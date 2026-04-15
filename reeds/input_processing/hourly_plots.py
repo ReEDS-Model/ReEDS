@@ -11,8 +11,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
 import cmocean
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 from reeds import plots
 plots.plotparams()
