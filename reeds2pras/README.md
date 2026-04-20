@@ -7,11 +7,10 @@ The purpose of ReEDS2PRAS is to translate a ReEDS system into a PRAS system read
 ### Julia Installation
 
 [Juliaup](https://github.com/JuliaLang/juliaup) is a cross platform installer of the Julia programming language.
-Detailed instructions to install Julia on different platforms are available from [Juliaup Installation Instructions](https://github.com/JuliaLang/juliaup?tab=readme-ov-file#installation).
+Detailed instructions to install Julia on different platforms are available from [Juliaup Installation Instructions](https://github.com/JuliaLang/juliaup?tab=readme-ov-file#installation). Julia `1.12.1` is the currently tested and recommended version across all platforms.
 
 #### Mac/Linux
 
-Julia is included in the conda environment, so Julia does not need to be installed separately.
 If you wish to install it for testing, you can run:
 
 ```shell

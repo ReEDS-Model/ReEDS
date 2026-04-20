@@ -13,9 +13,11 @@
 
 This GitHub repository contains the source code for NLR's ReEDS model.
 The ReEDS model source code is available at no cost from the National Laboratory of the Rockies.
-The ReEDS model can be downloaded or cloned from [https://github.com/ReEDS-Model/ReEDS](https://github.com/ReEDS-Model/ReEDS).
+The ReEDS model can be downloaded or cloned from [https://github.com/NatLabRockies/ReEDS-2.0](https://github.com/NatLabRockies/ReEDS-2.0).
 
-**For more information about the model, see the [open source ReEDS-2.0 Documentation](https://reeds-model.github.io/ReEDS).**
+**For more information about the model, see the [ReEDS-2.0 Documentation](https://pages.github.nrel.gov/ReEDS/ReEDS-2.0).**
+
+<!-- **For more information about the model, see the [open source ReEDS-2.0 Documentation](https://natlabrockies.github.io/ReEDS-2.0).** -->
 
 ReEDS training videos are available on the [NLR Learning YouTube channel](https://youtube.com/playlist?list=PLmIn8Hncs7bG558qNlmz2QbKhsv7QCKiC&si=NgGBaL_MxNcYiIEX).
 
@@ -48,12 +50,11 @@ A step-by-step guide for getting started with ReEDS is available [here](https://
     2. Obtain a combined GAMS/CPLEX license: <https://www.gams.com/sales/licensing/>
         1. Small ReEDS systems have been solved using the open-source [COIN-OR](https://www.coin-or.org/) solver as described [here](https://www.nrel.gov/docs/fy21osti/77907.pdf), but this capability is not actively maintained.
         2. Other commercial solvers have also been successfully applied to ReEDS, but setup details and some solver tuning are specific to the CPLEX solver.
-3. Install Julia: <https://julialang.org/downloads/>
+3. Install Julia (recommended version is `1.12.1`) using Juliaup: <https://github.com/JuliaLang/juliaup>
 4. Open a command-line interface and set up your environments:
     1. Clone the ReEDS repository: `git clone git@github.com:NatLabRockies/ReEDS-2.0.git` or `git clone https://github.com/NatLabRockies/ReEDS-2.0.git`
     2. Navigate to the cloned repository
     3. Create the `reeds2` [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html): `conda env create -f environment.yml`
-        1. Linux and Mac users can use the environment.yml directly. Windows users need to comment out the `- julia=1.8` line from the environment.yml file before creating the environment and use the version of Julia installed above.
     4. Activate the `reeds2` environment: `conda activate reeds2`
     5. Instantiate the Julia environment: `julia --project=. instantiate.jl`
     6. (Optional) Several large data files are hosted remotely.

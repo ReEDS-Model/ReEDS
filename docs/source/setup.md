@@ -171,60 +171,116 @@ Screenshot of GitHub links to clone the ReEDS repository or download ZIP of the 
 ```
 
 ### ReEDS2PRAS, Julia, and Stress Periods Setup
-Julia will need to be installed and set up to successfully run the model since ReEDS uses stress periods by default. To get Julia and stress periods set up: 
+Julia will need to be installed and set up to successfully run the model since ReEDS uses stress periods by default. The recommended way to install Julia is via **juliaup**, the official Julia version manager, which makes it easy to install and switch between specific Julia versions. Julia `1.12.1` is the currently tested version across all platforms.
 
-1. Install Julia
-   1. [max/linux]: Julia is included in the conda environment so no additional installation is needed
-   2. [windows]: install Julia from [https://julialang.org/downloads/](https://julialang.org/downloads/)
+#### Step 1: Install juliaup
 
-2. Navigate to the ReEDS-2.0 directory from the command line, then run `julia --project=. instantiate.jl`
+````{tab-set}
+```{tab-item} Windows
+Install juliaup using `winget` from a terminal (Command Prompt or PowerShell):
 
-#### Troubleshooting Issues with Julia Setup 
-When setting up julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get julia set up successfully: 
-1. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl) 
+    winget install --id Julialang.juliaup
+
+Alternatively, install from the [Microsoft Store](https://www.microsoft.com/store/apps/9NJNWW8PVKMN).
+```
+
+```{tab-item} macOS / Linux
+Run the following command from a terminal:
+
+    curl -fsSL https://install.julialang.org | sh
+
+Follow the on-screen prompts. When installation is complete, open a new terminal session (or run `source ~/.bashrc` / `source ~/.zshrc`) so that `juliaup` is available on your PATH.
+
+macOS and Linux users can also install via Homebrew:
+
+    brew install juliaup
+```
+````
+
+Verify the installation was successful:
+```
+juliaup status
+```
+
+#### Step 2: Install and pin the tested Julia version
+
+Install Julia `1.12.1` and set it as the default:
+```
+juliaup add 1.12.1
+juliaup default 1.12.1
+```
+
+Confirm the active version:
+```
+julia --version
+```
+
+You should see `julia version 1.12.1`.
+
+#### Step 3: Instantiate the Julia environment
+
+Navigate to the ReEDS-2.0 directory from the command line, then run:
+```
+julia --project=. instantiate.jl
+```
+
+#### Troubleshooting Issues with Julia Setup
+
+**Windows**
+
+When setting up Julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get Julia set up successfully:
+
+1. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl)
 
 2. Re-run `julia --project=. instantiate.jl`
 
-If that doesn't resolve the issue, the following may help: 
-1. If you previously installed julia, uninstall it: `winget uninstall julia`
+If that doesn't resolve the issue, try a clean install using juliaup:
 
-2. Manually install [Julia 1.8.5](https://julialang.org/downloads/oldreleases/#:~:text=ea85e0489c36324c4da62163aa1b82fcf2f52f72d173ee7dd213a3a92992cab7-,Windows,-x86_64)
+1. Remove any previously installed Julia version managed by juliaup: `juliaup remove 1.12.1`
 
-3. Add the julia bin path to your environment PATH variable
+1. If Julia was installed outside of juliaup, uninstall it first: `winget uninstall julia`
 
-4. Install [MinGW](https://www.mingw-w64.org/downloads/) 
+1. Re-install Julia `1.12.1` via juliaup: `juliaup add 1.12.1 && juliaup default 1.12.1`
 
-5. Open the julia interactive command line: `julia`
+1. Open the Julia interactive command line: `julia`
 
-6. Enter the julia package manager by pressing `]`, then run the following commands:
-    * `add Random123`   
+1. Enter the Julia package manager by pressing `]`, then run the following commands:
+    * `add Random123`
     * `registry add https://github.com/JuliaRegistries/General.git`
-    * `registry add https://github.com/NatLabRockies/JuliaRegistries.git`
     * `instantiate`
 
-7. Leave the package manager by pressing backspace or Ctrl+C
+1. Leave the package manager by pressing Backspace or Ctrl+C
 
-8. Run the following commands to finish setup: 
+1. Run the following commands to finish setup:
     * `import PRAS`
     * `import TimeZones`
     * `TimeZones.build()`
 
-9. You can then leave the julia command line by typing `exit()`
+1. You can then leave the Julia command line by typing `exit()`
 
-**If you're experiencing issues on Mac, a possible solution is:**
-1. Update the version of julia
+**macOS / Linux**
 
-2. Create the 'reeds2' conda environment with the environment.yml file
+If you experience issues, try the following:
 
-3. Run `julia` from the terminal to open the interactive command line
+1. Update to a known-good Julia version via juliaup:
+    ```
+    juliaup add 1.12.1
+    juliaup default 1.12.1
+    ```
 
-4. Run `import Pkg; Pkg.add("PRAS")`
+2. Run `julia` from the terminal to open the interactive command line
 
-5. Run `Pkg.add("TimeZones")`
+3. Run:
+    ```julia
+    import Pkg
+    Pkg.add("PRAS")
+    Pkg.add("TimeZones")
+    ```
 
-6. Exit julia with the command `exit()`, then run `julia instantiate.jl`
-
-7. Manually move the Manifest.toml file from the julia environment (~/miniconda3/envs/reeds2/share/julia/environments/reeds2/Manifest.toml) to the ReEDS repo
+4. Exit Julia with `exit()`, then re-run:
+    ```
+    julia --project=. instantiate.jl
+    ```
 
 ## Running ReEDS
 

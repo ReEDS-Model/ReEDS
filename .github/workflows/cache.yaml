@@ -21,15 +21,15 @@ env:
 jobs:
   python-cache:
     name: Python Cache
-    runs-on: ubuntu-latest
+    runs-on: reeds-runners
     permissions:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
+      - uses: mamba-org/setup-micromamba@4b9113af4fba0e9e1124b252dd6497a419e7396d # v1
         with:
           environment-file: environment.yml
           cache-environment: true
@@ -40,12 +40,12 @@ jobs:
 
   julia-cache:
     name: Julia Cache
-    runs-on: ubuntu-latest
+    runs-on: reeds-runners
     permissions:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
 
@@ -58,6 +58,8 @@ jobs:
           restore-keys: julia-${{ runner.os }}-
 
       - uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2
+        with:
+          version: '1.12.1'
         env:
           NODE_EXTRA_CA_CERTS: /usr/local/share/ca-certificates/nrel_ca_chain.crt
 

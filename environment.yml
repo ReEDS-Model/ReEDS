@@ -20,12 +20,6 @@ dependencies:
   - scikit-learn=1.2
   - scipy=1.11
   - tqdm=4.65
-  ## vvv Keep julia here if you're installing on the HPC.
-  ## vvv If you're installing on a local machine, you can comment out
-  ## vvv julia and install directly from https://julialang.org/downloads/.
-  ## vvv If you're on Windows, you MUST comment out julia and install directly.
-  - julia=1.8
-  ## ^^^
   ## vvv The next packages are optional for default settings and may
   ## vvv be excluded if you're having trouble building the environment.
   - ipykernel=6.25 # for interactive python in VS Code
