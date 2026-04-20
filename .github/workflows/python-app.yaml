@@ -29,9 +29,9 @@ env:
 jobs:
   julia-setup:
     name: "Julia environment"
-    runs-on: reeds-runners
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
@@ -52,15 +52,15 @@ jobs:
 
   python-setup:
     name: "Python environment"
-    runs-on: reeds-runners
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: mamba-org/setup-micromamba@4b9113af4fba0e9e1124b252dd6497a419e7396d # v1
+      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
         with:
           environment-file: environment.yml
           cache-environment: true
@@ -71,12 +71,12 @@ jobs:
     name: "Get Zenodo files"
     needs:
       - python-setup
-    runs-on: reeds-runners
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
           lfs: false
@@ -105,7 +105,7 @@ jobs:
             zenodo-files-${{ steps.zenodo-files.outputs.files-hash }}-
             zenodo-files-
       
-      - uses: mamba-org/setup-micromamba@4b9113af4fba0e9e1124b252dd6497a419e7396d # v1
+      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
         id: mamba
         with:
           environment-file: environment.yml
@@ -118,7 +118,7 @@ jobs:
         run: python .github/scripts/download_test_zenodo_files.py
 
   run-ReEDS:
-    runs-on: reeds-runners
+    runs-on: ubuntu-latest
     needs:
       - julia-setup
       - python-setup
@@ -140,7 +140,7 @@ jobs:
     env:
       batch: test
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
           lfs: false
@@ -180,12 +180,14 @@ jobs:
             inputs/remote/
             inputs/profiles_cf/
             inputs/profiles_demand/
+            inputs/profiles_dr/
+            inputs/profiles_temperature/
           key: zenodo-files-${{ steps.zenodo-files.outputs.files-hash }}-v1
           restore-keys: |
             zenodo-files-${{ steps.zenodo-files.outputs.files-hash }}-
             zenodo-files-
 
-      - uses: mamba-org/setup-micromamba@4b9113af4fba0e9e1124b252dd6497a419e7396d # v1
+      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
         id: mamba
         with:
           environment-file: environment.yml
@@ -254,7 +256,7 @@ jobs:
         run: python -m pytest tests/test_outputs.py --casepath "$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}"
 
       - name: Save ReEDS run
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: ${{ matrix.scenario }}
           compression-level: 9
@@ -266,10 +268,37 @@ jobs:
             ${{ env.RUN_FOLDER }}/outputs/**/*.csv
             ${{ env.RUN_FOLDER }}/outputs/**/*.h5
 
+  run-R2X:
+    runs-on: ubuntu-latest
+    needs:
+      - run-ReEDS
+    permissions:
+      contents: read
+      actions: write # required for setup-uv cache save in run-R2X
+    continue-on-error: true
+    strategy:
+      matrix:
+        include:
+          - scenario: github_Pacific
+            solve-year: 2029
+          - scenario: github_Everything
+            solve-year: 2060
+          - scenario: github_MA_county_CC
+            solve-year: 2026
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - name: Retrieve ReEDS runs for ${{ matrix.scenario }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: ${{ matrix.scenario }}
+          path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
       - name: R2X compatibility
         uses: ./.github/actions/r2x-check
         id: r2x-check
         with:
-          reeds-run-path: ${{ env.RUN_FOLDER }}
+          reeds-run-path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
           scenario: ${{ matrix.scenario }}
           solve-year: ${{ matrix.solve-year }}
