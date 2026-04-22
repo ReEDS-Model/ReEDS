@@ -2,7 +2,7 @@
 **Regional Energy Deployment System (ReEDS) Model**
 
  
-[![CI](https://github.com/ReEDS-Model/ReEDS/actions/workflows/python-app.yaml/badge.svg)](https://github.com/ReEDS-Model/ReEDS/actions/workflows/python-app.yaml)
+[![CI](https://github.com/ReEDS-Model/ReEDS/actions/workflows/python-app.yaml/badge.svg?branch=main)](https://github.com/ReEDS-Model/ReEDS/actions/workflows/python-app.yaml)
 [![Documentation](https://img.shields.io/badge/Documentation-view%20online-0a7f5e?logo=readthedocs&logoColor=white&labelColor=555)](https://reeds-model.github.io/ReEDS)
 ![Static Badge](https://img.shields.io/badge/python-3.11-blue)
 ![GitHub License](https://img.shields.io/github/license/ReEDS-Model/ReEDS)
