@@ -230,6 +230,8 @@ julia --project=. instantiate.jl
 
 When setting up Julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get Julia set up successfully:
 
+1. If you've used another version of Julia (from the reeds2 conda environment or a previous installation), you may get errors about conflicting manifest. To get past this, you can delete the `Manifest.toml` file with `rm Manifest.toml` (on Unix systems) or `del Manifest.toml` (on Windows systems). 
+
 1. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl)
 
 2. Re-run `julia --project=. instantiate.jl`
