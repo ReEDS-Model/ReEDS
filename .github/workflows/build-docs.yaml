@@ -48,11 +48,11 @@ jobs:
 
       - name: Set variables for internal github repo
         run: |
-          echo "BASE_URL=https://github.com/ReEDS-Model/ReEDS" >> $GITHUB_ENV
-          cd ${GITHUB_WORKSPACE}/docs/source/documentation_tools/
+          echo "BASE_URL=https://github.com/ReEDS-Model/ReEDS" >> "$GITHUB_ENV"
+          cd "$GITHUB_WORKSPACE/docs/source/documentation_tools/"
           sh generate_sources_md_file.sh
-          cd ${GITHUB_WORKSPACE}
-          python docs/source/documentation_tools/generate_markdown.py --githubURL "https://github.com/ReEDS-Model/ReEDS/blob/main" --reedsPath "${GITHUB_WORKSPACE}"
+          cd "$GITHUB_WORKSPACE"
+          python docs/source/documentation_tools/generate_markdown.py --githubURL "https://github.com/ReEDS-Model/ReEDS/blob/main" --reedsPath "$GITHUB_WORKSPACE"
 
       - name: Build Sphinx documentation
         env: 

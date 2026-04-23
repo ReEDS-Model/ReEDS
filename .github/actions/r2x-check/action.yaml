@@ -3,18 +3,13 @@ description: "Action to run R2X."
 inputs:
   reeds-run-path:
     required: true
-    type: string
   scenario:
-    type: string
   python-version:
-    type: string
     default: "3.11"
   weather-year:
-    type: int
-    default: 2012
+    default: "2012"
   solve-year:
-    type: int
-    default: 2035
+    default: "2035"
 
 outputs:
   scenario:
