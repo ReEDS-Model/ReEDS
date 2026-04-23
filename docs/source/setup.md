@@ -153,7 +153,7 @@ Screenshot of a test of GAMS from the terminal window
 ```
 
 ### Repository Setup
-The ReEDS source code is hosted on GitHub: [https://github.com/ReEDS-Model/ReEDS-2.0](https://github.com/ReEDS-Model/ReEDS-2.0)
+The ReEDS source code is hosted on GitHub at <https://github.com/ReEDS-Model/ReEDS>.
 
 1. Install Git Large File Storage, instructions can be found here: [Installing Git Large File Storage](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage)
 
@@ -219,7 +219,7 @@ You should see `julia version 1.12.1`.
 
 #### Step 3: Instantiate the Julia environment
 
-Navigate to the ReEDS-2.0 directory from the command line, then run:
+Navigate to the ReEDS directory from the command line, then run:
 ```
 julia --project=. instantiate.jl
 ```

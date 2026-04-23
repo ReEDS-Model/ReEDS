@@ -48,7 +48,11 @@ A step-by-step guide for getting started with ReEDS is available [here](https://
     2. Obtain a combined GAMS/CPLEX license: <https://www.gams.com/sales/licensing/>
         1. Small ReEDS systems have been solved using the open-source [COIN-OR](https://www.coin-or.org/) solver as described [here](https://www.nlr.gov/docs/fy21osti/77907.pdf), but this capability is not actively maintained.
         2. Other commercial solvers have also been successfully applied to ReEDS, but setup details and some solver tuning are specific to the CPLEX solver.
-3. Install Julia (recommended version is `1.12.1`). Explicit instructions for Julia in ReEDS can be found in the [documentation](https://reeds-model.github.io/ReEDS/setup.html#https://reeds-model.github.io/ReEDS/setup.html#reeds2pras-julia-and-stress-periods-setup).
+3. Install Julia version 1.12.1 as described in the [documentation](https://reeds-model.github.io/ReEDS/setup.html#reeds2pras-julia-and-stress-periods-setup):
+    1. Follow the platform-dependent installation instructions at <https://julialang.org/downloads/> to install both `julia` and `juliaup`
+    2. Specify version 1.12.1 by running:
+        1. `juliaup add 1.12.1`
+        2. `juliaup default 1.12.1`
 4. Open a command-line interface and set up your environments:
     1. Clone the ReEDS repository: `git clone git@github.com:ReEDS-Model/ReEDS.git` or `git clone https://github.com/ReEDS-Model/ReEDS.git`
     2. Navigate to the cloned repository
