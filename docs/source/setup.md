@@ -217,6 +217,8 @@ julia --version
 
 You should see `julia version 1.12.1`.
 
+**NOTE**: If you need other versions of Julia for other purposes, you can run those other Julia versions using `julia +channel` (More info on the [juliaup README](https://github.com/JuliaLang/juliaup#using-juliaup)). Or you can easily switch between versions with juliaup. For example, to switch to version `1.11.2`, run `juliaup default 1.11.2`. To switch back to `1.12.1`, run `juliaup default 1.12.1`.
+
 #### Step 3: Instantiate the Julia environment
 
 Navigate to the ReEDS directory from the command line, then run:
