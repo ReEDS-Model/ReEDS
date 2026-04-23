@@ -5,11 +5,22 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - 'LICENSE'
-      - '.gitignore'
+    paths:
+      - ".github/actions/setup-reeds-env/**"
+      - ".github/scripts/download_test_zenodo_files.py"
+      - ".github/workflows/python-app.yaml"
+      - "environment.yml"
+      - "Project.toml"
+      - "Manifest.toml"
+      - "runbatch.py"
+      - "d_solve*.py"
+      - "createmodel.gms"
+      - "reeds/**"
+      - "ReEDS_Augur/**"
+      - "Augur.py"
+      - "inputs/**"
+      - "tests/**"
+      - "scripts/run_r2x.py"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -186,12 +197,15 @@ jobs:
         run: |
           echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.11/site-packages/gamspy_base/gamslice.txt"
 
+      - name: Set run folder
+        env:
+          SCENARIO: ${{ matrix.scenario }}
+        run: echo "RUN_FOLDER=$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}" >> "$GITHUB_ENV"
+
       - name: Run ReEDS model
         env:
           SCENARIO: ${{ matrix.scenario }}
-        run: |
-          python runbatch.py -b "$batch" -c test -s "$SCENARIO"
-          echo "RUN_FOLDER=$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}" >> "$GITHUB_ENV"
+        run: python runbatch.py -b "$batch" -c test -s "$SCENARIO"
 
       - name: Print GAMS log
         if: runner.debug == '1'
@@ -208,6 +222,21 @@ jobs:
         env:
           SCENARIO: ${{ matrix.scenario }}
         run: python -m pytest tests/test_outputs.py --casepath "$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}"
+
+      - name: Upload ReEDS failure diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: ${{ format('{0}-failure-diagnostics', matrix.scenario) }}
+          compression-level: 9
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            ${{ env.RUN_FOLDER }}/gamslog.txt
+            ${{ env.RUN_FOLDER }}/meta.csv
+            ${{ env.RUN_FOLDER }}/outputs/**/*.log
+            ${{ env.RUN_FOLDER }}/outputs/**/*.err
+            ${{ env.RUN_FOLDER }}/outputs/**/*.lst
 
       - name: Save ReEDS run
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
