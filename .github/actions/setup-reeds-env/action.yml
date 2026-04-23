@@ -63,8 +63,6 @@ runs:
       uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2
       with:
         version: ${{ inputs.julia-version }}
-      env:
-        NODE_EXTRA_CA_CERTS: /usr/local/share/ca-certificates/nrel_ca_chain.crt
 
     - name: Instantiate Julia project
       if: ${{ fromJSON(inputs.setup-julia) && fromJSON(inputs.instantiate-julia) }}

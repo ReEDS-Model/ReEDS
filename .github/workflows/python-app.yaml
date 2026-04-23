@@ -26,8 +26,8 @@ env:
   JULIA_VERSION: '1.12.1'
 
 jobs:
-  env-prime:
-    name: Prime Python and Julia caches
+  reeds-env:
+    name: ReEDS Python and Julia env
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -45,7 +45,7 @@ jobs:
   zenodo-setup:
     name: "Get Zenodo files"
     needs:
-      - env-prime
+      - reeds-env
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs:
-      - env-prime
+      - reeds-env
       - zenodo-setup
     permissions:
       contents: read
