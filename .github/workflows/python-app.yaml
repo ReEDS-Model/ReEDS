@@ -68,7 +68,7 @@ jobs:
         
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
         with:
           path: |
             inputs/remote/
@@ -147,7 +147,7 @@ jobs:
 
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
         with:
           path: |
             inputs/remote/
@@ -167,7 +167,9 @@ jobs:
           julia-version: ${{ env.JULIA_VERSION }}
 
       - name: Prepend Julia install to PATH
-        run: echo "${{ steps.setup-env.outputs.julia-bindir }}" >> "$GITHUB_PATH"
+        env:
+          JULIA_BINDIR: ${{ steps.setup-env.outputs.julia-bindir }}
+        run: printf '%s\n' "$JULIA_BINDIR" >> "$GITHUB_PATH"
 
       - name: Setup environment variables
         run: |
