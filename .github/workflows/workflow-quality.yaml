@@ -33,7 +33,7 @@ jobs:
           version: "0.9.4"
 
       - name: Run zizmor
-        run: uvx zizmor .github
+        run: uvx zizmor --pedantic .github
 
   actionlint:
     name: actionlint

@@ -251,10 +251,35 @@ jobs:
         with:
           name: ${{ matrix.scenario }}
           path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
-      - name: R2X compatibility
-        uses: ./.github/actions/r2x-check
-        id: r2x-check
+
+      - name: Install uv and set Python version
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
-          reeds-run-path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
-          scenario: ${{ matrix.scenario }}
-          solve-year: ${{ matrix.solve-year }}
+          python-version: "3.11"
+          enable-cache: true
+          restore-cache: true
+          save-cache: true
+          ignore-nothing-to-cache: true
+
+      - name: Run R2X compatibility
+        env:
+          R2X_REEDS_RUN_PATH: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
+          R2X_SCENARIO: ${{ matrix.scenario }}
+          R2X_SOLVE_YEAR: ${{ matrix.solve-year }}
+          R2X_WEATHER_YEAR: "2012"
+          R2X_SYSTEM_JSON: ${{ format('{0}_system.json', matrix.scenario) }}
+        run: |
+          uvx --from "r2x-reeds>=0.3.5" python scripts/run_r2x.py \
+            --reeds-run-path "$R2X_REEDS_RUN_PATH" \
+            --scenario "$R2X_SCENARIO" \
+            --solve-year "$R2X_SOLVE_YEAR" \
+            --weather-year "$R2X_WEATHER_YEAR" \
+            --system-json "$R2X_SYSTEM_JSON"
+
+      - name: Save R2X system
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: r2x-${{ matrix.scenario }}
+          compression-level: 9
+          retention-days: 1
+          path: ${{ format('{0}_system.json', matrix.scenario) }}
