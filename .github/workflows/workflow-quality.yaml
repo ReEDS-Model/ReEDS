@@ -46,5 +46,8 @@ jobs:
 
       - name: Run actionlint
         run: |
-          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ACTIONLINT_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/rhysd/actionlint/e7d448ef7507c20fc4c88a95d0c448b848cd6127/scripts/download-actionlint.bash"
+          curl -fsSL "$ACTIONLINT_INSTALL_SCRIPT_URL" -o download-actionlint.bash
+          echo "28a0e78b3230372051c5a77840125aa2c8dc7804fce3696ef29dd52001ec3a8f  download-actionlint.bash" | sha256sum -c -
+          bash download-actionlint.bash
           ./actionlint
