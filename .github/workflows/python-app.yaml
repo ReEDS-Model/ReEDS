@@ -223,75 +223,6 @@ jobs:
           SCENARIO: ${{ matrix.scenario }}
         run: python -m pytest tests/test_outputs.py --casepath "$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}"
 
-      - name: Collect ReEDS failure diagnostics
-        if: ${{ failure() }}
-        env:
-          CASE_NAME: ${{ matrix.scenario }}
-        run: |
-          DIAG_ROOT="$RUNNER_TEMP/reeds-failure-diagnostics/$CASE_NAME"
-          mkdir -p "$DIAG_ROOT"
-          MANIFEST="$DIAG_ROOT/manifest.txt"
-
-          copy_if_exists() {
-            local src="$1"
-            local rel="$2"
-            if [[ -f "$src" ]]; then
-              mkdir -p "$(dirname "$DIAG_ROOT/$rel")"
-              cp "$src" "$DIAG_ROOT/$rel"
-              printf 'included: %s\n' "$src" >> "$MANIFEST"
-            else
-              printf 'missing: %s\n' "$src" >> "$MANIFEST"
-            fi
-          }
-
-          latest_by_year_iteration() {
-            local search_dir="$1"
-            local regex="$2"
-            local best_file=""
-            local best_year=-1
-            local best_iter=-1
-
-            [[ -d "$search_dir" ]] || return 0
-
-            while IFS= read -r file; do
-              local base year iter year_num iter_num
-              base="$(basename "$file")"
-              if [[ "$base" =~ $regex ]]; then
-                year="${BASH_REMATCH[1]}"
-                iter="${BASH_REMATCH[2]}"
-                year_num=$((10#$year))
-                iter_num=$((10#$iter))
-                if (( year_num > best_year || (year_num == best_year && iter_num > best_iter) )); then
-                  best_year=$year_num
-                  best_iter=$iter_num
-                  best_file="$file"
-                fi
-              fi
-            done < <(find "$search_dir" -maxdepth 1 -type f)
-
-            printf '%s\n' "$best_file"
-          }
-
-          copy_if_exists "$RUN_FOLDER/gamslog.txt" "gamslog.txt"
-          copy_if_exists "$RUN_FOLDER/meta.csv" "meta.csv"
-          copy_if_exists "$RUN_FOLDER/lstfiles/1_Inputs.lst" "lstfiles/1_Inputs.lst"
-
-          latest_case_lst="$(latest_by_year_iteration "$RUN_FOLDER/lstfiles" "^${CASE_NAME}_([0-9]+)i([0-9]+)\\.lst$")"
-          if [[ -n "$latest_case_lst" ]]; then
-            copy_if_exists "$latest_case_lst" "lstfiles/$(basename "$latest_case_lst")"
-          else
-            printf 'missing: %s\n' "$RUN_FOLDER/lstfiles/${CASE_NAME}_{year}i{iteration}.lst" >> "$MANIFEST"
-          fi
-
-          copy_if_exists "$RUN_FOLDER/lstfiles/report_${CASE_NAME}.lst" "lstfiles/report_${CASE_NAME}.lst"
-
-          latest_pras_log="$(latest_by_year_iteration "$RUN_FOLDER/ReEDS_Augur/PRAS" "^PRAS_([0-9]+)i([0-9]+)\\.log$")"
-          if [[ -n "$latest_pras_log" ]]; then
-            copy_if_exists "$latest_pras_log" "ReEDS_Augur/PRAS/$(basename "$latest_pras_log")"
-          else
-            printf 'missing: %s\n' "$RUN_FOLDER/ReEDS_Augur/PRAS/PRAS_{year}i{iteration}.log" >> "$MANIFEST"
-          fi
-
       - name: Upload ReEDS failure diagnostics
         if: ${{ failure() }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
@@ -300,7 +231,13 @@ jobs:
           compression-level: 9
           retention-days: 7
           if-no-files-found: ignore
-          path: ${{ format('{0}/reeds-failure-diagnostics/{1}', runner.temp, matrix.scenario) }}
+          path: |
+            ${{ env.RUN_FOLDER }}/gamslog.txt
+            ${{ env.RUN_FOLDER }}/meta.csv
+            ${{ env.RUN_FOLDER }}/lstfiles/1_Inputs.lst
+            ${{ env.RUN_FOLDER }}/lstfiles/${{ matrix.scenario }}_*i*.lst
+            ${{ env.RUN_FOLDER }}/lstfiles/report_${{ matrix.scenario }}.lst
+            ${{ env.RUN_FOLDER }}/ReEDS_Augur/PRAS/PRAS_*i*.log
 
       - name: Save ReEDS run
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
