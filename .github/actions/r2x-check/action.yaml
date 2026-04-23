@@ -49,42 +49,18 @@ runs:
     - name: Run R2X translation
       shell: bash -le {0}
       env:
-        R2X_RUN_PATH: ${{ inputs.reeds-run-path }}
+        R2X_REEDS_RUN_PATH: ${{ inputs.reeds-run-path }}
+        R2X_SCENARIO: ${{ steps.resolve.outputs.scenario }}
         R2X_SOLVE_YEAR: ${{ inputs.solve-year }}
         R2X_WEATHER_YEAR: ${{ inputs.weather-year }}
-        R2X_SCENARIO: ${{ steps.resolve.outputs.scenario }}
         R2X_SYSTEM_JSON: ${{ steps.resolve.outputs.system_json }}
       run: |
-        uv run --with "r2x-reeds>=0.3.5" python - <<'PY'
-        import os
-        from pathlib import Path
-
-        from loguru import logger
-        from r2x_core import DataStore, PluginContext
-        from r2x_core.logger import setup_logging
-        from r2x_reeds import ReEDSConfig, ReEDSParser
-
-        run_path = Path(os.environ["R2X_RUN_PATH"]).expanduser().resolve()
-        solve_year = int(os.environ["R2X_SOLVE_YEAR"])
-        weather_year = int(os.environ["R2X_WEATHER_YEAR"])
-        scenario = os.environ["R2X_SCENARIO"]
-        system_json = os.environ["R2X_SYSTEM_JSON"]
-
-        setup_logging()
-
-        config = ReEDSConfig(
-            weather_year=weather_year,
-            solve_year=solve_year,
-            scenario=scenario,
-        )
-
-        store = DataStore.from_plugin_config(config, path=run_path)
-        ctx = PluginContext(config=config, store=store)
-        parser = ReEDSParser.from_context(ctx)
-        result_ctx = parser.run()
-        result_ctx.system.to_json(system_json)
-        logger.info("Built R2X system for scenario '{}' at '{}'", scenario, system_json)
-        PY
+        uvx --from "r2x-reeds>=0.3.5" python scripts/run_r2x.py \
+          --reeds-run-path "$R2X_REEDS_RUN_PATH" \
+          --scenario "$R2X_SCENARIO" \
+          --solve-year "$R2X_SOLVE_YEAR" \
+          --weather-year "$R2X_WEATHER_YEAR" \
+          --system-json "$R2X_SYSTEM_JSON"
 
     - name: Save R2X system
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0

@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      actions: write
+      actions: write # Required to save/update micromamba cache.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -50,7 +50,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      actions: write
+      actions: write # Required to save/update Zenodo data cache.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -91,6 +91,7 @@ jobs:
         run: python .github/scripts/download_test_zenodo_files.py
 
   run-ReEDS:
+    name: run ReEDS model matrix
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs:
@@ -98,7 +99,7 @@ jobs:
       - zenodo-setup
     permissions:
       contents: read
-      actions: write
+      actions: write # Required to save/update LFS and Zenodo caches.
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -222,6 +223,7 @@ jobs:
             ${{ env.RUN_FOLDER }}/outputs/**/*.h5
 
   run-R2X:
+    name: run R2X compatibility matrix
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs:
