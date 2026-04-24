@@ -5,22 +5,11 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - ".github/actions/setup-reeds-env/**"
-      - ".github/scripts/download_test_zenodo_files.py"
-      - ".github/workflows/python-app.yaml"
-      - "environment.yml"
-      - "Project.toml"
-      - "Manifest.toml"
-      - "runbatch.py"
-      - "d_solve*.py"
-      - "createmodel.gms"
-      - "reeds/**"
-      - "ReEDS_Augur/**"
-      - "Augur.py"
-      - "inputs/**"
-      - "tests/**"
-      - "scripts/run_r2x.py"
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
