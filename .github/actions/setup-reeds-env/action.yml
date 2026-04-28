@@ -18,10 +18,6 @@ inputs:
     description: Run julia --project=. instantiate.jl.
     required: false
     default: "true"
-  remove-conda-julia:
-    description: Remove julia from micromamba env before setup-julia.
-    required: false
-    default: "true"
 
 outputs:
   mamba-env-path:
@@ -43,11 +39,6 @@ runs:
         cache-environment: true
         post-cleanup: "all"
         cache-environment-key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
-
-    - name: Remove conda Julia package
-      if: ${{ fromJSON(inputs.setup-python) && fromJSON(inputs.setup-julia) && fromJSON(inputs.remove-conda-julia) }}
-      shell: bash -le {0}
-      run: micromamba remove -y julia || true
 
     - name: Restore Julia cache
       if: ${{ fromJSON(inputs.setup-julia) }}

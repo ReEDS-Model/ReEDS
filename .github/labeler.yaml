@@ -42,10 +42,10 @@ tests:
 model_changes:
   - changed-files:
       - any-glob-to-any-file:
+          - "*.gms"
           - "**/*.gms"
           - "runbatch.py"
           - "d_solve*.py"
-          - "createmodel.gms"
           - "reeds/**"
           - "ReEDS_Augur/**"
           - "Augur.py"
@@ -60,10 +60,6 @@ data_changes:
           - "postprocessing/**/inputs/**"
           - "**/*.csv"
           - "**/*.h5"
-          - "**/*.hdf5"
-          - "**/*.parquet"
-          - "**/*.xlsx"
-          - "**/*.xls"
           - "sources.csv"
           - "sources_documentation.md"
 
@@ -87,4 +83,6 @@ reeds2pras:
 
 inputs:
   - changed-files:
-      - any-glob-to-any-file: "inputs/**"
+      - any-glob-to-any-file:
+          - "inputs/**"
+          - "cases.csv"
