@@ -91,6 +91,7 @@ jobs:
         run: python .github/scripts/download_test_zenodo_files.py
 
   run-ReEDS:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: run ReEDS model matrix
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -242,6 +243,7 @@ jobs:
             ${{ env.RUN_FOLDER }}/outputs/**/*.h5
 
   run-R2X:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: run R2X compatibility matrix
     runs-on: ubuntu-latest
     timeout-minutes: 30
