@@ -81,8 +81,7 @@ reeds2pras:
   - changed-files:
       - any-glob-to-any-file: "reeds2pras/**"
 
-inputs:
+switches:
   - changed-files:
       - any-glob-to-any-file:
-          - "inputs/**"
           - "cases.csv"
