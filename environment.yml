@@ -33,7 +33,7 @@ dependencies:
     - cmocean==3.0.3
     - gdxpds==1.4.0
     - geopandas==0.14.0
-    - pulp==2.7.0
+    - pulp==3.3.0
     - shapely==2.0.1
     ## vvv The next packages are optional for default settings and may
     ## vvv be excluded if they cause trouble building the environment.
