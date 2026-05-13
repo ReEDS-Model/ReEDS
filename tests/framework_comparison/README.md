@@ -64,64 +64,59 @@ approximately matching ReEDS's sequential-myopic solve structure.
 
 ## Running
 
-All commands assume the `reeds_benchmark` conda environment and are run from the repo root
-or from `tests/framework_comparison/`.
-
-```powershell
-# Activate environment
-conda activate reeds_benchmark
-
-# Quick sanity check — all frameworks, small problem only
-python tests/framework_comparison/benchmark.py --size small
-
-# Full benchmark — all sizes (slow, large takes ~5 min per framework)
-python tests/framework_comparison/benchmark.py
-
-# Subset of frameworks or sizes
-python tests/framework_comparison/benchmark.py --frameworks linopy pyomo --size small medium
-
-# GAMSPy with CPLEX only
-python tests/framework_comparison/benchmark.py --frameworks gamspy_cplex --size small medium large
-```
-
-Results are printed to the terminal and saved as CSV in `results/`.
-
-### Running Arco standalone with `uv --script`
-
-`solve_arco.py` includes inline `uv` metadata and pins Arco to the current PR commit. You can compile/install the bindings directly from that source with:
+Run the comparison as a Torc workflow from the repo root. Torc handles job
+isolation, wall time, and memory measurements in its SQLite database.
 
 ```bash
-uv run --script tests/framework_comparison/solve_arco.py
+uv sync --project tests/framework_comparison
+
+torc -s --in-memory \
+  --db tests/framework_comparison/torc_output/torc.db \
+  run tests/framework_comparison/torc_workflow.yaml \
+  --max-parallel-jobs 1 \
+  -o tests/framework_comparison/torc_output
 ```
 
-### CLI options
+Change each job's `size` parameter list in `torc_workflow.yaml` to run larger
+sizes. Add or edit job blocks to change framework/solver combinations; each block
+passes `--label`, `--module`, and `--solver` to `run_framework.py`. Torc 0.30.1+
+is required for `--in-memory` standalone runs.
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--size` | all | Problem size(s): `small medium large xlarge` |
-| `--frameworks` | all | Framework labels (see table above) |
-| `--repeat N` | 1 | Repeat each run N times; report minimum times |
-| `--no-memory` | off | Skip peak RSS measurement |
+Per-framework adapter JSON files are written to
+`tests/framework_comparison/torc_output/framework_results/`. Torc runtime and
+memory metrics are in `tests/framework_comparison/torc_output/torc.db`.
+
+### Inspecting Torc results
+
+```bash
+tests/framework_comparison/review_torc_results.sh
+```
+
+Or pass a specific Torc database:
+
+```bash
+tests/framework_comparison/review_torc_results.sh path/to/torc.db
+```
 
 ## Environment setup
 
-### Conda environment
+Use the local `uv` project:
 
-Create and activate the dedicated benchmark environment from the pinned spec:
-
-```powershell
-conda env create -f tests/framework_comparison/environment.yml
-conda activate reeds_benchmark
+```bash
+uv sync --project tests/framework_comparison
 ```
 
-The environment installs: `linopy`, `pyomo`, `highspy`, `highsbox`,
-`pyoptinterface`, `gamspy`, `gamspy_base`, `psutil`, `numpy`, `xarray`.
-`highsbox` provides the HiGHS shared library required by pyoptinterface.
+Torc must be available on `PATH`:
+
+```bash
+torc --version
+```
 
 ### GAMS (solve_gams.py)
 
-`solve_gams.py` calls `gams.exe` via subprocess. The GAMS executable path is
-hard-coded at the top of that file; update it if your GAMS installation is elsewhere.
+`solve_gams.py` calls GAMS via subprocess. By default it uses
+`/Library/Frameworks/GAMS.framework/Resources/gams`; pass `gams_exe=` to
+`solve()` or `--gams-exe` when running the script to use another installation.
 
 ### GAMSPy (solve_gamspy.py)
 
@@ -140,7 +135,7 @@ Set these via **System Properties → Environment Variables** and restart VSCode
 To install the GAMSPy license:
 
 ```powershell
-& "C:\envs\reeds_benchmark\python.exe" -m gamspy install license <access_code>
+& "C:\envs\reeds2\python.exe" -m gamspy install license <access_code>
 ```
 
 ## Files
@@ -148,7 +143,9 @@ To install the GAMSPy license:
 | File | Purpose |
 |------|---------|
 | `data_generator.py` | Generates `ProblemData` for each size; single source of truth for all parameters |
-| `benchmark.py` | Main harness: runs frameworks, measures time/memory, saves CSV |
+| `torc_workflow.yaml` | Torc workflow defining framework/solver benchmark jobs |
+| `run_framework.py` | Thin adapter called by Torc jobs; writes per-job JSON results |
+| `review_torc_results.sh` | Prints Torc runtime/memory metrics and adapter result summaries |
 | `solve_linopy.py` | linopy implementation |
 | `solve_pyomo.py` | Pyomo implementation |
 | `solve_pyoptinterface.py` | pyoptinterface implementation |
@@ -156,4 +153,4 @@ To install the GAMSPy license:
 | `solve_gams.py` | Writes a `.gms` file and invokes GAMS via subprocess |
 | `solve_gamspy.py` | GAMSPy implementation |
 | `verify_env.py` | Lightweight import and solve check (older, pre-ramping/storage version) |
-| `results/` | Benchmark output CSVs, timestamped |
+| `torc_output/` | Torc database, job logs, and framework result JSONs |

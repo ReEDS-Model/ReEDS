@@ -1,0 +1,26 @@
+[project]
+name = "reeds-framework-comparison"
+version = "0.1.0"
+description = "Dependencies for running the ReEDS LP framework comparison scripts."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "arco",
+  "gamspy",
+  "gamspy-base",
+  "highsbox",
+  "highspy",
+  "linopy",
+  "numpy",
+  "psutil",
+  "pyomo",
+  "pyoptinterface",
+  "pyscipopt",
+  "xarray",
+  "xpress",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+arco = { git = "https://github.com/NatLabRockies/arco.git", rev = "main", subdirectory = "bindings/python" }

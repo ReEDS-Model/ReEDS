@@ -31,20 +31,23 @@ def solve(
     solver: str = "highs",
     build_only: bool = False,
 ) -> tuple[float, float, float]:
-    if solver != "highs":
-        raise ValueError("solve_arco only supports solver='highs'")
+    if solver not in {"highs", "scip", "xpress"}:
+        raise ValueError("solve_arco only supports solver='highs', solver='scip', or solver='xpress'")
 
     regions, techs, hours, years = data.regions, data.techs, data.hours, data.years
     region_index = data.r_idx
     total_hours_weight = float(np.sum(data.hours_weight))
 
-    route_active_matrix = np.zeros((len(regions), len(regions)), dtype=bool)
-    transcap_matrix = np.zeros((len(regions), len(regions)), dtype=float)
-    for r_from, r_to in data.routes:
-        row = region_index[r_from]
-        col = region_index[r_to]
-        route_active_matrix[row, col] = True
-        transcap_matrix[row, col] = float(data.transcap[(r_from, r_to)])
+    n_regions = len(regions)
+    route_names = [f"{r_from}->{r_to}" for r_from, r_to in data.routes]
+    transcap_vector = np.zeros(len(data.routes), dtype=float)
+    net_flow_incidence = np.zeros((n_regions, len(data.routes)), dtype=float)
+    for route_idx, (r_from, r_to) in enumerate(data.routes):
+        from_idx = region_index[r_from]
+        to_idx = region_index[r_to]
+        transcap_vector[route_idx] = float(data.transcap[(r_from, r_to)])
+        net_flow_incidence[to_idx, route_idx] += 1.0 - float(data.tranloss)
+        net_flow_incidence[from_idx, route_idx] -= 1.0
 
     t0 = time.perf_counter()
     model = arco.Model()
@@ -54,8 +57,7 @@ def solve(
     H = arco.IndexSet("h", members=hours)
     T = arco.IndexSet("t", members=years)
     H_ramp = H[:-1]
-    R_from = R.alias("from")
-    R_to = R.alias("to")
+    L = arco.IndexSet("route", members=route_names)
 
     valcap = arco.param(data.valcap, I, R, T)
     is_vre = arco.param(data.is_vre, I)
@@ -78,8 +80,8 @@ def solve(
     cost_op = arco.param(data.cost_op, I)
     startcost = arco.param(data.startcost, I)
 
-    route_active = arco.param(route_active_matrix, R_from, R_to)
-    transcap = arco.param(transcap_matrix, R_from, R_to)
+    transcap = arco.param(transcap_vector, L)
+    net_flow_coeff = arco.param(net_flow_incidence, R, L)
 
     cap = model.add_variables(
         I,
@@ -107,12 +109,10 @@ def solve(
         name="GEN",
     )
     flow = model.add_variables(
-        R_from,
-        R_to,
+        L,
         H,
         T,
         bounds=arco.Bounds(0, transcap),
-        active=route_active,
         name="FLOW",
     )
     rampup = model.add_variables(
@@ -157,9 +157,7 @@ def solve(
         name="eq_mingen",
     )
 
-    imports = ((1.0 - float(data.tranloss)) * flow) @ R_from
-    exports = flow @ R_to
-    net_flow = imports - exports
+    net_flow = (net_flow_coeff * flow) @ L
     model.add_constraints(
         (gen @ I) + net_flow - (charge @ I) == load,
         name="eq_supply_demand_balance",
@@ -207,17 +205,21 @@ def solve(
     if build_only:
         return float("nan"), build_s, 0.0
 
-    t1 = time.perf_counter()
-    result = model.solve(
-        solver=arco.HiGHS(
+    solver_options = {
+        "highs": arco.HiGHS(
             log_to_console=False,
             parameters={"solver": "ipm", "arco.fingerprint": "false"},
-        )
-    )
+        ),
+        "scip": arco.Scip(log_to_console=False),
+        "xpress": arco.Xpress(log_to_console=False),
+    }
+
+    t1 = time.perf_counter()
+    result = model.solve(solver=solver_options[solver])
     solve_s = time.perf_counter() - t1
 
     if not result.is_optimal():
-        raise RuntimeError(f"HiGHS did not find an optimal solution: {result.status}")
+        raise RuntimeError(f"{solver} did not find an optimal solution: {result.status}")
 
     return float(result.objective_value), build_s, solve_s
 

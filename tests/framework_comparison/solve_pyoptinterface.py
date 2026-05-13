@@ -18,13 +18,16 @@ reasonable range; result is multiplied back at the end.
 from __future__ import annotations
 import time
 import pyoptinterface as poi
-from pyoptinterface import highs
+from pyoptinterface import highs, xpress
 from pyoptinterface._src.attributes import ModelAttribute, TerminationStatusCode
 
 from data_generator import ProblemData
 
 
 def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) -> tuple[float, float, float]:
+    if solver not in {"highs", "xpress"}:
+        raise ValueError("solve_pyoptinterface only supports solver='highs' or solver='xpress'")
+
     R, I, H, T = data.regions, data.techs, data.hours, data.years
     ri, ii, hi, ti = data.r_idx, data.i_idx, data.h_idx, data.t_idx
 
@@ -46,9 +49,11 @@ def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) ->
 
     # ------------------------------------------------------------------ build
     t0 = time.perf_counter()
-    m = highs.Model()
+    model_class = highs.Model if solver == "highs" else xpress.Model
+    m = model_class()
     m.set_model_attribute(ModelAttribute.Silent, True)
-    m.set_raw_parameter("solver", "ipm")
+    if solver == "highs":
+        m.set_raw_parameter("solver", "ipm")
 
     GEN    = {}
     CAP    = {}
@@ -253,7 +258,7 @@ def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) ->
 
     status = m.get_model_attribute(ModelAttribute.TerminationStatus)
     if status != TerminationStatusCode.OPTIMAL:
-        raise RuntimeError(f"HiGHS did not find an optimal solution: {status.name}")
+        raise RuntimeError(f"{solver} did not find an optimal solution: {status.name}")
 
     obj_val = m.get_model_attribute(ModelAttribute.ObjectiveValue)
     return float(obj_val * OBJ_SCALE), build_s, solve_s

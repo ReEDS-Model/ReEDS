@@ -1,0 +1,112 @@
+name: requested_solver_matrix
+description: Small/medium framework-solver benchmark matrix. Edit each job's solver and size lists to run any supported solver set.
+
+execution_config:
+  mode: direct
+
+resource_monitor:
+  sample_interval_seconds: 1
+  jobs:
+    enabled: true
+    granularity: summary
+  compute_node:
+    enabled: false
+
+jobs:
+  - name: install_gamspy_scip
+    command: uv run --no-sync --project tests/framework_comparison gamspy install solver scip --use-uv
+    resource_requirements: framework_job
+
+  - name: bench_linopy_{solver}_{size}
+    command: >
+      uv run --no-sync --project tests/framework_comparison python
+      tests/framework_comparison/run_framework.py
+      --label linopy_{solver}
+      --module solve_linopy
+      --solver {solver}
+      --size {size}
+      --output tests/framework_comparison/torc_output_matrix/framework_results/{size}_linopy_{solver}.json
+    resource_requirements: framework_job
+    parameters:
+      solver: "['highs','scip','xpress']"
+      size: "['small','medium']"
+
+  - name: bench_pyomo_{solver}_{size}
+    command: >
+      uv run --no-sync --project tests/framework_comparison python
+      tests/framework_comparison/run_framework.py
+      --label pyomo_{solver}
+      --module solve_pyomo
+      --solver {solver}
+      --size {size}
+      --output tests/framework_comparison/torc_output_matrix/framework_results/{size}_pyomo_{solver}.json
+    resource_requirements: framework_job
+    parameters:
+      solver: "['highs','scip','xpress']"
+      size: "['small','medium']"
+
+  - name: bench_pyoptinterface_{solver}_{size}
+    command: >
+      uv run --no-sync --project tests/framework_comparison python
+      tests/framework_comparison/run_framework.py
+      --label pyoptinterface_{solver}
+      --module solve_pyoptinterface
+      --solver {solver}
+      --size {size}
+      --output tests/framework_comparison/torc_output_matrix/framework_results/{size}_pyoptinterface_{solver}.json
+    resource_requirements: framework_job
+    parameters:
+      solver: "['highs','scip','xpress']"
+      size: "['small','medium']"
+
+  - name: bench_arco_{solver}_{size}
+    command: >
+      uv run --no-sync --project tests/framework_comparison python
+      tests/framework_comparison/run_framework.py
+      --label arco_{solver}
+      --module solve_arco
+      --solver {solver}
+      --size {size}
+      --output tests/framework_comparison/torc_output_matrix/framework_results/{size}_arco_{solver}.json
+    resource_requirements: framework_job
+    parameters:
+      solver: "['highs','scip','xpress']"
+      size: "['small','medium']"
+
+  - name: bench_gams_{solver}_{size}
+    command: >
+      uv run --no-sync --project tests/framework_comparison python
+      tests/framework_comparison/run_framework.py
+      --label gams_{solver}
+      --module solve_gams
+      --solver {solver}
+      --size {size}
+      --output tests/framework_comparison/torc_output_matrix/framework_results/{size}_gams_{solver}.json
+    resource_requirements: framework_job
+    parameters:
+      solver: "['cplex','highs','scip','xpress']"
+      size: "['small','medium']"
+
+  - name: bench_gamspy_{solver}_{size}
+    command: >
+      uv run --no-sync --project tests/framework_comparison python
+      tests/framework_comparison/run_framework.py
+      --label gamspy_{solver}
+      --module solve_gamspy
+      --solver {solver}
+      --size {size}
+      --output tests/framework_comparison/torc_output_matrix/framework_results/{size}_gamspy_{solver}.json
+    resource_requirements: framework_job
+    depends_on:
+      - install_gamspy_scip
+    parameters:
+      solver: "['cplex','highs','scip','xpress']"
+      size: "['small','medium']"
+
+resource_requirements:
+  - name: framework_job
+    num_cpus: 4
+    num_gpus: 0
+    num_nodes: 1
+    memory: 12g
+    runtime: PT45M

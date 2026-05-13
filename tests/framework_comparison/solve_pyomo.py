@@ -199,7 +199,8 @@ def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) ->
     # ------------------------------------------------------------------ solve
     t1 = time.perf_counter()
     slvr = SolverFactory(solver)
-    slvr.solve(m, tee=False, options={"solver": "ipm"})
+    options = {"solver": "ipm"} if solver == "highs" else {}
+    slvr.solve(m, tee=False, options=options)
     solve_s = time.perf_counter() - t1
 
     return float(pyo.value(m.obj)), build_s, solve_s

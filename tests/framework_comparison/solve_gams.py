@@ -1,7 +1,7 @@
 """
 Native GAMS implementation of the ReEDS-representative LP test problem.
 
-Generates a temporary .gms file from ProblemData, calls the GAMS 53 executable,
+Generates a temporary .gms file from ProblemData, calls the GAMS executable,
 and parses the .lst output for timing and objective value.
 
 Timing split:
@@ -18,7 +18,7 @@ from pathlib import Path
 
 from data_generator import ProblemData
 
-GAMS_EXE = r"C:\GAMS\53\gams.exe"
+GAMS_EXE = "/Library/Frameworks/GAMS.framework/Resources/gams"
 
 
 def _write_gms(data: ProblemData, gms_path: Path, solver: str) -> None:
@@ -313,7 +313,12 @@ def _parse_lst(lst_path: Path) -> tuple[float, float, float]:
     return obj, gen_s, solve_s
 
 
-def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) -> tuple[float, float, float]:
+def solve(
+    data: ProblemData,
+    solver: str = "highs",
+    build_only: bool = False,
+    gams_exe: str | Path = GAMS_EXE,
+) -> tuple[float, float, float]:
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         gms  = tmp_path / "reeds_mini.gms"
@@ -331,15 +336,20 @@ def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) ->
 
         t1 = time.perf_counter()
         result = subprocess.run(
-            [GAMS_EXE, str(gms), "lo=0", f"o={lst}", f"curdir={tmp_path}"],
+            [str(gams_exe), str(gms), "lo=0", f"o={lst}", f"curdir={tmp_path}"],
             capture_output=True, text=True,
         )
         gams_wall = time.perf_counter() - t1
 
         if result.returncode > 1:
+            lst_tail = ""
+            if lst.exists():
+                lst_tail = lst.read_text(encoding="ascii", errors="replace")[-2000:]
             raise RuntimeError(
                 f"GAMS exited {result.returncode}:\n"
-                f"{result.stdout[-1000:]}\n{result.stderr[-500:]}"
+                f"stdout:\n{result.stdout[-1000:]}\n"
+                f"stderr:\n{result.stderr[-500:]}\n"
+                f"lst tail:\n{lst_tail}"
             )
 
         obj, gen_s, solve_s = _parse_lst(lst)
@@ -349,10 +359,16 @@ def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) ->
 
 
 if __name__ == "__main__":
+    import argparse
     import sys
-    sys.path.insert(0, __file__.rsplit("\\", 1)[0])
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gams-exe", default=GAMS_EXE, help="Path to the GAMS executable")
+    args = parser.parse_args()
+
+    sys.path.insert(0, str(Path(__file__).parent))
     from data_generator import make_problem
     for size in ("small", "medium", "large", "xlarge"):
         data = make_problem(size)
-        obj, b, s = solve(data, solver="cplex")
+        obj, b, s = solve(data, solver="cplex", gams_exe=args.gams_exe)
         print(f"{size:6s}  obj={obj:>18,.0f}  build={b:.3f}s  solve={s:.3f}s")

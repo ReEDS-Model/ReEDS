@@ -69,3 +69,4 @@ docs/build/*
 
 # framework comparison benchmark outputs
 tests/framework_comparison/results/
+tests/framework_comparison/torc_output*/

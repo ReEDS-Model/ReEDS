@@ -176,7 +176,10 @@ def solve(data: ProblemData, solver: str = "highs", build_only: bool = False) ->
 
     # ------------------------------------------------------------------ solve
     t1 = time.perf_counter()
-    m.solve(solver, io_api="direct", output_flag=False, solver="ipm")
+    if solver == "highs":
+        m.solve(solver, io_api="direct", output_flag=False, solver="ipm")
+    else:
+        m.solve(solver)
     solve_s = time.perf_counter() - t1
 
     return float(m.objective.value), build_s, solve_s
