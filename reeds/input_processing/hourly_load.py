@@ -691,6 +691,54 @@ def main(reeds_path, inputs_case):
     regional_load_hourly = regional_load_hourly.astype(np.float32)
 
     #%%%#########################################
+    #    -- Large Load Additions --    #
+    #############################################
+    ## Add data center load if GSw_LargeLoadAdd is on
+    if sw['GSw_LargeLoadAdd'] == 'none':
+        pass
+    else:
+        dc_load = pd.read_csv(os.path.join(inputs_case,'large_load_additions.csv'))
+        # First check that data center load data exist for regions included in the run
+        val_r_all = sorted(
+                        pd.read_csv(
+                            os.path.join(inputs_case, 'val_r_all.csv'), header=None,
+                        ).squeeze(1).tolist())
+        list_reg = []
+        for item in dc_load['*r'].unique().tolist():
+            if item in val_r_all:
+                list_reg.append(item)
+        if len(list_reg) == 0:
+            raise ValueError(
+                "There are no data center load data for the regions included in this run. " 
+                "If this is intentional, set GSw_LargeLoadAdd to 0"
+            )
+        # Assign data center load as flat block starting in the year indicated
+        else:
+            # Add the data center load to the load profiles as a flat addition
+            load_profiles = regional_load_hourly.reset_index()   
+            for reg in list_reg:
+               # In mixed resolution runs it's possible a single region will have multiple large 
+               # load additions that come online in different years
+               # Check for multiple large loads in the same region
+               if len(dc_load.loc[dc_load['*r'] == reg, 't'].unique()) > 1:
+                   # Sort the years 
+                   ordered_years = sorted(dc_load.loc[dc_load['*r'] == reg, 't'])
+                   # Add the loads in the order they should come online
+                   for t_dc in ordered_years:
+                       # Only add the data center load to the load profiles for t_dc and beyond
+                       load_profiles.loc[load_profiles['year'] >= t_dc, reg] += \
+                           dc_load.loc[(dc_load['*r'] == reg) &(dc_load['t'] == t_dc) , 'value'].values[0]          
+               else:
+                    # Get the first year the data center load is online
+                    t_dc = dc_load.loc[dc_load['*r'] == reg, 't'].item()
+                    # Only add the data center load to the load profiles for t_dc and beyond                      
+                    load_profiles.loc[load_profiles['year'] >= t_dc, reg] += dc_load.loc[dc_load['*r'] == reg, 'value'].values[0]
+
+        load_profiles = load_profiles.set_index(['year', 'datetime'])
+        load_profiles = load_profiles.astype(np.float32)
+        regional_load_hourly = load_profiles.copy()
+
+    #%%%#########################################
     #    -- Peak Load Calculation --    #
     #############################################
 

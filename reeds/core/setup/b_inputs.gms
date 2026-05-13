@@ -2348,6 +2348,47 @@ prescription_check(i,newv,r,t)$[sum{pcat$prescriptivelink(pcat,i), noncumulative
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
 m_rscfeas(r,i,"bin1")$[sum{(pcat,t)$[sameas(pcat,i)$tmodel_new(t)], noncumulative_prescriptions(pcat,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
 
+$onempty
+parameter required_investment(pcat,st,allt) "--MW-- user-specified required investments by state"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%req_builds.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+* need to fill in for unmodeled, gap years via tprev but
+required_investment(pcat,st,t)$tmodel_new(t)
+                  = sum{tt$[(yeart(tt)<=yeart(t)
+* this condition populates values of tt which exist between the
+* previous modeled year and the current year
+                      $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
+                      ],
+                      required_investment(pcat,st,tt)
+                    } ;
+
+$onempty
+parameter required_tech(pcat,st,allt) "--MW-- user-specified required tech by state"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%required_tech.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+* need to fill in for unmodeled, gap years via tprev but
+required_tech(pcat,st,t)$tmodel_new(t)
+                  = sum{tt$[(yeart(tt)<=yeart(t)
+* this condition populates values of tt which exist between the
+* previous modeled year and the current year
+                      $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
+                      ],
+                      required_tech(pcat,st,tt)
+                    } ;
 *==========================================================
 *--- Interconnection queues (Capacity deployment limit) ---
 *==========================================================
@@ -2997,6 +3038,19 @@ $onlisting
 /
 ;
 $offempty
+
+$onempty
+parameter annual_generation_target(allt,st) "--MWh-- annual target for in-state generation"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%annual_generation_target.csv
+$offdelim
+$onlisting
+/
+;
+$offempty
+
 
 RecPerc(RPSCat,st,t) = sum{allt$att(allt,t), rps_fraction(allt,st,RPSCat) } ;
 RecPerc(RPSCat,st,t)$[(Sw_StateRPS_Carveouts = 0)$(sameas(RPSCat, "RPS_solar") or sameas(RPSCat, "RPS_Wind"))] = 0;

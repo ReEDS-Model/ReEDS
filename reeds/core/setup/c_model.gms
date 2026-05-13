@@ -40,6 +40,8 @@ positive variables
   INV_RSC(i,v,r,rscbin,t)                  "--MW-- investment in technologies that use a resource supply curve"
   UPGRADES(i,v,r,t)                        "--MW-- investments in upgraded capacity from ii to i"
   UPGRADES_RETIRE(i,v,r,t)                 "--MW-- upgrades that have been retired - used as a free slack variable in eq_cap_upgrade"
+  REQ_SLACK_LHS(pcat,st,t)                 "--MW-- left-hand side of the slack variable for required builds"
+  REQ_SLACK_RHS(pcat,st,t)                 "--MW-- right-hand side of the slack variable for required builds"
 
 * The units for all of the operational variables are average MW or MWh/time-slice hours
 * generation and storage variables
@@ -138,6 +140,11 @@ EQUATION
 * load constraint to compute proper marginal value
  eq_loadcon(r,allh,t)                    "--MW-- load constraint used for computing the marginal energy price"
 
+* OPGW Constraints
+ eq_option1(st,t)                        "--MWh -- generation constraint used to enforce annual in-state generation by exogeneously defined valued"
+ eq_option2(st,t)                        "--MWh -- generation constraint used to enforce annual in-state generation by scaled load"
+ eq_option3(st,allh,t)                      "--MWh -- generation constraint used to enforce hourly in-state generation by scaled load"
+
 * load flexibility constraints
  eq_load_flex_day(flex_type,r,allszn,t)  "--MWh-- total flexible load in each season is equal to the exogenously-specified flexible load"
  eq_load_flex1(flex_type,r,allh,t)       "--MWh-- exogenously-specified flexible demand (load_exog_flex) must be served by flexible load (FLEX)"
@@ -163,6 +170,10 @@ EQUATION
  eq_forceprescription_power(pcat,r,t)     "--MW-- total power investment in prescribed capacity must equal amount from exogenous prescriptions"
  eq_forceprescription_energy(pcat,r,t)    "--MWh-- total energy investment in prescribed capacity must equal amount from exogenous prescriptions"
  eq_refurblim(i,r,t)                      "--MW-- total refurbishments cannot exceed the amount of capacity that has reached the end of its life"
+
+* force exogenous build requirements (typically for IRP matching)
+ eq_build_requirement(pcat,st,t)          "--MW-- investments in a state must equal the user-specified investments"
+ eq_tech_requirement(pcat,st,t)           "--MW-- investments in a particular technolgy in state must equal the user-specified investments"
 
 * renewable supply curves
  eq_rsc_inv_account(i,v,r,t)              "--MW-- INV for rsc techs is the sum over all bins of INV_RSC"
@@ -969,6 +980,52 @@ eq_forceprescription_energy(pcat,r,t)
 ;
 
 * ---------------------------------------------------------------------------
+* require specific amounts of capacity to be built in a state
+eq_build_requirement(pcat,st,t)
+    $[tmodel(t)
+    $sum{(ppcat,tt), required_investment(ppcat,st,tt) }
+    $(yeart(t) >= model_builds_start_yr)
+    $Sw_BuildRequirements
+    $(not Sw_PCM)]..
+
+* Sum of investments in the state
+    sum{(i,v,r)$[prescriptivelink(pcat,i)$r_st(r,st)$valinv(i,v,r,t)], INV(i,v,r,t) }
+* add slack
+     + REQ_SLACK_LHS(pcat,st,t)
+
+    =e=
+
+* must equal the required amount
+    required_investment(pcat,st,t)
+
+* plus prescribed capacity
+    + sum{r$r_st(r,st),noncumulative_prescriptions(pcat,r,t)}
+* add slack
+    + REQ_SLACK_RHS(pcat,st,t)
+
+;
+
+* require investment in a specific technology in a state
+eq_tech_requirement(pcat,st,t)
+    $[tmodel(t)
+    $sum{tt, required_tech(pcat,st,tt) }
+    $(yeart(t) >= model_builds_start_yr)
+    $Sw_TechRequirement
+    $(not Sw_PCM)]..
+
+* Sum of investments in the state
+    sum{(i,v,r)$[prescriptivelink(pcat,i)$r_st(r,st)$valinv(i,v,r,t)], INV(i,v,r,t) }
+
+    =e=
+
+* must equal the required amount
+    required_tech(pcat,st,t)
+
+* plus prescribed capacity
+    + sum{r$r_st(r,st),noncumulative_prescriptions(pcat,r,t)}
+
+;
+* ---------------------------------------------------------------------------
 
 *limit the amount of refurbishments available in specific year
 *this is the sum of all previous year's investment that is now beyond the age
@@ -1445,6 +1502,69 @@ eq_supply_demand_balance(r,h,t)$tmodel(t)..
 
 * must equal demand
     LOAD(r,h,t)
+;
+
+* ---------------------------------------------------------------------------
+* Operation GW constraint options 
+* Option 1: An annual MWh target (e.g., Annual Utah generation > 1000 MWh)
+* Option 2: A proportion of annual load (e.g., Annual Utah generation > 2 x Annual Utah load)
+* Option 3: A proportion of hourly load (e.g., Utah generation in a given hour > 2 x Utah load in a given hour)
+
+
+*----- Option 1 -----
+eq_option1(st,t)
+    $[tmodel(t)$(Sw_OPGW=1)    
+    $(yeart(t)>=model_builds_start_yr)
+    $(sum{(i,r)$[r_st(r,st)], valgen_irt(i,r,t) })  
+    $(annual_generation_target(t,st)) 
+    ]..                                                        
+
+*  annual generation 
+    sum{(i,v,r,h)$[r_st(r,st)$valgen(i,v,r,t)],          
+        hours(h) * GEN(i,v,r,h,t) }   
+
+    =g=
+
+* must be greater than or equal to exogenously defined annual target
+    annual_generation_target(t,st) 
+;
+
+*---- Option 2 -----
+eq_option2(st,t)$[tmodel(t)      
+                $(yeart(t)>=model_builds_start_yr)
+                $sum{(i,r)$[r_st(r,st)], valgen_irt(i,r,t) }  
+                $(Sw_OPGW = 2)      
+                $sameas(st,"UT")                                                       
+                ]..
+
+*  annual generation 
+    sum{(i,v,r,h)$[r_st(r,st)$valgen(i,v,r,t)],          
+        hours(h) * GEN(i,v,r,h,t) }   
+    =g=
+
+* must be greater than or equal to Sw_OPGW_load_mult x Annual Utah load 
+        sum{(r,h)$r_st(r,st) ,           
+            hours(h) * LOAD(r,h,t) } * Sw_OPGW_load_mult   
+
+;
+
+*---- Option 3 ----
+eq_option3(st,h,t)$[tmodel(t)
+                    $(yeart(t)>=model_builds_start_yr)  
+                    $sum{(i,r)$[r_st(r,st)], valgen_irt(i,r,t) }
+                    $(Sw_OPGW = 3)    
+                    $sameas(st,"UT")                                                              
+                    ]..
+
+*  hourly generation 
+    sum{(i,v,r)$[r_st(r,st)$valgen(i,v,r,t)],       
+        GEN(i,v,r,h,t) }     
+
+    =g=
+
+* must be greater than or equal to Sw_OPGW_load_mult x hourly Utah load 
+        sum{r$r_st(r,st),  
+            LOAD(r,h,t) } * Sw_OPGW_load_mult   
 ;
 
 * ---------------------------------------------------------------------------

@@ -763,6 +763,19 @@ def main(reeds_path, inputs_case, agglevel, regions):
         .stack().rename_axis(['*r','t']).rename('MW').round(3)
     )
 
+    #%%----------------------------------------------------------------------------
+    ##############################
+    #  -- State Required Builds --    #
+    ##############################
+    # If no state required builds are specified, then return an empty dataframe
+    if int(sw.GSw_BuildRequirements) == 0:
+        req_builds = pd.DataFrame(columns=['*i', 'st', 't', 'value'])
+    # If enforcing state required builds then the prescribed builds and existing capacity need to added to the list of required capacity
+    else :
+        req_builds = pd.read_csv(os.path.join(inputs_case,'required_investments.csv'))
+           
+        # Filter to only include modeled years
+        req_builds = req_builds[req_builds['t']<= max(years)]
 
     #%%----------------------------------------------------------------------------
     ##############################
@@ -771,7 +784,7 @@ def main(reeds_path, inputs_case, agglevel, regions):
 
     #Round outputs before writing out
     for df in [rets, rets_energy, capnonrsc, capnonrsc_energy, prescribed_nonRSC, prescribed_nonRSC_energy,
-               caprsc, prescribed_rsc, h2_existing_smr_cap]:
+               caprsc, prescribed_rsc, h2_existing_smr_cap,req_builds]:
         df['value'] = df['value'].round(6)
         # Set all years to integer datatype
         if 't' in df.columns:
@@ -796,6 +809,7 @@ def main(reeds_path, inputs_case, agglevel, regions):
                 'hydcapadj_ccszn' : hydcapadj_ccszn[['*i','ccseason','r','value']],
                 'can_imports_capacity' : can_imports_capacity,
                 'geoexist' : geoexist,
+                'req_builds' : req_builds[['*i','st','t','value']],
                 'h2_ba_share': h2_ba_share_out
                 }
 
@@ -863,6 +877,10 @@ if __name__ == '__main__':
                     combined_data[key] = county_data[key]
                 else:
                     combined_data[key] = pd.concat([aggreg_data[key], county_data[key]])
+
+        # Since required builds are defined at the state level, mixed resolution runs will duplicate 
+        # the data in req_builds. Remove the duplicates here
+        combined_data['req_builds'] = combined_data['req_builds'].drop_duplicates()
         
         data = combined_data
 
