@@ -71,20 +71,20 @@ isolation, wall time, and memory measurements in its SQLite database.
 uv sync --project tests/framework_comparison
 
 torc -s --in-memory \
-  --db tests/framework_comparison/torc_output/torc.db \
-  run tests/framework_comparison/torc_workflow.yaml \
+  --db tests/framework_comparison/torc_output_matrix/torc.db \
+  run tests/framework_comparison/torc_solver_matrix.yaml \
   --max-parallel-jobs 1 \
-  -o tests/framework_comparison/torc_output
+  -o tests/framework_comparison/torc_output_matrix
 ```
 
-Change each job's `size` parameter list in `torc_workflow.yaml` to run larger
-sizes. Add or edit job blocks to change framework/solver combinations; each block
+Change each job's `solver` and `size` parameter lists in
+`torc_solver_matrix.yaml` to run different solver/size combinations. Each block
 passes `--label`, `--module`, and `--solver` to `run_framework.py`. Torc 0.30.1+
 is required for `--in-memory` standalone runs.
 
 Per-framework adapter JSON files are written to
-`tests/framework_comparison/torc_output/framework_results/`. Torc runtime and
-memory metrics are in `tests/framework_comparison/torc_output/torc.db`.
+`tests/framework_comparison/torc_output_matrix/framework_results/`. Torc runtime
+and memory metrics are in `tests/framework_comparison/torc_output_matrix/torc.db`.
 
 ### Inspecting Torc results
 
@@ -143,7 +143,7 @@ To install the GAMSPy license:
 | File | Purpose |
 |------|---------|
 | `data_generator.py` | Generates `ProblemData` for each size; single source of truth for all parameters |
-| `torc_workflow.yaml` | Torc workflow defining framework/solver benchmark jobs |
+| `torc_solver_matrix.yaml` | Torc workflow defining the framework/solver/size benchmark matrix |
 | `run_framework.py` | Thin adapter called by Torc jobs; writes per-job JSON results |
 | `review_torc_results.sh` | Prints Torc runtime/memory metrics and adapter result summaries |
 | `solve_linopy.py` | linopy implementation |
