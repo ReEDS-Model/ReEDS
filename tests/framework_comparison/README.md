@@ -64,12 +64,12 @@ approximately matching ReEDS's sequential-myopic solve structure.
 
 ## Running
 
-All commands assume the `reeds2` conda environment and are run from the repo root
+All commands assume the `reeds_benchmark` conda environment and are run from the repo root
 or from `tests/framework_comparison/`.
 
 ```powershell
 # Activate environment
-conda activate reeds2
+conda activate reeds_benchmark
 
 # Quick sanity check — all frameworks, small problem only
 python tests/framework_comparison/benchmark.py --size small
@@ -107,12 +107,16 @@ uv run --script tests/framework_comparison/solve_arco.py
 
 ### Conda environment
 
+Create and activate the dedicated benchmark environment from the pinned spec:
+
 ```powershell
-conda activate reeds2
+conda env create -f tests/framework_comparison/environment.yml
+conda activate reeds_benchmark
 ```
 
-The `reeds2` environment must have: `linopy`, `pyomo`, `highspy`, `highsbox`,
+The environment installs: `linopy`, `pyomo`, `highspy`, `highsbox`,
 `pyoptinterface`, `gamspy`, `gamspy_base`, `psutil`, `numpy`, `xarray`.
+`highsbox` provides the HiGHS shared library required by pyoptinterface.
 
 ### GAMS (solve_gams.py)
 
@@ -136,7 +140,7 @@ Set these via **System Properties → Environment Variables** and restart VSCode
 To install the GAMSPy license:
 
 ```powershell
-& "C:\envs\reeds2\python.exe" -m gamspy install license <access_code>
+& "C:\envs\reeds_benchmark\python.exe" -m gamspy install license <access_code>
 ```
 
 ## Files

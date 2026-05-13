@@ -1,0 +1,18 @@
+name: reeds_benchmark
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy=1.26
+  - psutil=7.0.0
+  - pip
+  - pip:
+    - linopy==0.6.7
+    - pyomo==6.10.0
+    - highspy==1.14.0
+    - highsbox
+    - pyoptinterface==0.6.1
+    - xarray==2026.4.0
+    - gamspy==1.23.0
+    - gamspy_highs

@@ -1,7 +1,7 @@
 """
 Benchmark harness for the ReEDS LP framework comparison.
 
-Runs each framework × each problem size and collects:
+Runs each framework x each problem size and collects:
   - build_s   : model-construction time (seconds)
   - solve_s   : LP-solver time (seconds)
   - total_s   : build_s + solve_s
@@ -120,7 +120,18 @@ def run_one(
     measure_memory: bool = True,
 ) -> dict:
     """Import module, run solve() under RSS polling, return a result dict."""
-    mod = importlib.import_module(module_name)
+    try:
+        mod = importlib.import_module(module_name)
+    except ImportError as exc:
+        return {
+            "label": label,
+            "error": f"ImportError: {exc}",
+            "objective": None,
+            "build_s": None,
+            "solve_s": None,
+            "total_s": None,
+            "peak_mb": None,
+        }
 
     def _call():
         kwargs: dict = {}
