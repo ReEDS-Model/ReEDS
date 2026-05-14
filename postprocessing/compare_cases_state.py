@@ -342,7 +342,11 @@ output_formatting = reeds.io.get_plot_formatting()
 aggregation_mapping = pd.read_csv(
         os.path.join(reeds_path,'postprocessing','tech_aggregation.csv'))
 
-ImportColors = {'imports':'grey'}
+
+import_colors_df = pd.Series(
+    {'imports': '#808080'},
+    name='color',
+)
 
 #%% Parse excel report sheet names
 val2sheet = reeds.io.get_report_sheetmap(cases[basecase])
@@ -373,6 +377,24 @@ for case in tqdm(cases, desc='get valid st values'):
             all_st+=val_st_subset[case]
 all_st = list(set(all_st))
 
+# val_r_subset = {}
+# for case in tqdm(cases, desc='get valid r values'):
+#     val_r_subset[case] =  None
+#     res = 'st'
+#     rvals = ['UT']
+#     val_r_subset[case] = hierarchy[case].loc[hierarchy[case][res].isin(rvals)].index.unique().tolist()
+
+# all_st = []
+# val_st_subset = {}
+# for case in tqdm(cases, desc='get valid st values'):
+#     val_st_subset[case] =  None
+
+#     res = 'st'
+#     rvals = ['UT']
+#     if res not in ['r','itlgrp']:
+#         val_st_subset[case] = hierarchy[case].loc[hierarchy[case][res].isin(rvals),'st'].unique().tolist()
+#         all_st+=val_st_subset[case]
+# all_st = list(set(all_st))
 
 dictin_error = {}
 for case in tqdm(cases, desc='system cost error'):
@@ -390,17 +412,6 @@ for case in tqdm(cases, desc='national capacity'):
     dictin_cap[case] = dictin_cap[case].loc[
         ~dictin_cap[case].tech.isin(capacity_removals)].copy()
 
-dictin_gen = {}
-for case in tqdm(cases, desc='national generation'):
-    dictin_gen[case] = (reeds.io.read_output(cases[case], filename = 'gen_ivrt',r_filter = val_r_subset[case], valname = 'Generation (TWh)')
-        .rename(columns = {'Value':'Generation (TWh)','i':'tech','t':'year'}))
-    dictin_gen[case]['Generation (TWh)']/=1e6
-    dictin_gen[case].tech = reedsplots.simplify_techs(dictin_gen[case].tech, display_level = simple_techs)
-    dictin_gen[case] = dictin_gen[case].loc[
-        ~dictin_gen[case].tech.isin(all_removals)].copy()
-    dictin_gen[case] = (
-        dictin_gen[case].groupby(['tech','year'], as_index=False)
-        ['Generation (TWh)'].sum())
 
 dictin_flow = {}
 for case in tqdm(cases, desc='Annual transmission flow'):
@@ -418,6 +429,22 @@ for case in tqdm(cases, desc='Annual transmission flow'):
         dictin_flow[case]['Net Import (TWh)']/=1e6
     else:
         dictin_flow[case]['Net Import (TWh)'] = 0
+
+dictin_gen = {}
+for case in tqdm(cases, desc='national generation'):
+    dictin_gen[case] = (reeds.io.read_output(cases[case], filename = 'gen_ivrt',r_filter = val_r_subset[case], valname = 'Generation (TWh)')
+        .rename(columns = {'Value':'Generation (TWh)','i':'tech','t':'year'}))
+    dictin_flow[case]['tech'] = 'interregional_flow'
+    dictin_flow[case]['Generation (TWh)'] = dictin_flow[case]['Net Import (TWh)']*1e6
+    dictin_gen[case] = pd.concat((dictin_gen[case],dictin_flow[case]))
+    dictin_gen[case]['Generation (TWh)']/=1e6
+    dictin_gen[case].tech = reedsplots.simplify_techs(dictin_gen[case].tech, display_level = simple_techs)
+    dictin_gen[case] = dictin_gen[case].loc[
+        ~dictin_gen[case].tech.isin(all_removals)].copy()
+    dictin_gen[case] = (
+        dictin_gen[case].groupby(['tech','year'], as_index=False)
+        ['Generation (TWh)'].sum())
+
 
 costcat_rename = {
     'CO2 Spurline':'CO2 T&S Capex',
@@ -437,7 +464,7 @@ costcat_rename = {
 }
 dictin_npv = {}
 for case in tqdm(cases, desc='NPV of system cost'):
-    temp = reeds.output_calc.calc_systemcost(cases[case], r_subset = val_r_subset[case], st_subset = val_st_subset).rename(columns = {'i':'tech','t':'year'})
+    temp = reeds.results.calc_systemcost(cases[case], r_subset = val_r_subset[case], st_subset = val_st_subset).rename(columns = {'i':'tech','t':'year'})
     temp = pd.pivot_table(data = temp, index = 'cost_cat',values = 'Discounted Cost (Bil $)', aggfunc = 'sum')
     dictin_npv[case] = temp['Discounted Cost (Bil $)']
 
@@ -446,9 +473,15 @@ for case in tqdm(cases, desc='NPV of system cost'):
 
 dictin_npv2 = {}
 for case in tqdm(cases, desc='Annualized system costs'):
-    temp = reeds.output_calc.calc_systemcost(cases[case], r_subset = val_r_subset[case],rename_as_bokeh = True, st_subset = val_st_subset).rename(columns = {'i':'tech','t':'year'})
+    temp = reeds.results.calc_systemcost(cases[case], r_subset = val_r_subset[case],rename_as_bokeh = True, st_subset = val_st_subset).rename(columns = {'i':'tech','t':'year'})
     temp = pd.pivot_table(data = temp, index = ['cost_cat','year'],values = 'Discounted Cost (Bil $)', aggfunc = 'sum')
     dictin_npv2[case] = temp.reset_index(drop = False)
+    dictin_npv2[case].cost_cat = dictin_npv2[case].cost_cat.replace(costcat_rename)
+    dictin_npv2[case] = (
+        dictin_npv2[case]
+        .groupby(['cost_cat', 'year'], sort=False, as_index=False)
+        ['Discounted Cost (Bil $)'].sum()
+    )
 
 dictin_loads = {}
 for case in tqdm(cases, desc='Annual electricity costs'):
@@ -470,7 +503,7 @@ for case in tqdm(cases, desc='Annual electricity costs'):
     temp = (reeds.io.read_output(cases[case],'load_rt',r_filter = val_r_subset[case])
         .rename(columns = {'Value':'Load (MWh)','t':'year'}))
     temp = pd.pivot_table(data = temp, index = ['year'],values = 'Load (MWh)', aggfunc = 'sum').reset_index(drop = False)
-    temp_values = reeds.output_calc.calc_systemcost(cases[case], r_subset = val_r_subset[case],rename_as_bokeh = True, st_subset = val_st_subset, discount_rate = 0.00001
+    temp_values = reeds.results.calc_systemcost(cases[case], r_subset = val_r_subset[case],rename_as_bokeh = True, st_subset = val_st_subset, discount_rate = 0.00001
         ).rename(columns = {'i':'tech','t':'year'}) # discount rate set marginally small to annulaize flat across years
     temp_values = pd.pivot_table(data = temp_values, index = ['cost_cat','year'],values = 'Discounted Cost (Bil $)', aggfunc = 'sum')
     temp = pd.merge(left = temp_values.reset_index(drop = False), right = temp, on = 'year')
@@ -503,13 +536,39 @@ for case in tqdm(cases, desc='national emissions'):
             .unstack('e')
         )
 
+
 dictin_trans = {}
+dictin_trans_inter = {}
+dictin_trans_intra = {}
 for case in tqdm(cases, desc='national transmission'):
-    dictin_trans[case] = reeds.io.read_report(cases[case], 'Transmission (GW-mi)')
+    '''
+    dictin_trans[case] = results.calc_tech_trans(cases[case])
+    dictin_trans[case].loc[(dictin_trans[case].r.isin(val_r_subset[case]))]
+    dictin_trans[case]['Amount (GW-mi)'] = dictin_trans[case]['Trans (TW-mi)']*1e3
+    dictin_trans[case]['trtype'] = [trtype_map[x] for x in dictin_trans[case].trtype]
+    print(dictin_trans[case])
+    '''
+    
+    if args.subregion is not None:
+        dictin_trans[case] = reeds.io.read_output(cases[case], 'tran_mi_out_detail', valname='MW-mi').rename(columns = {'t':'year'})
+        dictin_trans[case]['Amount (GW-mi)'] = dictin_trans[case]['MW-mi']/1e3
+        dictin_trans[case] = dictin_trans[case].loc[(dictin_trans[case].r.isin(val_r_subset[case])) | (dictin_trans[case].rr.isin(val_r_subset[case]))]
+        
+        dictin_trans_inter[case] = dictin_trans[case].loc[
+            (dictin_trans[case].r.isin(val_r_subset[case]))^(dictin_trans[case].rr.isin(val_r_subset[case]))]
+        dictin_trans_inter[case] = pd.pivot_table(data = dictin_trans_inter[case], 
+            index = ['year','trtype'], values = 'Amount (GW-mi)',aggfunc = 'sum').reset_index(drop = False)
+        dictin_trans_intra[case] = dictin_trans[case].loc[
+            (dictin_trans[case].r.isin(val_r_subset[case]))*(dictin_trans[case].rr.isin(val_r_subset[case]))]
+        dictin_trans_intra[case] = pd.pivot_table(data = dictin_trans_intra[case], 
+            index = ['year','trtype'], values = 'Amount (GW-mi)',aggfunc = 'sum').reset_index(drop = False)
+    else:
+        dictin_trans[case] = reeds.io.read_report(cases[case], 'Transmission (GW-mi)')
+    
 
 dictin_trans_r = {}
 for case in tqdm(cases, desc='regional transmission'):
-    dictin_trans_r[case] = reeds.io.read_output(cases[case], 'tran_out', valname='MW')
+    dictin_trans_r[case] = reeds.io.read_output(cases[case], 'tran_out', valname='MW',r_filter = val_r_subset)
     for _level in ['interconnect','transreg','transgrp','st']:
         dictin_trans_r[case][f'inter_{_level}'] = (
             dictin_trans_r[case].r.map(hierarchy[case][_level])
@@ -519,6 +578,8 @@ for case in tqdm(cases, desc='regional transmission'):
 dictin_cap_r = {}
 for case in tqdm(cases, desc='regional capacity'):
     dictin_cap_r[case] = reeds.io.read_output(cases[case], 'cap', valname='MW')
+    if args.subregion is not None:
+        dictin_cap_r[case] = dictin_cap_r[case].loc[dictin_cap_r[case].r.isin(val_r_subset[case])]
     dictin_cap_r[case].i = reedsplots.simplify_techs(dictin_cap_r[case].i, display_level = simple_techs)
     dictin_cap_r[case] = dictin_cap_r[case].loc[
         ~dictin_cap_r[case].i.isin(capacity_removals)].copy()
@@ -983,21 +1044,21 @@ toplot = {
             # },
             'Net Regional Imports' : {
                 'data': dictin_flow,
-                'colors':ImportColors,
+                'colors':import_colors_df,
                 'columns':'imports',
                 'values':'Net Import (TWh)',
                 'label':'Net Import (TWh)'
             },
             'Annualized System Cost': {
                 'data': dictin_npv2,
-                'colors':output_formatting['cost_cat_colors'],
+                'colors':output_formatting['cost_cat_colors'].squeeze(),
                 'columns':'cost_cat',
                 'values':'Discounted Cost (Bil $)',
                 'label':'Discounted Cost (Bil $)'
             },
             'Annual Electricity Price': {
                 'data': dictin_prices,
-                'colors':output_formatting['cost_cat_colors'],
+                'colors':output_formatting['cost_cat_colors'].squeeze(),
                 'columns':'cost_cat',
                 'values':'Electricity Price ($/MWh)',
                 'label':'Electricity Price ($/MWh)'
@@ -1272,9 +1333,14 @@ try:
     ### NPV
     col = 3
     ax[0,col].set_ylabel('NPV of system cost [$B]', y=-0.075)
-    dfplot = pd.concat(
-        {case: dictin_npv2[case] for case in cases},
-        axis=1).T.fillna(0)
+    dfplot = pd.concat({
+        case: (
+            dictin_npv2[case]
+            .loc[dictin_npv2[case]['year'] == lastyear]
+            .set_index('cost_cat')['Discounted Cost (Bil $)']
+        )
+        for case in cases
+    }, axis=1).T.fillna(0)
     dfplot = dfplot[[c for c in output_formatting['cost_cat_colors'].index if c in dfplot]].copy()
 
     handles['NPV'] = plot_bars_abs_stacked(
@@ -1328,7 +1394,7 @@ try:
     col = 0
     ax[0,col].set_ylabel('NPV of system cost [$B]', y=-0.075)
     ax[0,col].axhline(0, c='k', ls='--', lw=0.75)
-    dfcost_npv = pd.concat(dictin_npv2, axis=1).fillna(0).T
+    dfcost_npv = pd.concat({case: dictin_npv[case] for case in cases}, axis=1).T.fillna(0)
     dfcost_npv = dfcost_npv[[c for c in output_formatting['cost_cat_colors'].index if c in dfcost_npv]].copy()
     if simple_npv:
         dfcost_npv = dfcost_npv.sum(axis=1)
@@ -1407,860 +1473,12 @@ try:
 except Exception:
     print(traceback.format_exc())
 
-#%% Simplifed NPV
-try:
-    width = len(cases)*1.3 + 2
-    plt.close()
-    f,ax = plt.subplots(
-        2, 3, figsize=(width, 6), sharex=True,
-        sharey=('col' if (sharey is True) else False),
-    )
-    handles = {}
-
-    ### NPV of system cost
-    col = 0
-    ax[0,col].set_ylabel('NPV of system cost [$B]', y=-0.075)
-    ax[0,col].axhline(0, c='k', ls='--', lw=0.75)
-    dfcost_npv = pd.concat(dictin_npv, axis=1).fillna(0).T.sum(axis=1)
-
-    def two_bars(dfplot, basecase, colors, ax, col=0, ypad=0.02):
-        if isinstance(basecase, str):
-            dfdiff = dfplot - dfplot.loc[basecase]
-        elif isinstance(basecase, list):
-            dfdiff = dfplot - dfplot.loc[basecase].values
-        elif isinstance(basecase, dict):
-            dfdiff = dfplot - dfplot.loc[basecase.values()].values
-
-        for (row, df) in enumerate([dfplot, dfdiff]):
-            ax[row,col].bar(
-                range(len(df)), df.values,
-                color=[colors[c] for c in dfplot.index],
-                width=0.8,
-            )
-            ymin, ymax = ax[row,col].get_ylim()
-            _ypad = (ymax - ymin) * ypad
-            if ymin < 0:
-                ax[row,col].set_ylim(ymin * (1+ypad))
-            ## label net value
-            if not lesslabels:
-                for x, case in enumerate(df.index):
-                    val = df.loc[case].sum()
-                    ax[row,col].annotate(
-                        f'{val:.0f}', (x, val - _ypad),
-                        ha='center', va='top', color='k', size=9,
-                        path_effects=[pe.withStroke(linewidth=2.0, foreground='w', alpha=0.7)],
-                    )
-
-    two_bars(dfplot=dfcost_npv, basecase=basemap, colors=colors, ax=ax, col=col)
-
-    ### NPV of climate and health costs
-    col = 1
-    ax[0,col].set_ylabel('NPV of climate + health cost [$B]', y=-0.075)
-
-    dfsocial = {}
-    for case in cases:
-        dfsocial[case] = (
-            dictin_emissions[case].reindex(allyears).interpolate('linear')
-            * scghg_central
-        )[['CO2','CH4']].dropna() / 1e9
-        dfsocial[case]['health'] = dictin_health_central[case].reindex(allyears).interpolate('linear')
-    dfsocial = pd.concat(dfsocial, axis=1)
-
-    dfsocial_npv = dfsocial.multiply(discounts, axis=0).dropna().sum().unstack('e').sum(axis=1)
-
-    two_bars(dfplot=dfsocial_npv, basecase=basemap, colors=colors, ax=ax, col=col)
-
-    ### Combined
-    col = 2
-    ax[0,col].set_ylabel('NPV of system\n+ climate + health cost [$B]', y=-0.075)
-    dfcombo_npv = pd.concat([dfcost_npv, dfsocial_npv], axis=1).sum(axis=1)
-
-    two_bars(dfplot=dfcombo_npv, basecase=basemap, colors=colors, ax=ax, col=col)
-
-    ### Formatting
-    for col in range(3):
-        ax[1,col].set_xticks(range(len(cases)))
-        ax[1,col].set_xticklabels(cases.keys(), rotation=90)
-        ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
-        ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
-        ## Add commas to y axis labels
-        if max([abs(i) for i in ax[0,col].get_ylim()]) >= 10000:
-            ax[0,col].yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
-    plt.tight_layout()
-    plots.despine(ax)
-
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx(
-        'NPV of System, Climate, Health Costs', prs=prs, width=min(width, SLIDE_WIDTH))
-    if interactive:
-        plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%%### SCOE, NEUE
-try:
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
-    width = 9 + len(cases)*0.5
-    plt.close()
-    f,ax = plt.subplots(
-        1, 4, figsize=(width, 4.5),
-        gridspec_kw={'wspace':0.7, 'width_ratios':[1,1,1,len(cases)*0.25]},
-    )
-
-    ### SCOE
-    col = 0
-    dfscoe = {}
-    for case in cases:
-        dfscoe[case] = dictin_scoe[case].groupby('year')['Average cost ($/MWh)'].sum().loc[years[case]]
-        ax[col].plot(dfscoe[case].index, dfscoe[case].values, label=case, color=colors[case])
-    ax[col].set_ylim(0)
-    ax[col].set_ylabel('System cost of electricity [$/MWh]')
-    dfscoe = pd.concat(dfscoe, axis=1)
-    ## annotate the last value
-    plots.label_last(dfscoe, ax[col], colors=colors, extend='below')
-
-    ### Undiscounted annualized system cost
-    col = 1
-    dfsyscost = {}
-    for case in cases:
-        dfsyscost[case] = dictin_syscost[case].sum(axis=1).loc[startyear:lastyear]
-        ax[col].plot(dfsyscost[case].index, dfsyscost[case].values, label=case, color=colors[case])
-    ax[col].set_ylim(0)
-    ax[col].set_ylabel('Annualized system cost [$B/year]')
-    dfsyscost = pd.concat(dfsyscost, axis=1)
-    ## annotate the last value
-    plots.label_last(dfsyscost, ax[col], colors=colors, extend='below')
-
-    ### NEUE
-    col = 2
-    dfneue = {}
-    ymax = neue_threshold*1.05
-    for case in cases:
-        if case in dictin_neue:
-            dfneue[case] = (
-                dictin_neue[case]
-                .xs('country',0,'level')
-                .xs('sum',0,'metric')
-                .dropna()
-                .reset_index('region', drop=True)
-                .loc[2025:]
-            )
-            ax[col].plot(dfneue[case].index, dfneue[case].values, label=case, color=colors[case], marker = 'o')
-            ymax = max([ymax,max(dfneue[case].values)])
-    ax[col].set_ylim(0, ymax)
-    ax[col].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
-    ax[col].set_ylabel('National NEUE [ppm]')
-    ## annotate the last value
-    if len(dfneue):
-        dfneue = pd.concat(dfneue, axis=1)
-        plots.label_last(dfneue, ax[col], colors=colors, extend='below', decimals=1)
-
-    ### Spares
-    col = 3
-    ypad = 0.02
-    ax[col].set_ylabel('NPV of system cost [$billion]')
-    # ax[3].axis('off')
-    ax[col].bar(
-        range(len(dfcost_npv)), dfcost_npv.values,
-        color=[colors[c] for c in dfplot.index],
-        width=0.8,
-    )
-    ymin, ymax = ax[col].get_ylim()
-    _ypad = (ymax - ymin) * ypad
-    if ymin < 0:
-        ax[col].set_ylim(ymin * (1+ypad))
-    ## label net value
-    for x, case in enumerate(dfcost_npv.index):
-        val = dfcost_npv.loc[case].sum()
-        if len(cases) <= 10:
-            ax[col].annotate(
-                f'{np.around(val,-1):.0f}',
-                (x, val - _ypad), ha='center', va='top', color='k', size=9,
-                path_effects=[pe.withStroke(linewidth=2.0, foreground='w', alpha=0.8)],
-            )
-        else:
-            ax[col].annotate(
-                f'{np.around(val,-1):.0f}',
-                (x, val + _ypad), ha='center', va='bottom', color='k', size=9,
-                rotation=90,
-            )
-
-    ax[col].set_xticks(range(len(cases)))
-    ax[col].set_xticklabels(cases, rotation=45, rotation_mode='anchor', ha='right')
-
-    ### Legend
-    leg = ax[0].legend(
-        loc='upper left', bbox_to_anchor=(-0.3,-0.05), frameon=False, fontsize='large',
-        handletextpad=0.3, handlelength=0.7,
-    )
-    for legobj in leg.legend_handles:
-        legobj.set_linewidth(8)
-        legobj.set_solid_capstyle('butt')
-
-    ### Formatting
-    plots.despine(ax)
-    plt.draw()
-    for col in [0,1] + ([2] if len(dictin_neue) else []):
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx('Cost, Reliability', prs=prs, width=width)
-    if interactive:
-        plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%% Regional NEUE
-try:
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
-    dfmap = reeds.io.get_dfmap(cases[basecase])
-    level = sw.GSw_PRM_StressThreshold.split('_')[0]
-    regions = dfmap[level].loc[hierarchy[basecase][level].unique()].bounds.minx.sort_values().index
-    _nrows, _ncols, _coords = reeds.plots.get_coordinates(regions, ncols=6)
-    labelcoords = {
-        'label': (-1,0) if (_nrows > 1) and (_ncols > 1) else 0,
-        'legend': (0,-1) if (_nrows > 1) and (_ncols > 1) else -1,
-    }
-    plt.close()
-    f,ax = plt.subplots(_nrows, _ncols, figsize=(SLIDE_WIDTH, SLIDE_HEIGHT), sharex=True, sharey=True)
-    ymax = neue_threshold*1.05
-    for case in cases:
-        df = dictin_neue[case].xs(level,0,'level').xs('sum',0,'metric').unstack('region').loc[2025:]
-        for i, region in enumerate(regions):
-            _ax = ax[_coords[region]]
-            _ax.plot(df.index, df[region].values, color=colors[case], label=case)
-            ymax = max([ymax,max(df[region].values)])
-    ## Formatting
-    for i, region in enumerate(regions):
-        _ax = ax[_coords[region]]
-        _ax.set_title(region, weight='bold')
-        _ax.axhline(neue_threshold, c='C7', ls='--', lw=0.75)
-    _ax.set_ylim(0,ymax)
-    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ax[labelcoords['label']].set_ylabel('NEUE [ppm]', x=0, va='bottom')
-    ax[labelcoords['legend']].legend(
-        loc='upper left', bbox_to_anchor=(1,1), frameon=False, fontsize='large',
-    )
-    plots.despine(ax)
-    plt.draw()
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx('Resource Adequacy', prs=prs, width=SLIDE_WIDTH)
-    if interactive:
-        plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-
-#%% Emissions, health
-try:
-    width = 12
-    plt.close()
-    f,ax = plt.subplots(1, 4, figsize=(width, 4.5), gridspec_kw={'wspace':0.6})
-
-    ### CO2 emissions
-    for col, pollutant in enumerate(['CO2','CO2e']):
-        note = []
-        df = {}
-        for case in cases:
-            df[case] = dictin_emissions[case].reindex(years[case]).fillna(0) / 1e6 # metric ton->MMT
-            emissions_allyears = df[case].reindex(allyears).interpolate('linear').loc[startyear_notes:]
-            ax[col].plot(df[case].index, df[case][pollutant].values, label=case, color=colors[case])
-            ## collect more notes
-            lives = dictin_health_central_mort[case].reindex(allyears).interpolate('linear').sum()
-            note.append(
-                f"{case:<{maxlength}} | {startyear_notes}–{lastyear}: "
-                + f"{emissions_allyears['CO2'].sum()/1e3:.2f} GT CO2"
-                + f"; {emissions_allyears['CO2e'].sum()/1e3:.2f} GT CO2e"
-                + f"; {lives:,.0f} lives"
-            )
-        ax[col].set_ylim(0)
-        ax[col].set_ylabel(f"{pollutant.replace('CO2e','CO2(e)')} emissions [MMT/year]")
-        ## annotate the last value
-        df = pd.concat(df, axis=1).xs(pollutant, 1, 'e')
-        plots.label_last(df, ax[col], colors=colors, extend='both')
-
-    ## Notes
-    ax[0].axhline(phaseout_trigger, c='C7', ls='--', lw=0.75)
-    ax[1].annotate(
-        '\n'.join(note), (-0.2, -0.1), xycoords='axes fraction',
-        annotation_clip=False, fontsize=9, fontfamily='monospace', va='top', ha='left',
-    )
-    print('\n'.join(note))
-
-    ### Health impacts - mortality
-    col = 2
-    dfmort = {}
-    for case in cases:
-        if case in dictin_health_central_mort:
-            dfmort[case] = dictin_health_central_mort[case].loc[years[case]]
-            ax[col].plot(dfmort[case].index, dfmort[case].values, label=case, color=colors[case])
-    ax[col].set_ylim(0)
-    ax[col].set_ylabel('Mortality [lives/year]')
-    ## annotate the last value
-    dfmort = pd.concat(dfmort, axis=1)
-    plots.label_last(dfmort, ax[col], colors=colors, extend='both')
-
-    ### Health impacts - dollars
-    col = 3
-    dfhealth = {}
-    for case in cases:
-        if case in dictin_health_central:
-            dfhealth[case] = dictin_health_central[case].loc[years[case]]
-            ax[col].plot(dfhealth[case].index, dfhealth[case].values, label=case, color=colors[case])
-    ax[col].set_ylim(0)
-    ax[col].set_ylabel('Health costs [$B/year]')
-    ## annotate the last value
-    dfhealth = pd.concat(dfhealth, axis=1)
-    plots.label_last(dfhealth, ax[col], colors=colors, extend='both')
-
-    ### Legend
-    leg = ax[0].legend(
-        loc='upper left', bbox_to_anchor=(-0.3,-0.05), frameon=False, fontsize='large',
-        handletextpad=0.3, handlelength=0.7,
-    )
-    for legobj in leg.legend_handles:
-        legobj.set_linewidth(8)
-        legobj.set_solid_capstyle('butt')
-
-    ### Formatting
-    plots.despine(ax)
-    plt.draw()
-    for col in range(4):
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx('Emissions', prs=prs, width=width)
-    if interactive:
-        plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%%### Generation fraction
-
-ycol = 'Generation (TWh)'
-tech_subset = reeds.techs.get_tech_subset_table(cases[basecase])
-
-stortechs_keys = tech_subset.loc[['STORAGE']]
-vretechs_keys = tech_subset.loc[['VRE']]
-retechs_keys = pd.concat((vretechs_keys,tech_subset.loc[['BIO','HYDRO','GEO','BECCS']]))
-zctechs_keys = pd.concat((vretechs_keys,tech_subset.loc[['NUCLEAR','HYDRO','GEO']]))
-fossiltechs_keys = tech_subset.loc[['FOSSIL']]
-thermhydtechs_keys = pd.concat((fossiltechs_keys,tech_subset.loc[['HYDRO','GEO','BIO','BECCS','LFILL']]))
-reccsnuctechs_keys = pd.concat((retechs_keys,tech_subset.loc[['NUCLEAR', 'CCS','BECCS']]))
-
-stortechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(stortechs_keys).unique().tolist()])
-]
-
-vretechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(vretechs_keys).unique().tolist()])
-]
-
-retechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(retechs_keys).unique().tolist()])
-]
-
-zctechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(zctechs_keys).unique().tolist()])
-]
-
-fossiltechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(fossiltechs_keys).unique().tolist()])
-]
-
-thermhydtechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(thermhydtechs_keys).unique().tolist()])
-]
-
-reccsnuctechs = [
-    k for k in output_formatting['tech_color']['color'].keys()
-    if any([j.lower() in k.lower() for j in reedsplots.simplify_techs(reccsnuctechs_keys).unique().tolist()])
-]
-
-dftotal = pd.concat({
-    case:
-    dictin_gen[case].loc[~dictin_gen[case].tech.isin(stortechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dfvre = pd.concat({
-    case:
-    dictin_gen[case].loc[dictin_gen[case].tech.isin(vretechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dfre = pd.concat({
-    case:
-    dictin_gen[case].loc[dictin_gen[case].tech.isin(retechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dfth = pd.concat({
-    case:
-    dictin_gen[case].loc[dictin_gen[case].tech.isin(thermhydtechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dfzc = pd.concat({
-    case:
-    dictin_gen[case].loc[dictin_gen[case].tech.isin(zctechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dffossil = pd.concat({
-    case:
-    dictin_gen[case].loc[dictin_gen[case].tech.isin(fossiltechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dfreccsnuc = pd.concat({
-    case:
-    dictin_gen[case].loc[dictin_gen[case].tech.isin(reccsnuctechs)].groupby('year')[ycol].sum()
-    for case in cases
-}, axis=1)
-
-dfplot = {
-    'Fossil share [%]': (dffossil / dftotal * 100).loc[startyear:],
-    'Thermal + Hydro share [%]': (dfth / dftotal * 100).loc[startyear:],
-    'VRE share [%]': (dfvre / dftotal * 100).loc[startyear:],
-    'RE share [%]': (dfre / dftotal * 100).loc[startyear:],
-    'Zero carbon share [%]': (dfzc / dftotal * 100).loc[startyear:],
-    'RE + Nuclear + CCS share [%]': (dfreccsnuc / dftotal * 100).loc[startyear:],
-}
-
-### Plot them
-try:
-    plt.close()
-    f,ax = plt.subplots(1, 6, figsize=(SLIDE_WIDTH, 4.5), gridspec_kw={'wspace':0.8})
-    for col, (ylabel, df) in enumerate(dfplot.items()):
-        ax[col].set_ylabel(ylabel, labelpad=-4)
-        ax[col].set_ylim(0,100)
-        ax[col].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        for case in cases:
-            ax[col].plot(df.index, df[case].values, label=case, color=colors[case])
-        ## annotate the last value
-        plots.label_last(df, ax[col], mindistance=3.5, colors=colors, extend='both', tail='%')
-
-    ### Legend
-    leg = ax[0].legend(
-        loc='upper left', bbox_to_anchor=(-0.3,-0.05), frameon=False, fontsize='large',
-        handletextpad=0.3, handlelength=0.7,
-    )
-    for legobj in leg.legend_handles:
-        legobj.set_linewidth(8)
-        legobj.set_solid_capstyle('butt')
-
-    ### Formatting
-    plots.despine(ax)
-    plt.draw()
-    for col in range(len(dfplot)):
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        plots.shorten_years(ax[col])
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx('Generation Share', prs=prs)
-    if interactive:
-        plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%%### Firm capacity and capacity credit
-try:
-    capcreditcases = [c for c in cases if int(dictin_sw[c].GSw_PRM_CapCredit)]
-    if len(capcreditcases) == len(cases):
-        tech_subset = reeds.techs.get_tech_subset_table(cases[basecase])
-        capcredittechs_list = tech_subset.loc[['STORAGE','WIND','UPV']]
-        capcredittechs = [
-            k for k in output_formatting['tech_color'].keys()
-            if any([j.lower() in k.lower() for j in reedsplots
-                .simplify_techs(capcredittechs_list).unique().tolist()])
-        ]
-        ccseasons = pd.read_csv(
-            os.path.join(cases[case], 'inputs_case', 'ccseason.csv'),
-            header=None,
-        ).squeeze(1).values
-
-        cccols = len(ccseasons) + len(capcredittechs)
-        handles = {}
-
-        plt.close()
-        f,ax = plt.subplots(
-            len(ccseasons), cccols, figsize=(11, SLIDE_HEIGHT), sharex='col',
-            sharey=('col' if (sharey is True) else False),
-        )
-        ### Firm capacity stack
-        dfplot = pd.concat(
-            {case:
-                dictin_cap_firm[case].loc[
-                    dictin_cap_firm[case].t==lastyear
-                ].groupby(['ccseason','i']).MW.sum().rename('GW') / 1e3
-                for case in capcreditcases},
-            axis=1,
-        ).T
-        for col, ccseason in enumerate(ccseasons):
-            ax[0,col].set_ylabel(f'Firm capacity, {ccseason} [GW]', y=-0.075)
-
-            df = dfplot[ccseason][[c for c in output_formatting['bokeh_tech_colors'].index if c in dfplot[ccseason]]].copy()
-
-            handles[ccseason] = plot_bars_abs_stacked(
-                dfplot=df, basecase=basecase,
-                colors=output_formatting['tech_color'],
-                ax=ax, col=col, net=False, label=False,
-            )
-
-        ### Average capacity credit by technology
-        for _col, tech in enumerate(capcredittechs):
-            col = _col + len(ccseasons)
-            if tech == 'storage':
-                techs = [f'battery_{i}' for i in [2,4,6,8,10]] + ['battery_li', 'pumped-hydro']
-            else:
-                techs = [tech]
-            for case in capcreditcases:
-                cap_firm = (
-                    dictin_cap_firm[case]
-                    .loc[dictin_cap_firm[case].i.isin(techs)]
-                    .groupby(['ccseason','t']).MW.sum().unstack('ccseason') / 1e3
-                ).reindex(ccseasons, axis=1).fillna(0)
-                cap_total = (
-                    dictin_cap[case]
-                    .loc[dictin_cap[case].tech.isin(techs)]
-                    .groupby('year')['Capacity (GW)'].sum().rename('GW').loc[2025:]
-                )
-                capcredit = cap_firm.divide(cap_total, axis=0).dropna()
-                # for ccseason in lss:
-                for row, ccseason in enumerate(ccseasons):
-                        ax[row,col].plot(
-                            capcredit.index, capcredit[ccseason].values,
-                            color=colors[case], label=case,
-                        )
-
-        ### Legend
-        leg = ax[1,len(ccseasons)].legend(
-            loc='upper left', bbox_to_anchor=(-0.3,-0.07), frameon=False, fontsize='large',
-            handletextpad=0.3, handlelength=0.7,
-        )
-        for legobj in leg.legend_handles:
-            legobj.set_linewidth(8)
-            legobj.set_solid_capstyle('butt')
-
-        ### Formatting
-        for col in range(2):
-            ax[1,col].set_xticks(range(len(capcreditcases)))
-            ax[1,col].set_xticklabels(capcreditcases, rotation=90)
-            ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
-            ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
-        for _col, tech in enumerate(capcredittechs):
-            col = _col + len(ccseasons)
-            ax[0,col].set_ylabel(f'Capacity credit, {tech} [fraction]', y=-0.075)
-            for row, ccseason in enumerate(ccseasons):
-                ax[row,col].set_ylim(0,1)
-                ax[row,col].annotate(
-                    ccseason.title(), (0.5, 1.0), xycoords='axes fraction',
-                    fontsize='large', weight='bold', va='top', ha='center'
-                )
-
-        plt.tight_layout()
-        plots.despine(ax)
-        plt.draw()
-        for col in range(len(ccseasons),cccols):
-            ax[1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-            ax[1,col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-
-        ### Save it
-        slide = reeds.report_utils.add_to_pptx('Firm Capacity, Capacity Credit', prs=prs)
-        if interactive:
-            plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%%### Transmission
-try:
-    startyear_transgrowth = min(int(scalars.firstyear_trans_longterm), max(years[basecase]))
-    for interzonal_only in [False, True]:
-        if interzonal_only:
-            labelline = 'Interzonal transmission [TW-mi]'
-            labelbar = f'{lastyear} Interzonal transmission [TW-mi]'
-            labelgrowth = f'Interzonal transmission growth,\n{startyear_transgrowth}–{lastyear} [TWmi/year]'
-        else:
-            labelline = 'Transmission capacity [TW-mi]'
-            labelbar = f'{lastyear} Transmission capacity [TW-mi]'
-            labelgrowth = f'Transmission growth,\n{startyear_transgrowth}–{lastyear} [TWmi/year]'
-
-        plt.close()
-        f,ax = plt.subplots(1, 4, figsize=(11, 4.5), gridspec_kw={'wspace':0.6})
-
-        ### Transmission TW-miles over time
-        for case in cases:
-            if interzonal_only:
-                df = (
-                    dictin_trans[case]
-                    .loc[~dictin_trans[case].trtype.str.lower().isin(['spur','reinforcement'])]
-                    .groupby('year')['Amount (GW-mi)'].sum().reindex(years[case]) / 1e3
-                )
-            else:
-                df = dictin_trans[case].groupby('year').sum()['Amount (GW-mi)'].reindex(years[case]) / 1e3
-            ax[0].plot(df.index, df.values, label=case, color=colors[case])
-            ## annotate the last value
-            val = np.around(df.loc[max(years[case])], 0) + 0
-            ax[0].annotate(
-                f' {val:.0f}',
-                (max(years[case]), df.loc[max(years[case])]), ha='left', va='center',
-                color=colors[case], fontsize='medium',
-            )
-        ax[0].set_ylim(0)
-        ax[0].set_ylabel(labelline)
-
-        ### Disaggregated transmission (for next two plots)
-        dftrans = pd.concat({
-            case:
-            dictin_trans[case].groupby(['year','trtype'])['Amount (GW-mi)'].sum()
-            .unstack('trtype')
-            .reindex(allyears).interpolate('linear')
-            / 1e3
-            for case in cases
-        }, axis=1)
-        if interzonal_only:
-            dftrans = (
-                dftrans[[c for c in dftrans if c[1].lower() not in ['spur','reinforcement']]]
-            ).copy()
-
-        ### Disaggregated final year transmission capacity
-        df = dftrans.loc[lastyear].unstack('trtype')
-        plots.stackbar(df=df, ax=ax[1], colors=output_formatting['trtype_colors'], width=0.8, net=False)
-        ax[1].set_ylabel(labelbar)
-
-        ### Transmission growth
-        dftransgrowth = (
-            (dftrans.loc[lastyear] - dftrans.loc[startyear_transgrowth])
-            / (lastyear - startyear_transgrowth)
-        ).unstack('trtype')
-        plots.stackbar(df=dftransgrowth, ax=ax[2], colors=output_formatting['trtype_colors'], width=0.8, net=False)
-        ax[2].set_ylabel(labelgrowth)
-        ax[2].set_ylim(0, max(ax[2].get_ylim()[1], 3.8))
-        ## Scales
-        ymax = ax[2].get_ylim()[1]
-        scales = {
-            ## https://cigreindia.org/CIGRE%20Lib/CIGRE%20Session%202010%20paper/B4_306_2010.pdf
-            1476 * 6.3 / 1e3: '1× Rio Madeira per year',
-        }
-        ## Values here from DOE 2024 Land-based Wind Market Report (page 64)
-        ## and represent U.S-wide transmission capacity editions
-        ## https://emp.lbl.gov/sites/default/files/2024-08/Land-Based%20Wind%20Market%20Report_2024%20Edition.pdf
-        if interzonal_only:
-            scales[0.73] = 'Mean since 2014 (345+ kV)'
-            scales[1.46] = 'Max since 2014 (345+ kV)'
-            scales[3.42] = 'Max since 2009 (345+ kV)'
-        if not interzonal_only:
-            scales[0.96] = 'Mean since 2014 (all kV)'
-            scales[1.83] = 'Max since 2014 (all kV)'
-            scales[3.64] = 'Max since 2009 (all kV)'
-
-        ## Only add labels if doing a national-scale run
-        if sw.GSw_Region.lower() == 'usa':
-            for y, label in scales.items():
-                if y > ymax:
-                    continue
-                ax[2].annotate(
-                    label, xy=(len(cases), y), xytext=(len(cases)+1, y), annotation_clip=False,
-                    arrowprops={'arrowstyle':'-|>', 'color':'k'},
-                    ha='left', va='center', color='k', fontsize=11,
-                )
-                ax[2].axhline(
-                    y, c='k', lw=0.5, ls='--',
-                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.5)])
-
-        ### Spare
-        ax[3].axis('off')
-
-        ### Legends
-        ## Traces
-        _h, _l = ax[0].get_legend_handles_labels()
-        leg = ax[0].legend(
-            loc='upper left', bbox_to_anchor=(-0.4,-0.05), frameon=False, fontsize='large',
-            handletextpad=0.3, handlelength=0.7,
-        )
-        for legobj in leg.legend_handles:
-            legobj.set_linewidth(8)
-            legobj.set_solid_capstyle('butt')
-        ## Transmission types
-        handles = [
-            mpl.patches.Patch(facecolor=output_formatting['trtype_colors'][i], edgecolor='none', label=i)
-            for i in output_formatting['trtype_colors'].index if i in dftrans.columns.get_level_values('trtype')
-        ]
-        leg = ax[2].legend(
-            handles=handles[::-1],
-            loc='upper left', bbox_to_anchor=(1,-0.05), frameon=False, fontsize='large',
-            handletextpad=0.3, handlelength=0.7,
-        )
-
-        ### Formatting
-        for col in [1,2]:
-            ax[col].set_xticks(range(len(cases)))
-            ax[col].set_xticklabels(cases.keys(), rotation=90)
-            ax[col].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(5))
-
-        plots.despine(ax)
-        plt.draw()
-        for col in [0]:
-            ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-            ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        ### Save it
-        slide = reeds.report_utils.add_to_pptx(
-            'Interzonal Transmission' if interzonal_only else 'Transmission (all types)',
-            prs=prs,
-        )
-        if interactive:
-            plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%%### More transmission plot styles
-try:
-    ylabels = {
-        'transgrp': 'Transmission capacity between\nplanning regions [GW]',
-        'transreg': 'Interregional transmission\ncapacity [GW]',
-        'interconnect': 'Interconnection-seam-crossing\ntransmission capacity [GW]',
-    }
-
-    plt.close()
-    f,ax = plt.subplots(1, 4, figsize=(11, 4.5), gridspec_kw={'wspace':0.9})
-
-    ### All transmission [TW-mi]
-    ### Interzonal ("long-distance") [TW-mi]
-    for col, interzonal_only in enumerate([False,True]):
-        if interzonal_only:
-            labelline = 'Interzonal transmission capacity\n[TW-mi]'
-        else:
-            labelline = 'Total transmission capacity\n[TW-mi]'
-
-        df = {}
-        for case in cases:
-            if interzonal_only:
-                df[case] = (
-                    dictin_trans[case]
-                    .loc[~dictin_trans[case].trtype.str.lower().isin(['spur','reinforcement'])]
-                    .groupby('year')['Amount (GW-mi)'].sum().reindex(years[case]) / 1e3
-                )
-            else:
-                df[case] = dictin_trans[case].groupby('year').sum()['Amount (GW-mi)'].reindex(years[case]) / 1e3
-            ax[col].plot(df[case].index, df[case].values, label=case, color=colors[case])
-        ax[col].set_ylim(0)
-        ax[col].set_ylabel(labelline)
-        ## annotate the last value
-        df = pd.concat(df, axis=1)
-        plots.label_last(df, ax[col], colors=colors, extend='both')
-        ## Annotate the first value
-        plots.annotate(
-            ax[col], list(cases.keys())[0], 2020, (10,-10),
-            color='C7', arrowprops={'arrowstyle':'-|>','color':'C7'})
-    ax[1].set_ylim(0, ax[0].get_ylim()[1])
-
-    ### Interregional (FERC regions)
-    ### Interconnection-seam-crossing
-    for _col, level in enumerate(['transreg','interconnect']):
-        col = _col + 2
-        df = {}
-        for case in cases:
-            df[case] = dictin_trans_r[case].loc[
-                dictin_trans_r[case][f'inter_{level}'] == 1
-            ].groupby('t').MW.sum().reindex(years[case]).fillna(0) / 1e3
-            ax[col].plot(df[case].index, df[case].values, label=case, color=colors[case])
-        ax[col].set_ylim(0)
-        ax[col].set_ylabel(ylabels[level])
-        ## annotate the last value
-        df = pd.concat(df, axis=1)
-        plots.label_last(df, ax[col], colors=colors, extend='both')
-        ## Annotate the first value
-        plots.annotate(
-            ax[col], list(cases.keys())[0], 2020, (10,(-10 if col == 2 else 10)),
-            color='C7', arrowprops={'arrowstyle':'-|>','color':'C7'},
-            decimals=(0 if df[case][2020] >= 10 else 1),
-        )
-    ax[3].set_ylim(0, ax[2].get_ylim()[1])
-
-    ### Legends
-    ## Traces
-    _h, _l = ax[0].get_legend_handles_labels()
-    leg = ax[0].legend(
-        _h[::-1], _l[::-1],
-        loc='upper left', bbox_to_anchor=(-0.4,-0.05),
-        frameon=False, fontsize='large',
-        handletextpad=0.3, handlelength=0.7,
-    )
-    for legobj in leg.legend_handles:
-        legobj.set_linewidth(8)
-        legobj.set_solid_capstyle('butt')
-
-    ### Formatting
-    plots.despine(ax)
-    plt.draw()
-    for col in [0,1,2,3]:
-        ax[col].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        plots.shorten_years(ax[col])
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx('Transmission at Different Resolutions', prs=prs)
-    if interactive:
-        plt.show()
-except Exception:
-    print(traceback.format_exc())
-
-#%%### Interregional transfer capability to peak demand ratio
-try:
-    f, ax, dfplot = reedsplots.plot_interreg_transfer_cap_ratio(
-        case=list(cases.values()),
-        colors={v: colors[k] for k,v in cases.items()},
-        casenames={v:k for k,v in cases.items()},
-        level='transreg', tstart=startyear,
-        ymax=None,
-    )
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx(
-        'Interregional Transmission / Peak Demand',
-        prs=prs,
-        height=(SLIDE_HEIGHT if ax.shape[1] <= 8 else None),
-        width=(SLIDE_WIDTH if ax.shape[1] > 8 else None),
-    )
-    if interactive:
-        plt.show()
-
-except Exception:
-    print(traceback.format_exc())
-
-
-#%%### Max firm imports
-try:
-    f, ax, dfplot = reedsplots.plot_max_imports(
-        case=list(cases.values()),
-        colors={v: colors[k] for k,v in cases.items()},
-        casenames={v:k for k,v in cases.items()},
-        level='nercr', tstart=startyear,
-    )
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx(
-        'Max Net Stress Imports / Peak Demand',
-        prs=prs,
-        height=(SLIDE_HEIGHT if ax.shape[1] <= 8 else None),
-        width=(SLIDE_WIDTH if ax.shape[1] > 8 else None),
-    )
-    if interactive:
-        plt.show()
-
-except Exception:
-    print(traceback.format_exc())
-
 
 #%%### Transmission maps
 try:
     if (len(cases) == 2) and (not forcemulti):
+        casebase, casecomp = list(cases.values())
+        casebase_name, casecomp_name = list(cases.keys())
         plt.close()
         f,ax = reedsplots.plot_trans_diff(
             casebase=casebase,
@@ -2387,216 +1605,6 @@ try:
             plt.show()
 except Exception:
     print(traceback.format_exc())
-
-#%%### RA sharing
-if detailed:
-    try:
-        ralevel = 'transreg'
-        scale = 10
-        wscale = 7e3
-        dfmap = reeds.io.get_dfmap(cases[basecase])
-        regions = dfmap[ralevel].bounds.minx.sort_values().index
-
-        ### Calculate aggregated load
-        dictin_load_stress_agg = {}
-        for case in cases:
-            if int(dictin_sw[case].GSw_PRM_CapCredit):
-                hcol = 'ccseason'
-                df = dictin_peak_ccseason[case].copy()
-            else:
-                hcol = 'h'
-                df = dictin_load_stress[case].copy()
-            df = (
-                df.assign(region=df.r.map(hierarchy[case][ralevel]))
-                .groupby(['t','region',hcol]).GW.sum()
-                .loc[lastyear].unstack('region')
-            )
-            dictin_load_stress_agg[case] = df.sum()
-
-        ### Calculate aggregated stress period flows
-        tran_flow_stress_agg = {}
-        for case in cases:
-            if int(dictin_sw[case].GSw_PRM_CapCredit):
-                df = dictin_prmtrade[case].copy()
-                hcol = 'ccseason'
-            else:
-                df = dictin_tran_flow_stress[case].copy()
-                hcol = 'h'
-            df['aggreg'] = df.r.map(hierarchy[case][ralevel])
-            df['aggregg'] = df.rr.map(hierarchy[case][ralevel])
-            df['interface'] = df.aggreg + '|' + df.aggregg
-
-            df = (
-                df
-                .loc[df.aggreg != df.aggregg]
-                .groupby(['t',hcol,'interface']).GW.sum().unstack('interface').fillna(0)
-            )
-            if df.empty:
-                continue
-            else:
-                df = df.loc[lastyear].copy()
-            ## Order interfaces alphabetically
-            rename = {}
-            for interface in df:
-                r, rr = interface.split('|')
-                if r > rr:
-                    rename[interface] = f'{rr}|{r}'
-                    df[interface] *= -1
-            df = df.rename(columns=rename).groupby(axis=1, level=0).sum()
-            ## Now reorder interfaces by flow
-            rename = {}
-            for interface in df:
-                r, rr = interface.split('|')
-                if df[interface].clip(lower=0).sum() < df[interface].clip(upper=0).abs().sum():
-                    rename[interface] = f'{rr}|{r}'
-                    df[interface] *= -1
-            tran_flow_stress_agg[case] = df.rename(columns=rename).copy()
-
-        ### Calculate regional imports/exports
-        dfimportexport = {}
-        for case in cases:
-            df = {}
-            for region in regions:
-                df[region] = reedsplots.get_import_export(
-                    region=region, df=tran_flow_stress_agg[case]
-                )
-            dfimportexport[case] = pd.concat(df).sum(axis=1).unstack(level=0)
-            dfimportexport[case].columns = dfimportexport[case].columns.rename('region')
-
-        ### Plot it
-        whiteout = dict(zip(
-            [f'C{i}' for i in range(10)],
-            [plt.cm.tab20(i*2+1) for i in range(10)]
-        ))
-        if any([v not in whiteout for v in list(colors.values())]):
-            whiteout = {v: (v[0], v[1], v[2], v[3]*0.7) for v in list(colors.values())}
-
-        for label in ['max','average']:
-            plt.close()
-            f,ax = plt.subplots(
-                nrows, ncols, figsize=(SLIDE_WIDTH, SLIDE_HEIGHT),
-                gridspec_kw={'wspace':0.0,'hspace':-0.1},
-            )
-
-            for case in cases:
-                ### Formatting
-                dfmap[ralevel].plot(ax=ax[coords[case]], facecolor='none', edgecolor='C7', lw=0.5)
-                dfmap['interconnect'].plot(ax=ax[coords[case]], facecolor='none', edgecolor='k', lw=1)
-                ax[coords[case]].set_title(
-                    case, y=0.95, weight='bold', color=colors[case], fontsize=14)
-                ax[coords[case]].axis('off')
-
-                ### RA flows
-                if case not in tran_flow_stress_agg:
-                    continue
-
-                if label == 'max':
-                    ## Max flow
-                    forwardwidth = tran_flow_stress_agg[case].clip(lower=0).max()
-                    reversewidth = abs(tran_flow_stress_agg[case].clip(upper=0).min())
-                else:
-                    ## Average when it's flowing
-                    forwardwidth = (
-                        tran_flow_stress_agg[case].clip(lower=0).sum()
-                        / tran_flow_stress_agg[case].clip(lower=0).astype(bool).sum()
-                    )
-                    reversewidth = (
-                        tran_flow_stress_agg[case].clip(upper=0).abs().sum()
-                        / tran_flow_stress_agg[case].clip(upper=0).abs().astype(bool).sum()
-                    )
-
-                interfaces = tran_flow_stress_agg[case].columns
-                numdays = (
-                    len(tran_flow_stress_agg[case])
-                    * int(dictin_sw[case].GSw_HourlyChunkLengthStress)
-                    // 24
-                )
-
-                ### Head/tail length:
-                gwh_forward = tran_flow_stress_agg[case].clip(lower=0).sum()
-                gwh_reverse = abs(tran_flow_stress_agg[case].clip(upper=0).sum())
-
-                reversefrac = gwh_reverse / (gwh_reverse + gwh_forward)
-                forwardfrac = gwh_forward / (gwh_reverse + gwh_forward)
-
-                ### Plot it
-                for interface in interfaces:
-                    r, rr = interface.split('|')
-                    startx, starty = dfmap[ralevel].loc[r, ['x', 'y']]
-                    endx, endy = dfmap[ralevel].loc[rr, ['x', 'y']]
-
-                    plots.plot_segmented_arrow(
-                        ax[coords[case]],
-                        reversefrac=reversefrac[interface],
-                        forwardfrac=forwardfrac[interface],
-                        reversewidth=reversewidth[interface]*wscale,
-                        forwardwidth=forwardwidth[interface]*wscale,
-                        startx=startx, starty=starty, endx=endx, endy=endy,
-                        forwardcolor=colors[case], reversecolor=whiteout[colors[case]],
-                        alpha=0.8, headwidthfrac=1.5,
-                    )
-                ### Scale
-                if scale:
-                    (startx, starty, endx, endy) = (-2.0e6, -1.2e6, -1.5e6, -1.2e6)
-                    yspan = ax[coords[case]].get_ylim()
-                    yspan = yspan[1] - yspan[0]
-                    plots.plot_segmented_arrow(
-                        ax[coords[case]],
-                        reversefrac=0, forwardfrac=1,
-                        reversewidth=0, forwardwidth=scale*wscale,
-                        startx=startx, starty=starty, endx=endx, endy=endy,
-                        forwardcolor=colors[case], reversecolor=whiteout[colors[case]],
-                        alpha=0.8, headwidthfrac=1.5,
-                    )
-                    ax[coords[case]].annotate(
-                        f"{scale} GW\n{label}", ((startx+endx)/2, starty-(scale/2*wscale)-yspan*0.02),
-                        ha='center', va='top', fontsize=14,
-                    )
-
-            ### Save it
-            title = f'{ralevel} {label} RA flows'
-            slide = reeds.report_utils.add_to_pptx(title, prs=prs)
-            if interactive:
-                plt.show()
-    except Exception:
-        print(traceback.format_exc())
-
-
-#%%### Copy some premade single-case plots
-level = dictin_sw[basecase]['GSw_PRM_StressThreshold'].split('_')[0]
-wide = 1 if len(hierarchy[basecase]['transreg'].unique()) > 6 else 0
-metrics = [
-    'cap',
-    'rep_mean',
-    'stress_mean',
-    'stress_top5_load',
-    'stress_top5_netload',
-    'stress_bottom5_vregen',
-    'stress_max_load',
-    'stress_max_price',
-]
-for figname, width, height in [
-    (f'map_gencap_transcap-{lastyear}', None, SLIDE_HEIGHT),
-    (f'plot_stressperiod_evolution-sum-{level}', SLIDE_WIDTH, None),
-    (f'plot_dispatch-yearbymonth-1-{lastyear}', SLIDE_WIDTH, None),
-] + [
-    (
-        f"plot_techmix-transreg-{lastyear}-{units}-{reedsplots.stress_metrics_shorten(metrics)}",
-        (SLIDE_WIDTH if wide else None),
-        (None if wide else SLIDE_HEIGHT)
-    )
-    for units in ['GW', 'percent']
-]:
-    for case in cases:
-        try:
-            slide = reeds.report_utils.add_to_pptx(
-                case,
-                prs=prs,
-                file=os.path.join(cases[case], 'outputs', 'figures', f'{figname}.png'),
-                width=width, height=height,
-            )
-        except FileNotFoundError:
-            print(f'No outputs/figures/{figname}.png for {os.path.basename(cases[case])}')
 
 
 #%%### Generation capacity maps

@@ -77,3 +77,4 @@ gas-cc_,Gas-CC,Gas,Thermal,Gas-CC
 gas-cc-ccs_mod_,Gas-CC-CCS,Gas-CCS,Thermal,Gas-CC-CCS
 gas-cc-ccs_max_,Gas-CC-CCS,Gas-CCS,Thermal,Gas-CC-CCS
 nuclear_,Nuclear,Nuclear,Thermal,Nuclear
+interregional_flow,Interregion Trade,Interregion Trade,Remove,Interregion Trade
