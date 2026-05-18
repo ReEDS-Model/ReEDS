@@ -1,7 +1,7 @@
 ,Default Value,Utah_bl,Utah_bl_CAA,Utah_opgw1,Utah_opgw2,Utah_opgw3,Utah_lowcostnuclear,Utah_IRP_builds,Utah_add3_DC_load,Utah_Nuclear_Req,Utah_lowcost_Nuc,Utah_IRP_all_states,Utah_opgw2_endog_load
 ignore,1,0,1,1,1,1,1,1,1,1,1,1,0
 endyear,,2050,2050,2050,2050,2050,2050,2050,2050,2050,2029,2032,2029
-GSw_Region,usa,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,st/UT,UTcounty,UTcounty
+GSw_Region,usa,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western
 GSw_ZoneSet,z132,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,UTcounty,z54,UTcounty,UTcounty
 GSw_GasCurve,1,2,2,2,2,2,2,2,2,2,2,2,2
 GSw_OPGW,0,0,0,1,2,3,0,0,0,0,0,0,2
