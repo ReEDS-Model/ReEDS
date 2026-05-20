@@ -1,5 +1,6 @@
 #%% Imports
 import ArgParse
+import CSV
 import DataFrames
 import Logging
 import LoggingExtras
@@ -70,9 +71,19 @@ function parse_commandline()
             default = 0
             required = false
         "--write_shortfall_samples"
-            help = "Write the sample-level shortfall"
+            help = "Write the sample-level shortfall (hourly, large)"
             arg_type = Int
             default = 0
+            required = false
+        "--write_shortfall_samples_totals"
+            help = "Write per-sample total shortfall by region (small)"
+            arg_type = Int
+            default = 0
+            required = false
+        "--cvar_alpha"
+            help = "Alpha for CVaR (e.g., 0.95)"
+            arg_type = Float64
+            default = 0.95
             required = false
         "--write_availability_samples"
             help = "Write the sample-level generator and storage availability"
@@ -182,7 +193,7 @@ function run_pras(pras_system_path::String, args::Dict)
     if args["write_energy"] == 1
         resultspec["energy"] = PRAS.StorageEnergy()
     end
-    if args["write_shortfall_samples"] == 1
+    if args["write_shortfall_samples"] == 1 || args["write_shortfall_samples_totals"] == 1
         resultspec["short_samples"] = PRAS.ShortfallSamples()
     end
     if args["write_availability_samples"] == 1
@@ -209,9 +220,32 @@ function run_pras(pras_system_path::String, args::Dict)
     @info "NEUE = $(1e6 * PRAS.EUE(results["short"]).eue.estimate / sum(sys.regions.load)) ppm"
 
     # CVAR results
-    _,_,_,_,energyunit = PRAS.get_params(sys)
-    alpha = 0.95
-    @info (PRAS.CVAR(energyunit, results["short_samples"], alpha))
+    if haskey(results, "short_samples")
+        _,_,_,_,energyunit = PRAS.get_params(sys)
+        alpha = Float64(args["cvar_alpha"])
+        cvar_obj = PRAS.CVAR(energyunit, results["short_samples"], alpha)
+        @info(cvar_obj)
+
+        total_load = sum(sys.regions.load)
+        ncvar_value  = PRAS.val(cvar_obj.cvar)      / total_load * 1e6
+        ncvar_stderr = PRAS.stderror(cvar_obj.cvar) / total_load * 1e6
+        ncvar_var    = cvar_obj.var                  / total_load * 1e6
+
+        ### Write risk metrics to CSV
+        base = replace(pras_system_path, ".pras"=>"")
+        riskfile = base * "-risk_metrics.csv"
+        dfrisk = DF.DataFrame(
+            metric = ["CVAR",                      "NCVAR"],
+            alpha  = [alpha,                        alpha],
+            region = ["USA",                        "USA"],
+            unit   = ["MWh",                        "ppm"],
+            value  = [PRAS.val(cvar_obj.cvar),      ncvar_value],
+            stderr = [PRAS.stderror(cvar_obj.cvar), ncvar_stderr],
+            var    = [cvar_obj.var,                 ncvar_var],
+        )
+        CSV.write(riskfile, dfrisk)
+        @info("Wrote risk metrics to $(riskfile)")
+    end
 
     ## Filter out DC regions used for VSC HVDC transmission
     regions = [r for r in sys.regions.names if !(occursin("|", r))]
@@ -290,6 +324,7 @@ function run_pras(pras_system_path::String, args::Dict)
         end
         @info("Wrote PRAS surplus to $(surplusfile)")
     end
+
     ### Storage energy
     if args["write_energy"] == 1
         dfenergy = DF.DataFrame()
@@ -307,29 +342,37 @@ function run_pras(pras_system_path::String, args::Dict)
         @info("Wrote PRAS storage energy to $(energyfile)")
     end
 
-    ### Sample-level shortfall
+    ### Sample-level shortfall (hourly, large)
     if args["write_shortfall_samples"] == 1
-        dictshort = Dict(s => DF.DataFrame() for s = 1:args["samples"])
-        for s in range(1, args["samples"])
-            dictshort[s] = DF.DataFrame(
-                transpose(getindex.(results["short_samples"][:, :], s)),
-                sys.regions.names
-            )
-            # subset to regions (filter out DC regions) 
-            dictshort[s] = dictshort[s][:,findall(regions .∈ Ref(sys.regions.names))]
-        end
-        ## Write it
+        sf = results["short_samples"]
+        region_names = sf.regions.names
+        idx = [findfirst(==(r), region_names) for r in regions]
+
         shortfile = replace(outfile, ".h5"=>"-shortfall_samples.h5")
         HDF5.h5open(shortfile, "w") do f
-            ## Create a group for each sample. Within each group, write an array for each region.
-            for s in range(1, args["samples"])
+            for s in 1:args["samples"]
                 HDF5.create_group(f, "$s")
-                for column in DF._names(dictshort[s])
-                    f["$s"]["$column", compress=4] = convert(Array, dictshort[s][!, column])
+                for (r, i_r) in zip(regions, idx)
+                    arr = Float64.(sf.shortfall[i_r, :, s])
+                    f["$s"]["$r", compress=4] = arr
                 end
             end
         end
         @info("Wrote PRAS shortfall by sample to $(shortfile)")
+    end
+
+    ### Per-sample total shortfall by region (small, needed for CVaR)
+    if args["write_shortfall_samples_totals"] == 1
+        sf = results["short_samples"]
+        totalsfile = replace(outfile, ".h5"=>"-shortfall_totals_by_sample.h5")
+        HDF5.h5open(totalsfile, "w") do f
+            f["sample", compress=4] = collect(1:args["samples"])
+            f["USA", compress=4] = Float64.(sf[])
+            for r in regions
+                f["$r", compress=4] = Float64.(sf[r])
+            end
+        end
+        @info("Wrote PRAS shortfall totals by sample to $(totalsfile)")
     end
 
     ### Sample-level generator and storage availability
@@ -462,6 +505,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
     #     "write_surplus" => 0,
     #     "write_energy" => 0,
     #     "write_shortfall_samples" => 1,
+    #     "write_shortfall_samples_totals" => 1,
     #     "write_availability_samples" => 0,
     #     "overwrite" => 1,
     #     "debug" => 0,
@@ -471,6 +515,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
     #     "pras_existing_unit_size" => 1,
     #     "pras_max_unitsize_prm" => 1,
     #     "pras_seed" => 1,
+    #     "cvar_alpha" => 0.95,
     # )
     # reedscase = args["reedscase"]
     # solve_year = args["solve_year"]
@@ -483,7 +528,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     #%% Include ReEDS2PRAS
     include(joinpath(
-        args["reedscase"], "reeds", "resource_adequacy", "reeds2pras", "src", "ReEDS2PRAS.jl"
+        args["reedscase"], "reeds2pras", "src", "ReEDS2PRAS.jl"
     ))
 
     #%% Run it
