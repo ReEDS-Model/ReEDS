@@ -11,7 +11,7 @@ This script extracts data from a ReEDS case directory and optionally runs PRAS
 4. Control output options such as flow, surplus, and energy data
 
 Example Usage:
-    python pras_outofsampleweather.py --casedir runs/Apr23_climatetest_USA_mriesm20/ --year 2050 --profile_case runs/inputpronly_USA_mriesm20/ --output_dir test_pras_inputs/ --pras_system_path test_pras_inputs/mriesm20_mriesm20.pras --weather_year 2050 --timesteps 61320 --run_pras
+    python pras_outofsampleweather.py --casedir runs/Apr23_climatetest_USA_mriesm20/ --year 2050 --profile_case runs/inputpronly_USA_mriesm20/ --weather_year 2050 --timesteps 61320 --run_pras
 """
 
 import os
@@ -21,14 +21,20 @@ import argparse
 import reeds.resource_adequacy.prep_data as prep_data
 
 #%% Functions
-def run_pras(
-        args, 
-    ):
+def run_pras(args):
+    """Invoke reeds/resource_adequacy/run_pras.jl.
+
+    The new run_pras.jl derives everything from --reedscase: it expects
+    inputs_case/{load,recf}.h5 under that root and reads PRAS-ready data
+    from <reedscase>/handoff/reeds_data/, writing pras_system to
+    <reedscase>/handoff/PRAS/. So when profile_case is set we point reedscase
+    at the profile case (its inputs_case has the weather profiles we want);
+    prep_data must have already written its outputs into
+    <reedscase>/handoff/reeds_data/ (which is what output_dir defaults to).
     """
-    """
-    ### Get the PRAS settings for this solve year
     print('Running ReEDS2PRAS and PRAS')
     scriptpath = args.reeds_path
+    reedscase = args.profile_case if args.profile_case else args.casedir
     command = [
         "julia",
         f"--project={args.reeds_path}",
@@ -38,10 +44,9 @@ def run_pras(
         f"--threads={args.threads if args.threads > 0 else 'auto'}",
         f"{os.path.join(scriptpath, 'reeds','resource_adequacy','run_pras.jl')}",
         f"--reeds_path={args.reeds_path}",
-        f"--inputs_case={args.profile_case}/inputs_case",
-        f"--augur_data={args.output_dir}",
-        f"--pras_system_path={args.pras_system_path}",
+        f"--reedscase={reedscase}",
         f"--solve_year={args.year}",
+        f"--iteration={args.iteration}",
         f"--weather_year={args.weather_year}",
         f"--timesteps={args.timesteps}",
         f"--hydro_energylim={args.pras_hydro_energylim}",
@@ -76,28 +81,29 @@ def parse_args():
     )
     
     parser.add_argument(
-        "--profile_case", 
-        default=None, 
-        help="Optional: Path to a different case to use for load and resource profiles, also serves as inputs_case arg for run_pras"
+        "--profile_case",
+        default=None,
+        help="Optional: Path to a different case to use for load and resource profiles. When set, run_pras uses this case as its --reedscase (so its inputs_case/{load,recf}.h5 drive PRAS) and prep_data outputs are written into <profile_case>/handoff/reeds_data/ by default."
     )
-    
+
     parser.add_argument(
         "--output_dir",
         default=None,
-        help="Optional: Directory where prep_data output files will be stored, this is also the input to run_pras in the augur_data flag (default: case/ReEDS_Augur/augur_data)"
+        help="Optional: Directory where prep_data output files will be stored. Default: <profile_case or casedir>/handoff/reeds_data. If overridden, must match <reedscase>/handoff/reeds_data/ for run_pras to find the data."
     )
-    
+
     # PRAS-related arguments
     parser.add_argument(
         "--reeds_path",
         default=os.path.dirname(os.path.abspath(__file__)),
         help="Path to the ReEDS code repository"
     )
-    
+
     parser.add_argument(
-        "--pras_system_path",
-        default=None,
-        help="Path to store the PRAS system (default: output_dir)"
+        "--iteration",
+        type=int,
+        default=0,
+        help="ReEDS solve iteration number; used by run_pras.jl to name the pras_system file (default: 0)"
     )
     
     parser.add_argument(
@@ -186,24 +192,20 @@ def main():
         print(f"Error: Case directory {args.casedir} does not exist")
         sys.exit(1)
     
-    # Make sure the gdx file exists
-    gdx_file = os.path.join(args.casedir, 'ReEDS_Augur', 'augur_data', f'reeds_data_{args.year}.gdx')
+    # Make sure the gdx file exists (new-main layout: <case>/handoff/reeds_data/)
+    gdx_file = os.path.join(args.casedir, 'handoff', 'reeds_data', f'reeds_data_{args.year}.gdx')
     if not os.path.exists(gdx_file):
         print(f"Error: GDX file {gdx_file} does not exist")
         print("Make sure the ReEDS model has been run for this year and the outputs are available")
         sys.exit(1)
-        
-    if args.profile_case is None:
-        args.output_dir = os.path.join(args.casedir, 'ReEDS_Augur', 'augur_data')
-    
+
+    # Default output_dir to <reedscase>/handoff/reeds_data so run_pras.jl finds the
+    # PRAS-ready files at the path it derives from --reedscase.
     if args.output_dir is None:
-        args.output_dir = os.path.join(args.profile_case, 'ReEDS_Augur', 'augur_data')
-        
-    if args.pras_system_path is None:
-        args.pras_system_path = args.output_dir
-    
-    if args.output_dir:
-        os.makedirs(args.output_dir, exist_ok=True)
+        reedscase = args.profile_case if args.profile_case else args.casedir
+        args.output_dir = os.path.join(reedscase, 'handoff', 'reeds_data')
+
+    os.makedirs(args.output_dir, exist_ok=True)
     
     profile_msg = f" and using weather and load profiles from {args.profile_case}" if args.profile_case else ""
     print(f"Extracting ReEDS data for year {args.year} from {args.casedir}{profile_msg}")
