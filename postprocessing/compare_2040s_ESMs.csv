@@ -1,0 +1,6 @@
+casepath,casename,color
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_ecearth3cc-2040,EC-Earth3-CC-2040,#ff7f0e
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_ecearth3veg-2040,EC-Earth3-Veg-2040,#2ca02c
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_gfdlcm4-2040,GFDL-CM4-2040,#d62728
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_mpiesm12hr-2040,MPI-ESM1.2-HR-2040,#9467bd
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_taiesm1-2040,TaiESM1-2040,#8c564b

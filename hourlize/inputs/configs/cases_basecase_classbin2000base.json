@@ -1,0 +1,23 @@
+{
+    "upv_nsrdb_ba": {
+        "tech": "upv", 
+        "access_case": "nsrdb",
+        "classbin_base":"ecearth3cc2000",
+        "emit_scen": "",
+        "hourly_out_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020],
+        "reg_out_col": "ba"
+    },
+    "wind-ons_wtk_hrrr_ba": {
+        "tech": "wind-ons", 
+        "access_case": "wtk_hrrr",
+        "classbin_base":"ecearth3cc2000",
+        "hourly_out_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020],
+        "reg_out_col": "ba"
+    },
+    "wind-ofs_wtk_hrrr_ba": {
+        "tech": "wind-ofs",
+        "access_case": "wtk_hrrr",
+        "hourly_out_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020],
+        "reg_out_col": "ba"
+    }
+}

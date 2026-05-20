@@ -69,6 +69,164 @@ def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
     return load
 
 
+def optimize_period_weights(profiles_fitperiods, numclusters=100):
+    """
+    The optimization approach (minimizing sum of absolute errors) is described at
+    https://optimization.mccormick.northwestern.edu/index.php/Optimization_with_absolute_values
+    The general idea of optimizing period weights to reproduce regional variability is similar
+    to the method used in the EPRI US-REGEN model, described at
+    https://www.epri.com/research/products/000000003002016601
+    """
+    ### Imports
+    import pulp
+
+    ### Input processing
+    profiles_day = (
+        profiles_fitperiods.groupby(['property','region'], axis=1).mean())
+    profiles_mean = profiles_day.mean()
+    numdays = len(profiles_day)
+    days = profiles_day.index.values
+
+    ### Optimization: minimize sum of absolute errors
+    m = pulp.LpProblem('LinearDaySelection', pulp.LpMinimize)
+    ###### Variables
+    ### day weights
+    WEIGHT = pulp.LpVariable.dicts('WEIGHT', (d for d in days), lowBound=0, cat='Continuous')
+    ### errors
+    ERROR_POS = pulp.LpVariable.dicts(
+        'ERROR_POS', (c for c in profiles_day.columns), lowBound=0, cat='Continuous')
+    ERROR_NEG = pulp.LpVariable.dicts(
+        'ERROR_NEG', (c for c in profiles_day.columns), lowBound=0, cat='Continuous')
+    ###### Constraints
+    ### weights must sum to 1
+    m += pulp.lpSum([WEIGHT[d] for d in days]) == 1
+    ### definition of errors
+    for c in profiles_day.columns:
+        m += (
+            ### Full error for column (given by positive component minus negative component)...
+            ERROR_POS[c] - ERROR_NEG[c]
+            ### ...plus sum of values for weighted representative days...
+            + pulp.lpSum([WEIGHT[d] * profiles_day[c][d] for d in days])
+            ### ...equals the mean for that column
+            == profiles_mean[c])
+    ###### Objective: minimize the sum of absolute values of errors across all columns
+    m += pulp.lpSum([
+        ERROR_POS[c] + ERROR_NEG[c]
+        for c in profiles_day.columns
+    ])
+
+    ### Solve it
+    m.solve(solver=pulp.PULP_CBC_CMD(msg=True))
+
+    ### Collect weights, scaled by total number of days
+    weights = pd.Series({d:WEIGHT[d].varValue for d in days}) * numdays
+    print(f'weights: {weights}')
+    ### Truncate based on numclusters, scale appropriately, and convert to integers
+    ### Keep the the 'numclusters' highest-weighted days
+    rweights = (weights.sort_values(ascending=False)[:numclusters])
+    ### Scale so that the weights sum to numdays (have to do if numclusters is small)
+    rweights *= numdays / rweights.sum()
+    print(f'rweights: \n{rweights}')
+    ### Convert to integers
+    iweights = rweights.round(0).astype(int)
+    print(f'iweights: \n{iweights}')
+    ### Scale all weights little by little until they sum to number of actual days
+    sumweights = iweights.sum()
+    print(f' ')
+    print(f'sumweights: {sumweights} and numdays: {numdays}')
+    diffweights = sumweights - numdays
+    print(f'diffweights: {diffweights}')
+    increment = 0.00001 * (1 if diffweights < 0 else -1)
+    print(f'increment: {increment}')
+    best_iweights = iweights.copy()
+    best_diff = abs(sumweights - numdays)
+    prev_sum = sumweights.copy()
+    for i in range(1000000):
+        iweights = (rweights * (1 + increment*i)).round(0).astype(int)
+        print(f'Iteration {i}: iweights sum: {iweights.sum()} and numdays: {numdays}')
+        # Track iweights over iteration
+        new_diff = iweights.sum() - numdays
+        if abs(new_diff) < best_diff:
+            best_diff = abs(new_diff)
+            best_iweights = iweights.copy()
+        if iweights.sum() == numdays:
+            break
+        # Detect overshoot:
+        if ((prev_sum - numdays) * new_diff < 0):
+            print(f'Incremental adjustment overshot target: change increment to {increment * 0.5} and continue')
+            increment *= 0.5
+        prev_sum = iweights.sum().copy()
+
+    iweights = iweights.replace(0,np.nan).dropna().astype(int)
+    print(f'iweights post replace: {iweights}')
+    ### Make sure it worked
+    if iweights.sum() != numdays:
+        raise ValueError(f'Sum of rounded weights = {iweights.sum()} != {numdays}')
+
+    return profiles_day, iweights, weights
+
+
+def assign_representative_days(profiles_day, rweights):
+    """
+    """
+    ### Imports
+    import pulp
+
+    ### Input processing
+    actualdays = profiles_day.index.values
+    repdays = list(rweights.index)
+
+    ### Optimization: minimize sum of absolute errors
+    m = pulp.LpProblem('RepDayAssignment', pulp.LpMinimize)
+    ###### Variables
+    ### Weighting of rep days (r) for each actual day (a).
+    ### Can only use whole days, so it's a binary variable.
+    WEIGHT = pulp.LpVariable.dicts(
+        'WEIGHT', ((a,r) for a in actualdays for r in repdays),
+        lowBound=0, upBound=1, cat=pulp.LpInteger)
+    ### Errors. These are defined for features (c) and for actual days (a).
+    ERROR_POS = pulp.LpVariable.dicts(
+        'ERROR_POS', ((a,c) for a in actualdays for c in profiles_day.columns),
+        lowBound=0, cat='Continuous')
+    ERROR_NEG = pulp.LpVariable.dicts(
+        'ERROR_NEG', ((a,c) for a in actualdays for c in profiles_day.columns),
+        lowBound=0, cat='Continuous')
+    ###### Constraints
+    ### Each actual day can only be assigned to one representative day
+    for a in actualdays:
+        m += pulp.lpSum([WEIGHT[a,r] for r in repdays]) == 1
+    ### Each representative day must be used a number of times equal to its weight
+    for r in repdays:
+        m += pulp.lpSum([WEIGHT[a,r] for a in actualdays]) == rweights[r]
+    ### Define the error variables
+    for a in actualdays:
+        for c in profiles_day.columns:
+            m += (
+                ### Full error for column on actual day (given by positive
+                ### component minus negative component)...
+                ERROR_POS[a,c] - ERROR_NEG[a,c]
+                ### ...plus value for its representative day (since WEIGHT is binary)...
+                + pulp.lpSum([WEIGHT[a,r] * profiles_day[c][r] for r in repdays])
+                ### ...equals the actual value for that column and day
+                == profiles_day[c][a])
+    ###### Objective: minimize the sum of absolute values of errors
+    m += pulp.lpSum([
+        ERROR_POS[a,c] + ERROR_NEG[a,c]
+        for a in actualdays for c in profiles_day.columns
+    ])
+
+    ### Solve it
+    m.solve(solver=pulp.PULP_CBC_CMD(msg=True))
+
+    ### Collect assignments
+    assignments = pd.Series(
+        {(a,r):WEIGHT[a,r].varValue for a in actualdays for r in repdays}).astype(int)
+    assignments.index = assignments.index.rename(['act','rep'])
+    a2r = assignments.replace(0,np.nan).dropna().reset_index(level='rep').rep
+
+    return a2r
+
+
 def identify_peak_containing_periods(df, hierarchy, level):
     """
     Identify the period containing the peak value.

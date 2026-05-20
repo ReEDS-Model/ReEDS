@@ -497,6 +497,13 @@ def main(reeds_path, inputs_case):
     recf = pd.concat([recf, csp_system_cf], axis=1)
     resources = pd.concat([resources, csp_resources], axis=0)
 
+    ### Ensure leap years do not contain 12/31 data
+    recf = recf[~(
+        (recf.index.is_leap_year) &
+        (recf.index.month == 12) &
+        (recf.index.day == 31)
+    )]
+
     #%% Check for errors
     nulls = recf.isnull().sum()
     missing = nulls.loc[nulls > 0]

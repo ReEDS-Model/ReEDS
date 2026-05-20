@@ -1,0 +1,19 @@
+,Default Value,USA_ecearth3cc-2000,USA_ecearth3cc-2050,USA_taiesm1-2040,USA_taiesm1-2050,USA_gfdlcm4-2020
+ignore,1,,,0,,
+input_processing_only,0,,,1,,1
+endyear,2050,,,,,
+GSw_Region,cendiv/Pacific,country/USA,country/USA,country/USA,country/USA,country/USA
+GSw_RegionResolution,,,,,,
+resource_adequacy_years,2007_2008_2009_2010_2011_2012_2013,2000_2001_2002_2003_2004_2005_2006_2007_2008_2009,2050_2051_2052_2053_2054_2055_2056_2057_2058_2059,2040_2041_2042_2043_2044_2045_2046_2047_2048_2049,2050_2051_2052_2053_2054_2055_2056_2057_2058_2059,2020_2021_2022_2023_2024_2025_2026_2027_2028_2029
+GSw_HourlyWeatherYears,2012,2005,2055,2045,2055,2025
+GSw_GasCurve,2,,,,,
+yearset,,,,,,
+GSw_ClimateHydro,0,1,1,1,1,1
+climatescen,,EC-Earth3-CC-qdm,EC-Earth3-CC-qdm,TaiESM1-qdm,TaiESM1-qdm,GFDL-CM4-qdm
+distpvprofile,reference,ecearth3cc_historical_2000,ecearth3cc_ssp245_2050,taiesm1_ssp245_2040,taiesm1_ssp245_2050,gfdlcm4_ssp245_2020
+temperatureprofile,reference,ecearth3cc_historical_2000,ecearth3cc_ssp245_2050,taiesm1_ssp245_2040,taiesm1_ssp245_2050,gfdlcm4_ssp245_2020
+GSw_CSP,0,,,,,
+GSw_SitingUPV,reference,w2000ecearth3cc,w2050ecearth3cc,w2040taiesm1,w2050taiesm1,w2020gfdlcm4
+GSw_SitingWindOfs,reference,w2000ecearth3cc,w2050ecearth3cc,w2040taiesm1,w2050taiesm1,w2020gfdlcm4
+GSw_SitingWindOns,reference,w2000ecearth3cc,w2050ecearth3cc,w2040taiesm1,w2050taiesm1,w2020gfdlcm4
+GSw_LoadProfiles,EER2025_IRAlow,w2000ecearth3cc-central,w2050ecearth3cc-central,w2040taiesm1-central,w2050taiesm1-central,w2020gfdlcm4-central

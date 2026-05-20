@@ -1,0 +1,128 @@
+{
+    "upv_w2000ecearth3veg": {
+        "tech": "upv", 
+        "esm":"ecearth3veg",
+        "access_case": "ecearth3veg2000",
+        "profile_dir": "../upv_ecearth3veg_historical_2000",
+        "classbin_base": "nsrdb",
+        "emit_scen": "historical_2000",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "upv_w2010ecearth3veg": {
+        "tech": "upv", 
+        "esm":"ecearth3veg",
+        "access_case": "ecearth3veg2010",
+        "profile_dir": "../upv_ecearth3veg_historical_2010",
+        "classbin_base": "nsrdb",
+        "emit_scen": "historical_2010",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "upv_w2020ecearth3veg": {
+        "tech": "upv", 
+        "esm":"ecearth3veg",
+        "access_case": "ecearth3veg2020",
+        "profile_dir": "../upv_ecearth3veg_ssp245_2020",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2020",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "upv_w2030ecearth3veg": {
+        "tech": "upv", 
+        "esm":"ecearth3veg",
+        "access_case": "ecearth3veg2030",
+        "profile_dir": "../upv_ecearth3veg_ssp245_2030",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2030",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "upv_w2040ecearth3veg": {
+        "tech": "upv", 
+        "esm":"ecearth3veg",
+        "access_case": "ecearth3veg2040",
+        "profile_dir": "../upv_ecearth3veg_ssp245_2040",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2040",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "upv_w2050ecearth3veg": {
+        "tech": "upv", 
+        "esm":"ecearth3veg",
+        "access_case": "ecearth3veg2050",
+        "profile_dir": "../upv_ecearth3veg_ssp245_2050",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2050",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ons_w2000ecearth3veg": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3veg2000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ons_w2010ecearth3veg": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3veg2010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ons_w2020ecearth3veg": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3veg2020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ons_w2030ecearth3veg": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3veg2030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ons_w2040ecearth3veg": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3veg2040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ons_w2050ecearth3veg": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3veg2050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ofs_w2000ecearth3veg": {
+        "tech": "wind-ofs", 
+        "access_case": "ecearth3veg2000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ofs_w2010ecearth3veg": {
+        "tech": "wind-ofs", 
+        "access_case": "ecearth3veg2010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ofs_w2020ecearth3veg": {
+        "tech": "wind-ofs", 
+        "access_case": "ecearth3veg2020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ofs_w2030ecearth3veg": {
+        "tech": "wind-ofs", 
+        "access_case": "ecearth3veg2030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ofs_w2040ecearth3veg": {
+        "tech": "wind-ofs", 
+        "access_case": "ecearth3veg2040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ofs_w2050ecearth3veg": {
+        "tech": "wind-ofs", 
+        "access_case": "ecearth3veg2050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    }
+}

@@ -1,0 +1,128 @@
+{
+    "upv_w2000gfdlcm4": {
+        "tech": "upv", 
+        "esm":"gfdlcm4",
+        "access_case": "gfdlcm42000",
+        "profile_dir": "../upv_gfdlcm4_historical_2000",
+        "classbin_base": "nsrdb",
+        "emit_scen": "historical_2000",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "upv_w2010gfdlcm4": {
+        "tech": "upv", 
+        "esm":"gfdlcm4",
+        "access_case": "gfdlcm42010",
+        "profile_dir": "../upv_gfdlcm4_historical_2010",
+        "classbin_base": "nsrdb",
+        "emit_scen": "historical_2010",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "upv_w2020gfdlcm4": {
+        "tech": "upv", 
+        "esm":"gfdlcm4",
+        "access_case": "gfdlcm42020",
+        "profile_dir": "../upv_gfdlcm4_ssp245_2020",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2020",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "upv_w2030gfdlcm4": {
+        "tech": "upv", 
+        "esm":"gfdlcm4",
+        "access_case": "gfdlcm42030",
+        "profile_dir": "../upv_gfdlcm4_ssp245_2030",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2030",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "upv_w2040gfdlcm4": {
+        "tech": "upv", 
+        "esm":"gfdlcm4",
+        "access_case": "gfdlcm42040",
+        "profile_dir": "../upv_gfdlcm4_ssp245_2040",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2040",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "upv_w2050gfdlcm4": {
+        "tech": "upv", 
+        "esm":"gfdlcm4",
+        "access_case": "gfdlcm42050",
+        "profile_dir": "../upv_gfdlcm4_ssp245_2050",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2050",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ons_w2000gfdlcm4": {
+        "tech": "wind-ons", 
+        "access_case": "gfdlcm42000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ons_w2010gfdlcm4": {
+        "tech": "wind-ons", 
+        "access_case": "gfdlcm42010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ons_w2020gfdlcm4": {
+        "tech": "wind-ons", 
+        "access_case": "gfdlcm42020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ons_w2030gfdlcm4": {
+        "tech": "wind-ons", 
+        "access_case": "gfdlcm42030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ons_w2040gfdlcm4": {
+        "tech": "wind-ons", 
+        "access_case": "gfdlcm42040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ons_w2050gfdlcm4": {
+        "tech": "wind-ons", 
+        "access_case": "gfdlcm42050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ofs_w2000gfdlcm4": {
+        "tech": "wind-ofs", 
+        "access_case": "gfdlcm42000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ofs_w2010gfdlcm4": {
+        "tech": "wind-ofs", 
+        "access_case": "gfdlcm42010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ofs_w2020gfdlcm4": {
+        "tech": "wind-ofs", 
+        "access_case": "gfdlcm42020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ofs_w2030gfdlcm4": {
+        "tech": "wind-ofs", 
+        "access_case": "gfdlcm42030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ofs_w2040gfdlcm4": {
+        "tech": "wind-ofs", 
+        "access_case": "gfdlcm42040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ofs_w2050gfdlcm4": {
+        "tech": "wind-ofs", 
+        "access_case": "gfdlcm42050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    }
+}

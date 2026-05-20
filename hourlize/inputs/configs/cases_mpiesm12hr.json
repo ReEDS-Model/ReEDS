@@ -1,0 +1,128 @@
+{
+    "upv_w2000mpiesm12hr": {
+        "tech": "upv", 
+        "esm":"mpiesm12hr",
+        "access_case": "mpiesm12hr2000",
+        "profile_dir": "../upv_mpiesm12hr_historical_2000",
+        "classbin_base": "nsrdb",
+        "emit_scen": "historical_2000",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "upv_w2010mpiesm12hr": {
+        "tech": "upv", 
+        "esm":"mpiesm12hr",
+        "access_case": "mpiesm12hr2010",
+        "profile_dir": "../upv_mpiesm12hr_historical_2010",
+        "classbin_base": "nsrdb",
+        "emit_scen": "historical_2010",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "upv_w2020mpiesm12hr": {
+        "tech": "upv", 
+        "esm":"mpiesm12hr",
+        "access_case": "mpiesm12hr2020",
+        "profile_dir": "../upv_mpiesm12hr_ssp245_2020",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2020",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "upv_w2030mpiesm12hr": {
+        "tech": "upv", 
+        "esm":"mpiesm12hr",
+        "access_case": "mpiesm12hr2030",
+        "profile_dir": "../upv_mpiesm12hr_ssp245_2030",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2030",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "upv_w2040mpiesm12hr": {
+        "tech": "upv", 
+        "esm":"mpiesm12hr",
+        "access_case": "mpiesm12hr2040",
+        "profile_dir": "../upv_mpiesm12hr_ssp245_2040",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2040",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "upv_w2050mpiesm12hr": {
+        "tech": "upv", 
+        "esm":"mpiesm12hr",
+        "access_case": "mpiesm12hr2050",
+        "profile_dir": "../upv_mpiesm12hr_ssp245_2050",
+        "classbin_base": "nsrdb",
+        "emit_scen": "ssp245_2050",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ons_w2000mpiesm12hr": {
+        "tech": "wind-ons", 
+        "access_case": "mpiesm12hr2000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ons_w2010mpiesm12hr": {
+        "tech": "wind-ons", 
+        "access_case": "mpiesm12hr2010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ons_w2020mpiesm12hr": {
+        "tech": "wind-ons", 
+        "access_case": "mpiesm12hr2020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ons_w2030mpiesm12hr": {
+        "tech": "wind-ons", 
+        "access_case": "mpiesm12hr2030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ons_w2040mpiesm12hr": {
+        "tech": "wind-ons", 
+        "access_case": "mpiesm12hr2040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ons_w2050mpiesm12hr": {
+        "tech": "wind-ons", 
+        "access_case": "mpiesm12hr2050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ofs_w2000mpiesm12hr": {
+        "tech": "wind-ofs", 
+        "access_case": "mpiesm12hr2000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ofs_w2010mpiesm12hr": {
+        "tech": "wind-ofs", 
+        "access_case": "mpiesm12hr2010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ofs_w2020mpiesm12hr": {
+        "tech": "wind-ofs", 
+        "access_case": "mpiesm12hr2020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ofs_w2030mpiesm12hr": {
+        "tech": "wind-ofs", 
+        "access_case": "mpiesm12hr2030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ofs_w2040mpiesm12hr": {
+        "tech": "wind-ofs", 
+        "access_case": "mpiesm12hr2040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ofs_w2050mpiesm12hr": {
+        "tech": "wind-ofs", 
+        "access_case": "mpiesm12hr2050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    }
+}

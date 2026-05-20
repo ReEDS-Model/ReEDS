@@ -1,0 +1,22 @@
+{
+    "upv_reanalysis": {
+        "tech": "upv", 
+        "esm": "",
+        "access_case": "nsrdb",
+        "emit_scen": "",
+        "class_bin": true,
+        "class_path": null,
+        "profile_file_format": "upv_{access_case}_rep-profiles",
+        "hourly_out_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020]
+    },
+    "wind-ons_reanalysis": {
+        "tech": "wind-ons", 
+        "access_case": "wtk_hrrr",
+        "hourly_out_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020]
+    },
+    "wind-ofs_reanalysis": {
+        "tech": "wind-ofs",
+        "access_case": "wtk_hrrr",
+        "hourly_out_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020]
+    }
+}

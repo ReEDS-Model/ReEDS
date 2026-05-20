@@ -220,14 +220,26 @@ def add_land_fom(
 
     ## fair market values
 
+    # read in updated fair market values from the reV team
+    fmv = pd.read_csv(os.path.join(reeds_path, "hourlize", "inputs", "resource", "fair_market_value.csv"))
+
     # get median land cost
-    fmv_med = sc[fmv_column].median()
+    fmv_med = fmv.places_fmv_all_rev.median()
+
+    # drop any pre-existing land value columns (any original data was in log scale
+    # but not corrected so should be replaced)
+    for fmv_col in ['places_fmv_all','places_fmv_all_rev']:
+        if fmv_col in sc:
+            sc = sc.drop([fmv_col],axis=1,errors='ignore')
+
+    # merge in updated land costs
+    sc = sc.merge(fmv[[profile_id_col,'places_fmv_all_rev']], on=profile_id_col, how='left' )
 
     # calculate land cost adder ($/MW). this is computed by taking the difference in normalized land cost,
     # multiplying by the typical land cost FO&M related, and then using the CRF to convert to capital cost
     # PV land FOM cost is originally in units of $/kW-DC, so convert to $/kw-AC by multiplying by the ILR here.
     sc['land_cap_adder_per_mw'] = (
-        (sc[fmv_column] - fmv_med)
+        (sc['places_fmv_all_rev'] - fmv_med)
         / fmv_med
         * (LEASE_FOM[tech] * 1e3 / crf )
         * sc['ilr']
@@ -526,7 +538,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
             #Start with mask=True, and then build up the full conditional based on each column of df_class.
             mask = True
             for col, val in row.items():
-                if '|' in val:
+                if '|' in str(val):
                     #Pipe is a special character that indicates a numeric range.
                     rng = val.split('|')
                     rng = [float(n) for n in rng]
@@ -698,7 +710,7 @@ def process_cf_profiles(
         df_prof_out = df_prof_out * scale_factor
 
         ### Convert dtype
-        if 'int' in dtype and scale_factor < 100:
+        if pd.api.types.is_integer_dtype(dtype) and scale_factor < 100:
             raise ValueError(
                 "scale_factor must be greater than 100 when converting "
                 "CF values to ints. Update scale_factor or dtype."
@@ -751,7 +763,6 @@ def convert_upv_ac_profiles_to_dc(df_prof, df_sc):
     df_prof_out = df_prof / ilr_by_site
     return df_prof_out
 
-
 #%% ===========================================================================
 ### --- SAVE OUTPUTS ---
 ### ===========================================================================
@@ -762,6 +773,8 @@ def save_sc_outputs(
     start_year,
     outpath,
     tech,
+    access_case,
+    save_classmap,
     subtract_exog,
     profile_id_col,
     decimals,
@@ -774,6 +787,9 @@ def save_sc_outputs(
     df_sc = df_sc.copy()
     # save copy of pre-processed reV supply curve
     df_sc.to_csv(os.path.join(outpath, 'results', tech + '_supply_curve_raw.csv'), index=False)
+    # If desired, save mapping of sc_point_gid to class
+    if save_classmap:
+        df_sc[['sc_point_gid','class']].to_csv(os.path.join(outpath,'..','..','inputs','resource',f'{tech}_{access_case}_classes.csv'),index=False)
     #Round now to prevent infeasibility in model because existing (pre-2010 + prescribed) capacity is slightly higher than supply curve capacity
     df_sc[['capacity','existing_capacity']] = df_sc[['capacity','existing_capacity']].round(decimals)
     if existing_sites:
@@ -1025,6 +1041,8 @@ if __name__== '__main__':
         start_year=cf.start_year,
         outpath=cf.outpath,
         tech=cf.tech,
+        access_case=cf.access_case,
+        save_classmap=cf.save_classmap,
         subtract_exog=cf.subtract_exog,
         profile_id_col=cf.profile_id_col,
         decimals=2,

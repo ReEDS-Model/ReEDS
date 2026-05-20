@@ -244,7 +244,7 @@ def copy_files(casename, configout, outpath, args):
 
     # inputs (specified by 'inputfiles' in base config)
     for input in configout['inputfiles']:
-        if configout[input] is not None:
+        if configout[input] is not None and configout[input] is not False:
             shutil.copy(os.path.join(configout[input]), os.path.join(outpath, "inputs"))
 
     # add path info to final config
@@ -467,7 +467,7 @@ def setup_resource(args):
 
     ## Main loop for running cases
     for casename in cases:
-        print("-"*65)
+        print("-"*80)
         print(casename + '\n')
         try:
             setup_resource_run(casename=casename, case=cases[casename], args=args)

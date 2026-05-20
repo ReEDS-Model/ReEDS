@@ -1,0 +1,59 @@
+{
+    "upv_w2000ecearth3cc": {
+        "tech": "upv", 
+        "access_case": "ecearth3cc2000",
+        "profile_dir": "../upv_ecearth3cc_historical_2000",
+        "classbin_base": "ecearth3cc2000",
+        "emit_scen": "historical_2000",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ons_w2000ecearth3cc": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3cc2000",
+        "classbin_base": "ecearth3cc2000",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ofs_w2000ecearth3cc": {
+        "tech": "wind-ofs",
+        "access_case": "ecearth3cc2000",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "upv_w2010ecearth3cc": {
+        "tech": "upv", 
+        "access_case": "ecearth3cc2010",
+        "profile_dir": "../upv_ecearth3cc_historical_2010",
+        "classbin_base": "ecearth3cc2000",
+        "emit_scen": "historical_2010",
+        "hourly_out_years": "{eval_list(range(2010,2010))}"
+    },
+    "wind-ons_w2010ecearth3cc": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3cc2010",
+        "classbin_base": "ecearth3cc2000",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ofs_w2010ecearth3cc": {
+        "tech": "wind-ofs",
+        "access_case": "ecearth3cc2000",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "upv_w2050ecearth3cc": {
+        "tech": "upv", 
+        "access_case": "ecearth3cc",
+        "profile_dir": "../upv_ecearth3cc_ssp245_2050",
+        "classbin_base": "ecearth3cc2000",
+        "emit_scen": "ssp245_2050",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ons_w2050ecearth3cc": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3cc",
+        "classbin_base":"ecearth3cc2000",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    },
+    "wind-ofs_w2050ecearth3cc": {
+        "tech": "wind-ofs",
+        "access_case": "ecearth3cc",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    }
+}

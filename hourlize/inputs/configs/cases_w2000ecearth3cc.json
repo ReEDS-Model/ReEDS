@@ -1,0 +1,18 @@
+{
+    "upv_ecearth3cc2000_ba": {
+        "tech": "upv", 
+        "access_case": "ecearth3cc2000",
+        "emit_scen": "historical_2000",
+        "reg_out_col": "ba"
+    },
+    "wind-ons_ecearth3cc2000_ba": {
+        "tech": "wind-ons", 
+        "access_case": "ecearth3cc2000",
+        "reg_out_col": "ba"
+    },
+    "wind-ofs_ecearth3cc2000_ba": {
+        "tech": "wind-ofs",
+        "access_case": "ecearth3cc2000",
+        "reg_out_col": "ba"
+    }
+}

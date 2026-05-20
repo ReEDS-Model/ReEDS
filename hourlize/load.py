@@ -218,6 +218,8 @@ def get_sectoral_replacement_load(
 def create_hourly_state_load_for_model_year(
     load_source_path: str,
     scenario: str,
+    loadscen: str,
+    esm: str,
     weather_years: list[int],
     model_year: int,
     output_fpath: str,
@@ -235,6 +237,8 @@ def create_hourly_state_load_for_model_year(
         load_source_path: Path to directory containing raw hourly, state- and
             subsector-level load profiles.
         scenario: Load scenario from 'load_source_path'.
+        loadscen: batch name of load scenario
+        esm: name of ESM used
         weather_years: List of weather years to include in exported
             load profiles.
         model_year: Model year to include in exported load profiles.
@@ -264,11 +268,19 @@ def create_hourly_state_load_for_model_year(
     """
     print(f"Creating load profile for model year {model_year}...")
     # Read raw hourly, state- and subsector-level load profiles
+    if esm == 'reanalysis':
+        filename = f'{loadscen}_{esm}_load_MWh_EST_{scenario}_eyear{model_year}_wyear2010.csv'
+    else:
+        filename = f'{loadscen}_{esm}_load_MWh_EST_{scenario}_eyear{model_year}_wyear{weather_years[0]}.csv'
     df_load = pd.read_csv(
-        f'{load_source_path}/{scenario}/{model_year}.csv.gz',
-        compression='gzip',
-        parse_dates=['weather_datetime']
+                os.path.join(load_source_path,filename),
+                parse_dates=['weather_datetime'],
     )
+    # df_load = pd.read_csv(
+    #     f'{load_source_path}/{scenario}/{model_year}.csv.gz',
+    #     compression='gzip',
+    #     parse_dates=['weather_datetime']
+    # )
     # Downselect to specified weather years
     df_load = df_load.loc[df_load.weather_datetime.dt.year.isin(weather_years)]
 
@@ -328,7 +340,10 @@ def create_hourly_state_load_for_model_year(
     # and take the sum of columns with the same name (needed because both
     # Washington D.C. and Maryland are mapped to the "MD" state code)
     df_load.columns = df_load.columns.map(state_name_code_map)
-    df_load = df_load.drop(columns=['AK', 'HI'])
+    for st in ['AK','HI']:
+        if st in df_load.columns:
+            df_load = df_load.drop(columns=[st])
+    # df_load = df_load.drop(columns=['AK', 'HI'])
     df_load = df_load.T.groupby(df_load.columns).sum().T
 
     # Take only the first 8760 hours of each weather year (needed for
@@ -385,6 +400,8 @@ def main(
     reeds_path: str,
     load_source_path: str,
     scenarios: list[str],
+    loadscen: str,
+    esm: str,
     weather_years: list[int],
     model_years: list[int],
     replace_sectors: list[str] = [],
@@ -403,6 +420,8 @@ def main(
             subsector-level load profiles.
         scenarios: List of load scenarios (of those listed as subdirectories
             in 'load_source_path') to include in exported load profiles.
+        loadscen: batch name of load scenario
+        esm: name of ESM used
         weather_years: List of weather years to include in exported
             load profiles.
         model_years: List of model years to include in exported load profiles.
@@ -428,8 +447,10 @@ def main(
     """
     scenario_outfile_prefix_map = {
         'IRA cons': 'EER2025_IRAlow',
-        'central': 'EER2025_100by2050',
-        'baseline': 'EER2025_Baseline_AEO2023'
+        'CENTRAL': f'w{weather_years[0]}{esm}-central',
+        'CENTRAL_ADJ': f'w{weather_years[0]}{esm}-central_adj',
+        'REFERENCE': f'w{weather_years[0]}{esm}-reference',
+        'BASELINE': f'w{weather_years[0]}{esm}-baseline',
     }
     valid_scenarios = list(scenario_outfile_prefix_map.keys())
     state_name_code_map = get_state_name_code_map(reeds_path)
@@ -445,13 +466,15 @@ def main(
         output_fpath = os.path.join(
             reeds_path,
             "inputs",
-            "load",
+            "profiles_demand",
             f"demand_{scenario_outfile_prefix_map[scenario]}.h5"
         )
         for model_year in model_years:
             create_hourly_state_load_for_model_year(
                 load_source_path,
                 scenario,
+                loadscen,
+                esm,
                 weather_years,
                 model_year,
                 output_fpath,
@@ -504,6 +527,8 @@ if __name__== '__main__':
         cf.reeds_path,
         cf.load_source,
         cf.scenarios,
+        cf.loadscen,
+        cf.esm,
         cf.weather_years,
         cf.model_years,
         cf.replace_sectors,

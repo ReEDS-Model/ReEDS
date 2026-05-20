@@ -79,7 +79,7 @@ dfraster = pd.read_csv(
 ).drop(columns=['Unnamed: 0'], errors='ignore')
 
 ## Geohydro has some weird off-grid sites so leave them out
-techs = ['upv', 'wind-ons', 'egs']
+techs = ['upv', 'wind-ons', 'wind-ofs', 'egs']
 #%% Get all sc_point_gid's included in all supply curves
 rev_paths = pd.read_csv(
     os.path.join(reeds.io.reeds_path, 'inputs', 'supply_curve', 'rev_paths.csv')

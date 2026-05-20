@@ -1,0 +1,20 @@
+,Default Value,USA_reanalysis,USA_reanalysis_w2009,USA_reanalysis_w2010,USA_reanalysis_w2011,USA_reanalysis_w2013,USA_reanalysis_w2016,USA_reanalysis_w2017,USA_reanalysis_w2018,USA_reanalysis_w2019,USA_reanalysis_w2020
+ignore,1,,0,0,0,0,0,0,0,0,0
+input_processing_only,0,,,,,,,,,,
+endyear,2050,,,,,,,,,,
+GSw_Region,cendiv/Pacific,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA
+GSw_RegionResolution,,,,,,,,,,,
+resource_adequacy_years,2007_2008_2009_2010_2011_2012_2013,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020,2009_2010_2011_2012_2013_2016_2017_2018_2019_2020
+GSw_HourlyWeatherYears,2012,2012,2009,2010,2011,2013,2016,2017,2018,2019,2020
+GSw_GasCurve,2,,,,,,,,,,
+yearset,,,,,,,,,,,
+GSw_ClimateHydro,0,0,0,0,0,0,0,0,0,0,0
+climatescen,,,,,,,,,,,
+distpvprofile,reference,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009
+temperatureprofile,reference,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009,nsrdb_2009
+GSw_CSP,0,,,,,,,,,,
+GSw_SitingUPV,reference,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis
+GSw_SitingWindOfs,reference,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis
+GSw_SitingWindOns,reference,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis,w2009reanalysis
+GSw_LoadProfiles,EER2025_IRAlow,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central,w2009reanalysis-central
+keep_augur_files,1,,,,,,,,,,

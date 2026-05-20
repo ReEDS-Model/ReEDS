@@ -1,0 +1,7 @@
+{
+    "wind-ofs_mriesm20_ba": {
+        "tech": "wind-ofs",
+        "access_case": "mriesm20",
+        "reg_out_col": "ba"
+    }
+}

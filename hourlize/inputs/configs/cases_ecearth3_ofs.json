@@ -1,0 +1,7 @@
+{
+    "wind-ofs_ecearth3_ba": {
+        "tech": "wind-ofs",
+        "access_case": "ecearth3",
+        "reg_out_col": "ba"
+    }
+}

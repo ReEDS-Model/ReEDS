@@ -5,6 +5,7 @@
     "class_bin_num": 5,
     "class_bin": true,
     "class_path": "{hourlize_path}/inputs/resource/{tech}_resource_classes.csv",
+    "save_classmap": false,
     "filter_cols": {"capacity_ac_mw": [">", 0], "offshore": [":",1], "mean_depth": [">",-1300]},
     "min_cap": 15,
     "profile_dir": "",

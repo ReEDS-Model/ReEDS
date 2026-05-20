@@ -28,6 +28,11 @@ parser.add_argument('--copy_reeds', '-r', action='store_true',
                     help='Copy the reeds/ model folder from the repo to the run')
 parser.add_argument('--include_finished', '-i', action='store_true',
                     help='Also restart finished runs (e.g. to redo postprocessing)')
+parser.add_argument('--cases_file', '-p', type=str, default='',
+                    help=(
+                        'Path to a cases CSV file (e.g. cases_finalclimate.csv). '
+                        'When provided, only cases with ignore=0 in that file will be restarted.'
+                    ))
 
 args = parser.parse_args()
 batch_name = args.batch_name
@@ -37,6 +42,7 @@ force = args.force
 more_copyfiles = [i for i in args.more_copyfiles.split(',') if len(i)]
 copy_reeds = args.copy_reeds
 include_finished = args.include_finished
+cases_file = args.cases_file
 
 # #%% Inputs for debugging
 # batch_name = 'v20231113_yamM0'
@@ -46,6 +52,7 @@ include_finished = args.include_finished
 # more_copyfiles = ['report.gms']
 # copy_reeds = False
 # include_finished = False
+# cases_file = ''
 
 ###### Procedure
 #%% Shared parameters
@@ -61,6 +68,22 @@ runs_running = dictruns['running']
 print('unfinished:', len(runs_unfinished))
 print('running:', len(runs_running))
 print('failed:', len(runs_failed))
+
+#%% Filter by cases_file ignore switch if provided
+if cases_file:
+    df_cases = pd.read_csv(cases_file, index_col=0, header=0)
+    ignore_row = df_cases.loc['ignore']
+    # Keep only runs whose case column has ignore explicitly set to 0
+    allowed = {col for col, val in ignore_row.items() if str(val).strip() == '0'}
+    before = len(runs_failed)
+    runs_failed = [
+        r for r in runs_failed
+        if os.path.basename(r).split(batch_name + '_', 1)[-1] in allowed
+    ]
+    print(
+        f'Filtered by {os.path.basename(cases_file)} (ignore=0): '
+        f'{before} → {len(runs_failed)} runs'
+    )
 
 #%% Double check
 if not force:

@@ -1,0 +1,11 @@
+casepath,casename,color
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis,2012,plt.cm.tab20(0)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2009,2009,plt.cm.tab20(1)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2010,2010,plt.cm.tab20(2)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2011,2011,plt.cm.tab20(3)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2013,2013,plt.cm.tab20(4)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2016,2016,plt.cm.tab20(5)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2017,2017,plt.cm.tab20(6)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2018,2018,plt.cm.tab20(7)
+/projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2019,2019,plt.cm.tab20(8)
+# /projects/alcaps/jcarag/ssh_vc_paces/ReEDS-2.0/runs/v20260421_masterruns_USA_reanalysis_w2020,2020,plt.cm.tab20(9)

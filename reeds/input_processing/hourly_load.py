@@ -625,6 +625,7 @@ def main(reeds_path, inputs_case):
     match sw.GSw_LoadProfiles:
         case _ if (
             sw.GSw_LoadProfiles.startswith('EER')
+            or sw.GSw_LoadProfiles.startswith('w20') # All ESPRS profiles start with w{decade}
             or Path(sw.GSw_LoadProfiles).is_file()
         ):
             endyear = int(sw.endyear)
