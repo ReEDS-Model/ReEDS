@@ -363,7 +363,7 @@ diagnose,Write A and B matrix of the model [0 = no diagnose ; 1 = diagnose ],0; 
 diagnose_year,Year in which to start report diagnose,N/A,2022,
 dump_alldata,switch to automatically dump data from final solve year into .gdx file,0; 1,0,
 file_replacements,"List of files to replace from run folder, e.g: inputs_case/national_gen_frac.csv << //nrelnas01/ReEDS/some_project/national_gen_frac.csv || c_model.gms << //nrelnas01/ReEDS/some_project/c_model.gms",N/A,none,
-input_processing_only,Only run input_processing scripts; stop before creating and solving model,0; 1,0,
+input_processing_only,Only run input_processing scripts; stop before creating and solving model (1) or stop right after Monte Carlo sampling (2),0; 1; 2,0,
 keep_resource_adequacy_files,Indicate whether to keep (1) or delete (0) resource adequacy csv and h5 files after RA calculations finish,0; 1,0,
 keep_g00_files,Keep (1) or delete (0) .g00 files for completed solve years,0; 1,0,
 keep_run_terminal,"0=close run terminal, 1=keep run terminal open",0; 1,0,
@@ -388,3 +388,4 @@ resource_adequacy_years,_-delimited years to include in resource adequacy calcul
 MCS_runs,Number of Monte Carlo simulation runs. Set to 0 to disable MCS. Set to an integer N > 0 to run N ReEDS simulations with sampling.,int,0,
 MCS_dist,Name of the `.yaml` file defining the MCS distributions. Use 'default' or a string beginning with 'user' to reference `inputs/userinput/mcs_distributions_{MCS_dist}.yaml`,N/A,default,
 MCS_dist_groups,Define the distribution groups to use in a Monte Carlo Simulation. Each entry should refer to a key from `inputs/userinput/mcs_distributions_{MCS_dist}.yaml` with multiple entries separated by a dot (e.g. Example1.Example2.Example3),N/A,tech,
+MCS_lhs,Option to use random sampling (0) or latin hypercube sampling (1) for Monte Carlo simulation,0; 1,0,

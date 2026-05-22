@@ -1572,7 +1572,7 @@ Note the difference in color scales.
 
 
 Scheduled (planned and maintenance) outage rates are derived from the NERC GADS database {cite}`nercGeneratingAvailabilityData2023`.
-Scheduled outage rates for combined cycle, combustion turbine, nuclear, steam (coal), and hydro technologies are measured and applied at monthly resolution using GADS data from 2013 to 2023 {cite}`murphyGridReliabilityStatistics2025`.
+Scheduled outage rates for combined cycle, combustion turbine, nuclear, steam (coal), and hydro technologies are measured and applied at monthly resolution using GADS data from 2013 to 2023 {cite}`murphyGridReliabilityStatistics2025` (see the [scheduled outages](https://github.com/NatLabRockies/grid-reliability-statistics/blob/main/notebooks/scheduled_outages.ipynb) notebook for specific details).
 Scheduled outage rates for other technologies are measured as time-independent average values using GADS data from 2014 to 2018;
 scheduled outages for these technologies are applied only during spring and fall, with the outage rates during those months scaled to reproduce the measured time-independent averages.
 {numref}`figure-outage_scheduled` shows scheduled outage rates for the technologies used by default.
@@ -1627,7 +1627,7 @@ Although there is no explicit representation of natural gas demand beyond the el
 For details, see the [Natural Gas Supply Curves](#natural-gas-supply-curves) section of the appendix.
 
 [^ref32]: Supply curves are nonlinear in practice, but a linear regression approximation has been observed to be satisfactory under most conditions.
-The elasticity coefficients are derived from all scenarios of AEO2018, but the price-demand setpoints are taken from any one single scenario of the AEO.
+The elasticity coefficients are derived from AEO2025 scenarios via a demeaned fixed-effects ordinancy least squares regression, and the price-demand setpoints are taken from any one single scenario of the AEO.
 
 ReEDS includes options for other types of fuel supply curve representations.
 Supply curves can be national-only, census-division-only, or static.
@@ -3499,13 +3499,27 @@ P_{r,t} = \alpha + \alpha_r + \alpha_t + \alpha_{r,t} + \beta_{\text{nat}}Q_{\te
 where $P_{r,t}$ is the price of natural gas (in \$/MMBtu) in region $r$ and year $t$; the $\alpha$ parameters are the intercept terms of the supply curves with adjustments made based on region ($\alpha_r$), year ($\alpha_t$), and the region-year interaction ($\alpha_{r,t}$); $\beta_{\text{nat}}$ is the coefficient for the national NG demand ($Q_{\text{nat}}$, in quads); and $\beta_r$ is the coefficient for the regional NG demand ($Q_{r,t}$) in region $r$.
 Note that the four $\alpha$ parameters in {eq}`ng-price-consumption` can in practice be represented using only $\alpha_{r,t}$.
 
-The $\beta$ terms are regressed from AEO2014 scenarios, with 9 of the 31 AEO2014 scenarios removed as outliers {cite}`eiaAnnualEnergyOutlook2014`.
-These outlier scenarios typically include cases of very low or very high natural gas resource availability, which are useful for estimating NG price as a function of supply but not for estimating NG price as a function of demand within a given supply scenario.
+The $\beta$ terms are regressed from AEO scenarios using a demeaned fixed-effects ordinary least squares approach in two stages.
+
+**Stage 1 — Beta regression.** The price-consumption relationship is modeled as:
+
+$$\text{price}(r, t, s) = \alpha_1(r, t) + \beta_{\text{reg}}(r) \cdot Q_{\text{reg}}(r, t, s) + \beta_{\text{nat}} \cdot Q_{\text{nat}}(t, s)$$
+
+where $s$ indexes AEO scenarios, $r$ indexes census divisions, $t$ indexes years, $\alpha_1(r,t)$ is a fixed effect shared across scenarios, $Q_{\text{reg}}$ is regional electric-sector NG demand (quads), and $Q_{\text{nat}}$ is national total NG demand (quads).
+The scenarios included are those that primarily vary demand-side assumptions (e.g., high/low macroeconomic growth, high/low zero-carbon technology costs, alternative electrification pathways); High/Low Oil & Gas Supply and High/Low Oil Price scenarios are excluded to avoid distorting the structural demand-price elasticities with supply-side variation.
+
+To remove the fixed effect $\alpha_1(r,t)$, each variable is demeaned by subtracting its mean across scenarios for each $(r,t)$ group:
+
+$$d\text{Price} = \text{Price} - \overline{\text{Price}}_{(r,t)}$$
+$$dQ_{\text{reg}} = Q_{\text{reg}} - \overline{Q}_{\text{reg},(r,t)}$$
+$$dQ_{\text{nat}} = Q_{\text{nat}} - \overline{Q}_{\text{nat},(r,t)}$$
+
+yielding the demeaned regression:
+
+$$d\text{Price}(r, t, s) = \beta_{\text{reg}}(r) \cdot dQ_{\text{reg}}(r, t, s) + \beta_{\text{nat}} \cdot dQ_{\text{nat}}(t, s)$$
+
+The 9 regional $\beta_{\text{reg}}$ values and 1 national $\beta_{\text{nat}}$ are then estimated jointly via ordinary least squares.
 The national and regional $\beta$ terms are reported in {numref}`figure-census-division-values`.
-We made a specific post hoc adjustment to the regression model's outputs for one region: The $\beta_r$ term for the West North Central division was originally an order of magnitude higher than the other $\beta_r$ values because the West North Central usage in the electricity sector is so low (0.05 quad[^ref65] in 2013, compared to ~0.5 quad or more in most regions).
-The overall natural gas usage (i.e., not just electricity sector usage) in West North Central is similar to the usage in East North Central, so intuitively it makes sense to have a $\beta_r$ for West North Central relatively close to that of East North Central.
-We therefore manually adjusted the West North Central $\beta_r$ term to be 0.6 (in 2004\$/MMBtu/quad) and recalculated the $\alpha$ terms with the new $\beta$ to achieve the AEO2014 target prices.
-The situation in West North Central whereby such a small fraction of NG demand goes to electricity is unique; we do not believe the other regions warrant similar treatment.
 
 [^ref65]: A quad is a quadrillion Btu, or 10<sup>15</sup> Btu.
 
@@ -3517,9 +3531,22 @@ The "National" value at the far left is $\beta_{\text{nat}}$.
 A $\beta$ of 0.2 means that if demand increases by 1 quad, the price will increase by \$0.20/MMBtu (see {eq}`ng-price-consumption`).
 ```
 
-The $\alpha$ terms are then regressed for each scenario assuming the same $\beta$ values for all scenarios.
-Although the $\beta$ terms are derived from AEO2014 data, $\alpha$ terms are regressed using the most recent AEO data.
-Thus, we assume natural gas price elasticity has remained constant, whereas price projections shift over time as represented by the $\alpha$ values.
+**Stage 2 — Alpha regression.** Using the $\beta_{\text{reg}}$ and $\beta_{\text{nat}}$ from Stage 1, the $\alpha$ intercept is computed for the three AEO cases used as ReEDS inputs ($c$): Reference, High Oil & Gas Supply (HOG), and Low Oil & Gas Supply (LOG):
+
+$$\text{price}(r, t, c) = \alpha_c(r, t, c) + \beta_{\text{reg}}(r) \cdot Q_{\text{reg}}(r, t, c) + \beta_{\text{nat}} \cdot Q_{\text{nat}}(t, c)$$
+
+Here $\alpha_c(r, t, c)$ captures the remaining price component for each region, year, and case after accounting for the regional and national quantity effects.
+It is solved as the residual: $\alpha_c = \text{price} - \beta_{\text{reg}} \cdot Q_{\text{reg}} - \beta_{\text{nat}} \cdot Q_{\text{nat}}$.
+
+For the ReEDS start year (2010), the supply curve regression is not applied; instead, the $\beta$ contributions are zeroed and $\alpha$ absorbs the full AEO price level.
+This provides a fixed initial price point from which the supply curve responds to subsequent demand changes, consistent with how ReEDS initializes its NG price model.
+
+All monetary values are deflated to 2004 dollars.
+
+```{seealso}
+The natural gas price regression implementation can be found in the
+[`aeo_updates/natural_gas_price_regression`](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/natural_gas_price_regression) folder of the ReEDS_Input_Processing repository.
+```
 
 #### Comparison of elasticities from regression approach to literature values
 

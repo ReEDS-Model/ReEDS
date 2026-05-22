@@ -55,8 +55,10 @@ import reeds
 # Time the operation of this script
 tic = datetime.datetime.now()
 
-# ignore ConvergenceWarnings that occur in this file from the kmeans function 
+# ignore ConvergenceWarnings and Windows+MKL memory leak warnings that
+# occur in this file from the kmeans function
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
+warnings.filterwarnings("ignore", message="KMeans is known to have a memory leak")
 
 
 #%% ===========================================================================

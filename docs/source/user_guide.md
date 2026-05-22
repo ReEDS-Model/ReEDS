@@ -445,9 +445,11 @@ For example, `default` will use `inputs/userinput/mcs_distributions_default.yaml
 3. Set `MCS_dist_groups` to one or more YAML group names. Separate multiple groups with a dot.
    For example `tech.load_st.ng_fuel_price`.
 
-4. Run ReEDS as usual. Each Monte Carlo draw will create its own run using the sampled inputs.
+4. Choose the sampling method; `MCS_lhs=1` uses a Latin Hypercube sampling method and `MCS_lhs=0` uses random sampling.
 
-These three switches (`MCS_runs`,`MCS_dist`, and  `MCS_dist_groups`) are the only required controls.
+5. Run ReEDS as usual. Each Monte Carlo draw will create its own run using the sampled inputs.
+
+These four switches (`MCS_runs`, `MCS_dist`, `MCS_dist_groups`, and `MCS_lhs`) are the only required controls.
 All other settings live in the YAML file (`inputs/userinput/mcs_distributions_{MCS_dist}.yaml`).
 
 ### YAML distribution file format
@@ -551,6 +553,31 @@ Each state receives its own weighted combination of the two load scenarios.\
 ```
 
 This enables state level uncertainty in siting supply curves for wind and solar technologies through a random draw between `limited` and `reference` conditions.
+
+### Sampling method
+
+There are two sampling approaches available for Monte Carlo analysis: random sampling and Latin Hypercube sampling. 
+
+Random sampling uses the numpy `random` method for the relevant distribution to sample a set of weights. 
+These weights are applied to the assignment values specified in the distribution group to generate the value for each run. 
+To ensure reproducibility, the Monte Carlo run number is used as the seed value. This means that, for a given 
+run configuration, run MC001 will always have the same sampled values. A global seed value (set by `MCS_seed` in `inputs/scalars.csv`) 
+can be used to shift the seed values for a batch of runs; this can be useful for extending a set of runs; 
+for example, if you ran already 200 runs and now want to add 100 more, set the seed value to 200 to generate 
+new sampled runs.
+
+The second approach, Latin Hypercube sampling (LHS), utilizes a quasi-Monte Carlo sampling method that is 
+designed to improve efficiency by reducing overlap of the sampled values. An overview of this method
+can be found in {cite}`sheikholeslamiProgressiveLatinHypercube2017`. For this method, an NxD matrix is generated upfront
+for all model runs based on the number of samples (N) and the independent dimensions being sampled (D). 
+The values in this matrix represent sampling of the cumulative probability distribution functions, 
+and are later used by the inverse CDF (percent point) functions to derive the actual sample values. 
+A single global seed value (set by `MCS_seed` in `inputs/scalars.csv`) is used for all runs, 
+resulting in unique sampling matrices for a given set of values of N and D.
+
+The LHS method tends to result in sampling values that converge on the true input distributions for lower numbers of samples.
+However, it does not currently support sampling for any spatial resolution besides country 
+or using multivariate distributions such as the Dirichlet.
 
 ### Tips
 
