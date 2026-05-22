@@ -1464,6 +1464,26 @@ def write_batch_script(
         OPATH.writelines(
             'python ' + os.path.join(bokehdir,"interface_report_model.py") + ' "ReEDS 2.0" '
             + os.path.join(reeds_path,"runs",batch_case) + " all No none "
+            + os.path.join(bokehdir,"templates","reeds2","utah_idaho_wyoming_report.py") + ' "html,excel,csv" one '
+            + os.path.join(reeds_path,"runs",batch_case,"outputs","ut_id_wy-report") + ' No\n')
+        OPATH.writelines(
+            'python ' + os.path.join(bokehdir,"interface_report_model.py") + ' "ReEDS 2.0" '
+            + os.path.join(reeds_path,"runs",batch_case) + " all No none "
+            + os.path.join(bokehdir,"templates","reeds2","utah_report.py") + ' "html,excel,csv" one '
+            + os.path.join(reeds_path,"runs",batch_case,"outputs","utah-report") + ' No\n')
+        OPATH.writelines(
+            'python ' + os.path.join(bokehdir,"interface_report_model.py") + ' "ReEDS 2.0" '
+            + os.path.join(reeds_path,"runs",batch_case) + " all No none "
+            + os.path.join(bokehdir,"templates","reeds2","idaho_report.py") + ' "html,excel,csv" one '
+            + os.path.join(reeds_path,"runs",batch_case,"outputs","idaho-report") + ' No\n')
+        OPATH.writelines(
+            'python ' + os.path.join(bokehdir,"interface_report_model.py") + ' "ReEDS 2.0" '
+            + os.path.join(reeds_path,"runs",batch_case) + " all No none "
+            + os.path.join(bokehdir,"templates","reeds2","wyoming_report.py") + ' "html,excel,csv" one '
+            + os.path.join(reeds_path,"runs",batch_case,"outputs","wyoming-report") + ' No\n')
+        OPATH.writelines(
+            'python ' + os.path.join(bokehdir,"interface_report_model.py") + ' "ReEDS 2.0" '
+            + os.path.join(reeds_path,"runs",batch_case) + " all No none "
             + os.path.join(bokehdir,"templates","reeds2","standard_report_expanded.py") + ' "html,excel" one '
             + os.path.join(reeds_path,"runs",batch_case,"outputs","reeds-report") + ' No\n')
         OPATH.writelines(
