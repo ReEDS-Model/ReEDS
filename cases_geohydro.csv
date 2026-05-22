@@ -1,0 +1,6 @@
+,Default Value,Western_Interconnect,Reference
+ignore,0,,
+GSw_Region,,interconnect/western,
+GSw_ZoneSet,,z3109,
+endyear,2050,,
+GSw_GasCurve,2,,

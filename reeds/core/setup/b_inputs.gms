@@ -6440,8 +6440,8 @@ cap_prescribed(i,r)$rsc_i(i) = sum{(pcat,t)$[(sameas(pcat,i) or prescriptivelink
 
 *Loop over all regions
 loop(r,
-*Loop over non-geothermal rsc technologies
-  loop(i$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not prescriptivelink("geothermal",i))],
+*Loop over non-geothermal rsc technologies (exclude geo_hydro since it needs discovery-aware adjustment)
+  loop(i$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not prescriptivelink("geothermal",i))$(not geo_hydro(i))],
 
 *Get total available supply for all ii associated with pcat of i.
 *For example, if i = {upv_2}, then ii = {upv_2, upv_3, ...} and pcat = {UPV}.
@@ -6469,18 +6469,28 @@ rsc_cap_diff(r,i,rscbin) = m_rsc_dat(r,i,rscbin,"cap") - m_rsc_dat_original(r,i,
 *Round up to the nearest 3rd decimal place
 m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rscbin,"cap") * 1000) / 1000 ;
 
-*Geothermal is not a tech with sameas(i,pcat), so handle it separately here
-*Loop over regions that have geothermal prescribed builds
-loop(r$sum{(i,t)$[prescriptivelink("geothermal",i)$tmodel_new(t)], noncumulative_prescriptions("geothermal",r,t) },
+*Geothermal is not a tech with sameas(i,pcat), so handle it separately here.
+*Need to handle both "geothermal" pcat AND "geohydro_allkm" pcat because prescribed
+*builds from the generator database use pcat "geohydro_allkm" (not "geothermal").
+*Loop over regions that have geothermal prescribed builds (either pcat)
+set geo_pcat(pcat) "geothermal pcats that need discovery-aware feasibility adjustment" ;
+geo_pcat("geothermal") = yes ;
+geo_pcat("geohydro_allkm") = yes ;
+
+parameter geo_prescrip_total(r) "--MW-- total geo prescribed capacity in a region across geo pcats" ;
+geo_prescrip_total(r) = sum{(pcat,t)$[geo_pcat(pcat)$tmodel_new(t)],
+                              noncumulative_prescriptions(pcat,r,t) } ;
+
+loop(r$geo_prescrip_total(r),
 *Then loop over eligible geothermal technologies
-  loop(i$[prescriptivelink("geothermal",i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$geo_discovery(i,r,"%startyear%")],
+  loop(i$[sum{pcat$geo_pcat(pcat), prescriptivelink(pcat,i) }$sum{(v,t)$newv(v), valcap(i,v,r,t) }$geo_discovery(i,r,"%startyear%")],
 *If capacity is insufficient, add enough capacity to make the model feasible
-*Use the 2010 geothermal discovery (geo_discovery) rate for the calculation. That will slightly
+*Use the startyear geothermal discovery (geo_discovery) rate for the calculation. That will slightly
 *overestimate geothermal resource for any prescribed builds happening after the discovery rate
 *begins to increase (currently after 2021)
-    m_rsc_dat(r,i,"bin1","cap")$[((sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } * (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))) < sum{t$tmodel_new(t), noncumulative_prescriptions("geothermal",r,t) })
+    m_rsc_dat(r,i,"bin1","cap")$[((sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } * (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))) < geo_prescrip_total(r))
                                 $(1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))] =
-      (sum{t$tmodel_new(t), noncumulative_prescriptions("geothermal",r,t) }
+      (geo_prescrip_total(r)
        - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") }
        + m_rsc_dat(r,i,"bin1","cap")
       ) / (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i)) ;
