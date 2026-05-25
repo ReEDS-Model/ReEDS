@@ -528,7 +528,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     #%% Include ReEDS2PRAS
     include(joinpath(
-        args["reedscase"], "reeds2pras", "src", "ReEDS2PRAS.jl"
+        args["reeds_path"], "reeds", "resource_adequacy", "reeds2pras", "src", "ReEDS2PRAS.jl"
     ))
 
     #%% Run it
