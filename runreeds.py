@@ -325,21 +325,21 @@ def check_compatibility(sw):
                              for s in sw.keys() if s.startswith('GSw_PRM_StressThreshold')
                              and not s.endswith('Metrics')
                              ]
-    stressTresholdMetricControls = sw['GSw_PRM_StressThresholdMetrics'].split('/')
+    stressTresholdMetrics = sw['GSw_PRM_StressThresholdMetrics'].split('/')
 
-    print(f"stressThresholdMetricSwitches: {stressThresholdMetricSwitches}")
-    print(f"stressTresholdMetricControls: {stressTresholdMetricControls}")
-
-    # Metric control but not defined as switch
-    for metric in stressTresholdMetricControls:
-        if metric.upper() not in stressThresholdMetricSwitches:
-            raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is not defined as a switch.")
+    print(f"stressTresholdMetrics: {stressTresholdMetrics}")
+    print(f"stressThresholdMetricSwitches: {stressThresholdMetricSwitches}")   
     
-    # Metric switch but not defined in control
-    for metric in stressThresholdMetricSwitches:
-        if metric.upper() not in stressTresholdMetricControls:
-            raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is defined as a switch, "
-                f"but not added to GSw_PRM_StressThresholdMetrics list {stressTresholdMetricControls}")
+    # Threshold metric added but not specified as a switch
+    for metric in stressTresholdMetrics:
+        if metric.upper() not in stressThresholdMetricSwitches:
+            raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is not specified as a switch.")
+    
+    # # Threshold metric is not added but specified as a switch
+    # for metric in stressThresholdMetricSwitches:
+    #     if metric.upper() not in stressTresholdMetrics:
+    #         raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is specified as a switch,"
+    #             f"but not added to GSw_PRM_StressThresholdMetrics list {stressTresholdMetrics}")
         
     for metric in stressThresholdMetricSwitches:
         for threshold in sw[f'GSw_PRM_StressThreshold{metric}'].split('/'):

@@ -16,12 +16,19 @@ from reeds.input_processing import hourly_writetimeseries
 # import importlib
 # importlib.reload(functions)
 
+CVAR_METRICS = {'CVAR', 'NCVAR'}
+
 
 #%%### Functions
 def get_pras_stress_metric(case, t, iteration=0, stress_metric='EUE'):
     """
     """
     ### Get PRAS outputs
+    # NEUE load division takes place in the caller function
+    # get_stress_metric_periods() or get_annual_stress_metric() based on agg_period
+    if stress_metric.upper() == 'NEUE':
+        stress_metric = 'EUE'
+
     dfpras = reeds.io.read_pras_results(
         os.path.join(case, 'handoff', 'PRAS', f"PRAS_{t}i{iteration}.h5")
     )
@@ -79,7 +86,7 @@ def get_stress_metric_periods(
     )
 
     ###### Calculate the stress metric by period
-    if stress_metric.upper() in ['EUE', 'LOLE']:
+    if stress_metric.upper() != 'NEUE':
         ### Aggregate according to period_agg_method
         dfmetric_period = (
             dfmetric
@@ -87,11 +94,11 @@ def get_stress_metric_periods(
             .agg(period_agg_method)
             .rename_axis(['y','m','d'])
         )
-    elif stress_metric.upper() == 'NEUE':
+    else:
         ### Get load at hierarchy_level
         dfload = reeds.io.read_h5py_file(
             os.path.join(
-                case,'handoff','augur_data',f'pras_load_{t}.h5')
+                case,'handoff','reeds_data',f'pras_load_{t}.h5')
         ).rename(columns=rmap).groupby(level=0, axis=1).sum()
         dfload.index = dfmetric.index
 
@@ -199,6 +206,115 @@ def get_and_write_neue(sw, write=True):
         eue.to_csv(os.path.join(sw['casedir'],'outputs','eue.csv'))
     return neue
 
+def get_cvar_alpha(sw):
+    val = sw.get('GSw_PRM_CVARAlpha', 0.95)
+    if pd.isna(val) or str(val).strip().lower() in ['', 'none', 'nan']:
+        return 0.95
+    return float(val)
+
+
+def get_shortfall_totals_by_sample(case, t, iteration=0):
+    filepath = os.path.join(case, 'handoff', 'PRAS', f'PRAS_{t}i{iteration}-shortfall_totals_by_sample.h5')
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"{filepath} not found. Re-run PRAS with --write_shortfall_samples_totals 1.")
+    df = reeds.io.read_pras_results(filepath)
+    df.columns = df.columns.astype(str)
+    if 'sample' in df.columns:
+        df = df.set_index('sample')
+    elif df.index.name != 'sample':
+        df.index = pd.RangeIndex(1, len(df) + 1, name='sample')
+    return df.apply(pd.to_numeric, errors='coerce').clip(lower=0)
+
+
+def _sample_cvar(samples, alpha=0.95):
+    x = pd.Series(samples).dropna().astype(float)
+    if x.empty:
+        return np.nan
+    if not (0 <= alpha < 1):
+        raise ValueError(f"CVaR alpha must be in [0, 1). Got alpha={alpha}")
+    n_tail = max(1, int(np.ceil((1 - alpha) * len(x))))
+    return x.sort_values(ascending=False).iloc[:n_tail].mean()
+
+
+def get_annual_cvar_stress_metric(case, t, stress_metric='NCVAR', iteration=0, alpha=0.95):
+    stress_metric = stress_metric.upper()
+    if stress_metric not in CVAR_METRICS:
+        raise NotImplementedError(f"get_annual_cvar_stress_metric only supports {CVAR_METRICS}. Got {stress_metric}.")
+
+    shortfall_samples = get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration).drop(columns=['USA'], errors='ignore')
+    dfload = reeds.io.read_h5py_file(os.path.join(case, 'handoff', 'reeds_data', f'pras_load_{t}.h5'))
+
+    levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
+    _metric = {}
+    for hierarchy_level in levels:
+        rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
+        regions = [c for c in shortfall_samples.columns if c in rmap.index]
+        if not regions:
+            continue
+
+        shortfall_agg = shortfall_samples[regions].rename(columns=rmap).groupby(axis=1, level=0).sum()
+        cvar = shortfall_agg.apply(lambda s: _sample_cvar(s, alpha=alpha), axis=0)
+
+        if stress_metric == 'NCVAR':
+            load_regions = [c for c in dfload.columns if c in rmap.index]
+            load_agg = dfload[load_regions].rename(columns=rmap).groupby(axis=1, level=0).sum().sum()
+            cvar = cvar / load_agg.reindex(cvar.index) * 1e6
+
+        _metric[hierarchy_level,'cvar'] = cvar
+
+    return pd.concat(_metric, names=['level','metric','region']).rename(stress_metric)
+
+
+def evaluate_cvar_target_check(sw, t, iteration=0, stress_metrics=None):
+    if stress_metrics is None:
+        stress_metrics = sw.GSw_PRM_StressThresholdMetrics.split('/')
+
+    stress_metrics = [m.upper() for m in stress_metrics if str(m).strip()]
+    cvar_metrics = [m for m in stress_metrics if m in CVAR_METRICS]
+    if not cvar_metrics:
+        return pd.DataFrame()
+
+    records = []
+    for metric in cvar_metrics:
+        switch_name = f'GSw_PRM_StressThreshold{metric}'
+        if switch_name not in sw.index:
+            print(f"Warning: {metric} is listed in GSw_PRM_StressThresholdMetrics, but {switch_name} is not defined. Skipping {metric} target check.")
+            continue
+
+        for criterion in str(sw[switch_name]).split('/'):
+            criterion = criterion.strip()
+            if not criterion:
+                continue
+
+            hierarchy_level, stress_level, stress_metric, metric_name = criterion.split('_')
+            stress_metric = stress_metric.upper()
+            metric_name = metric_name.lower()
+
+            if stress_metric not in CVAR_METRICS:
+                raise ValueError(f"Invalid CVAR criterion: {criterion}. Metric must be one of {CVAR_METRICS}.")
+            if metric_name != 'cvar':
+                raise ValueError(f"Invalid CVAR criterion: {criterion}. The fourth field must be 'cvar'.")
+
+            stress_vals = pd.read_csv(os.path.join(sw.casedir, 'outputs', f'{stress_metric}_{t}i{iteration}.csv'), index_col=['level','metric','region']).squeeze(1)
+            this_test = stress_vals.xs((hierarchy_level, 'cvar'), level=['level','metric'])
+            threshold = float(stress_level)
+
+            for region, value in this_test.items():
+                records.append({'criterion':criterion, 'level':hierarchy_level, 'metric':stress_metric, 'region':region, 'alpha':get_cvar_alpha(sw), 'threshold':threshold, 'value':value, 'passed':value <= threshold})
+
+            failed = this_test.loc[this_test > threshold]
+            if len(failed):
+                print(f"GSw_PRM_StressThreshold = {criterion} failed for:")
+                print(failed)
+                print(f"{stress_metric} is check-only: no stress periods and no PRM increment will be added.")
+            else:
+                print(f"GSw_PRM_StressThreshold = {criterion} passed")
+
+    dfcheck = pd.DataFrame(records)
+    if not dfcheck.empty:
+        dfcheck.to_csv(os.path.join(sw.casedir, 'outputs', f'cvar_target_check_{t}i{iteration}.csv'), index=False)
+    return dfcheck
+
 def get_annual_stress_metric(case, t, stress_metric, iteration=0):
     """
     """
@@ -209,7 +325,7 @@ def get_annual_stress_metric(case, t, stress_metric, iteration=0):
     if stress_metric.upper() == 'NEUE':
         dfload = reeds.io.read_h5py_file(
             os.path.join(
-                case,'handoff','augur_data',f'pras_load_{t}.h5')
+                case,'handoff','reeds_data',f'pras_load_{t}.h5')
         )
         dfload.index = dfmetric.index
 
@@ -388,6 +504,10 @@ def _evaluate_stress_threshold_criterion(stress_criteria, criterion, sw, t, iter
     return stress_criteria
     
 def get_stress_metrics_sorted_periods(sw, t, iteration):
+    stress_metric_switches = [m.upper() for m in sw.GSw_PRM_StressThresholdMetrics.split('/') if str(m).strip() and m.upper() not in CVAR_METRICS]
+    if not stress_metric_switches:
+        return {}, None, None
+
     ### Get storage state of charge (SOC) to use in selection of "shoulder" stress periods
     dfenergy = reeds.io.read_pras_results(
         os.path.join(sw['casedir'], 'handoff', 'PRAS', f"PRAS_{t}i{iteration}-energy.h5")
@@ -409,35 +529,18 @@ def get_stress_metrics_sorted_periods(sw, t, iteration):
 
     ### Check all stress criteria; for regions that fail, add new stress periods
     stress_criteria = {'stress_sorted_periods': {}, 'failed': {}, 'high_stress_periods': {}, 'shoulder_periods': {}}
-
-    # Validation check: Display any GSw_PRM_StressThreshold{metric}
-    # that is not specified in GSw_PRM_StressThresholdMetrics
-    stress_metric_switches = sw.GSw_PRM_StressThresholdMetrics.split('/')
-    stressThresholdMetrics = [s.split('GSw_PRM_StressThreshold')[1] 
-                             for s in sw.keys() if s.startswith('GSw_PRM_StressThreshold')
-                             and not s.endswith('Metrics')
-                             ]
-    
-    for s in stressThresholdMetrics:
-        if s not in stress_metric_switches:
-            print(f"Warning: {s} is not included in GSw_PRM_StressThresholdMetrics, so it will not be evaluated")
-
+  
     # stress periods column names for writing outputs
     stress_metrics_units = {'EUE':'MWh', 'NEUE':'ppm', 'LOLE':'days'}
-    stress_metrics_col_names = {m:f'{m}_{stress_metrics_units[m]}' for m in 
-                                stress_metric_switches}
+    stress_metrics_col_names = {m:f'{m}_{stress_metrics_units[m]}' for m in stress_metric_switches}
     
     for metric in stress_metric_switches:
-        for criterion in sw[f'GSw_PRM_StressThreshold{metric.upper()}'].split('/'):
-            print(f"Evaluating GSw_PRM_StressThreshold {metric.upper()} with criterion: {criterion}")
-            stress_criteria = _evaluate_stress_threshold_criterion(stress_criteria,
-                                                                   criterion,
-                                                                   sw,
-                                                                   t,
-                                                                   iteration,
-                                                                   dfenergy_r,
-                                                                   stressperiods_this_iteration,
-                                                                   )
+        for criterion in sw[f'GSw_PRM_StressThreshold{metric}'].split('/'):
+            print(f"Evaluating GSw_PRM_StressThreshold {metric} with criterion: {criterion}")
+            stress_criteria = _evaluate_stress_threshold_criterion(stress_criteria, criterion, sw, t, iteration, dfenergy_r, stressperiods_this_iteration,
+            )
+            
+    stress_sorted_periods = stress_criteria['stress_sorted_periods']
             
     stress_sorted_periods = stress_criteria['stress_sorted_periods']
     failed = stress_criteria['failed']
@@ -513,27 +616,15 @@ def prm_increment_pras(sw, t, iteration, combined_periods_write, failed_regions)
         )
 
     ## shortfall data
-    # read the net shortfall (positive) and net surplus (negative) results
-    # by sample from PRAS run (MWh)
-    filepath = os.path.join(sw['casedir'], 'handoff', 'PRAS',
-                            f'PRAS_{sw["t"]}i{iteration}-shortfall_samples.h5')
-    net_short = reeds.io.read_pras_results(filepath)
-    # get number of samples
-    n_samples = len(net_short)
-    # collapse dict of dataframes by sample in 1 dataframe (keep index to preserve hours)
-    net_short = pd.concat(
-        (df.assign(**{"sample": k}) for k, df in net_short.items()), ignore_index=False)
-    # convert to long format with shortfall by sample, hour, and r
-    net_short.index.names=['hour']
-    net_short = net_short.reset_index().set_index(['sample','hour'])
-    net_short = net_short.sort_index(level=['sample', 'hour'], ascending=[True, True])
-    net_short = net_short.melt(
-        ignore_index=False, var_name='r', value_name='net_short_mwh').reset_index()
-
-    # zero-out negative values (net surplus) for determining regional unserved energy totals
-    net_short['net_short_mwh'] = net_short['net_short_mwh'].clip(lower=0)
-    # calaculate total regional net shortfall for all hours by sample
-    net_short_crit = net_short.groupby(['r','sample'], as_index=False)['net_short_mwh'].sum()
+    net_short_totals = get_shortfall_totals_by_sample(case=sw['casedir'], t=t, iteration=iteration)
+    n_samples = len(net_short_totals)
+    net_short_crit = (
+        net_short_totals
+        .drop(columns=['USA'], errors='ignore')
+        .reset_index()
+        .melt(id_vars='sample', var_name='r', value_name='net_short_mwh')
+    )
+    net_short_crit['net_short_mwh'] = net_short_crit['net_short_mwh'].clip(lower=0)
 
     ## get load data
     dfload = reeds.io.read_file(
@@ -700,13 +791,18 @@ def main(sw, t, iteration=0, logging=True):
         ## TODO: Check whether to keep _neue_simple or not.
         # _neue_simple = get_and_write_neue(sw, write=True)
         # Check if EUE is added, if not add it since it's needed for selection of shoulder stress periods
-        stress_metrics = sw.GSw_PRM_StressThresholdMetrics.split('/')
+        stress_metrics = [m.upper() for m in sw.GSw_PRM_StressThresholdMetrics.split('/') if str(m).strip()]
         for stress_metric in stress_metrics:
             print(f"Calculating and writing annual {stress_metric} for iteration {iteration}")
-            dfmetric = get_annual_stress_metric(sw.casedir, t, stress_metric, iteration=iteration)
-            dfmetric.round(2).to_csv(
-                os.path.join(sw.casedir, 'outputs', f"{stress_metric}_{t}i{iteration}.csv")
-            )
+            if stress_metric in CVAR_METRICS:
+                dfmetric = get_annual_cvar_stress_metric(case=sw.casedir, t=t, stress_metric=stress_metric, iteration=iteration, alpha=get_cvar_alpha(sw))
+            else:
+                dfmetric = get_annual_stress_metric(sw.casedir, t, stress_metric, iteration=iteration)
+            dfmetric.round(2).to_csv(os.path.join(sw.casedir, 'outputs', f"{stress_metric}_{t}i{iteration}.csv"))
+
+        # CVAR / NCVAR target check is check-only.
+        # It does not add stress periods and does not update PRM.
+        evaluate_cvar_target_check(sw=sw, t=t, iteration=iteration, stress_metrics=stress_metrics)
 
     except Exception as err:
         if int(sw['pras']) == 2:
