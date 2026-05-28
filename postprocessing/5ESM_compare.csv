@@ -1,0 +1,7 @@
+casepath,casename,color
+/projects/alcaps/jcarag/ReEDS-2.0/runs/Sep16_USA,Base,#1f77b4
+/projects/alcaps/jcarag/ReEDS-2.0/runs/Sep16_USA_ecearth3cc,EC-Earth3-CC,#ff7f0e
+/projects/alcaps/jcarag/ReEDS-2.0/runs/Sep16_USA_ecearth3veg,EC-Earth3-Veg,#2ca02c
+/projects/alcaps/jcarag/ReEDS-2.0/runs/Sep16_USA_gfdlcm4,GFDL-CM4,#d62728,
+/projects/alcaps/jcarag/ReEDS-2.0/runs/Sep16_USA_mpiesm12hr,MPI-ESM1.2-HR,#9467bd,
+#/projects/alcaps/jcarag/ReEDS-2.0/runs/Sep16_USA_taiesm1,TaiESM1,#8c564b

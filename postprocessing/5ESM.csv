@@ -1,0 +1,14 @@
+casepath,casename,color
+### Examples,,
+## nrelnas01 on windows,,
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092424_main_ERCOT_county,main,
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092524_dev_check_ERCOT_county,dev check,
+## nrelnas01 on mac,,
+/Volumes/Projects/15. PACES/runs/Sep16_USA,Base,C1
+/Volumes/Projects/15. PACES/runs/Sep16_USA_ecearth3cc,ecearth3cc2000,C2
+/Volumes/Projects/15. PACES/runs/Oct13_USA_ecearth3cc2000,ecearth3cc2010,C3
+/Volumes/Projects/15. PACES/runs/Oct13_USA_ecearth3cc2010,ecearth3cc,C4
+/Volumes/Projects/15. PACES/runs/Sep16_USA_ecearth3veg,ecearth3veg,C5
+/Volumes/Projects/15. PACES/runs/Sep16_USA_gfdlcm4,gfdlcm4,C6
+/Volumes/Projects/15. PACES/runs/Sep16_USA_mpiesm12hr,mpiesm12hr,C7
+/Volumes/Projects/15. PACES/runs/Sep16_USA_taiesm1,taiesm1,C8
