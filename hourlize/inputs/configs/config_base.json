@@ -12,7 +12,7 @@
     "bin_group_cols": ["region","class"],
     "bin_method": "equal_cap_cut",
     "class_bin_method": "kmeans",
-    "copy_to_reeds": true,
+    "copy_to_reeds": false,
     "copy_to_shared": false,
     "crs": "EPSG:5070",
     "driver": "H5FD_CORE",

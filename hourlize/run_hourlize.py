@@ -476,7 +476,7 @@ def setup_resource(args):
             traceback.print_exc()
             print(f"\nSkipping {casename}.")
             continue
-    print("-"*65)
+    print("-"*80)
     print("All resource runs set up")
 
 

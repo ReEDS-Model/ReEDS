@@ -816,6 +816,8 @@ def save_sc_outputs(
             df_exog = df_exog[[profile_id_col,'tech','year','capacity']].copy()
             df_exog = df_exog.groupby(['tech','year',profile_id_col], sort=False, as_index=False).sum()
             df_exog = df_exog.sort_values(['year',profile_id_col]).round(decimals)
+            if not df_exog.columns[0].startswith('*'):
+                df_exog.rename(columns={df_exog.columns[0]: '*'+str(df_exog.columns[0])}, inplace=True)
             df_exog.to_csv(os.path.join(outpath, 'results', tech + '_exog_cap.csv'), index=False)
         #Prescribed capacity output
         if tech in ['wind-ons', 'wind-ofs']:
@@ -895,7 +897,8 @@ def copy_outputs(
 
         try:
             df = pd.read_csv(os.path.join(resultspath,f'{tech}_exog_cap.csv'))
-            df.rename(columns={df.columns[0]: '*'+str(df.columns[0])}, inplace=True)
+            if not df.columns[0].startswith('*'):
+                df.rename(columns={df.columns[0]: '*'+str(df.columns[0])}, inplace=True)
             df.to_csv(
                 os.path.join(inputspath,'capacity_exogenous',f'exog_cap_{tech}_{access_case}.csv'),
                 index=False
