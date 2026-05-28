@@ -241,6 +241,7 @@ techs_banned_ces.csv,inputs/state_policies/techs_banned_ces.csv,int(sw.GSw_State
 techs_banned_imports_rps.csv,inputs/state_policies/techs_banned_imports_rps.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,wide_st,i,,,0,,,,,,
 techs_banned_rps.csv,inputs/state_policies/techs_banned_rps.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,wide_st,i,,,0,,,,,,
 tg_rsc_cspagg.csv,inputs/sets/tg_rsc_cspagg.csv,1,ignore,ignore,,,,,0,,,set,tg_rsc_cspagg,csp technologies that belong to the same class,
+temperature_celcius-st.h5,inputs/profiles_temperature/temperature_celsius_{temperatureprofile}-st.h5,1,ignore,ignore,,,,,0,,,,,,
 tg_rsc_cspagg_tmp.csv,inputs/waterclimate/tg_rsc_cspagg_tmp.csv,(int(sw.GSw_CSP) != 0) and (int(sw.GSw_WaterMain) != 0),ignore,ignore,,,,,0,,,,,,
 tg_rsc_upvagg.csv,inputs/sets/tg_rsc_upvagg.csv,1,ignore,ignore,,,,,0,,,set,tg_rsc_upvagg,pv and pvb technologies that belong to the same class,
 trancap_fut_cat.csv,inputs/sets/trancap_fut_cat.csv,1,ignore,ignore,,,,,,,,set,trancap_fut_cat,categories of near-term transmission projects that describe the likelihood of being completed,

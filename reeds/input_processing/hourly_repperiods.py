@@ -126,17 +126,12 @@ def optimize_period_weights(profiles_fitperiods, numclusters=100):
     rweights = (weights.sort_values(ascending=False)[:numclusters])
     ### Scale so that the weights sum to numdays (have to do if numclusters is small)
     rweights *= numdays / rweights.sum()
-    print(f'rweights: \n{rweights}')
     ### Convert to integers
     iweights = rweights.round(0).astype(int)
-    print(f'iweights: \n{iweights}')
     ### Scale all weights little by little until they sum to number of actual days
     sumweights = iweights.sum()
-    print(f' ')
-    print(f'sumweights: {sumweights} and numdays: {numdays}')
     diffweights = sumweights - numdays
-    print(f'diffweights: {diffweights}')
-    increment = 0.00001 * (1 if diffweights < 0 else -1)
+    increment = 0.000001 * (1 if diffweights < 0 else -1)
     print(f'increment: {increment}')
     best_iweights = iweights.copy()
     best_diff = abs(sumweights - numdays)
@@ -158,7 +153,7 @@ def optimize_period_weights(profiles_fitperiods, numclusters=100):
         prev_sum = iweights.sum().copy()
 
     iweights = iweights.replace(0,np.nan).dropna().astype(int)
-    print(f'iweights post replace: {iweights}')
+
     ### Make sure it worked
     if iweights.sum() != numdays:
         raise ValueError(f'Sum of rounded weights = {iweights.sum()} != {numdays}')

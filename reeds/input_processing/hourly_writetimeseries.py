@@ -237,6 +237,7 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
         }
 
         df = pd.read_csv(os.path.join(inputs_case,filename+'.csv'))
+        df['month'] = df['month'].str.upper()
         df_out = szn_month_weights.merge(df, on='month', how='outer')
         df_out['value'] = df_out['weight'] * df_out['Value']
         df_out = (

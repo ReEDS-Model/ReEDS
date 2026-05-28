@@ -240,7 +240,7 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
     county2zone.index = 'p' + county2zone.index
     # Read county-level distpv capacity factors and
     # downselect to relevant counties
-    county_distpv_cf = reeds.io.get_distpv_cf_hourly()
+    county_distpv_cf = reeds.io.get_distpv_cf_hourly(inputs_case)
     county_distpv_cf = county_distpv_cf[county2zone.index]
     # Read county- and model region-level distpv capacities to use
     # in capacity-weighted averages
@@ -391,6 +391,7 @@ def main(reeds_path, inputs_case):
         cspcf = reeds.io.read_file(
             os.path.join(inputs_case, 'recf_csp.h5'),
         )
+        cspcf.index = df_upv.index.copy()
 
     ### Format PV+battery profiles
     # Get the PVB types

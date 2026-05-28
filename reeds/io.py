@@ -1042,9 +1042,11 @@ def read_pras_results(filepath):
 
 def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     ### Derived inputs
+    ### [8/19/2025] This change is required for creating non-default ReEDS temperature profiles
+    ###             and can be deleted if/when merging into main
     inputs_case = case if 'inputs_case' in case else os.path.join(case, 'inputs_case')
     h5path = os.path.join(
-        reeds.io.reeds_path, 'inputs', 'profiles_temperature', 'temperature_state.h5',
+        inputs_case, 'temperature_celcius-st.h5',
     )
     sw = reeds.io.get_switches(inputs_case)
     ## Add one more year on either end of weather years to allow for timezone conversion
@@ -1280,17 +1282,31 @@ def get_distpv_capacities(case=None, **kwargs):
 
     return distpv_cap
 
-def get_distpv_cf_hourly():
+def get_distpv_cf_hourly(case=None, **kwargs):
     """
     Get hourly county-level distpv capacity factors in CST.
     """
-    h5path = os.path.join(
-        reeds_path,
-        'inputs',
-        'profiles_cf',
-        'cf_distpv_county.h5'
-    )
-    return read_file(h5path)
+    if case is None:
+        inputs_case = case
+        use_cache = False
+    else:
+        inputs_case = (
+                case
+                if 'inputs_case' in case
+                else os.path.join(case, 'inputs_case')
+            )
+        fpath = os.path.join(inputs_case, 'cf_distpv_county.csv')
+        use_cache = os.path.exists(fpath)
+    
+    if not use_cache:
+        sw = reeds.io.get_switches(inputs_case, **kwargs)
+        h5path = os.path.join(
+            reeds_path,
+            'inputs',
+            'profiles_cf',
+            f'cf_distpv_{sw.distpvprofile}_county.h5'
+        )
+    return read_file(h5path, parse_timestamps=True)
 
 def get_years(case):
     return pd.read_csv(

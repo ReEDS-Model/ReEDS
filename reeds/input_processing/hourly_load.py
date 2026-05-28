@@ -296,26 +296,28 @@ def prepend_historical_hourly_state_load(
     min_projected_model_year = (
         state_load_hourly.index.get_level_values('year').min()
     )
-    for model_year in range(
-        min_historical_model_year, min_projected_model_year
-    ):
-        historical_state_load_hourly_scaled = (
-            scale_historical_hourly_state_load_to_model_year(
-                historical_state_load_hourly,
-                historical_state_load_annual,
-                model_year
+    # Ignore procedure if no historic years to append
+    if len(range(min_historical_model_year, min_projected_model_year)) > 0:
+        for model_year in range(
+            min_historical_model_year, min_projected_model_year
+        ):
+            historical_state_load_hourly_scaled = (
+                scale_historical_hourly_state_load_to_model_year(
+                    historical_state_load_hourly,
+                    historical_state_load_annual,
+                    model_year
+                )
             )
-        )
-        historical_load_dict[model_year] = historical_state_load_hourly_scaled
+            historical_load_dict[model_year] = historical_state_load_hourly_scaled
 
-    historical_state_load_hourly = pd.concat(
-        historical_load_dict,
-        names=('year',)
-    )
-    state_load_hourly = pd.concat([
-        historical_state_load_hourly,
-        state_load_hourly
-    ])
+        historical_state_load_hourly = pd.concat(
+            historical_load_dict,
+            names=('year',)
+        )
+        state_load_hourly = pd.concat([
+            historical_state_load_hourly,
+            state_load_hourly
+        ])
 
     return state_load_hourly
 
