@@ -50,6 +50,12 @@ inputs/profiles_temperature
 inputs/remote
 inputs/shapefiles/cache
 
+# Additional ESPRS profiles from remote sources
+inputs/capacity_exogenous/exog_cap_*_w2*
+inputs/capacity_exogenous/prescribed_builds_*_w2*
+inputs/climate/*/
+inputs/supply_curve/supplycurve_*-w2*
+
 # IDE stuff
 *.vscode
 
