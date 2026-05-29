@@ -102,7 +102,7 @@ def errorcheck_reeds2pras(casedir, csvout, h5out):
 
 
 #%%### Procedure
-def main(t, casedir, iteration=0):
+def main(t, casedir, iteration=0, profile_casepath=None, output_path=None):
     #%%### DEBUGGING: Inputs
     # t = 2020
     # reeds_path = os.path.expanduser('~/github/ReEDS')
@@ -127,9 +127,17 @@ def main(t, casedir, iteration=0):
     sw = reeds.io.get_switches(casedir)
     sw['t'] = t
 
-    h_dt_szn = pd.read_csv(os.path.join(inputs_case, 'rep', 'h_dt_szn.csv'))
+    # When profile_casepath is set, source rep-period data and load/recf profiles from
+    # the profile case so that h_dt_szn keys align with hmap_allyrs and load.h5/recf.h5
+    # timestamps live in the profile case's weather decade rather than the build case's.
+    if profile_casepath is not None:
+        hmap_path = os.path.join(profile_casepath, 'inputs_case')
+    else:
+        hmap_path = inputs_case
+
+    h_dt_szn = pd.read_csv(os.path.join(hmap_path, 'rep', 'h_dt_szn.csv'))
     hmap_allyrs = pd.read_csv(
-        os.path.join(inputs_case, 'rep', 'hmap_allyrs.csv'),
+        os.path.join(hmap_path, 'rep', 'hmap_allyrs.csv'),
         low_memory=False,
     )
     hmap_allyrs['szn'] = h_dt_szn['season'].copy()
@@ -147,10 +155,19 @@ def main(t, casedir, iteration=0):
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
-    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
+    if profile_casepath is not None:
+        loadpath = os.path.join(profile_casepath, 'inputs_case', 'load.h5')
+        recfpath = os.path.join(profile_casepath, 'inputs_case', 'recf.h5')
+        resources = pd.read_csv(
+            os.path.join(profile_casepath, 'inputs_case', 'resources.csv')
+        )
+    else:
+        loadpath = os.path.join(inputs_case, 'load.h5')
+        recfpath = os.path.join(inputs_case, 'recf.h5')
+        resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
 
-    resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
+    load = reeds.io.read_file(loadpath, parse_timestamps=True)
+    recf = reeds.io.read_file(recfpath, parse_timestamps=True)
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
                                              names=('i','r'))
 
@@ -563,10 +580,16 @@ def main(t, casedir, iteration=0):
 
 
     #%%### Write it
+    if output_path is not None:
+        output_dir = output_path
+    else:
+        output_dir = os.path.join(casedir, 'handoff', 'reeds_data')
+    os.makedirs(output_dir, exist_ok=True)
+
     #%% .csv files
     for key in csvout:
         csvout[key].round(int(sw['decimals'])).to_csv(
-            os.path.join(casedir,'handoff','reeds_data',f'{key}_{t}.csv'),
+            os.path.join(output_dir, f'{key}_{t}.csv'),
         )
 
     #%% .h5 files
@@ -575,11 +598,11 @@ def main(t, casedir, iteration=0):
             reeds.io.write_profile_to_h5(
                 df=h5out[key].astype(np.float32),
                 filename=f'{key}_{t}.h5',
-                outfolder=os.path.join(casedir,'handoff','reeds_data'),
+                outfolder=output_dir,
             )
         else:
             h5out[key].astype(np.float32).to_hdf(
-                os.path.join(casedir,'handoff','reeds_data',f'{key}_{t}.h5'),
+                os.path.join(output_dir, f'{key}_{t}.h5'),
                 key='data', complevel=4, mode='w',
             )
 
