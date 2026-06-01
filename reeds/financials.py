@@ -854,13 +854,8 @@ def calc_ng_crf_penalty_st(inputs_case, years, financials_sys, sw):
     ng_crf_penalty_st = (
         ng_st_forced[['*t', 'st']].merge(crf_long, on='*t', how='left')
         [['t', 'st', 'value']]
-        .rename(columns={'t': '*t'}))
-
-    # Remove penalty when standalone DAC or BECCS provide general carbon removal.
-    # GSw_CCSFLEX_DAC enables DAC only as flexibility for fossil CCS plants (not
-    # atmospheric removal), so that case alone does not lift the NG penalty.
-    if int(sw['GSw_DAC']) or int(sw['GSw_BECCS']):
-        ng_crf_penalty_st['value'] = 1.0
+        .round({'value': 2})
+        .rename(columns={'t': '*t', 'value': 'value (CRF_X / CRF_30)'}))
 
     ng_crf_penalty_st.to_csv(os.path.join(inputs_case, 'ng_crf_penalty_st.csv'),
                              index=False)
