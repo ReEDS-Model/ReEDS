@@ -168,16 +168,16 @@ def main():
     #Conversion of latest version of sources.csv to markdown/readme format
 
     # Description holder file
-    desc_holder = 'sources.csv'
+    desc_holder = 'docs/sources.csv'
     desc_holder = desc_holder.replace("\\","/")
 
 
-    #Setting correct path to main ReEDS folder        
-    current_path = os.getcwd()
+    #Setting correct path to main ReEDS folder
     if reedsPath != '':
         reeds_path = reedsPath
-    else: 
-        reeds_path = os.path.dirname(os.path.dirname(os.path.dirname(current_path)))
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        reeds_path = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
         reeds_path = reeds_path.replace("\\","/")
 
                
@@ -219,7 +219,7 @@ def main():
         current_folder["files"].append((file_name, file_ext, rel_file_path))
         
     #Generate separate readme for ReEDS 2.0 Sources files
-    main_readme_file = "sources_documentation.md"
+    main_readme_file = "docs/sources_documentation.md"
     main_readme_file_path = os.path.join(reeds_path, main_readme_file).replace("\\","/")
 
     #Open markdown file for entries

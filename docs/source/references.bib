@@ -82,6 +82,21 @@
   institution = {California Public Utilities Commission}
 }
 
+@article{2022_marcy_etal,
+  title = {Comparison of Temporal Resolution Selection Approaches in Energy Systems Models},
+  author = {Marcy, Cara and Goforth, Teagan and Nock, Destenie and Brown, Maxwell},
+  year = 2022,
+  month = jul,
+  journal = {Energy},
+  volume = {251},
+  pages = {123969},
+  issn = {0360-5442},
+  doi = {10.1016/j.energy.2022.123969},
+  url = {https://www.sciencedirect.com/science/article/pii/S0360544222008726},
+  urldate = {2026-05-12},
+  abstract = {Capacity expansion models for the power sector are used to project future decisions over the coming decades by simulating investment and operation decisions for the use of electricity. Due to model performance constraints, these models typically do not explicitly simulate every hour within a year, but instead simulate representative time segments (groups of hours). This paper evaluates different approaches for selecting time segments across three methods: sequential, categorical, and clustering, across a wide range of time-segment quantities, for a total of 204 temporal profiles. To measure the performance of each profile's ability to accurately represent data, the root-mean-square-error of each profile's time segments are compared to the data's original hourly data. The temporal alignment across regions is also measured (i.e., how often windy days align across regions). Different spatial resolutions were applied for a subset of the temporal selection methods to investigate the impact spatial resolution has on performance. This paper provides a framework for measuring the value of different temporal selection methods and of adding more granular data to energy system models. Overall, multi-criteria clustering yields the lowest root-mean-square-error across all datasets evaluated and provides a holistic view of the intertwined relationships between renewable generation and electricity demand.}
+}
+
 @article{2023_mirletz_etal,
   title = {Unfounded Concerns about Photovoltaic Module Toxicity and Waste Are Slowing Decarbonization},
   author = {Mirletz, Heather and Hieslmair, Henry and Ovaitt, Silvana and Curtis, Taylor L. and Barnes, Teresa M.},
@@ -121,6 +136,21 @@
   urldate = {2026-03-13},
   abstract = {In power system studies the unit commitment problem (UC) is solved to support market decisions and assess system adequacy. Simplifications are made to solve the UC faster, but they are made without considering the consequences on solution quality. In this study we thoroughly investigated the impacts of simplifications on solution quality and computation time on a benchmark set consisting of almost all the available instances in the literature. We found that omitting the minimum up- and downtime and simplifying the startup cost resulted in a significant quality loss without reducing the computation time. Omitting reserve requirements, ramping limits and transmission limits reduced the computation time, but degraded the solution significantly. However, the linear relaxation resulted in less quality loss with a significant speed-up and resulted in no difference when unserved energy was minimized. Finally, we found that the average and maximum capacity factor difference is large for all model variants.},
   langid = {english}
+}
+
+@article{2025_catania_etal,
+  title = {The Impact of Temporal Clustering on Long-Term Energy System Models},
+  author = {Catania, Matteo and Muliere, Giuseppe and Fattori, Fabrizio and Colbertaldo, Paolo},
+  year = 2025,
+  month = dec,
+  journal = {Applied Energy},
+  volume = {399},
+  pages = {126354},
+  issn = {0306-2619},
+  doi = {10.1016/j.apenergy.2025.126354},
+  url = {https://www.sciencedirect.com/science/article/pii/S0306261925010840},
+  urldate = {2026-05-12},
+  abstract = {The field of energy system modelling is experiencing significant development, driven by the urgent need to redesign the national energy systems to achieve carbon neutrality. A growing interest regards long-term energy system models, which enable tracking the pathway and not only the final need for installations. The increase in complexity may easily lead them to face computational limits. Therefore, modelling approaches are required that cluster data to reduce the size of the problem while limiting errors and inaccuracies. This article studies the impact of temporal clustering on the performances of a sector-integrated energy system model, considering the double-layer clustering scheme operating on two distinct temporal scales: intra-year and inter-year. The former is addressed through typical-day clustering (k-means and k-medoids), while the latter introduces multi-year gaps between representative years. This methodology is implemented in the open-source framework oemof, which is customized to the dual clustering approach. The study addresses a sector-integrated energy system, built on the Italian structure, with a multi-vector and multi-sector perspective along the 2020--2050 horizon. The impact is investigated by comparing multiple options with varying number of typical days and multi-year gap, comparing each configuration with a benchmark without clustering. The approach yields coherent representations of the energy system evolution, simultaneously reducing the memory usage down to 4~\%. The outcomes show the benefits of balancing the number of representative years with the number of representative days, suggesting that such a trade-off leads to significant computational advantages. Although literature shows that time-series reduction is case-dependent, the double-layer clustering scheme appears promising for application on even more complex models, where a full-hour resolution would be computationally intractable.}
 }
 
 @techreport{2025_wilson_etal,
@@ -8690,6 +8720,17 @@ Woodrow Whitlatch}
   address = {Washington, D.C.},
   institution = {U.S. Energy Information Administration},
   url = {https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf}
+}
+
+@techreport{eiaAnnualEnergyOutlook2026,
+  title = {Annual {{Energy Outlook}} 2026},
+  author = {EIA},
+  year = 2026,
+  month = apr,
+  address = {Washington, D.C.},
+  institution = {U.S. Energy Information Administration},
+  url = {https://www.eia.gov/outlooks/aeo/},
+  langid = {english}
 }
 
 @techreport{eiaAssumptionsAnnualEnergy2015,
@@ -25329,6 +25370,22 @@ Woodrow Whitlatch}
   abstract = {The rapidly increasing electricity demand for data center operation has motivated efforts to better understand current data center energy use and to identify strategies that reduce the environmental impact of these buildings. This paper builds on previous data center energy modeling efforts by characterizing local climate and mechanical equipment differences among data centers and then evaluating their consequences for building energy use. Cities in the United States with significant data center activity are identified. Representative climate conditions for these cities are applied to data center energy models for several different prototypical space types. Results indicate that widespread, effective economizer use in data centers could reduce energy demand for data centers by about 20--25\%, equivalent to an energy efficiency resource in the US of {$\sim$}13--17 billion kWh per year. Almost half of the potential savings would result from better airflow management and proper control sequences. The total energy savings potential of economizers, although substantial, is constrained by their limited potential for use in server closets and server rooms, which together are estimated to account for about 30\% of all data center energy demand. Incorporating economizer use into the mechanical systems of larger data centers would increase the variation in energy efficiency among geographic regions, indicating that as data center buildings become more energy efficient, their locations will have an increasing effect on overall energy demand. Differences among regions become even more important when accounting for greenhouse-gas emissions. Future data center development could consider site location, along with efficiency measures, to limit the environmental impact attributable to this increasingly prominent economic sector.}
 }
 
+@article{sheikholeslamiProgressiveLatinHypercube2017,
+  title = {Progressive {{Latin Hypercube Sampling}}: {{An}} Efficient Approach for Robust Sampling-Based Analysis of Environmental Models},
+  shorttitle = {Progressive {{Latin Hypercube Sampling}}},
+  author = {Sheikholeslami, Razi and Razavi, Saman},
+  year = 2017,
+  month = jul,
+  journal = {Environmental Modelling \& Software},
+  volume = {93},
+  pages = {109--126},
+  issn = {1364-8152},
+  doi = {10.1016/j.envsoft.2017.03.010},
+  url = {https://www.sciencedirect.com/science/article/pii/S1364815216305096},
+  urldate = {2025-10-13},
+  abstract = {Efficient sampling strategies that scale with the size of the problem, computational budget, and users' needs are essential for various sampling-based analyses, such as sensitivity and uncertainty analysis. In this study, we propose a new strategy, called Progressive Latin Hypercube Sampling (PLHS), which sequentially generates sample points while progressively preserving the distributional properties of interest (Latin hypercube properties, space-filling, etc.), as the sample size grows. Unlike Latin hypercube sampling, PLHS generates a series of smaller sub-sets (slices) such that (1) the first slice is Latin hypercube, (2) the progressive union of slices remains Latin hypercube and achieves maximum stratification in any one-dimensional projection, and as such (3) the entire sample set is Latin hypercube. The performance of PLHS is compared with benchmark sampling strategies across multiple case studies for Monte Carlo simulation, sensitivity and uncertainty analysis. Our results indicate that PLHS leads to improved efficiency, convergence, and robustness of sampling-based analyses.}
+}
+
 @techreport{sherlockRenewableElectricityProduction2015,
   title = {The {{Renewable Electricity Production Tax Credit}}: {{In Brief}}},
   author = {Sherlock, Molly F.},
@@ -27439,6 +27496,23 @@ Woodrow Whitlatch}
   url = {https://linkinghub.elsevier.com/retrieve/pii/S0306261920307029},
   urldate = {2024-04-23},
   abstract = {Intermittent solar and wind availabilities pose design and operational challenges for renewable power systems because they are asynchronous with consumer demand. To align this supply-demand mismatch, optimizationbased design and scheduling models have been developed to minimize the capital and operational costs associated with power production and energy storage. However, hourly time discretization and large time horizons used to describe short- and long-term solar and wind dynamics, demand fluctuations, \& price changes significantly increase the computational burden of solving these models. A decomposition algorithm based on agglomerative hierarchical clustering (AHC) is developed to alleviate the model complexity and optimize the system over representative time periods, instead of every hour. An advantage for AHC compared to other clustering methods is the preservation of time chronology, which is important for energy storage applications. The algorithm is applied to investigate a renewable power system with battery storage in New York City. Results show that a few representative time periods (5--15 days) sufficiently capture the system performance within 5\% of the true optimal solution. The decomposition algorithm is suitable for investigating any optimization problem with time series data.},
+  langid = {english}
+}
+
+@article{turanORACLERigorousMetric2026,
+  title = {{{ORACLE}}: {{A}} Rigorous Metric and Method to Explore All near-Optimal Designs for Energy Systems},
+  shorttitle = {{{ORACLE}}},
+  author = {Turan, Evren M. and Moret, Stefano and Bardow, Andr{\'e}},
+  year = 2026,
+  month = jul,
+  journal = {Computers \& Chemical Engineering},
+  volume = {210},
+  pages = {109630},
+  issn = {00981354},
+  doi = {10.1016/j.compchemeng.2026.109630},
+  url = {https://linkinghub.elsevier.com/retrieve/pii/S0098135426000839},
+  urldate = {2026-04-29},
+  abstract = {Optimization models are fundamental tools for providing quantitative insights to decision-makers. However, models, objectives, and constraints do not capture all real-world factors accurately. Thus, instead of the single optimal solution, real-world stakeholders are often interested in the near-optimal space --- solutions that lie within a specified margin of the optimal objective value. Solutions in the near-optimal space can then be assessed regarding desirable non-modelled or qualitative aspects. The near-optimal space is usually explored by so-called Modelling to Generate Alternatives (MGA) methods. However, current MGA approaches mainly employ heuristics, which do not measure or guarantee convergence.},
   langid = {english}
 }
 

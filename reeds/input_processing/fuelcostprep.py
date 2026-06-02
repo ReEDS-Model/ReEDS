@@ -49,10 +49,8 @@ print("Starting fuelcostprep.py")
 sw = reeds.io.get_switches(inputs_case)
 
 # Load valid regions
-val_r = pd.read_csv(
-    os.path.join(inputs_case, 'val_r.csv'), header=None).squeeze(1).tolist()
-val_cendiv = pd.read_csv(
-    os.path.join(inputs_case, 'val_cendiv.csv'), header=None).squeeze(1).tolist()
+val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).tolist()
+val_cendiv = reeds.io.read_input(inputs_case, 'cendiv').squeeze(1).tolist()
 
 r_cendiv = pd.read_csv(os.path.join(inputs_case,"r_cendiv.csv"))
 

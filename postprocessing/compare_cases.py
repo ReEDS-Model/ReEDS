@@ -473,12 +473,12 @@ for case in tqdm(cases, desc='runtime'):
 dictin_neue = {}
 dictin_neue_all = {}
 for case in tqdm(cases, desc='NEUE'):
-    infiles = sorted(glob(os.path.join(cases[case],'outputs','neue_*.csv')))
+    infiles = sorted(glob(os.path.join(cases[case],'outputs','NEUE_*.csv')))
     if not len(infiles):
         continue
     df = {}
     for f in infiles:
-        y, i = [int(s) for s in os.path.basename(f).strip('neue_.csv').split('i')]
+        y, i = [int(s) for s in os.path.basename(f).strip('NEUE_.csv').split('i')]
         df[y,i] = pd.read_csv(f, index_col=['level', 'metric', 'region']).squeeze(1)
     dictin_neue_all[case] = pd.concat(df, names=('t', 'iteration'))
     indices = ['t', 'level', 'metric', 'region']
@@ -1436,7 +1436,7 @@ except Exception:
 
 #%%### SCOE, NEUE
 try:
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
+    neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
     width = 9 + len(cases)*0.5
     plt.close()
     f,ax = plt.subplots(
@@ -1549,9 +1549,9 @@ except Exception:
 
 #%% Regional NEUE
 try:
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
+    neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
     dfmap = reeds.io.get_dfmap(cases[basecase])
-    level = sw.GSw_PRM_StressThreshold.split('_')[0]
+    level = sw.GSw_PRM_StressThresholdNEUE.split('_')[0]
     regions = dfmap[level].loc[hierarchy[basecase][level].unique()].bounds.minx.sort_values().index
     _nrows, _ncols, _coords = reeds.plots.get_coordinates(regions, ncols=6)
     labelcoords = {
@@ -2500,7 +2500,10 @@ if detailed:
 
 
 #%%### Copy some premade single-case plots
-level = dictin_sw[basecase]['GSw_PRM_StressThreshold'].split('_')[0]
+# Use first stress metric level
+## TODO: add a check for choosing level if there are multiple stress metrics
+stress_metrics = dictin_sw[basecase]['GSw_PRM_StressThresholdMetrics'].split('/')
+level = dictin_sw[basecase][f'GSw_PRM_StressThreshold{stress_metrics[0]}'].split('_')[0]
 wide = 1 if len(hierarchy[basecase]['transreg'].unique()) > 6 else 0
 metrics = [
     'cap',

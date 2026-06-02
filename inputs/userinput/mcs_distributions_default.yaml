@@ -1,4 +1,5 @@
 # Description: This file defines the distributions used for Monte Carlo Sampling (MCS) analysis.
+# For rules on the distribution entries and support see inputs/userinput/mcs_distribution_rules.yaml
 
 # Distribution definition fields:
 # 1. name: A unique identifier for the distribution group, used in the 'MCS_dist_groups' switch.
@@ -15,18 +16,23 @@
 # 3. dist: Type of distribution to use. Options are:
 #    - dirichlet (weighted average)
 #    - discrete
+#    - triangular
 #    - triangular_multiplier
+#    - uniform
 #    - uniform_multiplier
 #
 # 4. dist_params (list): Parameters that define the distribution, based on its type:
 #    - dirichlet: [alpha1, alpha2, ...] — concentration parameters
 #    - discrete: [w1, w2, ...] — prob weights (normalized internally)
+#    - triangular: not required
 #    - triangular_multiplier: [low, center, high]
+#    - uniform: not required
 #    - uniform_multiplier: [low, high]
 #
 # 5. weight_r: For some files (those with regional data) we support the possibility of applying
 #    different weights to different ReEDS hierarchies. This field specifies the hierarchy 
 #    considered (e.g. country, st, ba, transgrp, etc- weight_r: country is always supported).
+#    Note that regional weights are not currently supported with latin hypercube sampling.
 #
 # Special cases:
 # 1. switches.csv: If you want to apply a distribution to a value in switches.csv,
@@ -46,11 +52,23 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: gas_tri
+  assignments_list:
+    - plantchar_gas_ccs: [gas-ccs_ATB_2024_conservative, gas-ccs_ATB_2024_moderate, gas-ccs_ATB_2024_advanced]
+  dist: triangular
+  weight_r: country
+
 - name: coal
   assignments_list:
     - plantchar_coal_ccs: [coal-ccs_ATB_2024_conservative, coal-ccs_ATB_2024_moderate, coal-ccs_ATB_2024_advanced]
   dist: dirichlet
   dist_params: [1, 1, 1]
+  weight_r: country
+
+- name: coal_tri
+  assignments_list:
+    - plantchar_coal_ccs: [coal-ccs_ATB_2024_conservative, coal-ccs_ATB_2024_moderate, coal-ccs_ATB_2024_advanced]
+  dist: triangular
   weight_r: country
 
 - name: geo
@@ -60,11 +78,23 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: geo_tri
+  assignments_list:
+    - plantchar_geo: [geo_ATB_2024_conservative, geo_ATB_2024_moderate, geo_ATB_2024_advanced]
+  dist: triangular
+  weight_r: country
+
 - name: hydro
   assignments_list: 
     - plantchar_hydro: [hydro_ATB_2019_constant, hydro_ATB_2019_mid, hydro_ATB_2019_low]
   dist: dirichlet
   dist_params: [1, 1, 1]
+  weight_r: country
+
+- name: hydro_tri
+  assignments_list:
+    - plantchar_hydro: [hydro_ATB_2019_constant, hydro_ATB_2019_mid, hydro_ATB_2019_low]
+  dist: triangular
   weight_r: country
 
 - name: nuclear
@@ -75,6 +105,13 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: nuclear_tri
+  assignments_list:
+    - plantchar_nuclear: [nuclear_ATB_2024_conservative, nuclear_ATB_2024_moderate, nuclear_ATB_2024_advanced]
+    - plantchar_nuclear_smr: [nuclear-smr_ATB_2024_conservative, nuclear-smr_ATB_2024_moderate, nuclear-smr_ATB_2024_advanced]
+  dist: triangular
+  weight_r: country
+
 - name: battery
   assignments_list:
     - plantchar_battery: [battery_ATB_2024_conservative, battery_ATB_2024_moderate, battery_ATB_2024_advanced]
@@ -82,11 +119,23 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: battery_tri
+  assignments_list:
+    - plantchar_battery: [battery_ATB_2024_conservative, battery_ATB_2024_moderate, battery_ATB_2024_advanced]
+  dist: triangular
+  weight_r: country
+
 - name: upv
   assignments_list:
     - plantchar_upv: [upv_ATB_2024_conservative, upv_ATB_2024_moderate, upv_ATB_2024_advanced]
   dist: dirichlet
   dist_params: [1, 1, 1]
+  weight_r: country
+
+- name: upv_tri
+  assignments_list:
+    - plantchar_upv: [upv_ATB_2024_conservative, upv_ATB_2024_moderate, upv_ATB_2024_advanced]
+  dist: triangular
   weight_r: country
 
 - name: csp
@@ -103,11 +152,23 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: ofswind_tri
+  assignments_list:
+    - plantchar_ofswind: [ofs-wind_ATB_2024_conservative, ofs-wind_ATB_2024_moderate, ofs-wind_ATB_2024_advanced]
+  dist: triangular
+  weight_r: country
+
 - name: onswind
   assignments_list:
     - plantchar_onswind: [ons-wind_ATB_2024_conservative, ons-wind_ATB_2024_moderate, ons-wind_ATB_2024_advanced]
   dist: dirichlet
   dist_params: [1, 1, 1]
+  weight_r: country
+
+- name: onswind_tri
+  assignments_list:
+    - plantchar_onswind: [ons-wind_ATB_2024_conservative, ons-wind_ATB_2024_moderate, ons-wind_ATB_2024_advanced]
+  dist: triangular
   weight_r: country
 
 # --- Combined technology sampling ---
@@ -147,6 +208,11 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: ng_fuel_price_tri
+  assignments_list:
+    - ngscen: [AEO_2025_HOG, AEO_2025_reference, AEO_2025_LOG]
+  dist: triangular
+  weight_r: country
 
 ### ---------------------------------------------------###
 ### --- Distributions for load
@@ -156,6 +222,12 @@
     - GSw_LoadProfiles: [EER2025_100by2050, EER2025_IRAlow]
   dist: dirichlet
   dist_params: [1, 1]
+  weight_r: country
+
+- name: load_country_unif
+  assignments_list: 
+    - GSw_LoadProfiles: [EER2025_IRAlow, EER2025_100by2050]
+  dist: uniform
   weight_r: country
 
 - name: load_st

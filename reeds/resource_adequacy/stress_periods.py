@@ -788,10 +788,22 @@ def main(sw, t, iteration=0, logging=True):
     """
     #%% Write consolidated stress metrics so far
     try:
-        ## TODO: Check whether to keep _neue_simple or not.
-        # _neue_simple = get_and_write_neue(sw, write=True)
-        # Check if EUE is added, if not add it since it's needed for selection of shoulder stress periods
-        stress_metrics = [m.upper() for m in sw.GSw_PRM_StressThresholdMetrics.split('/') if str(m).strip()]
+        ## TODO: Check if get_and_write_neue() is still needed.
+        # get_and_write_neue() writes outputs/neue.csv and outputs/eue.csv across
+        # completed PRAS years. The annual metric files below are still written per
+        # solve year / iteration.
+        _neue_simple = get_and_write_neue(sw, write=True)
+
+        stress_metrics = [
+            m.upper()
+            for m in sw.GSw_PRM_StressThresholdMetrics.split('/')
+            if str(m).strip()
+        ]
+
+        ## Include NEUE in the annual output files for reporting/plots if it is not
+        ## already requested. CVAR/NCVAR remain check-only metrics below.
+        if 'NEUE' not in stress_metrics:
+            stress_metrics.append('NEUE')
         for stress_metric in stress_metrics:
             print(f"Calculating and writing annual {stress_metric} for iteration {iteration}")
             if stress_metric in CVAR_METRICS:
@@ -856,7 +868,6 @@ def main(sw, t, iteration=0, logging=True):
 
     #%% Done
     return
-
 
 # if __name__ == '__main__':
 #     #%%###  option to run script directly for debugging

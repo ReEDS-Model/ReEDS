@@ -304,9 +304,7 @@ sitemap = pd.read_csv(
 sitemap['profile'] = sitemap.i.map(lambda x: x.split('_')[1]) + '|' + sitemap.r
 sitemap['tech'] = sitemap.i.map(lambda x: x.split('_')[0])
 ### Get list of valid regions and subset to those regions
-val_r = pd.read_csv(
-    os.path.join(inp['case'],'inputs_case','val_r.csv')
-).columns.values
+val_r = reeds.io.read_input(inp['case'], 'r').squeeze(1).values
 sitemap = sitemap.loc[sitemap.r.isin(val_r)].copy()
 ### Make lookup and a single-level column version to write out
 profilemap = sitemap.pivot(columns='tech',index='x',values=['profile','i','r']).dropna()

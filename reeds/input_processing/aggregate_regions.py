@@ -473,11 +473,6 @@ def agg_disagg(filepath, r2aggreg_glob, r_ba_glob, runfiles_row):
         if list_check == agglevel_check :
             if row['disaggfunc']=='ignore':
                 return
-
-    # If the file isn't in inputs_case, skip it
-    if filename not in inputfiles:
-        if verbose > 1:
-            logprint(filepath, 'skipped since not in inputs_case')
         return
 
     #%%##############
@@ -1079,33 +1074,6 @@ runfiles = (
     .rename(columns={'wide (1 if any parameters are in wide format)':'wide',
                      'header (0 if file has column labels)':'header'})
     )
-#%% If any files are missing, stop and alert the user
-inputfiles = sorted([
-    f.split('inputs_case'+os.sep)[1]
-    for f in glob(os.path.join(inputs_case,'**'), recursive=True)
-    if 'metadata' not in f
-])
-## Drop the directories and backup h17 files
-inputfiles = [f for f in inputfiles if (('.' in f) and not f.endswith('_h17.csv'))]
-missingfiles = [f for f in inputfiles if (os.path.basename(f) not in runfiles.index.values)
-]
-if any(missingfiles):
-    if missing == 'raise':
-        raise Exception(
-            'Missing aggregation method for:\n{}\n'
-            '>>> Need to add entries for these files to runfiles.csv'
-            .format('\n'.join(missingfiles))
-        )
-    else:
-        from warnings import warn
-        warn(
-            'Missing aggregation directions for:\n{}\n'
-            '>>> For this run, these files are copied without modification'
-            .format('\n'.join(missingfiles))
-        )
-        for f in missingfiles:
-            shutil.copy(os.path.join(inputs_case, f), os.path.join(inputs_case, f))
-            print(f'copied {f}, which is missing from runfiles.csv')
 
 #%% Maps (special case)
 mapsfile = os.path.join(inputs_case, 'maps.gpkg')
@@ -1164,8 +1132,15 @@ else:
     r2aggreg_glob = r2aggreg
 r_ba_glob = r_ba
 
-# loop over inputfiles from runfiles and call aggregation/disaggregation function
-for filepath in inputfiles:
+# loop over transmission_files from runfiles and call aggregation/disaggregation function
+transmission_files = [
+    'transmission_capacity_future.csv',
+    'transmission_capacity_future_baseline.csv',
+    'transmission_cost_ac.csv',
+    'transmission_cost_dc.csv',
+    'transmission_distance.csv',
+]
+for filepath in transmission_files:
     ### For debugging: Specify a file
     # filepath = ''
     ### Get the appropriate row from runfiles

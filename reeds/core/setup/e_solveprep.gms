@@ -197,7 +197,6 @@ cc_old(i,r,ccseason,t) = 0 ;
 *following sets are needed for linear interpolation of price
 *that determine the year before the non-solved year and the year after
 set t_before, t_after ;
-alias(t,ttt) ;
 t_before(t,tt)$[tprev(t,tt)$(ord(tt) = smax{ttt, ord(ttt)$tprev(t,ttt) })] = yes ;
 t_after(t,tt)$tprev(tt,t) = yes ;
 

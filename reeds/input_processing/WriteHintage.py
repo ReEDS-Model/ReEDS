@@ -467,12 +467,6 @@ def main(reeds_path, inputs_case):
 
     tdat = pd.concat([tdat_non_coal, tdat_coal], ignore_index=True, axis=0)
     
-    # calculate the maximum hintage number, to be used in b_inputs.gms, and export it
-    max_hintage_number = tdat['bin'].max()
-    max_hintage_number_text = f'scalar max_hintage_number "--number-- the maximum number of bins used in this ReEDS run" /{max_hintage_number}/ ;'
-    with open(os.path.join(inputs_case,'max_hintage_number.txt'), 'w') as file:
-        file.write(f'{max_hintage_number_text}')
-
    # calculate the capacity-weighted average heat rate for each bin 
     # by taking the product of the sum of the capacity and the centroid of the bin
     tdat['wHR'] = tdat.HR * tdat['Summer.capacity']
@@ -600,7 +594,48 @@ def main(reeds_path, inputs_case):
     zout.wCCS_Retro_HR = zout.wCCS_Retro_HR.round(decimals=1)
     zout.wCCS_Retro_CapAdjust = zout.wCCS_Retro_CapAdjust.round(decimals=3)
     zout.wCCS_Retro_LocFactor = zout.wCCS_Retro_LocFactor.round(decimals=3)
-    
+
+    #%% Get vintages
+    # Each generation technology is broken out by class:
+    # 1. initial capacity: init-1, init-2, ..., init-n
+    # 2. prescribed capacity: prescribed
+    # 3. new capacity: new
+    # This allows us to distinguish between existing, prescribed, and model-chosen builds
+    # The number of classes is set by numhintage for initial capacity and numclass for new capacity
+    # Under the Clean Air Act, all coal plants are regulated individually.
+    # Therefore, we need a large value of hintages to represent these plants
+    scalars = reeds.io.get_scalars(inputs_case)
+    max_hintage_number = tdat['bin'].max()
+    if sw.numhintage in ['unit', 'group']:
+        numhintage = int(scalars.hintage_unit_number)
+    else:
+        if int(sw.GSw_Clean_Air_Act) == 1:
+            numhintage = max_hintage_number
+        else:
+            numhintage = int(sw.numhintage)
+    # there are numeraire hintages on either sides of the outer breaks
+    # when using calcmethod = 1, here adding two for safety
+    # NB this will not increase model size given conditions
+    # dictating valcap and valgen for initial classes
+    numhintage += 2
+
+    initv = [f'init-{i}' for i in range(1, numhintage+1)]
+    newv = [f'new{i}' for i in range(1, int(sw.numclass)+1)]
+    v = initv + newv
+
+    reeds.io.write_to_inputs_h5(
+        pd.Series(v), 'v', inputs_case, gamstype='set',
+        comment='technology class',
+    )
+    for (name, ds, comment) in [
+        ('initv', initv, 'initial technologies'),
+        ('newv', newv, 'new technologies'),
+    ]:
+        reeds.io.write_to_inputs_h5(
+            pd.Series(ds, name='v'), name, inputs_case, gamstype='set',
+            comment=comment,
+        )
+
     #%% Save output dataframe in inputs_case folder
     cols = ['TECH', 'bin', 'r', 'yr', 'cap', 'wintercap', 'wHR',
             'wFOM', 'wVOM', 'wOnlineYear',

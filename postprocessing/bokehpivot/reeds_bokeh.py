@@ -22,7 +22,7 @@ from defaults import (DEFAULT_DOLLAR_YEAR, DEFAULT_PV_YEAR, DEFAULT_DISCOUNT_RAT
 
 this_dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(os.path.join(this_dir_path,'..','..')))
-from reeds.io import read_output
+from reeds.io import read_input, read_output
 
 logger = logging.getLogger('')
 #ReEDS globals
@@ -350,10 +350,11 @@ def get_src(scen, src):
         df_src = pd.DataFrame(data)
         df_src.columns = src['columns']
     elif src['file'].endswith('.csv'):
-        if 'header' in src and src['header'] == None:
-            df_src = pd.read_csv(filepath, low_memory=False, header=None)
-        else:
-            df_src = pd.read_csv(filepath, low_memory=False)
+        kwargs = {'header': None} if ('header' in src and src['header'] is None) else {}
+        try:
+            df_src = pd.read_csv(filepath, low_memory=False, **kwargs)
+        except FileNotFoundError:
+            df_src = read_input(scen['path'], src['name'], low_memory=False, **kwargs)
     else:
         df_src = read_output(scen['path'], filepath)
     if 'transpose' in src and src['transpose'] is True:

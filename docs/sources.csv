@@ -259,8 +259,9 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/fuelprices/cd_beta0.csv,/inputs/fuelprices,cd_beta0,.csv,reference census division beta levels electric sector,cendiv,2004,,Input,
 /inputs/fuelprices/cd_beta0_allsector.csv,/inputs/fuelprices,cd_beta0_allsector,.csv,reference census division beta levels all sectors,cendiv,2004,,Input,
 /inputs/fuelprices/cendivweights.csv,/inputs/fuelprices,cendivweights,.csv,weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders,"r,cendiv",,,,
-/inputs/fuelprices/coal_AEO_2023_reference.csv,/inputs/fuelprices,coal_AEO_2023_reference,.csv,reference case census division fuel price of coal,"t,cendiv",2022,,,
-/inputs/fuelprices/coal_AEO_2025_reference.csv,/inputs/fuelprices,coal_AEO_2025_reference,.csv,reference case census division fuel price of coal with missing values forward-filled from earlier years,"t,cendiv",2024,,,
+/inputs/fuelprices/coal_AEO_2025_reference.csv,/inputs/fuelprices,coal_AEO_2025_reference,.csv,AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic,"t,cendiv",2024,AEO2025,Input,$/MMBtu
+/inputs/fuelprices/coal_AEO_2026_altelec.csv,/inputs/fuelprices,coal_AEO_2026_altelec,.csv,AEO2026 Alternative Electricity case census division fuel price of coal with missing New England values set to Mid Atlantic,"t,cendiv",2025,AEO2026,Input,$/MMBtu
+/inputs/fuelprices/coal_AEO_2026_baseline.csv,/inputs/fuelprices,coal_AEO_2026_baseline,.csv,AEO2026 Counterfactual Baseline case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic,"t,cendiv",2025,AEO2026,Input,$/MMBtu
 /inputs/fuelprices/dollaryear.csv,/inputs/fuelprices,dollaryear,.csv,Dollar year mapping for each fuel price scenario,,,,,
 /inputs/fuelprices/h2-combustion_10.csv,/inputs/fuelprices,h2-combustion_10,.csv,price of hydrogen for combustion technologies (h2-ct and cc) at $10/MMBtu for all years,,,,,
 /inputs/fuelprices/h2-combustion_30.csv,/inputs/fuelprices,h2-combustion_30,.csv,price of hydrogen for combustion technologies (h2-ct and cc) at $30/MMBtu for all years,,,,,

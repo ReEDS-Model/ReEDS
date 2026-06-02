@@ -318,10 +318,7 @@ def calc_systemcost(
     scalars = reeds.io.get_scalars(case)  
 
     # Valid regions
-    val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
-        header=None,
-    ).squeeze(1).values
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).values
 
     # Rename columns to match the expected format
     systemcost.rename(columns={'t':'year', 'sys_costs':'cost_cat'}, inplace=True)
@@ -530,10 +527,7 @@ def calc_reinforcement_spur_capacity_miles(case):
     scalars = reeds.io.get_scalars(case)  
 
     # Valid regions
-    val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
-        header=None,
-    ).squeeze(1).values
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).values
 
     # Get the spur/reinforcement distance for each i/r/rscbin  
     spur_parameters = pd.read_csv(os.path.join(inputs_case, 'spur_parameters.csv'))

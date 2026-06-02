@@ -114,7 +114,7 @@ def plot_diff(
         'Present Value of System Cost': 'Discounted Cost (Bil $)',
         'Runtime (hours)': 'processtime',
         'Runtime by year (hours)': 'processtime',
-        'NEUE (ppm)': 'neue',
+        'NEUE (ppm)': 'NEUE',
     }
     xcol = {
         'Error Check': 'dummy',
@@ -484,7 +484,7 @@ def plot_diff(
     ymax = max(ax[0].get_ylim()[1], ax[1].get_ylim()[1])
     ymin = min(ax[0].get_ylim()[0], ax[1].get_ylim()[0])
     if val == 'NEUE (ppm)':
-        neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
+        neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
         ymax = max(ymax, 10, neue_threshold*1.05)
         ax[0].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
         ax[1].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
@@ -1239,9 +1239,7 @@ def plot_transmission_utilization(
             dftrans['trans_flow_power'].loc[dftrans['trans_flow_power'].Value < 0, ['rr','r']].values
         )
         dftrans['trans_flow_power'].Value = dftrans['trans_flow_power'].Value.abs()
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     ### Combine all transmission types
     for data in ['trans_flow_power','trans_cap']:
         dftrans[data]['trtype'] = 'all'
@@ -1736,9 +1734,7 @@ def plot_prmtrade(
     dfba = dfmap['r']
     dfstates = dfmap['st']
     ## Downselect to modeled regions
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     dfba = dfba.loc[val_r].copy()
 
     if sw.get('GSw_RegionResolution', 'ba') != 'county':
@@ -1825,9 +1821,7 @@ def plot_average_flow(
     dfmap = reeds.io.get_dfmap(case)
     dfba = dfmap['r']
     dfstates = dfmap['st']
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     if extent.lower() not in ['usa','full','nation','us','country','all']:
         dfba = dfba.loc[val_r]
 
@@ -4137,14 +4131,16 @@ def plot_stressperiod_evolution(
     """Plot NEUE by year and stress period iteration"""
     ### Parse inputs
     sw = reeds.io.get_switches(case)
-    _level, _threshold, _, _metric = sw['GSw_PRM_StressThreshold'].split('/')[0].split('_')
+    _first_metric = sw['GSw_PRM_StressThresholdMetrics'].split('/')[0].upper()
+    _parts = sw[f'GSw_PRM_StressThreshold{_first_metric}'].split('_')
+    _level, _threshold, _stress_metric, _metric = _parts[0], _parts[1], _parts[2], _parts[3]
     level = _level if level is None else level
     threshold = float(_threshold) if threshold is None else threshold
     metric = _metric if metric is None else metric
     ### Load NEUE results
-    infiles = sorted(glob(os.path.join(case,'outputs','neue_*.csv')))
+    infiles = sorted(glob(os.path.join(case,'outputs','NEUE_*.csv')))
     dictin_neue = {
-        tuple([int(x) for x in os.path.basename(f)[len('neue_'):-len('.csv')].split('i')]):
+        tuple([int(x) for x in os.path.basename(f)[len('NEUE_'):-len('.csv')].split('i')]):
         pd.read_csv(f, index_col=['level','metric','region'])
         for f in infiles
     }
@@ -4153,7 +4149,7 @@ def plot_stressperiod_evolution(
         pd.concat(dictin_neue, names=['year','iteration'])
         .xs(level,0,'level')
         .xs(metric,0,'metric')
-        .NEUE_ppm.unstack('region')
+        .NEUE.unstack('region')
     )
     ### Load stress periods for labels
     dfstress = get_stressperiods(case)
@@ -4224,8 +4220,8 @@ def plot_neue_bylevel(
     ### Get final iterations
     year2iteration = (
         pd.DataFrame([
-            os.path.basename(i).strip('neue_.csv').split('i')
-            for i in sorted(glob(os.path.join(case, 'outputs', 'neue_*.csv')))
+            os.path.basename(i).strip('NEUE_.csv').split('i')
+            for i in sorted(glob(os.path.join(case, 'outputs', 'NEUE_*.csv')))
         ], columns=['year','iteration']).astype(int)
         .drop_duplicates(subset='year', keep='last')
         .set_index('year').iteration
@@ -4238,12 +4234,12 @@ def plot_neue_bylevel(
     for t, iteration in year2iteration.items():
         try:
             dictin_neue[t] = (
-                reeds.io.read_output(case, f'neue_{t}i{iteration}.csv')
+                reeds.io.read_output(case, f'NEUE_{t}i{iteration}.csv')
                 .set_index(['level','metric','region']).squeeze(1)
             )
         except FileNotFoundError:
             dictin_neue[t] = (
-                reeds.io.read_output(case, f'neue_{t}i{iteration-1}.csv')
+                reeds.io.read_output(case, f'NEUE_{t}i{iteration-1}.csv')
                 .set_index(['level','metric','region']).squeeze(1)
             )
     dfin_neue = pd.concat(dictin_neue, axis=0, names=['year']).unstack('year')
@@ -4261,8 +4257,9 @@ def plot_neue_bylevel(
     norm = {'sum':1, 'max':1e-4}
     ylabel = {'sum': 'Sum of NEUE [ppm]', 'max':'Max NEUE [%]'}
     thresholds = {
-        i.split('_')[0]: float(i.split('_')[1])
-        for i in sw.GSw_PRM_StressThreshold.split('/')
+        sw[f'GSw_PRM_StressThreshold{m.upper()}'].split('_')[0]:
+        float(sw[f'GSw_PRM_StressThreshold{m.upper()}'].split('_')[1])
+        for m in sw.GSw_PRM_StressThresholdMetrics.split('/')
     }
     ### Plot it
     plt.close()
@@ -4323,11 +4320,11 @@ def map_neue(
             case=case, year=year, samples=samples)
     else:
         _iteration = iteration
-    neue = reeds.io.read_output(case, f'neue_{year}i{_iteration}.csv')
-    neue = neue.loc[neue.metric==metric].set_index(['level','region']).NEUE_ppm
+    neue = reeds.io.read_output(case, f'NEUE_{year}i{_iteration}.csv')
+    neue = neue.loc[neue.metric==metric].set_index(['level','region']).NEUE
     sw = reeds.io.get_switches(case)
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
-    neue_threshold_level = sw.GSw_PRM_StressThreshold.split('_')[0]
+    neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
+    neue_threshold_level = sw.GSw_PRM_StressThresholdNEUE.split('_')[0]
 
     ### Set up plot
     levels = ['interconnect','nercr','transreg','transgrp','st','r']
@@ -6195,7 +6192,8 @@ def map_stressors(
         dfmap[k] = v.to_crs(crs)
 
     ### Derived inputs
-    criterion = sw.GSw_PRM_StressThreshold.split('/')[0]
+    _first_metric = sw.GSw_PRM_StressThresholdMetrics.split('/')[0].upper()
+    criterion = sw[f'GSw_PRM_StressThreshold{_first_metric}']
     level = criterion.split('_')[0]
     regions = hierarchy[level].unique()
     region2rs = {
@@ -6637,8 +6635,8 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     ### Get final iterations
     year2iteration = (
         pd.DataFrame([
-            os.path.basename(i).strip('neue_.csv').split('i')
-            for i in sorted(glob(os.path.join(case, 'outputs', 'neue_*.csv')))
+            os.path.basename(i).strip('NEUE_.csv').split('i')
+            for i in sorted(glob(os.path.join(case, 'outputs', 'NEUE_*.csv')))
         ], columns=['year','iteration']).astype(int)
         .drop_duplicates(subset='year', keep='last')
         .set_index('year').iteration
@@ -6656,7 +6654,8 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
 
     ### Plot it
     nrows, ncols, coords = plots.get_coordinates(year2iteration.index, aspect=1.8)
-    level = sw.GSw_PRM_StressThreshold.split('_')[0]
+    _first_metric = sw.GSw_PRM_StressThresholdMetrics.split('/')[0].upper()
+    level = sw[f'GSw_PRM_StressThreshold{_first_metric}'].split('_')[0]
     plt.close()
     f,ax = plt.subplots(
         nrows, ncols, figsize=(ncols*scale, nrows*scale*0.8), sharex=True, sharey=True,

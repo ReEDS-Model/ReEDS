@@ -105,8 +105,7 @@ years = pd.read_csv(
     os.path.join(case,'inputs_case','modeledyears.csv')
 ).columns.astype(int).values
 yearstep = years[-1] - years[-2]
-val_r = pd.read_csv(
-    os.path.join(case, 'inputs_case', 'val_r.csv'), header=None).squeeze(1).tolist()
+val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
 ## If year not provided, use final solve year
 year = year if year > 0 else max(years)
 
@@ -367,9 +366,7 @@ subtechs = {
 ### Specify BAs to plot (None = aggregate all together)
 bas = [None]
 if int(sw['plot_ba_level']):
-    bas += pd.read_csv(
-        os.path.join(case, 'inputs_case', 'val_r.csv'), header=None,
-    ).squeeze(1).tolist()
+    bas += reeds.io.read_input(case, 'r').squeeze(1).tolist()
     savepath_ba = os.path.join(savepath, 'ba')
     os.makedirs(savepath_ba, exist_ok=True)
 else:
@@ -701,7 +698,9 @@ if not int(sw.GSw_PRM_CapCredit):
         print(traceback.format_exc())
 
     try:
-        level, threshold, _, metric = sw['GSw_PRM_StressThreshold'].split('/')[0].split('_')
+        _first_metric = sw['GSw_PRM_StressThresholdMetrics'].split('/')[0].upper()
+        _parts = sw[f'GSw_PRM_StressThreshold{_first_metric}'].split('_')
+        level, threshold, _stress_metric, metric = _parts[0], _parts[1], _parts[2], _parts[3]
         plt.close()
         f,ax = reedsplots.plot_stressperiod_evolution(
             case=case, level=level, metric=metric)

@@ -163,7 +163,7 @@ gasprice_ref.csv,.csv,0,None,wide,cendiv,1,0,constant,0,None,done,linear_5
 gb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin_min.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-gen_mandate_tech_list.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+nat_gen_tech_frac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gen_mandate_trajectory.csv,.csv,0,None,*t,None,0,0,constant,None,None,new,
 geo_discovery_factor.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 geo_discovery_rate.csv,.csv,0,None,*t,None,0,0,linear_5,None,None,new,
@@ -233,6 +233,7 @@ i.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 incentives.csv,.csv,0,None,t_start_construction,"i,country",1,0,constant,None,None,[CHECK] do we need to forecast within calc_financial_inputs?; new,
 inflation.csv,.csv,0,None,t,None,0,0,constant,None,None,done,constant
 inputs.gdx,.gdx,1,None,9999,None,9999,0,constant,None,None,done (wouldn't exist yet in normal run),constant
+inputs.h5,.h5,1,None,9999,None,9999,0,constant,None,None,new,
 interconnection_queues.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 itc_energy_comm_bonus.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 itc_frac_monetized.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
@@ -283,7 +284,6 @@ objective_function_params.yaml,.yaml,1,None,9999,None,9999,0,constant,None,None,
 offshore_goal_fix.csv,.csv,0,None,wide,st,1,0,constant,0,None,done,constant
 offshore_goal_float.csv,.csv,0,None,wide,st,1,0,constant,0,None,done,constant
 offshore_req.csv,.csv,0,None,wide,st,1,0,constant,0,None,done,constant
-offshore.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ofstype_i.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ofstype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ofswind_rsc_mult.csv,.csv,0,None,t,None,1,0,constant,0,None,done,linear_5
@@ -433,7 +433,6 @@ supplycurve_geohydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-sw.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 switches.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 tax_rate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 tc_phaseout_schedule.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -487,23 +486,10 @@ upgrade_mult_mid.csv,.csv,0,None,wide,dummy,1,0,linear_5,0,None,new,
 upgradelink_water.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 uranium_price.csv,.csv,0,None,year,None,0,0,linear_5,0,None,new,
 va_ng_crf_penalty.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
-val_aggreg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_ba.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_cendiv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_country.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_county.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+county.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_cs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_h2ptcreg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_hurdlereg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_interconnect.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_itlgrp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_nercr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_r_all.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_r.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-val_st.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_transgrp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_transreg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-val_usda_region.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 var_map.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 w.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 wat_access_cap_cost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant

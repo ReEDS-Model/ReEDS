@@ -326,9 +326,6 @@ def check_compatibility(sw):
                              and not s.endswith('Metrics')
                              ]
     stressTresholdMetrics = sw['GSw_PRM_StressThresholdMetrics'].split('/')
-
-    print(f"stressTresholdMetrics: {stressTresholdMetrics}")
-    print(f"stressThresholdMetricSwitches: {stressThresholdMetricSwitches}")   
     
     # Threshold metric added but not specified as a switch
     for metric in stressTresholdMetrics:
@@ -554,6 +551,14 @@ def check_compatibility(sw):
             )
             raise ModuleNotFoundError(err)
 
+# function to stop the model after input processing
+def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
+    comment('Exit after input_processing', OPATH)
+    OPATH.writelines(
+        f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
+        f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
+    )
+    OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
 
 def setup_sequential_year(
         cur_year, prev_year, next_year,
@@ -911,7 +916,7 @@ def setupEnvironment(
                     f'Specified single={single} but available cases are:\n'
                     + '\n> '.join([c for c in df_cases.columns])
                 )
-                raise ValueError(err)
+                raise KeyError(err)
         df_cases = df_cases[single.split(',')].copy()
         casenames = single.split(',')
 
@@ -1318,6 +1323,7 @@ def write_batch_script(
             'transmission',
             'outage_rates',
             'hourly_repperiods',
+            'h5_to_gdx',
         ]:
             OPATH.writelines(f"echo {'-'*12+'-'*len(s)}\n")
             OPATH.writelines(f"echo 'starting {s}.py'\n")
@@ -1326,17 +1332,17 @@ def write_batch_script(
                 f"python {os.path.join(casedir,'reeds','input_processing',s)}.py {reeds_path} {inputs_case}\n")
             OPATH.writelines(writescripterrorcheck(s)+'\n')
 
+            # option to stop input processing after Monte Carlo sampler
+            if s == 'mcs_sampler' and int(caseSwitches['input_processing_only']) == 2:
+                stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches)
+
         OPATH.writelines(
             f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
             f"{casedir} --force --quiet\n"
         )
 
-        if int(caseSwitches['input_processing_only']):
-            OPATH.writelines(
-                f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
-                f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
-            )
-            OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
+        if int(caseSwitches['input_processing_only']) == 1:
+            stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches)
 
         big_comment('Compile model', OPATH)
 
@@ -1348,6 +1354,7 @@ def write_batch_script(
         OPATH.writelines(f'python {logger}\n')
         restartfile = batch_case
         OPATH.writelines(writeerrorcheck(os.path.join('g00files', restartfile + '.g*')))
+        OPATH.writelines(writescripterrorcheck(s)+'\n')
 
         ################################
         #    -- CORE MODEL SETUP --    #

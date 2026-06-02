@@ -132,10 +132,10 @@ def fill_empty_techs(df_prefill, inputs_case, fillvalues_tech=None, during_quart
     -------
     """
     ### Parse inputs
-    quarters = pd.read_csv(
-        os.path.join(inputs_case, 'sets', 'quarter.csv'),
-        header=None,
-    ).squeeze(1).map(lambda x: x[:4]).tolist()
+    quarters = (
+        reeds.io.read_input(inputs_case, 'quarter')
+        .squeeze(1).map(lambda x: x[:4]).tolist()
+    )
     if isinstance(during_quarters, str):
         assert during_quarters == 'all'
     elif isinstance(during_quarters, list):

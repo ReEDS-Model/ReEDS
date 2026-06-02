@@ -987,10 +987,7 @@ def main(
     sitemap = reeds.io.get_sitemap()
     county2zone = reeds.io.get_county2zone(os.path.dirname(os.path.normpath(inputs_case)))
     interconnection_cost['r'] = interconnection_cost.index.map(sitemap.FIPS).map(county2zone)
-    val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
-        header=None,
-    ).squeeze(1).values
+    val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
     spursites = interconnection_cost.loc[interconnection_cost.r.isin(val_r)].copy()
     spursites['x'] = 'i' + spursites.index.astype(str)
     if write:

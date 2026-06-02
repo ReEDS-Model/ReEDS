@@ -174,10 +174,7 @@ def main(t, casedir, iteration=0):
         ))
 
     try:
-        offshore = pd.read_csv(
-            os.path.join(casedir, 'inputs_case', 'offshore.csv'),
-            header=None,
-        ).squeeze(1).tolist()
+        offshore = reeds.io.read_input(casedir, 'offshore').squeeze(1).tolist()
     except pd.errors.EmptyDataError:
         offshore = []
 
