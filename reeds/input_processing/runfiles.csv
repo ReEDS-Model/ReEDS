@@ -56,7 +56,7 @@ csapr_ozone_season.csv,inputs/emission_constraints/csapr_ozone_season.csv,int(sw
 currency_incentives.csv,inputs/financials/currency_incentives.csv,1,ignore,ignore,,,,,0,,,,,,
 dac_elec.csv,inputs/consume/dac_elec_{dacscen}.csv,int(sw.GSw_DAC) != 0,ignore,ignore,,,,1,0,,,,,,
 dac_gas.csv,inputs/consume/dac_gas_{GSw_DAC_Gas_Case}.csv,int(sw.GSw_DAC) != 0,ignore,ignore,,,,1,0,,1,,,,
-deflator.csv,inputs/financials/deflator.csv,1,ignore,ignore,,,,,0,,,,,,
+deflator.csv,,1,ignore,ignore,,,,,0,,1,,,,
 degradation_annual.csv,inputs/degradation/degradation_annual_{degrade_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
 demonstration_plants.csv,inputs/capacity_exogenous/demonstration_plants.csv,int(sw.GSw_NuclearDemo) != 0,sum,ignore,r,"t,i,coolingwatertech,ctt,wst,notes",i,0,0,,,,,,
 depreciation_schedules.csv,inputs/financials/depreciation_schedules_{depreciation_schedules_suffix}.csv,1,ignore,ignore,,,,1,0,,,,,,

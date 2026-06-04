@@ -10,6 +10,13 @@ Created on Mon May  4 14:14:07 2020
 import pandas as pd
 import numpy as np
 import os
+import sys
+
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+import reeds
+
+dollar_year = int(reeds.io.get_scalars().dollar_year)
 
 
 #################
@@ -172,7 +179,7 @@ def get_inflatable(inflationpath=None):
     inflatable = pd.Series(inflatable)
     return inflatable
 
-def get_excluded_costs(excludecells=excludecells, inflationpath=None, dollar_year=2004):
+def get_excluded_costs(excludecells=excludecells, inflationpath=None, dollar_year=dollar_year):
     """
     Get subtracted cells so we can add them back in with special treatment.
     Returns monetary values in dollar_year dollars.

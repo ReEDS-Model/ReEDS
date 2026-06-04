@@ -225,7 +225,6 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/financials/construction_schedules_default.csv,/inputs/financials,construction_schedules_default,.csv,,,,,,
 /inputs/financials/construction_times_default.csv,/inputs/financials,construction_times_default,.csv,,,,,,
 /inputs/financials/currency_incentives.csv,/inputs/financials,currency_incentives,.csv,,,,,,
-/inputs/financials/deflator.csv,/inputs/financials,deflator,.csv,Dollar year deflator to convert values to 2004$,,,,,
 /inputs/financials/depreciation_schedules_default.csv,/inputs/financials,depreciation_schedules_default,.csv,,,,,,
 /inputs/financials/energy_communities.csv,/inputs/financials,energy_communities,.csv,,,,,,
 /inputs/financials/financials_hydrogen.csv,/inputs/financials,financials_hydrogen,.csv,,,,,,

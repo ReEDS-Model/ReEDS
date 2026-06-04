@@ -148,7 +148,7 @@ def read_runfiles(reeds_path, inputs_case, sw, agglevel_variables):
     return runfiles, non_region_files, region_files
 
 
-def get_source_deflator_map(reeds_path):
+def get_source_deflator_map(reeds_path,inputs_case,write_out=True):
     """
     Get the deflator for each input file
     """
@@ -157,9 +157,29 @@ def get_source_deflator_map(reeds_path):
         os.path.join(reeds_path,'docs','sources.csv'),
         usecols=["RelativeFilePath", "DollarYear"]
     )
-    deflator = pd.read_csv(
-        os.path.join(reeds_path,'inputs','financials','deflator.csv'),
-        header=0, names=['Dollar.Year','Deflator'], index_col='Dollar.Year').squeeze(1)
+    
+    ### Deflator Calculation
+    # The deflator values are calculated relative to the reeds dollar year to most recent 
+    # inputs dollar year by using inflatable.
+    # Define the base year and current year for the deflator calculation.
+    scalars = reeds.io.get_scalars(full=True)
+    reeds_dollar_year=int(scalars.loc['dollar_year', 'value'])
+    max_dollar_year = pd.to_numeric(sources_dollaryear['DollarYear'], errors='coerce').max()
+
+    # Define the deflator 
+    inflatable = reeds.io.get_inflatable()  
+    deflator =( 1 / inflatable[reeds_dollar_year].loc[reeds_dollar_year:max_dollar_year]).reset_index() 
+    deflator.columns = ['*Dollar.Year', 'Deflator']
+    
+    # if get_source_deflator_map function is being called from mcs_sampler,
+    # we do not want to write out the deflator.csv file as it is only used for 
+    # the copy_files function.
+
+    if write_out:
+        deflator.to_csv(os.path.join(inputs_case, 'deflator.csv'), index=False)
+
+    deflator.rename(columns={'*Dollar.Year': 'Dollar.Year'}, inplace=True)
+
     # Create a mapping between inputs' relative filepaths and their deflation
     # multipliers based on the dollar years their monetary values are in
     sources_dollaryear = (
@@ -172,7 +192,7 @@ def get_source_deflator_map(reeds_path):
         .rename(columns={"DollarYear": "Dollar.Year"})
         .merge(deflator,on="Dollar.Year",how="left")
     )
-
+    
     source_deflator_map = dict(zip(sources_dollaryear["RelativeFilePath"], sources_dollaryear["Deflator"]))
 
     return source_deflator_map
@@ -1623,7 +1643,7 @@ def main(reeds_path, inputs_case):
     # (gswitches.csv is first written at runreeds.py)
     scalar_csv_to_txt(os.path.join(inputs_case,'gswitches.csv'))
     
-    source_deflator_map = get_source_deflator_map(reeds_path)
+    source_deflator_map = get_source_deflator_map(reeds_path,inputs_case)
 
     # Copy non-region files
     write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel, source_deflator_map)

@@ -32,10 +32,7 @@ inputs_case = args.inputs_case
 
 decimals = 5
 drop_canmex = True
-dollar_year = 2004
 weight = 'cost'
-
-costcol = f'USD{dollar_year}perMW'
 
 #%% Set up logger
 log = reeds.log.makelog(
@@ -46,6 +43,10 @@ print('Starting transmission.py', flush=True)
 
 #%% Inputs from switches
 sw = reeds.io.get_switches(inputs_case)
+scalars = reeds.io.get_scalars(inputs_case)
+
+dollar_year = int(scalars['dollar_year'])
+costcol = f'USD{dollar_year}perMW'
 
 ## networksource must end in a 4-digit year indicating the year represented by the network
 trans_init_year = int(sw.GSw_TransNetworkSource[-4:])

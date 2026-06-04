@@ -213,13 +213,13 @@ def calc_h2prod(case):
     
     return df
 
-def inflate_series(dfin, to_dollar_year=DEFAULT_DOLLAR_YEAR):
+def inflate_series(inputs_case,dfin, to_dollar_year=DEFAULT_DOLLAR_YEAR):
     """
     Inflate a series of financial data to a specified dollar year.
     """
     df_deflator = pd.read_csv(
-        os.path.join(reeds_path, 'inputs', 'financials', 'deflator.csv'),
-        index_col=0,
+        os.path.join(inputs_case, 'deflator.csv'), 
+        index_col=0
     )
     return dfin * 1 / df_deflator.loc[to_dollar_year, 'Deflator']
 
@@ -342,7 +342,7 @@ def calc_systemcost(
     df = systemcost.copy()
 
     # Apply inflation
-    df['Value'] = inflate_series(df['Value'])
+    df['Value'] = inflate_series(inputs_case,df['Value'])
     df.rename(columns={'Value':'Cost (Bil $)'}, inplace=True)
 
     cost_cat_map, cap_type_ls, op_type_ls = gather_cost_types(df)
@@ -388,7 +388,7 @@ def calc_systemcost(
             df_capex_hist=df_capex_hist.loc[:firstmodelyear-1,:]
 
             # Convert to output dollar year
-            df_capex_hist = pd.DataFrame(inflate_series(df_capex_hist))
+            df_capex_hist = pd.DataFrame(inflate_series(inputs_case,df_capex_hist))
 
             # Insert into full cost table
             df = df.join(df_capex_hist, on=['year','r'])

@@ -13,6 +13,7 @@ import urllib
 ### Local imports
 import ferc_distadmin
 import calculate_historical_capex
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import reeds
 from reeds import plots
@@ -371,6 +372,7 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
     modeled_years = load_rt['t'].drop_duplicates()
     non_modeled_years = list(set(np.arange(first_year,last_year,1)) - set(modeled_years))
     years_reeds = np.arange(first_year, last_year+1)
+    reeds_dollar_year=reeds.io.get_scalars().dollar_year
 
     # Ingest inflation
     inflation = pd.read_csv(
@@ -1018,7 +1020,7 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
             mdir, 'calc_historical_capex',
             'existing_transmission_cost_bystate_USD2024.csv'),
         index_col='state',
-    ).squeeze(1).rename('init_trans_capex') * inflatable[2024, 2004]
+    ).squeeze(1).rename('init_trans_capex') * inflatable[2024, reeds_dollar_year]
     # This approach assumes the existing transmission capacity was built evently 
     # over the trans_timeframe years prior to 2010
     init_trans_capex = pd.concat(

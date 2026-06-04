@@ -138,9 +138,8 @@ discountrate_social = DEFAULT_DISCOUNT_RATE
 discountrate_scghg = 0.02
 assert discountrate_scghg in [0.015, 0.02, 0.025]
 central_health = {'cr':'ACS', 'model':'EASIUR'}
-reeds_dollaryear = 2004
-output_dollaryear = DEFAULT_DOLLAR_YEAR
 startyear_notes = DEFAULT_PV_YEAR
+dollar_year = int(reeds.io.get_scalars().dollar_year)
 
 colors_social = {
     'CO2': plt.cm.tab20b(4),
@@ -317,7 +316,7 @@ phaseout_trigger = float(scalars.co2_emissions_2022) * float(sw.GSw_TCPhaseout_t
 
 inflatable = reeds.io.get_inflatable(os.path.join(
     reeds_path,'inputs','financials','inflation_default.csv'))
-inflator = inflatable[reeds_dollaryear, output_dollaryear]
+inflator = inflatable[dollar_year, DEFAULT_DOLLAR_YEAR]
 
 scghg = pd.read_csv(
     os.path.join(reeds_path, 'postprocessing', 'plots', 'scghg_annual.csv'),
@@ -331,7 +330,7 @@ scghg = pd.read_csv(
 }).set_index(['e','t'])
 scghg_central = (
     scghg[f'2020_{discountrate_scghg*100:.1f}%'].unstack('e')
-    * inflatable[2020, output_dollaryear]
+    * inflatable[2020, DEFAULT_DOLLAR_YEAR]
 )
 
 #%% Colors and mapping
@@ -527,7 +526,7 @@ for case in tqdm(cases, desc='health'):
             .xs(central_health['model'], level='model')
             .groupby('year').sum()
             ['damage_$']
-            ### Inflate from reeds_dollaryear (2004) to bokeh output_dollaryear (2021)
+            ### Inflate from dollar_year (2004) to bokeh DEFAULT_DOLLAR_YEAR (2024)
             * inflator
             ### Convert to $B
             / 1e9

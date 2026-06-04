@@ -64,7 +64,7 @@ def calc_financial_inputs(inputs_case):
 
     # Set up scen_settings object
     scen_settings = reeds.financials.scen_settings(
-        dollar_year=int(sw['dollar_year']), tech_groups=tech_groups, inputs_case=inputs_case,
+        dollar_year=int(scalars['dollar_year']), tech_groups=tech_groups, inputs_case=inputs_case,
         sw=sw)
 
 

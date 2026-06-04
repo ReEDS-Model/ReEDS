@@ -16,12 +16,14 @@ import collections
 import core
 import copy
 from itertools import product
+from math import prod
 ## Inherit the default present value year to use in plot definitions
 from defaults import DEFAULT_PV_YEAR
 
 rb_globs = {'output_subdir':'/outputs/', 'test_file':['cap.csv','outputs.h5'], 'report_subdir':'/reeds2'}
 this_dir_path = os.path.dirname(os.path.realpath(__file__))
-df_deflator = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs/financials/deflator.csv')), index_col=0)
+df_inflation = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs/financials/inflation_default.csv')), index_col=0)
+scalars = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs/scalars.csv')))
 coststreams = ['eq_gasaccounting_regional','eq_gasaccounting_national','eq_bioused','eq_gasused','eq_objfn_inv','eq_objfn_op']
 vf_valstreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min']
 # valuestreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_national_gen','eq_annual_cap','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min','eq_emit_accounting','eq_mingen_lb','eq_mingen_ub','eq_rps_ofswind']
@@ -70,8 +72,12 @@ def apply_inflation(df, **kw):
     return df
 
 def inflate_series(ser_in):
-    return ser_in * 1/df_deflator.loc[int(core.GL['widgets']['var_dollar_year'].value), 'Deflator']
-
+    inflation_dict = dict(zip(df_inflation.index, df_inflation['inflation_rate']))
+    REEDS_DOLLAR_YEAR=scalars.loc[scalars['scalar']=='dollar_year','value'].values[0]
+    deflator_multiplier = prod( inflation_dict[y]
+        for y in range(int(REEDS_DOLLAR_YEAR) + 1, int(core.GL['widgets']['var_dollar_year'].value) + 1 ))
+    return ser_in * deflator_multiplier
+    
 def gather_cost_types(df):
     #Gather lists of capital and operation labels
     cost_cats_df = df['cost_cat'].unique().tolist()

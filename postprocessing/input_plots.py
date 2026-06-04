@@ -799,6 +799,7 @@ def map_supplycurves(
     """
     ### Get inputs
     sw = reeds.io.get_switches(case)
+    scalars = reeds.io.get_scalars(case)
     dfmap = reeds.io.get_dfmap(case=case)
     for key in dfmap:
         if dfmap[key].crs != crs:
@@ -844,7 +845,7 @@ def map_supplycurves(
         ).to_crs(crs)
     if include_techneutral_adder:
         inflatable = reeds.io.get_inflatable()
-        costadder = float(sw.GSw_TransIntraCost) * inflatable[2004, dollaryear]
+        costadder = float(sw.GSw_TransIntraCost) * inflatable[int(scalars['dollar_year']), dollaryear]
     else:
         costadder = 0
     ## Convert from point to polygons if desired (raster is 11.52 km but include a little extra)
