@@ -293,8 +293,6 @@ def check_compatibility(sw):
 
     if sw['GSw_RegionResolution'] in ['county','mixed']:
         err_switch_configs = []
-        if int(sw['GSw_OffshoreZones']):
-            err_switch_configs.append('GSw_OffshoreZones=1')
         if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
             err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
 
@@ -385,6 +383,16 @@ def check_compatibility(sw):
                 float(limit)
             except ValueError:
                 raise ValueError(err)
+
+    if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
+        raise ValueError(
+            "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
+            "and GSw_PRM_StressIterateMax>0 is not supported.\n"
+            "To iteratively update the PRM, set GSw_PRM_UpdateMethod to an integer between 1-3:"
+            "\n1: static update set by GSw_PRM_UpdateFraction; "
+            "\n2: dynamic update informed by PRAS; "
+            "\n3: dynamic update but only after all new stress periods have been added"
+        )
 
     for bir in sw['GSw_PVB_BIR'].split('_'):
         if not (float(bir) >= 0):
@@ -1285,7 +1293,6 @@ def write_batch_script(
         for s in [
             'copy_files',
             'mcs_sampler',
-            'aggregate_regions',
             'hydcf',
             'h2_storage',
             'calc_financial_inputs',

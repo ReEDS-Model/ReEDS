@@ -230,25 +230,6 @@ def plot_diff(
         'Runtime by year (hours)': 1,
         'NEUE (ppm)': 1,
     }
-    outputs_unit_converstion = {
-        'Error Check': 1,
-        'Generation (TWh)': 1,
-        'Capacity (GW)': 1,
-        'New Annual Capacity (GW)': 1,
-        'Annual Retirements (GW)': 1,
-        'Final Gen by timeslice (GW)': 1,
-        'Firm Capacity (GW)': 1,
-        'Curtailment Rate': 1,
-        'Transmission (GW-mi)': 0.001,
-        'Transmission (PRM) (GW-mi)': 0.001,
-        'Bulk System Electricity Pric': 1,
-        'National Average Electricity': 1,
-        '2022-2050 Present Value of S': 1,
-        'Present Value of System Cost': 1,
-        'Runtime (hours)': 1,
-        'Runtime by year (hours)': 1,
-        'NEUE (ppm)': 1,
-    }
 
     output_formatting = reeds.io.get_plot_formatting()
 
@@ -272,7 +253,6 @@ def plot_diff(
 
     ### Load the data
     dfbase = reeds.io.read_report(casebase, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
-    dfbase[ycol[val]]*=outputs_unit_converstion[val]
     if 'tech' in dfbase.columns:
         dfbase.tech = simplify_techs(dfbase.tech, display_level = simple_techs)
         dfbase = (
@@ -291,7 +271,6 @@ def plot_diff(
         dfbase = dfbase.loc[dfbase[col] == fixval].copy()
 
     dfcomp = reeds.io.read_report(casecomp, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
-    dfcomp[ycol[val]]*=outputs_unit_converstion[val]
     if 'tech' in dfcomp.columns:
         dfcomp.tech = simplify_techs(dfcomp.tech, display_level = simple_techs)
         dfcomp = (
@@ -1926,13 +1905,12 @@ def plot_prmtrade(
     dfba = dfba.loc[val_r].copy()
 
     if sw.get('GSw_RegionResolution', 'ba') != 'county':
-        endpoints = (
-            gpd.read_file(os.path.join(reeds_path,'inputs','shapefiles','transmission_endpoints'))
-            .set_index('ba_str'))
-        endpoints['x'] = endpoints.centroid.x
-        endpoints['y'] = endpoints.centroid.y
-        dfba['x'] = dfba.index.map(endpoints.x)
-        dfba['y'] = dfba.index.map(endpoints.y)
+        endpoints = reeds.plots.df2gdf(
+            reeds.io.assemble_hierarchy(case).set_index('r'),
+            lat='node_lat', lon='node_lon',
+        )
+        dfba['x'] = dfba.index.map(endpoints.centroid.x)
+        dfba['y'] = dfba.index.map(endpoints.centroid.y)
 
     ### Get scaling and layout
     _vmax = dfplot.MW.abs().max() if vmax in [None, 0, 0.] else vmax
@@ -3756,10 +3734,21 @@ def map_hybrid_pv_wind(
 def plot_dispatch_yearbymonth(
         case, t=2050, plottype='gen', periodtype='rep',
         techs=None, region=None,
-        f=None, ax=None, figsize=(12,6), highlight_rep_periods=1,
+        figsize=(12,6), highlight_rep_periods=1,
     ):
     """
     Full year dispatch for final year with rep days mapped to actual days
+
+    Usage:
+        ```python
+        plot_generator = plot_dispatch_yearbymonth(case)
+        while True:
+            try:
+                f, ax, df = next(plot_generator)
+            except StopIteration:
+                break
+        ```
+
     Inputs
     ------
     techs: None to plot all techs, or list of subset techs, or single tech string
@@ -3871,46 +3860,51 @@ def plot_dispatch_yearbymonth(
         period_szn['repnum'] = period_szn.rep_period.map(repnum)
 
     ### Plot it
-    plt.close()
-    f, ax = plots.plotyearbymonth(
-        dfplot,
-        colors=[
-            tech_color[i.replace('_pos','').replace('_neg','').replace('_off','')]
-            for i in dfplot],
-        lwforline=0, f=f, ax=ax, figsize=figsize)
+    weatheryears = [int(i) for i in sw.GSw_HourlyWeatherYears.split('_')]
+    for weatheryear in weatheryears:
+        _dfplot = dfplot.loc[str(weatheryear)]
 
-    if highlight_rep_periods:
-        width = pd.Timedelta('5D') if sw['GSw_HourlyType'] == 'wek' else pd.Timedelta('1D')
-        ylim = ax[0].get_ylim()
-        for i, row in period_szn.iterrows():
-            plottime = pd.Timestamp(2001, 1, row.timestamp.day)
-            if row.rep:
-                ## Draw an outline
-                box = mpl.patches.Rectangle(
-                    xy=(plottime, ylim[0]),
-                    width=width, height=(ylim[1]-ylim[0]),
-                    lw=0.75, edgecolor='k', facecolor='none', ls=':',
-                    clip_on=False, zorder=2e6
-                )
-            else:
-                ## Wash out the dispatch
-                box = mpl.patches.Rectangle(
-                    xy=(plottime, ylim[0]),
-                    width=width, height=(ylim[1]-ylim[0]),
-                    lw=0.75, edgecolor='none', facecolor='w', alpha=0.4,
-                    clip_on=False, zorder=1e6
-                )
-            ax[row.timestamp.month-1].add_patch(box)
-            ## Note the rep period
-            ax[row.timestamp.month-1].annotate(
-                row.repnum,
-                (plottime+pd.Timedelta('30m'), ylim[1]*0.95),
-                va='top', size=5, zorder=1e7,
-                color=('k' if row.rep else 'C7'),
-                weight=('normal' if row.rep else 'normal'),
-            )
+        plt.close()
+        f, ax = plots.plotyearbymonth(
+            _dfplot,
+            colors=[
+                tech_color[i.replace('_pos','').replace('_neg','').replace('_off','')]
+                for i in _dfplot],
+            lwforline=0, figsize=figsize)
 
-    return f, ax, dfplot
+        if highlight_rep_periods:
+            _period_szn = period_szn.loc[period_szn.year==weatheryear]
+            width = pd.Timedelta('5D') if sw['GSw_HourlyType'] == 'wek' else pd.Timedelta('1D')
+            ylim = ax[0].get_ylim()
+            for i, row in _period_szn.iterrows():
+                plottime = pd.Timestamp(2001, 1, row.timestamp.day)
+                if row.rep:
+                    ## Draw an outline
+                    box = mpl.patches.Rectangle(
+                        xy=(plottime, ylim[0]),
+                        width=width, height=(ylim[1]-ylim[0]),
+                        lw=0.75, edgecolor='k', facecolor='none', ls=':',
+                        clip_on=False, zorder=2e6
+                    )
+                else:
+                    ## Wash out the dispatch
+                    box = mpl.patches.Rectangle(
+                        xy=(plottime, ylim[0]),
+                        width=width, height=(ylim[1]-ylim[0]),
+                        lw=0.75, edgecolor='none', facecolor='w', alpha=0.4,
+                        clip_on=False, zorder=1e6
+                    )
+                ax[row.timestamp.month-1].add_patch(box)
+                ## Note the rep period
+                ax[row.timestamp.month-1].annotate(
+                    row.repnum,
+                    (plottime+pd.Timedelta('30m'), ylim[1]*0.95),
+                    va='top', size=5, zorder=1e7,
+                    color=('k' if row.rep else 'C7'),
+                    weight=('normal' if row.rep else 'normal'),
+                )
+
+        yield f, ax, _dfplot, weatheryear
 
 
 def plot_dispatch_weightwidth(
@@ -5168,8 +5162,22 @@ def map_period_dispatch(
     return f, ax, out
 
 
+def make_dayofyear_colormap(startfrom=200, fmt='%-m/%-d'):
+    """
+    Map day of year to a value in [0-1] that can be used to look up a color from a cyclic colormap
+    """
+    days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
+    monthdays = days_of_year.strftime(fmt)
+    colorvals = (
+        list(np.linspace(0,1,len(monthdays))[startfrom:])
+        + list(np.linspace(0,1,len(monthdays))[:startfrom])
+    )
+    monthday2val = dict(zip(monthdays, colorvals))
+    return monthday2val
+
+
 def plot_seed_stressperiods(
-    case, cmap=cmocean.cm.phase, startfrom=200,
+    case, cmap=cmocean.cm.phase,
     alpha=0.7, fontsize=5, pealpha=0.8, pelinewidth=1.5,
 ):
     """
@@ -5196,7 +5204,9 @@ def plot_seed_stressperiods(
         dictin_seed[year]['monthday'] = dictin_seed[year].timestamp.map(lambda x: x.strftime('%m-%d'))
 
     days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
-    monthdays = days_of_year.strftime('%m-%d')
+    fmt = '%m-%d'
+    monthdays = days_of_year.strftime(fmt)
+    monthday2val = make_dayofyear_colormap(fmt=fmt)
 
     ### Recalculate peak load days since we dropped duplicates above
     load_allyears = hourly_repperiods.get_load(
@@ -5218,26 +5228,6 @@ def plot_seed_stressperiods(
             level=sw['GSw_PRM_StressSeedLoadLevel'])
         for y in years
     }
-
-    ### Put cold colors in winter
-    colorvals = (
-        list(np.linspace(0,1,len(monthdays))[startfrom:])
-        + list(np.linspace(0,1,len(monthdays))[:startfrom])
-    )
-    monthday2val = dict(zip(monthdays, colorvals))
-
-    # ### Test it
-    # step = 5
-    # plt.close()
-    # f,ax = plt.subplots(figsize=(12,3))
-    # for x, monthday in enumerate(monthdays[::step]):
-    #     color = cmap(monthday2val[monthday])
-    #     ax.plot([x], [0], color=color, marker='o')
-    #     ax.annotate(monthday, (x, 0.015), rotation=90, ha='center', va='center', color=color)
-    # ax.set_title(startfrom)
-    # plots.despine(ax)
-    # plt.show()
-
 
     ### Plot it
     ncols = 3
@@ -5334,36 +5324,41 @@ def plot_seed_stressperiods(
     return f, ax
 
 
-def plot_repdays(case, cmap=cmocean.cm.phase, alpha=0.7, startfrom=200):
+def plot_repdays(case=None, year=None, actualday2repday=None, cmap=cmocean.cm.phase, alpha=0.7):
     """Plot representative days in (12month)x(monthdays) format"""
     ### Setup
     months = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ]
-    ### Get color map
-    days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
-    monthdays = days_of_year.strftime('%m/%d')
-    colorvals = (
-        list(np.linspace(0,1,len(monthdays))[startfrom:])
-        + list(np.linspace(0,1,len(monthdays))[:startfrom])
-    )
-    monthday2val = dict(zip(monthdays, colorvals))
 
     ### Data
-    sw = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'switches.csv'), header=None, index_col=0
-    ).squeeze(1)
+    sw = reeds.io.get_switches(case)
+    stylestring = '%-m/%-d' if os.name == 'posix' else '%#m/%#d'
+    monthday2val = make_dayofyear_colormap(fmt=stylestring)
+    va = 'center'
+    ytext = 0.5
+    if len(sw.GSw_HourlyWeatherYears.split('_')) > 1:
+        stylestring += '/\n%Y'
+        va = 'top'
+        ytext = 0.9
 
-    hmap_myr = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv'),
-        index_col='*timestamp', parse_dates=True,
-    )
+    if actualday2repday is None:
+        hmap_myr = pd.read_csv(
+            os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv'),
+            index_col='*timestamp', parse_dates=True,
+        )
+        hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
+        hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
 
-    hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
-    hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
+        if year is None:
+            year = int(sw.GSw_HourlyWeatherYears.split('_')[0])
 
-    actualday2repday = hmap_myr.drop_duplicates('yearperiod', keep='first').timestamp_rep
+        actualday2repday = (
+            hmap_myr.loc[str(year)]
+            .drop_duplicates(['year','yearperiod'], keep='first')
+            .timestamp_rep
+        )
     repdaycounts = actualday2repday.value_counts()
 
     ### Plot it
@@ -5383,17 +5378,17 @@ def plot_repdays(case, cmap=cmocean.cm.phase, alpha=0.7, startfrom=200):
         row = actualday.month - 1
         xstart = actualday.day - 1
         xend = xstart + (5 if sw.GSw_HourlyType == 'wek' else 1)
-        monthday = repday.strftime('%m/%d')
+        monthday = repday.strftime(stylestring).split('/\n')[0]
         ## Background color
         ax[row].axvspan(xstart, xend, color=cmap(monthday2val[monthday]), alpha=alpha, lw=0)
         ## Date
         ax[row].annotate(
-            repday.strftime('%-m/%-d' if os.name == 'posix' else '%#m/%#d'),
-            (xstart+0.5, 0.5), ha='center', va='center', fontsize=8,
-            path_effects=[pe.withStroke(linewidth=2.1, foreground='w', alpha=1)],
+            repday.strftime(stylestring),
+            (xstart+0.5, ytext), ha='center', va=va, fontsize=8,
+            path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.8)],
         )
         ## Box
-        if (actualday.month == repday.month) and (actualday.day == repday.day):
+        if (actualday.year, actualday.month, actualday.day) == (repday.year, repday.month, repday.day):
             ax[row].axvspan(xstart, xend, facecolor='none', edgecolor='k', zorder=1e6, clip_on=False)
             ax[row].annotate(
                 f'×{repdaycounts[repday]}', (xend-0.03, 0.05), ha='right', fontsize=7,

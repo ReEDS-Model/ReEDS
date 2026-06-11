@@ -934,7 +934,10 @@ cc_new(i,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,r,ccseason,t)] = sum{v$iv
 
 cap_firm(i,r,ccseason,t)$[valcap_irt(i,r,t)$[not consume(i)]$tmodel_new(t)$Sw_PRM_CapCredit] =
       sum{v$[(not vre(i))$(not hydro(i))$(not storage(i))$(not storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
-          CAP.l(i,v,r,t) * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t)) }
+          CAP.l(i,v,r,t) 
+          * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t)) 
+          * (1 - mean_forced_outage_rate(i,r,ccseason,t))
+          }
     + cc_old(i,r,ccseason,t)
     + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valinv(i,v,r,t)],
          m_cc_mar(i,r,ccseason,t) * (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb]) }

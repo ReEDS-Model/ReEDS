@@ -221,16 +221,15 @@ def calculate_class_region_cf_hourly(
     # Concatenate all CF data
     class_region_cf_hourly = pd.concat(df_list)
 
-    # Shift timezone from UTC to tz_out
+    # Shift timezone from UTC to tz_out and trim to modeled years
+    timeindex = reeds.timeseries.get_timeindex(weather_years)
     utc_offset = -1 * int(tz_out.split('Etc/GMT')[1])
     class_region_cf_hourly = (
         class_region_cf_hourly.shift(utc_offset)
         .tz_localize(None)
         .tz_localize(tz_out)
+        .loc[timeindex]
     )
-    class_region_cf_hourly = class_region_cf_hourly.loc[(
-        class_region_cf_hourly.index.year.isin(weather_years)
-    )]
     class_region_cf_hourly.index.names = ['datetime']
 
     return class_region_cf_hourly
@@ -282,9 +281,9 @@ def main(reeds_path, inputs_case):
     print('Starting recf.py')
     
     # #%% Settings for testing
-    # reeds_path = os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))
+    # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20260416_mainM0_Pacific','inputs_case')
+    #     reeds_path,'runs','v20260601_repM0_USA_H20_ramp3_yr12_ys1623','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
