@@ -530,7 +530,6 @@ _diff_total_scatter = diff_plot.scatter(
     source=diff_total_source,
     size=12, marker="circle",
     fill_color="#000", line_color="#000",
-    legend_label="Total error",
 )
 # Hover tooltips: per-tech slice gets tech / region / signed value, the
 # net dot gets the region and signed total.
@@ -560,10 +559,6 @@ diff_plot.add_tools(_diff_slice_hover, _diff_total_hover)
 diff_plot.add_layout(
     Span(location=0, dimension="width", line_color="#888", line_width=1)
 )
-diff_plot.legend.location = "top_right"
-diff_plot.legend.click_policy = "hide"
-diff_plot.legend.background_fill_alpha = 0.7
-diff_plot.legend.label_text_font_size = "9pt"
 
 
 # ---------------------------------------------------------------------------
@@ -585,7 +580,12 @@ diff_plot.legend.label_text_font_size = "9pt"
 # :func:`surrogate_uq.conformal_widths` and aggregated through the SAME
 # ``agg_system`` / ``agg_regional`` pipeline that the values use, so the
 # numerator and denominator of the ratio always come from matching slices.
-UQ_CI_PCT_MAX = 50.0   # values >= 50% map to deepest red
+# Colour-mapper for the UQ panel slices.  Linear green -> yellow -> red
+# gradient runs over 0-50%.  Anything > 50% (including near-zero pred
+# divide-by-zero blow-ups) gets painted SOLID BLACK via ``high_color``
+# so outliers stand out without flattening the gradient for the rest.
+UQ_CI_PCT_MAX = 50.0
+UQ_HIGH_COLOR = "#000000"
 uq_color_mapper = LinearColorMapper(
     # Bokeh's RdYlGn11 already goes GREEN -> YELLOW -> RED (idx 0 = #006837,
     # idx 10 = #a50026), which is exactly what we want for an "uncertainty"
@@ -594,6 +594,7 @@ uq_color_mapper = LinearColorMapper(
     palette=RdYlGn11,
     low=0.0,
     high=UQ_CI_PCT_MAX,
+    high_color=UQ_HIGH_COLOR,
 )
 uq_plot = figure(
     height=_UQ_HEIGHT,
@@ -658,18 +659,16 @@ ci_colorbar_fig = figure(
 )
 ci_colorbar_fig.axis.visible = False
 ci_colorbar_fig.grid.visible = False
-ci_colorbar_fig.add_layout(
-    ColorBar(
-        color_mapper=uq_color_mapper,
-        title=f"90% CI / |value| (%)  — clipped at {UQ_CI_PCT_MAX:.0f}%",
-        ticker=BasicTicker(desired_num_ticks=6),
-        label_standoff=6,
-        width=18,
-        border_line_color=None,
-        location=(0, 0),
-    ),
-    "center",
+uq_colorbar = ColorBar(
+    color_mapper=uq_color_mapper,
+    title=f"90% CI / |value| (%)  — ≥{UQ_CI_PCT_MAX:.0f}% shown black",
+    ticker=BasicTicker(desired_num_ticks=6),
+    label_standoff=6,
+    width=18,
+    border_line_color=None,
+    location=(0, 0),
 )
+ci_colorbar_fig.add_layout(uq_colorbar, "center")
 
 
 # ---------------------------------------------------------------------------
@@ -1253,17 +1252,21 @@ def _render_uq_panel(
         else:
             top, bot = neg_base, neg_base + pred_val
             neg_base = bot
-        # CI% relative to |value|. If value is ~0 but CI is non-zero we
-        # have very high relative uncertainty -> clip to colormap max so
-        # the slice still gets the deepest red.
+        # CI% relative to |value|. No clipping: 0-50% gets the green->
+        # yellow->red gradient via the LinearColorMapper, >50% gets the
+        # mapper's high_color (solid black) so outliers are visible but
+        # don't flatten the gradient. For pred ~= 0 with non-zero CI we
+        # have effectively infinite relative uncertainty -> assign a
+        # large finite sentinel so the slice is coloured black and the
+        # hover formatter still produces a readable number.
         if abs(pred_val) > threshold:
             pct = half_val / abs(pred_val) * 100.0
         else:
-            pct = UQ_CI_PCT_MAX
+            pct = 999.0
         rows["x"].append(x_key)
         rows["bottom"].append(bot)
         rows["top"].append(top)
-        rows["ci_pct"].append(min(pct, UQ_CI_PCT_MAX))
+        rows["ci_pct"].append(pct)
         rows["tech"].append(cat)
         rows["pred"].append(pred_val)
         rows["half"].append(half_val)
@@ -1337,7 +1340,6 @@ def _render_uq_panel(
         end=ymax + pad,
     )
     uq_plot.title.text = "Predicted stack coloured by 90% CI / |value| (%)"
-
 
 def _tol_color(pct_err: float, good: float, warn: float) -> str:
     """Green / amber / red CSS color based on |pct_err|."""
