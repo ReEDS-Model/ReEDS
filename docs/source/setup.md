@@ -85,12 +85,6 @@ Screenshot of a test of Python in the terminal window
 #### MacOS
 Download the latest version of Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download)
 
-**IMPORTANT**: Make sure to download the Intel version even if your machine has an Apple Silicon / ARM processor. 
-
-```{figure} figs/readme/anaconda-intel.png
-:name: figure-anaconda-intel
-```
-
 During Installation, select to install Anaconda for your machine only.
 
 ```{figure} figs/readme/anaconda-install-mac.png

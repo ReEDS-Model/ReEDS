@@ -1535,11 +1535,6 @@
     - **Dollar year:** 2004
 ---
 
-  - [cendivweights.csv](/inputs/fuelprices/cendivweights.csv)
-    - **Description:** weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders
-    - **Indices:** r,cendiv
----
-
   - [coal_AEO_2025_reference.csv](/inputs/fuelprices/coal_AEO_2025_reference.csv)
     - **File Type:** Input
     - **Description:** AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
@@ -1842,23 +1837,6 @@
 
   - [cangrowth.csv](/inputs/load/cangrowth.csv)
     - **Description:** Canada load growth multiplier
----
-
-  - [demand_AEO_2023_high.csv](/inputs/load/demand_AEO_2023_high.csv)
-    - **Description:** Load growth projection from the AEO2023 High Economic Growth scenario
-    - **Units:** unitless
-
----
-
-  - [demand_AEO_2023_low.csv](/inputs/load/demand_AEO_2023_low.csv)
-    - **Description:** Load growth projection from the AEO2023 Low Economic Growth scenario
-    - **Units:** unitless
-
----
-
-  - [demand_AEO_2023_reference.csv](/inputs/load/demand_AEO_2023_reference.csv)
-    - **Description:** Load growth projection from the AEO2023 Reference scenario
-    - **Units:** unitless
 
 ---
 
@@ -1876,6 +1854,24 @@
 
   - [demand_AEO_2025_reference.csv](/inputs/load/demand_AEO_2025_reference.csv)
     - **Description:** Load growth projection from the AEO2025 Reference scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_high.csv](/inputs/load/demand_AEO_2026_high.csv)
+    - **Description:** Load growth projection from the AEO2026 High Economic Growth scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_low.csv](/inputs/load/demand_AEO_2026_low.csv)
+    - **Description:** Load growth projection from the AEO2026 Low Economic Growth scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_baseline.csv](/inputs/load/demand_AEO_2026_reference.csv)
+    - **Description:** Load growth projection from the AEO2026 Counterfactual Baseline scenario
     - **Units:** unitless
 
 ---
@@ -3978,4 +3974,3 @@
 - [sources.csv](/sources.csv)
   - **Description:** CSV file containing a list of all input files (csv, h5, csv.gz)
 ---
-
