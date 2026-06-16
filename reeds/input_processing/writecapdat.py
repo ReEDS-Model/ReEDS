@@ -66,11 +66,6 @@ def create_rsc_wsc(gendb,TECH,scalars,startyear):
 
 #########################
 ### STATIC DICTIONARY ###
-'''
-This dictionary must be placed at the module level of this script to be used with the 
-create_rsc_wsc() function in aggregate_regions
-'''
-
 TECH = {
     'capnonrsc': [
         'coaloldscr', 'coalolduns', 'biopower', 'coal-igcc',

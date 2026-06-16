@@ -1575,8 +1575,12 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             ## Capacity factor and load
             hourly_plots.plot_maps(sw, inputs_case, reeds_path, figpath)
             ## Representative days
-            f, ax, _ = reeds.reedsplots.plot_repdays(os.path.dirname(os.path.abspath(inputs_case)))
-            plt.savefig(os.path.join(figpath, 'inputs_repdays.png'))
+            for year in sw.GSw_HourlyWeatherYears:
+                f, ax, _ = reeds.reedsplots.plot_repdays(
+                    case=os.path.dirname(os.path.abspath(inputs_case)),
+                    year=int(year),
+                )
+                plt.savefig(os.path.join(figpath, f'inputs_repdays-{year}.png'))
         except Exception:
             import traceback
             print(traceback.format_exc())

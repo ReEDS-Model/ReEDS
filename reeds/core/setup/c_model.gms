@@ -1718,6 +1718,7 @@ eq_reserve_margin(r,ccseason,t)
     + sum{(i,v)$[valcap(i,v,r,t)$(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))$(not forced_retire(i,r,t))],
           CAP(i,v,r,t)
           * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))
+          * (1 - mean_forced_outage_rate(i,r,ccseason,t))
          }
 
 *[plus] firm capacity from existing VRE or CSP
@@ -2017,7 +2018,7 @@ eq_POI_cap(r,t)
 * to make sure we account for the existing spur line capacity already included in poi_cap_init)...
     + sum{x$[xfeas(x)$x_r(x,r)$Sw_SpurScen], CAP_SPUR(x,t) }
 * and AC/DC converter capacity for VSC...
-    + CAP_CONVERTER(r,t)
+    + CAP_CONVERTER(r,t)$val_converter(r,t)
 * and LCC (INVTRAN(r,rr) == INVTRAN(rr,r) for DC so only need to add one direction)
     + sum{(rr,tt)$[routes_inv(r,rr,"LCC",t)$(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))],
           INVTRAN(r,rr,"LCC",tt)
@@ -2029,9 +2030,9 @@ eq_POI_cap(r,t)
 * flows cannot exceed the total transmission capacity
 eq_transmission_limit(r,rr,h,t,trtype)$[tmodel(t)$routes(r,rr,trtype,t)]..
 
-* Representative periods use the energy (n-0) capacity.
+* Representative periods use the energy capacity
     (CAPTRAN_ENERGY(r,rr,trtype,t) * (1 + trans_cap_delta(h,t)))$h_rep(h)
-* Stress periods use the PRM (n-1) capacity.
+* Stress periods use the PRM capacity
 * Because these periods are assumed to be mutually exclusive, each timeslice should only
 * have a single capacity applied.
     + (CAPTRAN_PRM(r,rr,trtype,t) * (1 + trans_cap_delta(h,t)))$[h_stress(h)$routes_prm(r,rr)]
