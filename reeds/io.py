@@ -341,7 +341,10 @@ def get_dfmap(case=None, levels=None, exclude_water_areas=True):
     """Get dictionary of maps at different hierarchy levels"""
     hierarchy = (
         get_hierarchy(case, original=True)
-        .drop(columns=['aggreg', 'st_interconnect'], errors='ignore')
+        .drop(
+            columns=['aggreg', 'st_interconnect', 'md5', 'node_lat', 'node_lon'],
+            errors='ignore'
+        )
     )
     hierarchy_levels = list(hierarchy.columns)
     if levels:
