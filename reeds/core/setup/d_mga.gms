@@ -140,6 +140,9 @@ eq_MGA_Objective$Sw_MGA..
           $routes(r,rr,trtype,t)],
           CAPTRAN_ENERGY(r,rr,trtype,t) 
           * pvf_onm(t)
+* CAPTRAN_ENERGY is defined in both directions so needs to be divided by 2
+* but we don't divide by 2 here since it is not divided by 2 in the
+* objective function (will fix this separately)         
           * employment_factor_inter_transmission("fom")  }
 ;
 
