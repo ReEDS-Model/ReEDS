@@ -2000,10 +2000,15 @@ eq_prescribed_transmission(r,rr,trtype,t)
 
 * ---------------------------------------------------------------------------
 
-* New point-of-interconnection (POI) intra-zone transmission capacity must be added for new
-* generation capacity. With POI_cost_type=regional there is a single group 'all' covering all
-* technologies (identical to the legacy formulation); with POI_cost_type=techspecific each tech
-* group (wind, pv, other) must cover its own capacity on its own per-group reinforcement curve.
+* Point-of-interconnection (POI) / intra-zone network-reinforcement COST accounting.
+* This is a PRICE-ONLY mechanism: new generation is charged a per-MW reinforcement cost off the
+* supply curve and NO deliverable intra-zone transmission capacity is created. INV_POI never
+* enters the power balance, the transmission flow limits, or CAPTRAN; it relieves no flow. The
+* accounting quantity is sized to the group's interconnected generation capacity (CAP/ilr, AC)
+* solely so the curve price can be levied on it -- it is a cost basis, not transmission capability.
+* With POI_cost_type=regional there is a single group 'all' covering all technologies (identical
+* to the legacy formulation); with POI_cost_type=techspecific each tech group (wind, pv, other) is
+* charged on its own per-group reinforcement curve.
 * The free existing capacity (poi_cap_init) and the non-generator POI terms (spur, converter,
 * LCC) attach to the base group only (poi_basegroup: 'all' regional, 'other' techspecific).
 eq_POI_cap(poigroup,r,t)

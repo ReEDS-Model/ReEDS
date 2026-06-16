@@ -1,5 +1,6 @@
 #%% Imports
 import argparse
+import os
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -615,550 +616,308 @@ def calculate_co2_storage_routes(dfzones, max_miles=200):
     return routes_cs
 
 
-#%% ===========================================================================
-### --- PROCEDURE ---
-### ===========================================================================
-
-#%% Limits on PRMTRADE across nercr boundaries
-if not int(sw.GSw_PRM_NetImportLimit):
-    ## No limit
-    firm_import_limit = pd.DataFrame(columns=['*nercr','t','fraction']).set_index(['*nercr','t'])
-else:
-    limits = pd.Series(
-        {int(i.split('_')[0]): i.split('_')[1] for i in sw.GSw_PRM_NetImportLimitScen.split('/')}
-    )
-
-    solveyears = pd.read_csv(
-        os.path.join(inputs_case,'modeledyears.csv')
-    ).columns.astype(int).tolist()
-    startyear = min(solveyears)
-    endyear = max(solveyears)
-    allyears = range(startyear, max(endyear, limits.index.max())+1)
-
-    ## calculate the historical net_firm_import fraction for each region and drop negative values
-    peak_net_imports = pd.read_csv(
-        os.path.join(inputs_case,'peak_net_imports.csv'),
-        index_col=['nercr']
-    )
-    net_firm_import_frac = (
-        peak_net_imports.MW / peak_net_imports.MW_TotalDemand
-    ).clip(lower=0)
-    nercrs = net_firm_import_frac.index
-
-    _dfout = {}
-    for key, val in limits.items():
-        ## If 'hist' is in GSw_PRM_NetImportLimitScen,
-        ## all years up until that year use the historical regional max
-        if val == 'hist':
-            for y in range(startyear, key+1):
-                _dfout[y] = net_firm_import_frac
-        ## If 'histmax', all prior years use the historical max across all regions
-        elif val == 'histmax':
-            for y in range(startyear, key+1):
-                _dfout[y] = net_firm_import_frac.clip(lower=net_firm_import_frac.max())
-        else:
-            ## Input values are percentages so convert to fractions
-            _dfout[key] = pd.Series(index=nercrs, data=float(val) / 100)
-
-    firm_import_limit = (
-        pd.concat(_dfout, names=('t',)).unstack('nercr')
-        ## Linear interpolation between values; flat projections before and after
-        .reindex(allyears).interpolate('linear').bfill().ffill()
-        .loc[solveyears]
-        .unstack('t').rename('fraction').rename_axis(['*nercr','t'])
-    )
-
-firm_import_limit.to_csv(os.path.join(inputs_case, 'firm_import_limit.csv'))
+def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac):
+    """Make sure every non-AC transmission route has a cost"""
+    routecols = ['r', 'rr', 'trtype']
+    rename = {'r':'rr', 'rr':'r'}
+    ## Add both directions and sort them
+    routes = pd.concat([
+        trancap_fut[routecols],
+        trancap_fut.rename(columns=rename)[routecols],
+        trancap_init_energy[routecols],
+        trancap_init_energy.rename(columns=rename)[routecols],
+    ])
+    routes.r, routes.rr = routes[['r','rr']].min(axis=1), routes[['r','rr']].max(axis=1)
+    routes = routes.loc[routes.trtype != 'AC'].drop_duplicates()
+    ## Make sure each has a cost
+    dfcost = transmission_cost_nonac.copy()
+    dfcost.r, dfcost.rr = dfcost[['r','rr']].min(axis=1), dfcost[['r','rr']].max(axis=1)
+    dftest = routes.merge(dfcost, on=routecols, how='left').set_index(routecols).squeeze(1)
+    missing = dftest.loc[dftest.isnull()]
+    if len(missing):
+        print(missing)
+        raise ValueError(f'Missing non-AC transmission costs for {len(missing)} routes')
 
 
-#%% Load the transmission scalars
-scalars = reeds.io.get_scalars(inputs_case)
-### Put some in dicts for easier access
-tranloss_permile = {
-    'AC': scalars['tranloss_permile_ac'],
-    ### B2B converters are AC-AC/DC-DC/AC-AC, so use AC per-mile losses
-    'B2B': scalars['tranloss_permile_ac'],
-    'LCC': scalars['tranloss_permile_dc'],
-    'VSC': scalars['tranloss_permile_dc'],
-}
-tranloss_fixed = {
-    'AC': 1 - scalars['converter_efficiency_ac'],
-    'B2B': 1 - scalars['converter_efficiency_lcc'],
-    'LCC': 1 - scalars['converter_efficiency_lcc'],
-    'VSC': 1 - scalars['converter_efficiency_vsc'],
-}
-
-
-#%% Get single-link distances and losses
-interface_params = pd.read_csv(
-    os.path.join(inputs_case,'transmission_distance.csv'),
-)
-interface_params['r_rr'] = interface_params.r + '_' + interface_params.rr
-
-# Apply the distance multiplier
-interface_params['miles'] = interface_params['miles'] * float(sw.GSw_TransSquiggliness)
-
-# Make sure there are no duplicates
-if interface_params[['r','rr']].duplicated().sum():
-    print(
-        interface_params.loc[
-            interface_params[['r','rr']].duplicated(keep=False)
-        ].sort_values(['r','rr'])
-    )
-    raise Exception('Duplicate entries in transmission_distance.csv')
-
-### Calculate losses
-def getloss(row, trtype='AC'):
+def write_poi_supply_curve(case):
     """
-    Fixed losses are entered as per-endpoint values (e.g. for each AC/DC converter station
-    on a LCC DC line). There are two endpoints per line, so multiply fixed losses by 2.
-    Note that this approach only applies for LCC DC lines; VSC AC/DC losses are applied later.
+    Write the model-facing inputs_case/poi_supply_curve.csv in long format
+    (*poigroup, r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), plus rtscbin.csv (the bin
+    label set, used to size the GAMS rtscbin set when numpoibins=0). b_inputs.gms converts cost
+    $/kW -> $/MW (*1000) and charges each POI group on its own curve via eq_POI_cap(poigroup,r,t).
+
+    POI_cost_type = 'regional' (default): one zonal curve for all techs (poigroup='all'). numpoibins=1
+      (or POI_validate) -> flat GSw_TransIntraCost. Otherwise the zonal bins are built from the raw
+      cumulative interconnection curve (inputs/transmission/raw_interconnection_TSC_data.csv) via
+      make_poi_supply_curve.make_regional_poi_bins: numpoibins=0 -> native (one bin per raw segment),
+      numpoibins>1 -> re-binned to numpoibins; both append the unlimited GSw_POIUpperCost backstop
+      bin_upper. If the raw file is absent it falls back to the copied per-zone-set poi_supply_curve.csv.
+    POI_cost_type = 'techspecific': wind (wind-ons) and PV (upv) each get their OWN per-region
+      reinforcement curve from the reV supply-curve cost_reinforcement_usd_per_mw (deflated to
+      USD2004); 'other' (all non-VRE techs) gets the flat GSw_TransIntraCost floor. numpoibins=0 ->
+      full reV resolution; numpoibins>0 -> sampled to numpoibins unique-width bins minimizing the
+      native-vs-binned difference (optimal capacity-weighted least-squares segmentation).
     """
-    return row.miles * tranloss_permile[trtype] + tranloss_fixed[trtype] * 2
+    sw = reeds.io.get_switches(case)
+    reeds_path = reeds.io.reeds_path
+    inputs_case = os.path.join(case, 'inputs_case')
+    valid_regions = {'r': reeds.io.read_input(case, 'r').squeeze(1).tolist()}
 
-trtypes = ['AC', 'LCC', 'B2B', 'VSC']
-interface_params = pd.concat(
-    {
-        trtype:
-        interface_params.assign(loss=interface_params.apply(getloss, args=(trtype,), axis=1))
-        for trtype in trtypes
-    },
-    axis=0,
-    names=('trtype',),
-).reset_index(level='trtype').set_index(['r','rr','trtype'])
+    numpoibins = int(sw.numpoibins)
+    poicosttype = str(sw.get('POI_cost_type', 'regional'))
+    ## POI_validate (binning-sweep mode) routes numpoibins to the embedded VRE reinforcement
+    ## (handled in writesupplycurves.coarsen_reinforcement), so here the zonal POI is forced to the
+    ## flat GSw_TransIntraCost layer and held fixed across the sweep.
+    poi_validate = int(sw.get('POI_validate', 0) or 0)
 
+    if poicosttype == 'techspecific' and not poi_validate:
+        def _segment_curve(costs, caps, nbins, maxpts=400):
+            """Return [(cap_mw, cost_usd_per_mw), ...] bins for one region/tech curve.
+            nbins<=0 -> full native (distinct cost levels). nbins>0 -> optimal capacity-weighted L2
+            piecewise-constant segmentation (bin widths minimize the native-vs-binned difference)."""
+            df = (pd.DataFrame({'cost': costs, 'cap': caps})
+                  .groupby('cost', as_index=False)['cap'].sum().sort_values('cost').reset_index(drop=True))
+            x = df['cost'].to_numpy(float)
+            w = df['cap'].to_numpy(float)
+            n = len(x)
 
-#%% Include distances for existing lines
-transmission_distance = interface_params.miles.copy()
+            if (nbins <= 0) or (nbins >= n):
+                return list(zip(w, x))
+            ## Pre-aggregate to <=maxpts capacity-quantile micro-bins to bound the DP cost
+            if n > maxpts:
+                cum = np.cumsum(w)
+                bounds = np.unique(np.concatenate(
+                    [[0], np.clip(np.searchsorted(cum, np.linspace(0, cum[-1], maxpts + 1)[1:-1]), 0, n - 1) + 1, [n]]))
+                xs, ws = [], []
+                for a, b in zip(bounds[:-1], bounds[1:]):
+                    swt = w[a:b].sum()
+                    if swt > 0:
+                        ws.append(swt)
+                        xs.append((w[a:b] * x[a:b]).sum() / swt)
+                x = np.array(xs)
+                w = np.array(ws)
+                n = len(x)
 
-#%% Write the line-specific transmission FOM costs [$/MW/year]
-trans_fom_region_mult = int(scalars['trans_fom_region_mult'])
-trans_fom_frac = scalars['trans_fom_frac']
+            W = np.concatenate([[0], np.cumsum(w)])
+            WX = np.concatenate([[0], np.cumsum(w * x)])
+            WX2 = np.concatenate([[0], np.cumsum(w * x * x)])
 
-### For simplicity we just take the unweighted average base cost across
-### the four regions for which we have transmission cost data.
-### Future work should identify a better assumption.
-rev_transcost_base = pd.read_csv(
-    os.path.join(inputs_case,'rev_transmission_basecost.csv'),
-    header=[0], skiprows=[1],
-).replace({'500ACsingle':'AC','500DCbipole':'LCC'}).set_index('Voltage')
+            def sse(a, b):
+                swt = W[b] - W[a]
+                return 0.0 if swt <= 0 else (WX2[b] - WX2[a]) - (WX[b] - WX[a]) ** 2 / swt
+            INF = float('inf')
+            dp = np.full((nbins + 1, n + 1), INF)
+            cut = np.zeros((nbins + 1, n + 1), int)
 
-transfom_USDperMWmileyear = {
-    trtype: (
-        rev_transcost_base.loc[trtype][['TEPPC','SCE','MISO','Southeast']].mean()
-        * trans_fom_frac
-    )
-    for trtype in ['AC','LCC']
-}
-### B2B is treated like (AC line)-(AC/DC converter)-(AC/DC converter)-(AC line) so uses AC line FOM
-transfom_USDperMWmileyear['B2B'] = transfom_USDperMWmileyear['AC']
-transfom_USDperMWmileyear['VSC'] = transfom_USDperMWmileyear['LCC']
+            dp[0, 0] = 0.0
+            for k in range(1, nbins + 1):
+                for j in range(k, n + 1):
+                    best, ba = INF, k - 1
+                    for a in range(k - 1, j):
+                        v = dp[k - 1, a] + sse(a, j)
+                        if v < best:
+                            best, ba = v, a
+                    dp[k, j] = best
+                    cut[k, j] = ba
+            bins = []
+            j = n
+            for k in range(nbins, 0, -1):
+                a = cut[k, j]
+                swt = W[j] - W[a]
+                bins.append((swt, (WX[j] - WX[a]) / swt))
+                j = a
+            return list(reversed(bins))
 
-if trans_fom_region_mult:
-    ### Multiply line-specific $/MW by FOM fraction to get $/MW/year
-    transmission_line_fom = interface_params[costcol] * trans_fom_frac
-    ### Use regional average * distance_initial for existing lines
-    append = transmission_distance.loc[
-        transmission_distance.reset_index().trtype.isin(
-            ['AC','LCC','B2B','VSC']).set_axis(transmission_distance.index)
-    ]
-else:
-    ### Multiply $/MW/mile/year by distance [miles] to get $/MW/year for ALL lines
-    transmission_line_fom = (
-        transmission_distance.reset_index().trtype.map(transfom_USDperMWmileyear)
-        * transmission_distance.values
-    ).set_axis(transmission_distance.index).rename('USDperMWyear')
+        def _interconnection_deflator():
+            """Multiplier converting reV interconnection costs to USD2004 (the GSw_TransIntraCost basis)."""
+            try:
+                import h5py
+                with h5py.File(os.path.join(
+                        reeds_path, 'inputs', 'supply_curve', 'interconnection_land.h5'), 'r') as f:
+                    revyear = int(f['data'].attrs['dollaryear'])
+                defl = pd.read_csv(
+                    os.path.join(reeds_path, 'inputs', 'financials', 'deflator.csv'),
+                    header=0, names=['Dollar.Year', 'Deflator'], index_col='Dollar.Year')['Deflator']
+                return float(defl.loc[revyear])
+            except Exception as e:
+                print(f'WARNING: could not compute reV->USD2004 deflator ({e}); using 1.0')
+                return 1.0
 
-
-#%%### Write files for ReEDS (adding * to make GAMS read column names as comment)
-### transmission_distance
-transmission_distance.round(3).reset_index().rename(columns={'r':'*r'}).to_csv(
-    os.path.join(inputs_case,'transmission_miles.csv'), index=False)
-
-### tranloss
-tranloss = interface_params['loss'].reset_index()
-tranloss.round(decimals).rename(columns={'r':'*r'}).to_csv(
-    os.path.join(inputs_case,'tranloss.csv'), index=False, header=True)
-
-### transmission_line_fom
-transmission_line_fom.round(2).rename_axis(('*r','rr','trtype')).to_csv(
-    os.path.join(inputs_case,'transmission_line_fom.csv'))
-
-#%% Write the initial capacities
-case = Path(inputs_case).parent
-trancap_init = {}
-for captype, level in [
-    ('energy', 'r'),
-    ('transgroup', 'transgrp'),
-]:
-    trancap_init[captype] = get_trancap_init(
-        case=case, networksource=sw.GSw_TransNetworkSource, level=level)
-    ### TEMPORARY 20260402: Drop county interfaces with no distance/cost
-    if (level == 'r') and (sw.GSw_RegionResolution in ['county', 'mixed']):
-        indices = ['r', 'rr', 'trtype']
-        drop = (
-            trancap_init[captype]
-            .merge(transmission_line_fom.reset_index(), on=indices, how='left')
-        )
-        drop = list(drop.loc[drop.USDperMWyear.isnull(), indices].itertuples(index=False))
-        trancap_init[captype] = trancap_init[captype].set_index(indices).drop(drop).reset_index()
-    trancap_init[captype].rename(columns={level:'*'+level}).round(3).to_csv(
-        os.path.join(inputs_case,f'trancap_init_{captype}.csv'),
-        index=False,
-    )
-trancap_init['energy'].rename(columns={'r':'*r'}).round(3).to_csv(
-    os.path.join(inputs_case,'trancap_init_prm.csv'),
-    index=False,
-)
-### TEMPORARY 20260402: Skip itlgrp functionality until we fix it
-# ### Also write itlgrp capacity
-# trancap_itlgrp = trancap_init['energy'].copy()
-# ## Map counties to itlgrp's
-# hierarchy_itlgrp = pd.read_csv(os.path.join(inputs_case, 'hierarchy_itlgrp.csv'))
-# itl_d = dict(zip(hierarchy_itlgrp['*r'], hierarchy_itlgrp['itlgrp']))
-# for r in ['r', 'rr']:
-#     trancap_itlgrp[r] = trancap_itlgrp[r].map(lambda x: itl_d.get(x,x))
-# trancap_itlgrp.rename(columns={'r':'*itlgrp', 'rr':'itlgrpp'}).round(3).to_csv(
-#     os.path.join(inputs_case, 'trancap_init_itlgrp.csv'),
-#     index=False,
-# )
-
-
-#%%### Future transmission capacity
-## note that '0' is used as a filler value in the t column for firstyear_trans, which is defined
-## in inputs/scalars.csv. So we replace it whenever we load a transmission_capacity_future file.
-trancap_fut = (
-    pd.concat(
-        [
-            pd.read_csv(
-                os.path.join(inputs_case, 'transmission_capacity_future_baseline.csv'),
-                comment='#',
-            ),
-            pd.read_csv(
-                os.path.join(inputs_case, 'transmission_capacity_future.csv'),
-                comment='#',
+        def _binned_reinforcement(scfile, poigroup, nbins, deflator):
+            sc = pd.read_csv(scfile)
+            ## The binned-POI method zeroes cost_reinforcement_usd_per_mw in the supply curve (so it
+            ## is not charged on INV_RSC) and relocates it to the zonal INV_POI curve we build here.
+            ## Read the preserved native reinforcement so the relocation actually carries the cost;
+            ## fall back to the live column if the native one is absent (e.g. reinforcement not dropped).
+            reinfcol = (
+                'cost_reinforcement_usd_per_mw_native'
+                if 'cost_reinforcement_usd_per_mw_native' in sc.columns
+                else 'cost_reinforcement_usd_per_mw'
             )
-        ],
-        axis=0,
-        ignore_index=True,
-    )
-    .astype({'t': int})
-    .drop(['Notes', 'notes', 'Note', 'note'], axis=1, errors='ignore')
-    .replace({'t': {0: int(scalars['firstyear_trans_longterm'])}})
-)
+            sc = sc[['region', 'capacity', reinfcol]].dropna()
+            sc = sc.loc[sc['capacity'] > 0]
+            rows = []
+            for r, g in sc.groupby('region'):
+                if g['capacity'].sum() <= 0:
+                    continue
+                curve = _segment_curve(g[reinfcol].values, g['capacity'].values, nbins)
+                for k, (cap_mw, cost_mw) in enumerate(curve, start=1):
+                    ## reV $/MW -> USD2004 $/kW
+                    rows.append([poigroup, r, f'bin{k}', round(cost_mw * deflator / 1e3, 2), round(cap_mw, 1)])
+            return pd.DataFrame(rows, columns=['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw', 'cap_mw'])
 
-### Drop prospective AC lines from years <= trans_init_year
-trancap_fut = trancap_fut.drop(
-    trancap_fut.loc[
-        (trancap_fut.t <= trans_init_year)
-        & (trancap_fut.trtype == 'AC')
-    ].index,
-).copy()
-
-trancap_fut.rename(columns={'r':'*r'}).astype({'t':int}).round(3).to_csv(
-    os.path.join(inputs_case,'trancap_fut.csv'), index=False)
-
-
-#%%### Transmission upgrade supply curve
-transmission_cost_ac = pd.read_csv(
-    os.path.join(inputs_case, 'transmission_cost_ac.csv')
-)
-### Interfaces are always defined with the zones sorted in lexicographic order
-reverse_interfaces = transmission_cost_ac.loc[
-    transmission_cost_ac.apply(lambda row: row.r > row.rr, axis=1)
-]
-for i, row in reverse_interfaces.iterrows():
-    transmission_cost_ac.loc[i, ['r', 'rr']] = transmission_cost_ac.loc[i, ['rr', 'r']].values
-    transmission_cost_ac.loc[i, ['USD2004perMW_forward', 'USD2004perMW_reverse']] = (
-        transmission_cost_ac.loc[i, ['USD2004perMW_reverse', 'USD2004perMW_forward']].values
-    )
-
-_test = transmission_cost_ac.apply(lambda row: row.r < row.rr, axis=1)
-if not _test.all():
-    print(transmission_cost_ac.loc[~_test])
-    err = (
-        "Must have r < rr in AC transmission cost inputs but the interfaces "
-        "listed above are out of order"
-    )
-    raise ValueError(err)
-
-labels = {
-    'binwidth_USD2004': 'binwidth',
-    'USD2004perMW_forward': 'forward',
-    'USD2004perMW_reverse': 'reverse',
-}
-for col, label in labels.items():
-    transmission_cost_ac[['r','rr','tscbin',col]].rename(columns={'r':'*r'}).round(2).to_csv(
-        os.path.join(inputs_case, f'tsc_{label}.csv'),
-        index=False,
-    )
-reeds.io.write_to_inputs_h5(
-    df=transmission_cost_ac.tscbin.drop_duplicates().rename(),
-    key='tscbin',
-    case=inputs_case,
-    gamstype='set',
-    comment='transmission upgrade supply curve bins',
-)
-
-
-#%% DC and B2B transmission cost
-## Get DC line cost
-transmission_cost_dc = pd.read_csv(os.path.join(inputs_case, 'transmission_cost_dc.csv'))
-
-## B2B is: (zone center)--------(AC/DC converter)(DC/AC converter)--------(zone center)
-##                         ^ AC line                                 ^ AC line
-## so use AC per-mile costs.
-b2b_links = trancap_init['energy'].loc[
-    (trancap_init['energy'].trtype=='B2B')
-    & (trancap_init['energy'].r < trancap_init['energy'].rr)
-].set_index(['r','rr']).index
-## Take the weighted average of the whole supply curve (for the default 500 kV assumption
-## the supply curve only has one bin per interface, so it doesn't matter; when we add the
-## full supply curve, we'll need to include entries for these B2B-containing interfaces).
-df = transmission_cost_ac.set_index(['r','rr']).loc[b2b_links].copy()
-df['cost_weighted'] = (
-    df.binwidth_USD2004
-    * df.USD2004perMW_forward
-)
-transmission_cost_b2b = (
-    df.groupby(['r','rr','tscbin']).cost_weighted.sum()
-    / df.groupby(['r','rr','tscbin']).binwidth_USD2004.sum()
-).reset_index(level='tscbin', drop=True).rename('USD2004perMW').reset_index()
-## Add the reverse direction and write it
-transmission_cost_b2b = pd.concat([
-    transmission_cost_b2b,
-    transmission_cost_b2b.rename(columns={'r':'rr', 'rr':'r'})
-])
-
-### Write the combined cost table
-transmission_cost_nonac = (
-    pd.concat({
-        'LCC': transmission_cost_dc,
-        'B2B': transmission_cost_b2b,
-        'VSC': transmission_cost_dc,
-    }, names=('trtype','drop'))
-    .reset_index('drop', drop=True)
-    .reset_index()
-    .rename(columns={'r':'*r'})
-    [['*r','rr','trtype','USD2004perMW']]
-)
-transmission_cost_nonac.round(2).to_csv(
-    os.path.join(inputs_case, 'transmission_cost_nonac.csv'),
-    index=False,
-)
-
-
-#%%### Hurdle rates
-hurdle_levels = [1, 2]
-cost_hurdle_intra = (
-    pd.read_csv(os.path.join(inputs_case, 'cost_hurdle_intra.csv'))
-    .rename(columns={'t':'*t'}).set_index('*t').round(3)
-)
-cost_hurdle_rate = {
-    i: (
-        cost_hurdle_intra[sw[f'GSw_TransHurdleLevel{i}']] if int(sw.GSw_TransHurdleRate)
-        else pd.Series(name='region').rename_axis('*t')
-    )
-    for i in hurdle_levels
-}
-for i in hurdle_levels:
-    cost_hurdle_rate[i].to_csv(os.path.join(inputs_case, f'cost_hurdle_rate{i}.csv'))
-
-
-#%%### POI / network-reinforcement cost supply curve
-# Write the model-facing inputs_case/poi_supply_curve.csv in long format
-# (*poigroup, r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), plus rtscbin.csv (the bin
-# label set, used to size the GAMS rtscbin set when numpoibins=0). b_inputs.gms converts cost
-# $/kW -> $/MW (*1000) and charges each POI group on its own curve via eq_POI_cap(poigroup,r,t).
-#
-# POI_cost_type = 'regional' (default): one zonal curve for all techs (poigroup='all'). numpoibins=1
-#   (or POI_validate) -> flat GSw_TransIntraCost. Otherwise the zonal bins are built from the raw
-#   cumulative interconnection curve (inputs/transmission/raw_interconnection_TSC_data.csv) via
-#   make_poi_supply_curve.make_regional_poi_bins: numpoibins=0 -> native (one bin per raw segment),
-#   numpoibins>1 -> re-binned to numpoibins; both append the unlimited GSw_POIUpperCost backstop
-#   bin_upper. If the raw file is absent it falls back to the copied per-zone-set poi_supply_curve.csv.
-# POI_cost_type = 'techspecific': wind (wind-ons) and PV (upv) each get their OWN per-region
-#   reinforcement curve from the reV supply-curve cost_reinforcement_usd_per_mw (deflated to
-#   USD2004); 'other' (all non-VRE techs) gets the flat GSw_TransIntraCost floor. numpoibins=0 ->
-#   full reV resolution; numpoibins>0 -> sampled to numpoibins unique-width bins minimizing the
-#   native-vs-binned difference (optimal capacity-weighted least-squares segmentation).
-numpoibins = int(sw.numpoibins)
-poicosttype = str(sw.get('POI_cost_type', 'regional'))
-## POI_validate (binning-sweep mode) routes numpoibins to the embedded VRE reinforcement
-## (handled in writesupplycurves.coarsen_reinforcement), so here the zonal POI is forced to the
-## flat GSw_TransIntraCost layer and held fixed across the sweep.
-poi_validate = int(sw.get('POI_validate', 0) or 0)
-
-if poicosttype == 'techspecific' and not poi_validate:
-    def _segment_curve(costs, caps, nbins, maxpts=400):
-        """Return [(cap_mw, cost_usd_per_mw), ...] bins for one region/tech curve.
-        nbins<=0 -> full native (distinct cost levels). nbins>0 -> optimal capacity-weighted L2
-        piecewise-constant segmentation (bin widths minimize the native-vs-binned difference)."""
-        df = (pd.DataFrame({'cost': costs, 'cap': caps})
-              .groupby('cost', as_index=False)['cap'].sum().sort_values('cost').reset_index(drop=True))
-        x = df['cost'].to_numpy(float); w = df['cap'].to_numpy(float); n = len(x)
-        if (nbins <= 0) or (nbins >= n):
-            return list(zip(w, x))
-        ## Pre-aggregate to <=maxpts capacity-quantile micro-bins to bound the DP cost
-        if n > maxpts:
-            cum = np.cumsum(w)
-            bounds = np.unique(np.concatenate(
-                [[0], np.clip(np.searchsorted(cum, np.linspace(0, cum[-1], maxpts + 1)[1:-1]), 0, n - 1) + 1, [n]]))
-            xs, ws = [], []
-            for a, b in zip(bounds[:-1], bounds[1:]):
-                sw = w[a:b].sum()
-                if sw > 0:
-                    ws.append(sw); xs.append((w[a:b] * x[a:b]).sum() / sw)
-            x = np.array(xs); w = np.array(ws); n = len(x)
-        W = np.concatenate([[0], np.cumsum(w)]); WX = np.concatenate([[0], np.cumsum(w * x)])
-        WX2 = np.concatenate([[0], np.cumsum(w * x * x)])
-        def sse(a, b):
-            sw = W[b] - W[a]
-            return 0.0 if sw <= 0 else (WX2[b] - WX2[a]) - (WX[b] - WX[a]) ** 2 / sw
-        INF = float('inf'); dp = np.full((nbins + 1, n + 1), INF); cut = np.zeros((nbins + 1, n + 1), int)
-        dp[0, 0] = 0.0
-        for k in range(1, nbins + 1):
-            for j in range(k, n + 1):
-                best, ba = INF, k - 1
-                for a in range(k - 1, j):
-                    v = dp[k - 1, a] + sse(a, j)
-                    if v < best:
-                        best, ba = v, a
-                dp[k, j] = best; cut[k, j] = ba
-        bins = []; j = n
-        for k in range(nbins, 0, -1):
-            a = cut[k, j]; sw = W[j] - W[a]
-            bins.append((sw, (WX[j] - WX[a]) / sw)); j = a
-        return list(reversed(bins))
-
-    def _interconnection_deflator():
-        """Multiplier converting reV interconnection costs to USD2004 (the GSw_TransIntraCost basis)."""
-        try:
-            import h5py
-            with h5py.File(os.path.join(
-                    reeds_path, 'inputs', 'supply_curve', 'interconnection_land.h5'), 'r') as f:
-                revyear = int(f['data'].attrs['dollaryear'])
-            defl = pd.read_csv(
-                os.path.join(reeds_path, 'inputs', 'financials', 'deflator.csv'),
-                header=0, names=['Dollar.Year', 'Deflator'], index_col='Dollar.Year')['Deflator']
-            return float(defl.loc[revyear])
-        except Exception as e:
-            print(f'WARNING: could not compute reV->USD2004 deflator ({e}); using 1.0')
-            return 1.0
-
-    def _binned_reinforcement(scfile, poigroup, nbins, deflator):
-        sc = pd.read_csv(scfile)
-        ## The binned-POI method zeroes cost_reinforcement_usd_per_mw in the supply curve (so it
-        ## is not charged on INV_RSC) and relocates it to the zonal INV_POI curve we build here.
-        ## Read the preserved native reinforcement so the relocation actually carries the cost;
-        ## fall back to the live column if the native one is absent (e.g. reinforcement not dropped).
-        reinfcol = (
-            'cost_reinforcement_usd_per_mw_native'
-            if 'cost_reinforcement_usd_per_mw_native' in sc.columns
-            else 'cost_reinforcement_usd_per_mw'
-        )
-        sc = sc[['region', 'capacity', reinfcol]].dropna()
-        sc = sc.loc[sc['capacity'] > 0]
-        rows = []
-        for r, g in sc.groupby('region'):
-            if g['capacity'].sum() <= 0:
-                continue
-            curve = _segment_curve(g[reinfcol].values, g['capacity'].values, nbins)
-            for k, (cap_mw, cost_mw) in enumerate(curve, start=1):
-                ## reV $/MW -> USD2004 $/kW
-                rows.append([poigroup, r, f'bin{k}', round(cost_mw * deflator / 1e3, 2), round(cap_mw, 1)])
-        return pd.DataFrame(rows, columns=['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw', 'cap_mw'])
-
-    deflator = _interconnection_deflator()
-    parts = []
-    for poigroup, fname in {'wind': 'supplycurve_wind-ons.csv', 'pv': 'supplycurve_upv.csv'}.items():
-        fpath = os.path.join(inputs_case, fname)
-        if os.path.exists(fpath):
-            parts.append(_binned_reinforcement(fpath, poigroup, numpoibins, deflator))
-    bytech = (pd.concat(parts, ignore_index=True) if parts
-              else pd.DataFrame(columns=['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw', 'cap_mw']))
-    ## 'other' group (all non-wind/non-PV techs): flat GSw_TransIntraCost (USD2004/kW), unlimited
-    ## (single bin1, no cap). Defined for every model region.
-    other = pd.DataFrame({
-        'poigroup': 'other', 'r': valid_regions['r'], 'rtscbin': 'bin1',
-        'cost_usd_per_kw': float(sw.GSw_TransIntraCost), 'cap_mw': np.nan,
-    })
-    bytech = pd.concat([bytech, other], ignore_index=True)
-    bytech.to_csv(os.path.join(inputs_case, 'poi_supply_curve_bytech.csv'), index=False)
-    ## Melt to long format (cost rows always; cap rows where a finite width is defined)
-    cost_rows = (bytech[['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw']]
-                 .rename(columns={'cost_usd_per_kw': 'value'}).assign(sc_cat='cost'))
-    cap_rows = (bytech.loc[bytech['cap_mw'].notna(), ['poigroup', 'r', 'rtscbin', 'cap_mw']]
-                .rename(columns={'cap_mw': 'value'}).assign(sc_cat='cap'))
-    poi_model = pd.concat([cost_rows, cap_rows], ignore_index=True)[
-        ['poigroup', 'r', 'rtscbin', 'sc_cat', 'value']]
-else:
-    if (numpoibins == 1) or poi_validate:
-        ## Flat legacy POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
-        ## (b_inputs.gms also defaults any region the file omits to this same flat cost).
-        reg = pd.DataFrame({
-            'r': valid_regions['r'], 'rtscbin': 'bin1', 'sc_cat': 'cost',
-            'value': float(sw.GSw_TransIntraCost)})
+        deflator = _interconnection_deflator()
+        parts = []
+        for poigroup, fname in {'wind': 'supplycurve_wind-ons.csv', 'pv': 'supplycurve_upv.csv'}.items():
+            fpath = os.path.join(inputs_case, fname)
+            if os.path.exists(fpath):
+                parts.append(_binned_reinforcement(fpath, poigroup, numpoibins, deflator))
+        bytech = (pd.concat(parts, ignore_index=True) if parts
+                  else pd.DataFrame(columns=['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw', 'cap_mw']))
+        ## 'other' group (all non-wind/non-PV techs): flat GSw_TransIntraCost (USD2004/kW), unlimited
+        ## (single bin1, no cap). Defined for every model region.
+        other = pd.DataFrame({
+            'poigroup': 'other', 'r': valid_regions['r'], 'rtscbin': 'bin1',
+            'cost_usd_per_kw': float(sw.GSw_TransIntraCost), 'cap_mw': np.nan,
+        })
+        bytech = pd.concat([bytech, other], ignore_index=True)
+        bytech.to_csv(os.path.join(inputs_case, 'poi_supply_curve_bytech.csv'), index=False)
+        ## Melt to long format (cost rows always; cap rows where a finite width is defined)
+        cost_rows = (bytech[['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw']]
+                     .rename(columns={'cost_usd_per_kw': 'value'}).assign(sc_cat='cost'))
+        cap_rows = (bytech.loc[bytech['cap_mw'].notna(), ['poigroup', 'r', 'rtscbin', 'cap_mw']]
+                    .rename(columns={'cap_mw': 'value'}).assign(sc_cat='cap'))
+        poi_model = pd.concat([cost_rows, cap_rows], ignore_index=True)[
+            ['poigroup', 'r', 'rtscbin', 'sc_cat', 'value']]
     else:
-        ## Build the zonal curve from the raw cumulative interconnection data, re-binned to
-        ## numpoibins (numpoibins=0 -> native: one bin per raw segment), cost capped at
-        ## GSw_POIUpperCost. See inputs/transmission/make_poi_supply_curve.py.
-        raw_poi = os.path.join(
-            reeds_path, 'inputs', 'transmission', 'raw_interconnection_TSC_data.csv')
-        if os.path.exists(raw_poi):
-            import importlib.util
-            _spec = importlib.util.spec_from_file_location(
-                'make_poi_supply_curve',
-                os.path.join(reeds_path, 'inputs', 'transmission', 'make_poi_supply_curve.py'))
-            _poigen = importlib.util.module_from_spec(_spec)
-            _spec.loader.exec_module(_poigen)
-            reg = (
-                _poigen.make_regional_poi_bins(
-                    raw_poi, numpoibins=numpoibins, upper_cost=float(sw.GSw_POIUpperCost))
-                .rename(columns={'*r': 'r'}))
-            reg = reg.loc[reg['r'].isin(valid_regions['r'])].copy()
+        if (numpoibins == 1) or poi_validate:
+            ## Flat legacy POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
+            ## (b_inputs.gms also defaults any region the file omits to this same flat cost).
+            reg = pd.DataFrame({
+                'r': valid_regions['r'], 'rtscbin': 'bin1', 'sc_cat': 'cost',
+                'value': float(sw.GSw_TransIntraCost)})
         else:
-            ## Fall back to the committed per-zone-set poi_supply_curve.csv (copied to inputs_case).
-            ## numpoibins=0 keeps all of its bins; numpoibins>1 keeps bin1..binN.
-            reg = pd.read_csv(os.path.join(inputs_case, 'poi_supply_curve.csv'))
-            reg = reg.rename(columns={reg.columns[0]: 'r'})
-            if numpoibins > 1:
-                keep_bins = [f'bin{n}' for n in range(1, numpoibins + 1)]
-                reg = reg.loc[reg['rtscbin'].isin(keep_bins)].copy()
-        ## GSw_POIUpperCost: unlimited backstop bin (cost row only, no cap) so reinforcement above
-        ## the finite binned capacities stays feasible at a high price.
-        reg = pd.concat([reg, pd.DataFrame({
-            'r': reg['r'].unique(), 'rtscbin': 'bin_upper', 'sc_cat': 'cost',
-            'value': float(sw.GSw_POIUpperCost)})], ignore_index=True)
-    poi_model = reg.assign(poigroup='all')[['poigroup', 'r', 'rtscbin', 'sc_cat', 'value']]
+            ## Build the zonal curve from the raw cumulative interconnection data, re-binned to
+            ## numpoibins (numpoibins=0 -> native: one bin per raw segment), cost capped at
+            ## GSw_POIUpperCost. See inputs/transmission/make_poi_supply_curve.py.
+            raw_poi = os.path.join(
+                reeds_path, 'inputs', 'transmission', 'raw_interconnection_TSC_data.csv')
+            if os.path.exists(raw_poi):
+                import importlib.util
+                _spec = importlib.util.spec_from_file_location(
+                    'make_poi_supply_curve',
+                    os.path.join(reeds_path, 'inputs', 'transmission', 'make_poi_supply_curve.py'))
+                _poigen = importlib.util.module_from_spec(_spec)
+                _spec.loader.exec_module(_poigen)
+                reg = (
+                    _poigen.make_regional_poi_bins(
+                        raw_poi, numpoibins=numpoibins, upper_cost=float(sw.GSw_POIUpperCost))
+                    .rename(columns={'*r': 'r'}))
+                reg = reg.loc[reg['r'].isin(valid_regions['r'])].copy()
+            else:
+                ## Fall back to the committed per-zone-set poi_supply_curve.csv (copied to inputs_case).
+                ## numpoibins=0 keeps all of its bins; numpoibins>1 keeps bin1..binN.
+                reg = pd.read_csv(os.path.join(inputs_case, 'poi_supply_curve.csv'))
+                reg = reg.rename(columns={reg.columns[0]: 'r'})
+                if numpoibins > 1:
+                    keep_bins = [f'bin{n}' for n in range(1, numpoibins + 1)]
+                    reg = reg.loc[reg['rtscbin'].isin(keep_bins)].copy()
+            ## GSw_POIUpperCost: unlimited backstop bin (cost row only, no cap) so reinforcement above
+            ## the finite binned capacities stays feasible at a high price.
+            reg = pd.concat([reg, pd.DataFrame({
+                'r': reg['r'].unique(), 'rtscbin': 'bin_upper', 'sc_cat': 'cost',
+                'value': float(sw.GSw_POIUpperCost)})], ignore_index=True)
+        poi_model = reg.assign(poigroup='all')[['poigroup', 'r', 'rtscbin', 'sc_cat', 'value']]
 
-## Write the model-facing curve (leading '*' so GAMS treats the header row as a comment)
-poi_model.rename(columns={'poigroup': '*poigroup'}).to_csv(
-    os.path.join(inputs_case, 'poi_supply_curve.csv'), index=False)
+    ## Write the model-facing curve (leading '*' so GAMS treats the header row as a comment)
+    poi_model.rename(columns={'poigroup': '*poigroup'}).to_csv(
+        os.path.join(inputs_case, 'poi_supply_curve.csv'), index=False)
 
-## Write the rtscbin label set (bin1..binN in order, bin_upper last) for GAMS set sizing
-def _binkey(b):
-    return (1, 0) if b == 'bin_upper' else (0, int(str(b).replace('bin', '')))
-rtscbins = sorted(poi_model['rtscbin'].unique(), key=_binkey)
-pd.Series(rtscbins).to_csv(os.path.join(inputs_case, 'rtscbin.csv'), index=False, header=False)
+    ## Write the rtscbin label set (bin1..binN in order, bin_upper last) for GAMS set sizing
+    def _binkey(b):
+        return (1, 0) if b == 'bin_upper' else (0, int(str(b).replace('bin', '')))
+    rtscbins = sorted(poi_model['rtscbin'].unique(), key=_binkey)
+    pd.Series(rtscbins).to_csv(os.path.join(inputs_case, 'rtscbin.csv'), index=False, header=False)
 
 
-#%%### H2 pipeline cost multipliers
-# Calculate H2 pipeline cost multipliers by dividing the [$/mile] cost of DC transmission
-# between each pair of regions by the minimum interface [$/mile] cost for DC transmission
-# and subtracting 1 to get a fractional adder (which is then added to 1 in b_inputs.gms)
-fpath = os.path.join(inputs_case, 'pipeline_cost_mult.csv')
-if len(transmission_cost_nonac):
-    dc_cost_permile = (
-        transmission_cost_nonac.rename(columns={'*r':'r'})
-        .set_index(['trtype','r','rr']).loc['LCC'].squeeze(1)
-        / interface_params.xs('LCC', 0, 'trtype').miles
+#%% Main function
+def main(case):
+    #%% Calculate parameters
+    outputs = {}
+    outputs['firm_import_limit'] = get_firm_import_limit(case)
+
+    interface_params = get_interface_params(case)
+
+    outputs['transmission_miles'] = interface_params[['r','rr','trtype','miles']].round(3)
+    outputs['tranloss'] = interface_params[['r','rr','trtype','loss']].round(5)
+    outputs['transmission_line_fom'] = get_transmission_fom(case, interface_params).reset_index()
+    outputs['trancap_fut'] = get_trancap_fut(case)
+    outputs['transmission_cost_nonac'] = get_transmission_cost_nonac(case, interface_params)
+    ## A few downstream processes expect a single distance for each zone pair;
+    ## keep the longest
+    outputs['transmission_distance'] = (
+        outputs['transmission_miles'].drop(columns='trtype')
+        .sort_values('miles', ascending=False).drop_duplicates(['r','rr'], keep='first')
+        .sort_values(['r','rr'])
     )
-    pipeline_cost_mult = dc_cost_permile.rename('multiplier') / dc_cost_permile.min() - 1
 
-    pipeline_cost_mult.reset_index().rename(columns={'r':'*r'}).round(3).to_csv(
-        fpath,
-        index=False,
+    for hurdle_level in [1, 2]:
+        outputs[f'cost_hurdle_rate{hurdle_level}'] = get_hurdle_rates(case, hurdle_level)
+
+    for captype, level in [
+        ('energy', 'r'),
+        ('transgroup', 'transgrp'),
+    ]:
+        outputs[f'trancap_init_{captype}'] = get_trancap_init(
+            case=case, interface_params=interface_params, level=level,
+        )
+    outputs['trancap_init_prm'] = outputs['trancap_init_energy']
+
+    check_nonac_costs(
+        trancap_fut=outputs['trancap_fut'],
+        trancap_init_energy=outputs['trancap_init_energy'],
+        transmission_cost_nonac=outputs['transmission_cost_nonac'],
+    )
+
+    ### TEMPORARY 20260402: Skip itlgrp functionality until we fix it
+    # ### Also write itlgrp capacity
+    # trancap_itlgrp = trancap_init['energy'].copy()
+    # ## Map counties to itlgrp's
+    # hierarchy_itlgrp = pd.read_csv(Path(inputs_case, 'hierarchy_itlgrp.csv'))
+    # itl_d = dict(zip(hierarchy_itlgrp['r'], hierarchy_itlgrp['itlgrp']))
+    # for r in ['r', 'rr']:
+    #     trancap_itlgrp[r] = trancap_itlgrp[r].map(lambda x: itl_d.get(x,x))
+    # outputs['trancap_itlgrp'] = (
+    #     trancap_itlgrp
+    #     .rename(columns={'r':'itlgrp', 'rr':'itlgrpp'}).round(3)
+    # )
+
+    ### Transmission upgrade supply curve
+    transmission_cost_ac = get_transmission_cost(case, interface_params)
+    labels = {
+        'binwidth_USD2004': 'binwidth',
+        'USD2004perMW_forward': 'forward',
+        'USD2004perMW_reverse': 'reverse',
+    }
+    for col, label in labels.items():
+        outputs[f'tsc_{label}'] = (
+            transmission_cost_ac[['r','rr','tscbin',col]]
+            .round(2)
+        )
+    outputs['tscbin'] = transmission_cost_ac.tscbin.drop_duplicates().rename()
+    ## Write transmission_cost_ac for R2X
+    outputs['transmission_cost_ac'] = transmission_cost_ac
+
+    ### POI / network-reinforcement cost supply curve
+    ## Writes poi_supply_curve.csv (and rtscbin.csv) directly; already region-scoped, so it
+    ## bypasses the outputs/hierarchy-downselect mechanism below.
+    write_poi_supply_curve(case)
+
+    ### Pipelines
+    outputs['pipeline_cost_mult'] = get_pipeline_cost_mult(
+        case,
+        interface_params,
+        outputs['transmission_cost_nonac'],
     )
     outputs['routes_adjacent'] = calculate_adjacent_routes(case)
 

@@ -1885,13 +1885,17 @@ net_import_ann_stress(r,t)
     sum{allh$h_stress_t(allh,t), net_import_h_stress(r,allh,t) * hours(allh) }
 ;
 
+* POI reinforcement cost basis: the interconnected generation (plus existing capacity) that the
+* intra-zone reinforcement curve is priced on. This is a cost-accounting quantity reported for
+* cost/plot diagnostics -- it is NOT deliverable transmission capacity and relieves no flow.
 poi_capacity(r,t)$tmodel_new(t) =
   poi_cap_init(r)
   + sum{(poigroup,rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(poigroup,r,rtscbin)],
         INV_POI.l(poigroup,r,rtscbin,tt) }
 ;
 
-* Cumulative POI capacity by reinforcement cost bin (summed over POI tech groups; for the plot)
+* POI reinforcement cost basis by cost bin (summed over POI tech groups; for the plot). Same
+* caveat as poi_capacity above: a cost-accounting quantity, not deliverable transmission capacity.
 poi_capacity_bin(r,rtscbin,t)$tmodel_new(t) =
   sum{(poigroup,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(poigroup,r,rtscbin)],
         INV_POI.l(poigroup,r,rtscbin,tt) }
