@@ -1296,6 +1296,25 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .agg(aggmethod, *args)
     )
 
+    #scale cf_vre so annual average matches the original timeseries at the GSw_HourlyClusterRegionLevel
+    if not periodtype.startswith('stress'):
+        orig_cf = recf.mean(axis=0).rename('orig_cf').reset_index()
+        orig_cf['i'] = orig_cf['index'].map(lambda x: x.split('|')[0])
+        orig_cf['r'] = orig_cf['index'].map(lambda x: x.split('|')[1])
+
+        rep_cf = cf_vre.merge(hours.reset_index(), on='h')
+        rep_cf['weighted_cf'] = rep_cf['cf'] * rep_cf['numhours']
+        rep_cf_ann = rep_cf.groupby(['i', 'r'], as_index=False)['weighted_cf'].sum()
+        rep_cf_ann['rep_cf'] = rep_cf_ann['weighted_cf'] / hours['numhours'].sum()
+    
+        scale_factors_cf = orig_cf.merge(rep_cf_ann, on=['i', 'r'])
+        scale_factors_cf['scale_factor'] = (scale_factors_cf['orig_cf'] / scale_factors_cf['rep_cf']).fillna(1.0)
+        scale_factors_cf.loc[scale_factors_cf['rep_cf'] == 0, 'scale_factor'] = 1.0
+        cf_vre = cf_vre.merge(scale_factors_cf[['i', 'r', 'scale_factor']], on=['i', 'r'], how='left')
+        cf_vre['cf'] *= cf_vre['scale_factor']
+        cf_vre['cf'] = cf_vre['cf'].clip(upper=1.0)
+        cf_vre.drop(columns=['scale_factor'], inplace=True)
+
     load_long = (
         load_h
         .stack('t')
