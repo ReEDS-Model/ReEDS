@@ -2502,6 +2502,7 @@ if detailed:
 #%%### Copy some premade single-case plots
 level = dictin_sw[basecase]['GSw_PRM_StressThreshold'].split('_')[0]
 wide = 1 if len(hierarchy[basecase]['transreg'].unique()) > 6 else 0
+weatheryear = sw.GSw_HourlyWeatherYears.split('_')[0]
 metrics = [
     'cap',
     'rep_mean',
@@ -2516,6 +2517,8 @@ for figname, width, height in [
     (f'map_gencap_transcap-{lastyear}', None, SLIDE_HEIGHT),
     (f'plot_stressperiod_evolution-sum-{level}', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}', SLIDE_WIDTH, None),
+    ## Include both versions for backwards compatibility
+    (f'plot_dispatch-yearbymonth-1-{lastyear}-w{weatheryear}', SLIDE_WIDTH, None),
 ] + [
     (
         f"plot_techmix-transreg-{lastyear}-{units}-{reedsplots.stress_metrics_shorten(metrics)}",

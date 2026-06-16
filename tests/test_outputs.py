@@ -23,7 +23,7 @@ def test_output_files(casepath):
         # Static plots (single_case_plots.py)
         os.path.join('figures', i) + '.png' for i in [
             'bars_retirements_additions',
-            'inputs_repdays',
+            'inputs_cfmap-upv',
             f'plot_dispatch-weightwidth-{lastyear}',
         ]
     ]

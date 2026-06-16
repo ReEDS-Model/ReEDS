@@ -146,6 +146,7 @@ $gdxin handoff%ds%reeds_data%ds%ccdata_%prev_year%.gdx
 $loaddcr cc_old_load = cc_old
 $loaddcr cc_mar_load = cc_mar
 $loaddcr sdbin_size_load = sdbin_size
+$loaddcr mean_forced_outage_rate_load = mean_forced_outage_rate
 $gdxin
 
 *Note: these values are rounded before they are written to the gdx file, so no need to round them here
@@ -180,6 +181,7 @@ cc_old(i,r,ccseason,t)$[tload(t)$pvb(i)$sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)}
     min{ cc_old(i,r,ccseason,t) / sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)}, 1 / ilr(i) - bcr(i) }
     * sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)};
 
+mean_forced_outage_rate(i,r,ccseason,t)$tload(t) = mean_forced_outage_rate_load(i,r,ccseason,t) ;
 $endif.tcheck
 
 

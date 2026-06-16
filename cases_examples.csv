@@ -6,7 +6,6 @@ GSw_ZoneSet,,,,,,,z69,z54,z54,z3109,PJMcounty,z3109
 GSw_GasCurve,,2,2,2,2,,,,,2,2,2
 GSw_HourlyType,,,wek,year,,,,,,,,
 GSw_OpRes,,,,0,,,,,0,,,
-GSw_TransSquiggliness,,,,,,,1.07,1.07,1.07,,,
 GSw_HourlyNumClusters,,,,,,20,,,20,,,
 GSw_PRM_CapCredit,,,,,1,,,,,,,
 GSw_StartCost,,,,,,,,,0,,,

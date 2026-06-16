@@ -23,13 +23,12 @@ This script is currently not compatible with:
 ### ===========================================================================
 import argparse
 import json
-import numpy as np
 import os
 import sys
 import datetime
+import numpy as np
 import pandas as pd
 import scipy
-import sklearn.cluster
 import sklearn.neighbors
 import traceback
 from pathlib import Path
@@ -50,32 +49,7 @@ interactive = False
 ### VRE techs considered for GSw_PRM_StressSeedMinRElevel and GSw_HourlyMinRElevel
 techs_min_vre = ['upv', 'wind-ons']
 
-#%% ===========================================================================
-### --- FUNCTIONS ---
-### ===========================================================================
-
-def szn2yearperiod(szn):
-    """
-    szn's are formatted as 'y{20xx}{d or w}{day of year or wek of year}'
-    where a 'wek' is a 5-day period (5*73 = 365)
-    """
-    year, period = szn.split('d') if 'd' in szn else szn.split('w')
-    return int(year.strip('y')), int(period)
-
-
-def szn2period(szn):
-    """
-    szn's are formatted as 'y{20xx}{d or w}{day of year or wek of year}'
-    where a 'wek' is a 5-day period (5*73 = 365)
-    """
-    year, period = szn.split('d') if 'd' in szn else szn.split('w')
-    return int(period)
-
-
-###############################
-#    -- Load Processing --    #
-###############################
-
+#%%### Functions
 def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
     """
     """
@@ -93,143 +67,6 @@ def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
         load = load.loc[load.index.year.isin(keep_weatheryears)]
 
     return load
-
-
-def optimize_period_weights(profiles_fitperiods, numclusters=100):
-    """
-    The optimization approach (minimizing sum of absolute errors) is described at
-    https://optimization.mccormick.northwestern.edu/index.php/Optimization_with_absolute_values
-    The general idea of optimizing period weights to reproduce regional variability is similar
-    to the method used in the EPRI US-REGEN model, described at
-    https://www.epri.com/research/products/000000003002016601
-    """
-    ### Imports
-    import pulp
-
-    ### Input processing
-    profiles_day = (
-        profiles_fitperiods.groupby(['property','region'], axis=1).mean())
-    profiles_mean = profiles_day.mean()
-    numdays = len(profiles_day)
-    days = profiles_day.index.values
-
-    ### Optimization: minimize sum of absolute errors
-    m = pulp.LpProblem('LinearDaySelection', pulp.LpMinimize)
-    ###### Variables
-    ### day weights
-    WEIGHT = pulp.LpVariable.dicts('WEIGHT', (d for d in days), lowBound=0, cat='Continuous')
-    ### errors
-    ERROR_POS = pulp.LpVariable.dicts(
-        'ERROR_POS', (c for c in profiles_day.columns), lowBound=0, cat='Continuous')
-    ERROR_NEG = pulp.LpVariable.dicts(
-        'ERROR_NEG', (c for c in profiles_day.columns), lowBound=0, cat='Continuous')
-    ###### Constraints
-    ### weights must sum to 1
-    m += pulp.lpSum([WEIGHT[d] for d in days]) == 1
-    ### definition of errors
-    for c in profiles_day.columns:
-        m += (
-            ### Full error for column (given by positive component minus negative component)...
-            ERROR_POS[c] - ERROR_NEG[c]
-            ### ...plus sum of values for weighted representative days...
-            + pulp.lpSum([WEIGHT[d] * profiles_day[c][d] for d in days])
-            ### ...equals the mean for that column
-            == profiles_mean[c])
-    ###### Objective: minimize the sum of absolute values of errors across all columns
-    m += pulp.lpSum([
-        ERROR_POS[c] + ERROR_NEG[c]
-        for c in profiles_day.columns
-    ])
-
-    ### Solve it
-    m.solve(solver=pulp.PULP_CBC_CMD(msg=True))
-
-    ### Collect weights, scaled by total number of days
-    weights = pd.Series({d:WEIGHT[d].varValue for d in days}) * numdays
-
-    ### Truncate based on numclusters, scale appropriately, and convert to integers
-    ### Keep the the 'numclusters' highest-weighted days
-    rweights = (weights.sort_values(ascending=False)[:numclusters])
-    ### Scale so that the weights sum to numdays (have to do if numclusters is small)
-    rweights *= numdays / rweights.sum()
-    ### Convert to integers
-    iweights = rweights.round(0).astype(int)
-    ### Scale all weights little by little until they sum to number of actual days
-    sumweights = iweights.sum()
-    diffweights = sumweights - numdays
-    increment = 0.00001 * (1 if diffweights < 0 else -1)
-    for i in range(1000000):
-        iweights = (rweights * (1 + increment*i)).round(0).astype(int)
-        if iweights.sum() == numdays:
-            break
-
-    iweights = iweights.replace(0,np.nan).dropna().astype(int)
-    ### Make sure it worked
-    if iweights.sum() != numdays:
-        raise ValueError(f'Sum of rounded weights = {iweights.sum()} != {numdays}')
-
-    return profiles_day, iweights, weights
-
-
-def assign_representative_days(profiles_day, rweights):
-    """
-    """
-    ### Imports
-    import pulp
-
-    ### Input processing
-    actualdays = profiles_day.index.values
-    repdays = list(rweights.index)
-
-    ### Optimization: minimize sum of absolute errors
-    m = pulp.LpProblem('RepDayAssignment', pulp.LpMinimize)
-    ###### Variables
-    ### Weighting of rep days (r) for each actual day (a).
-    ### Can only use whole days, so it's a binary variable.
-    WEIGHT = pulp.LpVariable.dicts(
-        'WEIGHT', ((a,r) for a in actualdays for r in repdays),
-        lowBound=0, upBound=1, cat=pulp.LpInteger)
-    ### Errors. These are defined for features (c) and for actual days (a).
-    ERROR_POS = pulp.LpVariable.dicts(
-        'ERROR_POS', ((a,c) for a in actualdays for c in profiles_day.columns),
-        lowBound=0, cat='Continuous')
-    ERROR_NEG = pulp.LpVariable.dicts(
-        'ERROR_NEG', ((a,c) for a in actualdays for c in profiles_day.columns),
-        lowBound=0, cat='Continuous')
-    ###### Constraints
-    ### Each actual day can only be assigned to one representative day
-    for a in actualdays:
-        m += pulp.lpSum([WEIGHT[a,r] for r in repdays]) == 1
-    ### Each representative day must be used a number of times equal to its weight
-    for r in repdays:
-        m += pulp.lpSum([WEIGHT[a,r] for a in actualdays]) == rweights[r]
-    ### Define the error variables
-    for a in actualdays:
-        for c in profiles_day.columns:
-            m += (
-                ### Full error for column on actual day (given by positive
-                ### component minus negative component)...
-                ERROR_POS[a,c] - ERROR_NEG[a,c]
-                ### ...plus value for its representative day (since WEIGHT is binary)...
-                + pulp.lpSum([WEIGHT[a,r] * profiles_day[c][r] for r in repdays])
-                ### ...equals the actual value for that column and day
-                == profiles_day[c][a])
-    ###### Objective: minimize the sum of absolute values of errors
-    m += pulp.lpSum([
-        ERROR_POS[a,c] + ERROR_NEG[a,c]
-        for a in actualdays for c in profiles_day.columns
-    ])
-
-    ### Solve it
-    m.solve(solver=pulp.PULP_CBC_CMD(msg=True))
-
-    ### Collect assignments
-    assignments = pd.Series(
-        {(a,r):WEIGHT[a,r].varValue for a in actualdays for r in repdays}).astype(int)
-    assignments.index = assignments.index.rename(['act','rep'])
-    a2r = assignments.replace(0,np.nan).dropna().reset_index(level='rep').rep
-
-    return a2r
 
 
 def identify_peak_containing_periods(df, hierarchy, level):
@@ -274,11 +111,6 @@ def identify_min_periods(df, hierarchy, level, prefix=''):
     return forceperiods
 
 
-
-###########################
-#    -- Clustering --     #
-###########################
-
 def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
     """
     Cluster the load and (optionally) RE profiles to find representative days for dispatch in ReEDS.
@@ -301,47 +133,21 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         sw['GSw_HourlyClusterAlgorithm'].startswith('hierarchical')
         or sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kme')
     ):
-        if sw['GSw_HourlyClusterAlgorithm'].startswith('hierarchical'):
-            args = sw['GSw_HourlyClusterAlgorithm'].split('_')
-            if len(args) > 1:
-                metric = args[1]
-                linkage = args[2]
-            else:
-                metric = 'euclidean'
-                linkage = 'ward'
-            clusters = sklearn.cluster.AgglomerativeClustering(
-                n_clusters=int(sw['GSw_HourlyNumClusters']),
-                metric=metric, linkage=linkage,
-            )
-        elif sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kmeans'):
-            clusters = sklearn.cluster.KMeans(
-                n_clusters=int(sw['GSw_HourlyNumClusters']),
-                random_state=0, n_init='auto', max_iter=1000,
-            )
-        elif sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kmedoids'):
-            import sklearn_extra.cluster
-            args = sw['GSw_HourlyClusterAlgorithm'].split('_')
-            if len(args) > 1:
-                metric = args[1]
-                init = args[2]
-            else:
-                metric = 'euclidean'
-                init = 'heuristic'
-            clusters = sklearn_extra.cluster.KMedoids(
-                n_clusters=int(sw['GSw_HourlyNumClusters']),
-                metric=metric, init=init, method='pam',
-                max_iter=1000, random_state=0,
-            )
         ### Generate the fits
-        idx = clusters.fit_predict(profiles_fitperiods)
+        cluster_assignment = reeds.timeseries.get_clusters(
+            profiles_fitperiods,
+            GSw_HourlyClusterAlgorithm=sw.GSw_HourlyClusterAlgorithm,
+            GSw_HourlyNumClusters=int(sw.GSw_HourlyNumClusters),
+        )
         ### Get nearest period to each centroid
         centroids = pd.DataFrame(
-            sklearn.neighbors.NearestCentroid().fit(profiles_fitperiods, idx).centroids_,
+            sklearn.neighbors.NearestCentroid()
+            .fit(profiles_fitperiods, cluster_assignment).centroids_,
             columns=profiles_fitperiods.columns,
         )
         nearest_period = {
             i:
-            profiles_fitperiods.loc[:,idx==i,:].apply(
+            profiles_fitperiods.loc[:,cluster_assignment==i,:].apply(
                 lambda row: scipy.spatial.distance.euclidean(row, centroids.loc[i]),
                 axis=1
             ).nsmallest(1).index[0]
@@ -351,7 +157,7 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         period_szn = pd.DataFrame({
             'period': profiles_fitperiods.index.values,
             'szn': [f"y{i[0]}{sw['GSw_HourlyType'][0]}{i[1]:>03}"
-                       for i in pd.Series(idx).map(nearest_period)]
+                       for i in pd.Series(cluster_assignment).map(nearest_period)]
         ### Add the force-include periods to the end of the list of seasons
         })
         period_szn = pd.concat([
@@ -364,16 +170,29 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         ]).sort_values('period').set_index('period').szn
 
     elif sw['GSw_HourlyClusterAlgorithm'] in ['opt','optimized','optimize']:
+        profiles_period_mean = (
+            profiles_fitperiods.groupby(['property','region'], axis=1)
+            .mean()
+        )
         ### Optimize the weights of representative days
-        profiles_day, rweights, weights = optimize_period_weights(
-            profiles_fitperiods=profiles_fitperiods, numclusters=int(sw['GSw_HourlyNumClusters']))
+        iweights, weights = reeds.timeseries.optimize_period_weights(
+            profiles_period_mean=profiles_period_mean,
+            GSw_HourlyNumClusters=int(sw['GSw_HourlyNumClusters']),
+        )
         ### Optimize the assignment of actual days to representative days
-        a2r = assign_representative_days(profiles_day=profiles_day.round(4), rweights=rweights)
+        mapfunc = {
+            'milp': reeds.timeseries.match_act2rep_milp,
+            'bestfirst': reeds.timeseries.match_act2rep_bestfirst,
+        }[sw.get('GSw_HourlyClusterMapMethod', 'milp')]
+        a2r = mapfunc(
+            profiles_period_mean=profiles_period_mean.round(4),
+            iweights=iweights,
+        )
 
-        if len(rweights) < int(sw['GSw_HourlyNumClusters']):
+        if len(iweights) < int(sw['GSw_HourlyNumClusters']):
             print(
                 'Asked for {} representative periods but only needed {}'.format(
-                    sw['GSw_HourlyNumClusters'], len(rweights)))
+                    sw['GSw_HourlyNumClusters'], len(iweights)))
 
         period_szn = pd.concat([
             a2r.reset_index().rename(columns={'act':'period','rep':'szn'}),
@@ -388,73 +207,14 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         period_szn = pd.read_csv(
             os.path.join(inputs_case,'period_szn_user.csv')
         ).set_index('actual_period').rep_period.rename('szn')
-        period_szn.index = period_szn.index.map(szn2yearperiod).values
+        period_szn.index = period_szn.index.map(reeds.timeseries.szn2yearperiod).values
         period_szn.index = period_szn.index.rename('period')
 
 
     ### Get the list of representative periods for convenience
-    rep_periods = sorted(period_szn.map(szn2yearperiod).unique())
+    rep_periods = sorted(period_szn.map(reeds.timeseries.szn2yearperiod).unique())
 
     return rep_periods, period_szn
-
-
-def make_timestamps(sw):
-    ### Get some useful constants
-    hoursperperiod = {'day':24, 'wek':120, 'year':24}
-    periodsperyear = {'day':365, 'wek':73, 'year':365}
-    weather_years = sw.resource_adequacy_years_list
-
-    ### Get map from yperiod, hour, and h_of_period to timestamp
-    timestamps = pd.DataFrame({
-        'year': np.ravel([[y]*8760 for y in weather_years]),
-        'h_of_year': np.ravel([list(range(1,8761)) * len(weather_years)]),
-        'h_of_period': np.ravel(
-            [f'{h+1:>03}' for h in range(hoursperperiod[sw['GSw_HourlyType']])]
-            * periodsperyear[sw['GSw_HourlyType']] * len(weather_years)),
-        'yperiod': np.ravel(
-            [p+1 for p in range(periodsperyear[sw['GSw_HourlyType']])
-             for h in range(hoursperperiod[sw['GSw_HourlyType']])]
-            * len(weather_years)),
-        'h_of_day': np.ravel(
-            [f'{h+1:>03}' for h in range(hoursperperiod['day'])]
-            * periodsperyear['day'] * len(weather_years)),
-        'yday': np.ravel(
-            [p+1 for p in range(periodsperyear['day'])
-             for h in range(hoursperperiod['day'])]
-            * len(weather_years)),
-        'h_of_wek': np.ravel(
-            [f'{h+1:>03}' for h in range(hoursperperiod['wek'])]
-            * periodsperyear['wek'] * len(weather_years)),
-        'ywek': np.ravel(
-            [p+1 for p in range(periodsperyear['wek'])
-             for h in range(hoursperperiod['wek'])]
-            * len(weather_years)),
-    })
-    timestamps['timestamp'] = (
-        'y' + timestamps.year.astype(str)
-        ## d for day and w for wek 
-        + ('w' if sw.GSw_HourlyType == 'wek' else 'd')
-        + timestamps.yperiod.astype(str).map('{:>03}'.format)
-        + 'h' + timestamps.h_of_period
-    )
-    timestamps['period'] = timestamps['timestamp'].map(lambda x: x.split('h')[0])
-    timestamps['day'] = (
-        'y' + timestamps.year.astype(str)
-        + 'd' + timestamps.yday.astype(str).map('{:>03}'.format)
-    )
-    timestamps['wek'] = (
-        'y' + timestamps.year.astype(str)
-        + 'w' + timestamps.ywek.astype(str).map('{:>03}'.format)
-    )
-    timestamps.index = np.ravel([
-        pd.date_range(
-            f'{y}-01-01', f'{y+1}-01-01',
-            freq='H', inclusive='left', tz='Etc/GMT+6',
-        )[:8760]
-        for y in weather_years
-    ])
-
-    return timestamps
 
 
 #%% ===========================================================================
@@ -502,7 +262,7 @@ def main(
     agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
 
     #%% Get map from yperiod, hour, and h_of_period to timestamp
-    timestamps = make_timestamps(sw)
+    timestamps = reeds.timeseries.make_timestamps(sw)
     timestamps_myr = timestamps.loc[timestamps.year.isin(sw['GSw_HourlyWeatherYears'])].copy()
 
     ### Get region hierarchy for use with GSw_HourlyClusterRegionLevel
@@ -791,8 +551,8 @@ def main(
 
 
     #%% Get some other convenience sets
-    timestamps_day = make_timestamps(sw=pd.Series({**sw, **{'GSw_HourlyType':'day'}}))
-    timestamps_wek = make_timestamps(sw=pd.Series({**sw, **{'GSw_HourlyType':'wek'}}))
+    timestamps_day = reeds.timeseries.make_timestamps(sw=pd.Series({**sw, **{'GSw_HourlyType':'day'}}))
+    timestamps_wek = reeds.timeseries.make_timestamps(sw=pd.Series({**sw, **{'GSw_HourlyType':'wek'}}))
     ## Include all possible seasons so dispatch mode can be rerun with any of them
     quarters = reeds.io.read_input(inputs_case, 'quarter').squeeze(1).tolist()
     set_allszn = pd.Series(
@@ -813,6 +573,10 @@ def main(
     set_actualszn = (
         period_szn_write['season'].drop_duplicates() if sw['GSw_HourlyType'] == 'year'
         else period_szn_write['actual_period'])
+
+    nextszn = pd.Series(
+        index=set_actualszn, data=np.roll(set_actualszn.values, -1), name='actualszn',
+    ).rename_axis('*actualszn')
 
     stress_period_szn = (
         stressperiods_write.assign(rep_period=stressperiods_write.szn)
@@ -877,6 +641,8 @@ def main(
         comment='all potentially modeled time chunks (hour groupings)',
     )
 
+    nextszn.to_csv(os.path.join(inputs_case, 'nextszn.csv'))
+
     #%% Write the seed stress periods to use for the PRM constraint
     if 'user' in sw.GSw_PRM_StressModel:
         stressperiods_seed = pd.read_csv(os.path.join(inputs_case, 'stressperiods_user.csv'))
@@ -932,10 +698,10 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20260411_itlM0_USA_faster','inputs_case','')
+    #     'v20260525_repM0_USA_fast','inputs_case','')
     # interactive = True
 
     #%% Set up logger
