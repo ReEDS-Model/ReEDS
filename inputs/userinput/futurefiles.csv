@@ -197,7 +197,6 @@ heat_rate_penalty_spin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,
 heat_rate.csv,.csv,0,None,t,"i,v,r",0,0,constant,0,None,done,constant
 hierarchy_itlgrp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hierarchy_original.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-hierarchy_with_res.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hierarchy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hintage_char.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hintage_data.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant

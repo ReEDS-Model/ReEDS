@@ -256,10 +256,6 @@ def get_regions_and_agglevel(
         pd.Series(val_r_all).to_csv(
             os.path.join(inputs_case, 'val_r_all.csv'), header=False, index=False)
 
-    # Rename columns and save as hierarchy_with_res.csv for use in agglevel_variables function
-    hier_sub.drop(columns=['legacy_ba', 'offshore'], errors='ignore').rename(columns={'r':'*r'}).to_csv(
-        os.path.join(inputs_case, 'hierarchy_with_res.csv'), index=False)
-
     # Drop county name and resolution columns
     hier_sub = hier_sub.drop(['county_name'],axis=1)
 
