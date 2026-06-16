@@ -126,6 +126,8 @@ When creating the reeds2 environment locally, you might run into an SSL error th
 ### GAMS Configuration
 NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.
 
+For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
+
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)
     **If installing on Mac:** on the "Installation" page, click "customize" and ensure the box to "Add GAMS to PATH" is checked.
 
