@@ -99,9 +99,10 @@ def agg_supplycurve(
     ## Cost and distance are weighted averages, with capacity as the weighting factor
     aggs = {'capacity': 'sum', 'sc_point_gid': list}
     index_cols = ['region', 'class', 'bin']
+    exclude_cols = ['ba', 'mean_resource_depth', 'plant_type', 'lcoe_all_in_usd_per_mwh']
     aggs = {
         col: aggs.get(col, wm(dfin)) for col in dfin
-        if col not in index_cols
+        if col not in index_cols and col not in exclude_cols
     }
 
     ### Assign bins
@@ -122,6 +123,70 @@ def agg_supplycurve(
 
     return dfin, dfout
 
+def bin_geo_depth(dfin, bin_num, tech, bin_method='equal_cap_cut',
+                depth_col='mean_resource_depth', weight_col='lcoe_all_in_usd_per_mwh', inputs_case=None, save_output=True):
+
+    dfout_list = []
+    for (region, class_val, cost_bin), group in dfin.groupby(['region', 'class', 'bin']):
+        if group['capacity'].sum() <= 0:
+            continue
+
+        if bin_num == 1:
+            group_depth_binned = group.assign(depth_bin=1)
+        else:
+            ## perform depth binning
+            group_depth_binned = reeds.inputs.get_bin(
+                group, bin_num=bin_num,
+                bin_col=depth_col, bin_out_col='depth_bin',
+                weight_col=weight_col
+            )
+
+        ## calculate weighted average depth using weight_col
+        def wm_avg(x, weights):
+            return np.average(x, weights=weights) if weights.sum() > 0 else np.average(x)
+
+        distance_cols = ['dist_spur_km', 'dist_reinforcement_km']
+        agg_dict = {
+            'capacity': 'sum',
+            depth_col: lambda x: wm_avg(x, group_depth_binned.loc[x.index, weight_col]),
+            'supply_curve_cost_per_mw': lambda x: wm_avg(x, group_depth_binned.loc[x.index, 'capacity']),
+            'lcoe_all_in_usd_per_mwh': lambda x: wm_avg(x, group_depth_binned.loc[x.index, 'capacity']),
+            'sc_point_gid': list,
+            **{col: (lambda x, c=col: wm_avg(x, group_depth_binned.loc[x.index, 'capacity'])) for col in distance_cols}
+        }
+        
+        dfout_depth = group_depth_binned.groupby('depth_bin').agg(agg_dict).assign(
+            **{'region': region, 'class': class_val, 'bin': cost_bin}
+        ).reset_index()
+
+        #calculate flash_fraction
+        if 'plant_type' in group_depth_binned.columns:
+            flash_cap = group_depth_binned[group_depth_binned['plant_type'] == 'flash'].groupby('depth_bin')['capacity'].sum()
+            total_cap = group_depth_binned.groupby('depth_bin')['capacity'].sum()
+            dfout_depth['flash_fraction'] = dfout_depth['depth_bin'].map(
+                (flash_cap / total_cap).fillna(0)
+            )
+        else:
+            dfout_depth['flash_fraction'] = 0.0
+
+        dfout_list.append(dfout_depth)
+    
+    dfout = pd.concat(dfout_list, ignore_index=True)
+
+    # write out
+    if save_output and not dfout.empty:
+        dfout_write = (
+            dfout.copy()
+            .rename(columns={'region': 'r', depth_col: 'rep_depth'})
+            .assign(tech=lambda x: tech + x['depth_bin'].astype(str) + '_' + x['class'].astype(str))
+            .assign(rep_depth=lambda x: x['rep_depth'].round(1))
+        )
+        dfout_write['flash_fraction'] = dfout_write['flash_fraction'].fillna(0.0).round(2)
+        dfout_write['capacity'] = dfout_write['capacity'].round(3)
+
+        output_cols = ['r', 'tech', 'class', 'bin', 'depth_bin', 'rep_depth', 'flash_fraction', 'capacity']
+        dfout_write[output_cols].to_csv(os.path.join(inputs_case, f'{tech}_rep_depths.csv'), index=False)
+    return dfout
 
 # %% ============================================================================
 ### --- MAIN FUNCTION ---
@@ -155,6 +220,8 @@ def main(
         "csp": int(sw.numbins_csp),
         "geohydro": int(sw.numbins_geohydro_allkm),
         "egs": int(sw.numbins_egs_allkm),
+        "geohydro_depth": int(sw.get('numbins_geohydro_depth', '1')), 
+        'egs_depth': int(sw.get('numbins_egs_depth', '1'))
     }
 
     # Use agglevel_variables function to obtain spatial resolution variables 
@@ -472,7 +539,8 @@ def main(
     if use_geohydro_rev_sc or use_egs_rev_sc:
         geoin, geo = {}, {}
         rev_geo_types = []
-        if use_geohydro_rev_sc:
+        # only include geohydro if using reV supply curves and depth-binning
+        if use_geohydro_rev_sc and numbins.get('geohydro_depth', 1) > 1:
             rev_geo_types.append("geohydro")
         if use_egs_rev_sc:
             rev_geo_types.append("egs")
@@ -486,10 +554,29 @@ def main(
                 spur_cutoff=spur_cutoff,agglevel_variables=agglevel_variables, deflate=deflate,
                 sw=sw, write=False
             )
+
+            # apply depth binning
+            geo_depth_binned = bin_geo_depth(
+                geoin[s], bin_num=numbins[s+'_depth'],
+                tech=s, inputs_case=inputs_case, save_output=True
+            )
+            # use depth-binned results for supply curve only if numbins_depth > 1
+            if numbins.get(f'{s}_depth', 1) > 1:
+                if not geo_depth_binned.empty:
+                    geo[s] = geo_depth_binned
+                else:
+                    print(f"Warning: depth binning failed for {s}")
+            ## add source identifier
+            geo[s] = geo[s].reset_index().assign(source=s)
+
             spurout_list.append(
                 geo[s]
                 .reset_index()
-                .assign(i=f"{s}_allkm_" + geo[s].reset_index()["class"].astype(str))
+                .assign(i=(
+                    s + geo[s].reset_index()['depth_bin'].astype(str) + "_" + geo[s].reset_index()["class"].astype(str)
+                        if 'depth_bin' in geo[s].reset_index().columns
+                        else s + "1_" + geo[s].reset_index()["class"].astype(str)
+                ))
                 .assign(rscbin="bin" + geo[s].reset_index()["bin"].astype(str))
                 .rename(columns={"region": "r"})
             )
@@ -500,7 +587,10 @@ def main(
             .rename(columns={"level_0": "type"})
             .reset_index()
         )
-        geoall["type"] = geoall["type"] + "_allkm"
+        if 'depth_bin' not in geoall.columns:
+            geoall['depth_bin'] = 1
+
+        geoall['type'] = (geoall['source'] + geoall['depth_bin'].fillna(1).astype(int).astype(str))
         geoall.supply_curve_cost_per_mw = geoall.supply_curve_cost_per_mw.round(2)
         geoall["class"] = "class" + geoall["class"].astype(str)
         geoall["bin"] = "geosc" + geoall["bin"].astype(str)
@@ -523,7 +613,7 @@ def main(
         )
 
         ### Geothermal bins (flexible)
-        bins_geo = (range(1, max(numbins['geohydro']*use_geohydro_rev_sc, numbins['egs']*use_egs_rev_sc) + 1))
+        bins_geo = list(range(1, max(numbins['geohydro']*use_geohydro_rev_sc, numbins['egs']*use_egs_rev_sc) + 1))
         geocap.rename(
             columns={
                 **{
@@ -570,6 +660,11 @@ def main(
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
                 dfgeohydroexog = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
+                #update tech naming
+                if 'depth_bin' not in geo['geohydro'].columns:
+                    dfgeohydroexog = dfgeohydroexog.reset_index()
+                    dfgeohydroexog['*tech'] = dfgeohydroexog['*tech'].str.replace('geohydro_allkm_', 'geohydro1_')
+                    dfgeohydroexog = dfgeohydroexog.set_index(['*tech', 'region', 'rscbin', 'year']).squeeze()
                 dfgeohydroexog.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
@@ -656,8 +751,10 @@ def main(
     wndofst2 = t2.loc[t2.tech == "wind-ofs"].copy()
     cspt2 = t2.loc[t2.tech.isin(["csp{}".format(i) for i in range(1, csp_configs + 1)])]
     upvt2 = t2.loc[t2.tech == "upv"].copy()
-    geohydrot2 = t2.loc[t2.tech == "geohydro_allkm"].copy()
-    egst2 = t2.loc[t2.tech == "egs_allkm"].copy()
+    geohydro_techs = [tech for tech in t2.tech.unique() if tech.startswith("geohydro") and not tech.startswith("geohydro_")]
+    geohydrot2 = t2.loc[t2.tech.isin(geohydro_techs)].copy()
+    egs_techs = [tech for tech in t2.tech.unique() if tech.startswith("egs") and not tech.startswith("egs_")]
+    egst2 = t2.loc[t2.tech.isin(egs_techs)].copy()
 
     ### Get the combined outputs
     outcap = pd.concat([wndonst2, wndofst2, upvt2, cspt2, geohydrot2, egst2])
@@ -913,7 +1010,7 @@ def main(
         if not use_geohydro_rev_sc:
             geohydro_rsc = pd.read_csv(os.path.join(inputs_case, "geo_rsc.csv"), header=0)
             geohydro_rsc = geohydro_rsc.loc[
-                geohydro_rsc["*i"].str.startswith("geohydro_allkm")
+                geohydro_rsc["*i"].str.startswith("geohydro1")
             ]
             # Filter by valid regions
             geohydro_rsc = geohydro_rsc.loc[geohydro_rsc["r"].isin(val_r_all)]
@@ -927,7 +1024,7 @@ def main(
 
         if not use_egs_rev_sc:
             egs_rsc = pd.read_csv(os.path.join(inputs_case, "geo_rsc.csv"), header=0)
-            egs_rsc = egs_rsc.loc[egs_rsc["*i"].str.startswith("egs_allkm")]
+            egs_rsc = egs_rsc.loc[egs_rsc["*i"].str.startswith("egs1")]
             # Filter by valid regions
             egs_rsc = egs_rsc.loc[egs_rsc["r"].isin(val_r_all)]
             # Convert dollar year
@@ -1025,32 +1122,38 @@ def main(
     if use_geohydro_rev_sc:
         sitemap_geohydro = (
             geoin["geohydro"]
-            .assign(i="geohydro_allkm_" + geoin["geohydro"]["class"].astype(str))
-            .assign(rscbin="bin" + geoin["geohydro"]["bin"].astype(str))
-            .assign(x="i" + geoin["geohydro"]["sc_point_gid"].astype(str))
-        )
+                .assign(i=('geohydro' + geoin["geohydro"]['depth_bin'].astype(str) + '_' + geoin["geohydro"]['class'].astype(str)
+                        if 'depth_bin' in geoin["geohydro"].columns
+                        else "geohydro1" + '_' + geoin["geohydro"]['class'].astype(str)
+                ))
+                .assign(rscbin='bin'+geoin["geohydro"]['bin'].astype(str))
+                .assign(x='i'+geoin["geohydro"]['sc_point_gid'].astype(str))
+            )
         sitemap_geohydro = (
             sitemap_geohydro
             ### Assign rb's based on the no-exclusions transmission table
             .assign(r=sitemap_geohydro.x.map(spursites.set_index("x").r))[
                 ["i", "r", "rscbin", "x"]
-            ].rename(columns={"i": "*i"})
+            ].rename(columns={"i": "*i"}).drop_duplicates()
         )
         spurline_sitemap_list.append(sitemap_geohydro)
     ### egs_allkm
     if use_egs_rev_sc:
         sitemap_egs = (
-            geoin["egs"]
-            .assign(i="egs_allkm_" + geoin["egs"]["class"].astype(str))
-            .assign(rscbin="bin" + geoin["egs"]["bin"].astype(str))
-            .assign(x="i" + geoin["egs"]["sc_point_gid"].astype(str))
+            geoin['egs']
+            .assign(i=('egs' + geoin["egs"]['depth_bin'].astype(str) + '_' + geoin["egs"]['class'].astype(str)
+                        if 'depth_bin' in geoin["egs"].columns
+                        else "egs1" + '_' + geoin["egs"]['class'].astype(str)
+                ))
+            .assign(rscbin='bin'+geoin['egs']['bin'].astype(str))
+            .assign(x='i'+geoin['egs']['sc_point_gid'].astype(str))
         )
         sitemap_egs = (
             sitemap_egs
             ### Assign rb's based on the no-exclusions transmission table
             .assign(r=sitemap_egs.x.map(spursites.set_index("x").r))[
                 ["i", "r", "rscbin", "x"]
-            ].rename(columns={"i": "*i"})
+            ].rename(columns={"i": "*i"}).drop_duplicates()
         )
         spurline_sitemap_list.append(sitemap_egs)
 
@@ -1074,15 +1177,18 @@ def main(
             ]
         )
     if use_geohydro_rev_sc:
-        site_bin_map_list.append(
-            geoin["geohydro"].assign(tech="geohydro_allkm")[
-                ["tech", "sc_point_gid", "bin"]
-            ]
-        )
+        if 'depth_bin' in geoin['geohydro'].columns:
+            for depth_bin, group in geoin['geohydro'].groupby('depth_bin'):
+                site_bin_map_list.append(group.assign(tech=f'geohydro{depth_bin}')[['tech','sc_point_gid','bin']])
+        else:
+            site_bin_map_list.append(geoin['geohydro'].assign(tech='geohydro1')[['tech','sc_point_gid','bin']])
+    
     if use_egs_rev_sc:
-        site_bin_map_list.append(
-            geoin["egs"].assign(tech="egs_allkm")[["tech", "sc_point_gid", "bin"]]
-        )
+        if 'depth_bin' in geoin['egs'].columns:
+            for depth_bin, group in geoin['egs'].groupby('depth_bin'):
+                site_bin_map_list.append(group.assign(tech=f'egs{depth_bin}')[['tech','sc_point_gid','bin']])
+        else:
+            site_bin_map_list.append(geoin['egs'].assign(tech='egs1')[['tech','sc_point_gid','bin']])
     site_bin_map = pd.concat(site_bin_map_list, ignore_index=True)
     if write:
         site_bin_map.to_csv(os.path.join(inputs_case, "site_bin_map.csv"), index=False)

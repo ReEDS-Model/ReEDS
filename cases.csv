@@ -70,6 +70,8 @@ numbins_upv,Number of interconnection supply curve bins for upv; options are 20 
 numbins_csp,Number of interconnection supply curve bins for csp,int,5,
 numbins_geohydro_allkm,Number of interconnection supply curve bins for hydrothermal geothermal,int,10,
 numbins_egs_allkm,Number of interconnection supply curve bins for deep enhanced geothermal,int,10,
+numbins_geohydro_depth,Number of depth bins for geohydro supply curves,1; 2; 3; 4; 5,1,
+numbins_egs_depth,Number of depth bins for egs supply curves,1; 2; 3; 4; 5,1,
 mindev,minimum deviation for a hintage to qualify for a new bin,int,50,
 unitdata,"Unit Database: ""EIA-NEMS"" for NEMS",EIA-NEMS,EIA-NEMS,
 marg_vre_mw,MW for marginal VRE curt/cc calcs,N/A,1000,

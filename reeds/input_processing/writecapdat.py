@@ -89,12 +89,14 @@ TECH = {
     'rsc_all': ['upv','pvb','csp-ns'],
     'rsc_csp': ['csp-ns'],
     'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
-                'geohydro_allkm','egs_allkm'],
+                'geohydro1', 'geohydro2', 'geohydro3', 'geohydro4', 'geohydro5',
+                'egs1', 'egs2', 'egs3', 'egs4', 'egs5'],
     'prsc_all': ['upv','pvb','csp-ns','csp-ws'],
     'prsc_upv': ['upv','pvb'],
     'prsc_w': ['wind-ons','wind-ofs'],
     'prsc_csp': ['csp-ns','csp-ws'],
-    'prsc_geo': ['geohydro_allkm','egs_allkm'],
+    'prsc_geo': ['geohydro1', 'geohydro2', 'geohydro3', 'geohydro4', 'geohydro5',
+                 'egs1', 'egs2', 'egs3', 'egs4', 'egs5'],
     'retirements': [
         'coalolduns', 'o-g-s', 'hydED', 'hydEND', 'gas-ct', 'lfill-gas',
         'coaloldscr', 'biopower', 'gas-cc', 'coal-new',
@@ -104,11 +106,13 @@ TECH = {
         'battery_li'
     ],
     'windret': ['wind-ons'],
-    'georet': ['geohydro_allkm','egs_allkm'],
+    'georet': ['geohydro1', 'geohydro2', 'geohydro3', 'geohydro4', 'geohydro5',
+               'egs1', 'egs2', 'egs3', 'egs4', 'egs5'],
     # This is not all technologies that do not having cooling, but technologies
     # that are (or could be) in the plant database.
     'no_cooling': [
-        'upv', 'pvb', 'gas-ct', 'geohydro_allkm','egs_allkm',
+        'upv', 'pvb', 'gas-ct', 'geohydro1', 'geohydro2', 'geohydro3', 'geohydro4', 'geohydro5',
+        'egs1', 'egs2', 'egs3','egs4','egs5',
         'battery_li', 'pumped-hydro', 'pumped-hydro-flex', 
         'hydUD', 'hydUND', 'hydD', 'hydND', 'hydSD', 'hydSND', 'hydNPD',
         'hydNPND', 'hydED', 'hydEND', 'wind-ons', 'wind-ofs',
@@ -429,8 +433,8 @@ def main(reeds_path, inputs_case, agglevel, regions):
                 .rename(columns={'tech':'*i','summer_power_capacity_MW':'MW'})
                 )
     geoexist = geoexist.groupby(['*i','r']).sum().reset_index()
-    # Rename generic geothermal tech category to geohydro_allkm_1
-    geoexist['*i'] = 'geohydro_allkm_1'
+    # Rename generic geothermal tech category to geohydro1_1
+    geoexist['*i'] = 'geohydro1_1'
 
 
     #%%####################################

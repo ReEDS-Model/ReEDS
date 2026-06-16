@@ -71,6 +71,14 @@ dac,1
 dac_gas,1
 hyded_pumped-hydro,5
 hyded_pumped-hydro-flex,5
-egs_allkm_1*egs_allkm_10,0
-geohydro_allkm_1*geohydro_allkm_10,0
+egs1_1*egs1_10,0
+egs2_1*egs2_10,0
+egs3_1*egs3_10,0
+egs4_1*egs4_10,0
+egs5_1*egs5_10,0
+geohydro1_1*geohydro1_10,0
+geohydro2_1*geohydro2_10,0
+geohydro3_1*geohydro3_10,0
+geohydro4_1*geohydro4_10,0
+geohydro5_1*geohydro5_10,0
 egs_nearfield_1*egs_nearfield_10,0

@@ -61,12 +61,19 @@ def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path):
     sc_list = []
     for _, _, files in os.walk(raw_sc_files):
         for file in files:
-            sc_list.append(pd.read_csv(os.path.join(raw_sc_files, file)))
+            df_agg = pd.read_csv(os.path.join(raw_sc_files, file))
+            df_agg['mean_resource_depth'] =(df_agg['mean_resource_depth'] / 500).round() * 500
+
+            # extract plant type from filename
+            plant_type = 'flash' if 'flash' in file.lower() else 'binary'
+            df_agg['plant_type'] = plant_type
+
+            sc_list.append(df_agg)
     
     df_sc_agg = pd.concat(sc_list)
     df_sc_lowest_lcoe = (
-        df_sc_agg.sort_values(["lcoe_all_in_usd_per_mwh", "lcoe_site_usd_per_mwh"], ascending=True)
-        .groupby(["sc_point_gid"], as_index=False)
+        df_sc_agg.sort_values(["sc_point_gid", "mean_resource_depth", "lcoe_all_in_usd_per_mwh", "lcoe_site_usd_per_mwh"])
+        .groupby(["sc_point_gid", "mean_resource_depth"], as_index=False)
         .first()
         .reset_index(drop=True)
     )
@@ -818,8 +825,9 @@ def save_sc_outputs(
                 df_sc.loc[criteria, 'capacity'] - df_sc.loc[criteria, 'existing_capacity'])
 
     cfcol = 'capacity_factor_ac' if 'capacity_factor_ac' in df_sc else 'mean_cf'
+    keepcols = ['mean_resource_depth', 'plant_type', 'lcoe_all_in_usd_per_mwh'] if (tech == 'egs' or tech == 'geohydro') else []
     df_sc_out = (
-        df_sc[[profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', cfcol]]
+        df_sc[[profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', cfcol] + keepcols]
         .sort_values(profile_id_col)
         .rename(columns={cfcol:'cf'})
         .round({'capacity':decimals, 'capital_adder_per_mw':decimals, 'cf':decimals+2})

@@ -11,6 +11,8 @@ import datetime
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+import geo_cost_adjustments
+import traceback
 # Time the operation of this script
 tic = datetime.datetime.now()
 
@@ -189,8 +191,53 @@ wind_stack = winddata[['t','i','capcost','fom','vom']].copy()
 
 geodata = pd.read_csv(os.path.join(inputs_case,'plantchar_geo.csv'))
 geodata.columns = ['tech','class','depth','t','capcost','fom','vom']
-geodata['i'] = geodata['tech'] + '_' + geodata['depth'] + '_' + geodata['class'].astype(str)
+
+# format tech identifiers
+geodata['i'] = geodata['tech'] + '1_' + geodata['class'].astype(str)
+geodata.loc[geodata['depth'] == 'nearfield', 'i'] = (
+    'egs_nearfield_' + geodata.loc[geodata['depth'] == 'nearfield', 'class'].astype(str)
+)
 geodata = deflate_func(geodata, sw.plantchar_geo)
+
+geo_techs = {
+    'egs':      int(sw.get('numbins_egs_depth', 1)),
+    'geohydro': int(sw.get('numbins_geohydro_depth', 1)),
+}
+# use same baseline ATB values for depth bins 2/3/4/5
+extra = [
+    geodata[geodata['i'].str.startswith(f'{tech}1_')]
+    .assign(i=lambda df, b=b, tech=tech: df['i'].str.replace(f'{tech}1_', f'{tech}{b}_', regex=False))
+    for tech, numbins in geo_techs.items()
+    for b in range(2, numbins + 1)
+]
+if extra:
+    geodata = pd.concat([geodata] + extra, ignore_index=True, sort=False)
+
+# generate cost multipliers
+for tech, numbins in geo_techs.items():
+    out_path = os.path.join(inputs_case, f'{tech}_cap_cost_mult.csv')
+    if numbins > 1:
+        try:
+            gm = geo_cost_adjustments.main(
+                inputs_case, sw.plantchar_geo, tech_type=tech, output_multipliers=True
+            )
+            if gm is not None:
+                gm = gm.rename(columns={'*i': 'i'})
+                gm['value'] = pd.to_numeric(gm['value'], errors='coerce').fillna(0.0)
+                gm[['i','r','value']].rename(columns={'i': '*i'}).to_csv(out_path, index=False)
+                print(f"Wrote aggregated {tech.upper()} cost multipliers to {out_path}")
+            else:
+                print(f"geo_cost_adjustments returned None for {tech}; writing empty multipliers.")
+                pd.DataFrame(columns=['*i','r','value']).to_csv(out_path, index=False)
+        except Exception as e:
+            print(f"Error generating cost multipliers for {tech}: {e}")
+            traceback.print_exc()
+            pd.DataFrame(columns=['*i','r','value']).to_csv(out_path, index=False)
+    else:
+        # numbins == 1: no depth adjustment; write empty multiplier file
+        pd.DataFrame(columns=['*i','r','value']).to_csv(out_path, index=False)
+        print(f"numbins_{tech}_depth=1: no depth binning, writing empty {tech}_cap_cost_mult.csv")
+
 geo_stack = geodata[['t','i','capcost','fom','vom']].copy()
 
 

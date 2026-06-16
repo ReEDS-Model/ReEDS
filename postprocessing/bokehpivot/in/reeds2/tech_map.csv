@@ -95,9 +95,10 @@ dr_shed*,DR Shed
 evmc_storage*,EVMC_Storage
 evmc_shape*,EVMC_Shape
 hyd*,Hydropower
-egs_allkm_*,Geothermal
-geohydro_allkm_*,Geothermal
-egs_nearfield_*,Geothermal
+egs1_*,Geothermal
+egs2_*,Geothermal
+geohydro1_*,Geothermal
+geohydro2_*,Geothermal
 gas-cc_*,Gas-CC
 gas-cc-ccs_mod_*,Gas-CC-CCS
 gas-cc-ccs_max_*,Gas-CC-CCS

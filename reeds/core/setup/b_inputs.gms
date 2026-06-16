@@ -284,7 +284,7 @@ set
   geo_hydro(i)         "geothermal hydrothermal technologies",
   geo_egs(i)           "geothermal enhanced geothermal systems technologies",
   geo_extra(i)         "geothermal technologies not typically considered in model runs",
-  geo_egs_allkm(i)     "egs (covering deep egs depths of all km) technologies",
+  geo_egs_depth(i)     "egs (covering deep egs across multiple depth intervals) technologies",
   geo_egs_nf(i)        "egs (near-field) technologies",
   h2_combustion(i)     "h2-ct and h2-cc technologies",
   h2_cc(i)             "h2-cc technologies"
@@ -743,7 +743,7 @@ geo_base(i)$(not ban(i))            = yes$i_subsets(i,'geo_base') ;
 geo_hydro(i)$(not ban(i))           = yes$i_subsets(i,'geo_hydro') ;
 geo_egs(i)$(not ban(i))             = yes$i_subsets(i,'geo_egs') ;
 geo_extra(i)$(not ban(i))           = yes$i_subsets(i,'geo_extra') ;
-geo_egs_allkm(i)$(not ban(i))       = yes$i_subsets(i,'geo_egs_allkm') ;
+geo_egs_depth(i)$(not ban(i))       = yes$i_subsets(i,'geo_egs_depth') ;
 geo_egs_nf(i)$(not ban(i))          = yes$i_subsets(i,'geo_egs_nf') ;
 h2_combustion(i)$(not ban(i))       = yes$i_subsets(i,'h2_combustion') ;
 h2_cc(i)$(not ban(i))               = yes$i_subsets(i,'h2_cc') ;
@@ -1253,8 +1253,16 @@ firstyear_pcat("upv") = firstyear("upv_1") ;
 firstyear_pcat("wind-ons") = firstyear("wind-ons_1") ;
 firstyear_pcat("wind-ofs") = firstyear("wind-ofs_1") ;
 firstyear_pcat("csp-ws") = firstyear("csp2_1") ;
-firstyear_pcat("geohydro_allkm") = firstyear("geohydro_allkm_1") ;
-firstyear_pcat("egs_allkm") = firstyear("egs_allkm_1") ;
+firstyear_pcat("geohydro1") = firstyear("geohydro1_1") ;
+firstyear_pcat("geohydro2") = firstyear("geohydro2_1") ;
+firstyear_pcat("geohydro3") = firstyear("geohydro3_1") ;
+firstyear_pcat("geohydro4") = firstyear("geohydro4_1") ;
+firstyear_pcat("geohydro5") = firstyear("geohydro5_1") ;
+firstyear_pcat("egs1") = firstyear("egs1_1") ;
+firstyear_pcat("egs2") = firstyear("egs2_1") ;
+firstyear_pcat("egs3") = firstyear("egs3_1") ;
+firstyear_pcat("egs4") = firstyear("egs4_1") ;
+firstyear_pcat("egs5") = firstyear("egs5_1") ;
 
 
 *==============================
@@ -2081,7 +2089,7 @@ spur_techs(i)$(geo_hydro(i)) = yes ;
 $endif.geohydrorev
 
 $ifthen.egsrev %egssupplycurve% == 'reV'
-spur_techs(i)$(geo_egs_allkm(i)) = yes ;
+spur_techs(i)$(geo_egs_depth(i)) = yes ;
 $endif.egsrev
 
 $endif.spursites
@@ -4529,6 +4537,18 @@ $include inputs_case%ds%reg_cap_cost_diff.csv
 $offdelim
 $onlisting
 / ;
+
+parameter egs_cap_cost_mult(i,r) "EGS capital cost multipliers [fraction]"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%egs_cap_cost_mult.csv
+$offdelim
+$onlisting
+/ ;
+
+* Add to regional capital cost difference
+reg_cap_cost_diff(i,r) = reg_cap_cost_diff(i,r) + egs_cap_cost_mult(i,r);
 
 parameter eval_period_adj_mult(i,allt) "adjustment multiplier for the capital costs of techs with non-standard evaluation periods"
 /

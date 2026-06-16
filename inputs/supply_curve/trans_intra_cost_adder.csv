@@ -13,6 +13,14 @@ hydEND,53
 pumped-hydro,53
 pumped-hydro-flex,53
 geothermal,53
-egs_allkm_1*egs_allkm_10,53
-geohydro_allkm_1*geohydro_allkm_10,53
+egs1_1*egs1_10,53
+egs2_1*egs2_10,53
+egs3_1*egs3_10,53
+egs4_1*egs4_10,53
+egs5_1*egs5_10,53
+geohydro1_1*geohydro1_10,53
+geohydro2_1*geohydro2_10,53
+geohydro3_1*geohydro3_10,53
+geohydro4_1*geohydro4_10,53
+geohydro5_1*geohydro5_10,53
 egs_nearfield_1*egs_nearfield_10,53

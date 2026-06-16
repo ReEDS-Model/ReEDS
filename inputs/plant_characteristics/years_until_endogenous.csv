@@ -20,7 +20,11 @@ csp4_1*csp4_12,3
 dr_shed_1*dr_shed_2,0
 evmc_storage_1*evmc_storage_10,0
 evmc_shape_1*evmc_shape_10,0
-egs_allkm_1*egs_allkm_10,8
+egs1_1*egs1_10,8
+egs2_1*egs2_10,8
+egs3_1*egs3_10,8
+egs4_1*egs4_10,8
+egs5_1*egs5_10,8
 distpv,0
 Gas-CC,0
 Gas-CC_H_1x1,0
@@ -37,7 +41,11 @@ Gas-CT_aero,0
 H2-CT,3
 H2-CC,3
 ng-fuel-cell,10
-geohydro_allkm_1*geohydro_allkm_10,2
+geohydro1_1*geohydro1_10,2
+geohydro2_1*geohydro2_10,2
+geohydro3_1*geohydro3_10,2
+geohydro4_1*geohydro4_10,2
+geohydro5_1*geohydro5_10,2
 geothermal,2
 pvb1_1*pvb1_10,0
 pvb2_1*pvb2_10,0

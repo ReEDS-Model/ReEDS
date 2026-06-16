@@ -1,4 +1,4 @@
-,BIO,COAL,COAL_CCS,GAS,GAS_CC,GAS_CC_CCS,GAS_CT,COMBINED_CYCLE,COMBUSTION_TURBINE,FUEL_CELL,CONV,TEMP_DERATE,CCS,CCS_MOD,CCS_MAX,CCSFLEX,CCSFLEX_BYP,CCSFLEX_STO,CCSFLEX_DAC,BECCS,RE,VRE,RSC,WIND,ONSWIND,OFSWIND,UPV,distpv,PV,PVB,PVB1,PVB2,PVB3,CSP,CSP_STORAGE,CSP1,CSP2,CSP3,CSP4,STORAGE,STORAGE_HYBRID,STORAGE_STANDALONE,STORAGE_INTERDAY,THERMAL_STORAGE,BATTERY,DEMAND_FLEX,EVMC,EVMC_STORAGE,EVMC_SHAPE,COFIRE,HYDRO,HYDRO_D,HYDRO_ND,PSH,GEO,GEO_HYDRO,GEO_EGS,GEO_EGS_ALLKM,GEO_EGS_NF,GEO_BASE,GEO_EXTRA,CANADA,VRE_NO_CSP,VRE_UTILITY,VRE_DISTRIBUTED,NUCLEAR,OGS,CONSUME,H2,SMR,DAC,LFILL,H2_COMBUSTION,H2_CC,H2_CT,REFURBTECH,cf_tech,FOSSIL,BOILER,NONDISPATCH,DR_SHED
+,BIO,COAL,COAL_CCS,GAS,GAS_CC,GAS_CC_CCS,GAS_CT,COMBINED_CYCLE,COMBUSTION_TURBINE,FUEL_CELL,CONV,TEMP_DERATE,CCS,CCS_MOD,CCS_MAX,CCSFLEX,CCSFLEX_BYP,CCSFLEX_STO,CCSFLEX_DAC,BECCS,RE,VRE,RSC,WIND,ONSWIND,OFSWIND,UPV,distpv,PV,PVB,PVB1,PVB2,PVB3,CSP,CSP_STORAGE,CSP1,CSP2,CSP3,CSP4,STORAGE,STORAGE_HYBRID,STORAGE_STANDALONE,STORAGE_INTERDAY,THERMAL_STORAGE,BATTERY,DEMAND_FLEX,EVMC,EVMC_STORAGE,EVMC_SHAPE,COFIRE,HYDRO,HYDRO_D,HYDRO_ND,PSH,GEO,GEO_HYDRO,GEO_EGS,GEO_EGS_DEPTH,GEO_EGS_NF,GEO_BASE,GEO_EXTRA,CANADA,VRE_NO_CSP,VRE_UTILITY,VRE_DISTRIBUTED,NUCLEAR,OGS,CONSUME,H2,SMR,DAC,LFILL,H2_COMBUSTION,H2_CC,H2_CT,REFURBTECH,cf_tech,FOSSIL,BOILER,NONDISPATCH,DR_SHED
 can-imports,,,,,,,,,,,,,,,,,,,,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,,,,,,,,,,,,,,,,,,
 coal-CCS_mod,,YES,YES,,,,,,,,YES,YES,YES,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,
 coal-CCS_max,,YES,YES,,,,,,,,YES,YES,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,
@@ -69,6 +69,14 @@ smr,,,,,,,,,,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YE
 smr_ccs,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,YES,,,,,,,,,,,
 dac,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,,YES,,,,,,,,,,
 dac_gas,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,,YES,,,,,,,,,,
-egs_allkm_1*egs_allkm_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,YES,,,YES,,,,,,,,,,,,,,,,,,,,
-geohydro_allkm_1*geohydro_allkm_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,,,YES,,,,,,,,,,,,,,,,,,,,,
+egs1_1*egs1_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,YES,,,YES,,,,,,,,,,,,,,,,,,,,
+egs2_1*egs2_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,YES,,,YES,,,,,,,,,,,,,,,,,,,,
+egs3_1*egs3_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,YES,,,YES,,,,,,,,,,,,,,,,,,,,
+egs4_1*egs4_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,YES,,,YES,,,,,,,,,,,,,,,,,,,,
+egs5_1*egs5_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,YES,,,YES,,,,,,,,,,,,,,,,,,,,
+geohydro1_1*geohydro1_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,,,YES,,,,,,,,,,,,,,,,,,,,,
+geohydro2_1*geohydro2_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,,,YES,,,,,,,,,,,,,,,,,,,,,
+geohydro3_1*geohydro3_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,,,YES,,,,,,,,,,,,,,,,,,,,,
+geohydro4_1*geohydro4_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,,,YES,,,,,,,,,,,,,,,,,,,,,
+geohydro5_1*geohydro5_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,YES,,,,YES,,,,,,,,,,,,,,,,,,,,,
 egs_nearfield_1*egs_nearfield_10,,,,,,,,,,,,,,,,,,,,,YES,,YES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,YES,,YES,,YES,YES,,,,,,,,,,,,,,,,,,,,,

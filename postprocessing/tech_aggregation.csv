@@ -70,8 +70,10 @@ hydd,Hydropower,Hydropower,Hydropower,Hydropower New
 hydn,Hydropower,Hydropower,Hydropower,Hydropower New
 hyds,Hydropower,Hydropower,Hydropower,Hydropower New
 hydu,Hydropower,Hydropower,Hydropower,Hydropower New
-egs_allkm_,Geothermal,Geothermal,Thermal,Geothermal
-geohydro_allkm_,Geothermal,Geothermal,Thermal,Geothermal
+egs1_,Geothermal,Geothermal,Thermal,Geothermal
+egs2_,Geothermal,Geothermal,Thermal,Geothermal
+geohydro1_,Geothermal,Geothermal,Thermal,Geothermal
+geohydro2_,Geothermal,Geothermal,Thermal,Geothermal
 egs_nearfield_,Geothermal,Geothermal,Thermal,Geothermal
 gas-cc_,Gas-CC,Gas,Thermal,Gas-CC
 gas-cc-ccs_mod_,Gas-CC-CCS,Gas-CCS,Thermal,Gas-CC-CCS

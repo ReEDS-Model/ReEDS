@@ -47,9 +47,16 @@ battery,60,https://atb.nlr.gov/electricity/2024/utility-scale_battery_storage
 csp,102,https://atb.nlr.gov/electricity/2024/concentrating_solar_power
 pumped-hydro,1000,https://atb.nlr.gov/electricity/2024/pumped_storage_hydropower
 geothermal,40,https://atb.nlr.gov/electricity/2024/geothermal
-egs_allkm,40,geothermal assumption
-geohydro_allkm,40,geothermal assumption
-egs_nearfield,40,geothermal assumption
+egs1,40,geothermal assumption
+egs2,40,geothermal assumption
+egs3,40,geothermal assumption
+egs4,40,geothermal assumption
+egs5,40,geothermal assumption
+geohydro1,40,geothermal assumption
+geohydro2,40,geothermal assumption
+geohydro3,40,geothermal assumption
+geohydro4,40,geothermal assumption
+geohydro5,40,geothermal assumption
 hydro,94,https://atb.nlr.gov/electricity/2024/hydropower
 hydd,94,hydro assumption
 hydnd,94,hydro assumption
