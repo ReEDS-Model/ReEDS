@@ -1027,7 +1027,7 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 
 *capacity indicated by the resource supply curve minus exogenous (pre-start-year)
 *capacity (scaled by rsc_capacity_scalar)
-    (m_rsc_dat(r,i,rscbin,"cap")$[not evmc(i)]
+    (m_rsc_dat(r,i,rscbin,"cap")
      - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
          capacity_exog_rsc(ii,v,r,rscbin,tt) } )
         * (1$[not rsc_capacity_scalar_i(i)]
