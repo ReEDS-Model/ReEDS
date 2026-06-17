@@ -407,21 +407,17 @@ def plot_units_existing(
             techs = [i for i in techs if i in onlytechs]
 
     ### Parse inputs
+    plot_settings = reeds.io.get_plot_formatting()
+    colors = plot_settings['tech_color'].squeeze(1)
+
     if markers is None:
-        techmarkers = reeds.reedsplots.techmarkers
+        techmarkers = plot_settings['tech_marker'].squeeze(1)
     elif isinstance(markers, str):
         techmarkers = dict(zip(techs, markers(len(techs))))
     elif isinstance(markers, dict):
         techmarkers = markers
     else:
         raise ValueError(f'Invalid markers ({type(markers)}): {markers}')
-
-    colors = pd.read_csv(
-        os.path.join(
-            reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','tech_style.csv'),
-        index_col='order',
-    ).squeeze(1)
-    colors.index = colors.index.str.lower()
 
     dfmap = reeds.io.get_dfmap(case)
 
@@ -470,6 +466,64 @@ def plot_units_existing(
     ## Formatting
     ax.axis('off')
     return f, ax, dfunits
+
+
+def plot_exog_prescribed_cap(
+    case=None, year=None, crs='EPSG:5070',
+    markerscale=20, colors={'wind-ons':'C0', 'upv':'C1'},
+    **kwargs,
+):
+    """Plot exogenous and prescribed capacity (only applies to upv and wind-ons)"""
+    sw = reeds.io.get_switches(case=case, **kwargs)
+    if year is None:
+        scalars = reeds.io.get_scalars(case=case)
+        year = int(scalars.this_year)
+    sitemap = reeds.io.get_sitemap().to_crs(crs)
+    dfmap = reeds.io.get_dfmap(case=case, **kwargs)
+    for key, val in dfmap.items():
+        dfmap[key] = val.to_crs(crs)
+    
+    tech_access = [
+        ('wind-ons', sw.GSw_SitingWindOns),
+        ('upv', sw.GSw_SitingUPV),
+    ]
+    infiles = ['exog_cap', 'prescribed_builds']
+    ncols = len(tech_access)
+    nrows = len(infiles)
+
+    dfin = {}
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(4*ncols, 2.5*nrows), sharex=True, sharey=True,
+        gridspec_kw={'hspace':0, 'wspace':0},
+    )
+    for row, infile in enumerate(infiles):
+        for col, (tech, access) in enumerate(tech_access):
+            fpath = Path(
+                reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+                f'{infile}_{tech}_{access}.csv'
+            )
+            if fpath.is_file():
+                dfin[tech] = pd.read_csv(fpath)
+            else:
+                continue
+            _ax = ax[row,col]
+            _ax.set_title(f'{infile} {tech} ({access})', y=0.92)
+            dfplot = (
+                dfin[tech].loc[dfin[tech].year==year].groupby('sc_point_gid').capacity.sum()
+                .to_frame()
+            )
+            dfplot = sitemap.merge(dfplot, on='sc_point_gid', how='right')
+            dfmap['st'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2, zorder=1e6)
+            dfmap['r'].plot(ax=_ax, facecolor='none', edgecolor='0.5', lw=0.1, zorder=1e5)
+            dfplot.plot(
+                ax=_ax, color=colors[tech], lw=0,
+                markersize=(dfplot.capacity/dfplot.capacity.max()*markerscale),
+            )
+    for row in range(nrows):
+        for col in range(ncols):
+            ax[row,col].axis('off')
+    return f, ax, dfin
 
 
 def plot_existing_unitsize(
@@ -1107,9 +1161,9 @@ if __name__ == '__main__':
     write = args.write
 
     # #%% Inputs for testing
-    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20260521_transcostM0_USA_county')
+    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20260604_mainM0_USA_fast')
     # interactive = True
-    # write = 'pdf'
+    # write = 'png'
 
     #%% Create output container
     suffix = write.strip('.')
@@ -1196,6 +1250,12 @@ if __name__ == '__main__':
     try:
         f, ax, df = plot_units_existing(case=case)
         saveit('Existing capacity')
+    except Exception:
+        print(traceback.format_exc())
+
+    try:
+        f, ax, df = plot_exog_prescribed_cap(case=case)
+        saveit('Exog and prescribed capacity')
     except Exception:
         print(traceback.format_exc())
 

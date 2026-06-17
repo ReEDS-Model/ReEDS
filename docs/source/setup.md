@@ -85,12 +85,6 @@ Screenshot of a test of Python in the terminal window
 #### MacOS
 Download the latest version of Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download)
 
-**IMPORTANT**: Make sure to download the Intel version even if your machine has an Apple Silicon / ARM processor. 
-
-```{figure} figs/readme/anaconda-intel.png
-:name: figure-anaconda-intel
-```
-
 During Installation, select to install Anaconda for your machine only.
 
 ```{figure} figs/readme/anaconda-install-mac.png
@@ -131,6 +125,8 @@ When creating the reeds2 environment locally, you might run into an SSL error th
 
 ### GAMS Configuration
 NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.
+
+For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
 
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)
     **If installing on Mac:** on the "Installation" page, click "customize" and ensure the box to "Add GAMS to PATH" is checked.

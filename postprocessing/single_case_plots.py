@@ -110,6 +110,22 @@ val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
 year = year if year > 0 else max(years)
 
 
+#%% Validation plots
+### Existing capacity vs last historical capacity
+try:
+    mapmethod = 'FIPS'
+    f, ax, df = reedsplots.validate_regional_capacity(case, mapmethod=mapmethod)
+    savename = f'validate_cap_regional-{mapmethod}.png'
+    if write:
+        plt.savefig(os.path.join(savepath, savename))
+    if interactive:
+        plt.show()
+    plt.close()
+    print(savename)
+except Exception:
+    print(traceback.format_exc())
+
+
 #%% Transmission line map with disaggregated transmission types
 ### Plot both total capacity (subtract_baseyear=None) and new (subtract_baseyear=2020)
 for subtract_baseyear in [None, 2020]:

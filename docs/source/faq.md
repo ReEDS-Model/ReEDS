@@ -6,6 +6,7 @@
   - [Table of Contents](#table-of-contents)
     - [How much are the GAMS licensing fees?](#how-much-are-the-gams-licensing-fees)
     - [Is there a trial version of the GAMS license so that I can test ReEDS?](#is-there-a-trial-version-of-the-gams-license-so-that-i-can-test-reeds)
+    - [What if the GAMS community license isn't enough to run my ReEDS case?](#what-if-the-gams-community-license-isnt-enough-to-run-my-reeds-case)
     - [What computer hardware is necessary to run ReEDS?](#what-computer-hardware-is-necessary-to-run-reeds)
     - [Can I configure a ReEDS case to run as an isolated interconnect?](#can-i-configure-a-reeds-case-to-run-as-an-isolated-interconnect)
     - [How do I change the spatial resolution of a ReEDS case?](#how-do-i-change-the-spatial-resolution-of-a-reeds-case)
@@ -25,6 +26,12 @@ Please contact GAMS for more information.
 ### Is there a trial version of the GAMS license so that I can test ReEDS?
 
 We have created a reduced size version of the ReEDS model that has less than 5,000 rows and columns, and therefore should be compatible with the GAMS community license ([https://www.gams.com/try_gams/](https://www.gams.com/try_gams/) -- Please contact GAMS if you need additional information regarding the community license). You can run this reduced model version by using the cases_small.csv input file. This reduced model uses a smaller technology subset, smaller geographic extent, and simplifies several model constraints.
+
+### What if the GAMS community license isn't enough to run my ReEDS case?
+
+If you'd like to test ReEDS without the community license row/column limit, GAMS offers time-limited evaluation licenses. To request an evaluation license, [email GAMS](mailto:sales@gams.com?subject=Request%20for%20Evaluation%20License&body=Hello%2C%20%0A%0AI'd%20like%20to%20request%20an%20evaluation%20license%20for%20GAMS.%20I%20plan%20to%20use%20it%20to%20run%20the%20ReEDS.%20%0A%0AContact%20information%3A%20%0A-%20Full%20name%3A%20%0A-%20Company%3A%0A-%20Department%3A%20%0A-%20Full%20postal%20address%3A%0A-%20Country%3A%0A%0ALicense%20information%20(select%20one)%3A%20%0A-%20%5B%20%5D%20Single%20user%20-%20one%20named%20individual%0A-%20%5B%20%5D%20Shared%20team%20-%20N%20concurrent%20sessions%2C%20shared%20across%20a%20group%0A-%20%5B%20%5D%20Server%2Fmachine%20-%20tied%20to%20a%20specific%20machine%20(e.g.%20for%20batch%2FHPC%20use)%0A%0ANumber%20of%20users%2Fmachines%3A%20%0ANumber%20of%20cores%20on%20the%20machine%20that%20you%E2%80%99ll%20be%20using%3A%0ARequired%20solvers%3A%20GAMS%2FCPLEX%0A%0AAny%20additional%20comments%20regarding%20your%20setup%3A%20%0A%0AThank%20you%2C%20%0A%5BYour%20Name%5D).
+
+To see more about the different GAMS licenses, see their [general licensing information page](https://www.gams.com/sales/licensing/).
 
 ### What computer hardware is necessary to run ReEDS?
 
@@ -80,7 +87,7 @@ If you'd like to reduce the model solve time, consider making some of the follow
 
 Every year we target June 1 for the bulk of model changes to be completed, which allows us to meet the hard deadline for having a working, updated version of the model by June 30. We typically make minor updates to the model over the summer and tag a final version for that year in August or September. This version is then used to produce the Standard Scenarios and Cambium data products.
 
-Additionally, changes are made throughout the year and a new version is created and published roughly every month. You can find current and past ReEDS versions here: {{ '[ReEDS Releases]({}/releases)'.format(base_github_url) }}
+Additionally, changes are made throughout the year and a new version is created and published roughly every month. You can find current and past ReEDS versions here: '[ReEDS Releases](https://github.com/reeds-model/reeds/releases)
 
 If you would like to run ReEDS with a previous version, you can either download the source code directly or check out that version using the tag.
 
