@@ -43,7 +43,7 @@ import numpy as np
 import pandas as pd
 
 from bokeh.io import curdoc
-from bokeh.layouts import column, row
+from bokeh.layouts import column, gridplot, row
 from bokeh.models import (
     BasicTicker,
     ColorBar,
@@ -61,8 +61,9 @@ from bokeh.models import (
     TabPanel,
     Tabs,
 )
-from bokeh.palettes import RdYlGn11
+from bokeh.palettes import Category10, Category20, RdYlGn11
 from bokeh.plotting import figure
+from bokeh.transform import dodge, jitter
 
 # Local imports — keep the module path importable when launched via ``bokeh serve``.
 _HERE = Path(__file__).resolve().parent
@@ -71,6 +72,7 @@ if str(_HERE) not in sys.path:
 
 from surrogate_predict import DIMENSION_ENCODING, clip_physical_bounds, load_artifact, predict   # noqa: E402
 from surrogate_plots import (                                              # noqa: E402
+    _build_tech_lookup,
     aggregate_cap_to_tech_region,
     aggregate_cap_to_techs,
     aggregate_cost_to_buckets,
@@ -82,9 +84,16 @@ from surrogate_plots import (                                              # noq
     load_tech_map,
     load_tech_style,
     order_techs,
+    raw_to_display,
     tech_color,
 )
 from surrogate_uq import conformal_widths                                  # noqa: E402
+from surrogate_eval_captions import (                                      # noqa: E402
+    auto_readout_r0,
+    auto_readout_r5,
+    bokeh_explainer_div,
+    bokeh_intro_div,
+)
 
 # --- Tolerance bands for color-coded metrics (percent) ---
 CAP_TOL_GOOD = 5.0       # |%| <= GOOD  → green
@@ -159,6 +168,180 @@ MODELS_DIR: Path = RESULTS_DIR / "models"
 
 
 # ---------------------------------------------------------------------------
+# Cross-layer helpers — keyed by 'overall' / 'regional', persistent across
+# stage switches. Used by sections (1) and (4) of the eval tab to keep the
+# model-comparison view anchored to the OVERALL layer regardless of which
+# stage is selected on the Predict tab.
+# ---------------------------------------------------------------------------
+OOF_CACHE_BY_LAYER: dict[tuple, tuple] = {}
+TRAINING_CACHE_BY_LAYER: dict[str, pd.DataFrame] = {}
+SUMMARY_CACHE_BY_LAYER: dict[str, dict] = {}
+
+
+def _layer_paths(short: str):
+    """Resolve (results_dir, data_path, models_dir) for ``short`` ('overall' or 'regional')."""
+    target = "overall" if "overall" in short.lower() else "regional"
+    for label, cfg in STAGE_CONFIG.items():
+        if target in label.lower():
+            return cfg["results_dir"], cfg["data_path"], cfg["results_dir"] / "models"
+    return None, None, None
+
+
+def _summary_for_layer(short: str) -> dict:
+    """Load summary.json for the layer matching ``short``; cached, refreshable."""
+    target = "overall" if "overall" in short.lower() else "regional"
+    if target in SUMMARY_CACHE_BY_LAYER:
+        return SUMMARY_CACHE_BY_LAYER[target]
+    res_dir, _, _ = _layer_paths(target)
+    if res_dir is None:
+        SUMMARY_CACHE_BY_LAYER[target] = {}
+        return {}
+    p = res_dir / "summary.json"
+    if not p.exists():
+        SUMMARY_CACHE_BY_LAYER[target] = {}
+        return {}
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    SUMMARY_CACHE_BY_LAYER[target] = data
+    return data
+
+
+def _training_df_for_layer(short: str) -> pd.DataFrame:
+    """Load the training CSV for a specific layer, cached."""
+    target = "overall" if "overall" in short.lower() else "regional"
+    if target in TRAINING_CACHE_BY_LAYER:
+        return TRAINING_CACHE_BY_LAYER[target]
+    _, data_path, _ = _layer_paths(target)
+    if data_path is None or not data_path.exists():
+        df = pd.DataFrame()
+    else:
+        try:
+            df = pd.read_csv(data_path)
+        except Exception:
+            df = pd.DataFrame()
+    TRAINING_CACHE_BY_LAYER[target] = df
+    return df
+
+
+def _models_for_layer(short: str) -> dict:
+    """Discover ``.joblib`` artifacts for a specific layer."""
+    target = "overall" if "overall" in short.lower() else "regional"
+    _, _, models_dir = _layer_paths(target)
+    if models_dir is None or not models_dir.exists():
+        return {}
+    return {p.stem: p for p in sorted(models_dir.glob("*.joblib"))}
+
+
+def _artifact_for_layer(short: str, name: str):
+    """Load a model artifact for ``short`` layer, returning ``None`` on failure."""
+    target = "overall" if "overall" in short.lower() else "regional"
+    cache_key = ("artifact", target, name)
+    if cache_key in OOF_CACHE_BY_LAYER:
+        return OOF_CACHE_BY_LAYER[cache_key]
+    paths = _models_for_layer(target)
+    if name not in paths:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    try:
+        art = load_artifact(paths[name])
+    except Exception:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    OOF_CACHE_BY_LAYER[cache_key] = art
+    return art
+
+
+def _get_oof_pred_for_layer(short: str, name: str):
+    """Return ``(Y_true, Y_pred, y_cols)`` for ``short`` layer's ``name`` model."""
+    target = "overall" if "overall" in short.lower() else "regional"
+    cache_key = ("oof", target, name)
+    if cache_key in OOF_CACHE_BY_LAYER:
+        return OOF_CACHE_BY_LAYER[cache_key]
+    art = _artifact_for_layer(target, name)
+    if art is None:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    df = _training_df_for_layer(target)
+    if df.empty:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    y_cols = list(art.get("y_cols", []))
+    oof_res = art.get("oof_residuals")
+    if oof_res is None or not y_cols:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    available = [c for c in y_cols if c in df.columns]
+    if not available:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    Y_true = df[available].to_numpy(dtype=float)
+    oof_arr = np.asarray(oof_res, dtype=float)
+    col_idx = [
+        y_cols.index(c) for c in available
+        if y_cols.index(c) < oof_arr.shape[1]
+    ]
+    if not col_idx:
+        OOF_CACHE_BY_LAYER[cache_key] = None
+        return None
+    Y_true = Y_true[:, : len(col_idx)]
+    Y_pred = Y_true - oof_arr[:, col_idx]
+    cols = available[: len(col_idx)]
+    val = (Y_true, Y_pred, cols)
+    OOF_CACHE_BY_LAYER[cache_key] = val
+    return val
+
+
+# Pooled R² per (layer, model). Loaded lazily because it needs OOF preds.
+_POOLED_R2_CACHE: dict[tuple[str, str], float] = {}
+
+
+def _pooled_r2_for_layer_model(layer_short: str, model_name: str) -> float:
+    """Pooled R² across all (case × output) pairs for a model on a layer.
+
+    Same definition used in the parity-grid panel titles: flatten the
+    entire (Y_true, Y_pred) array and compute ``1 − SS_res/SS_tot``.
+    Dominated by high-magnitude outputs (Capacity), so it stays close to
+    1 for well-fitting methods. Cached per (layer, model).
+    """
+    target = "overall" if "overall" in layer_short.lower() else "regional"
+    cache_key = (target, model_name)
+    if cache_key in _POOLED_R2_CACHE:
+        return _POOLED_R2_CACHE[cache_key]
+    triple = _get_oof_pred_for_layer(target, model_name)
+    if triple is None:
+        _POOLED_R2_CACHE[cache_key] = float("nan")
+        return float("nan")
+    Y_true, Y_pred, _ = triple
+    yt = np.asarray(Y_true, dtype=float).ravel()
+    yp = np.asarray(Y_pred, dtype=float).ravel()
+    finite = np.isfinite(yt) & np.isfinite(yp)
+    yt = yt[finite]
+    yp = yp[finite]
+    if yt.size <= 1:
+        _POOLED_R2_CACHE[cache_key] = float("nan")
+        return float("nan")
+    ss_tot = float(np.sum((yt - yt.mean()) ** 2))
+    if ss_tot <= 0:
+        _POOLED_R2_CACHE[cache_key] = float("nan")
+        return float("nan")
+    ss_res = float(np.sum((yt - yp) ** 2))
+    r2 = 1.0 - ss_res / ss_tot
+    _POOLED_R2_CACHE[cache_key] = r2
+    return r2
+
+
+def _refresh_layer_caches() -> None:
+    """Drop disk-derived caches so a retrain is picked up on next access."""
+    SUMMARY_CACHE_BY_LAYER.clear()
+    TRAINING_CACHE_BY_LAYER.clear()
+    OOF_CACHE_BY_LAYER.clear()
+    _POOLED_R2_CACHE.clear()
+
+
+# ---------------------------------------------------------------------------
 # Load training data for the "Actual" lookup (re-loaded on layer change)
 # ---------------------------------------------------------------------------
 
@@ -171,6 +354,22 @@ def _load_training_data() -> pd.DataFrame:
 TRAINING_DF: pd.DataFrame = _load_training_data()
 TECH_MAP_DF = load_tech_map()
 TECH_STYLE_DF = load_tech_style()
+# Pre-built lookups so per-output metric panels can merge raw tech names
+# (e.g. ``wind-ons_4``) into the same display buckets the predict tab uses
+# (e.g. ``Onshore Wind``) via :func:`raw_to_display`.
+_TECH_EXACT_LOOKUP, _TECH_PREFIX_LOOKUP = _build_tech_lookup(TECH_MAP_DF)
+
+
+def _tech_display_name(raw_tech: str) -> str:
+    """Map a raw tech token (post-region-strip) to its bokehpivot display name.
+
+    Falls back to the raw token unchanged when no rule matches, so non-tech
+    outputs (e.g. ``inv_ltc_payments_negative``) stay readable instead of
+    being silently relabelled.
+    """
+    if not raw_tech:
+        return raw_tech
+    return raw_to_display(raw_tech, _TECH_EXACT_LOOKUP, _TECH_PREFIX_LOOKUP)
 
 
 def _find_actual_row(levels: dict[str, str]) -> pd.Series | None:
@@ -1607,55 +1806,772 @@ def _img_div(rel_name: str, width: int = 900) -> Div:
     return Div(text=_img_html(rel_name), width=width)
 
 
-def _summary_table_html() -> str:
-    if not SUMMARY:
-        return ("<i>summary.json not found — run "
-                "<code>python surrogate_ml_models.py</code> first.</i>")
-    cfg = SUMMARY.get("config", {})
+_SUMMARY_TABLE_BANNER = {
+    "overall":  ("#1f77b4", "Overall layer (system-level outputs, ~86 outputs) — "
+                            "fixed reference; used to pick the top-2 methods "
+                            "compared in the per-case, per-catalog, and "
+                            "Overall-vs-Regional sections below."),
+    "regional": ("#d62728", "Regional layer (per-BA outputs, ~382 outputs) — "
+                            "shown for comparison. Ranking here can differ from "
+                            "Overall; the noisier per-BA targets penalize methods "
+                            "differently."),
+}
+
+# Weights for the composite ranking score. Designed to balance:
+#   - median R² (robust central tendency, insensitive to outlier outputs)
+#   - fraction of outputs with R² > 0.9 (task-aligned: "how many usable?")
+#   - mean R² (penalizes catastrophic single-output failures)
+_COMPOSITE_W_MEDIAN = 0.5
+_COMPOSITE_W_USABLE = 0.3   # weight on (n_outputs_r2_above_0.9 / n_y_outputs)
+_COMPOSITE_W_MEAN   = 0.2
+
+
+def _composite_score(m: dict, n_out) -> float:
+    """Weighted blend of robust + task-aligned metrics; higher is better.
+
+    score = 0.5·median + 0.3·(R²>0.9 fraction) + 0.2·mean
+
+    Returns NaN if any component is missing / non-finite, so such models sink
+    to the bottom of the leaderboard.
+    """
+    median = m.get("oof_r2_median", float("nan"))
+    mean = m.get("oof_r2_mean", float("nan"))
+    n_above_09 = m.get("n_outputs_r2_above_0.9", float("nan"))
+    try:
+        n_out_f = float(n_out)
+    except (TypeError, ValueError):
+        return float("nan")
+    if n_out_f <= 0:
+        return float("nan")
+    if not (np.isfinite(median) and np.isfinite(mean) and np.isfinite(n_above_09)):
+        return float("nan")
+    frac_usable = n_above_09 / n_out_f
+    return (
+        _COMPOSITE_W_MEDIAN * median
+        + _COMPOSITE_W_USABLE * frac_usable
+        + _COMPOSITE_W_MEAN * mean
+    )
+
+
+def _rank_by_composite(summary: dict | None) -> list[str]:
+    """Return model keys sorted by composite score descending (best first).
+
+    NaN scores sink to the bottom; ties are broken by name for determinism.
+    """
+    if not summary:
+        return []
+    models = summary.get("models", {})
+    n_out = summary.get("config", {}).get("n_y_outputs", 1)
+    scores = {k: _composite_score(m, n_out) for k, m in models.items()}
+
+    def _key(k: str) -> tuple:
+        v = scores[k]
+        if not np.isfinite(v):
+            return (1, k)
+        return (0, -v, k)
+    return sorted(models.keys(), key=_key)
+
+
+def _rank_by_pooled_r2(layer_short: str) -> list[str]:
+    """Return model keys for ``layer_short`` ranked by pooled R² descending.
+
+    Matches the ranking used in the Section 1 leaderboard tables.
+    Models whose artifacts fail to load (NaN pooled R²) sink to the bottom;
+    ties are broken by name.
+    """
+    summary = _summary_for_layer(layer_short)
+    if not summary:
+        return []
+    names = list(summary.get("models", {}).keys())
+    pooled = {n: _pooled_r2_for_layer_model(layer_short, n) for n in names}
+
+    def _key(n: str) -> tuple:
+        v = pooled[n]
+        if not np.isfinite(v):
+            return (1, n)
+        return (0, -v, n)
+    return sorted(names, key=_key)
+
+
+# Weights for the Section 1 leaderboard rank score. Equal weight on
+# pooled accuracy and per-output usability — surfaces models that win on
+# the bulk of outputs even when a few high-magnitude outputs dominate
+# pooled R².
+_RANK_W_POOLED = 0.5
+_RANK_W_USABLE = 0.5
+
+
+def _rank_score_for_layer_model(
+    layer_short: str,
+    model_name: str,
+    models_dict: dict | None = None,
+    n_out: float | int | str | None = None,
+) -> float:
+    """Weighted leaderboard score for one (layer, model) pair.
+
+    ``score = w_pooled · pooled_r2  +  w_usable · (n_outputs_r2_above_0.9 / n_y_outputs)``
+
+    Returns NaN if either component is missing / non-finite (so the model
+    sinks to the bottom of the leaderboard).
+    """
+    if models_dict is None or n_out is None:
+        summary = _summary_for_layer(layer_short)
+        if not summary:
+            return float("nan")
+        models_dict = summary.get("models", {})
+        n_out = summary.get("config", {}).get("n_y_outputs", 1)
+    m = models_dict.get(model_name, {}) if models_dict else {}
+    pooled = _pooled_r2_for_layer_model(layer_short, model_name)
+    n_good = m.get("n_outputs_r2_above_0.9")
+    try:
+        n_out_f = float(n_out)
+    except (TypeError, ValueError):
+        return float("nan")
+    if not (np.isfinite(pooled)
+            and isinstance(n_good, (int, float))
+            and n_out_f > 0):
+        return float("nan")
+    good_frac = float(n_good) / n_out_f
+    return _RANK_W_POOLED * pooled + _RANK_W_USABLE * good_frac
+
+
+def _rank_by_score(layer_short: str) -> list[str]:
+    """Return model keys for ``layer_short`` ranked by leaderboard Score.
+
+    Score = ``_RANK_W_POOLED · pooled_r2 + _RANK_W_USABLE · good_frac``,
+    where ``good_frac = n_outputs_r2_above_0.9 / n_y_outputs``.
+    NaN scores sink to the bottom; ties are broken by name.
+    """
+    summary = _summary_for_layer(layer_short)
+    if not summary:
+        return []
+    models_dict = summary.get("models", {})
+    n_out = summary.get("config", {}).get("n_y_outputs", 1)
+    names = list(models_dict.keys())
+    scores = {n: _rank_score_for_layer_model(layer_short, n, models_dict, n_out)
+              for n in names}
+
+    def _key(n: str) -> tuple:
+        v = scores[n]
+        if not np.isfinite(v):
+            return (1, n)
+        return (0, -v, n)
+    return sorted(names, key=_key)
+
+
+def _summary_table_html(layer_short: str = "overall") -> str:
+    """Render the eval summary table for the requested layer."""
+    summary = _summary_for_layer(layer_short)
+    label_color, banner_text = _SUMMARY_TABLE_BANNER.get(
+        layer_short, ("#444", f"{layer_short} layer."))
+    if not summary:
+        return (f"<i>summary.json not found for the <b>{layer_short}</b> "
+                "layer — run <code>python surrogate_ml_models.py</code> "
+                f"with the <code>{layer_short}</code> target to populate.</i>")
+    cfg = summary.get("config", {})
     n_out = cfg.get("n_y_outputs", "?")
+    models = summary.get("models", {})
+    # Weighted leaderboard: 50 % pooled R² + 50 % fraction of outputs
+    # with R² > 0.9. Both components are also displayed so the user can
+    # see which one is driving the rank.
+    pooled = {name: _pooled_r2_for_layer_model(layer_short, name)
+              for name in models.keys()}
+    scores = {name: _rank_score_for_layer_model(layer_short, name, models, n_out)
+              for name in models.keys()}
+
+    def _rank_key(name: str) -> tuple:
+        v = scores[name]
+        if not np.isfinite(v):
+            return (1, name)  # push NaNs to the end
+        return (0, -v, name)
+    ranked_names = sorted(models.keys(), key=_rank_key)
+    try:
+        n_out_f = float(n_out)
+    except (TypeError, ValueError):
+        n_out_f = float("nan")
     rows_html = []
-    # Highlight the row with the best R² mean
-    models = SUMMARY.get("models", {})
-    best = max(models, key=lambda k: models[k].get("oof_r2_mean", float("-inf"))) if models else None
-    for name, m in models.items():
-        bg = " style='background:#eaffea'" if name == best else ""
+    for i, name in enumerate(ranked_names):
+        m = models[name]
+        rank = i + 1
+        prr = pooled[name]
+        sc = scores[name]
+        n_good = m.get("n_outputs_r2_above_0.9")
+        bg = " style='background:#eaffea'" if rank == 1 else ""
+        rank_cell = (
+            f"<td style='text-align:center;font-weight:bold'>"
+            f"{rank}{' &#11088;' if rank == 1 else ''}</td>"
+        )
+        score_str = f"{sc:.4f}" if np.isfinite(sc) else "—"
+        prr_str = f"{prr:.4f}" if np.isfinite(prr) else "—"
+        if isinstance(n_good, (int, float)) and np.isfinite(n_out_f) and n_out_f > 0:
+            pct = float(n_good) / n_out_f * 100.0
+            good_str = (
+                f"{int(n_good)} / {int(n_out_f)} "
+                f"<span style='color:#888'>({pct:.0f}%)</span>"
+            )
+        else:
+            good_str = "—"
         rows_html.append(
             f"<tr{bg}>"
-            f"<td>{m.get('display_name', name)}{' &#11088;' if name == best else ''}</td>"
-            f"<td style='text-align:right'>{m.get('oof_r2_mean', float('nan')):.3f}</td>"
-            f"<td style='text-align:right'>{m.get('oof_r2_median', float('nan')):.3f}</td>"
-            f"<td style='text-align:right'>{m.get('oof_r2_min', float('nan')):.3f}</td>"
-            f"<td style='text-align:right'>{m.get('oof_r2_max', float('nan')):.3f}</td>"
-            f"<td style='text-align:right'>"
-            f"{m.get('n_outputs_r2_above_0.9', '?')} / {n_out}</td>"
-            f"<td style='text-align:right'>"
-            f"{m.get('n_outputs_r2_above_0.95', '?')} / {n_out}</td>"
+            + rank_cell
+            + f"<td>{m.get('display_name', name)}</td>"
+            f"<td style='text-align:right;font-weight:bold'>{score_str}</td>"
+            f"<td style='text-align:right'>{prr_str}</td>"
+            f"<td style='text-align:right'>{good_str}</td>"
             f"</tr>"
         )
     style = (
         "<style>"
-        ".summ-tbl{border-collapse:collapse;font-size:12px;width:100%;margin:6px 0}"
-        ".summ-tbl th,.summ-tbl td{border:1px solid #bbb;padding:4px 8px}"
+        ".summ-tbl{border-collapse:collapse;font-size:13px;width:100%;margin:6px 0}"
+        ".summ-tbl th,.summ-tbl td{border:1px solid #bbb;padding:6px 8px}"
         ".summ-tbl th{background:#eee;text-align:left}"
         "</style>"
     )
+    score_help = (
+        f"<span title='Score = {_RANK_W_POOLED}\u00b7Pooled R\u00b2 + "
+        f"{_RANK_W_USABLE}\u00b7(Outputs &gt; 0.9 fraction). Equal weight on "
+        "pooled accuracy and per-output usability \u2014 a model that does "
+        "well on more outputs ranks higher even if pooled R\u00b2 is "
+        "slightly lower.'>Score \u24D8</span>"
+    )
+    r2_help = (
+        "<span title='Pooled R² = 1 − SS_res / SS_tot on the entire flat "
+        "(Y_true, Y_pred) array (all cases × outputs concatenated). "
+        "Same metric shown in the parity-grid panel titles. "
+        "Higher is better — 1 = perfect, 0 = baseline (predicting the "
+        "column mean), negative = worse than baseline.'>Pooled R² \u24D8</span>"
+    )
+    good_help = (
+        "<span title='Number of outputs (and percent) with per-output "
+        "R² > 0.9. Higher = the surrogate handles more variables well, "
+        "not just the high-magnitude ones.'>Outputs &gt; 0.9 \u24D8</span>"
+    )
     return (
         style
-        + f"<p style='margin:0 0 4px 0'><b>Dataset:</b> "
-        f"{cfg.get('n_samples', '?')} samples &times; "
-        f"{cfg.get('n_x_features', '?')} design dims &rarr; "
-        f"{n_out} non-constant outputs. "
-        f"<b>Evaluation:</b> {cfg.get('cv_type', '?')} "
-        f"({cfg.get('evaluation', '')}).</p>"
+        + f"<p style='margin:0 0 4px 0;color:{label_color};font-weight:bold'>"
+        f"{banner_text}</p>"
+        + f"<p style='margin:0 0 4px 0;font-size:12px;color:#555'>"
+        f"<b>{cfg.get('n_samples', '?')}</b> cases &times; "
+        f"<b>{cfg.get('n_x_features', '?')}</b> design dims &rarr; "
+        f"<b>{n_out}</b> outputs &middot; "
+        f"<i>{cfg.get('cv_type', '?')}</i>. "
+        f"Ranked by <b>Score</b> = "
+        f"{_RANK_W_POOLED}\u00b7Pooled R\u00b2 + "
+        f"{_RANK_W_USABLE}\u00b7(Outputs &gt; 0.9 fraction)."
+        f"</p>"
         + "<table class='summ-tbl'>"
-        + "<thead><tr><th>Model</th><th>R² mean</th><th>R² median</th>"
-        + "<th>R² min</th><th>R² max</th><th>R²&gt;0.9</th><th>R²&gt;0.95</th></tr></thead>"
+        + "<thead><tr><th style='text-align:center'>#</th>"
+        + "<th>Model</th>"
+        + f"<th style='text-align:right'>{score_help}</th>"
+        + f"<th style='text-align:right'>{r2_help}</th>"
+        + f"<th style='text-align:right'>{good_help}</th>"
+        + "</tr></thead>"
         + f"<tbody>{''.join(rows_html)}</tbody></table>"
     )
 
 
-eval_summary_div = Div(text=_summary_table_html(), width=900)
-parity_div = Div(text="", width=900)
+eval_summary_div = Div(text=_summary_table_html("overall"), width=520)
+eval_summary_div_regional = Div(
+    text=_summary_table_html("regional"), width=520)
+
+# ---------------------------------------------------------------------------
+# Eval tab — interactive Bokeh diagnostics
+# ---------------------------------------------------------------------------
+# Replaces several static matplotlib PNGs with hover-able / zoom-able views
+# that directly answer the questions: (1) which model wins, (2) which
+# outputs are hard to predict, (3) which techs / regions does the surrogate
+# exhibit per-group bias in.
+# ---------------------------------------------------------------------------
+
+# Quality buckets used everywhere on the eval tab.
+_R2_GOOD = "#2ca02c"
+_R2_OK   = "#ff9f00"
+_R2_BAD  = "#d62728"
+_R2_NA   = "#888888"
+
+
+def _r2_color(r2: float) -> str:
+    """Green / amber / red based on R² quality bucket."""
+    if r2 is None or not np.isfinite(r2):
+        return _R2_NA
+    if r2 >= 0.9:
+        return _R2_GOOD
+    if r2 >= 0.5:
+        return _R2_OK
+    return _R2_BAD
+
+
+def _parse_output_name(output: str) -> tuple[str | None, str | None, str | None]:
+    """Parse output names like ``cap_upv_p60`` -> (prefix, tech, region).
+
+    * ``cap_upv``                       -> ("cap", "upv", None)
+    * ``cap_CoalOldScr_coal-CCS_mod_p63``-> ("cap", "CoalOldScr_coal-CCS_mod", "p63")
+    * ``cost_op_vom_costs_p64``         -> ("cost", "op_vom_costs", "p64")
+    * unparseable                       -> (None, output, None)
+    """
+    if not output:
+        return None, None, None
+    parts = output.split("_")
+    if len(parts) < 2:
+        return None, output, None
+    prefix = parts[0]
+    rest = parts[1:]
+    region = None
+    if rest and rest[-1].startswith("p") and rest[-1][1:].isdigit():
+        region = rest[-1]
+        rest = rest[:-1]
+    tech = "_".join(rest) if rest else None
+    return prefix, tech, region
+
+
+def _short_model_name(display_name: str) -> str:
+    """Strip parenthetical suffix so the x-axis stays readable.
+
+    ``"NGBoost (distributional, UQ-native)"`` -> ``"NGBoost"``.
+    """
+    if not display_name:
+        return display_name
+    return display_name.split(" (")[0].strip() or display_name
+
+
+# ----- (1) Model comparison: grouped (dodged) bars per metric -------------
+# One row per model with one column per metric, then four ``vbar`` renderers
+# offset with ``dodge`` so the x-axis only carries ONE label per model.
+# Metric -> color mapping lives in the legend (click any entry to hide).
+MC_METRICS = [
+    ("R² mean",     "r2_mean",         "#1f77b4"),
+    ("R² median",   "r2_median",       "#ff7f0e"),
+    ("frac ≥0.9",   "frac_above_0p9",  "#2ca02c"),
+    ("frac ≥0.95",  "frac_above_0p95", "#9467bd"),
+]
+model_compare_source = ColumnDataSource(data=dict(
+    model=[], r2_mean=[], r2_median=[], frac_above_0p9=[], frac_above_0p95=[],
+))
+model_compare_fig = figure(
+    width=900, height=340,
+    x_range=FactorRange(),
+    y_range=Range1d(start=0, end=1.10),
+    title="Model comparison — out-of-fold R² metrics (higher = better)",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="box_zoom",
+    y_axis_label="R²  /  fraction of outputs",
+)
+model_compare_fig.toolbar.logo = None
+model_compare_fig.xaxis.major_label_orientation = 0.6
+model_compare_fig.xgrid.grid_line_color = None
+_mc_bar_w = 0.18  # leaves a small visual gap between groups
+for _i, (_label, _col, _color) in enumerate(MC_METRICS):
+    _offset = (_i - (len(MC_METRICS) - 1) / 2) * _mc_bar_w
+    _r = model_compare_fig.vbar(
+        x=dodge("model", _offset, range=model_compare_fig.x_range),
+        top=_col, width=_mc_bar_w * 0.95,
+        color=_color, source=model_compare_source,
+        line_color="white", line_width=0.5,
+        legend_label=_label,
+    )
+    model_compare_fig.add_tools(HoverTool(
+        renderers=[_r],
+        tooltips=[
+            ("Model", "@model"),
+            (_label, f"@{_col}{{0.000}}"),
+        ],
+        point_policy="follow_mouse",
+    ))
+model_compare_fig.legend.location = "top_right"
+model_compare_fig.legend.click_policy = "hide"
+model_compare_fig.legend.background_fill_alpha = 0.85
+model_compare_fig.legend.label_text_font_size = "10pt"
+
+# ----- (2) Model R² spread: min / median / max -----------------------------
+model_range_source = ColumnDataSource(data=dict(
+    model=[], r2_min=[], r2_median=[], r2_max=[],
+))
+model_range_fig = figure(
+    width=900, height=340,
+    x_range=FactorRange(),
+    y_range=Range1d(start=-0.5, end=1.05),
+    title="Model R² spread — min / median / max across all outputs "
+          "(short bar = consistent, tall bar = uneven across outputs)",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="box_zoom",
+    y_axis_label="R²",
+)
+model_range_fig.toolbar.logo = None
+model_range_fig.xaxis.major_label_orientation = 0.6
+model_range_fig.xgrid.grid_line_color = None
+model_range_fig.segment(
+    x0="model", y0="r2_min", x1="model", y1="r2_max",
+    source=model_range_source, line_width=10, line_color="#666",
+    line_cap="round",
+)
+_mr_dots = model_range_fig.scatter(
+    x="model", y="r2_median", source=model_range_source,
+    size=14, marker="diamond", fill_color="#1f77b4", line_color="white",
+    line_width=1.5,
+)
+model_range_fig.add_tools(HoverTool(
+    renderers=[_mr_dots],
+    tooltips=[
+        ("Model", "@model"),
+        ("R² min", "@r2_min{0.000}"),
+        ("R² median", "@r2_median{0.000}"),
+        ("R² max", "@r2_max{0.000}"),
+    ],
+    point_policy="follow_mouse",
+))
+for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+    model_range_fig.add_layout(Span(
+        location=thr, dimension="width", line_color=col,
+        line_dash="dashed", line_width=1, line_alpha=0.7,
+    ))
+
+# ----- (3) Per-output R² for the SELECTED model ---------------------------
+# Horizontal bars (one per output), sorted ascending so the worst outputs
+# sit at the top. With 382 outputs in the regional layer we cap the number
+# of bars shown at WORST_N and tell the user how many were trimmed.
+EVAL_WORST_N = 60
+
+per_output_bars_source = ColumnDataSource(data=dict(
+    output=[], r2=[], color=[], rmse=[], mae=[], nrmse=[],
+    prefix=[], tech=[], region=[],
+))
+per_output_bars_fig = figure(
+    width=900, height=600,
+    y_range=FactorRange(),
+    x_range=Range1d(start=-0.2, end=1.05),
+    title="Per-output R² (selected model) — worst at top",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="ybox_zoom",
+    x_axis_label="R²",
+)
+per_output_bars_fig.toolbar.logo = None
+per_output_bars_fig.ygrid.grid_line_color = None
+_po_bars = per_output_bars_fig.hbar(
+    y="output", right="r2", height=0.85,
+    color="color", source=per_output_bars_source,
+    line_color="white", line_width=0.5,
+)
+per_output_bars_fig.add_tools(HoverTool(
+    renderers=[_po_bars],
+    tooltips=[
+        ("Output", "@output"),
+        ("Prefix / Tech / Region", "@prefix / @tech / @region"),
+        ("R²", "@r2{0.000}"),
+        ("RMSE", "@rmse{0,0.000}"),
+        ("MAE", "@mae{0,0.000}"),
+        ("NRMSE", "@nrmse{0.000}"),
+    ],
+    point_policy="follow_mouse",
+))
+for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+    per_output_bars_fig.add_layout(Span(
+        location=thr, dimension="height", line_color=col,
+        line_dash="dashed", line_width=1, line_alpha=0.6,
+    ))
+
+# ----- (4) Bias by tech / by region (regional layer only) -----------------
+per_tech_source = ColumnDataSource(data=dict(
+    tech=[], r2_mean=[], r2_median=[], n=[], color=[],
+))
+per_tech_fig = figure(
+    width=440, height=380,
+    x_range=FactorRange(),
+    y_range=Range1d(start=-0.2, end=1.05),
+    title="Mean R² per tech — worst on the left",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="box_zoom",
+    y_axis_label="R² (mean across regions)",
+)
+per_tech_fig.toolbar.logo = None
+per_tech_fig.xaxis.major_label_orientation = 0.9
+per_tech_fig.xgrid.grid_line_color = None
+_pt_bars = per_tech_fig.vbar(
+    x="tech", top="r2_mean", width=0.75,
+    color="color", source=per_tech_source,
+    line_color="white", line_width=0.5,
+)
+per_tech_fig.add_tools(HoverTool(
+    renderers=[_pt_bars],
+    tooltips=[
+        ("Tech", "@tech"),
+        ("R² mean", "@r2_mean{0.000}"),
+        ("R² median", "@r2_median{0.000}"),
+        ("# outputs", "@n"),
+    ],
+    point_policy="follow_mouse",
+))
+for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+    per_tech_fig.add_layout(Span(
+        location=thr, dimension="width", line_color=col,
+        line_dash="dashed", line_width=1, line_alpha=0.6,
+    ))
+
+per_region_source = ColumnDataSource(data=dict(
+    region=[], r2_mean=[], r2_median=[], n=[], color=[],
+))
+per_region_fig = figure(
+    width=440, height=380,
+    x_range=FactorRange(),
+    y_range=Range1d(start=-0.2, end=1.05),
+    title="Mean R² per region (regional layer only)",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="box_zoom",
+    y_axis_label="R² (mean across techs)",
+)
+per_region_fig.toolbar.logo = None
+per_region_fig.xaxis.major_label_orientation = 0.5
+per_region_fig.xgrid.grid_line_color = None
+_pr_bars = per_region_fig.vbar(
+    x="region", top="r2_mean", width=0.75,
+    color="color", source=per_region_source,
+    line_color="white", line_width=0.5,
+)
+per_region_fig.add_tools(HoverTool(
+    renderers=[_pr_bars],
+    tooltips=[
+        ("Region", "@region"),
+        ("R² mean", "@r2_mean{0.000}"),
+        ("R² median", "@r2_median{0.000}"),
+        ("# outputs", "@n"),
+    ],
+    point_policy="follow_mouse",
+))
+for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+    per_region_fig.add_layout(Span(
+        location=thr, dimension="width", line_color=col,
+        line_dash="dashed", line_width=1, line_alpha=0.6,
+    ))
+
+per_output_summary_div = Div(text="", width=900)
+
+
+def _update_model_compare_charts() -> None:
+    """Refresh charts (1) from the OVERALL summary (always; stage-independent)."""
+    summary = _summary_for_layer("overall")
+    models = summary.get("models", {}) if summary else {}
+    if not models:
+        model_compare_source.data = dict(
+            model=[], r2_mean=[], r2_median=[],
+            frac_above_0p9=[], frac_above_0p95=[],
+        )
+        model_range_source.data = dict(
+            model=[], r2_min=[], r2_median=[], r2_max=[],
+        )
+        model_compare_fig.x_range.factors = []
+        model_range_fig.x_range.factors = []
+        return
+
+    n_out = float(summary.get("config", {}).get("n_y_outputs", 1) or 1)
+    # Order models by composite score descending (winner on the left).
+    order = _rank_by_composite(summary)
+    short_names = [_short_model_name(models[k].get("display_name", k))
+                   for k in order]
+    # Disambiguate any duplicates that survive the shortening (rare).
+    seen: dict[str, int] = {}
+    unique_names: list[str] = []
+    for n in short_names:
+        if n in seen:
+            seen[n] += 1
+            unique_names.append(f"{n} #{seen[n]}")
+        else:
+            seen[n] = 1
+            unique_names.append(n)
+    short_names = unique_names
+
+    def _f(k: str, fld: str) -> float:
+        try:
+            return float(models[k].get(fld, float("nan")))
+        except (TypeError, ValueError):
+            return float("nan")
+
+    # ---- chart (1): dodged bars, four metrics per model ----
+    model_compare_source.data = dict(
+        model=short_names,
+        r2_mean=[_f(k, "oof_r2_mean") for k in order],
+        r2_median=[_f(k, "oof_r2_median") for k in order],
+        frac_above_0p9=[_f(k, "n_outputs_r2_above_0.9") / n_out for k in order],
+        frac_above_0p95=[_f(k, "n_outputs_r2_above_0.95") / n_out for k in order],
+    )
+    model_compare_fig.x_range.factors = short_names
+
+    # ---- chart (2): min / median / max range per model ----
+    model_range_source.data = dict(
+        model=short_names,
+        r2_min=[_f(k, "oof_r2_min") for k in order],
+        r2_median=[_f(k, "oof_r2_median") for k in order],
+        r2_max=[_f(k, "oof_r2_max") for k in order],
+    )
+    model_range_fig.x_range.factors = short_names
+
+
+def _update_per_output_charts(model_name: str) -> None:
+    """Refresh charts (3) and (4) from per_output_metrics_<model>.csv."""
+    empty_po = dict(
+        output=[], r2=[], color=[], rmse=[], mae=[], nrmse=[],
+        prefix=[], tech=[], region=[],
+    )
+    empty_grp_tech = dict(tech=[], r2_mean=[], r2_median=[], n=[], color=[])
+    empty_grp_reg = dict(region=[], r2_mean=[], r2_median=[], n=[], color=[])
+
+    if not model_name:
+        per_output_bars_source.data = empty_po
+        per_output_bars_fig.y_range.factors = []
+        per_tech_source.data = empty_grp_tech
+        per_tech_fig.x_range.factors = []
+        per_region_source.data = empty_grp_reg
+        per_region_fig.x_range.factors = []
+        per_output_summary_div.text = ""
+        return
+
+    csv = RESULTS_DIR / f"per_output_metrics_{model_name}.csv"
+    if not csv.exists():
+        per_output_bars_source.data = empty_po
+        per_output_bars_fig.y_range.factors = []
+        per_tech_source.data = empty_grp_tech
+        per_tech_fig.x_range.factors = []
+        per_region_source.data = empty_grp_reg
+        per_region_fig.x_range.factors = []
+        per_output_summary_div.text = (
+            f"<p style='color:#a60;font-size:12px'>"
+            f"<code>per_output_metrics_{model_name}.csv</code> not found in "
+            f"<code>{RESULTS_DIR}</code> — retrain to populate per-output detail.</p>"
+        )
+        return
+
+    df = pd.read_csv(csv)
+    # Decorate with parsed prefix / tech / region for the bar hover + agg.
+    parsed = df["output"].apply(_parse_output_name)
+    df = df.copy()
+    df["_prefix"] = [p[0] or "" for p in parsed]
+    df["_tech"]   = [p[1] or "" for p in parsed]
+    df["_region"] = [p[2] or "" for p in parsed]
+
+    total = len(df)
+    n_bad  = int((df["r2"] < 0.5).sum())
+    n_ok   = int(((df["r2"] >= 0.5) & (df["r2"] < 0.9)).sum())
+    n_good = int((df["r2"] >= 0.9).sum())
+    n_nan  = int(df["r2"].isna().sum())
+
+    # ---- chart (3): horizontal bars, worst at top ----
+    df_sorted = df.sort_values("r2", ascending=True, na_position="first").reset_index(drop=True)
+    n_show = min(EVAL_WORST_N, total)
+    df_show = df_sorted.head(n_show)
+    # Bokeh draws FactorRange bottom-up, so the FIRST factor lands at the
+    # bottom of the chart. We want the WORST output at the TOP, so reverse
+    # the list before assigning as factors. After reversal the worst is the
+    # LAST factor (drawn at the top).
+    out_factors = list(reversed(df_show["output"].tolist()))
+    df_reversed = df_show.iloc[::-1].reset_index(drop=True)
+    per_output_bars_source.data = dict(
+        output=out_factors,
+        r2=df_reversed["r2"].fillna(0.0).tolist(),
+        rmse=df_reversed["rmse"].fillna(0.0).tolist(),
+        mae=df_reversed["mae"].fillna(0.0).tolist(),
+        nrmse=df_reversed["nrmse"].fillna(0.0).tolist(),
+        color=[_r2_color(r) for r in df_reversed["r2"]],
+        prefix=df_reversed["_prefix"].tolist(),
+        tech=df_reversed["_tech"].tolist(),
+        region=df_reversed["_region"].tolist(),
+    )
+    per_output_bars_fig.y_range.factors = out_factors
+    # Grow the chart height proportionally so labels stay readable when
+    # many outputs are shown.
+    per_output_bars_fig.height = max(300, min(1400, n_show * 18 + 80))
+    title_suffix = (f"showing {n_show} of {total} outputs (worst first)"
+                    if n_show < total else f"all {total} outputs")
+    per_output_bars_fig.title.text = (
+        f"Per-output R² (selected model) — {title_suffix}"
+    )
+
+    nan_html = (
+        f" &middot; <span style='color:{_R2_NA}'>&#9632; {n_nan} n/a</span>"
+        if n_nan else ""
+    )
+    per_output_summary_div.text = (
+        f"<p style='font-size:12px;color:#333;margin:2px 0'>"
+        f"<b>{total} outputs</b> &mdash; "
+        f"<span style='color:{_R2_GOOD}'>&#9632; {n_good} good (R\u00b2 &ge; 0.9)</span> &middot; "
+        f"<span style='color:{_R2_OK}'>&#9632; {n_ok} ok (0.5 &le; R\u00b2 &lt; 0.9)</span> &middot; "
+        f"<span style='color:{_R2_BAD}'>&#9632; {n_bad} poor (R\u00b2 &lt; 0.5)</span>"
+        f"{nan_html}"
+        f"</p>"
+    )
+
+    # ---- chart (4a): per-tech aggregation ----
+    # Merge raw tech tokens (e.g. ``wind-ons_4``, ``upv_3``) into the same
+    # display buckets the predict tab shows (``Onshore Wind``, ``UPV``, ...)
+    # so vintages and similar variants don't fragment the chart. Non-tech
+    # outputs (financial, transmission ...) stay under their raw label.
+    df_tech = df[df["_tech"] != ""].copy()
+    if not df_tech.empty:
+        df_tech["_tech_display"] = df_tech["_tech"].map(_tech_display_name)
+        tech_grp = (
+            df_tech.groupby("_tech_display")
+                   .agg(r2_mean=("r2", "mean"),
+                        r2_median=("r2", "median"),
+                        n=("r2", "size"))
+                   .reset_index()
+                   .sort_values("r2_mean", ascending=True)
+        )
+        # Cap to the worst 30 techs if there are many (regional layer can
+        # have 50+ raw tech-vintage combinations).
+        if len(tech_grp) > 30:
+            tech_grp = tech_grp.head(30)
+            per_tech_fig.title.text = "Mean R² per tech (display) — 30 WORST shown"
+        else:
+            per_tech_fig.title.text = "Mean R² per tech (display) — worst on the left"
+        per_tech_source.data = dict(
+            tech=tech_grp["_tech_display"].tolist(),
+            r2_mean=tech_grp["r2_mean"].fillna(0.0).tolist(),
+            r2_median=tech_grp["r2_median"].fillna(0.0).tolist(),
+            n=tech_grp["n"].tolist(),
+            color=[_r2_color(r) for r in tech_grp["r2_mean"]],
+        )
+        per_tech_fig.x_range.factors = tech_grp["_tech_display"].tolist()
+    else:
+        per_tech_source.data = empty_grp_tech
+        per_tech_fig.x_range.factors = []
+        per_tech_fig.title.text = "Mean R² per tech"
+
+    # ---- chart (4b): per-region aggregation (regional layer only) ----
+    df_reg = df[df["_region"] != ""]
+    if not df_reg.empty:
+        reg_grp = (
+            df_reg.groupby("_region")
+                  .agg(r2_mean=("r2", "mean"),
+                       r2_median=("r2", "median"),
+                       n=("r2", "size"))
+                  .reset_index()
+        )
+        # Natural sort: pNN by integer.
+        reg_grp = reg_grp.sort_values(
+            "_region",
+            key=lambda s: s.map(
+                lambda r: int(r[1:]) if r.startswith("p") and r[1:].isdigit() else 99999
+            ),
+        )
+        per_region_source.data = dict(
+            region=reg_grp["_region"].tolist(),
+            r2_mean=reg_grp["r2_mean"].fillna(0.0).tolist(),
+            r2_median=reg_grp["r2_median"].fillna(0.0).tolist(),
+            n=reg_grp["n"].tolist(),
+            color=[_r2_color(r) for r in reg_grp["r2_mean"]],
+        )
+        per_region_fig.x_range.factors = reg_grp["_region"].tolist()
+        per_region_fig.title.text = f"Mean R² per region — {len(reg_grp)} regions"
+    else:
+        per_region_source.data = empty_grp_reg
+        per_region_fig.x_range.factors = []
+        per_region_fig.title.text = (
+            "Mean R² per region — empty on Overall layer "
+            "(switch the Layer selector to Regional to populate)"
+        )
+
 
 # Pre-allocate the eval-tab image Divs so ``_refresh_after_stage_change``
 # can swap their content on Layer selector change without rebuilding the tab.
@@ -1693,31 +2609,905 @@ per_output_table = DataTable(
 per_output_caption = Div(text="", width=900)
 
 
+# ---------------------------------------------------------------------------
+# OOF prediction reconstruction (shared helper used by sections 4, 5, 6)
+# ---------------------------------------------------------------------------
+# Reconstruct (y_true, y_pred) from each artifact's ``oof_residuals`` and the
+# matching Y columns of TRAINING_DF.
+OOF_CACHE: dict[tuple, tuple] = {}
+
+
+def _get_oof_pred(name: str):
+    """Return ``(Y_true, Y_pred, y_cols)`` for model ``name`` or ``None``.
+
+    Cached per (stage, model); cache is cleared by ``_set_active_stage``.
+    Any artifact-loading error (e.g. custom-class unpickle failure on
+    ``nearest``) is swallowed and the model is silently skipped.
+    """
+    if not name:
+        return None
+    cache_key = (str(RESULTS_DIR), name)
+    if cache_key in OOF_CACHE:
+        return OOF_CACHE[cache_key]
+    try:
+        art = _get_artifact(name)
+    except Exception:
+        OOF_CACHE[cache_key] = None  # remember the failure
+        return None
+    if art is None or TRAINING_DF.empty:
+        return None
+    y_cols = list(art.get("y_cols", []))
+    oof_res = art.get("oof_residuals")
+    if oof_res is None or not y_cols:
+        return None
+    available = [c for c in y_cols if c in TRAINING_DF.columns]
+    if not available:
+        return None
+    Y_true = TRAINING_DF[available].to_numpy(dtype=float)
+    oof_arr = np.asarray(oof_res, dtype=float)
+    # Trim to the common subset (TRAINING_DF columns and residual columns may
+    # diverge when y_cols are filtered for constant outputs).
+    col_idx = [y_cols.index(c) for c in available if y_cols.index(c) < oof_arr.shape[1]]
+    if not col_idx:
+        return None
+    Y_true = Y_true[:, : len(col_idx)]
+    Y_pred = Y_true - oof_arr[:, col_idx]
+    cols = available[: len(col_idx)]
+    val = (Y_true, Y_pred, cols)
+    OOF_CACHE[cache_key] = val
+    return val
+
+
+# ---------------------------------------------------------------------------
+# Helpers for top-2 ranking, per-case R², output catalogs, cross-layer summary
+# ---------------------------------------------------------------------------
+_CATALOG_LABELS = {
+    "cap":  "Capacity",
+    "gen":  "Generation",
+    "cost": "System cost",
+    "tran": "Transmission",
+}
+
+
+def _output_category(name: str) -> str:
+    """Map an output column name to a high-level catalog label."""
+    prefix, _, _ = _parse_output_name(name)
+    return _CATALOG_LABELS.get(prefix or "", "Other")
+
+
+def _top_n_models(n: int = 2) -> list[str]:
+    """Return the top-n model keys (by composite score from SUMMARY) for the active layer."""
+    return _rank_by_composite(SUMMARY)[:n]
+
+
+def _per_case_r2(Y_true: np.ndarray, Y_pred: np.ndarray) -> np.ndarray:
+    """Per-case R² after column z-scoring.
+
+    Each output column is centred / scaled by its training mean / std so that
+    high-magnitude outputs don't dominate. Then for every row we compute
+    R² = 1 - SS_res / SS_tot, where the totals are summed across all
+    (z-scored) outputs in that row.
+    """
+    if Y_true.size == 0 or Y_pred.shape != Y_true.shape:
+        return np.full(Y_true.shape[0] if Y_true.ndim == 2 else 0, np.nan)
+    std = np.nanstd(Y_true, axis=0, ddof=0)
+    std_safe = np.where(std > 1e-12, std, 1.0)
+    mean = np.nanmean(Y_true, axis=0)
+    Zt = (Y_true - mean) / std_safe
+    Zp = (Y_pred - mean) / std_safe
+    res2 = np.nansum((Zp - Zt) ** 2, axis=1)
+    tot2 = np.nansum(Zt ** 2, axis=1)
+    return np.where(tot2 > 1e-12, 1.0 - res2 / tot2, np.nan)
+
+
+def _design_label(row: pd.Series) -> str:
+    """Stringify a TRAINING_DF row's design dimensions (decoded back to labels)."""
+    parts: list[str] = []
+    for dim, levels in DIMENSION_ENCODING.items():
+        col = f"x_{dim}"
+        if col not in row.index:
+            continue
+        try:
+            inv = {v: k for k, v in levels.items()}
+            parts.append(f"{dim}={inv.get(int(row[col]), str(row[col]))}")
+        except Exception:
+            parts.append(f"{dim}={row[col]}")
+    return ", ".join(parts) if parts else "—"
+
+
+# ---------------------------------------------------------------------------
+# (4) Per-model parity grid — one parity plot per model, per layer
+# ---------------------------------------------------------------------------
+# Each subplot shows ALL OOF (sample × output) points for ONE model on ONE
+# layer (Overall or Regional). Each panel uses a single colour (distinct
+# per method) so methods are easy to compare at a glance.
+PARITY_GRID_PER_MODEL_CAP = 5000
+PARITY_GRID_FIG_W = 280
+PARITY_GRID_FIG_H = 280
+PARITY_GRID_COLS = 3
+PARITY_LAYERS: tuple[str, ...] = ("overall", "regional")
+PARITY_LAYER_LABELS = {"overall": "Overall", "regional": "Regional"}
+PARITY_LAYER_COLORS = {"overall": "#1f77b4", "regional": "#d62728"}
+
+parity_grid_tech_select = Select(
+    title="Tech filter (applies to all panels, both layers)",
+    value="All", options=["All"], width=300,
+)
+parity_grid_region_select = Select(
+    title="Region filter (Regional layer only)",
+    value="All", options=["All"], width=240,
+)
+parity_grid_status_div = Div(text="", width=900)
+
+# Per-layer holders + legends + section titles. Use explicit fixed widths
+# so the holder columns don't collapse to zero width when nested under
+# the wider Section-1 table row.
+PARITY_GRID_HOLDER_W = PARITY_GRID_FIG_W * PARITY_GRID_COLS + 60  # ~900 px
+parity_holders: dict[str, "column"] = {}
+parity_legends: dict[str, Div] = {}
+parity_layer_titles: dict[str, Div] = {}
+for _l in PARITY_LAYERS:
+    parity_holders[_l] = column(
+        Div(text="<i>Loading parity grid…</i>"),
+        width=PARITY_GRID_HOLDER_W,
+    )
+    parity_legends[_l] = Div(text="", width=200)
+    parity_layer_titles[_l] = Div(text="", width=PARITY_GRID_HOLDER_W + 220)
+
+# Mutable state — populated by ``_build_parity_grid``. Keyed first by layer
+# short name, then by model key.
+_parity_sources: dict[str, dict[str, ColumnDataSource]] = {l: {} for l in PARITY_LAYERS}
+_parity_diag_sources: dict[str, dict[str, ColumnDataSource]] = {l: {} for l in PARITY_LAYERS}
+_parity_figures: dict[str, dict[str, "figure"]] = {l: {} for l in PARITY_LAYERS}
+
+
+def _make_parity_subfig(model_key: str):
+    """Build one parity subplot (figure + scatter + diag sources)."""
+    src = ColumnDataSource(data=dict(
+        actual=[], predicted=[], output=[], tech=[], region=[],
+        color=[], abs_err=[],
+    ))
+    diag = ColumnDataSource(data=dict(x=[0.0, 1.0], y=[0.0, 1.0]))
+    fig = figure(
+        width=PARITY_GRID_FIG_W, height=PARITY_GRID_FIG_H,
+        x_range=Range1d(start=0.0, end=1.0),
+        y_range=Range1d(start=0.0, end=1.0),
+        title=model_key,
+        toolbar_location="above",
+        tools="pan,wheel_zoom,box_zoom,reset,save",
+        active_drag="box_zoom",
+        active_scroll="wheel_zoom",
+        x_axis_label="Actual",
+        y_axis_label="Predicted",
+        output_backend="webgl",
+    )
+    fig.toolbar.logo = None
+    fig.title.text_font_size = "11pt"
+    fig.line(x="x", y="y", source=diag, line_color="#444",
+             line_dash="dashed", line_width=1.2)
+    sct = fig.scatter(
+        x="actual", y="predicted", size=4, alpha=0.45,
+        fill_color="color", line_color=None, source=src,
+    )
+    fig.add_tools(HoverTool(
+        renderers=[sct],
+        tooltips=[
+            ("Output", "@output"),
+            ("Tech / Region", "@tech / @region"),
+            ("Actual", "@actual{0,0.000}"),
+            ("Predicted", "@predicted{0,0.000}"),
+            ("|err|", "@abs_err{0,0.000}"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    return fig, src, diag
+
+
+def _build_parity_grid_for_layer(layer_short: str) -> None:
+    """Recreate per-model parity subplots for one layer."""
+    _parity_sources[layer_short].clear()
+    _parity_diag_sources[layer_short].clear()
+    _parity_figures[layer_short].clear()
+    layer_label = PARITY_LAYER_LABELS[layer_short]
+    layer_color = PARITY_LAYER_COLORS[layer_short]
+    layer_models = _models_for_layer(layer_short)
+    layer_summary = _summary_for_layer(layer_short)
+    title_html = (
+        f"<h4 style='margin:14px 0 4px 0;color:{layer_color}'>"
+        f"{layer_label} layer — per-method parity</h4>"
+    )
+    parity_layer_titles[layer_short].text = title_html
+    if not layer_models:
+        parity_holders[layer_short].children = [
+            Div(text=f"<i>No models found in the {layer_label} layer.</i>")
+        ]
+        return
+    # Order models by composite score descending (best first); skip any that
+    # are not in the on-disk artifact list.
+    order = [k for k in _rank_by_composite(layer_summary)
+             if k in layer_models]
+    for k in order:
+        # Skip models that fail to load (e.g. ``nearest`` custom-class issue).
+        triple = _get_oof_pred_for_layer(layer_short, k)
+        if triple is None:
+            continue
+        fig_, src, diag = _make_parity_subfig(k)
+        _parity_figures[layer_short][k] = fig_
+        _parity_sources[layer_short][k] = src
+        _parity_diag_sources[layer_short][k] = diag
+    if not _parity_figures[layer_short]:
+        parity_holders[layer_short].children = [
+            Div(text=f"<i>No usable artifacts in the {layer_label} layer.</i>")
+        ]
+        return
+    figs = list(_parity_figures[layer_short].values())
+    # Build the grid manually with nested row/column — more predictable than
+    # gridplot under varying parent widths in Bokeh 3.6.
+    grid_rows = [
+        row(*figs[i:i + PARITY_GRID_COLS], spacing=10)
+        for i in range(0, len(figs), PARITY_GRID_COLS)
+    ]
+    grid = column(*grid_rows, spacing=10)
+    parity_holders[layer_short].children = [grid]
+
+
+def _build_parity_grid() -> None:
+    """Recreate per-model parity subplots for BOTH layers."""
+    for layer_short in PARITY_LAYERS:
+        _build_parity_grid_for_layer(layer_short)
+
+
+def _refresh_parity_grid_options() -> None:
+    """Repopulate Tech / Region dropdowns from both layers' outputs."""
+    techs: set[str] = set()
+    regions: set[str] = set()
+    for layer_short in PARITY_LAYERS:
+        models = _models_for_layer(layer_short)
+        if not models:
+            continue
+        art = None
+        for k in models.keys():
+            art = _artifact_for_layer(layer_short, k)
+            if art is not None:
+                break
+        if art is None:
+            continue
+        for c in art.get("y_cols", []):
+            _, t, r = _parse_output_name(c)
+            if t:
+                techs.add(t)
+            if r:
+                regions.add(r)
+    parity_grid_tech_select.options = ["All"] + sorted(techs)
+    if parity_grid_tech_select.value not in parity_grid_tech_select.options:
+        parity_grid_tech_select.value = "All"
+    parity_grid_region_select.options = ["All"] + sorted(
+        regions,
+        key=lambda r: int(r[1:]) if r.startswith("p") and r[1:].isdigit() else 99999,
+    )
+    if parity_grid_region_select.value not in parity_grid_region_select.options:
+        parity_grid_region_select.value = "All"
+
+
+def _update_parity_grid_for_layer(layer_short: str) -> int:
+    """Refresh every subplot for one layer. One color per method (panel-wide).
+
+    Returns the total number of points drawn across all panels.
+    """
+    figs = _parity_figures[layer_short]
+    if not figs:
+        parity_legends[layer_short].text = ""
+        return 0
+    sel_tech = parity_grid_tech_select.value or "All"
+    sel_region = parity_grid_region_select.value or "All"
+
+    # One color per method — Category10 / Category20 cycled through panels.
+    model_keys = list(figs.keys())
+    if len(model_keys) <= 10:
+        palette = list(Category10[10])
+    else:
+        palette = list(Category20[20])
+    method_color = {k: palette[i % len(palette)] for i, k in enumerate(model_keys)}
+
+    rng = np.random.default_rng(42)
+    n_total = 0
+
+    for k, fig_ in figs.items():
+        src = _parity_sources[layer_short][k]
+        diag = _parity_diag_sources[layer_short][k]
+        triple = _get_oof_pred_for_layer(layer_short, k)
+        if triple is None:
+            src.data = dict(actual=[], predicted=[], output=[], tech=[],
+                            region=[], color=[], abs_err=[])
+            fig_.title.text = f"{k} — n/a"
+            continue
+        Y_true, Y_pred, cols = triple
+        keep_idx: list[int] = []
+        keep_techs: list[str] = []
+        keep_regions: list[str] = []
+        for i, c in enumerate(cols):
+            _, t, r = _parse_output_name(c)
+            t = t or "(no tech)"
+            r = r or ""
+            if sel_tech != "All" and t != sel_tech:
+                continue
+            # Region filter only applies when the output is regional. For
+            # the Overall layer there is no region info, so the filter is
+            # ignored (but tech filter still applies).
+            if sel_region != "All" and r and r != sel_region:
+                continue
+            keep_idx.append(i)
+            keep_techs.append(t)
+            keep_regions.append(r)
+        if not keep_idx:
+            src.data = dict(actual=[], predicted=[], output=[], tech=[],
+                            region=[], color=[], abs_err=[])
+            fig_.title.text = f"{k} — no points after filter"
+            continue
+        Yt = Y_true[:, keep_idx]
+        Yp = Y_pred[:, keep_idx]
+        n_rows = Yt.shape[0]
+        out_names = np.array([cols[i] for i in keep_idx], dtype=object)
+        tech_arr = np.array(keep_techs, dtype=object)
+        reg_arr = np.array(keep_regions, dtype=object)
+        out_flat = np.tile(out_names, n_rows)
+        tech_flat = np.tile(tech_arr, n_rows)
+        reg_flat = np.tile(reg_arr, n_rows)
+        Yt_flat = Yt.ravel()
+        Yp_flat = Yp.ravel()
+        finite = np.isfinite(Yt_flat) & np.isfinite(Yp_flat)
+        Yt_flat = Yt_flat[finite]
+        Yp_flat = Yp_flat[finite]
+        out_flat = out_flat[finite]
+        tech_flat = tech_flat[finite]
+        reg_flat = reg_flat[finite]
+        n = len(Yt_flat)
+        # Pooled R² on the FULL filtered data (before sampling).
+        if n > 1 and Yt_flat.var() > 0:
+            ss_res = float(np.sum((Yt_flat - Yp_flat) ** 2))
+            ss_tot = float(np.sum((Yt_flat - Yt_flat.mean()) ** 2))
+            r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+        else:
+            r2 = float("nan")
+        # Sample for plotting only.
+        if n > PARITY_GRID_PER_MODEL_CAP:
+            sel = rng.choice(n, PARITY_GRID_PER_MODEL_CAP, replace=False)
+            Yt_flat = Yt_flat[sel]
+            Yp_flat = Yp_flat[sel]
+            out_flat = out_flat[sel]
+            tech_flat = tech_flat[sel]
+            reg_flat = reg_flat[sel]
+        n_kept = len(Yt_flat)
+        n_total += n_kept
+        # ALL points in this panel use the method's single colour.
+        method_c = method_color[k]
+        color_flat = np.full(n_kept, method_c, dtype=object)
+        src.data = dict(
+            actual=Yt_flat.tolist(),
+            predicted=Yp_flat.tolist(),
+            output=out_flat.tolist(),
+            tech=tech_flat.tolist(),
+            region=reg_flat.tolist(),
+            color=color_flat.tolist(),
+            abs_err=np.abs(Yt_flat - Yp_flat).tolist(),
+        )
+        if n_kept > 0:
+            lo = float(min(Yt_flat.min(), Yp_flat.min()))
+            hi = float(max(Yt_flat.max(), Yp_flat.max()))
+        else:
+            lo, hi = 0.0, 1.0
+        if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
+            lo, hi = -1.0, 1.0
+        pad = max((hi - lo) * 0.05, 1e-6)
+        lo -= pad
+        hi += pad
+        diag.data = dict(x=[lo, hi], y=[lo, hi])
+        fig_.x_range.start = lo
+        fig_.x_range.end = hi
+        fig_.y_range.start = lo
+        fig_.y_range.end = hi
+        r2_str = f"R²={r2:.3f}" if np.isfinite(r2) else "R²=n/a"
+        fig_.title.text = f"{k} — {r2_str} ({n:,} pts)"
+
+    # Method-color legend HTML (one swatch per panel).
+    legend_rows = [
+        "<div style='font-size:12px;line-height:1.4'>"
+        "<b>Method (panel color)</b><br/>"
+    ]
+    for k in model_keys:
+        legend_rows.append(
+            f"<div style='margin:1px 0'>"
+            f"<span style='display:inline-block;width:10px;height:10px;"
+            f"background:{method_color[k]};border-radius:50%;"
+            f"margin-right:6px;vertical-align:middle'></span>"
+            f"<code>{k}</code></div>"
+        )
+    legend_rows.append("</div>")
+    parity_legends[layer_short].text = "".join(legend_rows)
+    return n_total
+
+
+def _update_parity_grid(*_args) -> None:
+    """Refresh every subplot for both layers."""
+    if not any(_parity_figures[l] for l in PARITY_LAYERS):
+        parity_grid_status_div.text = ""
+        return
+    sel_tech = parity_grid_tech_select.value or "All"
+    sel_region = parity_grid_region_select.value or "All"
+    parts = []
+    for layer_short in PARITY_LAYERS:
+        n = _update_parity_grid_for_layer(layer_short)
+        parts.append(
+            f"<b style='color:{PARITY_LAYER_COLORS[layer_short]}'>"
+            f"{PARITY_LAYER_LABELS[layer_short]}</b>: "
+            f"{n:,} points across {len(_parity_figures[layer_short])} models"
+        )
+    parity_grid_status_div.text = (
+        f"<p style='font-size:12px;color:#555;margin:2px 0'>"
+        f"Tech filter: <b>{sel_tech}</b> · region filter: <b>{sel_region}</b>"
+        f"<br/>" + " &nbsp;|&nbsp; ".join(parts)
+        + f" &nbsp;(per-model cap {PARITY_GRID_PER_MODEL_CAP:,}).</p>"
+    )
+
+
+parity_grid_tech_select.on_change(
+    "value", lambda _attr, _old, _new: _update_parity_grid()
+)
+parity_grid_region_select.on_change(
+    "value", lambda _attr, _old, _new: _update_parity_grid()
+)
+
+
+# ---------------------------------------------------------------------------
+# (5) Per-case R² distribution — top-1 method, BOTH layers (2 charts)
+# ---------------------------------------------------------------------------
+# Each of the 486 cases gets a single R² score (across all outputs after
+# z-scoring). Cases are sorted ascending by the model's own R² so the
+# curve reveals which designs are systematically harder to predict.
+# Each layer shows ONLY its top-1 method (per the §1 leaderboard Score).
+PERCASE_COLOR_A = Category10[10][0]   # blue (top-1 model)
+PERCASE_COLOR_B = Category10[10][1]   # orange (used by §4/§5 top-2 overlays)
+PERCASE_LAYERS: tuple[str, ...] = ("overall", "regional")
+PERCASE_LAYER_LABELS = {"overall": "Overall", "regional": "Regional"}
+PERCASE_LAYER_HEADER_COLORS = {"overall": "#1f77b4", "regional": "#d62728"}
+
+percase_sources_a: dict[str, ColumnDataSource] = {}
+percase_figs_a: dict[str, "figure"] = {}
+percase_legends: dict[str, Div] = {}
+percase_layer_titles: dict[str, Div] = {}
+
+
+def _make_percase_subfig(title: str, color: str, src: ColumnDataSource,
+                         marker: str = "circle") -> "figure":
+    fig = figure(
+        width=900, height=300,
+        title=title,
+        x_axis_label="Case rank (sorted by this panel's model R², "
+                     "ascending)",
+        y_axis_label="Case R² (z-scored across outputs)",
+        toolbar_location="above",
+        tools="box_zoom,wheel_zoom,pan,reset,save",
+        active_drag="box_zoom",
+        active_scroll="wheel_zoom",
+    )
+    fig.toolbar.logo = None
+    fig.line(
+        x="rank", y="r2", source=src,
+        line_color=color, line_width=1.3, alpha=0.85,
+    )
+    sct = fig.scatter(
+        x="rank", y="r2", source=src,
+        size=5, alpha=0.85, fill_color=color, line_color=None,
+        marker=marker,
+    )
+    for thr, c in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+        fig.add_layout(Span(
+            location=thr, dimension="width",
+            line_color=c, line_dash="dashed",
+            line_width=1, line_alpha=0.6,
+        ))
+    fig.add_tools(HoverTool(
+        renderers=[sct],
+        tooltips=[
+            ("Case row", "@case"),
+            ("Rank", "@rank"),
+            ("R²", "@r2{0.000}"),
+            ("Design", "@design"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    return fig
+
+
+for _layer in PERCASE_LAYERS:
+    _src_a = ColumnDataSource(data=dict(rank=[], r2=[], case=[], design=[]))
+    _fig_a = _make_percase_subfig(
+        f"{PERCASE_LAYER_LABELS[_layer]} — top-1 (sorted by its own R²)",
+        PERCASE_COLOR_A, _src_a, marker="circle",
+    )
+    percase_sources_a[_layer] = _src_a
+    percase_figs_a[_layer] = _fig_a
+    percase_legends[_layer] = Div(text="", width=900)
+    percase_layer_titles[_layer] = Div(text="", width=900)
+
+
+def _update_percase_chart_for_layer(layer_short: str) -> None:
+    """Recompute the per-case R² curve for one layer's top-1 model."""
+    empty = dict(rank=[], r2=[], case=[], design=[])
+    layer_label = PERCASE_LAYER_LABELS[layer_short]
+    layer_color = PERCASE_LAYER_HEADER_COLORS[layer_short]
+    summary = _summary_for_layer(layer_short)
+    training_df = _training_df_for_layer(layer_short)
+    src_a = percase_sources_a[layer_short]
+    fig_a = percase_figs_a[layer_short]
+    legend = percase_legends[layer_short]
+    title_div = percase_layer_titles[layer_short]
+    title_div.text = (
+        f"<h4 style='margin:14px 0 4px 0;color:{layer_color}'>"
+        f"{layer_label} layer — best method by leaderboard Score</h4>"
+    )
+    if not summary or training_df is None or training_df.empty:
+        src_a.data = empty
+        fig_a.title.text = f"{layer_label} — best (no data)"
+        legend.text = ""
+        return
+    top1_list = _rank_by_score(layer_short)[:1]
+    top1 = top1_list[0] if top1_list else ""
+    triple = _get_oof_pred_for_layer(layer_short, top1) if top1 else None
+    if not top1 or triple is None:
+        src_a.data = empty
+        fig_a.title.text = (
+            f"{layer_label} — best: '{top1 or '—'}' (no usable model)"
+        )
+        legend.text = ""
+        return
+    Y_true, Y_pred, _ = triple
+    r2 = _per_case_r2(Y_true, Y_pred)
+    sort_order = np.argsort(np.where(np.isfinite(r2), r2, -np.inf))
+    r2_sorted = r2[sort_order]
+    src_a.data = dict(
+        rank=list(range(1, len(sort_order) + 1)),
+        r2=[float(x) if np.isfinite(x) else 0.0 for x in r2_sorted],
+        case=[int(j) for j in sort_order],
+        design=[_design_label(training_df.iloc[int(j)])
+                for j in sort_order],
+    )
+    fig_a.title.text = (
+        f"{layer_label} — best: '{top1}' (sorted by its own R²)"
+    )
+    legend.text = (
+        "<div style='font-size:12px;color:#555'>"
+        f"<span style='color:{PERCASE_COLOR_A}'>● best: "
+        f"{top1}</span>"
+        " &nbsp;|&nbsp; horizontal lines: R² = 0.9 / 0.5 / 0."
+        "</div>"
+    )
+
+
+def _update_percase_chart() -> None:
+    """Refresh per-case R² curves for both layers."""
+    for layer_short in PERCASE_LAYERS:
+        _update_percase_chart_for_layer(layer_short)
+
+
+# ---------------------------------------------------------------------------
+# (6) Per-catalog R² — top-2 models, BOTH layers
+# ---------------------------------------------------------------------------
+# Catalog = (layer, output-prefix), e.g. ("Overall", "Capacity"),
+# ("Regional", "Generation"). Bars show median R² across the outputs in
+# each (layer, catalog) cell, side by side for the top-2 models. Top-2
+# are chosen from the OVERALL summary so the comparison is anchored.
+percatalog_source = ColumnDataSource(data=dict(
+    factors=[], r2=[], color=[], n=[], catalog=[], layer=[], model=[],
+))
+percatalog_fig = figure(
+    width=900, height=380,
+    x_range=FactorRange(),
+    y_range=Range1d(start=-0.5, end=1.05),
+    title="Per-catalog median R² — top-2 models (both layers)",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="box_zoom",
+    y_axis_label="R² (median across outputs)",
+)
+percatalog_fig.toolbar.logo = None
+percatalog_fig.xaxis.major_label_orientation = 0.5
+percatalog_fig.xgrid.grid_line_color = None
+_pcat_bars = percatalog_fig.vbar(
+    x="factors", top="r2", width=0.85,
+    color="color", source=percatalog_source,
+    line_color="white", line_width=0.5,
+)
+percatalog_fig.add_tools(HoverTool(
+    renderers=[_pcat_bars],
+    tooltips=[
+        ("Layer", "@layer"),
+        ("Catalog", "@catalog"),
+        ("Model", "@model"),
+        ("Median R²", "@r2{0.000}"),
+        ("# outputs", "@n"),
+    ],
+    point_policy="follow_mouse",
+))
+for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+    percatalog_fig.add_layout(Span(
+        location=thr, dimension="width",
+        line_color=col, line_dash="dashed", line_width=1, line_alpha=0.6,
+    ))
+
+
+def _update_percatalog_chart() -> None:
+    """Refresh per-catalog R² bars across BOTH layers for the top-2 models."""
+    empty = dict(factors=[], r2=[], color=[], n=[], catalog=[],
+                 layer=[], model=[])
+    # Top-2 models from the OVERALL summary (anchored reference).
+    overall_summary = _summary_for_layer("overall")
+    if not overall_summary:
+        percatalog_source.data = empty
+        percatalog_fig.x_range.factors = []
+        percatalog_fig.title.text = "Per-catalog R² — Overall summary not found"
+        return
+    models_dict = overall_summary.get("models", {})
+    top2 = _rank_by_score("overall")[:2]
+    if not top2:
+        percatalog_source.data = empty
+        percatalog_fig.x_range.factors = []
+        percatalog_fig.title.text = "Per-catalog R² — no models"
+        return
+    palette = (PERCASE_COLOR_A, PERCASE_COLOR_B)
+    catalog_canonical = list(_CATALOG_LABELS.values())
+    layer_order = ("Overall", "Regional")
+
+    # Pull per_output_metrics CSVs for both layers × top-2 models.
+    per_layer_model_df: dict[tuple, pd.DataFrame] = {}
+    for layer_short, layer_label in (("overall", "Overall"), ("regional", "Regional")):
+        res_dir, _, _ = _layer_paths(layer_short)
+        if res_dir is None:
+            continue
+        for m in top2:
+            csv_path = res_dir / f"per_output_metrics_{m}.csv"
+            if not csv_path.exists():
+                continue
+            try:
+                df = pd.read_csv(csv_path)
+            except Exception:
+                continue
+            if df.empty or "output" not in df.columns or "r2" not in df.columns:
+                continue
+            df = df.copy()
+            df["_cat"] = df["output"].apply(_output_category)
+            per_layer_model_df[(layer_label, m)] = df
+
+    if not per_layer_model_df:
+        percatalog_source.data = empty
+        percatalog_fig.x_range.factors = []
+        percatalog_fig.title.text = (
+            "Per-catalog R² — no per_output_metrics_<model>.csv found in either layer"
+        )
+        return
+
+    # Catalogs that actually appear in any (layer, model) combo, in canonical order.
+    catalog_seen: set[str] = set()
+    for df in per_layer_model_df.values():
+        catalog_seen.update(df["_cat"].unique())
+    catalog_order = (
+        [c for c in catalog_canonical if c in catalog_seen]
+        + sorted(c for c in catalog_seen if c not in catalog_canonical)
+    )
+
+    factors: list[tuple] = []
+    r2s: list[float] = []
+    colors: list[str] = []
+    ns: list[int] = []
+    cats_out: list[str] = []
+    layers_out: list[str] = []
+    models_out: list[str] = []
+    for layer_label in layer_order:
+        for cat in catalog_order:
+            for i, m in enumerate(top2):
+                df = per_layer_model_df.get((layer_label, m))
+                if df is None:
+                    continue
+                sub = df[df["_cat"] == cat]
+                if sub.empty:
+                    continue
+                r2_med = float(sub["r2"].median())
+                # 2-level factor: outer = "Layer · Catalog", inner = model.
+                outer = f"{layer_label} · {cat}"
+                factors.append((outer, m))
+                r2s.append(r2_med)
+                colors.append(palette[i % len(palette)])
+                ns.append(int(len(sub)))
+                cats_out.append(cat)
+                layers_out.append(layer_label)
+                models_out.append(m)
+
+    percatalog_source.data = dict(
+        factors=factors, r2=r2s, color=colors, n=ns,
+        catalog=cats_out, layer=layers_out, model=models_out,
+    )
+    percatalog_fig.x_range.factors = factors
+    label_a = top2[0]
+    label_b = top2[1] if len(top2) > 1 else "—"
+    percatalog_fig.title.text = (
+        f"Per-catalog median R² — '{label_a}' (blue) vs '{label_b}' (red), "
+        "across both layers"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (7) Overall vs Regional — per-output R² distribution for top-2 methods
+# ---------------------------------------------------------------------------
+# For the same top-2 methods (anchored by Overall R² mean), show every
+# output's R² as a jittered dot, separated into 4 columns:
+# (top-1 · Overall), (top-1 · Regional), (top-2 · Overall), (top-2 · Regional).
+# Median bar overlaid as a thick horizontal segment.
+crosslayer_source = ColumnDataSource(data=dict(
+    factors=[], r2=[], output=[], model=[], layer=[], color=[],
+))
+crosslayer_median_source = ColumnDataSource(data=dict(
+    factors=[], median=[], mean=[], n=[],
+))
+crosslayer_fig = figure(
+    width=900, height=420,
+    x_range=FactorRange(),
+    y_range=Range1d(start=-1.0, end=1.05),
+    title="Overall vs Regional — per-output R² (top-2 methods)",
+    toolbar_location="above",
+    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+    active_drag="box_zoom",
+    y_axis_label="Per-output R² (one dot per output)",
+)
+crosslayer_fig.toolbar.logo = None
+crosslayer_fig.xaxis.major_label_orientation = 0.3
+crosslayer_fig.xgrid.grid_line_color = None
+_CROSSLAYER_OVERALL_C = "#1f77b4"
+_CROSSLAYER_REGIONAL_C = "#d62728"
+
+# Jittered scatter — every output is one dot.
+_cl_dots = crosslayer_fig.scatter(
+    x=jitter("factors", width=0.4, range=crosslayer_fig.x_range),
+    y="r2",
+    size=6, alpha=0.55,
+    fill_color="color", line_color=None,
+    source=crosslayer_source,
+)
+crosslayer_fig.add_tools(HoverTool(
+    renderers=[_cl_dots],
+    tooltips=[
+        ("Model", "@model"),
+        ("Layer", "@layer"),
+        ("Output", "@output"),
+        ("R²", "@r2{0.000}"),
+    ],
+    point_policy="follow_mouse",
+))
+# Median segment per (model, layer).
+_cl_median = crosslayer_fig.segment(
+    x0=dodge("factors", -0.35, range=crosslayer_fig.x_range),
+    x1=dodge("factors",  0.35, range=crosslayer_fig.x_range),
+    y0="median", y1="median",
+    line_color="black", line_width=3,
+    source=crosslayer_median_source,
+)
+crosslayer_fig.add_tools(HoverTool(
+    renderers=[_cl_median],
+    tooltips=[
+        ("Group", "@factors"),
+        ("Median R²", "@median{0.000}"),
+        ("Mean R²", "@mean{0.000}"),
+        ("# outputs", "@n"),
+    ],
+))
+for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+    crosslayer_fig.add_layout(Span(
+        location=thr, dimension="width",
+        line_color=col, line_dash="dashed", line_width=1, line_alpha=0.6,
+    ))
+
+
+def _update_crosslayer_chart() -> None:
+    """Refresh per-output R² distribution for top-2 methods across both layers."""
+    empty = dict(factors=[], r2=[], output=[], model=[], layer=[], color=[])
+    empty_med = dict(factors=[], median=[], mean=[], n=[])
+
+    overall_summary = _summary_for_layer("overall")
+    if not overall_summary:
+        crosslayer_source.data = empty
+        crosslayer_median_source.data = empty_med
+        crosslayer_fig.x_range.factors = []
+        crosslayer_fig.title.text = (
+            "Overall vs Regional — Overall summary.json not found"
+        )
+        return
+    m_overall = overall_summary.get("models", {})
+    top2 = _rank_by_score("overall")[:2]
+    if not top2:
+        crosslayer_source.data = empty
+        crosslayer_median_source.data = empty_med
+        crosslayer_fig.x_range.factors = []
+        crosslayer_fig.title.text = "Overall vs Regional — no models found"
+        return
+
+    layer_color = {"Overall": _CROSSLAYER_OVERALL_C, "Regional": _CROSSLAYER_REGIONAL_C}
+    factors_all: list[tuple] = []
+    r2_all: list[float] = []
+    out_all: list[str] = []
+    model_all: list[str] = []
+    layer_all: list[str] = []
+    color_all: list[str] = []
+    med_factors: list[tuple] = []
+    med_vals: list[float] = []
+    mean_vals: list[float] = []
+    n_vals: list[int] = []
+
+    factor_order: list[tuple] = []
+    for m in top2:
+        for layer_short, layer_label in (("overall", "Overall"),
+                                         ("regional", "Regional")):
+            res_dir, _, _ = _layer_paths(layer_short)
+            if res_dir is None:
+                continue
+            csv_path = res_dir / f"per_output_metrics_{m}.csv"
+            if not csv_path.exists():
+                continue
+            try:
+                df = pd.read_csv(csv_path)
+            except Exception:
+                continue
+            if df.empty or "output" not in df.columns or "r2" not in df.columns:
+                continue
+            r2_vals = df["r2"].to_numpy(dtype=float)
+            outputs = df["output"].astype(str).tolist()
+            factor = (m, layer_label)
+            factor_order.append(factor)
+            n = len(r2_vals)
+            factors_all.extend([factor] * n)
+            r2_all.extend([float(x) for x in r2_vals])
+            out_all.extend(outputs)
+            model_all.extend([m] * n)
+            layer_all.extend([layer_label] * n)
+            color_all.extend([layer_color[layer_label]] * n)
+            finite = np.isfinite(r2_vals)
+            if finite.any():
+                med_factors.append(factor)
+                med_vals.append(float(np.median(r2_vals[finite])))
+                mean_vals.append(float(np.mean(r2_vals[finite])))
+                n_vals.append(int(finite.sum()))
+
+    if not factors_all:
+        crosslayer_source.data = empty
+        crosslayer_median_source.data = empty_med
+        crosslayer_fig.x_range.factors = []
+        crosslayer_fig.title.text = (
+            "Overall vs Regional — no per_output_metrics_<model>.csv found"
+        )
+        return
+
+    crosslayer_source.data = dict(
+        factors=factors_all, r2=r2_all, output=out_all,
+        model=model_all, layer=layer_all, color=color_all,
+    )
+    crosslayer_median_source.data = dict(
+        factors=med_factors, median=med_vals, mean=mean_vals, n=n_vals,
+    )
+    crosslayer_fig.x_range.factors = factor_order
+    label_a = top2[0]
+    label_b = top2[1] if len(top2) > 1 else "—"
+    crosslayer_fig.title.text = (
+        f"Per-output R² distribution — '{label_a}' vs '{label_b}', "
+        "Overall (blue) vs Regional (red); thick black bar = median"
+    )
+
+
 def _update_eval_for_model(name: str) -> None:
-    """Refresh the parity image + per-output table for the chosen model."""
+    """Refresh the per-output detail (charts + table) for the chosen model."""
     art = _get_artifact(name)
     if art is None:
-        parity_div.text = "<i>No artifact loaded.</i>"
         per_output_source.data = {"output": [], "r2": [], "rmse": [], "mae": [], "nrmse": []}
         per_output_caption.text = ""
+        _update_per_output_charts("")
         return
-    display = art.get("display_name", name)
-    safe = display.replace(" ", "_").replace("(", "").replace(")", "")
-    p = RESULTS_DIR / f"parity_{safe}.png"
-    if p.exists():
-        b64 = base64.b64encode(p.read_bytes()).decode("ascii")
-        parity_div.text = (
-            f"<h4 style='margin:12px 0 4px 0'>OOF parity plots — {display}</h4>"
-            f"<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-            f"Top row: 3 outputs with the highest R². Bottom row: 3 with the lowest.</p>"
-            f"<img src='data:image/png;base64,{b64}' "
-            f"style='max-width:100%;height:auto;border:1px solid #ddd;padding:4px'/>"
-        )
-    else:
-        parity_div.text = (
-            f"<h4 style='margin:12px 0 4px 0'>OOF parity plots — {display}</h4>"
-            f"<i>parity_{safe}.png not found in {RESULTS_DIR}</i>"
-        )
     csv = RESULTS_DIR / f"per_output_metrics_{name}.csv"
     if csv.exists():
         df = pd.read_csv(csv).sort_values("r2", ascending=False)
@@ -1735,9 +3525,18 @@ def _update_eval_for_model(name: str) -> None:
             f"<code>per_output_metrics_{name}.csv</code> not found "
             f"— retrain to populate per-model detail.</p>"
         )
+    # Refresh the new interactive per-output / per-tech / per-region charts.
+    _update_per_output_charts(name)
 
 
 # Initial render and per-model hook
+_update_model_compare_charts()
+_build_parity_grid()
+_refresh_parity_grid_options()
+_update_parity_grid()
+_update_percase_chart()
+_update_percatalog_chart()
+_update_crosslayer_chart()
 if model_select.options:
     _update_eval_for_model(model_select.value)
 model_select.on_change(
@@ -1763,15 +3562,31 @@ def _set_active_stage(label: str) -> None:
     TRAINING_DF = _load_training_data()
     MODEL_PATHS = _discover_models()
     MODEL_CACHE = {}  # invalidate — different stage = different artifacts
+    OOF_CACHE.clear()  # parity scatter caches per-stage OOF predictions
     SUMMARY = _load_summary()
+    # Cross-layer caches (used by Section 1 and Section 4, which are pinned
+    # to Overall regardless of stage). Clearing here lets a mid-session
+    # retrain be picked up the next time the user clicks the stage selector.
+    _refresh_layer_caches()
 
     # Hide / restore Transmission in the Variable dropdown to match the layer.
     _sync_variable_options_for_stage(label)
 
     # Refresh evaluation-tab static content
-    eval_summary_div.text = _summary_table_html()
+    eval_summary_div.text = _summary_table_html("overall")
+    eval_summary_div_regional.text = _summary_table_html("regional")
     for img_name, div in eval_image_divs.items():
         div.text = _img_html(img_name)
+    # Section 1 — dual leaderboard tables + per-method parity grid (pinned to
+    # Overall, re-read in case of retrain).
+    _build_parity_grid()
+    _refresh_parity_grid_options()
+    _update_parity_grid()
+    # Section 4 (per-case) and Section 5 (per-catalog) are layer-specific;
+    # Section 6 (cross-layer) reads both summaries and is independent.
+    _update_percase_chart()
+    _update_percatalog_chart()
+    _update_crosslayer_chart()
 
     # Refresh model dropdown. The on_change handler for model_select will
     # fire when ``value`` changes, so ``_update_eval_for_model`` is invoked
@@ -1826,25 +3641,115 @@ predict_tab = TabPanel(
 )
 eval_tab = TabPanel(
     child=column(
-        Div(text="<h3 style='margin:8px 0 4px 0'>Model comparison "
-                 "(out-of-fold cross-validation)</h3>"),
-        eval_summary_div,
-        Div(text="<h4 style='margin:12px 0 4px 0'>R² mean across models</h4>"),
-        eval_image_divs["model_comparison_r2.png"],
-        Div(text="<h4 style='margin:12px 0 4px 0'>R² distribution per output</h4>"),
-        eval_image_divs["r2_distribution_per_output.png"],
-        Div(text="<h4 style='margin:12px 0 4px 0'>Stacked-bar preview "
-                 "(best model, 6 sampled cases)</h4>"),
-        eval_image_divs["preview_capacity_stacks.png"],
-        Div(text="<h4 style='margin:12px 0 4px 0'>Active-learning lift "
-                 "(uncertainty- vs random-acquisition)</h4>"
-                 "<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+        bokeh_intro_div(),
+        Div(text="<h3 style='margin:8px 0 4px 0'>1. Model comparison "
+                 "(out-of-fold cross-validation, "
+                 "<span style='color:#1f77b4'>Overall</span> &amp; "
+                 "<span style='color:#d62728'>Regional</span> layers)</h3>"),
+        bokeh_explainer_div("s1_leaderboard"),
+        Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+                 "Two leaderboards side-by-side: the <b>Overall</b> layer "
+                 "(~86 system outputs) is the <i>fixed reference</i> used "
+                 "to pick the top-2 methods compared in the per-case, "
+                 "per-catalog, and Overall-vs-Regional sections below. The "
+                 "<b>Regional</b> layer (~382 per-BA outputs) is shown for "
+                 "comparison — method ranking on the noisier per-BA targets "
+                 "often differs. Both tables are independent of the stage "
+                 "selector on the Predict tab.</p>"),
+        row(eval_summary_div, eval_summary_div_regional, spacing=12),
+        bokeh_explainer_div("s1_parity"),
+        Div(text="<p style='color:#555;margin:8px 0 6px 0;font-size:12px'>"
+                 "<b>Per-method parity grid (both layers).</b> One parity "
+                 "plot per ML method, on each layer's out-of-fold "
+                 "predictions. Each panel uses a single color (distinct per "
+                 "method) so methods are easy to compare at a glance. Panel "
+                 "title = pooled R² on the filtered points; the dashed line "
+                 "is <i>y = x</i>. Use the <b>Tech</b> filter to drill in "
+                 "by technology (applies to both layers) and the "
+                 "<b>Region</b> filter for per-BA outputs (Regional layer "
+                 "only). Models that fail to load (e.g. <code>nearest</code>) "
+                 "are skipped silently.</p>"),
+        row(parity_grid_tech_select, parity_grid_region_select, spacing=10),
+        parity_grid_status_div,
+        parity_layer_titles["overall"],
+        row(parity_holders["overall"], parity_legends["overall"], spacing=20),
+        parity_layer_titles["regional"],
+        row(parity_holders["regional"], parity_legends["regional"], spacing=20),
+        Div(text="<h3 style='margin:18px 0 4px 0'>2. Per-case R² distribution "
+                 "(best method, both layers)</h3>"),
+        bokeh_explainer_div("s2_percase"),
+        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+                 "Each point is one of the ~486 design cases. R² is "
+                 "computed across <i>all</i> outputs after column "
+                 "z-scoring, so high-magnitude variables don't dominate. "
+                 "Two charts stacked, one per layer, each showing the "
+                 "<b>top-1 method</b> from the §1 leaderboard. Cases are "
+                 "sorted ascending by the model's own R² so the leftmost "
+                 "are the hardest designs for that model. Hover for the "
+                 "design behind each case. "
+                 "<b style='color:#1f77b4'>Overall</b> and "
+                 "<b style='color:#d62728'>Regional</b> layers may pick "
+                 "different top-1 methods.</p>"),
+        percase_layer_titles["overall"],
+        percase_legends["overall"],
+        percase_figs_a["overall"],
+        percase_layer_titles["regional"],
+        percase_legends["regional"],
+        percase_figs_a["regional"],
+        Div(text="<h3 style='margin:18px 0 4px 0'>3. Bias by tech &amp; region</h3>"),
+        bokeh_explainer_div("s3_bias"),
+        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+                 "Mean R² grouped by tech and by region (parsed from "
+                 "output names). <b>Tech labels follow the same display "
+                 "mapping as the predict tab</b> — vintages and similar "
+                 "variants are merged (e.g. <code>wind-ons_1/2/3/4</code> "
+                 "&rarr; <i>Onshore Wind</i>, <code>upv_*</code> &rarr; "
+                 "<i>UPV</i>) via <code>tech_map.csv</code>. Outputs that "
+                 "aren't real techs (e.g. financial / transmission lines) "
+                 "keep their raw labels. For the <i>regional</i> layer "
+                 "the right panel exposes spatial bias; the <i>overall</i> "
+                 "layer has no region decomposition so it stays empty.</p>"),
+        row(per_tech_fig, per_region_fig, spacing=20),
+        Div(text="<h3 style='margin:18px 0 4px 0'>4. Per-catalog R² "
+                 "(top-2 methods, both layers)</h3>"),
+        bokeh_explainer_div("s4_percatalog"),
+        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+                 "Outputs are grouped by their prefix into catalogs "
+                 "(<i>Capacity</i>, <i>Generation</i>, <i>System cost</i>, "
+                 "<i>Transmission</i>) and shown side-by-side for both "
+                 "layers (e.g. <i>Overall · Capacity</i>, <i>Regional · "
+                 "Generation</i>). Bars show the <b>median</b> R² across "
+                 "the outputs in each (layer, catalog) cell, comparing "
+                 "the Overall-anchored top-2 methods. Tall variation "
+                 "between cells = a method that's strong on some variable "
+                 "types but weak on others.</p>"),
+        percatalog_fig,
+        Div(text="<h3 style='margin:18px 0 4px 0'>5. Overall vs Regional "
+                 "(top-2 methods, per-output R² distribution)</h3>"),
+        bokeh_explainer_div("s5_crosslayer"),
+        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+                 "Each dot is one output; columns are jittered for "
+                 "readability. Four columns = top-2 methods (anchored by "
+                 "Overall) × two layers. The thick black bar is the "
+                 "<b>median</b> per group; spread between dots in a "
+                 "column = prediction variability across outputs in that "
+                 "layer. Compare adjacent columns for the same method to "
+                 "see if it generalizes from the system-level (~86) to "
+                 "per-BA (~382) targets.</p>"),
+        crosslayer_fig,
+        Div(text="<h3 style='margin:18px 0 4px 0'>6. Active-learning lift "
+                 "(uncertainty- vs random-acquisition)</h3>"),
+        bokeh_explainer_div("s6_active"),
+        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
                  "Random Forest retrained from 30 &rarr; 230 cases. "
-                 "Median R² (left) and # outputs &gt; 0.9 (right) on a held-out test set. "
-                 "Run <code>python surrogate_active_learning.py</code> to (re)generate.</p>"),
+                 "Median R² (left) and # outputs &gt; 0.9 (right) on a "
+                 "held-out test set. Run "
+                 "<code>python surrogate_active_learning.py</code> to "
+                 "(re)generate.</p>"),
         eval_image_divs["active_learning_curve.png"],
-        parity_div,
-        Div(text="<h4 style='margin:12px 0 4px 0'>Per-output OOF metrics</h4>"),
+        Div(text="<h3 style='margin:18px 0 4px 0'>7. Raw per-output "
+                 "metrics table</h3>"),
+        bokeh_explainer_div("s7_table"),
         per_output_caption,
         per_output_table,
         spacing=6,
@@ -1852,6 +3757,574 @@ eval_tab = TabPanel(
     ),
     title="Evaluation results",
 )
+
+
+# ---------------------------------------------------------------------------
+# Research Evaluation tab (surfaces surrogate_eval.py outputs without breaking
+# anything above). Lazily loads CSVs / PNGs from ``<results_dir>/eval/`` for
+# the selected layer. Falls back to a "run surrogate_eval.py first" notice if
+# the index file is missing.
+# ---------------------------------------------------------------------------
+
+RESEARCH_EVAL_LAYERS: tuple[str, ...] = ("overall", "regional")
+
+
+def _research_eval_dir(layer_short: str) -> Path | None:
+    """Locate ``<results_dir>/eval`` for the requested layer, or ``None``."""
+    res_dir, _, _ = _layer_paths(layer_short)
+    if res_dir is None:
+        return None
+    eval_dir = res_dir / "eval"
+    return eval_dir if eval_dir.exists() else None
+
+
+def _research_eval_load_index(layer_short: str) -> dict:
+    eval_dir = _research_eval_dir(layer_short)
+    if eval_dir is None:
+        return {}
+    p = eval_dir / "_index.json"
+    if not p.exists():
+        return {}
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _research_eval_read_csv(layer_short: str, name: str) -> pd.DataFrame:
+    eval_dir = _research_eval_dir(layer_short)
+    if eval_dir is None:
+        return pd.DataFrame()
+    p = eval_dir / name
+    if not p.exists():
+        return pd.DataFrame()
+    try:
+        return pd.read_csv(p)
+    except Exception:
+        return pd.DataFrame()
+
+
+def _research_eval_image_b64(layer_short: str, fig_name: str) -> str:
+    """Read a PNG figure from ``eval/figs`` and return a base64 data URI string."""
+    eval_dir = _research_eval_dir(layer_short)
+    if eval_dir is None:
+        return ""
+    p = eval_dir / "figs" / fig_name
+    if not p.exists():
+        return ""
+    try:
+        b = p.read_bytes()
+    except Exception:
+        return ""
+    return "data:image/png;base64," + base64.b64encode(b).decode("ascii")
+
+
+def _research_eval_df_to_source(df: pd.DataFrame) -> tuple[ColumnDataSource, list[TableColumn]]:
+    """Build a ColumnDataSource + columns for a generic DataTable view."""
+    if df is None or df.empty:
+        return ColumnDataSource(data={"_": []}), [TableColumn(field="_", title="(empty)")]
+    out: dict[str, list] = {}
+    cols: list[TableColumn] = []
+    for c in df.columns:
+        # Floats get nice formatter; everything else as-is.
+        s = df[c]
+        if pd.api.types.is_float_dtype(s):
+            # Choose precision based on magnitude
+            arr = s.replace([np.inf, -np.inf], np.nan).dropna()
+            max_abs = float(arr.abs().max()) if not arr.empty else 0.0
+            fmt = "0,0.0000" if max_abs < 100 else "0,0.00"
+            cols.append(TableColumn(field=str(c), title=str(c),
+                                    formatter=NumberFormatter(format=fmt)))
+        else:
+            cols.append(TableColumn(field=str(c), title=str(c)))
+        out[str(c)] = s.tolist()
+    return ColumnDataSource(data=out), cols
+
+
+# Per-layer index lookup at module load. Cheap (small JSON each).
+RESEARCH_EVAL_INDEX: dict[str, dict] = {
+    layer: _research_eval_load_index(layer) for layer in RESEARCH_EVAL_LAYERS
+}
+
+
+def _research_eval_default_layer() -> str:
+    """Prefer 'overall' if present, else the first layer that has an index."""
+    for layer in RESEARCH_EVAL_LAYERS:
+        if RESEARCH_EVAL_INDEX.get(layer):
+            return layer
+    return RESEARCH_EVAL_LAYERS[0]
+
+
+_initial_re_layer = _research_eval_default_layer()
+_initial_re_index = RESEARCH_EVAL_INDEX.get(_initial_re_layer, {})
+_initial_re_models = list(_initial_re_index.get("models") or [])
+_initial_re_csvs = list(_initial_re_index.get("csvs") or [])
+_initial_re_figs = list(_initial_re_index.get("figs") or [])
+_initial_re_model = "rf" if "rf" in _initial_re_models else (
+    _initial_re_models[0] if _initial_re_models else ""
+)
+
+# Layer + model selectors
+research_layer_select = Select(
+    title="Layer",
+    value=_initial_re_layer,
+    options=[l for l in RESEARCH_EVAL_LAYERS if RESEARCH_EVAL_INDEX.get(l)] or [_initial_re_layer],
+    width=160,
+)
+research_model_select = Select(
+    title="Model (drives §1/§3/§5)",
+    value=_initial_re_model,
+    options=_initial_re_models or [""],
+    width=180,
+)
+
+# Header info
+research_header_div = Div(text="", sizing_mode="stretch_width")
+
+# §0 Headline ranking
+research_rank_source, research_rank_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, "model_ranking_bootstrap.csv")
+)
+research_rank_table = DataTable(
+    source=research_rank_source, columns=research_rank_cols,
+    width=1080, height=260, index_position=None, fit_columns=True,
+)
+
+# §1 Grouped by category (driven by model selector)
+research_groupcat_source, research_groupcat_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, f"grouped_by_category_{_initial_re_model}.csv")
+    if _initial_re_model else pd.DataFrame()
+)
+research_groupcat_table = DataTable(
+    source=research_groupcat_source, columns=research_groupcat_cols,
+    width=1080, height=200, index_position=None, fit_columns=True,
+)
+
+# §1b Grouped by tech (driven by model selector)
+research_grouptech_source, research_grouptech_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, f"grouped_by_tech_{_initial_re_model}.csv")
+    if _initial_re_model else pd.DataFrame()
+)
+research_grouptech_table = DataTable(
+    source=research_grouptech_source, columns=research_grouptech_cols,
+    width=1080, height=300, index_position=None, fit_columns=True,
+)
+
+# §3 Calibration (driven by model selector)
+research_calib_source, research_calib_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, f"calibration_{_initial_re_model}.csv")
+    if _initial_re_model else pd.DataFrame()
+)
+research_calib_table = DataTable(
+    source=research_calib_source, columns=research_calib_cols,
+    width=1080, height=280, index_position=None, fit_columns=True,
+)
+research_calib_overlay_img = Div(
+    text=(f'<img src="{_research_eval_image_b64(_initial_re_layer, "calibration_overlay.png")}" '
+          f'style="max-width:100%;border:1px solid #ddd;background:#fff;padding:4px">'
+          if "calibration_overlay.png" in _initial_re_figs else
+          "<p><i>calibration_overlay.png not found.</i></p>"),
+    width=1080,
+)
+
+# §5 Headline scalars (driven by model selector)
+research_headline_source, research_headline_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, f"headline_scalars_{_initial_re_model}.csv")
+    if _initial_re_model else pd.DataFrame()
+)
+research_headline_table = DataTable(
+    source=research_headline_source, columns=research_headline_cols,
+    width=1080, height=180, index_position=None, fit_columns=True,
+)
+
+# §6 Output difficulty (one global table per layer)
+research_difficulty_source, research_difficulty_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, "per_output_difficulty.csv")
+)
+research_difficulty_table = DataTable(
+    source=research_difficulty_source, columns=research_difficulty_cols,
+    width=1080, height=400, index_position=None, fit_columns=True,
+)
+
+# §8 Clipping summary
+research_clipping_source, research_clipping_cols = _research_eval_df_to_source(
+    _research_eval_read_csv(_initial_re_layer, "clipping_summary.csv")
+)
+research_clipping_table = DataTable(
+    source=research_clipping_source, columns=research_clipping_cols,
+    width=1080, height=240, index_position=None, fit_columns=True,
+)
+
+# Auto-readout Divs for §R0 and §R5 — single-sentence summaries computed
+# from the *current* run's CSVs. They sit *under* the static explainer
+# callouts so a re-run automatically updates them without editing captions.
+research_rank_readout_div = Div(text="", sizing_mode="stretch_width")
+research_headline_readout_div = Div(text="", sizing_mode="stretch_width")
+
+
+def _research_eval_inline_md_to_html(text: str) -> str:
+    """Convert ``**bold**`` / ``_italic_`` / ```code``` to HTML inline tags.
+
+    The underscore rule is word-boundary aware: an ``_`` is only treated as an
+    italic toggle if it's not flanked by alphanumerics on both sides. This
+    keeps identifiers like ``cost_total`` intact instead of breaking them into
+    ``cost<i>total``.
+    """
+    out: list[str] = []
+    i = 0
+    in_b = in_i = in_c = False
+    n = len(text)
+    while i < n:
+        if text[i:i + 2] == "**":
+            out.append("</b>" if in_b else "<b>")
+            in_b = not in_b
+            i += 2
+            continue
+        ch = text[i]
+        if ch == "_":
+            prev_ch = text[i - 1] if i > 0 else " "
+            next_ch = text[i + 1] if i + 1 < n else " "
+            is_word_internal = prev_ch.isalnum() and next_ch.isalnum()
+            if is_word_internal:
+                out.append("_")
+            else:
+                out.append("</i>" if in_i else "<i>")
+                in_i = not in_i
+        elif ch == "`":
+            out.append("</code>" if in_c else "<code>")
+            in_c = not in_c
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _research_eval_format_readout(lines: list[str]) -> str:
+    """Wrap auto-readout sentences in a small amber callout. Empty if no lines."""
+    if not lines:
+        return ""
+    body = "<br>".join(_research_eval_inline_md_to_html(s) for s in lines)
+    return (
+        "<div style='background:#fff8e1;border-left:3px solid #f0a050;"
+        "padding:4px 10px;margin:2px 0 6px 0;font-size:12px;"
+        "color:#5b4317;line-height:1.45'>"
+        f"{body}</div>"
+    )
+
+
+def _research_eval_update_rank_readout(layer_short: str):
+    df = _research_eval_read_csv(layer_short, "model_ranking_bootstrap.csv")
+    line = auto_readout_r0(df)
+    research_rank_readout_div.text = _research_eval_format_readout(
+        [line] if line else []
+    )
+
+
+def _research_eval_update_headline_readout(layer_short: str, model_name: str):
+    if not model_name:
+        research_headline_readout_div.text = ""
+        return
+    df = _research_eval_read_csv(layer_short, f"headline_scalars_{model_name}.csv")
+    lines = list(auto_readout_r5(df))
+    research_headline_readout_div.text = _research_eval_format_readout(lines)
+
+
+# Browse-CSV pane
+research_browse_csv_select = Select(
+    title="Browse any CSV", value=(_initial_re_csvs[0] if _initial_re_csvs else ""),
+    options=_initial_re_csvs or [""], width=420,
+)
+_init_browse_csv_df = (
+    _research_eval_read_csv(_initial_re_layer, _initial_re_csvs[0])
+    if _initial_re_csvs else pd.DataFrame()
+)
+research_browse_csv_source, research_browse_csv_cols = _research_eval_df_to_source(_init_browse_csv_df)
+research_browse_csv_table = DataTable(
+    source=research_browse_csv_source, columns=research_browse_csv_cols,
+    width=1080, height=380, index_position=None, fit_columns=True,
+)
+
+# Browse-figure pane
+research_browse_fig_select = Select(
+    title="Browse any figure", value=(_initial_re_figs[0] if _initial_re_figs else ""),
+    options=_initial_re_figs or [""], width=420,
+)
+research_browse_fig_div = Div(
+    text=(f'<img src="{_research_eval_image_b64(_initial_re_layer, _initial_re_figs[0])}" '
+          f'style="max-width:100%;border:1px solid #ddd;background:#fff;padding:4px">'
+          if _initial_re_figs else
+          "<p><i>No figures available — run surrogate_eval.py first.</i></p>"),
+    width=1080,
+)
+
+
+def _research_eval_update_header(layer_short: str):
+    idx = RESEARCH_EVAL_INDEX.get(layer_short, {})
+    if not idx:
+        research_header_div.text = (
+            f"<div style='padding:8px 12px;background:#fff3cd;border-left:3px solid #f0a050'>"
+            f"<b>No evaluation artifacts found</b> for layer <code>{layer_short}</code>. "
+            f"Run <code>python surrogate_eval.py --output_dir &lt;results_dir&gt; "
+            f"--data &lt;data_csv&gt; --layer {layer_short}</code> to generate.</div>"
+        )
+        return
+    n_models = len(idx.get("models") or [])
+    n_out = idx.get("n_outputs", "?")
+    mz = idx.get("mostly_zero_count", "?")
+    alphas = ", ".join(str(a) for a in (idx.get("alpha_levels") or []))
+    research_header_div.text = (
+        f"<div style='padding:8px 12px;background:#eef5ff;border-left:3px solid #1f4e79'>"
+        f"<b>Layer:</b> {layer_short} &nbsp;|&nbsp; "
+        f"<b>Models:</b> {n_models} ({', '.join(idx.get('models') or [])}) &nbsp;|&nbsp; "
+        f"<b>Outputs:</b> {n_out} &nbsp;|&nbsp; "
+        f"<b>Mostly-zero:</b> {mz} &nbsp;|&nbsp; "
+        f"<b>α-sweep:</b> {alphas}</div>"
+        f"<p style='color:#555;margin:6px 0 0 0;font-size:12px'>"
+        f"Tables and figures below are loaded from "
+        f"<code>{(_research_eval_dir(layer_short) or '?')}</code>. "
+        f"The full prose report is in <code>REPORT.md</code> / <code>REPORT.html</code> "
+        f"in that directory; this tab surfaces the headline numbers + a browser for "
+        f"the rest.</p>"
+    )
+
+
+def _research_eval_replace_table(table: DataTable, df: pd.DataFrame):
+    src, cols = _research_eval_df_to_source(df)
+    table.source.data = dict(src.data)
+    table.columns = cols
+
+
+def _research_eval_apply_layer(layer_short: str):
+    """Rewire every table / image to the selected layer."""
+    idx = RESEARCH_EVAL_INDEX.get(layer_short, {})
+    _research_eval_update_header(layer_short)
+
+    # Refresh model selector with this layer's models
+    models = list(idx.get("models") or [])
+    research_model_select.options = models or [""]
+    if research_model_select.value not in models:
+        research_model_select.value = ("rf" if "rf" in models else
+                                       (models[0] if models else ""))
+
+    # Refresh the universal tables (independent of model)
+    _research_eval_replace_table(
+        research_rank_table,
+        _research_eval_read_csv(layer_short, "model_ranking_bootstrap.csv"),
+    )
+    _research_eval_update_rank_readout(layer_short)
+    _research_eval_replace_table(
+        research_difficulty_table,
+        _research_eval_read_csv(layer_short, "per_output_difficulty.csv"),
+    )
+    _research_eval_replace_table(
+        research_clipping_table,
+        _research_eval_read_csv(layer_short, "clipping_summary.csv"),
+    )
+
+    # Calibration overlay PNG
+    fig_b64 = _research_eval_image_b64(layer_short, "calibration_overlay.png")
+    research_calib_overlay_img.text = (
+        f'<img src="{fig_b64}" style="max-width:100%;border:1px solid #ddd;'
+        f'background:#fff;padding:4px">'
+        if fig_b64 else "<p><i>calibration_overlay.png not found.</i></p>"
+    )
+
+    # Refresh browse dropdowns
+    csvs = list(idx.get("csvs") or [])
+    figs = list(idx.get("figs") or [])
+    research_browse_csv_select.options = csvs or [""]
+    if research_browse_csv_select.value not in csvs:
+        research_browse_csv_select.value = csvs[0] if csvs else ""
+    research_browse_fig_select.options = figs or [""]
+    if research_browse_fig_select.value not in figs:
+        research_browse_fig_select.value = figs[0] if figs else ""
+
+
+def _research_eval_apply_model(layer_short: str, model_name: str):
+    """Refresh tables that depend on (layer, model)."""
+    if not model_name:
+        return
+    _research_eval_replace_table(
+        research_groupcat_table,
+        _research_eval_read_csv(layer_short, f"grouped_by_category_{model_name}.csv"),
+    )
+    _research_eval_replace_table(
+        research_grouptech_table,
+        _research_eval_read_csv(layer_short, f"grouped_by_tech_{model_name}.csv"),
+    )
+    _research_eval_replace_table(
+        research_calib_table,
+        _research_eval_read_csv(layer_short, f"calibration_{model_name}.csv"),
+    )
+    _research_eval_replace_table(
+        research_headline_table,
+        _research_eval_read_csv(layer_short, f"headline_scalars_{model_name}.csv"),
+    )
+    _research_eval_update_headline_readout(layer_short, model_name)
+
+
+def _on_research_layer_change(attr, old, new):
+    if new == old:
+        return
+    _research_eval_apply_layer(new)
+    _research_eval_apply_model(new, research_model_select.value)
+
+
+def _on_research_model_change(attr, old, new):
+    if new == old or not new:
+        return
+    _research_eval_apply_model(research_layer_select.value, new)
+
+
+def _on_research_browse_csv_change(attr, old, new):
+    if new == old or not new:
+        return
+    _research_eval_replace_table(
+        research_browse_csv_table,
+        _research_eval_read_csv(research_layer_select.value, new),
+    )
+
+
+def _on_research_browse_fig_change(attr, old, new):
+    if new == old or not new:
+        return
+    b64 = _research_eval_image_b64(research_layer_select.value, new)
+    research_browse_fig_div.text = (
+        f'<img src="{b64}" style="max-width:100%;border:1px solid #ddd;'
+        f'background:#fff;padding:4px">'
+        if b64 else "<p><i>(figure not found)</i></p>"
+    )
+
+
+research_layer_select.on_change("value", _on_research_layer_change)
+research_model_select.on_change("value", _on_research_model_change)
+research_browse_csv_select.on_change("value", _on_research_browse_csv_change)
+research_browse_fig_select.on_change("value", _on_research_browse_fig_change)
+
+# Populate initial header
+_research_eval_update_header(_initial_re_layer)
+
+# ---------------------------------------------------------------------------
+# Merge research-grade diagnostics into the existing "Evaluation results" tab
+# instead of a separate tab. All Research-Eval widgets / callbacks were
+# constructed above; here we just append the visual sections to the bottom of
+# ``eval_tab``'s column. Assigning a NEW list (rather than ``.extend``) ensures
+# Bokeh registers the children change on the model.
+# ---------------------------------------------------------------------------
+_research_eval_sections = [
+    Div(text="<h2 style='border-top:2px solid #999;margin:28px 0 4px 0;"
+             "padding-top:14px'>Research-grade diagnostics "
+             "(<code>surrogate_eval.py</code> &mdash; out-of-fold artefacts)"
+             "</h2>"
+             "<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+             "Sections below surface the per-layer artefacts written by "
+             "<code>surrogate_eval.py</code> (which reads existing "
+             "<code>.joblib</code> models and their saved OOF residuals "
+             "&mdash; it does <b>not</b> retrain). Use the <b>Layer</b> "
+             "selector to flip between the system-level <i>overall</i> and "
+             "per-BA <i>regional</i> evaluations; the <b>Model</b> selector "
+             "drives the per-model tables in &sect;R1, &sect;R3, &sect;R5. "
+             "Numbering uses an <code>R</code> prefix so it doesn't collide "
+             "with the &sect;1&ndash;&sect;7 leaderboard sections above.</p>"),
+    row(research_layer_select, research_model_select, spacing=12),
+    research_header_div,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R0. Headline ranking "
+             "(bootstrap CIs, 200 resamples, winsorised at R&sup2; = &minus;1)</h3>"),
+    bokeh_explainer_div("r0_ranking"),
+    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "Each model's mean / median R&sup2; across OOF cases with a "
+             "95% bootstrap CI. <code>r2_mean_point</code> is the unaveraged "
+             "point estimate; <code>r2_mean_boot_mean</code> is the mean over "
+             "200 resamples (winsorised). Pairwise dominance matrix is in "
+             "<code>model_ranking_bootstrap_pwise.csv</code> &mdash; browse "
+             "it below.</p>"),
+    research_rank_readout_div,
+    research_rank_table,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R1. Grouped metrics "
+             "(selected model)</h3>"),
+    bokeh_explainer_div("r1_grouped"),
+    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "Per-output metrics aggregated by category (cap / gen / "
+             "tran / cost) and by tech (using <code>tech_map.csv</code> "
+             "display names). Mostly-zero outputs are excluded from the "
+             "mean.</p>"),
+    Div(text="<b>By category</b>", styles={"margin": "8px 0 4px 0"}),
+    research_groupcat_table,
+    Div(text="<b>By tech</b>", styles={"margin": "8px 0 4px 0"}),
+    research_grouptech_table,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R3. Interval calibration "
+             "(split-conformal sweep)</h3>"),
+    bokeh_explainer_div("r3_calibration"),
+    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "Empirical coverage at five nominal levels for the selected "
+             "model, broken down by category. Coverage &asymp; nominal &harr; "
+             "well-calibrated; sharpness is "
+             "<code>2&middot;half_width / range</code> per output, so it's "
+             "unit-free.</p>"),
+    research_calib_table,
+    Div(text="<b>Calibration overlay (all models)</b>",
+        styles={"margin": "8px 0 4px 0"}),
+    research_calib_overlay_img,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R5. Headline scalars "
+             "(selected model)</h3>"),
+    bokeh_explainer_div("r5_headline"),
+    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "Total system cost + total cap / gen / tran (across all "
+             "486 cases) with a 90% conformal interval. The "
+             "<code>conformal_relative_width</code> column is the "
+             "interval width as a fraction of the headline's actual "
+             "range &mdash; a quick &ldquo;how tight is the uncertainty&rdquo; "
+             "read.</p>"),
+    research_headline_readout_div,
+    research_headline_table,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R6. Per-output "
+             "difficulty (model-vs-model)</h3>"),
+    bokeh_explainer_div("r6_difficulty"),
+    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "For every output, R&sup2; under each model. "
+             "<code>intrinsic_hard=True</code> means <i>no</i> model "
+             "clears 0.5; <code>model_specific_hard=True</code> means "
+             "at least one model is strong (&gt;0.9) and another is "
+             "negative &mdash; an architecture-selection signal. Sorted "
+             "hardest-first so the worst offenders surface "
+             "immediately.</p>"),
+    research_difficulty_table,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R8. Clipping consistency "
+             "(unclipped vs deployed)</h3>"),
+    bokeh_explainer_div("r8_clipping"),
+    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "Diff between the unclipped raw OOF predictions and the "
+             "deployed (physical-bounds clipping from "
+             "<code>surrogate_predict.py</code>). "
+             "<code>n_outputs_clipping_helps</code> = #outputs whose R&sup2; "
+             "<i>improves</i> after clipping; positive "
+             "<code>mean_delta_r2</code> = clipping is a net win.</p>"),
+    research_clipping_table,
+
+    Div(text="<h3 style='margin:16px 0 4px 0'>Browse every CSV / figure</h3>"
+             "<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+             "All artefacts written under <code>eval/</code> are reachable "
+             "from here. Useful for the pairwise bootstrap matrix, "
+             "per-output metric panels, bias / Q-Q figures by model, "
+             "etc.</p>"),
+    row(research_browse_csv_select, spacing=12),
+    research_browse_csv_table,
+    row(research_browse_fig_select, spacing=12),
+    research_browse_fig_div,
+]
+eval_tab.child.children = list(eval_tab.child.children) + _research_eval_sections
+
+# Initial per-model population so the merged sections render non-empty.
+_research_eval_apply_layer(_initial_re_layer)
+_research_eval_apply_model(_initial_re_layer, _initial_re_model)
+
 
 tabs = Tabs(tabs=[predict_tab, eval_tab])
 layout = column(header, tabs, sizing_mode="stretch_width")

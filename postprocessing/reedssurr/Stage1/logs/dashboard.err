@@ -1,6 +1,9 @@
-2026-06-15 16:53:05,101 Starting Bokeh server version 3.6.0 (running on Tornado 6.4.1)
-2026-06-15 16:53:05,114 User authentication hooks NOT provided (default user enabled)
-2026-06-15 16:53:05,117 Bokeh app running at: http://localhost:5006/surrogate_dashboard
-2026-06-15 16:53:05,117 Starting Bokeh server with process id: 38204
-2026-06-15 16:53:10,125 WebSocket connection opened
-2026-06-15 16:53:10,127 ServerConnection created
+2026-06-17 13:31:01,753 Starting Bokeh server version 3.6.0 (running on Tornado 6.4.1)
+2026-06-17 13:31:01,758 User authentication hooks NOT provided (default user enabled)
+2026-06-17 13:31:01,770 Bokeh app running at: http://localhost:5006/surrogate_dashboard
+2026-06-17 13:31:01,770 Starting Bokeh server with process id: 34736
+C:\Users\ychen10\AppData\Local\anaconda3\Lib\site-packages\sklearn\tree\_classes.py:1351: FutureWarning: Value `"friedman_mse"` for `criterion` is deprecated and will be removed in 1.11. It maps to `"squared_error"` as both were always equivalent. Use `criterion="squared_error"` to remove this warning.
+  warnings.warn(
+2026-06-17 13:31:37,967 WebSocket connection opened
+2026-06-17 13:31:37,971 ServerConnection created
+2026-06-17 13:39:59,545 WebSocket connection closed: code=1001, reason=None

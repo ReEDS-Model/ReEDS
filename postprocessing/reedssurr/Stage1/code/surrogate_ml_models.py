@@ -692,6 +692,29 @@ def run_pipeline(config: Config):
     print(f"  bokeh serve --show postprocessing/surrogate_dashboard.py "
           f"--args --results_dir {output_dir.resolve()} --data {config.data_path}")
 
+    # ------------------------------------------------------------------
+    # Optional research evaluation pass — purely additive. Reads the OOF
+    # residuals just saved above and writes a full battery of bias,
+    # calibration, distributional, worst-case, and bootstrap diagnostics
+    # to ``<output_dir>/eval/``. Failures here never propagate (the .joblib
+    # artefacts and per-model CSVs in <output_dir>/models/ are still
+    # valid). The eval module never edits surrogate_predict.py.
+    # ------------------------------------------------------------------
+    try:
+        from surrogate_eval import EvalConfig, run_eval   # local import on purpose
+
+        eval_layer = output_dir.name  # 'overall' or 'regional' by convention
+        eval_cfg = EvalConfig(
+            output_dir=output_dir,
+            data_path=Path(config.data_path),
+            layer=eval_layer,
+        )
+        print(f"\n[eval] running surrogate_eval.run_eval(layer={eval_layer}) ...")
+        run_eval(eval_cfg)
+        print(f"[eval] research artefacts written to {eval_cfg.eval_dir}")
+    except Exception as exc:  # noqa: BLE001 - eval is non-critical
+        print(f"[eval] skipped (failed: {exc}); model artefacts above are still valid")
+
 
 # ============================================================================
 # CLI
