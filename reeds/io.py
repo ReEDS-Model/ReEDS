@@ -81,6 +81,15 @@ def assemble_hierarchy(case=None, fpath=None, extra=True, **kwargs) -> pd.DataFr
     if fpath is None:
         fpath = Path(fpath_base, 'hierarchy.csv')
     dfin = pd.read_csv(fpath)
+    ## Add offshore zones if necessary
+    if int(sw.GSw_OffshoreZones):
+        fpath_offshore = Path(reeds.io.reeds_path, 'inputs', 'zones', 'hierarchy_offshore.csv')
+        hierarchy_offshore = (
+            pd.read_csv(fpath_offshore)
+            .rename(columns={'ba':'r'})
+            .drop(columns='aggreg', errors='ignore')
+        )
+        dfin = pd.concat([dfin, hierarchy_offshore])
     ## Add hierarchy levels defined by groups of states
     fpath_state = Path(reeds.io.reeds_path, 'inputs', 'zones', 'state_groups.csv')
     state_groups = pd.read_csv(fpath_state, index_col='st')
@@ -93,6 +102,17 @@ def assemble_hierarchy(case=None, fpath=None, extra=True, **kwargs) -> pd.DataFr
     if extra:
         fpath_zonehash = Path(fpath_base, 'zonehash.csv')
         zonehash = pd.read_csv(fpath_zonehash)
+        if int(sw.GSw_OffshoreZones):
+            hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+            offshore_zones = (
+                get_offshore_zones().reset_index()
+                .rename(columns={'zone':'r'})
+                .drop(columns='geometry', errors='ignore')
+            )
+            ## Offshore zones are not groups of counties and are not user-adjustable,
+            ## so we use their hardcoded name as their zonehash
+            offshore_zones[hashfunc] = offshore_zones['r'].copy()
+            zonehash = pd.concat([zonehash, offshore_zones])
         dfout = dfout.merge(zonehash, on='r', how='left')
         if any(dfout.isnull().sum()):
             print(dfout.loc[dfout.isnull().sum(axis=1) > 0])
@@ -104,9 +124,9 @@ def get_hierarchy(case=None, original=False, **kwargs):
     """Get hierarchy for ReEDs case if provided, or for country if case not provided"""
     if case:
         if original:
-            filepath = Path(case, 'inputs_case', 'hierarchy_original.csv')
+            filepath = Path(standardize_case(case), 'inputs_case', 'hierarchy_original.csv')
         else:
-            filepath = Path(case, 'inputs_case', 'hierarchy.csv')
+            filepath = Path(standardize_case(case), 'inputs_case', 'hierarchy.csv')
     else:
         ## TEMPORARY 20260402: Use deprecated hierarchy inputs.
         ## Use the line below once we make the switch:
@@ -166,6 +186,48 @@ def get_county2zone(
     return dfout
 
 
+
+def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
+    """Get the transmission node for each model zone"""
+    sw = get_switches(case, **kwargs)
+    zonepath = Path(reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet)
+    zonehash = pd.read_csv(Path(zonepath, 'zonehash.csv'), index_col='r')
+    ## Convert lat/lon to x/y
+    xy = reeds.plots.df2gdf(zonehash, lat='node_lat', lon='node_lon', crs=crs)
+    zonehash['x'] = xy.geometry.x
+    zonehash['y'] = xy.geometry.y
+    ## Drop zone hash
+    hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+    zonehash = zonehash.drop(columns=hashfunc, errors='ignore')
+    return zonehash
+
+
+def get_zones(
+    case=None,
+    crs='ESRI:102008',
+    exclude_water_areas=True,
+    **kwargs,
+) -> gpd.GeoDataFrame:
+    """
+    Args:
+        case (str, Path, or None): Path to a ReEDS case.
+            If None, uses the default GSw_ZoneSet from cases.csv.
+        crs (str): Coordinate reference system
+        **kwargs: ReEDS switch:value pairs (overrides case argument)
+    """
+    dfcounty = reeds.spatial.get_map('county', source='tiger', crs=crs)
+    county2zone = reeds.io.get_county2zone(case, **kwargs)
+    dfcounty['r'] = county2zone
+    dfzones = dfcounty.dissolve('r')
+
+    if exclude_water_areas:
+        dfstates = reeds.spatial.get_map('states', source='census', crs=crs)
+        country = dfstates.dissolve().geometry[0]
+        dfzones.geometry = dfzones.intersection(country).buffer(0)
+
+    return dfzones[['geometry']]
+
+
 def get_countymap(select_counties=None, exclude_water_areas=False):
     """Get geodataframe of US counties"""
     dfcounty = reeds.spatial.get_map('county', source='tiger')
@@ -191,193 +253,52 @@ def get_countymap(select_counties=None, exclude_water_areas=False):
     return dfcounty
 
 
-def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008'):
+def get_offshore_zones(crs='ESRI:102008'):
+    offshore_zones = (
+        gpd.read_file(
+            os.path.join(reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
+        ).set_index('zone').to_crs(crs).drop(columns=['zone_old'], errors='ignore')
+        .rename(columns={'node_latitude':'node_lat', 'node_longitude':'node_lon'})
+    )
+    return offshore_zones
+
+
+def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwargs):
     """
-    Get geodataframe of model zones, applying aggregation if necessary
+    Get geodataframe of model zones, node locations, and hierarchy levels
     """
+    zone_nodes = get_zone_nodes(case=case, **kwargs)
+    dfzones = get_zones(case=case, exclude_water_areas=exclude_water_areas, crs=crs, kwargs=kwargs)
+    dfzones = dfzones.merge(zone_nodes, left_index=True, right_index=True, how='left')
+    ## Add offshore zones if necessary
     sw = get_switches(case)
-    ## Backwards compatibility
-    if 'GSw_RegionResolution' not in sw:
-        sw['GSw_RegionResolution'] = 'ba'
-
-    if case:
-        agglevel_variables = reeds.spatial.get_agglevel_variables(
-            reeds_path,
-            os.path.join(case, 'inputs_case'),
+    if int(sw.GSw_OffshoreZones):
+        offshore_zones = get_offshore_zones(crs=crs)
+        regions = reeds.inputs.parse_regions(case=case, **kwargs)
+        regions_offshore = [i for i in regions if i in offshore_zones.index]
+        offshore_zones = offshore_zones.loc[regions_offshore]
+        ## Get node x/y for consistency with land-based zones
+        xy = reeds.plots.df2gdf(
+            offshore_zones.drop(columns='geometry'),
+            lat='node_lat',
+            lon='node_lon',
+            crs=crs,
         )
-    else:
-        agglevel_variables = {'lvl': 'ba',
-                              'agglevel': 'ba',
-                              }
-
-    # Mixed resolution procedure
-    if agglevel_variables['lvl'] == 'mult':
-        ### Model zones
-        dfba = gpd.read_file(os.path.join(reeds_path, 'inputs', 'shapefiles', 'US_PCA'))
-        ### Use transmission endpoints from reV
-        endpoints = gpd.read_file(
-            os.path.join(reeds_path, 'inputs', 'shapefiles', 'transmission_endpoints')
-        ).set_index('ba_str')
-        endpoints['x'] = endpoints.centroid.x
-        endpoints['y'] = endpoints.centroid.y
-
-        dfba['x'] = dfba['rb'].map(endpoints.x)
-        dfba['y'] = dfba['rb'].map(endpoints.y)
-        dfba['centroid_x'] = dfba.geometry.centroid.x
-        dfba['centroid_y'] = dfba.geometry.centroid.y
-
-        # Filter to regions being solved at BA resolution
-        dfba = dfba[dfba['rb'].isin(agglevel_variables['ba_regions'])].set_index('rb')
-
-        if 'aggreg' in agglevel_variables['agglevel']:
-            r2aggreg = (
-                pd.read_csv(os.path.join(case, 'inputs_case', 'hierarchy_original.csv'))
-                .rename(columns={'ba': 'r'})
-                .set_index('r')
-                .aggreg
-            )
-            ### Take the "anchor" zone as the zone with the largest area [km2]
-            dfba['km2'] = dfba.area / 1e6
-            ## Add column for new regions
-            dfba['aggreg'] = dfba.index.map(r2aggreg)
-            ## Take the original zone with largest area
-            aggreg2anchorreg = dfba.groupby('aggreg').km2.idxmax().rename('rb')
-            ## Save it for plotting
-            aggreg2anchorreg.to_csv(os.path.join(case,'inputs_case', 'aggreg2anchorreg.csv'))
-
-            aggreg2anchorreg = aggreg2anchorreg.reset_index()
-            aggreg2anchorreg = aggreg2anchorreg[aggreg2anchorreg
-                ['aggreg'].isin(agglevel_variables['ba_regions'])
-            ]
-            dfba = dfba.reset_index()
-            dfba.rb = dfba.rb.map(r2aggreg)
-            dfba = dfba.dissolve('rb').loc[aggreg2anchorreg.aggreg].copy()
-
-        ### Get the county map
-        dfcounty = get_countymap(
-            agglevel_variables['county_regions'], exclude_water_areas
-        )
-        dfcounty = dfcounty[['rb', 'NAMELSAD', 'STATE', 'geometry']]
-
-        ## Use the centroid for both the transmission endpoint and centroid
-        for prefix in ['', 'centroid_']:
-            dfcounty[prefix + 'x'] = dfcounty.geometry.centroid.x
-            dfcounty[prefix + 'y'] = dfcounty.geometry.centroid.y
-
-        dfcounty = (
-            dfcounty.rename(columns={'NAMELSAD': 'county', 'STCODE': 'st'})
-            .set_index('rb')
-            .drop(columns=['county'])
-        )
-
-        # Combine BA and County
-        dfcounty = dfcounty.to_crs(dfba.crs)
-        dfba = pd.concat([dfba, dfcounty])
-
-        ### Include all hierarchy levels
-        hierarchy = get_hierarchy(case)
-
-        for col in hierarchy:
-            dfba[col] = dfba.index.map(hierarchy[col])
-
-    ######## Single Resolution Procedure ########
-    else:
-        ### Check if resolution is at county level
-        if sw.GSw_RegionResolution != 'county':
-            hierarchy = get_hierarchy(case, original=True)
-            ### Model zones
-            dfba = gpd.read_file(
-                os.path.join(reeds_path, 'inputs', 'shapefiles', 'US_PCA')
-            ).set_index('rb').to_crs(crs)[['geometry']].copy()
-            ## Add transmission endpoints
-            endpoints = (
-                gpd.read_file(
-                    os.path.join(reeds_path, 'inputs', 'shapefiles', 'transmission_endpoints')
-                )
-                .set_index('ba_str')
-                .rename(columns={'lon':'node_longitude','lat':'node_latitude'})
-                [['node_longitude','node_latitude','geometry']]
-            )
-            endpoints['x'] = endpoints.centroid.x
-            endpoints['y'] = endpoints.centroid.y
-            dfba = dfba.merge(endpoints.drop(columns='geometry'), left_index=True, right_index=True)
-            ## Add offshore zones (transmission endpoints already included)
-            if int(sw.GSw_OffshoreZones):
-                offshore_zones = gpd.read_file(
-                    os.path.join(reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
-                ).set_index('zone').to_crs(crs).drop(columns=['zone_old'], errors='ignore')
-                ## Get node x/y for consistency with land-based zones
-                xy = reeds.plots.df2gdf(
-                    offshore_zones.drop(columns='geometry'),
-                    lat='node_latitude',
-                    lon='node_longitude',
-                    crs=crs,
-                )
-                offshore_zones['x'] = xy.geometry.x
-                offshore_zones['y'] = xy.geometry.y
-                ## Combine
-                dfba = pd.concat([dfba.assign(offshore=0), offshore_zones.assign(offshore=1)])
-            ## Filter to regions used in this run
-            if 'ba_regions' in agglevel_variables:
-                dfba = dfba.loc[(
-                    dfba.index.intersection(agglevel_variables['ba_regions'])
-                )]
-            ## Record centroid locations for plot labels
-            dfba['centroid_x'] = dfba.geometry.centroid.x
-            dfba['centroid_y'] = dfba.geometry.centroid.y
-
-            if 'aggreg' in agglevel_variables['agglevel']:
-                r2aggreg = (
-                    pd.read_csv(os.path.join(case, 'inputs_case', 'hierarchy_original.csv'))
-                    .rename(columns={'ba': 'r'})
-                    .set_index('r')
-                    .aggreg
-                    )
-                ### Take the "anchor" zone as the zone with the largest area [km2]
-                dfba['km2'] = dfba.area / 1e6
-                ## Add column for new regions
-                dfba['aggreg'] = dfba.index.map(r2aggreg)
-                ## Take the original zone with largest area
-                aggreg2anchorreg = dfba.groupby('aggreg').km2.idxmax().rename('rb')
-                ## Save it for plotting
-                aggreg2anchorreg.to_csv(os.path.join(case,'inputs_case', 'aggreg2anchorreg.csv'))
-
-        else:
-            hierarchy = (
-                pd.read_csv(os.path.join(case, 'inputs_case', 'hierarchy.csv'))
-                .rename(columns={'*r': 'r', 'ba': 'r'})
-                .set_index('r')
-            )
-            ### Get the county map
-            select_counties = agglevel_variables.get('county_regions')
-            dfba = get_countymap(select_counties, exclude_water_areas)
-
-            ### Add US state code and drop states outside of CONUS
-            state_fips = pd.read_csv(
-                os.path.join(reeds_path, 'inputs', 'shapefiles', "state_fips_codes.csv"),
-                names=["STATE", "STCODE", "STATEFP", "CONUS"],
-                dtype={"STATEFP": "string"},
-                header=0,
-            )
-            state_fips = state_fips.loc[state_fips['CONUS'], :]
-            dfba = dfba.merge(state_fips, on="STATEFP")
-            dfba = dfba[['rb', 'NAMELSAD', 'STATE_x', 'geometry']].set_index('rb')
-
-            ## Use the centroid for both the transmission endpoint and centroid
-            for prefix in ['', 'centroid_']:
-                dfba[prefix + 'x'] = dfba.geometry.centroid.x
-                dfba[prefix + 'y'] = dfba.geometry.centroid.y
-
-            dfba.rename(columns={'NAMELSAD': 'county', 'STATE_x': 'st'}, inplace=True)
-
-        ### Include all hierarchy levels
-        for col in hierarchy:
-            dfba[col] = dfba.index.map(hierarchy[col])
+        offshore_zones['x'] = xy.geometry.x
+        offshore_zones['y'] = xy.geometry.y
+        ## Combine
+        dfzones = pd.concat([dfzones.assign(offshore=0), offshore_zones.assign(offshore=1)])
+    ## Add spatial hierarchy levels
+    hierarchy = assemble_hierarchy(case=case, extra=False, kwargs=kwargs)
+    dfba = dfzones.merge(hierarchy, left_index=True, right_on='r').set_index('r')
+    ## Record centroid locations for plot labels
+    dfba['centroid_x'] = dfba.geometry.centroid.x
+    dfba['centroid_y'] = dfba.geometry.centroid.y
 
     return dfba
 
 
-def get_dfmap(case=None, levels=None, exclude_water_areas=False):
+def get_dfmap(case=None, levels=None, exclude_water_areas=True):
     """Get dictionary of maps at different hierarchy levels"""
     hierarchy = (
         get_hierarchy(case, original=True)
@@ -413,10 +334,23 @@ def get_dfmap(case=None, levels=None, exclude_water_areas=False):
 
     return dfmap
 
-def get_disagg_data(case, disagg_variable='population'):
+def get_disagg_data(
+    case: str | Path,
+    disagg_variable: Literal['hydroexist', 'geosize', 'population', 'state_lpf']
+):
     """
     Get state/region-to-county disaggregation factors for the given variable.
     """
+    if disagg_variable not in [
+        'hydroexist',
+        'geosize',
+        'population',
+        'state_lpf'
+    ]:
+        raise NotImplementedError(
+            f"'{disagg_variable}' is not a valid disagg variable."
+        )
+
     return pd.read_csv(
         os.path.join(case, 'inputs_case', f'disagg_{disagg_variable}.csv')
     )
@@ -1608,6 +1542,8 @@ def assemble_supplycurve(
                 'trans_type',
                 'node_latitude',
                 'node_longitude',
+                'node_lat',
+                'node_lon',
                 'always_radial',
                 'ba',
             ],

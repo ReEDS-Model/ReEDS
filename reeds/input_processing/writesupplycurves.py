@@ -72,7 +72,6 @@ def agg_supplycurve(
     inputs_case,
     numbins_tech,
     agglevel,
-    AggregateRegions,
     bin_method='equal_cap_cut',
     bin_col='supply_curve_cost_per_mw',
     spur_cutoff=1e7, 
@@ -87,9 +86,6 @@ def agg_supplycurve(
     dfin = reeds.io.assemble_supplycurve(
         scfile=scpath,
         case=os.path.dirname(os.path.normpath(inputs_case)),
-        agg=AggregateRegions,
-        ## TEMPORARY 20260402
-        **({'GSw_ZoneSet': 'z134'} if not AggregateRegions else {}),
     ).reset_index().drop(columns=['FIPS','cf'], errors='ignore')
     ## Convert dollar year and recalculate total cost
     transcost_cols = [c for c in dfin if 'cost' in c]
@@ -133,13 +129,11 @@ def agg_supplycurve(
 
 
 def main(
-    reeds_path, inputs_case, AggregateRegions=1, rsc_wsc_dat=None, write=True, **kwargs
+    reeds_path, inputs_case, write=True, **kwargs
 ):
     # #%% Settings for testing
     # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # inputs_case = os.path.join(reeds_path,'runs','v20251209_scM0_Pacific','inputs_case')
-    # AggregateRegions = 1
-    # rsc_wsc_dat = None
     # write = True
     # kwargs = {}
 
@@ -190,14 +184,9 @@ def main(
     ).squeeze(1)
     deflate = dollaryear.map(deflator).rename('Deflator')
 
-    #%% Load the existing RSC capacity (PV plants, wind, and CSP) if not provided in main function call
-    if rsc_wsc_dat is None:
-        # writesupplycurves.py is being run as a main input processing script
-        rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
-    else:
-        # writesupplycurves.py is being passed rsc_wsc data from an aggregate_regions.py call
-        rsc_wsc = rsc_wsc_dat.copy()
-    
+    #%% Load the existing RSC capacity (PV plants, wind, and CSP)
+    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
+
     # Group CSP tech
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'
     rsc_wsc = rsc_wsc.groupby(["r", "i"]).sum().reset_index()
@@ -234,7 +223,7 @@ def main(
         windin[s], wind[s] = agg_supplycurve(
             scpath=os.path.join(inputs_case,f'supplycurve_wind-{s}.csv'),
             inputs_case=inputs_case, 
-            agglevel=agglevel, AggregateRegions=AggregateRegions, 
+            agglevel=agglevel,
             numbins_tech=numbins[f'wind-{s}'], spur_cutoff=spur_cutoff,
             agglevel_variables=agglevel_variables, deflate=deflate,
             sw=sw, write=write
@@ -331,7 +320,7 @@ def main(
     upvin, upv = agg_supplycurve(
         scpath=os.path.join(inputs_case, 'supplycurve_upv.csv'),
         inputs_case=inputs_case,
-        agglevel=agglevel, AggregateRegions=AggregateRegions,
+        agglevel=agglevel,
         numbins_tech=numbins['upv'], spur_cutoff=spur_cutoff,
         agglevel_variables=agglevel_variables, deflate=deflate,
         sw=sw, write=write
@@ -412,7 +401,7 @@ def main(
         cspin, csp = agg_supplycurve(
             scpath=os.path.join(inputs_case, 'supplycurve_csp.csv'),
             inputs_case=inputs_case,
-            agglevel=agglevel, AggregateRegions=AggregateRegions, 
+            agglevel=agglevel,
             numbins_tech=numbins['csp'], spur_cutoff=spur_cutoff,
             agglevel_variables=agglevel_variables, deflate=deflate,
             sw=sw, write=False
@@ -493,7 +482,7 @@ def main(
                     inputs_case,
                     f'supplycurve_{s}.csv'),
                 numbins_tech=numbins[s], inputs_case=inputs_case,
-                agglevel=agglevel, AggregateRegions=AggregateRegions,
+                agglevel=agglevel,
                 spur_cutoff=spur_cutoff,agglevel_variables=agglevel_variables, deflate=deflate,
                 sw=sw, write=False
             )

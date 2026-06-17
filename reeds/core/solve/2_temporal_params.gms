@@ -134,6 +134,16 @@ $include inputs_case%ds%stress%stress_year%%ds%nexth.csv
 $offdelim
 $onlisting
 /
+
+nextszn(actualszn,actualszn) "Mapping between one actual period (actualszn) and the next"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%nextszn.csv
+$offdelim
+$onlisting
+/
+
 $ONEMPTY
 nextpartition(allszn,allszn) "Mapping between one partition (allszn) and the next"
 /
@@ -180,13 +190,6 @@ starting_hour_nowrap(h)$[sum{szn, h_szn_start(szn,h) }$(not Sw_HourlyWrap)] = ye
 
 final_hour_nowrap(allh) = no ;
 final_hour_nowrap(h)$[sum{szn, h_szn_end(szn,h) }$(not Sw_HourlyWrap)] = yes ;
-
-* Get the order of actual periods
-nextszn(actualszn,actualsznn)$[(ord(actualsznn) = ord(actualszn) + 1)] = yes ;
-nextszn(actualszn,actualsznn)
-    $[(ord(actualszn) = smax(actualsznnn, ord(actualsznnn)))
-    $(ord(actualsznn) = smin(actualsznnn, ord(actualsznnn)))]
-    = yes ;
 
 $onOrder
 
@@ -894,10 +897,14 @@ szn_adj_gas(h)$frac_h_quarter_weights(h,"wint") =
 avail(i,r,h)$avail(i,r,h) = round(avail(i,r,h),3) ;
 can_imports_szn(r,szn,t)$can_imports_szn(r,szn,t) = round(can_imports_szn(r,szn,t),3) ;
 can_exports_h(r,h,t)$can_exports_h(r,h,t) = round(can_exports_h(r,h,t),3) ;
+frac_h_ccseason_weights(h,ccseason)$frac_h_ccseason_weights(h,ccseason) = round(frac_h_ccseason_weights(h,ccseason),3) ;
+gasadder_cd(cendiv,t,h)$gasadder_cd(cendiv,t,h) = round(gasadder_cd(cendiv,t,h),3) ;
 h_weight_csapr(h)$h_weight_csapr(h) = round(h_weight_csapr(h),3) ;
+hours(h)$hours(h) = round(hours(h),3) ;
 load_exog(r,h,t)$load_exog(r,h,t) = round(load_exog(r,h,t),3) ;
 load_exog_static(r,h,t)$load_exog_static(r,h,t) = round(load_exog_static(r,h,t),3) ;
 minloadfrac(r,i,h)$minloadfrac(r,i,h) = round(minloadfrac(r,i,h),3) ;
+numdays(szn)$numdays(szn) = round(numdays(szn),3) ;
 szn_adj_gas(h)$szn_adj_gas(h) = round(szn_adj_gas(h), 3) ;
 cap_hyd_szn_adj(i,szn,r)$cap_hyd_szn_adj(i,szn,r) = round(cap_hyd_szn_adj(i,szn,r),3) ;
 peakdem_static_ccseason(r,ccseason,t)$peakdem_static_ccseason(r,ccseason,t) = round(peakdem_static_ccseason(r,ccseason,t),2) ;
