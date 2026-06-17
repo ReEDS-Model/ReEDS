@@ -1305,7 +1305,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         rep_cf = cf_vre.merge(hours.reset_index(), on='h')
         rep_cf['weighted_cf'] = rep_cf['cf'] * rep_cf['numhours']
         rep_cf_ann = rep_cf.groupby(['i', 'r'], as_index=False)['weighted_cf'].sum()
-        rep_cf_ann['rep_cf'] = rep_cf_ann['weighted_cf'] / hours['numhours'].sum()
+        rep_cf_ann['rep_cf'] = rep_cf_ann['weighted_cf'] / hours.sum()
     
         scale_factors_cf = orig_cf.merge(rep_cf_ann, on=['i', 'r'])
         scale_factors_cf['scale_factor'] = (scale_factors_cf['orig_cf'] / scale_factors_cf['rep_cf']).fillna(1.0)
