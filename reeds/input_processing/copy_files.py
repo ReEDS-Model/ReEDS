@@ -901,7 +901,7 @@ def write_non_region_file(
             df.to_csv(os.path.join(dir_dst, 'co2_site_char.csv'), index=False)
 
         else:
-            if str(row.GAMStype).lower() == 'set':
+            if str(row.GAMStype).lower() in ['set', 'parameter']:
                 reeds.io.write_csv_to_inputs_h5(
                     filepath=row.full_filepath,
                     case=case,

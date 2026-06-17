@@ -639,14 +639,6 @@ $endif.naris
 
 parameter resourceclassnum(resourceclass) "numeric value for resource class" ;
 resourceclassnum(resourceclass) = resourceclass.val ;
-set tech_resourceclass(i,resourceclass) "map from CSP/DUPV techs to resource classes"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tech_resourceclass.csv
-$offdelim
-$onlisting
-/ ;
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
@@ -806,18 +798,6 @@ tg_i("csp",i)$[(csp1(i) or csp2(i) or csp3(i) or csp4(i))$Sw_WaterMain] = yes ;
 storage_interday(i)$(Sw_InterDayLinkage = 0) = no ;
 
 $onempty
-parameter water_with_cons_rate(i,ctt,w) "--gal/MWh-- technology specific-cooling tech based water withdrawal and consumption data"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%water_with_cons_rate.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
-$onempty
 * Water requirement if all filling takes place in 1 year and minimum reservoir level is 15% of max volume
 table water_req_psh(r,rscbin) "--Mgal/MW/yr-- required water for PSH during construction to fill reservoir"
 $offlisting
@@ -872,27 +852,9 @@ sccapcosttech(i)$[hydro(i) or psh(i) or dr_shed(i)] = yes ;
 retiretech(i,v,r,t) = no ;
 inv_cond(i,v,r,t,tt) = no ;
 
-parameter min_retire_age(i) "minimum retirement age by technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%min_retire_age.csv
-$offdelim
-$onlisting
-/ ;
-
 min_retire_age(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), min_retire_age(ii) } ;
 * if GSw_Clean_Air_Act is enabled, there is no minimum retire age for coal plants
 min_retire_age(i)$[coal(i)$Sw_Clean_Air_Act] = no ;
-
-parameter retire_penalty(allt) "--fraction-- penalty for retiring a power plant expressed as a fraction of FOM"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%retire_penalty.csv
-$offdelim
-$onlisting
- / ;
 
 
 *include non-numeraire CSPs and then exclude numeraire CSPs in ii dimension of

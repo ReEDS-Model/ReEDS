@@ -1764,6 +1764,7 @@ def write_to_inputs_h5(
     ## should contain the data as floats; all the other columns are treated as indices
     if gamstype == 'parameter':
         dfwrite.columns = dfwrite.columns.tolist()[:-1] + ['Value']
+        dfwrite['Value'] = dfwrite['Value'].astype(np.float32)
     ### Write record to h5 file
     calling_file = Path(inspect.stack()[-1][1]).name
     attrs = {'gamstype': gamstype.lower(), 'written_by': calling_file}
