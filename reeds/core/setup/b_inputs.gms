@@ -2151,8 +2151,8 @@ valcap(i,newv,r,t)$bannew(i) = no ;
 valcap(i,newv,r,t)
        $[bannew(i)
        $(not ban(i))
-       $ivt(i,newv,t)
-       $prescribed_build(i,newv,r,t)]
+       $sum{tt$ivt(i,newv,tt)
+       $prescribed_build(i,newv,r,tt)}]
        = yes ;
 
 *NEW capacity only valid in historical years if and only if it has required prescriptions
