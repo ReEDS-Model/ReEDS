@@ -1830,8 +1830,7 @@ def write_samples(
             region_files_row = aux_files['region_files'].query('filename == @file_name').iloc[0]
             copy_files.write_region_indexed_file(sample_values, dir_dst, aux_files['source_deflator_map'],
                                                     aux_files['sw'], region_files_row,
-                                                    aux_files['regions_and_agglevel'],
-                                                    aux_files['agglevel_variables'])
+                                                    aux_files['regions_and_agglevel'])
         # ...if we have a csv file that isn't region-indexed (including switches.csv)
         elif file_termination == '.csv':
             if file_name == 'switches.csv':
