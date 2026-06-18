@@ -494,6 +494,15 @@ def check_compatibility(sw):
         err = f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} but the specified file does not exist"
         raise FileNotFoundError(err)
 
+    if sw['GSw_LoadProfiles'].startswith('EER2023'):
+        allowed_ra_years = range(2007,2014)
+        if not all([y in allowed_ra_years for y in resource_adequacy_years]):
+            err = (
+                f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} only supports resource_adequacy_years="
+                f"{list(allowed_ra_years)} but {resource_adequacy_years} was supplied"
+            )
+            raise ValueError(err)
+
     ### Dependent model availability
     if (
         ((int(sw['pras']) == 2) or int(sw['GSw_PRM_StressIterateMax']))

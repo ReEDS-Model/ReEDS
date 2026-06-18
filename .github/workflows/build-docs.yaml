@@ -50,10 +50,6 @@ jobs:
             sphinxcontrib-bibtex==2.6.2 \
             sphinx_design==0.6.1
 
-      - name: Set variables for internal github repo
-        run: |
-          echo "BASE_URL=https://github.com/ReEDS-Model/ReEDS" >> "$GITHUB_ENV"
-
       - name: Build Sphinx documentation
         env: 
           GAMSLICE: ${{ secrets.GAMSLICE }}
