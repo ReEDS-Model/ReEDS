@@ -134,17 +134,17 @@ def calculate_historical_daily_state_degree_days(
 
     return hdd_daily, cdd_daily
 
-def aggregate_regional_degree_days_to_aggregion(
-    regional_degree_days: pd.DataFrame,
+def aggregate_by_weighted_average(
+    regional_data: pd.DataFrame,
     region_aggregion_weights: pd.Series,
     region2aggregion: dict[str, str]
 ) -> pd.DataFrame:
     """
-    Aggregate region-level degree days to the aggregated region
+    Aggregate region-level data to the aggregated region
     ("aggregion") level via weighted average.
 
     Args:
-        regional_degree_days: Region-level degree days.
+        regional_data: Region-level data.
         region_aggregion_weights: The "weight" of each region
             corresponding to its aggregion to use in weighted
             average calculation.
@@ -153,15 +153,15 @@ def aggregate_regional_degree_days_to_aggregion(
     Returns:
         pd.DataFrame
     """
-    aggregional_degree_days = (
-        regional_degree_days.mul(region_aggregion_weights)
+    aggregional_data = (
+        regional_data.mul(region_aggregion_weights)
         .transpose()
         .rename(region2aggregion)
         .groupby(level=0)
         .sum()
         .transpose()
     )
-    return aggregional_degree_days
+    return aggregional_data
 
 def rescale_historical_daily_degree_days_to_projected_annuals(
     historical_daily_degree_days: pd.DataFrame,
@@ -261,12 +261,12 @@ def calculate_daily_gasreg_degree_days(
     # the gasreg level via population-weighted average
     state_groups = reeds.inputs.get_state_groups()
     st2gasreg = state_groups.set_index('st')['gasreg']
-    historical_hdd_daily_gasreg = aggregate_regional_degree_days_to_aggregion(
+    historical_hdd_daily_gasreg = aggregate_by_weighted_average(
         historical_hdd_daily_st,
         state_gasreg_weights,
         st2gasreg
     )
-    historical_cdd_daily_gasreg = aggregate_regional_degree_days_to_aggregion(
+    historical_cdd_daily_gasreg = aggregate_by_weighted_average(
         historical_cdd_daily_st,
         state_gasreg_weights,
         st2gasreg
@@ -410,7 +410,7 @@ def calculate_daily_gasprice_multipliers(
         aggregion_level='cendiv'
     )
     gasreg_cendiv_map = dict(zip(hierarchy['gasreg'], hierarchy['cendiv']))
-    df_out_cendiv = aggregate_regional_degree_days_to_aggregion(
+    df_out_cendiv = aggregate_by_weighted_average(
         df_out,
         gasreg_cendiv_weights,
         gasreg_cendiv_map
