@@ -1,6 +1,6 @@
 {
   "config": {
-    "data_path": "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage1\\inputs\\overall_ml_numeric.csv",
+    "data_path": "..\\inputs\\overall_ml_numeric.csv",
     "n_folds": 10,
     "cv_type": "10-fold CV",
     "n_samples": 486,

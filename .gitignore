@@ -81,3 +81,5 @@ docs/build/*
 *.joblib
 postprocessing/reedssurr/Stage1/outputs/*/models/
 postprocessing/reedssurr/Stage1/logs/
+# Session-scoped scratch logs produced by training / compile / smoke tests
+postprocessing/reedssurr/Stage1/code/*.log

@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -1806,6 +1807,102 @@ def _img_div(rel_name: str, width: int = 900) -> Div:
     return Div(text=_img_html(rel_name), width=width)
 
 
+def _distfid_by_catalog_html() -> str:
+    """Render the by-catalog distributional fidelity summary (P3b).
+
+    Reads ``eval/distribution_fidelity_by_catalog.csv`` from the active
+    layer and produces a small HTML table + the matching PNG. Returns a
+    helpful note when the artefacts are absent so the panel never breaks
+    the eval tab.
+    """
+    # Local label map — keeps this helper independent of the global
+    # ``_CATALOG_LABELS`` dict (which is defined further down in the file
+    # and is therefore unavailable at module-load time when this helper
+    # is first called for the initial Div text).
+    _LBL = {"cap": "Capacity", "gen": "Generation",
+            "cost": "System cost", "tran": "Transmission",
+            "misc": "Misc"}
+    csv = RESULTS_DIR / "eval" / "distribution_fidelity_by_catalog.csv"
+    png_rel = "eval/figs/distribution_fidelity_by_catalog.png"
+    if not csv.exists():
+        return (
+            "<p style='color:#a60;font-size:12px;margin:4px 0'>"
+            "<code>eval/distribution_fidelity_by_catalog.csv</code> not "
+            "found — re-run <code>python surrogate_eval.py</code> on this "
+            "layer to populate.</p>"
+        )
+    try:
+        df = pd.read_csv(csv)
+    except Exception as exc:  # noqa: BLE001
+        return (
+            f"<p style='color:#c33;font-size:12px;margin:4px 0'>"
+            f"Could not read distribution_fidelity_by_catalog.csv: {exc}</p>"
+        )
+    if df.empty:
+        return "<p style='color:#888;font-size:12px'>No catalogs available.</p>"
+
+    # Order canonically.
+    order = ["cap", "gen", "cost", "tran", "misc"]
+    df["category"] = df["category"].astype(str)
+    df = (df.set_index("category")
+            .reindex([c for c in order if c in df["category"].values])
+            .reset_index())
+
+    rows: list[str] = []
+    for _, row in df.iterrows():
+        cat = str(row.get("category", "?"))
+        std_r = row.get("median_std_ratio")
+        sp = row.get("median_spearman")
+        n = row.get("n_outputs")
+        std_str = (f"{float(std_r):.3f}" if pd.notna(std_r) else "—")
+        sp_str = (f"{float(sp):.3f}" if pd.notna(sp) else "—")
+        n_str = (f"{int(n)}" if pd.notna(n) else "—")
+        # Colour-code std_ratio: red if < 0.7, amber 0.7-0.9, green ≥ 0.9.
+        try:
+            v = float(std_r)
+            if v >= 0.9:
+                clr = "#1a7f37"  # green
+            elif v >= 0.7:
+                clr = "#bf8700"  # amber
+            else:
+                clr = "#cf222e"  # red
+            std_html = f"<span style='color:{clr};font-weight:bold'>{std_str}</span>"
+        except (TypeError, ValueError):
+            std_html = std_str
+        rows.append(
+            f"<tr>"
+            f"<td style='padding:4px 8px;font-weight:bold'>"
+            f"{_LBL.get(cat, cat.title())}</td>"
+            f"<td style='padding:4px 8px;text-align:right'>{std_html}</td>"
+            f"<td style='padding:4px 8px;text-align:right'>{sp_str}</td>"
+            f"<td style='padding:4px 8px;text-align:right;color:#888'>{n_str}</td>"
+            f"</tr>"
+        )
+    head_model = (
+        df.iloc[0]["model"] if "model" in df.columns and len(df) else "?"
+    )
+    table_html = (
+        "<style>"
+        ".dfid-tbl{border-collapse:collapse;font-size:13px;margin:6px 0}"
+        ".dfid-tbl th,.dfid-tbl td{border:1px solid #bbb}"
+        ".dfid-tbl th{background:#eef;text-align:center;padding:4px 8px}"
+        "</style>"
+        "<table class='dfid-tbl'>"
+        "<thead><tr>"
+        "<th>Catalog</th>"
+        "<th>Median std(pred)/std(actual)</th>"
+        "<th>Median Spearman</th>"
+        "<th># outputs</th>"
+        "</tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table>"
+        f"<p style='color:#888;font-size:11px;margin:0 0 6px 0'>"
+        f"Headline model: <code>{head_model}</code>. "
+        f"Coloured cells: green = good (\u2265 0.9), amber = 0.7-0.9, "
+        f"red = compression (&lt; 0.7).</p>"
+    )
+    return table_html + _img_html(png_rel)
+
+
 _SUMMARY_TABLE_BANNER = {
     "overall":  ("#1f77b4", "Overall layer (system-level outputs, ~86 outputs) — "
                             "fixed reference; used to pick the top-2 methods "
@@ -1959,6 +2056,52 @@ def _rank_by_score(layer_short: str) -> list[str]:
     return sorted(names, key=_key)
 
 
+# (P2c) Top-N methods used by §4 (per-catalog) and §5 (cross-layer).
+# Default 6; can be overridden by setting SURROGATE_N_METHODS_COMPARE in
+# the environment (kept as an env var rather than CLI to avoid threading
+# new flags through the bokeh launcher).
+N_METHODS_COMPARE: int = max(2, int(os.environ.get("SURROGATE_N_METHODS_COMPARE", 6)))
+
+
+def _rank_by_honest_r0(layer_short: str) -> list[str]:
+    """Return model keys ranked by §R0 honest mean R² for ``layer_short``.
+
+    Reads ``model_ranking_bootstrap.csv`` (written by ``surrogate_eval.py``)
+    and sorts by ``r2_mean_boot_mean`` descending. This is the "paper"
+    ranking — per-output R² averaged with bootstrap CIs — and avoids the
+    pooled-R² inflation discussed in §1's de-emphasis note.
+
+    Falls back to ``_rank_by_score`` when the CSV is missing.
+    """
+    res_dir, _, _ = _layer_paths(layer_short)
+    if res_dir is None:
+        return _rank_by_score(layer_short)
+    csv = res_dir / "eval" / "model_ranking_bootstrap.csv"
+    if not csv.exists():
+        return _rank_by_score(layer_short)
+    try:
+        df = pd.read_csv(csv)
+    except Exception:  # noqa: BLE001
+        return _rank_by_score(layer_short)
+    if "model" not in df.columns or "r2_mean_boot_mean" not in df.columns:
+        return _rank_by_score(layer_short)
+    df = df.copy().sort_values(
+        "r2_mean_boot_mean", ascending=False, kind="stable",
+    )
+    return [str(m) for m in df["model"].tolist()]
+
+
+def _palette_for_n(n: int) -> list[str]:
+    """Stable colour list of length ``n`` for ranked-method bars / dots."""
+    if n <= 0:
+        return []
+    if n <= 10:
+        return list(Category10[max(3, n)])[:n]
+    # Cycle Category20 for >10 (rarely needed; we cap at the available models).
+    pool = list(Category20[20])
+    return [pool[i % len(pool)] for i in range(n)]
+
+
 def _summary_table_html(layer_short: str = "overall") -> str:
     """Render the eval summary table for the requested layer."""
     summary = _summary_for_layer(layer_short)
@@ -1971,19 +2114,36 @@ def _summary_table_html(layer_short: str = "overall") -> str:
     cfg = summary.get("config", {})
     n_out = cfg.get("n_y_outputs", "?")
     models = summary.get("models", {})
-    # Weighted leaderboard: 50 % pooled R² + 50 % fraction of outputs
-    # with R² > 0.9. Both components are also displayed so the user can
-    # see which one is driving the rank.
+    # Paper-readiness sort (P3a):
+    #   Primary key   = n_outputs_r2_above_0.9 descending  (per-variable
+    #                   usability — the metric we cite in the paper).
+    #   Tie-breaker   = composite Score descending.
+    #   Final tie     = name ascending (deterministic).
+    # Pooled R² is shown for context but de-emphasised — see note line below.
     pooled = {name: _pooled_r2_for_layer_model(layer_short, name)
               for name in models.keys()}
     scores = {name: _rank_score_for_layer_model(layer_short, name, models, n_out)
               for name in models.keys()}
 
+    def _good_count(name: str) -> float:
+        v = models[name].get("n_outputs_r2_above_0.9")
+        try:
+            return float(v) if v is not None else float("nan")
+        except (TypeError, ValueError):
+            return float("nan")
+
+    good_counts = {name: _good_count(name) for name in models.keys()}
+
     def _rank_key(name: str) -> tuple:
-        v = scores[name]
-        if not np.isfinite(v):
-            return (1, name)  # push NaNs to the end
-        return (0, -v, name)
+        g = good_counts[name]
+        s = scores[name]
+        # NaNs go last (priority bucket 1); finite values are bucket 0.
+        if not np.isfinite(g) and not np.isfinite(s):
+            return (1, name)
+        # Negate so larger sorts first.
+        g_sort = -g if np.isfinite(g) else float("inf")
+        s_sort = -s if np.isfinite(s) else float("inf")
+        return (0, g_sort, s_sort, name)
     ranked_names = sorted(models.keys(), key=_rank_key)
     try:
         n_out_f = float(n_out)
@@ -2002,12 +2162,17 @@ def _summary_table_html(layer_short: str = "overall") -> str:
             f"{rank}{' &#11088;' if rank == 1 else ''}</td>"
         )
         score_str = f"{sc:.4f}" if np.isfinite(sc) else "—"
-        prr_str = f"{prr:.4f}" if np.isfinite(prr) else "—"
+        # De-emphasise Pooled R² (P3a): smaller font + grey colour.
+        prr_str = (
+            f"<span style='color:#888;font-size:11px'>{prr:.4f}</span>"
+            if np.isfinite(prr) else "<span style='color:#bbb'>—</span>"
+        )
         if isinstance(n_good, (int, float)) and np.isfinite(n_out_f) and n_out_f > 0:
             pct = float(n_good) / n_out_f * 100.0
+            # Outputs > 0.9 is now the headline metric — embolden the count.
             good_str = (
-                f"{int(n_good)} / {int(n_out_f)} "
-                f"<span style='color:#888'>({pct:.0f}%)</span>"
+                f"<b>{int(n_good)}</b> / {int(n_out_f)} "
+                f"<span style='color:#666'>({pct:.0f}%)</span>"
             )
         else:
             good_str = "—"
@@ -2015,9 +2180,9 @@ def _summary_table_html(layer_short: str = "overall") -> str:
             f"<tr{bg}>"
             + rank_cell
             + f"<td>{m.get('display_name', name)}</td>"
-            f"<td style='text-align:right;font-weight:bold'>{score_str}</td>"
+            f"<td style='text-align:right;font-weight:bold'>{good_str}</td>"
+            f"<td style='text-align:right'>{score_str}</td>"
             f"<td style='text-align:right'>{prr_str}</td>"
-            f"<td style='text-align:right'>{good_str}</td>"
             f"</tr>"
         )
     style = (
@@ -2029,22 +2194,22 @@ def _summary_table_html(layer_short: str = "overall") -> str:
     )
     score_help = (
         f"<span title='Score = {_RANK_W_POOLED}\u00b7Pooled R\u00b2 + "
-        f"{_RANK_W_USABLE}\u00b7(Outputs &gt; 0.9 fraction). Equal weight on "
-        "pooled accuracy and per-output usability \u2014 a model that does "
-        "well on more outputs ranks higher even if pooled R\u00b2 is "
-        "slightly lower.'>Score \u24D8</span>"
+        f"{_RANK_W_USABLE}\u00b7(Outputs &gt; 0.9 fraction). Tie-breaker on "
+        "the leaderboard.'>Score \u24D8</span>"
     )
     r2_help = (
-        "<span title='Pooled R² = 1 − SS_res / SS_tot on the entire flat "
+        "<span title='Pooled R² = 1 − SS_res / SS_tot on the flat "
         "(Y_true, Y_pred) array (all cases × outputs concatenated). "
-        "Same metric shown in the parity-grid panel titles. "
-        "Higher is better — 1 = perfect, 0 = baseline (predicting the "
-        "column mean), negative = worse than baseline.'>Pooled R² \u24D8</span>"
+        "Inflated by the largest-magnitude outputs; shown here for "
+        "context only. The paper-quoted metric is the per-output mean / "
+        "median R² with bootstrap CIs in §R0.'>Pooled R² \u24D8</span>"
     )
     good_help = (
         "<span title='Number of outputs (and percent) with per-output "
-        "R² > 0.9. Higher = the surrogate handles more variables well, "
-        "not just the high-magnitude ones.'>Outputs &gt; 0.9 \u24D8</span>"
+        "R² > 0.9. Headline ranking metric: a model that gets MORE "
+        "individual variables right is more useful, even if a few "
+        "high-magnitude outputs drag pooled R\u00b2 down.'>"
+        "Outputs &gt; 0.9 \u24D8</span>"
     )
     return (
         style
@@ -2055,16 +2220,20 @@ def _summary_table_html(layer_short: str = "overall") -> str:
         f"<b>{cfg.get('n_x_features', '?')}</b> design dims &rarr; "
         f"<b>{n_out}</b> outputs &middot; "
         f"<i>{cfg.get('cv_type', '?')}</i>. "
-        f"Ranked by <b>Score</b> = "
-        f"{_RANK_W_POOLED}\u00b7Pooled R\u00b2 + "
-        f"{_RANK_W_USABLE}\u00b7(Outputs &gt; 0.9 fraction)."
+        f"Ranked by <b>Outputs &gt; 0.9</b> (paper metric); "
+        f"<b>Score</b> breaks ties."
         f"</p>"
+        + f"<p style='margin:0 0 4px 0;font-size:11px;color:#888;"
+          f"font-style:italic'>"
+        + "Pooled R² is inflated by high-magnitude outputs; see <b>\u00a7R0</b> "
+          "for the per-variable ranking used in the paper."
+        + "</p>"
         + "<table class='summ-tbl'>"
         + "<thead><tr><th style='text-align:center'>#</th>"
         + "<th>Model</th>"
+        + f"<th style='text-align:right'>{good_help}</th>"
         + f"<th style='text-align:right'>{score_help}</th>"
         + f"<th style='text-align:right'>{r2_help}</th>"
-        + f"<th style='text-align:right'>{good_help}</th>"
         + "</tr></thead>"
         + f"<tbody>{''.join(rows_html)}</tbody></table>"
     )
@@ -2273,61 +2442,99 @@ for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
     ))
 
 # ----- (4) Bias by tech / by region (regional layer only) -----------------
-per_tech_source = ColumnDataSource(data=dict(
-    tech=[], r2_mean=[], r2_median=[], n=[], color=[],
-))
-per_tech_fig = figure(
-    width=440, height=380,
-    x_range=FactorRange(),
-    y_range=Range1d(start=-0.2, end=1.05),
-    title="Mean R² per tech — worst on the left",
-    toolbar_location="above",
-    tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
-    active_drag="box_zoom",
-    y_axis_label="R² (mean across regions)",
+# (P2a) Small-multiples: one panel per output catalog (Capacity, Generation,
+# System cost, Transmission). Bars show MEDIAN R² per item — outputs flagged
+# as ``mostly_zero`` (deployed in fewer than mostly_zero_threshold of cases)
+# are filtered out to keep the chart readable. The panel-level catalog
+# detection uses ``_parse_output_name`` on the original column.
+PER_TECH_CATALOGS: tuple[tuple[str, str], ...] = (
+    ("cap",  "Capacity"),
+    ("gen",  "Generation"),
+    ("cost", "System cost"),
+    ("tran", "Transmission"),
 )
-per_tech_fig.toolbar.logo = None
-per_tech_fig.xaxis.major_label_orientation = 0.9
-per_tech_fig.xgrid.grid_line_color = None
-_pt_bars = per_tech_fig.vbar(
-    x="tech", top="r2_mean", width=0.75,
-    color="color", source=per_tech_source,
-    line_color="white", line_width=0.5,
-)
-per_tech_fig.add_tools(HoverTool(
-    renderers=[_pt_bars],
-    tooltips=[
-        ("Tech", "@tech"),
-        ("R² mean", "@r2_mean{0.000}"),
-        ("R² median", "@r2_median{0.000}"),
-        ("# outputs", "@n"),
-    ],
-    point_policy="follow_mouse",
-))
-for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
-    per_tech_fig.add_layout(Span(
-        location=thr, dimension="width", line_color=col,
-        line_dash="dashed", line_width=1, line_alpha=0.6,
+
+
+def _make_per_tech_subfig(label: str):
+    """Return ``(source, fig)`` for one bias-by-item small-multiple.
+
+    The y-range covers ``[-1.0, 1.05]`` because catalogs like
+    Capacity often contain low-deployment techs (Nuclear-SMR,
+    Pumped-Hydro) whose OOF R² is strongly negative — the previous
+    floor of -0.2 hid those bars entirely. Anything below -1.0 is
+    clipped to -1.0 in the plotted value (the true R² is still
+    surfaced in the hover tooltip via ``r2_actual``).
+    """
+    src = ColumnDataSource(data=dict(
+        item=[], r2_median=[], r2_actual=[], r2_mean=[], n=[], color=[],
     ))
+    fig = figure(
+        width=440, height=300,
+        x_range=FactorRange(),
+        y_range=Range1d(start=-1.0, end=1.05),
+        title=f"{label} — median R² per item (worst on the left)",
+        toolbar_location="above",
+        tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
+        active_drag="box_zoom",
+        y_axis_label="R² (median; clipped at -1)",
+    )
+    fig.toolbar.logo = None
+    fig.xaxis.major_label_orientation = 0.9
+    fig.xgrid.grid_line_color = None
+    bars = fig.vbar(
+        x="item", top="r2_median", width=0.75,
+        color="color", source=src,
+        line_color="white", line_width=0.5,
+    )
+    fig.add_tools(HoverTool(
+        renderers=[bars],
+        tooltips=[
+            ("Item", "@item"),
+            ("R² median (true)", "@r2_actual{0.000}"),
+            ("R² median (plotted)", "@r2_median{0.000}"),
+            ("R² mean", "@r2_mean{0.000}"),
+            ("# outputs", "@n"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
+        fig.add_layout(Span(
+            location=thr, dimension="width", line_color=col,
+            line_dash="dashed", line_width=1, line_alpha=0.6,
+        ))
+    return src, fig
+
+
+per_tech_sources: dict[str, ColumnDataSource] = {}
+per_tech_figs: dict[str, "object"] = {}
+for _cat, _lbl in PER_TECH_CATALOGS:
+    _src, _fig = _make_per_tech_subfig(_lbl)
+    per_tech_sources[_cat] = _src
+    per_tech_figs[_cat] = _fig
+
+# Backward-compat alias: legacy code paths that referenced per_tech_source /
+# per_tech_fig get the Capacity panel (the most-populated catalog).
+per_tech_source = per_tech_sources["cap"]
+per_tech_fig = per_tech_figs["cap"]
 
 per_region_source = ColumnDataSource(data=dict(
-    region=[], r2_mean=[], r2_median=[], n=[], color=[],
+    region=[], r2_mean=[], r2_median=[], r2_actual=[], n=[], color=[],
 ))
 per_region_fig = figure(
-    width=440, height=380,
+    width=900, height=320,
     x_range=FactorRange(),
-    y_range=Range1d(start=-0.2, end=1.05),
-    title="Mean R² per region (regional layer only)",
+    y_range=Range1d(start=-1.0, end=1.05),
+    title="Median R² per region (regional layer only) — worst on the left",
     toolbar_location="above",
     tools="box_zoom,xbox_zoom,ybox_zoom,pan,reset,save",
     active_drag="box_zoom",
-    y_axis_label="R² (mean across techs)",
+    y_axis_label="R² (median across techs; clipped at -1)",
 )
 per_region_fig.toolbar.logo = None
 per_region_fig.xaxis.major_label_orientation = 0.5
 per_region_fig.xgrid.grid_line_color = None
 _pr_bars = per_region_fig.vbar(
-    x="region", top="r2_mean", width=0.75,
+    x="region", top="r2_median", width=0.75,
     color="color", source=per_region_source,
     line_color="white", line_width=0.5,
 )
@@ -2335,8 +2542,9 @@ per_region_fig.add_tools(HoverTool(
     renderers=[_pr_bars],
     tooltips=[
         ("Region", "@region"),
+        ("R² median (true)", "@r2_actual{0.000}"),
+        ("R² median (plotted)", "@r2_median{0.000}"),
         ("R² mean", "@r2_mean{0.000}"),
-        ("R² median", "@r2_median{0.000}"),
         ("# outputs", "@n"),
     ],
     point_policy="follow_mouse",
@@ -2348,6 +2556,56 @@ for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
     ))
 
 per_output_summary_div = Div(text="", width=900)
+
+
+# (P2a / P2b) Layout holders for §3 — built once, populated on each
+# stage / layer change. ``bias_by_tech_grid`` is always the 2x2 catalog
+# small-multiples; ``bias_by_region_holder`` swaps between the Bokeh
+# region figure (Regional layer) and a Div note (Overall layer).
+bias_by_tech_grid = gridplot(
+    [[per_tech_figs["cap"],  per_tech_figs["gen"]],
+     [per_tech_figs["cost"], per_tech_figs["tran"]]],
+    toolbar_location="above",
+    merge_tools=True,
+    sizing_mode=None,
+)
+
+_BIAS_REGION_OVERALL_NOTE_HTML = (
+    "<div style='background:#fff8e1;border-left:4px solid #f0a050;"
+    "padding:10px 14px;margin:6px 0;border-radius:3px;font-size:13px;"
+    "line-height:1.5;color:#222;max-width:900px'>"
+    "<b>Spatial breakdown is only available on the Regional layer.</b> "
+    "Switch the <i>Layer</i> selector at the top of the Predict tab to "
+    "<i>Regional (per-BA, ~382 outputs)</i> to populate this panel.</div>"
+)
+
+bias_by_region_overall_note = Div(
+    text=_BIAS_REGION_OVERALL_NOTE_HTML, width=900,
+)
+bias_by_region_holder = column(
+    bias_by_region_overall_note, sizing_mode=None,
+)
+
+
+def _active_layer_short() -> str:
+    """Return ``"overall"`` or ``"regional"`` based on the current
+    ``RESULTS_DIR``. Used by P2b to swap the §3 region panel content.
+    """
+    try:
+        name = Path(RESULTS_DIR).name.lower()
+    except Exception:  # noqa: BLE001
+        return "overall"
+    if "regional" in name:
+        return "regional"
+    return "overall"
+
+
+def _update_bias_region_holder() -> None:
+    """Swap the §3 region panel between figure and note based on layer."""
+    if _active_layer_short() == "regional":
+        bias_by_region_holder.children = [per_region_fig]
+    else:
+        bias_by_region_holder.children = [bias_by_region_overall_note]
 
 
 def _update_model_compare_charts() -> None:
@@ -2415,14 +2673,22 @@ def _update_per_output_charts(model_name: str) -> None:
         output=[], r2=[], color=[], rmse=[], mae=[], nrmse=[],
         prefix=[], tech=[], region=[],
     )
-    empty_grp_tech = dict(tech=[], r2_mean=[], r2_median=[], n=[], color=[])
-    empty_grp_reg = dict(region=[], r2_mean=[], r2_median=[], n=[], color=[])
+    empty_grp_tech = dict(
+        item=[], r2_median=[], r2_actual=[], r2_mean=[], n=[], color=[]
+    )
+    empty_grp_reg = dict(
+        region=[], r2_mean=[], r2_median=[], r2_actual=[], n=[], color=[]
+    )
+
+    def _clear_all_per_tech():
+        for cat, _lbl in PER_TECH_CATALOGS:
+            per_tech_sources[cat].data = empty_grp_tech
+            per_tech_figs[cat].x_range.factors = []
 
     if not model_name:
         per_output_bars_source.data = empty_po
         per_output_bars_fig.y_range.factors = []
-        per_tech_source.data = empty_grp_tech
-        per_tech_fig.x_range.factors = []
+        _clear_all_per_tech()
         per_region_source.data = empty_grp_reg
         per_region_fig.x_range.factors = []
         per_output_summary_div.text = ""
@@ -2432,8 +2698,7 @@ def _update_per_output_charts(model_name: str) -> None:
     if not csv.exists():
         per_output_bars_source.data = empty_po
         per_output_bars_fig.y_range.factors = []
-        per_tech_source.data = empty_grp_tech
-        per_tech_fig.x_range.factors = []
+        _clear_all_per_tech()
         per_region_source.data = empty_grp_reg
         per_region_fig.x_range.factors = []
         per_output_summary_div.text = (
@@ -2502,44 +2767,90 @@ def _update_per_output_charts(model_name: str) -> None:
         f"</p>"
     )
 
-    # ---- chart (4a): per-tech aggregation ----
-    # Merge raw tech tokens (e.g. ``wind-ons_4``, ``upv_3``) into the same
-    # display buckets the predict tab shows (``Onshore Wind``, ``UPV``, ...)
-    # so vintages and similar variants don't fragment the chart. Non-tech
-    # outputs (financial, transmission ...) stay under their raw label.
-    df_tech = df[df["_tech"] != ""].copy()
-    if not df_tech.empty:
-        df_tech["_tech_display"] = df_tech["_tech"].map(_tech_display_name)
-        tech_grp = (
-            df_tech.groupby("_tech_display")
-                   .agg(r2_mean=("r2", "mean"),
-                        r2_median=("r2", "median"),
-                        n=("r2", "size"))
-                   .reset_index()
-                   .sort_values("r2_mean", ascending=True)
-        )
-        # Cap to the worst 30 techs if there are many (regional layer can
-        # have 50+ raw tech-vintage combinations).
-        if len(tech_grp) > 30:
-            tech_grp = tech_grp.head(30)
-            per_tech_fig.title.text = "Mean R² per tech (display) — 30 WORST shown"
-        else:
-            per_tech_fig.title.text = "Mean R² per tech (display) — worst on the left"
-        per_tech_source.data = dict(
-            tech=tech_grp["_tech_display"].tolist(),
-            r2_mean=tech_grp["r2_mean"].fillna(0.0).tolist(),
-            r2_median=tech_grp["r2_median"].fillna(0.0).tolist(),
-            n=tech_grp["n"].tolist(),
-            color=[_r2_color(r) for r in tech_grp["r2_mean"]],
-        )
-        per_tech_fig.x_range.factors = tech_grp["_tech_display"].tolist()
+    # ---- chart (4a): per-catalog small-multiples (P2a) ----
+    # Drop near-constant outputs first — frac_nonzero / mostly_zero columns
+    # are written by surrogate_eval.per_output_metrics. Items where the
+    # output is deployed in fewer than ~5% of cases have unstable R² and
+    # were the source of the "wind-ons mean R² ≈ 0.3" optical illusion in
+    # the old chart. We keep them in per_output_bars (chart 3) but exclude
+    # them from the bias-by-catalog summary.
+    if "mostly_zero" in df.columns:
+        df_keep = df[~df["mostly_zero"].fillna(False)].copy()
+    elif "frac_nonzero" in df.columns:
+        df_keep = df[df["frac_nonzero"] >= 0.05].copy()
     else:
-        per_tech_source.data = empty_grp_tech
-        per_tech_fig.x_range.factors = []
-        per_tech_fig.title.text = "Mean R² per tech"
+        df_keep = df.copy()
+
+    # Resolve a display item name once per row:
+    #   • Tech catalogs (cap, gen) use _tech_display_name to merge vintages.
+    #   • Cost catalog uses the parsed `_tech` token (cost component).
+    #   • Transmission uses `_tech` (line type).
+    #   • Anything without a tech token falls back to the raw output name.
+    def _display_item(row) -> str:
+        prefix = row.get("_prefix") or ""
+        tech = row.get("_tech") or ""
+        if not tech:
+            return str(row.get("output", "?"))
+        if prefix in ("cap", "gen"):
+            return _tech_display_name(tech)
+        return tech
+
+    df_keep["_item"] = df_keep.apply(_display_item, axis=1)
+    df_keep["_catalog"] = df_keep["_prefix"].fillna("").str.lower()
+
+    excluded_n = int(len(df) - len(df_keep))
+    excluded_note = (
+        f" (excluded {excluded_n} near-constant outputs)" if excluded_n
+        else ""
+    )
+
+    for cat, label in PER_TECH_CATALOGS:
+        sub = df_keep[df_keep["_catalog"] == cat]
+        if sub.empty:
+            per_tech_sources[cat].data = empty_grp_tech
+            per_tech_figs[cat].x_range.factors = []
+            per_tech_figs[cat].title.text = (
+                f"{label} — no outputs in this catalog"
+            )
+            continue
+        grp = (
+            sub.groupby("_item")
+               .agg(r2_median=("r2", "median"),
+                    r2_mean=("r2", "mean"),
+                    n=("r2", "size"))
+               .reset_index()
+               .sort_values("r2_median", ascending=True, na_position="first")
+        )
+        # Cap each panel at the 30 worst items (rare overflow on regional).
+        capped = False
+        if len(grp) > 30:
+            grp = grp.head(30)
+            capped = True
+        # Clip displayed bar tops at -1.0 so catastrophic outputs
+        # don't extend off the panel — surface the true value in the
+        # tooltip via ``r2_actual``.
+        r2_true  = grp["r2_median"].fillna(0.0).tolist()
+        r2_clip  = [max(float(r), -1.0) for r in r2_true]
+        per_tech_sources[cat].data = dict(
+            item=grp["_item"].tolist(),
+            r2_median=r2_clip,
+            r2_actual=r2_true,
+            r2_mean=grp["r2_mean"].fillna(0.0).tolist(),
+            n=grp["n"].tolist(),
+            color=[_r2_color(r) for r in r2_true],
+        )
+        per_tech_figs[cat].x_range.factors = grp["_item"].tolist()
+        suffix = " (30 WORST shown)" if capped else ""
+        per_tech_figs[cat].title.text = (
+            f"{label} — median R² per item{suffix}{excluded_note}"
+        )
 
     # ---- chart (4b): per-region aggregation (regional layer only) ----
-    df_reg = df[df["_region"] != ""]
+    # P2b: on Overall layer the source has no region column, so we leave
+    # this empty here and the layout swaps in a Div note instead. On
+    # Regional we sort by MEDIAN R² ascending (worst-on-the-left) so the
+    # eye lands on the regions that need attention first.
+    df_reg = df_keep[df_keep["_region"] != ""]
     if not df_reg.empty:
         reg_grp = (
             df_reg.groupby("_region")
@@ -2547,28 +2858,31 @@ def _update_per_output_charts(model_name: str) -> None:
                        r2_median=("r2", "median"),
                        n=("r2", "size"))
                   .reset_index()
+                  .sort_values("r2_median", ascending=True, na_position="first")
         )
-        # Natural sort: pNN by integer.
-        reg_grp = reg_grp.sort_values(
-            "_region",
-            key=lambda s: s.map(
-                lambda r: int(r[1:]) if r.startswith("p") and r[1:].isdigit() else 99999
-            ),
-        )
+        # Clip displayed bar tops at -1.0 so catastrophic regions don't
+        # extend off the panel; tooltip surfaces the true value via
+        # ``r2_actual``.
+        reg_true = reg_grp["r2_median"].fillna(0.0).tolist()
+        reg_clip = [max(float(r), -1.0) for r in reg_true]
         per_region_source.data = dict(
             region=reg_grp["_region"].tolist(),
             r2_mean=reg_grp["r2_mean"].fillna(0.0).tolist(),
-            r2_median=reg_grp["r2_median"].fillna(0.0).tolist(),
+            r2_median=reg_clip,
+            r2_actual=reg_true,
             n=reg_grp["n"].tolist(),
-            color=[_r2_color(r) for r in reg_grp["r2_mean"]],
+            color=[_r2_color(r) for r in reg_true],
         )
         per_region_fig.x_range.factors = reg_grp["_region"].tolist()
-        per_region_fig.title.text = f"Mean R² per region — {len(reg_grp)} regions"
+        per_region_fig.title.text = (
+            f"Median R² per region — worst on the left "
+            f"({len(reg_grp)} regions)"
+        )
     else:
         per_region_source.data = empty_grp_reg
         per_region_fig.x_range.factors = []
         per_region_fig.title.text = (
-            "Mean R² per region — empty on Overall layer "
+            "Median R² per region — empty on Overall layer "
             "(switch the Layer selector to Regional to populate)"
         )
 
@@ -2584,6 +2898,10 @@ EVAL_IMAGE_NAMES: tuple[str, ...] = (
 eval_image_divs: dict[str, Div] = {
     name: Div(text=_img_html(name), width=900) for name in EVAL_IMAGE_NAMES
 }
+
+# (P3b) By-catalog distributional fidelity panel — refreshed on every
+# stage change. Auto-hides when the eval CSV/PNG aren't present.
+dist_fidelity_div = Div(text=_distfid_by_catalog_html(), width=900)
 
 per_output_source = ColumnDataSource(
     data={"output": [], "r2": [], "rmse": [], "mae": [], "nrmse": []}
@@ -3144,14 +3462,32 @@ def _update_percase_chart_for_layer(layer_short: str) -> None:
     title_div = percase_layer_titles[layer_short]
     title_div.text = (
         f"<h4 style='margin:14px 0 4px 0;color:{layer_color}'>"
-        f"{layer_label} layer — best method by leaderboard Score</h4>"
+        f"{layer_label} layer — best method by honest §R0 ranking</h4>"
     )
     if not summary or training_df is None or training_df.empty:
         src_a.data = empty
         fig_a.title.text = f"{layer_label} — best (no data)"
         legend.text = ""
         return
-    top1_list = _rank_by_score(layer_short)[:1]
+    # P3a fix: use the honest §R0 ranking (bootstrap per-output mean)
+    # rather than the legacy pooled-R²-based Score. The Score depends on
+    # joblibs being loadable, which fails transiently while training is
+    # in progress and produces misleading picks like "best = knn" when
+    # the actually-good models simply haven't finished training yet.
+    # The honest §R0 ranking reads ``model_ranking_bootstrap.csv`` which
+    # captures all models from the last full eval pass.
+    top1_list = _rank_by_honest_r0(layer_short)[:1]
+    # Only pick a model that we can actually load — if the top R0 model
+    # has no joblib on disk (transient mid-training state) fall back to
+    # the next-best loadable one.
+    available = set(_models_for_layer(layer_short).keys())
+    if top1_list and top1_list[0] not in available:
+        for cand in _rank_by_honest_r0(layer_short):
+            if cand in available:
+                top1_list = [cand]
+                break
+        else:
+            top1_list = []
     top1 = top1_list[0] if top1_list else ""
     triple = _get_oof_pred_for_layer(layer_short, top1) if top1 else None
     if not top1 or triple is None:
@@ -3172,14 +3508,29 @@ def _update_percase_chart_for_layer(layer_short: str) -> None:
         design=[_design_label(training_df.iloc[int(j)])
                 for j in sort_order],
     )
+    # If the picked model is not actually #1 in the honest ranking
+    # (transient mid-training state where #1's joblib hasn't been
+    # written yet), tell the reader explicitly so they don't mistake
+    # the fallback for the truly-best method.
+    full_ranking = _rank_by_honest_r0(layer_short)
+    true_top1 = full_ranking[0] if full_ranking else ""
+    fallback_note = ""
+    if true_top1 and true_top1 != top1:
+        fallback_note = (
+            f" &nbsp;|&nbsp; <span style='color:#b8860b'>"
+            f"NOTE: \u00a7R0 #1 is <b>{true_top1}</b> but its joblib "
+            f"is not loaded yet \u2014 showing best-loadable instead."
+            f"</span>"
+        )
     fig_a.title.text = (
-        f"{layer_label} — best: '{top1}' (sorted by its own R²)"
+        f"{layer_label} \u2014 best: '{top1}' (sorted by its own R\u00b2)"
     )
     legend.text = (
         "<div style='font-size:12px;color:#555'>"
-        f"<span style='color:{PERCASE_COLOR_A}'>● best: "
+        f"<span style='color:{PERCASE_COLOR_A}'>\u25cf best: "
         f"{top1}</span>"
-        " &nbsp;|&nbsp; horizontal lines: R² = 0.9 / 0.5 / 0."
+        " &nbsp;|&nbsp; horizontal lines: R\u00b2 = 0.9 / 0.5 / 0."
+        f"{fallback_note}"
         "</div>"
     )
 
@@ -3237,10 +3588,12 @@ for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
 
 
 def _update_percatalog_chart() -> None:
-    """Refresh per-catalog R² bars across BOTH layers for the top-2 models."""
+    """Refresh per-catalog R² bars across BOTH layers for the top-N models."""
     empty = dict(factors=[], r2=[], color=[], n=[], catalog=[],
                  layer=[], model=[])
-    # Top-2 models from the OVERALL summary (anchored reference).
+    # Top-N models from the OVERALL layer using the honest §R0 ranking
+    # (per-output mean R² with bootstrap CIs). Falls back to §1 Score
+    # when model_ranking_bootstrap.csv is missing.
     overall_summary = _summary_for_layer("overall")
     if not overall_summary:
         percatalog_source.data = empty
@@ -3248,23 +3601,26 @@ def _update_percatalog_chart() -> None:
         percatalog_fig.title.text = "Per-catalog R² — Overall summary not found"
         return
     models_dict = overall_summary.get("models", {})
-    top2 = _rank_by_score("overall")[:2]
-    if not top2:
+    top_all = _rank_by_honest_r0("overall")
+    if not top_all:
+        top_all = _rank_by_score("overall")
+    topN = [m for m in top_all if m in models_dict][:N_METHODS_COMPARE]
+    if not topN:
         percatalog_source.data = empty
         percatalog_fig.x_range.factors = []
         percatalog_fig.title.text = "Per-catalog R² — no models"
         return
-    palette = (PERCASE_COLOR_A, PERCASE_COLOR_B)
+    palette = _palette_for_n(len(topN))
     catalog_canonical = list(_CATALOG_LABELS.values())
     layer_order = ("Overall", "Regional")
 
-    # Pull per_output_metrics CSVs for both layers × top-2 models.
+    # Pull per_output_metrics CSVs for both layers × top-N models.
     per_layer_model_df: dict[tuple, pd.DataFrame] = {}
     for layer_short, layer_label in (("overall", "Overall"), ("regional", "Regional")):
         res_dir, _, _ = _layer_paths(layer_short)
         if res_dir is None:
             continue
-        for m in top2:
+        for m in topN:
             csv_path = res_dir / f"per_output_metrics_{m}.csv"
             if not csv_path.exists():
                 continue
@@ -3304,7 +3660,7 @@ def _update_percatalog_chart() -> None:
     models_out: list[str] = []
     for layer_label in layer_order:
         for cat in catalog_order:
-            for i, m in enumerate(top2):
+            for i, m in enumerate(topN):
                 df = per_layer_model_df.get((layer_label, m))
                 if df is None:
                     continue
@@ -3327,11 +3683,10 @@ def _update_percatalog_chart() -> None:
         catalog=cats_out, layer=layers_out, model=models_out,
     )
     percatalog_fig.x_range.factors = factors
-    label_a = top2[0]
-    label_b = top2[1] if len(top2) > 1 else "—"
+    method_list = ", ".join(f"'{m}'" for m in topN)
     percatalog_fig.title.text = (
-        f"Per-catalog median R² — '{label_a}' (blue) vs '{label_b}' (red), "
-        "across both layers"
+        f"Per-catalog median R² — top-{len(topN)} methods (ranked by §R0): "
+        f"{method_list}"
     )
 
 
@@ -3407,7 +3762,7 @@ for thr, col in ((0.9, _R2_GOOD), (0.5, _R2_OK), (0.0, _R2_BAD)):
 
 
 def _update_crosslayer_chart() -> None:
-    """Refresh per-output R² distribution for top-2 methods across both layers."""
+    """Refresh per-output R² distribution for top-N methods across both layers."""
     empty = dict(factors=[], r2=[], output=[], model=[], layer=[], color=[])
     empty_med = dict(factors=[], median=[], mean=[], n=[])
 
@@ -3421,8 +3776,11 @@ def _update_crosslayer_chart() -> None:
         )
         return
     m_overall = overall_summary.get("models", {})
-    top2 = _rank_by_score("overall")[:2]
-    if not top2:
+    top_all = _rank_by_honest_r0("overall")
+    if not top_all:
+        top_all = _rank_by_score("overall")
+    topN = [m for m in top_all if m in m_overall][:N_METHODS_COMPARE]
+    if not topN:
         crosslayer_source.data = empty
         crosslayer_median_source.data = empty_med
         crosslayer_fig.x_range.factors = []
@@ -3442,7 +3800,7 @@ def _update_crosslayer_chart() -> None:
     n_vals: list[int] = []
 
     factor_order: list[tuple] = []
-    for m in top2:
+    for m in topN:
         for layer_short, layer_label in (("overall", "Overall"),
                                          ("regional", "Regional")):
             res_dir, _, _ = _layer_paths(layer_short)
@@ -3492,11 +3850,10 @@ def _update_crosslayer_chart() -> None:
         factors=med_factors, median=med_vals, mean=mean_vals, n=n_vals,
     )
     crosslayer_fig.x_range.factors = factor_order
-    label_a = top2[0]
-    label_b = top2[1] if len(top2) > 1 else "—"
+    method_list = ", ".join(f"'{m}'" for m in topN)
     crosslayer_fig.title.text = (
-        f"Per-output R² distribution — '{label_a}' vs '{label_b}', "
-        "Overall (blue) vs Regional (red); thick black bar = median"
+        f"Per-output R² distribution — top-{len(topN)} methods (ranked by §R0): "
+        f"{method_list}; Overall (blue) vs Regional (red); thick black bar = median"
     )
 
 
@@ -3537,6 +3894,7 @@ _update_parity_grid()
 _update_percase_chart()
 _update_percatalog_chart()
 _update_crosslayer_chart()
+_update_bias_region_holder()
 if model_select.options:
     _update_eval_for_model(model_select.value)
 model_select.on_change(
@@ -3577,6 +3935,8 @@ def _set_active_stage(label: str) -> None:
     eval_summary_div_regional.text = _summary_table_html("regional")
     for img_name, div in eval_image_divs.items():
         div.text = _img_html(img_name)
+    # P3b: by-catalog distributional fidelity panel.
+    dist_fidelity_div.text = _distfid_by_catalog_html()
     # Section 1 — dual leaderboard tables + per-method parity grid (pinned to
     # Overall, re-read in case of retrain).
     _build_parity_grid()
@@ -3587,6 +3947,8 @@ def _set_active_stage(label: str) -> None:
     _update_percase_chart()
     _update_percatalog_chart()
     _update_crosslayer_chart()
+    # Section 3 — swap the region-bias panel between figure and note.
+    _update_bias_region_holder()
 
     # Refresh model dropdown. The on_change handler for model_select will
     # fire when ``value`` changes, so ``_update_eval_for_model`` is invoked
@@ -3696,22 +4058,28 @@ eval_tab = TabPanel(
         percase_layer_titles["regional"],
         percase_legends["regional"],
         percase_figs_a["regional"],
-        Div(text="<h3 style='margin:18px 0 4px 0'>3. Bias by tech &amp; region</h3>"),
+        Div(text="<h3 style='margin:18px 0 4px 0'>3. Bias by catalog &amp; "
+                 "region</h3>"),
         bokeh_explainer_div("s3_bias"),
         Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "Mean R² grouped by tech and by region (parsed from "
-                 "output names). <b>Tech labels follow the same display "
-                 "mapping as the predict tab</b> — vintages and similar "
-                 "variants are merged (e.g. <code>wind-ons_1/2/3/4</code> "
-                 "&rarr; <i>Onshore Wind</i>, <code>upv_*</code> &rarr; "
-                 "<i>UPV</i>) via <code>tech_map.csv</code>. Outputs that "
-                 "aren't real techs (e.g. financial / transmission lines) "
-                 "keep their raw labels. For the <i>regional</i> layer "
-                 "the right panel exposes spatial bias; the <i>overall</i> "
-                 "layer has no region decomposition so it stays empty.</p>"),
-        row(per_tech_fig, per_region_fig, spacing=20),
-        Div(text="<h3 style='margin:18px 0 4px 0'>4. Per-catalog R² "
-                 "(top-2 methods, both layers)</h3>"),
+                 "Median R² grouped by item, split into one small panel "
+                 "per output catalog (<i>Capacity</i>, <i>Generation</i>, "
+                 "<i>System cost</i>, <i>Transmission</i>). Tech labels "
+                 "follow the same display mapping as the predict tab — "
+                 "vintages and similar variants are merged (e.g. "
+                 "<code>wind-ons_1/2/3/4</code> &rarr; <i>Onshore Wind</i>) "
+                 "via <code>tech_map.csv</code>. Outputs flagged "
+                 "<i>mostly-zero</i> (deployed in fewer than ~5% of cases) "
+                 "are excluded — their R² is unstable by definition and was "
+                 "the source of the misleading low-bar tail in the old "
+                 "single-panel view. The region panel below the grid only "
+                 "fills in on the <i>Regional</i> layer.</p>"),
+        bias_by_tech_grid,
+        Div(text="<h4 style='margin:14px 0 4px 0;color:#1f4e79'>"
+                 "Bias by region</h4>"),
+        bias_by_region_holder,
+        Div(text=f"<h3 style='margin:18px 0 4px 0'>4. Per-catalog R² "
+                 f"(top-{N_METHODS_COMPARE} methods, both layers)</h3>"),
         bokeh_explainer_div("s4_percatalog"),
         Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
                  "Outputs are grouped by their prefix into catalogs "
@@ -3719,24 +4087,38 @@ eval_tab = TabPanel(
                  "<i>Transmission</i>) and shown side-by-side for both "
                  "layers (e.g. <i>Overall · Capacity</i>, <i>Regional · "
                  "Generation</i>). Bars show the <b>median</b> R² across "
-                 "the outputs in each (layer, catalog) cell, comparing "
-                 "the Overall-anchored top-2 methods. Tall variation "
+                 f"the outputs in each (layer, catalog) cell, comparing "
+                 f"the top-{N_METHODS_COMPARE} methods (ranked by §R0 honest "
+                 "mean R², not §1's pooled Score). Tall variation "
                  "between cells = a method that's strong on some variable "
                  "types but weak on others.</p>"),
         percatalog_fig,
-        Div(text="<h3 style='margin:18px 0 4px 0'>5. Overall vs Regional "
-                 "(top-2 methods, per-output R² distribution)</h3>"),
+        Div(text=f"<h3 style='margin:18px 0 4px 0'>5. Overall vs Regional "
+                 f"(top-{N_METHODS_COMPARE} methods, per-output R² distribution)</h3>"),
         bokeh_explainer_div("s5_crosslayer"),
         Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
                  "Each dot is one output; columns are jittered for "
-                 "readability. Four columns = top-2 methods (anchored by "
-                 "Overall) × two layers. The thick black bar is the "
+                 f"readability. Columns = top-{N_METHODS_COMPARE} methods "
+                 "(ranked by §R0) × two layers. The thick black bar is the "
                  "<b>median</b> per group; spread between dots in a "
                  "column = prediction variability across outputs in that "
                  "layer. Compare adjacent columns for the same method to "
                  "see if it generalizes from the system-level (~86) to "
                  "per-BA (~382) targets.</p>"),
         crosslayer_fig,
+        Div(text="<h3 style='margin:18px 0 4px 0'>5b. Distributional "
+                 "fidelity by catalog</h3>"),
+        bokeh_explainer_div("s5_distfidelity"),
+        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
+                 "<b>std_ratio</b> = std(predicted) / std(actual) per "
+                 "output, then median per catalog &mdash; below 1.0 means "
+                 "the surrogate is regressing toward the mean (compressing "
+                 "scenario-to-scenario variation). <b>Spearman</b> = how "
+                 "well the surrogate's <i>ordering</i> of scenarios "
+                 "matches the truth. Computed for the headline model on "
+                 "the active layer; rerun "
+                 "<code>python surrogate_eval.py</code> to refresh.</p>"),
+        dist_fidelity_div,
         Div(text="<h3 style='margin:18px 0 4px 0'>6. Active-learning lift "
                  "(uncertainty- vs random-acquisition)</h3>"),
         bokeh_explainer_div("s6_active"),

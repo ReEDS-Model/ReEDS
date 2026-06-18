@@ -111,46 +111,61 @@ EXPLAINERS: dict[str, dict[str, str]] = {
     },
     "s3_bias": {
         "plain": (
-            "Is accuracy even across technologies (and, on the Regional "
-            "layer, across regions)?"
+            "Is accuracy even across the four output catalogs (Capacity, "
+            "Generation, System cost, Transmission), and on the Regional "
+            "layer, across regions?"
         ),
         "read": (
-            "Each bar is a technology; its height is the average R². The "
-            "region panel only fills in when you switch the Layer selector "
-            "to Regional."
+            "One small panel per catalog. Each bar is one item inside that "
+            "catalog (a tech for capacity / generation, a cost component "
+            "for system cost, a line for transmission), with bar height = "
+            "<b>median</b> R². Items are sorted worst-on-the-left within "
+            "each panel. Near-constant outputs (deployed in fewer than "
+            "~5% of cases, e.g. nuclear) are marked or excluded because "
+            "their R² is unstable by definition. The region panel only "
+            "fills in when you switch the Layer selector to Regional — "
+            "the Overall layer has no per-region decomposition."
         ),
         "look_for": (
-            "Low or negative bars are usually technologies that barely "
-            "change across scenarios (e.g. nuclear) — with almost nothing "
-            "to predict, R² is punishing by definition. That's not the "
-            "same as the model being broken."
+            "Within a panel: a long tail of low bars on the left tells "
+            "you which items inside that catalog the surrogate struggles "
+            "with. Across panels: a panel that is uniformly lower than "
+            "the others is a catalog-wide weakness, not an item-specific "
+            "one. Median (rather than mean) shields the chart from a few "
+            "near-constant items skewing the picture."
         ),
     },
     "s4_percatalog": {
         "plain": (
             "Which TYPES of output are predicted best — capacity, "
-            "generation, cost, or transmission?"
+            "generation, cost, or transmission — across the top-N methods?"
         ),
         "read": (
-            "Bars are grouped by output type and compare the top two "
-            "methods. Taller = better median R² for that type."
+            "Bars are grouped by output type and compare the top-N methods "
+            "(default N = 6, configurable; ranked by the honest §R0 mean "
+            "R²). Taller = better median R² for that type. Both layers "
+            "are shown side by side so you can see where per-region "
+            "detail costs accuracy."
         ),
         "look_for": (
             "Big height differences between types mean a method is strong "
             "on some kinds of variable and weak on others. Compare the "
             "same type across the Overall vs Regional groups to see where "
-            "added detail hurts."
+            "added detail hurts. If the top-N converge on a type, that "
+            "type is well-modelled by every reasonable method."
         ),
     },
     "s5_crosslayer": {
         "plain": (
             "What accuracy do we give up by going from system-wide totals "
-            "to per-region detail?"
+            "to per-region detail, across the top-N methods?"
         ),
         "read": (
-            "Each dot is one output. Four columns = two methods × two "
-            "layers (Overall, Regional). The thick black bar is the "
-            "median of each column."
+            "Each dot is one output. Columns = top-N methods × two layers "
+            "(Overall, Regional). The thick black bar is the <b>median</b> "
+            "of each column. Default N = 6, configurable; ranking uses the "
+            "honest §R0 metric (per-output R² with bootstrap CIs), NOT "
+            "§1's pooled score."
         ),
         "look_for": (
             "Compare the two columns for the same method. A big median "
@@ -446,9 +461,9 @@ EXPLAINERS: dict[str, dict[str, str]] = {
             "8a Clipping: clipping_delta_<m>.csv lists the per-output R² "
             "delta from forcing impossible values (negative cap, etc.) "
             "up to physical bounds. 8b Extrapolation: structured_cv "
-            "(opt-in via --structured_cv) holds out one level of one X "
-            "dimension at a time and measures held-out R² — the honest "
-            "extrapolation diagnostic."
+            "(opt-in via --structured_cv or --extrapolation) holds out "
+            "one level of one X dimension at a time and measures held-out "
+            "R² — the honest extrapolation diagnostic."
         ),
         "look_for": (
             "8a: net positive mean_delta_r2 = clipping is helping; if "
@@ -456,6 +471,76 @@ EXPLAINERS: dict[str, dict[str, str]] = {
             "investigating. 8b: a big drop from in-grid to out-of-grid "
             "R² means the surrogate should not be queried beyond the "
             "original 486-case envelope."
+        ),
+    },
+    # ------------------------------------------------------------------
+    # Paper-readiness additions: extrapolation diagnostic, limitations,
+    # by-catalog distributional fidelity summary.
+    # ------------------------------------------------------------------
+    "extrapolation": {
+        "plain": (
+            "Two flavours of accuracy. <b>Interpolation</b> = predict a "
+            "setting we never ran but which sits inside the 486-case grid "
+            "(filling a gap). <b>Extrapolation</b> = predict a setting at "
+            "a level we never ran for some input. The standard out-of-fold "
+            "score in §R0 measures interpolation; this section measures "
+            "extrapolation."
+        ),
+        "read": (
+            "For each design dimension we hold out ALL cases at one of its "
+            "levels (leave-one-level-out, LOLO), retrain on the rest, and "
+            "score the held-out level. The bar chart shows two bars per "
+            "method: the in-grid OOF mean R² and the average LOLO mean R² "
+            "across dimensions. The accompanying table breaks the LOLO "
+            "score down by dimension and flags which dimension is hardest "
+            "to extrapolate along (largest R² drop)."
+        ),
+        "look_for": (
+            "Small drop from OOF to LOLO = the surrogate generalises beyond "
+            "the trained levels. Large drop = the surrogate has memorised "
+            "levels and should not be queried at unseen settings of the "
+            "hardest dimension. The surrogate is <i>validated</i> for "
+            "interpolation and only <i>tested</i> for extrapolation."
+        ),
+    },
+    "limitations": {
+        "plain": (
+            "What this surrogate is and is not validated for, in one place."
+        ),
+        "read": (
+            "Three threads matter: (a) the metric we report from §R0 is "
+            "<b>within-grid interpolation</b> accuracy, not extrapolation; "
+            "(b) Pooled R² in §1 is inflated by high-magnitude outputs and "
+            "is shown for context only; (c) intervals are calibrated "
+            "split-conformal and assume the deployed input distribution "
+            "matches the 486-case envelope."
+        ),
+        "look_for": (
+            "For paper claims: cite §R0 mean / median R² with the bootstrap "
+            "CI and, if you ran extrapolation, the §8b LOLO drop. Avoid "
+            "quoting Pooled R² or unconditional intervals at settings "
+            "outside the trained envelope."
+        ),
+    },
+    "s5_distfidelity": {
+        "plain": (
+            "Does the surrogate preserve scenario-to-scenario STRUCTURE, "
+            "not just hit average values?"
+        ),
+        "read": (
+            "Per-output: <b>std_ratio</b> = std(predicted) / std(actual) — "
+            "below 1.0 means the surrogate is regressing toward the mean "
+            "(compressing variation). <b>Spearman</b> = rank correlation — "
+            "how well the surrogate's <i>ordering</i> of scenarios matches "
+            "the truth. The summary panel reports each catalog's median "
+            "std_ratio and Spearman."
+        ),
+        "look_for": (
+            "std_ratio close to 1 and Spearman close to 1 = the surrogate "
+            "reproduces both magnitudes and ordering. std_ratio < 0.7 = "
+            "meaningful compression, especially dangerous for "
+            "sensitivity-style downstream analyses; act on it before "
+            "trusting per-scenario rankings."
         ),
     },
 }
@@ -616,6 +701,36 @@ def auto_readout_r5(headline_df) -> Iterable[str]:
         )
 
 
+def auto_readout_extrapolation(extrap_df) -> str | None:
+    """One-sentence summary of §8b LOLO results for the current run.
+
+    Expects the cross-model summary table written by ``surrogate_eval.py``
+    with columns ``model``, ``oof_r2_mean``, ``lolo_r2_mean``,
+    ``hardest_dim``, ``hardest_dim_drop``. Returns ``None`` if missing or
+    empty.
+    """
+    needed = {"model", "oof_r2_mean", "lolo_r2_mean",
+              "hardest_dim", "hardest_dim_drop"}
+    if extrap_df is None or not needed.issubset(extrap_df.columns):
+        return None
+    if len(extrap_df) == 0:
+        return None
+    df = extrap_df.copy().sort_values("oof_r2_mean", ascending=False)
+    top = df.iloc[0]
+    try:
+        oof = float(top["oof_r2_mean"])
+        lolo = float(top["lolo_r2_mean"])
+        drop = float(top["hardest_dim_drop"])
+    except (TypeError, ValueError):
+        return None
+    return (
+        f"_Current run:_ best in-grid method `{top['model']}` scores "
+        f"R²={oof:.2f} on interpolation but R²={lolo:.2f} on average "
+        f"extrapolation; biggest single drop is along "
+        f"`{top['hardest_dim']}` ({drop:.2f} R²)."
+    )
+
+
 __all__ = [
     "EXPLAINERS",
     "INTRO_BODY",
@@ -625,4 +740,5 @@ __all__ = [
     "md_intro",
     "auto_readout_r0",
     "auto_readout_r5",
+    "auto_readout_extrapolation",
 ]

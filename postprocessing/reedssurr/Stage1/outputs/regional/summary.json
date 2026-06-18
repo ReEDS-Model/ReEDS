@@ -1,6 +1,6 @@
 {
   "config": {
-    "data_path": "surrogate_ml_data/stage2_regional_ml_numeric.csv",
+    "data_path": "..\\inputs\\regional_ml_numeric.csv",
     "n_folds": 10,
     "cv_type": "10-fold CV",
     "n_samples": 486,
@@ -41,10 +41,10 @@
     },
     "ridge": {
       "display_name": "Ridge Regression",
-      "oof_r2_mean": 0.33673903172681957,
-      "oof_r2_median": 0.30533305521171517,
+      "oof_r2_mean": 0.33673903172681974,
+      "oof_r2_median": 0.3053330552117151,
       "oof_r2_min": -0.0240567092094619,
-      "oof_r2_max": 0.8995121736030356,
+      "oof_r2_max": 0.8995121736030354,
       "n_outputs_r2_above_0.9": 0,
       "n_outputs_r2_above_0.95": 0,
       "artifact": "models/ridge.joblib"

@@ -92,6 +92,7 @@ except Exception:  # noqa: BLE001 - if training module isn't importable, skip
 
 # Shared plain-language captions (used here AND in surrogate_dashboard.py).
 from surrogate_eval_captions import (   # noqa: E402
+    auto_readout_extrapolation,
     auto_readout_r0,
     auto_readout_r5,
     md_explainer,
@@ -155,6 +156,11 @@ class EvalConfig:
     skip_models
         Skip these model names (matched against ``model_name`` in artifacts).
         Useful to leave out heavy baselines for fast iteration.
+    n_methods_compare
+        Number of top methods to surface in cross-method comparison panels
+        (e.g. §4 per-catalog, §5 cross-layer). Defaults to 6. The selection
+        uses the honest §R0 ranking (per-output mean R² with bootstrap CIs),
+        not §1's pooled score.
     """
 
     output_dir: Path
@@ -169,6 +175,7 @@ class EvalConfig:
     ngboost_native: bool = False
     include_clipped: bool = True
     skip_models: tuple[str, ...] = ()
+    n_methods_compare: int = 6
 
     @property
     def eval_dir(self) -> Path:
@@ -1111,6 +1118,210 @@ def _structured_cv_for_model(
 
 
 # ---------------------------------------------------------------------------
+# Extrapolation aggregator (P1)
+# ---------------------------------------------------------------------------
+
+def _extrapolation_summary(
+    cfg: EvalConfig,
+    models: dict[str, "ModelOOF"],
+    per_output_by_model: dict[str, pd.DataFrame],
+) -> Optional[pd.DataFrame]:
+    """Aggregate per-model ``structured_cv_<m>.csv`` into one cross-method
+    table + a grouped bar figure (``figs/extrapolation_drop.png``).
+
+    Returns the summary DataFrame (one row per model) with columns
+    ``model``, ``oof_r2_mean``, ``oof_r2_median``, ``lolo_r2_mean``,
+    ``lolo_r2_median``, ``hardest_dim``, ``hardest_dim_drop``,
+    ``n_dims_evaluated``. Returns ``None`` if no LOLO CSVs are present.
+    """
+    rows = []
+    per_dim_rows = []
+    for name in sorted(models.keys()):
+        path = cfg.eval_dir / f"structured_cv_{name}.csv"
+        if not path.exists():
+            continue
+        try:
+            lolo = pd.read_csv(path)
+        except Exception as exc:  # noqa: BLE001
+            warnings.warn(f"could not read {path}: {exc}")
+            continue
+        if lolo.empty or "r2_mean_held_out" not in lolo.columns:
+            continue
+
+        # Per-dim means: average held-out R² across the levels of each dim.
+        dim_means = (
+            lolo.dropna(subset=["r2_mean_held_out"])
+                .groupby("x_dim", as_index=False)
+                .agg(lolo_r2_mean=("r2_mean_held_out", "mean"),
+                     lolo_r2_median=("r2_median_held_out", "mean"),
+                     n_levels=("held_out_level", "nunique"))
+        )
+        if dim_means.empty:
+            continue
+
+        # OOF (interpolation) baseline from this layer's per-output CSV.
+        per_out = per_output_by_model.get(name)
+        if per_out is not None and "r2" in per_out.columns:
+            mask = ~per_out.get("mostly_zero", False)
+            non_const = per_out[mask] if mask.any() else per_out
+            oof_mean = float(non_const["r2"].mean(skipna=True))
+            oof_median = float(non_const["r2"].median(skipna=True))
+        else:
+            oof_mean = float("nan")
+            oof_median = float("nan")
+
+        # Hardest dimension = largest drop OOF -> LOLO mean.
+        dim_means["r2_drop"] = oof_mean - dim_means["lolo_r2_mean"]
+        idx = int(dim_means["r2_drop"].idxmax()) if dim_means["r2_drop"].notna().any() else None
+        if idx is not None:
+            hardest_dim = str(dim_means.loc[idx, "x_dim"])
+            hardest_drop = float(dim_means.loc[idx, "r2_drop"])
+        else:
+            hardest_dim, hardest_drop = "", float("nan")
+
+        rows.append({
+            "model": name,
+            "oof_r2_mean": oof_mean,
+            "oof_r2_median": oof_median,
+            "lolo_r2_mean": float(dim_means["lolo_r2_mean"].mean()),
+            "lolo_r2_median": float(dim_means["lolo_r2_median"].mean()),
+            "hardest_dim": hardest_dim,
+            "hardest_dim_drop": hardest_drop,
+            "n_dims_evaluated": int(len(dim_means)),
+        })
+
+        for _, dr in dim_means.iterrows():
+            per_dim_rows.append({
+                "model": name,
+                "x_dim": dr["x_dim"],
+                "lolo_r2_mean": float(dr["lolo_r2_mean"]),
+                "lolo_r2_median": float(dr["lolo_r2_median"]),
+                "n_levels": int(dr["n_levels"]),
+                "oof_r2_mean": oof_mean,
+                "r2_drop": float(oof_mean - dr["lolo_r2_mean"]),
+            })
+
+    if not rows:
+        return None
+    summary = pd.DataFrame(rows).sort_values("oof_r2_mean", ascending=False)
+    summary.to_csv(
+        cfg.eval_dir / "extrapolation_vs_interpolation.csv", index=False,
+    )
+    if per_dim_rows:
+        pd.DataFrame(per_dim_rows).to_csv(
+            cfg.eval_dir / "extrapolation_by_dim.csv", index=False,
+        )
+
+    # Grouped-bar figure: OOF (interpolation) vs LOLO (extrapolation).
+    try:
+        fig, ax = plt.subplots(
+            figsize=(max(6.0, 1.0 * len(summary) + 2), 4.2),
+            layout="constrained",
+        )
+        x = np.arange(len(summary))
+        width = 0.36
+        ax.bar(x - width / 2, summary["oof_r2_mean"], width,
+               label="Interpolation (OOF)", color="#1f77b4")
+        ax.bar(x + width / 2, summary["lolo_r2_mean"], width,
+               label="Extrapolation (LOLO mean across dims)", color="#d97706")
+        ax.set_xticks(x)
+        ax.set_xticklabels(summary["model"], rotation=30, ha="right")
+        ax.set_ylabel("Mean R² across non-constant outputs")
+        ax.axhline(0.0, color="grey", lw=0.6)
+        ax.set_title(
+            "§8b Interpolation vs extrapolation R²  "
+            "(higher = better; gap = extrapolation cost)"
+        )
+        ax.legend(loc="lower left", fontsize=9, frameon=False)
+        ax.grid(axis="y", alpha=0.25)
+        out = cfg.figs_dir / "extrapolation_drop.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, dpi=140)
+        plt.close(fig)
+    except Exception as exc:  # noqa: BLE001
+        warnings.warn(f"extrapolation_drop figure failed: {exc}")
+
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# By-catalog distributional fidelity summary (P3b)
+# ---------------------------------------------------------------------------
+
+def _per_catalog_distribution_summary(
+    cfg: EvalConfig,
+    per_output_by_model: dict[str, pd.DataFrame],
+    first_model_name: str,
+) -> Optional[pd.DataFrame]:
+    """Summarise std_ratio + Spearman per output catalog for the headline
+    model (first_model_name). Writes a CSV + small grouped-bar figure.
+    """
+    df = per_output_by_model.get(first_model_name)
+    if df is None or df.empty:
+        return None
+    needed = {"category", "std_ratio", "spearman"}
+    if not needed.issubset(df.columns):
+        return None
+
+    work = df.copy()
+    if "mostly_zero" in work.columns:
+        work = work[~work["mostly_zero"].fillna(False)]
+    if work.empty:
+        return None
+
+    # Order catalogs canonically; keep "misc" last.
+    cat_order = list(KNOWN_CATEGORIES) + ["misc"]
+    work["category"] = work["category"].fillna("misc")
+    work = work[work["category"].isin(cat_order)]
+    summary = (
+        work.groupby("category", as_index=False)
+            .agg(median_std_ratio=("std_ratio", "median"),
+                 median_spearman=("spearman", "median"),
+                 n_outputs=("std_ratio", "size"))
+    )
+    summary["category"] = pd.Categorical(
+        summary["category"], categories=cat_order, ordered=True,
+    )
+    summary = summary.sort_values("category").reset_index(drop=True)
+    summary["model"] = first_model_name
+    summary.to_csv(
+        cfg.eval_dir / "distribution_fidelity_by_catalog.csv", index=False,
+    )
+
+    try:
+        fig, ax = plt.subplots(figsize=(7.0, 4.0), layout="constrained")
+        x = np.arange(len(summary))
+        width = 0.36
+        ax.bar(x - width / 2, summary["median_std_ratio"], width,
+               label="Median std(pred)/std(actual)", color="#1f77b4")
+        ax.bar(x + width / 2, summary["median_spearman"], width,
+               label="Median Spearman", color="#2ca02c")
+        ax.axhline(1.0, color="grey", linestyle="--", linewidth=0.7,
+                   label="ideal = 1.0")
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [str(c) for c in summary["category"]], rotation=0,
+        )
+        ax.set_ylabel("Median value")
+        ax.set_ylim(0.0, max(1.05, float(summary[
+            ["median_std_ratio", "median_spearman"]
+        ].max().max() * 1.05)))
+        ax.set_title(
+            f"§5 Distributional fidelity by catalog ({first_model_name})"
+        )
+        ax.legend(loc="lower left", fontsize=9, frameon=False)
+        ax.grid(axis="y", alpha=0.25)
+        out = cfg.figs_dir / "distribution_fidelity_by_catalog.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, dpi=140)
+        plt.close(fig)
+    except Exception as exc:  # noqa: BLE001
+        warnings.warn(f"distribution_fidelity_by_catalog figure failed: {exc}")
+
+    return summary
+
+
+# ---------------------------------------------------------------------------
 # Cross-model assembly
 # ---------------------------------------------------------------------------
 
@@ -1342,6 +1553,41 @@ def _render_report(
     )
     md.append("\n### Clipping consistency (plain-language read)\n")
     md.append(md_explainer("r8_clipping"))
+
+    # --- 8c: Extrapolation summary table (only if available) ---
+    extrap_df = ctx.get("extrapolation_summary")
+    if extrap_df is not None and len(extrap_df):
+        md.append("\n### 8c. Extrapolation diagnostic (LOLO)\n")
+        md.append(
+            "Per-model summary (`extrapolation_vs_interpolation.csv`). "
+            "`oof_r2_mean` is in-grid; `lolo_r2_mean` averages "
+            "leave-one-level-out R² across design dimensions; "
+            "`hardest_dim` is the dimension with the largest drop.\n"
+        )
+        md.append(_md_table(extrap_df.round(3)))
+        readout = auto_readout_extrapolation(extrap_df)
+        if readout:
+            md.append(readout + "\n")
+
+    # --- 5b: By-catalog distributional fidelity (only if available) ---
+    distfid_df = ctx.get("distfid_by_catalog")
+    if distfid_df is not None and len(distfid_df):
+        md.append("\n### 5b. Distributional fidelity by catalog\n")
+        md.append(md_explainer("s5_distfidelity"))
+        md.append(_md_table(distfid_df.round(3)))
+
+    # --- 9: Limitations & validity (paper-readiness) ---
+    md.append("\n## 9. Limitations & validity\n")
+    md.append(md_explainer("limitations"))
+    md.append(
+        "**One-line summary.** This surrogate is *validated* for "
+        "interpolation inside the 486-case grid (§R0 mean / median R² with "
+        "bootstrap CIs). It is *tested* for extrapolation via LOLO (§8c when "
+        "present) and that score should be cited as a worst-case bound for "
+        "predictions at unseen levels. Pooled R² in §1 is shown for context "
+        "only; it is dominated by the largest-magnitude outputs and is "
+        "**not** the metric to quote in the paper.\n"
+    )
     md_text = "\n".join(md)
 
     html = f"""<!doctype html>
@@ -1543,6 +1789,15 @@ def run_eval(cfg: EvalConfig) -> dict:
             except Exception as exc:  # noqa: BLE001
                 warnings.warn(f"structured CV failed for {name}: {exc}")
 
+    # --- Always-on aggregators that consume any structured_cv_*.csv files
+    #     already on disk from this or a prior run. Cheap, no refit.
+    extrap_summary = _extrapolation_summary(cfg, models, per_output_by_model)
+
+    # --- Per-catalog distributional fidelity summary (P3b) ---
+    distfid_summary = _per_catalog_distribution_summary(
+        cfg, per_output_by_model, first_model_name,
+    )
+
     # --- Cross-model heatmaps ---
     _model_x_category_heatmap(
         models, group_cat, cfg.figs_dir / "heatmap_model_x_category.png",
@@ -1581,6 +1836,8 @@ def run_eval(cfg: EvalConfig) -> dict:
             )
         ),
         "worst_cases": worst_first,
+        "extrapolation_summary": extrap_summary,
+        "distfid_by_catalog": distfid_summary,
     }
     md_text, html_text = _render_report(cfg, ctx)
     (cfg.eval_dir / "REPORT.md").write_text(md_text, encoding="utf-8")
@@ -1625,14 +1882,20 @@ def _build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--mostly_zero_eps", type=float, default=1e-3)
     p.add_argument("--bootstrap_n", type=int, default=500)
     p.add_argument("--bootstrap_seed", type=int, default=42)
-    p.add_argument("--structured_cv", action="store_true",
-                   help="Run leave-one-level-out diagnostic (slow).")
+    p.add_argument("--structured_cv", "--extrapolation", action="store_true",
+                   dest="structured_cv",
+                   help="Run leave-one-level-out (LOLO) extrapolation "
+                        "diagnostic. Refits each model per held-out level; "
+                        "slow. --extrapolation is the paper-friendly alias.")
     p.add_argument("--ngboost_native", action="store_true",
                    help="Add NGBoost native-Normal calibration table.")
     p.add_argument("--no_clipped", action="store_true",
                    help="Skip the unclipped-vs-clipped delta table.")
     p.add_argument("--skip_models", nargs="*", default=[],
                    help="Skip these model names.")
+    p.add_argument("--n_methods_compare", type=int, default=6,
+                   help="Top-N for cross-method panels (§4, §5). "
+                        "Default 6. Ranking is the honest §R0 metric.")
     return p
 
 
@@ -1651,6 +1914,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         ngboost_native=bool(args.ngboost_native),
         include_clipped=not bool(args.no_clipped),
         skip_models=tuple(args.skip_models),
+        n_methods_compare=int(args.n_methods_compare),
     )
     try:
         run_eval(cfg)
