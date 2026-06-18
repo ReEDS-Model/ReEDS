@@ -1571,7 +1571,7 @@
 
   - [gasreg_degree_day_price_mult_regression_params.csv](/inputs/fuelprices/gasreg_degree_day_price_mult_regression_params.csv)
     - **File Type:** Input
-    - **Description:** Coefficients and intercepts derived from regression regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual average price with monthly fixed effects. "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
+    - **Description:** Coefficients and intercepts derived from regression regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual average price with monthly fixed effects (https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/temperature_gas_price_regression). "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
     - **Indices:** param
 ---
 
