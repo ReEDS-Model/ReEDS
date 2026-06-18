@@ -2135,7 +2135,7 @@ valcap(i,newv,r,t)$[rsc_i(i)$tmodel_new(t)$(not ban(i))$(not bannew(i))
 *enable capacity if there is a required prescription in that region
 *first for non-rsc techs
 valcap(i,newv,r,t)$[(not rsc_i(i))
-                    $( m_required_prescriptions(i,newv,r,t))
+                    $m_required_prescriptions(i,newv,r,t)
                     $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
                           $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))] = yes ;
 *then for rsc techs
