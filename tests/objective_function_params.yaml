@@ -212,7 +212,7 @@ szn_adj_gas:
   indexsets:
   - h
   switchon:
-    GSw_GasPriceAdjMethod: 0
+    GSw_GasPriceAdjMethod: 1
 cendiv_weights:
   indexsets:
   - valgen

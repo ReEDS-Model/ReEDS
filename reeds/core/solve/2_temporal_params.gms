@@ -902,7 +902,7 @@ $onlisting
 / ;
 $offempty
 
-*winter gas gets marked up if GSw_GasPriceAdjMethod = 0
+* If GSw_GasPriceAdjMethod = 1, replace daily regional adjustments with the national wintertime markup
 szn_adj_gas(allh) = 0 ;
 szn_adj_gas(h) = 1 ;
 szn_adj_gas(h)$frac_h_quarter_weights(h,"wint") =
@@ -911,10 +911,12 @@ szn_adj_gas(h)$frac_h_quarter_weights(h,"wint") =
 scalar szn_adj_gas_avg "--unitless-- hour-weighted average of natural gas seasonal adjustment" ;
 szn_adj_gas_avg = sum{h, szn_adj_gas(h) * hours(h) } / sum{h, hours(h) } ;
 szn_adj_gas(h) = szn_adj_gas(h) / szn_adj_gas_avg ;
+gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
+gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
 
-* If GSw_GasPriceAdjMethod = 0, replace daily regional adjustments with the national wintertime markup
-gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 0) = szn_adj_gas(h) ;
-gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 0) = szn_adj_gas(h) ;
+If GSw_GasPriceAdjMethod = 0, nullify the price adjustments
+gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 0) = 1 ;
+gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 
 
 *=============================================
