@@ -99,6 +99,7 @@ eq_MGA_Objective$Sw_MGA..
     sum{(i,v,r,t)
         $[tmodel(t)
         $valcap(i,v,r,t)],
+*       [MW] * [.] * [job-years/MW] = [job-years]        
         CAP(i,v,r,t) * pvf_onm(t) * employment_factor_plant(i,"fom")
     }
     + sum{(i,v,r,h,t)
@@ -110,6 +111,7 @@ eq_MGA_Objective$Sw_MGA..
     + sum{(i,v,r,t)
           $[tmodel(t)
           $valinv(i,v,r,t)],
+*         [MW] * [.] * [job-years/MW] = [job-years]           
           INV(i,v,r,t) * pvf_capital(t) * employment_factor_plant(i,"construction")
     }
     
@@ -120,7 +122,8 @@ eq_MGA_Objective$Sw_MGA..
           $[tmodel(t)
           $routes_inv(r,rr,"AC",t)
           $tsc_binwidth(r,rr,tscbin)],
-          trans_cost_cap_fin_mult(t) 
+          trans_cost_cap_fin_mult(t)
+*         [$] * [.] * [job-years/$] = [job-years]           
           * ((TRAN_CAPEX_BINS(r,rr,tscbin,t)) 
           * pvf_capital(t)
 * TRAN_CAPEX_BINS is only defined for r < rr so is not divided by 2
@@ -130,6 +133,7 @@ eq_MGA_Objective$Sw_MGA..
           $[routes_inv(r,rr,trtype,t)
           $(not aclike(trtype))],
           trans_cost_cap_fin_mult(t)
+*         [$/MW] * [MW] * [job-years/$] = [job-years] 
           * transmission_cost_nonac(r,rr,trtype)
           * INVTRAN(r,rr,trtype,t)
 * INVTRAN is defined in both directions so needs to be divided by 2
@@ -138,11 +142,12 @@ eq_MGA_Objective$Sw_MGA..
     + sum{(r,rr,trtype,t)
           $[tmodel(t)
           $routes(r,rr,trtype,t)],
+*         [MW] * [.] * [job-years/MW] = [job-years]           
           CAPTRAN_ENERGY(r,rr,trtype,t) 
           * pvf_onm(t)
 * CAPTRAN_ENERGY is defined in both directions so needs to be divided by 2
-* but we don't divide by 2 here since it is not divided by 2 in the
-* objective function (will fix this separately)         
+* but we don't divide by 2 here since this portion in the objective function
+* is high by factor of 2 (will fix this separately)         
           * employment_factor_inter_transmission("fom")  }
 ;
 
