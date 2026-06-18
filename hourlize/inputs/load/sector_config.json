@@ -10,6 +10,7 @@
       ]
     },
     "model_years": [2025, 2030, 2035],
+    "multi_model_year_replacement": true,
     "filepaths": [
       "/projects/drprojects/evmc/data/full_run_2024-10-14/scenario=mid_baseline/segment=ldv/year={model_year}/summaries/ev-ws-immediatecharging-hourly-weighted-sum-kWh-{model_year}.csv",
       "/projects/drprojects/evmc/data/full_run_2024-10-14/scenario=mid_baseline/segment=mhdv/year={model_year}/summaries/ev-ws-immediatecharging-hourly-weighted-sum-kWh-{model_year}.csv"
@@ -21,31 +22,41 @@
   "Buildings": {
     "subsectors": {
       "commercial": [
-        "commercial air conditioning",
-        "commercial space heating",
-        "commercial ventilation"
+        "commercial air conditioning", 
+        "commercial cooking", "commercial lighting", 
+        "commercial other", "commercial refrigeration",
+        "commercial space heating", "commercial ventilation",
+        "commercial water heating", "district services",
+        "office equipment (non-p.c.)", "office equipment (p.c.)"
       ],
       "residential": [
-        "residential air conditioning",
-        "residential furnace fans",
-        "residential secondary heating",
-        "residential space heating"
+         "residential air conditioning", "residential ceiling fans",
+         "residential clothes drying", "residential clothes washing",
+         "residential cooking", "residential cooking - secondary", 
+         "residential dehumidifiers", "residential dishwashing", 
+         "residential freezing", "residential furnace fans and boiler pumps", 
+         "residential hot tubs", "residential humidifiers", 
+         "residential lighting", "residential microwaves", 
+         "residential other", "residential pool pumps", 
+         "residential refrigeration", "residential secondary heating", 
+         "residential space heating", "residential tv and peripherals", 
+         "residential water heating"
       ]
     },
-    "model_years": [2021, 2025, 2030, 2035, 2040, 2045, 2050],
+    "model_years": [2030, 2035, 2040, 2045, 2050],
+    "multi_model_year_replacement": true,
     "filepaths": [
-      "/projects/eerload/mmowers/eer_splice/agg_res_eulp_hvac_elec_GWh_upgrade0.csv",
-      "/projects/eerload/mmowers/eer_splice/agg_com_eulp_hvac_elec_GWh_upgrade0.csv"
-    ],
-    "unit_conversion_factor": 1e3,
-    "timezone": "Etc/GMT+6",
-    "regional_scope": "legacy_ba"
+      "/projects/geohc/challora/GHP/hourlize/processed_loads/Baseline/Baseline_y{model_year}.csv"],
+    "unit_conversion_factor": 1,
+    "timezone": "Etc/GMT+5",
+    "regional_scope": "state"
   },
   "Data Centers": {
     "subsectors": {
       "commercial": ["data center cooling", "data center it"]
     },
     "model_years": [2021, 2025, 2030, 2035, 2040, 2045, 2050],
+    "multi_model_year_replacement": false,
     "filepaths": ["/kfs2/projects/eerload/challoran/eer_splice/dummy_agg_op_datacenters_by_state.csv"],
     "unit_conversion_factor": 1,
     "timezone": "Etc/GMT+6",
