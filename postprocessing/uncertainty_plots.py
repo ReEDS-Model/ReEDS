@@ -21,7 +21,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FuncFormatter
-import pptx
 from pptx.util import Inches
 import io
 import seaborn as sns
@@ -486,7 +485,7 @@ class DataFetcher:
 
         # --- Fetch methods for output data ---
         self.OUT_FETCH_METHODS = {
-            # Naming as in e_report_params.csv
+            # Naming as in report_params.csv
             "cap_out": self._fetch_cap_out,
             "gen_ann": self._fetch_gen_ann,
             "tran_mi_out_detail": self._fetch_tran_mi_out_detail,
@@ -626,7 +625,7 @@ class DataFetcher:
         )
 
         df_tech_trans = (
-            reeds.output_calc.calc_reinforcement_spur_capacity_miles(self.cases_dict[case])
+            reeds.results.calc_reinforcement_spur_capacity_miles(self.cases_dict[case])
         )
         df_tech_trans['rr'] = df_tech_trans['r']  # Duplicate region data
         # Convert "Trans (GW-mi)" to "Trans (TW-mi)"
@@ -681,7 +680,7 @@ class DataFetcher:
         Returns:
             pd.DataFrame: Columns ['year', 'r', 'cost_cat', 'Cost (Bil $)', 'Discounted Cost (Bil $)']
         """
-        return reeds.output_calc.calc_systemcost(self.cases_dict[case])
+        return reeds.results.calc_systemcost(self.cases_dict[case])
 
 
     ### ===========================================================================

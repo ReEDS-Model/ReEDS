@@ -14,13 +14,13 @@ the past decade.
 Additional information about this module can be found here:
 Brown, Patrick R, Pieter J Gagnon, J Sean Corcoran, and Wesley J Cole. 2022. Retail Rate Projections for
 Long-Term Electricity System Models. Golden, CO: National Renewable Energy Laboratory. NREL/TP-6A20-78224.
-<https://www.nrel.gov/docs/fy22osti/78224.pdf>.
+<https://www.nlr.gov/docs/fy22osti/78224.pdf>.
 
 ## Usage
 
-- `cd` to the REEDS-2.0/postprocessing/retail_rate_module directory
+- `cd` to the ReEDS/postprocessing/retail_rate_module directory
 - Run the retail_rate_calculations.py script, with the name of a run folder as a required argument input. For example:
-  - `D:\username\ReEDS-2.0\postprocessing\retail_rate_module> python retail_rate_calculations.py v20200806_retailtest_MidCase`
+  - `D:\username\ReEDS\postprocessing\retail_rate_module> python retail_rate_calculations.py v20200806_retailtest_MidCase`
 
 ## Outputs
 

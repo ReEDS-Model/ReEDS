@@ -99,7 +99,7 @@ def gather_cost_types(df):
 
 def pre_systemcost(dfs, **kw):
     df = dfs['sc'].copy()
-    sw = dfs['sw'].set_index('switch')['value'].copy()
+    sw = dfs['switches'].set_index('switch')['value'].copy()
     scalars = dfs['scalars'].set_index('scalar')['value'].copy()
     sim_years = sorted(dfs['sc']['year'].unique()) #Years Optimized
     sys_eval_years = int(sw['sys_eval_years'])
@@ -164,7 +164,7 @@ def pre_systemcost(dfs, **kw):
         ###### Add payments for pre-2010 capacity
         if ('remove_existing' not in kw) or (kw['remove_existing'] is False):
             ### Get modeled BAs
-            val_r = dfs['val_r'][0].values
+            val_r = dfs['r'].squeeze(1).values
             ### Get total historical capex in modeled BAs
             df_capex_init = dfs['df_capex_init']
             if 'maintain_ba_index' in kw and kw['maintain_ba_index'] is True:
@@ -1068,14 +1068,14 @@ def rgba2hex(rgba):
 def pre_runtime(dictin, **kw):
     """
     ### Use the code below to redefine the colormap when new scripts are added
-    augur_start = df.index.tolist().index('ReEDS_Augur/prep_data.py')
+    ra_start = df.index.tolist().index('ra/prep_data.py')
     for i, row in enumerate(df.index):
-        if i < augur_start:
+        if i < ra_start:
             colors[row.lower()] = rgba2hex(plt.cm.tab20b(i))
-        elif i < augur_start + 20:
-            colors[row.lower()] = rgba2hex(plt.cm.tab20c(i-augur_start))
+        elif i < ra_start + 20:
+            colors[row.lower()] = rgba2hex(plt.cm.tab20c(i-ra_start))
         else:
-            colors[row.lower()] = rgba2hex(plt.cm.tab20(i-augur_start-20))
+            colors[row.lower()] = rgba2hex(plt.cm.tab20(i-ra_start-20))
     """
     df = dictin['runtime'].copy()
 
@@ -1135,24 +1135,23 @@ def process_health_damage(df, **kw):
     rows = product(*allRows.values())
     df_all = pd.DataFrame.from_records(rows, columns=allRows.keys())
     df_new = df.merge(df_all, how='outer', on=['model', 'cr', 'e', 'rb', 'year'])
-    df_new['st'] = df_new['st'].interpolate(method="ffill")
     
     # sort by category and year
     df_new = df_new.sort_values(['model', 'cr', 'e', 'rb', 'year'])
 
     # interpolate any missing values 
-    df_new = df_new.groupby(['model', 'cr', 'e', 'rb']).apply(lambda group: group.interpolate(method='ffill'))
+    df_new = df_new.ffill()
 
     # sum over rb
-    df_out = df_new.groupby(['model', 'cr', 'e', 'year'])[
+    df_out = df_new.groupby(['model', 'cr', 'e', 'year'])[[
             'Emissions (thousand metric tons)', 'Health damages (billion $)', 
             'Health damages (lives)', 'Discounted health damages (billion $)'
-        ].sum().reset_index()
+    ]].sum().reset_index()
 
     # also sum over pollutant   
-    df_poll_agg = df_new.groupby(['model', 'cr', 'year'])[
+    df_poll_agg = df_new.groupby(['model', 'cr', 'year'])[[
             'Health damages (billion $)', 'Health damages (lives)', 'Discounted health damages (billion $)'
-        ].sum().reset_index()
+    ]].sum().reset_index()
 
     df_poll_agg.rename(columns={'Health damages (billion $)' : 'Total health damages (billion $)', 
                                 'Health damages (lives)' : 'Total health damages (lives)',
@@ -1174,7 +1173,7 @@ def process_social_costs(dfs, **kw):
     system_costs_agg.rename(columns={'Cost (Bil $)' : 'Cost (Bil $)-system', 
                                     'Discounted Cost (Bil $)' : 'Discounted Cost (Bil $)-system'}, inplace=True)
 
-    health_costs_agg = health_costs.groupby(['year', 'model', 'cr'])['Health damages (billion $)', 'Discounted health damages (billion $)'].sum().reset_index()
+    health_costs_agg = health_costs.groupby(['year', 'model', 'cr'])[['Health damages (billion $)', 'Discounted health damages (billion $)']].sum().reset_index()
     health_costs_agg.rename(columns={'Health damages (billion $)' : 'Cost (Bil $)-health', 
                                     'Discounted health damages (billion $)' : 'Discounted Cost (Bil $)-health'}, inplace=True)
 
@@ -2067,7 +2066,7 @@ results_meta = collections.OrderedDict((
 
     ('Health Damages from Emissions',
         {'file':'health_damages_caused_r.csv',
-        'columns': ['rb', 'st', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)'],
+        'columns': ['rb', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)'],
         'preprocess': [
             {'func': process_health_damage, 'args':{}},
         ],
@@ -2086,11 +2085,11 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'q', 'file': 'reqt_quant', 'columns': ['type', 'subtype', 'rb', 'timeslice', 'year', 'q']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
-            {'name': 'health_damages', 'file': 'health_damages_caused_r.csv', 'columns': ['rb', 'st', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)']},
+            {'name': 'health_damages', 'file': 'health_damages_caused_r.csv', 'columns': ['rb', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)']},
         ],  
         'preprocess': [
             {'func': process_social_costs, 'args': {}},
@@ -2258,7 +2257,7 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'year'],
@@ -2274,7 +2273,7 @@ results_meta = collections.OrderedDict((
     ('Sys Cost beyond final year (Bil $)',
         {'sources': [
             {'name': 'sc', 'file': 'systemcost_bulk', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'year'],
@@ -2294,9 +2293,9 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'year'],
@@ -2318,9 +2317,9 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'sc', 'file': 'systemcost_ba', 'columns': ['cost_cat', 'r', 'year', 'Cost (Bil $)']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'r', 'year'],
@@ -2349,9 +2348,9 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'q', 'file': 'reqt_quant', 'columns': ['type', 'subtype', 'rb', 'timeslice', 'year', 'q']}, 
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
@@ -2374,9 +2373,9 @@ results_meta = collections.OrderedDict((
             {'name': 'powerfrac_downstream', 'file': 'powerfrac_downstream', 'columns': ['rr', 'r', 'timeslice', 'year', 'frac']},
             {'name': 'powerfrac_upstream', 'file': 'powerfrac_upstream', 'columns': ['r', 'rr', 'timeslice', 'year', 'frac']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
@@ -2394,9 +2393,9 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'emit', 'file': 'emit_nat', 'columns': ['year', 'CO2 (MMton)']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [

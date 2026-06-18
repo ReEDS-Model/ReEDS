@@ -117,8 +117,8 @@ def plot_cf_diff(
     Plot absolute difference in regional CF between repo_old and repo_new.
 
     Args:
-        repo_old: Path to old ReEDS-2.0 directory
-        repo_new: Path to new ReEDS-2.0 directory
+        repo_old: Path to old ReEDS directory
+        repo_new: Path to new ReEDS directory
         diffmax: Color axis limit for difference plots [%]
     
     Returns:
@@ -248,8 +248,8 @@ if __name__ == '__main__':
         description='Plot differences in input data between ReEDS repos',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('old', help='path to old ReEDS-2.0 directory')
-    parser.add_argument('new', help='path to new ReEDS-2.0 directory')
+    parser.add_argument('old', help='path to old ReEDS directory')
+    parser.add_argument('new', help='path to new ReEDS directory')
     parser.add_argument(
         '--outpath', '-o', default='~/Desktop',
         help='directory path to save figures to', 

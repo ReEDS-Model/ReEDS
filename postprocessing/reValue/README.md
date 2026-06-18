@@ -22,7 +22,7 @@ reValue has two main purposes:
      - **netload_num_hrs**: When **res_marg_style** = *max_net_load_2012*, this allows the user to specify the number of max net load hours to assign the reserve margin prices (default in ReEDS is 20, but the default here is 50 so that technologies don't randomly align with peak net load hours as often). Higher **netload_num_hrs** mean lower reserve margin prices in each hour, such that total value of firm capacity stays constant.
      - **netload_time_style**: When **res_marg_style** = *max_net_load_2012*, This allows the user to keep reserve margin prices at the hour level (**netload_time_style**=*hour*), or to assign prices to the entire timeslice(s) containing the hour(s) (**netload_time_style**=*timeslice*).
  3. Run activated scenarios with `python reValue.py` (from the reeds2 conda environment).
- 4. Gather price and value metric outputs from output folder at *ReEDS-2.0/postprocessing/reValue/outputs_[timestamp]*. Here are the main outputs:
+ 4. Gather price and value metric outputs from output folder at *ReEDS/postprocessing/reValue/outputs_[timestamp]*. Here are the main outputs:
      - **reValue_out.csv**: This file contains the various value metrics:
          - *LVOE*: Value per unit energy
          - *LVOE_load*: Value per unit energy (load, or energy requirement, component. For *load* technology, this includes influence on operating reserves, state rps, and all model requirements that are linked to the LOAD variable)

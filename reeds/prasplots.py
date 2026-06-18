@@ -42,7 +42,7 @@ def plot_interface_flows(
             case=case, year=year, datum='flow', samples=samples)
         dfflow = reeds.io.read_pras_results(infile).set_index(timeindex)
         ## Filter out AC/DC converters from scenarios with VSC
-        dfflow = dfflow[[c for c in dfflow if '"DC_' not in c]].copy()
+        dfflow = dfflow[[c for c in dfflow if '"DC|' not in c]].copy()
         ## Normalize the interface names
         renamer = {i: '→'.join(i.replace('"','').split(' => ')) for i in dfflow}
     else:
@@ -252,7 +252,7 @@ def plot_pras_eue_timeseries_full(
     else:
         _iteration = iteration
     infile = os.path.join(
-        case, 'ReEDS_Augur', 'PRAS',
+        case, 'handoff', 'PRAS',
         f"PRAS_{year}i{_iteration}" + (f'-{samples}' if samples is not None else '') + '.h5'
     )
     dfpras = reeds.io.read_pras_results(infile)
@@ -317,7 +317,6 @@ def plot_pras_samples(
     tend='2012-08-07',
     plottype='outage',
     drawload=False,
-    region='country/USA',
     year=2050,
     iteration='last',
     samples=None,
@@ -339,7 +338,7 @@ def plot_pras_samples(
         reeds.io.get_last_iteration(case, t) if iteration in [None, 'last']
         else iteration
     )
-    rs = reeds.inputs.parse_regions(region, case)
+    rs = reeds.inputs.parse_regions(case)
 
     bokehcolors, plotorder = reeds.reedsplots.get_tech_colors_order(order='fuel_storage_vre')
 
@@ -363,7 +362,7 @@ def plot_pras_samples(
 
     ### Get unit availability
     filebase = os.path.join(
-        case, 'ReEDS_Augur', 'PRAS',
+        case, 'handoff', 'PRAS',
         f"PRAS_{t}i{_iteration}"
         f"{f'-{samples}' if isinstance(samples, int) else ''}"
     )

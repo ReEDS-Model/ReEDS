@@ -43,16 +43,15 @@ file_levels = {
     ],
     ## Large output files. Can be regenerated without rerunning the case.
     3: [
-        os.path.join('outputs', 'Augur_plots'),
         os.path.join('outputs', 'hourly'),
         os.path.join('outputs', 'figures'),
     ],
     ## Largest output files. Would need to rerun the case to regenerate.
     4: [
         'g00files',
-        'ReEDS_Augur',
+        'handoff',
         ## The following regex matches the rep_{casename}.gdx file written by
-        ## e_report.gms (which contains the same data as outputs.h5)
+        ## report.gms (which contains the same data as outputs.h5)
         os.path.join('outputs', '^rep_.*\.gdx$'),
     ]
 }

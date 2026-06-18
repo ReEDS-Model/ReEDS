@@ -105,10 +105,25 @@ years = pd.read_csv(
     os.path.join(case,'inputs_case','modeledyears.csv')
 ).columns.astype(int).values
 yearstep = years[-1] - years[-2]
-val_r = pd.read_csv(
-    os.path.join(case, 'inputs_case', 'val_r.csv'), header=None).squeeze(1).tolist()
+val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
 ## If year not provided, use final solve year
 year = year if year > 0 else max(years)
+
+
+#%% Validation plots
+### Existing capacity vs last historical capacity
+try:
+    mapmethod = 'FIPS'
+    f, ax, df = reedsplots.validate_regional_capacity(case, mapmethod=mapmethod)
+    savename = f'validate_cap_regional-{mapmethod}.png'
+    if write:
+        plt.savefig(os.path.join(savepath, savename))
+    if interactive:
+        plt.show()
+    plt.close()
+    print(savename)
+except Exception:
+    print(traceback.format_exc())
 
 
 #%% Transmission line map with disaggregated transmission types
@@ -367,9 +382,7 @@ subtechs = {
 ### Specify BAs to plot (None = aggregate all together)
 bas = [None]
 if int(sw['plot_ba_level']):
-    bas += pd.read_csv(
-        os.path.join(case, 'inputs_case', 'val_r.csv'), header=None,
-    ).squeeze(1).tolist()
+    bas += reeds.io.read_input(case, 'r').squeeze(1).tolist()
     savepath_ba = os.path.join(savepath, 'ba')
     os.makedirs(savepath_ba, exist_ok=True)
 else:
@@ -383,21 +396,24 @@ for label, plottechs in subtechs.items():
             figpath = savepath_ba if ba else savepath
             for plottype in plottypes:
                 for v in ([1] if ba else [0, 1]):
-                    plt.close()
-                    f, ax, df = reedsplots.plot_dispatch_yearbymonth(
+                    plot_generator = reedsplots.plot_dispatch_yearbymonth(
                         case=case, t=year, plottype=plottype,
                         region=(None if ba is None else f"r/{ba}"),
                         techs=plottechs, highlight_rep_periods=v,
                     )
-                    savename = (
-                        f"plot_{plottype}{'_'+label if len(label) else ''}-yearbymonth"
-                        + f"{'-'+ba if ba else ''}-{v}-{year}.png")
-                    if write and (df is not None):
-                        plt.savefig(os.path.join(figpath, savename))
-                        print(savename)
-                    if interactive and (df is not None):
-                        plt.show()
-                    plt.close()
+                    while True:
+                        try:
+                            f, ax, df, weatheryear = next(plot_generator)
+                            savename = (
+                                f"plot_{plottype}{'_'+label if len(label) else ''}-yearbymonth"
+                                + f"{'-'+ba if ba else ''}-{v}-{year}-w{weatheryear}.png")
+                            if write and (df is not None):
+                                plt.savefig(os.path.join(figpath, savename))
+                                print(savename)
+                            if interactive and (df is not None):
+                                plt.show()
+                        except StopIteration:
+                            break
     except Exception:
         print('plot_dispatch-yearbymonth failed:')
         print(traceback.format_exc())

@@ -23,57 +23,34 @@ defaults:
     shell: bash -le {0}
 
 env:
-  CACHE_NUMBER: 1
   JULIA_VERSION: '1.12.1'
-  REEDS_ENV_NAME: reeds2
 
 jobs:
-  julia-setup:
-    name: "Julia environment"
+  reeds-env:
+    name: ReEDS Python and Julia env
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-
-      - name: Restore Julia cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
-        with:
-          path: ~/.julia
-          key: julia-${{ runner.os }}-${{ hashFiles('Project.toml') }}
-          restore-keys: julia-${{ runner.os }}-
-
-      - uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2
-        with:
-          version: ${{ env.JULIA_VERSION }}
-
-      - run: julia --project=. instantiate.jl
-
-  python-setup:
-    name: "Python environment"
-    runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
-      actions: write
+      actions: write # Required to save/update micromamba cache.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
+      - name: Setup ReEDS environments
+        uses: ./.github/actions/setup-reeds-env
         with:
-          environment-file: environment.yml
-          cache-environment: true
-          post-cleanup: 'all'
-          cache-environment-key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          julia-version: ${{ env.JULIA_VERSION }}
 
   zenodo-setup:
     name: "Get Zenodo files"
     needs:
-      - python-setup
+      - reeds-env
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
-      actions: write
+      actions: write # Required to save/update Zenodo data cache.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -91,7 +68,7 @@ jobs:
         
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
         with:
           path: |
             inputs/remote/
@@ -104,27 +81,26 @@ jobs:
             zenodo-files-${{ steps.zenodo-files.outputs.files-hash }}-
             zenodo-files-
       
-      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
-        id: mamba
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-reeds-env
         with:
-          environment-file: environment.yml
-          cache-environment: true
-          post-cleanup: 'all'
-          cache-environment-key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          setup-julia: false
 
       - name: Download Zenodo files if not cached
         if: steps.cache-zenodo.outputs.cache-hit != 'true'
         run: python .github/scripts/download_test_zenodo_files.py
 
   run-ReEDS:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    name: run ReEDS model matrix
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs:
-      - julia-setup
-      - python-setup
+      - reeds-env
       - zenodo-setup
     permissions:
       contents: read
-      actions: write
+      actions: write # Required to save/update LFS and Zenodo caches.
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -150,7 +126,7 @@ jobs:
 
       - name: Restore LFS cache
         id: lfs-restore
-        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
         with:
           path: .git/lfs
           key: lfs-${{ runner.os }}-${{ hashFiles('.lfs-assets-id') }}-v1
@@ -161,7 +137,7 @@ jobs:
 
       - name: Save the updated LFS cache
         if: steps.lfs-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
         with:
           path: .git/lfs
           key: ${{ steps.lfs-restore.outputs.cache-primary-key }}
@@ -173,7 +149,7 @@ jobs:
 
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
         with:
           path: |
             inputs/remote/
@@ -186,63 +162,48 @@ jobs:
             zenodo-files-${{ steps.zenodo-files.outputs.files-hash }}-
             zenodo-files-
 
-      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
-        id: mamba
+      - name: Setup Python and Julia environments
+        id: setup-env
+        uses: ./.github/actions/setup-reeds-env
         with:
-          environment-file: environment.yml
-          cache-environment: true
-          post-cleanup: 'all'
-          cache-environment-key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
-
-      - name: Removing julia from python
-        run: micromamba remove -y julia
-
-      - uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2
-        id: setup-julia
-        with:
-          version: ${{ env.JULIA_VERSION }}
-
-      - name: Restore Julia cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
-        with:
-          path: ~/.julia
-          key: julia-${{ runner.os }}-${{ hashFiles('Project.toml') }}
-          restore-keys: julia-${{ runner.os }}-
-
-      - run: julia --project=. instantiate.jl
+          julia-version: ${{ env.JULIA_VERSION }}
 
       - name: Prepend Julia install to PATH
         env:
-          JULIA_BINDIR: ${{ steps.setup-julia.outputs.julia-bindir }}
-        run: echo "$JULIA_BINDIR" >> $GITHUB_PATH
+          JULIA_BINDIR: ${{ steps.setup-env.outputs.julia-bindir }}
+        run: printf '%s\n' "$JULIA_BINDIR" >> "$GITHUB_PATH"
 
       - name: Setup environment variables
         run: |
-          echo "GAMSDIR=$(python -c 'from gamspy_base import directory;print(directory)')" >> "$GITHUB_ENV"
-          echo "$(python -c 'from gamspy_base import directory;print(directory)')" >> "$GITHUB_PATH"
+          GAMSDIR="$(python -c 'from gamspy_base import directory;print(directory)')"
+          echo "GAMSDIR=$GAMSDIR" >> "$GITHUB_ENV"
+          echo "$GAMSDIR" >> "$GITHUB_PATH"
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GAMSDIR" >> "$GITHUB_ENV"
 
       - name: Setup licence
         env:
           GAMSLICE_CONTENT: ${{ secrets.GAMSLICE }}
-          MAMBA_ENV_PATH: ${{ steps.mamba.outputs.environment-path }}
+          MAMBA_ENV_PATH: ${{ steps.setup-env.outputs.mamba-env-path }}
         run: |
           echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.11/site-packages/gamspy_base/gamslice.txt"
+
+      - name: Set run folder
+        env:
+          SCENARIO: ${{ matrix.scenario }}
+        run: echo "RUN_FOLDER=$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}" >> "$GITHUB_ENV"
 
       - name: Run ReEDS model
         env:
           SCENARIO: ${{ matrix.scenario }}
-        run: |
-          python runbatch.py -b "$batch" -c test -s "$SCENARIO"
-          echo "RUN_FOLDER=$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}" >> "$GITHUB_ENV"
+        run: python runreeds.py -b "$batch" -c test -s "$SCENARIO"
 
       - name: Print GAMS log
         if: runner.debug == '1'
-        run: cat $RUN_FOLDER/gamslog.txt
+        run: cat "$RUN_FOLDER/gamslog.txt"
 
       - name: Check ReEDS outputs
         if: ${{ hashFiles(format('{0}/outputs/cap_ivrt.csv', env.RUN_FOLDER)) == '' }}
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v7
         with:
           script: |
             core.setFailed('ReEDS run failed. Check log to diagnose.')
@@ -252,8 +213,24 @@ jobs:
           SCENARIO: ${{ matrix.scenario }}
         run: python -m pytest tests/test_outputs.py --casepath "$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}"
 
+      - name: Upload ReEDS failure diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ format('{0}-failure-diagnostics', matrix.scenario) }}
+          compression-level: 9
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            ${{ env.RUN_FOLDER }}/gamslog.txt
+            ${{ env.RUN_FOLDER }}/meta.csv
+            ${{ env.RUN_FOLDER }}/lstfiles/1_Inputs.lst
+            ${{ env.RUN_FOLDER }}/lstfiles/${{ matrix.scenario }}_*i*.lst
+            ${{ env.RUN_FOLDER }}/lstfiles/report_${{ matrix.scenario }}.lst
+            ${{ env.RUN_FOLDER }}/ReEDS_Augur/PRAS/PRAS_*i*.log
+
       - name: Save ReEDS run
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.scenario }}
           compression-level: 9
@@ -266,7 +243,10 @@ jobs:
             ${{ env.RUN_FOLDER }}/outputs/**/*.h5
 
   run-R2X:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    name: run R2X compatibility matrix
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs:
       - run-ReEDS
     permissions:
@@ -288,14 +268,39 @@ jobs:
         with:
           persist-credentials: false
       - name: Retrieve ReEDS runs for ${{ matrix.scenario }}
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ matrix.scenario }}
           path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
-      - name: R2X compatibility
-        uses: ./.github/actions/r2x-check
-        id: r2x-check
+
+      - name: Install uv and set Python version
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          reeds-run-path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
-          scenario: ${{ matrix.scenario }}
-          solve-year: ${{ matrix.solve-year }}
+          python-version: "3.11"
+          enable-cache: true
+          restore-cache: true
+          save-cache: true
+          ignore-nothing-to-cache: true
+
+      - name: Run R2X compatibility
+        env:
+          R2X_REEDS_RUN_PATH: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
+          R2X_SCENARIO: ${{ matrix.scenario }}
+          R2X_SOLVE_YEAR: ${{ matrix.solve-year }}
+          R2X_WEATHER_YEAR: "2012"
+          R2X_SYSTEM_JSON: ${{ format('{0}_system.json', matrix.scenario) }}
+        run: |
+          uvx --from "r2x-reeds>=0.3.5" python postprocessing/run_r2x.py \
+            --reeds-run-path "$R2X_REEDS_RUN_PATH" \
+            --scenario "$R2X_SCENARIO" \
+            --solve-year "$R2X_SOLVE_YEAR" \
+            --weather-year "$R2X_WEATHER_YEAR" \
+            --system-json "$R2X_SYSTEM_JSON"
+
+      - name: Save R2X system
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r2x-${{ matrix.scenario }}
+          compression-level: 9
+          retention-days: 1
+          path: ${{ format('{0}_system.json', matrix.scenario) }}

@@ -15,6 +15,8 @@ This GitHub repository contains the source code for NLR's ReEDS model.
 The ReEDS model source code is available at no cost from the National Laboratory of the Rockies.
 The ReEDS model can be downloaded or cloned from [https://github.com/ReEDS-Model/ReEDS](https://github.com/ReEDS-Model/ReEDS).
 
+If you want to use the latest stable version of ReEDS, download or check out the latest stable release [here](https://github.com/ReEDS-Model/ReEDS/releases/latest).
+
 **For more information about the model, see the [ReEDS Documentation](https://reeds-model.github.io/ReEDS).**
 
 ReEDS training videos are available on the [NLR Learning YouTube channel](https://youtube.com/playlist?list=PLmIn8Hncs7bG558qNlmz2QbKhsv7QCKiC&si=NgGBaL_MxNcYiIEX).
@@ -63,10 +65,10 @@ A step-by-step guide for getting started with ReEDS is available [here](https://
     These files are downloaded automatically as needed during a ReEDS run, but to finish all the internet-requiring steps up front, you can download them all by running `python reeds/remote.py`.
     Additional details on remote files and other topics can be found in the [user guide](https://reeds-model.github.io/ReEDS/user_guide.html#large-input-files).
 5. Run ReEDS on a test case from the root of the cloned repository:
-    1. For interactive setup: `python runbatch.py`
-    2. For one-line operation: `python runbatch.py -b v20250314_main -c test`.
+    1. For interactive setup: `python runreeds.py`
+    2. For one-line operation: `python runreeds.py -b v20250314_main -c test`.
     In this example, "v20250314_main" is the prefix for this batch of cases, and "test" is the suffix of the cases file, in this case `cases_test.csv`, located in the root of the repository.
-    Run `python runbatch.py -h` for information on other optional command-line arguments for ReEDS.
+    Run `python runreeds.py -h` for information on other optional command-line arguments for ReEDS.
 
 
 

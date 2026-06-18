@@ -72,7 +72,7 @@ Include additional illustrative plots describing input data, methods, testing, a
 - [ ] No large data file(s) added/modified
 - [ ] No substantive impact on runtime for full-US reference case
 - [ ] No substantive impact on folder size for full-US reference case
-- [ ] No change to process flow (runbatch.py, d_solve_iterate.py)
+- [ ] No change to process flow (runreeds.py, reeds/core/solve/solve.py)
 - [ ] No change to code organization
 - [ ] No change to package requirements (environment.yml or Project.toml)
 
@@ -80,41 +80,41 @@ Include additional illustrative plots describing input data, methods, testing, a
 
 ### Tag points of contact here if you would like additional review of the relevant parts of the model
 <!-- Model dimensions -->
-<!-- - [ ] County resolution: @lserpe -->
-<!-- - [ ] Demand data: @ahamilto -->
-<!-- - [ ] Emissions: @apham -->
-<!-- - [ ] Financial calculations: @wcole -->
-<!-- - [ ] FINITO: @molmezt or @cavraam -->
+<!-- - [ ] County resolution: @louisaserpe -->
+<!-- - [ ] Demand data: @ahamilton5 -->
+<!-- - [ ] Emissions: @atpham88 -->
+<!-- - [ ] Financial calculations: @wesleyjcole -->
+<!-- - [ ] FINITO: @merveturan or @cavraam -->
 <!-- - [ ] Hybrids: @aschleif -->
 <!-- - [ ] Monte Carlo: @bsergi -->
-<!-- - [ ] Sparse chronology or interday diurnal storage: @ychen10 -->
-<!-- - [ ] State policies: @wcole or @aschleif -->
-<!-- - [ ] Stress periods, resource adequacy, or ReEDS2PRAS/Julia: @pbrown -->
+<!-- - [ ] Sparse chronology or interday diurnal storage: @Yunzhi-Chen -->
+<!-- - [ ] State policies: @wesleyjcole or @aschleif -->
+<!-- - [ ] Stress periods, resource adequacy, or ReEDS2PRAS/Julia: @patrickbrown4 -->
 <!-- - [ ] Supply curves, hourlize, reeds_to_rev: @bsergi -->
-<!-- - [ ] Time resolution: @pbrown -->
-<!-- - [ ] Water cooling: @jcarag or @scohen -->
+<!-- - [ ] Time resolution: @patrickbrown4 -->
+<!-- - [ ] Water cooling: @jcarag or @stuartcohen8 -->
 
 <!-- Pre/Postprocessing -->
-<!-- - [ ] Dispatch mode (run_pcm.py): @pbrown -->
-<!-- - [ ] Github actions: @kminderm -->
+<!-- - [ ] Dispatch mode (run_pcm.py): @patrickbrown4 -->
+<!-- - [ ] Github actions: @kennedy-mindermann -->
 <!-- - [ ] Health impacts: @bsergi -->
-<!-- - [ ] Input data structure and processing: @cobika -->
+<!-- - [ ] Input data structure and processing: @kodiobika -->
 <!-- - [ ] Interactive plots (bokeh, vizit): @mmowers -->
 <!-- - [ ] Land use: @bsergi -->
-<!-- - [ ] R2X: @psanchez -->
-<!-- - [ ] Retail rates: @wcole -->
-<!-- - [ ] Static plots (single_case_plots.py, compare_cases.py): @pbrown -->
-<!-- - [ ] Tableau: @ahamilto -->
+<!-- - [ ] R2X: @pesap -->
+<!-- - [ ] Retail rates: @wesleyjcole -->
+<!-- - [ ] Static plots (single_case_plots.py, compare_cases.py): @patrickbrown4 -->
+<!-- - [ ] Tableau: @ahamilton5 -->
 <!-- - [ ] Technology value (reValue, valuestreams.py): @mmowers -->
 
 <!-- Technologies -->
-<!-- - [ ] Batteries: @wcole -->
-<!-- - [ ] EV managed charging (EVMC): @mvanatta -->
+<!-- - [ ] Batteries: @wesleyjcole -->
+<!-- - [ ] EV managed charging (EVMC): @Max-Vanatta -->
 <!-- - [ ] Fossil, CCS, or DAC: @mbrown1 -->
-<!-- - [ ] Geothermal: @ssharma2 -->
-<!-- - [ ] Hydropower or PSH: @scohen -->
+<!-- - [ ] Geothermal: @shashwatsharma24 -->
+<!-- - [ ] Hydropower or PSH: @stuartcohen8 -->
 <!-- - [ ] Hydrogen: @bsergi -->
-<!-- - [ ] Nuclear: @wcole -->
-<!-- - [ ] Solar: @wcole -->
-<!-- - [ ] Transmission: @pbrown -->
+<!-- - [ ] Nuclear: @wesleyjcole -->
+<!-- - [ ] Solar: @wesleyjcole -->
+<!-- - [ ] Transmission: @patrickbrown4 -->
 <!-- - [ ] Wind: @mmowers -->
