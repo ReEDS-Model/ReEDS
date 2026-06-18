@@ -5,6 +5,7 @@ Model zones are defined by the following user-generated files:
 - `county2zone.csv`: Maps from counties (`FIPS` column) to ReEDS zones (`ba` column)
 - `hierarchy.csv`: Maps from ReEDS zones (`r` column) to the larger region hierarchy levels
 - `b2b.csv`: Back-to-back converter (B2B) capacity [MW] between model zones
+- `newlinks_offshore_radial.csv`: Candiate connections between offshore and coastal land-based zones
 - TEMPORARY 20260402: `hierarchy_from134.csv`: The legacy-formatted `hierarchy.csv` file from the 134-zone version of ReEDS (will be removed once the rest of the spatial input processing is updated)
 
 And the following automatically generated files:
@@ -51,10 +52,15 @@ Once you're happy with your zone and hierarchy level definitions, run the follow
     - It also checks to make sure the user-specified `interconnect` for each zone matches the interconnection for the majority of network buses located within that zone.
 1. Calculate the AC interface transfer limits (ITLs) by running [TSC/interfacemax.py](https://github.nrel.gov/ReEDS/TSC/blob/pb/itldb/interfacemax.py)
     - Include the `--dbpath={path/to/ITL folder}` argument and point it to the existing directory of ITLs to avoid recalculating ITLs for interfaces that already have data
+1. Calculate the length and cost of new greenfield transmission lines between zones
+    - Write the new interzonal endpoint pairs using [TSC/analysis/zone_links.py](https://github.nrel.gov/ReEDS/TSC/blob/main/analysis/zone_links.py)
+        - Write pairs that require offshore routes (the links between land-based and offshore zones, new backbone links between offshore zones, and/or new exogenous offshore HVDC lines) into their own file, separate from routes that should be land-only
+    - Send these files (with a note on which should allow offshore paths and which should not) to a member of the reV team who can calculate the interzonal least-cost paths using the [reVRt](https://github.com/NatLabRockies/reVRt) tool
 1. Write the resulting files to the ReEDS repo by running [TSC/analysis/write_for_reeds.py](https://github.nrel.gov/ReEDS/TSC/blob/pb/itldb/analysis/write_for_reeds.py). This script:
     - Copies the `interface_r.csv` and `interface_transgrp.csv` files
     - Creates the `zonehash.csv` file
-    - Rewrites the `itl_NARIS.csv` file (existing data in the file are preserved, so you should only see new rows added to the bottom of the file)
+    - Rewrites the `itl_NARIS.csv`, `transmission_cost_distance.csv`, and `transmission_cost_distance_lines.csv` files
+    (existing data in the file are preserved, so you should only see new rows added, typically at the bottom of the file)
 1. Add the new zone definition to the choices for the `GSw_ZoneSet` switch in `cases.csv`
 1. To make sure it worked (or just to read the ITLs in general), you can run `import reeds` and then `reeds.inputs.get_itls(GSw_ZoneSet='your new zoneset name')` in Python with the `reeds2` conda environment activated.
 1. Try a ReEDS run.

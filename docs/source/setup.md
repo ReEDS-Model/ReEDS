@@ -85,12 +85,6 @@ Screenshot of a test of Python in the terminal window
 #### MacOS
 Download the latest version of Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download)
 
-**IMPORTANT**: Make sure to download the Intel version even if your machine has an Apple Silicon / ARM processor. 
-
-```{figure} figs/readme/anaconda-intel.png
-:name: figure-anaconda-intel
-```
-
 During Installation, select to install Anaconda for your machine only.
 
 ```{figure} figs/readme/anaconda-install-mac.png
@@ -132,6 +126,8 @@ When creating the reeds2 environment locally, you might run into an SSL error th
 ### GAMS Configuration
 NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.
 
+For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
+
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)
     **If installing on Mac:** on the "Installation" page, click "customize" and ensure the box to "Add GAMS to PATH" is checked.
 
@@ -162,7 +158,7 @@ The ReEDS source code is hosted on GitHub at <https://github.com/ReEDS-Model/ReE
 git lfs install
 ```
 
-3. Clone the ReEDS-2.0 repository on your desktop. Alternatively, download a ZIP from GitHub ({numref}`figure-github-download`).
+3. Clone the ReEDS repository on your desktop. Alternatively, download a ZIP from GitHub ({numref}`figure-github-download`).
 
 ```{figure} figs/readme/github-download.png
 :name: figure-github-download
@@ -291,7 +287,7 @@ If you experience issues, try the following:
 **Quick Start:**
 1. Navigate to the ReEDS directory from the command line
 2. Activate environment: `conda activate reeds2`
-3. Run the model: `python runbatch.py`
+3. Run the model: `python runreeds.py`
 4. Follow the prompts for batch configuration
 5. Check for a successful run: 
    1. Look for CSV files in `runs/[batchname_scenario]/outputs` (a successful run should have 100+ csv files in the outputs folder)

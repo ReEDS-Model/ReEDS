@@ -1,6 +1,6 @@
 ### Notes
 # This file holds parameters used in the objective function. These parameters
-# are checked using input_processing/check_inputs.py, which will identify missing
+# are checked using reeds/input_processing/check_inputs.py, which will identify missing
 # values in the parameters if there are any.
 
 # Instructions:
@@ -29,12 +29,12 @@
 
 # Note that in many cases the specific configuration here does not match the GAMS
 # code. For example, the check for cost_cap excludes hydro and psh, even though
-# those are not explicitly excluded in c_supplyobjective.gms. When values are
+# those are not explicitly excluded in d_objective.gms. When values are
 # known to be zero they must be excluded otherwise they will be flagged as missing
 # (GAMS does not hold zero values, so values explicitly set to zero will appear
 # the same as missing values).
 
-# The ordering of parameters here should follow the ordering in c_supplyobjective.gms.
+# The ordering of parameters here should follow the ordering in d_objective.gms.
 # Most general-purpose parameters used in the objective function should be added to
 # this file. Parameters that are primarily user-defined or that define their own scope
 # without the use of separate index sets are not tested here. Examples of such skipped

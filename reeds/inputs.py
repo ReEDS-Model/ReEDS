@@ -11,52 +11,41 @@ import sklearn.cluster
 import geopandas as gpd
 from pathlib import Path
 from warnings import warn
+from typing import Literal
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
-from input_processing import mcs_sampler
+from reeds.input_processing import mcs_sampler
 
 ### Functions
-def parse_regions(case_or_string, case=None):
+def parse_regions(case:str|Path|None=None, **kwargs) -> list:
     """
+    Get the list of active model zones.
+
     Inputs
     ------
-    case_or_string: path to a ReEDS case or a parseable string in the format of GSw_Region
-    case: path to a ReEDS case. Only used if case_or_string is not a ReEDS case. Should be
-        used if you want to select a subset of model zones from a ReEDS case that used
-        region aggregation.
+    case: Filepath to a ReEDS case or None. If None, the defaults from cases.csv are used.
+    **kwargs: key/value pairs from cases.csv that override the values in the provided case.
+        The only relevant switches here are GSw_ZoneSet and GSw_Region.
 
     Returns
     -------
-    np.array of zone names
-        - If case_or_string is a case, return the regions modeled in the run
-        - If case_or_string is a parseable string in the format of GSw_Region, return
-          the regions that obey that string
+    list of zone names
 
     Examples
     --------
-    parse_regions('transreg/NYISO') -> ['p127', 'p128']
-    parse_regions('st/PA') -> ['p115', 'p119', 'p120', 'p122']
-    parse_regions('st/PA', 'path/to/case/using/region/aggregation') -> ['p115', 'p120', 'z122']
+    parse_regions(GSw_ZoneSet='z134', GSw_Region='transreg/NYISO') -> ['p127', 'p128']
+    parse_regions(GSw_ZoneSet='z134', GSw_Region='st/PA') -> ['p115', 'p119', 'p120', 'p122']
+    parse_regions(GSw_ZoneSet='z132', GSw_Region='st/PA') -> ['p115', 'p120', 'z122']
     """
-    if os.path.exists(case_or_string):
-        sw = reeds.io.get_switches(case_or_string)
-        hierarchy = reeds.io.get_hierarchy(case_or_string)
-        GSw_Region = sw['GSw_Region']
-    ## Provide case argument if using aggregated regions
-    elif os.path.exists(str(case)):
-        hierarchy = reeds.io.get_hierarchy(case)
-        GSw_Region = case_or_string
-    else:
-        hierarchy = reeds.io.get_hierarchy()
-        GSw_Region = case_or_string
-
-    level, regions = GSw_Region.split('/')
-    regions = regions.split('.')
-    if level in ['r', 'ba']:
-        rs = [r for r in hierarchy.index if r in regions]
-    else:
-        rs = hierarchy.loc[hierarchy[level].isin(regions)].index
-    return rs
+    sw = reeds.io.get_switches(case, **kwargs)
+    hierarchy = reeds.io.assemble_hierarchy(case, **kwargs)
+    region_groups = sw.GSw_Region.split('//')
+    zones = []
+    for region_group in region_groups:
+        level, _regions = region_group.split('/')
+        regions = _regions.split('.')
+        zones.extend(hierarchy.loc[hierarchy[level].isin(regions), 'r'].tolist())
+    return zones
 
 
 def parse_yearset(yearset:str) -> list:
@@ -338,6 +327,62 @@ def parse_cases(
     return dfcases_out
 
 
+def solvestring_sequential(
+        batch_case, caseSwitches,
+        cur_year, next_year, prev_year, restartfile,
+        toLogGamsString=' logOption=4 logFile=gamslog.txt appendLog=1 ',
+        hpc=0, iteration=0, stress_year=None,
+        temporal_inputs='rep',
+    ):
+    """
+    Typical inputs:
+    * restartfile: batch_case if first solve year else {batch_case}_{prev_year}
+    * caseSwitches: loaded from {batch_case}/inputs_case/switches.csv
+    """
+    savefile = f"{batch_case}_{cur_year}i{iteration}"
+    _stress_year = f"{cur_year}i0" if stress_year is None else stress_year
+    out = (
+        f"gams {Path('reeds','core','solve','3_solve_oneyear.gms')}"
+        + (" license=gamslice.txt" if hpc else '')
+        + " o=" + os.path.join("lstfiles", f"{savefile}.lst")
+        + " r=" + os.path.join("g00files", restartfile)
+        + " gdxcompress=1"
+        + " xs=" + os.path.join("g00files", savefile)
+        + toLogGamsString
+        + f" --case={batch_case}"
+        + f" --cur_year={cur_year}"
+        + f" --next_year={next_year}"
+        + f" --prev_year={prev_year}"
+        + f" --stress_year={_stress_year}"
+        + f" --temporal_inputs={temporal_inputs}"
+        + ''.join([f" --{s}={caseSwitches[s]}" for s in [
+            'GSw_Canada',
+            'GSw_ClimateHydro',
+            'GSw_ClimateWater',
+            'GSw_gopt',
+            'GSw_HourlyChunkLengthRep',
+            'GSw_HourlyChunkLengthStress',
+            'GSw_HourlyType',
+            'GSw_HourlyWrapLevel',
+            'GSw_MGA_CostDelta',
+            'GSw_MGA_Direction',
+            'GSw_PVB_Dur',
+            'GSw_SkipRAyear',
+            'GSw_StateCO2ImportLevel',
+            'GSw_StartMarkets',
+            'GSw_ValStr',
+            'solver',
+            'debug',
+            'startyear',
+            'diagnose',
+            'diagnose_year'
+        ]])
+        + '\n'
+    )
+
+    return out
+
+
 def get_bin(
     df_in,
     bin_num,
@@ -483,46 +528,58 @@ def get_itl(r, rr, case=None, errors='raise', **kwargs) -> dict:
     return itl
 
 
-def get_itls(case=None, level:str='r', errors='raise', **kwargs) -> pd.DataFrame:
+def get_interface_data(
+    case=None,
+    datafile:Literal['itl_NARIS.csv', 'transmission_cost_distance.csv']='itl_NARIS.csv',
+    level:str='r',
+    interfaces:bool=True,
+    errors='raise',
+    **kwargs,
+) -> pd.DataFrame:
     """
-    Get all the ITLs for the specified resolution. The resolution can be specified by:
+    Get all the transmission interface data for the specified resolution.
+    The resolution can be specified by:
         - Providing a path to a ReEDS run via `case`
         - Providing `GSw_ZoneSet` as a keyword argument
     If neither `case` nor `GSw_ZoneSet` are provided, the default resolution from
     `cases.csv` is used.
 
     Args:
+        datafile (str): 'itl_NARIS.csv' or 'transmission_cost_distance.csv'
         level (str): 'r' or 'transgrp'
-
-    Inputs for testing:
-        case = None
-        level = 'r'
-        kwargs = {}
-        errors = 'raise'
+        interfaces (bool): If True, return values for
+            inputs/zones/{GSw_ZoneSet}/interfaces_{level}.csv;
+            if False, return values for all start/end zone pairs in GSw_ZoneSet
     """
+    ## Derivative inputs
+    datacols = {
+        'itl_NARIS.csv': ['MW_forward', 'MW_reverse'],
+        'transmission_cost_distance.csv': ['polarity', 'voltage', 'cost_MUSD', 'length_miles'],
+    }[datafile]
+    ## Get some settings
     sw = reeds.io.get_switches(case, **kwargs)
     inputs = Path(reeds.io.reeds_path, 'inputs')
-    ## Get the ITL config settings
     config = get_itl_config()
     hashfunc = config['hashfunc']
-    ## Get the ITLs for all interfaces
-    fpath = Path(inputs, 'transmission', 'itl_NARIS.csv')
-    itls = (
+    ## Get the data for all interfaces
+    fpath = Path(inputs, 'transmission', datafile)
+    dfin = (
         pd.read_csv(fpath)
         .rename(columns={
-            f'{hashfunc}_from':f'{hashfunc}_r',
-            f'{hashfunc}_to':f'{hashfunc}_rr',
+            f'{hashfunc}_from': 'start',
+            f'{hashfunc}_to': 'end',
         })
     )
-    if itls.index.duplicated().sum():
-        raise ValueError('Duplicate entries in ITL database')
+    if dfin.index.duplicated().sum():
+        raise ValueError(f'Duplicate entries in {datafile}')
     ### Get the zone hashes
+    zone_node = pd.read_csv(
+        Path(inputs, 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
+        index_col='r',
+    )
     if level == 'r':
         ## We save the zonehash for level == 'r' directly for peace of mind
-        zonehash = pd.read_csv(
-            Path(inputs, 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
-            index_col='r',
-        )[hashfunc]
+        zonehash = zone_node[hashfunc]
     else:
         ## For other levels, we calculate the zonehash from the hierarchy
         hierarchy = reeds.io.assemble_hierarchy(case, **kwargs).set_index('r')
@@ -536,18 +593,43 @@ def get_itls(case=None, level:str='r', errors='raise', **kwargs) -> pd.DataFrame
             )
             raise ValueError(err)
         zonehash = county2level.reset_index().groupby(level).FIPS.agg(hash_counties)
-    ### Get the ITLs
-    interfacepath = Path(inputs, 'zones', sw.GSw_ZoneSet, f'interfaces_{level}.csv')
-    dfout = pd.read_csv(interfacepath)
-    for i, r in enumerate(['r', 'rr']):
-        dfout[r] = dfout.interface.str.split(config['idelim']).str[i]
-        dfout[f'{hashfunc}_{r}'] = dfout[r].map(zonehash)
-    dfout = dfout.merge(itls, on=[f'{hashfunc}_r', f'{hashfunc}_rr'], how='left')
+    ### Get the data for the defined interfaces
+    if interfaces:
+        interfacepath = Path(inputs, 'zones', sw.GSw_ZoneSet, f'interfaces_{level}.csv')
+        dfout = pd.read_csv(interfacepath)
+        for i, (r, side) in enumerate([('r', 'start'), ('rr', 'end')]):
+            dfout[r] = dfout.interface.str.split(config['idelim']).str[i]
+            dfout[side] = dfout[r].map(zonehash)
+        dfout = dfout.merge(dfin, on=['start', 'end'], how='left')
+    else:
+        ## Include any connections to offshore zones for now
+        dfoffshore = reeds.io.get_offshore_zones()
+        offshore_zones = dfoffshore.index.values.tolist()
+        dfout = dfin.loc[
+            dfin.start.isin(zonehash.tolist()+offshore_zones)
+            & dfin.end.isin(zonehash.tolist()+offshore_zones)
+        ].copy()
+        hash2zone = pd.Series(
+            data=zonehash.index.tolist()+offshore_zones,
+            index=zonehash.values.tolist()+offshore_zones,
+        )
+        for r, side in [('r', 'start'), ('rr', 'end')]:
+            dfout[r] = dfout[side].map(hash2zone)
+        ## Keep them sorted
+        dfout.r, dfout.rr = dfout[['r','rr']].min(axis=1), dfout[['r','rr']].max(axis=1)
+        ## Include the lat/lon for plotting and straight-line distance
+        zone2latlon = pd.concat([
+            dfoffshore[['node_lat','node_lon']],
+            zone_node.set_index(hashfunc)[['node_lat','node_lon']],
+        ])
+        for side in ['start', 'end']:
+            for datum in ['lat', 'lon']:
+                dfout[f'{side}_{datum}'] = dfout[side].map(zone2latlon[f'node_{datum}'])
     ### Make sure it worked
-    missing = dfout.loc[dfout.MW_forward.isnull() | dfout.MW_reverse.isnull()]
+    missing = dfout.loc[dfout[datacols].isnull().any(axis=1)]
     if len(missing):
         print(missing)
-        err = f'Missing ITL for {len(missing)} interfaces'
+        err = f'Missing data from {datafile} for {len(missing)} interfaces'
         if len(missing) <= 10:
             err += ': ' + (' '.join(missing.interface))
         if errors == 'raise':
@@ -557,34 +639,55 @@ def get_itls(case=None, level:str='r', errors='raise', **kwargs) -> pd.DataFrame
     return dfout.dropna()
 
 
-def get_zones(case=None, crs='ESRI:102008', **kwargs) -> gpd.GeoDataFrame:
+def get_itls(case=None, level:str='r', errors='raise', **kwargs) -> pd.DataFrame:
     """
+    Get all the ITLs for the specified resolution using get_interface_data().
+    The resolution can be specified by:
+        - Providing a path to a ReEDS run via `case`
+        - Providing `GSw_ZoneSet` as a keyword argument
+    If neither `case` nore `GSw_ZoneSet` are provided, the default resolution from
+    `cases.csv` is used.
+
     Args:
-        case (str, Path, or None): Path to a ReEDS case.
-            If None, uses the default GSw_ZoneSet from cases.csv.
-        crs (str): Coordinate reference system
-        **kwargs: ReEDS switch:value pairs (overrides case argument)
+        level (str): 'r' or 'transgrp'
+
+    Inputs for testing:
+        case = None
+        level = 'r'
+        kwargs = {}
+        errors = 'raise'
     """
-    dfcounty = reeds.spatial.get_map('county', source='tiger', crs=crs)
-    dfstates = reeds.spatial.get_map('states', source='census', crs=crs)
-    country = dfstates.dissolve().geometry[0]
-    county2zone = reeds.io.get_county2zone(case, **kwargs)
+    return get_interface_data(
+        case=case,
+        datafile='itl_NARIS.csv',
+        level=level,
+        interfaces=True,
+        errors=errors,
+        **kwargs,
+    )
 
-    dfcounty['r'] = county2zone
 
-    dfzones = dfcounty.dissolve('r')
-    dfzones.geometry = dfzones.intersection(country).buffer(0)
-
-    return dfzones[['geometry']]
+def get_distances(case=None, errors='raise', **kwargs) -> pd.DataFrame:
+    """
+    """
+    distances = get_interface_data(
+        case=case,
+        datafile='transmission_cost_distance.csv',
+        level='r',
+        interfaces=False,
+        errors=errors,
+        **kwargs,
+    )
+    return distances
 
 
 def _make_line(row):
     return shapely.LineString([[row.from_lon, row.from_lat], [row.to_lon, row.to_lat]])
 
 
-def get_hvdc_lines():
+def get_hvdc_lines(filename='hvdc_existing.csv'):
     """Load data for individual HVDC lines"""
-    datapath = Path(reeds.io.reeds_path, 'inputs', 'transmission', 'hvdc_lines.csv')
+    datapath = Path(reeds.io.reeds_path, 'inputs', 'transmission', filename)
     dfdc = pd.read_csv(datapath)
     dfdc['geometry'] = dfdc.apply(_make_line, axis=1)
     dfdc = gpd.GeoDataFrame(dfdc, crs='EPSG:4326')
@@ -593,16 +696,28 @@ def get_hvdc_lines():
     return dfdc
 
 
-def map_hvdc_lines_to_interfaces(case=None, **kwargs) -> pd.DataFrame:
+def map_hvdc_lines_to_interfaces(
+    case=None,
+    filename='hvdc_existing.csv',
+    dtype:Literal['capacity', 'cost']='capacity',
+    **kwargs,
+) -> pd.DataFrame:
     """
     Assign HVDC line capacity to interfaces by mapping start/end points to zones
 
     Inputs for testing:
         case = None
-        kwargs = {'GSw_ZoneSet': 'z90'}
+        kwargs = {'GSw_ZoneSet': 'z132'}
+        for filename in [
+            'hvdc_existing.csv',
+            'hvdc_planned-baseline.csv',
+            'hvdc_planned-NTP_MT.csv',
+            'hvdc_planned-NTP_P2P.csv',
+        ]:
+            map_hvdc_lines_to_interfaces(case=case, filename=filename, kwargs=kwargs)
     """
-    dfzones = get_zones(case, **kwargs)
-    dfdc = get_hvdc_lines().to_crs(dfzones.crs)
+    dfzones = reeds.io.get_zones(reeds.io.standardize_case(case), **kwargs)
+    dfdc = get_hvdc_lines(filename=filename).to_crs(dfzones.crs)
     for i, side in enumerate(['from', 'to']):
         dfdc[f'zone_{side}'] = gpd.sjoin(
             dfdc.set_geometry(f'{side}_latlon').set_crs('EPSG:4326').to_crs(dfzones.crs),
@@ -614,11 +729,19 @@ def map_hvdc_lines_to_interfaces(case=None, **kwargs) -> pd.DataFrame:
         dfdc.loc[dfdc.zone_from != dfdc.zone_to].dropna()
         .rename(columns={'zone_from':'r', 'zone_to':'rr'})
     ).copy()
-    ## Normalize from/to order and sum capacity for each interface
+    ## Normalize from/to order
     for index, row in dfcap.iterrows():
         for side, r in enumerate(['r', 'rr']):
             dfcap.loc[index, r] = sorted(row[['r','rr']])[side]
-    dfout = dfcap.groupby(['r','rr'])[['name','MW']].agg({'MW':sum, 'name':list})
+    if dtype == 'capacity':
+        ## Sum capacity for each interface
+        dfout = (
+            dfcap
+            .groupby(['r', 'rr', 'trtype', 'year_online', 'certain'])
+            [['name', 'MW']].agg({'MW':sum, 'name':list})
+        )
+    else:
+        dfout = dfcap.copy()
     return dfout
 
 
@@ -755,9 +878,16 @@ def validate_zoneset(GSw_ZoneSet):
             f"match for {len(wrong)} zones: {', '.join(wrong.index)}"
         )
     ## Do all the zone interfaces have ITLs?
-    get_itls(GSw_ZoneSet=GSw_ZoneSet, errors='raise')
+    dfitl = get_itls(GSw_ZoneSet=GSw_ZoneSet, errors='raise')
     ## Do all the transgrp interfaces have ITLs?
     get_itls(GSw_ZoneSet=GSw_ZoneSet, level='transgrp', errors='raise')
+    ## Do all interfaces with ITLs have distances and costs?
+    dfdistance = get_distances(GSw_ZoneSet=GSw_ZoneSet)
+    dftest = dfitl.merge(dfdistance.loc[dfdistance.polarity=='ac'], on=['r','rr'], how='left')
+    nulls = dftest.loc[dftest[['cost_MUSD','length_miles']].isnull().sum(axis=1) > 0]
+    if len(nulls):
+        print(nulls)
+        raise ValueError(f'Missing transmission distance/cost for {len(nulls)} interfaces')
     ## Do the hierarchy files have all the required columns?
     required_levels = ['st', 'transreg', 'transgrp', 'nercr', 'interconnect']
     hierarchy = reeds.io.assemble_hierarchy(GSw_ZoneSet=GSw_ZoneSet).set_index('r')

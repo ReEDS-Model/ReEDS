@@ -8,7 +8,7 @@ from pdb import set_trace as b
 
 #Inputs
 bldg_type = 'com' # 'com' for comstock or 'res' for resstock
-bldg_path = r'/projects/geohc/jm_ReEDS-2.0/postprocessing/reValue/parallel_agg/outputs/outputs_2025-01-20-15-17-29'
+bldg_path = r'/projects/geohc/jm_ReEDS/postprocessing/reValue/parallel_agg/outputs/outputs_2025-01-20-15-17-29'
 bldg_tech = 'upgrade0'
 
 shutil.copy2(os.path.realpath(__file__), bldg_path)

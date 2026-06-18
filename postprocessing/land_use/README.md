@@ -7,7 +7,7 @@ estimate total land use from a ReEDS scenario for a set of specified reV charact
 
 The land_use analysis processing can be run as part of a ReEDS run by setting `land_use_analysis=1` (`reeds_to_rev` must also be enabled). By default the script runs for all supported technologies (upv and wind-ons).
 
-Alternatively, the script can be run as a standalone for a specified ReEDS run by passing the folder of the run: `python postprocessing/land_use/land_use_analysis.py /kfs3/scratch/bsergi/ReEDS-2.0/runs/[run folder]`. See the passed arguments options in the script for some additional options for running in standalone mode.
+Alternatively, the script can be run as a standalone for a specified ReEDS run by passing the folder of the run: `python postprocessing/land_use/land_use_analysis.py /kfs3/scratch/bsergi/ReEDS/runs/[run folder]`. See the passed arguments options in the script for some additional options for running in standalone mode.
 
 When running, users specify which land characterizations from the reV supply curve they want to process in `postprocessing/land_use/inputs/process_categories.json`. Each entry has a format like the following:
 

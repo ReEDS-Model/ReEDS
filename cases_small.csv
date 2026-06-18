@@ -27,7 +27,7 @@ GSw_Refurb,0
 GSw_PRM_CapCredit,0
 GSw_Retire,0
 GSw_RGGI,0
-GSw_SkipAugurYear,2030
+GSw_SkipRAyear,2030
 GSw_StateCap,0
 GSw_StateRPS,0
 GSw_Storage,0

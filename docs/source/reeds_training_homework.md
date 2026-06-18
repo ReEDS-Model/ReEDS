@@ -18,14 +18,14 @@ orphan: true
 5. Add a new column with 'ERCOT_BA' in row 1.
    - Copy the contents of rows 2-6 from the ERCOT_county column
    - Replace 'z3109' with 'z134' in row 5 (`GSw_ZoneSet`)
-   - Save `cases_examples.csv` in the ReEDS-2.0 folder (you can overwrite the existing file)
+   - Save `cases_examples.csv` in the ReEDS folder (you can overwrite the existing file)
 
 6. Open VS Code
-   - Open the folder where your repo is located (File -> Open Folder -> navigate to ReEDS-2.0 folder)
+   - Open the folder where your repo is located (File -> Open Folder -> navigate to ReEDS folder)
    - Open a new terminal and activate the reeds2 environment
 
 7. Start a new run
-   - `python runbatch.py`
+   - `python runreeds.py`
    - when prompted for case file name, enter `examples`
    - when prompted for how many simultaneous runs you would like to execute, enter 2
    - The 'ERCOT_county' and 'ERCOT_BA' runs should start
@@ -33,7 +33,7 @@ orphan: true
 
 ### 1. Review the results
 
-1. Navigate to 'ReEDS-2.0/runs/{your run name}/outputs/reeds-report' and open 'report.html'
+1. Navigate to 'ReEDS/runs/{your run name}/outputs/reeds-report' and open 'report.html'
 2. Learn to create your own plots of the results using bokehpivot
    - See [Bokeh Pivot](../postprocessing_tools.md#bokehpivot)
 
@@ -67,14 +67,14 @@ Create an informal slide deck with the following results:
 
 4. Change the ‘ignore’ row value to be 1 for all columns except ‘Western_BA_Decarb’ which you can either set to 0 or leave blank
 
-5. Save `cases_examples.csv` in ReEDS-2.0 folder
+5. Save `cases_examples.csv` in ReEDS folder
 
 6. Open VS Code
-   - Open the folder where your repo is located (File -> Open Folder -> navigate to ReEDS-2.0 folder)
+   - Open the folder where your repo is located (File -> Open Folder -> navigate to ReEDS folder)
    - Open a new terminal and activate the reeds2 environment
 
 7. Start a new run
-   - `python runbatch.py`
+   - `python runreeds.py`
    - when prompted for case file name, enter `examples`
    - The 'Western_BA_Decarb' run should start
 

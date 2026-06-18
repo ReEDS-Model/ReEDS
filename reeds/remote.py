@@ -98,6 +98,8 @@ def download_remote_files(only=None, force=False, access_token=None):
                     "of inputs/remote_files.csv."
                 )
                 raise ValueError(err)
+        else:
+            print(f'local version ok: {filename}')
         ## Always update the link
         linkpath = Path(row.linkpath)
         linkpath.unlink(missing_ok=True)

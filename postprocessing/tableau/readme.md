@@ -25,11 +25,11 @@ This folder contains files that facilitate the postprocessing and publication of
 ### Step 2: Run tableau_viz_suite.py
 
 1. Confirm your inputs: 
-- Scenario name and filepaths, as shown in `ReEDS-2.0\postprocessing\example.csv`. `tableau_viz_suite.py` will point to this csv to know which scenarios to include.
-    - Note: the "casename" column in `ReEDS-2.0\postprocessing\example.csv` will become the name shown in the CSV files that you may ultimately publish. It is recommended to choose decipherable scenario names for a general audience not familiar with your scenario matrix. For example, instead of "Scenario1" you may call it "MidDemand_RefTransmission_DefaultPolicy". Each value in the "casename" column must be unique.
-- Description of your suite of scenarios, to be used in the Tableau workbook: `ReEDS-2.0\postprocessing\tableau\scenarios.csv`. This should correspond to the scenarios used in `ReEDS-2.0\postprocessing\example.csv` in the "casename" column. If you do not populate `ReEDS-2.0\postprocessing\tableau\scenarios.csv`, the script will attempt to automatically assign metadata of your scenarios based on the cases.csv switches they used. This is imperfect for publication ready datasets but works well for quick analyses and interrim results. If the script cannot populate `ReEDS-2.0\postprocessing\tableau\scenarios.csv` automatically, the script will break.
+- Scenario name and filepaths, as shown in `ReEDS\postprocessing\example.csv`. `tableau_viz_suite.py` will point to this csv to know which scenarios to include.
+    - Note: the "casename" column in `ReEDS\postprocessing\example.csv` will become the name shown in the CSV files that you may ultimately publish. It is recommended to choose decipherable scenario names for a general audience not familiar with your scenario matrix. For example, instead of "Scenario1" you may call it "MidDemand_RefTransmission_DefaultPolicy". Each value in the "casename" column must be unique.
+- Description of your suite of scenarios, to be used in the Tableau workbook: `ReEDS\postprocessing\tableau\scenarios.csv`. This should correspond to the scenarios used in `ReEDS\postprocessing\example.csv` in the "casename" column. If you do not populate `ReEDS\postprocessing\tableau\scenarios.csv`, the script will attempt to automatically assign metadata of your scenarios based on the cases.csv switches they used. This is imperfect for publication ready datasets but works well for quick analyses and interrim results. If the script cannot populate `ReEDS\postprocessing\tableau\scenarios.csv` automatically, the script will break.
     - Note: Each value in the "Scenario Name" column must be unique. This is what is visible in the Tableau workbooks.
-- Technology mapping and cost mapping are pulled from the bokehpivot csvs (see `ReEDS-2.0\postprocessing\bokehpivot\in\reeds2`). To change those settings, alter the mappings in the bokehpivot csvs.
+- Technology mapping and cost mapping are pulled from the bokehpivot csvs (see `ReEDS\postprocessing\bokehpivot\in\reeds2`). To change those settings, alter the mappings in the bokehpivot csvs.
 - No additional packages are needed beyond the default ReEDS environment.
 2. Run tableau_viz_suite.py 
 
@@ -44,7 +44,7 @@ python postprocessing/tableau/tableau_viz_suite.py ../example.csv --years [2025,
 However, it has has not been configured to submit jobs on Kestrel because even with suites of 100+ runs, it only takes a couple minutes to process. 
 ```
 
-3. Expected outputs: expected output is a directory of csvs and shapefiles `ReEDS-2.0\postprocessing\tableau\out\report-{datetime}`.
+3. Expected outputs: expected output is a directory of csvs and shapefiles `ReEDS\postprocessing\tableau\out\report-{datetime}`.
 
 
 ### Step 3: Load your data into template Tableau workbook
@@ -53,7 +53,7 @@ However, it has has not been configured to submit jobs on Kestrel because even w
 3. You may also be asked to "Allow Extension" in a pop-up box. Click "OK". That extension is needed for the workbook to function properly.
 4. On the bottom left hand corner, click on "Data Source". 
 Under "Connections", in the top-left hand corner, click on the down arrow next to "Scenarios". Click "Edit Connection". 
-Change the directory to the location of the csv files you produced with `tableau_viz_suite.py`. Default location is `ReEDS-2.0\postprocessing\tableau\out\report-{datetime}`. Do this for each of the "Connections" in the workbook. For the `ReEDS_Study_Results_Charts.twbx` workbook, this is "Scenarios", "CSV Files" and "Hierarchy".  For the `ReEDS_Study_Results_Maps.twbx` workbook, this is "Scenarios", "CSV Files", "Transmission Endpoints", "US_PCA" and "Hierarchy".
+Change the directory to the location of the csv files you produced with `tableau_viz_suite.py`. Default location is `ReEDS\postprocessing\tableau\out\report-{datetime}`. Do this for each of the "Connections" in the workbook. For the `ReEDS_Study_Results_Charts.twbx` workbook, this is "Scenarios", "CSV Files" and "Hierarchy".  For the `ReEDS_Study_Results_Maps.twbx` workbook, this is "Scenarios", "CSV Files", "Transmission Endpoints", "US_PCA" and "Hierarchy".
 - Note: When altering the path for the `hierarchy.csv` file, point the path to the Tableau script outputs (ex. postprocessing/tableau/out/report-*), not `inputs/hierarchy.csv`.
 5. Clicking into this folder will automatically update the data. You should now see the new data populated throughout the notebook if you click to the other tabs, which are referred to as "Dashboards" in Tableau.
 6. If you do not see your data populating the "Dashboards", there are a couple common culprits.
@@ -80,7 +80,7 @@ Change the directory to the location of the csv files you produced with `tableau
 
 ## Troubleshooting
 
-`tableau_viz_suite.py` relies on the `ReEDS-2.0/reeds` functions and functions in bokehpivot. Errors may be derived from broken functionality there.  
+`tableau_viz_suite.py` relies on the `ReEDS/reeds` functions and functions in bokehpivot. Errors may be derived from broken functionality there.  
 
 ## Known Incompatibilities
 - Mixed resolution scenarios - this postprocessing pipeline is currently only configured

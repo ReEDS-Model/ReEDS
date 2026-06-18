@@ -1,0 +1,29 @@
+name: labeler
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  labeler:
+    name: apply labels
+    permissions:
+      contents: read
+      pull-requests: write # Required to add/remove pull-request labels.
+      issues: write # Required because PR labels are issue labels in the API.
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6.1.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yaml
+          sync-labels: true

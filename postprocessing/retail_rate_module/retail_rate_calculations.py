@@ -4,9 +4,9 @@
 import argparse
 import datetime
 import itertools
+import gdxpds
 import pandas as pd
 import numpy as np
-import gdxpds
 import os
 import sys
 import urllib
@@ -462,7 +462,7 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
             'r':'receiving_region', 't':'t', 'Value':'expenditure_flow',
             'Dim1':'receiving_region','Dim2':'t','Val':'expenditure_flow'})
         )
-    ### According to e_report.gms, all international flows are load to/from Canada
+    ### According to report.gms, all international flows are load to/from Canada
     # (not capacity, reserves, rps, or Mexico)
     state_international_flows['price_type'] = 'load'
     state_international_flows['sending_state'] = 'Canadian Imports'

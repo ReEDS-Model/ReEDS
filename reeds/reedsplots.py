@@ -1,7 +1,9 @@
 ### Imports
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import matplotlib as mpl
+from typing import Literal
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import patheffects as pe
@@ -230,25 +232,6 @@ def plot_diff(
         'Runtime by year (hours)': 1,
         'NEUE (ppm)': 1,
     }
-    outputs_unit_converstion = {
-        'Error Check': 1,
-        'Generation (TWh)': 1,
-        'Capacity (GW)': 1,
-        'New Annual Capacity (GW)': 1,
-        'Annual Retirements (GW)': 1,
-        'Final Gen by timeslice (GW)': 1,
-        'Firm Capacity (GW)': 1,
-        'Curtailment Rate': 1,
-        'Transmission (GW-mi)': 0.001,
-        'Transmission (PRM) (GW-mi)': 0.001,
-        'Bulk System Electricity Pric': 1,
-        'National Average Electricity': 1,
-        '2022-2050 Present Value of S': 1,
-        'Present Value of System Cost': 1,
-        'Runtime (hours)': 1,
-        'Runtime by year (hours)': 1,
-        'NEUE (ppm)': 1,
-    }
 
     output_formatting = reeds.io.get_plot_formatting()
 
@@ -272,7 +255,6 @@ def plot_diff(
 
     ### Load the data
     dfbase = reeds.io.read_report(casebase, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
-    dfbase[ycol[val]]*=outputs_unit_converstion[val]
     if 'tech' in dfbase.columns:
         dfbase.tech = simplify_techs(dfbase.tech, display_level = simple_techs)
         dfbase = (
@@ -291,7 +273,6 @@ def plot_diff(
         dfbase = dfbase.loc[dfbase[col] == fixval].copy()
 
     dfcomp = reeds.io.read_report(casecomp, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
-    dfcomp[ycol[val]]*=outputs_unit_converstion[val]
     if 'tech' in dfcomp.columns:
         dfcomp.tech = simplify_techs(dfcomp.tech, display_level = simple_techs)
         dfcomp = (
@@ -1239,9 +1220,7 @@ def plot_transmission_utilization(
             dftrans['trans_flow_power'].loc[dftrans['trans_flow_power'].Value < 0, ['rr','r']].values
         )
         dftrans['trans_flow_power'].Value = dftrans['trans_flow_power'].Value.abs()
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     ### Combine all transmission types
     for data in ['trans_flow_power','trans_cap']:
         dftrans[data]['trtype'] = 'all'
@@ -1736,19 +1715,16 @@ def plot_prmtrade(
     dfba = dfmap['r']
     dfstates = dfmap['st']
     ## Downselect to modeled regions
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     dfba = dfba.loc[val_r].copy()
 
     if sw.get('GSw_RegionResolution', 'ba') != 'county':
-        endpoints = (
-            gpd.read_file(os.path.join(reeds_path,'inputs','shapefiles','transmission_endpoints'))
-            .set_index('ba_str'))
-        endpoints['x'] = endpoints.centroid.x
-        endpoints['y'] = endpoints.centroid.y
-        dfba['x'] = dfba.index.map(endpoints.x)
-        dfba['y'] = dfba.index.map(endpoints.y)
+        endpoints = reeds.plots.df2gdf(
+            reeds.io.assemble_hierarchy(case).set_index('r'),
+            lat='node_lat', lon='node_lon',
+        )
+        dfba['x'] = dfba.index.map(endpoints.centroid.x)
+        dfba['y'] = dfba.index.map(endpoints.centroid.y)
 
     ### Get scaling and layout
     _vmax = dfplot.MW.abs().max() if vmax in [None, 0, 0.] else vmax
@@ -1825,9 +1801,7 @@ def plot_average_flow(
     dfmap = reeds.io.get_dfmap(case)
     dfba = dfmap['r']
     dfstates = dfmap['st']
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     if extent.lower() not in ['usa','full','nation','us','country','all']:
         dfba = dfba.loc[val_r]
 
@@ -2034,7 +2008,7 @@ def plot_interreg_transfer_cap_ratio(
     """Plot interregional transfer capability / peak demand over time"""
     ### Inputs for debugging
     # case = (
-    #     '/Users/pbrown/github2/ReEDS-2.0/runs/'
+    #     '/Users/pbrown/github2/ReEDS/runs/'
     #     'v20240212_transopM0_WECC_CPNP_GP1_TFY2035_PTL2035_TRc_MITCg0p3')
     # casenames = 'base'
     # level = 'transreg'; tstart=2020;
@@ -3574,10 +3548,21 @@ def map_hybrid_pv_wind(
 def plot_dispatch_yearbymonth(
         case, t=2050, plottype='gen', periodtype='rep',
         techs=None, region=None,
-        f=None, ax=None, figsize=(12,6), highlight_rep_periods=1,
+        figsize=(12,6), highlight_rep_periods=1,
     ):
     """
     Full year dispatch for final year with rep days mapped to actual days
+
+    Usage:
+        ```python
+        plot_generator = plot_dispatch_yearbymonth(case)
+        while True:
+            try:
+                f, ax, df = next(plot_generator)
+            except StopIteration:
+                break
+        ```
+
     Inputs
     ------
     techs: None to plot all techs, or list of subset techs, or single tech string
@@ -3689,46 +3674,51 @@ def plot_dispatch_yearbymonth(
         period_szn['repnum'] = period_szn.rep_period.map(repnum)
 
     ### Plot it
-    plt.close()
-    f, ax = plots.plotyearbymonth(
-        dfplot,
-        colors=[
-            tech_color[i.replace('_pos','').replace('_neg','').replace('_off','')]
-            for i in dfplot],
-        lwforline=0, f=f, ax=ax, figsize=figsize)
+    weatheryears = [int(i) for i in sw.GSw_HourlyWeatherYears.split('_')]
+    for weatheryear in weatheryears:
+        _dfplot = dfplot.loc[str(weatheryear)]
 
-    if highlight_rep_periods:
-        width = pd.Timedelta('5D') if sw['GSw_HourlyType'] == 'wek' else pd.Timedelta('1D')
-        ylim = ax[0].get_ylim()
-        for i, row in period_szn.iterrows():
-            plottime = pd.Timestamp(2001, 1, row.timestamp.day)
-            if row.rep:
-                ## Draw an outline
-                box = mpl.patches.Rectangle(
-                    xy=(plottime, ylim[0]),
-                    width=width, height=(ylim[1]-ylim[0]),
-                    lw=0.75, edgecolor='k', facecolor='none', ls=':',
-                    clip_on=False, zorder=2e6
-                )
-            else:
-                ## Wash out the dispatch
-                box = mpl.patches.Rectangle(
-                    xy=(plottime, ylim[0]),
-                    width=width, height=(ylim[1]-ylim[0]),
-                    lw=0.75, edgecolor='none', facecolor='w', alpha=0.4,
-                    clip_on=False, zorder=1e6
-                )
-            ax[row.timestamp.month-1].add_patch(box)
-            ## Note the rep period
-            ax[row.timestamp.month-1].annotate(
-                row.repnum,
-                (plottime+pd.Timedelta('30m'), ylim[1]*0.95),
-                va='top', size=5, zorder=1e7,
-                color=('k' if row.rep else 'C7'),
-                weight=('normal' if row.rep else 'normal'),
-            )
+        plt.close()
+        f, ax = plots.plotyearbymonth(
+            _dfplot,
+            colors=[
+                tech_color[i.replace('_pos','').replace('_neg','').replace('_off','')]
+                for i in _dfplot],
+            lwforline=0, figsize=figsize)
 
-    return f, ax, dfplot
+        if highlight_rep_periods:
+            _period_szn = period_szn.loc[period_szn.year==weatheryear]
+            width = pd.Timedelta('5D') if sw['GSw_HourlyType'] == 'wek' else pd.Timedelta('1D')
+            ylim = ax[0].get_ylim()
+            for i, row in _period_szn.iterrows():
+                plottime = pd.Timestamp(2001, 1, row.timestamp.day)
+                if row.rep:
+                    ## Draw an outline
+                    box = mpl.patches.Rectangle(
+                        xy=(plottime, ylim[0]),
+                        width=width, height=(ylim[1]-ylim[0]),
+                        lw=0.75, edgecolor='k', facecolor='none', ls=':',
+                        clip_on=False, zorder=2e6
+                    )
+                else:
+                    ## Wash out the dispatch
+                    box = mpl.patches.Rectangle(
+                        xy=(plottime, ylim[0]),
+                        width=width, height=(ylim[1]-ylim[0]),
+                        lw=0.75, edgecolor='none', facecolor='w', alpha=0.4,
+                        clip_on=False, zorder=1e6
+                    )
+                ax[row.timestamp.month-1].add_patch(box)
+                ## Note the rep period
+                ax[row.timestamp.month-1].annotate(
+                    row.repnum,
+                    (plottime+pd.Timedelta('30m'), ylim[1]*0.95),
+                    va='top', size=5, zorder=1e7,
+                    color=('k' if row.rep else 'C7'),
+                    weight=('normal' if row.rep else 'normal'),
+                )
+
+        yield f, ax, _dfplot, weatheryear
 
 
 def plot_dispatch_weightwidth(
@@ -4986,14 +4976,27 @@ def map_period_dispatch(
     return f, ax, out
 
 
+def make_dayofyear_colormap(startfrom=200, fmt='%-m/%-d'):
+    """
+    Map day of year to a value in [0-1] that can be used to look up a color from a cyclic colormap
+    """
+    days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
+    monthdays = days_of_year.strftime(fmt)
+    colorvals = (
+        list(np.linspace(0,1,len(monthdays))[startfrom:])
+        + list(np.linspace(0,1,len(monthdays))[:startfrom])
+    )
+    monthday2val = dict(zip(monthdays, colorvals))
+    return monthday2val
+
+
 def plot_seed_stressperiods(
-    case, cmap=cmocean.cm.phase, startfrom=200,
+    case, cmap=cmocean.cm.phase,
     alpha=0.7, fontsize=5, pealpha=0.8, pelinewidth=1.5,
 ):
     """
     """
-    sys.path.append(os.path.join(reeds.io.reeds_path, 'input_processing'))
-    import hourly_repperiods
+    from reeds.input_processing import hourly_repperiods
 
     sw = reeds.io.get_switches(case)
     hierarchy = reeds.io.get_hierarchy(case)
@@ -5015,7 +5018,9 @@ def plot_seed_stressperiods(
         dictin_seed[year]['monthday'] = dictin_seed[year].timestamp.map(lambda x: x.strftime('%m-%d'))
 
     days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
-    monthdays = days_of_year.strftime('%m-%d')
+    fmt = '%m-%d'
+    monthdays = days_of_year.strftime(fmt)
+    monthday2val = make_dayofyear_colormap(fmt=fmt)
 
     ### Recalculate peak load days since we dropped duplicates above
     load_allyears = hourly_repperiods.get_load(
@@ -5037,26 +5042,6 @@ def plot_seed_stressperiods(
             level=sw['GSw_PRM_StressSeedLoadLevel'])
         for y in years
     }
-
-    ### Put cold colors in winter
-    colorvals = (
-        list(np.linspace(0,1,len(monthdays))[startfrom:])
-        + list(np.linspace(0,1,len(monthdays))[:startfrom])
-    )
-    monthday2val = dict(zip(monthdays, colorvals))
-
-    # ### Test it
-    # step = 5
-    # plt.close()
-    # f,ax = plt.subplots(figsize=(12,3))
-    # for x, monthday in enumerate(monthdays[::step]):
-    #     color = cmap(monthday2val[monthday])
-    #     ax.plot([x], [0], color=color, marker='o')
-    #     ax.annotate(monthday, (x, 0.015), rotation=90, ha='center', va='center', color=color)
-    # ax.set_title(startfrom)
-    # plots.despine(ax)
-    # plt.show()
-
 
     ### Plot it
     ncols = 3
@@ -5153,36 +5138,41 @@ def plot_seed_stressperiods(
     return f, ax
 
 
-def plot_repdays(case, cmap=cmocean.cm.phase, alpha=0.7, startfrom=200):
+def plot_repdays(case=None, year=None, actualday2repday=None, cmap=cmocean.cm.phase, alpha=0.7):
     """Plot representative days in (12month)x(monthdays) format"""
     ### Setup
     months = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ]
-    ### Get color map
-    days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
-    monthdays = days_of_year.strftime('%m/%d')
-    colorvals = (
-        list(np.linspace(0,1,len(monthdays))[startfrom:])
-        + list(np.linspace(0,1,len(monthdays))[:startfrom])
-    )
-    monthday2val = dict(zip(monthdays, colorvals))
 
     ### Data
-    sw = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'switches.csv'), header=None, index_col=0
-    ).squeeze(1)
+    sw = reeds.io.get_switches(case)
+    stylestring = '%-m/%-d' if os.name == 'posix' else '%#m/%#d'
+    monthday2val = make_dayofyear_colormap(fmt=stylestring)
+    va = 'center'
+    ytext = 0.5
+    if len(sw.GSw_HourlyWeatherYears.split('_')) > 1:
+        stylestring += '/\n%Y'
+        va = 'top'
+        ytext = 0.9
 
-    hmap_myr = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv'),
-        index_col='*timestamp', parse_dates=True,
-    )
+    if actualday2repday is None:
+        hmap_myr = pd.read_csv(
+            os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv'),
+            index_col='*timestamp', parse_dates=True,
+        )
+        hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
+        hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
 
-    hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
-    hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
+        if year is None:
+            year = int(sw.GSw_HourlyWeatherYears.split('_')[0])
 
-    actualday2repday = hmap_myr.drop_duplicates('yearperiod', keep='first').timestamp_rep
+        actualday2repday = (
+            hmap_myr.loc[str(year)]
+            .drop_duplicates(['year','yearperiod'], keep='first')
+            .timestamp_rep
+        )
     repdaycounts = actualday2repday.value_counts()
 
     ### Plot it
@@ -5202,17 +5192,17 @@ def plot_repdays(case, cmap=cmocean.cm.phase, alpha=0.7, startfrom=200):
         row = actualday.month - 1
         xstart = actualday.day - 1
         xend = xstart + (5 if sw.GSw_HourlyType == 'wek' else 1)
-        monthday = repday.strftime('%m/%d')
+        monthday = repday.strftime(stylestring).split('/\n')[0]
         ## Background color
         ax[row].axvspan(xstart, xend, color=cmap(monthday2val[monthday]), alpha=alpha, lw=0)
         ## Date
         ax[row].annotate(
-            repday.strftime('%-m/%-d' if os.name == 'posix' else '%#m/%#d'),
-            (xstart+0.5, 0.5), ha='center', va='center', fontsize=8,
-            path_effects=[pe.withStroke(linewidth=2.1, foreground='w', alpha=1)],
+            repday.strftime(stylestring),
+            (xstart+0.5, ytext), ha='center', va=va, fontsize=8,
+            path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.8)],
         )
         ## Box
-        if (actualday.month == repday.month) and (actualday.day == repday.day):
+        if (actualday.year, actualday.month, actualday.day) == (repday.year, repday.month, repday.day):
             ax[row].axvspan(xstart, xend, facecolor='none', edgecolor='k', zorder=1e6, clip_on=False)
             ax[row].annotate(
                 f'×{repdaycounts[repday]}', (xend-0.03, 0.05), ha='right', fontsize=7,
@@ -6207,21 +6197,20 @@ def map_stressors(
     dflevel = dfmap[level].copy()
 
     ### Get the data
-    augur_files = {
-        'vre_gen': os.path.join(case, 'ReEDS_Augur', 'augur_data', f'pras_vre_gen_{t}.h5'),
-        'load': os.path.join(case, 'ReEDS_Augur', 'augur_data', f'pras_load_{t}.h5'),
+    ra_files = {
+        'vre_gen': os.path.join(case, 'handoff', 'reeds_data', f'pras_vre_gen_{t}.h5'),
+        'load': os.path.join(case, 'handoff', 'reeds_data', f'pras_load_{t}.h5'),
     }
-    if any([not os.path.exists(fpath) for fpath in augur_files.values()]):
-        import ReEDS_Augur.prep_data as prep_data
-        prep_data.main(t, case, iteration)
+    if any([not os.path.exists(fpath) for fpath in ra_files.values()]):
+        reeds.resource_adequacy.prep_data.main(t, case, iteration)
 
-    vre_gen = reeds.io.read_file(augur_files['vre_gen'], parse_timestamps=True)
+    vre_gen = reeds.io.read_file(ra_files['vre_gen'], parse_timestamps=True)
     vre_gen.columns = pd.MultiIndex.from_tuples(
         vre_gen.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
 
-    load = reeds.io.read_file(augur_files['load'], parse_timestamps=True)
+    load = reeds.io.read_file(ra_files['load'], parse_timestamps=True)
 
     recf = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'recf.h5'),
@@ -6693,3 +6682,89 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     plots.trim_subplots(ax, nrows, ncols, len(coords))
 
     return f, ax, prm_final
+
+
+def validate_regional_capacity(
+    case,
+    mapmethod:Literal['FIPS','latlon']='county',
+    scale:float=1.2,
+    sharey=False,
+):
+    """Compare regional capacity from EIA-NEMS to ReEDS results for last historical year"""
+    ### Settings
+    plot_settings = reeds.io.get_plot_formatting()
+    tech_color = plot_settings['tech_color'].squeeze(1)
+    unitspath = Path(
+        reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+        'ReEDS_generator_database_final_EIA-NEMS.csv',
+    )
+    ### Get run capacity and last historical year
+    hierarchy = reeds.io.get_hierarchy(case)
+    dfmap = reeds.io.get_dfmap(case)
+    crs = dfmap['r'].crs
+    county2zone = reeds.io.get_county2zone(case)
+    sw = reeds.io.get_switches(case)
+    years = reeds.inputs.parse_yearset(sw.yearset)
+    scalars = reeds.io.get_scalars(case)
+    plotyear = max([y for y in years if y <= int(scalars.this_year)])
+    cap = reeds.io.read_output(case, 'cap')
+    cap = cap.loc[~cap.i.isin(['can-imports'])].copy()
+    cap.i = simplify_techs(cap.i)
+    cap_year = cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+    ### Get EIA-NEMS capacity and formatting
+    dfunits = reeds.plots.df2gdf(pd.read_csv(unitspath), lat='T_LAT', lon='T_LONG').to_crs(crs)
+    ## Clean up old techs
+    dfunits.tech = dfunits.tech.replace({'dupv':'upv'})
+    dfunits.tech = simplify_techs(dfunits.tech)
+    dfunits.FIPS = dfunits.FIPS.str.strip('p')
+    ## Map to zones
+    if mapmethod == 'FIPS':
+        dfunits['r'] = dfunits.FIPS.map(county2zone)
+    elif mapmethod == 'latlon':
+        dfunits = (
+            dfunits.sjoin(dfmap['r'][['geometry']], how='left')
+            .rename(columns={'index_right':'r'})
+        )
+    dfunits_year = dfunits.loc[
+        (dfunits.StartYear <= plotyear)
+        & (dfunits.RetireYear > plotyear)
+    ].copy()
+    ### Plot setup
+    rs = sorted(hierarchy.index)
+    nrows, ncols, coords = reeds.plots.get_coordinates(rs, aspect=1.3)
+    order = tech_color.index.tolist()
+    dictout = {}
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(scale*ncols, scale*nrows), sharex=True, sharey=sharey,
+        gridspec_kw={'wspace':0.5, 'hspace':0.5},
+    )
+    for r in rs:
+        _ax = ax[coords[r]]
+        _ax.set_title(r.replace('_','.'), y=0.95, fontsize=11)
+        dfplot = pd.concat({
+            'NEMS': dfunits_year.loc[dfunits_year.r==r].groupby('tech').summer_power_capacity_MW.sum(),
+            'ReEDS': cap_year[r],
+        ## Convert from MW to GW
+        }, axis=1).dropna(how='all').T / 1e3
+        keep = [i for i in order if i in dfplot]
+        if len(keep) != dfplot.shape[1]:
+            _missing = [i for i in dfplot if i not in keep]
+            print(dfplot)
+            raise ValueError(f"Dropped these techs: {_missing}")
+        dfplot = dfplot[keep]
+        reeds.plots.stackbar(
+            df=dfplot, ax=_ax, colors=tech_color, net=False, width=0.8,
+        )
+        dictout[r] = dfplot
+        ## Formatting
+        row, col = coords[r]
+        if row == nrows - 1:
+            ax[row,col].set_xticks(range(len(dfplot)))
+            ax[row,col].set_xticklabels(dfplot.index, rotation=90)
+    ## Formatting
+    ax[-1,0].set_ylabel(f'{plotyear} capacity [GW]', y=0, ha='left')
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(rs))
+    reeds.plots.despine(ax)
+    return f, ax, dictout

@@ -43,7 +43,7 @@ For new gas plants, this is the code implementation:
 1. `inputs/scalars.csv`
     - `caa_gas_max_cf` = 0.40.
     This is the maximum capacity factor that new gas plants (CCs or CTs) can operate at without being regulated under Clean Air Act, Section 111, expressed as a fraction.
-2. `c_supplymodel.gms` - `eq_caa_max_cf` enforces the maximum capacity factor for new gas plants.
+2. `c_model.gms` - `eq_caa_max_cf` enforces the maximum capacity factor for new gas plants.
 
 
 For existing coal plants, this is the code implementation:
@@ -57,7 +57,7 @@ For existing coal plants, this is the code implementation:
     This is the emissions rate (metric tons CO<sub>2</sub> per MWh) equivalent to average emissions from a new coal-CCS plant, assuming 90% capture rate.
     The emissions rate from a new coal-CCS plant in ReEDS is 0.051956 metric tons CO<sub>2</sub> per MWh (see `emit_rate` parameter) which assumes 95% capture.
     For 90% capture, the emissions rate is double that or 0.1039 metric tons CO<sub>2</sub> per MWh, which we use as the standard.
-2. `input_processing/WriteHintage.py`
+2. `reeds/input_processing/WriteHintage.py`
     - Coal plants are binned at the unit level if `GSw_Clean_Air_Act=1` so that each coal unit can independently choose to retire or upgrade.
     - Coal plants maintain their exogenous retirement assumption, except after 2032, when the Clean Air Act regulations begin and coal can retire endogenously.
     For example, if the NEMS data states that a plant will retire in 2029, we maintain that assumption and that plant will retire in 2029.
@@ -68,7 +68,7 @@ For existing coal plants, this is the code implementation:
     - if `caa_coal_retire_year` is not in the set of years being modeled for this run, then set it to the first year that is modeled after `caa_coal_retire_year`.
     For example, if running 5 year solves, then instead of enforcing coal retirement in 2032, it will be enforced in 2035.
 
-4. `c_supplymodel.gms`
+4. `c_model.gms`
     - `eq_caa_rate_standard(st,t)` - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions rate per state under Clean Air Act Section 111.
 
 ## Assumptions

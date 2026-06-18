@@ -191,9 +191,9 @@ def main(casematrix_path=None, batchname=None):
     ### Write it
     dfcases.to_csv(os.path.join(reeds_path,f'cases_{_batchname}.csv'))
 
-    ### Make sure the switch names and values pass the checks in runbatch.py
+    ### Make sure the switch names and values pass the checks in runreeds.py
     sep = ';' if os.name == 'posix' else '&&'
-    cmd = f"cd {reeds_path} {sep} python runbatch.py -b test -c {_batchname} -r 4 -p 1 --dryrun"
+    cmd = f"cd {reeds_path} {sep} python runreeds.py -b test -c {_batchname} -r 4 -p 1 --dryrun"
     result = subprocess.run(cmd, shell=True, capture_output=True)
     err = result.stderr.decode()
     if len(err):
