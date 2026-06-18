@@ -30,10 +30,10 @@ p28,WECC_SW,WestConnect,WestConnect_South,Mountain,AZ,western,USA,mountain,South
 p29,WECC_SW,WestConnect,WestConnect_South,Mountain,AZ,western,USA,mountain,Southwest,Arizona_Public_Service_Co,AZ
 p30,WECC_SW,WestConnect,WestConnect_South,Mountain,AZ,western,USA,mountain,Southwest,Arizona_Public_Service_Co,AZ
 p31,WECC_SW,WestConnect,WestConnect_South,Mountain,NM,western,USA,mountain,Southwest,Public_Service_Co_of_New_Mexico,NM_WestConnect
-p32,WECC_NW,WestConnect,WestConnect_North,Mountain,SD,western,USA,northern-plains,Plains,WAPA_Rocky_Mountain_Region,SD_WestConnect
+p32,WECC_NW,WestConnect,WestConnect_North,West_North_Central,SD,western,USA,northern-plains,Plains,WAPA_Rocky_Mountain_Region,SD_WestConnect
 p33,WECC_NW,WestConnect,WestConnect_North,Mountain,CO,western,USA,mountain,Mountain,Public_Service_Co_of_Colorado,CO
 p34,WECC_NW,WestConnect,WestConnect_North,Mountain,CO,western,USA,mountain,Mountain,Public_Service_Co_of_Colorado,CO
-p35,SPP,SPP,SPP_North,West_North_Central,MT,eastern,USA,mountain,Mountain,SPP,MT_SPP
+p35,SPP,SPP,SPP_North,Mountain,MT,eastern,USA,mountain,Mountain,SPP,MT_SPP
 p36,SPP,SPP,SPP_North,West_North_Central,ND,eastern,USA,northern-plains,Plains,SPP,ND_SPP
 p37,MISO,MISO,MISO_North,West_North_Central,ND,eastern,USA,northern-plains,Plains,MISO,ND_MISO
 p38,SPP,SPP,SPP_North,West_North_Central,SD,eastern,USA,northern-plains,Plains,SPP,SD_SPP
@@ -45,7 +45,7 @@ p43,MISO,MISO,MISO_North,West_North_Central,MN,eastern,USA,lake-states,Midwest,M
 p44,MISO,MISO,MISO_North,West_North_Central,MN,eastern,USA,lake-states,Midwest,MISO,MN
 p45,MISO,MISO,MISO_North,West_North_Central,IA,eastern,USA,corn-belt,Midwest,MISO,IA
 p46,MISO,MISO,MISO_North,East_North_Central,WI,eastern,USA,lake-states,Midwest,MISO,WI
-p47,SPP,SPP,SPP_South,West_South_Central,NM,eastern,USA,mountain,Southwest,SPP,NM_SPP
+p47,SPP,SPP,SPP_South,Mountain,NM,eastern,USA,mountain,Southwest,SPP,NM_SPP
 p48,SPP,SPP,SPP_South,West_South_Central,TX,eastern,USA,southern-plains,Texas,SPP,TX_SPP_N
 p49,SPP,SPP,SPP_South,West_South_Central,OK,eastern,USA,southern-plains,Plains,SPP,OK
 p50,SPP,SPP,SPP_South,West_South_Central,OK,eastern,USA,southern-plains,Plains,SPP,OK
@@ -57,7 +57,7 @@ p55,SPP,SPP,SPP_South,West_North_Central,MO,eastern,USA,corn-belt,Midwest,SPP,MO
 p56,SPP,SPP,SPP_South,West_South_Central,AR,eastern,USA,delta-states,Delta,SPP,AR_SPP
 p57,SPP,SPP,SPP_South,West_South_Central,TX,eastern,USA,southern-plains,Texas,SPP,TX_SPP_E
 p58,MISO,MISO,MISO_South,West_South_Central,LA,eastern,USA,delta-states,Delta,MISO,LA
-p59,WECC_SW,WestConnect,WestConnect_South,Mountain,TX,western,USA,southern-plains,Texas,El_Paso_Electric,TX_WestConnect
+p59,WECC_SW,WestConnect,WestConnect_South,West_South_Central,TX,western,USA,southern-plains,Texas,El_Paso_Electric,TX_WestConnect
 p60,ERCOT,ERCOT,ERCOT,West_South_Central,TX,texas,USA,southern-plains,Texas,ERCOT,TX_W_ERCOT
 p61,ERCOT,ERCOT,ERCOT,West_South_Central,TX,texas,USA,southern-plains,Texas,ERCOT,TX_W_ERCOT
 p62,ERCOT,ERCOT,ERCOT,West_South_Central,TX,texas,USA,southern-plains,Texas,ERCOT,TX_W_ERCOT
