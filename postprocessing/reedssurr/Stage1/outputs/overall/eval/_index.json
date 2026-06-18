@@ -59,6 +59,7 @@
     "clipping_delta_ridge.csv",
     "clipping_delta_xgb.csv",
     "clipping_summary.csv",
+    "distribution_fidelity_by_catalog.csv",
     "distribution_fidelity_knn.csv",
     "distribution_fidelity_lasso.csv",
     "distribution_fidelity_mean.csv",
@@ -139,6 +140,7 @@
     "bias_residvspred_ridge.png",
     "bias_residvspred_xgb.png",
     "calibration_overlay.png",
+    "distribution_fidelity_by_catalog.png",
     "heatmap_model_x_category.png",
     "heatmap_model_x_tech.png",
     "pred_vs_actual_std.png"

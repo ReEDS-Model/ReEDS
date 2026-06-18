@@ -91,9 +91,9 @@
     },
     "ngboost": {
       "display_name": "NGBoost (distributional, UQ-native)",
-      "oof_r2_mean": 0.7277803273607119,
-      "oof_r2_median": 0.8254663728179146,
-      "oof_r2_min": -0.058323747595884434,
+      "oof_r2_mean": 0.7277579054832628,
+      "oof_r2_median": 0.8256139945570997,
+      "oof_r2_min": -0.058416943633553764,
       "oof_r2_max": 0.9999999846092461,
       "n_outputs_r2_above_0.9": 34,
       "n_outputs_r2_above_0.95": 21,
