@@ -533,7 +533,7 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h)*heat_rate(i,v,r,t)*fuel_price(i,r,t)*GEN.l(i,v,r,h,t)*gasprice_adj_r(r,h,t)
+          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h,t)
        } / (repgasquant(cendiv,t) * 1e9) ;
 
 repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tmodel_new(t)] = sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ;
