@@ -1,16 +1,21 @@
-case,Default Value
-ignore,1
-GSw_Region,country/USA
-endyear,2050
-GSw_ZoneSet,z54
-GSw_HourlyNumClusters,142
-GSw_HourlyClusterRegionLevel,st
-GSw_HourlyClusterWeights,load_1/upv_1/wind-ons_1/wind-ofs_1
-GSw_HourlyType,day
-GSw_LoadCalibrate,0
-GSw_LoadProfiles,EER2025_IRAlow
-GSw_GasCurve,1
-GSw_Geothermal,2
-GSw_GrowthPenalties,1
-GSw_Upstream,1
-GSw_TransHurdleRate,1
+case,Default Value,Mid-case_ref,Mid-case_ASHP,Mid-case_GHP,Mid-case_GHP+env,Adv_NG_ref,Adv_NG_ASHP,Adv_NG_GHP,Con_NG_ref,Con_NG_ASHP,Con_NG_GHP,Reduced_RE_Resource_ref,Reduced_RE_Resource_ASHP,Reduced_RE_Resource_GHP,HighDataCenter_Current_ref,HighDataCenter_Current_ASHP,HighDataCenter_Current_GHP
+ignore,1,0,0,0,0,,,,,,,,,,,,
+GSw_Region,country/USA,,,,,,,,,,,,,,,,
+endyear,2050,,,,,,,,,,,,,,,,
+GSw_ZoneSet,z54,,,,,,,,,,,,,,,,
+GSw_HourlyNumClusters,142,,,,,,,,,,,,,,,,
+GSw_HourlyClusterRegionLevel,st,,,,,,,,,,,,,,,,
+GSw_HourlyClusterWeights,load_1/upv_1/wind-ons_1/wind-ofs_1,,,,,,,,,,,,,,,,
+GSw_HourlyType,day,,,,,,,,,,,,,,,,
+GSw_LoadCalibrate,0,,,,,,,,,,,,,,,,
+GSw_LoadProfiles,inputs/load/demand_Baseline.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,inputs/load/demand_GHP+Envelope.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5
+GSw_GasCurve,1,,,,,,,,,,,,,,,,
+GSw_Geothermal,2,,,,,,,,,,,,,,,,
+GSw_GrowthPenalties,1,,,,,,,,,,,,,,,,
+GSw_Upstream,1,,,,,,,,,,,,,,,,
+GSw_TransHurdleRate,1,,,,,,,,,,,,,,,,
+ngscen,AEO_2025_reference,,,,,AEO_2025_HOG,AEO_2025_HOG,AEO_2025_HOG,AEO_2025_LOG,AEO_2025_LOG,AEO_2025_LOG,,,,,,
+GSw_ReducedResource,0,,,,,,,,,,,1,1,1,,,
+GSw_SitingUPV,reference,,,,,,,,,,,limited,limited,limited,,,
+GSw_SitingWindOfs,reference,,,,,,,,,,,limited,limited,limited,,,
+GSw_SitingWindOns,reference,,,,,,,,,,,limited,limited,limited,,,
