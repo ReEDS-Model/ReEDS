@@ -68,6 +68,9 @@ def roll_hourly_data(
     if shift != 0:
         for col in df:
             df[col] = np.roll(df[col], shift)
+        
+    # convert datetime index to output timezone
+    df.index = pd.to_datetime(df.index).tz_localize(input_timezone).tz_convert(output_timezone)
 
     return df
 
@@ -161,13 +164,14 @@ def get_sectoral_replacement_load(
 
     # Read the file(s) containing exogenous sectoral load and
     # concatenate the results if there are multiple
-    if sector == 'Transportation':
+    if sector_settings['multi_model_year_replacement']:
         df_list = []
         for fpath in sector_settings['filepaths']:
             df = pd.read_csv(
                 fpath.format(model_year=model_year),
                 index_col='datetime'
             )
+            df_list.append(df)
     else:
         df_list = [
             pd.read_csv(fpath, index_col=0)
@@ -339,29 +343,37 @@ def create_hourly_state_load_for_model_year(
         .round(0)
         .astype(int)
     )
-
-    # Read exogenous load files for the sectors specified in 'replace_sectors'
-    replacement_load_list = [
-        get_sectoral_replacement_load(
-            sector,
-            sector_config,
-            model_year
-        )
-        for sector in replace_sectors
-    ]
+    for sector in replace_sectors:
+        sector_settings = sector_config[sector]
+        if model_year in sector_settings['model_years']:
+            # Read exogenous load files for the sectors specified in 'replace_sectors'
+            replacement_load_list.append(
+                get_sectoral_replacement_load(
+                    sector,
+                    sector_config,
+                    model_year
+                )
+            )
+        else:
+            pass
 
     # Aggregate the exogenous sectoral load to the state level and
     # add the result to each weather year of the load profiles
     if len(replacement_load_list) > 0:
         print("Adding exogenous sectoral load...")
-        df_load_replace = pd.concat(replacement_load_list).groupby(level=0).sum()
+        df_load_replace = pd.concat(replacement_load_list).groupby('datetime').sum()
+        df_load_replace.index = pd.to_datetime(df_load_replace.index)
+        
         for weather_year in weather_years:
             weather_year_mask = (
                 df_load.index.get_level_values('datetime').year == weather_year
             )
+            weather_year_mask_replacement = (
+                df_load_replace.index.year == weather_year
+            )
             df_load.loc[weather_year_mask] = (
                 df_load.loc[weather_year_mask].add(
-                    df_load_replace.set_index(
+                    df_load_replace[weather_year_mask_replacement].set_index(
                         df_load.loc[weather_year_mask].index
                     )
                 )
