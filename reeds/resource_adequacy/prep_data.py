@@ -78,7 +78,7 @@ def errorcheck_reeds2pras(casedir, csvout, h5out):
     ### Make sure there are no missing values in data sent to ReEDS2PRAS
     for key in ['pras_load', 'pras_vre_gen']:
         if h5out[key].isnull().sum().sum() > 0:
-            missing_data_cols = [i for i in h5out[key] if h5out[key].isnull().sum(axis=0) > 0]
+            missing_data_cols = [i for i in h5out[key] if h5out[key][i].isnull().sum(axis=0) > 0]
             print(missing_data_cols)
             raise ValueError(f'{key} has NaN values in {len(missing_data_cols)} columns')
 
