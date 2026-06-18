@@ -8,7 +8,7 @@ GSw_HourlyClusterRegionLevel,st,,,,,,,,,,,,,,,,
 GSw_HourlyClusterWeights,load_1/upv_1/wind-ons_1/wind-ofs_1,,,,,,,,,,,,,,,,
 GSw_HourlyType,day,,,,,,,,,,,,,,,,
 GSw_LoadCalibrate,0,,,,,,,,,,,,,,,,
-GSw_LoadProfiles,inputs/load/demand_Baseline.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,inputs/load/demand_GHP+Envelope.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5,,inputs/load/demand_ASHP.h5,inputs/load/demand_GHP.h5
+GSw_LoadProfiles,/projects/geohc/challora/GHP/inputs/load/demand_Baseline.h5,,/projects/geohc/challora/GHP/inputs/load/demand_ASHP.h5,/projects/geohc/challora/GHP/inputs/load/demand_GHP.h5,/projects/geohc/challora/GHP/inputs/load/demand_GHP+Envelope.h5,,/projects/geohc/challora/GHP/inputs/load/demand_ASHP.h5,/projects/geohc/challora/GHP/inputs/load/demand_GHP.h5,,/projects/geohc/challora/GHP/inputs/load/demand_ASHP.h5,/projects/geohc/challora/GHP/inputs/load/demand_GHP.h5,,/projects/geohc/challora/GHP/inputs/load/demand_ASHP.h5,/projects/geohc/challora/GHP/inputs/load/demand_GHP.h5,,/projects/geohc/challora/GHP/inputs/load/demand_ASHP.h5,/projects/geohc/challora/GHP/inputs/load/demand_GHP.h5
 GSw_GasCurve,1,,,,,,,,,,,,,,,,
 GSw_Geothermal,2,,,,,,,,,,,,,,,,
 GSw_GrowthPenalties,1,,,,,,,,,,,,,,,,
