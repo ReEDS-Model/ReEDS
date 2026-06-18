@@ -68,22 +68,22 @@ dollaryear_consume.csv,inputs/consume/dollaryear.csv,int(sw.GSw_DAC) != 0,ignore
 dollaryear_plant.csv,inputs/plant_characteristics/dollaryear.csv,1,ignore,ignore,,,,,0,,,,,,Do we really need 3 separate instances of dollaryear?
 dollaryear_fuel.csv,inputs/fuelprices/dollaryear.csv,1,ignore,ignore,,,,,0,,,,,,
 dollaryear_sc.csv,inputs/supply_curve/dollaryear.csv,1,ignore,ignore,,,,,0,,,,,,
-dr_shape_cap.csv,inputs/supply_curve/dr_shape_cap_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,sum,population,wide,"tech,rscbin",,1,0,,,,,,done,
+dr_shape_cap.csv,inputs/supply_curve/dr_shape_cap_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,sum,population,wide,"tech,rscbin",,1,0,,,,,,done
 dr_shape_capacity_scalar.csv,inputs/demand_response/dr_shape_cap_scalars_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,done
-dr_shape_cost.csv,inputs/supply_curve/dr_shape_cost_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,wide,"tech,rscbin",,1,0,,,,,,done,
-dr_shape_profile_decrease.csv,inputs/profiles_dr/dr_shape_decrease_profile_{dr_shapescen}.h5,int(sw.GSw_DRShape) !=0,uniform,uniform,wide,"i,hour,year",,1,0,,,,,,,
-dr_shape_profile_increase.csv,inputs/profiles_dr/dr_shape_increase_profile_{dr_shapescen}.h5,int(sw.GSw_DRShape) !=0,uniform,uniform,wide,"i,hour,year",,1,0,,,,,,,
+dr_shape_cost.csv,inputs/supply_curve/dr_shape_cost_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,wide,"tech,rscbin",,1,0,,,,,,done
+dr_shape_profile_decrease.csv,inputs/profiles_dr/dr_shape_decrease_profile_{dr_shapescen}.h5,int(sw.GSw_DRShape) !=0,uniform,uniform,wide,"i,hour,year",,1,0,,,,,,
+dr_shape_profile_increase.csv,inputs/profiles_dr/dr_shape_increase_profile_{dr_shapescen}.h5,int(sw.GSw_DRShape) !=0,uniform,uniform,wide,"i,hour,year",,1,0,,,,,,
 dr_shed_avail_scalar.csv,inputs/demand_response/dr_shed_avail_scalar.csv,1,ignore,ignore,,,,,0,,,,,,
 dr_shed_cap.csv,inputs/supply_curve/dr_shed_cap_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,wide,tech,,1,0,,,,,,done
 dr_shed_cost.csv,inputs/supply_curve/dr_shed_cost_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,wide,tech,,1,0,,,,,,done
 dr_shed_capacity_scalar.csv,inputs/demand_response/dr_shed_capacity_scalar_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,done
 dr_shed_hourly.h5,inputs/profiles_dr/dr_shed_hourly_{dr_shedscen}.h5,int(sw.GSw_DRShed) != 0,ignore,ignore,wide,"datetime,year",,1,keepindex,,,,,,Agg/Disagg handled in hourly_load
-dr_shift_cap.csv,inputs/supply_curve/dr_shift_cap_{dr_shiftscen}.csv,int(GSw_DRShift) !=0,sum,population,wide,"tech,rscbin",,1,0,,,,,,done,
-dr_shift_cost.csv,inputs/supply_curve/dr_shift_cost_{dr_shiftscen}.csv,int(GSw_DRShift) !=0,mean,uniform,wide,"tech,rscbin",,1,0,,,,,,done,
-dr_shift_capacity_scalar.csv,inputs/demand_response/dr_shift_cap_scalars_{dr_shiftscen}.csv,int(GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,done,
-dr_shift_profile_decrease.csv,inputs/profiles_dr/dr_shift_decrease_profile_{dr_shiftscen}.h5,int(GSw_DRShift) !=0,mean,population,wide,"i,hour,year",,1,0,,,,,,,
-dr_shift_profile_increase.csv,inputs/profiles_dr/dr_shift_increase_profile_{dr_shiftscen}.h5,int(GSw_DRShift) !=0,mean,population,wide,"i,hour,year",,1,0,,,,,,,
-dr_shift_profile_energy.csv,inputs/profiles_dr/dr_shift_profile_energy_{dr_shiftscen}.h5,int(GSw_DRShift) !=0,mean,population,wide,"i,hour,year",,1,0,,,,,,,
+dr_shift_cap.csv,inputs/supply_curve/dr_shift_cap_{dr_shiftscen}.csv,int(GSw_DRShift) !=0,sum,population,wide,"tech,rscbin",,1,0,,,,,,done
+dr_shift_cost.csv,inputs/supply_curve/dr_shift_cost_{dr_shiftscen}.csv,int(GSw_DRShift) !=0,mean,uniform,wide,"tech,rscbin",,1,0,,,,,,done
+dr_shift_capacity_scalar.csv,inputs/demand_response/dr_shift_cap_scalars_{dr_shiftscen}.csv,int(GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,done
+dr_shift_profile_decrease.csv,inputs/profiles_dr/dr_shift_decrease_profile_{dr_shiftscen}.h5,int(GSw_DRShift) !=0,mean,population,wide,"i,hour,year",,1,0,,,,,,
+dr_shift_profile_increase.csv,inputs/profiles_dr/dr_shift_increase_profile_{dr_shiftscen}.h5,int(GSw_DRShift) !=0,mean,population,wide,"i,hour,year",,1,0,,,,,,
+dr_shift_profile_energy.csv,inputs/profiles_dr/dr_shift_profile_energy_{dr_shiftscen}.h5,int(GSw_DRShift) !=0,mean,population,wide,"i,hour,year",,1,0,,,,,,
 e.csv,inputs/sets/e.csv,1,ignore,ignore,,,,,0,,,set,e,emission categories used in model,
 eall.csv,inputs/sets/eall.csv,1,ignore,ignore,,,,,,,,set,eall,emission categories used in reporting,
 emitrate.csv,inputs/emission_constraints/emitrate.csv,1,ignore,ignore,,,,,0,,,,,,
@@ -191,15 +191,15 @@ plantchar_coal_ccs.csv,inputs/plant_characteristics/{plantchar_coal_ccs}.csv,1,i
 plantchar_coal.csv,inputs/plant_characteristics/{plantchar_coal}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_battery.csv,inputs/plant_characteristics/{plantchar_battery}.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_csp.csv,inputs/plant_characteristics/{plantchar_csp}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shape.csv,inputs/plant_characteristics/dr_shape_cost_scalars_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv,
-plantchar_dr_shape_vom.csv,inputs/plant_characteristics/dr_shape_vom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv,
-plantchar_dr_shape_fom.csv,inputs/plant_characteristics/dr_shape_fom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv,
+plantchar_dr_shape.csv,inputs/plant_characteristics/dr_shape_cost_scalars_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shape_vom.csv,inputs/plant_characteristics/dr_shape_vom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shape_fom.csv,inputs/plant_characteristics/dr_shape_fom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed.csv,inputs/plant_characteristics/dr_shed_capcost_scalars_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed_vom.csv,inputs/plant_characteristics/dr_shed_vom_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed_fom.csv,inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shift.csv,inputs/plant_characteristics/dr_shift_cost_scalars_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv,
-plantchar_dr_shift_vom.csv,inputs/plant_characteristics/dr_shift_vom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv,
-plantchar_dr_shift_fom.csv,inputs/plant_characteristics/dr_shift_fom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv,
+plantchar_dr_shift.csv,inputs/plant_characteristics/dr_shift_cost_scalars_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shift_vom.csv,inputs/plant_characteristics/dr_shift_vom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shift_fom.csv,inputs/plant_characteristics/dr_shift_fom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_fuelcell.csv,inputs/plant_characteristics/{plantchar_fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas_ccs.csv,inputs/plant_characteristics/{plantchar_gas_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas.csv,inputs/plant_characteristics/{plantchar_gas}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
