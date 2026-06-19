@@ -13,8 +13,6 @@ import shutil
 import csv
 import importlib
 import numpy as np
-import gdxpds
-from gdxpds.gdx import GdxFile,GdxSymbol,GamsDataType
 import pandas as pd
 import subprocess
 import re
@@ -1358,7 +1356,6 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda deactivate \n")
             OPATH.writelines("conda activate reeds2 \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
@@ -1438,8 +1435,7 @@ def write_batch_script(
         #################################
         #    -- OUTPUT PROCESSING --    #
         #################################
-        
-        ## create reporting files
+        #create reporting files
         big_comment('Output processing', OPATH)
         if not LINUXORMAC:
             OPATH.writelines("setlocal enabledelayedexpansion\n")
@@ -1513,7 +1509,7 @@ def write_batch_script(
                 + f" --casepath {casedir} \n\n"
             )
 
-        ## Run the retail rate module
+        ### Run the retail rate module
         OPATH.writelines(
             "python"
             + f" {os.path.join(reeds_path,'postprocessing','retail_rate_module','retail_rate_calculations.py')}"
@@ -1527,7 +1523,7 @@ def write_batch_script(
             f"{casedir}\n\n"
         )
 
-        ## Make script to unload all data to .gdx file
+        ### Make script to unload all data to .gdx file
         command = (
             f"gams {Path('reeds','core','terminus','dump_alldata.gms')}"
             + ' o='+os.path.join('lstfiles','dump_alldata_{}_{}.lst'.format(BatchName,case))
@@ -1816,7 +1812,7 @@ def launch_single_case_run(
             shellscript = subprocess.Popen(
                 [os.path.join(casedir, 'call_' + batch_case + ext)], shell=True)
             # Wait for it to finish before killing the thread
-            #shellscript.wait()
+            shellscript.wait()
         else:
             if int(caseSwitches['keep_run_terminal']) == 1:
                 terminal_keep_flag = ' /k '
@@ -1944,7 +1940,7 @@ if __name__ == '__main__':
                         help="Check inputs but don't start runs")
 
     args = parser.parse_args()
-    
+
     main(
         BatchName=args.BatchName, cases_suffix=args.cases_suffix, single=args.single,
         simult_runs=args.simult_runs, forcelocal=args.forcelocal, skip_checks=args.skip_checks,

@@ -247,7 +247,6 @@ $endif.diagnose
 * ------------------------------
 * Solve the Model
 * ------------------------------
-option limrow = 1e6;
 $ifthen.valstr %GSw_ValStr% == 1
 OPTION lp = convert ;
 ReEDSmodel.optfile = 1 ;

@@ -9,10 +9,6 @@ if(Sw_RemoveSmallNumbers = 1,
     INV_ENERGY.l(i,v,r,tfix)$[abs(INV_ENERGY.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     INV_RSC.l(i,v,r,rscbin,tfix)$[abs(INV_RSC.l(i,v,r,rscbin,tfix)) < rhs_tolerance] = 0 ;
     INV_POI.l(r,tfix)$[abs(INV_POI.l(r,tfix)) < rhs_tolerance] = 0 ;
-    INV_REFURB.l(i,v,r,tfix)$[abs(INV_REFURB.l(i,v,r,tfix)) < rhs_tolerance] = 0;
-    CO2_SPURLINE_INV.l(r,cs,tfix)$[abs(CO2_SPURLINE_INV.l(r,cs,tfix)) < rhs_tolerance] = 0;
-    CO2_TRANSPORT_INV.l(r,rr,tfix)$[abs(CO2_TRANSPORT_INV.l(r,rr,tfix)) < rhs_tolerance] = 0;
-    H2_TRANSPORT_INV.l(r,rr,tfix)$[abs(H2_TRANSPORT_INV.l(r,rr,tfix)) < rhs_tolerance] = 0 ;
     H2_STOR_INV.l(h2_stor,r,tfix)$[abs(H2_STOR_INV.l(h2_stor,r,tfix)) < rhs_tolerance] = 0 ;
     H2_TRANSPORT_INV.l(r,rr,tfix) $[abs(H2_TRANSPORT_INV.l(r,rr,tfix) ) < rhs_tolerance] = 0 ;
 );
@@ -123,9 +119,7 @@ H2_STOR_LEVEL_SZN.fx(h2_stor,r,actualszn,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)
 
 *CO2-related variables
 CO2_CAPTURED.fx(r,h,tfix)$Sw_CO2_Detail = CO2_CAPTURED.l(r,h,tfix) ;
-$ifthene.linked_varfix Sw_FINITO_Link==0
 CO2_STORED.fx(r,cs,h,tfix)$[Sw_CO2_Detail$r_cs(r,cs)] = CO2_STORED.l(r,cs,h,tfix) ;
-$endif.linked_varfix
 CO2_FLOW.fx(r,rr,h,tfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = CO2_FLOW.l(r,rr,h,tfix) ;
 CO2_TRANSPORT_INV.fx(r,rr,tfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = CO2_TRANSPORT_INV.l(r,rr,tfix) ;
 CO2_SPURLINE_INV.fx(r,cs,tfix)$[Sw_CO2_Detail$r_cs(r,cs)] = CO2_SPURLINE_INV.l(r,cs,tfix) ;

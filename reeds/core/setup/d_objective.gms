@@ -259,12 +259,12 @@ eq_Objfn_op(t)$tmodel(t)..
 *Sw_GasCurve = 0 (census division supply curves natural gas prices)
               + sum{(cendiv,gb)$[tfuel(t)], sum{h, hours(h) * GASUSED(cendiv,gb,h,t) }
                    * gasprice(cendiv,gb,t)
-                   }$[(Sw_GasCurve = 0)]
+                   }$(Sw_GasCurve = 0)
 
 *Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
               + sum{(h,cendiv,gb)$[tfuel(t)], hours(h) * GASUSED(cendiv,gb,h,t)
                    * gasadder_cd(cendiv,t,h) + gasprice_nat_bin(gb,t)
-                   }$[(Sw_GasCurve = 3)]
+                   }$(Sw_GasCurve = 3)
 
 *Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
@@ -279,12 +279,13 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(fuelbin)$tfuel(t),
                    gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL(fuelbin,t) }
 
-              )$[(Sw_GasCurve = 1)]
+              )$[Sw_GasCurve = 1]
 
 * ---cost of biofuel consumption and biomass transport---
               + sum{(r,bioclass)$[tfuel(t)$sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }],
                    BIOUSED(bioclass,r,t) *
                    (sum{usda_region$r_usda(r,usda_region), biosupply(usda_region, bioclass, "price") } + bio_transport_cost) }
+
 * --- hurdle costs for transmission flow ---
               + sum{(r,rr,h,trtype)$[routes(r,rr,trtype,t)$cost_hurdle(r,rr,t)],
                    cost_hurdle(r,rr,t) * FLOW(r,rr,h,t,trtype) * hours(h) }
@@ -349,15 +350,15 @@ eq_Objfn_op(t)$tmodel(t)..
                                    CO2_SPURLINE_INV(r,cs,tt) } }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- CO2 injection break even costs
-              + sum{(r,cs,h)$[r_cs(r,cs)$h_rep(h)], hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs,t) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
+              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs,t) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- Tax credit for CO2 stored ---
 * note conversion to 12-year CRF given length of CO2 captured incentive payments
-              - sum{(i,v,r,h)$[valgen(i,v,r,t)$h_rep(h)$co2_captured_incentive(i,v,r,t)],
+              - sum{(i,v,r,h)$[valgen(i,v,r,t)$co2_captured_incentive(i,v,r,t)],
                               (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * capture_rate("CO2",i,v,r,t) * GEN(i,v,r,h,t)}
 
 * --- Tax credit for CO2 stored for DAC ---
-              - sum{(p,i,v,r,h)$[dac(i)$valcap(i,v,r,t)$i_p(i,p)$h_rep(h)$co2_captured_incentive(i,v,r,t)],
+              - sum{(p,i,v,r,h)$[dac(i)$valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],
                               (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * PRODUCE(p,i,v,r,h,t)}
 
 * --- PTC value for electric power generation ---
@@ -371,7 +372,7 @@ eq_Objfn_op(t)$tmodel(t)..
               - sum{(p,v,r,h)$[valcap("electrolyzer",v,r,t)$(sameas(p,"H2"))$h2_ptc("electrolyzer",v,r,t)$h_rep(h)],
                   hours(h) * PRODUCE(p,"electrolyzer",v,r,h,t) *
                    (crf(t) / crf_h2_incentive(t)) * h2_ptc("electrolyzer",v,r,t) * 1e3} 
-                   $[(Sw_H2_PTC)$Sw_H2$h2_ptc_years(t)$(yeart(t) >= h2_demand_start)]
+                   $[Sw_H2_PTC$Sw_H2$h2_ptc_years(t)$(yeart(t) >= h2_demand_start)]
 
 *end multiplier for pvf_onm
          )

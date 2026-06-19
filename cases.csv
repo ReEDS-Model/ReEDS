@@ -121,7 +121,6 @@ GSw_CO2_pipeline_fom,Set FOM cost for CO2 Pipeline. 2004$/(tonne-mi)/hr-yr. Sugg
 GSw_CO2_spurline_cost,Set capex cost for CO2 Spurline. 2004$/(tonne-mi)/hr. Suggested value: 2257,N/A,2257,
 GSw_CO2_spurline_fom,Set FOM cost for CO2 Spurline. 2004$/(tonne-mi)/hr-yr. Suggested value: 60,N/A,60,
 GSw_CO2_Detail,Switch to enable detailed representation CO2 transportation and storage,0; 1,0,
-GSw_CO2_LimitStorageSites,Switch to limit storage sites to the closest site for each region,0; 1,0,
 GSw_CO2_CostAdj,multiplier for co2 infrastructure when Sw_CO2_Detail = 1,float,1,
 GSw_CO2_BEC,"Break even cost capacity factor assignment. Must be a suffix to ""bec_"" in the columns of co2_site_char.csv",N/A,70,
 GSw_CoalIGCC,Turn on/off COAL IGCC,0; 1,1,

@@ -181,8 +181,7 @@ else:
         # It is a single case or we are not on HPC
         if copy_srun_template:
             writelines_srun_case = writelines_srun.copy()
-            writelines_srun_case.append(f"#SBATCH --job-name={casename}")
-            writelines_srun_case.append(f"#SBATCH --output={os.path.join(case, 'slurm-%j.out')}\n")
+            writelines_srun_case.append(f"\n#SBATCH --job-name={casename}\n")
             writelines_srun_case.append(f"sh {callfile}")
             with open(sbatchfile, 'w') as f:
                 for line in writelines_srun_case:

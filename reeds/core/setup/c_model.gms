@@ -1048,6 +1048,7 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
     + sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
          capacity_exog_rsc(ii,v,r,rscbin,tt) }
+
 ;
 
 * ---------------------------------------------------------------------------
@@ -3864,7 +3865,7 @@ $endif.linked_co2_capture
 
 * ---------------------------------------------------------------------------
 
-eq_co2_transport_caplimit(r,rr,h,t)$[co2_routes(r,rr)$Sw_CO2_Detail$h_rep(h)
+eq_co2_transport_caplimit(r,rr,h,t)$[co2_routes(r,rr)$Sw_CO2_Detail
                                     $tmodel(t)$(yeart(t)>=co2_detail_startyr)]..
 
 *capacity computed as cumulative investments of co2 pipelines up to the current year
@@ -3880,8 +3881,7 @@ eq_co2_transport_caplimit(r,rr,h,t)$[co2_routes(r,rr)$Sw_CO2_Detail$h_rep(h)
 
 * ---------------------------------------------------------------------------
 
-eq_co2_spurline_caplimit(r,cs,h,t)$[Sw_CO2_Detail$r_cs(r,cs)$h_rep(h)$tmodel(t)
-                                    $(yeart(t)>=co2_detail_startyr)]..
+eq_co2_spurline_caplimit(r,cs,h,t)$[Sw_CO2_Detail$r_cs(r,cs)$tmodel(t)$(yeart(t)>=co2_detail_startyr)]..
 
 *capacity computed as cumulative investments of co2 spurlines up to the current year
     sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)],
@@ -3899,7 +3899,7 @@ $endif.linked_co2_spurline_caplimit
 
 * ---------------------------------------------------------------------------
 
-eq_co2_sink(r,h,t)$[tmodel(t)$Sw_CO2_Detail$h_rep(h)$(yeart(t)>=co2_detail_startyr)]..
+eq_co2_sink(r,h,t)$[tmodel(t)$Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]..
 
 *the amount of co2 stored from r in all of its cs sites
     sum{cs$r_cs(r,cs), CO2_STORED(r,cs,h,t) }
@@ -3930,8 +3930,7 @@ $endif.linked_co2_sink
 
 * ---------------------------------------------------------------------------
 
-eq_co2_injection_limit(cs,h,t)$[tmodel(t)$Sw_CO2_Detail$h_rep(h)
-                                $(yeart(t)>=co2_detail_startyr)$csfeas(cs)]..
+eq_co2_injection_limit(cs,h,t)$[Sw_CO2_Detail$tmodel(t)$(yeart(t)>=co2_detail_startyr)$csfeas(cs)]..
 
 * exogenously defined injection limit
     co2_injection_limit(cs)
@@ -3973,7 +3972,6 @@ $ifthene.linked_co2_storage_cumul_limit Sw_FINITO_Link==1
         yearweight(tt) * hours(h) * EXTRACT_CO2_CS(cs,r,h,tt) }$[t_finito(t)]
 $endif.linked_co2_storage_cumul_limit 
 ;
-
 * ---------------------------------------------------------------------------
 
 *===================

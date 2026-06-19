@@ -2432,7 +2432,6 @@ h2_ptc(i,v,r,t)$valcap(i,v,r,t) = h2_ptc_in(i,v,t) ;
 * Otherwise, we assume it receives $0/kg because the cleanliness of its carbon cannot be proven
 h2_ptc("electrolyzer",v,r,t)$[(not Sw_H2_PTC)] = 0;
 
-
 set h2_ptc_years(t) "years in which the hydrogen production incentive is active";
 h2_ptc_years(t) = tmodel_new(t)$[sum{(i,v,r),h2_ptc(i,v,r,t)}];
 
@@ -3130,7 +3129,6 @@ $include inputs_case%ds%tsc_binwidth.csv
 $offdelim
 $onlisting
 / ;
-tsc_binwidth(r,rr,tscbin) = 1e9;
 
 parameter tsc_forward(r,rr,tscbin) "--$/MW-- transmission upgrade cost for forward direction"
 /
@@ -5950,19 +5948,18 @@ $include inputs_case%ds%r_cs_distance_mi.csv
 $offdelim
 $ondigit
 $onlisting
-/ ,
-          min_r_cs_distance(r)          "--mi-- minimum euclidean distance between BA transmission endpoints and storage formations"
+/
 ;
 $offempty
 
-* find the closest storage site to each region
-min_r_cs_distance(r) = smin(cs$[r_cs(r,cs)], r_cs_distance(r,cs));
+* Assign spurline costs
+cost_co2_spurline_cap(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_cost * r_cs_distance(r,cs) ;
 
-$ifthene.rcslimit %GSw_CO2_LimitStorageSites% == 1
-* remove the region-site combinations that are not the closest
-r_cs_distance(r,cs)$[r_cs(r,cs)$(r_cs_distance(r,cs) <= min_r_cs_distance(r))] = min_r_cs_distance(r) ;
-r_cs_distance(r,cs)$[r_cs(r,cs)$(r_cs_distance(r,cs) > min_r_cs_distance(r))] = 0 ;
-$endif.rcslimit
+* CO2 pipelines can be build between any two adjacent BAs
+cost_co2_pipeline_cap(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pipeline_cost * pipeline_distance(r,rr) ;
+cost_co2_pipeline_fom(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pipeline_fom * pipeline_distance(r,rr) ;
+
+co2_routes(r,rr)$[routes_adjacent(r,rr)$pipeline_distance(r,rr)] = yes ;
 
 $onempty
 table co2_char(cs,*) "co2 site characteristics including injection rate limit, total storage limit, and break even cost"
@@ -5981,17 +5978,8 @@ cost_co2_stor_bec(cs,t) = co2_char(cs,"bec_%GSw_CO2_BEC%");
 csfeas(cs)$[co2_storage_limit(cs)$co2_injection_limit(cs)] = yes ;
 * only want to consider r_cs pairs which have available capacity
 r_cs(r,cs)$[not csfeas(cs)] = no ;
-r_cs(r,cs)$[not r_cs_distance(r,cs)] = no ;
 
-* Assign spurline costs
-cost_co2_spurline_cap(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_cost * r_cs_distance(r,cs) ;
 cost_co2_spurline_fom(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_fom * r_cs_distance(r,cs) ;
-
-* CO2 pipelines can be build between any two adjacent BAs
-cost_co2_pipeline_cap(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pipeline_cost * pipeline_distance(r,rr) ;
-cost_co2_pipeline_fom(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pipeline_fom * pipeline_distance(r,rr) ;
-
-co2_routes(r,rr)$[routes_adjacent(r,rr)$pipeline_distance(r,rr)] = yes ;
 
 cost_co2_pipeline_cap(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_cap(r,rr,t);
 cost_co2_pipeline_fom(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_fom(r,rr,t);
