@@ -914,7 +914,7 @@ szn_adj_gas(h) = szn_adj_gas(h) / szn_adj_gas_avg ;
 gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
 gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
 
-If GSw_GasPriceAdjMethod = 0, nullify the price adjustments
+* If GSw_GasPriceAdjMethod = 0, nullify the price adjustments
 gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 
