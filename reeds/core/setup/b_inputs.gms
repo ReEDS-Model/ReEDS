@@ -6000,7 +6000,7 @@ z_rep_op(t) = 0 ;
 *====================================
 * Employment factors of construction and operation of power plants
 $onempty
-Table employment_factor_plant(i,jtype) "--job-years/MW or job-years/MWh-- employment factors of power plants by technology and job type (construction and o&m jobs)"
+Table employment_factor_plant(i,jtype) "--job-years/MW (construction) or job-years/MWh (o&m)-- employment factors of power plants by technology and job type"
 $offlisting
 $ondelim
 $include inputs_case%ds%employment_factor_plant.csv
@@ -6010,7 +6010,7 @@ $onlisting
 $offempty
 
 * Employment factors of transmission deployment and flow
-parameter employment_factor_inter_transmission(jtype)  "--job-years/MW or job-years/$M-- employment factors of transmission lines by job type (construction or o&m jobs)"
+parameter employment_factor_inter_transmission(jtype)  "--job-years/MW (fo&m) or job-years/$ (construction)-- employment factors of transmission lines by job type"
 /
 $offlisting
 $ondelim
@@ -6019,13 +6019,25 @@ $offdelim
 $onlisting
 / ;
 
-* If upgrade techs, construction employment factor is half
+* If upgrade techs, construction employment factor is adjusted by upgrade capital cost ratio
 * Only apply this to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
+
+parameter upgrade_ratio(i) ;
+upgrade_ratio(i)$upgrade(i) = 1 ;
+upgrade_ratio(i)$[upgrade(i)
+                $(sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) }
+                 - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } > 0)] 
+                  = (sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) } 
+                    - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ) /
+                      sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ;
+
 $ifthen.upgrade_ef %GSw_EmploymentFactor% == "jedi"
 employment_factor_plant(i,"construction")$[upgrade(i)
-                                         $(not ccs(i))] = employment_factor_plant(i,"construction") * 0.5 ;
+                                         $(not ccs(i))] = employment_factor_plant(i,"construction") 
+                                         * upgrade_ratio(i) ;
 $else.upgrade_ef
-employment_factor_plant(i,"construction")$upgrade(i) = employment_factor_plant(i,"construction") * 0.5 ;
+employment_factor_plant(i,"construction")$upgrade(i) = employment_factor_plant(i,"construction") 
+                                                       * upgrade_ratio(i) ;
 $endif.upgrade_ef
 
 *================================================================================================
