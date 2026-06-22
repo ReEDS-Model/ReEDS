@@ -96,18 +96,21 @@ Variable MGA_OBJ "--job-years-- Total job-years to be minimized/maximized" ;
 eq_MGA_Objective$Sw_MGA..
     MGA_OBJ
     =e=
+* Power plant FO&M employment    
     sum{(i,v,r,t)
         $[tmodel(t)
         $valcap(i,v,r,t)],
 *       [MW] * [.] * [job-years/MW] = [job-years]        
         CAP(i,v,r,t) * pvf_onm(t) * employment_factor_plant(i,"fom")
     }
+* Power plant VO&M employment    
     + sum{(i,v,r,h,t)
           $[tmodel(t)
           $valgen(i,v,r,t)],
 *         [MW] * [.] * [MWh/MW] * [job-years/MWh] = [job-years]
           GEN(i,v,r,h,t) * pvf_onm(t) * hours(h) * employment_factor_plant(i,"vom")
     }
+* Power plant construction employment    
     + sum{(i,v,r,t)
           $[tmodel(t)
           $valinv(i,v,r,t)],
@@ -118,6 +121,8 @@ eq_MGA_Objective$Sw_MGA..
 *   AC construction employment formula here is slightly different than in
 *   e_report.gms as only cumulative term TRAN_CAPEX_BINS is included here vs
 *   annual term used in e_report.gms
+
+* Transmission line construction employment
     + sum{(r,rr,tscbin,t)
           $[tmodel(t)
           $routes_inv(r,rr,"AC",t)
@@ -139,17 +144,27 @@ eq_MGA_Objective$Sw_MGA..
 * INVTRAN is defined in both directions so needs to be divided by 2
           * employment_factor_inter_transmission("construction") / 2 }
     
-    + sum{(r,rr,trtype,t)
-          $[tmodel(t)
-          $routes(r,rr,trtype,t)],
-*         [MW] * [.] * [job-years/MW] = [job-years]           
-          CAPTRAN_ENERGY(r,rr,trtype,t) 
-          * pvf_onm(t)
+* Transmission line FO&M employment is assumed to be
+* transmission line construction x trans_fom_frac
+    * (1 + trans_fom_frac)
+;
+
+***************************************************************************
+* Alternative way of estimating transmission line 
+* FO&M employment using FTE/MW employment factor data
+* (currently not used)
+*    + sum{(r,rr,trtype,t)
+*          $[tmodel(t)
+*          $routes(r,rr,trtype,t)],
+**         [MW] * [.] * [job-years/MW] = [job-years]           
+*          CAPTRAN_ENERGY(r,rr,trtype,t) 
+*          * pvf_onm(t)
 * CAPTRAN_ENERGY is defined in both directions so needs to be divided by 2
 * but we don't divide by 2 here since this portion in the objective function
 * is high by factor of 2 (will fix this separately)         
-          * employment_factor_inter_transmission("fom")  }
-;
+*          * employment_factor_inter_transmission("fom")  }
+*;
+***************************************************************************
 
 
 $endif.mgaobj
