@@ -1643,7 +1643,11 @@ In the static case, fuel prices are not responsive to demand.
 The switch `GSw_GasCurve` controls the choice of natural gas supply curve.
 0 = census-division-only, 1 = national + census division, 2 = static, 3 = national-only
 
-The file `inputs/fuelprices/cendivweights.csv` contains the weights applied to the fuel prices to help smooth the prices across census divisions when setting `GSw_GasCurve` to 1. This file was created by taking an input file of county-level spatial resolution and assigning a weight to each balancing area.  The highest weight is farthest from the census region border and an exponential decay length of 150 km is applied, blending the weight values across balancing areas and census regions.
+Gas prices vary by census division.
+To avoid sharp boundaries between regions, the gas price in each model zone can be defined as the average over multiple census divisions, weighted by the distance from the zone centroid to the census division boundary.
+The distance weighting is controlled by the `GSw_GasRegionSmooth` switch;
+an exponential decay length of 150 km is used by default.
+If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {numref}`figure-hierarchy` is instead used directly.
 ```
 
 The natural gas fuel prices also include a seasonal price adjustor, making winter prices higher than the natural gas prices seen during the other seasons of the year.
@@ -1653,7 +1657,7 @@ For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-
 ## Electricity Demand
 
 End-use electricity demand is an exogenous input to ReEDS represented by hourly profiles.
-The available load profile options fall into three categories: 1) load projections from Evolved Energy Research, 2) load projections developed as part of the Electrification Futures Study and 3) historic load multiplied by annual load growth factors from AEO.
+The available load profile options fall into three categories: 1) load projections from Evolved Energy Research, 2) load projections developed as part of the Electrification Futures Study and 3) historic load multiplied by state-level annual load growth factors from AEO.
 When applicable, ReEDS will modify the exogenously specified profiles by applying a load shape adjustment method that incorporates analysis from other modeling tools or by adding load from endogenously built electricity-consuming technologies.
 
 ReEDS includes interzonal transmission system losses in the optimization.
@@ -2441,10 +2445,11 @@ Adapted from {cite}`maiIncorporatingStressfulGrid2024`.
 
 The calculation of capacity credit for VRE is described in the [VRE capacity credit](#vre-capacity-credit) section;
 the method for storage is described in the [storage capacity credit](#storage-capacity-credit) section.
-Thermal generators are given a capacity credit of 100% in ReEDS;
-technology-specific [outage rates](#outage-rates) for thermal generators are not considered in this method
-and are instead assumed to be factored into the [planning reserve margin](#planning-reserve-margins).
 
+
+#### Thermal generation capacity credit
+
+For thermal generators (i.e. combined cycle, combustion turbine, nuclear (conventional and SMR), and steam (coal)), ReEDS estimates a seasonal capacity credit for each region/technology combination based on temperature-dependent forced outage rates (described in detail in [outage rates](#outage-rates)). To calculate each technology's contribution to the seasonal reserve margin, its nameplate capacity is multiplied by $(1 - \bar{FOR})$, where $\bar{FOR}$ is the mean forced outage rate during the top 20 net load hours cross all modeled [weather years](#weather-years) for each season. 
 
 
 #### VRE capacity credit

@@ -259,6 +259,7 @@ set
   combustion_turbine(i)"combustion turbine technologies",
   consume(i)           "technologies that consume electricity and add to load",
   conv(i)              "conventional generation technologies",
+  temp_derate(i)       "generation technologies derated based on ambient temperature",
   csp_storage(i)       "csp generation technologies with thermal storage",
   csp(i)               "csp generation technologies",
   csp1(i)              "csp-tes generation technologies 1",
@@ -729,6 +730,7 @@ combined_cycle(i)$(not ban(i))      = yes$i_subsets(i,'combined_cycle') ;
 combustion_turbine(i)$(not ban(i))  = yes$i_subsets(i,'combustion_turbine') ;
 consume(i)$(not ban(i))             = yes$i_subsets(i,'consume') ;
 conv(i)$(not ban(i))                = yes$i_subsets(i,'conv') ;
+temp_derate(i)$(not ban(i))         = yes$i_subsets(i,'temp_derate') ;
 csp_storage(i)$(not ban(i))         = yes$i_subsets(i,'csp_storage') ;
 csp(i)$(not ban(i))                 = yes$i_subsets(i,'csp') ;
 csp1(i)$(not ban(i))                = yes$i_subsets(i,'csp1') ;
