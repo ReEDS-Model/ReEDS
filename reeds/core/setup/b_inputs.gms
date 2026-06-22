@@ -6000,7 +6000,7 @@ z_rep_op(t) = 0 ;
 *====================================
 * Employment factors of construction and operation of power plants
 $onempty
-Table employment_factor_plant(i,jtype) "--job-years/MW (construction) or job-years/MWh (o&m)-- employment factors of power plants by technology and job type"
+Table employment_factor_plant(i,jtype) "--job-years/MW (construction & fom) or job-years/MWh (vom)-- employment factors of power plants by technology and job type"
 $offlisting
 $ondelim
 $include inputs_case%ds%employment_factor_plant.csv
@@ -6010,7 +6010,7 @@ $onlisting
 $offempty
 
 * Employment factors of transmission deployment and flow
-parameter employment_factor_inter_transmission(jtype)  "--job-years/MW (fo&m) or job-years/$ (construction)-- employment factors of transmission lines by job type"
+parameter employment_factor_inter_transmission(jtype)  "--job-years/$ (construction) or job-years/MW (fom) or job-years/MWh (vom)-- employment factors of transmission lines by job type"
 /
 $offlisting
 $ondelim
