@@ -143,6 +143,18 @@ if __name__ == '__main__':
     coal = coal[['year','r','value']].rename(columns={'year':'t','value':'coal'})
     coal.coal = coal.coal.round(6)
 
+    # Apply coal price multiplier
+    coal_multiplier = pd.read_csv(os.path.join(inputs_case, 'coal_price_multiplier.csv'))
+    coal_multiplier = coal_multiplier.melt(id_vars = ['year']).rename(columns={'variable':'cendiv'})
+    coal_multiplier = coal_multiplier.loc[coal_multiplier['cendiv'].isin(val_cendiv)]
+    coal_multiplier = coal_multiplier.merge(r_cendiv,on='cendiv',how='left')
+    coal_multiplier = coal_multiplier.drop('cendiv', axis=1)
+    coal_multiplier = coal_multiplier[['year','r','value']].rename(columns={'year':'t','value':'coal_mult'})
+
+    coal = coal.merge(coal_multiplier, on = ['t','r'], how = 'left')
+    coal['coal'] = coal['coal']  * coal['coal_mult']
+    coal = coal[['t','r','coal']]
+
     #######################
     #    -- Uranium --    #
     #######################
