@@ -46,6 +46,8 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
+start_year = 2025
+
 out_txt = f'{output_dir}/out.txt'
 with open(out_txt, 'w') as f:
     print("Results:", file=f)
@@ -59,7 +61,7 @@ print('Read in value factors')
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
 df = df.rename(columns={'vf': 'value_factor'})
 df = df[df['tech'].isin(df_forcetech_map['tech'])].copy()
-df = df[df['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
+df = df[df['year']>=start_year].copy() #First endogenous year (also without prescribed builds).
 
 print('Merge with vf components')
 df_vf_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_energy').rename(columns={'vf_load':'vf_energy'})
@@ -269,7 +271,7 @@ for plot in plots + plots_core:
 print('Read in vf_full for transreg and interconnect calcs') #Eventually I should use vf_full for everything I think
 df_full = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
 df_full = df_full[df_full['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
-df_full = df_full[df_full['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
+df_full = df_full[df_full['year']>=start_year].copy() #First endogenous year (also without prescribed builds).
 subregs = ['transreg','interconnect']
 dfs_subreg = {}
 for subreg in subregs:
