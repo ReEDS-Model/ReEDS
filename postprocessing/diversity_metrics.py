@@ -25,51 +25,28 @@ def main():
     parser = argparse.ArgumentParser(description="Calculating euclidean distance between two solutions")
     parser.add_argument('--metric', '-m', type=str, default='capacity',
                         help='metric to calculate distance, options: generation and capacity. default is capacity')
-    parser.add_argument('--crpyears', '-y', type=int, default=20, 
-                        help='crpyears, default is 20')
-    parser.add_argument('--format', '-f', type=str, default='png',
-                        help='format of output plots, options are .png and .pdf')
-    parser.add_argument('--save', '-s', action="store_true",
-                        help='save calculated euclidean distances to csv.')
-    args = parser.parse_args()
+    parser.add_argument('--runs_path', '-r', type=str,
+                        help='location of run folder')
+    parser.add_argument('--case_file', '-c', type=str,
+                        help='location of csv file that includes all case names to compare. first row is base case')
     
-    core_metric_parameter = args.metric             # Metric to calculate distance: 'capacity', 'generation'
-    figure_format = args.format                     # 'png' or 'pdf'
-    save_data = args.save                           # Save calculated euclidean distances to csv.
+    #args = parser.parse_args()
+    #metric = args.metric                            # Metric to calculate distance: 'capacity', 'generation'
+    #runs_path = args.runs_path                      # Path of runs folder.
+    #case_file = args.case_file                      # Case file in csv that includes all case names to compare.
     
     ######################################### FOR TESTING/DEBUGGING #########################################
-    # atb_version = 2024                              # ATB version
-    # core_metric_parameter = 'CAPEX'                 # Metric to plot: 'CAPEX', 'Fixed O&M','Variable O&M'
-    # crpyears = 20
-    # atb_inputs = 'url'                              # Read in ATBe.csv input file from 'url' or 'local' inputs folder 
-                                                      # (if a version of ATB is not yet available online, read from 'inputs')
-                                                      # Link to past ATBe versions: https://data.openei.org/s3_viewer?bucket=oedi-data-lake&prefix=ATB%2Felectricity%2Fcsv%2F&limit=50
-                                                      # 2024 atb_path = 'https://oedi-data-lake.s3.amazonaws.com/ATB/electricity/csv/2024/v3.0.0/ATBe.csv'
-                                                      # 2025 atb is not yet available online, so only option is reading it from inputs folder.
-    # figure_format = 'png'                           # 'png' or 'pdf'
-    # save_data = False                               # Print the version of ATBe that has been cleaned and ready for plotting to csv
+    metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
+    runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
+    case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
-    # Specify dollar year:
-    if atb_version == 2024:
-        dollar_year = 2022
-    elif atb_version == 2025:
-        dollar_year = 2023
+    if metric == 'capacity':
+        # Read in data case file:
+        case_file = pd.read_csv(case_file)
+        #data = 
 
-    # Get the path for ATB data and clean the data:
-    (inputs_path, atb_path, figures_path) = read_path(atb_inputs, atb_version)
-    (technologies, dfplot) = clean_atb_data(atb_inputs, atb_path, atb_version, core_metric_parameter, crpyears)
-    if save_data:
-        print("Saving the version of ATBe that has been cleaned and ready for plotting to csv file...")
-        dfplot.to_csv(os.path.join(inputs_path, "ATB_"+str(atb_version)+"_cleaned.csv"))
 
-    # Define plot attributes:
-    (traces, colors, tracelabels, legendtitle, plottitle) = plot_attributes(inputs_path, atb_version)
-
-    # Plot ATB:
-    plot_atb(figures_path, atb_version, technologies, dfplot, traces, colors, legendtitle, plottitle, 
-             tracelabels, core_metric_parameter, figure_format, dollar_year)
-    
 ######################################################################################################
 #%% FUNCTIONS ###
 def read_path(atb_inputs, atb_version):
