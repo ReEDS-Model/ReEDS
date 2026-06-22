@@ -6019,9 +6019,9 @@ $offdelim
 $onlisting
 / ;
 
-* If upgrade techs, construction employment factor is adjusted by upgrade capital cost ratio
-* Only apply this to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
-
+* If upgrade techs, construction employment factor is adjusted by upgrade ratio
+* calculated as the ratio of the difference in capital costs between the initial 
+* techs and the upgraded tech divided by the capital costs of the initial techs
 parameter upgrade_ratio(i) ;
 upgrade_ratio(i)$upgrade(i) = 1 ;
 upgrade_ratio(i)$[upgrade(i)
@@ -6031,6 +6031,7 @@ upgrade_ratio(i)$[upgrade(i)
                     - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ) /
                       sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ;
 
+* Only apply this ratio to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
 $ifthen.upgrade_ef %GSw_EmploymentFactor% == "jedi"
 employment_factor_plant(i,"construction")$[upgrade(i)
                                          $(not ccs(i))] = employment_factor_plant(i,"construction") 
