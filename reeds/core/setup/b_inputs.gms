@@ -2628,11 +2628,8 @@ RecPerc(RPSCat,st,t) = sum{allt$att(allt,t), rps_fraction(allt,st,RPSCat) } ;
 RecPerc(RPSCat,st,t)$[(Sw_StateRPS_Carveouts = 0)$(sameas(RPSCat, "RPS_solar") or sameas(RPSCat, "RPS_Wind"))] = 0;
 RecPerc("CES",st,t) = ces_fraction(t,st) ;
 
-* RE generation creates both CES and RPS credits, which can cause double-counting
-* if a state has an RPS but not a CES. By setting each state's CES as the maximum
-* of its RPS or CES, we prevent the double-counting.
-RecPerc("CES",st,t) = max(RecPerc("CES",st,t), RecPerc("RPS_all",st,t)) ;
-
+* The combined RPS+CES credit limit is enforced in eq_REC_Generation_Limit,
+* which prevents a single MWh from satisfying both an RPS and a CES requirement.
 *Some links (value in RECtable = 2) restricted to bundled trading, while
 *some (value in RECtable = 1) allowed to also trade unbundled RECs.
 *Note the reversed set index order for rectable as compared to RecTrade, RecMap, and RECS.

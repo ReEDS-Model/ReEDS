@@ -228,6 +228,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_REC_launder(RPSCat,st,t)              "--RECs-- RECs laundering constraint"
  eq_REC_BundleLimit(RPSCat,st,ast,t)      "--RECS-- trade in bundle recs must be less than interstate electricity transmission"
  eq_REC_unbundledLimit(RPScat,st,t)       "--RECS-- unbundled RECS cannot exceed some percentage of total REC requirements"
+ eq_REC_Generation_Limit(i,st,t)          "--RECs-- combined RPS and CES credits cannot exceed generation for technologies eligible for both"
  eq_RPS_OFSWind(st,t)                     "--MW-- MW of offshore wind capacity must be greater than or equal to RPS amount"
  eq_national_gen(t)                       "--MWh-- e.g. a national RPS or CES. require a certain amount of total generation to be from specified sources."
 
@@ -2640,6 +2641,40 @@ eq_REC_Generation(RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
 
 * ---------------------------------------------------------------------------
 
+* For technologies eligible for both RPS_All and CES, each unit of generation
+* can create only one credit (either an RPS credit or a CES credit, not both).
+* This constraint limits the combined RPS_All and CES credit issuance to total
+* adjusted generation, preventing a single MWh from satisfying both policies.
+eq_REC_Generation_Limit(i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
+                                 $Sw_StateRPS$(yeart(t)>=firstyear_RPS)
+                                 $RecTech("RPS_All",i,st,t)
+                                 $RecTech("CES",i,st,t)]..
+
+* Adjusted generation (same H2-PTC and hybrid-storage deductions as eq_REC_Generation)
+    + sum{(v,r,h)$[valgen(i,v,r,t)$r_st(r,st)$h_rep(h)],
+          RPSTechMult("RPS_All",i,st) * hours(h)
+          * (GEN(i,v,r,h,t)
+          - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC]
+          - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] )
+         }
+
+     =g=
+
+* RPS_All credits issued (in-state and interstate)
+    + sum{ast$[RecMap(i,"RPS_All",st,ast,t)$(stfeas(ast) or sameas(ast,"voluntary"))],
+          RECS("RPS_All",i,st,ast,t) }
+    + sum{ast$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
+          RECS("RPS_Bundled",i,st,ast,t) }
+
+* CES credits issued (in-state and interstate)
+    + sum{ast$[RecMap(i,"CES",st,ast,t)$(stfeas(ast) or sameas(ast,"voluntary"))],
+          RECS("CES",i,st,ast,t) }
+    + sum{ast$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
+          RECS("CES_Bundled",i,st,ast,t) }
+;
+
+* ---------------------------------------------------------------------------
+
 * note that the bundled rpscat can be included
 * to comply with the RPS_All categeory
 * but it is not in itself explicit requirement
@@ -2710,7 +2745,7 @@ eq_REC_BundleLimit(RPSCat,st,ast,t)$[stfeas(st)$stfeas(ast)$tmodel(t)
 
 *amount of net transmission flows from state st to state ast
     sum{(h,r,rr,trtype)$[r_st(r,st)$r_st(rr,ast)$routes(r,rr,trtype,t)$h_rep(h)],
-          hours(h) * FLOW(r,rr,h,t,trtype)
+          hours(h) * FLOW(r,rr,h,t,trtype) * (1 - tranloss(rr,r,trtype)) 
       }
 
     =g=
