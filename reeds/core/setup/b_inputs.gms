@@ -3107,7 +3107,7 @@ routes_transgroup(transgrp,transgrpp,r,rr)$[
 
 parameter routes_transreg(transreg,transregg,r,rr) "collection of routes between transregs" ;
 routes_transreg(transreg,transregg,r,rr)$[
-    sum{t, routes(r,rr,"AC",t) }
+    sum{(t,trtype), routes(r,rr,trtype,t) }
     $r_transreg(r,transreg)
     $r_transreg(rr,transregg)
     $(not sameas(transreg,transregg))
@@ -4452,7 +4452,7 @@ $offdelim
 $onlisting
 / ;
 
-parameter peakload_transreg(transreg,allt) "--MW-- Peak exogenous demand across all weather years by NERC region"
+parameter peakload_transreg(transreg,allt) "--MW-- Peak exogenous demand across all weather years by FERC region"
 /
 $offlisting
 $ondelim

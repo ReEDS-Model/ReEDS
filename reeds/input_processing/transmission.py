@@ -248,7 +248,7 @@ def get_firm_import_limit(case):
     sw = reeds.io.get_switches(case)
     if not int(sw.GSw_PRM_NetImportLimit):
         ## No limit
-        firm_import_limit = pd.DataFrame(columns=['*transreg','t','fraction']).set_index(['*transreg','t'])
+        firm_import_limit = pd.DataFrame(columns=['transreg','t','fraction']).set_index(['transreg','t'])
     else:
         limits = pd.Series(
             {int(i.split('_')[0]): i.split('_')[1] for i in sw.GSw_PRM_NetImportLimitScen.split('/')}
@@ -269,7 +269,7 @@ def get_firm_import_limit(case):
         net_firm_import_frac = (
             peak_net_imports.MW / peak_net_imports.MW_TotalDemand
         ).clip(lower=0)
-        nercrs = net_firm_import_frac.index
+        transregs = net_firm_import_frac.index
 
         _dfout = {}
         for key, val in limits.items():
@@ -284,7 +284,7 @@ def get_firm_import_limit(case):
                     _dfout[y] = net_firm_import_frac.clip(lower=net_firm_import_frac.max())
             else:
                 ## Input values are percentages so convert to fractions
-                _dfout[key] = pd.Series(index=nercrs, data=float(val) / 100)
+                _dfout[key] = pd.Series(index=transregs, data=float(val) / 100)
 
         firm_import_limit = (
             pd.concat(_dfout, names=('t',)).unstack('transreg')

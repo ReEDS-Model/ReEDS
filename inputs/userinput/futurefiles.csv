@@ -300,7 +300,7 @@ pcm_defaults.json,.json,1,None,9999,None,9999,0,constant,None,None,new,
 peak_ccseason.csv,.csv,2,None,wide,"r,ccseason",1,0,linear_5,None,None,"ignore if not EFS, else apply projection",linear_10
 peak_h.csv,.csv,2,None,wide,"r,h",1,0,linear_5,None,None,"ignore if not EFS, else apply projection",linear_10
 peak_net_imports.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-peakload_nercr.csv,.csv,0,None,t,*nercr,0,0,linear_5,None,None,new,
+peakload_transreg.csv,.csv,0,None,t,*transreg,0,0,linear_5,None,None,new,
 peakload.csv,.csv,0,None,wide,"level,region",1,0,linear_5,None,None,new,
 period_szn_user.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 pipeline_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

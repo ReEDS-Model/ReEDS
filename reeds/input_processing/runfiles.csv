@@ -149,7 +149,6 @@ natgas_price_cendiv.csv,inputs/fuelprices/ng_{ngscen}.csv,1,ignore,ignore,wide_c
 national_rps_frac_allScen.csv,inputs/national_generation/national_rps_frac_allScen.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,,,,1,0,,,,,,
 net_gen_existing_hydro.csv,inputs/hydro/net_gen_existing_hydro.csv,1,ignore,ignore,,"t,month",,0,0,,,,,,
 peak_net_imports.csv,inputs/reserves/peak_net_imports.csv,1,ignore,ignore,transreg,t,,0,0,,,,,,
-peak_net_imports.csv,inputs/reserves/peak_net_imports.csv,1,ignore,ignore,transreg,t,,0,0,,,,,,
 ng_crf_penalty_st.csv,inputs/state_policies/ng_crf_penalty_st.csv,1,ignore,ignore,st,*t,,0,0,,,,,,
 ng_demand_elec.csv,inputs/fuelprices/ng_demand_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
 ng_demand_tot.csv,inputs/fuelprices/ng_tot_demand_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
