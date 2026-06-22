@@ -3647,6 +3647,14 @@ For purposes of calculating this population-weighted average, state-level popula
 
 Depending on the spatial resolution of the gas prices being used in the model, the daily gas price adjustments are either downscaled to the zone level by copying each regression region's adjustments to their constituent zones or upscaled to the census division level via population-weighted average.
 Once representative periods are selected in the model, the daily adjustments are filtered to include only the representative periods and then renormalized so that the average price multiplier for each zone or census division and each model year is one, thus ensuring the year-round average gas price remains unchanged.
+{numref}`figure-natural-gas-price-adjustments` shows an example set of price adjustments including the national wintertime markup and daily adjustments for each census division.
+
+```{figure} figs/docs/natural-gas-price-adjustments.png
+:name: figure-natural-gas-price-adjustments
+
+Seasonal and daily natural gas price adjustments for model year 2050 and weather year 2012.
+This example uses one weather year, but the method can also be applied across multiple weather years.
+```
 
 
 ### Capital Cost Financial Multipliers
