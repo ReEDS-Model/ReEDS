@@ -136,6 +136,14 @@ dictin_cap = {
     for case in cases
 }
 
+dictin_price = {
+    case: reeds.io.read_output(
+        os.path.join(cases[case], 'outputs', f'pcm_{label}_{plotyear}', 'outputs.h5'),
+        'reqt_price',
+    )
+    for case in cases
+}
+
 dictin_gen = {
     case: reeds.io.read_output(
         os.path.join(cases[case], 'outputs', f'pcm_{label}_{plotyear}', 'outputs.h5'),
@@ -820,6 +828,157 @@ for tech in rev_techs:
     slide = reeds.report_utils.add_to_pptx(f'{tech} revenue {plotyear} [$/kW]', prs=prs)
     if interactive:
         plt.show()
+
+#%%### Price maps by category
+renameprice = {
+    'load': 'Energy',
+    'res_marg': 'Capacity (seasonal)',
+    'res_marg_ann': 'Capacity (annual)',
+    'oper_res': 'Operating reserves',
+    'state_rps': 'State RPS',
+    'nat_gen': 'National gen standard',
+    'annual_cap': 'Annual emissions cap',
+    'eq_loadcon': 'Load constraint',
+}
+
+price_units = {
+    'load': '$/MWh',
+    'oper_res': '$/MWh',
+    'res_marg': '$/MW-day',
+    'res_marg_ann': '$/MW-day',
+    'state_rps': '$/MWh',
+    'nat_gen': '$/MWh',
+    'eq_loadcon': '$/MW-yr',
+}
+
+price_col = '*'  # first column of reqt_price: the price category
+price_time_col = '*.2'  # timeslice/season column in reqt_price
+
+price_cats = dictin_price[basecase][price_col].unique()
+
+for cat in price_cats:
+    unit = price_units.get(cat, '$/unit')
+
+    cat_time_values = [None]
+    if cat == 'res_marg':
+        cat_time_values = sorted(
+            dictin_price[basecase].loc[
+                (dictin_price[basecase].t == plotyear)
+                & (dictin_price[basecase][price_col] == cat),
+                price_time_col,
+            ].dropna().unique()
+        )
+        if len(cat_time_values) > 24:
+            print(
+                f'res_marg has {len(cat_time_values)} time slices in {plotyear}; '
+                'skipping per-slice maps and using aggregate map instead.'
+            )
+            cat_time_values = [None]
+
+    for time_val in cat_time_values:
+        time_suffix = '' if time_val is None else f' ({time_val})'
+
+        ### Get average price per region for this category/slice
+        price = pd.concat({
+            case:
+            dictin_price[case].loc[
+                (dictin_price[case].t == plotyear)
+                & (dictin_price[case][price_col] == cat)
+                & (
+                    (dictin_price[case][price_time_col] == time_val)
+                    if time_val is not None else True
+                )
+            ]
+            .groupby('r').Value.mean()
+            for case in cases
+        }, axis=1).fillna(0)
+
+        # Convert reserve margin prices from $/MW-year to $/MW-day.
+        if cat in ['res_marg', 'res_marg_ann']:
+            price = price / 365.0
+
+        pricediff = price.subtract(price[basecase], axis=0)
+        print(
+            f"{renameprice.get(cat, cat)}{time_suffix} national average price difference "
+            f"[{unit}]"
+        )
+        print(pricediff.mean().to_string())
+
+        ### Get colorbar limits
+        absmax = price.stack().max()
+        diffmax = pricediff.unstack().abs().max()
+
+        if np.isnan(absmax) or not absmax:
+            print(f'{cat}{time_suffix} has zero price in {plotyear}, so skipping maps')
+            continue
+
+        ### Set up plot
+        plt.close()
+        f, ax = plt.subplots(
+            nrows, ncols, figsize=(scale * ncols, scale * nrows * 0.75),
+            gridspec_kw={'wspace': 0.0, 'hspace': -0.1},
+        )
+        ### Plot it
+        for case in cases:
+            dfplot = dfba.copy()
+            dfplot[unit] = price[case] if case == basecase else pricediff[case]
+
+            ax[coords[case]].set_title(case)
+            dfba.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
+            dfstates.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
+            dfplot.plot(
+                ax=ax[coords[case]], column=unit,
+                cmap=(cmap if case == basecase else cmap_diff),
+                vmin=(0 if case == basecase else -diffmax),
+                vmax=(absmax if case == basecase else diffmax),
+                legend=False,
+                missing_kwds={'color': 'darkgrey'}
+            )
+            ## Difference legend
+            if coords[case] == legendcoords:
+                reeds.plots.addcolorbarhist(
+                    f=f, ax0=ax[coords[case]], data=dfplot[unit].values,
+                    title=(f'{renameprice.get(cat, cat)}{time_suffix} {plotyear}\n'
+                           f'price, difference\nfrom {basecase} [{unit}]'),
+                    title_fontsize='x-small',
+                    cmap=(cmap if case == basecase else cmap_diff),
+                    vmin=(0 if case == basecase else -diffmax),
+                    vmax=(absmax if case == basecase else diffmax),
+                    orientation='horizontal', labelpad=2.25, histratio=2.,
+                    cbarwidth=0.05, cbarheight=0.85,
+                    cbarbottom=-0.1, cbarhoffset=0.,
+                    histcolor='grey', nbins=25,
+                )
+        ## Absolute legend
+        reeds.plots.addcolorbarhist(
+            f=f, ax0=ax[coords[basecase]], data=price[basecase].values,
+            title=f'{renameprice.get(cat, cat)}{time_suffix} {plotyear}\nprice [{unit}]',
+            title_fontsize='x-small',
+            cmap=cmap, vmin=0, vmax=absmax,
+            orientation='horizontal', labelpad=2.25, histratio=2.,
+            cbarwidth=0.05, cbarheight=0.85,
+            cbarbottom=-0.1, cbarhoffset=0.,
+            nbins=25,
+        )
+
+        for row in range(nrows):
+            for col in range(ncols):
+                if nrows == 1:
+                    ax[col].axis('off')
+                elif ncols == 1:
+                    ax[row].axis('off')
+                else:
+                    ax[row, col].axis('off')
+        ### Save it
+        slide = reeds.report_utils.add_to_pptx(
+            f'{renameprice.get(cat, cat)}{time_suffix} price {plotyear} [{unit}]', prs=prs)
+        if interactive:
+            plt.show()
+
 
 # total generation difference check
 gen = pd.concat({
