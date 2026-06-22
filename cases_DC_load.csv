@@ -1,9 +1,14 @@
 ,Default Value,central,high,lowgas_central,lowgas_high,highgas_central,highgas_high
-ignore,0,,,0,,,0
+ignore,1,,0,00,0,0,0
 input_processing_only,0,,,,,,
+pcm,0,1,,1,,1,
 yearset,2010_2015_2020..2030..2,,,,,,
 endyear,2030,,,,,,
 GSw_ZoneSet,z54,,,,,,
+GSw_HourlyClusterAlgorithm,hierarchical,,,,,,
+GSw_HourlyClusterRegionLevel,st,,,,,,
+GSw_HourlyNumClusters,356,,,,,,
+GSw_HourlyClusterWeights,load_1/upv_1/wind-ons_1/wind-ofs_1,,,,,,
 ngscen,AEO_2025_reference,,,AEO_2025_HOG,AEO_2025_HOG,AEO_2025_LOG,AEO_2025_LOG
 GSw_PRM_CapCredit,1,,,,,,
 GSw_PRM_scenario,nerc,,,,,,
