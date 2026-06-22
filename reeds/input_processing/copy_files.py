@@ -1221,7 +1221,7 @@ def write_miscellaneous_files(
     
     # Add coal emission rate multiplier by FIPS
     # First, filter the counties that are in chosen GSw_Region
-    val_county = pd.read_csv(os.path.join(inputs_case,'val_county.csv'),names=['r'])
+    val_county = pd.read_csv(os.path.join(inputs_case,'county.csv'),names=['r'])
 
     emitrate_coal_mult = pd.read_csv(
         os.path.join(reeds_path,'inputs','emission_constraints','emitrate_coal_mult.csv'))
