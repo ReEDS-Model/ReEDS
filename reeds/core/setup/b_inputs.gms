@@ -3319,7 +3319,7 @@ trans_inv_max(t)$[
 trans_inv_max(t)$[
     tmodel_new(t)
     $(yeart(t) >= firstyear_trans_longterm)
-] = Sw_TransInvMaxLongterm ;
+] = Sw_TransInvMaxLongterm * Sw_TransInvScalar;
 
 *============================
 *   --- Fuel Prices ---

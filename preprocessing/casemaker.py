@@ -68,10 +68,11 @@ def validate_casematrix(casematrix):
     """Make sure casematrix is formatted correctly"""
     ## Dimensions
     dimensions = casematrix['dimensions']
+    print(dimensions)
     if not isinstance(dimensions, dict):
         err = f"dimensions has type {type(dimensions)} but should be a dictionary"
         raise TypeError(err)
-
+    
     disallowed = ['_', ' ', '.', '&', '/']
     for dimension, elements in dimensions.items():
         for i, item in enumerate(list(elements.keys())):
