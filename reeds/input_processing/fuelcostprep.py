@@ -13,7 +13,6 @@ well as NG demand for electricity generation) and natural gas alphas
 ### ===========================================================================
 
 import pandas as pd
-import numpy as np
 import os
 import sys
 import argparse
