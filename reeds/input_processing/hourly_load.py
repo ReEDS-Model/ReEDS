@@ -736,8 +736,8 @@ def main(reeds_path, inputs_case):
     #############################################
     # 
     if int(sw.GSw_DRShape): 
-        state_dr_shape_profile_inc = pd.read_csv(os.path.join(inputs_case, 'dr_shape_profile_increase.csv'))
-        state_dr_shape_profile_dec = pd.read_csv(os.path.join(inputs_case, 'dr_shape_profile_decrease.csv'))
+        state_dr_shape_profile_inc = reeds.io.read_file(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'))
+        state_dr_shape_profile_dec = reeds.io.read_file(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'))
         
         reg_cols = [col for col in state_dr_shape_profile_inc.columns if col not in ['i','year','hour']]
         disagg_data = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'))
@@ -773,8 +773,8 @@ def main(reeds_path, inputs_case):
         reeds.io.write_profile_to_h5(regional_dr_shed_hourly, 'dr_shed_hourly.h5', inputs_case)
 
     if int(sw.GSw_DRShape):
-        state_dr_shape_profile_inc.to_csv(os.path.join(inputs_case, 'dr_shape_profile_increase.csv'))
-        state_dr_shape_profile_dec.to_csv(os.path.join(inputs_case, 'dr_shape_profile_decrease.csv'))
+        state_dr_shape_profile_inc.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'), key='data', complevel=4)
+        state_dr_shape_profile_dec.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'), key='data', complevel=4)
 
 
 #%% ===========================================================================

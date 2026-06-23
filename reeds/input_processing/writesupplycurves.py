@@ -895,33 +895,34 @@ def main(
     disagg_data = pd.read_csv(os.path.join(inputs_case, 'disagg_state_lpf.csv'))
     state2r = disagg_data.groupby('state')['r'].unique().apply(list).to_dict()
     
+    dr_shed_dat, dr_shed_capacity_scalar_reg = process_dr_state_level('dr_shed', disagg_data, state2r)
+    dr_shape_dat, dr_shape_capacity_scalar_reg = process_dr_state_level('dr_shape', disagg_data, state2r)
+    # dr_shift_dat, dr_shift_capacity_scalar_reg = process_dr_state_level('dr_shift', disagg_data, state2r)
 
+    # Add DR data to rsc_combined if turned on, otherwise populate empty files 
     if int(sw.GSw_DRShed) == 1:
-        dr_shed_dat, dr_shed_capacity_scalar_reg = process_dr_state_level('dr_shed', disagg_data, state2r)
         allout_list.append(dr_shed_dat)
         dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shed_capacity_scalar.csv'), index=False)
 
     else:
-        dr_shed_capacity_scalar_reg = pd.DataFrame(columns=['tech', 'r'])
+        dr_shed_capacity_scalar_reg = pd.DataFrame(columns=dr_shed_capacity_scalar_reg.columns)
         dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shed_capacity_scalar.csv'), index=False)
 
     if int(sw.GSw_DRShape) == 1:
-        dr_shape_dat, dr_shape_capacity_scalar_reg = process_dr_state_level('dr_shape', disagg_data, state2r)
         allout_list.append(dr_shape_dat)
         dr_shape_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shape_capacity_scalar.csv'), index=False)
 
     else:
-        dr_shape_capacity_scalar_reg = pd.DataFrame(columns=['tech', 'r'])
+        dr_shape_capacity_scalar_reg = pd.DataFrame(columns=dr_shape_capacity_scalar_reg.columns)
         dr_shape_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shape_capacity_scalar.csv'), index=False)
 
-    if int(sw.GSw_DRShift) == 1:  
-        dr_shift_dat, dr_shift_capacity_scalar_reg = process_dr_state_level('dr_shift', disagg_data, state2r)
-        allout_list.append(dr_shift_dat)
-        dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
+    # if int(sw.GSw_DRShift) == 1:  
+    #     allout_list.append(dr_shift_dat)
+    #     dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
 
-    else:
-        dr_shift_capacity_scalar_reg = pd.DataFrame(columns=['tech', 'r'])
-        dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
+    # else:
+    #     dr_shift_capacity_scalar_reg = pd.DataFrame(columns=dr_shift_capacity_scalar_reg.columns)
+    #     dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
            
     # %%----------------------------------------------------------------------------------
     ##################################

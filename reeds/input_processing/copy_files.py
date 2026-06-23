@@ -1103,7 +1103,12 @@ def write_region_indexed_file(
 
     #---- Write data to dir_dst (inputs_case) folder ----
     if filetype_out == 'h5':
-        reeds.io.write_profile_to_h5(df, filename, dir_dst)
+        if filename in ['dr_shape_profile_decrease.h5', 'dr_shape_profile_increase.h5', 
+                        'dr_shift_profile_decrease.h5', 'dr_shift_profile_increase.h5', 
+                        'dr_shift_profile_energy.h5']:
+            df.to_hdf(os.path.join(dir_dst, filename), key = 'data', complevel=4)
+        else:
+            reeds.io.write_profile_to_h5(df, filename, dir_dst)
     else:
         # Special cases: These files' values need to be adjusted to copy
         filepath = region_file_entry['filepath']

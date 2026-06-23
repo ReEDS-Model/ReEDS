@@ -285,9 +285,8 @@ def get_yearly_flexibility(
                 continue
 
         elif drcat.lower() == "dr_shape":
-            shape[stype] = pd.read_csv(
-                os.path.join(inputs_case, f"dr_shape_profile_{stype}.csv")
-            )
+            shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shape_profile_{stype}.h5"))
+                 
         elif drcat.lower() == "dr_shift":
             shape[stype] = pd.read_csv(
                 os.path.join(inputs_case, f"dr_shift_profile_{stype}.csv")
