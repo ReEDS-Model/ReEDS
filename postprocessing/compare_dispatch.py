@@ -154,92 +154,108 @@ dictin_gen = {
 
 ###### Plots ######
 #%% Total dropped load
-dfdropped = pd.Series({
-    case:
-    dictin_dropped[case].loc[dictin_dropped[case].t==plotyear].Value.sum() / 1e3
-    for case in cases
-})
+try:
+    dfdropped = pd.Series({
+        case:
+        dictin_dropped[case].loc[dictin_dropped[case].t==plotyear].Value.sum() / 1e3
+        for case in cases
+    })
 
-plt.close()
-f,ax = plt.subplots()
-ax.bar(
-    x=dfdropped.index,
-    height=dfdropped.values,
-    color=[colors[case] for case in dfdropped.index],
-)
-ax.set_ylabel(f'Dropped load {plotyear} [GWh]')
-ax.set_xticks(range(len(cases)))
-ax.set_xticklabels(cases.keys(), rotation=45, rotation_mode='anchor', ha='right')
-reeds.plots.despine(ax)
-## Save it
-title = 'Total dropped load'
-slide = reeds.report_utils.add_to_pptx(title, prs=prs, width=None, height=SLIDE_HEIGHT)
-if interactive:
-    plt.show()
+    plt.close()
+    f,ax = plt.subplots()
+    ax.bar(
+        x=dfdropped.index,
+        height=dfdropped.values,
+        color=[colors[case] for case in dfdropped.index],
+    )
+    ax.set_ylabel(f'Dropped load {plotyear} [GWh]')
+    ax.set_xticks(range(len(cases)))
+    ax.set_xticklabels(cases.keys(), rotation=45, rotation_mode='anchor', ha='right')
+    reeds.plots.despine(ax)
+    ## Save it
+    title = 'Total dropped load'
+    slide = reeds.report_utils.add_to_pptx(title, prs=prs, width=None, height=SLIDE_HEIGHT)
+    if interactive:
+        plt.show()
+except Exception as e:
+    print(f'Warning: Failed to plot total dropped load: {type(e).__name__}: {e}')
+    plt.close()
 
 
 #%% Regions
-scale = 3
-cmap = cmocean.cm.rain
-dfmaps = {case: reeds.io.get_dfmap(cases[case]) for case in cases}
+try:
+    scale = 3
+    cmap = cmocean.cm.rain
+    dfmaps = {case: reeds.io.get_dfmap(cases[case]) for case in cases}
 
-nrows, ncols, coords = reeds.plots.get_coordinates(cases)
-
-plt.close()
-f,ax = plt.subplots(
-    nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75), sharex=True, sharey=True,
-    gridspec_kw={'wspace':0, 'hspace':-0.1}, dpi=200,
-)
-for case in cases:
-    _ax = ax[coords[case]]
-    dfmaps[case]['st'].plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
-    dfmaps[case]['transreg'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2)
-    for r, row in dfmaps[case]['r'].iterrows():
-        _ax.annotate(
-            r.strip('p'), (row.centroid_x, row.centroid_y),
-            ha='center', va='center', fontsize=3,
-            color='0.8',
-        )
-    df = dfmaps[case]['r'].copy()
-    df['GWh'] = (
-        dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]
-        .groupby('r').Value.sum()
-        / 1e3
-    )
-    df.plot(ax=_ax, column='GWh', cmap=cmap)
-    _ax.axis('off')
-    _ax.set_title(case, y=0.9)
-reeds.plots.trim_subplots(ax, nrows, ncols, len(cases))
-## Save it
-title = 'Dropped load'
-slide = reeds.report_utils.add_to_pptx(title, prs=prs)
-if interactive:
-    plt.show()
-
-
-#%% Timing of dropped load
-dfdropped = pd.Series({
-    case:
-    dictin_dropped[case].loc[dictin_dropped[case].t==plotyear].Value.sum() / 1e3
-    for case in cases
-})
-
-for case in dfdropped.loc[dfdropped > 0].index:
-    sw = reeds.io.get_switches(cases[case])
-    y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
-    fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
-    df = (dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]).groupby('h').Value.sum()
-    df.index = df.index.map(reeds.timeseries.h2timestamp)
-    df = df.reindex(fullyear).fillna(0)
+    nrows, ncols, coords = reeds.plots.get_coordinates(cases)
 
     plt.close()
-    f, ax = reeds.plots.plotyearbymonth(df, colors='r')
-    # ax[0].set_title(case, fontsize=14)
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75), sharex=True, sharey=True,
+        gridspec_kw={'wspace':0, 'hspace':-0.1}, dpi=200,
+    )
+    for case in cases:
+        _ax = ax[coords[case]]
+        dfmaps[case]['st'].plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+        dfmaps[case]['transreg'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2)
+        for r, row in dfmaps[case]['r'].iterrows():
+            _ax.annotate(
+                r.strip('p'), (row.centroid_x, row.centroid_y),
+                ha='center', va='center', fontsize=3,
+                color='0.8',
+            )
+        df = dfmaps[case]['r'].copy()
+        df['GWh'] = (
+            dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]
+            .groupby('r').Value.sum()
+            / 1e3
+        )
+        df.plot(ax=_ax, column='GWh', cmap=cmap)
+        _ax.axis('off')
+        _ax.set_title(case, y=0.9)
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(cases))
     ## Save it
-    title = f'Dropped load ({case})'
+    title = 'Dropped load'
     slide = reeds.report_utils.add_to_pptx(title, prs=prs)
     if interactive:
         plt.show()
+except Exception as e:
+    print(f'Warning: Failed to plot regions dropped load maps: {type(e).__name__}: {e}')
+    plt.close()
+
+
+#%% Timing of dropped load
+try:
+    dfdropped = pd.Series({
+        case:
+        dictin_dropped[case].loc[dictin_dropped[case].t==plotyear].Value.sum() / 1e3
+        for case in cases
+    })
+
+    for case in dfdropped.loc[dfdropped > 0].index:
+        try:
+            sw = reeds.io.get_switches(cases[case])
+            y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
+            fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
+            df = (dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]).groupby('h').Value.sum()
+            df.index = df.index.map(reeds.timeseries.h2timestamp)
+            df = df.reindex(fullyear).fillna(0)
+
+            plt.close()
+            f, ax = reeds.plots.plotyearbymonth(df, colors='r')
+            # ax[0].set_title(case, fontsize=14)
+            ## Save it
+            title = f'Dropped load ({case})'
+            slide = reeds.report_utils.add_to_pptx(title, prs=prs)
+            if interactive:
+                plt.show()
+        except Exception as e:
+            print(f'Warning: Failed to plot timing of dropped load for {case}: {type(e).__name__}: {e}')
+            plt.close()
+except Exception as e:
+    print(f'Warning: Failed in timing of dropped load section: {type(e).__name__}: {e}')
+    plt.close()
 
 
 #%%### Dispatch
@@ -267,53 +283,57 @@ for r in plot_regions:
             title = f"{case}: {r} ({dfdropped[case][r]/1e3:.1f} GWh)"
         except KeyError:
             continue
-        sw = reeds.io.get_switches(cases[case])
-        y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
-        fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
-        ## Dispatch
-        plt.close()
-        f, ax, dfplot = reeds.reedsplots.plot_dispatch_yearbymonth(
-            case=cases[case],
-            t=plotyear,
-            periodtype=f'pcm_{label}',
-            highlight_rep_periods=False,
-            region=f'r/{r}',
-        )
-        ## Dropped, as white areas at the bottom
-        df = (
-            dictin_dropped[case]
-            .loc[
-                (dictin_dropped[case].t==plotyear)
-                & (dictin_dropped[case].r==r)
-            ]
-        ).groupby('h').Value.sum()
-        df.index = df.index.map(reeds.timeseries.h2timestamp)
-        df = df.reindex(fullyear).fillna(0) / 1e3
-        reeds.plots.plotyearbymonth(df, colors='w', f=f, ax=ax)
-        ## Annotate the hours with dropped load
-        nonzero_dropped_load = df.loc[df > 0].sort_values(ascending=False)
-        for i in range(min(max_arrows, len(nonzero_dropped_load))):
-            dt = nonzero_dropped_load.index[i]
-            row = dt.month - 1
-            ## plots.plotyearbymonth() plots each month as January 2001
-            _dt = pd.Timestamp(f'2001-01-{dt.day:02} {dt.hour}:00:00')
-            ax[row].annotate(
-                '',
-                xy=(_dt, -ax[row].get_ylim()[1]*0.05),
-                xytext=(_dt, -ax[row].get_ylim()[1]*0.25),
-                arrowprops={
-                    'headwidth':2.5,
-                    'headlength':3,
-                    'width':0.5,
-                    'color':'k',
-                    'lw':0.5,
-                },
-                annotation_clip=False,
+        try:
+            sw = reeds.io.get_switches(cases[case])
+            y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
+            fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
+            ## Dispatch
+            plt.close()
+            f, ax, dfplot = reeds.reedsplots.plot_dispatch_yearbymonth(
+                case=cases[case],
+                t=plotyear,
+                periodtype=f'pcm_{label}',
+                highlight_rep_periods=False,
+                region=f'r/{r}',
             )
-        ## Save it
-        slide = reeds.report_utils.add_to_pptx(title, prs=prs)
-        if interactive:
-            plt.show()
+            ## Dropped, as white areas at the bottom
+            df = (
+                dictin_dropped[case]
+                .loc[
+                    (dictin_dropped[case].t==plotyear)
+                    & (dictin_dropped[case].r==r)
+                ]
+            ).groupby('h').Value.sum()
+            df.index = df.index.map(reeds.timeseries.h2timestamp)
+            df = df.reindex(fullyear).fillna(0) / 1e3
+            reeds.plots.plotyearbymonth(df, colors='w', f=f, ax=ax)
+            ## Annotate the hours with dropped load
+            nonzero_dropped_load = df.loc[df > 0].sort_values(ascending=False)
+            for i in range(min(max_arrows, len(nonzero_dropped_load))):
+                dt = nonzero_dropped_load.index[i]
+                row = dt.month - 1
+                ## plots.plotyearbymonth() plots each month as January 2001
+                _dt = pd.Timestamp(f'2001-01-{dt.day:02} {dt.hour}:00:00')
+                ax[row].annotate(
+                    '',
+                    xy=(_dt, -ax[row].get_ylim()[1]*0.05),
+                    xytext=(_dt, -ax[row].get_ylim()[1]*0.25),
+                    arrowprops={
+                        'headwidth':2.5,
+                        'headlength':3,
+                        'width':0.5,
+                        'color':'k',
+                        'lw':0.5,
+                    },
+                    annotation_clip=False,
+                )
+            ## Save it
+            slide = reeds.report_utils.add_to_pptx(title, prs=prs)
+            if interactive:
+                plt.show()
+        except Exception as e:
+            print(f'Warning: Failed to plot dispatch for {r} ({case}): {type(e).__name__}: {e}')
+            plt.close()
 
 #%%### Revenue irt
 # histogram of revenue from different cases
@@ -415,81 +435,85 @@ plotwidth = 2.0
 figwidth = plotwidth * len(cases)
 dfbase = {}
 for slidetitle, data in toplot.items():
-    plt.close()
-    f,ax = plt.subplots(
-        2, len(cases), figsize=(figwidth, 6.8),
-        sharex=True, sharey=False, dpi=None,
-    )
-    ax[0,0].set_ylabel(data['label'], y=-0.075)
-    ax[0,0].set_xlim(2017.5, plotyear+2.5)
-    ax[1,0].annotate(
-        f'Diff\nfrom\n{basecase}', (0.03,0.03), xycoords='axes fraction',
-        fontsize='x-large', weight='bold')
-    ###### Absolute
-    alltechs = set()
-    for col, case in enumerate(cases):
-        if case not in data['data']:
-            continue
-        dfplot = data['data'][case].pivot_table(index='t', columns='i', values='Value',aggfunc='sum')
-        dfplot = (
-            dfplot[[c for c in data['colors'] if c in dfplot]]
-            .round(3).replace(0,np.nan)
-            .dropna(axis=1, how='all')
-            / data['conversionfactor'] # to GW or TWh
+    try:
+        plt.close()
+        f,ax = plt.subplots(
+            2, len(cases), figsize=(figwidth, 6.8),
+            sharex=True, sharey=False, dpi=None,
         )
-        if case == basecase:
-            dfbase[slidetitle] = dfplot.copy()
-        alltechs.update(dfplot.columns)
-        reeds.plots.stackbar(df=dfplot, ax=ax[0,col], colors=data['colors'], net=False)
-        ax[0,col].set_title(
-            reeds.plots.wraptext(case, width=plotwidth*0.9, fontsize=14),
-            fontsize=14, weight='bold', x=0, ha='left', pad=8,)
-        ax[0,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[0,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
+        ax[0,0].set_ylabel(data['label'], y=-0.075)
+        ax[0,0].set_xlim(2017.5, plotyear+2.5)
+        ax[1,0].annotate(
+            f'Diff\nfrom\n{basecase}', (0.03,0.03), xycoords='axes fraction',
+            fontsize='x-large', weight='bold')
+        ###### Absolute
+        alltechs = set()
+        for col, case in enumerate(cases):
+            if case not in data['data']:
+                continue
+            dfplot = data['data'][case].pivot_table(index='t', columns='i', values='Value',aggfunc='sum')
+            dfplot = (
+                dfplot[[c for c in data['colors'] if c in dfplot]]
+                .round(3).replace(0,np.nan)
+                .dropna(axis=1, how='all')
+                / data['conversionfactor'] # to GW or TWh
+            )
+            if case == basecase:
+                dfbase[slidetitle] = dfplot.copy()
+            alltechs.update(dfplot.columns)
+            reeds.plots.stackbar(df=dfplot, ax=ax[0,col], colors=data['colors'], net=False)
+            ax[0,col].set_title(
+                reeds.plots.wraptext(case, width=plotwidth*0.9, fontsize=14),
+                fontsize=14, weight='bold', x=0, ha='left', pad=8,)
+            ax[0,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
+            ax[0,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
 
 
-    ### Legend
-    handles = [
-        mpl.patches.Patch(
-            facecolor=data['colors'][i], edgecolor='none',
-            label=i.replace('Canada','imports').split('/')[-1]
+        ### Legend
+        handles = [
+            mpl.patches.Patch(
+                facecolor=data['colors'][i], edgecolor='none',
+                label=i.replace('Canada','imports').split('/')[-1]
+            )
+            for i in data['colors'] if i in alltechs
+        ]
+        leg = ax[0,-1].legend(
+            handles=handles[::-1], loc='upper left', bbox_to_anchor=(1.0,1.0), 
+            fontsize='medium', ncol=1,  frameon=False,
+            handletextpad=0.3, handlelength=0.7, columnspacing=0.5, 
         )
-        for i in data['colors'] if i in alltechs
-    ]
-    leg = ax[0,-1].legend(
-        handles=handles[::-1], loc='upper left', bbox_to_anchor=(1.0,1.0), 
-        fontsize='medium', ncol=1,  frameon=False,
-        handletextpad=0.3, handlelength=0.7, columnspacing=0.5, 
-    )
 
-    ###### Difference
-    for col, case in enumerate(cases):
-        ax[1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[1,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
-        ax[1,col].axhline(0,c='k',ls='--',lw=0.75)
+        ###### Difference
+        for col, case in enumerate(cases):
+            ax[1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
+            ax[1,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
+            ax[1,col].axhline(0,c='k',ls='--',lw=0.75)
 
-        if (case not in data['data']) or (case == basecase):
-            continue
-        dfplot = data['data'][case].pivot_table(index='t', columns='i', values='Value',aggfunc='sum')
-        dfplot = (
-            dfplot
-            .round(3).replace(0,np.nan)
-            .dropna(axis=1, how='all')
-            / data['conversionfactor'] # to GW or TWh
-        )
-        dfplot = dfplot.subtract(dfbase[slidetitle], fill_value=0)
-        dfplot = dfplot[[c for c in data['colors'] if c in dfplot]].copy()
-        alltechs.update(dfplot.columns)
-        reeds.plots.stackbar(df=dfplot, ax=ax[1,col], colors=data['colors'], net=True)
+            if (case not in data['data']) or (case == basecase):
+                continue
+            dfplot = data['data'][case].pivot_table(index='t', columns='i', values='Value',aggfunc='sum')
+            dfplot = (
+                dfplot
+                .round(3).replace(0,np.nan)
+                .dropna(axis=1, how='all')
+                / data['conversionfactor'] # to GW or TWh
+            )
+            dfplot = dfplot.subtract(dfbase[slidetitle], fill_value=0)
+            dfplot = dfplot[[c for c in data['colors'] if c in dfplot]].copy()
+            alltechs.update(dfplot.columns)
+            reeds.plots.stackbar(df=dfplot, ax=ax[1,col], colors=data['colors'], net=True)
 
-    reeds.plots.despine(ax)
-    plt.draw()
-    reeds.plots.shorten_years(ax[1,0])
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx(
-        slidetitle+' stack', prs=prs, width=None, height=SLIDE_HEIGHT)
-    if interactive:
-        plt.show()
+        reeds.plots.despine(ax)
+        plt.draw()
+        reeds.plots.shorten_years(ax[1,0])
+        ### Save it
+        slide = reeds.report_utils.add_to_pptx(
+            slidetitle+' stack', prs=prs, width=None, height=SLIDE_HEIGHT)
+        if interactive:
+            plt.show()
+    except Exception as e:
+        print(f'Warning: Failed to plot {slidetitle} stack: {type(e).__name__}: {e}')
+        plt.close()
 
 for case in cases:
     print('Using tech categories...')
@@ -520,121 +544,11 @@ else:
 # total  rervenue
 ### Set up plot
 ### Get limits
-revenue = pd.concat({
-    case:
-    dictin_revenue[case].loc[
-        (dictin_revenue[case].t==plotyear)
-        ]
-    .groupby('r').Value.sum()
-    for case in cases
-},axis=1).fillna(0)
-cap = pd.concat({
-    case:
-    dictin_cap[case].loc[
-        (dictin_cap[case].t==plotyear)
-        ]
-    .groupby('r').Value.sum() * 1e3 # sum of different subtechs
-    for case in cases
-},axis=1)
-norm_revenue = revenue/cap
-revdiff = revenue.subtract(revenue[basecase], axis=0)
-print(f'Total national revenue difference: ' + str(revdiff.sum()))
-dfdiff = norm_revenue.subtract(norm_revenue[basecase], axis=0)
-print(f'Total normalized revenue difference summary:')
-print(dfdiff.describe())
-### Get colorbar limits
-absmax = norm_revenue.stack().max()
-diffmax = dfdiff.unstack().abs().max()
-
-if np.isnan(absmax):
-    absmax = 0.
-
-### Set up plot
-plt.close()
-f,ax = plt.subplots(
-    nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75),
-    gridspec_kw={'wspace':0.0,'hspace':-0.1},
-)
-### Plot it
-for case in cases:
-    dfplot = dfba.copy()
-    dfplot['$/kW'] = norm_revenue[case] if case == basecase else dfdiff[case]
-
-    ax[coords[case]].set_title(case)
-    dfba.plot(
-        ax=ax[coords[case]],
-        facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
-    dfstates.plot(
-        ax=ax[coords[case]],
-        facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
-    dfplot.plot(
-        ax=ax[coords[case]], column='$/kW',
-        cmap=(cmap if case == basecase else cmap_diff),
-        vmin=(0 if case == basecase else -diffmax),
-        vmax=(absmax if case == basecase else diffmax),
-        legend=False,
-        missing_kwds={'color': 'darkgrey'}
-    )
-    ## Difference legend
-    if coords[case] == legendcoords:
-        reeds.plots.addcolorbarhist(
-            f=f, ax0=ax[coords[case]], data=dfplot['$/kW'].values,
-            title=f'Total {plotyear}\nrevenue, difference\nfrom {basecase} [$/kW]',
-            title_fontsize = 'x-small',
-            cmap=(cmap if case == basecase else cmap_diff),
-            vmin=(0 if case == basecase else -diffmax),
-            vmax=(absmax if case == basecase else diffmax),
-            orientation='horizontal', labelpad=2.25, histratio=2.,
-            cbarwidth=0.05, cbarheight=0.85,
-            cbarbottom=-0.1, cbarhoffset=0.,
-            histcolor='grey', nbins=25,
-        )
-## Absolute legend
-reeds.plots.addcolorbarhist(
-    f=f, ax0=ax[coords[basecase]], data=norm_revenue[basecase].values,
-    title=f'Total {plotyear}\nrevenue [$/kW]',
-    title_fontsize = 'x-small',
-    cmap=cmap, vmin=0, vmax=absmax,
-    orientation='horizontal', labelpad=2.25, histratio=2.,
-    cbarwidth=0.05, cbarheight=0.85,
-    cbarbottom=-0.1, cbarhoffset=0.,
-    nbins=25,
-)
-
-for row in range(nrows):
-    for col in range(ncols):
-        if nrows == 1:
-            ax[col].axis('off')
-        elif ncols == 1:
-            ax[row].axis('off')
-        else:
-            ax[row,col].axis('off')
-### Save it
-slide = reeds.report_utils.add_to_pptx(f'Total revenue {plotyear} [$/kW]', prs=prs)
-if interactive:
-    plt.show()
-
-#TODO: map rev_cats to pretty names
-renamecats = {
-    'load':'Energy',
-    'res_marg':'Capacity',
-    'oper_res':'Operating reserves',
-    'rps':'RPS',
-    'charge':'Charging',
-}
-# revenue by revenue category
-for case in cases:
-    dictin_revenue[case].rev_cat = dictin_revenue[case].rev_cat.map(lambda x: renamecats.get(x,x))
-
-rev_cats = dictin_revenue[basecase].rev_cat.unique()
-
-for cat in rev_cats:
-    ### Get limits
+try:
     revenue = pd.concat({
         case:
         dictin_revenue[case].loc[
             (dictin_revenue[case].t==plotyear)
-            &(dictin_revenue[case].rev_cat==cat)
             ]
         .groupby('r').Value.sum()
         for case in cases
@@ -649,9 +563,9 @@ for cat in rev_cats:
     },axis=1)
     norm_revenue = revenue/cap
     revdiff = revenue.subtract(revenue[basecase], axis=0)
-    print(f'{cat} national revenue difference: ' + str(revdiff.sum()))
+    print(f'Total national revenue difference: ' + str(revdiff.sum()))
     dfdiff = norm_revenue.subtract(norm_revenue[basecase], axis=0)
-    print(f'{cat} normalized revenue difference summary:')
+    print(f'Total normalized revenue difference summary:')
     print(dfdiff.describe())
     ### Get colorbar limits
     absmax = norm_revenue.stack().max()
@@ -659,9 +573,7 @@ for cat in rev_cats:
 
     if np.isnan(absmax):
         absmax = 0.
-    if not absmax:
-        print(f'{cat} has zero capacity in {plotyear}, so skipping maps')
-        continue
+
     ### Set up plot
     plt.close()
     f,ax = plt.subplots(
@@ -692,7 +604,7 @@ for cat in rev_cats:
         if coords[case] == legendcoords:
             reeds.plots.addcolorbarhist(
                 f=f, ax0=ax[coords[case]], data=dfplot['$/kW'].values,
-                title=f'{cat} {plotyear}\nrevenue, difference\nfrom {basecase} [$/kW]',
+                title=f'Total {plotyear}\nrevenue, difference\nfrom {basecase} [$/kW]',
                 title_fontsize = 'x-small',
                 cmap=(cmap if case == basecase else cmap_diff),
                 vmin=(0 if case == basecase else -diffmax),
@@ -700,12 +612,12 @@ for cat in rev_cats:
                 orientation='horizontal', labelpad=2.25, histratio=2.,
                 cbarwidth=0.05, cbarheight=0.85,
                 cbarbottom=-0.1, cbarhoffset=0.,
-                histcolor='grey',nbins=25,
+                histcolor='grey', nbins=25,
             )
     ## Absolute legend
     reeds.plots.addcolorbarhist(
         f=f, ax0=ax[coords[basecase]], data=norm_revenue[basecase].values,
-        title=f'{cat} {plotyear}\nrevenue [$/kW]',
+        title=f'Total {plotyear}\nrevenue [$/kW]',
         title_fontsize = 'x-small',
         cmap=cmap, vmin=0, vmax=absmax,
         orientation='horizontal', labelpad=2.25, histratio=2.,
@@ -723,111 +635,234 @@ for cat in rev_cats:
             else:
                 ax[row,col].axis('off')
     ### Save it
-    slide = reeds.report_utils.add_to_pptx(f'{cat} revenue {plotyear} [$/kW]', prs=prs)
+    slide = reeds.report_utils.add_to_pptx(f'Total revenue {plotyear} [$/kW]', prs=prs)
     if interactive:
         plt.show()
+except Exception as e:
+    print(f'Warning: Failed to plot total revenue maps: {type(e).__name__}: {e}')
+    plt.close()
+
+renamecats = {
+    'load':'Energy',
+    'res_marg':'Capacity',
+    'oper_res':'Operating reserves',
+    'rps':'RPS',
+    'charge':'Charging',
+}
+# revenue by revenue category
+for case in cases:
+    dictin_revenue[case].rev_cat = dictin_revenue[case].rev_cat.map(lambda x: renamecats.get(x,x))
+
+rev_cats = dictin_revenue[basecase].rev_cat.unique()
+
+for cat in rev_cats:
+    try:
+        ### Get limits
+        revenue = pd.concat({
+            case:
+            dictin_revenue[case].loc[
+                (dictin_revenue[case].t==plotyear)
+                &(dictin_revenue[case].rev_cat==cat)
+                ]
+            .groupby('r').Value.sum()
+            for case in cases
+        },axis=1).fillna(0)
+        cap = pd.concat({
+            case:
+            dictin_cap[case].loc[
+                (dictin_cap[case].t==plotyear)
+                ]
+            .groupby('r').Value.sum() * 1e3 # sum of different subtechs
+            for case in cases
+        },axis=1)
+        norm_revenue = revenue/cap
+        revdiff = revenue.subtract(revenue[basecase], axis=0)
+        print(f'{cat} national revenue difference: ' + str(revdiff.sum()))
+        dfdiff = norm_revenue.subtract(norm_revenue[basecase], axis=0)
+        print(f'{cat} normalized revenue difference summary:')
+        print(dfdiff.describe())
+        ### Get colorbar limits
+        absmax = norm_revenue.stack().max()
+        diffmax = dfdiff.unstack().abs().max()
+
+        if np.isnan(absmax):
+            absmax = 0.
+        if not absmax:
+            print(f'{cat} has zero capacity in {plotyear}, so skipping maps')
+            continue
+        ### Set up plot
+        plt.close()
+        f,ax = plt.subplots(
+            nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75),
+            gridspec_kw={'wspace':0.0,'hspace':-0.1},
+        )
+        ### Plot it
+        for case in cases:
+            dfplot = dfba.copy()
+            dfplot['$/kW'] = norm_revenue[case] if case == basecase else dfdiff[case]
+
+            ax[coords[case]].set_title(case)
+            dfba.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
+            dfstates.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
+            dfplot.plot(
+                ax=ax[coords[case]], column='$/kW',
+                cmap=(cmap if case == basecase else cmap_diff),
+                vmin=(0 if case == basecase else -diffmax),
+                vmax=(absmax if case == basecase else diffmax),
+                legend=False,
+                missing_kwds={'color': 'darkgrey'}
+            )
+            ## Difference legend
+            if coords[case] == legendcoords:
+                reeds.plots.addcolorbarhist(
+                    f=f, ax0=ax[coords[case]], data=dfplot['$/kW'].values,
+                    title=f'{cat} {plotyear}\nrevenue, difference\nfrom {basecase} [$/kW]',
+                    title_fontsize = 'x-small',
+                    cmap=(cmap if case == basecase else cmap_diff),
+                    vmin=(0 if case == basecase else -diffmax),
+                    vmax=(absmax if case == basecase else diffmax),
+                    orientation='horizontal', labelpad=2.25, histratio=2.,
+                    cbarwidth=0.05, cbarheight=0.85,
+                    cbarbottom=-0.1, cbarhoffset=0.,
+                    histcolor='grey',nbins=25,
+                )
+        ## Absolute legend
+        reeds.plots.addcolorbarhist(
+            f=f, ax0=ax[coords[basecase]], data=norm_revenue[basecase].values,
+            title=f'{cat} {plotyear}\nrevenue [$/kW]',
+            title_fontsize = 'x-small',
+            cmap=cmap, vmin=0, vmax=absmax,
+            orientation='horizontal', labelpad=2.25, histratio=2.,
+            cbarwidth=0.05, cbarheight=0.85,
+            cbarbottom=-0.1, cbarhoffset=0.,
+            nbins=25,
+        )
+
+        for row in range(nrows):
+            for col in range(ncols):
+                if nrows == 1:
+                    ax[col].axis('off')
+                elif ncols == 1:
+                    ax[row].axis('off')
+                else:
+                    ax[row,col].axis('off')
+        ### Save it
+        slide = reeds.report_utils.add_to_pptx(f'{cat} revenue {plotyear} [$/kW]', prs=prs)
+        if interactive:
+            plt.show()
+    except Exception as e:
+        print(f'Warning: Failed to plot {cat} revenue maps: {type(e).__name__}: {e}')
+        plt.close()
 
 # revenue by technology type
 ### Set up plot
 for tech in rev_techs:
-    ### Get limits
-    revenue = pd.concat({
-        case:
-        dictin_revenue[case].loc[
-            (dictin_revenue[case].t==plotyear)
-            &(dictin_revenue[case].i==tech)
-            ]
-        .groupby('r').Value.sum() # sum of different revenue categories and subtechs
-        for case in cases
-    },axis=1).fillna(0)
-    cap = pd.concat({
-        case:
-        dictin_cap[case].loc[
-            (dictin_cap[case].t==plotyear)
-            &(dictin_cap[case].i==tech)
-            ]
-        .groupby('r').Value.sum() * 1e3 # sum of different subtechs
-        for case in cases
-    },axis=1)
-    norm_revenue = revenue/cap
-    revdiff = revenue.subtract(revenue[basecase], axis=0)
-    print(f'{tech} national revenue difference: ' + str(revdiff.sum()))
-    dfdiff = norm_revenue.subtract(norm_revenue[basecase], axis=0)
-    print(f'{tech} normalized revenue difference summary:')
-    print(dfdiff.describe())
-    ### Get colorbar limits
-    absmax = norm_revenue.stack().max()
-    diffmax = dfdiff.unstack().abs().max()
+    try:
+        ### Get limits
+        revenue = pd.concat({
+            case:
+            dictin_revenue[case].loc[
+                (dictin_revenue[case].t==plotyear)
+                &(dictin_revenue[case].i==tech)
+                ]
+            .groupby('r').Value.sum() # sum of different revenue categories and subtechs
+            for case in cases
+        },axis=1).fillna(0)
+        cap = pd.concat({
+            case:
+            dictin_cap[case].loc[
+                (dictin_cap[case].t==plotyear)
+                &(dictin_cap[case].i==tech)
+                ]
+            .groupby('r').Value.sum() * 1e3 # sum of different subtechs
+            for case in cases
+        },axis=1)
+        norm_revenue = revenue/cap
+        revdiff = revenue.subtract(revenue[basecase], axis=0)
+        print(f'{tech} national revenue difference: ' + str(revdiff.sum()))
+        dfdiff = norm_revenue.subtract(norm_revenue[basecase], axis=0)
+        print(f'{tech} normalized revenue difference summary:')
+        print(dfdiff.describe())
+        ### Get colorbar limits
+        absmax = norm_revenue.stack().max()
+        diffmax = dfdiff.unstack().abs().max()
 
-    if np.isnan(absmax):
-        absmax = 0.
-    if not absmax:
-        print(f'{tech} has zero capacity in {plotyear}, so skipping maps')
-        continue
-    ### Set up plot
-    plt.close()
-    f,ax = plt.subplots(
-        nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75),
-        gridspec_kw={'wspace':0.0,'hspace':-0.1},
-    )
-    ### Plot it
-    for case in cases:
-        dfplot = dfba.copy()
-        dfplot['$/kW'] = norm_revenue[case] if case == basecase else dfdiff[case]
-
-        ax[coords[case]].set_title(case)
-        dfba.plot(
-            ax=ax[coords[case]],
-            facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
-        dfstates.plot(
-            ax=ax[coords[case]],
-            facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
-        dfplot.plot(
-            ax=ax[coords[case]], column='$/kW',
-            cmap=(cmap if case == basecase else cmap_diff),
-            vmin=(0 if case == basecase else -diffmax),
-            vmax=(absmax if case == basecase else diffmax),
-            legend=False,
-            missing_kwds={'color': 'darkgrey'}
+        if np.isnan(absmax):
+            absmax = 0.
+        if not absmax:
+            print(f'{tech} has zero capacity in {plotyear}, so skipping maps')
+            continue
+        ### Set up plot
+        plt.close()
+        f,ax = plt.subplots(
+            nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75),
+            gridspec_kw={'wspace':0.0,'hspace':-0.1},
         )
-        ## Difference legend
-        if coords[case] == legendcoords:
-            reeds.plots.addcolorbarhist(
-                f=f, ax0=ax[coords[case]], data=dfplot['$/kW'].values,
-                title=f'{tech} {plotyear}\nrevenue, difference\nfrom {basecase} [$/kW]',
-                title_fontsize = 'x-small',
+        ### Plot it
+        for case in cases:
+            dfplot = dfba.copy()
+            dfplot['$/kW'] = norm_revenue[case] if case == basecase else dfdiff[case]
+
+            ax[coords[case]].set_title(case)
+            dfba.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
+            dfstates.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
+            dfplot.plot(
+                ax=ax[coords[case]], column='$/kW',
                 cmap=(cmap if case == basecase else cmap_diff),
                 vmin=(0 if case == basecase else -diffmax),
                 vmax=(absmax if case == basecase else diffmax),
-                orientation='horizontal', labelpad=2.25, histratio=2.,
-                cbarwidth=0.05, cbarheight=0.85,
-                cbarbottom=-0.1, cbarhoffset=0.,
-                histcolor='grey',nbins=25,
+                legend=False,
+                missing_kwds={'color': 'darkgrey'}
             )
-    ## Absolute legend
-    reeds.plots.addcolorbarhist(
-        f=f, ax0=ax[coords[basecase]], data=norm_revenue[basecase].values,
-        title=f'{tech} {plotyear}\nrevenue [$/kW]',
-        title_fontsize = 'x-small',
-        cmap=cmap, vmin=0, vmax=absmax,
-        orientation='horizontal', labelpad=2.25, histratio=2.,
-        cbarwidth=0.05, cbarheight=0.85,
-        cbarbottom=-0.1, cbarhoffset=0.,
-        nbins=25,
-    )
+            ## Difference legend
+            if coords[case] == legendcoords:
+                reeds.plots.addcolorbarhist(
+                    f=f, ax0=ax[coords[case]], data=dfplot['$/kW'].values,
+                    title=f'{tech} {plotyear}\nrevenue, difference\nfrom {basecase} [$/kW]',
+                    title_fontsize = 'x-small',
+                    cmap=(cmap if case == basecase else cmap_diff),
+                    vmin=(0 if case == basecase else -diffmax),
+                    vmax=(absmax if case == basecase else diffmax),
+                    orientation='horizontal', labelpad=2.25, histratio=2.,
+                    cbarwidth=0.05, cbarheight=0.85,
+                    cbarbottom=-0.1, cbarhoffset=0.,
+                    histcolor='grey',nbins=25,
+                )
+        ## Absolute legend
+        reeds.plots.addcolorbarhist(
+            f=f, ax0=ax[coords[basecase]], data=norm_revenue[basecase].values,
+            title=f'{tech} {plotyear}\nrevenue [$/kW]',
+            title_fontsize = 'x-small',
+            cmap=cmap, vmin=0, vmax=absmax,
+            orientation='horizontal', labelpad=2.25, histratio=2.,
+            cbarwidth=0.05, cbarheight=0.85,
+            cbarbottom=-0.1, cbarhoffset=0.,
+            nbins=25,
+        )
 
-    for row in range(nrows):
-        for col in range(ncols):
-            if nrows == 1:
-                ax[col].axis('off')
-            elif ncols == 1:
-                ax[row].axis('off')
-            else:
-                ax[row,col].axis('off')
-    ### Save it
-    slide = reeds.report_utils.add_to_pptx(f'{tech} revenue {plotyear} [$/kW]', prs=prs)
-    if interactive:
-        plt.show()
+        for row in range(nrows):
+            for col in range(ncols):
+                if nrows == 1:
+                    ax[col].axis('off')
+                elif ncols == 1:
+                    ax[row].axis('off')
+                else:
+                    ax[row,col].axis('off')
+        ### Save it
+        slide = reeds.report_utils.add_to_pptx(f'{tech} revenue {plotyear} [$/kW]', prs=prs)
+        if interactive:
+            plt.show()
+    except Exception as e:
+        print(f'Warning: Failed to plot {tech} revenue maps: {type(e).__name__}: {e}')
+        plt.close()
 
 #%%### Price maps by category
 renameprice = {
