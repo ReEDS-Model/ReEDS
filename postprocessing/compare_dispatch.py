@@ -152,6 +152,14 @@ dictin_gen = {
     for case in cases
 }
 
+dictin_cap_firm = {
+    case: reeds.io.read_output(
+        os.path.join(cases[case], 'outputs', f'pcm_{label}_{plotyear}', 'outputs.h5'),
+        'cap_firm',
+    )
+    for case in cases
+}
+
 ###### Plots ######
 #%% Total dropped load
 try:
@@ -1027,6 +1035,101 @@ gen = pd.concat({
 gendiff = gen.subtract(gen[basecase], axis=0)
 
 print(f'National generation difference: ' + str(gendiff.sum()/1e6) + ' TWh')
+
+
+#%%### Firm capacity maps
+try:
+    ccseason_col = 'ccseason'
+    ccseasons = sorted(
+        dictin_cap_firm[basecase].loc[
+            dictin_cap_firm[basecase].t == plotyear, ccseason_col
+        ].dropna().unique()
+    )
+
+    for ccseason in ccseasons:
+        cap_firm = pd.concat({
+            case:
+            dictin_cap_firm[case].loc[
+                (dictin_cap_firm[case].t == plotyear)
+                & (dictin_cap_firm[case][ccseason_col] == ccseason)
+            ].groupby('r').Value.sum() / 1e3  # to GW
+            for case in cases
+        }, axis=1).fillna(0)
+
+        cap_firm_diff = cap_firm.subtract(cap_firm[basecase], axis=0)
+
+        if str(ccseason).lower() == 'hot':
+            print(f'\nFirm capacity hot difference from {basecase} [{plotyear}, GW]:')
+            print(cap_firm_diff.sum().drop(basecase).to_string())
+
+        absmax = cap_firm[basecase].max()
+        diffmax = cap_firm_diff.abs().max().max()
+
+        if np.isnan(absmax) or not absmax:
+            print(f'Firm capacity has zero values for {ccseason} in {plotyear}, so skipping maps')
+            continue
+
+        plt.close()
+        f, ax = plt.subplots(
+            nrows, ncols, figsize=(scale * ncols, scale * nrows * 0.75),
+            gridspec_kw={'wspace': 0.0, 'hspace': -0.1},
+        )
+        for case in cases:
+            dfplot = dfba.copy()
+            dfplot['GW'] = cap_firm[case] if case == basecase else cap_firm_diff[case]
+
+            ax[coords[case]].set_title(case)
+            dfba.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
+            dfstates.plot(
+                ax=ax[coords[case]],
+                facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
+            dfplot.plot(
+                ax=ax[coords[case]], column='GW',
+                cmap=(cmap if case == basecase else cmap_diff),
+                vmin=(0 if case == basecase else -diffmax),
+                vmax=(absmax if case == basecase else diffmax),
+                legend=False,
+                missing_kwds={'color': 'darkgrey'}
+            )
+            if coords[case] == legendcoords:
+                reeds.plots.addcolorbarhist(
+                    f=f, ax0=ax[coords[case]], data=dfplot['GW'].values,
+                    title=f'Firm capacity {ccseason} {plotyear}\ndifference\nfrom {basecase} [GW]',
+                    title_fontsize='x-small',
+                    cmap=(cmap if case == basecase else cmap_diff),
+                    vmin=(0 if case == basecase else -diffmax),
+                    vmax=(absmax if case == basecase else diffmax),
+                    orientation='horizontal', labelpad=2.25, histratio=2.,
+                    cbarwidth=0.05, cbarheight=0.85,
+                    cbarbottom=-0.1, cbarhoffset=0.,
+                    histcolor='grey', nbins=25,
+                )
+        reeds.plots.addcolorbarhist(
+            f=f, ax0=ax[coords[basecase]], data=cap_firm[basecase].values,
+            title=f'Firm capacity {ccseason} {plotyear} [GW]',
+            title_fontsize='x-small',
+            cmap=cmap, vmin=0, vmax=absmax,
+            orientation='horizontal', labelpad=2.25, histratio=2.,
+            cbarwidth=0.05, cbarheight=0.85,
+            cbarbottom=-0.1, cbarhoffset=0.,
+            nbins=25,
+        )
+        for row in range(nrows):
+            for col in range(ncols):
+                if nrows == 1:
+                    ax[col].axis('off')
+                elif ncols == 1:
+                    ax[row].axis('off')
+                else:
+                    ax[row, col].axis('off')
+        slide = reeds.report_utils.add_to_pptx(f'Firm capacity {ccseason} {plotyear} [GW]', prs=prs)
+        if interactive:
+            plt.show()
+except Exception as e:
+    print(f'Warning: Failed to plot firm capacity maps: {type(e).__name__}: {e}')
+    plt.close()
 
 
 
