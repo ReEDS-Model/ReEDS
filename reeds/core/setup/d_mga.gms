@@ -120,7 +120,7 @@ eq_MGA_Objective$Sw_MGA..
     
 *   AC construction employment formula here is slightly different than in
 *   e_report.gms as only cumulative term TRAN_CAPEX_BINS is included here vs
-*   annual term used in e_report.gms
+*   annual term used in report.gms
 
 * Transmission line construction employment
     + sum{(r,rr,tscbin,t)
