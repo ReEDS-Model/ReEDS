@@ -24,7 +24,7 @@ import reeds
 
 
 def calculate_region_aggregion_population_weights(
-    inputs_case: str,
+    inputs_case: str | Path,
     region_level: str,
     aggregion_level: str,
 ) -> pd.Series:
