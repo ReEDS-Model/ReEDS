@@ -63,12 +63,12 @@ TN,TN,SERTP,SERTP,SERC_C,eastern,Tennessee_Valley_Authority
 AL,AL,SERTP,SERTP,SERC_SE,eastern,Southern_Co_Services_Inc
 GA_N,GA,SERTP,SERTP,SERC_SE,eastern,Southern_Co_Services_Inc
 GA_S,GA,SERTP,SERTP,SERC_SE,eastern,Southern_Co_Services_Inc
-SC,SC,SERTP,SERTP,SERC_E,eastern,South_Carolina_Electric_&_Gas_Co
+SC,SC,SERTP,SERTP,SERC_E,eastern,South_Carolina_Electric_and_Gas_Co
 NC_SE,NC,SERTP,SERTP,SERC_E,eastern,Duke_Energy_Progress_East
 NC_PJM,NC,PJM,PJM_East,SERC_E,eastern,PJM
 FL_N,FL,FRCC,FRCC,SERC_F,eastern,Seminole_Electric_Coop_Inc
 FL_S,FL,FRCC,FRCC,SERC_F,eastern,Seminole_Electric_Coop_Inc
-FL_SE,FL,FRCC,FRCC,SERC_F,eastern,Florida_Power_&_Light
+FL_SE,FL,FRCC,FRCC,SERC_F,eastern,Florida_Power_and_Light
 OH_N,OH,PJM,PJM_East,PJM,eastern,PJM
 OH_S,OH,PJM,PJM_East,PJM,eastern,PJM
 WV,WV,PJM,PJM_East,PJM,eastern,PJM
