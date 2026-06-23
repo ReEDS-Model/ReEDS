@@ -122,11 +122,7 @@ def calculate_historical_daily_state_degree_days(
     base_temp = scalars['degree_days_base_temperature']
 
     # Calculate each state's average temperature for each day
-    temp_daily = temp_hourly.resample('D').agg(['min', 'max'])
-    avg_temp_daily = (
-        temp_daily.xs('min', axis=1, level=1)
-        + temp_daily.xs('max', axis=1, level=1)
-    ) / 2
+    avg_temp_daily = temp_hourly.resample('D').mean()
 
     # Take differences between baseline and average temperatures
     hdd_daily = (base_temp - avg_temp_daily).clip(lower=0)
