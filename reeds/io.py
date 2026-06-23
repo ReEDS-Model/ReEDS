@@ -675,22 +675,25 @@ def get_switches(case=None, **kwargs):
             'reeds', 'resource_adequacy', 'ra_switches.csv',
         )
         asw = pd.read_csv(fpath_asw, index_col='key')
-        for i, row in asw.iterrows():
+        parsed_asw = {}
+        for key, row in asw.iterrows():
+            value = row['value']
             if row['dtype'] == 'list':
-                row.value = row.value.split(',')
+                value = value.split(',')
                 try:
-                    row.value = [int(i) for i in row.value]
+                    value = [int(item) for item in value]
                 except ValueError:
                     pass
             elif row['dtype'] == 'boolean':
-                row.value = False if row.value.lower() == 'false' else True
+                value = False if value.lower() == 'false' else True
             elif row['dtype'] == 'str':
-                row.value = str(row.value)
+                value = str(value)
             elif row['dtype'] == 'int':
-                row.value = int(row.value)
+                value = int(value)
             elif row['dtype'] == 'float':
-                row.value = float(row.value)
-        sw = pd.concat([sw, asw.value])
+                value = float(value)
+            parsed_asw[key] = value
+        sw = pd.concat([sw, pd.Series(parsed_asw, name='value')])
     except FileNotFoundError:
         print(f"{fpath_asw} not found so leaving out resource adequacy switches")
     ### Add derivative switches

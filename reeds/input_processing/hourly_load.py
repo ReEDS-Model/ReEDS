@@ -731,6 +731,30 @@ def main(reeds_path, inputs_case):
         regional_dr_shed_hourly = regional_dr_shed_hourly.astype(np.float32)
         regional_dr_shed_hourly = regional_dr_shed_hourly.reset_index().set_index(['datetime'])
 
+    #%%%#########################################
+    #    -- DR Shape Load Modifications --    #
+    #############################################
+    # 
+    if int(sw.GSw_DRShape): 
+        state_dr_shape_profile_inc = pd.read_csv(os.path.join(inputs_case, 'dr_shape_profile_increase.csv'))
+        state_dr_shape_profile_dec = pd.read_csv(os.path.join(inputs_case, 'dr_shape_profile_decrease.csv'))
+        
+        reg_cols = [col for col in state_dr_shape_profile_inc.columns if col not in ['i','year','hour']]
+        disagg_data = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'))
+        state2r = disagg_data.groupby('state')['r'].unique().apply(list).to_dict()  
+
+        # Assign shape increase and decrease fractions uniformly
+        for state_col in reg_cols:
+            if state_col in state2r:
+                for r in state2r[state_col]:
+                    state_dr_shape_profile_inc[r] = state_dr_shape_profile_inc[state_col]
+                    state_dr_shape_profile_dec[r] = state_dr_shape_profile_dec[state_col]
+        # Drop state columns
+        state_dr_shape_profile_inc = state_dr_shape_profile_inc.drop(columns=reg_cols)
+        state_dr_shape_profile_dec = state_dr_shape_profile_dec.drop(columns=reg_cols)      
+
+
+
     #%%###########################
     #    -- Data Write-Out --    #
     ##############################
@@ -747,6 +771,11 @@ def main(reeds_path, inputs_case):
     )
     if int(sw.GSw_DRShed):
         reeds.io.write_profile_to_h5(regional_dr_shed_hourly, 'dr_shed_hourly.h5', inputs_case)
+
+    if int(sw.GSw_DRShape):
+        state_dr_shape_profile_inc.to_csv(os.path.join(inputs_case, 'dr_shape_profile_increase.csv'))
+        state_dr_shape_profile_dec.to_csv(os.path.join(inputs_case, 'dr_shape_profile_decrease.csv'))
+
 
 #%% ===========================================================================
 ### --- PROCEDURE ---
