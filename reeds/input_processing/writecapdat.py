@@ -120,7 +120,7 @@ TECH = {
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
 
-def main(reeds_path, inputs_case, regions):
+def main(reeds_path, inputs_case):
     
     # #%% Settings for testing
     #reeds_path = "/Users/apham/Documents/GitHub/ReEDS/ReEDS/"
@@ -149,6 +149,8 @@ def main(reeds_path, inputs_case, regions):
     years = pd.read_csv(
         os.path.join(inputs_case,'modeledyears.csv')
     ).columns.astype(int).values.tolist()
+
+    regions = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
 
     ####################
     ### DICTIONARIES ###
@@ -816,9 +818,7 @@ if __name__ == '__main__':
     )
     print('Starting writecapdat.py')
 
-
-    regions = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
-    data, comments = main(reeds_path, inputs_case, regions)
+    data, comments = main(reeds_path, inputs_case)
 
     # Write it
     print('Writing out capacity data')
