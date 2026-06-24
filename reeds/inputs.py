@@ -107,9 +107,6 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
         sw = dfcases[case]
         new_switches[case] = {}
         ### TEMPORARY 20260402: Turn off itlgrp constraint until it's fixed
-        # new_switches[case]['GSw_itlgrpConstraint'] = str(int(
-        #     sw['GSw_RegionResolution'] in ['county', 'mixed']
-        # ))
         new_switches[case]['GSw_itlgrpConstraint'] = '0'
         ## 'meshed' offshore files are only used when offshore zones are turned on
         new_switches[case]['GSw_OffshoreFiles'] = (
