@@ -265,19 +265,7 @@ hierarchy = reeds.io.assemble_hierarchy(inputs_case, extra=False)
     hier_sub['numeric_value'] = hier_sub['r'].str.extract('(\d+)').astype(float)
     hier_sub = hier_sub.sort_values(by='numeric_value').drop('numeric_value', axis=1)
 
-    ### TEMPORARY 20260402: Skip itlgrp functionality until we fix it
-    # # Output the itlgrp files for mixed and county resolution
-    # if sw.GSw_RegionResolution == 'aggreg':
-    #     hier_sub['itlgrp'] = hier_sub['aggreg']
-    # else:
-    #     hier_sub['itlgrp'] = hier_sub['ba']
-
-    # if sw.GSw_RegionResolution == 'mixed':
-    #     mod_reg = pd.read_csv(
-    #         os.path.join(reeds_path,'inputs','userinput','modeled_regions.csv'))
-    #     if 'aggreg' in mod_reg[sw.GSw_ZoneSet].tolist():
-    #         hier_sub['itlgrp'] = hier_sub['aggreg']
-    # For now just assign 'itlgrp' hierarchy level to 'r'
+    ### TEMPORARY 20260402: For now just assign 'itlgrp' hierarchy level to 'r'
     hier_sub['itlgrp'] = hier_sub['r']
     hier_sub[['r','itlgrp']].rename(columns={'r':'*r'}).to_csv(
         os.path.join(inputs_case, 'hierarchy_itlgrp.csv'), index=False)
