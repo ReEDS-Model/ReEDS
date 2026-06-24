@@ -258,7 +258,6 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/fuelprices/alpha_AEO_2025_reference.csv,/inputs/fuelprices,alpha_AEO_2025_reference,.csv,"reference census division alpha values, used in the calculation of natural gas demand curves","allt,cendiv",2004,AEO 2025,Input,
 /inputs/fuelprices/cd_beta0.csv,/inputs/fuelprices,cd_beta0,.csv,reference census division beta levels electric sector,cendiv,2004,,Input,
 /inputs/fuelprices/cd_beta0_allsector.csv,/inputs/fuelprices,cd_beta0_allsector,.csv,reference census division beta levels all sectors,cendiv,2004,,Input,
-/inputs/fuelprices/cendivweights.csv,/inputs/fuelprices,cendivweights,.csv,weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders,"r,cendiv",,,,
 /inputs/fuelprices/coal_AEO_2025_reference.csv,/inputs/fuelprices,coal_AEO_2025_reference,.csv,AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic,"t,cendiv",2024,AEO2025,Input,$/MMBtu
 /inputs/fuelprices/coal_AEO_2026_altelec.csv,/inputs/fuelprices,coal_AEO_2026_altelec,.csv,AEO2026 Alternative Electricity case census division fuel price of coal with missing New England values set to Mid Atlantic,"t,cendiv",2025,AEO2026,Input,$/MMBtu
 /inputs/fuelprices/coal_AEO_2026_baseline.csv,/inputs/fuelprices,coal_AEO_2026_baseline,.csv,AEO2026 Counterfactual Baseline case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic,"t,cendiv",2025,AEO2026,Input,$/MMBtu
@@ -307,14 +306,14 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/hydro/net_gen_existing_hydro.h5,/inputs/hydro,net_gen_existing_hydro,.h5,"Monthly net generation values for hydro plants spanning 2007-2022, which come from ORNL's Existing Hydropower Assets dataset.","t,month",,,Input,MWh
 /inputs/hydro/SeaCapAdj_hy.csv,/inputs/hydro,SeaCapAdj_hy,.csv,,,,,,
 /inputs/load/cangrowth.csv,/inputs/load,cangrowth,.csv,Canada load growth multiplier,,,,,
-/inputs/load/demand_AEO_2023_high.csv,/inputs/load,demand_AEO_2023_high,.csv,Load growth projection from the AEO2023 High Economic Growth scenario,,,,,unitless
-/inputs/load/demand_AEO_2023_low.csv,/inputs/load,demand_AEO_2023_low,.csv,Load growth projection from the AEO2023 Low Economic Growth scenario,,,,,unitless
-/inputs/load/demand_AEO_2023_reference.csv,/inputs/load,demand_AEO_2023_reference,.csv,Load growth projection from the AEO2023 Reference scenario,,,,,unitless
 /inputs/load/demand_AEO_2025_high.csv,/inputs/load,demand_AEO_2025_high,.csv,Load growth projection from the AEO2025 High Economic Growth scenario,,,,,unitless
 /inputs/load/demand_AEO_2025_low.csv,/inputs/load,demand_AEO_2025_low,.csv,Load growth projection from the AEO2025 Low Economic Growth scenario,,,,,unitless
 /inputs/load/demand_AEO_2025_reference.csv,/inputs/load,demand_AEO_2025_reference,.csv,Load growth projection from the AEO2025 Reference scenario,,,,,unitless
-/inputs/load/EIA_loadbystate.csv,/inputs/load,EIA_loadbystate,.csv,,,,,,
-/inputs/load/loadsite_country_test.csv,/inputs/load,loadsite_country_test,.csv,,,,,,
+/inputs/load/demand_AEO_2026_high.csv,/inputs/load,demand_AEO_2026_high,.csv,Load growth projection from the AEO2026 High Economic Growth scenario,,,,,unitless
+/inputs/load/demand_AEO_2026_low.csv,/inputs/load,demand_AEO_2026_low,.csv,Load growth projection from the AEO2026 Low Economic Growth scenario,,,,,unitless
+/inputs/load/demand_AEO_2026_baseline.csv,/inputs/load,demand_AEO_2026_baseline,.csv,Load growth projection from the AEO2026 Counterfactual Baseline scenario,,,,,unitless
+/inputs/load/EIA_loadbystate.csv,/inputs/load,EIA_loadbystate,.csv,,,,,/
+/inputs/load/loadsite_country_test.csv,/inputs/load,loadsite_country_test,.csv,,,,,/
 /inputs/load/mex_growth_rate.csv,/inputs/load,mex_growth_rate,.csv,Mexico load growth multiplier,,,,,
 /inputs/national_generation/gen_mandate_tech_list.csv,/inputs/national_generation,gen_mandate_tech_list,.csv,,,,,,
 /inputs/national_generation/gen_mandate_trajectory.csv,/inputs/national_generation,gen_mandate_trajectory,.csv,,,,,,
