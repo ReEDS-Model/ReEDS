@@ -287,18 +287,6 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
-    if reeds.io.has_county_zones(GSw_ZoneSet=sw['GSw_ZoneSet']):
-        err_switch_configs = []
-        if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
-            err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
-
-        if len(err_switch_configs) > 0:
-            raise NotImplementedError(
-                'The following switch configurations are not implemented for '
-                'county/mixed resolution:\n{}\n'
-                .format('\n'.join(err_switch_configs))
-            )
-
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
 
     ### Parsed string switches

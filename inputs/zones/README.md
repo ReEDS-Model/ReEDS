@@ -20,6 +20,12 @@ The lat/lon is used for plotting, representative least-cost paths and greenfield
   - If the centroid is NOT within the zone polygon, the node location is the "most interior" point in the polygon
   (determined by iteratively inward-buffering the polygon until it disappears, then keeping the centroid of the penultimate iteration).
 
+
+## Notes on zone options
+- `z3109`: 1:1 mapping from counties to zones
+  - Not all counties have high-voltage load buses, so if `GSw_LoadAllocationMethod = state_lpf`, some counties may have zero load.
+
+
 ## Creating a new set of model zones
 
 Start by copying the `county2zone.csv` and `hierarchy.csv` file for an existing set of zones to a new folder (named with a memorable name for your new set of zones) in the [ReEDS_Input_Processing/zones](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones) directory.
