@@ -774,27 +774,6 @@ def get_b2b(case=None, **kwargs) -> pd.DataFrame:
     return b2b
 
 
-def check_aggreg_unique(hierarchy):
-    """
-    Make sure each aggreg is only assigned to a single transreg / transgrp / st / etc.
-    """
-    testcols = [i for i in hierarchy.columns if i != 'aggreg']
-    aggreg_errors = {}
-    for col in testcols:
-        unique_aggregs = (
-            hierarchy[[col,'aggreg']]
-            .drop_duplicates()
-            .groupby('aggreg')[col].count()
-        )
-        duplicated = unique_aggregs.loc[unique_aggregs>1]
-        if len(duplicated):
-            aggreg_errors[col] = hierarchy.loc[
-                hierarchy.aggreg.isin(duplicated.index),
-                [col,'aggreg']
-            ]
-    return aggreg_errors
-
-
 def validate_zoneset(GSw_ZoneSet):
     """
     Make sure all the required inputs are supplied for GSw_ZoneSet
@@ -881,19 +860,3 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
-    ## TEMPORARY 20260402: Is each aggreg only assigned to a single hierarchy level?
-    fpath_134 = Path(zonepath, 'hierarchy_from134.csv')
-    if fpath_134.is_file():
-        hierarchy_134 = pd.read_csv(fpath_134, index_col='ba')
-        errors = check_aggreg_unique(hierarchy_134)
-        if len(errors):
-            for v in errors.values():
-                print(v)
-                print()
-            err = (
-                "There are aggreg values spanning multiple hierarchy levels for:\n > "
-                + '\n > '.join(errors.keys())
-                + f"\nPlease modify {fpath_134}\n"
-                "to ensure each aggreg is only assigned to a single hierarchy level."
-            )
-            raise ValueError(err)
