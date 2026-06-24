@@ -254,7 +254,6 @@ min_retire_age.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 minCF.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 mingen_fixed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 minloadfrac0.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-modeled_regions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 modeledyears.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 month.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 month2quarter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
