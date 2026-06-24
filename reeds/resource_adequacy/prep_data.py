@@ -511,7 +511,12 @@ def main(t, casedir, iteration=0):
     ## Turn off for counties by setting to zero (zeros in this file mean the max unit
     ## size is not enforced for that region in ReEDS2PRAS)
     counties = reeds.io.get_county_zones(casedir)
-    if len(counties):
+    unconstrain_counties = sw.GSw_ZoneSet in (
+        reeds.inputs.get_applicable_zonesets(
+            'reeds2pras_unitsize_unconstrain_counties'
+        )
+    )
+    if len(counties) and unconstrain_counties:
         csvout['max_unitsize'].loc[counties] = 0
 
     #%% Strip water tech suffixes from water-dependent technologies

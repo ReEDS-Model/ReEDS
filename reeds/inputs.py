@@ -774,6 +774,27 @@ def get_b2b(case=None, **kwargs) -> pd.DataFrame:
     return b2b
 
 
+def get_zoneset_config() -> dict:
+    configpath = Path(reeds.io.reeds_path, 'inputs', 'zones', 'zoneset_config.yaml')
+    with open(configpath, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
+
+
+def get_applicable_zonesets(setting):
+    """
+    Get the list of zonesets that a setting should apply to. The provided
+    setting should be a field in 'inputs/zones/zoneset_config.yaml'.
+    """
+    zoneset_config = get_zoneset_config()
+    if setting not in zoneset_config:
+        raise NotImplementedError(
+            f"The provided setting '{setting}' is invalid. "
+            "Update inputs/zones/zoneset_config.yaml to include it."
+        )
+    return zoneset_config[setting]
+
+
 def validate_zoneset(GSw_ZoneSet):
     """
     Make sure all the required inputs are supplied for GSw_ZoneSet

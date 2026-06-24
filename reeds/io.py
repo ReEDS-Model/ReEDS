@@ -199,31 +199,15 @@ def get_county_zones(
         list[str]
     """
     county2zone = get_county2zone(case, as_map=True, **kwargs)
-    county_zones = (
-        county2zone[county2zone == 'p' + county2zone.index]
-        .tolist()
-    )
+    county_zones = county2zone.loc[
+        county2zone.isin(
+            county2zone.value_counts()
+            .loc[county2zone.value_counts() == 1]
+            .index
+        )
+    ].tolist()
 
     return county_zones
-
-def has_county_zones(
-    case: str | Path | None = None,
-    **kwargs
-) -> bool:
-    """
-    Determine whether a zone set has county-level zones.
-    Reads from the inputs_case folder if {case} is provided or from
-    the default set of inputs (with key word arguments overriding
-    case switches, e.g., "GSw_ZoneSet") otherwise.
-
-    Args:
-        case: Path to a ReEDS case.
-
-    Returns:
-        bool
-    """
-    county_zones = get_county_zones(case, **kwargs)
-    return len(county_zones) > 0
 
 
 def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
@@ -1550,12 +1534,10 @@ def assemble_supplycurve(
         else:
             dfout['ba'] = dfout['region'].copy()
 
-    ## Drop reinforcement cost for counties
-    if case is not None:
-        counties = get_county_zones(case)
-    else:
-        counties = []
-    if len(counties):
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        counties = get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet)
         zerocols = ['cost_reinforcement_usd_per_mw', 'dist_reinforcement_km']
         dfout.loc[dfout.region.isin(counties), zerocols] = 0
         dfout.loc[dfout.region.isin(counties), 'cost_total_trans_usd_per_mw'] = dfout.loc[

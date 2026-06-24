@@ -583,15 +583,12 @@ def calc_reinforcement_spur_capacity_miles(case):
         .sort_values(by=['r', 'trtype', 'year'])
     )
 
-    """
-    Due to some old ReEDS outputs runs we need to zero out
-    the reinforcement line for county level regions
-    (This can be removed in the future if county level
-    supply curves get reinforcement distance zeroed out)
-    """
-    county_regions = reeds.io.get_county_zones(case)
-    if len(county_regions):
-        # Set reinforcement distance to zero for county level regions  
+    sw = reeds.io.get_switches(case)
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        # Set reinforcement distance to zero for county level regions
+        county_regions = reeds.io.get_county_zones(case)
         tech_trans_out = tech_trans_out.loc[  
             ~(  
                 tech_trans_out.r.isin(county_regions)

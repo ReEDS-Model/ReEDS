@@ -8,6 +8,7 @@ import time
 import datetime
 from lxml import etree as ET
 import shutil
+from pathlib import Path
 pd.options.display.max_rows = 20
 pd.options.display.max_columns = 200
 
@@ -22,6 +23,24 @@ plots.plotparams()
 
 
 #%%### GENERAL FUNCTIONS
+def has_county_zones(
+    case: str | Path | None = None,
+    **kwargs
+) -> bool:
+    """
+    Determine whether a zone set has county-level zones.
+    Reads from the inputs_case folder if {case} is provided or from
+    the default set of inputs (with key word arguments overriding
+    case switches, e.g., "GSw_ZoneSet") otherwise.
+
+    Args:
+        case: Path to a ReEDS case.
+
+    Returns:
+        bool
+    """
+    county_zones = reeds.io.get_county_zones(case, **kwargs)
+    return len(county_zones) > 0
 
 # produce Scenarios.csv
 def create_scenarios_csv(output_dir,cases):
@@ -99,7 +118,7 @@ def produce_hierarchy_file(output_dir,basecase):
     # clean up region names, ex. turn 'NorthernGrid_West' to 'NorthernGrid West', replace all instances of '_' with ' ' in the entire dataframe
     hierarchy = hierarchy.replace('_',' ',regex=True)
 
-    if reeds.io.has_county_zones(cases[basecase]):
+    if has_county_zones(cases[basecase]):
         # county2zone has the county FIPS to ReEDS BA mapping
         county2zone = pd.read_csv(os.path.join(reeds_path, 'inputs', 'county2zone.csv'), dtype={'FIPS':str},)
         county2zone['Region'] = 'p' + county2zone.FIPS
@@ -151,7 +170,7 @@ def produce_transmission_endpoints():
     os.mkdir(os.path.join(output_dir,'shapefiles','transmission_endpoints'))
     
     try:
-        if reeds.io.has_county_zones(GSw_ZoneSet=dictin_sw[basecase].GSw_ZoneSet):
+        if has_county_zones(GSw_ZoneSet=dictin_sw[basecase].GSw_ZoneSet):
             src_file  = os.path.join(reeds_path,'inputs','shapefiles','US_COUNTY_2022','US_COUNTY_2022.shp')
             dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
 
@@ -290,7 +309,7 @@ def reformat(df,case,metric,years):
                 df['Transmission Planning Subregion End'] = df['Transmission Planning Subregion End'].str.replace("_"," ") # turn NorthernGrid_West to 'NorthernGrid West'
                 df['Transmission Planning Subregion Begin'] = df['Transmission Planning Subregion Begin'].str.replace("_"," ")
 
-        if reeds.io.has_county_zones(cases[case]):
+        if has_county_zones(cases[case]):
             # the 'r' column already has the 'p41003' format
             df = df.rename(columns={'r':'County'})
             # add a column with the FIPS code (remove the 'p' prefix and turn the value into a integer from the CountyName column)
