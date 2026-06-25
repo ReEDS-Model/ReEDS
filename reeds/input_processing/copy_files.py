@@ -154,7 +154,7 @@ def get_regions_and_agglevel(
     """
     sw = reeds.io.get_switches(inputs_case)
 
-hierarchy = reeds.io.assemble_hierarchy(inputs_case, extra=False)
+    hierarchy = reeds.io.assemble_hierarchy(inputs_case, extra=False)
     hierarchy['offshore'] = 0
     # Label offshore zones if using
     if int(sw.GSw_OffshoreZones):
