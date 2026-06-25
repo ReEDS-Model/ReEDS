@@ -1535,11 +1535,6 @@
     - **Dollar year:** 2004
 ---
 
-  - [cendivweights.csv](/inputs/fuelprices/cendivweights.csv)
-    - **Description:** weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders
-    - **Indices:** r,cendiv
----
-
   - [coal_AEO_2025_reference.csv](/inputs/fuelprices/coal_AEO_2025_reference.csv)
     - **File Type:** Input
     - **Description:** AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
@@ -3979,4 +3974,3 @@
 - [sources.csv](/sources.csv)
   - **Description:** CSV file containing a list of all input files (csv, h5, csv.gz)
 ---
-

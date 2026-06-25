@@ -33,7 +33,6 @@ ccs_link_water.csv,inputs/emission_constraints/ccs_link_water.csv,1,ignore,ignor
 ccsflex_cat.csv,inputs/sets/ccsflex_cat.csv,1,ignore,ignore,,,,,,,,set,ccsflex_cat,flexible ccs performance parameter categories,
 cd_beta0.csv,inputs/fuelprices/cd_beta0.csv,1,ignore,ignore,*cendiv,,,,0,,,,,,
 cd_beta0_allsector.csv,inputs/fuelprices/cd_beta0_allsector.csv,1,ignore,ignore,*cendiv,,,,0,,,,,,
-cendivweights.csv,inputs/fuelprices/cendivweights.csv,1,mean,ignore,r_cendiv,wide,,1,0,,,,,,Includes two region definitions; disaggfunc set to ignore because data is already at county resolution in inputs folder
 ces_fraction.csv,inputs/state_policies/ces_fraction.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,st,,1,0,,,,,,
 climate_param.csv,inputs/sets/climate_param.csv,1,ignore,ignore,,,,,,,,set,climate_param,parameters defined in climate_heuristics_finalyear,
 co2_site_char.csv,inputs/ctus/co2_site_char.csv,1,ignore,ignore,,,,0,,,,,,,
