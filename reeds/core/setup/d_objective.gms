@@ -109,7 +109,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
                         trans_cost_cap_fin_mult(t) * cost_acdc_lcc * INVTRAN(r,rr,trtype,t) }
 
 * VSC AC/DC converter stations
-                  + sum{r,
+                  + sum{r$val_converter(r,t),
                         trans_cost_cap_fin_mult(t) * cost_acdc_vsc * INV_CONVERTER(r,t) }
 
 * --- storage capacity credit---
@@ -184,7 +184,7 @@ eq_Objfn_op(t)$tmodel(t)..
                     cost_acdc_lcc * 2 * trans_fom_frac * CAPTRAN_ENERGY(r,rr,trtype,t) }
 
 * VSC AC/DC converter stations
-              + sum{r,
+              + sum{r$val_converter(r,t),
                     cost_acdc_vsc * trans_fom_frac * CAP_CONVERTER(r,t) }
 
 * spur lines modeled as part of supply curve

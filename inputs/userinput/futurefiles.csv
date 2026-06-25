@@ -3,7 +3,6 @@ aclike.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 acp_disallowed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 acp_prices.csv,.csv,0,None,wide,st,1,0,constant,None,None,done,constant
 agglevels.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-aggreg2anchorreg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 allout_RSC.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 allt.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 alpha.csv,.csv,0,None,t,None,1,0,constant,None,None,done,linear_10
@@ -87,7 +86,6 @@ csapr_group2_ex.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 csapr_ozone_season.csv,.csv,0,None,wide,"st,csapr_cat",1,0,constant,None,None,done,constant
 csp.h5,.h5,1,None,9999,None,9999,0,constant,None,None,new,
 ctt.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-ctus_r_cs_spurlines_200mi.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 currency_incentives.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 d_szn_1yr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 d_szn_7yr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -393,7 +391,6 @@ retire_penalty.csv,.csv,0,None,0,None,0,None,constant,None,None,new,
 retirements_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 retirements.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"discuss, make sure it should just be copied",constant
 rev_paths.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-rev_transmission_basecost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 rggi_states.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 rggicon.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
 routes_adjacent.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -457,10 +454,6 @@ trans_cap_cost_mult_noITC.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled
 trans_cap_cost_mult.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
 trans_intra_cost_adder.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 trans_itc_fractions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,constant or expire?,constant
-transmission_capacity_future_baseline.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-transmission_capacity_future.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-transmission_cost_ac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-transmission_cost_dc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 transmission_distance_cost_500kVac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 transmission_distance_cost_500kVdc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 transmission_distance.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant

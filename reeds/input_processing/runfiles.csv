@@ -33,7 +33,6 @@ ccs_link_water.csv,inputs/emission_constraints/ccs_link_water.csv,1,ignore,ignor
 ccsflex_cat.csv,inputs/sets/ccsflex_cat.csv,1,ignore,ignore,,,,,,,,set,ccsflex_cat,flexible ccs performance parameter categories,
 cd_beta0.csv,inputs/fuelprices/cd_beta0.csv,1,ignore,ignore,*cendiv,,,,0,,,,,,
 cd_beta0_allsector.csv,inputs/fuelprices/cd_beta0_allsector.csv,1,ignore,ignore,*cendiv,,,,0,,,,,,
-cendivweights.csv,inputs/fuelprices/cendivweights.csv,1,mean,ignore,r_cendiv,wide,,1,0,,,,,,Includes two region definitions; disaggfunc set to ignore because data is already at county resolution in inputs folder
 ces_fraction.csv,inputs/state_policies/ces_fraction.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,st,,1,0,,,,,,
 climate_param.csv,inputs/sets/climate_param.csv,1,ignore,ignore,,,,,,,,set,climate_param,parameters defined in climate_heuristics_finalyear,
 co2_site_char.csv,inputs/ctus/co2_site_char.csv,1,ignore,ignore,,,,0,,,,,,,
@@ -217,7 +216,6 @@ regional_cap_cost_diff.csv,inputs/financials/reg_cap_cost_diff_{reg_cap_cost_dif
 resourceclass.csv,inputs/sets/resourceclass.csv,1,ignore,ignore,,,,,,,,set,resourceclass,renewable resource classes,
 retire_penalty.csv,inputs/financials/retire_penalty.csv,1,ignore,ignore,,,,,0,,,,,,
 rev_paths.csv,inputs/supply_curve/rev_paths.csv,1,ignore,ignore,,,,,0,,,,,,
-rev_transmission_basecost.csv,inputs/transmission/rev_transmission_basecost.csv,1,ignore,ignore,,,,,0,,,,,,
 rggi_states.csv,inputs/emission_constraints/rggi_states.csv,int(sw.GSw_RGGI) != 0,ignore,ignore,*st,,,,0,,,,,,
 rggicon.csv,inputs/emission_constraints/rggicon.csv,int(sw.GSw_RGGI) != 0,ignore,ignore,,,,0,,,,,,,
 rps_fraction.csv,inputs/state_policies/rps_fraction.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,st,,1,0,,,,,,
@@ -246,11 +244,6 @@ tg_rsc_cspagg.csv,inputs/sets/tg_rsc_cspagg.csv,1,ignore,ignore,,,,,0,,,set,tg_r
 tg_rsc_cspagg_tmp.csv,inputs/waterclimate/tg_rsc_cspagg_tmp.csv,(int(sw.GSw_CSP) != 0) and (int(sw.GSw_WaterMain) != 0),ignore,ignore,,,,,0,,,,,,
 tg_rsc_upvagg.csv,inputs/sets/tg_rsc_upvagg.csv,1,ignore,ignore,,,,,0,,,set,tg_rsc_upvagg,pv and pvb technologies that belong to the same class,
 trancap_fut_cat.csv,inputs/sets/trancap_fut_cat.csv,1,ignore,ignore,,,,,,,,set,trancap_fut_cat,categories of near-term transmission projects that describe the likelihood of being completed,
-transmission_capacity_future.csv,inputs/transmission/transmission_capacity_future_{lvl}_{GSw_TransScen}.csv,1,sum,ignore,"r,rr","status,trtype,t",,0,0,drop_dup_r,,,,,'ignore’ in disaggfunc because all transmisison data will be read into model at appropriate spatial resolution
-transmission_capacity_future_baseline.csv,inputs/transmission/transmission_capacity_future_{lvl}_baseline.csv,1,sum,ignore,"r,rr","status,trtype,t",,0,0,drop_dup_r,,,,,'ignore’ in disaggfunc because all transmisison data will be read into model at appropriate spatial resolution
-transmission_cost_ac.csv,inputs/transmission/transmission_cost_ac_{GSw_TransUpgradeMethod}_{lvl}.h5,1,trans_lookup,ignore,"r,rr",tscbin,,0,0,drop_dup_r,,,,,
-transmission_cost_dc.csv,inputs/transmission/transmission_cost_dc_{lvl}.csv,1,trans_lookup,ignore,"r,rr",,,0,0,drop_dup_r,,,,,
-transmission_distance.csv,inputs/transmission/transmission_distance_{lvl}.h5,1,trans_lookup,ignore,"r,rr",,,0,0,drop_dup_r,,,,,Stored in wide-format h5 to reduce county filesize but converted to long in copy_files.py
 trtype.csv,inputs/sets/trtype.csv,1,ignore,ignore,,,,,,,,set,trtype,transmission capacity type,
 unapp_water_sea_distr.csv,inputs/waterclimate/unapp_water_sea_distr.csv,int(sw.GSw_WaterMain) != 0,mean,uniform,r,"wst,wide",,1,0,,,,,,
 UnappWaterMult.csv,inputs/climate/{climatescen}/UnappWaterMult.csv,int(sw.GSw_ClimateWater) != 0,mean,uniform,r,"wst,month,t",,0,0,,,,,,

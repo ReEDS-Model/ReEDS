@@ -293,8 +293,6 @@ def check_compatibility(sw):
 
     if sw['GSw_RegionResolution'] in ['county','mixed']:
         err_switch_configs = []
-        if int(sw['GSw_OffshoreZones']):
-            err_switch_configs.append('GSw_OffshoreZones=1')
         if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
             err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
 
@@ -321,28 +319,28 @@ def check_compatibility(sw):
 
     ### Check that the stress metrics specified in GSw_PRM_StressThresholdMetrics
     # have corresponding GSw_PRM_StressThreshold{metric} switches
-    stressThresholdMetricSwitches = [s.split('GSw_PRM_StressThreshold')[1]
-                             for s in sw.keys() if s.startswith('GSw_PRM_StressThreshold')
-                             and not s.endswith('Metrics')
-                             ]
-    stressTresholdMetrics = sw['GSw_PRM_StressThresholdMetrics'].split('/')
+    ## TODO: Check a regex way to list the switches 
+    stressThresholdMetricSwitches = ['NEUE','LOLH']
+    stressThresholdMetrics = sw['GSw_PRM_StressThresholdMetrics'].split('/')
     
+    # if int(sw['GSw_PRM_UpdateMethod']) == 1 or 'EUE' not in stressThresholdMetrics:
+    #     if int(sw['GSw_PRM_UpdateMethod']) > 1:
+    #         raise NotImplementedError(
+    #             f"Warning: GSw_PRM_UpdateMethod is set to {sw['GSw_PRM_UpdateMethod']}, "
+    #             "but EUE is not included in GSw_PRM_StressThresholdMetrics, so defaulting to fixed increment. " 
+    #             "Add EUE to GSw_PRM_StressThresholdMetrics to use PRAS-informed update method."
+    #         )
+        
     # Threshold metric added but not specified as a switch
-    for metric in stressTresholdMetrics:
+    for metric in stressThresholdMetrics:
         if metric.upper() not in stressThresholdMetricSwitches:
             raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is not specified as a switch.")
-    
-    # # Threshold metric is not added but specified as a switch
-    # for metric in stressThresholdMetricSwitches:
-    #     if metric.upper() not in stressTresholdMetrics:
-    #         raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is specified as a switch,"
-    #             f"but not added to GSw_PRM_StressThresholdMetrics list {stressTresholdMetrics}")
-        
-    for metric in stressThresholdMetricSwitches:
-        for threshold in sw[f'GSw_PRM_StressThreshold{metric}'].split('/'):
-            ## Example: threshold = 'transgrp_10_EUE_sum'
+            
+    for stress_metric in stressThresholdMetricSwitches:
+        for threshold in sw[f'GSw_PRM_StressThreshold{stress_metric}'].split('/'):
+            ## Example: NEUE threshold = 'transgrp_1_sum'
             allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
-            (hierarchy_level, ppm, stress_metric, period_agg_method) = threshold.split('_')
+            (hierarchy_level, stress_value, period_agg_method) = threshold.split('_')
             if hierarchy_level not in allowed_levels:
                 raise ValueError(
                     f"GSw_PRM_StressThreshold{stress_metric}: level={hierarchy_level} but must be in:\n"
@@ -350,22 +348,16 @@ def check_compatibility(sw):
                 )
             if period_agg_method.lower() not in ['sum','max']:
                 raise ValueError(f"Fix period agg method in GSw_PRM_StressThreshold{stress_metric}")
-            if not (float(ppm) >= 0):
+            if not (float(stress_value) >= 0):
                 raise ValueError(
-                    f"ppm in GSw_PRM_StressThreshold{stress_metric} must be a positive number "
-                    f"but '{ppm}' was provided"
+                    f"stress value in GSw_PRM_StressThreshold{stress_metric} must be a positive number "
+                    f"but '{stress_value}' was provided"
                 )
-            if stress_metric.upper() not in ['EUE','NEUE','LOLE']:
+            if stress_metric.upper() not in stressThresholdMetricSwitches:
                 raise ValueError(
-                    f"stress metric in GSw_PRM_StressThreshold{stress_metric} must be 'EUE', 'NEUE', or 'LOLE' "
+                    f"stress metric in GSw_PRM_StressThreshold{stress_metric} must be in {stressThresholdMetricSwitches}"
                     f"but '{stress_metric}' was provided"
                 )
-            if (sw['GSw_PRM_StressModel'].lower() != 'pras') and (stress_metric.upper() != 'EUE'):
-                err = (
-                    f"The combination of GSw_PRM_StressModel={sw['GSw_PRM_StressModel']} and "
-                    f"stress_metric={stress_metric} is not supported."
-                )
-                raise NotImplementedError(err)
         
     if sw['GSw_PRM_StressStorageCutoff'].lower() not in ['off','0','false']:
         metric, value = sw['GSw_PRM_StressStorageCutoff'].split('_')
@@ -405,6 +397,16 @@ def check_compatibility(sw):
                 float(limit)
             except ValueError:
                 raise ValueError(err)
+
+    if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
+        raise ValueError(
+            "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
+            "and GSw_PRM_StressIterateMax>0 is not supported.\n"
+            "To iteratively update the PRM, set GSw_PRM_UpdateMethod to an integer between 1-3:"
+            "\n1: static update set by GSw_PRM_UpdateFraction; "
+            "\n2: dynamic update informed by PRAS; "
+            "\n3: dynamic update but only after all new stress periods have been added"
+        )
 
     for bir in sw['GSw_PVB_BIR'].split('_'):
         if not (float(bir) >= 0):
@@ -505,6 +507,15 @@ def check_compatibility(sw):
     ):
         err = f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} but the specified file does not exist"
         raise FileNotFoundError(err)
+
+    if sw['GSw_LoadProfiles'].startswith('EER2023'):
+        allowed_ra_years = range(2007,2014)
+        if not all([y in allowed_ra_years for y in resource_adequacy_years]):
+            err = (
+                f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} only supports resource_adequacy_years="
+                f"{list(allowed_ra_years)} but {resource_adequacy_years} was supplied"
+            )
+            raise ValueError(err)
 
     ### Dependent model availability
     if (
@@ -1306,7 +1317,6 @@ def write_batch_script(
         for s in [
             'copy_files',
             'mcs_sampler',
-            'aggregate_regions',
             'hydcf',
             'h2_storage',
             'calc_financial_inputs',
