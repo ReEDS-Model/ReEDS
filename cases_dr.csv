@@ -1,5 +1,5 @@
 ,Default Value,Pacific_DRShed,Pacific_DRShape
-ignore,1,1,0
+ignore,1,0,0
 endyear,,2032,2032
 GSw_Region,,cendiv/Pacific,cendiv/Pacific
 GSw_ZoneSet,,,

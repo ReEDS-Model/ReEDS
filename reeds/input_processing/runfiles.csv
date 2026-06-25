@@ -191,15 +191,15 @@ plantchar_coal_ccs.csv,inputs/plant_characteristics/{plantchar_coal_ccs}.csv,1,i
 plantchar_coal.csv,inputs/plant_characteristics/{plantchar_coal}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_battery.csv,inputs/plant_characteristics/{plantchar_battery}.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_csp.csv,inputs/plant_characteristics/{plantchar_csp}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shape.csv,inputs/plant_characteristics/dr_shape_cost_scalars_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shape_vom.csv,inputs/plant_characteristics/dr_shape_vom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shape_fom.csv,inputs/plant_characteristics/dr_shape_fom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shape.csv,inputs/plant_characteristics/dr_shape_cost_scalars_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shape_vom.csv,inputs/plant_characteristics/dr_shape_vom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shape_fom.csv,inputs/plant_characteristics/dr_shape_fom_{dr_shapescen}.csv,int(sw.GSw_DRShape) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed.csv,inputs/plant_characteristics/dr_shed_capcost_scalars_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed_vom.csv,inputs/plant_characteristics/dr_shed_vom_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed_fom.csv,inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shift.csv,inputs/plant_characteristics/dr_shift_cost_scalars_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shift_vom.csv,inputs/plant_characteristics/dr_shift_vom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
-plantchar_dr_shift_fom.csv,inputs/plant_characteristics/dr_shift_fom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,mean,uniform,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shift.csv,inputs/plant_characteristics/dr_shift_cost_scalars_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shift_vom.csv,inputs/plant_characteristics/dr_shift_vom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
+plantchar_dr_shift_fom.csv,inputs/plant_characteristics/dr_shift_fom_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_fuelcell.csv,inputs/plant_characteristics/{plantchar_fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas_ccs.csv,inputs/plant_characteristics/{plantchar_gas_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas.csv,inputs/plant_characteristics/{plantchar_gas}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv

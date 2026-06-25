@@ -290,35 +290,70 @@ consume_char.loc[mask, 'value'] = consume_char[mask]['value'] + round( (elec_cos
 # Capital cost multipliers for DR Shed vary by state and year
 # Input cost data are state-level and are assigned to model region resolution here
 # We assume all regions within the same state have uniform costs
-dr_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed.csv'), index_col=0).round(6)
-# FOM & VOM inputs are also state-level and need to be disaggregated
-fom = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed_fom.csv'), index_col=0).round(6)
-vom = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed_vom.csv'), index_col=0).round(6)
-# If there are no DR shed data for regions being run, write dr_shed_capcostmult.csv 
-if dr_shed.empty:
-    dr_shed_capcost_mult = dr_shed.copy()
-    dr_shed_fom_regional = fom.copy()
-    dr_shed_vom_regional = vom.copy()
-else:
-    state2r = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'),usecols=['state','r'])
-    # Map each unique state to all r values within that state
-    state2r = state2r.groupby('state')['r'].unique().apply(list).to_dict()
-        
-    def disaggregate_to_regions(data, state2r):
-        regional_data = {}
-        for st in data['r'].unique():
-            bas_in_st = state2r[st]
-            data2r = {}
-            for r in bas_in_st:
-                copy_state = data.loc[data['r'] == st].copy()
-                copy_state['r'] = r
-                data2r[r] = copy_state
-            regional_data[st] = pd.concat(data2r.values())
-        return pd.concat(regional_data.values())
 
+def disaggregate_to_regions(data, state2r):
+    regional_data = {}
+    for st in data['r'].unique():
+        bas_in_st = state2r[st]
+        data2r = {}
+        for r in bas_in_st:
+            copy_state = data.loc[data['r'] == st].copy()
+            copy_state['r'] = r
+            data2r[r] = copy_state
+        regional_data[st] = pd.concat(data2r.values())
+    return pd.concat(regional_data.values()).set_index('tech')
+
+state2r = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'),usecols=['state','r'])
+# Map each unique state to all r values within that state
+state2r = state2r.groupby('state')['r'].unique().apply(list).to_dict()   
+
+# Shed DR 
+dr_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed.csv'))
+# FOM & VOM inputs are also state-level and need to be disaggregated
+fom_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed_fom.csv'))
+vom_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed_vom.csv'))
+if int(sw.GSw_DRShed):
+    # Write from state-level to region-level
     dr_shed_capcost_mult = disaggregate_to_regions(dr_shed, state2r)
-    dr_shed_fom_regional = disaggregate_to_regions(fom, state2r)
-    dr_shed_vom_regional = disaggregate_to_regions(vom, state2r)
+    dr_shed_fom_regional = disaggregate_to_regions(fom_shed, state2r)
+    dr_shed_vom_regional = disaggregate_to_regions(vom_shed, state2r)
+# Write empty files if DR Shed is OFF
+else:
+    dr_shed_capcost_mult = pd.DataFrame(columns=dr_shed.columns).set_index('tech')
+    dr_shed_fom_regional = pd.DataFrame(columns=fom_shed.columns).set_index('tech')
+    dr_shed_vom_regional = pd.DataFrame(columns=vom_shed.columns).set_index('tech')
+
+# Shape DR
+dr_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape.csv'))
+# FOM & VOM inputs are also state-level and need to be disaggregated
+fom_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape_fom.csv'))
+vom_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape_vom.csv'))
+if int(sw.GSw_DRShape):
+    dr_shape_capcost_mult = disaggregate_to_regions(dr_shape, state2r)
+    dr_shape_fom_regional = disaggregate_to_regions(fom_shape, state2r)
+    dr_shape_vom_regional = disaggregate_to_regions(vom_shape, state2r)
+# Write empty files if DR Shape is OFF
+else:
+    dr_shape_capcost_mult = pd.DataFrame(columns=dr_shape.columns).set_index('tech')
+    dr_shape_fom_regional = pd.DataFrame(columns=fom_shape.columns).set_index('tech')
+    dr_shape_vom_regional = pd.DataFrame(columns=vom_shape.columns).set_index('tech')
+
+# Shift DR
+dr_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift.csv'))
+# FOM & VOM inputs are also state-level and need to be disaggregated
+fom_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift_fom.csv'))
+vom_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift_vom.csv'))
+if int(sw.GSw_DRShift):
+    dr_shift_capcost_mult = disaggregate_to_regions(dr_shift, state2r)
+    dr_shift_fom_regional = disaggregate_to_regions(fom_shift, state2r)
+    dr_shift_vom_regional = disaggregate_to_regions(vom_shift, state2r)
+# Write empty files if DR Shift is OFF
+else:
+    dr_shift_capcost_mult = pd.DataFrame(columns=dr_shift.columns).set_index('tech')
+    dr_shift_fom_regional = pd.DataFrame(columns=fom_shift.columns).set_index('tech')
+    dr_shift_vom_regional = pd.DataFrame(columns=vom_shift.columns).set_index('tech')
+
+
 
 #%%###############################
 #    -- Other Technologies --    #
@@ -326,9 +361,6 @@ else:
 
 ccsflex_perf = pd.read_csv(os.path.join(inputs_case,'plantchar_ccsflex_perf.csv'),index_col=0).round(6)
 hydro = pd.read_csv(os.path.join(inputs_case,'plantchar_hydro.csv'), index_col=0).round(6)
-dr_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed.csv'), index_col=0).round(6)
-dr_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape.csv'), index_col=0).round(6)
-dr_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift.csv'), index_col=0).round(6)
 degrade = pd.read_csv(
 	os.path.join(inputs_case,'degradation_annual.csv'),
 	header=None)
@@ -487,11 +519,15 @@ outwindcfmult.to_csv(os.path.join(inputs_case,'windcfmult.csv'))
 ccsflex_perf.to_csv(os.path.join(inputs_case,'ccsflex_perf.csv'))
 consume_char.to_csv(os.path.join(inputs_case,'consume_char.csv'),index=False)
 hydro.to_csv(os.path.join(inputs_case,'hydrocapcostmult.csv'))
-dr_shape.to_csv(os.path.join(inputs_case,'dr_shape_capcostmult.csv'))
-dr_shift.to_csv(os.path.join(inputs_case,'dr_shift_capcostmult.csv'))
-dr_shed_capcost_mult.to_csv(os.path.join(inputs_case,'dr_shed_capcostmult.csv'))
-dr_shed_fom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shed_fom.csv'))
-dr_shed_vom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shed_vom.csv'))
+dr_shape_capcost_mult.to_csv(os.path.join(inputs_case,'dr_shape_capcostmult.csv'), index=True)
+dr_shape_fom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shape_fom.csv'), index=True)
+dr_shape_vom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shape_vom.csv'), index=True)
+dr_shift_capcost_mult.to_csv(os.path.join(inputs_case,'dr_shift_capcostmult.csv'), index=True)
+dr_shift_fom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shift_fom.csv'), index=True)
+dr_shift_vom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shift_vom.csv'), index=True)
+dr_shed_capcost_mult.to_csv(os.path.join(inputs_case,'dr_shed_capcostmult.csv'), index=True)
+dr_shed_fom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shed_fom.csv'), index=True)
+dr_shed_vom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shed_vom.csv'), index=True)
 ofswind_rsc_mult.to_csv(os.path.join(inputs_case,'ofswind_rsc_mult.csv'))
 degrade.to_csv(os.path.join(inputs_case,'degradation_annual.csv'),header=False)
 pvb.to_csv(os.path.join(inputs_case,'pvbcapcostmult.csv'))
