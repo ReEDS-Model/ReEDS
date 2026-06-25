@@ -781,7 +781,7 @@ def get_zoneset_config() -> dict:
     return config
 
 
-def get_applicable_zonesets(setting):
+def get_applicable_zonesets(setting: str) -> list[str]:
     """
     Get the list of zonesets that a setting should apply to. The provided
     setting should be a field in 'inputs/zones/zoneset_config.yaml'.
