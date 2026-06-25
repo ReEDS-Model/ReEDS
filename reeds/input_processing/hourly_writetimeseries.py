@@ -1337,12 +1337,20 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         cluster_level = sw.get('GSw_HourlyClusterRegionLevel')
         rmap = pd.Series(hierarchy.index, index=hierarchy.index) if cluster_level == 'r' else hierarchy[cluster_level]
 
-        orig_annual_load = load_in.sum(axis=0).rename('orig_MWh').reset_index()
+        orig_annual_load = (
+            load_in[hmap_allyrs.set_index('actual_h').year.isin(sw['GSw_HourlyWeatherYears'])]
+            .sum(axis=0).rename('orig_MWh').reset_index()
+        )
         orig_annual_load['orig_MWh'] /= len(sw['GSw_HourlyWeatherYears'])
         orig_annual_load['cluster_reg'] = orig_annual_load['r'].map(rmap)
         orig_agg = orig_annual_load.groupby(['cluster_reg', 't'], as_index=False)['orig_MWh'].sum()
 
-        rep_load = load_allyear.merge(hours.reset_index(), on='h')
+        hrs_clustered = (
+            hours.reset_index()
+            .assign(h=hours.index.map(chunkmap))
+            .groupby('h', as_index=False)['numhours'].sum()
+        )
+        rep_load = load_allyear.merge(hrs_clustered, on='h', how='left')
         rep_load['rep_MWh'] = rep_load['MW'] * rep_load['numhours']
         rep_annual_load = rep_load.groupby(['r', 't'], as_index=False)['rep_MWh'].sum()
         rep_annual_load['cluster_reg'] = rep_annual_load['r'].map(rmap)
