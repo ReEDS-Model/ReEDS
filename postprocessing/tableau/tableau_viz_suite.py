@@ -542,7 +542,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--levels', 
         nargs="+",     # '+' means one or more arguments
-        default=['r'], # this can be 'ba','county','aggreg', depending on the run
+        default=['r'],
         help="Spatial resolution for results")
     parser.add_argument(
         '--trans_level', type=str, default='transgrp',
