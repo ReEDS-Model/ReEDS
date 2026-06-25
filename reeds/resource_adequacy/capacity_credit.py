@@ -152,6 +152,20 @@ def reeds_cc(t, tnext, casedir):
     ### Get the non-duplicated profiles
     resource_profiles = resources.drop_duplicates('resource')
 
+    ### Get forced outage rates for thermal technologies
+    forced_outage_rate = reeds.io.get_outage_hourly(inputs_case,'forced')
+    
+    tech_subset_table = reeds.techs.expand_GAMS_tech_groups(
+        reeds.techs.get_tech_subset_table(casedir).reset_index()
+    ).set_index('tech_group').i
+    techs_to_keep = tech_subset_table.loc['TEMP_DERATE'].tolist()
+    techs_to_drop = [
+        col for col in forced_outage_rate.columns.get_level_values('i').unique()
+        if col not in techs_to_keep
+    ]
+    
+    forced_outage_rate = forced_outage_rate.drop(columns=techs_to_drop, level=0, errors='ignore')
+    
     # Remove the "8760" safety valve bin
     safety_bin = max(sdb['bin'].values)
     sdb = sdb[sdb['bin'] != max(sdb['bin'])]
@@ -159,7 +173,6 @@ def reeds_cc(t, tnext, casedir):
 
     # Temporal definitions
     h_dt_szn = pd.read_csv(os.path.join('inputs_case', 'rep', 'h_dt_szn.csv'))
-
     ccseasons = []
     if sw['cc_calc_annual']:
         ccseasons += ['year']
@@ -464,6 +477,27 @@ def reeds_cc(t, tnext, casedir):
     ### Reorder to match ReEDS convention
     net_load_2012 = net_load_2012.reindex(['ccreg','ccseason','year','h','hour','t','value'], axis=1)
 
+    # export mean forced outage rate for top load hours in each region and ccseason
+    top_net_load_hours = net_load.groupby(['ccreg','ccseason']).head(int(sw['GSw_PRM_CapCreditHours']))
+    # map back to regions from ccreg for ReEDS input
+    top_net_load_hours = top_net_load_hours.merge(
+        hierarchy[['r','ccreg']], on='ccreg', how='left'
+    ).drop(['ccreg','year','hour','t','value'], axis=1)
+    # map h to timestamp to match forced outage rate
+    top_net_load_hours['*timestamp'] = top_net_load_hours['h'].apply(reeds.timeseries.h2timestamp)
+    hours = top_net_load_hours.groupby(['ccseason', 'r'])['*timestamp'].agg(list)
+
+    mean_forced_outage_rate = (
+        pd.concat({  
+            (ccseason, r): forced_outage_rate.loc[h].xs(r, 1, 'r').mean()  
+            for (ccseason, r), h in hours.items()  
+        }, names=('ccseason', 'r'))  
+        .reset_index()
+        .rename(columns={0:'value'})
+        .assign(t=str(tnext))
+        .reindex(['i','r','ccseason','t','value'], axis=1)
+    )
+
     if int(sw['GSw_EVMC']):
         cc_evmc = (
             pd.concat(dict_cc_evmc, axis=0)
@@ -484,6 +518,7 @@ def reeds_cc(t, tnext, casedir):
         'sdbin_size': sdbin_size,
         'net_load': net_load,
         'net_load_2012': net_load_2012,
+        'mean_forced_outage_rate' : mean_forced_outage_rate,
     }
 
     return cc_results

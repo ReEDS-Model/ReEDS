@@ -138,6 +138,7 @@ def main(t, tnext, casedir, iteration=0):
             'cc_old': pd.DataFrame(columns=['i','r','ccreg','szn','t','Value']),
             'cc_evmc': pd.DataFrame(columns=['i','r','szn','t','Value']),
             'sdbin_size': pd.DataFrame(columns=['ccreg','szn','bin','t','Value']),
+            'mean_forced_outage_rate': pd.DataFrame(columns=['i','r','ccseason','t','Value']),
         }
 
     reeds.log.toc(tic=tic, year=t, process='ra/capacity_credit.py')
@@ -165,7 +166,6 @@ def main(t, tnext, casedir, iteration=0):
             )
 
     #%% Identify stress periods
-    print('identifying new stress periods...')
     tic = datetime.datetime.now()
     if (
         ('user' not in sw['GSw_PRM_StressModel'].lower())

@@ -384,6 +384,16 @@ def check_compatibility(sw):
             except ValueError:
                 raise ValueError(err)
 
+    if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
+        raise ValueError(
+            "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
+            "and GSw_PRM_StressIterateMax>0 is not supported.\n"
+            "To iteratively update the PRM, set GSw_PRM_UpdateMethod to an integer between 1-3:"
+            "\n1: static update set by GSw_PRM_UpdateFraction; "
+            "\n2: dynamic update informed by PRAS; "
+            "\n3: dynamic update but only after all new stress periods have been added"
+        )
+
     for bir in sw['GSw_PVB_BIR'].split('_'):
         if not (float(bir) >= 0):
             raise ValueError("Fix GSw_PVB_BIR")
@@ -483,6 +493,15 @@ def check_compatibility(sw):
     ):
         err = f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} but the specified file does not exist"
         raise FileNotFoundError(err)
+
+    if sw['GSw_LoadProfiles'].startswith('EER2023'):
+        allowed_ra_years = range(2007,2014)
+        if not all([y in allowed_ra_years for y in resource_adequacy_years]):
+            err = (
+                f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} only supports resource_adequacy_years="
+                f"{list(allowed_ra_years)} but {resource_adequacy_years} was supplied"
+            )
+            raise ValueError(err)
 
     ### Dependent model availability
     if (

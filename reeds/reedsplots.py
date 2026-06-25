@@ -1,7 +1,9 @@
 ### Imports
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import matplotlib as mpl
+from typing import Literal
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import patheffects as pe
@@ -6680,3 +6682,89 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     plots.trim_subplots(ax, nrows, ncols, len(coords))
 
     return f, ax, prm_final
+
+
+def validate_regional_capacity(
+    case,
+    mapmethod:Literal['FIPS','latlon']='county',
+    scale:float=1.2,
+    sharey=False,
+):
+    """Compare regional capacity from EIA-NEMS to ReEDS results for last historical year"""
+    ### Settings
+    plot_settings = reeds.io.get_plot_formatting()
+    tech_color = plot_settings['tech_color'].squeeze(1)
+    unitspath = Path(
+        reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+        'ReEDS_generator_database_final_EIA-NEMS.csv',
+    )
+    ### Get run capacity and last historical year
+    hierarchy = reeds.io.get_hierarchy(case)
+    dfmap = reeds.io.get_dfmap(case)
+    crs = dfmap['r'].crs
+    county2zone = reeds.io.get_county2zone(case)
+    sw = reeds.io.get_switches(case)
+    years = reeds.inputs.parse_yearset(sw.yearset)
+    scalars = reeds.io.get_scalars(case)
+    plotyear = max([y for y in years if y <= int(scalars.this_year)])
+    cap = reeds.io.read_output(case, 'cap')
+    cap = cap.loc[~cap.i.isin(['can-imports'])].copy()
+    cap.i = simplify_techs(cap.i)
+    cap_year = cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+    ### Get EIA-NEMS capacity and formatting
+    dfunits = reeds.plots.df2gdf(pd.read_csv(unitspath), lat='T_LAT', lon='T_LONG').to_crs(crs)
+    ## Clean up old techs
+    dfunits.tech = dfunits.tech.replace({'dupv':'upv'})
+    dfunits.tech = simplify_techs(dfunits.tech)
+    dfunits.FIPS = dfunits.FIPS.str.strip('p')
+    ## Map to zones
+    if mapmethod == 'FIPS':
+        dfunits['r'] = dfunits.FIPS.map(county2zone)
+    elif mapmethod == 'latlon':
+        dfunits = (
+            dfunits.sjoin(dfmap['r'][['geometry']], how='left')
+            .rename(columns={'index_right':'r'})
+        )
+    dfunits_year = dfunits.loc[
+        (dfunits.StartYear <= plotyear)
+        & (dfunits.RetireYear > plotyear)
+    ].copy()
+    ### Plot setup
+    rs = sorted(hierarchy.index)
+    nrows, ncols, coords = reeds.plots.get_coordinates(rs, aspect=1.3)
+    order = tech_color.index.tolist()
+    dictout = {}
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(scale*ncols, scale*nrows), sharex=True, sharey=sharey,
+        gridspec_kw={'wspace':0.5, 'hspace':0.5},
+    )
+    for r in rs:
+        _ax = ax[coords[r]]
+        _ax.set_title(r.replace('_','.'), y=0.95, fontsize=11)
+        dfplot = pd.concat({
+            'NEMS': dfunits_year.loc[dfunits_year.r==r].groupby('tech').summer_power_capacity_MW.sum(),
+            'ReEDS': cap_year[r],
+        ## Convert from MW to GW
+        }, axis=1).dropna(how='all').T / 1e3
+        keep = [i for i in order if i in dfplot]
+        if len(keep) != dfplot.shape[1]:
+            _missing = [i for i in dfplot if i not in keep]
+            print(dfplot)
+            raise ValueError(f"Dropped these techs: {_missing}")
+        dfplot = dfplot[keep]
+        reeds.plots.stackbar(
+            df=dfplot, ax=_ax, colors=tech_color, net=False, width=0.8,
+        )
+        dictout[r] = dfplot
+        ## Formatting
+        row, col = coords[r]
+        if row == nrows - 1:
+            ax[row,col].set_xticks(range(len(dfplot)))
+            ax[row,col].set_xticklabels(dfplot.index, rotation=90)
+    ## Formatting
+    ax[-1,0].set_ylabel(f'{plotyear} capacity [GW]', y=0, ha='left')
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(rs))
+    reeds.plots.despine(ax)
+    return f, ax, dictout

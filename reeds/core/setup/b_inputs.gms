@@ -241,78 +241,79 @@ $onlisting
 
 set
 *technology-specific subsets
-  battery(i)            "battery storage technologies",
-  beccs(i)              "Bio with CCS",
-  bio(i)                "technologies that use only biofuel",
-  boiler(i)             "technologies that use steam boilers"
-  canada(i)             "Canadian imports",
-  ccs(i)                "CCS technologies",
-  ccs_mod(i)            "CCS technologies with moderate capture rate",
-  ccs_max(i)            "CCS technologies with maximum capture rate",
-  ccsflex_byp(i)        "Flexible CCS technologies with bypass",
-  ccsflex_dac(i)        "Flexible CCS technologies with direct air capture",
-  ccsflex_sto(i)        "Flexible CCS technologies with storage",
-  ccsflex(i)            "Flexible CCS technologies",
-  cf_tech(i)            "technologies that have a specified capacity factor"
-  coal_ccs(i)           "technologies that use coal and have CCS",
-  coal(i)               "technologies that use coal",
-  cofire(i)             "cofire technologies",
-  combined_cycle(i)     "combined cycle technologies",
-  combustion_turbine(i) "combustion turbine technologies",
-  consume(i)            "technologies that consume electricity and add to load",
-  conv(i)               "conventional generation technologies",
-  csp_storage(i)        "csp generation technologies with thermal storage",
-  csp(i)                "csp generation technologies",
-  csp1(i)               "csp-tes generation technologies 1",
-  csp2(i)               "csp-tes generation technologies 2",
-  csp3(i)               "csp-tes generation technologies 3",
-  csp4(i)               "csp-tes generation technologies 4",
-  dac(i)                "direct air capture technologies",
-  distpv(i)             "distpv (i.e., rooftop PV) generation technologies",
-  demand_flex(i)        "demand flexibility technologies (includes DR and EVMC)",
-  dr_shed(i)            "DR shed technologies"
-  evmc(i)               "ev flexibility technologies",
-  evmc_storage(i)       "ev flexibility as direct load control",
-  evmc_shape(i)         "ev flexibility as adoptable change to load from response to pricing",
-  fossil(i)             "fossil technologies"
-  fuel_cell(i)          "fuel cell technologies",
-  gas_cc_ccs(i)         "techs that are gas combined cycle and have CCS",
-  gas_cc(i)             "techs that are gas combined cycle",
-  gas_ct(i)             "techs that are gas combustion turbine",
-  gas(i)                "techs that use gas (but not o-g-s)",
-  gentech(i)            "generation technologies",
-  geo(i)                "geothermal technologies",
-  geo_base(i)           "geothermal technologies typically considered in model runs",
-  geo_hydro(i)          "geothermal hydrothermal technologies",
-  geo_egs(i)            "geothermal enhanced geothermal systems technologies",
-  geo_extra(i)          "geothermal technologies not typically considered in model runs",
-  geo_egs_allkm(i)      "egs (covering deep egs depths of all km) technologies",
-  geo_egs_nf(i)         "egs (near-field) technologies",
-  h2_combustion(i)      "h2-ct and h2-cc technologies",
-  h2_cc(i)              "h2-cc technologies"
-  h2_ct(i)              "h2-ct technologies",
-  h2(i)                 "hydrogen-producing technologies",
-  hyd_add_pump(i)       "hydro techs with an added pump",
-  hydro_d(i)            "dispatchable hydro technologies",
-  hydro_nd(i)           "non-dispatchable hydro technologies",
-  hydro(i)              "hydro technologies",
-  lfill(i)              "land-fill gas technologies",
-  nondispatch(i)        "technologies that are not dispatchable"
-  nuclear(i)            "nuclear technologies",
-  ofswind(i)            "offshore wind technologies",
-  ogs(i)                "oil-gas-steam technologies",
-  onswind(i)            "onshore wind technologies",
-  psh(i)                "pumped hydro storage technologies",
-  pv(i)                 "all PV generation technologies",
-  pvb(i)                "hybrid pv+battery technologies",
-  pvb1(i)               "pvb generation technologies 1",
-  pvb2(i)               "pvb generation technologies 2",
-  pvb3(i)               "pvb generation technologies 3",
-  re(i)                 "renewable energy technologies",
-  refurbtech(i)         "technologies that can be refurbished",
-  rsc_i(i)              "technologies based on Resource supply curves",
-  smr(i)                "steam methane reforming technologies",
-  storage_hybrid(i)     "hybrid VRE-storage technologies",
+  battery(i)           "battery storage technologies",
+  beccs(i)             "Bio with CCS",
+  bio(i)               "technologies that use only biofuel",
+  boiler(i)            "technologies that use steam boilers"
+  canada(i)            "Canadian imports",
+  ccs(i)               "CCS technologies",
+  ccs_mod(i)           "CCS technologies with moderate capture rate",
+  ccs_max(i)           "CCS technologies with maximum capture rate",
+  ccsflex_byp(i)       "Flexible CCS technologies with bypass",
+  ccsflex_dac(i)       "Flexible CCS technologies with direct air capture",
+  ccsflex_sto(i)       "Flexible CCS technologies with storage",
+  ccsflex(i)           "Flexible CCS technologies",
+  cf_tech(i)           "technologies that have a specified capacity factor"
+  coal_ccs(i)          "technologies that use coal and have CCS",
+  coal(i)              "technologies that use coal",
+  cofire(i)            "cofire technologies",
+  combined_cycle(i)    "combined cycle technologies",
+  combustion_turbine(i)"combustion turbine technologies",
+  consume(i)           "technologies that consume electricity and add to load",
+  conv(i)              "conventional generation technologies",
+  temp_derate(i)       "generation technologies derated based on ambient temperature",
+  csp_storage(i)       "csp generation technologies with thermal storage",
+  csp(i)               "csp generation technologies",
+  csp1(i)              "csp-tes generation technologies 1",
+  csp2(i)              "csp-tes generation technologies 2",
+  csp3(i)              "csp-tes generation technologies 3",
+  csp4(i)              "csp-tes generation technologies 4",
+  dac(i)               "direct air capture technologies",
+  distpv(i)            "distpv (i.e., rooftop PV) generation technologies",
+  demand_flex(i)       "demand flexibility technologies (includes DR and EVMC)",
+  dr_shed(i)           "DR shed technologies"
+  evmc(i)              "ev flexibility technologies",
+  evmc_storage(i)      "ev flexibility as direct load control",
+  evmc_shape(i)        "ev flexibility as adoptable change to load from response to pricing",
+  fossil(i)            "fossil technologies"
+  fuel_cell(i)         "fuel cell technologies",
+  gas_cc_ccs(i)        "techs that are gas combined cycle and have CCS",
+  gas_cc(i)            "techs that are gas combined cycle",
+  gas_ct(i)            "techs that are gas combustion turbine",
+  gas(i)               "techs that use gas (but not o-g-s)",
+  gentech(i)           "generation technologies",
+  geo(i)               "geothermal technologies",
+  geo_base(i)          "geothermal technologies typically considered in model runs",
+  geo_hydro(i)         "geothermal hydrothermal technologies",
+  geo_egs(i)           "geothermal enhanced geothermal systems technologies",
+  geo_extra(i)         "geothermal technologies not typically considered in model runs",
+  geo_egs_allkm(i)     "egs (covering deep egs depths of all km) technologies",
+  geo_egs_nf(i)        "egs (near-field) technologies",
+  h2_combustion(i)     "h2-ct and h2-cc technologies",
+  h2_cc(i)             "h2-cc technologies"
+  h2_ct(i)             "h2-ct technologies",
+  h2(i)                "hydrogen-producing technologies",
+  hyd_add_pump(i)      "hydro techs with an added pump",
+  hydro_d(i)           "dispatchable hydro technologies",
+  hydro_nd(i)          "non-dispatchable hydro technologies",
+  hydro(i)             "hydro technologies",
+  lfill(i)             "land-fill gas technologies",
+  nondispatch(i)       "technologies that are not dispatchable"
+  nuclear(i)           "nuclear technologies",
+  ofswind(i)           "offshore wind technologies",
+  ogs(i)               "oil-gas-steam technologies",
+  onswind(i)           "onshore wind technologies",
+  psh(i)               "pumped hydro storage technologies",
+  pv(i)                "all PV generation technologies",
+  pvb(i)               "hybrid pv+battery technologies",
+  pvb1(i)              "pvb generation technologies 1",
+  pvb2(i)              "pvb generation technologies 2",
+  pvb3(i)              "pvb generation technologies 3",
+  re(i)                "renewable energy technologies",
+  refurbtech(i)        "technologies that can be refurbished",
+  rsc_i(i)             "technologies based on Resource supply curves",
+  smr(i)               "steam methane reforming technologies",
+  storage_hybrid(i)    "hybrid VRE-storage technologies",
   storage_standalone(i) "stand alone storage technologies",
   storage(i)           "storage technologies",
   storage_interday(i)  "interday storage",
@@ -720,6 +721,7 @@ combined_cycle(i)$(not ban(i))      = yes$i_subsets(i,'combined_cycle') ;
 combustion_turbine(i)$(not ban(i))  = yes$i_subsets(i,'combustion_turbine') ;
 consume(i)$(not ban(i))             = yes$i_subsets(i,'consume') ;
 conv(i)$(not ban(i))                = yes$i_subsets(i,'conv') ;
+temp_derate(i)$(not ban(i))         = yes$i_subsets(i,'temp_derate') ;
 csp_storage(i)$(not ban(i))         = yes$i_subsets(i,'csp_storage') ;
 csp(i)$(not ban(i))                 = yes$i_subsets(i,'csp') ;
 csp1(i)$(not ban(i))                = yes$i_subsets(i,'csp1') ;
@@ -6178,7 +6180,8 @@ Parameter
     cc_excess(i,r,ccseason,t)              "--MW-- this is the excess capacity credit when assuming marginal capacity credit in intertemporal solve"
     vre_gen_last_year(r,allh,t)            "--MW-- generation from VRE generators in the prior solve year"
     hybrid_cc_derate(i,r,ccseason,sdbin,t) "--fraction-- derate factor for hybrid PV+battery storage capacity credit"
-    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit",
+    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit"
+    mean_forced_outage_rate(i,r,ccseason,t)"--fraction-- mean forced outage rate for each technology, region, and ccseason - used to derate thermal generator capacity"
 * Heuristic climate impacts
     trans_cap_delta(allh,allt)             "--fraction-- fractional adjustment to transmission capacity from climate heuristics"
 * Emissions and policies
@@ -6200,6 +6203,7 @@ cc_excess(i,r,ccseason,t) = 0 ;
 cc_old(i,r,ccseason,t) = 0 ;
 m_cc_mar(i,r,ccseason,t) = 0 ;
 hybrid_cc_derate(i,r,ccseason,sdbin,t)$[pvb(i)$valcap_irt(i,r,t)] = 1 ;
+mean_forced_outage_rate(i,r,ccseason,t) = 0 ;
 
 * Trim some of the largest matrices to reduce file sizes
 cost_vom(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;

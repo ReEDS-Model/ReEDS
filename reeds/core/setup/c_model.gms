@@ -1718,6 +1718,7 @@ eq_reserve_margin(r,ccseason,t)
     + sum{(i,v)$[valcap(i,v,r,t)$(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))$(not forced_retire(i,r,t))],
           CAP(i,v,r,t)
           * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))
+          * (1 - mean_forced_outage_rate(i,r,ccseason,t))
          }
 
 *[plus] firm capacity from existing VRE or CSP
