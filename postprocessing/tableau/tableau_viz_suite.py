@@ -23,24 +23,6 @@ plots.plotparams()
 
 
 #%%### GENERAL FUNCTIONS
-def has_county_zones(
-    case: str | Path | None = None,
-    **kwargs
-) -> bool:
-    """
-    Determine whether a zone set has county-level zones.
-    Reads from the inputs_case folder if {case} is provided or from
-    the default set of inputs (with key word arguments overriding
-    case switches, e.g., "GSw_ZoneSet") otherwise.
-
-    Args:
-        case: Path to a ReEDS case.
-
-    Returns:
-        bool
-    """
-    county_zones = reeds.io.get_county_zones(case, **kwargs)
-    return len(county_zones) > 0
 
 # produce Scenarios.csv
 def create_scenarios_csv(output_dir,cases):
@@ -118,25 +100,13 @@ def produce_hierarchy_file(output_dir,basecase):
     # clean up region names, ex. turn 'NorthernGrid_West' to 'NorthernGrid West', replace all instances of '_' with ' ' in the entire dataframe
     hierarchy = hierarchy.replace('_',' ',regex=True)
 
-    if has_county_zones(cases[basecase]):
-        # county2zone has the county FIPS to ReEDS BA mapping
-        county2zone = pd.read_csv(os.path.join(reeds_path, 'inputs', 'county2zone.csv'), dtype={'FIPS':str},)
-        county2zone['Region'] = 'p' + county2zone.FIPS
-        # Add BA info to hierarchy
-        hierarchy = hierarchy.merge(county2zone.drop(columns=['state']), left_on='r', right_on='Region')
-        # move the FIPS column to be the first column in the df
-        hierarchy = hierarchy[['Region'] + [col for col in hierarchy.columns if col != 'Region']]
-        # export
-        hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
-    else:
-        # add columns to match the county-level hierarchy.csv format
-        hierarchy = hierarchy.reset_index()
-        hierarchy['ba'] = hierarchy['r']
-        hierarchy = hierarchy.rename(columns={'r':'Region'})
-        hierarchy['FIPS'] = '' # add a blank FIPS column so that the hierarchy.csv has the same columns as when using county-level runs
-        hierarchy['county_name'] = '' # add a blank county_name column so that the hierarchy.csv has the same columns as when using county-level runs
-        # then hierarchy.csv is already ready to export 
-        hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
+    # reformat
+    hierarchy = hierarchy.reset_index()
+    hierarchy['ba'] = hierarchy['r']
+    hierarchy = hierarchy.rename(columns={'r':'Region'})
+
+    # then hierarchy.csv is already ready to export 
+    hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
     
     return
 
@@ -170,50 +140,27 @@ def produce_transmission_endpoints():
     os.mkdir(os.path.join(output_dir,'shapefiles','transmission_endpoints'))
     
     try:
-        if has_county_zones(GSw_ZoneSet=dictin_sw[basecase].GSw_ZoneSet):
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles','US_COUNTY_2022','US_COUNTY_2022.shp')
-            dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
+        dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
 
-            # Read the shapefile
-            gdf = gpd.read_file(src_file)
+        gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'index':'Region',
+                                                                                'country':'COUNTRY',
+                                                                                'st':'STATE',})
+        # columns we have: ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg', 'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
+        # columns we need: ['Region', 'FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY', 'BA', 'geometry']
+        gdf['geometry'] = gpd.points_from_xy(gdf['x'], gdf['y'])
+        gdf['BA'] = gdf['Region']
 
-            # Compute centroids
-            gdf['geometry'] = gdf.geometry.centroid
+        # only keep columns needed for Tableau join
+        keep_cols = ['Region','STATE','COUNTRY','BA','geometry']
+        gdf = gdf[keep_cols]
 
-            # add 'BA' column to this shapefile, needed for the Tableau join
-            # county2zone has the county FIPS to ReEDS BA mapping, must be the mapping from the ReEDS repo not inputs_case (which does not have all regions if not running nationally)
-            county2zone = pd.read_csv(os.path.join(reeds_path,'inputs','county2zone.csv'), dtype={'FIPS':str},index_col='FIPS').squeeze(1)
+        # add blank columns (ideally these would be populated correctly or removed but they are not used in the merge)
+        for col in ['FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY']:
+            # if that column is not in the gdf, add it as a blank column
+            if col not in gdf.columns:
+                gdf[col] = ''
 
-            gdf['BA'] = gdf['FIPS'].map(lambda x: county2zone['ba'][x])
-
-            # rename for join in Tableau
-            gdf = gdf.rename(columns={'rb':'Region'})
-
-            # Export to shapefile
-            gdf.to_file(dst_file)
-        else:
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles','transmission_endpoints','transmission_endpoints.shp')
-            dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
-
-            gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'index':'Region',
-                                                                                    'country':'COUNTRY',
-                                                                                    'st':'STATE',})
-            # columns we have: ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg', 'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
-            # columns we need: ['Region', 'FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY', 'BA', 'geometry']
-            gdf['geometry'] = gpd.points_from_xy(gdf['x'], gdf['y'])
-            gdf['BA'] = gdf['Region']
-
-            # only keep columns needed for Tableau join
-            keep_cols = ['Region','STATE','COUNTRY','BA','geometry']
-            gdf = gdf[keep_cols]
-
-            # add blank columns (ideally these would be populated correctly or removed but they are not used in the merge)
-            for col in ['FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY']:
-                # if that column is not in the gdf, add it as a blank column
-                if col not in gdf.columns:
-                    gdf[col] = ''
-
-            gdf.to_file(dst_file)
+        gdf.to_file(dst_file)
     except Exception as error:
         print(error)
 
@@ -309,23 +256,8 @@ def reformat(df,case,metric,years):
                 df['Transmission Planning Subregion End'] = df['Transmission Planning Subregion End'].str.replace("_"," ") # turn NorthernGrid_West to 'NorthernGrid West'
                 df['Transmission Planning Subregion Begin'] = df['Transmission Planning Subregion Begin'].str.replace("_"," ")
 
-        if has_county_zones(cases[case]):
-            # the 'r' column already has the 'p41003' format
-            df = df.rename(columns={'r':'County'})
-            # add a column with the FIPS code (remove the 'p' prefix and turn the value into a integer from the CountyName column)
-            df['FIPS'] = df['County'].str.replace('p','').astype(int)
-
-            # now need to aggregate up to BA level, county2zone has the county FIPS to ReEDS BA mapping
-            county2zone = pd.read_csv(os.path.join(cases[case], 'inputs_case', 'county2zone.csv'), dtype={'FIPS':int},index_col='FIPS').squeeze(1)
-
-            # aggregate up to BA level using the hierarchy mapping
-            df['BA'] = df['FIPS'].map(lambda x: county2zone['ba'][x])
-            del df['FIPS']
-        else:
-            # the 'r' column already has the 'p4' BA format
-            df = df.rename(columns={'r':'BA'})
-            # make the county column blank as it will not be used when we are using BA-level runs
-            df['County']=''
+        # the 'r' column already has the 'p4' BA format
+        df = df.rename(columns={'r':'BA'})
 
         # add a column named 'Metric' which helps in the Tableau union
         df.loc[:,'Metric'] = metric
@@ -345,25 +277,25 @@ def reformat(df,case,metric,years):
                                 'scenario':'Scenario'})
         
         if metric == 'Emissions (million metric tonnes)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Pollutant','Year','Value']]
+            df = df.loc[:,['Metric','Scenario','BA','Pollutant','Year','Value']]
         elif metric == 'Coincident Peak End-Use Electricity Demand (GW)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Year','Value']]
+            df = df.loc[:,['Metric','Scenario','BA','Year','Value']]
         elif metric == 'Annual End-Use Electricity Demand (TWh)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Year','Value','Measure']]
+            df = df.loc[:,['Metric','Scenario','BA','Year','Value','Measure']]
         elif metric in ['Transmission Capacity (TW-miles)']:
-            df = df.loc[:,['Metric','Scenario','County','BA','Transmission Type','Region Begin','Region End','Transmission Planning Subregion Begin','Transmission Planning Subregion End','Value','Year','Measure']]
+            df = df.loc[:,['Metric','Scenario','BA','Transmission Type','Region Begin','Region End','Transmission Planning Subregion Begin','Transmission Planning Subregion End','Value','Year','Measure']]
         elif metric in ['Interregional Transmission Capacity (GW)']:
-            df = df.loc[:,['Metric','Scenario','County','BA','Transmission Type','Region Begin','Region End','Transmission Planning Subregion Begin','Transmission Planning Subregion End','Value','Year','Measure']]
+            df = df.loc[:,['Metric','Scenario','BA','Transmission Type','Region Begin','Region End','Transmission Planning Subregion Begin','Transmission Planning Subregion End','Value','Year','Measure']]
         elif metric == 'System Cost (billion $)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Cost Category','Year','Value']]
+            df = df.loc[:,['Metric','Scenario','BA','Cost Category','Year','Value']]
         elif metric == 'Load-Normalized System Cost ($ per MWh)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Year','Value']]    
+            df = df.loc[:,['Metric','Scenario','BA','Year','Value']]    
         elif metric == 'Hydrogen Production (million metric tonnes)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Technology','Year','Value']]
+            df = df.loc[:,['Metric','Scenario','BA','Technology','Year','Value']]
         elif metric == 'Load Site Capacity (MW)':
-            df = df.loc[:,['Metric','Scenario','County','BA','Year','Value']]    
+            df = df.loc[:,['Metric','Scenario','BA','Year','Value']]    
         else:
-            df = df.loc[:,['Metric','Scenario','County','BA','Technology','Year','Value']]
+            df = df.loc[:,['Metric','Scenario','BA','Technology','Year','Value']]
 
         # remove any rows with techs we want to exclude, we want a minimum amount of data passed to Tableau as possible
         # For example: Technology is not a column in the system cost outputs therefore don't want to assess this for that metric
@@ -384,12 +316,11 @@ def set_zero_values(dictin):
     idx = pd.MultiIndex.from_product(
         [df['Metric'].unique(),
         df['Scenario'].unique(),
-        df['County'].unique(),
         df['BA'].unique(),
         df['Technology'].unique(),
         # ['Offshore Wind'], # done this way, only OSW is populated, would need to apply set_zero_values() separately for each technology if we want to do this for all technologies, which could be a future improvement but for now just doing this for OSW to reduce the size of the data being passed to Tableau and make it easier to read in Tableau
         df['Year'].unique()],
-        names=['Metric','Scenario','County','BA','Technology','Year']) # 
+        names=['Metric','Scenario','BA','Technology','Year']) # 
     template = pd.DataFrame(index=idx).reset_index()
     
     # loop through the dictionary of dataframes and set any values that are very close to zero (but not exactly zero) to be exactly zero, this is to reduce the size of the data being passed to Tableau and make it easier to read in Tableau
@@ -505,7 +436,7 @@ def export(dictin,output_dir):
         except Exception:
             print(f'{metric} is empty, not printing this to csv.')
             # create a blank df to export so that the csv still gets created and Tableau does not break when trying to read in the data
-            df_blank = pd.DataFrame(columns=['Metric','Scenario','County','BA','Year','Value'])
+            df_blank = pd.DataFrame(columns=['Metric','Scenario','BA','Year','Value'])
             df_blank.to_csv(os.path.join(output_dir,'data',f'{metric}.csv'),index=False)
             pass
 
@@ -623,7 +554,7 @@ if __name__ == '__main__':
     # produce hierachy.csv for Tableau to use
     produce_hierarchy_file(output_dir,basecase)
 
-    # copy transmission_endpoints.shp or US_COUNTY_2022.shp if runs are at county resolution
+    # copy transmission_endpoints.shp
     produce_transmission_endpoints()
 
     # copy US_PCA.shp
@@ -694,13 +625,13 @@ if __name__ == '__main__':
     dictin_norm_sys_cost = {}
     metric = 'Load-Normalized System Cost ($ per MWh)'
     for case in tqdm(cases, desc=metric): 
-        systemcost_total = dictin_systemcost[case].drop(columns=['Metric','Cost Category']).groupby(['Scenario','County','BA','Year'], as_index=False).sum()
+        systemcost_total = dictin_systemcost[case].drop(columns=['Metric','Cost Category']).groupby(['Scenario','BA','Year'], as_index=False).sum()
         # Filter to the "Total Demand" in the "Measure" column to avoid double counting
         annualload_total = dictin_annualload[case][dictin_annualload[case]['Measure'] == 'Total Demand'].drop(columns=['Metric','Measure'])
         dictin_norm_sys_cost[case] = pd.merge(
             systemcost_total,
             annualload_total,
-            on=['Scenario','County','BA','Year'],
+            on=['Scenario','BA','Year'],
             suffixes=('_systemcost','_annualload'),
             how='right')
         # Convert TWh to MWh and billion dollars to dollars, then calculate $/MWh
