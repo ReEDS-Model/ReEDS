@@ -3434,10 +3434,6 @@
     - **Description:** ivt steps for endyears beyond 2050
 ---
 
-  - [modeled_regions.csv](/inputs/userinput/modeled_regions.csv)
-    - **Description:** Sets of BA regions that a user can model in a run. Each column is a different region option and can be specified in cases using GSw_Region.
----
-
   - [windows_2100.csv](/inputs/userinput/windows_2100.csv)
     - **Description:** Window size for using window solve method to 2100
 ---

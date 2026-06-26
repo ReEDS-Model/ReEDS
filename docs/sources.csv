@@ -685,7 +685,6 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/userinput/ivt_default.csv,/inputs/userinput,ivt_default,.csv,,,,,,
 /inputs/userinput/ivt_small.csv,/inputs/userinput,ivt_small,.csv,,,,,,
 /inputs/userinput/ivt_step.csv,/inputs/userinput,ivt_step,.csv,ivt steps for endyears beyond 2050,,,,,
-/inputs/userinput/modeled_regions.csv,/inputs/userinput,modeled_regions,.csv,Sets of BA regions that a user can model in a run. Each column is a different region option and can be specified in cases using GSw_Region.,,,,,
 /inputs/userinput/windows_2100.csv,/inputs/userinput,windows_2100,.csv,Window size for using window solve method to 2100,,,,,
 /inputs/userinput/windows_default.csv,/inputs/userinput,windows_default,.csv,Window size for using window solve method,,,,,
 /inputs/userinput/windows_step10.csv,/inputs/userinput,windows_step10,.csv,Window size for beyond2050step10,,,,,
