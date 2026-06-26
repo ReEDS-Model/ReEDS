@@ -183,10 +183,10 @@ def get_and_write_neue(sw, write=True):
     return neue
 
 def get_cvar_alpha(sw):
-    val = sw.get('GSw_PRM_CVARAlpha', 0.95)
-    if pd.isna(val) or str(val).strip().lower() in ['', 'none', 'nan']:
-        return 0.95
-    return float(val)
+    alpha = float(sw.GSw_PRM_CVARAlpha)
+    if not (0 <= alpha < 1):
+        raise ValueError(f"GSw_PRM_CVARAlpha must be in [0, 1). Got {alpha}")
+    return alpha
 
 
 def get_shortfall_totals_by_sample(case, t, iteration=0):
@@ -206,8 +206,6 @@ def _sample_cvar(samples, alpha=0.95):
     x = pd.Series(samples).dropna().astype(float)
     if x.empty:
         return np.nan
-    if not (0 <= alpha < 1):
-        raise ValueError(f"CVaR alpha must be in [0, 1). Got alpha={alpha}")
     n_tail = max(1, int(np.ceil((1 - alpha) * len(x))))
     return x.sort_values(ascending=False).iloc[:n_tail].mean()
 
@@ -217,21 +215,29 @@ def get_annual_cvar_stress_metric(case, t, stress_metric='NCVAR', iteration=0, a
     if stress_metric not in CVAR_METRICS:
         raise NotImplementedError(f"get_annual_cvar_stress_metric only supports {CVAR_METRICS}. Got {stress_metric}.")
 
+    ### Read per-sample total shortfall by region from PRAS.
     shortfall_samples = get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration).drop(columns=['USA'], errors='ignore')
+
+    ### Read hourly PRAS load. This is used to normalize CVAR into NCVAR.
     dfload = reeds.io.read_h5py_file(os.path.join(case, 'handoff', 'reeds_data', f'pras_load_{t}.h5'))
 
+    ### Calculate CVAR/NCVAR at each supported hierarchy level.
     levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
     _metric = {}
     for hierarchy_level in levels:
+        ### Aggregate sample-level regional shortfall to the requested hierarchy level.
         rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
         regions = [c for c in shortfall_samples.columns if c in rmap.index]
         if not regions:
             continue
 
         shortfall_agg = shortfall_samples[regions].rename(columns=rmap).groupby(axis=1, level=0).sum()
+
+        ### CVAR is the average of the highest-shortfall samples in the alpha tail.
         cvar = shortfall_agg.apply(lambda s: _sample_cvar(s, alpha=alpha), axis=0)
 
         if stress_metric == 'NCVAR':
+            ### NCVAR normalizes CVAR by total load over the PRAS time period and reports ppm.
             load_regions = [c for c in dfload.columns if c in rmap.index]
             load_agg = dfload[load_regions].rename(columns=rmap).groupby(axis=1, level=0).sum().sum()
             cvar = cvar / load_agg.reindex(cvar.index) * 1e6
@@ -240,11 +246,11 @@ def get_annual_cvar_stress_metric(case, t, stress_metric='NCVAR', iteration=0, a
 
     return pd.concat(_metric, names=['level','metric','region']).rename(stress_metric)
 
-
 def evaluate_cvar_target_check(sw, t, iteration=0, stress_metrics=None):
     if stress_metrics is None:
         stress_metrics = sw.GSw_PRM_StressThresholdMetrics.split('/')
 
+    ### Only evaluate CVAR/NCVAR here. Standard metrics are handled by _evaluate_stress_threshold_criterion(), which can add stress periods.
     stress_metrics = [m.upper() for m in stress_metrics if str(m).strip()]
     cvar_metrics = [m for m in stress_metrics if m in CVAR_METRICS]
     if not cvar_metrics:
@@ -262,6 +268,7 @@ def evaluate_cvar_target_check(sw, t, iteration=0, stress_metrics=None):
             if not criterion:
                 continue
 
+            ### CVAR/NCVAR criteria are check-only and use: HierarchyLevel_Threshold_Metric_cvar
             hierarchy_level, stress_level, stress_metric, metric_name = criterion.split('_')
             stress_metric = stress_metric.upper()
             metric_name = metric_name.lower()
@@ -271,7 +278,13 @@ def evaluate_cvar_target_check(sw, t, iteration=0, stress_metrics=None):
             if metric_name != 'cvar':
                 raise ValueError(f"Invalid CVAR criterion: {criterion}. The fourth field must be 'cvar'.")
 
-            stress_vals = pd.read_csv(os.path.join(sw.casedir,'outputs',f'{stress_metric.lower()}_{t}i{iteration}.csv',),index_col=['level', 'metric', 'region'],).squeeze(1)
+            ### Read the annual CVAR/NCVAR metric written earlier in main().
+            stress_vals = pd.read_csv(
+                os.path.join(sw.casedir, 'outputs', f'{stress_metric.lower()}_{t}i{iteration}.csv'),
+                index_col=['level','metric','region'],
+            ).squeeze(1)
+
+            ### Compare each region against the check-only threshold.
             this_test = stress_vals.xs((hierarchy_level, 'cvar'), level=['level','metric'])
             threshold = float(stress_level)
 
@@ -815,12 +828,11 @@ def main(sw, t, iteration=0, logging=True):
                 os.path.join(sw.casedir, 'outputs', f"{stress_metric.lower()}_{t}i{iteration}.csv")
             )
 
-        # CVAR / NCVAR are additional check-only metrics.
-        # They do not replace or modify the standard EUE / NEUE / LOLH calculations above.
-        cvar_metrics = [m.upper()for m in sw.GSw_PRM_StressThresholdMetrics.split('/')if str(m).strip() and m.upper() in CVAR_METRICS]
+        # CVAR / NCVAR are additional check-only metrics. They do not replace or modify the standard EUE / NEUE / LOLH calculations above.
+        cvar_metrics = [m.upper() for m in sw.GSw_PRM_StressThresholdMetrics.split('/') if str(m).strip() and m.upper() in CVAR_METRICS]
 
         for stress_metric in cvar_metrics:
-            print(f"Calculating and writing annual "f"{stress_metric} for iteration {iteration}")
+            print(f"Calculating and writing annual {stress_metric} for iteration {iteration}")
 
             dfmetric = get_annual_cvar_stress_metric(case=sw.casedir, t=t, stress_metric=stress_metric, iteration=iteration, alpha=get_cvar_alpha(sw),)
 
@@ -831,8 +843,7 @@ def main(sw, t, iteration=0, logging=True):
 
             dfmetric.round(2).to_csv(os.path.join(sw.casedir,'outputs', f"{stress_metric.lower()}_{t}i{iteration}.csv",))
 
-        # CVAR / NCVAR are check-only:
-        # no stress periods and no PRM increment.
+        # CVAR / NCVAR are check-only: no stress periods and no PRM increment.
         evaluate_cvar_target_check(sw=sw, t=t, iteration=iteration, stress_metrics=cvar_metrics,)
 
     except Exception as err:

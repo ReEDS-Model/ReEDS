@@ -71,12 +71,12 @@ function parse_commandline()
             default = 0
             required = false
         "--write_shortfall_samples"
-            help = "Write the sample-level shortfall (hourly, large)"
+            help = "Write per-sample hourly shortfall by region"
             arg_type = Int
             default = 0
             required = false
         "--write_shortfall_samples_totals"
-            help = "Write per-sample total shortfall by region (small)"
+            help = "Write per-sample total shortfall by region over the full PRAS time period"
             arg_type = Int
             default = 0
             required = false
@@ -224,24 +224,31 @@ function run_pras(pras_system_path::String, args::Dict)
         _,_,_,_,energyunit = PRAS.get_params(sys)
         alpha = Float64(args["cvar_alpha"])
         cvar_obj = PRAS.CVAR(energyunit, results["short_samples"], alpha)
-        @info(cvar_obj)
 
+        cvar_value = PRAS.val(cvar_obj.cvar)
+        cvar_stderr = PRAS.stderror(cvar_obj.cvar)
+        cvar_var = cvar_obj.var
+
+        ### Normalize CVaR by total load over the full PRAS time period and report NCVAR in ppm.
         total_load = sum(sys.regions.load)
-        ncvar_value  = PRAS.val(cvar_obj.cvar)      / total_load * 1e6
-        ncvar_stderr = PRAS.stderror(cvar_obj.cvar) / total_load * 1e6
-        ncvar_var    = cvar_obj.var                  / total_load * 1e6
+        ncvar_value  = cvar_value  / total_load * 1e6
+        ncvar_stderr = cvar_stderr / total_load * 1e6
+        ncvar_var    = cvar_var    / total_load * 1e6
+
+        @info "CVAR = $(cvar_value)±$(cvar_stderr) MWh; VaR = $(cvar_var) MWh; alpha = $(alpha)"
+        @info "NCVAR = $(ncvar_value)±$(ncvar_stderr) ppm; VaR = $(ncvar_var) ppm; alpha = $(alpha)"
 
         ### Write risk metrics to CSV
         base = replace(pras_system_path, ".pras"=>"")
         riskfile = base * "-risk_metrics.csv"
         dfrisk = DF.DataFrame(
-            metric = ["CVAR",                      "NCVAR"],
-            alpha  = [alpha,                        alpha],
-            region = ["USA",                        "USA"],
-            unit   = ["MWh",                        "ppm"],
-            value  = [PRAS.val(cvar_obj.cvar),      ncvar_value],
-            stderr = [PRAS.stderror(cvar_obj.cvar), ncvar_stderr],
-            var    = [cvar_obj.var,                 ncvar_var],
+            metric = ["CVAR",       "NCVAR"],
+            alpha  = [alpha,        alpha],
+            region = ["USA",        "USA"],
+            unit   = ["MWh",        "ppm"],
+            value  = [cvar_value,   ncvar_value],
+            stderr = [cvar_stderr,  ncvar_stderr],
+            var    = [cvar_var,     ncvar_var],
         )
         CSV.write(riskfile, dfrisk)
         @info("Wrote risk metrics to $(riskfile)")
@@ -342,9 +349,10 @@ function run_pras(pras_system_path::String, args::Dict)
         @info("Wrote PRAS storage energy to $(energyfile)")
     end
 
-    ### Sample-level shortfall (hourly, large)
+    ### Per-sample hourly shortfall by region
     if args["write_shortfall_samples"] == 1
         sf = results["short_samples"]
+        ## Use filtered system regions to avoid DC converter pseudo-regions without load.
         region_names = sf.regions.names
         idx = [findfirst(==(r), region_names) for r in regions]
 
@@ -361,9 +369,10 @@ function run_pras(pras_system_path::String, args::Dict)
         @info("Wrote PRAS shortfall by sample to $(shortfile)")
     end
 
-    ### Per-sample total shortfall by region (small, needed for CVaR)
+    ### Per-sample total shortfall by region over the full PRAS time period, needed for CVaR
     if args["write_shortfall_samples_totals"] == 1
         sf = results["short_samples"]
+        ## Use filtered system regions to avoid DC converter pseudo-regions without load.
         totalsfile = replace(outfile, ".h5"=>"-shortfall_totals_by_sample.h5")
         HDF5.h5open(totalsfile, "w") do f
             f["sample", compress=4] = collect(1:args["samples"])
