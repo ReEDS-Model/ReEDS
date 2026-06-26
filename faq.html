@@ -169,10 +169,10 @@
 <h3>How do I change the spatial resolution of a ReEDS case?<a class="headerlink" href="#how-do-i-change-the-spatial-resolution-of-a-reeds-case" title="Link to this heading"></a></h3>
 <p>The ReEDS model is capable of capturing several spatial resolutions. This aspect of the model is controlled by the <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> switches.</p>
 <ul class="simple">
-<li><p>Balancing areas (BAs) and aggregated groups of BAs: Aggregation level is controlled by the ‘aggreg’ column of the <code class="docutils literal notranslate"><span class="pre">inputs/zones/GSw_ZoneSet/hierarchy_from134.csv</span></code> file.</p>
+<li><p>Aggregated groups of counties: Model zone is specified by the ‘r’ column of the <code class="docutils literal notranslate"><span class="pre">inputs/zones/GSw_ZoneSet/hierarchy.csv</span></code> file.</p>
 <ul>
 <li><p>134 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z134</span></code></p></li>
-<li><p>132 zones (<strong>default</strong>): <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z132</span></code>. Merges p119 into p122 and p30 into p28.</p></li>
+<li><p>132 zones (<strong>default</strong>): <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z132</span></code>. Identical to z134 except merges p119 into p122 and p30 into p28.</p></li>
 <li><p>69 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z69</span></code>. Obeys state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.</p></li>
 <li><p>54 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z54</span></code>. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.</p></li>
 <li><p>48 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z48</span></code>. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states (highly simplified).</p></li>
@@ -312,7 +312,7 @@ you might need to clear your fonts cache (you can back it up first if you like).
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on June 23, 2026.
+      <span class="lastupdated">Last updated on June 26, 2026.
       </span></p>
   </div>
 
