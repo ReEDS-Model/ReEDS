@@ -483,8 +483,7 @@ def main(reeds_path, inputs_case):
     ### Get solar multiples
     sms = {tech: scalars[f'csp_sm_{tech.strip("csp")}'] for tech in csptechs}
     ### Get storage durations
-    storage_duration = pd.read_csv(
-        os.path.join(inputs_case,'storage_duration.csv'), header=None, index_col=0).squeeze(1)
+    storage_duration = reeds.io.read_input(inputs_case, 'storage_duration').set_index('i').squeeze(1)
     ## All CSP resource classes have the same duration for a given tech, so just take the first one
     durations = {tech: storage_duration[f'csp{tech.strip("csp")}_1'] for tech in csptechs}
     ### Run the dispatch simulation for modeled regions

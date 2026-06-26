@@ -913,7 +913,7 @@ def setupEnvironment(
                     f'Specified single={single} but available cases are:\n'
                     + '\n> '.join([c for c in df_cases.columns])
                 )
-                raise KeyError(err)
+                raise ValueError(err)
         df_cases = df_cases[single.split(',')].copy()
         casenames = single.split(',')
 

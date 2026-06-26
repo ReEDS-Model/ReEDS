@@ -297,9 +297,9 @@ def main(reeds_path, inputs_case):
     print('Starting WriteHintage.py')
 
     # #%% Settings for testing
-    # reeds_path = os.path.expanduser('~/github/ReEDS')
+    # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20231027_yamM0_Z45_h_d_365_transreg_z69_core','inputs_case')
+    #     reeds_path,'runs','v20260626_inputsM1_Pacific','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -547,10 +547,11 @@ def main(reeds_path, inputs_case):
     #%%############################################################################
     #    -- Get forced retirement dataframe and merge onto output dataframe --    #
     ###############################################################################
-    forced_retire = pd.read_csv(
-        os.path.join(inputs_case, 'forced_retirements.csv'),
-        header=0, names=['tech','st','retire_year'])
-    
+    forced_retire = (
+        reeds.io.read_input(inputs_case, 'forced_retirements')
+        .astype({'Value':int})
+        .rename(columns={'i':'tech', 'Value':'retire_year'})
+    )
     # Forced retirements are at the state level, so use hierarchy to get the regions
     state2r = (
         pd.read_csv(

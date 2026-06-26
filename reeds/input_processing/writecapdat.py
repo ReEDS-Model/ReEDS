@@ -306,7 +306,6 @@ def main(reeds_path, inputs_case, agglevel, regions):
     poi_cap_init = gdb_use.loc[(gdb_use[Sw_onlineyearcol] < startyear) &
                             (gdb_use['RetireYear'] > startyear) 
     ].groupby('r').summer_power_capacity_MW.sum().rename('MW').round(3)
-    poi_cap_init.index = poi_cap_init.index.rename('*r')
 
     #%%######################################
     #    -- non-RSC Existing Capacity --    #
@@ -489,9 +488,7 @@ def main(reeds_path, inputs_case, agglevel, regions):
     print('Gathering SMR Existing Capacity...')
     # Grab the first year for smr because that is when new capacity can begin to be built (for 
     # smr, smr_ccs and electrolyzers)
-    firstyear = pd.read_csv(
-        os.path.join(inputs_case,'firstyear.csv'),
-    ).rename(columns={'*i':'i'}).set_index('i').squeeze(1)
+    firstyear = reeds.io.read_input(inputs_case, 'firstyear').set_index('i').squeeze(1)
     h2_prod_first_year = firstyear['smr']
     # Get exogenous H2 demand
     h2_exogenous_demand = (
@@ -802,6 +799,7 @@ def main(reeds_path, inputs_case, agglevel, regions):
                 }
     comments = {
         'pcat': 'prescribed capacity categories',
+        'poi_cap_init': '--MW-- initial (pre-2010) capacity of all types',
     }
 
     return files_out, comments
@@ -902,6 +900,7 @@ if __name__ == '__main__':
     }
     gamstype = {
         'pcat': 'set',
+        'poi_cap_init': 'parameter',
     }
     for key, df in data.items():
         if gamstype.get(key, False):

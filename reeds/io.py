@@ -1787,6 +1787,7 @@ def write_csv_to_inputs_h5(
     filepath:str|Path,
     case:str|Path,
     gamstype:Literal['set','parameter'],
+    name:str|None=None,
     comment:str='',
     **kwargs,
 ):
@@ -1795,7 +1796,10 @@ def write_csv_to_inputs_h5(
     and write it to inputs.h5
     """
     df = pd.read_csv(filepath, dtype=str, header=None)
-    key = Path(filepath).stem
+    if isinstance(name, str):
+        if not len(name):
+            name = None
+    key = (Path(filepath).stem if name is None else name)
     if df.shape[1] == 1:
         ## Subsets have a header column beginning with '*';
         ## primary sets do not have a header

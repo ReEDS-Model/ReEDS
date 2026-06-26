@@ -1181,15 +1181,6 @@ pvf_onm_undisc(t)$pvf_capital(t) = pvf_onm(t) / pvf_capital(t) ;
 *==========================================
 
 * Note that some techs have a dummy firstyear of 2500
-parameter firstyear(i) "first year where new investment is allowed"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%firstyear.csv
-$offdelim
-$onlisting
-/ ;
-
 *---Add first year that capacity can be built:
 firstyear(i)$[(firstyear(i) < firstyear_min)$firstyear(i)] = firstyear_min ;
 
@@ -1231,16 +1222,6 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 *==========================
 * -- existing capacity --
 *==========================
-
-*Begin loading of capacity data
-parameter poi_cap_init(r) "--MW-- initial (pre-2010) capacity of all types"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%poi_cap_init.csv
-$offdelim
-$onlisting
-/ ;
 
 *created by reeds/input_processing/writecapdat.py
 table capnonrsc(i,r,*) "--MW-- raw power capacity data for non-RSC tech"
@@ -1354,17 +1335,6 @@ $include inputs_case%ds%retirements_energy.csv
 $offdelim
 $onlisting
 ;
-$offempty
-
-$onempty
-parameter forced_retirements(i,st) "--integer-- year in which to force retirements of certain techs by state"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%forced_retirements.csv
-$offdelim
-$onlisting
-/ ;
 $offempty
 
 set forced_retire(i,r,t) ;
@@ -2617,18 +2587,6 @@ $include inputs_case%ds%acp_prices.csv
 $offdelim
 $onlisting
 ;
-
-$onempty
-parameter acp_disallowed(st,RPSCat) "--integer-- Indication for whether ACP purchases are disallowed (1) or allowed (0)."
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%acp_disallowed.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
 
 RecStates(RPSCat,st,t)$[RecPerc(RPSCat,st,t) or sum{ast, rectable(ast,st) }] = yes ;
 
@@ -5210,15 +5168,6 @@ resourcescaler(i)$csp(i) = CSP_SM(i) / csp_sm_baseline ;
 * For PSH, tech-specific storage duration sets a default value.
 *   Then when when GSw_HydroPSHDurData = 1,
 *   region- and vintage-specific durations are defined where data exists.
-parameter storage_duration(i)   "--hours-- storage duration by tech"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%storage_duration.csv
-$offdelim
-$onlisting
-/ ;
-
 $onempty
 scalar psh_sc_duration "--hours-- PSH storage duration corresponding to selected supply curve"
 /
@@ -5305,30 +5254,12 @@ cost_vom(i,v,r,t)$[storage(i)$valgen(i,v,r,t)$(not cost_vom(i,v,r,t))] = storage
 parameter minCF(i,t)      "--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)"
           maxdailycf(i,t) "--fraction-- maximum daily capacity factor" ;
 
-* 6% for H2-CT and H2-CC is based on unpublished PLEXOS runs of 100% RE scenarios performed in summer 2019
-parameter minCF_input(i) "--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%minCF.csv
-$offdelim
-$onlisting
-/ ;
 minCF(i,t) = minCF_input(i) ;
 minCF(i,t)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), minCF(ii,t) } ;
 minCF(i,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), minCF(ii,t) } ;
 
 * adjust fleet mincf for nuclear when using flexible nuclear
 minCF(i,t)$[nuclear(i)$Sw_NukeFlex] = minCF_nuclear_flex ;
-
-parameter maxdailycf_input(i) "--fraction-- maximum daily capacity factor for a technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%maxdailycf.csv
-$offdelim
-$onlisting
-/ ;
 
 maxdailycf(i,t) = maxdailycf_input(i) ;
 maxdailycf(i,t)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), maxdailycf(ii,t) } ;
@@ -5619,18 +5550,6 @@ retiretech(i,v,r,t)$[(Sw_Retire=5)$nuclear(i)$(yeart(t)<=2030)] = no ;
 *several states have subsidies for nuclear power, so do not allow nuclear to retire in these states
 *before the year specified (see https://www.eia.gov/todayinenergy/detail.php?id=41534)
 *Note that Ohio has since repealed their nuclear subsidy, so is no longer included
-$onempty
-parameter nuclear_subsidies(st) '--year-- the year a nuclear subsidy ends in a given state'
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%nuclear_subsidies.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
 retiretech(i,initv,r,t)$[(yeart(t) < sum{st$r_st(r,st), nuclear_subsidies(st) })$valcap(i,initv,r,t)$nuclear(i)] = no ;
 
 * if Sw_NukeNoRetire is enabled, don't allow nuclear to retire through Sw_NukeNoRetireYear

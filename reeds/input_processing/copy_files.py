@@ -906,8 +906,8 @@ def write_non_region_file(
                     filepath=row.full_filepath,
                     case=case,
                     gamstype=row.GAMStype.lower(),
+                    name=(None if isinstance(row.GAMSname, float) else row.GAMSname),
                     comment=(row.comment if isinstance(row.comment, str) else ''),
-                    overwrite=True,
                 )
             else:
                 shutil.copy(row.full_filepath, os.path.join(dir_dst, row.filename))
@@ -1067,7 +1067,7 @@ def map_and_aggregate(
 
 def write_region_indexed_file(
     df,
-    dir_dst,
+    inputs_case,
     source_deflator_map,
     sw,
     region_file_entry,
@@ -1103,7 +1103,7 @@ def write_region_indexed_file(
 
     #---- Write data to dir_dst (inputs_case) folder ----
     if filetype_out == 'h5':
-        reeds.io.write_profile_to_h5(df, filename, dir_dst)
+        reeds.io.write_profile_to_h5(df, filename, inputs_case)
     else:
         # Special cases: These files' values need to be adjusted to copy
         filepath = region_file_entry['filepath']
@@ -1125,7 +1125,23 @@ def write_region_indexed_file(
             case _:
                 pass
 
-        df.to_csv(os.path.join(dir_dst,filename), index=False)
+        if str(region_file_entry.GAMStype).lower() in ['set', 'parameter']:
+            reeds.io.write_to_inputs_h5(
+                df,
+                key=(
+                    Path(region_file_entry.filename).stem
+                    if isinstance(region_file_entry.GAMSname, float)
+                    else region_file_entry.GAMSname
+                ),
+                case=reeds.io.standardize_case(inputs_case),
+                gamstype=region_file_entry.GAMStype.lower(),
+                comment=(
+                    region_file_entry.comment
+                    if isinstance(region_file_entry.comment, str) else ''
+                ),
+            )
+        else:
+            df.to_csv(os.path.join(inputs_case, filename), index=False)
 
 
 def write_region_indexed_files(
@@ -1219,17 +1235,20 @@ def write_miscellaneous_files(
     )[sw['GSw_H2LeakageScen']].rename_axis('*i').round(5).to_csv(
         os.path.join(inputs_case,'h2_leakage_rate.csv'))
 
-    # Add this_year to years_until_endogenous to generate the tech-specific firstyear.csv file
+    # Add this_year to years_until_endogenous to generate the tech-specific firstyear parameter
     scalars = reeds.io.get_scalars(full=True)
-    (
+    firstyear = (
         pd.read_csv(
             # years_until_endogenous created using function write_non_region_files
             os.path.join(inputs_case, 'years_until_endogenous.csv'),
             index_col=0,
         ).squeeze(1)
         + int(scalars.loc['this_year','value'])
-    ).rename_axis('*i').rename('t').to_csv(os.path.join(inputs_case, 'firstyear.csv'))
-
+    )
+    reeds.io.write_to_inputs_h5(
+        firstyear, 'firstyear', inputs_case, gamstype='parameter',
+        comment='first year where new investment is allowed',
+    )
 
     ### Single column from input table ###
 
@@ -1578,7 +1597,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # #%% Settings for testing ###
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260522_transcostM0_OR_water','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20260626_inputsM0_Pacific','inputs_case')
 
 
     # ---- Set up logger ----
