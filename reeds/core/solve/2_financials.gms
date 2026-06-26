@@ -167,7 +167,9 @@ $ifthen %ForceMandate% == 1
 forcetechmult(i,t)$[tmodel(t)$%ForceTech%(i)$(yeart(t)>=%ForceStartYear%)] =
     %ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%) ;
 cost_cap(i,t)$[tmodel(t)$cost_cap(i,t)$(forcetechmult(i,t)<>1)] = round(cost_cap(i,t)*forcetechmult(i,t), 2) ;
+cost_cap_energy(i,t)$[tmodel(t)$cost_cap_energy(i,t)$(forcetechmult(i,t)<>1)] = round(cost_cap_energy(i,t)*forcetechmult(i,t), 2) ;
 cost_fom(i,v,r,t)$[tmodel(t)$cost_fom(i,v,r,t)$(forcetechmult(i,t)<>1)] = round(cost_fom(i,v,r,t)*forcetechmult(i,t), 2) ;
+cost_fom_energy(i,v,r,t)$[tmodel(t)$cost_fom_energy(i,v,r,t)$(forcetechmult(i,t)<>1)] = round(cost_fom_energy(i,v,r,t)*forcetechmult(i,t), 2) ;
 cost_vom(i,v,r,t)$[tmodel(t)$cost_vom(i,v,r,t)$(forcetechmult(i,t)<>1)] = round(cost_vom(i,v,r,t)*forcetechmult(i,t), 2) ;
 cost_opres(i,ortype,t)$[tmodel(t)$cost_opres(i,ortype,t)$(forcetechmult(i,t)<>1)] = round(cost_opres(i,ortype,t)*forcetechmult(i,t), 2) ;
 fuel_price(i,r,t)$[tmodel(t)$fuel_price(i,r,t)$(forcetechmult(i,t)<>1)] = round(fuel_price(i,r,t)*forcetechmult(i,t), 2) ;
