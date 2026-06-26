@@ -23,24 +23,6 @@ plots.plotparams()
 
 
 #%%### GENERAL FUNCTIONS
-def has_county_zones(
-    case: str | Path | None = None,
-    **kwargs
-) -> bool:
-    """
-    Determine whether a zone set has county-level zones.
-    Reads from the inputs_case folder if {case} is provided or from
-    the default set of inputs (with key word arguments overriding
-    case switches, e.g., "GSw_ZoneSet") otherwise.
-
-    Args:
-        case: Path to a ReEDS case.
-
-    Returns:
-        bool
-    """
-    county_zones = reeds.io.get_county_zones(case, **kwargs)
-    return len(county_zones) > 0
 
 # produce Scenarios.csv
 def create_scenarios_csv(output_dir,cases):
@@ -118,25 +100,15 @@ def produce_hierarchy_file(output_dir,basecase):
     # clean up region names, ex. turn 'NorthernGrid_West' to 'NorthernGrid West', replace all instances of '_' with ' ' in the entire dataframe
     hierarchy = hierarchy.replace('_',' ',regex=True)
 
-    if has_county_zones(cases[basecase]):
-        # county2zone has the county FIPS to ReEDS BA mapping
-        county2zone = pd.read_csv(os.path.join(reeds_path, 'inputs', 'county2zone.csv'), dtype={'FIPS':str},)
-        county2zone['Region'] = 'p' + county2zone.FIPS
-        # Add BA info to hierarchy
-        hierarchy = hierarchy.merge(county2zone.drop(columns=['state']), left_on='r', right_on='Region')
-        # move the FIPS column to be the first column in the df
-        hierarchy = hierarchy[['Region'] + [col for col in hierarchy.columns if col != 'Region']]
-        # export
-        hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
-    else:
-        # add columns to match the county-level hierarchy.csv format
-        hierarchy = hierarchy.reset_index()
-        hierarchy['ba'] = hierarchy['r']
-        hierarchy = hierarchy.rename(columns={'r':'Region'})
-        hierarchy['FIPS'] = '' # add a blank FIPS column so that the hierarchy.csv has the same columns as when using county-level runs
-        hierarchy['county_name'] = '' # add a blank county_name column so that the hierarchy.csv has the same columns as when using county-level runs
-        # then hierarchy.csv is already ready to export 
-        hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
+    # add columns to match the county-level hierarchy.csv format
+    # (required due to legacy downstream handling of counties)
+    hierarchy = hierarchy.reset_index()
+    hierarchy['ba'] = hierarchy['r']
+    hierarchy = hierarchy.rename(columns={'r':'Region'})
+    hierarchy['FIPS'] = '' # add a blank FIPS column so that the hierarchy.csv has the same columns as when using county-level runs
+    hierarchy['county_name'] = '' # add a blank county_name column so that the hierarchy.csv has the same columns as when using county-level runs
+    # then hierarchy.csv is already ready to export 
+    hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
     
     return
 
@@ -170,50 +142,27 @@ def produce_transmission_endpoints():
     os.mkdir(os.path.join(output_dir,'shapefiles','transmission_endpoints'))
     
     try:
-        if has_county_zones(GSw_ZoneSet=dictin_sw[basecase].GSw_ZoneSet):
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles','US_COUNTY_2022','US_COUNTY_2022.shp')
-            dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
+        dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
 
-            # Read the shapefile
-            gdf = gpd.read_file(src_file)
+        gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'index':'Region',
+                                                                                'country':'COUNTRY',
+                                                                                'st':'STATE',})
+        # columns we have: ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg', 'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
+        # columns we need: ['Region', 'FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY', 'BA', 'geometry']
+        gdf['geometry'] = gpd.points_from_xy(gdf['x'], gdf['y'])
+        gdf['BA'] = gdf['Region']
 
-            # Compute centroids
-            gdf['geometry'] = gdf.geometry.centroid
+        # only keep columns needed for Tableau join
+        keep_cols = ['Region','STATE','COUNTRY','BA','geometry']
+        gdf = gdf[keep_cols]
 
-            # add 'BA' column to this shapefile, needed for the Tableau join
-            # county2zone has the county FIPS to ReEDS BA mapping, must be the mapping from the ReEDS repo not inputs_case (which does not have all regions if not running nationally)
-            county2zone = pd.read_csv(os.path.join(reeds_path,'inputs','county2zone.csv'), dtype={'FIPS':str},index_col='FIPS').squeeze(1)
+        # add blank columns (ideally these would be populated correctly or removed but they are not used in the merge)
+        for col in ['FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY']:
+            # if that column is not in the gdf, add it as a blank column
+            if col not in gdf.columns:
+                gdf[col] = ''
 
-            gdf['BA'] = gdf['FIPS'].map(lambda x: county2zone['ba'][x])
-
-            # rename for join in Tableau
-            gdf = gdf.rename(columns={'rb':'Region'})
-
-            # Export to shapefile
-            gdf.to_file(dst_file)
-        else:
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles','transmission_endpoints','transmission_endpoints.shp')
-            dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
-
-            gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'index':'Region',
-                                                                                    'country':'COUNTRY',
-                                                                                    'st':'STATE',})
-            # columns we have: ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg', 'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
-            # columns we need: ['Region', 'FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY', 'BA', 'geometry']
-            gdf['geometry'] = gpd.points_from_xy(gdf['x'], gdf['y'])
-            gdf['BA'] = gdf['Region']
-
-            # only keep columns needed for Tableau join
-            keep_cols = ['Region','STATE','COUNTRY','BA','geometry']
-            gdf = gdf[keep_cols]
-
-            # add blank columns (ideally these would be populated correctly or removed but they are not used in the merge)
-            for col in ['FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY']:
-                # if that column is not in the gdf, add it as a blank column
-                if col not in gdf.columns:
-                    gdf[col] = ''
-
-            gdf.to_file(dst_file)
+        gdf.to_file(dst_file)
     except Exception as error:
         print(error)
 
@@ -309,23 +258,11 @@ def reformat(df,case,metric,years):
                 df['Transmission Planning Subregion End'] = df['Transmission Planning Subregion End'].str.replace("_"," ") # turn NorthernGrid_West to 'NorthernGrid West'
                 df['Transmission Planning Subregion Begin'] = df['Transmission Planning Subregion Begin'].str.replace("_"," ")
 
-        if has_county_zones(cases[case]):
-            # the 'r' column already has the 'p41003' format
-            df = df.rename(columns={'r':'County'})
-            # add a column with the FIPS code (remove the 'p' prefix and turn the value into a integer from the CountyName column)
-            df['FIPS'] = df['County'].str.replace('p','').astype(int)
-
-            # now need to aggregate up to BA level, county2zone has the county FIPS to ReEDS BA mapping
-            county2zone = pd.read_csv(os.path.join(cases[case], 'inputs_case', 'county2zone.csv'), dtype={'FIPS':int},index_col='FIPS').squeeze(1)
-
-            # aggregate up to BA level using the hierarchy mapping
-            df['BA'] = df['FIPS'].map(lambda x: county2zone['ba'][x])
-            del df['FIPS']
-        else:
-            # the 'r' column already has the 'p4' BA format
-            df = df.rename(columns={'r':'BA'})
-            # make the county column blank as it will not be used when we are using BA-level runs
-            df['County']=''
+        # the 'r' column already has the 'p4' BA format
+        df = df.rename(columns={'r':'BA'})
+        # make the county column blank as it will not be used when we are using BA-level runs
+        # (required due to legacy downstream handling of counties)
+        df['County']=''
 
         # add a column named 'Metric' which helps in the Tableau union
         df.loc[:,'Metric'] = metric
