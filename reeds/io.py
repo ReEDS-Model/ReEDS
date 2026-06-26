@@ -1661,7 +1661,7 @@ def write_to_h5(
     key,
     filepath,
     attrs={},
-    overwrite=False,
+    overwrite=True,
     compression='gzip',
     compression_opts=4,
     **kwargs,
@@ -1671,6 +1671,7 @@ def write_to_h5(
         if key in list(f):
             if overwrite:
                 del f[key]
+                print(f'{key} was already used in {filepath} but is being overwritten')
             else:
                 raise ValueError(f'{key} is already used in {filepath}')
 

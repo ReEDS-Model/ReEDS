@@ -181,7 +181,6 @@ def get_regions_and_agglevel(
     reeds_path,
     inputs_case,
     save_regions_and_agglevel=True,
-    overwrite=False,
 ):
     """
     Create a regional mapping to help filter for specific regions and aggregation levels.
@@ -360,7 +359,6 @@ def get_regions_and_agglevel(
     reeds.io.write_to_inputs_h5(
         itlgrp, 'itlgrp', inputs_case, gamstype='set',
         comment='zone for additional interface transfer limit constraint',
-        overwrite=overwrite,
     )
 
     # Drop any substate region columns as these will no longer be needed
@@ -389,14 +387,12 @@ def get_regions_and_agglevel(
             df = pd.Series(hier_sub[level].unique())
             reeds.io.write_to_inputs_h5(
                 df, level, inputs_case, gamstype='set', comment=comment,
-                overwrite=overwrite,
             )
 
         # Use a modified version of val_st that includes 'voluntary'
         reeds.io.write_to_inputs_h5(
             pd.Series(val_st), 'st', inputs_case, gamstype='set',
             comment="state (or special 'voluntary' entry for corporate procurements)",
-            overwrite=overwrite,
         )
 
         # Rename columns and save as hierarchy.csv
@@ -410,7 +406,6 @@ def get_regions_and_agglevel(
         offshore = hier_sub.loc[hier_sub.offshore == 1, 'r']
         reeds.io.write_to_inputs_h5(
             offshore, 'offshore', inputs_case, gamstype='set', comment='offshore zones',
-            overwrite=overwrite,
         )
 
     levels = [i for i in hier_sub if i != 'offshore']
@@ -421,8 +416,7 @@ def get_regions_and_agglevel(
     # Export region files
     if save_regions_and_agglevel:
         reeds.io.write_to_inputs_h5(
-            pd.Series(val_r), 'r', inputs_case, gamstype='set',
-            comment='regions', overwrite=overwrite,
+            pd.Series(val_r), 'r', inputs_case, gamstype='set', comment='regions',
         )
 
     regions_and_agglevel = {
