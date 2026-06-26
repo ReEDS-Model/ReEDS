@@ -125,7 +125,7 @@ def produce_shapefiles():
             # rename for join in Tableau
             # Column names we need: ['OBJECTID_1', 'rb', 'st', 'rto', 'interconne', 'country', 'custreg', 'geometry']
             # ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg',  'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
-            gdf = gdf.reset_index()[['index', 'geometry', 'st', 'interconnect', 'country']].rename(columns={'index':'rb', 'interconnect':'interconne'})
+            gdf = gdf.reset_index()[['r', 'geometry', 'st', 'interconnect', 'country']].rename(columns={'r':'rb', 'interconnect':'interconne'})
             
             # fill in blank columns needed for Tableau join if they are not in the gdf but are in US_PCA shapefile``
             for x in ['OBJECTID_1','custreg','rto']:
@@ -144,7 +144,7 @@ def produce_transmission_endpoints():
     try:
         dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
 
-        gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'index':'Region',
+        gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'r':'Region',
                                                                                 'country':'COUNTRY',
                                                                                 'st':'STATE',})
         # columns we have: ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg', 'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
