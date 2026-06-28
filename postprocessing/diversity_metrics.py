@@ -69,9 +69,12 @@ def main():
     for submetric in submetrics:
         case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, metric, submetric, year)
         if submetric =='all':
-            case_file.loc[case_file['old_prefix']==case_file.loc[case_file['euclidean_distance'].idxmax(), 'old_prefix'], 'rank'] = 1
+            col = 'euclidean_distance'
+            rank = 'rank'
         else:
-            case_file.loc[case_file['old_prefix']==case_file.loc[case_file['euclidean_distance_'+submetric].idxmax(), 'old_prefix'], 'rank_'+submetric] = 1
+            col = 'euclidean_distance_'+submetric
+            rank = 'rank_'+submetric
+        case_file.loc[case_file['old_prefix']==case_file.loc[case_file[col].idxmax(), 'old_prefix'], rank] = 1
     
 
     # Find the next number_of_max_diff_case maximallty different solutions from 
