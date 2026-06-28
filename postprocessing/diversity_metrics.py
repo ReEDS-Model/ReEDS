@@ -45,6 +45,7 @@ def main():
     case_file = pd.read_csv(case_file)
     optimal_case = case_file['old_prefix'].iloc[0]
     rv_cases = case_file['old_prefix'].iloc[1:].values.tolist()
+    case_file['euclidean_distance'] = 0
     
     for case in rv_cases:
         output_path_rv = os.path.join(runs_path,case,'outputs')
@@ -62,8 +63,8 @@ def main():
         data['distance'] = (data['Value']-data['Value_opt'])**2
         data = data[data['t']==final_year]
         euclidean_dist = data['distance'].sum()
-        
-        case_file['euclidean_distance'] = 0
+        print(f"Case {case}'s distance from optimal: {euclidean_dist}")
+
         case_file.loc[case_file['old_prefix']==case,'euclidean_distance'] = euclidean_dist
     
     # Find the maximally different solution:
