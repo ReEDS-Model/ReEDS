@@ -146,16 +146,13 @@ if __name__ == '__main__':
 
     # Apply coal price multiplier
     coal_multiplier = pd.read_csv(os.path.join(inputs_case, 'coal_price_multiplier.csv'))
-    agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
-    regions_and_agglevel = copy_files.get_regions_and_agglevel(
-        reeds_path, inputs_case, save_regions_and_agglevel=False, overwrite=True)
-
+    coal_multiplier = coal_multiplier.rename(columns={'year':'t'})
+    
     # Aggregate based on spatial resolution
-    if (agglevel_variables["lvl"] != 'county') and ('county' not in agglevel_variables['agglevel']):
-        coal_multiplier = coal_multiplier.rename(columns={'FIPS':'county','year':'t'})
-        coal_multiplier = pd.merge(coal_multiplier, regions_and_agglevel["r_county"], on='county', how='left').dropna()
-        coal_multiplier = coal_multiplier.drop('county', axis=1)
-
+    county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
+    county2zone.index = 'p' + county2zone.index
+    coal_multiplier['r'] = coal_multiplier['FIPS'].map(county2zone)
+    coal_multiplier = coal_multiplier[['r','t','multiplier']]
     coal_multiplier = coal_multiplier.groupby(['r','t'], as_index=False).mean()
     coal_multiplier.to_csv(os.path.join(inputs_case,'coal_price_mult.csv'), index=False)
 
