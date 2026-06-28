@@ -76,7 +76,7 @@ dr_shed_hourly.h5,inputs/profiles_dr/dr_shed_hourly_{dr_shedscen}.h5,int(sw.GSw_
 e.csv,inputs/sets/e.csv,1,ignore,ignore,,,,,0,,,set,e,emission categories used in model,
 eall.csv,inputs/sets/eall.csv,1,ignore,ignore,,,,,,,,set,eall,emission categories used in reporting,
 emitrate.csv,inputs/emission_constraints/emitrate.csv,1,ignore,ignore,,,,,0,,,,,,
-emitrate_coal_mult.csv,inputs/emission_constraints/emitrate_coal_mult.csv,1,ignore,ignore,,,,,0,,,,,,
+emitrate_coal_multiplier.csv,inputs/emission_constraints/emitrate_coal_multiplier.csv,1,ignore,ignore,FIPS,,,,0,,,,,,
 energy_communities.csv,inputs/financials/energy_communities.csv,1,ignore,ignore,,,,,0,,,,,,region aggregation and filtering is handled in copy_files
 etype.csv,inputs/sets/etype.csv,1,ignore,ignore,,,,,,,,set,etype,emission types used in model (upstream and process),
 exog_cap_geohydro.csv,inputs/capacity_exogenous/exog_cap_geohydro_{GSw_SitingGeo}.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,region,"*tech,sc_point_gid,year",,0,0,,,,,,

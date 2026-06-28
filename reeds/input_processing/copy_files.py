@@ -1013,20 +1013,13 @@ def write_miscellaneous_files(
         os.path.join(inputs_case,'h2_leakage_rate.csv'))
     
     # Add coal emission rate multiplier by FIPS
-    # First, filter the counties that are in chosen GSw_Region
-    val_county = pd.read_csv(os.path.join(inputs_case,'county.csv'),names=['r'])
-
-    emitrate_coal_mult = pd.read_csv(
-        os.path.join(reeds_path,'inputs','emission_constraints','emitrate_coal_mult.csv'))
-    # Filter the counties that are in chosen GSw_Region
-    emitrate_coal_mult = emitrate_coal_mult[emitrate_coal_mult['r'].isin(val_county['r'])]
-
+    emitrate_coal_mult = pd.read_csv(os.path.join(inputs_case,'emitrate_coal_multiplier.csv'))
     # Aggregate based on spatial resolution
-    if (agglevel_variables["lvl"] != 'county') and ('county' not in agglevel_variables['agglevel']):
-        emitrate_coal_mult = emitrate_coal_mult.rename(columns={'r':'county'})
-        emitrate_coal_mult = pd.merge(emitrate_coal_mult, regions_and_agglevel["r_county"], on='county', how='left').dropna()
-        emitrate_coal_mult = emitrate_coal_mult.drop('county', axis=1)
-
+    county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
+    county2zone.index = 'p' + county2zone.index
+    emitrate_coal_mult['r'] = emitrate_coal_mult['FIPS'].map(county2zone)
+    
+    emitrate_coal_mult = emitrate_coal_mult.drop(columns=['FIPS'])
     emitrate_coal_mult = emitrate_coal_mult.groupby(['i','r','etype'], as_index=False).mean()
     emitrate_coal_mult.to_csv(os.path.join(inputs_case,'emitrate_coal_mult.csv'), index=False)
 
@@ -1355,8 +1348,8 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     inputs_case = args.inputs_case
 
     # #%% Settings for testing ###
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260522_transcostM0_OR_water','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_em_Pacific','inputs_case')
 
 
     # ---- Set up logger ----
