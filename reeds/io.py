@@ -127,15 +127,9 @@ def get_hierarchy(case=None, original=False, **kwargs):
             filepath = Path(standardize_case(case), 'inputs_case', 'hierarchy_original.csv')
         else:
             filepath = Path(standardize_case(case), 'inputs_case', 'hierarchy.csv')
+        hierarchy = pd.read_csv(filepath).rename(columns={'*r':'r', 'ba':'r'}).set_index('r')
     else:
-        ## TEMPORARY 20260402: Use deprecated hierarchy inputs.
-        ## Use the line below once we make the switch:
-        # hierarchy = assemble_hierarchy(case=case, **kwargs).set_index('r')
-        sw = reeds.io.get_switches(**kwargs)
-        filepath = Path(
-            reeds.io.reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'hierarchy_from134.csv',
-        )
-    hierarchy = pd.read_csv(filepath).rename(columns={'*r':'r', 'ba':'r'}).set_index('r')
+        hierarchy = assemble_hierarchy(case=case, **kwargs).set_index('r')
     return hierarchy
 
 
@@ -178,13 +172,42 @@ def get_county2zone(
 
     if as_map:
         dfout = dfin.set_index('FIPS')['r']
-    else:
+    elif case is None:
         fpath_countystate = Path(reeds.io.reeds_path, 'inputs', 'zones', 'county_state.csv')
         county_state = pd.read_csv(fpath_countystate, dtype=str)
         dfout = dfin.merge(county_state, on='FIPS', how='left')
+    else:
+        dfout = dfin
 
     return dfout
 
+
+def get_county_zones(
+    case: str | Path | None = None,
+    **kwargs
+) -> list[str]:
+    """
+    Get the set of county-level zones corresponding to a given zone set.
+    Reads from the inputs_case folder if {case} is provided or from the
+    default set of inputs (with key word arguments overriding case
+    switches, e.g., "GSw_ZoneSet") otherwise.
+
+    Args:
+        case: Path to a ReEDS case.
+
+    Returns:
+        list[str]
+    """
+    county2zone = get_county2zone(case, as_map=True, **kwargs)
+    county_zones = county2zone.loc[
+        county2zone.isin(
+            county2zone.value_counts()
+            .loc[county2zone.value_counts() == 1]
+            .index
+        )
+    ].tolist()
+
+    return county_zones
 
 
 def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
@@ -302,7 +325,10 @@ def get_dfmap(case=None, levels=None, exclude_water_areas=True):
     """Get dictionary of maps at different hierarchy levels"""
     hierarchy = (
         get_hierarchy(case, original=True)
-        .drop(columns=['aggreg', 'st_interconnect'], errors='ignore')
+        .drop(
+            columns=['aggreg', 'st_interconnect', 'md5', 'node_lat', 'node_lon'],
+            errors='ignore'
+        )
     )
     hierarchy_levels = list(hierarchy.columns)
     if levels:
@@ -1508,15 +1534,10 @@ def assemble_supplycurve(
         else:
             dfout['ba'] = dfout['region'].copy()
 
-    ## Drop reinforcement cost for counties
-    if case is not None:
-        agglevel_variables = reeds.spatial.get_agglevel_variables(
-            reeds_path, os.path.join(case, 'inputs_case')
-        )
-        counties = agglevel_variables['county_regions']
-    else:
-        counties = []
-    if len(counties):
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        counties = get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet)
         zerocols = ['cost_reinforcement_usd_per_mw', 'dist_reinforcement_km']
         dfout.loc[dfout.region.isin(counties), zerocols] = 0
         dfout.loc[dfout.region.isin(counties), 'cost_total_trans_usd_per_mw'] = dfout.loc[
