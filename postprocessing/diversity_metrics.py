@@ -40,8 +40,10 @@ def main():
     submetrics = ['pv', 'wind-ons', 'wind-ofs', 'coal', 'gas', 'nuclear', 'all' ]           
     year = 2050
     number_of_max_diff_case = 10
-    runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
-    case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
+    #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
+    #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
+    runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
+    case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
@@ -87,6 +89,7 @@ def main():
 #%% FUNCTIONS ###
 def euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, metric, submetric, year):
     for case in rv_cases:
+        print(case)
         output_path_rv = os.path.join(runs_path,case,'outputs')
         output_path_optimal = os.path.join(runs_path,optimal_case,'outputs')
         if metric == 'capacity':
@@ -105,8 +108,10 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, metric
 
         euclidean_dist = data['distance'].sum()
         #print(f"Case {case}'s distance from optimal: {euclidean_dist}")
-
-        case_file.loc[case_file['old_prefix']==case,'euclidean_distance'] = euclidean_dist
-        return case_file
+        if submetric == 'all':
+            case_file.loc[case_file['old_prefix']==case,'euclidean_distance'] = euclidean_dist
+        else:
+            case_file.loc[case_file['old_prefix']==case,'euclidean_distance'+submetric] = euclidean_dist
+    return case_file
 
 main()
