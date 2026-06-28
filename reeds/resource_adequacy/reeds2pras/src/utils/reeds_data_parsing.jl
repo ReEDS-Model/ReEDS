@@ -876,7 +876,7 @@ function disagg_existing_capacity(
     tech_ba_year_existing = DataFrames.subset(
         unitdata,
         :tech => DataFrames.ByRow(==(tech)),
-        :reeds_ba => DataFrames.ByRow(==(pca)),
+        :r => DataFrames.ByRow(==(pca)),
         :RetireYear => DataFrames.ByRow(>(year)),
         :StartYear => DataFrames.ByRow(<=(year)),
     )

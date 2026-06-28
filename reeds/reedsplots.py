@@ -1718,13 +1718,12 @@ def plot_prmtrade(
     val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     dfba = dfba.loc[val_r].copy()
 
-    if sw.get('GSw_RegionResolution', 'ba') != 'county':
-        endpoints = reeds.plots.df2gdf(
-            reeds.io.assemble_hierarchy(case).set_index('r'),
-            lat='node_lat', lon='node_lon',
-        )
-        dfba['x'] = dfba.index.map(endpoints.centroid.x)
-        dfba['y'] = dfba.index.map(endpoints.centroid.y)
+    endpoints = reeds.plots.df2gdf(
+        reeds.io.assemble_hierarchy(case).set_index('r'),
+        lat='node_lat', lon='node_lon',
+    )
+    dfba['x'] = dfba.index.map(endpoints.centroid.x)
+    dfba['y'] = dfba.index.map(endpoints.centroid.y)
 
     ### Get scaling and layout
     _vmax = dfplot.MW.abs().max() if vmax in [None, 0, 0.] else vmax
@@ -5773,14 +5772,8 @@ def plot_capacity_offline(
     ### Get temperatures
     temperatures = reeds.io.get_temperatures(case)
 
-    ## Aggregate if necessary
+    ### Get switches
     sw = reeds.io.get_switches(case)
-
-    if sw['GSw_RegionResolution'] == 'aggreg':
-        r2aggreg = pd.read_csv(
-            os.path.join(case, 'inputs_case', 'hierarchy_original.csv')
-        ).rename(columns={'ba':'r'}).set_index('r').aggreg
-        temperatures = temperatures.rename(columns=r2aggreg)
 
     hierarchy = reeds.io.get_hierarchy(case)
     r2level = hierarchy[level]
