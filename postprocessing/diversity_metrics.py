@@ -37,6 +37,9 @@ def main():
     
     ######################################### FOR TESTING/DEBUGGING #########################################
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
+    submetrics = ['pv', 'wind-ons', 'wind-ofs', 'coal', 'gas', 'nuclear', 'all' ]           
+    year = 2050
+    number_of_max_diff_case = 10
     runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
     case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
@@ -46,7 +49,43 @@ def main():
     optimal_case = case_file['old_prefix'].iloc[0]
     rv_cases = case_file['old_prefix'].iloc[1:].values.tolist()
     case_file['euclidean_distance'] = 0
+    case_file['rank'] = 0
+    case_file['euclidean_distance_pv'] = 0
+    case_file['euclidean_distance_wind-ons'] = 0
+    case_file['euclidean_distance_wind-ofs'] = 0
+    case_file['euclidean_distance_coal'] = 0
+    case_file['euclidean_distance_gas'] = 0
+    case_file['euclidean_distance_nuclear'] = 0
+    case_file['rank_pv'] = 0
+    case_file['rank_wind-ons'] = 0
+    case_file['rank_wind-ofs'] = 0
+    case_file['rank_coal'] = 0
+    case_file['rank_gas'] = 0
+    case_file['rank_nuclear'] = 0
     
+    # Find the maximally different solution from optimal solution:
+    for submetric in submetrics:
+        case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, metric, submetric, year)
+        if submetric =='all':
+            case_file.loc[case_file['old_prefix']==case_file.loc[case_file['euclidean_distance'].idxmax(), 'old_prefix'], 'rank'] = 1
+        else:
+            case_file.loc[case_file['old_prefix']==case_file.loc[case_file['euclidean_distance_'+submetric].idxmax(), 'old_prefix'], 'rank_'+submetric] = 1
+    
+
+    # Find the next number_of_max_diff_case maximallty different solutions from 
+    # optimal solution and maximally different solutions so far
+    #for i in list(range(number_of_max_diff_case)):
+    #    rv_cases_i = rv_cases.remove(case_file.loc[case_file['rank']>i, 'old_prefix'])
+    #    sel_cases_i = optimal_case.append(case_file.loc[case_file['rank']>i, 'old_prefix'])
+
+    # Calculate Gini index
+
+    case_file.to_csv(os.path.join(runs_path,'case_diversity_metrics.csv'))    
+
+
+######################################################################################################
+#%% FUNCTIONS ###
+def euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, metric, submetric, year):
     for case in rv_cases:
         output_path_rv = os.path.join(runs_path,case,'outputs')
         output_path_optimal = os.path.join(runs_path,optimal_case,'outputs')
@@ -59,21 +98,15 @@ def main():
 
         data = data.merge(data_optimal, on=['i','r','t'], how='left')
         data = data.fillna(0)
-        final_year = 2050
         data['distance'] = (data['Value']-data['Value_opt'])**2
-        data = data[data['t']==final_year]
+        data = data[data['t']==year]
+        if submetric != 'all':
+            data = data[data['i'].str.contains(submetric)]
+
         euclidean_dist = data['distance'].sum()
-        print(f"Case {case}'s distance from optimal: {euclidean_dist}")
+        #print(f"Case {case}'s distance from optimal: {euclidean_dist}")
 
         case_file.loc[case_file['old_prefix']==case,'euclidean_distance'] = euclidean_dist
-    
-    # Find the maximally different solution:
-    case_file['max_diff_case'] = case_file.loc[case_file['euclidean_distance'].idxmax(), 'old_prefix']
-
-    case_file.to_csv(os.path.join(runs_path,'case_diversity_metrics.csv'))    
-
-
-######################################################################################################
-#%% FUNCTIONS ###
+        return case_file
 
 main()
