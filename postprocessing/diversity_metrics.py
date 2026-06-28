@@ -112,9 +112,10 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, metric
         euclidean_dist = data['distance'].sum()
         #print(f"Case {case}'s distance from optimal: {euclidean_dist}")
         if submetric == 'all':
-            case_file.loc[case_file['old_prefix']==case,'euclidean_distance'] = euclidean_dist
+            col = 'euclidean_distance'
         else:
-            case_file.loc[case_file['old_prefix']==case,'euclidean_distance'+submetric] = euclidean_dist
+            col = 'euclidean_distance_'+submetric
+        case_file.loc[case_file['old_prefix']==case,col] = euclidean_dist
     return case_file
 
 main()
