@@ -21,6 +21,7 @@ import numpy as np
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+from reeds.input_processing import copy_files
 # Time the operation of this script
 tic = datetime.datetime.now()
 
@@ -98,9 +99,9 @@ if __name__ == '__main__':
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
 
-    # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260609_cendivM0_Pacific','inputs_case')
+    #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_pm_Pacific','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
@@ -145,14 +146,21 @@ if __name__ == '__main__':
 
     # Apply coal price multiplier
     coal_multiplier = pd.read_csv(os.path.join(inputs_case, 'coal_price_multiplier.csv'))
-    coal_multiplier = coal_multiplier.melt(id_vars = ['year']).rename(columns={'variable':'cendiv'})
-    coal_multiplier = coal_multiplier.loc[coal_multiplier['cendiv'].isin(val_cendiv)]
-    coal_multiplier = coal_multiplier.merge(r_cendiv,on='cendiv',how='left')
-    coal_multiplier = coal_multiplier.drop('cendiv', axis=1)
-    coal_multiplier = coal_multiplier[['year','r','value']].rename(columns={'year':'t','value':'coal_mult'})
+    agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
+    regions_and_agglevel = copy_files.get_regions_and_agglevel(
+        reeds_path, inputs_case, save_regions_and_agglevel=False, overwrite=True)
+
+    # Aggregate based on spatial resolution
+    if (agglevel_variables["lvl"] != 'county') and ('county' not in agglevel_variables['agglevel']):
+        coal_multiplier = coal_multiplier.rename(columns={'FIPS':'county','year':'t'})
+        coal_multiplier = pd.merge(coal_multiplier, regions_and_agglevel["r_county"], on='county', how='left').dropna()
+        coal_multiplier = coal_multiplier.drop('county', axis=1)
+
+    coal_multiplier = coal_multiplier.groupby(['r','t'], as_index=False).mean()
+    coal_multiplier.to_csv(os.path.join(inputs_case,'coal_price_mult.csv'), index=False)
 
     coal = coal.merge(coal_multiplier, on = ['t','r'], how = 'left')
-    coal['coal'] = coal['coal']  * coal['coal_mult']
+    coal['coal'] = coal['coal']  * coal['multiplier']
     coal = coal[['t','r','coal']]
 
     #######################
