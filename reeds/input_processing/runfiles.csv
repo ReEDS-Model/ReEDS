@@ -37,7 +37,7 @@ ces_fraction.csv,inputs/state_policies/ces_fraction.csv,int(sw.GSw_StateRPS) != 
 climate_param.csv,inputs/sets/climate_param.csv,1,ignore,ignore,,,,,,,,set,climate_param,parameters defined in climate_heuristics_finalyear,
 co2_site_char.csv,inputs/ctus/co2_site_char.csv,1,ignore,ignore,,,,0,,,,,,,
 coal_price.csv,inputs/fuelprices/coal_{coalscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
-coal_price_multiplier.csv,inputs/fuelprices/coal_{coalscen}_multiplier.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
+coal_price_multiplier.csv,inputs/fuelprices/coal_{coalscen}_multiplier.csv,1,ignore,ignore,FIPS,,,,0,,,,,,
 construction_schedules.csv,inputs/financials/construction_schedules_{construction_schedules_suffix}.csv,1,ignore,ignore,,,,1,0,,,,,,
 construction_times.csv,inputs/financials/construction_times_{construction_times_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
 consume_char.csv,inputs/consume/consume_char_{GSw_H2_Inputs}.csv,int(sw.GSw_H2) != 0,ignore,ignore,,"*i,t,parameter",,0,0,,,,,,
