@@ -1,4 +1,5 @@
 raw,display
+r,Region
 nercr,NERC regions
 transreg,Transmission Planning Region
 transgrp,Transmission Planning Subregion
