@@ -41,10 +41,10 @@ def main():
     submetrics = ['pv', 'wind-ons', 'wind-ofs', 'coal', 'gas', 'nuclear', 'all' ]           
     year = 2050
     number_of_max_diff_case = 10
-    runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
-    case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
-    #runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
-    #case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs.csv'  # Case file in csv that includes all case names to compare
+    #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
+    #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
+    runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
+    case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
