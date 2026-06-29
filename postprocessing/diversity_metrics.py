@@ -38,7 +38,7 @@ def main():
     
     ######################################### FOR TESTING/DEBUGGING #########################################
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
-    submetrics = ['pv']           
+    submetrics = ['pv','all']           
     year = 2050
     number_of_max_diff_case = 10
     #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
