@@ -1295,25 +1295,43 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .groupby(['i','r','h'], as_index=False)
         .agg(aggmethod, *args)
     )
-
+    
     #scale cf_vre so annual average matches the original timeseries at the GSw_HourlyClusterRegionLevel
     if not periodtype.startswith('stress'):
-        orig_cf = recf.mean(axis=0).rename('orig_cf').reset_index()
-        orig_cf['i'] = orig_cf['index'].map(lambda x: x.split('|')[0])
-        orig_cf['r'] = orig_cf['index'].map(lambda x: x.split('|')[1])
+        cluster_level = sw.get('GSw_HourlyClusterRegionLevel')
+        rmap = pd.Series(hierarchy.index, index=hierarchy.index) if cluster_level == 'r' else hierarchy[cluster_level]
 
-        rep_cf = cf_vre.merge(hours.reset_index(), on='h')
-        rep_cf['weighted_cf'] = rep_cf['cf'] * rep_cf['numhours']
-        rep_cf_ann = rep_cf.groupby(['i', 'r'], as_index=False)['weighted_cf'].sum()
-        rep_cf_ann['rep_cf'] = rep_cf_ann['weighted_cf'] / hours.sum()
-    
-        scale_factors_cf = orig_cf.merge(rep_cf_ann, on=['i', 'r'])
-        scale_factors_cf['scale_factor'] = (scale_factors_cf['orig_cf'] / scale_factors_cf['rep_cf']).fillna(1.0)
+        # Get original annual average CF from recf data for GSw_HourlyWeatherYears
+        df_orig_cf = (
+            recf[recf.index.map(hmap_allyrs.set_index('actual_h').year.isin(sw['GSw_HourlyWeatherYears']))]
+            .mean(axis=0).rename('orig_cf').reset_index()
+        )
+        df_orig_cf['i'] = df_orig_cf['index'].map(lambda x: x.split('|')[0])
+        df_orig_cf['r'] = df_orig_cf['index'].map(lambda x: x.split('|')[1])
+        df_orig_cf['cluster_reg'] = df_orig_cf['r'].map(rmap)
+        orig_cf_agg = df_orig_cf.groupby(['i', 'cluster_reg'], as_index=False)['orig_cf'].mean()
+
+        # Get representative annual average CF from clustered data
+        df_rep_cf = cf_vre.merge(hours.reset_index(), on='h')
+        df_rep_cf['weighted_cf'] = df_rep_cf['cf'] * df_rep_cf['numhours']
+        rep_ann_cf = df_rep_cf.groupby(['i', 'r'], as_index=False)['weighted_cf'].sum()
+        rep_ann_cf['rep_cf'] = rep_ann_cf['weighted_cf']/hours.sum()
+        rep_ann_cf['cluster_reg'] = rep_ann_cf['r'].map(rmap)
+        rep_cf_agg = rep_ann_cf.groupby(['i', 'cluster_reg'], as_index=False)['rep_cf'].mean()
+        
+        # Calculate scaling factor and apply to cf_vre
+        scale_factors_cf = orig_cf_agg.merge(rep_cf_agg, on=['i', 'cluster_reg'])
+        scale_factors_cf['scale_factor'] = (scale_factors_cf['orig_cf']/scale_factors_cf['rep_cf']).fillna(1.0)
         scale_factors_cf.loc[scale_factors_cf['rep_cf'] == 0, 'scale_factor'] = 1.0
-        cf_vre = cf_vre.merge(scale_factors_cf[['i', 'r', 'scale_factor']], on=['i', 'r'], how='left')
+
+        cf_vre['cluster_reg'] = cf_vre['r'].map(rmap)
+        cf_vre = cf_vre.merge(
+            scale_factors_cf[['i', 'cluster_reg', 'scale_factor']],
+            on=['i', 'cluster_reg'], how='left'
+        )
         cf_vre['cf'] *= cf_vre['scale_factor']
         cf_vre['cf'] = cf_vre['cf'].clip(upper=1.0)
-        cf_vre.drop(columns=['scale_factor'], inplace=True)
+        cf_vre.drop(columns=['cluster_reg', 'scale_factor'], inplace=True)
 
     load_long = (
         load_h
