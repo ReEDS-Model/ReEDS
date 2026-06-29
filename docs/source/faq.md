@@ -59,9 +59,9 @@ Yes, you can configure ReEDS as a single interconnect. Limiting the spatial exte
 
 The ReEDS model is capable of capturing several spatial resolutions. This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` switches.
 
-- Balancing areas (BAs) and aggregated groups of BAs: Aggregation level is controlled by the 'aggreg' column of the `inputs/zones/GSw_ZoneSet/hierarchy_from134.csv` file.
+- Aggregated groups of counties: Model zone is specified by the 'r' column of the `inputs/zones/GSw_ZoneSet/hierarchy.csv` file.
   - 134 zones: `GSw_ZoneSet = z134`
-  - 132 zones (**default**): `GSw_ZoneSet = z132`. Merges p119 into p122 and p30 into p28.
+  - 132 zones (**default**): `GSw_ZoneSet = z132`. Identical to z134 except merges p119 into p122 and p30 into p28.
   - 69 zones: `GSw_ZoneSet = z69`. Obeys state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
   - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
   - 48 zones: `GSw_ZoneSet = z48`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states (highly simplified).
