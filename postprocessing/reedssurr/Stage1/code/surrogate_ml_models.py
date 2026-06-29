@@ -33,8 +33,6 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
 
-from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.dummy import DummyRegressor
 from sklearn.model_selection import KFold, LeaveOneOut
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
@@ -60,38 +58,6 @@ except ImportError:
 
 
 # ============================================================================
-# CUSTOM BASELINE: nearest-design lookup
-# ============================================================================
-
-class NearestDesignRegressor(BaseEstimator, RegressorMixin):
-    """Returns the Y of the training row whose X is closest in Hamming distance.
-
-    A defensible baseline for categorical / factorial designs: if the surrogate
-    can't beat 'just return the most similar training case', it isn't earning
-    its keep.
-    """
-
-    def __init__(self):
-        self.X_ = None
-        self.Y_ = None
-
-    def fit(self, X, y):
-        self.X_ = np.asarray(X, dtype=float)
-        self.Y_ = np.asarray(y, dtype=float)
-        return self
-
-    def predict(self, X):
-        X = np.asarray(X, dtype=float)
-        # Hamming distance for integer-encoded factorial inputs (ties broken
-        # by Euclidean to make the choice deterministic).
-        dists_hamming = (X[:, None, :] != self.X_[None, :, :]).sum(axis=2)
-        dists_eucl = np.linalg.norm(X[:, None, :] - self.X_[None, :, :], axis=2)
-        combined = dists_hamming + 1e-6 * dists_eucl
-        nearest = combined.argmin(axis=1)
-        return self.Y_[nearest]
-
-
-# ============================================================================
 # CONFIGURATION
 # ============================================================================
 
@@ -102,9 +68,15 @@ class Config:
     output_dir: str = "../outputs/overall"
     random_state: int = 42
     n_folds: int = 10  # Set to n_samples for LOO-CV
-    # Default model list: 3 baselines + 3 ML methods + NGBoost (UQ-native)
+    # Default model list: 1 baseline (knn) + 2 linear + 3 tree/ML + NGBoost (UQ-native).
+    # Two legacy baselines were dropped:
+    #   * ``mean``    — DummyRegressor predicting the column mean; R² ≈ 0 by
+    #     construction, useless for model selection.
+    #   * ``nearest`` — 1-NN lookup over the factorial design; regional mean
+    #     R² ≈ 0 (worse than ``mean``) and silently failed to load in the
+    #     parity grid, so it only cluttered the dashboard.
     models: list = field(default_factory=lambda: [
-        "mean", "knn", "nearest", "ridge", "lasso", "rf", "xgb", "nn", "ngboost",
+        "knn", "ridge", "lasso", "rf", "xgb", "nn", "ngboost",
     ])
     # Filter: only keep Y columns with sufficient variance
     min_variance_threshold: float = 1e-10
@@ -138,15 +110,7 @@ def get_model(name: str, n_outputs: int, config: Config):
     model is wrapped in :class:`MultiOutputRegressor` so it trains one
     independent surrogate per output, mirroring how XGBoost and NGBoost
     already run. This gives an apples-to-apples comparison across families.
-    The two pure baselines (``mean``, ``nearest``) are left as-is because
-    wrapping them only adds bookkeeping cost without changing any
-    prediction.
     """
-    if name == "mean":
-        return DummyRegressor(strategy="mean"), "Mean (baseline)"
-    if name == "nearest":
-        return NearestDesignRegressor(), "Nearest-design lookup (baseline)"
-
     if name == "knn":
         base = KNeighborsRegressor(
             n_neighbors=config.knn_k, weights="distance"
@@ -231,6 +195,11 @@ def load_data(config: Config):
     x_cols : list[str]
     y_cols : list[str]   (already filtered to non-constant outputs)
     case_names : list[str] or None   (if a 'case_name' column exists in the CSV)
+    constants : dict[str, float]
+        Constant Y columns that were dropped before fitting (variance below
+        ``min_variance_threshold``) mapped to their constant value. Used
+        downstream so the dashboard / Predict tab can surface them as point
+        estimates instead of silently omitting them.
     """
     df = pd.read_csv(config.data_path)
     print(f"Loaded data: {df.shape[0]} samples, {df.shape[1]} columns")
@@ -248,17 +217,24 @@ def load_data(config: Config):
     print(f"  X features: {X.shape[1]} ({x_cols})")
     print(f"  Y outputs: {Y.shape[1]}")
 
-    # Filter out constant Y columns (zero variance)
+    # Filter out constant Y columns (zero variance). For each dropped
+    # column we also record its constant value (the column mean, which
+    # equals every observation for a truly constant series) so it can be
+    # surfaced as a "trivially predicted" point estimate downstream.
     y_var = Y.var(axis=0)
     valid_mask = y_var > config.min_variance_threshold
-    n_removed = (~valid_mask).sum()
+    n_removed = int((~valid_mask).sum())
+    constants: dict[str, float] = {}
     if n_removed > 0:
-        print(f"  Removed {n_removed} constant Y columns (zero variance)")
+        dropped_idx = np.where(~valid_mask)[0]
+        for i in dropped_idx:
+            constants[y_cols[i]] = float(Y[:, i].mean())
+        print(f"  Removed {n_removed} constant Y columns (recorded as constant_outputs)")
     Y = Y[:, valid_mask]
     y_cols = [c for i, c in enumerate(y_cols) if valid_mask[i]]
     print(f"  Final Y outputs: {Y.shape[1]}")
 
-    return X, Y, x_cols, y_cols, case_names
+    return X, Y, x_cols, y_cols, case_names, constants
 
 
 # ============================================================================
@@ -506,7 +482,7 @@ def run_pipeline(config: Config):
 
     # 1. Load data
     print("\n[1/4] Loading data...")
-    X, Y, x_cols, y_cols, case_names = load_data(config)
+    X, Y, x_cols, y_cols, case_names, constants = load_data(config)
     n_samples = X.shape[0]
 
     cv_type = "LOO-CV" if config.n_folds >= n_samples else f"{config.n_folds}-fold CV"
@@ -539,6 +515,11 @@ def run_pipeline(config: Config):
         "n_y_outputs": int(Y.shape[1]),
         "evaluation": "Out-of-fold predictions (all samples used for both training and evaluation)",
     }
+    # Record dropped-but-known-constant outputs so the dashboard / Predict
+    # tab can surface them as point estimates (σ = 0). Without this they
+    # silently disappear from predictions even though we know the exact
+    # value (e.g. exogenous DistPV capacity, never-built techs).
+    running_summary["constant_outputs"] = dict(constants)
 
     for model_name in config.models:
         if model_name == "xgb" and not HAS_XGBOOST:
@@ -739,9 +720,9 @@ def main():
     )
     parser.add_argument(
         "--models", nargs="+",
-        default=["mean", "knn", "nearest", "ridge", "lasso", "rf", "xgb", "nn", "ngboost"],
-        choices=["mean", "knn", "nearest", "ridge", "lasso", "rf", "xgb", "nn", "ngboost"],
-        help="Models to test. 'mean'/'knn'/'nearest' are baselines; "
+        default=["knn", "ridge", "lasso", "rf", "xgb", "nn", "ngboost"],
+        choices=["knn", "ridge", "lasso", "rf", "xgb", "nn", "ngboost"],
+        help="Models to test. 'knn' is the baseline; "
              "'ngboost' gives native UQ but is slow.",
     )
     parser.add_argument(

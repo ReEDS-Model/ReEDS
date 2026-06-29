@@ -59,16 +59,6 @@
       "n_outputs_r2_above_0.95": 23,
       "artifact": "models/nn.joblib"
     },
-    "mean": {
-      "display_name": "Mean (baseline)",
-      "oof_r2_mean": -0.0042204881831824775,
-      "oof_r2_median": -0.004207877058134413,
-      "oof_r2_min": -0.007580562240796063,
-      "oof_r2_max": -0.001728278628327029,
-      "n_outputs_r2_above_0.9": 0,
-      "n_outputs_r2_above_0.95": 0,
-      "artifact": "models/mean.joblib"
-    },
     "knn": {
       "display_name": "k-NN (k=3, baseline)",
       "oof_r2_mean": 0.598423121750307,
@@ -78,16 +68,6 @@
       "n_outputs_r2_above_0.9": 4,
       "n_outputs_r2_above_0.95": 0,
       "artifact": "models/knn.joblib"
-    },
-    "nearest": {
-      "display_name": "Nearest-design lookup (baseline)",
-      "oof_r2_mean": 0.1788292355887037,
-      "oof_r2_median": 0.3470581951691151,
-      "oof_r2_min": -1.510330578512396,
-      "oof_r2_max": 0.8271758902527675,
-      "n_outputs_r2_above_0.9": 0,
-      "n_outputs_r2_above_0.95": 0,
-      "artifact": "models/nearest.joblib"
     },
     "ngboost": {
       "display_name": "NGBoost (distributional, UQ-native)",
@@ -99,5 +79,19 @@
       "n_outputs_r2_above_0.95": 21,
       "artifact": "models/ngboost.joblib"
     }
+  },
+  "constant_outputs": {
+    "cap_distpv": 12994.628098999998,
+    "cap_hydED": 142.0,
+    "cap_hydEND": 405.8000000000002,
+    "cap_lfill-gas": 24.399999999999995,
+    "gen_Gas-CT_H2-CT": 0.0,
+    "gen_coal-igcc": 0.0,
+    "gen_coal-new": 0.0,
+    "gen_wind-ofs_2": 0.0,
+    "gen_wind-ofs_3": 0.0,
+    "gen_wind-ofs_7": 0.0,
+    "gen_wind-ofs_8": 0.0,
+    "gen_wind-ons_2": 0.0
   }
 }

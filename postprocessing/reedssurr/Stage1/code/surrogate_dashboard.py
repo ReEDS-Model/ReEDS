@@ -227,6 +227,54 @@ def _training_df_for_layer(short: str) -> pd.DataFrame:
     return df
 
 
+def _constants_for_layer(short: str) -> dict[str, float]:
+    """Return the ``constant_outputs`` dict written by ``surrogate_ml_models``.
+
+    Each entry maps a Y column (e.g. ``cap_distpv``) to the constant value
+    it takes across every training case. These columns were dropped from
+    model fitting because their variance is below ``min_variance_threshold``,
+    but we still know the exact value — so downstream the dashboard surfaces
+    them as point estimates (\u03c3 = 0) instead of silently omitting them.
+
+    Empty dict if the summary file is missing the key (e.g. an older
+    training run that pre-dates this feature).
+    """
+    summary = _summary_for_layer(short)
+    raw = summary.get("constant_outputs", {}) if isinstance(summary, dict) else {}
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, float] = {}
+    for k, v in raw.items():
+        try:
+            out[str(k)] = float(v)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _augment_predicted_with_constants(predicted: pd.Series, short: str) -> pd.Series:
+    """Append known-constant Y columns to a model's prediction Series.
+
+    The trainer drops zero-variance columns before fitting (R\u00b2 is
+    undefined, scalers divide by zero, NGBoost crashes). But for those
+    columns we know the exact value (e.g. ``cap_distpv`` is always
+    12,994.6 MW because DistPV is an exogenous policy input in this
+    sweep). This helper splices those constants into the prediction so
+    the Predict tab's bar charts include them. Existing entries take
+    precedence so a model that did learn a column is never overwritten.
+    """
+    constants = _constants_for_layer(short)
+    if not constants:
+        return predicted
+    if predicted is None or not isinstance(predicted, pd.Series):
+        return predicted
+    missing = {k: v for k, v in constants.items() if k not in predicted.index}
+    if not missing:
+        return predicted
+    extra = pd.Series(missing, name=predicted.name)
+    return pd.concat([predicted, extra])
+
+
 def _models_for_layer(short: str) -> dict:
     """Discover ``.joblib`` artifacts for a specific layer."""
     target = "overall" if "overall" in short.lower() else "regional"
@@ -535,8 +583,12 @@ source = ColumnDataSource(data={"x": [], "tech": [], "top": [], "color": []})
 # how many bars / cost buckets / tech categories are active.
 _PLOT_WIDTH_SYSTEM = 460
 _PLOT_HEIGHT = 520
-_DIFF_HEIGHT = 320        # diff panel: predicted − actual, sandwiched between bars and CI
-_UQ_HEIGHT = 240          # secondary panel showing per-category 90% CI
+# All three stacked panels (main bars / per-category error / UQ-coloured stack)
+# share the same height so the figures line up as equal-size tiles. Inner-frame
+# alignment is still guaranteed by ``min_border_left`` / ``min_border_right``
+# being identical on each, and by ``x_range=plot.x_range`` on the lower panels.
+_DIFF_HEIGHT = _PLOT_HEIGHT   # was 320 — match main bar plot
+_UQ_HEIGHT = _PLOT_HEIGHT     # was 240 — match main bar plot
 _LEGEND_WIDTH = 220
 _BAR_PX = 55              # nominal pixels per stacked bar (Actual or Predicted)
 _AXIS_PAD_PX = 100        # y-axis label + tick labels + plot margin
@@ -1713,6 +1765,13 @@ def _redraw():
             used_oof = True
         else:
             predicted = predict(artifact, levels)
+        # Splice in known-constant outputs the trainer dropped (zero
+        # variance \u2192 R\u00b2 undefined / scaler divides by zero). Without
+        # this, the Predicted bar misses things like cap_distpv that the
+        # Actual bar shows, even though the value is known exactly.
+        predicted = _augment_predicted_with_constants(
+            predicted, _active_layer_short()
+        )
         surrogate_ms = (time.perf_counter() - t0) * 1000.0
         pred_var_raw = _row_slice(predicted, active_prefix)
         pred_cap_raw = _row_slice(predicted, "cap_")
@@ -2939,8 +2998,8 @@ def _get_oof_pred(name: str):
     """Return ``(Y_true, Y_pred, y_cols)`` for model ``name`` or ``None``.
 
     Cached per (stage, model); cache is cleared by ``_set_active_stage``.
-    Any artifact-loading error (e.g. custom-class unpickle failure on
-    ``nearest``) is swallowed and the model is silently skipped.
+    Any artifact-loading error is swallowed and the model is silently
+    skipped.
     """
     if not name:
         return None
@@ -3145,7 +3204,7 @@ def _build_parity_grid_for_layer(layer_short: str) -> None:
     order = [k for k in _rank_by_composite(layer_summary)
              if k in layer_models]
     for k in order:
-        # Skip models that fail to load (e.g. ``nearest`` custom-class issue).
+        # Skip models that fail to load.
         triple = _get_oof_pred_for_layer(layer_short, k)
         if triple is None:
             continue
@@ -4001,139 +4060,708 @@ predict_tab = TabPanel(
     ),
     title="Predict",
 )
+
+
+# ---------------------------------------------------------------------------
+# §2 Prediction overlook — per-item parity grid (model × layer × category)
+# ---------------------------------------------------------------------------
+PRED_OVERLOOK_FIG_W = 260
+PRED_OVERLOOK_FIG_H = 260
+PRED_OVERLOOK_COLS = 4
+PRED_OVERLOOK_MAX_PANELS = 200  # safety cap on number of panels rendered
+
+CATEGORY_OPTIONS = ["All", "Capacity", "Generation", "System cost", "Transmission"]
+
+
+def _po_initial_model(layer_short: str) -> str:
+    models = list(_models_for_layer(layer_short).keys())
+    if not models:
+        return ""
+    return "rf" if "rf" in models else models[0]
+
+
+_po_initial_layer = "overall" if _models_for_layer("overall") else "regional"
+_po_initial_models = list(_models_for_layer(_po_initial_layer).keys())
+
+po_layer_select = Select(
+    title="Layer", value=_po_initial_layer,
+    options=list(PARITY_LAYERS), width=140,
+)
+po_model_select = Select(
+    title="Model", value=_po_initial_model(_po_initial_layer),
+    options=_po_initial_models or [""], width=180,
+)
+po_category_select = Select(
+    title="Category", value="All", options=CATEGORY_OPTIONS, width=180,
+)
+po_status_div = Div(text="", sizing_mode="stretch_width")
+po_holder = column(
+    Div(text="<i>Loading…</i>"),
+    width=PRED_OVERLOOK_FIG_W * PRED_OVERLOOK_COLS + 60,
+)
+
+
+def _make_singleoutput_parity_fig(output_name: str, color: str):
+    """One parity subplot for a single output column (486 case-points)."""
+    src = ColumnDataSource(data=dict(actual=[], predicted=[], case=[]))
+    diag = ColumnDataSource(data=dict(x=[0.0, 1.0], y=[0.0, 1.0]))
+    fig = figure(
+        width=PRED_OVERLOOK_FIG_W, height=PRED_OVERLOOK_FIG_H,
+        x_range=Range1d(start=0.0, end=1.0),
+        y_range=Range1d(start=0.0, end=1.0),
+        title=output_name,
+        toolbar_location="above",
+        tools="pan,wheel_zoom,box_zoom,reset,save",
+        active_drag="box_zoom",
+        active_scroll="wheel_zoom",
+        x_axis_label="Actual",
+        y_axis_label="Predicted",
+        output_backend="webgl",
+    )
+    fig.toolbar.logo = None
+    fig.title.text_font_size = "9pt"
+    fig.line(x="x", y="y", source=diag, line_color="#444",
+             line_dash="dashed", line_width=1.0)
+    sct = fig.scatter(
+        x="actual", y="predicted", size=5, alpha=0.7,
+        fill_color=color, line_color=None, source=src,
+    )
+    fig.add_tools(HoverTool(
+        renderers=[sct],
+        tooltips=[
+            ("Case", "@case"),
+            ("Actual", "@actual{0,0.000}"),
+            ("Predicted", "@predicted{0,0.000}"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    return fig, src, diag
+
+
+# Output prefixes that identify a Y column in the training CSV (everything else
+# \u2014 ``x_*`` design dims and the ``case`` identifier \u2014 is metadata).
+_Y_COL_PREFIXES = ("cap_", "cost_", "gen_", "runtime_", "tran_")
+
+
+def _all_y_cols_for_layer(short: str) -> list[str]:
+    """Full list of Y output columns in the training CSV for ``short`` layer.
+
+    Includes ALL outputs that were in the original training data, regardless
+    of whether the trainer kept them. Columns the trainer dropped (because
+    their variance fell below ``min_variance_threshold``) are present here
+    but absent from any model's ``y_cols``. This is what lets the parity
+    grid render a warning panel for those silently-skipped outputs.
+    """
+    df = _training_df_for_layer(short)
+    if df is None or df.empty:
+        return []
+    return [c for c in df.columns if c.startswith(_Y_COL_PREFIXES)]
+
+
+# Visual styling for "dropped output" warning panels: muted red on a faint
+# pink background so they stand out as different from the layer-coloured
+# parity dots above.
+_DROPPED_OUTPUT_COLOR = "#c0392b"
+_DROPPED_OUTPUT_BG = "#fdecea"
+
+# Visual styling for "trivially predicted" panels: a calm green that signals
+# "this is fine — the model knows the exact value, it just isn't learned".
+# Used for outputs the trainer dropped because they're constant across all
+# training cases (variance \u2248 0). Distinct from the red theme above,
+# which is reserved for outputs we can't predict at all.
+_CONSTANT_OUTPUT_COLOR = "#1a7f37"
+_CONSTANT_OUTPUT_BG = "#eaf6ec"
+
+
+def _format_constant_value(v: float) -> str:
+    """Format a constant Y value for use in panel titles / hovers."""
+    if not np.isfinite(v):
+        return "n/a"
+    if v == 0:
+        return "0"
+    if abs(v) >= 1000:
+        return f"{v:,.1f}"
+    if abs(v) >= 1:
+        return f"{v:,.3f}"
+    return f"{v:.3g}"
+
+
+def _make_constant_parity_fig(output_name: str, constant_value: float,
+                              actual_values):
+    """Trivially-predicted parity panel for a known-constant output.
+
+    The trainer skipped this column because every training case has the
+    same value, so there was nothing to learn. The surrogate now returns
+    that constant exactly, so the prediction is perfect by construction.
+    We render a single dot at ``(constant, constant)`` on the y=x line and
+    annotate the panel with the value so the user can read it off the title.
+    """
+    actual = np.asarray(actual_values, dtype=float)
+    actual = actual[np.isfinite(actual)]
+    n = int(actual.size)
+    src = ColumnDataSource(data=dict(
+        actual=actual.tolist() if n else [constant_value],
+        predicted=[constant_value] * (n if n else 1),
+        case=list(range(n if n else 1)),
+    ))
+    diag = ColumnDataSource(data=dict(x=[0.0, 1.0], y=[0.0, 1.0]))
+    val_str = _format_constant_value(constant_value)
+    title_short = output_name if len(output_name) <= 24 else output_name[:22] + "\u2026"
+    fig = figure(
+        width=PRED_OVERLOOK_FIG_W, height=PRED_OVERLOOK_FIG_H,
+        x_range=Range1d(start=0.0, end=1.0),
+        y_range=Range1d(start=0.0, end=1.0),
+        title=f"{title_short}  \u2261 {val_str}",
+        toolbar_location="above",
+        tools="pan,wheel_zoom,box_zoom,reset,save",
+        active_drag="box_zoom",
+        active_scroll="wheel_zoom",
+        x_axis_label="Actual",
+        y_axis_label="Predicted (\u2261 constant)",
+        output_backend="webgl",
+        background_fill_color=_CONSTANT_OUTPUT_BG,
+        border_fill_color=_CONSTANT_OUTPUT_BG,
+    )
+    fig.toolbar.logo = None
+    fig.title.text_font_size = "9pt"
+    fig.title.text_color = _CONSTANT_OUTPUT_COLOR
+    fig.line(x="x", y="y", source=diag, line_color="#444",
+             line_dash="dashed", line_width=1.0)
+    sct = fig.scatter(
+        x="actual", y="predicted", size=8, alpha=0.85,
+        fill_color=_CONSTANT_OUTPUT_COLOR, line_color="white",
+        line_width=0.6, source=src, marker="circle",
+    )
+    fig.add_tools(HoverTool(
+        renderers=[sct],
+        tooltips=[
+            ("Output", output_name),
+            ("Case", "@case"),
+            ("Actual", "@actual{0,0.000}"),
+            ("Prediction", f"\u2261 {val_str} (constant)"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    # Bound the axes symmetrically around the constant so the dot is
+    # centred and the y=x line is visible. If the constant is zero use a
+    # small symmetric range; otherwise pad \u00b1 10% around the value.
+    c = float(constant_value) if np.isfinite(constant_value) else 0.0
+    if c == 0:
+        lo, hi = -1.0, 1.0
+    else:
+        span = max(abs(c) * 0.1, 1e-6)
+        lo, hi = c - span, c + span
+    diag.data = dict(x=[lo, hi], y=[lo, hi])
+    fig.x_range.start = lo
+    fig.x_range.end = hi
+    fig.y_range.start = lo
+    fig.y_range.end = hi
+    return fig
+
+
+def _make_dropped_parity_fig(output_name: str, actual_values):
+    """Warning-style parity panel for an output the model never predicts.
+
+    Renders the actual values along the x-axis with a constant ``y = 0``
+    \u2014 the implicit prediction whenever a column is missing from the
+    artifact's ``y_cols``. The y=x diagonal is still drawn so users can
+    visually compare the gap between what the data shows and what the model
+    would have had to learn.
+    """
+    actual = np.asarray(actual_values, dtype=float)
+    actual = actual[np.isfinite(actual)]
+    n = int(actual.size)
+    src = ColumnDataSource(data=dict(
+        actual=actual.tolist(),
+        predicted=[0.0] * n,
+        case=list(range(n)),
+    ))
+    diag = ColumnDataSource(data=dict(x=[0.0, 1.0], y=[0.0, 1.0]))
+    fig = figure(
+        width=PRED_OVERLOOK_FIG_W, height=PRED_OVERLOOK_FIG_H,
+        x_range=Range1d(start=0.0, end=1.0),
+        y_range=Range1d(start=0.0, end=1.0),
+        title=output_name,
+        toolbar_location="above",
+        tools="pan,wheel_zoom,box_zoom,reset,save",
+        active_drag="box_zoom",
+        active_scroll="wheel_zoom",
+        x_axis_label="Actual",
+        y_axis_label="Predicted (always 0)",
+        output_backend="webgl",
+        background_fill_color=_DROPPED_OUTPUT_BG,
+        border_fill_color=_DROPPED_OUTPUT_BG,
+    )
+    fig.toolbar.logo = None
+    fig.title.text_font_size = "9pt"
+    fig.title.text_color = _DROPPED_OUTPUT_COLOR
+    fig.line(x="x", y="y", source=diag, line_color="#444",
+             line_dash="dashed", line_width=1.0)
+    sct = fig.scatter(
+        x="actual", y="predicted", size=6, alpha=0.85,
+        fill_color=_DROPPED_OUTPUT_COLOR, line_color="white",
+        line_width=0.5, source=src, marker="x",
+    )
+    fig.add_tools(HoverTool(
+        renderers=[sct],
+        tooltips=[
+            ("Output", output_name),
+            ("Case", "@case"),
+            ("Actual", "@actual{0,0.000}"),
+            ("Prediction", "(none \u2014 dropped at training)"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    # Bound the axes around the actual values; if all-zero, use a small
+    # symmetric range so the y=0 strip is still visible.
+    if n:
+        lo = float(min(actual.min(), 0.0))
+        hi = float(max(actual.max(), 0.0))
+    else:
+        lo, hi = -1.0, 1.0
+    if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
+        lo, hi = lo - 1.0, hi + 1.0
+    pad = max((hi - lo) * 0.05, 1e-6)
+    lo -= pad
+    hi += pad
+    diag.data = dict(x=[lo, hi], y=[lo, hi])
+    fig.x_range.start = lo
+    fig.x_range.end = hi
+    fig.y_range.start = lo
+    fig.y_range.end = hi
+    return fig
+
+
+def _build_predoverlook_grid(*_args) -> None:
+    layer = po_layer_select.value
+    model = po_model_select.value
+    cat = po_category_select.value
+    if not model:
+        po_holder.children = [Div(text="<i>No model selected.</i>")]
+        po_status_div.text = ""
+        return
+    triple = _get_oof_pred_for_layer(layer, model)
+    if triple is None:
+        po_holder.children = [Div(text=(
+            f"<i>Model '{model}' has no usable OOF data on the "
+            f"{layer} layer.</i>"
+        ))]
+        po_status_div.text = ""
+        return
+    Y_true, Y_pred, cols = triple
+    # Discover Y columns that the trainer dropped (variance below
+    # ``min_variance_threshold``). They exist in the training CSV but never
+    # appear in any model's ``y_cols`` \u2014 so the parity grid normally
+    # hides them. We split them into two buckets:
+    #   1. Known-constant   \u2192 green "trivially predicted" panels (the
+    #      surrogate now returns the exact value, so the prediction is
+    #      perfect by construction).
+    #   2. Truly unmodelled \u2192 red warning panels (defensive: in
+    #      practice empty, because every dropped column has a recorded
+    #      constant value).
+    df = _training_df_for_layer(layer)
+    all_y = _all_y_cols_for_layer(layer)
+    predicted_set = set(cols)
+    dropped_cols = [c for c in all_y if c not in predicted_set]
+    constants_map = _constants_for_layer(layer)
+    constant_cols = [c for c in dropped_cols if c in constants_map]
+    missing_cols = [c for c in dropped_cols if c not in constants_map]
+
+    if cat != "All":
+        keep_idx = [i for i, c in enumerate(cols)
+                    if _output_category(c) == cat]
+        constant_cols = [c for c in constant_cols
+                         if _output_category(c) == cat]
+        missing_cols = [c for c in missing_cols
+                        if _output_category(c) == cat]
+    else:
+        keep_idx = list(range(len(cols)))
+    total_pred = len(keep_idx)
+    total_constant = len(constant_cols)
+    total_missing = len(missing_cols)
+    if total_pred == 0 and total_constant == 0 and total_missing == 0:
+        po_holder.children = [Div(text=(
+            f"<i>No outputs in category '{cat}' for "
+            f"{layer}/{model}.</i>"
+        ))]
+        po_status_div.text = ""
+        return
+    truncated_pred = False
+    if total_pred > PRED_OVERLOOK_MAX_PANELS:
+        keep_idx = keep_idx[:PRED_OVERLOOK_MAX_PANELS]
+        truncated_pred = True
+    color = PARITY_LAYER_COLORS.get(layer, "#1f77b4")
+    figs: list = []
+    for i in keep_idx:
+        col = cols[i]
+        y_t = Y_true[:, i].astype(float)
+        y_p = Y_pred[:, i].astype(float)
+        finite = np.isfinite(y_t) & np.isfinite(y_p)
+        y_t = y_t[finite]
+        y_p = y_p[finite]
+        if y_t.size > 1 and y_t.var() > 0:
+            ss_res = float(np.sum((y_t - y_p) ** 2))
+            ss_tot = float(np.sum((y_t - y_t.mean()) ** 2))
+            r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+        else:
+            r2 = float("nan")
+        fig_, src, diag = _make_singleoutput_parity_fig(col, color)
+        src.data = dict(
+            actual=y_t.tolist(),
+            predicted=y_p.tolist(),
+            case=list(range(len(y_t))),
+        )
+        if y_t.size:
+            lo = float(min(y_t.min(), y_p.min()))
+            hi = float(max(y_t.max(), y_p.max()))
+        else:
+            lo, hi = 0.0, 1.0
+        if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
+            lo, hi = lo - 1.0, hi + 1.0
+        pad = max((hi - lo) * 0.05, 1e-6)
+        lo -= pad
+        hi += pad
+        diag.data = dict(x=[lo, hi], y=[lo, hi])
+        fig_.x_range.start = lo
+        fig_.x_range.end = hi
+        fig_.y_range.start = lo
+        fig_.y_range.end = hi
+        r2_str = f"R\u00b2={r2:.3f}" if np.isfinite(r2) else "R\u00b2=n/a"
+        title_short = col if len(col) <= 32 else col[:30] + "\u2026"
+        fig_.title.text = f"{title_short} \u00b7 {r2_str}"
+        figs.append(fig_)
+
+    # Render the "predicted" portion of the grid.
+    if figs:
+        rows_pred = [
+            row(*figs[i:i + PRED_OVERLOOK_COLS], spacing=8)
+            for i in range(0, len(figs), PRED_OVERLOOK_COLS)
+        ]
+        pred_block = column(*rows_pred, spacing=8)
+    else:
+        pred_block = Div(text=(
+            f"<i>No predicted outputs in category '{cat}' for "
+            f"{layer}/{model}.</i>"
+        ))
+
+    children = [pred_block]
+
+    # Trivially-predicted (known constant) panels \u2014 green theme.
+    if constant_cols:
+        const_figs: list = []
+        for col in constant_cols:
+            value = constants_map[col]
+            actuals = (
+                df[col].to_numpy(dtype=float)
+                if df is not None and col in df.columns
+                else np.array([value])
+            )
+            const_figs.append(_make_constant_parity_fig(col, value, actuals))
+        if const_figs:
+            const_header = Div(text=(
+                f"<div style='margin:18px 0 6px 0;padding:8px 12px;"
+                f"background:{_CONSTANT_OUTPUT_BG};border-left:4px solid "
+                f"{_CONSTANT_OUTPUT_COLOR};font-size:12px;color:#555'>"
+                f"<b style='color:{_CONSTANT_OUTPUT_COLOR}'>"
+                f"\u2713 {len(const_figs)} output(s) trivially predicted "
+                f"(constant across all training cases).</b> "
+                f"The trainer skipped these columns because their "
+                f"variance is below "
+                f"<code>min_variance_threshold</code> \u2014 there's "
+                f"nothing for an ML model to learn. The Predict tab now "
+                f"returns the exact value (\u03c3 = 0), so prediction "
+                f"error is zero by construction.</div>"
+            ))
+            const_rows = [
+                row(*const_figs[i:i + PRED_OVERLOOK_COLS], spacing=8)
+                for i in range(0, len(const_figs), PRED_OVERLOOK_COLS)
+            ]
+            children.append(const_header)
+            children.append(column(*const_rows, spacing=8))
+
+    # Truly-missing panels (no model AND no recorded constant) \u2014 red warning.
+    # In practice this list is empty because every variance-dropped column
+    # is recorded in ``constant_outputs``. Kept defensively so a future
+    # change to the drop rule doesn't silently hide outputs again.
+    if missing_cols and df is not None and not df.empty:
+        miss_figs: list = []
+        for col in missing_cols:
+            if col not in df.columns:
+                continue
+            actuals = df[col].to_numpy(dtype=float)
+            miss_figs.append(_make_dropped_parity_fig(col, actuals))
+        if miss_figs:
+            warn_header = Div(text=(
+                f"<div style='margin:18px 0 6px 0;padding:8px 12px;"
+                f"background:{_DROPPED_OUTPUT_BG};border-left:4px solid "
+                f"{_DROPPED_OUTPUT_COLOR};font-size:12px;color:#555'>"
+                f"<b style='color:{_DROPPED_OUTPUT_COLOR}'>"
+                f"\u26a0 {len(miss_figs)} output(s) not modeled.</b> "
+                f"No model fit and no constant value recorded. The "
+                f"surrogate has no answer for these.</div>"
+            ))
+            miss_rows = [
+                row(*miss_figs[i:i + PRED_OVERLOOK_COLS], spacing=8)
+                for i in range(0, len(miss_figs), PRED_OVERLOOK_COLS)
+            ]
+            children.append(warn_header)
+            children.append(column(*miss_rows, spacing=8))
+
+    po_holder.children = [column(*children, spacing=8)]
+    pieces = [
+        f"<b>{layer}</b> \u00b7 model <b>{model}</b> \u00b7 category "
+        f"<b>{cat}</b> \u00b7 predicted <b>{len(figs)}</b> of "
+        f"<b>{total_pred}</b> outputs"
+        f"{' (truncated to ' + str(PRED_OVERLOOK_MAX_PANELS) + ')' if truncated_pred else ''}"
+    ]
+    if total_constant:
+        pieces.append(
+            f"<span style='color:{_CONSTANT_OUTPUT_COLOR}'>"
+            f"\u2713 {total_constant} trivially predicted</span>"
+        )
+    if total_missing:
+        pieces.append(
+            f"<span style='color:{_DROPPED_OUTPUT_COLOR}'>"
+            f"\u26a0 {total_missing} not modeled</span>"
+        )
+    po_status_div.text = (
+        "<p style='font-size:12px;color:#555;margin:2px 0'>"
+        + " \u00b7 ".join(pieces) + ".</p>"
+    )
+
+
+def _po_on_layer_change(_attr, old, new):
+    if new == old:
+        return
+    models = list(_models_for_layer(new).keys())
+    po_model_select.options = models or [""]
+    if po_model_select.value not in models:
+        po_model_select.value = (
+            "rf" if "rf" in models else (models[0] if models else "")
+        )
+    _build_predoverlook_grid()
+
+
+po_layer_select.on_change("value", _po_on_layer_change)
+po_model_select.on_change("value", lambda _a, _o, _n: _build_predoverlook_grid())
+po_category_select.on_change("value", lambda _a, _o, _n: _build_predoverlook_grid())
+
+
+# ---------------------------------------------------------------------------
+# §3 Regional comparison — per-BA parity grid (regional layer only)
+# ---------------------------------------------------------------------------
+REG_COMP_FIG_W = 260
+REG_COMP_FIG_H = 260
+REG_COMP_COLS = 4
+REG_COMP_PER_BA_CAP = 5000  # downsample per-BA panels to keep browser responsive
+
+_rc_initial_models = list(_models_for_layer("regional").keys())
+_rc_initial_model = _po_initial_model("regional")
+
+rc_model_select = Select(
+    title="Model", value=_rc_initial_model,
+    options=_rc_initial_models or [""], width=180,
+)
+rc_category_select = Select(
+    title="Category", value="All", options=CATEGORY_OPTIONS, width=180,
+)
+rc_status_div = Div(text="", sizing_mode="stretch_width")
+rc_holder = column(
+    Div(text="<i>Loading…</i>"),
+    width=REG_COMP_FIG_W * REG_COMP_COLS + 60,
+)
+
+
+def _make_perba_parity_fig(region_label: str, color: str):
+    src = ColumnDataSource(data=dict(actual=[], predicted=[], output=[]))
+    diag = ColumnDataSource(data=dict(x=[0.0, 1.0], y=[0.0, 1.0]))
+    fig = figure(
+        width=REG_COMP_FIG_W, height=REG_COMP_FIG_H,
+        x_range=Range1d(start=0.0, end=1.0),
+        y_range=Range1d(start=0.0, end=1.0),
+        title=region_label,
+        toolbar_location="above",
+        tools="pan,wheel_zoom,box_zoom,reset,save",
+        active_drag="box_zoom",
+        active_scroll="wheel_zoom",
+        x_axis_label="Actual",
+        y_axis_label="Predicted",
+        output_backend="webgl",
+    )
+    fig.toolbar.logo = None
+    fig.title.text_font_size = "10pt"
+    fig.line(x="x", y="y", source=diag, line_color="#444",
+             line_dash="dashed", line_width=1.0)
+    sct = fig.scatter(
+        x="actual", y="predicted", size=4, alpha=0.55,
+        fill_color=color, line_color=None, source=src,
+    )
+    fig.add_tools(HoverTool(
+        renderers=[sct],
+        tooltips=[
+            ("Output", "@output"),
+            ("Actual", "@actual{0,0.000}"),
+            ("Predicted", "@predicted{0,0.000}"),
+        ],
+        point_policy="follow_mouse",
+    ))
+    return fig, src, diag
+
+
+def _region_sort_key(r: str) -> int:
+    if r.startswith("p") and r[1:].isdigit():
+        return int(r[1:])
+    return 99999
+
+
+def _build_regcomp_grid(*_args) -> None:
+    model = rc_model_select.value
+    cat = rc_category_select.value
+    if not model:
+        rc_holder.children = [Div(text="<i>No model selected.</i>")]
+        rc_status_div.text = ""
+        return
+    triple = _get_oof_pred_for_layer("regional", model)
+    if triple is None:
+        rc_holder.children = [Div(text=(
+            f"<i>Model '{model}' has no usable OOF data on the "
+            f"regional layer.</i>"
+        ))]
+        rc_status_div.text = ""
+        return
+    Y_true, Y_pred, cols = triple
+    by_region: dict[str, list[int]] = {}
+    for i, c in enumerate(cols):
+        _, _, region = _parse_output_name(c)
+        if region is None:
+            continue
+        if cat != "All" and _output_category(c) != cat:
+            continue
+        by_region.setdefault(region, []).append(i)
+    if not by_region:
+        rc_holder.children = [Div(text=(
+            f"<i>No per-BA outputs in category '{cat}'.</i>"
+        ))]
+        rc_status_div.text = ""
+        return
+    regions_sorted = sorted(by_region.keys(), key=_region_sort_key)
+    color = PARITY_LAYER_COLORS["regional"]
+    rng = np.random.default_rng(42)
+    figs: list = []
+    for region in regions_sorted:
+        idxs = by_region[region]
+        out_names = np.array([cols[i] for i in idxs], dtype=object)
+        Yt_slice = Y_true[:, idxs]
+        Yp_slice = Y_pred[:, idxs]
+        n_rows = Yt_slice.shape[0]
+        out_flat = np.tile(out_names, n_rows)
+        Yt_flat = Yt_slice.ravel()
+        Yp_flat = Yp_slice.ravel()
+        finite = np.isfinite(Yt_flat) & np.isfinite(Yp_flat)
+        Yt_flat = Yt_flat[finite]
+        Yp_flat = Yp_flat[finite]
+        out_flat = out_flat[finite]
+        n_total = len(Yt_flat)
+        if n_total > 1 and Yt_flat.var() > 0:
+            ss_res = float(np.sum((Yt_flat - Yp_flat) ** 2))
+            ss_tot = float(np.sum((Yt_flat - Yt_flat.mean()) ** 2))
+            r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+        else:
+            r2 = float("nan")
+        if n_total > REG_COMP_PER_BA_CAP:
+            sel = rng.choice(n_total, REG_COMP_PER_BA_CAP, replace=False)
+            Yt_flat = Yt_flat[sel]
+            Yp_flat = Yp_flat[sel]
+            out_flat = out_flat[sel]
+        fig_, src, diag = _make_perba_parity_fig(region, color)
+        src.data = dict(
+            actual=Yt_flat.tolist(),
+            predicted=Yp_flat.tolist(),
+            output=out_flat.tolist(),
+        )
+        if Yt_flat.size:
+            lo = float(min(Yt_flat.min(), Yp_flat.min()))
+            hi = float(max(Yt_flat.max(), Yp_flat.max()))
+        else:
+            lo, hi = 0.0, 1.0
+        if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
+            lo, hi = lo - 1.0, hi + 1.0
+        pad = max((hi - lo) * 0.05, 1e-6)
+        lo -= pad
+        hi += pad
+        diag.data = dict(x=[lo, hi], y=[lo, hi])
+        fig_.x_range.start = lo
+        fig_.x_range.end = hi
+        fig_.y_range.start = lo
+        fig_.y_range.end = hi
+        r2_str = f"R²={r2:.3f}" if np.isfinite(r2) else "R²=n/a"
+        fig_.title.text = f"{region} · {r2_str} ({n_total:,} pts)"
+        figs.append(fig_)
+    rows_ = [
+        row(*figs[i:i + REG_COMP_COLS], spacing=8)
+        for i in range(0, len(figs), REG_COMP_COLS)
+    ]
+    rc_holder.children = [column(*rows_, spacing=8)]
+    rc_status_div.text = (
+        f"<p style='font-size:12px;color:#555;margin:2px 0'>"
+        f"Model <b>{model}</b> · category <b>{cat}</b> · "
+        f"<b>{len(figs)}</b> BA panels (regional layer)."
+        f"</p>"
+    )
+
+
+rc_model_select.on_change("value", lambda _a, _o, _n: _build_regcomp_grid())
+rc_category_select.on_change("value", lambda _a, _o, _n: _build_regcomp_grid())
+
+
 eval_tab = TabPanel(
     child=column(
-        bokeh_intro_div(),
-        Div(text="<h3 style='margin:8px 0 4px 0'>1. Model comparison "
-                 "(out-of-fold cross-validation, "
-                 "<span style='color:#1f77b4'>Overall</span> &amp; "
-                 "<span style='color:#d62728'>Regional</span> layers)</h3>"),
-        bokeh_explainer_div("s1_leaderboard"),
-        Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-                 "Two leaderboards side-by-side: the <b>Overall</b> layer "
-                 "(~86 system outputs) is the <i>fixed reference</i> used "
-                 "to pick the top-2 methods compared in the per-case, "
-                 "per-catalog, and Overall-vs-Regional sections below. The "
-                 "<b>Regional</b> layer (~382 per-BA outputs) is shown for "
-                 "comparison — method ranking on the noisier per-BA targets "
-                 "often differs. Both tables are independent of the stage "
-                 "selector on the Predict tab.</p>"),
-        row(eval_summary_div, eval_summary_div_regional, spacing=12),
-        bokeh_explainer_div("s1_parity"),
-        Div(text="<p style='color:#555;margin:8px 0 6px 0;font-size:12px'>"
-                 "<b>Per-method parity grid (both layers).</b> One parity "
-                 "plot per ML method, on each layer's out-of-fold "
-                 "predictions. Each panel uses a single color (distinct per "
-                 "method) so methods are easy to compare at a glance. Panel "
-                 "title = pooled R² on the filtered points; the dashed line "
-                 "is <i>y = x</i>. Use the <b>Tech</b> filter to drill in "
-                 "by technology (applies to both layers) and the "
-                 "<b>Region</b> filter for per-BA outputs (Regional layer "
-                 "only). Models that fail to load (e.g. <code>nearest</code>) "
-                 "are skipped silently.</p>"),
+        Div(text="<h2 style='margin:8px 0 4px 0'>ReEDS Surrogate Model "
+                 "&mdash; Evaluation</h2>"
+                 "<p style='color:#555;margin:0 0 10px 0;font-size:13px'>"
+                 "Three views: (1) per-method parity to compare models, "
+                 "(2) drill into a single model &times; layer &times; "
+                 "category to see each output's parity, "
+                 "(3) regional layer per-BA parity.</p>"),
+
+        # 1. Model comparison — reuse existing per-method parity grid
+        Div(text="<h3 style='margin:14px 0 4px 0'>1. Model comparison "
+                 "&mdash; per-method parity (both layers)</h3>"
+                 "<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+                 "One parity plot per ML method on each layer's "
+                 "out-of-fold predictions. Panel title shows pooled R&sup2;. "
+                 "Use the Tech / Region filters to drill in.</p>"),
         row(parity_grid_tech_select, parity_grid_region_select, spacing=10),
         parity_grid_status_div,
         parity_layer_titles["overall"],
         row(parity_holders["overall"], parity_legends["overall"], spacing=20),
         parity_layer_titles["regional"],
         row(parity_holders["regional"], parity_legends["regional"], spacing=20),
-        Div(text="<h3 style='margin:18px 0 4px 0'>2. Per-case R² distribution "
-                 "(best method, both layers)</h3>"),
-        bokeh_explainer_div("s2_percase"),
-        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "Each point is one of the ~486 design cases. R² is "
-                 "computed across <i>all</i> outputs after column "
-                 "z-scoring, so high-magnitude variables don't dominate. "
-                 "Two charts stacked, one per layer, each showing the "
-                 "<b>top-1 method</b> from the §1 leaderboard. Cases are "
-                 "sorted ascending by the model's own R² so the leftmost "
-                 "are the hardest designs for that model. Hover for the "
-                 "design behind each case. "
-                 "<b style='color:#1f77b4'>Overall</b> and "
-                 "<b style='color:#d62728'>Regional</b> layers may pick "
-                 "different top-1 methods.</p>"),
-        percase_layer_titles["overall"],
-        percase_legends["overall"],
-        percase_figs_a["overall"],
-        percase_layer_titles["regional"],
-        percase_legends["regional"],
-        percase_figs_a["regional"],
-        Div(text="<h3 style='margin:18px 0 4px 0'>3. Bias by catalog &amp; "
-                 "region</h3>"),
-        bokeh_explainer_div("s3_bias"),
-        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "Median R² grouped by item, split into one small panel "
-                 "per output catalog (<i>Capacity</i>, <i>Generation</i>, "
-                 "<i>System cost</i>, <i>Transmission</i>). Tech labels "
-                 "follow the same display mapping as the predict tab — "
-                 "vintages and similar variants are merged (e.g. "
-                 "<code>wind-ons_1/2/3/4</code> &rarr; <i>Onshore Wind</i>) "
-                 "via <code>tech_map.csv</code>. Outputs flagged "
-                 "<i>mostly-zero</i> (deployed in fewer than ~5% of cases) "
-                 "are excluded — their R² is unstable by definition and was "
-                 "the source of the misleading low-bar tail in the old "
-                 "single-panel view. The region panel below the grid only "
-                 "fills in on the <i>Regional</i> layer.</p>"),
-        bias_by_tech_grid,
-        Div(text="<h4 style='margin:14px 0 4px 0;color:#1f4e79'>"
-                 "Bias by region</h4>"),
-        bias_by_region_holder,
-        Div(text=f"<h3 style='margin:18px 0 4px 0'>4. Per-catalog R² "
-                 f"(top-{N_METHODS_COMPARE} methods, both layers)</h3>"),
-        bokeh_explainer_div("s4_percatalog"),
-        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "Outputs are grouped by their prefix into catalogs "
-                 "(<i>Capacity</i>, <i>Generation</i>, <i>System cost</i>, "
-                 "<i>Transmission</i>) and shown side-by-side for both "
-                 "layers (e.g. <i>Overall · Capacity</i>, <i>Regional · "
-                 "Generation</i>). Bars show the <b>median</b> R² across "
-                 f"the outputs in each (layer, catalog) cell, comparing "
-                 f"the top-{N_METHODS_COMPARE} methods (ranked by §R0 honest "
-                 "mean R², not §1's pooled Score). Tall variation "
-                 "between cells = a method that's strong on some variable "
-                 "types but weak on others.</p>"),
-        percatalog_fig,
-        Div(text=f"<h3 style='margin:18px 0 4px 0'>5. Overall vs Regional "
-                 f"(top-{N_METHODS_COMPARE} methods, per-output R² distribution)</h3>"),
-        bokeh_explainer_div("s5_crosslayer"),
-        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "Each dot is one output; columns are jittered for "
-                 f"readability. Columns = top-{N_METHODS_COMPARE} methods "
-                 "(ranked by §R0) × two layers. The thick black bar is the "
-                 "<b>median</b> per group; spread between dots in a "
-                 "column = prediction variability across outputs in that "
-                 "layer. Compare adjacent columns for the same method to "
-                 "see if it generalizes from the system-level (~86) to "
-                 "per-BA (~382) targets.</p>"),
-        crosslayer_fig,
-        Div(text="<h3 style='margin:18px 0 4px 0'>5b. Distributional "
-                 "fidelity by catalog</h3>"),
-        bokeh_explainer_div("s5_distfidelity"),
-        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "<b>std_ratio</b> = std(predicted) / std(actual) per "
-                 "output, then median per catalog &mdash; below 1.0 means "
-                 "the surrogate is regressing toward the mean (compressing "
-                 "scenario-to-scenario variation). <b>Spearman</b> = how "
-                 "well the surrogate's <i>ordering</i> of scenarios "
-                 "matches the truth. Computed for the headline model on "
-                 "the active layer; rerun "
-                 "<code>python surrogate_eval.py</code> to refresh.</p>"),
-        dist_fidelity_div,
-        Div(text="<h3 style='margin:18px 0 4px 0'>6. Active-learning lift "
-                 "(uncertainty- vs random-acquisition)</h3>"),
-        bokeh_explainer_div("s6_active"),
-        Div(text="<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-                 "Random Forest retrained from 30 &rarr; 230 cases. "
-                 "Median R² (left) and # outputs &gt; 0.9 (right) on a "
-                 "held-out test set. Run "
-                 "<code>python surrogate_active_learning.py</code> to "
-                 "(re)generate.</p>"),
-        eval_image_divs["active_learning_curve.png"],
-        Div(text="<h3 style='margin:18px 0 4px 0'>7. Raw per-output "
-                 "metrics table</h3>"),
-        bokeh_explainer_div("s7_table"),
-        per_output_caption,
-        per_output_table,
+
+        # 2. Prediction overlook
+        Div(text="<h3 style='margin:18px 0 4px 0'>2. Prediction overlook "
+                 "&mdash; per-item parity</h3>"
+                 "<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+                 "Pick a model, layer, and output category. One parity plot "
+                 "per output column with one dot per case (~486). Panel "
+                 "title shows the per-output R&sup2;. Useful for spotting "
+                 "which specific outputs a model struggles with.</p>"),
+        row(po_layer_select, po_model_select, po_category_select, spacing=10),
+        po_status_div,
+        po_holder,
+
+        # 3. Regional comparison
+        Div(text="<h3 style='margin:18px 0 4px 0'>3. Regional comparison "
+                 "&mdash; per-BA parity (regional layer)</h3>"
+                 "<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
+                 "One parity plot per BA. Each plot pools every output "
+                 "column belonging to that BA (filtered by category if "
+                 "selected) across all cases. Panel title shows the pooled "
+                 "R&sup2; for that BA.</p>"),
+        row(rc_model_select, rc_category_select, spacing=10),
+        rc_status_div,
+        rc_holder,
+
         spacing=6,
         sizing_mode="stretch_width",
     ),
@@ -4588,124 +5216,12 @@ research_browse_fig_select.on_change("value", _on_research_browse_fig_change)
 _research_eval_update_header(_initial_re_layer)
 
 # ---------------------------------------------------------------------------
-# Merge research-grade diagnostics into the existing "Evaluation results" tab
-# instead of a separate tab. All Research-Eval widgets / callbacks were
-# constructed above; here we just append the visual sections to the bottom of
-# ``eval_tab``'s column. Assigning a NEW list (rather than ``.extend``) ensures
-# Bokeh registers the children change on the model.
+# Initial render of the two driven sections in the slimmed-down "Evaluation
+# results" tab. §1 (per-method parity) is already populated by the existing
+# ``_build_parity_grid`` / ``_update_parity_grid`` calls higher up.
 # ---------------------------------------------------------------------------
-_research_eval_sections = [
-    Div(text="<h2 style='border-top:2px solid #999;margin:28px 0 4px 0;"
-             "padding-top:14px'>Research-grade diagnostics "
-             "(<code>surrogate_eval.py</code> &mdash; out-of-fold artefacts)"
-             "</h2>"
-             "<p style='color:#555;margin:0 0 6px 0;font-size:12px'>"
-             "Sections below surface the per-layer artefacts written by "
-             "<code>surrogate_eval.py</code> (which reads existing "
-             "<code>.joblib</code> models and their saved OOF residuals "
-             "&mdash; it does <b>not</b> retrain). Use the <b>Layer</b> "
-             "selector to flip between the system-level <i>overall</i> and "
-             "per-BA <i>regional</i> evaluations; the <b>Model</b> selector "
-             "drives the per-model tables in &sect;R1, &sect;R3, &sect;R5. "
-             "Numbering uses an <code>R</code> prefix so it doesn't collide "
-             "with the &sect;1&ndash;&sect;7 leaderboard sections above.</p>"),
-    row(research_layer_select, research_model_select, spacing=12),
-    research_header_div,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R0. Headline ranking "
-             "(bootstrap CIs, 200 resamples, winsorised at R&sup2; = &minus;1)</h3>"),
-    bokeh_explainer_div("r0_ranking"),
-    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "Each model's mean / median R&sup2; across OOF cases with a "
-             "95% bootstrap CI. <code>r2_mean_point</code> is the unaveraged "
-             "point estimate; <code>r2_mean_boot_mean</code> is the mean over "
-             "200 resamples (winsorised). Pairwise dominance matrix is in "
-             "<code>model_ranking_bootstrap_pwise.csv</code> &mdash; browse "
-             "it below.</p>"),
-    research_rank_readout_div,
-    research_rank_table,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R1. Grouped metrics "
-             "(selected model)</h3>"),
-    bokeh_explainer_div("r1_grouped"),
-    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "Per-output metrics aggregated by category (cap / gen / "
-             "tran / cost) and by tech (using <code>tech_map.csv</code> "
-             "display names). Mostly-zero outputs are excluded from the "
-             "mean.</p>"),
-    Div(text="<b>By category</b>", styles={"margin": "8px 0 4px 0"}),
-    research_groupcat_table,
-    Div(text="<b>By tech</b>", styles={"margin": "8px 0 4px 0"}),
-    research_grouptech_table,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R3. Interval calibration "
-             "(split-conformal sweep)</h3>"),
-    bokeh_explainer_div("r3_calibration"),
-    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "Empirical coverage at five nominal levels for the selected "
-             "model, broken down by category. Coverage &asymp; nominal &harr; "
-             "well-calibrated; sharpness is "
-             "<code>2&middot;half_width / range</code> per output, so it's "
-             "unit-free.</p>"),
-    research_calib_table,
-    Div(text="<b>Calibration overlay (all models)</b>",
-        styles={"margin": "8px 0 4px 0"}),
-    research_calib_overlay_img,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R5. Headline scalars "
-             "(selected model)</h3>"),
-    bokeh_explainer_div("r5_headline"),
-    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "Total system cost + total cap / gen / tran (across all "
-             "486 cases) with a 90% conformal interval. The "
-             "<code>conformal_relative_width</code> column is the "
-             "interval width as a fraction of the headline's actual "
-             "range &mdash; a quick &ldquo;how tight is the uncertainty&rdquo; "
-             "read.</p>"),
-    research_headline_readout_div,
-    research_headline_table,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R6. Per-output "
-             "difficulty (model-vs-model)</h3>"),
-    bokeh_explainer_div("r6_difficulty"),
-    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "For every output, R&sup2; under each model. "
-             "<code>intrinsic_hard=True</code> means <i>no</i> model "
-             "clears 0.5; <code>model_specific_hard=True</code> means "
-             "at least one model is strong (&gt;0.9) and another is "
-             "negative &mdash; an architecture-selection signal. Sorted "
-             "hardest-first so the worst offenders surface "
-             "immediately.</p>"),
-    research_difficulty_table,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>&sect;R8. Clipping consistency "
-             "(unclipped vs deployed)</h3>"),
-    bokeh_explainer_div("r8_clipping"),
-    Div(text="<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "Diff between the unclipped raw OOF predictions and the "
-             "deployed (physical-bounds clipping from "
-             "<code>surrogate_predict.py</code>). "
-             "<code>n_outputs_clipping_helps</code> = #outputs whose R&sup2; "
-             "<i>improves</i> after clipping; positive "
-             "<code>mean_delta_r2</code> = clipping is a net win.</p>"),
-    research_clipping_table,
-
-    Div(text="<h3 style='margin:16px 0 4px 0'>Browse every CSV / figure</h3>"
-             "<p style='color:#555;margin:0 0 4px 0;font-size:12px'>"
-             "All artefacts written under <code>eval/</code> are reachable "
-             "from here. Useful for the pairwise bootstrap matrix, "
-             "per-output metric panels, bias / Q-Q figures by model, "
-             "etc.</p>"),
-    row(research_browse_csv_select, spacing=12),
-    research_browse_csv_table,
-    row(research_browse_fig_select, spacing=12),
-    research_browse_fig_div,
-]
-eval_tab.child.children = list(eval_tab.child.children) + _research_eval_sections
-
-# Initial per-model population so the merged sections render non-empty.
-_research_eval_apply_layer(_initial_re_layer)
-_research_eval_apply_model(_initial_re_layer, _initial_re_model)
+_build_predoverlook_grid()
+_build_regcomp_grid()
 
 
 tabs = Tabs(tabs=[predict_tab, eval_tab])

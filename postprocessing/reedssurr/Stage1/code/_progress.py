@@ -21,7 +21,7 @@ HERE = Path(__file__).resolve().parent
 STAGE1 = HERE.parent
 LAYERS = ("overall", "regional")
 MODELS_ORDER = (
-    "mean", "knn", "nearest", "ridge", "lasso",
+    "knn", "ridge", "lasso",
     "rf", "xgb", "nn", "ngboost",
 )
 LOG_PATHS = {L: HERE / f"train_{L}.log" for L in LAYERS}

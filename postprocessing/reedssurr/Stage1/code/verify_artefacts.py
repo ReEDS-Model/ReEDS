@@ -26,8 +26,6 @@ from surrogate_uq import (  # noqa: E402
     ngboost_interval,
     prediction_interval,
 )
-# Ensure the custom NearestDesignRegressor class is importable for joblib unpickle.
-from surrogate_ml_models import NearestDesignRegressor  # noqa: E402,F401
 
 
 def verify_one(path: Path, levels: dict[str, str]) -> dict:

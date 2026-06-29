@@ -229,7 +229,7 @@ def main():
 
     config = Config(data_path=args.data, output_dir=args.output_dir)
     print(f"[1/3] Loading {args.data}")
-    X, Y, x_cols, y_cols, _ = load_data(config)
+    X, Y, x_cols, y_cols, _, _ = load_data(config)
     print(f"    n_samples={X.shape[0]}, n_outputs={Y.shape[1]}")
 
     if args.n_init + args.n_test + args.n_per_iter * args.n_iter > X.shape[0]:

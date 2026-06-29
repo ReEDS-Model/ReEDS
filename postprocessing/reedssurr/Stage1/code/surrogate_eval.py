@@ -81,14 +81,6 @@ from surrogate_uq import (        # noqa: E402
     conformal_widths,
     empirical_coverage,
 )
-# The ``nearest`` baseline is pickled with a reference to its defining class;
-# importing it here registers the symbol so ``pickle.load`` can resolve it
-# when we load ``nearest.joblib``. Without this, the artifact loads only
-# when ``surrogate_ml_models`` is the entry point.
-try:
-    from surrogate_ml_models import NearestDesignRegressor  # noqa: F401, E402
-except Exception:  # noqa: BLE001 - if training module isn't importable, skip
-    pass
 
 # Shared plain-language captions (used here AND in surrogate_dashboard.py).
 from surrogate_eval_captions import (   # noqa: E402
@@ -1545,11 +1537,10 @@ def _render_report(
         "**8b. CV is interpolation, not extrapolation.** The OOF folds in "
         "`surrogate_ml_models.py` shuffle the full factorial, so the metric "
         "we report is *within-grid* interpolation accuracy. Outside the 486-"
-        "case grid we have no guarantee. The `nearest`-design baseline is a "
-        "fair interpolation reference — anything that doesn't beat it is "
-        "not earning its keep. If you passed `--structured_cv` we also wrote "
-        "`structured_cv_<m>.csv`: hold out one level of one X dimension at a "
-        "time and measure held-out R² — this is the extrapolation diagnostic.\n"
+        "case grid we have no guarantee. If you passed `--structured_cv` we "
+        "also wrote `structured_cv_<m>.csv`: hold out one level of one X "
+        "dimension at a time and measure held-out R² — this is the "
+        "extrapolation diagnostic.\n"
     )
     md.append("\n### Clipping consistency (plain-language read)\n")
     md.append(md_explainer("r8_clipping"))

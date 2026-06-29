@@ -28,8 +28,6 @@ _Current run:_ top method `rf` leads `ngboost` by 0.024 mean R²; their confiden
 | knn     |          0.5984 |              0.5922 |          0.5494 |          0.6313 |                0.7244 |            0.6959 |            0.7535 |
 | ridge   |          0.461  |              0.4579 |          0.4415 |          0.472  |                0.47   |            0.4363 |            0.5068 |
 | lasso   |          0.4606 |              0.4575 |          0.4412 |          0.4715 |                0.47   |            0.4361 |            0.5068 |
-| nearest |          0.1788 |              0.2124 |          0.1468 |          0.2828 |                0.3488 |            0.2743 |            0.4208 |
-| mean    |         -0.0042 |             -0.007  |         -0.0122 |         -0.0048 |               -0.0057 |           -0.0083 |           -0.0043 |
 
 Each row is a model's mean / median R² across the OOF rows with a 95% bootstrap CI (500 resamples). A pairwise `P(row > col)` matrix is in `model_ranking_bootstrap_pwise.csv`.
 
@@ -104,8 +102,8 @@ Split-conformal coverage sweep at alphas = [0.5, 0.3, 0.2, 0.1, 0.05], see `cali
 | lasso   |    0.2  |               0.8  |          0.8006 |             0.2529 |
 | lasso   |    0.3  |               0.7  |          0.6996 |             0.1987 |
 | lasso   |    0.5  |               0.5  |          0.5    |             0.131  |
-| mean    |    0.05 |               0.95 |          0.9532 |             0.7696 |
-| mean    |    0.1  |               0.9  |          0.9124 |             0.5726 |
+| ngboost |    0.05 |               0.95 |          0.9488 |             0.2245 |
+| ngboost |    0.1  |               0.9  |          0.8992 |             0.1542 |
 
 
 ## 4. Regional vs overall
@@ -212,8 +210,6 @@ _Current run:_ **total_tran** R²=0.86, ±18% band.
 | knn     |          0.5984 |              0.5922 |          0.5494 |          0.6313 |                0.7244 |            0.6959 |            0.7535 |
 | ridge   |          0.461  |              0.4579 |          0.4415 |          0.472  |                0.47   |            0.4363 |            0.5068 |
 | lasso   |          0.4606 |              0.4575 |          0.4412 |          0.4715 |                0.47   |            0.4361 |            0.5068 |
-| nearest |          0.1788 |              0.2124 |          0.1468 |          0.2828 |                0.3488 |            0.2743 |            0.4208 |
-| mean    |         -0.0042 |             -0.007  |         -0.0122 |         -0.0048 |               -0.0057 |           -0.0083 |           -0.0043 |
 
 Pairwise `P(row > col)` is in `model_ranking_bootstrap_pwise.csv`.
 
@@ -228,7 +224,7 @@ Pairwise `P(row > col)` is in `model_ranking_bootstrap_pwise.csv`.
 
 **8a. Clipping consistency.** Deployed predictions go through `clip_physical_bounds` in `surrogate_predict.py`; OOF predictions used by the existing eval pipeline are *unclipped*. We report both. `clipping_delta_<m>.csv` lists the per-output R² delta. Conformal half-widths derived from unclipped residuals can be very slightly miscalibrated near zero (the band's lower edge is below physical zero for non-storage `gen`, `cap`, `tran`, non-incentive `cost`).
 
-**8b. CV is interpolation, not extrapolation.** The OOF folds in `surrogate_ml_models.py` shuffle the full factorial, so the metric we report is *within-grid* interpolation accuracy. Outside the 486-case grid we have no guarantee. The `nearest`-design baseline is a fair interpolation reference — anything that doesn't beat it is not earning its keep. If you passed `--structured_cv` we also wrote `structured_cv_<m>.csv`: hold out one level of one X dimension at a time and measure held-out R² — this is the extrapolation diagnostic.
+**8b. CV is interpolation, not extrapolation.** The OOF folds in `surrogate_ml_models.py` shuffle the full factorial, so the metric we report is *within-grid* interpolation accuracy. Outside the 486-case grid we have no guarantee. If you passed `--structured_cv` we also wrote `structured_cv_<m>.csv`: hold out one level of one X dimension at a time and measure held-out R² — this is the extrapolation diagnostic.
 
 
 ### Clipping consistency (plain-language read)
