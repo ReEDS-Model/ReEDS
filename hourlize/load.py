@@ -363,6 +363,7 @@ def create_hourly_state_load_for_model_year(
         print("Adding exogenous sectoral load...")
         df_load_replace = pd.concat(replacement_load_list).groupby('datetime').sum()
         df_load_replace.index = pd.to_datetime(df_load_replace.index)
+        df_load_replace.columns = df_load_replace.columns.map(state_name_code_map)
         
         for weather_year in weather_years:
             weather_year_mask = (
