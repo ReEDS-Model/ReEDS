@@ -150,7 +150,7 @@ colors_social = {
 
 # remove techs within capacity set which are not inherently capacity sources outside of ReEDS
 all_removals = ['Remove']
-capacity_removals = ['Electrolyzer','SMR','SMR-CCS','DAC','Canadian Imports','Remove']
+capacity_removals = ['Electrolyzer','SMR','SMR-CCS','DAC','Remove']
 
 # Mapping options: variable to map and technologies to plot on each slide
 ## mapdiff: 'cap' or 'gen_ann'
@@ -1914,6 +1914,213 @@ try:
         slide = reeds.report_utils.add_to_pptx('Firm Capacity, Capacity Credit', prs=prs)
         if interactive:
             plt.show()
+except Exception:
+    print(traceback.format_exc())
+
+#%%### Firm capacity by NERC region
+try:
+    tech_colors = output_formatting['bokeh_tech_colors'].squeeze().copy()
+    import_label = 'Firm imports'
+    if import_label not in tech_colors.index:
+        tech_colors.loc[import_label] = '#B9CBF5'
+
+    nerc_regions = []
+    if 'nercr' in hierarchy[basecase]:
+        nerc_regions = sorted([
+            n for n in hierarchy[basecase]['nercr'].dropna().unique()
+            if isinstance(n, str) and len(n)
+        ])
+
+    firm_by_nerc = {}
+    for case in cases:
+        if 'nercr' not in hierarchy[case]:
+            continue
+        df = dictin_cap_firm[case].loc[dictin_cap_firm[case].t == lastyear].copy()
+        df['nercr'] = df.r.map(hierarchy[case]['nercr'])
+        df = df.dropna(subset=['nercr'])
+        firm_by_nerc[case] = df.groupby(['ccseason', 'nercr', 'i'], as_index=False).MW.sum()
+
+    ### Firm capacity imports into each NERC region from outside that NERC region
+    firm_imports_by_nerc = {}
+    for case in cases:
+        if 'nercr' not in hierarchy[case]:
+            continue
+        try:
+            captrade = reeds.io.read_output(cases[case], 'captrade', valname='MW')
+            captrade = captrade.loc[captrade.t.astype(int) == int(lastyear)].copy()
+            captrade['nercr_from'] = captrade.r.map(hierarchy[case]['nercr'])
+            captrade['nercr_to'] = captrade.rr.map(hierarchy[case]['nercr'])
+            captrade = captrade.dropna(subset=['nercr_from', 'nercr_to', 'ccseason'])
+            captrade = captrade.loc[captrade.nercr_from != captrade.nercr_to]
+            imports = (
+                captrade.groupby(['ccseason', 'nercr_to'], as_index=False).MW.sum()
+                .rename(columns={'nercr_to': 'nercr'})
+            )
+            imports['i'] = import_label
+            firm_imports_by_nerc[case] = imports
+        except Exception:
+            print(f'Could not read captrade imports for {case}:\n{traceback.format_exc()}')
+
+    nerc_regions = [
+        region for region in nerc_regions
+        if any([
+            ((case in firm_by_nerc) and (firm_by_nerc[case].nercr == region).any())
+            or ((case in firm_imports_by_nerc) and (firm_imports_by_nerc[case].nercr == region).any())
+            for case in cases
+        ])
+    ]
+
+    ## Collect all ccseasons present across cases
+    all_ccseasons = []
+    for case in cases:
+        if case in firm_by_nerc:
+            for s in firm_by_nerc[case].ccseason.unique():
+                if s not in all_ccseasons:
+                    all_ccseasons.append(s)
+
+    ### Firm capacity requirement per NERC region and ccseason per case
+    ## Use reqt_quant rows where first '*' column is 'res_marg'
+    fcreq_by_nerc = {}
+    for case in cases:
+        try:
+            req = reeds.io.read_output(cases[case], 'reqt_quant')
+            reqt_col = '*' if '*' in req.columns else 'reqt'
+            star_cols = [c for c in req.columns if c.startswith('*') and c != reqt_col]
+            season_col = '*.2' if '*.2' in req.columns else (
+                'ccseason' if 'ccseason' in req.columns else None)
+            if season_col is None:
+                season_col = max(
+                    star_cols,
+                    key=lambda c: req.loc[req[reqt_col] == 'res_marg', c].nunique(),
+                )
+            req_r = req.loc[
+                (req[reqt_col] == 'res_marg')
+                & (req.t.astype(int) == int(lastyear)),
+                ['r', season_col, 'Value'],
+            ].copy()
+            req_r = req_r.rename(columns={season_col: 'ccseason'})
+            req_r['nercr'] = req_r.r.map(hierarchy[case]['nercr'])
+            fcreq_by_nerc[case] = (
+                req_r.dropna(subset=['nercr'])
+                .groupby(['ccseason', 'nercr'])
+                .Value.sum()
+                / 1e3
+            )
+        except Exception:
+            print(f'Could not compute firm capacity requirement for {case}:\n{traceback.format_exc()}')
+
+    if len(nerc_regions):
+        width = max(11, len(nerc_regions) * 2.4)
+        for ccseason in all_ccseasons:
+            plt.close()
+            f,ax = plt.subplots(
+                2, len(nerc_regions),
+                figsize=(width, SLIDE_HEIGHT),
+                sharex='col',
+                sharey=('col' if (sharey is True) else False),
+                squeeze=False,
+                gridspec_kw={'wspace':0.35, 'hspace':0.15},
+            )
+
+            legend_handles = []
+            for col, region in enumerate(nerc_regions):
+                def _firm_stack(case):
+                    df_case = (
+                        firm_by_nerc[case]
+                        .loc[
+                            (firm_by_nerc[case].ccseason == ccseason)
+                            & (firm_by_nerc[case].nercr == region)
+                        ]
+                        .set_index('i').MW
+                    )
+                    if case in firm_imports_by_nerc:
+                        imp = (
+                            firm_imports_by_nerc[case]
+                            .loc[
+                                (firm_imports_by_nerc[case].ccseason == ccseason)
+                                & (firm_imports_by_nerc[case].nercr == region),
+                                'MW'
+                            ]
+                            .sum()
+                        )
+                        if imp:
+                            df_case.loc[import_label] = df_case.get(import_label, 0) + imp
+                    return df_case / 1e3
+
+                dfplot = pd.concat({
+                    case: _firm_stack(case)
+                    for case in cases if case in firm_by_nerc
+                }, axis=1).T.fillna(0)
+
+                dfplot = dfplot[[c for c in tech_colors.index if c in dfplot]].copy()
+                if dfplot.empty:
+                    continue
+
+                legend_handles = plot_bars_abs_stacked(
+                    dfplot=dfplot,
+                    basecase=basemap,
+                    colors=tech_colors,
+                    ax=ax,
+                    col=col,
+                    net=False,
+                    label=(False if lesslabels else True),
+                )
+
+                ### Firm capacity requirement lines from reqt_quant res_marg
+                base_req = fcreq_by_nerc.get(basecase, pd.Series(dtype=float)).get((ccseason, region), np.nan)
+                for x, case in enumerate(dfplot.index):
+                    req = fcreq_by_nerc.get(case, pd.Series(dtype=float)).get((ccseason, region), np.nan)
+                    if not np.isnan(req):
+                        ax[0,col].hlines(req, x - 0.4, x + 0.4, colors='k', lw=1.5, zorder=5)
+                        req_diff = req - base_req
+                        if not np.isnan(req_diff):
+                            ax[1,col].hlines(
+                                req_diff, x - 0.4, x + 0.4, colors='k', lw=1.5, zorder=5)
+
+                ax[0,col].annotate(
+                    region,
+                    (0.5, 1.0),
+                    xycoords='axes fraction',
+                    fontsize='large',
+                    weight='bold',
+                    va='top',
+                    ha='center',
+                )
+                ax[1,col].annotate('Diff', (0.03, 0.03), xycoords='axes fraction', fontsize='large')
+                ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
+                ax[1,col].set_xticks(range(len(dfplot.index)))
+                ax[1,col].set_xticklabels(dfplot.index, rotation=90)
+
+            if len(legend_handles):
+                ## Append a legend entry for the requirement line
+                legend_handles.append(
+                    mpl.lines.Line2D([0], [0], color='k', lw=1.5, label='Firm capacity requirement')
+                )
+                leg = ax[1,-1].legend(
+                    handles=legend_handles[::-1],
+                    loc='upper left',
+                    bbox_to_anchor=(1.02, -0.05),
+                    frameon=False,
+                    fontsize='large',
+                    handletextpad=0.3,
+                    handlelength=0.7,
+                )
+                for legobj in leg.legend_handles:
+                    if hasattr(legobj, 'set_linewidth'):
+                        legobj.set_linewidth(8)
+                    if hasattr(legobj, 'set_solid_capstyle'):
+                        legobj.set_solid_capstyle('butt')
+
+            ax[0,0].set_ylabel(f'{lastyear} firm capacity [GW]')
+            ax[1,0].set_ylabel(f'{lastyear} firm capacity difference [GW]')
+
+            plt.tight_layout()
+            plots.despine(ax)
+            plt.draw()
+            slide = reeds.report_utils.add_to_pptx(
+                f'Firm Capacity by NERC Region, {ccseason}', prs=prs, width=width)
+            if interactive:
+                plt.show()
 except Exception:
     print(traceback.format_exc())
 
