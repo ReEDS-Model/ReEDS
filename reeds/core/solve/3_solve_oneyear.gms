@@ -282,10 +282,6 @@ $endif.mga
 
 *** Adjust some parameters based on the solution for this solve year
 $include reeds%ds%core%ds%solve%ds%4_post_solve_adjustments.gms
-$ifthene.linked_finito_shrink %GSw_FINITO_Link% == 1
-* Industrial variable fix
-$include finito/model/finito_post_solve_adjustments.gms
-$endif.linked_finito_shrink
 
 *** Fix decision variables to their optimized levels for this solve year
 tfix("%cur_year%") = yes ;
