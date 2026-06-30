@@ -71,7 +71,6 @@ This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` swi
   - Counties for PJM and a few adjacent states, 134 zones for the rest: `GSw_ZoneSet = PJMcounty`
 - Zone sets based on counties:
   - Single counties (3109 zones): `GSw_ZoneSet = z3109`. Only solves in tolerable time when running a subset of the U.S. as specified by the `GSw_Region` switch.
-  - Mostly single counties  (2972 zones): `GSw_ZoneSet = z2972`. Counties without high-voltage buses or transmission lines are combined with the neighboring data-containing county with which they share the longest border.
 - Zone sets based on states:
   - Single states (48 zones): `GSw_ZoneSet = z48`
 
