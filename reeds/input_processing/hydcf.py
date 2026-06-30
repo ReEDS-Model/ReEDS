@@ -408,7 +408,12 @@ def apply_hydro_climate_adjustments(
     inputs_case: str
 ) -> pd.DataFrame:
     """
-    Applies climate adjustment factors to hydropower capacity factors, if applicable
+    Applies climate adjustment factors to hydropower capacity factors, if applicable.
+    
+    Non-dispatchable hydro gets new seasonal profiles as well as annually-varying CFs.
+    Dispatchable hydro keeps the original seasonal profiles; only annual CF changes. 
+        Reflects the assumption that reservoirs will be utilized in the same seasonal pattern 
+        even if seasonal inflows change.
     
     Args:
         hydcf_unadjusted: Monthly regional CFs prior to climate adjustments
@@ -434,7 +439,7 @@ def apply_hydro_climate_adjustments(
     hydcf_nd = hydcf_unadjusted[hydcf_unadjusted.index.isin(hydro_nd, level='*i')].reset_index().copy()
     assert len(hydcf_d)+len(hydcf_nd) == len(hydcf_unadjusted), "At least 1 hydro tech is unaccounted for from hydcf.csv"
     
-    # Read hydropower CF climate adjustments and melt to long form      
+    # Read hydropower CF climate adjustment factors
     adj_factors_ann = pd.read_csv(
         os.path.join(inputs_case, 'climate_hydadjann.csv'),
         dtype={'r':str,'t':int}
@@ -443,6 +448,10 @@ def apply_hydro_climate_adjustments(
         os.path.join(inputs_case, 'climate_hydadjsea.csv'),
         dtype={'r':str,'t':int,'month':str}
     ).rename(columns={'Value':'Factor'})
+    
+    # Apply adjustment factors only to years >= GSw_ClimateStartYear - set years before to 1
+    adj_factors_ann.loc[adj_factors_ann['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
+    adj_factors_sea.loc[adj_factors_sea['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
     
     # Apply adjustment factors
     hydcf_d = pd.merge(hydcf_d, adj_factors_ann, how='left', on=['r','t'])
