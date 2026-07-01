@@ -90,8 +90,6 @@ def main():
             case_file = gini_coefficient_cal(case_file, runs_path, metric, submetric, year)
             
                 
-    
-
     # Find the next number_of_max_diff_case maximallty different solutions from 
     # optimal solution and maximally different solutions so far
     #for i in list(range(number_of_max_diff_case)):
