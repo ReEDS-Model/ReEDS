@@ -99,6 +99,7 @@ def main(inputs_case):
 
     # Read unitdata
     unitdata = pd.read_csv(os.path.join(inputs_case, 'unitdata_orig.csv'))
+    unitdata = unitdata.rename(columns={'r':'reeds_ba'})
     
     ## Assign sc_point_gids and pv, wind capacity factors, and geothermal resource temperature to NEMS unit
     # Using 'EPSG:5070' projection for nearest distance calculation
@@ -147,6 +148,7 @@ def main(inputs_case):
     # Rearrange column orders
     cols = df_rev.columns.to_list()
     unitdata = unitdata[cols].drop(columns=['temp_id'])
+    unitdata = unitdata.rename(columns={'reeds_ba':'r'})
     
     # Save processed unitdata
     unitdata.to_csv(os.path.join(inputs_case,'unitdata.csv'),index=False)
@@ -165,8 +167,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
     
     # for testing
-    # reeds_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..'))
-    # inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(

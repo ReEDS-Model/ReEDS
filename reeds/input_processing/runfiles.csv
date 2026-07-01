@@ -79,7 +79,6 @@ eall.csv,inputs/sets/eall.csv,1,ignore,ignore,,,,,,,,set,eall,emission categorie
 emitrate.csv,inputs/emission_constraints/emitrate.csv,1,ignore,ignore,,,,,0,,,,,,
 energy_communities.csv,inputs/financials/energy_communities.csv,1,ignore,ignore,,,,,0,,,,,,region aggregation and filtering is handled in copy_files
 etype.csv,inputs/sets/etype.csv,1,ignore,ignore,,,,,,,,set,etype,emission type,
-eval_period_adj_mult.csv,,1,ignore,ignore,,,,,0,,,,,,
 f.csv,inputs/sets/f.csv,1,ignore,ignore,,,,,,,,set,f,fuel type,
 financials_hydrogen.csv,inputs/financials/financials_hydrogen.csv,int(sw.GSw_H2) != 0,ignore,ignore,,,,,0,,,,,,
 financials_sys.csv,inputs/financials/financials_sys_{financials_sys_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
