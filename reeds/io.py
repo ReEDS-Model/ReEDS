@@ -291,7 +291,7 @@ def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwarg
     Get geodataframe of model zones, node locations, and hierarchy levels
     """
     zone_nodes = get_zone_nodes(case=case, **kwargs)
-    dfzones = get_zones(case=case, exclude_water_areas=exclude_water_areas, crs=crs, kwargs=kwargs)
+    dfzones = get_zones(case=case, exclude_water_areas=exclude_water_areas, crs=crs, **kwargs)
     dfzones = dfzones.merge(zone_nodes, left_index=True, right_index=True, how='left')
     ## Add offshore zones if necessary
     sw = get_switches(case)
@@ -312,7 +312,7 @@ def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwarg
         ## Combine
         dfzones = pd.concat([dfzones.assign(offshore=0), offshore_zones.assign(offshore=1)])
     ## Add spatial hierarchy levels
-    hierarchy = assemble_hierarchy(case=case, extra=False, kwargs=kwargs)
+    hierarchy = assemble_hierarchy(case=case, extra=False, **kwargs)
     dfba = dfzones.merge(hierarchy, left_index=True, right_on='r').set_index('r')
     ## Record centroid locations for plot labels
     dfba['centroid_x'] = dfba.geometry.centroid.x
