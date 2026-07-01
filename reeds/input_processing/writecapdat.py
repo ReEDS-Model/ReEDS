@@ -48,7 +48,8 @@ def create_rsc_wsc(gendb,TECH,startyear):
                         (gendb['RetireYear']     > startyear)
                         ]
     
-    rsc_wsc = rsc_wsc[['reeds_ba','tech','summer_power_capacity_MW']].rename(columns={'reeds_ba':'r','tech':'i','summer_power_capacity_MW':'value'})
+    rsc_wsc = rsc_wsc[['r','tech','summer_power_capacity_MW']].rename(columns={'tech':'i',
+                                                                               'summer_power_capacity_MW':'value'})
 
     return rsc_wsc
 
