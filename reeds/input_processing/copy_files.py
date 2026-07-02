@@ -482,7 +482,6 @@ def subset_to_valid_regions(
             df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str})
         else:
             df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
-        df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
     else:
         raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
 
@@ -1341,8 +1340,8 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     inputs_case = args.inputs_case
 
     # #%% Settings for testing ###
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260522_transcostM0_OR_water','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
 
 
     # ---- Set up logger ----

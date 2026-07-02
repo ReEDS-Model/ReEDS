@@ -328,8 +328,8 @@ TECH = {
 def main(reeds_path, inputs_case):
     
     # #%% Settings for testing
-    #reeds_path = "/Users/apham/Documents/GitHub/ReEDS/ReEDS/"
-    #inputs_case = os.path.join(reeds_path,'runs','test_newNEMS_OR_water','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
 
 
     #########################
@@ -1025,7 +1025,7 @@ def main(reeds_path, inputs_case):
                 'exog_cap_geohydro':cap_exog['geohydro_allkm']
                 }
 
-    return files_out, comments
+    return files_out
 
 #%% ===========================================================================
 ### --- PROCEDURE ---
@@ -1045,8 +1045,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    #reeds_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..'))
-    #inputs_case = os.path.join(reeds_path,'runs','test_github_Everything','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
@@ -1055,7 +1055,7 @@ if __name__ == '__main__':
     )
     print('Starting writecapdat.py')
 
-    data, comments = main(reeds_path, inputs_case)
+    data = main(reeds_path, inputs_case)
 
     # Write it
     print('Writing out capacity data')
@@ -1077,7 +1077,6 @@ if __name__ == '__main__':
         if gamstype.get(key, False):
             reeds.io.write_to_inputs_h5(
                 df=df, key=outname.get(key, key), case=inputs_case, gamstype=gamstype[key],
-                comment=comments.get(key, ''),
             )
         else:
             df.to_csv(

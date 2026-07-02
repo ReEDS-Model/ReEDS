@@ -78,8 +78,8 @@ e.csv,inputs/sets/e.csv,1,ignore,ignore,,,,,0,,,set,e,emission categories used i
 eall.csv,inputs/sets/eall.csv,1,ignore,ignore,,,,,,,,set,eall,emission categories used in reporting,
 emitrate.csv,inputs/emission_constraints/emitrate.csv,1,ignore,ignore,,,,,0,,,,,,
 energy_communities.csv,inputs/financials/energy_communities.csv,1,ignore,ignore,,,,,0,,,,,,region aggregation and filtering is handled in copy_files
-etype.csv,inputs/sets/etype.csv,1,ignore,ignore,,,,,,,,set,etype,emission type,
-f.csv,inputs/sets/f.csv,1,ignore,ignore,,,,,,,,set,f,fuel type,
+etype.csv,inputs/sets/etype.csv,1,ignore,ignore,,,,,,,,set,etype,emission types used in model (upstream and process),
+f.csv,inputs/sets/f.csv,1,ignore,ignore,,,,,,,,set,f,fuel types,
 financials_hydrogen.csv,inputs/financials/financials_hydrogen.csv,int(sw.GSw_H2) != 0,ignore,ignore,,,,,0,,,,,,
 financials_sys.csv,inputs/financials/financials_sys_{financials_sys_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
 financials_tech.csv,inputs/financials/financials_tech_{financials_tech_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
