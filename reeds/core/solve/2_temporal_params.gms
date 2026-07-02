@@ -302,6 +302,9 @@ can_exports_h(r,h,t)$[hours(h)] = can_exports(r,t) * can_exports_h_frac(h) / hou
 
 $endif.Canada
 
+* zero Canada exports when Canada is not modeled
+can_imports_szn(r,szn,t)$[Sw_Canada=0] = 0 ;
+can_exports_h(r,h,t)$[Sw_Canada=0] = 0 ;
 
 $onempty
 parameter canmexload(r,allh) "load for canadian and mexican regions"
