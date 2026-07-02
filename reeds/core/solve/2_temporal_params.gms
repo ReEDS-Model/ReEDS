@@ -904,6 +904,7 @@ $endif.linked_finito_temporal_params
 *=============================================
 
 avail(i,r,h)$avail(i,r,h) = round(avail(i,r,h),3) ;
+can_imports_szn(r,szn,t)$can_imports_szn(r,szn,t) = round(can_imports_szn(r,szn,t),3) ;
 can_exports_h(r,h,t)$can_exports_h(r,h,t) = round(can_exports_h(r,h,t),3) ;
 frac_h_ccseason_weights(h,ccseason)$frac_h_ccseason_weights(h,ccseason) = round(frac_h_ccseason_weights(h,ccseason),3) ;
 gasadder_cd(cendiv,t,h)$gasadder_cd(cendiv,t,h) = round(gasadder_cd(cendiv,t,h),3) ;
