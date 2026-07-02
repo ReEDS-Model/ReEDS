@@ -213,30 +213,6 @@ set i_numeraire(i) "numeraire techs that need cooling" ;
 *or will have numeraire techs otherwise.
 i_numeraire(ii)$sum{(wst,ctt,i)$i_ii_ctt_wst(i,ii,ctt,wst), 1 } = yes ;
 
-table ctt_hr_mult(i,ctt) "heatrate multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%heat_rate_mult.csv
-$offdelim
-$onlisting
-;
-
-table ctt_cc_mult(i,ctt) "capital cost multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_cap_mult.csv
-$offdelim
-$onlisting
-;
-
-table ctt_cost_vom_mult(i,ctt) "VOM cost multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_vom_mult.csv
-$offdelim
-$onlisting
-;
-
 set
 *technology-specific subsets
   battery(i)           "battery storage technologies",
