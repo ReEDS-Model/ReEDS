@@ -332,6 +332,14 @@ def get_reeds_data(topwdg, scenarios, result_dfs):
         result_dfs[result] = df.set_index(idx_cols).reindex(full_idx).reset_index()
     logger.info('***Done fetching ' + str(result) + ': ' + str(datetime.datetime.now() - startTime))
 
+def _to_numeric_ignore(col):
+    """Try to convert a Series to numeric; return it unchanged if conversion fails."""
+    try:
+        return pd.to_numeric(col)
+    except (ValueError, TypeError):
+        return col
+
+
 def get_src(scen, src):
     '''
     For a given scenario and data source, fetch gdx or csv data and do common
@@ -363,7 +371,7 @@ def get_src(scen, src):
         df_src.columns = src['columns']
     df_src.replace('Eps',0, inplace=True)
     df_src.replace('Undf',0, inplace=True)
-    df_src = df_src.apply(pd.to_numeric, errors='ignore')
+    df_src = df_src.apply(_to_numeric_ignore)
     df_src = df_to_lowercase(df_src)
     return df_src
 
@@ -457,7 +465,7 @@ def process_reeds_data(topwdg, custom_sorts, custom_colors, result_dfs):
                 df[c] = df[c].astype(str)
 
     #categorize columns
-    cols['discrete'] = [x for x in cols['all'] if df[x].dtype == object]
+    cols['discrete'] = [x for x in cols['all'] if not pd.api.types.is_numeric_dtype(df[x])]
     cols['continuous'] = [x for x in cols['all'] if x not in cols['discrete']]
     cols['y-axis'] = [x for x in cols['continuous'] if not (x in reeds.columns_meta and 'y-allow' in reeds.columns_meta[x] and reeds.columns_meta[x]['y-allow'] is False)]
     cols['x-axis'] = [x for x in cols['all'] if x not in cols['y-axis']]
@@ -618,6 +626,6 @@ def update_reeds_presets(attr, old, new):
 
 def df_to_lowercase(df):
     for col in df:
-        if df[col].dtype == object:
+        if not pd.api.types.is_numeric_dtype(df[col]):
             df[col] = df[col].str.lower()
     return df

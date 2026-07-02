@@ -47,8 +47,8 @@ def add_cooling_water(df, **kw):
     df_tech_ctt_wst['tech'] = df_tech_ctt_wst['tech'].str.lower()
     df = pd.merge(left=df, right=df_tech_ctt_wst, how='left', on=['tech'], sort=False)
     #fill na values
-    df['wst'].fillna('other', inplace=True)
-    df['ctt'].fillna('none', inplace=True)
+    df['wst'] = df['wst'].fillna('other')
+    df['ctt'] = df['ctt'].fillna('none')
     return df
 
 def scale_column_filtered(df, **kw):
@@ -196,7 +196,8 @@ def pre_systemcost(dfs, **kw):
                 for myr in missing_years:
                     historical_capex.at[myr] = np.nan
                 df.loc[:firstmodelyear-1,'inv_investment_capacity_costs'] = (
-                    historical_capex[historical_years].values)
+                    historical_capex[historical_years].to_numpy().astype(
+                        df['inv_investment_capacity_costs'].dtype))
 
         #For capital costs, multiply by CRF to annualize, and sum over previous 20 years.
         #This requires 20 years before 2010 to sum properly.
@@ -210,7 +211,7 @@ def pre_systemcost(dfs, **kw):
             crf = dfs['crf']
             crf = crf.set_index('year').reindex(full_yrs)
             crf = crf.interpolate(method='linear')
-            crf['crf'] = crf['crf'].fillna(method='bfill')
+            crf['crf'] = crf['crf'].bfill()
 
         if 'shift_capital' in kw and kw['shift_capital'] is True:
             #This means we start capital payments in the year of the investment, even though loan payments
@@ -253,9 +254,9 @@ def pre_systemcost(dfs, **kw):
         df.loc[df['year'].isin(sim_years), op_type_ls] = df.loc[df['year'].isin(sim_years), op_type_ls].fillna(0)
 
         if 'r' in df.columns:
-            df.loc[:,op_type_ls] = df.groupby('r')[op_type_ls].fillna(method='ffill', limit=sys_eval_years-1)
+            df.loc[:,op_type_ls] = df.groupby('r')[op_type_ls].ffill(limit=sys_eval_years-1)
         else:
-            df.loc[:,op_type_ls] = df[op_type_ls].fillna(method='ffill', limit=sys_eval_years-1)
+            df.loc[:,op_type_ls] = df[op_type_ls].ffill(limit=sys_eval_years-1)
         df = df.fillna(0)
         df = pd.melt(df.reset_index(), id_vars=id_cols, value_vars=cap_type_ls + op_type_ls, var_name='cost_cat', value_name= 'Cost (Bil $)')
         
@@ -273,9 +274,9 @@ def pre_avgprice(dfs, **kw):
         df_load_nat = df_load_nat.to_frame()
         full_yrs = list(range(int(df['year'].min()), int(df['year'].max()) + 1))
         df_load_nat = df_load_nat.reindex(full_yrs)
-        df_load_nat = df_load_nat.interpolate(method='ffill')
+        df_load_nat = df_load_nat.ffill()
 
-        df_natavgprice = pd.merge(left=df, right=df_load_nat, how='left',on=['year'], sort=False)
+        df_natavgprice = pd.merge(left=df, right=df_load_nat.reset_index(), how='left',on=['year'], sort=False)
         df_natavgprice['Average cost ($/MWh)'] = df_natavgprice['Cost (Bil $)'] * 1e9 / df_natavgprice['q']
 
         return df_natavgprice
@@ -310,7 +311,7 @@ def pre_avgprice(dfs, **kw):
         crf = dfs['crf']
         crf = crf.set_index('year').reindex(full_yrs)
         crf = crf.interpolate(method ='linear')
-        crf['crf'] = crf['crf'].fillna(method='bfill')
+        crf['crf'] = crf['crf'].bfill()
         df = pd.merge(left=df, right=crf, how='left',on=['year'], sort=False)
         colname_ls = pd.MultiIndex.from_product([region_ls, cap_type_ls],names=['rb', 'cost_cat'])
         colname_ls = [c for c in colname_ls if c in df.columns.tolist()]
@@ -325,7 +326,7 @@ def pre_avgprice(dfs, **kw):
         #For operation costs, simply fill missing years with model year values.
         colname_ls = pd.MultiIndex.from_product([region_ls, op_type_ls],names=['rb', 'cost_cat'])
         colname_ls = [c for c in colname_ls if c in df.columns.tolist()]
-        df[colname_ls] = df[colname_ls].fillna(method='ffill')
+        df[colname_ls] = df[colname_ls].ffill()
         #The final year should only include capital payments because operation payments last for 20 yrs starting
         #in the model year, whereas capital payments last for 20 yrs starting in the year after the model year.
         df.loc[df.index.max(), colname_ls] = 0
@@ -457,7 +458,7 @@ def pre_abatement_cost(dfs, **kw):
         df_co2['val'] = df_co2['val'] * 1e-3 #converting to billion metric tons
         full_yrs = list(range(df_sc['year'].min(), df_sc['year'].max() + 1))
         df_co2 = df_co2.set_index('year').reindex(full_yrs).reset_index()
-        df_co2['val'] = df_co2['val'].fillna(method='ffill')
+        df_co2['val'] = df_co2['val'].ffill()
         df_co2['type'] = 'CO2 (Bil metric tons)'
         df_co2['cost_cat'] = 'CO2 (Bil metric tons)'
         #Concatenate costs and emissions
@@ -640,7 +641,7 @@ def pre_val_streams(dfs, **kw):
         #get requirement prices and quantities and build benchmark value streams
         dfs['p']['p'] = inflate_series(dfs['p']['p'])
         df_bm = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=['type', 'subtype', 'rb', 'timeslice', 'year'], sort=False)
-        df_bm['p'].fillna(0, inplace=True)
+        df_bm['p'] = df_bm['p'].fillna(0)
         #Add con_name:
         types = ['load','res_marg','oper_res','state_rps','curt_realize','curt_cause'] #the curt ones don't exist, they are just placeholders for the mapping.
         df_bm = df_bm[df_bm['type'].isin(types)].copy()
@@ -959,7 +960,7 @@ def pre_prices(dfs, **kw):
     #Join prices and quantities
     merge_cols = [c for c in ['type', 'subtype', 'rb', 'timeslice', 'year'] if c in dfs['q'].columns]
     df = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=merge_cols, sort=False)
-    df['p'].fillna(0, inplace=True)
+    df['p'] = df['p'].fillna(0)
     #Calculate $
     df['$'] = df['p'] * df['q']
     df.drop(['p', 'q'], axis='columns',inplace=True)
@@ -1014,7 +1015,7 @@ def pre_ng_price(dfs, **kw):
     dfs['p']['p'] = inflate_series(dfs['p']['p'])
     #Join prices and quantities
     df = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=['census', 'year'], sort=False)
-    df['p'].fillna(0, inplace=True)
+    df['p'] = df['p'].fillna(0)
     return df
 
 # calculate storage power (GW) and energy (GWh) capacity
