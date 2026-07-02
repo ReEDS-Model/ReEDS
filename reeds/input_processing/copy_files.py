@@ -708,12 +708,6 @@ def write_non_region_file(
             e_df.columns = ['r', 'percentage_energy_communities']
 
             e_df.to_csv(os.path.join(dir_dst, row.filename),index=False)
-        
-        elif row.filename == 'co2_site_char.csv':
-            # Adjust for inflation
-            df = pd.read_csv(row.full_filepath)
-            df[f"bec_{sw['GSw_CO2_BEC']}"] *= source_deflator_map[row.filepath]
-            df.to_csv(os.path.join(dir_dst, 'co2_site_char.csv'), index=False)
 
         else:
             if str(row.GAMStype).lower() in ['set', 'parameter']:

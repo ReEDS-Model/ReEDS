@@ -363,7 +363,6 @@ pvf_onm_int.csv,.csv,1,None,*t,None,0,0,linear_10,0,None,done (but double-check 
 quarter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_cendiv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_county.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-r_cs_distance_mi.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_cs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_rr_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ramprate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -475,7 +474,6 @@ upgrade_mult_mid.csv,.csv,0,None,wide,dummy,1,0,linear_5,0,None,new,
 upgradelink_water.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 uranium_price.csv,.csv,0,None,year,None,0,0,linear_5,0,None,new,
 va_ng_crf_penalty.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
-val_cs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_r_all.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 var_map.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 w.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

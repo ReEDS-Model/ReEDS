@@ -72,16 +72,6 @@ $include inputs_case%ds%scalars.txt
 * --- Set Declarations ---
 *==========================
 
-* written by copy_files.py
-$onempty
-set cs(*) "carbon storage sites"
-/
-$offlisting
-$include inputs_case%ds%val_cs.csv
-$onlisting
-/ ;
-$offempty
-
 * Written by h5_to_gdx.py
 $include autocode%ds%b_declare_sets.gms
 $include autocode%ds%b_declare_parameters.gms
@@ -2815,43 +2805,6 @@ trtypemax(trtype)$[(Sw_TransCapMaxTypes=1)] = yes ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=2)$sameas(trtype,'VSC')] = yes ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=3)$(not sameas(trtype,'AC'))] = yes ;
 
-* --- initial transmission capacity ---
-* transmission capacity input data are defined in both directions for each region-to-region pair
-* Written by transmission.py
-$onempty
-parameter trancap_init_energy(r,rr,trtype) "--MW-- initial transmission capacity for energy trading"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_energy.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter trancap_init_prm(r,rr,trtype) "--MW-- initial transmission capacity for capacity (PRM) trading"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_prm.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-* --- future transmission capacity ---
-* Transmission additions are defined in one direction for each region-to-region pair with the lowest region number listed first
-* Written by transmission.py
-$onempty
-parameter trancap_fut(r,rr,trancap_fut_cat,trtype,allt) "--MW-- potential future transmission capacity by type (one direction)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_fut.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 * --- exogenously specified transmission capacity ---
 * Transmission additions are defined in one direction for each region-to-region pair with the lowest region number listed first
 parameter invtran_exog(r,rr,trtype,t) "--MW-- exogenous transmission capacity investment (one direction)" ;
@@ -2956,18 +2909,6 @@ $endif.oprestradelevel
 Scalar opres_mult "multiplier on opres flow in transmission constraint" ;
 opres_mult = Sw_OpResTradeMult;
 
-* Interfaces are collections of routes with an additional constraint on total flows
-$onempty
-parameter trancap_init_transgroup(transgrp,transgrpp,trtype) "--MW-- initial upper limit on interface AC flows"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_transgroup.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 $onempty
 parameter trancap_init_itlgrp(itlgrp,itlgrpp,trtype) "--MW-- initial upper limit on interface flows between itlgrps"
 /
@@ -3007,64 +2948,6 @@ routes_itlgrp(itlgrp,itlgrpp,r,rr)$[
     $(not sameas(r,rr))
     $[not((sameas(itlgrp,r)) AND (sameas(itlgrpp,rr)))]
 ] = yes ;
-* --- transmission cost ---
-
-* Transmission line capex cost (generated from reV tables)
-* Written by transmission.py
-$onempty
-parameter tsc_binwidth(r,rr,tscbin) "--$-- investment bin widths for transmission interfaces"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_binwidth.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tsc_forward(r,rr,tscbin) "--$/MW-- transmission upgrade cost for forward direction"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_forward.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tsc_reverse(r,rr,tscbin) "--$/MW-- transmission upgrade cost for reverse direction"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_reverse.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter transmission_cost_nonac(r,rr,trtype) "--$/MW-- expansion cost for DC interfaces (only lines; converters handled separately)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_cost_nonac.csv
-$offdelim
-$onlisting
-/ ;
-
-* Scale transmission line costs by Sw_TransCostMult (for sensitivity analysis)
-tsc_binwidth(r,rr,tscbin) = tsc_binwidth(r,rr,tscbin) * Sw_TransCostMult ;
-tsc_forward(r,rr,tscbin) = tsc_forward(r,rr,tscbin) * Sw_TransCostMult ;
-tsc_reverse(r,rr,tscbin) = tsc_reverse(r,rr,tscbin) * Sw_TransCostMult ;
-transmission_cost_nonac(r,rr,trtype) = transmission_cost_nonac(r,rr,trtype) * Sw_TransCostMult ;
-
-* Transmission line FOM cost
-* Written by transmission.py
-parameter transmission_line_fom(r,rr,trtype) "--$/MW/year-- fixed O&M cost of transmission lines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_line_fom.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 parameter cost_hurdle(r,rr,allt) "--$ per MWh-- cost for transmission hurdle rate" ;
 parameter cost_hurdle_regiongrp1(r,rr,allt) "--$ per MWh-- cost for transmission hurdle rate between regiongrp1" ;
@@ -3082,28 +2965,6 @@ $onlisting
 $offempty
 
 * Assign hurdle rates to chosen GSw_TransHurdLevel
-$onempty
-parameter cost_hurdle_rate1(allt) "--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp1"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_hurdle_rate1.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-$onempty
-parameter cost_hurdle_rate2(allt) "--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp2"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_hurdle_rate2.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 * define hurdle rates across international lines
 * first determine whether the regions are of different countries..
 cost_hurdle_regiongrp1(r,rr,t)$[sum{country$r_country(r,country),ord(country) }
@@ -3153,36 +3014,6 @@ $endif.hurdlelevel_regiongrp2
 
 * The final hurdle cost is the higher cost among regiongrp1 and regiongrp2, and hurdle_rate_floor
 cost_hurdle(r,rr,t)$[sum{trtype, routes(r,rr,trtype,t) }] = max{cost_hurdle_regiongrp1(r,rr,t),cost_hurdle_regiongrp2(r,rr,t), hurdle_rate_floor} ;
-
-* --- transmission distance ---
-
-* The distance for a transmission interface is calculated in reV using the same "least-cost-path"
-* algorithm and cost tables as for wind and solar spur lines.
-* Distances are more representative of new greenfield lines than existing lines.
-* Written by transmission.py
-$onempty
-parameter distance(r,rr,trtype) "--miles-- distance between BAs by line type"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_miles.csv
-$offdelim
-$onlisting
-/ ;
-
-
-* --- transmission losses ---
-* Written by transmission.py
-parameter tranloss(r,rr,trtype)    "--fraction-- transmission loss between r and rr"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tranloss.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 
 * --- VSC HVDC macrogrid ---
 set val_converter(r,t) "BAs where VSC converter investment is allowed" ;
@@ -3302,16 +3133,6 @@ ccseason_cap_frac_delta(i,v,r,ccseason,t)$[conv(i)$sameas(ccseason,'hot')] =
 * -- Consume technologies specification --
 *============================================
 
-$onempty
-set routes_adjacent(r,rr) "all pairs of adjacent land-based BAs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%routes_adjacent.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 * Remove offshore zones
 routes_adjacent(r,rr)$(offshore(r) or offshore(rr)) = no ;
 
@@ -3524,17 +3345,6 @@ $include inputs_case%ds%h2_storage_cap_cost_mult.csv
 $offdelim
 $onlisting
 / ;
-
-$onempty
-parameter pipeline_cost_mult(r,rr) "--fraction-- cost multiplier for H2 pipelines (will be added to 1)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pipeline_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 * here computing capital and FOM costs as $/metric ton-hour for all possible routes
 * including capital cost multipliers, which are different for pipelines and compressors
@@ -4327,15 +4137,6 @@ $onlisting
 / ;
 
 $onempty
-parameter firm_import_limit(nercr,allt) "--fraction-- limit on net firm imports into NERC regions"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%firm_import_limit.csv
-$offdelim
-$onlisting
-/ ;
-
 parameter peakload_nercr(nercr,allt) "--MW-- Peak exogenous demand across all weather years by NERC region"
 /
 $offlisting
@@ -5772,37 +5573,14 @@ m_rsc_dat_init(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap") = m_rsc_dat(r,i,rscbin,"c
 *========================================
 * -- CO2 Capture and Storage Network --
 *========================================
-$onempty
 set csfeas(cs)         "carbon storage sites with available capacity"
-    r_cs(r,cs)         "mapping from BA to carbon storage sites"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%r_cs.csv
-$offdelim
-$onlisting
-/ ,
     co2_routes(r,rr)   "set of available inter-ba co2 trade relationships" ;
 
-parameter co2_storage_limit(cs)         "--metric tons-- total cumulative storage capacity per carbon storage site",
-          co2_injection_limit(cs)       "--metric tons/hr-- co2 site injection rate upper bound",
-          cost_co2_pipeline_cap(r,rr,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in co2 pipeline infrastructure",
+parameter cost_co2_pipeline_cap(r,rr,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in co2 pipeline infrastructure",
           cost_co2_pipeline_fom(r,rr,t) "--$2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 pipeline infrastructure",
-          cost_co2_stor_bec(cs,t)       "--$2004/metric ton-- breakeven cost for storing carbon - CF determined by GSw_CO2_BEC",
           cost_co2_spurline_cap(r,cs,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in spur lines to injection sites",
-          cost_co2_spurline_fom(r,cs,t) "--2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 spurline infrastructure",
-          r_cs_distance(r,cs)           "--mi-- euclidean distance between BA transmission endpoints and storage formations"
-/
-$offlisting
-$offdigit
-$ondelim
-$include inputs_case%ds%r_cs_distance_mi.csv
-$offdelim
-$ondigit
-$onlisting
-/
+          cost_co2_spurline_fom(r,cs,t) "--2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 spurline infrastructure"
 ;
-$offempty
 
 * Assign spurline costs
 cost_co2_spurline_cap(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_cost * r_cs_distance(r,cs) ;
@@ -5813,19 +5591,6 @@ cost_co2_pipeline_fom(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pip
 
 co2_routes(r,rr)$[routes_adjacent(r,rr)$pipeline_distance(r,rr)] = yes ;
 
-$onempty
-table co2_char(cs,*) "co2 site characteristics including injection rate limit, total storage limit, and break even cost"
-$ondelim
-$include inputs_case%ds%co2_site_char.csv
-$offdelim
-;
-$offempty
-
-*note that original units Mton == 'million tons'
-co2_storage_limit(cs)   = 1e6 * co2_char(cs,"max_stor_cap") ;
-co2_injection_limit(cs) = co2_char(cs,"max_inj_rate") ;
-cost_co2_stor_bec(cs,t) = co2_char(cs,"bec_%GSw_CO2_BEC%");
-
 * only want to consider storage sites that have both available capacity and injection limits
 csfeas(cs)$[co2_storage_limit(cs)$co2_injection_limit(cs)] = yes ;
 * only want to consider r_cs pairs which have available capacity
@@ -5835,7 +5600,7 @@ cost_co2_spurline_fom(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_fom *
 
 cost_co2_pipeline_cap(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_cap(r,rr,t);
 cost_co2_pipeline_fom(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_fom(r,rr,t);
-cost_co2_stor_bec(cs,t) =        %GSw_CO2_CostAdj% * cost_co2_stor_bec(cs,t) ;
+cost_co2_stor_bec(cs) =          %GSw_CO2_CostAdj% * cost_co2_stor_bec(cs) ;
 cost_co2_spurline_fom(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_fom(r,cs,t) ;
 cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,t) ;
 
