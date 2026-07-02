@@ -1757,7 +1757,7 @@
 #### inputs/storage
 
   - [cap_existing_psh.csv](/inputs/storage/cap_existing_psh.csv)
-    - **Description:** County-wide PSH operational capacity, pump capacity, and max energy, based on plant-level data from https://www.hydropower.org/hydropower-pumped-storage-tool
+    - **Description:** County-wide PSH operational capacity, pump capacity, and max energy, based on plant-level data from https://www.energy.gov/sites/prod/files/2021/01/f82/us-hydropower-market-report-full-2021.pdf
     - **Units:** MW/MWh
 
   - [PSH_supply_curves_durations.csv](/inputs/storage/PSH_supply_curves_durations.csv)
