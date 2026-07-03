@@ -1,8 +1,0 @@
-,Default Value,ERCOT_aligned,ERCOT_bin10,ERCOT_bin7,ERCOT_bin4
-ignore,0,,,,
-endyear,2032,,,,
-GSw_Region,interconnect/texas,,,,
-GSw_GasCurve,2,,,,
-POI_validate,1,,,,
-numpoibins,0,0,10,7,4
-pras,0,,,,

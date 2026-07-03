@@ -263,37 +263,6 @@ except Exception:
     print(traceback.format_exc())
 
 
-#%% Reinforcement binning: native vs. binned curve (POI_validate runs only)
-try:
-    for tech in ['wind-ons', 'wind-ofs', 'upv']:
-        binfile = os.path.join(case, 'inputs_case', f'poi_reinf_binning_{tech}.csv')
-        if not os.path.exists(binfile):
-            continue
-        regions = (
-            pd.read_csv(binfile)
-            .query('capacity > 0')
-            .groupby('region')['capacity'].sum().sort_values(ascending=False).index.tolist()
-        )
-        print(f'Plotting reinforcement binning for {tech}: {len(regions)} region(s)')
-        for region in regions:
-            try:
-                plt.close()
-                f, ax = reedsplots.plot_reinforcement_binning(case=case, region=region, tech=tech)
-                savename = f'poi_reinf_binning-{tech}-{region}.png'
-                if write:
-                    plt.savefig(os.path.join(savepath, savename))
-                if interactive:
-                    plt.show()
-                plt.close()
-                print(savename)
-            except Exception:
-                print(f'plot_reinforcement_binning failed for {tech} {region}:')
-                print(traceback.format_exc())
-except Exception:
-    print('plot_reinforcement_binning setup failed:')
-    print(traceback.format_exc())
-
-
 #%% Macrogrid map
 try:
     plt.close()

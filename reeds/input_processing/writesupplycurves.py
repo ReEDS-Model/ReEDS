@@ -52,95 +52,6 @@ def wm(df):
     return _wm
 
 
-def optimal_segment_costs(values, weights, nbins):
-    """Best `nbins`-segment, capacity-weighted, piecewise-constant approximation of `values`.
-
-    Sorts the points by `values`, finds the contiguous segmentation that minimizes the
-    capacity-weighted L2 error (exact DP with prefix sums), and returns an array in the
-    ORIGINAL order giving each point its segment's capacity-weighted mean. With `nbins<=0`
-    or `nbins>=` the number of distinct values it returns `values` unchanged (a no-op).
-    """
-    values = np.asarray(values, dtype=float)
-    weights = np.asarray(weights, dtype=float)
-    n = len(values)
-    if n == 0:
-        return values.copy()
-    if nbins <= 0 or nbins >= len(np.unique(values)):
-        return values.copy()
-    order = np.argsort(values, kind='mergesort')
-    xs = values[order]
-    ws = weights[order]
-    W = np.concatenate([[0.0], np.cumsum(ws)])
-    WX = np.concatenate([[0.0], np.cumsum(ws * xs)])
-    WX2 = np.concatenate([[0.0], np.cumsum(ws * xs * xs)])
-
-    def sse(a, b):
-        sw = W[b] - W[a]
-        return 0.0 if sw <= 0 else (WX2[b] - WX2[a]) - (WX[b] - WX[a]) ** 2 / sw
-
-    INF = float('inf')
-    dp = np.full((nbins + 1, n + 1), INF)
-    cut = np.zeros((nbins + 1, n + 1), dtype=int)
-    dp[0, 0] = 0.0
-    for k in range(1, nbins + 1):
-        for j in range(k, n + 1):
-            best, ba = INF, k - 1
-            for a in range(k - 1, j):
-                v = dp[k - 1, a] + sse(a, j)
-                if v < best:
-                    best, ba = v, a
-            dp[k, j] = best
-            cut[k, j] = ba
-    seg_sorted = np.empty(n)
-    j = n
-    for k in range(nbins, 0, -1):
-        a = cut[k, j]
-        sw = W[j] - W[a]
-        seg_sorted[a:j] = (WX[j] - WX[a]) / sw if sw > 0 else xs[a:j].mean()
-        j = a
-    out = np.empty(n)
-    out[order] = seg_sorted
-    return out
-
-
-def coarsen_reinforcement(dfout, numpoibins, inputs_case=None, tech=None):
-    """POI_validate: coarsen the embedded reinforcement cost to `numpoibins` bins per region.
-
-    Replaces ``cost_reinforcement_usd_per_mw`` with its best `numpoibins`-bin capacity-weighted
-    piecewise-constant approximation across the region's (class, bin) cells, and shifts
-    ``supply_curve_cost_per_mw``/``cost_total_trans_usd_per_mw`` by the same delta so the
-    reinforcement stays embedded in the resource supply curve (i.e. still charged on INV_RSC
-    with rsc_fin_mult, exactly as the legacy run). ``numpoibins<=0`` is an exact no-op; larger
-    values coarsen only the reinforcement *cost resolution*, isolating the binning effect.
-
-    If `inputs_case` and `tech` are given, writes ``poi_reinf_binning_{tech}.csv`` (region, class,
-    bin, capacity, reinf_native_usd_per_mw, reinf_binned_usd_per_mw) for the native-vs-binned plot.
-    """
-    col = 'cost_reinforcement_usd_per_mw'
-    if numpoibins <= 0 or dfout.empty or (col not in dfout.columns):
-        return dfout
-    df = dfout.reset_index(drop=False)
-    old = df[col].to_numpy(dtype=float)
-    new = old.copy()
-    for _region, sub in df.groupby('region', sort=False):
-        pos = sub.index.to_numpy()
-        new[pos] = optimal_segment_costs(
-            sub[col].to_numpy(dtype=float), sub['capacity'].to_numpy(dtype=float), numpoibins)
-    if inputs_case is not None and tech is not None:
-        (pd.DataFrame({
-            'region': df['region'], 'class': df['class'], 'bin': df['bin'],
-            'capacity': df['capacity'].round(3),
-            'reinf_native_usd_per_mw': old.round(2),
-            'reinf_binned_usd_per_mw': new.round(2),
-        }).to_csv(os.path.join(inputs_case, f'poi_reinf_binning_{tech}.csv'), index=False))
-    delta = new - old
-    df[col] = new
-    for c in ('cost_total_trans_usd_per_mw', 'supply_curve_cost_per_mw'):
-        if c in df.columns:
-            df[c] = df[c].to_numpy(dtype=float) + delta
-    return df.set_index(['region', 'class', 'bin'])
-
-
 def get_exog_cap(inputs_case, tech, dfsc):
     """Get exogenous capacity by class, region, rscbin, and year"""
     dfexog = (
@@ -245,13 +156,7 @@ def main(
         "geohydro": int(sw.numbins_geohydro_allkm),
         "egs": int(sw.numbins_egs_allkm),
     }
-    ### POI_validate: coarsen the embedded VRE reinforcement cost to numpoibins bins per
-    ### region/tech (keeping it in the supply curve). numpoibins=0 -> native (exact). See
-    ### coarsen_reinforcement() and cases.csv:POI_validate.
-    poi_validate = int(sw.POI_validate)
-    numpoibins = int(sw.numpoibins)
-
-    # Use agglevel_variables function to obtain spatial resolution variables 
+    # Use agglevel_variables function to obtain spatial resolution variables
     agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
     agglevel = agglevel_variables['agglevel']
 
@@ -322,10 +227,6 @@ def main(
             agglevel_variables=agglevel_variables, deflate=deflate,
             sw=sw, write=write
             )
-        if poi_validate:
-            wind[s] = coarsen_reinforcement(
-                wind[s], numpoibins,
-                inputs_case=(inputs_case if write else None), tech=f'wind-{s}')
 
         cost_components = (
             wind[s][["cost_total_trans_usd_per_mw", "capital_adder_per_mw"]]
@@ -423,9 +324,6 @@ def main(
         agglevel_variables=agglevel_variables, deflate=deflate,
         sw=sw, write=write
         )
-    if poi_validate:
-        upv = coarsen_reinforcement(
-            upv, numpoibins, inputs_case=(inputs_case if write else None), tech='upv')
 
     # Similar to wind, save the trans vs cap components and then concatenate them below just
     # before outputting rsc_combined.csv

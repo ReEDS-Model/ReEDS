@@ -1519,12 +1519,9 @@ def assemble_supplycurve(
             reeds_path, os.path.join(case, 'inputs_case')
         )
         counties = agglevel_variables['county_regions']
-        ## POI_validate keeps reinforcement embedded in the supply curve (it is coarsened in
-        ## writesupplycurves.coarsen_reinforcement, not relocated), so it must NOT be dropped here.
         use_poi_bins = (
             (int(sw.numpoibins) > 1)
             and (float(sw.GSw_TransIntraCost) != 0)
-            and not int(sw.POI_validate)
         )
     else:
         counties = []

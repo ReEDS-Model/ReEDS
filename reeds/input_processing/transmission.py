@@ -647,8 +647,8 @@ def write_poi_supply_curve(case):
     used to size the GAMS rtscbin set when numpoibins=0). b_inputs.gms converts cost $/kW -> $/MW
     (*1000) and charges every technology on this single zonal curve via eq_POI_cap(r,t).
 
-    One zonal reinforcement curve applies to all techs. numpoibins=1 (or POI_validate) -> flat
-    GSw_TransIntraCost. Otherwise the zonal bins are built from the raw cumulative interconnection
+    One zonal reinforcement curve applies to all techs. numpoibins=1 -> flat GSw_TransIntraCost.
+    Otherwise the zonal bins are built from the raw cumulative interconnection
     curve (inputs/transmission/raw_interconnection_TSC_data.csv) via
     make_poi_supply_curve.make_regional_poi_bins: numpoibins=0 -> native (one bin per raw segment),
     numpoibins>1 -> re-binned to numpoibins; both append the unlimited GSw_POIUpperCost backstop
@@ -660,12 +660,8 @@ def write_poi_supply_curve(case):
     valid_regions = {'r': reeds.io.read_input(case, 'r').squeeze(1).tolist()}
 
     numpoibins = int(sw.numpoibins)
-    ## POI_validate (binning-sweep mode) routes numpoibins to the embedded VRE reinforcement
-    ## (handled in writesupplycurves.coarsen_reinforcement), so here the zonal POI is forced to the
-    ## flat GSw_TransIntraCost layer and held fixed across the sweep.
-    poi_validate = int(sw.POI_validate)
 
-    if (numpoibins == 1) or poi_validate:
+    if numpoibins == 1:
         ## Flat legacy POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
         ## (b_inputs.gms also defaults any region the file omits to this same flat cost).
         reg = pd.DataFrame({
