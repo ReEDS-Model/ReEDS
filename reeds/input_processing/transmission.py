@@ -491,8 +491,18 @@ def get_hurdle_rates(case, hurdle_level=1):
         pd.read_csv(Path(reeds.io.reeds_path, 'inputs', 'transmission', 'cost_hurdle_intra.csv'))
         .set_index('t').round(3)
     )
+    start_val = f'GSw_TransHurdleStart{hurdle_level}'
+    if start_val in sw:
+        ## calculate multipliers based on the 2010 start value
+        val_start = float(sw[start_val])
+        hurdle_col = sw[f'GSw_TransHurdleLevel{hurdle_level}']
+        base_val = cost_hurdle_intra.loc[2010, hurdle_col]
+        mult_hr = val_start / base_val
+    else:
+        mult_hr = 1
+
     cost_hurdle_rate = (
-        cost_hurdle_intra[sw[f'GSw_TransHurdleLevel{hurdle_level}']].rename('USDperMWh')
+        (cost_hurdle_intra[sw[f'GSw_TransHurdleLevel{hurdle_level}']] * mult_hr).rename('USDperMWh')
         if int(sw.GSw_TransHurdleRate)
         else pd.Series(name='USDperMWh').rename_axis('t')
     )

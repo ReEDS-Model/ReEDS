@@ -329,6 +329,8 @@ GSw_TransCostMult,Multiplier for bulk BA-BA transmission costs,float,1,
 GSw_TransHurdleLevel1,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,transgrp,
 GSw_TransHurdleLevel2,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,hurdlereg,
 GSw_TransHurdleRate,Turn on (1) or off (0) hurdle rates between hierarchy regions as defined by GSw_TransHurdleLevel1/GSw_TransHurdleLevel2 and inputs/transmission/cost_hurdle_intra.csv,0; 1,0,
+GSw_TransHurdleStart1,Start year hurdle rate value in $/MWh for GSw_TransHurdleLevel1 hierarchy region,int,2
+GSw_TransHurdleStart2,Start year hurdle rate value in $/MWh for GSw_TransHurdleLevel2 hierarchy region,int,2
 GSw_TransNetworkSource,Network source for the initial transmission network used in the model,NARIS2024,NARIS2024,
 GSw_TransRestrict,hierarchy level within which to allow new transmission lines,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region,country,
 GSw_TransScen,Additional candidate interfaces for transmission expansion between zones,^(none|NTP_(MT|P2P))$,none,
