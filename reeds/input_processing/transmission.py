@@ -757,7 +757,7 @@ def main(case):
     val_cs = pd.Series(routes_cs['cs'].unique())
     outputs['cs'] = val_cs
 
-    co2_site_char = get_co2_site_char(case).loc[val_cs]
+    co2_site_char = get_co2_site_char(case).reindex(val_cs).dropna().rename_axis('cs')
     for col in co2_site_char:
         outputs[col] = co2_site_char[col].reset_index()
 
@@ -829,7 +829,7 @@ if __name__ == '__main__':
     case = Path(args.inputs_case).parent
 
     # #%% Settings for testing ###
-    # case = str(Path(reeds.io.reeds_path, 'runs', 'v22060702_inputsM0_github_Pacific'))
+    # case = str(Path(reeds.io.reeds_path, 'runs', 'v22060702_inputsM0_github_Everything'))
 
     #%% Set up logger
     log = reeds.log.makelog(scriptname=__file__, logpath=Path(case, 'gamslog.txt'))
