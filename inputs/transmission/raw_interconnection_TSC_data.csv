@@ -1,4 +1,4 @@
-region,capacity_MW,cum_cost_$,slope_$/kW
+region,capacity_GW,cum_cost_$,slope_$/kW
 p64,18.395181,0.0,
 p64,18.694236,114463990.559,382.7523049572831
 p64,20.748264,907304811.9760001,385.9931906561159

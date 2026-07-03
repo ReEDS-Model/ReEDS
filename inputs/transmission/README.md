@@ -16,7 +16,7 @@
 
 - `cost_hurdle_intra.csv`: Hurdle rate for transmission flows [\$/MWh] between ReEDS spatial hierarchy levels.
 
-- `dollaryear.scv`: U.S. dollar year for cost-related input files
+- `dollaryear.csv`: U.S. dollar year for cost-related input files
 
 - `hvdc_existing.csv`: Power capacity and start/end locations of [high-voltage direct current (HVDC) lines](https://en.wikipedia.org/wiki/List_of_HVDC_projects#North_America) in the USA.
 These lines are mapped to ReEDS zone interfaces during input processing.
@@ -58,6 +58,23 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
 
 - `newlinks_offshore_backbone.csv`: Candidate connections between offshore zones
   - Similarly formatted files for candidate connections between offshore and coastal land-based zones are found at `inputs/zones/{GSw_ZoneSet}/newlinks_offshore_radial.csv`
+
+- `poi_supply_curve_{GSw_ZoneSet}.csv`: Binned point-of-interconnection (POI) / network-reinforcement cost supply curve by ReEDS zone, in long format (`*r, rtscbin, sc_cat in {cost, cap}, value`). Each zone has one or more increasing-cost bins giving the marginal cost [USD2024/kW] of new POI capacity and the incremental capacity width [MW] available at that cost, above the zone's existing (free) interconnection capacity. Used by the binned `INV_POI` supply curve when `numpoibins > 1`; with `numpoibins = 1` the model instead uses the flat `GSw_TransIntraCost` adder.
+  - These per-zone-set files are a **fallback** source. The primary source is `raw_interconnection_TSC_data.csv` (below), from which `reeds/input_processing/transmission.py` regenerates the curve at run time via `reeds/input_processing/make_poi_supply_curve.py`.
+  - `cost` values are in **USD2024** (registered as `poi_supply_curve.csv` in `dollaryear.csv`, the name they are copied to in `inputs_case`); `transmission.py` deflates them to the model dollar year at read time. `cap` values are incremental capacity [MW].
+
+- `raw_interconnection_TSC_data.csv`: Raw cumulative interconnection / network-reinforcement cost curve per ReEDS zone from the [TSC](https://github.nrel.gov/ReEDS/TSC) model (nodal network data as described by [Brown et al.](https://arxiv.org/abs/2308.03612)). One cumulative supply-curve point per row:
+  - `region`: ReEDS zone (must match the zone set's `hierarchy.csv`)
+  - `capacity_GW`: cumulative POI capacity [GW]; the row with zero cumulative cost marks the zone's existing (free) capacity
+  - `cum_cost_$`: cumulative reinforcement cost [USD2024]
+  - `slope_$/kW`: marginal cost from the previous point [USD2024/kW] (informational)
+  - Converted into the binned `poi_supply_curve_{GSw_ZoneSet}.csv` format and read at run time by `reeds/input_processing/make_poi_supply_curve.py` / `transmission.py`, which deflates the costs from USD2024 (registered in `dollaryear.csv`) to the model dollar year.
+  - **TODO:** confirm the exact TSC dataset version / study citation before publishing.
+
+- `wind-ons_nodal_supply_curve.csv`: Wind (wind-ons) interconnection / reinforcement supply curve by ReEDS zone, used by the wind-specific POI limit (`GSw_WindReinf`, which requires `numpoibins > 1`). Columns: `ba` (ReEDS zone), `node_b` (transmission node id), `bin`, `cap_mw` (reinforcement capacity [MW] the node contributes to that tier), `marginal_$_per_MW` / `marginal_$_per_kW` (reinforcement cost [USD2024]), and `cum_cap_mw_node`.
+  - **The reV→node→bin allocation is already baked into this file.** During its preparation (upstream, in the [TSC](https://github.nrel.gov/ReEDS/TSC)/reV pipeline) every reV wind site within a zone was associated with a transmission node, and each node's reinforcement was allocated into the zone's cost tiers. The `bin` column is a **shared per-zone cost tier** — all nodes at a given `(ba, bin)` have the identical `marginal_$_per_kW` — so the wind reinforcement bins already capture the nodal aspects. `transmission.py` therefore just aggregates `cap_mw` to `(zone, tier)` and aligns it to the regional POI `rtscbin` by (dollar-year-adjusted) cost, producing `cap_wpoi_bin`; it does **not** need to redo the site→node join.
+  - Costs are in USD2024 (registered in `dollaryear.csv`).
+  - **TODO:** confirm the exact TSC dataset version / study citation before publishing.
 
 - `transmission_cost_ac_500kv_z134.h5`: Example file illustrating the required format when using the transmission upgrade supply curve ([TSC](https://github.nrel.gov/ReEDS/TSC)) method for `GSw_ZoneSet = z134`
   - The full method is not yet supported; when implemented, it will only be supported for a limited number of `GSw_ZoneSet` definitions

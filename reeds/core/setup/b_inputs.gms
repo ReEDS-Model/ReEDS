@@ -332,14 +332,9 @@ set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
     rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
 * Sets involved with the POI / network-reinforcement cost supply curve.
-* POI reinforcement is charged on increasing-cost bins. With POI_cost_type=regional a single zonal
-* curve (poigroup 'all') applies to every technology; with POI_cost_type=techspecific each tech
-* group (wind, pv, other) has its own per-zone curve (eq_POI_cap covers each group's own capacity).
-* bin_upper is an unlimited backstop bin priced at GSw_POIUpperCost. When numpoibins=0 (full-reV
-* resolution) the bins are loaded from data (rtscbin.csv written by transmission.py).
-set poigroup "POI technology groups for reinforcement cost curves" /all, wind, pv, other/ ;
-set poi_basegroup(poigroup) "POI group carrying existing capacity (poi_cap_init) and non-generator POI capacity (spur/converter/LCC)" ;
-set tg_poigroup(i,poigroup) "map from technology to its POI cost group" ;
+* POI reinforcement is charged on a single increasing-cost zonal curve that applies to every
+* technology. bin_upper is an unlimited backstop bin priced at GSw_POIUpperCost. When numpoibins=0
+* (full-reV resolution) the bins are loaded from data (rtscbin.csv written by transmission.py).
 $ifThenE.poifr %numpoibins%==0
 * rtscbin.csv is a single column (one bin label per line, no header), so $ondelim is neither
 * needed nor allowed here (the set's dimension is the universe, which $ondelim cannot infer):
@@ -353,7 +348,7 @@ $onlisting
 $else.poifr
 set rtscbin "POI / network-reinforcement supply curve bins" /bin1*bin%numpoibins%, bin_upper/ ;
 $endIf.poifr
-set poi_bin_feas(poigroup,r,rtscbin) "feasibility set for POI bins that have a defined reinforcement cost" ;
+set poi_bin_feas(r,rtscbin) "feasibility set for POI bins that have a defined reinforcement cost" ;
 
 parameter yeart(t) "numeric value for year",
           year(allt) "numeric year value for allt" ;
@@ -1304,38 +1299,20 @@ $offdelim
 $onlisting
 / ;
 
-* --- Map technologies to POI cost groups (built from the POI_cost_type switch) ---
-* regional: a single group 'all' applies one zonal curve to every technology (legacy behavior).
-* techspecific: wind-ons -> wind, upv/pvb -> pv, everything else -> other (wind-ofs falls in other).
-* poi_basegroup is the group that carries the free existing capacity (poi_cap_init) and the
-* non-generator POI capacity (spur lines, VSC converters, LCC): 'all' for regional, 'other' for
-* techspecific.
-tg_poigroup(i,poigroup) = no ;
-poi_basegroup(poigroup) = no ;
-$ifThen.poitech "%POI_cost_type%" == "techspecific"
-tg_poigroup(i,"wind")$onswind(i) = yes ;
-tg_poigroup(i,"pv")$[upv(i) or pvb(i)] = yes ;
-tg_poigroup(i,"other")$[(not ban(i))$(not onswind(i))$(not upv(i))$(not pvb(i))] = yes ;
-poi_basegroup("other") = yes ;
-$else.poitech
-tg_poigroup(i,"all")$(not ban(i)) = yes ;
-poi_basegroup("all") = yes ;
-$endIf.poitech
-
-* POI / network-reinforcement cost supply curve, indexed by POI group, region, and bin.
+* POI / network-reinforcement cost supply curve, indexed by region and bin.
 * Costs are provided in $/kW of new POI capacity above the existing capacity (poi_cap_init),
 * binned so that the marginal cost increases with cumulative new capacity (cheapest bin fills
 * first under cost minimization). cost_poi_bin is stored internally in $/MW (input $/kW * 1000,
 * as for the flat Sw_TransIntraCost) so it multiplies INV_POI [MW] directly in the objective.
-parameter cost_poi_bin(poigroup,r,rtscbin) "--$/MW-- POI / network-reinforcement cost in each bin" ;
-parameter cap_poi_bin(poigroup,r,rtscbin)  "--MW-- incremental capacity width available in each POI bin (0 = unlimited)" ;
+parameter cost_poi_bin(r,rtscbin) "--$/MW-- POI / network-reinforcement cost in each bin" ;
+parameter cap_poi_bin(r,rtscbin)  "--MW-- incremental capacity width available in each POI bin (0 = unlimited)" ;
 
 * Binned POI supply curve loaded from inputs_case/poi_supply_curve.csv (long format:
-* poigroup, r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value). transmission.py writes this:
-* poigroup='all' for regional, or wind/pv/other for techspecific. The region dimension is read
-* against the GAMS universe (*) rather than the model region set r so that regions present in the
-* file but filtered out of the model by GSw_Region do not raise a domain error.
-parameter poi_sc_dat(poigroup,*,rtscbin,sc_cat) "--$/kW or MW-- POI / network-reinforcement supply curve data by group, region, bin, and category"
+* r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), written by transmission.py. The region
+* dimension is read against the GAMS universe (*) rather than the model region set r so that
+* regions present in the file but filtered out of the model by GSw_Region do not raise a domain
+* error.
+parameter poi_sc_dat(*,rtscbin,sc_cat) "--$/kW or MW-- POI / network-reinforcement supply curve data by region, bin, and category"
 /
 $onempty
 $offlisting
@@ -1346,18 +1323,44 @@ $onlisting
 $offempty
 / ;
 
-* Default (single flat bin) for the base group reproduces the legacy flat Sw_TransIntraCost:
-* the base group's bin1 is available at the flat cost with no bin-width limit. This is the
-* fallback for any region the poi_supply_curve.csv file does not cover.
-cost_poi_bin(poigroup,r,"bin1")$[Sw_TransIntraCost$poi_basegroup(poigroup)] = Sw_TransIntraCost * 1000 ;
+* Default (single flat bin) reproduces the legacy flat Sw_TransIntraCost: bin1 is available at the
+* flat cost with no bin-width limit. This is the fallback for any region the poi_supply_curve.csv
+* file does not cover.
+cost_poi_bin(r,"bin1")$Sw_TransIntraCost = Sw_TransIntraCost * 1000 ;
 
-* Overlay the supply-curve data for any (group,region,bin) it covers (only model regions r match).
-* Costs are converted from input $/kW to $/MW with *1000; capacities (MW) are used as-is.
-cost_poi_bin(poigroup,r,rtscbin)$poi_sc_dat(poigroup,r,rtscbin,"cost") = poi_sc_dat(poigroup,r,rtscbin,"cost") * 1000 ;
-cap_poi_bin(poigroup,r,rtscbin)$poi_sc_dat(poigroup,r,rtscbin,"cap")   = poi_sc_dat(poigroup,r,rtscbin,"cap") ;
+* Overlay the supply-curve data for any (region,bin) it covers (only model regions r match).
+* poi_sc_dat costs are already in the model dollar year (2004$): transmission.py deflates them from
+* their input dollar year (USD2024, registered in inputs/transmission/dollaryear.csv) when writing
+* poi_supply_curve.csv, so here they are only unit-converted from $/kW to $/MW with *1000
+* (capacities in MW are used as-is), exactly as for the flat Sw_TransIntraCost.
+cost_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cost") = poi_sc_dat(r,rtscbin,"cost") * 1000 ;
+cap_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cap")   = poi_sc_dat(r,rtscbin,"cap") ;
 
 * A POI bin is feasible (i.e. can be built into) if it has a defined cost.
-poi_bin_feas(poigroup,r,rtscbin)$cost_poi_bin(poigroup,r,rtscbin) = yes ;
+poi_bin_feas(r,rtscbin)$cost_poi_bin(r,rtscbin) = yes ;
+
+* Wind (wind-ons) subset of the POI reinforcement curve (Sw_WindReinf): the wind interconnection
+* capacity available in each regional reinforcement bin. Wind is binned into the SAME rtscbin as the
+* regional curve (transmission.py assigns each wind node by its reinforcement cost), so the mirrored
+* wind supply curve (eq_WPOI_cap/eq_WPOI_binlim) shares the regional bins and eq_WPOI_link pairs them
+* bin-for-bin. Only 'cap' rows are provided (wind pays the regional bin cost, not a separate price);
+* bins the file omits are left at 0 = unlimited (e.g. the bin_upper backstop). Region read against
+* the universe (*) so regions filtered out by GSw_Region do not raise a domain error.
+parameter cap_wpoi_bin(r,rtscbin) "--MW-- wind interconnection capacity available in each POI bin (0 = unlimited)" ;
+* wind_poi_supply_curve.csv is empty (header only) whenever Sw_WindReinf is off, so $onempty must
+* wrap the whole data statement (the canonical ReEDS idiom -- $onempty inside the /.../ block does
+* not suppress the empty-data error).
+$onempty
+parameter wpoi_sc_dat(*,rtscbin,sc_cat) "--MW-- wind POI supply curve data by region and bin"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%wind_poi_supply_curve.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+cap_wpoi_bin(r,rtscbin)$wpoi_sc_dat(r,rtscbin,"cap") = wpoi_sc_dat(r,rtscbin,"cap") ;
 
 *created by reeds/input_processing/writecapdat.py
 table capnonrsc(i,r,*) "--MW-- raw power capacity data for non-RSC tech"

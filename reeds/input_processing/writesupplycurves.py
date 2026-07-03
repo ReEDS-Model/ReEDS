@@ -175,9 +175,7 @@ def agg_supplycurve(
     dfin = reeds.io.assemble_supplycurve(
         scfile=scpath,
         case=os.path.dirname(os.path.normpath(inputs_case)),
-    ).reset_index().drop(
-        columns=['FIPS', 'cf', 'cost_reinforcement_usd_per_mw_native'], errors='ignore'
-    )
+    ).reset_index().drop(columns=['FIPS', 'cf'], errors='ignore')
     ## Convert dollar year and recalculate total cost
     transcost_cols = [c for c in dfin if 'cost' in c]
     dfin.loc[:, transcost_cols] *= deflate['interconnection']
@@ -250,8 +248,8 @@ def main(
     ### POI_validate: coarsen the embedded VRE reinforcement cost to numpoibins bins per
     ### region/tech (keeping it in the supply curve). numpoibins=0 -> native (exact). See
     ### coarsen_reinforcement() and cases.csv:POI_validate.
-    poi_validate = int(sw.get('POI_validate', 0) or 0)
-    numpoibins = int(sw.get('numpoibins', 0) or 0)
+    poi_validate = int(sw.POI_validate)
+    numpoibins = int(sw.numpoibins)
 
     # Use agglevel_variables function to obtain spatial resolution variables 
     agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)

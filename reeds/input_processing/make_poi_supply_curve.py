@@ -9,9 +9,14 @@ Input
 | column         | units  | meaning                                                       |
 |----------------|--------|---------------------------------------------------------------|
 | ``region``     | -      | ReEDS zone (must match the zone set's hierarchy.csv)          |
-| ``capacity_MW``| GW     | cumulative POI capacity at this point (column name is legacy) |
+| ``capacity_GW``| GW     | cumulative POI capacity at this point                         |
 | ``cum_cost_$`` | $      | cumulative reinforcement cost; ``0`` marks existing capacity  |
 | ``slope_$/kW`` | $/kW   | marginal cost from the previous point (informational)         |
+
+``capacity_GW`` is in **gigawatts**; ``region_bins`` converts it to MW for the output bin widths
+(``width_mw = width_gw * 1000``) and to kW in the marginal-cost denominator (``width_gw * 1e6``).
+Cost outputs (``cost`` rows) are in the raw file's input dollar year (USD2024); ReEDS'
+``transmission.py`` deflates them to the model dollar year at read time (see dollaryear.csv).
 
 The row where ``cum_cost_$`` is 0 is the zone's **existing capacity** (the free
 ``poi_cap_init``); only capacity *above* it is binnable. Points at lower capacity than the
@@ -36,11 +41,11 @@ By default each zone is re-binned to ``--numpoibins`` bins (default 5, matching 
 the optimal capacity-weighted least-squares segmentation used elsewhere for POI/RSC binning. Pass
 ``--native`` to instead emit one bin per raw segment (variable bin count per zone).
 
-Usage
+Usage (run from the repo root; input/output default to ``inputs/transmission/``)
 -----
-    python make_poi_supply_curve.py --zoneset z134
-    python make_poi_supply_curve.py --numpoibins 7 --output poi_supply_curve_z134.csv
-    python make_poi_supply_curve.py --native --raw raw_interconnection_TSC_data.csv
+    python -m reeds.input_processing.make_poi_supply_curve --zoneset z134
+    python -m reeds.input_processing.make_poi_supply_curve --numpoibins 7 --output poi_supply_curve_z134.csv
+    python -m reeds.input_processing.make_poi_supply_curve --native
 """
 
 import argparse
@@ -49,6 +54,9 @@ import numpy as np
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# POI data files live in inputs/transmission/ at the repo root (this module is in
+# reeds/input_processing/, two levels down), so default raw input and outputs resolve there.
+TRANS_DIR = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'inputs', 'transmission')
 
 
 def optimal_bins(costs, widths, nbins):
@@ -106,14 +114,16 @@ def region_bins(g, numpoibins, upper_cost, native):
     The existing-capacity anchor is the (lowest-capacity) row with zero cumulative cost; only
     capacity above it is binned, and lower-capacity rows are discarded.
     """
-    g = g.sort_values('capacity_MW')
+    g = g.sort_values('capacity_GW')
     # Existing capacity = capacity at which cumulative cost is zero (the free poi_cap_init).
     anchor = g['cum_cost_$'].abs().idxmin()
-    existing_cap = g.loc[anchor, 'capacity_MW']
+    existing_cap = g.loc[anchor, 'capacity_GW']
     # Keep the anchor and everything above it; drop below-existing points (handles zones whose
     # existing capacity exceeds the lowest-capacity point in the raw curve).
-    above = g.loc[g['capacity_MW'] >= existing_cap].sort_values('capacity_MW')
-    cap_gw = above['capacity_MW'].to_numpy(dtype=float)
+    above = g.loc[g['capacity_GW'] >= existing_cap].sort_values('capacity_GW')
+    # capacity_GW is in GW: read into cap_gw / width_gw and convert to MW (width_mw) and kW (in the
+    # marginal-cost denominator) below.
+    cap_gw = above['capacity_GW'].to_numpy(dtype=float)
     cum_cost = above['cum_cost_$'].to_numpy(dtype=float)
     width_gw = np.diff(cap_gw)                      # incremental capacity per segment (GW)
     d_cost = np.diff(cum_cost)                       # incremental $ per segment (cost==0 at anchor)
@@ -132,7 +142,7 @@ def region_bins(g, numpoibins, upper_cost, native):
 def make_regional_poi_bins(raw, numpoibins=5, upper_cost=2000.0, native=False):
     """Convert raw cumulative interconnection data into the long-format POI supply curve.
 
-    ``raw`` is a path or DataFrame with columns ``region, capacity_MW, cum_cost_$, slope_$/kW``.
+    ``raw`` is a path or DataFrame with columns ``region, capacity_GW, cum_cost_$, slope_$/kW``.
     Returns a DataFrame with columns ``*r, rtscbin, sc_cat, value`` (cost rows in $/kW, cap rows
     in incremental MW), one bin set per zone.
     """
@@ -151,7 +161,7 @@ def main():
         description='Build a regional POI supply curve from raw interconnection data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--raw', default=os.path.join(HERE, 'raw_interconnection_TSC_data.csv'),
+        '--raw', default=os.path.join(TRANS_DIR, 'raw_interconnection_TSC_data.csv'),
         help='path to the raw cumulative interconnection-cost CSV')
     parser.add_argument(
         '--numpoibins', type=int, default=5,
@@ -177,9 +187,9 @@ def main():
     if args.output:
         outpath = args.output
     elif args.zoneset:
-        outpath = os.path.join(HERE, f'poi_supply_curve_{args.zoneset}.csv')
+        outpath = os.path.join(TRANS_DIR, f'poi_supply_curve_{args.zoneset}.csv')
     else:
-        outpath = os.path.join(HERE, 'poi_supply_curve_from_raw.csv')
+        outpath = os.path.join(TRANS_DIR, 'poi_supply_curve_from_raw.csv')
 
     out.to_csv(outpath, index=False)
     nbins = out.loc[out['sc_cat'] == 'cost'].groupby('*r').size()

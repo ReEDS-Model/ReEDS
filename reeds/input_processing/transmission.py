@@ -10,6 +10,7 @@ import datetime
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+from reeds.input_processing import make_poi_supply_curve
 tic = datetime.datetime.now()
 
 
@@ -642,21 +643,16 @@ def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac)
 def write_poi_supply_curve(case):
     """
     Write the model-facing inputs_case/poi_supply_curve.csv in long format
-    (*poigroup, r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), plus rtscbin.csv (the bin
-    label set, used to size the GAMS rtscbin set when numpoibins=0). b_inputs.gms converts cost
-    $/kW -> $/MW (*1000) and charges each POI group on its own curve via eq_POI_cap(poigroup,r,t).
+    (*r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), plus rtscbin.csv (the bin label set,
+    used to size the GAMS rtscbin set when numpoibins=0). b_inputs.gms converts cost $/kW -> $/MW
+    (*1000) and charges every technology on this single zonal curve via eq_POI_cap(r,t).
 
-    POI_cost_type = 'regional' (default): one zonal curve for all techs (poigroup='all'). numpoibins=1
-      (or POI_validate) -> flat GSw_TransIntraCost. Otherwise the zonal bins are built from the raw
-      cumulative interconnection curve (inputs/transmission/raw_interconnection_TSC_data.csv) via
-      make_poi_supply_curve.make_regional_poi_bins: numpoibins=0 -> native (one bin per raw segment),
-      numpoibins>1 -> re-binned to numpoibins; both append the unlimited GSw_POIUpperCost backstop
-      bin_upper. If the raw file is absent it falls back to the copied per-zone-set poi_supply_curve.csv.
-    POI_cost_type = 'techspecific': wind (wind-ons) and PV (upv) each get their OWN per-region
-      reinforcement curve from the reV supply-curve cost_reinforcement_usd_per_mw (deflated to
-      USD2004); 'other' (all non-VRE techs) gets the flat GSw_TransIntraCost floor. numpoibins=0 ->
-      full reV resolution; numpoibins>0 -> sampled to numpoibins unique-width bins minimizing the
-      native-vs-binned difference (optimal capacity-weighted least-squares segmentation).
+    One zonal reinforcement curve applies to all techs. numpoibins=1 (or POI_validate) -> flat
+    GSw_TransIntraCost. Otherwise the zonal bins are built from the raw cumulative interconnection
+    curve (inputs/transmission/raw_interconnection_TSC_data.csv) via
+    make_poi_supply_curve.make_regional_poi_bins: numpoibins=0 -> native (one bin per raw segment),
+    numpoibins>1 -> re-binned to numpoibins; both append the unlimited GSw_POIUpperCost backstop
+    bin_upper. If the raw file is absent it falls back to the copied per-zone-set poi_supply_curve.csv.
     """
     sw = reeds.io.get_switches(case)
     reeds_path = reeds.io.reeds_path
@@ -664,173 +660,61 @@ def write_poi_supply_curve(case):
     valid_regions = {'r': reeds.io.read_input(case, 'r').squeeze(1).tolist()}
 
     numpoibins = int(sw.numpoibins)
-    poicosttype = str(sw.get('POI_cost_type', 'regional'))
     ## POI_validate (binning-sweep mode) routes numpoibins to the embedded VRE reinforcement
     ## (handled in writesupplycurves.coarsen_reinforcement), so here the zonal POI is forced to the
     ## flat GSw_TransIntraCost layer and held fixed across the sweep.
-    poi_validate = int(sw.get('POI_validate', 0) or 0)
+    poi_validate = int(sw.POI_validate)
 
-    if poicosttype == 'techspecific' and not poi_validate:
-        def _segment_curve(costs, caps, nbins, maxpts=400):
-            """Return [(cap_mw, cost_usd_per_mw), ...] bins for one region/tech curve.
-            nbins<=0 -> full native (distinct cost levels). nbins>0 -> optimal capacity-weighted L2
-            piecewise-constant segmentation (bin widths minimize the native-vs-binned difference)."""
-            df = (pd.DataFrame({'cost': costs, 'cap': caps})
-                  .groupby('cost', as_index=False)['cap'].sum().sort_values('cost').reset_index(drop=True))
-            x = df['cost'].to_numpy(float)
-            w = df['cap'].to_numpy(float)
-            n = len(x)
-
-            if (nbins <= 0) or (nbins >= n):
-                return list(zip(w, x))
-            ## Pre-aggregate to <=maxpts capacity-quantile micro-bins to bound the DP cost
-            if n > maxpts:
-                cum = np.cumsum(w)
-                bounds = np.unique(np.concatenate(
-                    [[0], np.clip(np.searchsorted(cum, np.linspace(0, cum[-1], maxpts + 1)[1:-1]), 0, n - 1) + 1, [n]]))
-                xs, ws = [], []
-                for a, b in zip(bounds[:-1], bounds[1:]):
-                    swt = w[a:b].sum()
-                    if swt > 0:
-                        ws.append(swt)
-                        xs.append((w[a:b] * x[a:b]).sum() / swt)
-                x = np.array(xs)
-                w = np.array(ws)
-                n = len(x)
-
-            W = np.concatenate([[0], np.cumsum(w)])
-            WX = np.concatenate([[0], np.cumsum(w * x)])
-            WX2 = np.concatenate([[0], np.cumsum(w * x * x)])
-
-            def sse(a, b):
-                swt = W[b] - W[a]
-                return 0.0 if swt <= 0 else (WX2[b] - WX2[a]) - (WX[b] - WX[a]) ** 2 / swt
-            INF = float('inf')
-            dp = np.full((nbins + 1, n + 1), INF)
-            cut = np.zeros((nbins + 1, n + 1), int)
-
-            dp[0, 0] = 0.0
-            for k in range(1, nbins + 1):
-                for j in range(k, n + 1):
-                    best, ba = INF, k - 1
-                    for a in range(k - 1, j):
-                        v = dp[k - 1, a] + sse(a, j)
-                        if v < best:
-                            best, ba = v, a
-                    dp[k, j] = best
-                    cut[k, j] = ba
-            bins = []
-            j = n
-            for k in range(nbins, 0, -1):
-                a = cut[k, j]
-                swt = W[j] - W[a]
-                bins.append((swt, (WX[j] - WX[a]) / swt))
-                j = a
-            return list(reversed(bins))
-
-        def _interconnection_deflator():
-            """Multiplier converting reV interconnection costs to USD2004 (the GSw_TransIntraCost basis)."""
-            try:
-                import h5py
-                with h5py.File(os.path.join(
-                        reeds_path, 'inputs', 'supply_curve', 'interconnection_land.h5'), 'r') as f:
-                    revyear = int(f['data'].attrs['dollaryear'])
-                defl = pd.read_csv(
-                    os.path.join(reeds_path, 'inputs', 'financials', 'deflator.csv'),
-                    header=0, names=['Dollar.Year', 'Deflator'], index_col='Dollar.Year')['Deflator']
-                return float(defl.loc[revyear])
-            except Exception as e:
-                print(f'WARNING: could not compute reV->USD2004 deflator ({e}); using 1.0')
-                return 1.0
-
-        def _binned_reinforcement(scfile, poigroup, nbins, deflator):
-            sc = pd.read_csv(scfile)
-            ## The binned-POI method zeroes cost_reinforcement_usd_per_mw in the supply curve (so it
-            ## is not charged on INV_RSC) and relocates it to the zonal INV_POI curve we build here.
-            ## Read the preserved native reinforcement so the relocation actually carries the cost;
-            ## fall back to the live column if the native one is absent (e.g. reinforcement not dropped).
-            reinfcol = (
-                'cost_reinforcement_usd_per_mw_native'
-                if 'cost_reinforcement_usd_per_mw_native' in sc.columns
-                else 'cost_reinforcement_usd_per_mw'
-            )
-            sc = sc[['region', 'capacity', reinfcol]].dropna()
-            sc = sc.loc[sc['capacity'] > 0]
-            rows = []
-            for r, g in sc.groupby('region'):
-                if g['capacity'].sum() <= 0:
-                    continue
-                curve = _segment_curve(g[reinfcol].values, g['capacity'].values, nbins)
-                for k, (cap_mw, cost_mw) in enumerate(curve, start=1):
-                    ## reV $/MW -> USD2004 $/kW
-                    rows.append([poigroup, r, f'bin{k}', round(cost_mw * deflator / 1e3, 2), round(cap_mw, 1)])
-            return pd.DataFrame(rows, columns=['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw', 'cap_mw'])
-
-        deflator = _interconnection_deflator()
-        parts = []
-        for poigroup, fname in {'wind': 'supplycurve_wind-ons.csv', 'pv': 'supplycurve_upv.csv'}.items():
-            fpath = os.path.join(inputs_case, fname)
-            if os.path.exists(fpath):
-                parts.append(_binned_reinforcement(fpath, poigroup, numpoibins, deflator))
-        bytech = (pd.concat(parts, ignore_index=True) if parts
-                  else pd.DataFrame(columns=['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw', 'cap_mw']))
-        ## 'other' group (all non-wind/non-PV techs): flat GSw_TransIntraCost (USD2004/kW), unlimited
-        ## (single bin1, no cap). Defined for every model region.
-        other = pd.DataFrame({
-            'poigroup': 'other', 'r': valid_regions['r'], 'rtscbin': 'bin1',
-            'cost_usd_per_kw': float(sw.GSw_TransIntraCost), 'cap_mw': np.nan,
-        })
-        bytech = pd.concat([bytech, other], ignore_index=True)
-        bytech.to_csv(os.path.join(inputs_case, 'poi_supply_curve_bytech.csv'), index=False)
-        ## Melt to long format (cost rows always; cap rows where a finite width is defined)
-        cost_rows = (bytech[['poigroup', 'r', 'rtscbin', 'cost_usd_per_kw']]
-                     .rename(columns={'cost_usd_per_kw': 'value'}).assign(sc_cat='cost'))
-        cap_rows = (bytech.loc[bytech['cap_mw'].notna(), ['poigroup', 'r', 'rtscbin', 'cap_mw']]
-                    .rename(columns={'cap_mw': 'value'}).assign(sc_cat='cap'))
-        poi_model = pd.concat([cost_rows, cap_rows], ignore_index=True)[
-            ['poigroup', 'r', 'rtscbin', 'sc_cat', 'value']]
+    if (numpoibins == 1) or poi_validate:
+        ## Flat legacy POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
+        ## (b_inputs.gms also defaults any region the file omits to this same flat cost).
+        reg = pd.DataFrame({
+            'r': valid_regions['r'], 'rtscbin': 'bin1', 'sc_cat': 'cost',
+            'value': float(sw.GSw_TransIntraCost)})
     else:
-        if (numpoibins == 1) or poi_validate:
-            ## Flat legacy POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
-            ## (b_inputs.gms also defaults any region the file omits to this same flat cost).
-            reg = pd.DataFrame({
-                'r': valid_regions['r'], 'rtscbin': 'bin1', 'sc_cat': 'cost',
-                'value': float(sw.GSw_TransIntraCost)})
+        ## Build the zonal curve from the raw cumulative interconnection data, re-binned to
+        ## numpoibins (numpoibins=0 -> native: one bin per raw segment), cost capped at
+        ## GSw_POIUpperCost. See reeds/input_processing/make_poi_supply_curve.py.
+        raw_poi = os.path.join(
+            reeds_path, 'inputs', 'transmission', 'raw_interconnection_TSC_data.csv')
+        if os.path.exists(raw_poi):
+            reg = (
+                make_poi_supply_curve.make_regional_poi_bins(
+                    raw_poi, numpoibins=numpoibins, upper_cost=float(sw.GSw_POIUpperCost))
+                .rename(columns={'*r': 'r'}))
+            reg = reg.loc[reg['r'].isin(valid_regions['r'])].copy()
+            poi_source_file = 'raw_interconnection_TSC_data.csv'
         else:
-            ## Build the zonal curve from the raw cumulative interconnection data, re-binned to
-            ## numpoibins (numpoibins=0 -> native: one bin per raw segment), cost capped at
-            ## GSw_POIUpperCost. See inputs/transmission/make_poi_supply_curve.py.
-            raw_poi = os.path.join(
-                reeds_path, 'inputs', 'transmission', 'raw_interconnection_TSC_data.csv')
-            if os.path.exists(raw_poi):
-                import importlib.util
-                _spec = importlib.util.spec_from_file_location(
-                    'make_poi_supply_curve',
-                    os.path.join(reeds_path, 'inputs', 'transmission', 'make_poi_supply_curve.py'))
-                _poigen = importlib.util.module_from_spec(_spec)
-                _spec.loader.exec_module(_poigen)
-                reg = (
-                    _poigen.make_regional_poi_bins(
-                        raw_poi, numpoibins=numpoibins, upper_cost=float(sw.GSw_POIUpperCost))
-                    .rename(columns={'*r': 'r'}))
-                reg = reg.loc[reg['r'].isin(valid_regions['r'])].copy()
-            else:
-                ## Fall back to the committed per-zone-set poi_supply_curve.csv (copied to inputs_case).
-                ## numpoibins=0 keeps all of its bins; numpoibins>1 keeps bin1..binN.
-                reg = pd.read_csv(os.path.join(inputs_case, 'poi_supply_curve.csv'))
-                reg = reg.rename(columns={reg.columns[0]: 'r'})
-                if numpoibins > 1:
-                    keep_bins = [f'bin{n}' for n in range(1, numpoibins + 1)]
-                    reg = reg.loc[reg['rtscbin'].isin(keep_bins)].copy()
-            ## GSw_POIUpperCost: unlimited backstop bin (cost row only, no cap) so reinforcement above
-            ## the finite binned capacities stays feasible at a high price.
-            reg = pd.concat([reg, pd.DataFrame({
-                'r': reg['r'].unique(), 'rtscbin': 'bin_upper', 'sc_cat': 'cost',
-                'value': float(sw.GSw_POIUpperCost)})], ignore_index=True)
-        poi_model = reg.assign(poigroup='all')[['poigroup', 'r', 'rtscbin', 'sc_cat', 'value']]
+            ## Fall back to the committed per-zone-set poi_supply_curve.csv (copied to inputs_case).
+            ## numpoibins=0 keeps all of its bins; numpoibins>1 keeps bin1..binN.
+            reg = pd.read_csv(os.path.join(inputs_case, 'poi_supply_curve.csv'))
+            reg = reg.rename(columns={reg.columns[0]: 'r'})
+            if numpoibins > 1:
+                keep_bins = [f'bin{n}' for n in range(1, numpoibins + 1)]
+                reg = reg.loc[reg['rtscbin'].isin(keep_bins)].copy()
+            poi_source_file = 'poi_supply_curve.csv'
+        ## Convert the data-derived bin costs from their input dollar year (registered in
+        ## inputs/transmission/dollaryear.csv -- both the raw interconnection data and the committed
+        ## per-zone-set curves are USD2024) to the model dollar year (sw.dollar_year, 2004$), matching
+        ## every other transmission cost. Only 'cost' rows are deflated ('cap' rows are MW); the
+        ## bin_upper backstop and flat Sw_TransIntraCost fallback are already model-year (USD2004/kW)
+        ## switches, so they are not deflated.
+        input_dollar_year = pd.read_csv(
+            os.path.join(reeds_path, 'inputs', 'transmission', 'dollaryear.csv'), index_col=0,
+        ).squeeze(1)
+        poi_deflator = reeds.io.get_inflatable()[
+            int(input_dollar_year[poi_source_file]), int(sw.dollar_year)]
+        cost_rows = reg['sc_cat'] == 'cost'
+        reg.loc[cost_rows, 'value'] = reg.loc[cost_rows, 'value'].astype(float) * poi_deflator
+        ## GSw_POIUpperCost: unlimited backstop bin (cost row only, no cap) so reinforcement above
+        ## the finite binned capacities stays feasible at a high price.
+        reg = pd.concat([reg, pd.DataFrame({
+            'r': reg['r'].unique(), 'rtscbin': 'bin_upper', 'sc_cat': 'cost',
+            'value': float(sw.GSw_POIUpperCost)})], ignore_index=True)
+    poi_model = reg[['r', 'rtscbin', 'sc_cat', 'value']]
 
     ## Write the model-facing curve (leading '*' so GAMS treats the header row as a comment)
-    poi_model.rename(columns={'poigroup': '*poigroup'}).to_csv(
+    poi_model.rename(columns={'r': '*r'}).to_csv(
         os.path.join(inputs_case, 'poi_supply_curve.csv'), index=False)
 
     ## Write the rtscbin label set (bin1..binN in order, bin_upper last) for GAMS set sizing
@@ -838,6 +722,91 @@ def write_poi_supply_curve(case):
         return (1, 0) if b == 'bin_upper' else (0, int(str(b).replace('bin', '')))
     rtscbins = sorted(poi_model['rtscbin'].unique(), key=_binkey)
     pd.Series(rtscbins).to_csv(os.path.join(inputs_case, 'rtscbin.csv'), index=False, header=False)
+
+
+def write_wind_poi_supply_curve(case):
+    """
+    Write inputs_case/wind_poi_supply_curve.csv: the wind (wind-ons) subset of the regional POI
+    reinforcement supply curve, giving cap_wpoi_bin(r,rtscbin) -- the wind interconnection capacity
+    (MW) whose node reinforcement cost falls in each regional POI cost bin. Only the capacity
+    (sc_cat='cap') is written; wind pays the regional bin cost (Sw_WindReinf is a limit, not a
+    separate price), and any bin the file omits (e.g. bin_upper) is left unlimited in GAMS.
+
+    Wind is assigned to the SAME rtscbin as the regional curve by matching each wind node's
+    reinforcement cost to the regional bin costs (read from the poi_supply_curve.csv that
+    write_poi_supply_curve already wrote), so eq_WPOI_link can pair wind and regional bin-for-bin.
+    Source: inputs/transmission/wind-ons_nodal_supply_curve.csv (ba, node_b, bin, cap_mw,
+    marginal_$_per_kW, ...). An empty (header-only) file is written -- so the GAMS $include always
+    succeeds -- when GSw_WindReinf is off, numpoibins<=1, GSw_TransIntraCost=0, or the source is absent.
+
+    NODAL PRE-ASSOCIATION (why this needs no site->node join here): the reV<->node<->bin allocation
+    is already baked into wind-ons_nodal_supply_curve.csv during its preparation upstream (the
+    TSC/reV pipeline). Within each zone, every reV wind site was associated with a transmission node
+    and each node's interconnection reinforcement was allocated into that zone's shared cost tiers.
+    In the file the `bin` column IS a per-zone cost tier (all nodes at a given (ba,bin) share an
+    identical marginal_$_per_kW), and `cap_mw` is the reinforcement capacity that zone's wind nodes
+    contribute to that tier. So the wind reinforcement bins ALREADY capture the nodal aspects; ReEDS
+    just aggregates cap_mw to (zone, tier) and aligns it to the regional rtscbin by cost.
+    """
+    sw = reeds.io.get_switches(case)
+    reeds_path = reeds.io.reeds_path
+    inputs_case = os.path.join(case, 'inputs_case')
+    valid_regions = set(reeds.io.read_input(case, 'r').squeeze(1).tolist())
+
+    outpath = os.path.join(inputs_case, 'wind_poi_supply_curve.csv')
+    nodal_path = os.path.join(
+        reeds_path, 'inputs', 'transmission', 'wind-ons_nodal_supply_curve.csv')
+
+    active = (int(sw.GSw_WindReinf)
+              and int(sw.numpoibins) > 1
+              and float(sw.GSw_TransIntraCost) != 0
+              and os.path.exists(nodal_path))
+    if not active:
+        pd.DataFrame(columns=['*r', 'rtscbin', 'sc_cat', 'value']).to_csv(outpath, index=False)
+        return
+
+    ## Regional bin costs ($/kW) per region, from the regional curve just written by
+    ## write_poi_supply_curve (cost rows only; includes the bin_upper backstop cost).
+    reg = pd.read_csv(os.path.join(inputs_case, 'poi_supply_curve.csv'))
+    reg = reg.rename(columns={reg.columns[0]: 'r'})
+    regcost = reg.loc[reg['sc_cat'] == 'cost'].astype({'value': float})
+
+    ## Wind node reinforcement curve: cost ($/kW) and capacity (MW) per node/bin.
+    wind = pd.read_csv(nodal_path).rename(
+        columns={'ba': 'r', 'marginal_$_per_kW': 'cost', 'cap_mw': 'cap'})
+    wind = wind[['r', 'cost', 'cap']].dropna()
+    wind = wind.loc[wind['r'].isin(valid_regions) & (wind['cap'] > 0)]
+
+    ## Deflate the wind node reinforcement cost from its input dollar year (USD2024, per
+    ## dollaryear.csv) to the model dollar year, matching the regional bin costs read above
+    ## (write_poi_supply_curve already deflated those). Bin assignment below is by nearest cost,
+    ## so both sides must be in the same dollar year.
+    input_dollar_year = pd.read_csv(
+        os.path.join(reeds_path, 'inputs', 'transmission', 'dollaryear.csv'), index_col=0,
+    ).squeeze(1)
+    wind_deflator = reeds.io.get_inflatable()[
+        int(input_dollar_year['wind-ons_nodal_supply_curve.csv']), int(sw.dollar_year)]
+    wind['cost'] = wind['cost'].astype(float) * wind_deflator
+
+    rows = []
+    for r, wg in wind.groupby('r'):
+        rc = regcost.loc[regcost['r'] == r].sort_values('value')
+        if rc.empty:
+            continue
+        bins = rc['rtscbin'].tolist()
+        costs = rc['value'].tolist()
+        ## Assign each wind node to the regional bin nearest in cost: bin boundaries are the
+        ## midpoints between consecutive regional bin costs, so a node with reinforcement cost c
+        ## lands in the regional tier whose price is closest to c (highest tier / bin_upper catches
+        ## everything above the last midpoint).
+        edges = [(costs[i] + costs[i + 1]) / 2 for i in range(len(costs) - 1)]
+        idx = np.searchsorted(edges, wg['cost'].to_numpy(dtype=float))
+        wg = wg.assign(rtscbin=[bins[i] for i in idx])
+        for b, c in wg.groupby('rtscbin')['cap'].sum().items():
+            rows.append((r, b, 'cap', round(float(c), 1)))
+
+    (pd.DataFrame(rows, columns=['*r', 'rtscbin', 'sc_cat', 'value'])
+     .to_csv(outpath, index=False))
 
 
 #%% Main function
@@ -912,6 +881,9 @@ def main(case):
     ## Writes poi_supply_curve.csv (and rtscbin.csv) directly; already region-scoped, so it
     ## bypasses the outputs/hierarchy-downselect mechanism below.
     write_poi_supply_curve(case)
+    ## Wind subset of the POI curve (cap_wpoi_bin); must run AFTER write_poi_supply_curve because it
+    ## reads that file's per-region bin costs to assign wind capacity to the same reinforcement bins.
+    write_wind_poi_supply_curve(case)
 
     ### Pipelines
     outputs['pipeline_cost_mult'] = get_pipeline_cost_mult(

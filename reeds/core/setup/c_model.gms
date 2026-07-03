@@ -93,7 +93,8 @@ positive variables
   CONVERSION_PRM(r,ccseason,intype,outtype,t)    "--MW-- planning reserve margin capacity sent through VSC AC/DC converters"
   CAP_SPUR(x,t)                                  "--MW-- capacity of spur lines"
   INV_SPUR(x,t)                                  "--MW-- investment in spur line capacity"
-  INV_POI(poigroup,r,rtscbin,t)                  "--MW-- investment in new POI capacity by tech group and reinforcement cost bin"
+  INV_POI(r,rtscbin,t)                           "--MW-- investment in new POI capacity by reinforcement cost bin"
+  INV_WPOI(r,rtscbin,t)                          "--MW-- wind (wind-ons) interconnection assigned to each reinforcement cost bin (Sw_WindReinf)"
   TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins (defined for r < rr)"
 
 * production-, CO2-, and hydrogen-specific variables
@@ -288,8 +289,11 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_CONVERSION_limit_energy(r,allh,t)        "--MW-- AC/DC energy conversion is limited to converter capacity"
  eq_CONVERSION_limit_prm(r,ccseason,t)       "--MW-- AC/DC PRM conversion is limited to converter capacity"
  eq_PRMTRADE_VSC(r,ccseason,t)               "--MW-- PRM capacity can flow through VSC lines but doesn't directly contribute to PRM"
- eq_POI_cap(poigroup,r,t)                    "--MW-- POI capacity accounting by tech group (for network reinforcement costs)"
- eq_POI_binlim(poigroup,r,rtscbin,t)         "--MW-- cumulative POI investment in each bin cannot exceed the bin's available capacity"
+ eq_POI_cap(r,t)                             "--MW-- POI capacity accounting (for network reinforcement costs)"
+ eq_POI_binlim(r,rtscbin,t)                  "--MW-- cumulative POI investment in each bin cannot exceed the bin's available capacity"
+ eq_WPOI_cap(r,t)                            "--MW-- wind interconnection must be assigned across the wind reinforcement bins (Sw_WindReinf)"
+ eq_WPOI_binlim(r,rtscbin,t)                 "--MW-- cumulative wind interconnection in each bin cannot exceed the wind subset capacity (Sw_WindReinf)"
+ eq_WPOI_link(r,rtscbin,t)                   "--MW-- regional POI in each bin must carry the wind interconnection assigned to that bin (Sw_WindReinf)"
  eq_CAPTRAN_GRP(transgrp,transgrpp,t)        "--MW-- combined flow capacity between transmission groups"
  eq_transgrp_limit_energy(transgrp,transgrpp,allh,t) "--MW-- limit on combined interface energy flows"
  eq_transgrp_limit_prm(transgrp,transgrpp,ccseason,t) "--MW-- limit on combined interface PRM flows"
@@ -2004,59 +2008,122 @@ eq_prescribed_transmission(r,rr,trtype,t)
 * This is a PRICE-ONLY mechanism: new generation is charged a per-MW reinforcement cost off the
 * supply curve and NO deliverable intra-zone transmission capacity is created. INV_POI never
 * enters the power balance, the transmission flow limits, or CAPTRAN; it relieves no flow. The
-* accounting quantity is sized to the group's interconnected generation capacity (CAP/ilr, AC)
+* accounting quantity is sized to the zone's interconnected generation capacity (CAP/ilr, AC)
 * solely so the curve price can be levied on it -- it is a cost basis, not transmission capability.
-* With POI_cost_type=regional there is a single group 'all' covering all technologies (identical
-* to the legacy formulation); with POI_cost_type=techspecific each tech group (wind, pv, other) is
-* charged on its own per-group reinforcement curve.
-* The free existing capacity (poi_cap_init) and the non-generator POI terms (spur, converter,
-* LCC) attach to the base group only (poi_basegroup: 'all' regional, 'other' techspecific).
-eq_POI_cap(poigroup,r,t)
+* A single zonal reinforcement curve covers all technologies (the free existing capacity
+* poi_cap_init and the non-generator POI terms -- spur, converter, LCC -- attach here too).
+eq_POI_cap(r,t)
     $[tmodel(t)
     $Sw_TransIntraCost
-    $sum{rtscbin, poi_bin_feas(poigroup,r,rtscbin) }
+    $sum{rtscbin, poi_bin_feas(r,rtscbin) }
     $(not Sw_PCM)]..
 
-* The sum of POI capacity for this group...
-    poi_cap_init(r)$poi_basegroup(poigroup)
-    + sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(poigroup,r,rtscbin)],
-          INV_POI(poigroup,r,rtscbin,tt) }
+* The sum of POI capacity...
+    poi_cap_init(r)
+    + sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+          INV_POI(r,rtscbin,tt) }
 
     =g=
 
-* must be greater than the generation capacity [AC] of techs in this group without explicit spur lines...
-    sum{(i,v)$[valcap(i,v,r,t)$tg_poigroup(i,poigroup)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
-* and (base group only) spur-line capacity if explicitly tracked (total capacity, since existing
-* spur-line capacity is already included in poi_cap_init)...
-    + sum{x$[xfeas(x)$x_r(x,r)$Sw_SpurScen$poi_basegroup(poigroup)], CAP_SPUR(x,t) }
-* and (base group only) AC/DC converter capacity for VSC...
-    + CAP_CONVERTER(r,t)$[val_converter(r,t)$poi_basegroup(poigroup)]
-* and (base group only) LCC (INVTRAN(r,rr) == INVTRAN(rr,r) for DC so only need one direction)
-    + sum{(rr,tt)$[routes_inv(r,rr,"LCC",t)$(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_basegroup(poigroup)],
+* must be greater than the generation capacity [AC] without explicit spur lines...
+    sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
+* and spur-line capacity if explicitly tracked (total capacity, since existing spur-line
+* capacity is already included in poi_cap_init)...
+    + sum{x$[xfeas(x)$x_r(x,r)$Sw_SpurScen], CAP_SPUR(x,t) }
+* and AC/DC converter capacity for VSC...
+    + CAP_CONVERTER(r,t)$val_converter(r,t)
+* and LCC (INVTRAN(r,rr) == INVTRAN(rr,r) for DC so only need one direction)
+    + sum{(rr,tt)$[routes_inv(r,rr,"LCC",t)$(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))],
           INVTRAN(r,rr,"LCC",tt)
     }
 ;
 
 * ---------------------------------------------------------------------------
 
-* Cumulative POI investment in each reinforcement cost bin (per group) cannot exceed the
-* incremental capacity available in that bin. Because cost_poi_bin increases across bins, the LP
-* fills the cheapest bins first, producing an increasing marginal reinforcement cost (same
-* mechanism as the VRE resource supply curve, eq_rsc_INVlim). Bins with cap_poi_bin = 0 are
-* treated as unlimited (no constraint generated), e.g. the flat single-bin case or an unbounded
-* top bin.
-eq_POI_binlim(poigroup,r,rtscbin,t)
+* Cumulative POI investment in each reinforcement cost bin cannot exceed the incremental capacity
+* available in that bin. Because cost_poi_bin increases across bins, the LP fills the cheapest bins
+* first, producing an increasing marginal reinforcement cost (same mechanism as the VRE resource
+* supply curve, eq_rsc_INVlim). Bins with cap_poi_bin = 0 are treated as unlimited (no constraint
+* generated), e.g. the flat single-bin case or an unbounded top bin.
+eq_POI_binlim(r,rtscbin,t)
     $[tmodel(t)
     $Sw_TransIntraCost
-    $poi_bin_feas(poigroup,r,rtscbin)
-    $cap_poi_bin(poigroup,r,rtscbin)
+    $poi_bin_feas(r,rtscbin)
+    $cap_poi_bin(r,rtscbin)
     $(not Sw_PCM)]..
 
-    cap_poi_bin(poigroup,r,rtscbin)
+    cap_poi_bin(r,rtscbin)
 
     =g=
 
-    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI(poigroup,r,rtscbin,tt) }
+    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI(r,rtscbin,tt) }
+;
+
+* ---------------------------------------------------------------------------
+
+* Wind (wind-ons) interconnection reinforcement, as a subset of the regional POI curve (Sw_WindReinf).
+* INV_WPOI mirrors INV_POI but is scoped to wind: it distributes wind's interconnected capacity
+* across the SAME reinforcement bins as the regional curve, so eq_WPOI_binlim can cap how much wind
+* fits in each bin (the wind subset of the zone's reinforcement, cap_wpoi_bin) and eq_WPOI_link can
+* force the regional curve to carry it. INV_WPOI itself carries NO objective cost -- wind pays the
+* single regional price via eq_POI_cap/eq_ObjFn_inv; this is a limit only.
+
+* All of wind's interconnected capacity [AC] must be assigned to some wind reinforcement bin (mirror
+* of eq_POI_cap, wind-only). Uses the same (not spur_techs) filter as eq_POI_cap so that when
+* GSw_SpurScen puts wind on explicit spur lines wind drops out of both terms consistently.
+eq_WPOI_cap(r,t)
+    $[tmodel(t)
+    $Sw_TransIntraCost
+    $Sw_WindReinf
+    $sum{rtscbin, poi_bin_feas(r,rtscbin) }
+    $(not Sw_PCM)]..
+
+    sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+        INV_WPOI(r,rtscbin,tt) }
+
+    =g=
+
+    sum{(i,v)$[valcap(i,v,r,t)$onswind(i)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
+;
+
+* ---------------------------------------------------------------------------
+
+* Cumulative wind interconnection in each reinforcement bin cannot exceed the wind subset capacity
+* available in that bin (mirror of eq_POI_binlim). Bins with cap_wpoi_bin = 0 are unlimited (no
+* constraint generated), e.g. the bin_upper backstop the wind file omits.
+eq_WPOI_binlim(r,rtscbin,t)
+    $[tmodel(t)
+    $Sw_TransIntraCost
+    $Sw_WindReinf
+    $poi_bin_feas(r,rtscbin)
+    $cap_wpoi_bin(r,rtscbin)
+    $(not Sw_PCM)]..
+
+    cap_wpoi_bin(r,rtscbin)
+
+    =g=
+
+    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_WPOI(r,rtscbin,tt) }
+;
+
+* ---------------------------------------------------------------------------
+
+* Shared-bin link: the regional POI capacity built in each reinforcement bin must be at least the
+* wind interconnection assigned to that same bin. Combined with eq_POI_binlim (INV_POI <= cap_poi_bin)
+* and the increasing cost_poi_bin, wind pushed into expensive bins forces the shared regional curve
+* into those bins too -> higher regional reinforcement price paid by all technologies (Sw_WindReinf).
+eq_WPOI_link(r,rtscbin,t)
+    $[tmodel(t)
+    $Sw_TransIntraCost
+    $Sw_WindReinf
+    $poi_bin_feas(r,rtscbin)
+    $(not Sw_PCM)]..
+
+    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI(r,rtscbin,tt) }
+
+    =g=
+
+    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_WPOI(r,rtscbin,tt) }
 ;
 
 * ---------------------------------------------------------------------------

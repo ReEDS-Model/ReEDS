@@ -1485,10 +1485,9 @@ loop(t$[tmodel_new(t)$(not tfirst(t))],
 ) ;
 
 systemcost_ba("inv_transmission_intrazone_investment",r,t)$[tmodel_new(t)$Sw_TransIntraCost] =
-* cost of intra-zone network reinforcement (cost_poi_bin in $/MW, increasing across bins), summed
-* over POI tech groups
-              sum{(poigroup,rtscbin)$poi_bin_feas(poigroup,r,rtscbin),
-                  trans_cost_cap_fin_mult(t) * cost_poi_bin(poigroup,r,rtscbin) * INV_POI.l(poigroup,r,rtscbin,t) }
+* cost of intra-zone network reinforcement (cost_poi_bin in $/MW, increasing across bins)
+              sum{rtscbin$poi_bin_feas(r,rtscbin),
+                  trans_cost_cap_fin_mult(t) * cost_poi_bin(r,rtscbin) * INV_POI.l(r,rtscbin,t) }
 ;
 
 systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
@@ -1503,10 +1502,10 @@ systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
 ;
 
 systemcost_ba("op_transmission_intrazone_fom",r,t)$[tmodel_new(t)$Sw_TransIntraCost] =
-* FOM cost for intra-zone network reinforcement, summed over POI tech groups
+* FOM cost for intra-zone network reinforcement
               trans_fom_frac
-              * sum{(poigroup,rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(poigroup,r,rtscbin)],
-                    cost_poi_bin(poigroup,r,rtscbin) * INV_POI.l(poigroup,r,rtscbin,tt) }
+              * sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+                    cost_poi_bin(r,rtscbin) * INV_POI.l(r,rtscbin,tt) }
 ;
 
 systemcost_ba("inv_converter_costs",r,t)$tmodel_new(t)  =
@@ -1890,15 +1889,22 @@ net_import_ann_stress(r,t)
 * cost/plot diagnostics -- it is NOT deliverable transmission capacity and relieves no flow.
 poi_capacity(r,t)$tmodel_new(t) =
   poi_cap_init(r)
-  + sum{(poigroup,rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(poigroup,r,rtscbin)],
-        INV_POI.l(poigroup,r,rtscbin,tt) }
+  + sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+        INV_POI.l(r,rtscbin,tt) }
 ;
 
-* POI reinforcement cost basis by cost bin (summed over POI tech groups; for the plot). Same
-* caveat as poi_capacity above: a cost-accounting quantity, not deliverable transmission capacity.
+* POI reinforcement cost basis by cost bin (for the plot). Same caveat as poi_capacity above:
+* a cost-accounting quantity, not deliverable transmission capacity.
 poi_capacity_bin(r,rtscbin,t)$tmodel_new(t) =
-  sum{(poigroup,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(poigroup,r,rtscbin)],
-        INV_POI.l(poigroup,r,rtscbin,tt) }
+  sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+        INV_POI.l(r,rtscbin,tt) }
+;
+
+* Wind (wind-ons) interconnection assigned to each reinforcement bin (Sw_WindReinf). A
+* cost-accounting quantity, not deliverable transmission capacity.
+wind_poi_capacity_bin(r,rtscbin,t)$[tmodel_new(t)$Sw_WindReinf] =
+  sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+        INV_WPOI.l(r,rtscbin,tt) }
 ;
 
 *==========================

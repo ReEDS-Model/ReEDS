@@ -1561,11 +1561,9 @@ def plot_poi_supply_curve(
     staircase, with a vertical line at the cumulative POI capacity deployed in each modeled
     year (x = total capacity, including the free existing poi_cap_init; y = $/kW).
 
-    Each bin's cumulative capacity edge is marked with its own dotted vertical line in the
-    curve's color, so the discrete bin capacities are visible. The x-axis is scaled to the
-    deployed POI capacity (plus the next bin edge beyond it) rather than the full extent of the
-    supply curves, which for tech-specific wind/PV can run to thousands of GW of never-built
-    capacity.
+    Each bin's cumulative capacity edge is marked with its own dotted vertical line so the
+    discrete bin capacities are visible. The x-axis is scaled to the deployed POI capacity
+    (plus the next bin edge beyond it) rather than the full extent of the supply curve.
 
     Args:
         case: path to a ReEDS run folder
@@ -1578,11 +1576,10 @@ def plot_poi_supply_curve(
     """
     xscale = {'MW': 1, 'GW': 1e3, 'TW': 1e6}[x_units]
 
-    ### Per-group supply curves: cost ($/kW) and incremental cap (MW) per bin.
-    ### Format: poigroup, r, rtscbin, sc_cat in {cost, cap}, value. poigroup='all' for
-    ### POI_cost_type=regional, or wind/pv/other for techspecific.
+    ### Zonal supply curve: cost ($/kW) and incremental cap (MW) per bin.
+    ### Format: r, rtscbin, sc_cat in {cost, cap}, value.
     sc = pd.read_csv(os.path.join(case, 'inputs_case', 'poi_supply_curve.csv'))
-    sc = sc.rename(columns={sc.columns[0]: 'poigroup'})
+    sc = sc.rename(columns={sc.columns[0]: 'r'})
     sc = sc.loc[sc['r'] == region]
     if not len(sc):
         raise ValueError(f'No POI supply-curve data for region {region}')
@@ -1593,7 +1590,7 @@ def plot_poi_supply_curve(
         columns={poi_init.columns[0]: 'r', poi_init.columns[1]: 'MW'}).set_index('r')['MW']
     poi_cap_init = float(poi_init.reindex([region]).fillna(0).iloc[0])
 
-    ### Cumulative deployed capacity by year (total, across groups)
+    ### Cumulative deployed capacity by year
     poi_cap = reeds.io.read_output(case, 'poi_capacity', valname='MW')
     poi_cap = (
         poi_cap.loc[poi_cap['r'] == region]
@@ -1604,8 +1601,7 @@ def plot_poi_supply_curve(
     if not len(poi_cap):
         raise ValueError(f'No poi_capacity output for region {region}')
 
-    ### Build a staircase per POI group (each group's curve starts at x=0; the base group also
-    ### shows the free existing capacity)
+    ### Build the staircase (curve starts at x=0; the free existing capacity is drawn separately)
     def _staircase(gc):
         curve = gc.pivot_table(index='rtscbin', columns='sc_cat', values='value', aggfunc='first')
         if 'cap' not in curve.columns:
@@ -1619,15 +1615,12 @@ def plot_poi_supply_curve(
             edges.append(edges[-1] + cap if (np.isfinite(cap) and (cap > 0)) else np.inf)
         return edges, costs
 
-    groups = sorted(sc['poigroup'].unique())
-    stairs = {grp: _staircase(sc.loc[sc['poigroup'] == grp]) for grp in groups}
-    ### Scale the x-axis to the capacities actually deployed (poi_capacity, which already includes
+    edges, costs = _staircase(sc)
+    ### Scale the x-axis to the capacity actually deployed (poi_capacity, which already includes
     ### the free poi_cap_init) plus the first bin edge just beyond, rather than the full extent of
-    ### the supply curves: the tech-specific wind/PV curves can run to thousands of GW of
-    ### never-built capacity, which would otherwise squeeze the deployed region into a sliver.
+    ### the supply curve (an unbounded backstop bin would otherwise squeeze it into a sliver).
     deployed_max = float(poi_cap.max())
-    next_edges = [e for edges, _ in stairs.values() for e in edges
-                  if np.isfinite(e) and e > deployed_max]
+    next_edges = [e for e in edges if np.isfinite(e) and e > deployed_max]
     xmax = max((min(next_edges) if next_edges else deployed_max) * 1.05, deployed_max * 1.12)
 
     ### Plot
@@ -1635,24 +1628,18 @@ def plot_poi_supply_curve(
     if poi_cap_init > 0:
         ax.plot([0, poi_cap_init / xscale], [0, 0],
                 color='C7', lw=3, solid_capstyle='butt', label='existing (free)')
-    groupcolor = {'all': 'k', 'wind': 'C0', 'pv': 'C1', 'other': 'C7'}
-    for grp in groups:
-        edges, costs = stairs[grp]
-        edges_fin = [e if np.isfinite(e) else xmax for e in edges]
-        x, y = [], []
-        for k, cost in enumerate(costs):
-            x += [edges_fin[k] / xscale, edges_fin[k + 1] / xscale]
-            y += [cost, cost]
-        label = 'reinforcement supply curve' if grp == 'all' else grp
-        ax.plot(x, y, color=groupcolor.get(grp, None), lw=2, label=label)
-        ### A unique vertical line at each bin's cumulative capacity edge (in the group's color)
-        ### so each bin's capacity threshold is visible on the curve.
-        for e in edges[1:]:
-            if np.isfinite(e) and (0 < e <= xmax):
-                ax.axvline(e / xscale, color=groupcolor.get(grp, '0.5'),
-                           ls=':', lw=0.8, alpha=0.5, zorder=0)
+    edges_fin = [e if np.isfinite(e) else xmax for e in edges]
+    x, y = [], []
+    for k, cost in enumerate(costs):
+        x += [edges_fin[k] / xscale, edges_fin[k + 1] / xscale]
+        y += [cost, cost]
+    ax.plot(x, y, color='k', lw=2, label='reinforcement supply curve')
+    ### A dotted vertical line at each bin's cumulative capacity edge so each threshold is visible
+    for e in edges[1:]:
+        if np.isfinite(e) and (0 < e <= xmax):
+            ax.axvline(e / xscale, color='0.5', ls=':', lw=0.8, alpha=0.5, zorder=0)
 
-    ### Vertical line per year at the cumulative deployed (total) POI capacity
+    ### Vertical line per year at the cumulative deployed POI capacity
     norm = mpl.colors.Normalize(int(poi_cap.index.min()), int(poi_cap.index.max()))
     sm = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])

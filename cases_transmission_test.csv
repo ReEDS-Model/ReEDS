@@ -1,8 +1,8 @@
-,Default Value,ERCOT_defualt,ERCOT_0,ERCOT_regional,ERCOT_tech
-ignore,1,,0,,
+,Default Value,ERCOT_defualt,ERCOT_0,ERCOT_regional,ERCOT_Wind
+ignore,1,,,0,0
 endyear,2032,,,,
 GSw_Region,interconnect/texas,,,,
 GSw_GasCurve,2,,,,
-numpoibins,1,,,3,9
+numpoibins,1,,,6,6
 GSw_TransIntraCost,,,0.0001,,
-POI_cost_type,regional,,,,techspecific
+GSw_WindReinf,,,,,1

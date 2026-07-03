@@ -1,3 +1,6 @@
 filename,US_dollar_year
 transmission_cost_distance.csv,2024
 transmission_cost_distance_lines.csv,2024
+raw_interconnection_TSC_data.csv,2024
+poi_supply_curve.csv,2024
+wind-ons_nodal_supply_curve.csv,2024
