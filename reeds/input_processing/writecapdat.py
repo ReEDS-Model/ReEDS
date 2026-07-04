@@ -377,8 +377,9 @@ def main(reeds_path, inputs_case):
         gdb_use['tech'] = gdb_use['tech'].replace('pvb_pv','pvb')
 
 
-    # Consider all DUPV as UPV for existing and prescribed builds.
-    gdb_use['tech'] = gdb_use['tech'].replace('dupv','upv')  
+    # Consider all DUPV and pvb_pv as UPV for existing and prescribed builds.
+    gdb_use['tech'] = gdb_use['tech'].replace('dupv','upv')
+    gdb_use['tech'] = gdb_use['tech'].replace('pvb_pv','upv')
 
     # Change tech category of hydro that will be prescribed to use upgrade tech
     # This is a coarse assumption that all recent new hydro is upgrades
@@ -386,11 +387,15 @@ def main(reeds_path, inputs_case):
     # Future work could incorporate this change into unit database creation and possibly
     #    use data from ORNL HydroSource to assign a more accurate hydro category.
     gdb_use.loc[
-        (gdb_use['tech']=='hydEND') & (gdb_use['StartYear'] >= startyear) & (gdb_use['StartYear'] < endyear), 'tech'
-    ] = 'hydUND'
+        (gdb_use['tech']=='hydEND') & 
+        (gdb_use['StartYear'] >= startyear) & 
+        (gdb_use['StartYear'] <= endyear), 
+        'tech'] = 'hydUND'
     gdb_use.loc[
-        (gdb_use['tech']=='hydED') & (gdb_use['StartYear'] >= startyear) & (gdb_use['StartYear'] < endyear), 'tech'
-    ] = 'hydUD'
+        (gdb_use['tech']=='hydED') & 
+        (gdb_use['StartYear'] >= startyear) & 
+        (gdb_use['StartYear'] <= endyear), 
+        'tech'] = 'hydUD'
 
     # We model csp-ns (CSP No Storage) as upv throughout ReEDS, but switch it back for reporting.
     # So save the csp-ns capacity separately, then rename it.
@@ -497,7 +502,7 @@ def main(reeds_path, inputs_case):
     ### prescribed power capacity
     prescribed_nonRSC = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC'])) &
                                     (gdb_use['StartYear'] >= startyear) &
-                                    (gdb_use['StartYear'] < endyear)
+                                    (gdb_use['StartYear'] <= endyear)
                                     ]
     prescribed_nonRSC['tech'] = prescribed_nonRSC['tech'].str.lower()
     ### assign vintage based on start year of the unit
@@ -526,7 +531,7 @@ def main(reeds_path, inputs_case):
     ### prescribed energy capacity
     prescribed_nonRSC_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC_energy'])) &
                                     (gdb_use['StartYear'] >= startyear) &
-                                    (gdb_use['StartYear'] < endyear)
+                                    (gdb_use['StartYear'] <= endyear)
                                     ]
 
     ### assign vintage based on start year of the unit
@@ -623,7 +628,7 @@ def main(reeds_path, inputs_case):
     for tech in TECH['rsc_wsc']:
         cap_pres[tech]= gdb_use.loc[(gdb_use['tech']==tech) &
                     (gdb_use['StartYear'] >= startyear) &
-                    (gdb_use['StartYear'] < endyear)
+                    (gdb_use['StartYear'] <= endyear)
                     ].copy()
         mask = ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
         if len(cap_pres[tech]) != 0:
@@ -779,7 +784,7 @@ def main(reeds_path, inputs_case):
     print('Gathering Retirement Data...')
     rets = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements'])) &
                     (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
-                    (gdb_use['StartYear'] < endyear) 
+                    (gdb_use['StartYear'] <= endyear) 
                     ].copy()
     
     # Assign the retirements type based on whether the unit was online before or after startyear
@@ -802,7 +807,7 @@ def main(reeds_path, inputs_case):
 
     rets_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements_energy'])) &
                     (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
-                    (gdb_use['StartYear'] < endyear)
+                    (gdb_use['StartYear'] <= endyear)
                     ].copy()
     # Assign the retirements type based on whether the unit was online before or after startyear
     rets_energy['type'] = None
@@ -1046,7 +1051,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
+    #inputs_case = os.path.join(reeds_path,'runs','test_NY','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
