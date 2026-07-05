@@ -558,7 +558,7 @@ $ontext
 
 The following six equations dictate how capacity is represented in the model.
 
-The first three equations handle init-X vintages (those that existed pre-2010)
+The first three equations handle init-X vintages (those that existed pre-startyear)
 which are bounded by m_capacity_exog. With retirements (in the second and third
 equations), the constraints imply that capacity must be less than or
 equal to m_capacity_exog and monotonically decreasing over time -

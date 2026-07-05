@@ -280,22 +280,22 @@ TECH = {
     ],
     'prescribed_nonRSC': [
         'battery_li', 'biopower', 'coal-igcc', 'coal-new',
-        'coaloldscr', 'coalolduns','gas-cc', 'gas-ct',
+        'coaloldscr', 'gas-cc', 'gas-ct',
         'hydED', 'hydEND', 'hydUD', 'hydUND', 'hydND', 'hydNPND', 
         'lfill-gas', 'nuclear', 'o-g-s', 'pumped-hydro'
-    ],
+    ], #'coalolduns',
     'prescribed_nonRSC_energy': [
         'battery_li',
     ],
     'storage'  : ['battery_li', 'pumped-hydro'
     ],
-    'rsc_all': ['upv','dpv','pvb_pv','csp-ns'],
+    'rsc_all': ['upv','dpv','pvb','csp-ns'],
     'rsc_w': ['wind-ons','wind-ofs'],
     'rsc_csp': ['csp-ns'],
-    'rsc_wsc': ['upv','pvb_pv','csp-ns','csp-ws','wind-ons','wind-ofs',
+    'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
                 'geohydro_allkm','egs_allkm'],
-    'prsc_all': ['upv','pvb_pv','csp-ns','csp-ws'],
-    'prsc_upv': ['upv','pvb_pv'],
+    'prsc_all': ['upv','pvb','csp-ns','csp-ws'],
+    'prsc_upv': ['upv','pvb'],
     'prsc_w': ['wind-ons','wind-ofs'],
     'prsc_csp': ['csp-ns','csp-ws'],
     'prsc_geo': ['geohydro_allkm','egs_allkm'],
@@ -312,7 +312,7 @@ TECH = {
     # This is not all technologies that do not having cooling, but technologies
     # that are (or could be) in the plant database.
     'no_cooling': [
-        'upv', 'pvb_pv', 'gas-ct', 'geohydro_allkm','egs_allkm',
+        'upv', 'pvb', 'gas-ct', 'geohydro_allkm','egs_allkm',
         'battery_li', 'pumped-hydro', 'pumped-hydro-flex', 
         'hydUD', 'hydUND', 'hydD', 'hydND', 'hydSD', 'hydSND', 'hydNPD',
         'hydNPND', 'hydED', 'hydEND', 'wind-ons', 'wind-ofs',
@@ -375,7 +375,6 @@ def main(reeds_path, inputs_case):
 
     # Consider all DUPV and pvb_pv as UPV for existing and prescribed builds.
     gdb_use['tech'] = gdb_use['tech'].replace('dupv','upv')
-    gdb_use['tech'] = gdb_use['tech'].replace('pvb_pv','upv')
 
     # Change tech category of hydro that will be prescribed to use upgrade tech
     # This is a coarse assumption that all recent new hydro is upgrades
