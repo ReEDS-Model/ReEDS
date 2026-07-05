@@ -281,7 +281,7 @@ TECH = {
     'prescribed_nonRSC': [
         'battery_li', 'biopower', 'coal-igcc', 'coal-new',
         'coaloldscr', 'coalolduns','gas-cc', 'gas-ct',
-        'hydED', 'hydEND', 'hydND', 'hydNPND', 
+        'hydED', 'hydEND', 'hydUD', 'hydUND', 'hydND', 'hydNPND', 
         'lfill-gas', 'nuclear', 'o-g-s', 'pumped-hydro'
     ],
     'prescribed_nonRSC_energy': [
@@ -327,10 +327,6 @@ TECH = {
 
 def main(reeds_path, inputs_case):
     
-    # #%% Settings for testing
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
-
 
     #########################
     ### SUPPLEMENTAL DATA ###
@@ -1051,7 +1047,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_NY','inputs_case')
+    #inputs_case = os.path.join(reeds_path,'runs','test_Mid_Atlantic','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
