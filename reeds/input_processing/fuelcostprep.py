@@ -96,7 +96,7 @@ def calculate_region_aggregion_population_weights(
 
     return region_aggregion_weights
 
-def calculate_historical_daily_state_degree_days(
+def calculate_daily_state_degree_days(
     inputs_case: str
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -110,11 +110,8 @@ def calculate_historical_daily_state_degree_days(
     Returns:
         (pd.DataFrame, pd.DataFrame)
     """
-    # Get hourly state-level temperatures for the given weather year(s)
-    sw = reeds.io.get_switches(inputs_case)
-    weather_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
+    # Get hourly state-level temperatures
     temp_hourly = reeds.io.get_temperatures(inputs_case)
-    temp_hourly = temp_hourly.loc[temp_hourly.index.year.isin(weather_years)]
 
     # Get baseline temperature for calculating degree days
     scalars = reeds.io.get_scalars(inputs_case)
@@ -158,71 +155,6 @@ def aggregate_by_weighted_average(
     )
     return aggregional_data
 
-def rescale_historical_daily_degree_days_to_projected_annuals(
-    historical_daily_degree_days: pd.DataFrame,
-    projected_annual_degree_days: pd.DataFrame
-) -> pd.DataFrame:
-    """
-    Rescale daily, historical degree days so that they match
-    annual degree day projections. This is used to estimate
-    daily degree day projections for model solve years.
-
-    Args:
-        historical_daily_degree_days: Daily historical degree days.
-        projected_annual_degree_days: Annual degree day projections.
-
-    Returns:
-        pd.DataFrame
-    """
-    # Normalize the daily degree day profile annually to get daily
-    # shapes for each historical year
-    historical_degree_day_shapes = (
-        historical_daily_degree_days.div(
-            historical_daily_degree_days.groupby(
-                historical_daily_degree_days.index.year
-            )
-            .transform('sum')
-        )
-        .reset_index()
-    )
-
-    # Combine the historical daily normalized values and projected
-    # annual degree day magnitudes via cartesian product to line
-    # them up row-by-row for each region
-    projected_daily_degree_days = (
-        pd.merge(
-            historical_degree_day_shapes,
-            projected_annual_degree_days,
-            how='cross',
-            suffixes=('_shape', '_magnitude')
-        )
-        .set_index(['t', 'timestamp'])
-        .rename_axis(['year', 'datetime'])
-        .sort_index()
-    )
-
-    # For each region, multiply the daily normalized value by the
-    # annual projection to calculate a degree day projection for
-    # each day
-    regions = (
-        projected_annual_degree_days
-        .drop(columns='t')
-        .columns
-        .tolist()
-    )
-    for region in regions:
-        projected_daily_degree_days[region] = (
-            projected_daily_degree_days[f"{region}_shape"]
-            * projected_daily_degree_days[f"{region}_magnitude"]
-        )
-        projected_daily_degree_days = (
-            projected_daily_degree_days.drop(
-                columns=[f"{region}_shape", f"{region}_magnitude"]
-            )
-        )
-    
-    return projected_daily_degree_days
-
 def calculate_daily_gasreg_degree_days(
     inputs_case: str,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -248,60 +180,26 @@ def calculate_daily_gasreg_degree_days(
     )
 
     # Calculate historical state-level daily HDDs and CDDs
-    historical_hdd_daily_st, historical_cdd_daily_st = (
-        calculate_historical_daily_state_degree_days(inputs_case)
+    hdd_daily_st, cdd_daily_st = (
+        calculate_daily_state_degree_days(inputs_case)
     )
 
     # Aggregate historical daily state-level degree days to
     # the gasreg level via population-weighted average
     state_groups = reeds.inputs.get_state_groups()
     st2gasreg = state_groups.set_index('st')['gasreg']
-    historical_hdd_daily_gasreg = aggregate_by_weighted_average(
-        historical_hdd_daily_st,
+    hdd_daily_gasreg = aggregate_by_weighted_average(
+        hdd_daily_st,
         state_gasreg_weights,
         st2gasreg
     )
-    historical_cdd_daily_gasreg = aggregate_by_weighted_average(
-        historical_cdd_daily_st,
+    hdd_daily_gasreg = hdd_daily_gasreg.rename_axis(index='datetime')
+    cdd_daily_gasreg = aggregate_by_weighted_average(
+        cdd_daily_st,
         state_gasreg_weights,
         st2gasreg
     )
-
-    # Get gasreg-level annual HDD/CDD projections
-    # for the model solve years
-    solveyears = reeds.io.get_years(os.path.dirname(inputs_case))
-    annual_degree_days_gasreg = pd.read_csv(
-        os.path.join(inputs_case, 'gasreg_degree_days.csv')
-    )
-    annual_degree_days_gasreg = (
-        annual_degree_days_gasreg
-        .loc[annual_degree_days_gasreg['t'].isin(solveyears)]
-    )
-    annual_hdd_gasreg = (
-        annual_degree_days_gasreg
-        .loc[annual_degree_days_gasreg.ddtype == 'HDD']
-        .drop(columns='ddtype')
-    )
-    annual_cdd_gasreg = (
-        annual_degree_days_gasreg
-        .loc[annual_degree_days_gasreg.ddtype == 'CDD']
-        .drop(columns='ddtype')
-    )
-
-    # Apply annual HDD/CDD projections to historical daily degree day shapes to
-    # estimate daily gasreg-level HDD/CDD projections for each model solve year
-    hdd_daily_gasreg = (
-        rescale_historical_daily_degree_days_to_projected_annuals(
-            historical_hdd_daily_gasreg,
-            annual_hdd_gasreg
-        )
-    )
-    cdd_daily_gasreg = (
-        rescale_historical_daily_degree_days_to_projected_annuals(
-            historical_cdd_daily_gasreg,
-            annual_cdd_gasreg
-        )
-    )
+    cdd_daily_gasreg = cdd_daily_gasreg.rename_axis(index='datetime')
 
     return hdd_daily_gasreg, cdd_daily_gasreg
 
@@ -352,8 +250,7 @@ def calculate_daily_gasprice_multipliers(
 
     # Apply regression parameters to daily HDD/CDDs
     # to get daily gasreg-level price multipliers
-    year_datetime_index = hdd_daily_gasreg.index
-    df_out = pd.DataFrame(index=year_datetime_index)
+    df_out = pd.DataFrame(index=hdd_daily_gasreg.index)
     for gasreg in regression_params.columns:
         beta_cdd = regression_params.loc['beta_CDD', gasreg]
         beta_hdd = regression_params.loc['beta_HDD', gasreg]
@@ -369,8 +266,7 @@ def calculate_daily_gasprice_multipliers(
             .removeprefix('alpha_')
         )
         month_effects = (
-            year_datetime_index
-            .get_level_values('datetime')
+            hdd_daily_gasreg.index
             .strftime('%b')
             .str
             .upper()

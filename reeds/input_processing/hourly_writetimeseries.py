@@ -261,6 +261,7 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
 def get_daily_gasprice_multipliers(
     sw,
     hmap_myr,
+    hmap_allyrs,
     inputs_case,
     periodtype='rep',
     region_level='r'
@@ -275,23 +276,23 @@ def get_daily_gasprice_multipliers(
         os.path.join(inputs_case, f'daily_gasprice_multipliers_{region_level}.h5'),
         parse_timestamps=True
     )
-    dfin = dfin.unstack(level=0)
-    dfin.columns = dfin.columns.rename([region_level,'t'])
+    dfin.columns = dfin.columns.rename(region_level)
 
     ### Add time index and forward fill so that the multiplier for
     ### each day is copied to each hour of that day
-    dfin = dfin.reindex(hmap_myr.timestamp).ffill()
+    dfin = dfin.reindex(hmap_allyrs.timestamp).ffill()
     dfin.index = (
         dfin.index
-        .map(hmap_myr.set_index('timestamp')['actual_h'])
+        .map(hmap_allyrs.set_index('timestamp')['actual_h'])
         .rename('h')
     )
 
     ### For full year, keep all periods in the modeled years
-    ### Note the daily multipliers are already filtered to contain
-    ### only the modeled years
     if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
-        dfout = dfin.copy()
+        dfout = dfin.loc[
+            dfin.index.map(hmap_allyrs.set_index('actual_h').year)
+            .isin(sw['GSw_HourlyWeatherYears'])
+        ].copy()
     ### Otherwise, pull out the specified periods
     else:
         dfout = dfin.loc[hmap_myr.h.unique()].copy()
@@ -299,7 +300,7 @@ def get_daily_gasprice_multipliers(
     ### Reshape for ReEDS
     dfout = (
         dfout.stack(region_level)
-        .reorder_levels([region_level, "h"], axis=0)
+        .reorder_levels([region_level, "h"])
         .sort_index()
     )
 
@@ -1372,6 +1373,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         df = get_daily_gasprice_multipliers(
             sw=sw,
             hmap_myr=hmap_myr,
+            hmap_allyrs=hmap_allyrs,
             inputs_case=inputs_case,
             periodtype=periodtype,
             region_level=region_level
@@ -1382,15 +1384,14 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         # the set of hours in chunkmap.
         df = (
             df.loc[df.index.get_level_values('h').isin(chunkmap.values())]
-            .stack('t')
             .rename('multiplier')
         )
         # Renormalize so the average for each region and year is 1,
         # ensuring the year-round average gas price doesn't change.
         df = (
-            df.div(df.groupby(level=[region_level, 't']).mean())
+            df.div(df.groupby(level=[region_level]).mean())
             .reset_index()
-            [[region_level, 'h', 't', 'multiplier']]
+            [[region_level, 'h', 'multiplier']]
         )
         daily_gasprice_multipliers_dict[region_level] = df
 
