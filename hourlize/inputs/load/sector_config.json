@@ -46,7 +46,7 @@
     "model_years": [2030, 2035, 2040, 2045, 2050],
     "multi_model_year_replacement": true,
     "filepaths": [
-      "/projects/geohc/challora/GHP/hourlize/processed_loads/Baseline/Baseline_y{model_year}.csv"],
+      "/projects/geohc/radhikar/outputs/resstock_cross_val_june8_2026/ReEDs/Baseline_y{model_year}.csv"],
     "unit_conversion_factor": 1,
     "timezone": "Etc/GMT+5",
     "regional_scope": "state"

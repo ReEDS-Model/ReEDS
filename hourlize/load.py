@@ -169,8 +169,9 @@ def get_sectoral_replacement_load(
         for fpath in sector_settings['filepaths']:
             df = pd.read_csv(
                 fpath.format(model_year=model_year),
-                index_col='datetime'
+                index_col=0
             )
+            df.index.name = 'datetime'
             df_list.append(df)
     else:
         df_list = [
@@ -287,7 +288,6 @@ def create_hourly_state_load_for_model_year(
     # sectoral load from the raw load profiles
     replacement_load_list = []
     for sector in replace_sectors:
-        print(f"Removing endogenous load for '{sector}' sector...")
         if sector not in sector_config:
             raise NotImplementedError(
                 f"'{sector}' is not a recognized sector. "
@@ -296,6 +296,7 @@ def create_hourly_state_load_for_model_year(
 
         sector_settings = sector_config[sector]
         if model_year in sector_settings['model_years']:
+            print(f"Removing endogenous load for '{sector}' sector...")
             df_load = remove_sectoral_load(
                 df_load,
                 sector_settings['subsectors'],
