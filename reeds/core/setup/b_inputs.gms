@@ -6280,7 +6280,6 @@ trt_int(trtype,mat) =  sum{ptype$trtype_ptype(trtype,ptype), tran_int(ptype,mat)
 i_int(i,mat)$[upgrade(i)] = i_int(i,mat) - sum{ii$upgrade_from(i,ii), i_int(ii,mat)};
 i_int(i,mat)$i_subsets(i,'h2_combustion') = no ;
 
-
 *!!! set this up as the average, hardcoding now
 yearweight(t)$tlast(t) = 3 ; 
 
@@ -6292,9 +6291,8 @@ i_theta(i,mat,t)$[i_int(i,mat)$cost_cap(i,t)] = i_int(i,mat) * mat_price(mat) / 
 matprice_multiplier(mat) = 1;
 matprice_multiplier(mat)$[(sameas(mat,'%GSw_specmat_price%'))] = %GSw_matprice_multiplier% ;
 
-
-* addition for consumption restriction
 $ontext
+* addition for consumption restriction
 Parameter share_consumption(mat) "share of material supply that is consumed by power sector" ;
 *placeholder - pull from a previous reference run
 share_consumption(mat) = 0.1 ; 

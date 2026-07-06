@@ -4027,7 +4027,6 @@ eq_mat_procure(mat,t)$[tmodel(t)$Sw_mat_restrict$[t.val>=2029]]..
     MAT_DEMAND(mat,t)
 ;
 
-* update draft: -- where does the slack go? 
 $ontext
 * total material supply 
 eq_mat_supply(mat,t)$[tmodel(t)$[t.val>=2029]]..
@@ -4049,10 +4048,9 @@ eq_mat_supply(mat,t)$[tmodel(t)$[t.val>=2029]]..
     + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_glb
 ;
 
-
 * material demand cannot exceed the historic share of total materials produced (metric tons)
 eq_mat_procure(mat,t)$[tmodel(t)$Sw_mat_restrict$[t.val>=2029]]..
-
+* pull from 2026
     MAT_SUPPLY(mat,t) * share_consumption(mat)
 
 * material slack to meet demand

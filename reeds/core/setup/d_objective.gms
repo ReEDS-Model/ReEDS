@@ -370,13 +370,23 @@ eq_Objfn_op(t)$tmodel(t)..
               + 1e6 * sum(mat, mat_slack(mat,t))
 
 * --- materials costs --- 
-* subtract off share of capital costs attributable to materials to avoid double counting 
-              -  sum{(i,v,r,mat)$[valinv(i,v,r,t)$i_theta(i,mat,t)], i_theta(i,mat,t) * 
-                       cost_cap_fin_mult(i,r,t) * cost_cap(i,t) * INV(i,v,r,t)
-                      }
 
-               + sum{(i,v,r,mat)$[valinv(i,v,r,t)$i_int(i,mat)], 
-                    cost_cap_fin_mult(i,r,t) * matprice_multiplier(mat) * i_int(i,mat) * mat_price(mat) * INV(i,v,r,t)} 
+*** generation technology investment costs
+* subtract off share of capital costs attributable to materials to avoid double counting (for materials used in investment for generation technologies)
+               -  sum{(i,v,r,mat)$[valinv(i,v,r,t)$i_theta(i,mat,t)], cost_cap_fin_mult(i,r,t) * 
+                    i_theta(i,mat,t) * cost_cap(i,t) * INV(i,v,r,t)}
+
+* add on cost of materials used in investment for generation technologies
+               + sum{(i,v,r,mat)$[valinv(i,v,r,t)$i_int(i,mat)], cost_cap_fin_mult(i,r,t) * 
+                    matprice_multiplier(mat) * mat_price(mat) * i_int(i,mat) * INV(i,v,r,t)} 
+
+*** transmission investmentcosts 
+* Note to self: transmission costs are all those in objective function from line 94 - 113 
+* add on additional cost of materials from price shocks used in investment for transmission technologies (dollar increase in costs from reference price which is assumed to be incorporated in capital costs)
+* price change [$ / metric ton] * transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
+               + sum((r,rr,trtype)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
+                    (matprice_multiplier(mat) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
+                    (INVTRAN(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype)) 
 
 *end multiplier for pvf_onm
          )
