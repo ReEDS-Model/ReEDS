@@ -529,7 +529,11 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 *for reported gasprice (not that used to compute system costs)
 *scale back to $ / mmbtu
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
-    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }], gasprice(cendiv,gb,t) } / gas_scale ;
+    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) }],
+        gasprice(cendiv,gb,t)
+        * sum{h, gasprice_adj_cendiv(cendiv,h) / hours(h) * sum{gb, GASUSED.l(cendiv,gb,h,t)} }
+        }
+        / gas_scale ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
