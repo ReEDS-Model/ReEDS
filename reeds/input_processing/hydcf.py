@@ -418,7 +418,7 @@ def apply_hydro_climate_adjustments(
     # Exit function if climate adjustments to hydropower are turned OFF, otherwise continue
     sw = reeds.io.get_switches(inputs_case)
     if not int(sw.GSw_ClimateHydro):
-        return
+        return hydcf_unadjusted
     
     # Get sets for dispatchable/non-dispatchable hydro from tech subset table
     tech_subsets = pd.read_csv(
@@ -447,7 +447,7 @@ def apply_hydro_climate_adjustments(
     adj_factors_ann.loc[adj_factors_ann['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
     adj_factors_sea.loc[adj_factors_sea['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
     
-    # Apply adjustment factors
+    # Merge and apply adjustment factors
     hydcf_d = pd.merge(hydcf_d, adj_factors_ann, how='left', on=['r','t'])
     hydcf_d['value_adj'] = hydcf_d['value'] * hydcf_d['Factor']
     hydcf_d = hydcf_d.drop(columns=['value','Factor']).rename(columns={'value_adj':'value'})
@@ -456,7 +456,7 @@ def apply_hydro_climate_adjustments(
     hydcf_nd = hydcf_nd.drop(columns=['value','Factor']).rename(columns={'value_adj':'value'})
     
     # Reassemble hydcf
-    hydcf = pd.concat([hydcf_d,hydcf_nd],axis=0)
+    hydcf = pd.concat([hydcf_d,hydcf_nd],axis=0).set_index(['t','*i','month','r'])
     
 
     return hydcf
