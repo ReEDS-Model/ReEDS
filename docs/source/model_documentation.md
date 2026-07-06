@@ -149,7 +149,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | WECC | Western Electricity Coordinating Council |
 | WIND | Wind Integration National Dataset |
 | WinDS | Wind Deployment System |
-
+| WIRED | Workforce Impacts and Regional Economic Development |
 
 ## Introduction
 
@@ -2820,6 +2820,39 @@ SO<sub>2</sub> and NO<sub>x</sub> are also included in the [cost of health damag
 
 
 
+## Power sector Employment
+
+Employment factors for biopower, solar PV, hydropower, pumped storage, and land-based wind are derived respectively from the Jobs and Economic Development Impact (JEDI) models {cite}`JEDI_2025` of individual technologies, all of which are publicly available. Employment factors for battery storage, coal, natural gas, geothermal, offshore wind, and transmission lines are derived respectively from the Workforce Impacts and Regional Economic Development (WIRED) models of individual technologies, all of which are not yet publicly available but are based on publicly available data inputs. Details are shown in {numref}`employment-factors` below.
+
+```{table} Technology-specific construction and FOM employment factors.
+:name: employment-factors
+| Technology              | Construction EF | FOM EF | Unit       | Source                          |
+|-------------------------|-----------------|--------|------------|---------------------------------|
+| Biopower                | 3.76            | 1.453  | FTE/MW     | JEDI {cite}`JEDI_2025`          |
+| Battery                 | 0.94            | 0.033  | FTE/MW     | WIRED {cite}`Ramasamy_et_al_2022` |
+| Coal-IGCC               | 4.15            | 0.182  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023a` and {cite}`NETL_2023c`|
+| Coal-PC                 | 2.66            | 0.160  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023a` and {cite}`NETL_2023c`|
+| Coal-CCS RT             | 1.62            | 0.157  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023a` and {cite}`NETL_2023c`|
+| Coal-CCS GF             | 4.20            | 0.186  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023a` and {cite}`NETL_2023c`|
+| DPV                     | 2.98            | 0.204  | FTE/MW     | JEDI {cite}`JEDI_2025` |
+| Geothermal-Hydrothermal | 4.61            | 0.157  | FTE/MW     | WIRED {cite}`SAM` |
+| Geothermal-EGS          | 5.51            | 0.151  | FTE/MW     | WIRED {cite}`SAM` |
+| Hydropower              | 3.09            | 0.02   | FTE/MW     | JEDI {cite}`JEDI_2025` |
+| Land-based Wind         | 1.23            | 0.033  | FTE/MW     | JEDI {cite}`JEDI_2025` |
+| NG-CC                   | 0.58            | 0.052  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023b` and {cite}`NETL_2025` |
+| NG-CC-CCS RT            | 0.86            | 0.084  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023b` and {cite}`NETL_2025`  |
+| NG-CC-CCS GF            | 1.30            | 0.072  | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023b` and {cite}`NETL_2025`  |
+| NG-CT                   | 1.12            | 0.28   | FTE/MW     | WIRED {cite}`NETL_2022`, {cite}`NETL_2023b` and {cite}`NETL_2025`  |
+| Nuclear Conventional    | 13.75           | 1.043  | FTE/MW     | {cite}`Abou_Jaoude_et_al_2023` |
+| Nuclear SMR             | 13.75           | 1.043  | FTE/MW     | {cite}`Asuega_et_al_2023` |
+| Offshore Wind           | 1.75            | 0.115  | FTE/MW     | {cite}`Hammond_and_Cooperman_2022` and {cite}`Nunemaker_et_al_2020` |
+| Transmission-500kW AC   | 12.68           | 0.093  | FTE/MW     | JEDI {cite}`JEDI_2025`|
+| Transmission-230kW AC   | 4.71            | 0.089  | FTE/MW     | JEDI {cite}`JEDI_2025`|
+| Transmission-500kW AC   | 1.99            | 0.978  | FTE/M2004$ | Estimated |
+| Transmission-230kW AC   | 1.57            | 0.938  | FTE/M2004$ | Estimated |
+| UPV                     | 2.32            | 0.05   | FTE/MW     | JEDI {cite}`JEDI_2025` |
+
+```
 
 
 
