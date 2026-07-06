@@ -144,7 +144,7 @@ def get_ivt_numclass(reeds_path, casedir, caseSwitches):
     return numclass
 
 
-def get_rev_paths(revswitches, caseSwitches):
+def get_rev_paths(revswitches):
     # Expand on reV path based on where this run is happening
     # when running on the HPC this links to the shared-projects folder
     hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
@@ -169,15 +169,10 @@ def get_rev_paths(revswitches, caseSwitches):
     revswitches['rev_path'] = revswitches.apply(lambda row: os.path.join(row.sc_path, "reV", row.rev_case), axis=1)
 
     # link to the pre-processed reV supply curves from hourlize
-    def get_rev_sc_file_name(caseSwitches, rev_row, use_hpc=False):
+    def get_rev_sc_file_name(rev_row, use_hpc=False):
         if pd.isnull(rev_row.original_sc_file):
             return ""
         else:
-            if caseSwitches['GSw_RegionResolution'] == "county":
-                sc_folder_suffix = "_county"
-            else:
-                sc_folder_suffix = "_ba"
-
             # link to HPC or other sc_path
             if use_hpc:
                 sc_path = rev_row.hpc_sc_path
@@ -186,14 +181,15 @@ def get_rev_paths(revswitches, caseSwitches):
 
             # supply curve name should be in format of {tech}_rev_supply_curves_raw.csv
             # in the hourlize results folder (must match format in 'save_sc_outputs' function of hourlize/resource.py)
-            sc_file = os.path.join(sc_path,
-                            rev_row.tech + "_" + rev_row.access_case + sc_folder_suffix,
-                            "results",
-                            rev_row.tech + "_supply_curve_raw.csv"
-                            )
+            sc_file = os.path.join(
+                sc_path,
+                f"{rev_row.tech}_{rev_row.access_case}_county",
+                "results",
+                f"{rev_row.tech}_supply_curve_raw.csv"
+            )
             return sc_file
-    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row), axis=1)
-    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row, use_hpc=True), axis=1)
+    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row), axis=1)
+    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row, use_hpc=True), axis=1)
 
     return revswitches
 
@@ -291,26 +287,7 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
-    if sw['GSw_RegionResolution'] in ['county','mixed']:
-        err_switch_configs = []
-        if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
-            err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
-
-        if len(err_switch_configs) > 0:
-            raise NotImplementedError(
-                'The following switch configurations are not implemented for '
-                'county/mixed resolution:\n{}\n'
-                .format('\n'.join(err_switch_configs))
-            )
-
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
-
-    ### Aggregation
-    if (sw['GSw_RegionResolution'] != 'aggreg') and (int(sw['GSw_NumCSPclasses']) != 12):
-        raise NotImplementedError(
-            'Aggregated CSP classes only work with aggregated regions. '
-            'GSw_NumCSPclasses is incompatible with '
-            'GSw_RegionResolution != aggreg')
 
     ### Parsed string switches
     ## Automatic inputs
@@ -458,8 +435,7 @@ def check_compatibility(sw):
         raise ValueError(err)
 
     # Add a row for each county
-    ## TEMPORARY 20260402 until the aggregation procedure is updated
-    county2zone = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
+    county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
     county2zone['county'] = 'p' + county2zone.FIPS
     # Add county info to hierarchy
     hierarchy = hierarchy.merge(county2zone.drop(columns=['FIPS','state']), on='r')
@@ -1158,7 +1134,7 @@ def write_batch_script(
     revswitches = revswitches.merge(binSwitches, on=['tech'], how='left')
 
     # format rev paths
-    revswitches = get_rev_paths(revswitches, caseSwitches)
+    revswitches = get_rev_paths(revswitches)
 
     # save rev paths file for run
     revswitches[['tech','access_switch','access_case','rev_case','bins','sc_path',

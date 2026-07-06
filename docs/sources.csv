@@ -574,7 +574,7 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/state_policies/techs_banned_rps.csv,/inputs/state_policies,techs_banned_rps,.csv,Indicates which technolgies are not eligible to contribute to RPS,,,,,
 /inputs/state_policies/unbundled_limit_ces.csv,/inputs/state_policies,unbundled_limit_ces,.csv,Limit on fraction of credits towards CES which can be purchased unbundled from other states ,,,,,
 /inputs/state_policies/unbundled_limit_rps.csv,/inputs/state_policies,unbundled_limit_rps,.csv,Limit on fraction of credits towards RPS which can be purchased unbundled from other states ,,,,,
-/inputs/storage/cap_existing_psh.csv,/inputs/storage,cap_existing_psh,.csv,"County-wide PSH operational capacity, pump capacity, and max energy, based on plant-level data from https://www.hydropower.org/hydropower-pumped-storage-tool",,,,,MW/MWh
+/inputs/storage/cap_existing_psh.csv,/inputs/storage,cap_existing_psh,.csv,"County-wide PSH operational capacity, pump capacity, and max energy, based on plant-level data from https://www.energy.gov/sites/prod/files/2021/01/f82/us-hydropower-market-report-full-2021.pdf",,,,,MW/MWh
 /inputs/storage/PSH_supply_curves_durations.csv,/inputs/storage,PSH_supply_curves_durations,.csv,,,,,,
 /inputs/storage/storage_duration.csv,/inputs/storage,storage_duration,.csv,,,,,,
 /inputs/supply_curve/bio_supplycurve.csv,/inputs/supply_curve,bio_supplycurve,.csv,Regional biomass supply and costs by resource class,,2015,,,
@@ -685,7 +685,6 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/userinput/ivt_default.csv,/inputs/userinput,ivt_default,.csv,,,,,,
 /inputs/userinput/ivt_small.csv,/inputs/userinput,ivt_small,.csv,,,,,,
 /inputs/userinput/ivt_step.csv,/inputs/userinput,ivt_step,.csv,ivt steps for endyears beyond 2050,,,,,
-/inputs/userinput/modeled_regions.csv,/inputs/userinput,modeled_regions,.csv,Sets of BA regions that a user can model in a run. Each column is a different region option and can be specified in cases using GSw_Region.,,,,,
 /inputs/userinput/windows_2100.csv,/inputs/userinput,windows_2100,.csv,Window size for using window solve method to 2100,,,,,
 /inputs/userinput/windows_default.csv,/inputs/userinput,windows_default,.csv,Window size for using window solve method,,,,,
 /inputs/userinput/windows_step10.csv,/inputs/userinput,windows_step10,.csv,Window size for beyond2050step10,,,,,
