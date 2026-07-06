@@ -302,7 +302,7 @@ TECH = {
     'retirements': [
         'coalolduns', 'o-g-s', 'hydED', 'hydEND', 'gas-ct', 'lfill-gas',
         'coaloldscr', 'biopower', 'gas-cc', 'coal-new',
-        'battery_li','nuclear', 'pumped-hydro', 'coal-igcc',
+        'battery_li','nuclear', 'pumped-hydro', 'coal-igcc'
     ],
     'retirements_energy': [
         'battery_li'
@@ -453,7 +453,7 @@ def main(reeds_path, inputs_case):
     print('Gathering non-RSC Existing Capacity...')
     capnonrsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['capnonrsc'])) &
                             (gdb_use['StartYear'] < startyear) &
-                            (gdb_use['RetireYear']     > startyear)
+                            (gdb_use['RetireYear'] > startyear)
                             ]
     capnonrsc = capnonrsc[COLNAMES['capnonrsc'][0]]
     capnonrsc.columns = COLNAMES['capnonrsc'][1]
@@ -461,7 +461,7 @@ def main(reeds_path, inputs_case):
 
     capnonrsc_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['capnonrsc_energy'])) &
                                     (gdb_use['StartYear'] < startyear) &
-                                    (gdb_use['RetireYear']     > startyear)
+                                    (gdb_use['RetireYear'] > startyear)
                                     ]
     capnonrsc_energy = capnonrsc_energy[COLNAMES['capnonrsc_energy'][0]]
     capnonrsc_energy.columns = COLNAMES['capnonrsc_energy'][1]
@@ -778,7 +778,7 @@ def main(reeds_path, inputs_case):
     ################################
     print('Gathering Retirement Data...')
     rets = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements'])) &
-                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
+                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<endyear) &
                     (gdb_use['StartYear'] <= endyear) 
                     ].copy()
     
@@ -801,7 +801,7 @@ def main(reeds_path, inputs_case):
     rets = rets.groupby(COLNAMES['retirements'][1][:-1]).sum().reset_index().rename(columns={'i':'*i'})
 
     rets_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements_energy'])) &
-                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
+                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<endyear) &
                     (gdb_use['StartYear'] <= endyear)
                     ].copy()
     # Assign the retirements type based on whether the unit was online before or after startyear
