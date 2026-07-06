@@ -3163,7 +3163,7 @@ eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
                                $(not storage_interday(i))]..
 
 * [plus] storage duration times storage capacity for fixed-duration techs
-    storage_duration(i) * CAP(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$pvb(i))
+    storage_duration_m(i,v,r) * CAP(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$pvb(i))
 
 * [plus] EVMC storage has time-varying energy capacity
     + evmc_storage_energy_hours(i,r,h,t) * CAP(i,v,r,t) * (bcr(i)$evmc_storage(i))
@@ -3314,7 +3314,7 @@ eq_storage_interday_min_level_end(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_inter
 eq_storage_interday_max_level_start(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$numpartitions(allszn)]..
     
 * Fixed-duration storage
-    storage_duration(i) * CAP(i,v,r,t)$(not battery(i))
+    storage_duration_m(i,v,r) * CAP(i,v,r,t)$(not battery(i))
 * Variable-duration storage
     + CAP_ENERGY(i,v,r,t)$battery(i)
 
@@ -3332,7 +3332,7 @@ eq_storage_interday_max_level_start(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_int
 * This is to make sure not only their hour 0 but also the highest point of the last period of each partition is greater than maximum capacity
 eq_storage_interday_max_level_end(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$numpartitions(allszn)]..
     
-    storage_duration(i) * CAP(i,v,r,t)$(not battery(i))
+    storage_duration_m(i,v,r) * CAP(i,v,r,t)$(not battery(i))
 
     + CAP_ENERGY(i,v,r,t)$battery(i)
 

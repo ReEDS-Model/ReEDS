@@ -910,10 +910,10 @@ cap_sdbin_out(i,r,ccseason,sdbin,t)$valcap_irt(i,r,t) = sum{v, CAP_SDBIN.l(i,v,r
 
 * energy capacity of storage
 stor_energy_cap(i,v,r,t)$[tmodel_new(t)$valcap(i,v,r,t)] =
-        storage_duration(i) * CAP.l(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$[battery(i) or storage_hybrid(i)$(not csp(i))]) ;
+        storage_duration_m(i,v,r) * CAP.l(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$[battery(i) or storage_hybrid(i)$(not csp(i))]) ;
 
 * add PSH energy capacity to cap_energy_ivrt
-cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$psh(i)] = CAP.l(i,v,r,t) * storage_duration(i) ;
+cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$psh(i)] = CAP.l(i,v,r,t) * storage_duration_m(i,v,r) ;
 
 * battery storage duration
 storage_duration_out(i,v,r,t)$[valcap(i,v,r,t)$battery(i)$CAP.l(i,v,r,t)] = 
