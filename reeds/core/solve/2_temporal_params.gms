@@ -881,7 +881,7 @@ gasadder_cd(cendiv,t,h) = (gasprice_ref(cendiv,t) - gasprice_nat(t))/2 ;
 
 * Written by hourly_writetimeseries.py
 $onempty
-parameter gasprice_adj_r(r,allh,allt) "--unitless-- daily gas price multipliers by region, timeslice, and year"
+parameter gasprice_adj_r(r,allh) "--unitless-- daily gas price multipliers by region and timeslice"
 / 
 $offlisting
 $ondelim
@@ -892,7 +892,7 @@ $onlisting
 $offempty
 
 $onempty
-parameter gasprice_adj_cendiv(cendiv,allh,allt) "--unitless-- daily gas price multipliers by cendiv, timeslice, and year"
+parameter gasprice_adj_cendiv(cendiv,allh) "--unitless-- daily gas price multipliers by cendiv and timeslice"
 / 
 $offlisting
 $ondelim
@@ -911,12 +911,12 @@ szn_adj_gas(h)$frac_h_quarter_weights(h,"wint") =
 scalar szn_adj_gas_avg "--unitless-- hour-weighted average of natural gas seasonal adjustment" ;
 szn_adj_gas_avg = sum{h, szn_adj_gas(h) * hours(h) } / sum{h, hours(h) } ;
 szn_adj_gas(h) = szn_adj_gas(h) / szn_adj_gas_avg ;
-gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
-gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
+gasprice_adj_r(r,h)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
+gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
 
 * If GSw_GasPriceAdjMethod = 0, nullify the price adjustments
-gasprice_adj_r(r,h,t)$(Sw_GasPriceAdjMethod = 0) = 1 ;
-gasprice_adj_cendiv(cendiv,h,t)$(Sw_GasPriceAdjMethod = 0) = 1 ;
+gasprice_adj_r(r,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
+gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 
 
 *=============================================
@@ -935,8 +935,8 @@ load_exog_static(r,h,t)$load_exog_static(r,h,t) = round(load_exog_static(r,h,t),
 minloadfrac(r,i,h)$minloadfrac(r,i,h) = round(minloadfrac(r,i,h),3) ;
 numdays(szn)$numdays(szn) = round(numdays(szn),3) ;
 szn_adj_gas(h)$szn_adj_gas(h) = round(szn_adj_gas(h), 3) ;
-gasprice_adj_r(r,h,t)$gasprice_adj_r(r,h,t) = round(gasprice_adj_r(r,h,t), 3) ;
-gasprice_adj_cendiv(cendiv,h,t)$gasprice_adj_cendiv(cendiv,h,t) = round(gasprice_adj_cendiv(cendiv,h,t), 3) ;
+gasprice_adj_r(r,h)$gasprice_adj_r(r,h) = round(gasprice_adj_r(r,h), 3) ;
+gasprice_adj_cendiv(cendiv,h)$gasprice_adj_cendiv(cendiv,h) = round(gasprice_adj_cendiv(cendiv,h), 3) ;
 cap_hyd_szn_adj(i,szn,r)$cap_hyd_szn_adj(i,szn,r) = round(cap_hyd_szn_adj(i,szn,r),3) ;
 peakdem_static_ccseason(r,ccseason,t)$peakdem_static_ccseason(r,ccseason,t) = round(peakdem_static_ccseason(r,ccseason,t),2) ;
 seas_cap_frac_delta(i,v,r,szn,t)$seas_cap_frac_delta(i,v,r,szn,t) = round(seas_cap_frac_delta(i,v,r,szn,t),3) ;

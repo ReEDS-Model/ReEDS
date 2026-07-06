@@ -529,11 +529,11 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 *for reported gasprice (not that used to compute system costs)
 *scale back to $ / mmbtu
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
-    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h,t) }], gasprice(cendiv,gb,t) } / gas_scale ;
+    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }], gasprice(cendiv,gb,t) } / gas_scale ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h,t)
+          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h)
        } / (repgasquant(cendiv,t) * 1e9) ;
 
 repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tmodel_new(t)] = sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ;
@@ -541,7 +541,7 @@ repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tmodel_new(t)] = sum{ce
 repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)] =
               ( sum{(h,cendiv),
                    gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
-                   hours(h) * gasprice_adj_r(r,h,t) } / sum{h, hours(h) }
+                   hours(h) * gasprice_adj_r(r,h) } / sum{h, hours(h) }
 
               + smax((fuelbin,cendiv)$[VGASBINQ_REGIONAL.l(fuelbin,cendiv,t)$r_cendiv(r,cendiv)], gasbinp_regional(fuelbin,cendiv,t) )
 
@@ -571,21 +571,21 @@ gascost_cendiv(cendiv,t)$tmodel_new(t) =
 *cost of natural gas for Sw_GasCurve = 2 (static natural gas prices)
               + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)
                               $[not bio(i)]$[not cofire(i)]$[Sw_GasCurve = 2]],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h,t) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *cost of natural gas for Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{gb, sum{h,hours(h) * GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h,t) } * gasprice(cendiv,gb,t)
+              + sum{gb, sum{h,hours(h) * GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) } * gasprice(cendiv,gb,t)
                    }$[Sw_GasCurve = 0]
 
 *cost of natural gas for Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
               + sum{(h,gb), hours(h) * GASUSED.l(cendiv,gb,h,t)
-                   * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h,t) + gasprice_nat_bin(gb,t)
+                   * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
                    }$[Sw_GasCurve = 3]
 *cost of natural gas for Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
               + (sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)],
                    gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
-                   hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h,t) }
+                   hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin),
                    gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL.l(fuelbin,cendiv,t) }
