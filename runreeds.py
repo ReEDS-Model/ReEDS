@@ -780,7 +780,10 @@ def linked_cases(df_cases,case):
     """
     # check for valid finito_dir
     if not os.path.isdir(df_cases[case]['finito_dir']):
-        raise ValueError(f"finito_dir = {df_cases[case]['finito_dir']} is not a valid path.")
+        raise ValueError(
+            f"finito_dir = {df_cases[case]['finito_dir']} is not a valid path. "
+            "Please ensure this path points to a cloned version of the FINITO repository. "
+        )
 
     # define path to and read the FINITO check_inputs function
     finito_check_inputs_path = os.path.join(df_cases[case]['finito_dir'], 'input_processing', 'processing')
