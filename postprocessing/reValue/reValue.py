@@ -193,25 +193,12 @@ def get_prices():
         #Roll prices from CST to UTC (this will bring prices from end of year to beginning of year)
         for col in df_p_h_serv[s]:
             df_p_h_serv[s][col] = np.roll(df_p_h_serv[s][col], 6)
-        if sw_reg != 'ba':
-            #In this case, we need to map prices to bas
-            df_hier_red = df_hier[df_hier[sw_reg].isin(df_p_h_serv[s].columns)]
-            df_p_h_serv[s] = df_p_h_serv[s][df_hier_red[sw_reg].tolist()]
-            df_p_h_serv[s].columns = df_hier_red['ba'].tolist()
     return df_pq, df_q_load, df_p_h_serv
 
 def calculate_benchmarks():
     print('Calculating benchmark annual average prices and system-wide price profile')
     #Calculate annual load by region and total load
     load_ba = df_q_load.drop(columns=['h']).sum()
-    if sw_reg != 'ba':
-        #In this case, we need to map load_ba from aggreg to ba, incorrectly assuming equal load for all bas in the same aggreg
-        df_load_ba = df_hier[df_hier['aggreg'].isin(load_ba.index)].copy()
-        df_load_ba['load'] = df_load_ba['aggreg'].map(load_ba.to_dict())
-        df_load_ba['ba_count'] = df_load_ba.groupby('aggreg')['ba'].transform('count')
-        df_load_ba['load'] = df_load_ba['load'] / df_load_ba['ba_count']
-        df_load_ba = df_load_ba.set_index('ba')
-        load_ba = df_load_ba['load']
     load_nat = load_ba.sum()
     #Calculate benchmark prices, assuming flat-block benchmark providing energy and firm capacity only,
     #so averages across time are simply time-weighted. But when averaging across space, we weight by load.
@@ -282,7 +269,7 @@ def calculate_metrics():
     print('Reducing profiles to only those that can be mapped to prices')
     #First find list of BAs associated with ReEDS run
     reg_set = df_pq['reeds_ba'].unique().tolist()
-    bas =  reg_set if sw_reg == 'ba' else df_hier[df_hier[sw_reg].isin(reg_set)]['ba'].tolist()
+    bas = reg_set
     df_p_h_s = df_p_h_serv.copy() #Shallow copy so we don't duplicate so much data
     if r['meta_path'] != 'none':
         df_meta = df_meta_full[df_meta_full['reeds_ba'].isin(bas)].copy()
@@ -367,12 +354,12 @@ for i,r in df_scens.iterrows():
     reeds_run_path = r['reeds_run_path'].replace('"', '')
     year = r['year']
     switches = reeds.io.get_switches(reeds_run_path)
-    sw_reg = switches['GSw_RegionResolution']
-    hier_file = f'{this_dir_path}/../../inputs/zones/{switches.GSw_ZoneSet}/hierarchy_from134.csv'
-    df_hier = pd.read_csv(hier_file, usecols=['ba',sw_reg]).drop_duplicates()
     df_hier_run = pd.read_csv(f'{reeds_run_path}/inputs_case/hierarchy.csv')
-    df_county_map = pd.read_csv(hier_file, usecols=['county','ba'])
-    df_county_map.columns = ['reeds_county', 'reeds_ba']
+    df_county_map = (
+        reeds.io.get_county2zone(reeds_run_path, as_map=False)
+        .rename(columns={'county': 'reeds_county', 'r': 'reeds_ba'})
+        [['reeds_county', 'reeds_ba']]
+    )
     df_hmap = pd.read_csv(f'{reeds_run_path}/inputs_case/rep/hmap_myr.csv')
     #Only fetch prices if we haven't already for this reeds run and year
     #TODO: Include tech here in the dct_prices tuple key? For now I disallow multiple techs

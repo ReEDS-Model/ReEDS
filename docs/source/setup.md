@@ -31,7 +31,8 @@ Screenshot of running "Command Prompt" with "Run as administrator"
 ```
 
 ### Python Configuration
-#### Windows
+`````{tab-set}
+````{tab-item} Windows
 Install Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download).
 
 **IMPORTANT** : Be sure to download the Windows version of the installer.
@@ -81,8 +82,9 @@ Append the Path environment
 
 Screenshot of a test of Python in the terminal window
 ```
+````
 
-#### MacOS
+````{tab-item} macOS / Linux
 Download the latest version of Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download)
 
 During Installation, select to install Anaconda for your machine only.
@@ -103,8 +105,16 @@ Image of Anaconda Install Mac - Customize Installation Type
 
 **To validate Python was installed properly** execute the following command from a new terminal (without quotes): "python"
 
-Python should initiate, looking similar to {numref}`figure-python-test`.
+Python should initiate ({numref}`figure-python-test2`).
 
+```{figure} figs/readme/py-test.png
+:name: figure-python-test2
+
+Screenshot of a test of Python in the terminal window
+```
+
+````
+`````
 
 #### Conda Environment Setup
 
@@ -129,6 +139,8 @@ NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also wor
 For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
 
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)
+    
+    
     **If installing on Mac:** on the "Installation" page, click "customize" and ensure the box to "Add GAMS to PATH" is checked.
 
     ```{figure} figs/readme/gams-install-mac.png
@@ -158,29 +170,23 @@ The ReEDS source code is hosted on GitHub at <https://github.com/ReEDS-Model/ReE
 git lfs install
 ```
 
-3. Clone the ReEDS repository on your desktop. Alternatively, download a ZIP from GitHub ({numref}`figure-github-download`).
-
-```{figure} figs/readme/github-download.png
-:name: figure-github-download
-
-Screenshot of GitHub links to clone the ReEDS repository or download ZIP of the ReEDS files
-```
+3. Clone the ReEDS repository on your desktop or download a ZIP from GitHub.
 
 ### ReEDS2PRAS, Julia, and Stress Periods Setup
 Julia will need to be installed and set up to successfully run the model since ReEDS uses stress periods by default. The recommended way to install Julia is via **juliaup**, the official Julia version manager, which makes it easy to install and switch between specific Julia versions. Julia `1.12.1` is the currently tested version across all platforms.
 
 #### Step 1: Install juliaup
 
-````{tab-set}
-```{tab-item} Windows
+`````{tab-set}
+````{tab-item} Windows
 Install juliaup using `winget` from a terminal (Command Prompt or PowerShell):
 
     winget install --id Julialang.juliaup
 
 Alternatively, install from the [Microsoft Store](https://www.microsoft.com/store/apps/9NJNWW8PVKMN).
-```
+````
 
-```{tab-item} macOS / Linux
+````{tab-item} macOS / Linux
 Run the following command from a terminal:
 
     curl -fsSL https://install.julialang.org | sh
@@ -190,8 +196,8 @@ Follow the on-screen prompts. When installation is complete, open a new terminal
 macOS and Linux users can also install via Homebrew:
 
     brew install juliaup
-```
 ````
+`````
 
 Verify the installation was successful:
 ```
@@ -224,15 +230,15 @@ julia --project=. instantiate.jl
 
 #### Troubleshooting Issues with Julia Setup
 
-**Windows**
-
+`````{tab-set}
+````{tab-item} Windows
 When setting up Julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get Julia set up successfully:
 
 1. If you've used another version of Julia (from the reeds2 conda environment or a previous installation), you may get errors about conflicting manifest. To get past this, you can delete the `Manifest.toml` file with `rm Manifest.toml` (on Unix systems) or `del Manifest.toml` (on Windows systems). 
 
-1. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl)
+2. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl)
 
-2. Re-run `julia --project=. instantiate.jl`
+3. Re-run `julia --project=. instantiate.jl`
 
 If that doesn't resolve the issue, try a clean install using juliaup:
 
@@ -257,8 +263,9 @@ If that doesn't resolve the issue, try a clean install using juliaup:
     * `TimeZones.build()`
 
 1. You can then leave the Julia command line by typing `exit()`
+````
 
-**macOS / Linux**
+````{tab-item} macOS / Linux
 
 If you experience issues, try the following:
 
@@ -281,6 +288,8 @@ If you experience issues, try the following:
     ```
     julia --project=. instantiate.jl
     ```
+````
+`````
 
 ## Running ReEDS
 
@@ -330,11 +339,9 @@ If you'd like practice with running a specific ReEDS scenario, you can walk thro
 
 Additional resources and learning:
 * [General information on ReEDS](https://www.nlr.gov/analysis/reeds/)
-* [ReEDS POC list](https://nrel.sharepoint.com/:w:/s/ReEDS/ES6GQTyzXo1DnnCPlnAhg5QB8cPY--_01HkQkiOnrPskxw?e=flEAtY)
 * [GitHub README](https://github.com/ReEDS-Model/ReEDS/blob/main/README.md)
 * [YouTube tutorials](https://www.youtube.com/playlist?list=PLmIn8Hncs7bG558qNlmz2QbKhsv7QCKiC)
 * [GAMS language information](https://www.gams.com/latest/docs/UG_MAIN.html#UG_Language_Environment)
-* [Tips and tricks for the bash shell](https://nlr-my.sharepoint.com/:p:/r/personal/ssundar_nrel_gov/Documents/Microsoft%20Teams%20Chat%20Files/02062024_what_the_shell.pptx?d=wa7aea3514f814d51924bf2dfa737d414&csf=1&web=1&e=qr1YuP)
 
-### NLR Specific Setup
-See the [Internal ReEDS Documentation](https://nrel.sharepoint.com/:w:/s/ReEDS/Efathg8KjjtCkxW44vZpWQQBA2KsU3RadSsVauBMskEfUA?e=YaSIqc). Information on Yampa and HPC setup can be found there.
+## Internal ReEDS Documentation
+See the [NLR Specific ReEDS Documentation](https://nrel.sharepoint.com/:w:/s/ReEDS/Efathg8KjjtCkxW44vZpWQQBA2KsU3RadSsVauBMskEfUA?e=YaSIqc). Information on Yampa and HPC setup can be found there.
