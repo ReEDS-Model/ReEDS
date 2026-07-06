@@ -280,10 +280,10 @@ TECH = {
     ],
     'prescribed_nonRSC': [
         'battery_li', 'biopower', 'coal-igcc', 'coal-new',
-        'coaloldscr', 'gas-cc', 'gas-ct',
+        'coaloldscr', 'coalolduns', 'gas-cc', 'gas-ct',
         'hydED', 'hydEND', 'hydUD', 'hydUND', 'hydND', 'hydNPND', 
         'lfill-gas', 'nuclear', 'o-g-s', 'pumped-hydro'
-    ], #'coalolduns',
+    ],
     'prescribed_nonRSC_energy': [
         'battery_li',
     ],

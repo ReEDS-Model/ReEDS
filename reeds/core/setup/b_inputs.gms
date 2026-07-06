@@ -3968,7 +3968,7 @@ cost_fom(i,v,r,t)$[valcap(i,v,r,t)$pvb(i)] = cost_fom_pvb_p(i,v,r,t) + bcr(i) * 
 parameter plant_age(i,v,r,t) "--years-- plant age of existing units" ;
 *a plants age is the difference between the current year and
 *the year at which the plant came online
-plant_age(i,v,r,t)$[valcap(i,v,r,t)$initv(v)] =
+plant_age(i,v,r,t)$[valcap(i,v,r,t)$initv(v)$hintage_data(i,v,r,"%startyear%","wOnlineYear")] =
   max(0, yeart(t) - hintage_data(i,v,r,"%startyear%","wOnlineYear") ) ;
 
 cost_fom(i,initv,r,t)$[Sw_BinOM$valcap(i,initv,r,t)$coal(i)] =

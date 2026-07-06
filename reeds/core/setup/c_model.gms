@@ -947,7 +947,7 @@ eq_forceprescription_power(i,newv,r,t)
         + EXTRA_PRESCRIP(i,newv,r,t)$[yeart(t)>=firstyear(i)]
 
 * or in regions where there is a offshore wind requirement
-        + EXTRA_PRESCRIP(i,newv,r,t)$[r_offshore(r,t)
+        + EXTRA_PRESCRIP(i,newv,r,t)$[r_offshore(r,t)$ofswind(i)
                                $(yeart(t)>=firstyear_RPS)
                                $sum{st$r_st(r,st), offshore_cap_req(st,t) }]
 ;
