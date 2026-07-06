@@ -93,7 +93,6 @@ fuel2tech.csv,inputs/sets/fuel2tech.csv,1,ignore,ignore,,,,,0,,,set,fuel2tech,ma
 fuelbin.csv,inputs/sets/fuelbin.csv,1,ignore,ignore,,,,,,,,set,fuelbin,gas usage bracket,
 futurefiles.csv,inputs/userinput/futurefiles.csv,1,ignore,ignore,,,,,0,,,,,,
 gasreg_degree_day_price_mult_regression_params.csv,inputs/fuelprices/gasreg_degree_day_price_mult_regression_params.csv,int(sw.GSw_GasPriceAdjMethod) == 2,ignore,ignore,wide_gasreg,param,,1,0,,,,,,
-gasreg_degree_days.csv,inputs/fuelprices/gasreg_degree_days.csv,int(sw.GSw_GasPriceAdjMethod) == 2,ignore,ignore,wide_gasreg,"t,ddtype",,1,0,,,,,,
 gb.csv,inputs/sets/gb.csv,1,ignore,ignore,,,,,,,,set,gb,gas price bins; must have an odd number of bins; e.g. gb1*gb15,
 gbin.csv,inputs/sets/gbin.csv,1,ignore,ignore,,,,,,,,set,gbin,growth bins,
 gbin_min.csv,inputs/growth_constraints/gbin_min.csv,1,ignore,ignore,,,,,0,,,,,,
