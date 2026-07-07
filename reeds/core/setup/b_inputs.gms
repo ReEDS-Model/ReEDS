@@ -1051,81 +1051,12 @@ one_newv(i)$sum{(v,t)$[not sameas(v,"new1")], ivt(i,v,t) } = no ;
 *--- basic parameter declarations ---
 *=====================================
 
-parameter crf(t) "--unitless-- capital recovery factor"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf.csv
-$offdelim
-$onlisting
-/,
-          crf_co2_incentive(t) "--unitless-- capital recovery factor using a 12-year economic lifetime"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf_co2_incentive.csv
-$offdelim
-$onlisting
-/,
-
-          crf_h2_incentive(t) "--unitless-- capital recovery factor using a 10-year economic lifetime"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf_h2_incentive.csv
-$offdelim
-$onlisting
-/,
-
-* pvf_capital and pvf_onm here are for intertemporal mode. These parameters
-* are overwritten for sequential mode in e_solveprep.gms.
-          pvf_capital(t) "--unitless-- present value factor for overnight capital costs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pvf_cap.csv
-$offdelim
-$onlisting
-/,
-          pvf_onm(t)"--unitless-- present value factor of operations and maintenance costs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pvf_onm_int.csv
-$offdelim
-$onlisting
-/,
+parameter
           tc_phaseout_mult(i,v,t)                 "--unitless-- multiplier that reduces the value of the PTC and ITC after the phaseout trigger has been hit",
           tc_phaseout_mult_t(i,t)                 "--unitless-- a single year's multiplier of tc_phaseout_mult",
           tc_phaseout_mult_t_load(i,t)            "--unitless-- a single year's multiplier of tc_phaseout_mult",
           co2_captured_incentive(i,v,r,allt)      "--$/tco2 stored-- incentive on CO2 captured dependent on technology"
-          co2_captured_incentive_in(i,v,allt)     "--$/tco2 stored-- incentive on CO2 captured dependent on technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%co2_capture_incentive.csv
-$offdelim
-$onlisting
-/,
-
           h2_ptc(i,v,r,allt)        "--2004$/kg h2 produced -- incentive on hydrogen production by electrolyzers which purchase Energy Attribute Credits"
-          h2_ptc_in(i,v,allt)       "--2004$/kg h2 produced -- incentive on hydrogen production by electrolyzers which purchase Energy Attribute Credits, this parameter is used to build h2_ptc"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_ptc.csv
-$offdelim
-$onlisting
-/,
-
-          ptc_value_scaled(i,v,allt) "--$/MWh-- value of the PTC incorporating adjustments for monetization costs, tax grossup benefits, and the difference between ptc duration and reeds evaluation period"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ptc_value_scaled.csv
-$offdelim
-$onlisting
-/,
           pvf_onm_undisc(t) "--unitless-- undiscounted present value factor of operations and maintenance costs"
 ;
 
@@ -4151,90 +4082,6 @@ $offempty
 * ===========================================================================
 * Regional and temporal capital cost multipliers
 * ===========================================================================
-* Load scenario-specific capital cost multiplier components
-
-parameter ccmult(i,allt) "construction cost multiplier"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ccmult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tax_rate(allt) "all-in tax rate"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tax_rate.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter itc_frac_monetized(i,allt) "fractional value of the ITC, after adjusting for the costs of monetization"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%itc_frac_monetized.csv
-$offdelim
-$onlisting
-/ ;
-
-$onempty
-parameter itc_energy_comm_bonus(i,r) "energy community tax credit bonus factor"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%itc_energy_comm_bonus.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-parameter pv_frac_of_depreciation(i,allt) "present value of depreciation, expressed as a fraction of the capital cost of the investment"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pv_frac_of_depreciation.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter degradation_adj(i,allt) "adjustment to reflect degradation over the lifetime of an asset"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%degradation_adj.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter financing_risk_mult(i,allt) "multiplier to reflect higher financing costs for riskier assets"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%financing_risk_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter reg_cap_cost_diff(i,r) "regional capital cost difference [fraction] (note that wind-ons and upv have separate multiplers in the supply curve cost)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%reg_cap_cost_diff.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter eval_period_adj_mult(i,allt) "adjustment multiplier for the capital costs of techs with non-standard evaluation periods"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%eval_period_adj_mult.csv
-$offdelim
-$onlisting
-/ ;
 
 eval_period_adj_mult(i,t)$[i_water_cooling(i)$Sw_WaterMain] =
   sum{ii$ctt_i_ii(i,ii), eval_period_adj_mult(ii,t) } ;

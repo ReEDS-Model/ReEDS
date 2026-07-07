@@ -356,7 +356,10 @@ def get_src(scen, src):
         except FileNotFoundError:
             df_src = read_input(scen['path'], src['name'], low_memory=False, **kwargs)
     else:
-        df_src = read_output(scen['path'], filepath)
+        if 'inputs_case' in filepath:
+            df_src = read_input(scen['path'], filepath)
+        else:
+            df_src = read_output(scen['path'], filepath)
     if 'transpose' in src and src['transpose'] is True:
         df_src = df_src.T
     if 'columns' in src:

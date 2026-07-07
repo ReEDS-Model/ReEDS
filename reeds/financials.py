@@ -744,7 +744,9 @@ def adjust_ptc_values(df_ivt):
     return df_ivt
 
 
-def inv_param_exporter(df, modeled_years, parameter, indices, file_name, output_dir):
+def inv_param_exporter(
+    df, modeled_years, parameter, indices, file_name, inputs_case, units='', comment='',
+):
     '''
     General exporter for investment parameters, to be used in the GAMS model.
 
@@ -776,15 +778,6 @@ def inv_param_exporter(df, modeled_years, parameter, indices, file_name, output_
         sys.exit()
 
     df_param[parameter] = np.round(df_param[parameter], 6)
-    ### Add '*' to first column name so GAMS reads it as a comment
-    df_param = df_param.rename(
-        columns={c: (f'*{c}' if not i else c) for i, c in enumerate(df_param.columns)}
+    reeds.io.write_to_inputs_h5(
+        df_param, file_name, inputs_case, gamstype='parameter', units=units, comment=comment,
     )
-    df_param.to_csv(os.path.join(output_dir, f'{file_name}.csv'), index=False, header=True)
-
-
-def param_exporter(df, parameter, file_name, output_dir):
-    """Export parameters"""
-    ### Add '*' to first column name so GAMS reads it as a comment
-    df = df.rename(columns={c: (f'*{c}' if not i else c) for i, c in enumerate(df.columns)})
-    df.round(5).to_csv(os.path.join(output_dir, f'{file_name}.csv'), index=False, header=True)
