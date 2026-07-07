@@ -44,5 +44,3 @@
 - `_aliases.csv`: aliases (extra names for the same set) used in GAMS
   - Aliases of primary sets should be added here
   - Aliases of sets defined in `b_inputs.gms` (e.g., `h`→`hh`) should instead be defined in GAMS after the set definition
-- `_pcat.csv`: prescribed capacity categories
-  - The `pcat` set in GAMS (defined in `writecapdat.py`) includes the members of the `i` set; this file includes only the *extra* elements on top of the `i` set

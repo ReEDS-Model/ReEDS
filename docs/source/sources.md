@@ -1633,9 +1633,6 @@
   - [p.csv](/inputs/sets/p.csv)
     - **File Type:** GAMS set
     - **Description:** set of products produced
-  - [pcat.csv](/inputs/sets/pcat.csv)
-    - **File Type:** GAMS set
-    - **Description:** set of prescribed technology categories
   - [plantcat.csv](/inputs/sets/plantcat.csv)
     - **File Type:** GAMS set
     - **Description:** set of categories for plant characteristics

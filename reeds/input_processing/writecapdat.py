@@ -1070,19 +1070,12 @@ if __name__ == '__main__':
         'cap_cspns': True,
         'can_imports_capacity': True,
     }
-    gamstype = {
-        'pcat': 'set',
-    }
+
     for key, df in data.items():
-        if gamstype.get(key, False):
-            reeds.io.write_to_inputs_h5(
-                df=df, key=outname.get(key, key), case=inputs_case, gamstype=gamstype[key],
-            )
-        else:
-            df.to_csv(
-                os.path.join(inputs_case, f'{outname.get(key, key)}.csv'),
-                index=keep_index.get(key, False),
-            )
+        df.to_csv(
+            os.path.join(inputs_case, f'{outname.get(key, key)}.csv'),
+            index=keep_index.get(key, False),
+        )
 
     reeds.log.toc(tic=tic, year=0, process='input_processing/writecapdat.py',
         path=os.path.join(inputs_case,'..'))
