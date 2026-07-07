@@ -1669,7 +1669,7 @@ For details, see the [Daily Natural Gas Price Adjustments section](#daily-natura
 
 ```{admonition} Natural gas price adjustments
 The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
-0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default = 1)
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 1)
 ```
 
 
@@ -3640,6 +3640,7 @@ The Pacific census division is broken up into the subregions "Northwest" (Oregon
 The Mountain census division is broken up into the subregions "Southwest" (Arizona and New Mexico) and "Mountain" (all remaining states in the Mountain census division).
 
 Depending on the spatial resolution of the gas prices being used in the model, the daily gas price adjustments are either downscaled to the zone level by copying each regression region's adjustments to their constituent zones or upscaled to the census division level via population-weighted average.
+In the default national case, zonal gas prices and price adjustments are used.
 Once representative periods are selected in the model, the daily adjustments are filtered to include only the representative periods and then renormalized so that the average price multiplier for each zone or census division is one, thus ensuring the year-round average gas price remains unchanged.
 
 
