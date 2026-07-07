@@ -5269,6 +5269,7 @@ $onlisting
 $offempty
 
 * Note that this PSH duration overwrites what is contained in storage_duration.csv
+* and will be overridden by data in storage_duration_pshdata.csv if durations for existing PSH are used
 storage_duration(i)$psh(i) = psh_sc_duration ;
 
 storage_duration(i)$[i_water_cooling(i)$Sw_WaterMain] =
