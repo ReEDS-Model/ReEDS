@@ -194,7 +194,10 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
        } ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tcur(t)] =
-    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }], gasprice(cendiv,gb,t) } ;
+    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) }],
+        gasprice(cendiv,gb,t)
+        * sum{h, GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) / hours(h) }
+    } ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tcur(t)$repgasquant(cendiv,t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
