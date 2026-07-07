@@ -1664,12 +1664,12 @@ If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {n
 The natural gas fuel prices also include time-based price adjustors.
 One option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
 For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
-The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual average price.
+The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
 For details, see the [Daily Natural Gas Price Adjustments section](#daily-natural-gas-price-adjustments) of the appendix.
 
 ```{admonition} Natural gas price adjustments
 The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
-0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default = 1)
 ```
 
 
@@ -3634,27 +3634,13 @@ The multipliers $\rho$ and $\sigma$ are determined by solving {eq}`gas-year` thr
 
 ### Daily Natural Gas Price Adjustments
 
-Daily gas price adjustments use degree day coefficients derived from an ordinary least squares regression regressing daily regional heating and cooling degree days on daily deviations of regional natural gas spot prices from their annual average price with monthly fixed effects.
+Daily gas price adjustments use degree day coefficients derived from an ordinary least squares regression regressing daily regional heating and cooling degree days on daily deviations of regional natural gas spot prices from their annual average with monthly fixed effects.
 The regions used in the regression mostly correspond to census divisions, except in two cases where census divisions are broken up into two smaller regions.
 The Pacific census division is broken up into the subregions "Northwest" (Oregon and Washington) and "California" (California).
 The Mountain census division is broken up into the subregions "Southwest" (Arizona and New Mexico) and "Mountain" (all remaining states in the Mountain census division).
 
-To derive daily gas price adjustments, the regression parameters are applied to projections of daily heating and cooling degree days.
-These projections are derived by rescaling historical daily heating and cooling degree days (calculated using hourly average temperatures observed during the weather years corresponding to representative periods) to match projections of annual degree days.
-In cases where the regression regions correspond to census divisions, annual degree day projections are taken from AEO.
-Otherwise, annual degree day projections are calculated by taking historical (1995-2025) state-level degree days from {cite}`noaaDailyDegreeDays`, projecting them out to 2050 using a 30-year linear trend, and then aggregating them to the scope of the regression regions via population-weighted average.
-For purposes of calculating this population-weighted average, state-level population projections for 2030, 2040, and 2050 are taken from {cite}`uvaWeldonCooperCenterPopulationProjections` and in-between years are linearly interpolated.
-
 Depending on the spatial resolution of the gas prices being used in the model, the daily gas price adjustments are either downscaled to the zone level by copying each regression region's adjustments to their constituent zones or upscaled to the census division level via population-weighted average.
-Once representative periods are selected in the model, the daily adjustments are filtered to include only the representative periods and then renormalized so that the average price multiplier for each zone or census division and each model year is one, thus ensuring the year-round average gas price remains unchanged.
-{numref}`figure-natural-gas-price-adjustments` shows an example set of price adjustments including the national wintertime markup and daily adjustments for each census division.
-
-```{figure} figs/docs/natural-gas-price-adjustments.png
-:name: figure-natural-gas-price-adjustments
-
-Seasonal and daily natural gas price adjustments for model year 2050 and weather year 2012.
-This example uses one weather year, but the method can also be applied across multiple weather years.
-```
+Once representative periods are selected in the model, the daily adjustments are filtered to include only the representative periods and then renormalized so that the average price multiplier for each zone or census division is one, thus ensuring the year-round average gas price remains unchanged.
 
 
 ### Capital Cost Financial Multipliers
