@@ -142,7 +142,6 @@ minCF.csv,inputs/plant_characteristics/minCF.csv,int(sw.GSw_MinCF) != 0,ignore,i
 min_retire_age.csv,inputs/plant_characteristics/min_retire_age.csv,1,ignore,ignore,,,,,0,,,,,,
 mingen_fixed.csv,inputs/plant_characteristics/mingen_fixed.csv,int(sw.GSw_MingenFixed) != 0,ignore,ignore,,,*i,,0,,,,,,
 minloadfrac0.csv,inputs/plant_characteristics/minloadfrac0.csv,(int(sw.GSw_Mingen) != 0) or (int(sw.GSw_MinLoading) != 0),ignore,ignore,,,,,0,,,,,,
-modeled_regions.csv,inputs/userinput/modeled_regions.csv,1,ignore,ignore,,,,,,,,,,,
 month2quarter.csv,inputs/temporal/month2quarter.csv,1,ignore,ignore,,,,,0,,,,,,
 mttr.csv,inputs/plant_characteristics/mttr.csv,1,ignore,ignore,,,tech,,0,,,,,,
 natgas_price_cendiv.csv,inputs/fuelprices/ng_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,

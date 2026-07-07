@@ -85,6 +85,12 @@ def get_inputs(sw):
     resources['tech'] = reeds.reedsplots.simplify_techs(resources.i, display_level = 'diagnostics')
     resources['rb'] = resources.r
 
+    fpath = Path(sw.casedir, 'inputs_case', f'stress{sw.t}i{sw.iteration+1}', 'new_stress_periods.csv')
+    if fpath.is_file():
+        new_stress_periods = pd.read_csv(fpath)
+    else:
+        new_stress_periods = pd.DataFrame(columns=['period'])
+
     ##### Hourly dispatch by month
     ### Load and aggregate the VRE generation profiles by tech group
     try:
@@ -242,6 +248,7 @@ def get_inputs(sw):
     dfs['tech_style'] = tech_style
     dfs['vre_gen_usa'] = vre_gen_usa
     dfs['vre_gen'] = vre_gen
+    dfs['new_stress_periods'] = new_stress_periods
 
     return dfs
 
@@ -544,9 +551,7 @@ def plot_reeds_pras_capacity(sw, dfs):
 
     ### Get coordinates
     zones = dfs['hierarchy'].index
-    ncols = int(np.around(np.sqrt(len(zones)) * 1.618, 0))
-    nrows = len(zones) // ncols + int(bool(len(zones) % ncols))
-    coords = dict(zip(zones, [(row,col) for row in range(nrows) for col in range(ncols)]))
+    nrows, ncols, coords = reeds.plots.get_coordinates(zones)
 
     ### Plot the capacities
     plt.close()
@@ -1023,6 +1028,37 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
             plt.close()
 
 
+def map_outagerate_new_stressperiods(sw, dfs):
+    new_stress_periods = dfs['new_stress_periods']
+    if not len(new_stress_periods):
+        print('No new stress periods to plot')
+        return
+    dates = (
+        new_stress_periods
+        .period.map(reeds.timeseries.h2timestamp)
+        .dt.strftime('%Y-%m-%d')
+        .tolist()
+    )
+    vmax = {'forced': 40, 'scheduled': 25, 'both': 50}
+    aggfunc = 'max'
+    for outage_type in vmax:
+        savename = f'map-outage_{outage_type}_{aggfunc}-{t}i{iteration}.png'
+        plt.close()
+        f, ax, _ = reeds.reedsplots.map_outage_days(
+            sw.casedir,
+            dates=dates,
+            outage_type=outage_type,
+            aggfunc=aggfunc,
+            vmax=vmax[outage_type],
+        )
+        ## Save it
+        if savefig:
+            plt.savefig(os.path.join(sw['savepath'],savename))
+        if interactive:
+            plt.show()
+        plt.close()
+
+
 def plot_cc_mar(sw, dfs):
     """
     Marginal capacity credit
@@ -1259,6 +1295,11 @@ def main(sw, debug=False):
             map_dropped_load(sw, dfs, level=level)
     except Exception:
         print('map_dropped_load() failed:', traceback.format_exc())
+
+    try:
+        map_outagerate_new_stressperiods(sw, dfs)
+    except Exception:
+        print('map_outagerate_new_stressperiods() failed:', traceback.format_exc())
 
     if int(sw['GSw_PRM_CapCredit']):
         try:

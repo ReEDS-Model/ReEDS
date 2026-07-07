@@ -13,10 +13,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import reeds
 
 def get_historical_units(inputs_case):
-    # Read generator database and map units to the model regions for this run
-    r_county = pd.read_csv(os.path.join(inputs_case, 'r_county.csv'))
+    # Read generator database
     gendb = pd.read_csv(os.path.join(inputs_case, 'unitdata.csv'), low_memory=False)
-    gendb = gendb.merge(r_county, left_on='FIPS', right_on='county', how='left')
 
     # Select units existing before or during the model start year
     sw = reeds.io.get_switches(inputs_case)

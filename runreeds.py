@@ -144,7 +144,7 @@ def get_ivt_numclass(reeds_path, casedir, caseSwitches):
     return numclass
 
 
-def get_rev_paths(revswitches, caseSwitches):
+def get_rev_paths(revswitches):
     # Expand on reV path based on where this run is happening
     # when running on the HPC this links to the shared-projects folder
     hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
@@ -169,15 +169,10 @@ def get_rev_paths(revswitches, caseSwitches):
     revswitches['rev_path'] = revswitches.apply(lambda row: os.path.join(row.sc_path, "reV", row.rev_case), axis=1)
 
     # link to the pre-processed reV supply curves from hourlize
-    def get_rev_sc_file_name(caseSwitches, rev_row, use_hpc=False):
+    def get_rev_sc_file_name(rev_row, use_hpc=False):
         if pd.isnull(rev_row.original_sc_file):
             return ""
         else:
-            if caseSwitches['GSw_RegionResolution'] == "county":
-                sc_folder_suffix = "_county"
-            else:
-                sc_folder_suffix = "_ba"
-
             # link to HPC or other sc_path
             if use_hpc:
                 sc_path = rev_row.hpc_sc_path
@@ -186,14 +181,15 @@ def get_rev_paths(revswitches, caseSwitches):
 
             # supply curve name should be in format of {tech}_rev_supply_curves_raw.csv
             # in the hourlize results folder (must match format in 'save_sc_outputs' function of hourlize/resource.py)
-            sc_file = os.path.join(sc_path,
-                            rev_row.tech + "_" + rev_row.access_case + sc_folder_suffix,
-                            "results",
-                            rev_row.tech + "_supply_curve_raw.csv"
-                            )
+            sc_file = os.path.join(
+                sc_path,
+                f"{rev_row.tech}_{rev_row.access_case}_county",
+                "results",
+                f"{rev_row.tech}_supply_curve_raw.csv"
+            )
             return sc_file
-    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row), axis=1)
-    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row, use_hpc=True), axis=1)
+    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row), axis=1)
+    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row, use_hpc=True), axis=1)
 
     return revswitches
 
@@ -291,26 +287,7 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
-    if sw['GSw_RegionResolution'] in ['county','mixed']:
-        err_switch_configs = []
-        if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
-            err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
-
-        if len(err_switch_configs) > 0:
-            raise NotImplementedError(
-                'The following switch configurations are not implemented for '
-                'county/mixed resolution:\n{}\n'
-                .format('\n'.join(err_switch_configs))
-            )
-
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
-
-    ### Aggregation
-    if (sw['GSw_RegionResolution'] != 'aggreg') and (int(sw['GSw_NumCSPclasses']) != 12):
-        raise NotImplementedError(
-            'Aggregated CSP classes only work with aggregated regions. '
-            'GSw_NumCSPclasses is incompatible with '
-            'GSw_RegionResolution != aggreg')
 
     ### Parsed string switches
     ## Automatic inputs
@@ -318,47 +295,32 @@ def check_compatibility(sw):
     hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
 
     ### Check that the stress metrics specified in GSw_PRM_StressThresholdMetrics
-    # have corresponding GSw_PRM_StressThreshold{metric} switches
-    ## TODO: Check a regex way to list the switches 
-    stressThresholdMetricSwitches = ['NEUE','LOLH']
-    stressThresholdMetrics = sw['GSw_PRM_StressThresholdMetrics'].split('/')
-    
-    # if int(sw['GSw_PRM_UpdateMethod']) == 1 or 'EUE' not in stressThresholdMetrics:
-    #     if int(sw['GSw_PRM_UpdateMethod']) > 1:
-    #         raise NotImplementedError(
-    #             f"Warning: GSw_PRM_UpdateMethod is set to {sw['GSw_PRM_UpdateMethod']}, "
-    #             "but EUE is not included in GSw_PRM_StressThresholdMetrics, so defaulting to fixed increment. " 
-    #             "Add EUE to GSw_PRM_StressThresholdMetrics to use PRAS-informed update method."
-    #         )
-        
-    # Threshold metric added but not specified as a switch
-    for metric in stressThresholdMetrics:
-        if metric.upper() not in stressThresholdMetricSwitches:
-            raise NotImplementedError(f"GSw_PRM_StressThreshold{metric} is not specified as a switch.")
-            
-    for stress_metric in stressThresholdMetricSwitches:
-        for threshold in sw[f'GSw_PRM_StressThreshold{stress_metric}'].split('/'):
-            ## Example: NEUE threshold = 'transgrp_1_sum'
-            allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
-            (hierarchy_level, stress_value, period_agg_method) = threshold.split('_')
+    ### are allowed and have well-formed GSw_PRM_StressThreshold{metric} entries
+    ra_switches = {
+        i.lower(): f'GSw_PRM_StressThreshold{i}'
+        for i in ['Depth', 'Duration', 'LOLD', 'LOLE', 'LOLH', 'NEUE']
+    }
+    used_metrics = [i.lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')]
+    allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
+
+    for metric in used_metrics:
+        if metric not in ra_switches:
+            raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
+
+        for threshold in sw[ra_switches[metric]].split('/'):
+            ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
+            (hierarchy_level, stress_value) = threshold.split('_')
             if hierarchy_level not in allowed_levels:
                 raise ValueError(
-                    f"GSw_PRM_StressThreshold{stress_metric}: level={hierarchy_level} but must be in:\n"
+                    f"{ra_switches[metric]}: level={hierarchy_level} but must be in:\n"
                     + '\n'.join(allowed_levels)
                 )
-            if period_agg_method.lower() not in ['sum','max']:
-                raise ValueError(f"Fix period agg method in GSw_PRM_StressThreshold{stress_metric}")
             if not (float(stress_value) >= 0):
                 raise ValueError(
-                    f"stress value in GSw_PRM_StressThreshold{stress_metric} must be a positive number "
+                    f"stress value in {ra_switches[metric]} must be a positive number "
                     f"but '{stress_value}' was provided"
                 )
-            if stress_metric.upper() not in stressThresholdMetricSwitches:
-                raise ValueError(
-                    f"stress metric in GSw_PRM_StressThreshold{stress_metric} must be in {stressThresholdMetricSwitches}"
-                    f"but '{stress_metric}' was provided"
-                )
-        
+
     if sw['GSw_PRM_StressStorageCutoff'].lower() not in ['off','0','false']:
         metric, value = sw['GSw_PRM_StressStorageCutoff'].split('_')
         if metric.lower()[:3] not in ['eue', 'cap', 'abs']:
@@ -472,8 +434,7 @@ def check_compatibility(sw):
         raise ValueError(err)
 
     # Add a row for each county
-    ## TEMPORARY 20260402 until the aggregation procedure is updated
-    county2zone = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
+    county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
     county2zone['county'] = 'p' + county2zone.FIPS
     # Add county info to hierarchy
     hierarchy = hierarchy.merge(county2zone.drop(columns=['FIPS','state']), on='r')
@@ -1172,7 +1133,7 @@ def write_batch_script(
     revswitches = revswitches.merge(binSwitches, on=['tech'], how='left')
 
     # format rev paths
-    revswitches = get_rev_paths(revswitches, caseSwitches)
+    revswitches = get_rev_paths(revswitches)
 
     # save rev paths file for run
     revswitches[['tech','access_switch','access_case','rev_case','bins','sc_path',
