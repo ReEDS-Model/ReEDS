@@ -1289,10 +1289,10 @@ def write_batch_script(
             'climateprep',
             'hourly_load',
             'recf',
-            'forecast',
             'WriteHintage',
             'transmission',
             'outage_rates',
+            'forecast',
             'hourly_repperiods',
             'h5_to_gdx',
         ]:
