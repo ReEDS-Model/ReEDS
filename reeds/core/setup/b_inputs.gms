@@ -6029,8 +6029,8 @@ upgrade_ratio(i)$[upgrade(i)
                 $(sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) }
                  - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } > 0)] 
                   = (sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) } 
-                    - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ) /
-                      sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ;
+                    - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } )
+                    / sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ;
 
 * Only apply this ratio to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
 $ifthen.upgrade_ef %GSw_EmploymentFactor% == "jedi"
