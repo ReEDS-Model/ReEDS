@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = os.path.expanduser('~/github/ReEDS')
-    # inputs_case = os.path.join(reeds_path,'runs','v20260707_inputsM0_github_Everything','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20260707_inputsM2_github_Everything','inputs_case')
 
     #%% Settings for debugging
     ### Set debug == True to write to a new folder (inputs_case/future/), leaving original files
@@ -259,7 +259,7 @@ if __name__ == '__main__':
         print(f'{filename}', end='')
         
         ### If the file isn't in inputs_case, skip it and continue to the next file
-        if filename not in inputfiles:
+        if Path(filename).stem not in inputfiles:
             if verbose > 1:
                 print('  -> skipped since not in inputs_case')
             continue

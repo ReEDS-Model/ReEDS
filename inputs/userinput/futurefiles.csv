@@ -52,10 +52,10 @@ climate_param.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 climate_UnappWaterMult.csv,.csv,0,None,wide,"wst,r,szn",1,0,constant,0,None,done,constant
 climate_UnappWaterMultAnn.csv,.csv,0,None,wide,"wst,r",1,0,constant,0,None,done,constant
 climate_UnappWaterSeaAnnDistr.csv,.csv,0,None,wide,"wst,r,szn",1,0,constant,0,1,done,constant
-co2_cap.csv,.csv,0,None,*t,None,0,0,constant,0,None,"constant, linear, or saturate?",constant
+co2_cap.csv,.csv,0,None,allt,None,0,0,constant,0,None,"constant, linear, or saturate?",constant
 co2_capture_incentive.csv,.csv,1,None,9999,None,9999,0,constant,None,None,[CHECK] do we need to forecast within calc_financial_inputs? Data only extends to 2049; new,
 co2_site_char.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-co2_tax.csv,.csv,0,None,*t,None,0,0,linear_5,None,None,"constant, linear, or saturate?",linear_5
+co2_tax.csv,.csv,0,None,allt,None,0,0,linear_5,None,None,"constant, linear, or saturate?",linear_5
 coal_fom_adj.csv,.csv,0,None,*t,None,0,0,constant,None,None,"constant, linear, or saturate?",linear_5
 coal_price.csv,.csv,0,None,year,None,1,0,constant,None,None,[CHECK] can we expect linear extrapolation for fuel prices (check other fuel prices); new,
 construction_schedules.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -332,7 +332,6 @@ plantchar_pvb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to c
 plantchar_upgrades.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantcharout.csv,.csv,0,None,t,"*i,variable",0,0,constant,None,None,new,
-plantcharout.txt,.txt,0,None,1,"0,2",0,None,constant,None,None,"done. consider field-specific projections (i.e. linear projection for capcost for PV, but constant projection for heatrate and rte)",constant
 plexos_inputs.gdx,.gdx,1,None,9999,None,9999,0,constant,None,None,done (wouldn't exist yet in normal run),constant
 poi_cap_init.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prepost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -396,7 +395,7 @@ rsc_combined.txt,.txt,1,None,9999,None,9999,0,constant,None,None,done,constant
 rsc_evmc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"[CHECK] don't know what this input file is supposed to look like, but needs to be forecasted; new",
 rsc_wsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 safe_harbor_max.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
-safe_harbor.csv,.csv,0,None,t,*i,0,0,constant,None,None,new,
+safe_harbor.csv,.csv,0,None,t,i,0,0,constant,None,None,new,
 sc_cat.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 sc_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 sc_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -515,7 +514,7 @@ h2_ptc_in,inputs.h5,1,,,,9999,,,,,,
 h2ptcreg,inputs.h5,1,,,,9999,,,,,,
 hurdlereg,inputs.h5,1,,,,9999,,,,,,
 initv,inputs.h5,1,,,,9999,,,,,,
-inputs_0,inputs.h5,1,,,,9999,,,,,,
+inputs_0.gdx,.gdx,1,,,,9999,,,,,,
 interconnect,inputs.h5,1,,,,9999,,,,,,
 itlgrp,inputs.h5,1,,,,9999,,,,,,
 maxdailycf_input,inputs.h5,1,,,,9999,,,,,,
@@ -526,16 +525,14 @@ newv,inputs.h5,1,,,,9999,,,,,,
 nextszn,inputs.h5,1,,,,9999,,,,,,
 offshore,inputs.h5,1,,,,9999,,,,,,
 opres_periods_h17,inputs.h5,1,,,,9999,,,,,,
-outage_forced_hourly,inputs.h5,1,,,,9999,,,,,,
-outage_scheduled_hourly,inputs.h5,1,,,,9999,,,,,,
+outage_forced_hourly.h5,.h5,1,,,,9999,,,,,,
+outage_scheduled_hourly.h5,.h5,1,,,,9999,,,,,,
 pvf_capital,inputs.h5,1,,,,9999,,,,,,
 pvf_onm,inputs.h5,1,,,,9999,,,,,,
 r,inputs.h5,1,,,,9999,,,,,,
 r_cs_distance,inputs.h5,1,,,,9999,,,,,,
-rep,inputs.h5,1,,,,9999,,,,,,
 st,inputs.h5,1,,,,9999,,,,,,
 stressperiods_seed,inputs.h5,1,,,,9999,,,,,,
-supplycurve_metadata,inputs.h5,1,,,,9999,,,,,,
 t,inputs.h5,1,,,,9999,,,,,,
 tmodel_new,inputs.h5,1,,,,9999,,,,,,
 trancap_fut,inputs.h5,1,,,,9999,,,,,,
