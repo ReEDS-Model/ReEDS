@@ -21,80 +21,70 @@ import numpy as np
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+# Time the operation of this script
+tic = datetime.datetime.now()
 
 
-def calculate_region_aggregion_population_weights(
-    inputs_case: str | Path,
-    region_level: str,
-    aggregion_level: str,
-) -> pd.Series:
+#%% Functions
+def smear(dfzones, dfgroups, decay_km:float=150, decay_func=np.exp) -> pd.DataFrame:
     """
-    For a given region level and aggregated region (aggregion)
-    level, calculate each region's share of its corresponding
-    aggregion's total population.
-    
-    Args:
-        inputs_case: Path to the inputs case directory.
-        region_level: Region level (example: 'state')
-        aggregion_level: Aggregated region level
-            (example: 'cendiv')
-
-    Returns:
-        pd.Series
+    Calculate a weighted-average parameter between dfzones and dfgroups, where the weighting
+    between a zone in dfzones and all groups in dfgroups is determined by decay_func (default
+    is exponential decay) and decay_km.
     """
-    # Get county populations
-    county_populations = reeds.inputs.get_county_populations()
-    county_populations = county_populations.rename(
-        columns={'value': 'population'}
-    )
+    weights = {}
 
-    # Get county-to-region mapping
-    county2zone = reeds.io.get_county2zone(
-        os.path.dirname(inputs_case),
-        as_map=False
-    )
-    county2zone['FIPS'] = (
-        'p' + county2zone['FIPS'].astype(str).str.zfill(5)
-    )
-    state_groups = reeds.inputs.get_state_groups()
-    county2zone = county2zone.merge(
-        state_groups,
-        left_on='state',
-        right_on='st'
-    )
-    county_region_map = county2zone.set_index('FIPS')[region_level]
+    for r, row in dfzones.iterrows():
+        ## Get distance from centroid to edge of all other zones
+        distances_km = dfgroups.distance(row.geometry.centroid) / 1000
+        ## Weight decays with distance from centroid
+        if decay_km != 0:
+            weight = decay_func(-distances_km / decay_km)
+        else:
+            ## 1 if zero distance, 0 otherwise
+            weight = (~distances_km.astype(bool)).astype(int)
+        weights[r] = weight
 
-    # Calculate regional populations
-    county_populations[region_level] = (
-        county_populations['FIPS'].map(county_region_map)
-    )
-    region_populations = (
-        county_populations.groupby(region_level, as_index=False)
-        ['population']
-        .sum()
-    )
+    weight_df = pd.DataFrame(weights)
+    weight_norm = weight_df / weight_df.sum()
+    weight_norm = weight_norm.T
 
-    # Calculate each region's percentage of aggregion population
-    region2aggregion = dict(zip(
-        county2zone[region_level],
-        county2zone[aggregion_level]
-    ))
-    region_populations[aggregion_level] = (
-        region_populations[region_level].map(region2aggregion)
-    )
-    region_populations['weight'] = (
-        region_populations['population']
-        / (
-            region_populations.groupby(aggregion_level)
-            ['population']
-            .transform('sum')
-        )
-    )
-    region_aggregion_weights = (
-        region_populations.set_index(region_level)['weight']
-    )
+    return weight_norm
 
-    return region_aggregion_weights
+
+def plot_cendivweights(inputs_case, dfmap, cendivweights):
+    import cmocean
+    import matplotlib.pyplot as plt
+    cmap = cmocean.cm.rain
+    cendivs = dfmap['cendiv'].bounds.minx.sort_values().index
+    nrows, ncols, coords = reeds.plots.get_coordinates(cendivs, aspect=1)
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, sharex=True, sharey=True, figsize=(3*ncols, 2.5*nrows),
+        gridspec_kw={'hspace':0, 'wspace':0},
+    )
+    for cendiv in cendivs:
+        _ax = ax[coords[cendiv]] if len(cendivs) > 1 else ax
+        _ax.axis('off')
+        dfmap['cendiv'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.5, zorder=1e6)
+        dfplot = dfmap['r'].copy()
+        dfplot['value'] = dfplot.index.map(cendivweights[cendiv])
+        dfplot = dfplot[['value','geometry']].replace(0,np.nan).dropna()
+        dfplot.plot(ax=_ax, column='value', vmin=0, vmax=1, cmap=cmap)
+        _ax.set_title(cendiv, fontsize=12, weight='bold', y=0.92)
+    cax = ax if len(cendivs) == 1 else ax[-1, 1]
+    reeds.plots.addcolorbarhist(
+        f, cax, dfplot.value,
+        cmap=cmap, vmin=0, vmax=1,
+        orientation='horizontal', cbarbottom=-0.1, cbarheight=2, cbarwidth=0.1,
+        histratio=0.1, histcolor='w', title='Weight [fraction]',
+        labelpad=1.3, title_fontsize=12, ticklabel_fontsize=12,
+    )
+    figpath = Path(inputs_case, '..', 'outputs', 'figures', 'inputs', 'cendivweights.png')
+    figpath.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(figpath)
+    return f, ax
+
 
 def calculate_daily_state_degree_days(
     inputs_case: str
@@ -132,45 +122,15 @@ def calculate_daily_state_degree_days(
 
     return hdd_daily, cdd_daily
 
-def aggregate_by_weighted_average(
-    regional_data: pd.DataFrame,
-    region_aggregion_weights: pd.Series,
-    region2aggregion: dict[str, str]
-) -> pd.DataFrame:
-    """
-    Aggregate region-level data to the aggregated region
-    ("aggregion") level via weighted average.
-
-    Args:
-        regional_data: Region-level data.
-        region_aggregion_weights: The "weight" of each region
-            corresponding to its aggregion to use in weighted
-            average calculation.
-        region2aggregion: Mapping between regions and aggregions.
-
-    Returns:
-        pd.DataFrame
-    """
-    aggregional_data = (
-        regional_data.mul(region_aggregion_weights)
-        .transpose()
-        .rename(region2aggregion)
-        .groupby(level=0)
-        .sum()
-        .transpose()
-    )
-    return aggregional_data
 
 def calculate_daily_gasreg_degree_days(
     inputs_case: str,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Calculate daily gasreg-level heating and cooling degree days.
-    This is done by calculating historical daily state-level degree
-    days for the given weather year(s), aggregating them to the
-    gasreg level via population-weighted average, and then rescaling
-    the historical daily degree days to match projected annual
-    degree days (corresponding to model solve years) for each gasreg.
+    This is done by calculating daily state-level degree days for
+    the weather year(s) of the given case and then aggregating
+    them to the gasreg level via population-weighted average.
 
     Args:
         inputs_case: Path to the inputs case directory.
@@ -179,28 +139,30 @@ def calculate_daily_gasreg_degree_days(
         (pd.DataFrame, pd.DataFrame)
     """
     # Calculate population-based state-gasreg weights
-    state_gasreg_weights = calculate_region_aggregion_population_weights(
-        inputs_case,
-        region_level='state',
-        aggregion_level='gasreg'
+    state_gasreg_weights = (
+        reeds.spatial.calculate_region_aggregion_population_weights(
+            inputs_case,
+            region_level='state',
+            aggregion_level='gasreg'
+        )
     )
 
-    # Calculate historical state-level daily HDDs and CDDs
+    # Calculate state-level daily HDDs and CDDs
     hdd_daily_st, cdd_daily_st = (
         calculate_daily_state_degree_days(inputs_case)
     )
 
-    # Aggregate historical daily state-level degree days to
+    # Aggregate daily state-level degree days to
     # the gasreg level via population-weighted average
     state_groups = reeds.inputs.get_state_groups()
     st2gasreg = state_groups.set_index('st')['gasreg']
-    hdd_daily_gasreg = aggregate_by_weighted_average(
+    hdd_daily_gasreg = reeds.spatial.aggregate_by_weighted_average(
         hdd_daily_st,
         state_gasreg_weights,
         st2gasreg
     )
     hdd_daily_gasreg = hdd_daily_gasreg.rename_axis(index='datetime')
-    cdd_daily_gasreg = aggregate_by_weighted_average(
+    cdd_daily_gasreg = reeds.spatial.aggregate_by_weighted_average(
         cdd_daily_st,
         state_gasreg_weights,
         st2gasreg
@@ -209,25 +171,23 @@ def calculate_daily_gasreg_degree_days(
 
     return hdd_daily_gasreg, cdd_daily_gasreg
 
+
 def calculate_daily_gasprice_multipliers(
     inputs_case: str
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Calculate daily gas price multipliers at the r and cendiv levels.
-    This is done by first calculating daily, gasreg-level heating and cooling
-    degree days, where the daily degree day shapes correspond to temperature
-    patterns of the given weather year(s) and annual degree day totals
-    correspond to projections for the model solve years. Then, degree
-    day-price multiplier regression parameters are applied to derive
-    gasreg-level price multipliers. To derive r-level multipliers, the
-    gasreg-level multipliers are copied to their constituent zones. To
-    derive cendiv-level multipliers, gasreg-level multipliers are
+    This is done by calculating daily gasreg-level heating and cooling
+    degree days and then applying price adjustment regression parameters
+    to them to derive gasreg-level price multipliers. Then, to derive r-level
+    multipliers, the gasreg-level multipliers are copied to their constituent
+    zones. To derive cendiv-level multipliers, gasreg-level multipliers are
     aggregated via population-weighted average.
-    
+
     Note that this function just gives an intermediate result, which is
     passed to hourly_writetimeseries.py for further processing. In
     hourly_writetimeseries.py, the multipliers are renormalized so that the
-    year-round average multiplier for the set of representative periods
+    average of the multipliers for the set of representative periods
     is 1 for each region.
 
     Args:
@@ -301,83 +261,21 @@ def calculate_daily_gasprice_multipliers(
 
     # Create another set of multipliers for census divisions by aggregating
     # the gasreg-level multipliers via population-weighted average
-    gasreg_cendiv_weights = calculate_region_aggregion_population_weights(
-        inputs_case,
-        region_level='gasreg',
-        aggregion_level='cendiv'
+    gasreg_cendiv_weights = (
+        reeds.spatial.calculate_region_aggregion_population_weights(
+            inputs_case,
+            region_level='gasreg',
+            aggregion_level='cendiv'
+        )
     )
     gasreg_cendiv_map = dict(zip(hierarchy['gasreg'], hierarchy['cendiv']))
-    df_out_cendiv = aggregate_by_weighted_average(
+    df_out_cendiv = reeds.spatial.aggregate_by_weighted_average(
         df_out,
         gasreg_cendiv_weights,
         gasreg_cendiv_map
     )
 
     return df_out_r, df_out_cendiv
-
-# Time the operation of this script
-tic = datetime.datetime.now()
-
-
-#%% Functions
-def smear(dfzones, dfgroups, decay_km:float=150, decay_func=np.exp) -> pd.DataFrame:
-    """
-    Calculate a weighted-average parameter between dfzones and dfgroups, where the weighting
-    between a zone in dfzones and all groups in dfgroups is determined by decay_func (default
-    is exponential decay) and decay_km.
-    """
-    weights = {}
-
-    for r, row in dfzones.iterrows():
-        ## Get distance from centroid to edge of all other zones
-        distances_km = dfgroups.distance(row.geometry.centroid) / 1000
-        ## Weight decays with distance from centroid
-        if decay_km != 0:
-            weight = decay_func(-distances_km / decay_km)
-        else:
-            ## 1 if zero distance, 0 otherwise
-            weight = (~distances_km.astype(bool)).astype(int)
-        weights[r] = weight
-
-    weight_df = pd.DataFrame(weights)
-    weight_norm = weight_df / weight_df.sum()
-    weight_norm = weight_norm.T
-
-    return weight_norm
-
-
-def plot_cendivweights(inputs_case, dfmap, cendivweights):
-    import cmocean
-    import matplotlib.pyplot as plt
-    cmap = cmocean.cm.rain
-    cendivs = dfmap['cendiv'].bounds.minx.sort_values().index
-    nrows, ncols, coords = reeds.plots.get_coordinates(cendivs, aspect=1)
-    plt.close()
-    f,ax = plt.subplots(
-        nrows, ncols, sharex=True, sharey=True, figsize=(3*ncols, 2.5*nrows),
-        gridspec_kw={'hspace':0, 'wspace':0},
-    )
-    for cendiv in cendivs:
-        _ax = ax[coords[cendiv]] if len(cendivs) > 1 else ax
-        _ax.axis('off')
-        dfmap['cendiv'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.5, zorder=1e6)
-        dfplot = dfmap['r'].copy()
-        dfplot['value'] = dfplot.index.map(cendivweights[cendiv])
-        dfplot = dfplot[['value','geometry']].replace(0,np.nan).dropna()
-        dfplot.plot(ax=_ax, column='value', vmin=0, vmax=1, cmap=cmap)
-        _ax.set_title(cendiv, fontsize=12, weight='bold', y=0.92)
-    cax = ax if len(cendivs) == 1 else ax[-1, 1]
-    reeds.plots.addcolorbarhist(
-        f, cax, dfplot.value,
-        cmap=cmap, vmin=0, vmax=1,
-        orientation='horizontal', cbarbottom=-0.1, cbarheight=2, cbarwidth=0.1,
-        histratio=0.1, histcolor='w', title='Weight [fraction]',
-        labelpad=1.3, title_fontsize=12, ticklabel_fontsize=12,
-    )
-    figpath = Path(inputs_case, '..', 'outputs', 'figures', 'inputs', 'cendivweights.png')
-    figpath.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(figpath)
-    return f, ax
 
 
 #%% Procedure
