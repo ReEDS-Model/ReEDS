@@ -219,39 +219,149 @@ def plot_fixed(df_input, filename, title=None):
 # -----------------------------
 # POLYGON WITH PANELS
 # -----------------------------
-def plot_polygons_panel(df_input, filename, title=None, use_density=False):
+def plot_polygons_panel(
+    df_input,
+    filename,
+    title=None,
+    use_density=False
+):
+    # ---------------------------------
+    # Helper: original density style
+    # ---------------------------------
+    def add_original_density(target_ax, x, y):
+        """
+        Draw the same default matplotlib KDE density treatment
+        used in the inset figure.
+        """
+        if not use_density:
+            return
+
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+
+        # A 2D KDE is not meaningful for a point, horizontal line,
+        # vertical line, or too few points.
+        if (
+            len(x) < 3
+            or np.isclose(np.ptp(x), 0, atol=1e-12)
+            or np.isclose(np.ptp(y), 0, atol=1e-12)
+        ):
+            return
+
+        try:
+            kde = gaussian_kde(np.vstack([x, y]))
+
+            xi, yi = np.mgrid[
+                x.min():x.max():100j,
+                y.min():y.max():100j
+            ]
+
+            zi = kde(
+                np.vstack([
+                    xi.flatten(),
+                    yi.flatten()
+                ])
+            ).reshape(xi.shape)
+
+            # Intentionally do not specify colors=[color].
+            # This restores the original visible density treatment.
+            target_ax.contourf(
+                xi,
+                yi,
+                zi,
+                levels=6,
+                alpha=0.20,
+                zorder=1
+            )
+
+        except (
+            np.linalg.LinAlgError,
+            ValueError
+        ):
+            pass
+
+    # ---------------------------------
+    # Helper: add label for adjust_text
+    # ---------------------------------
+    def add_label(
+        target_ax,
+        x_value,
+        y_value,
+        label,
+        text_list,
+        x_list,
+        y_list
+    ):
+        txt = target_ax.text(
+            x_value,
+            y_value,
+            label,
+            fontsize=11,
+            ha="center",
+            va="center",
+            zorder=5,
+            bbox=dict(
+                facecolor="white",
+                edgecolor="none",
+                alpha=0.75,
+                pad=1
+            )
+        )
+
+        text_list.append(txt)
+        x_list.append(x_value)
+        y_list.append(y_value)
+
+    # ---------------------------------
     # Weight grid
+    # ---------------------------------
     apd_vals = np.linspace(0.5, 0.7, 25)
     cod_vals = np.linspace(0.1, 0.25, 25)
 
     rows = []
+
     for a in apd_vals:
         for c in cod_vals:
             r = 1 - a - c
+
             if r <= 0:
                 continue
 
             tmp = df_input.copy()
+
             tmp["Composite_Risk"] = (
-                a * tmp["APD (60%)"] +
-                c * tmp["COD (20%)"] +
-                r * tmp["RDS (20%)"]
+                a * tmp["APD (60%)"]
+                + c * tmp["COD (20%)"]
+                + r * tmp["RDS (20%)"]
             )
+
             rows.append(tmp)
 
     df_all = pd.concat(rows, ignore_index=True)
 
-    # Split materials into the two panels
+    # ---------------------------------
+    # Split materials into panels
+    # ---------------------------------
     focal_materials = ["Aluminum", "Copper"]
+
     other_materials = [
         mat for mat in materials
         if mat not in focal_materials
     ]
 
-    panel_materials = [focal_materials, other_materials]
-    panel_titles = ["Aluminum and Copper", "All Other Materials"]
+    panel_materials = [
+        focal_materials,
+        other_materials
+    ]
 
-    # Do not share axes: each panel can show its own useful range
+    panel_titles = [
+        "Aluminum and Copper",
+        "All Other Materials"
+    ]
+
+    # ---------------------------------
+    # Figure setup
+    # ---------------------------------
     fig, axes = plt.subplots(
         ncols=2,
         figsize=(18, 8),
@@ -259,18 +369,24 @@ def plot_polygons_panel(df_input, filename, title=None, use_density=False):
         sharey=False
     )
 
-    # Dictionary prevents duplicate legend entries
     legend_handles = {}
 
+    # ---------------------------------
+    # Draw each panel
+    # ---------------------------------
     for ax, mats_in_panel, panel_title in zip(
-        axes, panel_materials, panel_titles
+        axes,
+        panel_materials,
+        panel_titles
     ):
         texts = []
         label_xs = []
         label_ys = []
 
         for mat in mats_in_panel:
-            sub = df_all[df_all["Material_name"] == mat]
+            sub = df_all[
+                df_all["Material_name"] == mat
+            ].copy()
 
             if sub.empty:
                 continue
@@ -279,12 +395,18 @@ def plot_polygons_panel(df_input, filename, title=None, use_density=False):
 
             short_label = sub["Material"].iloc[0]
             long_label = sub["Material_name"].iloc[0]
-            legend_label = f"{short_label}: {long_label}"
 
-            # Actual unique risk/cost combinations
-            pts = sub[
-                ["Composite_Risk", "Pct_Diff"]
-            ].drop_duplicates().to_numpy()
+            legend_label = (
+                f"{short_label}: {long_label}"
+            )
+
+            pts = (
+                sub[
+                    ["Composite_Risk", "Pct_Diff"]
+                ]
+                .drop_duplicates()
+                .to_numpy()
+            )
 
             if len(pts) == 0:
                 continue
@@ -292,78 +414,127 @@ def plot_polygons_panel(df_input, filename, title=None, use_density=False):
             x = pts[:, 0]
             y = pts[:, 1]
 
-            # Optional density shading
-            if use_density and len(pts) > 1:
-                try:
-                    kde = gaussian_kde(np.vstack([x, y]))
+            x_span = np.ptp(x)
+            y_span = np.ptp(y)
 
-                    xi, yi = np.mgrid[
-                        x.min():x.max():100j,
-                        y.min():y.max():100j
-                    ]
+            # ---------------------------------
+            # Handle point / horizontal /
+            # vertical / non-polygon cases
+            # ---------------------------------
+            has_2d_variation = (
+                len(pts) >= 3
+                and not np.isclose(x_span, 0, atol=1e-12)
+                and not np.isclose(y_span, 0, atol=1e-12)
+            )
 
-                    zi = kde(
-                        np.vstack([xi.flatten(), yi.flatten()])
-                    ).reshape(xi.shape)
+            if not has_2d_variation:
+                x0 = np.mean(x)
+                y0 = np.mean(y)
 
-                    ax.contourf(
-                        xi,
-                        yi,
-                        zi,
-                        levels=6,
-                        colors=[color],
-                        alpha=0.20
-                    )
-
-                except Exception:
-                    pass
-
-            # Point fallback for too few points to construct a hull
-            if len(pts) < 3:
-                x0 = sub["Composite_Risk"].mean()
-                y0 = sub["Pct_Diff"].mean()
-
-                ax.scatter(
-                    x0,
-                    y0,
-                    color=color,
-                    s=80,
-                    zorder=3
+                is_point = (
+                    np.isclose(x_span, 0, atol=1e-12)
+                    and np.isclose(y_span, 0, atol=1e-12)
                 )
 
-                txt = ax.text(
+                is_horizontal = (
+                    np.isclose(y_span, 0, atol=1e-12)
+                    and not np.isclose(x_span, 0, atol=1e-12)
+                )
+
+                is_vertical = (
+                    np.isclose(x_span, 0, atol=1e-12)
+                    and not np.isclose(y_span, 0, atol=1e-12)
+                )
+
+                if is_point:
+                    ax.scatter(
+                        x0,
+                        y0,
+                        color=color,
+                        s=80,
+                        zorder=3
+                    )
+
+                    legend_handles[mat] = Line2D(
+                        [0],
+                        [0],
+                        marker="o",
+                        linestyle="None",
+                        markerfacecolor=color,
+                        markeredgecolor=color,
+                        markersize=8,
+                        label=legend_label
+                    )
+
+                elif is_horizontal:
+                    ax.plot(
+                        [x.min(), x.max()],
+                        [y0, y0],
+                        color=color,
+                        linewidth=2,
+                        zorder=3
+                    )
+
+                    legend_handles[mat] = Line2D(
+                        [0],
+                        [0],
+                        color=color,
+                        linewidth=2,
+                        label=legend_label
+                    )
+
+                elif is_vertical:
+                    ax.plot(
+                        [x0, x0],
+                        [y.min(), y.max()],
+                        color=color,
+                        linewidth=2,
+                        zorder=3
+                    )
+
+                    legend_handles[mat] = Line2D(
+                        [0],
+                        [0],
+                        color=color,
+                        linewidth=2,
+                        label=legend_label
+                    )
+
+                else:
+                    # Collinear diagonal points
+                    order = np.argsort(x)
+
+                    ax.plot(
+                        x[order],
+                        y[order],
+                        color=color,
+                        linewidth=2,
+                        zorder=3
+                    )
+
+                    legend_handles[mat] = Line2D(
+                        [0],
+                        [0],
+                        color=color,
+                        linewidth=2,
+                        label=legend_label
+                    )
+
+                add_label(
+                    ax,
                     x0,
                     y0,
                     short_label,
-                    fontsize=11,
-                    ha="center",
-                    va="center",
-                    zorder=5,
-                    bbox=dict(
-                        facecolor="white",
-                        edgecolor="none",
-                        alpha=0.75,
-                        pad=1
-                    )
-                )
-
-                texts.append(txt)
-                label_xs.append(x0)
-                label_ys.append(y0)
-
-                legend_handles[mat] = Line2D(
-                    [0], [0],
-                    marker="o",
-                    linestyle="None",
-                    markerfacecolor=color,
-                    markeredgecolor=color,
-                    markersize=8,
-                    label=legend_label
+                    texts,
+                    label_xs,
+                    label_ys
                 )
 
                 continue
 
-            # Convex hull / polygon
+            # ---------------------------------
+            # Polygon / convex hull
+            # ---------------------------------
             try:
                 hull = ConvexHull(pts)
                 hull_pts = pts[hull.vertices]
@@ -376,41 +547,42 @@ def plot_polygons_panel(df_input, filename, title=None, use_density=False):
                 )
 
                 hull_pts = hull_pts[np.argsort(angles)]
-                hull_pts = np.vstack([hull_pts, hull_pts[0]])
 
+                # Close polygon
+                hull_pts = np.vstack([
+                    hull_pts,
+                    hull_pts[0]
+                ])
+
+                # Draw density first, as in the inset version.
+                add_original_density(ax, x, y)
+
+                # Then draw the material envelope on top.
                 ax.plot(
                     hull_pts[:, 0],
                     hull_pts[:, 1],
                     color=color,
-                    linewidth=2
+                    linewidth=2,
+                    zorder=3
                 )
 
                 ax.fill(
                     hull_pts[:, 0],
                     hull_pts[:, 1],
                     color=color,
-                    alpha=0.35
+                    alpha=0.35,
+                    zorder=2
                 )
 
-                txt = ax.text(
+                add_label(
+                    ax,
                     center[0],
                     center[1],
                     short_label,
-                    fontsize=11,
-                    ha="center",
-                    va="center",
-                    zorder=5,
-                    bbox=dict(
-                        facecolor="white",
-                        edgecolor="none",
-                        alpha=0.75,
-                        pad=1
-                    )
+                    texts,
+                    label_xs,
+                    label_ys
                 )
-
-                texts.append(txt)
-                label_xs.append(center[0])
-                label_ys.append(center[1])
 
                 legend_handles[mat] = Patch(
                     facecolor=color,
@@ -419,50 +591,46 @@ def plot_polygons_panel(df_input, filename, title=None, use_density=False):
                     label=legend_label
                 )
 
-            except Exception:
-                # Fallback if ConvexHull cannot form a polygon
-                x0 = sub["Composite_Risk"].mean()
-                y0 = sub["Pct_Diff"].mean()
+            except (
+                QhullError,
+                ValueError,
+                np.linalg.LinAlgError
+            ):
+                # Final fallback for diagonal / nearly collinear values
+                x0 = np.mean(x)
+                y0 = np.mean(y)
 
-                ax.scatter(
-                    x0,
-                    y0,
+                order = np.argsort(x)
+
+                ax.plot(
+                    x[order],
+                    y[order],
                     color=color,
-                    s=80,
+                    linewidth=2,
                     zorder=3
                 )
 
-                txt = ax.text(
+                add_label(
+                    ax,
                     x0,
                     y0,
                     short_label,
-                    fontsize=11,
-                    ha="center",
-                    va="center",
-                    zorder=5,
-                    bbox=dict(
-                        facecolor="white",
-                        edgecolor="none",
-                        alpha=0.75,
-                        pad=1
-                    )
+                    texts,
+                    label_xs,
+                    label_ys
                 )
 
-                texts.append(txt)
-                label_xs.append(x0)
-                label_ys.append(y0)
-
                 legend_handles[mat] = Line2D(
-                    [0], [0],
-                    marker="o",
-                    linestyle="None",
-                    markerfacecolor=color,
-                    markeredgecolor=color,
-                    markersize=8,
+                    [0],
+                    [0],
+                    color=color,
+                    linewidth=2,
                     label=legend_label
                 )
 
-        # Adjust labels within each panel independently
+        # ---------------------------------
+        # Adjust labels for this panel
+        # ---------------------------------
         if texts:
             adjust_text(
                 texts,
@@ -479,44 +647,65 @@ def plot_polygons_panel(df_input, filename, title=None, use_density=False):
                 )
             )
 
-        ax.set_title(panel_title, fontsize=15)
-        ax.set_xlabel("Composite supply risk", fontsize=14)
+        ax.set_title(
+            panel_title,
+            fontsize=15
+        )
+
+        ax.set_xlabel(
+            "Composite supply risk",
+            fontsize=14
+        )
+
         ax.set_ylabel(
             "% Difference in Cumulative Discounted System Cost",
             fontsize=14
         )
+
         ax.grid(True)
         ax.margins(x=0.10, y=0.10)
 
-    # Overall figure title
+    # ---------------------------------
+    # Title
+    # ---------------------------------
     if title is not None:
-        fig.suptitle(title, fontsize=18, y=0.98)
-    else:
         fig.suptitle(
-            os.path.splitext(filename)[0],
+            title,
             fontsize=18,
             y=0.98
         )
 
-    # One legend for both panels
-    fig.legend(
-        handles=list(legend_handles.values()),
-        title="Material",
-        loc="center left",
-        bbox_to_anchor=(0.86, 0.5),
-        fontsize=10,
-        title_fontsize=11,
-        frameon=True
-    )
+    else:
+        fig.suptitle(
+            filename.rsplit(".", 1)[0],
+            fontsize=18,
+            y=0.98
+        )
 
-    # Reserve room at right for the shared legend
-    fig.tight_layout(rect=[0, 0, 0.84, 0.94])
+    # ---------------------------------
+    # Shared legend
+    # ---------------------------------
+    if legend_handles:
+        fig.legend(
+            handles=list(legend_handles.values()),
+            title="Material",
+            loc="center left",
+            bbox_to_anchor=(0.86, 0.5),
+            fontsize=10,
+            title_fontsize=11,
+            frameon=True
+        )
+
+    fig.tight_layout(
+        rect=[0, 0, 0.84, 0.94]
+    )
 
     fig.savefig(
         filename,
         dpi=300,
         bbox_inches="tight"
     )
+
     plt.close(fig)
 
 
@@ -1270,6 +1459,14 @@ plot_polygons_with_inset(
     use_density=True,
     zoom_ymin=0,
     zoom_ymax=0.04,
+    title=(
+        ""
+    )
+)
+
+plot_polygons_panel(df_without_restrict, 
+    "3_range_with_density_without_restrict_panel.png",
+    use_density=True,
     title=(
         ""
     )
