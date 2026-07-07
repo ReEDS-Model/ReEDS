@@ -2820,7 +2820,7 @@ SO<sub>2</sub> and NO<sub>x</sub> are also included in the [cost of health damag
 
 
 
-## Power sector Employment
+## Power sector employment
 
 Employment factors for biopower, solar PV, hydropower, pumped storage, and land-based wind are derived respectively from the Jobs and Economic Development Impact (JEDI) models {cite}`JEDI_2025` of individual technologies, all of which are publicly available. Employment factors for battery storage, coal, natural gas, geothermal, offshore wind, and transmission lines are derived respectively from the Workforce Impacts and Regional Economic Development (WIRED) models of individual technologies, all of which are not yet publicly available but are based on publicly available data inputs. Details are shown in {numref}`employment-factors` below.
 
