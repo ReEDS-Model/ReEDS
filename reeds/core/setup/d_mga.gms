@@ -149,22 +149,5 @@ eq_MGA_Objective$Sw_MGA..
     * (1 + trans_fom_frac)
 ;
 
-***************************************************************************
-* Alternative way of estimating transmission line 
-* FO&M employment using FTE/MW employment factor data
-* (currently not used)
-*    + sum{(r,rr,trtype,t)
-*          $[tmodel(t)
-*          $routes(r,rr,trtype,t)],
-**         [MW] * [.] * [job-years/MW] = [job-years]           
-*          CAPTRAN_ENERGY(r,rr,trtype,t) 
-*          * pvf_onm(t)
-* CAPTRAN_ENERGY is defined in both directions so needs to be divided by 2
-* but we don't divide by 2 here since this portion in the objective function
-* is high by factor of 2 (will fix this separately)         
-*          * employment_factor_inter_transmission("fom")  }
-*;
-***************************************************************************
-
 
 $endif.mgaobj
