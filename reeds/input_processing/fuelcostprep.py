@@ -117,12 +117,18 @@ def calculate_daily_state_degree_days(
     scalars = reeds.io.get_scalars(inputs_case)
     base_temp = scalars['degree_days_base_temperature']
 
-    # Calculate each state's average temperature for each day
-    avg_temp_daily = temp_hourly.resample('D').mean()
+    # Calculate degree-hours (hourly deviations from baseline)
+    # and then take the daily averages of degree-hours to
+    # get degree days. This is different from the traditional
+    # approach for calculating degree days
+    # (https://www.eia.gov/energyexplained/units-and-calculators/degree-days.php),
+    # but we found that this approach resulted in better predictors
+    # of daily deviations from annual average gas prices.
+    hdd_hourly = (base_temp - temp_hourly).clip(lower=0)
+    hdd_daily = hdd_hourly.resample('D').mean()
 
-    # Take differences between baseline and average temperatures
-    hdd_daily = (base_temp - avg_temp_daily).clip(lower=0)
-    cdd_daily = (avg_temp_daily - base_temp).clip(lower=0)
+    cdd_hourly = (temp_hourly - base_temp).clip(lower=0)
+    cdd_daily = cdd_hourly.resample('D').mean()
 
     return hdd_daily, cdd_daily
 
@@ -238,7 +244,7 @@ def calculate_daily_gasprice_multipliers(
     regression_params = pd.read_csv(
         os.path.join(
             inputs_case,
-            'gasreg_degree_day_price_mult_regression_params.csv'
+            'gasreg_price_adj_regression_params.csv'
         ),
         index_col='param'
     )

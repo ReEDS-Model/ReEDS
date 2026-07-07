@@ -159,7 +159,7 @@ fuel2tech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 fuelbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 futurefiles.csv,.csv,1,None,9999,None,9999,0,constant,None,None,so meta,constant
 gasprice_ref.csv,.csv,0,None,wide,cendiv,1,0,constant,0,None,done,linear_5
-gasreg_degree_day_price_mult_regression_params.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+gasreg_price_adj_regression_params.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin_min.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
