@@ -6034,9 +6034,9 @@ upgrade_ratio(i)$[upgrade(i)
 
 * Only apply this ratio to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
 $ifthen.upgrade_ef %GSw_EmploymentFactor% == "jedi"
-employment_factor_plant(i,"construction")$[upgrade(i)
-                                         $(not ccs(i))] = employment_factor_plant(i,"construction") 
-                                         * upgrade_ratio(i) ;
+employment_factor_plant(i,"construction")
+    $[upgrade(i)$(not ccs(i))]
+    = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
 $else.upgrade_ef
 employment_factor_plant(i,"construction")$upgrade(i) = employment_factor_plant(i,"construction") 
                                                        * upgrade_ratio(i) ;
