@@ -122,8 +122,8 @@ def calculate_daily_state_degree_days(
     # get degree days. This is different from the traditional
     # approach for calculating degree days
     # (https://www.eia.gov/energyexplained/units-and-calculators/degree-days.php),
-    # but we found that this approach resulted in better predictors
-    # of daily deviations from annual average gas prices.
+    # but we found that this approach generally resulted in better
+    # predictors of daily deviations from annual average gas prices.
     hdd_hourly = (base_temp - temp_hourly).clip(lower=0)
     hdd_daily = hdd_hourly.resample('D').mean()
 

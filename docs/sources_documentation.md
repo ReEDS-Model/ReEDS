@@ -1569,17 +1569,10 @@
     - **Description:** Dollar year mapping for each fuel price scenario
 ---
 
-  - [gasreg_degree_day_price_mult_regression_params.csv](/inputs/fuelprices/gasreg_degree_day_price_mult_regression_params.csv)
+  - [gasreg_price_adj_regression_params.csv](/inputs/fuelprices/gasreg_price_adj_regression_params.csv)
     - **File Type:** Input
-    - **Description:** Coefficients and intercepts derived from regression regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual average price with monthly fixed effects (https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/temperature_gas_price_regression). "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
+    - **Description:** Parameters derived from regression with monthly fixed effects regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual averages (https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/temperature_gas_price_adj_regression). "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
     - **Indices:** param
----
-
-  - [gasreg_degree_days.csv](/inputs/fuelprices/gasreg_degree_days.csv)
-    - **File Type:** Input
-    - **Description:** Annual heating and cooling degree days for each gasreg
-    - **Indices:** t,ddtype
-    - **Citation:** AEO: https://github.com/EIAgov/NEMS/blob/main/input/bld/kdegday.txt
 ---
 
   - [h2-combustion_10.csv](/inputs/fuelprices/h2-combustion_10.csv)

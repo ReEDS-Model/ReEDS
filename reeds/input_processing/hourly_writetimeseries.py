@@ -548,8 +548,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'evmc_storage_energy': ['*i','r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
-            'daily_gasprice_multipliers_r': ['*r','h','t','multiplier'],
-            'daily_gasprice_multipliers_cendiv': ['*cendiv','h','t','multiplier'],
+            'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
+            'daily_gasprice_multipliers_cendiv': ['*cendiv','h','multiplier'],
         }
         for f, columns in write.items():
             pd.DataFrame(columns=columns).to_csv(
@@ -1386,7 +1386,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             df.loc[df.index.get_level_values('h').isin(chunkmap.values())]
             .rename('multiplier')
         )
-        # Renormalize so the average for each region and year is 1,
+        # Renormalize so the average for each region is 1,
         # ensuring the year-round average gas price doesn't change.
         df = (
             df.div(df.groupby(level=[region_level]).mean())
