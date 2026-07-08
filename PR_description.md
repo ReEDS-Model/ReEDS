@@ -2,7 +2,7 @@
 
 Replaces the flat intra-zone point-of-interconnection (POI) / network-reinforcement adder (`GSw_TransIntraCost`) with an optional **increasing-cost supply curve**. Successive amounts of new capacity built in a zone pay a higher marginal reinforcement cost, applied to **all** technologies through the existing `INV_POI` / `eq_POI_cap` mechanism.
 
-While this is refered to as the POI in the code currently, this is purely the scaffolding that was used to implement the inclusion. POI in reV is seperate from the reinforcement costs (POI is not the network costs). In thsi implementation, the POI from reV is still included but the reinforcement assumptions previously in reV is stripped out and replaced by the binned costs.
+While this is referred to as the POI in the code currently, this is purely the scaffolding that was used to implement the inclusion. POI in reV is separate from the reinforcement costs (POI is not the network costs). In this implementation, the POI from reV is still included but the reinforcement assumptions previously in reV are stripped out and replaced by the binned costs.
 
 The bin structure reuses the VRE resource-supply-curve pattern (`rtscbin` as the indexer rather than `rscbin`): each bin has an incremental capacity width and a per-bin cost. The flat cost is the degenerate one-bin case, so **`numpoibins = 1` (the default) reproduces current behavior exactly** — the binned method is fully opt-in.
 
@@ -33,16 +33,17 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
 
 ### Known incompatibilities
 
-- None. `numpoibins = 1` (the default) reproduces the legacy flat-cost behavior exactly.
+- `numpoibins != 1` (binned or native curve) requires `GSw_TransIntraCost > 0`; the curve is gated on that switch, so the combination `numpoibins != 1` with `GSw_TransIntraCost = 0` is rejected with a `ValueError` in `runreeds.py` rather than silently charging no reinforcement.
+- `numpoibins = 1` (the default) reproduces the legacy flat-cost behavior exactly.
 
 ### Relevant sources or documentation
 
-- Interconnection cost data from the [TSC](https://github.nrel.gov/ReEDS/TSC) model with still to be PR-ed interconnection optimization. **TODO:** Add in the exact links and docus (noted in `inputs/transmission/README.md`).
+- Interconnection cost data from the [TSC](https://github.nrel.gov/ReEDS/TSC) model with still to be PR-ed interconnection optimization. **TODO:** Add in the exact links and docs (noted in `inputs/transmission/README.md`).
 
 ## Validation, testing, and comparison report(s)
 
 - [ ] **Pending.** This is a model + data change, so full-US reference and full-US decarb comparison reports are required and will be added before merge.
-- Test-case configs are included for exercising the feature at ERCOT resolution: `cases_transmission_test.csv` (`ERCOT_0`, `ERCOT_regional`).
+- Test-case configs are included for exercising the feature at ERCOT resolution: `cases_transmission_test.csv` (`ERCOT_default` = flat legacy, `ERCOT_0` = near-zero flat, `ERCOT_regional` = binned curve).
 - Default-case impact is expected to be zero because `numpoibins` defaults to `1` (legacy flat cost).
 
 ## Checklist for author
@@ -64,7 +65,7 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
 - [ ] No large data file(s) added/modified *(several per-zone-set curves added; largest is `poi_supply_curve_z3109.csv`)*
 - [ ] No substantive impact on runtime for full-US reference case
 - [x] No change to package requirements
-- [x] No change to process flow
+- [ ] No change to process flow *(`runreeds.py` gains one compatibility check: `numpoibins != 1` requires `GSw_TransIntraCost > 0`)*
 
 #### Did you use LLM tools (chatbot or copilot) in the preparation of this PR? If so, describe how
 
@@ -76,7 +77,7 @@ Yes. Claude Code (Anthropic) was used across several sessions as a pair-programm
 
 All LLM-assisted changes were reviewed, directed, and tested by the author.
 
-_Note: parts of this PR — including the summary of LLM usage above — was itself drafted by Claude Code (from the branch diff and prior session history) and reviewed by the author. (but I have checked and edited a fair amount)_
+_Note: parts of this PR — including the summary of LLM usage above — were themselves drafted by Claude Code (from the branch diff and prior session history) and reviewed by the author. (but I have checked and edited a fair amount)_
 
 <!-- Points of contact for review -->
 <!-- - [ ] Transmission: @patrickbrown4 -->

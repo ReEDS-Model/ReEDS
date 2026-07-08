@@ -291,6 +291,15 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
+    if (int(sw['numpoibins']) != 1) and (float(sw['GSw_TransIntraCost']) == 0):
+        raise ValueError(
+            'The binned/native POI reinforcement curve (numpoibins != 1) is gated on '
+            'GSw_TransIntraCost > 0; with GSw_TransIntraCost=0 the entire curve is silently '
+            'disabled (no reinforcement cost is charged).\n'
+            'Set GSw_TransIntraCost > 0 to use the curve, or numpoibins = 1 for the flat legacy '
+            f"cost.\nnumpoibins={sw['numpoibins']}, GSw_TransIntraCost={sw['GSw_TransIntraCost']}"
+        )
+
     if sw['GSw_RegionResolution'] in ['county','mixed']:
         err_switch_configs = []
         if sw['GSw_LoadAllocationMethod'] == 'state_lpf':

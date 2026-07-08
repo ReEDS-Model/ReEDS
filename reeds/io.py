@@ -1510,9 +1510,9 @@ def assemble_supplycurve(
 
     ## Drop embedded reinforcement cost where network reinforcement is represented elsewhere:
     ##  - always for counties (county-resolution reinforcement is handled at the BA level), and
-    ##  - for all regions when the binned POI reinforcement method is active (numpoibins>1 with
-    ##    GSw_TransIntraCost>0), to avoid double-counting reinforcement now captured by the POI
-    ##    supply curve (INV_POI / eq_POI_cap).
+    ##  - for all regions when the POI reinforcement curve is active (numpoibins != 1, i.e. the
+    ##    binned or native curve, with GSw_TransIntraCost>0), to avoid double-counting reinforcement
+    ##    now captured by the POI supply curve (INV_POI / eq_POI_cap).
     ## In both cases cost_total_trans is recomputed as spur + connection (POI) only.
     if case is not None:
         agglevel_variables = reeds.spatial.get_agglevel_variables(
@@ -1520,7 +1520,7 @@ def assemble_supplycurve(
         )
         counties = agglevel_variables['county_regions']
         use_poi_bins = (
-            (int(sw.numpoibins) > 1)
+            (int(sw.numpoibins) != 1)
             and (float(sw.GSw_TransIntraCost) != 0)
         )
     else:

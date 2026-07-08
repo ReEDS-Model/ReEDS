@@ -1648,7 +1648,7 @@ def plot_poi_supply_curve(
     f.colorbar(sm, ax=ax, label='year')
 
     ax.set_xlabel(f'cumulative POI capacity [{x_units}]')
-    ax.set_ylabel('reinforcement cost [$/kW]')
+    ax.set_ylabel('reinforcement cost [2004$/kW]')
     ax.set_title(f'POI supply curve — {region}')
     ax.set_xlim(0, xmax / xscale)
     ax.set_ylim(bottom=0)
