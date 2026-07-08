@@ -5,17 +5,17 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 
 | Technology              | Source                                                              |
 |-------------------------|---------------------------------------------------------------------|
-| Biopower                | JEDI {cite}`JobsEconomicDevelopment`                                              |
+| Biopower                | JEDI Biopower Model (B12.23.16)[^1]                                             |
 | Battery                 | WIRED {cite}`ramasamyUSSolarPhotovoltaic2022`                                   |
 | Coal-IGCC               | WIRED {cite}`schmitt_et_al_2022`, {cite}`james_et_al_2023` and {cite}`EliminatingDerateCarbon`. |
 | Coal-PC                 | WIRED {cite}`schmitt_et_al_2022`, {cite}`james_et_al_2023` and {cite}`EliminatingDerateCarbon`. |
 | Coal-CCS RT             | WIRED {cite}`schmitt_et_al_2022`, {cite}`james_et_al_2023` and {cite}`EliminatingDerateCarbon`. |
 | Coal-CCS GF             | WIRED {cite}`schmitt_et_al_2022`, {cite}`james_et_al_2023` and {cite}`EliminatingDerateCarbon`. |
-| DPV                     | JEDI {cite}`JobsEconomicDevelopment`                                              |
+| DPV                     | JEDI Photovoltaics Model (PV05.20.21)[^1]                                             |
 | Geothermal-Hydrothermal | WIRED {cite}`hansonGeothermalElectricityTechnology2013`                                                   |
 | Geothermal-EGS          | WIRED {cite}`hansonGeothermalElectricityTechnology2013`                                                   |
-| Hydropower              | JEDI {cite}`JEDI_2025`                                              |
-| Land-based Wind         | JEDI {cite}`JEDI_2025`                                              |
+| Hydropower              | JEDI Conventional Hydro Model (CH12.23.16)[^1]                                              |
+| Land-based Wind         | JEDI Onshore Wind Model (W2000)[^1]                                              |
 | NG-CC                   | WIRED {cite}`schmitt_et_al_2022`, {cite}`oakesCostPerformanceBaseline2023` and {cite}`schmittCostPerformanceRetrofitting2023`   |
 | NG-CC-CCS RT            | WIRED {cite}`schmitt_et_al_2022`, {cite}`oakesCostPerformanceBaseline2023` and {cite}`schmittCostPerformanceRetrofitting2023`   |
 | NG-CC-CCS GF            | WIRED {cite}`schmitt_et_al_2022`, {cite}`oakesCostPerformanceBaseline2023` and {cite}`schmittCostPerformanceRetrofitting2023`   |
@@ -23,9 +23,9 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 | Nuclear Conventional    | {cite}`abou-jaoudeLiteratureReviewAdvanced2023`                                      |
 | Nuclear SMR             | {cite}`asuegaTechnoeconomicAnalysisAdvanced2023`                                           |
 | Offshore Wind           | {cite}`hammondWindfarmOperationsMaintenance2022` and {cite}`nunemakerORBITOffshoreRenewables2020` |
-| Transmission-500kW AC   | JEDI {cite}`JobsEconomicDevelopment`                                              |
-| Transmission-230kW AC   | JEDI {cite}`JobsEconomicDevelopment`                                              |
-| UPV                     | JEDI {cite}`JobsEconomicDevelopment`                                              |
+| Transmission-500kW AC   | WIRED Transmission Line Model (TL.12.23.16) based on JEDI Transmission Line Model[^1]                                              |
+| Transmission-230kW AC   | WIRED Transmission Line Model (TL.12.23.16) based on JEDI Transmission Line Model[^1]                                              |
+| UPV                     | JEDI Photovoltaics Model (PV05.20.21)[^1]                                              |
 
 - `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- Mayfield et al. (2023) {cite}`mayfieldLaborPathwaysAchieve2023`, Rutovitz et al. (2024) {cite}`rutovitzUpdatedEmploymentFactors2025` and Ram et al. (2020) {cite}`ramJobCreationGlobal2020`.
 
@@ -38,3 +38,5 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
   - VOM: [job-years/MWh]
 - Transmission lines:
   - Construction: [job-years/(2004$)]
+
+[^1] NLR. Jobs and economic development impact models, 2025. https://www.nlr.gov/analysis/jedi/
