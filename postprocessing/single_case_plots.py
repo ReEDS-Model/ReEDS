@@ -233,36 +233,6 @@ except Exception:
     print(traceback.format_exc())
 
 
-#%% POI / network-reinforcement supply curves (one figure per region that builds reinforcement)
-try:
-    poi_cap = reeds.io.read_output(case, 'poi_capacity', valname='MW').astype({'t': int})
-    poi_init = reeds.io.read_input(case, 'poi_cap_init')
-    poi_init = poi_init.rename(
-        columns={poi_init.columns[0]: 'r', poi_init.columns[1]: 'MW'}).set_index('r')['MW']
-    finalyear = poi_cap['t'].max()
-    built = poi_cap.loc[poi_cap['t'] == finalyear].set_index('r')['MW']
-    new_poi = (built - built.index.to_series().map(poi_init).fillna(0))
-    poi_regions = new_poi.loc[new_poi > 1].sort_values(ascending=False).index.tolist()
-    print(f'Plotting POI supply curves for {len(poi_regions)} region(s) that build reinforcement')
-    for region in poi_regions:
-        try:
-            plt.close()
-            f, ax = reedsplots.plot_poi_supply_curve(case=case, region=region)
-            savename = f'poi_supply_curve-{region}.png'
-            if write:
-                plt.savefig(os.path.join(savepath, savename))
-            if interactive:
-                plt.show()
-            plt.close()
-            print(savename)
-        except Exception:
-            print(f'plot_poi_supply_curve failed for {region}:')
-            print(traceback.format_exc())
-except Exception:
-    print('plot_poi_supply_curve setup failed:')
-    print(traceback.format_exc())
-
-
 #%% Macrogrid map
 try:
     plt.close()

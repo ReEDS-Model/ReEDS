@@ -20,20 +20,19 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
 
 ### Additional changes
 
-- `reeds/reedsplots.py` + `postprocessing/single_case_plots.py`: plotting helper for the POI supply curve.
 - `inputs/transmission/README.md`: provenance for the raw input file; `dollaryear.csv` entry added (`raw_interconnection_TSC_data.csv`, USD2024). The per-zone-set `poi_supply_curve_{GSw_ZoneSet}.csv` placeholder files and their `runfiles.csv` copy entry were removed — the curve is built at run time from the single raw source.
 
 ### Switches added/removed/changed
 
 | Switch | Change | Description |
 |---|---|---|
-| `numpoibins` | **added** | Number of POI cost bins. `1` (default) = legacy flat `GSw_TransIntraCost`; `>1` = binned curve; `0` = native (one bin per raw segment). |
+| `numpoibins` | **added** | Number of POI cost bins. `1` (default) = legacy flat `GSw_TransIntraCost`; `>1` = binned curve; `0` = defualt (one bin per raw segment). |
 | `GSw_POIUpperCost` | **added** | [USD2004/kW] cost of the unlimited backstop bin above the finite binned capacities; only active when `numpoibins != 1`. |
 | `GSw_TransIntraCost` | unchanged | Now also serves as the `numpoibins = 1` flat-cost value. |
 
 ### Known incompatibilities
 
-- `numpoibins != 1` (binned or native curve) requires `GSw_TransIntraCost > 0`; the curve is gated on that switch, so the combination `numpoibins != 1` with `GSw_TransIntraCost = 0` is rejected with a `ValueError` in `runreeds.py` rather than silently charging no reinforcement.
+- `numpoibins != 1` (binned or defualt curve) requires `GSw_TransIntraCost > 0`; the curve is gated on that switch, so the combination `numpoibins != 1` with `GSw_TransIntraCost = 0` is rejected with a `ValueError` in `runreeds.py` rather than silently charging no reinforcement.
 - `numpoibins = 1` (the default) reproduces the legacy flat-cost behavior exactly.
 
 ### Relevant sources or documentation
@@ -44,7 +43,6 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
 
 - [ ] **Pending.** This is a model + data change, so full-US reference and full-US decarb comparison reports are required and will be added before merge.
 - Test-case configs are included for exercising the feature at ERCOT resolution: `cases_transmission_test.csv` (`ERCOT_default` = flat legacy, `ERCOT_0` = near-zero flat, `ERCOT_regional` = binned curve).
-- Default-case impact is expected to be zero because `numpoibins` defaults to `1` (legacy flat cost).
 
 ## Checklist for author
 
@@ -69,16 +67,15 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
 
 #### Did you use LLM tools (chatbot or copilot) in the preparation of this PR? If so, describe how
 
-Yes. Claude Code (Anthropic) was used across several sessions as a pair-programming and drafting assistant, with the author directing the design and reviewing/testing all changes:
+Yes. Claude Code (Anthropic) was used across several sessions as a pair-programming and drafting assistant, with the author directing the design and reviewing/testing all changes performed by the LLM. Specifically, this was involved in:
 
 - **Feature implementation**: planning and scaffolding the conversion of the flat `INV_POI` adder into a binned supply curve — GAMS sets/params/equations (`b_inputs.gms`, `c_model.gms`, `d_objective.gms`), `make_poi_supply_curve.py`, the `transmission.py` writer, and the objective/report/var-fix wiring.
-- **Visualization**: regional POI maps and supply-curve comparison plots (`reedsplots.py`, `postprocessing/single_case_plots.py`).
 - **Hardening & hygiene**: the USD2024→2004$ dollar-year conversion via `get_inflatable()`/`dollaryear.csv`; replacing most silent-default `sw.get()` switch lookups with direct indexing (keeping `.get()` only where switches are re-read from pre-feature runs); relocating `make_poi_supply_curve.py` into `reeds/input_processing/`; renaming the mislabeled `capacity_MW`→`capacity_GW` column; consolidating and restyling the documentation; and diff-hygiene cleanup.
-- **Review response**: a multi-agent code review of the branch drove several fixes — gating the double-count reinforcement drop on `numpoibins != 1` (so native mode doesn't double-count), a `runreeds.py` guard rejecting `numpoibins != 1` with `GSw_TransIntraCost = 0`, consolidating the curves to the single `raw_interconnection_TSC_data.csv` source with fail-loud region-coverage validation (removing the per-zone-set placeholder files), and the `sw.get()` backward-compat for postprocessing on older runs.
+- **Review response**: a multi-agent code review of the branch drove several fixes — gating the double-count reinforcement drop on `numpoibins != 1` (so defualt mode doesn't double-count), a `runreeds.py` guard rejecting `numpoibins != 1` with `GSw_TransIntraCost = 0`, consolidating the curves to the single `raw_interconnection_TSC_data.csv` source with fail-loud region-coverage validation (removing the per-zone-set placeholder files), and the `sw.get()` backward-compat for postprocessing on older runs.
 
 All LLM-assisted changes were reviewed, directed, and tested by the author.
 
-_Note: parts of this PR — including the summary of LLM usage above — were themselves drafted by Claude Code (from the branch diff and prior session history) and reviewed by the author. (but I have checked and edited a fair amount)_
+_Note: parts of this PR — including the summary of LLM usage above — were themselves drafted by Claude Code (from the branch diff and prior session history) and reviewed/revised by the author._
 
 <!-- Points of contact for review -->
 <!-- - [ ] Transmission: @patrickbrown4 -->
