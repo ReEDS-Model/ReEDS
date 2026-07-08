@@ -75,6 +75,7 @@ cost_vom_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 cost_vom.csv,.csv,0,None,t,"i,v,r",0,0,constant,0,None,done,constant
 county2zone.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 county2zone_original.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+county2zone_z134.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 crf_co2_incentive.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 crf_h2_incentive.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 crf.csv,.csv,1,None,0,None,0,None,constant,None,None,done; seems to be handled in calc_financial_inputs.py,constant

@@ -229,14 +229,14 @@ def get_capacity_weighted_fixed_cfs(
         os.path.join(inputs_case, 'hydcf_fixed.csv')
     )
     # Build county-level mapping: FIPS -> r_legacy (z134) and r_current (model)
-    # county2zone_original.csv is written by copy_files.py and contains the
-    # z134 county-to-zone mapping (column 'ba') alongside the plain FIPS codes
-    c2z_legacy = pd.read_csv(
-        os.path.join(inputs_case, 'county2zone_original.csv'),
+    # county2zone_z134.csv is a raw copy of inputs/zones/z134/county2zone.csv
+    # written to inputs_case by copy_files.py via runfiles.csv
+    c2z_z134 = pd.read_csv(
+        os.path.join(inputs_case, 'county2zone_z134.csv'),
         dtype=str
-    )[['FIPS', 'ba']].rename(columns={'ba': 'r_legacy'})
+    )[['FIPS', 'r']].rename(columns={'r': 'r_legacy'})
     c2z_current = reeds.io.get_county2zone(os.path.dirname(inputs_case))
-    county_map = c2z_legacy.copy()
+    county_map = c2z_z134.copy()
     county_map['r_current'] = county_map['FIPS'].map(c2z_current)
     county_map = county_map.dropna(subset=['r_current'])
     # Compute average capacity per (tech, county) from plant data
