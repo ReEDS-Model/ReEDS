@@ -8,9 +8,8 @@ generation across select years and calculating the ratio of total average net
 and average max generation for each region's hydro fleet.
 2) In other cases, capacity factors come from "hydcf_fixed.csv",
 which contains pre-calculated CFs for the legacy 134 zones.
-These are transformed into model region-level CFs by uniformly assigning the
-zonal CFs to each legacy zone's counties and taking the average CF
-across each model region's counties.
+These are aggregated to model region-level CFs using a capacity-weighted
+mean, with weights derived from existing hydro plant capacities.
 '''
 
 import argparse
@@ -30,7 +29,7 @@ def get_monthly_plant_generation(inputs_case: str) -> (
     Get monthly net generation and maximum generation in MWh for
     each hydro plant. Net generation values are read from
     inputs_case/net_gen_existing_hydro.csv, while maximum generation values
-    are derived from annual capcities (inputs_case/cap_existing_hydro.csv)
+    are derived from annual capacities (inputs_case/cap_existing_hydro.csv)
     by calculating monthly generation assuming 100% capacity factor.
 
     Args:
@@ -209,6 +208,94 @@ def calculate_regional_average_generation(
     return regional_average_generation
 
 
+def get_capacity_weighted_fixed_cfs(
+    inputs_case: str,
+) -> pd.DataFrame:
+    """
+    Read legacy-zone (z134) fixed CFs from inputs_case/hydcf_fixed.csv and
+    aggregate to model regions using a capacity-weighted mean. Weights are
+    derived from average plant-level hydro capacities; where no capacity data
+    are available for a given (tech, county), the aggregation falls back to an
+    unweighted mean.
+
+    Args:
+        inputs_case: Path to the inputs case directory.
+
+    Returns:
+        pd.DataFrame: CFs indexed by ['*i', 'month'] with model regions as columns.
+    """
+    # Read the raw legacy-zone CFs (z134 format)
+    legacy_cf = pd.read_csv(
+        os.path.join(inputs_case, 'hydcf_fixed.csv')
+    )
+    # Build county-level mapping: FIPS -> r_legacy (z134) and r_current (model)
+    # county2zone_original.csv is written by copy_files.py and contains the
+    # z134 county-to-zone mapping (column 'ba') alongside the plain FIPS codes
+    c2z_legacy = pd.read_csv(
+        os.path.join(inputs_case, 'county2zone_original.csv'),
+        dtype=str
+    )[['FIPS', 'ba']].rename(columns={'ba': 'r_legacy'})
+    c2z_current = reeds.io.get_county2zone(os.path.dirname(inputs_case))
+    county_map = c2z_legacy.copy()
+    county_map['r_current'] = county_map['FIPS'].map(c2z_current)
+    county_map = county_map.dropna(subset=['r_current'])
+    # Compute average capacity per (tech, county) from plant data
+    plant_cap_avg = pd.read_csv(
+        os.path.join(inputs_case, 'cap_existing_hydro.csv'),
+        index_col='t'
+    ).mean()
+    gendb = pd.read_csv(
+        os.path.join(inputs_case, 'unitdata.csv'),
+        usecols=['T_PID', 'tech', 'FIPS']
+    )
+    hydro_gendb = (
+        gendb.loc[gendb.tech.str.startswith('hyd')]
+        .drop_duplicates('T_PID')
+        .assign(
+            T_PID=lambda df: df['T_PID'].astype(str),
+            # FIPS in unitdata.csv carries a 'p' prefix (e.g. 'p06061');
+            # strip it to match the plain-FIPS format used in county2zone.csv
+            FIPS=lambda df: df['FIPS'].str.lstrip('p'),
+        )
+    )
+    county_tech_cap = (
+        hydro_gendb[['T_PID', 'tech', 'FIPS']]
+        .merge(
+            plant_cap_avg.rename('capacity').rename_axis('T_PID').reset_index(),
+            on='T_PID',
+        )
+        .groupby(['FIPS', 'tech'])['capacity']
+        .sum()
+        .reset_index()
+        .rename(columns={'tech': '*i'})
+    )
+    # Expand legacy CFs to county level (each county inherits its legacy zone's CF)
+    county_cf = (
+        legacy_cf.rename(columns={'r': 'r_legacy'})
+        .merge(county_map[['FIPS', 'r_legacy', 'r_current']], on='r_legacy')
+    )
+    # Attach capacity weights for each (tech, county)
+    county_cf = county_cf.merge(
+        county_tech_cap, on=['FIPS', '*i'], how='left'
+    )
+    county_cf['capacity'] = county_cf['capacity'].fillna(0)
+    # Capacity-weighted mean per (tech, month, current region);
+    # fall back to unweighted mean where total capacity is zero
+    county_cf['weighted_value'] = county_cf['value'] * county_cf['capacity']
+    grp = county_cf.groupby(['*i', 'month', 'r_current'])
+    numerator = grp['weighted_value'].sum()
+    denominator = grp['capacity'].sum()
+    unweighted_mean = grp['value'].mean()
+    weighted_cf = (
+        (numerator / denominator.replace(0, np.nan))
+        .fillna(unweighted_mean)
+        .rename('value')
+        .reset_index()
+        .rename(columns={'r_current': 'r'})
+    )
+    return weighted_cf.pivot_table(index=['*i', 'month'], columns='r', values='value')
+
+
 def calculate_future_monthly_regional_cf(
     monthly_plant_net_generation: pd.DataFrame,
     monthly_plant_max_generation: pd.DataFrame,
@@ -222,11 +309,10 @@ def calculate_future_monthly_regional_cf(
        generation across select years (based on the GSw_FutureHydCF_RepYears
        switch) and calculating the ratio of total average
        net and average max generation for each region's hydro fleet.
-    2) In other cases, capacity factors come from inputs_case/hydcf_fixed.csv,
+    2) In other cases, capacity factors come from inputs/hydro/hydcf_fixed.csv,
        which contains pre-calculated CFs for the legacy 134 zones.
-       These are transformed into model region-level CFs by uniformly
-       assigning the zonal CFs to each legacy zone's counties and taking
-       the average CF across each model region's counties.
+       These are aggregated to model region-level CFs using a capacity-weighted
+       mean, with weights derived from existing hydro plant capacities.
 
     In cases where data for a given time and region exist in both sources,
     the first source (i.e., plant-level data) takes precedence.
@@ -272,15 +358,9 @@ def calculate_future_monthly_regional_cf(
         .replace(upgrade_dict)
         .set_index(['*i', 'month'])
     )
-    # Read pre-calculated fixed CFs and reformat
-    future_cf_fixed = pd.read_csv(
-        os.path.join(inputs_case, 'hydcf_fixed.csv')
-    )
-    future_cf_fixed = future_cf_fixed.pivot_table(
-        index=['*i', 'month'],
-        columns='r',
-        values='value'
-    )
+    # Read legacy-zone fixed CFs and aggregate to model regions using
+    # capacity-weighted mean
+    future_cf_fixed = get_capacity_weighted_fixed_cfs(inputs_case)
     ## Concatenate all future CFs
     # Note that we don't simply call pd.concat because the component dataframes
     # are not guaranteed to be mutually exclusive (i.e., we may have both fixed
@@ -424,7 +504,7 @@ def main(reeds_path, inputs_case):
         monthly_plant_net_generation,
         monthly_plant_max_generation,
         hydro_plants,
-        inputs_case
+        inputs_case,
     )
     hydcf = assemble_hydcf(
         historical_monthly_regional_cf,
