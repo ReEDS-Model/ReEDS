@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation-view%20online-0a7f5e?logo=readthedocs&logoColor=white&labelColor=555)](https://reeds-model.github.io/ReEDS)
 ![Static Badge](https://img.shields.io/badge/python-3.11-blue)
 ![GitHub License](https://img.shields.io/github/license/ReEDS-Model/ReEDS)
-[![DOI](https://zenodo.org/badge/189060033.svg)](https://doi.org/10.5281/zenodo.16943302)
+[![DOI](https://zenodo.org/badge/189060033.svg)](https://doi.org/10.5281/zenodo.20314874)
 
 </br>
 </br>
@@ -14,6 +14,8 @@
 This GitHub repository contains the source code for NLR's ReEDS model.
 The ReEDS model source code is available at no cost from the National Laboratory of the Rockies.
 The ReEDS model can be downloaded or cloned from [https://github.com/ReEDS-Model/ReEDS](https://github.com/ReEDS-Model/ReEDS).
+
+If you want to use the latest stable version of ReEDS, download or check out the latest stable release [here](https://github.com/ReEDS-Model/ReEDS/releases/latest).
 
 **For more information about the model, see the [ReEDS Documentation](https://reeds-model.github.io/ReEDS).**
 
