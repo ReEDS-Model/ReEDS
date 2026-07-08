@@ -271,23 +271,6 @@ def create_hourly_state_load_for_model_year(
         parse_dates=['weather_datetime']
     )
 
-    # If applicable, replace or add to data center cooling and IT projections,
-    # as specified in inputs/load/sector_config.json
-    if 'Data Centers' in replace_sectors:
-        data_center_config = sector_config['Data Centers']
-        data_center_config['cooling_proportions_source'] = (
-            data_center_config['cooling_proportions_source']
-            .format(scenario=data_center_config['scenario'])
-        )
-        if model_year in data_center_config['model_years']:
-            df_load = reveal2reeds.apply_custom_data_center_demand_projections(
-                df_load,
-                model_year,
-                data_center_config
-            )
-        else:
-            pass
-
     # Downselect to specified weather years
     df_load = df_load.loc[df_load.weather_datetime.dt.year.isin(weather_years)]
 
@@ -299,31 +282,50 @@ def create_hourly_state_load_for_model_year(
         ]
 
     # For each sector specified in 'replace_sectors', remove endogenous
-    # sectoral load from the raw load profiles
+    # sectoral load from the raw load profiles. In general, the removal of
+    # endogenous load and then the exogenous replacement load is added later
+    # once the load profiles are aggregated across sectors.
+    # In the case of the "Data Centers" sector, the replacement of the load
+    # happens here all in one step, as executed by the function
+    # reveal2reeds.apply_custom_data_center_demand_projections().
     replacement_load_list = []
     for sector in replace_sectors:
-        # Skip 'data centers' sector, as it was already processed above
         if sector == 'Data Centers':
-            continue
-
-        print(f"Removing endogenous load for '{sector}' sector...")
-        if sector not in sector_config:
-            raise NotImplementedError(
-                f"'{sector}' is not a recognized sector. "
-                "Update 'hourlize/inputs/load/sector_config.json'."
+            data_center_config = sector_config[sector]
+            data_center_config['cooling_proportions_source'] = (
+                data_center_config['cooling_proportions_source']
+                .format(scenario=data_center_config['scenario'])
             )
-
-        sector_settings = sector_config[sector]
-        if model_year in sector_settings['model_years']:
-            df_load = remove_sectoral_load(
-                df_load,
-                sector_settings['subsectors'],
-                replace_states,
-                replacement_share,
-                model_year
-            )
+            if model_year in data_center_config['model_years']:
+                print(f"Replacing endogenous load for '{sector}' sector...")
+                df_load = (
+                    reveal2reeds.apply_custom_data_center_demand_projections(
+                        df_load,
+                        model_year,
+                        data_center_config
+                    )
+                )
+            else:
+                pass
         else:
-            pass
+            print(f"Removing endogenous load for '{sector}' sector...")
+            if sector not in sector_config:
+                raise NotImplementedError(
+                    f"'{sector}' is not a recognized sector. "
+                    "Update 'hourlize/inputs/load/sector_config.json'."
+                )
+
+            sector_settings = sector_config[sector]
+            if model_year in sector_settings['model_years']:
+                df_load = remove_sectoral_load(
+                    df_load,
+                    sector_settings['subsectors'],
+                    replace_states,
+                    replacement_share,
+                    model_year
+                )
+            else:
+                pass
 
     # Aggregate load across sectors to create state-level profiles
     df_load = (
@@ -371,7 +373,7 @@ def create_hourly_state_load_for_model_year(
             model_year
         )
         for sector in replace_sectors
-        # Skip 'data centers' sector, as it was already processed above
+        # Skip 'data centers' sector, as it was already fully processed above
         if sector != 'Data Centers'
     ]
 

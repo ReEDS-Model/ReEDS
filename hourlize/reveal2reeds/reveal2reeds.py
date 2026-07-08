@@ -60,7 +60,7 @@ def calculate_national_data_center_demand_hourly(
     # by multiplying the propagation factors by national data
     # center demand for the model year.
     national_data_center_demand_hourly = pd.DataFrame(
-        index=df_load['weather_datetime'].drop_duplicates()
+        index=df_load['weather_datetime'].unique()
     )
     national_data_center_demand_hourly['propagation_factor'] = (
         national_data_center_demand_hourly.index.year
@@ -229,7 +229,6 @@ def apply_custom_data_center_demand_projections(
                     'weather_datetime',
                     'sector',
                     'subsector',
-                    'dispatch_feeder'
                 ],
                 as_index=False
             )
