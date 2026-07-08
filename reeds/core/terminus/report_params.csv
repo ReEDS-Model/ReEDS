@@ -267,6 +267,7 @@ pvf_onm,,,,,1
 r,,,,,1
 rsc_dat,,,,,1
 storage_duration,,,,,1
+storage_duration_m,,,,,1
 storage_eff,,,,,1
 szn_stress_t,,,,,1
 tc_phaseout_mult,,,,,1
