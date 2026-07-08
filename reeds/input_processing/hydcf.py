@@ -498,7 +498,7 @@ def main(reeds_path, inputs_case):
         monthly_plant_net_generation,
         monthly_plant_max_generation,
         hydro_plants,
-        inputs_case,
+        inputs_case
     )
     hydcf = assemble_hydcf(
         historical_monthly_regional_cf,
