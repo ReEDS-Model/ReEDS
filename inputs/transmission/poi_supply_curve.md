@@ -13,7 +13,6 @@ The flat cost is the degenerate one-bin case, so legacy results are reproduced e
 
 - `numpoibins` — number of cost bins. `1` (default) reproduces the legacy flat `GSw_TransIntraCost`; `>1` activates the binned curve re-segmented to that many bins; `0` uses the native curve (one bin per raw supply-curve segment).
 - `GSw_POIUpperCost` — `[USD2004/kW]` cost of the unlimited backstop bin (`bin_upper`) applied above the finite binned capacities; only active when `numpoibins > 1`.
-- `GSw_WindReinf` — limit wind (wind-ons) interconnection by the wind-specific subset of the reinforcement curve (requires `numpoibins > 1`). See [Wind-specific limit](#wind-specific-limit-gsw_windreinf).
 
 ## Inputs
 
@@ -22,7 +21,6 @@ The zonal curve is built at run time by `reeds/input_processing/transmission.py`
 - `write_poi_supply_curve` writes `inputs_case/poi_supply_curve.csv` (`*r, rtscbin, sc_cat in {cost, cap}, value`).
   With `numpoibins = 1` it is the flat `GSw_TransIntraCost`.
   Otherwise the zonal bins are built from `raw_interconnection_TSC_data.csv` via `make_poi_supply_curve.make_regional_poi_bins` (optimal capacity-weighted least-squares segmentation to `numpoibins` bins), with an unlimited `bin_upper` backstop appended at `GSw_POIUpperCost`.
-- `write_wind_poi_supply_curve` writes `inputs_case/wind_poi_supply_curve.csv`, giving `cap_wpoi_bin(r, rtscbin)` — see below.
 
 Input costs are `USD2024` (registered in `dollaryear.csv`) and deflated to the model dollar year (`2004$`) at read time; `b_inputs.gms` then converts `$/kW → $/MW`.
 See `README.md` in this folder for the input-file provenance.
@@ -41,12 +39,6 @@ The bin dimension folds straight into the existing `INV_POI` mechanism (`INV_POI
 The wind / solar / CSP / geo resource supply curves already embed a network-reinforcement cost (`cost_reinforcement_usd_per_mw`).
 When the binned POI method is active (`numpoibins > 1` **and** `GSw_TransIntraCost > 0`), `reeds/io.py` drops that embedded reinforcement for all regions (recomputing `cost_total_trans` as spur + POI connection only) so it is not counted twice.
 With `numpoibins = 1` it is retained unchanged, preserving legacy results.
-
-### Wind-specific limit (`GSw_WindReinf`)
-
-`GSw_WindReinf = 1` caps how much wind (wind-ons) fits in each reinforcement bin via a mirrored supply curve (`INV_WPOI` / `eq_WPOI_cap` / `eq_WPOI_binlim`) that shares the regional `rtscbin`; `eq_WPOI_link` forces the regional curve to carry the wind, so wind still pays the single regional price (no separate wind cost).
-The wind bin capacities (`cap_wpoi_bin`) come from `wind-ons_nodal_supply_curve.csv`.
-The reV→node→bin allocation is pre-computed into that file upstream (the `bin` column is a shared per-zone cost tier), so `transmission.py` only aggregates it to `(zone, tier)` and aligns it to the regional bins by cost.
 
 ## Notes and assumptions
 

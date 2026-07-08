@@ -1339,39 +1339,6 @@ cap_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cap")   = poi_sc_dat(r,rtscbin,"cap
 * A POI bin is feasible (i.e. can be built into) if it has a defined cost.
 poi_bin_feas(r,rtscbin)$cost_poi_bin(r,rtscbin) = yes ;
 
-* Wind (wind-ons) subset of the POI reinforcement curve (Sw_WindReinf): the wind interconnection
-* capacity available in each regional reinforcement bin. Wind is binned into the SAME rtscbin as the
-* regional curve (transmission.py assigns each wind node by its reinforcement cost), so the mirrored
-* wind supply curve (eq_WPOI_cap/eq_WPOI_binlim) shares the regional bins and eq_WPOI_link pairs them
-* bin-for-bin. Only 'cap' rows are provided (wind pays the regional bin cost, not a separate price);
-* bins the file omits are left at 0 = unlimited (e.g. the bin_upper backstop). Region read against
-* the universe (*) so regions filtered out by GSw_Region do not raise a domain error.
-parameter cap_wpoi_bin(r,rtscbin) "--MW-- wind interconnection capacity available in each POI bin (0 = unlimited)" ;
-* wind_poi_supply_curve.csv is empty (header only) whenever Sw_WindReinf is off, so $onempty must
-* wrap the whole data statement (the canonical ReEDS idiom -- $onempty inside the /.../ block does
-* not suppress the empty-data error).
-$onempty
-parameter wpoi_sc_dat(*,rtscbin,sc_cat) "--MW-- wind POI supply curve data by region and bin"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%wind_poi_supply_curve.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-cap_wpoi_bin(r,rtscbin)$wpoi_sc_dat(r,rtscbin,"cap") = wpoi_sc_dat(r,rtscbin,"cap") ;
-
-* Enforce the subset invariant: wind cannot be assigned more capacity in a bin than the regional
-* curve provides there. This keeps cap_wpoi_bin a genuine subset of cap_poi_bin (the wind nodal and
-* regional-zonal curves come from different data sources and can be inconsistent in magnitude). It
-* is a data-consistency guard: eq_WPOI_link + eq_POI_binlim already cap cumulative INV_WPOI at
-* cap_poi_bin, so this does not change the solution -- it just makes cap_wpoi_bin (and eq_WPOI_binlim)
-* self-consistent. Only finite regional bins are clipped; unlimited regional bins (cap_poi_bin = 0,
-* e.g. bin_upper) leave wind as provided.
-cap_wpoi_bin(r,rtscbin)$[cap_poi_bin(r,rtscbin)$(cap_wpoi_bin(r,rtscbin) > cap_poi_bin(r,rtscbin))]
-    = cap_poi_bin(r,rtscbin) ;
-
 *created by reeds/input_processing/writecapdat.py
 table capnonrsc(i,r,*) "--MW-- raw power capacity data for non-RSC tech"
 $offlisting

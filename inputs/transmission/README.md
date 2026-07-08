@@ -71,11 +71,6 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
   - Converted into the binned `poi_supply_curve_{GSw_ZoneSet}.csv` format and read at run time by `reeds/input_processing/make_poi_supply_curve.py` / `transmission.py`, which deflates the costs from USD2024 (registered in `dollaryear.csv`) to the model dollar year.
   - **TODO:** confirm the exact TSC dataset version / study citation before publishing.
 
-- `wind-ons_nodal_supply_curve.csv`: Wind (wind-ons) interconnection / reinforcement supply curve by ReEDS zone, used by the wind-specific POI limit (`GSw_WindReinf`, which requires `numpoibins > 1`). Columns: `ba` (ReEDS zone), `node_b` (transmission node id), `bin`, `cap_mw` (reinforcement capacity [MW] the node contributes to that tier), `marginal_$_per_MW` / `marginal_$_per_kW` (reinforcement cost [USD2024]), and `cum_cap_mw_node`.
-  - **The reV→node→bin allocation is already baked into this file.** During its preparation (upstream, in the [TSC](https://github.nrel.gov/ReEDS/TSC)/reV pipeline) every reV wind site within a zone was associated with a transmission node, and each node's reinforcement was allocated into the zone's cost tiers. The `bin` column is a **shared per-zone cost tier** — all nodes at a given `(ba, bin)` have the identical `marginal_$_per_kW` — so the wind reinforcement bins already capture the nodal aspects. `transmission.py` therefore just aggregates `cap_mw` to `(zone, tier)` and aligns it to the regional POI `rtscbin` by (dollar-year-adjusted) cost, producing `cap_wpoi_bin`; it does **not** need to redo the site→node join.
-  - Costs are in USD2024 (registered in `dollaryear.csv`).
-  - **TODO:** confirm the exact TSC dataset version / study citation before publishing.
-
 - `transmission_cost_ac_500kv_z134.h5`: Example file illustrating the required format when using the transmission upgrade supply curve ([TSC](https://github.nrel.gov/ReEDS/TSC)) method for `GSw_ZoneSet = z134`
   - The full method is not yet supported; when implemented, it will only be supported for a limited number of `GSw_ZoneSet` definitions
 

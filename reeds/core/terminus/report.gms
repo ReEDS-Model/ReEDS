@@ -1900,13 +1900,6 @@ poi_capacity_bin(r,rtscbin,t)$tmodel_new(t) =
         INV_POI.l(r,rtscbin,tt) }
 ;
 
-* Wind (wind-ons) interconnection assigned to each reinforcement bin (Sw_WindReinf). A
-* cost-accounting quantity, not deliverable transmission capacity.
-wind_poi_capacity_bin(r,rtscbin,t)$[tmodel_new(t)$Sw_WindReinf] =
-  sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
-        INV_WPOI.l(r,rtscbin,tt) }
-;
-
 *==========================
 * Expenditures Exchanged
 *==========================

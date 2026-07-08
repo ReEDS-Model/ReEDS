@@ -291,13 +291,6 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
-    if int(sw['GSw_WindReinf']) and (int(sw['numpoibins']) <= 1):
-        raise ValueError(
-            'GSw_WindReinf requires the binned POI method (numpoibins>1); it has no effect with '
-            'the flat legacy POI cost (numpoibins<=1).\n'
-            f"GSw_WindReinf={sw['GSw_WindReinf']}, numpoibins={sw['numpoibins']}"
-        )
-
     if sw['GSw_RegionResolution'] in ['county','mixed']:
         err_switch_configs = []
         if sw['GSw_LoadAllocationMethod'] == 'state_lpf':

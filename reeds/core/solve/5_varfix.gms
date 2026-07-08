@@ -9,7 +9,6 @@ if(Sw_RemoveSmallNumbers = 1,
     INV_ENERGY.l(i,v,r,tfix)$[abs(INV_ENERGY.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     INV_RSC.l(i,v,r,rscbin,tfix)$[abs(INV_RSC.l(i,v,r,rscbin,tfix)) < rhs_tolerance] = 0 ;
     INV_POI.l(r,rtscbin,tfix)$[abs(INV_POI.l(r,rtscbin,tfix)) < rhs_tolerance] = 0 ;
-    INV_WPOI.l(r,rtscbin,tfix)$[abs(INV_WPOI.l(r,rtscbin,tfix)) < rhs_tolerance] = 0 ;
     H2_STOR_INV.l(h2_stor,r,tfix)$[abs(H2_STOR_INV.l(h2_stor,r,tfix)) < rhs_tolerance] = 0 ;
     H2_TRANSPORT_INV.l(r,rr,tfix) $[abs(H2_TRANSPORT_INV.l(r,rr,tfix) ) < rhs_tolerance] = 0 ;
 );
@@ -100,7 +99,6 @@ CONVERSION_PRM.fx(r,ccseason,intype,outtype,tfix)$Sw_VSC = CONVERSION_PRM.l(r,cc
 CAP_SPUR.fx(x,tfix)$[Sw_SpurScen$xfeas(x)] = CAP_SPUR.l(x,tfix) ;
 INV_SPUR.fx(x,tfix)$[Sw_SpurScen$xfeas(x)] = INV_SPUR.l(x,tfix) ;
 INV_POI.fx(r,rtscbin,tfix)$[Sw_TransIntraCost$poi_bin_feas(r,rtscbin)] = INV_POI.l(r,rtscbin,tfix) ;
-INV_WPOI.fx(r,rtscbin,tfix)$[Sw_TransIntraCost$Sw_WindReinf$poi_bin_feas(r,rtscbin)] = INV_WPOI.l(r,rtscbin,tfix) ;
 TRAN_CAPEX_BINS.fx(r,rr,tscbin,tfix)$[routes_inv(r,rr,"AC",tfix)$tsc_binwidth(r,rr,tscbin)] = TRAN_CAPEX_BINS.l(r,rr,tscbin,tfix) ;
 
 * water climate variables
