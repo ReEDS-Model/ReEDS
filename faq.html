@@ -167,38 +167,48 @@
 </section>
 <section id="how-do-i-change-the-spatial-resolution-of-a-reeds-case">
 <h3>How do I change the spatial resolution of a ReEDS case?<a class="headerlink" href="#how-do-i-change-the-spatial-resolution-of-a-reeds-case" title="Link to this heading"></a></h3>
-<p>The ReEDS model is capable of capturing several spatial resolutions. This aspect of the model is controlled by the <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> switches.</p>
+<p>The ReEDS model is capable of capturing several spatial resolutions.
+This aspect of the model is controlled by the <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> switches.</p>
 <ul class="simple">
-<li><p>Aggregated groups of counties: Model zone is specified by the ‘r’ column of the <code class="docutils literal notranslate"><span class="pre">inputs/zones/GSw_ZoneSet/hierarchy.csv</span></code> file.</p>
+<li><p>Default zone set:</p>
 <ul>
-<li><p>134 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z134</span></code></p></li>
-<li><p>132 zones (<strong>default</strong>): <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z132</span></code>. Identical to z134 except merges p119 into p122 and p30 into p28.</p></li>
-<li><p>69 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z69</span></code>. Obeys state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.</p></li>
-<li><p>54 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z54</span></code>. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.</p></li>
-<li><p>48 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z48</span></code>. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states (highly simplified).</p></li>
+<li><p>90 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z90</span></code></p></li>
 </ul>
 </li>
-<li><p>Counties: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z3109</span></code>. Only solves in tolerable time when running a subset of the U.S. as specified by the <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code> switch.</p></li>
-<li><p>Mixed resolution: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> = <code class="docutils literal notranslate"><span class="pre">PJMcounty</span></code> or <code class="docutils literal notranslate"><span class="pre">UTcounty</span></code>. Can be used to model some regions at county resolution and others at BA or aggregated-region resolution.</p></li>
+<li><p>Zone sets based on the traditional 134 ReEDS zones:</p>
+<ul>
+<li><p>134 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z134</span></code></p></li>
+<li><p>132 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z132</span></code>. Identical to z134 except merges p119 into p122 and p30 into p28.</p></li>
+<li><p>69 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z69</span></code>. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.</p></li>
+<li><p>54 zones: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z54</span></code>. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries from z134 to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.</p></li>
+<li><p>Counties for Utah, 134 zones for the rest: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">UTcounty</span></code></p></li>
+<li><p>Counties for PJM and a few adjacent states, 134 zones for the rest: <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">PJMcounty</span></code></p></li>
+</ul>
+</li>
+<li><p>Zone sets based on counties:</p>
+<ul>
+<li><p>Single counties (3109 zones): <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z3109</span></code>. Only solves in tolerable time when running a subset of the U.S. as specified by the <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code> switch.</p></li>
+</ul>
+</li>
+<li><p>Zone sets based on states:</p>
+<ul>
+<li><p>Single states (48 zones): <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z48</span></code></p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="how-can-i-reduce-solve-time">
 <h3>How can I reduce solve time?<a class="headerlink" href="#how-can-i-reduce-solve-time" title="Link to this heading"></a></h3>
 <p>If you’d like to reduce the model solve time, consider making some of the following changes:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">yearset</span> <span class="pre">=</span> <span class="pre">2010_2015_2020_2025_2030_2035_2040_2045_2050</span></code></p>
+<li><p><code class="docutils literal notranslate"><span class="pre">yearset</span> <span class="pre">=</span> <span class="pre">2010..2050..5</span></code></p>
 <ul>
 <li><p>Solve in 5-year steps</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_OpRes</span> <span class="pre">=</span> <span class="pre">0</span></code></p>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_StartCost</span> <span class="pre">=</span> <span class="pre">0</span></code></p>
 <ul>
-<li><p>Turn off operating reserves</p></li>
-</ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_MinLoading</span> <span class="pre">=</span> <span class="pre">0</span></code></p>
-<ul>
-<li><p>Turn off the sliding-window representation of minimum-generation limits</p></li>
+<li><p>Turn off linearized startup costs</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_HourlyNumClusters</span> <span class="pre">=</span> <span class="pre">25</span></code> (or lower)</p>
@@ -208,7 +218,7 @@
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z54</span></code></p>
 <ul>
-<li><p>Aggregate the native 134 zones into 54 (larger) zones</p></li>
+<li><p>Reduce the number of model zones</p></li>
 </ul>
 </li>
 </ul>
@@ -312,7 +322,7 @@ you might need to clear your fonts cache (you can back it up first if you like).
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on July 06, 2026.
+      <span class="lastupdated">Last updated on July 08, 2026.
       </span></p>
   </div>
 

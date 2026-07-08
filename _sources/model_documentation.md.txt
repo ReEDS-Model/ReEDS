@@ -1900,7 +1900,7 @@ in general, the ITL for power flow from Zone A to Zone B is not the same as the 
 
 As discussed in {cite}`brownGeneralMethodEstimating2023`, because of the constraints imposed by Kirchhoff's voltage law and nodal load participation factors, the ITL tends to be smaller than the sum of line ratings that cross an interface;
 that is, every transmission line between a pair of regions cannot in general be used at its rated capacity at the same time.
-{numref}`figure-transmission-itl-r` illustrates this effect for the default 134 ReEDS zones.
+{numref}`figure-transmission-itl-r` illustrates this effect for the traditional 134 ReEDS zones.
 The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.
