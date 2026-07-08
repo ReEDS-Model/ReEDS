@@ -3634,7 +3634,8 @@ The multipliers $\rho$ and $\sigma$ are determined by solving {eq}`gas-year` thr
 
 ### Daily Natural Gas Price Adjustments
 
-Daily gas price adjustments use degree day coefficients derived from an ordinary least squares regression regressing daily regional heating and cooling degree days on daily deviations of regional natural gas spot prices from their annual average with monthly fixed effects.
+Daily gas price adjustments use coefficients and intercepts derived from regional ordinary least squares regression models with monthly fixed effects.
+The regression models regress daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
 The regions used in the regression mostly correspond to census divisions, except in two cases where census divisions are broken up into two smaller regions.
 The Pacific census division is broken up into the subregions "Northwest" (Oregon and Washington) and "California" (California).
 The Mountain census division is broken up into the subregions "Southwest" (Arizona and New Mexico) and "Mountain" (all remaining states in the Mountain census division).
