@@ -531,7 +531,7 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
     smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) }],
         gasprice(cendiv,gb,t)
-        * sum{h, GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) / hours(h) }
+        * sum{h, GASUSED.l(cendiv,gb,h,t) / sum{h, GASUSED.l(cendiv,gb,h,t)} * gasprice_adj_cendiv(cendiv,h) / hours(h) }
         } / gas_scale ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
