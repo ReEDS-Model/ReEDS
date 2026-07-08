@@ -1362,6 +1362,16 @@ $onlisting
 $offempty
 cap_wpoi_bin(r,rtscbin)$wpoi_sc_dat(r,rtscbin,"cap") = wpoi_sc_dat(r,rtscbin,"cap") ;
 
+* Enforce the subset invariant: wind cannot be assigned more capacity in a bin than the regional
+* curve provides there. This keeps cap_wpoi_bin a genuine subset of cap_poi_bin (the wind nodal and
+* regional-zonal curves come from different data sources and can be inconsistent in magnitude). It
+* is a data-consistency guard: eq_WPOI_link + eq_POI_binlim already cap cumulative INV_WPOI at
+* cap_poi_bin, so this does not change the solution -- it just makes cap_wpoi_bin (and eq_WPOI_binlim)
+* self-consistent. Only finite regional bins are clipped; unlimited regional bins (cap_poi_bin = 0,
+* e.g. bin_upper) leave wind as provided.
+cap_wpoi_bin(r,rtscbin)$[cap_poi_bin(r,rtscbin)$(cap_wpoi_bin(r,rtscbin) > cap_poi_bin(r,rtscbin))]
+    = cap_poi_bin(r,rtscbin) ;
+
 *created by reeds/input_processing/writecapdat.py
 table capnonrsc(i,r,*) "--MW-- raw power capacity data for non-RSC tech"
 $offlisting

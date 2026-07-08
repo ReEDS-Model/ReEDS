@@ -2068,9 +2068,16 @@ eq_POI_binlim(r,rtscbin,t)
 * force the regional curve to carry it. INV_WPOI itself carries NO objective cost -- wind pays the
 * single regional price via eq_POI_cap/eq_ObjFn_inv; this is a limit only.
 
-* All of wind's interconnected capacity [AC] must be assigned to some wind reinforcement bin (mirror
-* of eq_POI_cap, wind-only). Uses the same (not spur_techs) filter as eq_POI_cap so that when
-* GSw_SpurScen puts wind on explicit spur lines wind drops out of both terms consistently.
+* NEW wind interconnection [AC] must be assigned to wind reinforcement bins (mirror of eq_POI_cap,
+* wind-only). The offset is the EXISTING (exogenous, pre-tfirst) wind capacity specifically -- not
+* the all-technology poi_cap_init -- because existing wind already has its interconnection: it is
+* grandfathered onto the reinforcement it already occupies, and only wind ABOVE the existing fleet
+* draws on the (bin-limited) new reinforcement. Because m_capacity_exog is the existing-wind portion
+* of the RHS CAP, the two existing-wind terms cancel and the constraint reduces to
+* "cumulative INV_WPOI >= cumulative NEW wind". Using the whole-zone poi_cap_init here would have
+* let wind hide behind reinforcement built for other technologies; omitting the offset entirely
+* over-charged wind by forcing new reinforcement for capacity that already exists. Same
+* (not spur_techs) filter as eq_POI_cap so wind drops out of both sides together under GSw_SpurScen.
 eq_WPOI_cap(r,t)
     $[tmodel(t)
     $Sw_TransIntraCost
@@ -2078,11 +2085,14 @@ eq_WPOI_cap(r,t)
     $sum{rtscbin, poi_bin_feas(r,rtscbin) }
     $(not Sw_PCM)]..
 
-    sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
+* existing (exogenous) wind capacity [AC] -- grandfathered onto its current interconnection...
+    sum{(i,v)$[valcap(i,v,r,t)$onswind(i)$(not spur_techs(i))], m_capacity_exog(i,v,r,t) / ilr(i) }
+    + sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
         INV_WPOI(r,rtscbin,tt) }
 
     =g=
 
+* ...must cover all wind capacity [AC] (existing + new), leaving new wind to draw on INV_WPOI.
     sum{(i,v)$[valcap(i,v,r,t)$onswind(i)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
 ;
 
