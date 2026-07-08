@@ -3,8 +3,6 @@
 - `employment_factor_plant_jedi.csv`: Employment factor data for power plants of different technologies, taken from the JEDI/WIRED model.
 Sources for employment data of individual technologies in JEDI/WIRED are shown in the table below.
 
-```{table} Employment factors for individual ReEDS technologies
-:name: employment-factors
 | Technology              | Source                                                              |
 |-------------------------|---------------------------------------------------------------------|
 | Biopower                | JEDI {cite}`JobsEconomicDevelopment`                                              |
@@ -26,9 +24,8 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 | Nuclear SMR             | {cite}`asuegaTechnoeconomicAnalysisAdvanced2023`                                           |
 | Offshore Wind           | {cite}`hammondWindfarmOperationsMaintenance2022` and {cite}`nunemakerORBITOffshoreRenewables2020` |
 | Transmission-500kW AC   | JEDI {cite}`JobsEconomicDevelopment`                                              |
-| Transmission-230kW AC   | JEDI {cite}`JobsEconomicDevelopment`                                              |                                            |
-| UPV                     | JEDI {cite}`JobsEconomicDevelopment` 
-```
+| Transmission-230kW AC   | JEDI {cite}`JobsEconomicDevelopment`                                              |
+| UPV                     | JEDI {cite}`JobsEconomicDevelopment`                                              |
 
 - `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- Mayfield et al. (2023) {cite}`mayfieldLaborPathwaysAchieve2023`, Rutovitz et al. (2024) {cite}`rutovitzUpdatedEmploymentFactors2025` and Ram et al. (2020) {cite}`ramJobCreationGlobal2020`.
 
