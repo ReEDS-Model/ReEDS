@@ -77,7 +77,7 @@ error_check(*),unitless,set of checks to determine if there is an error - values
 "flex_load_out(flex_type,r,allh,t)",MWh,flexible load consumed in each timeslice,,,
 forced_outage(i),fraction,average forced outage rate (h-weighted; r-unweighted) by technology during representative periods,,,
 planned_outage(i),fraction,average scheduled outage rate (h-weighted) by technology during representative periods,,,
-"gas_consumption_weights(cendiv,gb,h,t)",unitless,share of annual cendiv- and gb-level natural gas consumption attributed to each hour,,,
+"gas_consumption(cendiv,gb,t)",MMBtu,annual gas used by census division and gas bin,,,
 "gen_ivrt_uncurt(i,v,r,t)",MWh,annual uncurtailed generation from VREs,,,
 "gen_ivrt(i,v,r,t)",MWh,annual generation,,,
 "gen_h(i,r,allh,t)",MW,generation by timeslice with charge and production load as negative generation,1,,
