@@ -14,7 +14,7 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
 
 ### Implementation notes
 
-- **Input processing** (`reeds/input_processing/`): `make_poi_supply_curve.py` (new) builds the zonal cost bins from `raw_interconnection_TSC_data.csv` via optimal capacity-weighted least-squares segmentation. `transmission.py::write_poi_supply_curve` writes `poi_supply_curve.csv` (flat `GSw_TransIntraCost` when `numpoibins=1`, otherwise the binned curve with an unlimited `GSw_POIUpperCost` backstop bin).
+- **Input processing** (`reeds/input_processing/`): `make_poi_supply_curve.py` (new) builds the zonal cost bins from `raw_interconnection_TSC_data.csv` via optimal capacity-weighted least-squares segmentation. `transmission.py::write_poi_supply_curve` writes `poi_supply_curve.csv` (flat `GSw_TransIntraCost` when `numpoibins=1`, otherwise the binned curve with an unlimited `GSw_POIUpperCost` backstop bin). `raw_interconnection_TSC_data.csv` is the single source for every spatial resolution (like the hashed transmission cost files) — no per-zone-set fallback; a run whose regions it does not cover fails loudly (matching the transmission cost/distance validation).
 - **GAMS**: `INV_POI(r,t)` → `INV_POI(r,rtscbin,t)`; new set `rtscbin`, params `cost_poi_bin`/`cap_poi_bin`/`poi_bin_feas`, and `eq_POI_binlim` (incremental bin-width cap) in `b_inputs.gms`/`c_model.gms`. Objective (`d_objective.gms`), var-fixing (`5_varfix.gms`), and reporting (`report.gms`, `report_params.csv`) updated to carry the `rtscbin` index. The single zonal curve applies to every technology (the free existing capacity `poi_cap_init` and the non-generator POI terms — spur, converter, LCC — attach here too).
 - **Double-counting avoided**: when the binned method is active (`numpoibins>1` and `GSw_TransIntraCost>0`), `reeds/io.py` drops the reinforcement cost already embedded in the VRE resource supply curves for all regions, so it is not counted twice. Retained unchanged when `numpoibins=1`.
 
@@ -56,13 +56,13 @@ Method documentation: [`inputs/transmission/poi_supply_curve.md`](inputs/transmi
   - [x] Dollar year recorded (`dollaryear.csv`, USD2024) and converted to 2004$ for GAMS
   - [x] Units are specified
   - [ ] Preprocessing steps documented/committed to ReEDS_Input_Processing *(TSC-side; to confirm)*
-  - [ ] New large data files handled with .h5 instead of .csv *(review `poi_supply_curve_z3109.csv` against the size threshold)*
+  - [x] New large data files handled with .h5 instead of .csv *(only `raw_interconnection_TSC_data.csv` is added, which is small; the per-zone-set curve files were removed in favor of the single raw source)*
 - [x] Code formatting standardized
 - [x] Reusable functions used where possible instead of copy/pasted code
 
 ### General information to guide review
 - [ ] Zero impact on results of default case (`numpoibins=1` default)
-- [ ] No large data file(s) added/modified *(several per-zone-set curves added; largest is `poi_supply_curve_z3109.csv`)*
+- [x] No large data file(s) added/modified *(only the small `raw_interconnection_TSC_data.csv`)*
 - [ ] No substantive impact on runtime for full-US reference case
 - [x] No change to package requirements
 - [ ] No change to process flow *(`runreeds.py` gains one compatibility check: `numpoibins != 1` requires `GSw_TransIntraCost > 0`)*

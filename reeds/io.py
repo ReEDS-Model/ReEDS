@@ -1519,9 +1519,12 @@ def assemble_supplycurve(
             reeds_path, os.path.join(case, 'inputs_case')
         )
         counties = agglevel_variables['county_regions']
+        ## assemble_supplycurve also runs in postprocessing (input plots, reeds_to_rev) against
+        ## completed runs; a pre-feature run's switches file has no numpoibins/GSw_TransIntraCost,
+        ## so read these with legacy defaults (1 / 0 -> use_poi_bins False) rather than raising.
         use_poi_bins = (
-            (int(sw.numpoibins) != 1)
-            and (float(sw.GSw_TransIntraCost) != 0)
+            (int(sw.get('numpoibins', 1)) != 1)
+            and (float(sw.get('GSw_TransIntraCost', 0) or 0) != 0)
         )
     else:
         counties = []

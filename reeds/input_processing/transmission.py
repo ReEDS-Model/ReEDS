@@ -652,7 +652,9 @@ def write_poi_supply_curve(case):
     curve (inputs/transmission/raw_interconnection_TSC_data.csv) via
     make_poi_supply_curve.make_regional_poi_bins: numpoibins=0 -> native (one bin per raw segment),
     numpoibins>1 -> re-binned to numpoibins; both append the unlimited GSw_POIUpperCost backstop
-    bin_upper. If the raw file is absent it falls back to the copied per-zone-set poi_supply_curve.csv.
+    bin_upper. raw_interconnection_TSC_data.csv is the single source of these curves for every
+    spatial resolution (like the hashed transmission cost files) -- there is no per-zone-set
+    fallback, so a run whose model regions it does not cover fails loudly.
     """
     sw = reeds.io.get_switches(case)
     reeds_path = reeds.io.reeds_path
@@ -671,35 +673,37 @@ def write_poi_supply_curve(case):
         ## Build the zonal curve from the raw cumulative interconnection data, re-binned to
         ## numpoibins (numpoibins=0 -> native: one bin per raw segment), cost capped at
         ## GSw_POIUpperCost. See reeds/input_processing/make_poi_supply_curve.py.
+        ## raw_interconnection_TSC_data.csv is the single source (curves for every spatial
+        ## resolution). No per-zone-set fallback: if it is missing, or does not cover every model
+        ## region, fail loudly -- the same way get_distances/ITL validation does for transmission.
         raw_poi = os.path.join(
             reeds_path, 'inputs', 'transmission', 'raw_interconnection_TSC_data.csv')
-        if os.path.exists(raw_poi):
-            reg = (
-                make_poi_supply_curve.make_regional_poi_bins(
-                    raw_poi, numpoibins=numpoibins, upper_cost=float(sw.GSw_POIUpperCost))
-                .rename(columns={'*r': 'r'}))
-            reg = reg.loc[reg['r'].isin(valid_regions['r'])].copy()
-            poi_source_file = 'raw_interconnection_TSC_data.csv'
-        else:
-            ## Fall back to the committed per-zone-set poi_supply_curve.csv (copied to inputs_case).
-            ## numpoibins=0 keeps all of its bins; numpoibins>1 keeps bin1..binN.
-            reg = pd.read_csv(os.path.join(inputs_case, 'poi_supply_curve.csv'))
-            reg = reg.rename(columns={reg.columns[0]: 'r'})
-            if numpoibins > 1:
-                keep_bins = [f'bin{n}' for n in range(1, numpoibins + 1)]
-                reg = reg.loc[reg['rtscbin'].isin(keep_bins)].copy()
-            poi_source_file = 'poi_supply_curve.csv'
-        ## Convert the data-derived bin costs from their input dollar year (registered in
-        ## inputs/transmission/dollaryear.csv -- both the raw interconnection data and the committed
-        ## per-zone-set curves are USD2024) to the model dollar year (sw.dollar_year, 2004$), matching
-        ## every other transmission cost. Only 'cost' rows are deflated ('cap' rows are MW); the
-        ## bin_upper backstop and flat Sw_TransIntraCost fallback are already model-year (USD2004/kW)
-        ## switches, so they are not deflated.
+        if not os.path.exists(raw_poi):
+            raise FileNotFoundError(
+                'The binned/native POI reinforcement curve (numpoibins != 1) requires '
+                f'{raw_poi}, which was not found.')
+        reg = (
+            make_poi_supply_curve.make_regional_poi_bins(
+                raw_poi, numpoibins=numpoibins, upper_cost=float(sw.GSw_POIUpperCost))
+            .rename(columns={'*r': 'r'}))
+        reg = reg.loc[reg['r'].isin(valid_regions['r'])].copy()
+        ## Every model region must have a reinforcement curve when the binned/native method is
+        ## active; raw_interconnection_TSC_data.csv is expected to cover all resolutions.
+        missing = sorted(set(valid_regions['r']) - set(reg['r']))
+        if missing:
+            raise ValueError(
+                f'Missing POI / network-reinforcement curve for {len(missing)} of '
+                f'{len(valid_regions["r"])} model regions in raw_interconnection_TSC_data.csv '
+                f'(numpoibins={numpoibins}, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing}')
+        ## Convert the data-derived bin costs from their input dollar year (USD2024, registered in
+        ## inputs/transmission/dollaryear.csv) to the model dollar year (sw.dollar_year, 2004$),
+        ## matching every other transmission cost. Only 'cost' rows are deflated ('cap' rows are
+        ## MW); the bin_upper backstop is already a model-year (USD2004/kW) switch, so it is not.
         input_dollar_year = pd.read_csv(
             os.path.join(reeds_path, 'inputs', 'transmission', 'dollaryear.csv'), index_col=0,
         ).squeeze(1)
         poi_deflator = reeds.io.get_inflatable()[
-            int(input_dollar_year[poi_source_file]), int(sw.dollar_year)]
+            int(input_dollar_year['raw_interconnection_TSC_data.csv']), int(sw.dollar_year)]
         cost_rows = reg['sc_cat'] == 'cost'
         reg.loc[cost_rows, 'value'] = reg.loc[cost_rows, 'value'].astype(float) * poi_deflator
         ## GSw_POIUpperCost: unlimited backstop bin (cost row only, no cap) so reinforcement above

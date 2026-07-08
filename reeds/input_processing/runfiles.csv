@@ -200,7 +200,6 @@ plantchar_other.csv,inputs/plant_characteristics/{plantchar_other}.csv,1,ignore,
 plantchar_pvb.csv,inputs/plant_characteristics/pvb_{pvbscen}.csv,int(sw.GSw_PVB) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upgrades.csv,inputs/upgrades/{upgradescen}.csv,sw.upgradescen != 'default',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upv.csv,inputs/plant_characteristics/{plantchar_upv}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
-poi_supply_curve.csv,inputs/transmission/poi_supply_curve_{GSw_ZoneSet}.csv,1,ignore,ignore,,,,,0,,,,,,POI/network-reinforcement cost supply curve; one file per zone set (regions match the zone set's hierarchy.csv); copied verbatim with no region aggregation
 prepost.csv,inputs/sets/prepost.csv,1,ignore,ignore,,,,,,,,set,prepost,defines pre-2010 versus post-2010 years,
 prescribed_builds_wind-ofs.csv,inputs/capacity_exogenous/prescribed_builds_wind-ofs_{GSw_OffshoreFiles}_{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,year,,0,0,,,,,,aggfunc and disaggfunc set to ignore because data will be read in at the correct spatial resolution
 prescribed_builds_wind-ons.csv,inputs/capacity_exogenous/prescribed_builds_wind-ons_{GSw_SitingWindOns}.csv,1,ignore,ignore,region,year,,0,0,,,,,,aggfunc and disaggfunc set to ignore because data will be read in at the correct spatial resolution

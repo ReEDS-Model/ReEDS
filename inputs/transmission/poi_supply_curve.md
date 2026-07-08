@@ -22,6 +22,8 @@ The zonal curve is built at run time by `reeds/input_processing/transmission.py`
   With `numpoibins = 1` it is the flat `GSw_TransIntraCost`.
   Otherwise the zonal bins are built from `raw_interconnection_TSC_data.csv` via `make_poi_supply_curve.make_regional_poi_bins` (optimal capacity-weighted least-squares segmentation to `numpoibins` bins), with an unlimited `bin_upper` backstop appended at `GSw_POIUpperCost`.
 
+`raw_interconnection_TSC_data.csv` is the single source of these curves for every spatial resolution (like the hashed transmission cost files) — there is no per-zone-set fallback. When `numpoibins != 1`, a run whose model regions the file does not cover fails loudly (matching the transmission cost/distance validation).
+
 Input costs are `USD2024` (registered in `dollaryear.csv`) and deflated to the model dollar year (`2004$`) at read time; `b_inputs.gms` then converts `$/kW → $/MW`.
 See `README.md` in this folder for the input-file provenance.
 

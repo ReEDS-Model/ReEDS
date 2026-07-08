@@ -23,9 +23,14 @@ The row where ``cum_cost_$`` is 0 is the zone's **existing capacity** (the free
 existing-capacity anchor are dropped, which handles zones with more existing capacity than the
 lowest-capacity point in the raw curve (e.g. p60, p62).
 
+This module's ``make_regional_poi_bins`` is imported by ``transmission.py`` and called at run time
+on ``raw_interconnection_TSC_data.csv`` (the single committed source). The command-line entry point
+below is a standalone helper for generating/inspecting a curve offline; its ``poi_supply_curve_*``
+output is not a committed ReEDS input.
+
 Output
 ------
-Long format matching the existing ``poi_supply_curve_{zoneset}.csv`` inputs::
+Long format (the same schema ``transmission.py`` writes to ``inputs_case/poi_supply_curve.csv``)::
 
     *r,rtscbin,sc_cat,value
     p60,bin1,cost,<$/kW>
