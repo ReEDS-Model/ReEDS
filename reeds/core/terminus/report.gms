@@ -528,10 +528,11 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 
 *for reported gasprice (not that used to compute system costs)
 *scale back to $ / mmbtu and apply annual consumption-weighted gas price multipliers
+gas_consumption_weights(cendiv,gb,h,t) = GASUSED.l(cendiv,gb,h,t) / sum{h, GASUSED.l(cendiv,gb,h,t)}
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
     smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) }],
         gasprice(cendiv,gb,t)
-        * sum{h, GASUSED.l(cendiv,gb,h,t) / sum{h, GASUSED.l(cendiv,gb,h,t)} * gasprice_adj_cendiv(cendiv,h) / hours(h) }
+        * sum{h, gas_consumption_weights(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) / hours(h) }
         } / gas_scale ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
