@@ -5,7 +5,7 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 
 | Technology              | Source                                                              |
 |-------------------------|---------------------------------------------------------------------|
-| Biopower                | [JEDI Biofuels Model (B12.23.16)](nlr.gov/analysis/jedi/biofuels)                                             |
+| Biopower                | [JEDI Biofuels Model (B12.23.16)](https://nlr.gov/analysis/jedi/biofuels)                                             |
 | Battery                 | WIRED Battery Storage Model (BESS.2025.09.30) based on [Ramasamy et al. (2022)](https://research-hub.nlr.gov/en/publications/us-solar-photovoltaic-system-and-energy-storage-cost-benchmarks-w/).                                  |
 | Coal-IGCC               | WIRED Coal Model (COAL.2025.09.30) based on NETL's studies - [Schmitt et al. (2022)](https://www.osti.gov/servlets/purl/1893822/), [Turner et al. (2023)](https://www.osti.gov/servlets/purl/1968040/), and [Buchheit et al. (2023)](https://www.osti.gov/biblio/1968037)  . |
 | Coal-PC                 | WIRED Coal Model (COAL.2025.09.30) based on NETL's studies - [Schmitt et al. (2022)](https://www.osti.gov/servlets/purl/1893822/), [Turner et al. (2023)](https://www.osti.gov/servlets/purl/1968040/), and [Buchheit et al. (2023)](https://www.osti.gov/biblio/1968037)  . |
@@ -27,9 +27,9 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 | Transmission-230kW AC   | WIRED Transmission Line Model (TL.12.23.16) based on [JEDI Transmission Line Model](https://www.nlr.gov/analysis/jedi/transmission-line)                                               |
 | UPV                     | [JEDI Photovoltaics Model (PV05.20.21)](https://www.nlr.gov/analysis/jedi/pv)                                             |
 
-- `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- [Mayfield et al. (2023)](10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](10.1016/j.rser.2025.115339), and [Ram et al. (2020)](10.1016/j.techfore.2019.06.008).
+- `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- [Mayfield et al. (2023)](https://10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://10.1016/j.rser.2025.115339), and [Ram et al. (2020)](https://10.1016/j.techfore.2019.06.008).
 
-- `employment_factor_inter_transmission.csv`: Employment factor data for transmission line construction, taken from the four data source mentioned above - [JEDI/WIRED models](https://www.nlr.gov/analysis/jedi/transmission-line), [Mayfield et al. (2023)](10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](10.1016/j.rser.2025.115339) and [Ram et al. (2020)](10.1016/j.techfore.2019.06.008).
+- `employment_factor_inter_transmission.csv`: Employment factor data for transmission line construction, taken from the four data source mentioned above - [JEDI/WIRED models](https://www.nlr.gov/analysis/jedi/transmission-line), [Mayfield et al. (2023)](https://10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://10.1016/j.rser.2025.115339) and [Ram et al. (2020)](https://10.1016/j.techfore.2019.06.008).
 
 ## Employment factor unit
 - Power plants:
