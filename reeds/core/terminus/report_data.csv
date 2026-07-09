@@ -1,6 +1,8 @@
 ***
 *** Sets and parameters
 ***
+distance
+h_rep
 hours
 r
 routes
@@ -8,9 +10,13 @@ routes
 *** Variables
 ***
 CAP_ABOVE_LIM
+CAP_CONVERTER
+CAPTRAN_ENERGY
+CAPTRAN_PRM
 CO2_CAPTURED
+CO2_FLOW
+CO2_SPURLINE_INV
 CO2_STORED
 CO2_TRANSPORT_INV
-CO2_SPURLINE_INV
-CO2_FLOW
 FLOW
+INVTRAN

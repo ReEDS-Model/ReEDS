@@ -74,7 +74,18 @@ def calc_co2_stor(g):
 def calc_transmission(g):
     """Transmission capacity and flow"""
     dfs = {}
-    dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'])
+    dfs['invtran_out'] = g['INVTRAN'].Level
+    dfs['tran_cap_energy'] = g['CAPTRAN_ENERGY'].Level
+    dfs['tran_cap_prm'] = g['CAPTRAN_PRM'].Level
+    dfs['tran_cap_grp'] = g['CAPTRAN_GRP'].Level
+    dfs['tran_out'] = combine_forward_reverse(dfs['tran_cap_energy'], agg='simult') / 2
+    dfs['tran_prm_out'] = combine_forward_reverse(dfs['tran_cap_prm'], agg='simult') / 2
+    dfs['tran_mi_out_detail'] = dfs['tran_out'] * g['distance']
+    dfs['tran_mi_out'] = dfs['tran_mi_out_detail'].groupby(['trtype','t']).sum()
+    dfs['tran_prm_mi_out'] = (dfs['tran_prm_out'] * g['distance']).groupby(['trtype','t']).sum()
+    dfs['cap_converter_out'] = g['CAP_CONVERTER'].Level
+    dfs['tran_flow_all_rep'] = g['FLOW'].Level.xs(g['h_rep'], 0, 'h')
+    dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'], agg='net')
     dfs['tran_flow_rep_ann'] = (dfs['tran_flow_rep'] * g['hours']).groupby(['r','rr','trtype','t']).sum()
     return dfs
 

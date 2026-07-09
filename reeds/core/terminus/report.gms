@@ -129,25 +129,39 @@ szn(szn)$[not szn_rep(szn)] = no ;
 $ontext
 The calculation of the following output parameters has been moved to report_calcs.py:
 
-cap_above_limit
+Interconnection queue
+    cap_above_limit
 
-CO2_CAPTURED_out
-CO2_CAPTURED_out_ann
-CO2_STORED_out
-CO2_STORED_out_ann
-CO2_TRANSPORT_INV_out
-CO2_SPURLINE_INV_out
-CO2_FLOW_out
-CO2_FLOW_out_ann
-CO2_FLOW_pos_out
-CO2_FLOW_pos_out_ann
-CO2_FLOW_neg_out
-CO2_FLOW_neg_out_ann
-CO2_FLOW_net_out
-CO2_FLOW_net_out_ann
+CO2 storage and flows
+    CO2_CAPTURED_out
+    CO2_CAPTURED_out_ann
+    CO2_STORED_out
+    CO2_STORED_out_ann
+    CO2_TRANSPORT_INV_out
+    CO2_SPURLINE_INV_out
+    CO2_FLOW_out
+    CO2_FLOW_out_ann
+    CO2_FLOW_pos_out
+    CO2_FLOW_pos_out_ann
+    CO2_FLOW_neg_out
+    CO2_FLOW_neg_out_ann
+    CO2_FLOW_net_out
+    CO2_FLOW_net_out_ann
 
-tran_flow_rep
-tran_flow_rep_ann
+Transmission
+    invtran_out
+    tran_cap_energy
+    tran_cap_prm
+    tran_cap_grp
+    tran_out
+    tran_prm_out
+    tran_mi_out_detail
+    tran_mi_out
+    tran_prm_mi_out
+    cap_converter_out
+    tran_flow_all_rep
+    tran_flow_rep
+    tran_flow_rep_ann
 $offtext
 
 *=========================
@@ -1767,32 +1781,6 @@ excess_load(r,h,t) = EXCESS.l(r,h,t) ;
 *======================
 * Transmission
 *======================
-
-invtran_out(r,rr,trtype,t)$routes_inv(r,rr,trtype,t) = INVTRAN.l(r,rr,trtype,t) ;
-
-tran_cap_energy(r,rr,trtype,t)$routes(r,rr,trtype,t) = CAPTRAN_ENERGY.l(r,rr,trtype,t) ;
-tran_cap_prm(r,rr,trtype,t)$routes(r,rr,trtype,t) = CAPTRAN_PRM.l(r,rr,trtype,t) ;
-tran_cap_grp(transgrp,transgrpp,t)$trancap_init_transgroup(transgrp,transgrpp,"AC")
-    = CAPTRAN_GRP.l(transgrp,transgrpp,t) ;
-
-tran_out(r,rr,trtype,t)$[(ord(r)<ord(rr))$routes(r,rr,trtype,t)] =
-  (tran_cap_energy(r,rr,trtype,t) + tran_cap_energy(rr,r,trtype,t)) / 2 ;
-
-tran_prm_out(r,rr,trtype,t)$[(ord(r)<ord(rr))$routes(r,rr,trtype,t)] =
-  (tran_cap_prm(r,rr,trtype,t) + tran_cap_prm(rr,r,trtype,t)) / 2 ;
-
-tran_mi_out_detail(r,rr,trtype,t)$routes(r,rr,trtype,t) = tran_out(r,rr,trtype,t) * distance(r,rr,trtype) ;
-
-tran_mi_out(trtype,t)$tmodel_new(t) =
-  sum{(r,rr)$routes(r,rr,trtype,t), tran_mi_out_detail(r,rr,trtype,t) } ;
-tran_prm_mi_out(trtype,t)$tmodel_new(t) =
-  sum{(r,rr)$routes(r,rr,trtype,t), tran_prm_out(r,rr,trtype,t) * distance(r,rr,trtype) } ;
-
-cap_converter_out(r,t)$tmodel_new(t) = CAP_CONVERTER.l(r,t) ;
-
-tran_flow_all_rep(r,rr,h,trtype,t)
-    $[tmodel_new(t)$routes(r,rr,trtype,t)] = FLOW.l(r,rr,h,t,trtype) ;
-
 tran_flow_all_stress(r,rr,allh,trtype,t)
     $[tmodel_new(t)$routes(r,rr,trtype,t)$h_stress_t(allh,t)] = FLOW.l(r,rr,allh,t,trtype) ;
 
