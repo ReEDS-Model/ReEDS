@@ -95,7 +95,7 @@ def calc_financial_inputs(inputs_case):
     financials_sys = reeds.financials.import_sys_financials(
         sw['financials_sys_suffix'], inflation_df, modeled_years, 
         years, year_map, sw['sys_eval_years'], scen_settings, scalars['co2_capture_incentive_length'],scalars['h2_ptc_length'])
-    financials_sys.to_csv(os.path.join(inputs_case,'financials_sys.csv'),index=False)
+    financials_sys.to_csv(os.path.join(inputs_case,'financials_sys_full.csv'),index=False)
     df_ivt = df_ivt.merge(
         financials_sys[['t', 'pvf_capital', 'crf', 'crf_co2_incentive','crf_h2_incentive','d_real', 'd_nom', 'interest_rate_nom', 
                         'tax_rate', 'debt_fraction', 'rroe_nom']], 
@@ -268,10 +268,17 @@ def calc_financial_inputs(inputs_case):
         dftrans.loc[dftrans.t<firstyear_trans, 'cap_cost_mult_noITC'])
 
     ### Write it
-    dftrans.rename(columns={'t':'*t'})[['*t','cap_cost_mult']].round(6).to_csv(
-        os.path.join(inputs_case, 'trans_cap_cost_mult.csv'), index=False)
-    dftrans.rename(columns={'t':'*t'})[['*t','cap_cost_mult_noITC']].round(6).to_csv(
-        os.path.join(inputs_case, 'trans_cap_cost_mult_noITC.csv'), index=False)
+    dftrans['allt'] = dftrans['t']
+    reeds.io.write_to_inputs_h5(
+        dftrans[['allt','cap_cost_mult']], 'trans_cost_cap_fin_mult', inputs_case,
+        gamstype='parameter', units='fraction',
+        comment='capital cost multiplier for transmission - used in the objective function'
+    )
+    reeds.io.write_to_inputs_h5(
+        dftrans[['allt','cap_cost_mult']], 'trans_cost_cap_fin_mult_noITC', inputs_case,
+        gamstype='parameter', units='fraction',
+        comment='capital cost multiplier for transmission excluding ITC - used only in outputs',
+    )
     dftrans.loc[
         dftrans.itc_frac != 0,
         ['t','itc_frac','itc_tax_equity_penalty','itc_frac_monetized']
@@ -295,6 +302,7 @@ def calc_financial_inputs(inputs_case):
     dfhydrogen = dfhydrogen.merge(financials_sys.dropna(how='any'), on='t', how='right')
         
     ### Get financial multipliers
+    dfhydrogen['allt'] = dfhydrogen['t']
     dfhydrogen_pipeline = dfhydrogen.copy().rename(columns={"eval_period_pipeline":"eval_period"})
     dfhydrogen_pipeline = reeds.financials.calc_financial_multipliers(
         df_inv=dfhydrogen_pipeline, construction_schedules=construction_schedules,
@@ -322,12 +330,18 @@ def calc_financial_inputs(inputs_case):
     dfhydrogen_storage["cap_cost_mult_storage"] = reeds.financials.calc_final_capital_cost_multiplier(dfhydrogen_storage)
     
     ### Write it
-    dfhydrogen_pipeline.rename(columns={'t':'*t'})[['*t','cap_cost_mult_pipeline']].round(6).to_csv(
-        os.path.join(inputs_case, 'h2_pipeline_cap_cost_mult.csv'), index=False)
-    dfhydrogen_compressor.rename(columns={'t':'*t'})[['*t','cap_cost_mult_compressor']].round(6).to_csv(
-        os.path.join(inputs_case, 'h2_compressor_cap_cost_mult.csv'), index=False)    
-    dfhydrogen_storage.rename(columns={'t':'*t'})[['*t','cap_cost_mult_storage']].round(6).to_csv(
-        os.path.join(inputs_case, 'h2_storage_cap_cost_mult.csv'), index=False)
+    reeds.io.write_to_inputs_h5(
+        dfhydrogen_pipeline[['allt','cap_cost_mult_pipeline']], 'h2_cap_cost_mult_pipeline',
+        inputs_case, 'parameter', units='fraction', comment='capital cost multiplier for h2 pipelines',
+    )
+    reeds.io.write_to_inputs_h5(
+        dfhydrogen_compressor[['allt','cap_cost_mult_compressor']], 'h2_cap_cost_mult_compressor',
+        inputs_case, 'parameter', units='fraction', comment='capital cost multiplier for h2 compressors',
+    )
+    reeds.io.write_to_inputs_h5(
+        dfhydrogen_storage[['allt','cap_cost_mult_storage']], 'h2_cap_cost_mult_storage',
+        inputs_case, 'parameter', units='fraction', comment='capital cost multiplier for h2 storage',
+    )
 
     #%% Import regional capital cost differences
     reg_cap_cost_diff = reeds.financials.import_data(

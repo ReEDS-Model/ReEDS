@@ -996,25 +996,34 @@ def write_miscellaneous_files(
     county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
     county2zone.index = 'p' + county2zone.index
 
-    # Constant value if input is float, otherwise named profile
     # Methane leakage rate:
+    # Constant value if input is float, otherwise named profile.
+    # Best estimate for fixed leakage rate is from
+    # Alvarez et al. 2018 (https://dx.doi.org/10.1126/science.aar7204)
     try:
         rate = float(sw['GSw_MethaneLeakageScen'])
-        pd.Series(index=range(2010,2051), data=rate, name='constant').rename_axis('*t').round(5).to_csv(
-            os.path.join(inputs_case,'methane_leakage_rate.csv'))
+        methane_leakage_rate = pd.Series(
+            index=range(int(sw.startyear), int(sw.endyear)+1), data=rate, name='constant'
+        ).rename_axis('allt')
     except ValueError:
-        pd.read_csv(
+        methane_leakage_rate = pd.read_csv(
             os.path.join(reeds_path,'inputs','emission_constraints','methane_leakage_rate.csv'),
             index_col='t',
-        )[sw['GSw_MethaneLeakageScen']].rename_axis('*t').round(5).to_csv(
-            os.path.join(inputs_case,'methane_leakage_rate.csv'))
+        )[sw['GSw_MethaneLeakageScen']].rename_axis('allt')
+    reeds.io.write_to_inputs_h5(
+        methane_leakage_rate, 'methane_leakage_rate', inputs_case, 'parameter',
+        units='fraction', comment='methane leakage as fraction of gross production',
+    )
 
     # H2 leakage rate:
-    pd.read_csv(
+    h2_leakage_rate = pd.read_csv(
         os.path.join(reeds_path,'inputs','emission_constraints','h2_leakage_rate.csv'),
         index_col='i',
-    )[sw['GSw_H2LeakageScen']].rename_axis('*i').round(5).to_csv(
-        os.path.join(inputs_case,'h2_leakage_rate.csv'))
+    )[sw['GSw_H2LeakageScen']]
+    reeds.io.write_to_inputs_h5(
+        h2_leakage_rate, 'h2_leakage_rate', inputs_case, 'parameter', units='fraction',
+        comment='H2 leakage rate as a fraction of total production by technology',
+    )
 
     # Add this_year to years_until_endogenous to generate the tech-specific firstyear parameter
     scalars = reeds.io.get_scalars(full=True)

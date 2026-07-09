@@ -135,7 +135,7 @@ loadsite_annual.csv,inputs/load/loadsite_{GSw_LoadSiteTrajectory}.csv,float(sw.G
 maxage.csv,inputs/plant_characteristics/maxage.csv,1,ignore,ignore,,,,,0,,,,,,
 maxdailycf.csv,inputs/plant_characteristics/maxdailycf.csv,int(sw.GSw_MaxDailyCF) != 0,ignore,ignore,,,,,0,,,parameter,maxdailycf_input,--fraction-- maximum daily capacity factor for a technology,
 mcs_distributions.yaml,inputs/userinput/mcs_distributions_{MCS_dist}.yaml,int(sw.MCS_runs) != 0,ignore,ignore,,,,,,,,,,,
-mex_growth_rate.csv,inputs/load/mex_growth_rate.csv,1,ignore,ignore,,,,0,,,,,,,
+mex_growth_rate.csv,inputs/load/mex_growth_rate.csv,1,ignore,ignore,,,,0,,,,parameter,,growth rate for mexican demand - national,
 minCF.csv,inputs/plant_characteristics/minCF.csv,int(sw.GSw_MinCF) != 0,ignore,ignore,,,,,0,,,parameter,minCF_input,"--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)",6% for H2-CT and H2-CC is based on unpublished PLEXOS runs of 100% RE scenarios performed in summer 2019
 min_retire_age.csv,inputs/plant_characteristics/min_retire_age.csv,1,ignore,ignore,,,,,0,,,parameter,,minimum retirement age by technology,
 mingen_fixed.csv,inputs/plant_characteristics/mingen_fixed.csv,int(sw.GSw_MingenFixed) != 0,ignore,ignore,,,*i,,0,,,,,,

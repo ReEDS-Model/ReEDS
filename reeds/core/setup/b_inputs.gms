@@ -3249,34 +3249,6 @@ parameter cost_h2_transport_cap(r,rr,allt)          "--$/(metric ton/hour)-- cap
           h2_network_load(h2_st,allt)               "--MWh/metric ton-- electricity consumption of H2 network components"
 ;
 
-* read in capital cost multiplier from financial processing script
-parameter h2_cap_cost_mult_pipeline(allt) "capital cost multiplier for h2 pipelines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_pipeline_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter h2_cap_cost_mult_compressor(allt) "capital cost multiplier for h2 compressors"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_compressor_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter h2_cap_cost_mult_storage(allt) "capital cost multiplier for h2 storage"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_storage_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
 * here computing capital and FOM costs as $/metric ton-hour for all possible routes
 * including capital cost multipliers, which are different for pipelines and compressors
 * note that pipeline distance is between BA centroids
@@ -4042,15 +4014,6 @@ $include inputs_case%ds%cangrowth.csv
 $offdelim
 $onlisting
 ;
-
-parameter mex_growth_rate(allt) "growth rate for mexican demand - national"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%mex_growth_rate.csv
-$offdelim
-$onlisting
-/ ;
 $offempty
 
 
@@ -4067,16 +4030,6 @@ $offdelim
 $onlisting
 / ;
 
-$onempty
-parameter peakload_nercr(nercr,allt) "--MW-- Peak exogenous demand across all weather years by NERC region"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%peakload_nercr.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 
 * ===========================================================================
@@ -4096,24 +4049,6 @@ cost_cap_fin_mult(i,r,t) "final capital cost multiplier for regions and technolo
 cost_cap_fin_mult_noITC(i,r,t) "final capital cost multiplier excluding ITC - used only in outputs",
 cost_cap_fin_mult_no_credits(i,r,t) "final capital cost multiplier ITC/PTC/Depreciation (i.e. the actual expenditures) - used only in outputs",
 cost_cap_fin_mult_out(i,r,t) "final capital cost multiplier for system cost outputs" ;
-
-parameter trans_cost_cap_fin_mult(allt) "capital cost multiplier for transmission - used in the objective function"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trans_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter trans_cost_cap_fin_mult_noITC(allt) "capital cost multiplier for transmission excluding ITC - used only in outputs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trans_cap_cost_mult_noITC.csv
-$offdelim
-$onlisting
-/ ;
 
 
 * --- Hybrid PV+Battery ---
@@ -4213,29 +4148,9 @@ capture_rate_fuel(i,"CO2")$beccs(i) = - emit_rate_fuel(i,"process","CO2")
 
 parameter capture_rate(e,i,v,r,t) "--metric tons per MWh-- emissions capture rate" ;
 
-parameter methane_leakage_rate(allt) "--fraction-- methane leakage as fraction of gross production"
-* best estimate for fixed leakage rate is 0.023 (Alvarez et al. 2018, https://dx.doi.org/10.1126/science.aar7204)
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%methane_leakage_rate.csv
-$offdelim
-$onlisting
-/ ;
-
 scalar methane_tonperMMBtu "--metric tons per MMBtu-- methane content of natural gas" ;
 * [ton CO2 / MMBtu] * [ton CH4 / ton CO2]
 methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","CO2") * molWeightCH4 / molWeightCO2 ;
-
-* H2 leakage rate by technology and etype (broken down to process and upstream)
-parameter h2_leakage_rate(i)  "--fraction-- h2 leakage rate as a fraction of total production by technology and emission type"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_leakage_rate.csv
-$offdelim
-$onlisting
-/ ;
 
 parameter prod_emit_rate(etype,e,i,allt) "--metric tons emitted per metric ton product-- emissions rate per metric ton of product (e.g. tonCO2/tonH2 for SMR & SMR-CCS)" ;
 * Steam methane reformer (SMR)'s process emission here refers to emissions from steam methane reforming process
