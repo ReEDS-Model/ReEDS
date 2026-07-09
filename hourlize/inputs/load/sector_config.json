@@ -46,11 +46,16 @@
       "commercial": ["data center cooling", "data center it"]
     },
     "model_years": [2025, 2030, 2035, 2040, 2045, 2050],
-    "scenario": "central",
-    "national_demand_source": "/projects/largeload/geospatial/runs/random_forest_base_weights_01_09_2026/downscaling_2026-01-07_agg64/eer_national_central/eer_national_central_downscaled_projections.csv",
-    "cooling_proportions_source": "/projects/largeload/reVeal2ReEDS/files/{scenario}_dc_cooling_prop.csv",
-    "propagation_source": "/projects/largeload/reVeal2ReEDS/files/weather_year_propagation.csv",
     "replace_existing_data_center_demand": true,
-    "state_proportions_source": "/projects/eerload/source_eer_load_profiles/20250512_eer_download/shape_outputs_2025-05-12/annual_files/data center load allocation ADP 2024.xlsx"
+    "national_demand_source": "/projects/largeload/geospatial/runs/random_forest_base_weights_01_09_2026/downscaling_2026-01-07_agg64/eer_national_central/eer_national_central_downscaled_projections.csv",
+    "cooling_proportions_source": "/projects/largeload/reVeal2ReEDS/files/central_dc_cooling_prop.csv",
+    "state_proportions_source": {
+      "filepath": "/projects/eerload/source_eer_load_profiles/20250512_eer_download/shape_outputs_2025-05-12/annual_files/data center load allocation ADP 2024.xlsx",
+      "scenario": "central"
+    },
+    "weather_year_propagation_source": {
+      "filepath": "/projects/largeload/reVeal2ReEDS/files/weather_year_propagation.csv",
+      "scenario": "central"
+    }
   }
 }
