@@ -758,8 +758,9 @@ def inv_param_exporter(
 
     # For investment parameters we only care about modeled_year values
     # Skip this step if there is no 't' index, inducated by modeled_years=None
-    if 't' in indices:
-        df = df[df['t'].isin(modeled_years)]
+    for tcol in ['t', 'allt']:
+        if tcol in indices:
+            df = df[df[tcol].isin(modeled_years)]
 
     df_param = df[indices + [parameter]].drop_duplicates()
     df_check_size = df[indices].drop_duplicates()

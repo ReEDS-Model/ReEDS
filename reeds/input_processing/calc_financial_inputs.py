@@ -221,7 +221,7 @@ def calc_financial_inputs(inputs_case):
                             'ptc_value_monetized_posttax', 'ptc_grossup_value', 'ptc_value_scaled']].iloc[0:5,:] # this is just a hack because pjg didn't know how to have gams handle empty files
     ptc_values_df = ptc_values_df.drop_duplicates(['i', 'v', 't'])
     ptc_values_df['v'] = ['new%s' % v for v in ptc_values_df['v']]
-    ptc_values_df['t'] = ptc_values_df['t'].astype(int)
+    ptc_values_df['allt'] = ptc_values_df['t'].astype(int)
     
     
 
@@ -445,10 +445,7 @@ def calc_financial_inputs(inputs_case):
     
     # Write out the safe harbor window for each tech, for determining
     # the tax credit phaseout schedules
-    reeds.io.write_to_inputs_h5(
-        df_ivt[['i', 't', 'safe_harbor']],
-        'safe_harbor', inputs_case, gamstype='parameter',
-    )
+    df_ivt[['i', 't', 'safe_harbor']].to_csv(Path(inputs_case, 'safe_harbor.csv'), index=False)
     
     # Write out the carbon capture incentive values
     reeds.io.write_to_inputs_h5(
@@ -466,7 +463,7 @@ def calc_financial_inputs(inputs_case):
 
     # Write out the ptc_value_scaled (which incorporates all the adjustments reeds expects)
     reeds.io.write_to_inputs_h5(
-        ptc_values_df[['i', 'v', 't', 'ptc_value_scaled']], 
+        ptc_values_df[['i', 'v', 'allt', 'ptc_value_scaled']], 
         'ptc_value_scaled', inputs_case, gamstype='parameter', units='$/MWh',
         comment=(
             'value of the PTC incorporating adjustments for monetization costs, tax grossup '

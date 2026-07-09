@@ -476,7 +476,7 @@ def main(reeds_path, inputs_case):
     print('Gathering SMR Existing Capacity...')
     # Grab the first year for smr because that is when new capacity can begin to be built (for 
     # smr, smr_ccs and electrolyzers)
-    firstyear = reeds.io.read_input(inputs_case, 'firstyear').set_index('i').squeeze(1)
+    firstyear = reeds.io.read_input(inputs_case, 'firstyear').set_index('i').squeeze(1).astype(int)
     h2_prod_first_year = firstyear['smr']
     # Get exogenous H2 demand
     h2_exogenous_demand = (
