@@ -299,11 +299,6 @@ def check_missing_class_resource(existing_techs, resources):
 ### ===========================================================================
 def main(reeds_path, inputs_case):
     print('Starting recf.py')
-    
-    # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20260601_repM0_USA_H20_ramp3_yr12_ys1623','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -604,8 +599,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..'))
-    # inputs_case = os.path.join(reeds_path,'runs','test_Ref','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
     
     log = reeds.log.makelog(
         scriptname=__file__,
