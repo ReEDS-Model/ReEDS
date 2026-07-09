@@ -123,30 +123,36 @@ eq_MGA_Objective$Sw_MGA..
 *   annual term used in report.gms
 
 * Transmission line construction employment
-    + sum{(r,rr,tscbin,t)
-          $[tmodel(t)
-          $routes_inv(r,rr,"AC",t)
-          $tsc_binwidth(r,rr,tscbin)],
-          trans_cost_cap_fin_mult(t)
-*         [$] * [.] * [job-years/$] = [job-years]           
-          * ((TRAN_CAPEX_BINS(r,rr,tscbin,t)) 
-          * pvf_capital(t)
-* TRAN_CAPEX_BINS is only defined for r < rr so is not divided by 2
-          * employment_factor_inter_transmission("construction"))}
-
-    + sum{trtype
-          $[routes_inv(r,rr,trtype,t)
-          $(not aclike(trtype))],
-          trans_cost_cap_fin_mult(t)
-*         [$/MW] * [MW] * [job-years/$] = [job-years] 
-          * transmission_cost_nonac(r,rr,trtype)
-          * INVTRAN(r,rr,trtype,t)
-* INVTRAN is defined in both directions so needs to be divided by 2
-          * employment_factor_inter_transmission("construction") / 2 }
-    
-* Transmission line FO&M employment is assumed to be
-* transmission line construction x trans_fom_frac
-    * (1 + trans_fom_frac)
+    + pvf_capital(t)
+      * trans_cost_cap_fin_mult(t)
+      * employment_factor_inter_transmission("construction")
+      * (
+* AC: TRAN_CAPEX_BINS is only defined for r < rr so is not divided by 2
+        sum{(r,rr,tscbin,t)
+            $[tmodel(t)
+            $routes_inv(r,rr,"AC",t)
+            $tsc_binwidth(r,rr,tscbin)],
+*           [job-years/$] * [$] = [job-years]
+            TRAN_CAPEX_BINS(r,rr,tscbin,t)
+        }
+* DC: INVTRAN is defined in both directions so needs to be divided by 2
+        + sum{trtype
+            $[routes_inv(r,rr,trtype,t)
+            $(not aclike(trtype))],
+*           [job-years/$] * [$/MW] * [MW] = [job-years]
+            transmission_cost_nonac(r,rr,trtype)
+            * INVTRAN(r,rr,trtype,t) / 2
+        }
+    )
+* Transmission fixed O&M is assumed to have the same employment factor [job-years/$]
+* as transmission construction
+    + pvf_onm(t)
+      * employment_factor_inter_transmission("construction")
+* AC and DC together; divide by 2 since defined in both directions
+      * sum{(r,rr,trtype)$routes(r,rr,trtype,t),
+*           [years] * [job-years/$] * [$/MW-year] * [MW] = [job-years]
+            transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2
+      }
 ;
 
 
