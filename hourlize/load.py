@@ -292,10 +292,6 @@ def create_hourly_state_load_for_model_year(
     for sector in replace_sectors:
         if sector == 'Data Centers':
             data_center_config = sector_config[sector]
-            data_center_config['cooling_proportions_source'] = (
-                data_center_config['cooling_proportions_source']
-                .format(scenario=data_center_config['scenario'])
-            )
             if model_year in data_center_config['model_years']:
                 print(f"Replacing endogenous load for '{sector}' sector...")
                 df_load = (

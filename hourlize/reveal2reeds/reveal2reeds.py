@@ -19,13 +19,12 @@ def get_national_model_year_data_center_demand(
     return national_model_year_data_center_demand
 
 def get_propagation_by_weather_year(
-    propagation_source_path: str,
-    scenario: str
+    propagation_source: dict[str, str],
 ) -> pd.Series:
-    propagation_by_weather_year = pd.read_csv(propagation_source_path)
+    propagation_by_weather_year = pd.read_csv(propagation_source['filepath'])
     propagation_by_weather_year = (
         propagation_by_weather_year.loc[(
-            propagation_by_weather_year.scenario == scenario
+            propagation_by_weather_year.scenario == propagation_source['scenario']
         )]
         .set_index('year')
         ['avg_prop']
@@ -37,7 +36,6 @@ def get_propagation_by_weather_year(
 def calculate_national_data_center_demand_hourly(
     df_load: pd.DataFrame,
     model_year: int,
-    scenario: str,
     national_demand_source_path: str,
     propagation_source_path: str
 ):
@@ -47,13 +45,12 @@ def calculate_national_data_center_demand_hourly(
         model_year
     )
 
-    # Get propagation factors by weather year for the given scenario.
+    # Get propagation factors by weather year.
     # Propagation factors represent the percentage of projected national
     # data center demand for the model year that is expected to be
     # realized during each hour of each weather year.
     propagation_by_weather_year = get_propagation_by_weather_year(
-        propagation_source_path,
-        scenario
+        propagation_source_path
     )
 
     # Estimate national hourly load values for each weather year
@@ -92,15 +89,14 @@ def get_data_center_cooling_weights(
     return national_cooling_weights
 
 def get_data_center_state_weights(
-    state_proportions_source_path: str,
-    model_year: int,
-    scenario: str
+    state_proportions_source: dict[str, str],
+    model_year: int
 ) -> pd.DataFrame:
     data_center_year = 2024 if model_year == 2025 else model_year
-    state_weights = pd.read_excel(state_proportions_source_path)
+    state_weights = pd.read_excel(state_proportions_source['filepath'])
     state_weights = (
         state_weights.loc[
-            (state_weights['Run Name'] == scenario)
+            (state_weights['Run Name'] == state_proportions_source['scenario'])
             & (state_weights['Year'] == data_center_year)
         ]
         .set_index('State')
@@ -137,7 +133,6 @@ def apply_state_and_subsector_weights(
 def calculate_state_subsector_data_center_demand_hourly(
     df_load: pd.DataFrame,
     model_year: int,
-    scenario: str,
     national_demand_source_path: str,
     cooling_proportions_source_path: str,
     propagation_source_path: str,
@@ -148,7 +143,6 @@ def calculate_state_subsector_data_center_demand_hourly(
         calculate_national_data_center_demand_hourly(
             df_load,
             model_year,
-            scenario,
             national_demand_source_path,
             propagation_source_path
         )
@@ -156,8 +150,7 @@ def calculate_state_subsector_data_center_demand_hourly(
     # Calculate proportion of national demand attributable to each state
     state_weights = get_data_center_state_weights(
         state_proportions_source_path,
-        model_year,
-        scenario
+        model_year
     )
     state_weights = state_weights.loc[state_weights.index.isin(df_load.columns)]
     # Get proportion of hourly demand attributable to cooling
@@ -201,7 +194,6 @@ def apply_custom_data_center_demand_projections(
         calculate_state_subsector_data_center_demand_hourly(
             df_load,
             model_year,
-            cf['scenario'],
             cf['national_demand_source'],
             cf['cooling_proportions_source'],
             cf['propagation_source'],
