@@ -37,7 +37,7 @@ def calculate_national_data_center_demand_hourly(
     df_load: pd.DataFrame,
     model_year: int,
     national_demand_source_path: str,
-    propagation_source_path: str
+    weather_year_propagation_source: str
 ):
     # Calculate national projected data center demand for the model year
     national_data_center_demand = get_national_model_year_data_center_demand(
@@ -50,14 +50,14 @@ def calculate_national_data_center_demand_hourly(
     # data center demand for the model year that is expected to be
     # realized during each hour of each weather year.
     propagation_by_weather_year = get_propagation_by_weather_year(
-        propagation_source_path
+        weather_year_propagation_source
     )
 
     # Estimate national hourly load values for each weather year
     # by multiplying the propagation factors by national data
     # center demand for the model year.
     national_data_center_demand_hourly = pd.DataFrame(
-        index=df_load['weather_datetime'].unique()
+        index=df_load['weather_datetime'].drop_duplicates()
     )
     national_data_center_demand_hourly['propagation_factor'] = (
         national_data_center_demand_hourly.index.year
@@ -135,8 +135,8 @@ def calculate_state_subsector_data_center_demand_hourly(
     model_year: int,
     national_demand_source_path: str,
     cooling_proportions_source_path: str,
-    propagation_source_path: str,
-    state_proportions_source_path: str
+    weather_year_propagation_source: str,
+    state_proportions_source: str
 ) -> pd.DataFrame:
     # Calculate hourly national data center demand
     national_data_center_demand_hourly = (
@@ -144,12 +144,12 @@ def calculate_state_subsector_data_center_demand_hourly(
             df_load,
             model_year,
             national_demand_source_path,
-            propagation_source_path
+            weather_year_propagation_source
         )
     )
     # Calculate proportion of national demand attributable to each state
     state_weights = get_data_center_state_weights(
-        state_proportions_source_path,
+        state_proportions_source,
         model_year
     )
     state_weights = state_weights.loc[state_weights.index.isin(df_load.columns)]
@@ -196,7 +196,7 @@ def apply_custom_data_center_demand_projections(
             model_year,
             cf['national_demand_source'],
             cf['cooling_proportions_source'],
-            cf['propagation_source'],
+            cf['weather_year_propagation_source'],
             cf['state_proportions_source']
         )
     )
