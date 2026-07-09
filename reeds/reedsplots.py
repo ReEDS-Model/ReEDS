@@ -1438,12 +1438,13 @@ def plot_max_imports(
         flow[level] = flow.r.map(r2agg)
         flow[levell] = flow.rr.map(r2agg)
 
-        tranloss = pd.read_csv(
-            os.path.join(c,'inputs_case','tranloss.csv')
-        ).rename(columns={'*r':'r'}).set_index(['r','rr','trtype']).squeeze(1)
+        tranloss = (
+            reeds.io.read_input(c, 'tranloss')
+            .rename(columns={'*r':'r'}).set_index(['r','rr','trtype']).squeeze(1)
+        )
 
         peakload = (
-            pd.read_csv(os.path.join(c,'inputs_case','peakload.csv'))
+            reeds.io.read_input(c, 'peakload')
             .set_index(['level','region']).loc[level].stack()
             .rename_axis(['r','t']).rename('MW')
             .reset_index().astype({'t':int}).set_index(['r','t']).squeeze()
@@ -1452,9 +1453,10 @@ def plot_max_imports(
         if _draw_limit:
             ## Fraction
             try:
-                firm_import_limit = pd.read_csv(
-                    os.path.join(c, 'inputs_case', 'firm_import_limit.csv')
-                ).rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze()
+                firm_import_limit = (
+                    reeds.io.read_input(c, 'firm_import_limit')
+                    .rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze(1)
+                )
             except FileNotFoundError:
                 print("firm_import_limit.csv not found, so it won't be plotted")
                 _draw_limit = False

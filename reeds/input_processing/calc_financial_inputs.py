@@ -198,7 +198,7 @@ def calc_financial_inputs(inputs_case):
         h2_ptc_value = df_ivt[['i', 'v', 't', 'h2_ptc_value_monetized', 'h2_ptc_dur']].iloc[0:5,:]
     h2_ptc_value = h2_ptc_value.drop_duplicates(['i', 'v', 't'])
     h2_ptc_value['v'] = ['new%s' % v for v in h2_ptc_value['v']]
-    h2_ptc_value['t'] = h2_ptc_value['t'].astype(int)
+    h2_ptc_value['allt'] = h2_ptc_value['t'].astype(int)
     
     # Expand the various ptc values by the duration of the incentive. 
     # We are tracking various ptc_values (e.g. with and without tax grossups)
@@ -459,7 +459,7 @@ def calc_financial_inputs(inputs_case):
 
     # Write out the H2 production incentive values
     reeds.io.write_to_inputs_h5(
-        h2_ptc_value[['i', 'v', 't', 'h2_ptc_value_monetized']],
+        h2_ptc_value[['i', 'v', 'allt', 'h2_ptc_value_monetized']],
         'h2_ptc_in', inputs_case, gamstype='parameter', units='2004$/kg H2 produced',
         comment='incentive on hydrogen production by electrolyzers that purchase Energy Attribute Credits',
     )

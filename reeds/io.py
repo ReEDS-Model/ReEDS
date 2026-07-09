@@ -1650,10 +1650,10 @@ def assemble_prescribed_builds(filepath, case=None, **kwargs):
 def gamsify_header(df):
     """Add '*' to the beginning so GAMS reads the header as a comment"""
     if isinstance(df, pd.DataFrame):
-        df = df.rename(columns={df.columns[0]: '*'+str(df.columns[0])})
+        dfout = df.rename(columns={df.columns[0]: '*' + str(df.columns[0])})
     else:
-        df = df.rename('*'+df.name) if df.name else df
-    return df
+        dfout = df.rename('*' + df.name) if df.name else df
+    return dfout
 
 
 def get_dtype(col, df=None):
