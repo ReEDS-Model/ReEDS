@@ -1,7 +1,16 @@
-CAP_ABOVE_LIM
-CO2_CAPTURED
-CO2_STORED
-FLOW
+***
+*** Sets and parameters
+***
 hours
 r
 routes
+***
+*** Variables
+***
+CAP_ABOVE_LIM
+CO2_CAPTURED
+CO2_STORED
+CO2_TRANSPORT_INV
+CO2_SPURLINE_INV
+CO2_FLOW
+FLOW

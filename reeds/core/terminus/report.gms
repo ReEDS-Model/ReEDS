@@ -122,26 +122,33 @@ $include autocode%ds%report_params.gms
 h(h)$[not h_rep(h)] = no ;
 szn(szn)$[not szn_rep(szn)] = no ;
 
-*=====================
-* -- CO2 Reporting --
-*=====================
+*=====================================
+* -- Parameters moved to Python --
+*=====================================
 
-CO2_STORED_out(r,cs,h,t)$[tmodel_new(t)$csfeas(cs)] = CO2_STORED.l(r,cs,h,t) ;
-CO2_STORED_out_ann(r,cs,t)$[tmodel_new(t)$csfeas(cs)] = sum(h,hours(h) * CO2_STORED.l(r,cs,h,t) );
-CO2_TRANSPORT_INV_out(r,rr,t)$tmodel_new(t) = CO2_TRANSPORT_INV.l(r,rr,t) ;
-CO2_SPURLINE_INV_out(r,cs,t)$[tmodel_new(t)$csfeas(cs)] = CO2_SPURLINE_INV.l(r,cs,t) ;
+$ontext
+The calculation of the following output parameters has been moved to report_calcs.py:
 
-CO2_FLOW_out(r,rr,h,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = CO2_FLOW.l(r,rr,h,t) + CO2_FLOW.l(rr,r,h,t) ;
-CO2_FLOW_out_ann(r,rr,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = sum{h, hours(h) * (CO2_FLOW.l(r,rr,h,t) + CO2_FLOW.l(rr,r,h,t)) } ;
+cap_above_limit
 
-CO2_FLOW_pos_out(r,rr,h,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = CO2_FLOW.l(r,rr,h,t) ;
-CO2_FLOW_pos_out_ann(r,rr,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = sum{h, hours(h) * CO2_FLOW.l(r,rr,h,t) } ;
+CO2_CAPTURED_out
+CO2_CAPTURED_out_ann
+CO2_STORED_out
+CO2_STORED_out_ann
+CO2_TRANSPORT_INV_out
+CO2_SPURLINE_INV_out
+CO2_FLOW_out
+CO2_FLOW_out_ann
+CO2_FLOW_pos_out
+CO2_FLOW_pos_out_ann
+CO2_FLOW_neg_out
+CO2_FLOW_neg_out_ann
+CO2_FLOW_net_out
+CO2_FLOW_net_out_ann
 
-CO2_FLOW_neg_out(r,rr,h,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = -1 * CO2_FLOW.l(rr,r,h,t) ;
-CO2_FLOW_neg_out_ann(r,rr,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = -1 * sum{h, hours(h) * CO2_FLOW.l(rr,r,h,t) } ;
-
-CO2_FLOW_net_out(r,rr,h,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = CO2_FLOW.l(r,rr,h,t) - CO2_FLOW.l(rr,r,h,t) ;
-CO2_FLOW_net_out_ann(r,rr,t)$[(ord(r) < ord(rr))$tmodel_new(t)] = sum{h, hours(h) * (CO2_FLOW.l(r,rr,h,t) - CO2_FLOW.l(rr,r,h,t)) } ;
+tran_flow_rep
+tran_flow_rep_ann
+$offtext
 
 *=========================
 * LCOE

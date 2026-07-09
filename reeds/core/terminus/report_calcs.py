@@ -2,6 +2,7 @@
 import gdxpds
 import pandas as pd
 from pathlib import Path
+from typing import Literal
 
 
 #%% Helper functions
@@ -17,19 +18,29 @@ def get_gams_results(case):
     return dictin
 
 
-def combine_forward_reverse(df, value='Level'):
+def get_flow(df, direction:Literal['forward','reverse']='forward', value='Level'):
+    r_indices = ['r', 'rr']
+    other_indices = [i for i in df.index.names if i not in r_indices]
+    if direction == 'forward':
+        out = df.loc[
+            df.index.get_level_values('r') < df.index.get_level_values('rr'),
+            value,
+        ]
+    elif direction == 'reverse':
+        out = df.loc[
+            df.index.get_level_values('r') > df.index.get_level_values('rr'),
+            value,
+        ].rename_axis(['rr', 'r'] + other_indices).reorder_levels(r_indices + other_indices)
+    return out
+
+
+def combine_forward_reverse(df, agg:Literal['net','simult']='net', value='Level'):
     """Combine forward (r < rr) and reverse (r > rr) into one +/- series"""
     r_indices = ['r', 'rr']
     other_indices = [i for i in df.index.names if i not in r_indices]
-    forward = df.loc[
-        df.index.get_level_values('r') < df.index.get_level_values('rr'),
-        value,
-    ]
-    reverse = -df.loc[
-        df.index.get_level_values('r') > df.index.get_level_values('rr'),
-        value,
-    ].rename_axis(['rr', 'r'] + other_indices).reorder_levels(['r', 'rr'] + other_indices)
-    return pd.concat([forward, reverse]).groupby(['r', 'rr'] + other_indices).sum()
+    forward = get_flow(df, 'forward')
+    reverse = (-1 if agg == 'net' else 1) * get_flow(df, 'reverse')
+    return pd.concat([forward, reverse]).groupby(r_indices + other_indices).sum()
 
 
 #%% Results calculations
@@ -44,7 +55,19 @@ def calc_co2_stor(g):
     """CO2 capture, transport, and storage"""
     dfs = {}
     dfs['CO2_CAPTURED_out'] = g['CO2_CAPTURED'].Level
-    dfs['CO2_CAPTURED_out_ann'] = (g['CO2_STORED'].Level * g['hours']).groupby(['r','t']).sum()
+    dfs['CO2_CAPTURED_out_ann'] = (g['CO2_CAPTURED'].Level * g['hours']).groupby(['r','t']).sum()
+    dfs['CO2_STORED_out'] = g['CO2_STORED'].Level
+    dfs['CO2_STORED_out_ann'] = (g['CO2_STORED'].Level * g['hours']).groupby(['r','cs','t']).sum()
+    dfs['CO2_TRANSPORT_INV_out'] = g['CO2_TRANSPORT_INV'].Level
+    dfs['CO2_SPURLINE_INV_out'] = g['CO2_SPURLINE_INV'].Level
+    dfs['CO2_FLOW_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='simult')
+    dfs['CO2_FLOW_out_ann'] = (dfs['CO2_FLOW_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_pos_out'] = get_flow(g['CO2_FLOW'], 'forward')
+    dfs['CO2_FLOW_pos_out_ann'] = (dfs['CO2_FLOW_pos_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_neg_out'] = -get_flow(g['CO2_FLOW'], 'reverse')
+    dfs['CO2_FLOW_neg_out_ann'] = (dfs['CO2_FLOW_neg_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_net_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='net')
+    dfs['CO2_FLOW_net_out_ann'] = (dfs['CO2_FLOW_net_out'] * g['hours']).groupby(['r','rr','t']).sum()
     return dfs
 
 
