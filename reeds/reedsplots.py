@@ -919,10 +919,13 @@ def plot_trans_onecase(
     return f, ax, dfplot
 
 
-def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
-                 plot='diff', f=None, ax=None, cmap=plt.cm.Blues,
-                 zmax=None, zlim=None,
-                 legend_kwds=None, plot_kwds=None,):
+def plot_diff_maps(
+    val, i_plot, titles, year, casebase, casecomp,
+    level:Literal['r','st']='r',
+    plot='diff', f=None, ax=None, cmap=plt.cm.Blues,
+    zmax=None, zlim=None,
+    legend_kwds=None, plot_kwds=None,
+):
     """
     Inputs
     ------
@@ -962,12 +965,18 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
 
     ### Get the maps
     dfmap = reeds.io.get_dfmap(casecomp)
-    dfba = dfmap['r']
+    dfba = dfmap[level]
     dfstates = dfmap['st']
 
     ### Load the data, sum over hours
     dfbase = reeds.io.read_output(casebase, val, valname=valcol)
     dfcomp = reeds.io.read_output(casecomp, val, valname=valcol)
+
+    if level != 'r':
+        hierarchy_base = reeds.io.get_hierarchy(casebase)
+        hierarchy_comp = reeds.io.get_hierarchy(casecomp)
+        dfbase.r = dfbase.r.map(hierarchy_base[level])
+        dfcomp.r = dfcomp.r.map(hierarchy_comp[level])
 
     ### Simplify the i names
     dfbase.i = simplify_techs(dfbase.i)
