@@ -49,6 +49,11 @@ h(allh) = no ;
 h(allh)$[h_rep(allh)] = yes ;
 h(allh)$[h_stress(allh)] = yes ;
 
+* h_htype generalizes h_rep/h_stress for use in the htype-indexed state RPS/CES
+h_htype(h,htype) = no ;
+h_htype(h,"rep")$h_rep(h) = yes ;
+h_htype(h,"stress")$h_stress(h) = yes ;
+
 szn(allszn) = no ;
 szn(allszn)$[szn_rep(allszn)] = yes ;
 szn(allszn)$[szn_stress(allszn)] = yes ;
@@ -203,6 +208,13 @@ $include inputs_case%ds%stress%stress_year%%ds%numhours.csv
 $offdelim
 $onlisting
 / ;
+
+* rps_hours generalizes hours(h) for use in the htype-indexed state RPS/CES
+* stress periods are given equal weighting using 1 rather than dividing by 
+* the sum of hours(h) for all stress periods
+rps_hours(h,htype) = 0 ;
+rps_hours(h,"rep")$h_rep(h) = hours(h) ;
+rps_hours(h,"stress")$h_stress(h) = 1 ;
 
 parameter numdays(allszn) "--number of days-- number of days for each season" ;
 numdays(allszn) = 0 ;

@@ -77,8 +77,8 @@ positive variables
   BIOUSED(bioclass,r,t)                 "--MMBtu-- total biomass used by biomass class"
 
 * RECS variables
-  RECS(RPSCat,i,st,ast,t)               "--MWh-- renewable energy credits from state st to state ast",
-  ACP_PURCHASES(RPSCat,st,t)            "--MWh-- purchases of ACP credits to meet the RPS constraints",
+  RECS(RPSCat,i,st,ast,htype,t)         "--MWh-- renewable energy credits from state st to state ast, for representative (htype=rep) or stress (htype=stress) periods",
+  ACP_PURCHASES(RPSCat,st,htype,t)      "--MWh-- purchases of ACP credits to meet the RPS constraints, for representative (htype=rep) or stress (htype=stress) periods",
 
 * transmission variables
   CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
@@ -222,14 +222,14 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_caa_rate_standard(st,t)               "--metric tons CO2-- maximum coal emissions per state under Clean Air Act Section 111 (rate-based emissions standard)"
  
 * RPS Policy equations
- eq_REC_Generation(RPSCat,i,st,t)         "--RECs-- Generation of RECs by state"
- eq_REC_Requirement(RPSCat,st,t)          "--RECs-- RECs generated plus trade must meet the state's requirement"
- eq_REC_ooslim(RPSCat,st,t)               "--RECs-- RECs imported cannot exceed a fraction of total requirement for certain states",
- eq_REC_launder(RPSCat,st,t)              "--RECs-- RECs laundering constraint"
- eq_REC_BundleLimit(RPSCat,st,ast,t)      "--RECS-- trade in bundle recs must be less than interstate electricity transmission"
- eq_REC_unbundledLimit(RPScat,st,t)       "--RECS-- unbundled RECS cannot exceed some percentage of total REC requirements"
- eq_RPS_OFSWind(st,t)                     "--MW-- MW of offshore wind capacity must be greater than or equal to RPS amount"
- eq_national_gen(t)                       "--MWh-- e.g. a national RPS or CES. require a certain amount of total generation to be from specified sources."
+ eq_REC_Generation(RPSCat,i,st,htype,t)    "--RECs-- Generation of RECs by state"
+ eq_REC_Requirement(RPSCat,st,htype,t)     "--RECs-- RECs generated plus trade must meet the state's requirement"
+ eq_REC_ooslim(RPSCat,st,htype,t)          "--RECs-- RECs imported cannot exceed a fraction of total requirement for certain states",
+ eq_REC_launder(RPSCat,st,htype,t)         "--RECs-- RECs laundering constraint"
+ eq_REC_BundleLimit(RPSCat,st,ast,htype,t) "--RECS-- trade in bundle recs must be less than interstate electricity transmission"
+ eq_REC_unbundledLimit(RPScat,st,htype,t)  "--RECS-- unbundled RECS cannot exceed some percentage of total REC requirements"
+ eq_RPS_OFSWind(st,t)                      "--MW-- MW of offshore wind capacity must be greater than or equal to RPS amount"
+ eq_national_gen(t)                        "--MWh-- e.g. a national RPS or CES. require a certain amount of total generation to be from specified sources."
 
 * fuel supply curve equations
  eq_gasused(cendiv,allh,t)                "--MMBtu-- gas used must be from the sum of gas bins"
@@ -2606,8 +2606,9 @@ eq_caa_rate_standard(st,t)$[tmodel(t)
 
 * ---------------------------------------------------------------------------
 
-eq_REC_Generation(RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
+eq_REC_Generation(RPSCat,i,st,htype,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
                                  $Sw_StateRPS$(yeart(t)>=firstyear_RPS)
+                                 $[sameas(htype,"rep") or Sw_StateRPS_Stress]
                                  $(not sameas(RPSCat,"RPS_Bundled"))
                                  $(not sameas(RPSCat,"CES_Bundled"))
                                  $RecTech(RPSCat,i,st,t)
@@ -2617,26 +2618,26 @@ eq_REC_Generation(RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
 *hydro is the only technology adjusted by RPSTechMult
 *because GEN can only generate a H2 PTC credit or a REC, not both, subtract out the generation which produces a hydrogen PTC credit
 *because GEN from pvb(i) includes grid charging, subtract out its grid charging
-    + sum{(v,r,h)$[valgen(i,v,r,t)$r_st(r,st)$h_rep(h)],
-          RPSTechMult(RPSCat,i,st) * hours(h)
-          * (GEN(i,v,r,h,t) 
-          - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC] 
+    + sum{(v,r,h)$[valgen(i,v,r,t)$r_st(r,st)$h_htype(h,htype)],
+          RPSTechMult(RPSCat,i,st) * rps_hours(h,htype)
+          * (GEN(i,v,r,h,t)
+          - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC]
           - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] )
          }
 
      =g=
 
 * Generation must be greater than RECS sent to all states that can trade
-    + sum{ast$[RecMap(i,RPSCat,st,ast,t)$(stfeas(ast) or sameas(ast,"voluntary"))],
-          RECS(RPSCat,i,st,ast,t) }
+    + sum{ast$[RecMap(i,RPSCat,st,ast,htype,t)$(stfeas(ast) or sameas(ast,"voluntary"))],
+          RECS(RPSCat,i,st,ast,htype,t) }
 * RPS_Bundled RECS and RPS_All RECS can meet the same requirement
 * therefore lumping them together to avoid double-counting
-    + sum{ast$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("RPS_Bundled",i,st,ast,t) }$[sameas(RPSCat,"RPS_All")]
+    + sum{ast$[RecMap(i,"RPS_Bundled",st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+          RECS("RPS_Bundled",i,st,ast,htype,t) }$[sameas(RPSCat,"RPS_All")]
 
 *same logic as bundled RPS RECS is applied to the bundled CES RECS
-    + sum{ast$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("CES_Bundled",i,st,ast,t) }$[sameas(RPSCat,"CES")]
+    + sum{ast$[RecMap(i,"CES_Bundled",st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+          RECS("CES_Bundled",i,st,ast,htype,t) }$[sameas(RPSCat,"CES")]
 ;
 
 * ---------------------------------------------------------------------------
@@ -2644,42 +2645,43 @@ eq_REC_Generation(RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
 * note that the bundled rpscat can be included
 * to comply with the RPS_All categeory
 * but it is not in itself explicit requirement
-eq_REC_Requirement(RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(not tfirst(t))
+eq_REC_Requirement(RPSCat,st,htype,t)$[RecPerc(RPSCat,st,htype,t)$(not tfirst(t))
                                 $tmodel(t)$Sw_StateRPS$(yeart(t)>=firstyear_RPS)
+                                $[sameas(htype,"rep") or Sw_StateRPS_Stress]
                                 $(stfeas(st) or sameas(st,"voluntary"))
                                 $(not sameas(RPSCat,"RPS_Bundled"))
                                 $(not sameas(RPSCat,"CES_Bundled"))]..
 
 * RECs owned (i.e. imported and generated/used in state minus exports)
-    + sum{(i,ast)$[RecMap(i,RPSCat,ast,st,t)$stfeas(ast)],
-         RECS(RPSCat,i,ast,st,t) }
-    - sum{(i,ast)$[RecMap(i,RPSCat,st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-         RECS(RPSCat,i,st,ast,t) }
+    + sum{(i,ast)$[RecMap(i,RPSCat,ast,st,htype,t)$stfeas(ast)],
+         RECS(RPSCat,i,ast,st,htype,t) }
+    - sum{(i,ast)$[RecMap(i,RPSCat,st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+         RECS(RPSCat,i,st,ast,htype,t) }
 
 * bundled RECS can also be used to meet the RPS_All requirements (imports minus exports)
-    + sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,t)$stfeas(ast)$(not sameas(ast,st))],
-         RECS("RPS_Bundled",i,ast,st,t) }$[sameas(RPSCat,"RPS_All")]
-    - sum{(i,ast)$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-         RECS("RPS_Bundled",i,st,ast,t) }$[sameas(RPSCat,"RPS_All")]
+    + sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(ast,st))],
+         RECS("RPS_Bundled",i,ast,st,htype,t) }$[sameas(RPSCat,"RPS_All")]
+    - sum{(i,ast)$[RecMap(i,"RPS_Bundled",st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+         RECS("RPS_Bundled",i,st,ast,htype,t) }$[sameas(RPSCat,"RPS_All")]
 
 * bundled CES credits can also be used to meet the CES requirements (imports minus exports)
-    + sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,t)$stfeas(ast)$(not sameas(ast,st))],
-         RECS("CES_Bundled",i,ast,st,t) }$[sameas(RPSCat,"CES")]
-    - sum{(i,ast)$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-         RECS("CES_Bundled",i,st,ast,t) }$[sameas(RPSCat,"CES")]
+    + sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(ast,st))],
+         RECS("CES_Bundled",i,ast,st,htype,t) }$[sameas(RPSCat,"CES")]
+    - sum{(i,ast)$[RecMap(i,"CES_Bundled",st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+         RECS("CES_Bundled",i,st,ast,htype,t) }$[sameas(RPSCat,"CES")]
 
 * ACP credits can also be purchased
-    + ACP_PURCHASES(rpscat,st,t)$(not acp_disallowed(st,RPSCat))
+    + ACP_PURCHASES(rpscat,st,htype,t)$(not acp_disallowed(st,RPSCat))
 
 * Exports to Canada are assumed to be clean, and therefore consume CES credits
-    - sum{(r,h)$[r_st(r,st)$h_rep(h)],
-          can_exports_h(r,h,t) * hours(h) }$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
+    - sum{(r,h)$[r_st(r,st)$h_htype(h,htype)],
+          can_exports_h(r,h,t) * rps_hours(h,htype) }$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
 
     =g=
 
 * note here we do not pre-define the rec requirement since load_exog(r,h,t)
 * changes when sent to/from the demand side
-    RecPerc(RPSCat,st,t) * sum{(r,h)$[r_st_rps(r,st)$h_rep(h)], hours(h) * (
+    RecPerc(RPSCat,st,htype,t) * sum{(r,h)$[r_st_rps(r,st)$h_htype(h,htype)], rps_hours(h,htype) * (
 * RecStyle(st,RPSCat)=0 means end-use sales.
         ( (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
         - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
@@ -2703,106 +2705,110 @@ eq_REC_Requirement(RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(not tfirst(t))
 
 * ---------------------------------------------------------------------------
 
-eq_REC_BundleLimit(RPSCat,st,ast,t)$[stfeas(st)$stfeas(ast)$tmodel(t)
+eq_REC_BundleLimit(RPSCat,st,ast,htype,t)$[stfeas(st)$stfeas(ast)$tmodel(t)
                               $(not sameas(st,ast))$Sw_StateRPS
-                              $(sum{i,RecMap(i,RPSCat,st,ast,t) })
+                              $[sameas(htype,"rep") or Sw_StateRPS_Stress]
+                              $(sum{i,RecMap(i,RPSCat,st,ast,htype,t) })
                               $(sameas(RPSCat,"RPS_Bundled") or sameas(RPSCat,"CES_Bundled"))
                               $(yeart(t)>=firstyear_RPS)]..
 
 *amount of net transmission flows from state st to state ast
-    sum{(h,r,rr,trtype)$[r_st(r,st)$r_st(rr,ast)$routes(r,rr,trtype,t)$h_rep(h)],
-          hours(h) * FLOW(r,rr,h,t,trtype)
+    sum{(h,r,rr,trtype)$[r_st(r,st)$r_st(rr,ast)$routes(r,rr,trtype,t)$h_htype(h,htype)],
+          rps_hours(h,htype) * FLOW(r,rr,h,t,trtype)
       }
 
     =g=
 * must be greater than bundled RECS
-    sum{i$RecMap(i,RPSCat,st,ast,t),
-        RECS(RPSCat,i,st,ast,t) }
+    sum{i$RecMap(i,RPSCat,st,ast,htype,t),
+        RECS(RPSCat,i,st,ast,htype,t) }
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_REC_unbundledLimit(RPSCat,st,t)$[st_unbundled_limit(RPScat,st)$tmodel(t)$stfeas(st)
+eq_REC_unbundledLimit(RPSCat,st,htype,t)$[st_unbundled_limit(RPScat,st)$tmodel(t)$stfeas(st)
                             $(yeart(t)>=firstyear_RPS)$Sw_StateRPS
+                            $[sameas(htype,"rep") or Sw_StateRPS_Stress]
                             $(sameas(RPSCat,"RPS_All") or sameas(RPSCat,"CES"))]..
 *the limit on unbundled RECS times the REC requirement (based on end-use sales)
-      REC_unbundled_limit(RPSCat,st,t) * RecPerc(RPSCat,st,t) *
-        sum{(r,h)$[r_st(r,st)$h_rep(h)],
-            hours(h) *
+      REC_unbundled_limit(RPSCat,st,t) * RecPerc(RPSCat,st,htype,t) *
+        sum{(r,h)$[r_st(r,st)$h_htype(h,htype)],
+            rps_hours(h,htype) *
             (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1] - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
            }
       =g=
 
 *needs to be greater than the unbundled recs
 *NB unbundled RECS are computed as all imported RECS minus bundled RECS
-    sum{(i,ast)$[RecMap(i,RPSCat,ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS(RPSCat,i,ast,st,t) }
+    sum{(i,ast)$[RecMap(i,RPSCat,ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+        RECS(RPSCat,i,ast,st,htype,t) }
 
-    - sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("RPS_Bundled",i,ast,st,t) }$sameas(RPSCat,"RPS_All")
+    - sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+        RECS("RPS_Bundled",i,ast,st,htype,t) }$sameas(RPSCat,"RPS_All")
 
-    - sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("CES_Bundled",i,ast,st,t) }$sameas(RPSCat,"CES")
+    - sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+        RECS("CES_Bundled",i,ast,st,htype,t) }$sameas(RPSCat,"CES")
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_REC_ooslim(RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(yeart(t)>=firstyear_RPS)
+eq_REC_ooslim(RPSCat,st,htype,t)$[RecPerc(RPSCat,st,htype,t)$(yeart(t)>=firstyear_RPS)
                            $RPS_oosfrac(st)$stfeas(st)$tmodel(t)$Sw_StateRPS
+                           $[sameas(htype,"rep") or Sw_StateRPS_Stress]
                            $(not sameas(RPSCat,"RPS_Bundled"))
                            $(not sameas(RPSCat,"CES_Bundled"))]..
 
 *the fraction of imported recs times the requirement (based on end-use sales)
-    RPS_oosfrac(st) * RecPerc(RPSCat,st,t) *
-        sum{(r,h)$[r_st(r,st)$h_rep(h)],
-            hours(h) *
+    RPS_oosfrac(st) * RecPerc(RPSCat,st,htype,t) *
+        sum{(r,h)$[r_st(r,st)$h_htype(h,htype)],
+            rps_hours(h,htype) *
             (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1] - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
            }
     =g=
 
 *imported RECs - note that the not sameas(st,ast) indicates they are not generated in-state
-    sum{(i,ast)$[RecMap(i,RPSCat,ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS(RPSCat,i,ast,st,t)
+    sum{(i,ast)$[RecMap(i,RPSCat,ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+        RECS(RPSCat,i,ast,st,htype,t)
        }
 
-    + sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("RPS_Bundled",i,ast,st,t)
+    + sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+        RECS("RPS_Bundled",i,ast,st,htype,t)
        }$sameas(RPSCat,"RPS_All")
 
-    + sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("CES_Bundled",i,ast,st,t)
+    + sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+        RECS("CES_Bundled",i,ast,st,htype,t)
        }$sameas(RPSCat,"CES")
 ;
 
 * ---------------------------------------------------------------------------
 
 *exports must be less than RECS generated
-eq_REC_launder(RPSCat,st,t)$[RecStates(RPSCat,st,t)$(not tfirst(t))$(yeart(t)>=firstyear_RPS)
+eq_REC_launder(RPSCat,st,htype,t)$[RecStates(RPSCat,st,t)$(not tfirst(t))$(yeart(t)>=firstyear_RPS)
                                $tmodel(t)$stfeas(st)$Sw_StateRPS
+                               $[sameas(htype,"rep") or Sw_StateRPS_Stress]
                                $(not sameas(RPSCat,"RPS_Bundled"))
                                $(not sameas(RPSCat,"CES_Bundled"))]..
 
 *in-state REC generation
-    + sum{(i,v,r,h)$[valgen(i,v,r,t)$RecTech(RPSCat,i,st,t)$r_st(r,st)$h_rep(h)],
-          hours(h) * (GEN(i,v,r,h,t) - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC])
+    + sum{(i,v,r,h)$[valgen(i,v,r,t)$RecTech(RPSCat,i,st,t)$r_st(r,st)$h_htype(h,htype)],
+          rps_hours(h,htype) * (GEN(i,v,r,h,t) - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC])
          }
 
 *minus ACP_PURCHASES with a 10x multiplier (the multiplier discourages the model from
 *exporting RECs when it is buying ACP credits)
-    - ACP_PURCHASES(RPSCat,st,t)$(not acp_disallowed(st,RPSCat)) * 10
+    - ACP_PURCHASES(RPSCat,st,htype,t)$(not acp_disallowed(st,RPSCat)) * 10
 
     =g=
 
 *exported RECS - NB the conditional that st!=ast
-    + sum{(i,ast)$[RecMap(i,RPSCat,st,ast,t)$(stfeas(ast) or sameas(ast,"voluntary"))$(not sameas(st,ast))],
-          RECS(RPSCat,i,st,ast,t) }
+    + sum{(i,ast)$[RecMap(i,RPSCat,st,ast,htype,t)$(stfeas(ast) or sameas(ast,"voluntary"))$(not sameas(st,ast))],
+          RECS(RPSCat,i,st,ast,htype,t) }
 
-    + sum{(i,ast)$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("RPS_Bundled",i,st,ast,t)
+    + sum{(i,ast)$[RecMap(i,"RPS_Bundled",st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+          RECS("RPS_Bundled",i,st,ast,htype,t)
        }$sameas(RPSCat,"RPS_All")
 
-    + sum{(i,ast)$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("CES_Bundled",i,st,ast,t)
+    + sum{(i,ast)$[RecMap(i,"CES_Bundled",st,ast,htype,t)$stfeas(ast)$(not sameas(st,ast))],
+          RECS("CES_Bundled",i,st,ast,htype,t)
        }$sameas(RPSCat,"CES")
 
 ;

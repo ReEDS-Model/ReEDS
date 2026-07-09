@@ -317,7 +317,7 @@ reqt_price('oper_res',ortype,r,h,t)$tmodel_new(t) =
     (1 / cost_scale) * (1 / pvf_onm(t)) * eq_OpRes_requirement.m(ortype,r,h,t) / hours(h) ;
 
 reqt_price('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * sum{st$r_st(r,st), eq_REC_Requirement.m(RPSCat,st,t) } ;
+    (1 / cost_scale) * (1 / pvf_onm(t)) * sum{st$r_st(r,st), eq_REC_Requirement.m(RPSCat,st,"rep",t) } ;
 
 reqt_price('nat_gen','na',r,'ann',t)$tmodel_new(t) =
     (1 / cost_scale) * (1 / pvf_onm(t)) * eq_national_gen.m(t) ;
@@ -379,7 +379,7 @@ reqt_quant('oper_res',ortype,r,h,t)$tmodel_new(t) =
            CAP.l(i,v,r,t) }$dayhours(h)
     ) ;
 reqt_quant('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
-    sum{(st,h)$r_st_rps(r,st), RecPerc(RPSCat,st,t) * hours(h) *(
+    sum{(st,h)$r_st_rps(r,st), RecPerc(RPSCat,st,"rep",t) * hours(h) *(
         ( (LOAD.l(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
         - sum{v$valgen("distpv",v,r,t), GEN.l("distpv",v,r,h,t) }) * (1.0 - distloss)
         )$(RecStyle(st,RPSCat)=0)
@@ -481,8 +481,8 @@ tran_hurdle_cost_ann(r,rr,trtype,t)$[tmodel_new(t)$routes(r,rr,trtype,t)$cost_hu
 * RPS, CES, AND TAX CREDIT OUTPUTS
 *========================================
 
-rec_outputs(RPSCat,i,st,ast,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(RPSCat,i,st,ast,t) ;
-acp_purchases_out(rpscat,st,t) = ACP_PURCHASES.l(RPSCat,st,t) ;
+rec_outputs(RPSCat,i,st,ast,htype,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(RPSCat,i,st,ast,htype,t) ;
+acp_purchases_out(rpscat,st,htype,t) = ACP_PURCHASES.l(RPSCat,st,htype,t) ;
 ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) ;
 
 *========================================
@@ -1604,14 +1604,14 @@ systemcost_ba("op_h2_storage",r,t)$[tmodel_new(t)$(Sw_H2 = 2)] =
 
 systemcost_ba("op_acp_compliance_costs",r,t)$[tmodel_new(t)$(yeart(t)>=firstyear_RPS)]  =
 *plus ACP purchase costs, attributed to bas based on fraction of state requirement
-              + sum{(st,RPSCat)
-                    $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,t)
+              + sum{(st,RPSCat,htype)
+                    $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,htype,t)
                     $sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }],
-                       acp_price(st,t) * ACP_PURCHASES.l(RPSCat,st,t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
+                       acp_price(st,t) * ACP_PURCHASES.l(RPSCat,st,htype,t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
                        / sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }
                    }
 * spread voluntary purchase costs based on BA load frac
-              + sum{RPSCat$RecPerc(RPSCat,"voluntary",t), acp_price("voluntary",t) * ACP_PURCHASES.l(RPSCat,"voluntary",t) }
+              + sum{(RPSCat,htype)$RecPerc(RPSCat,"voluntary",htype,t), acp_price("voluntary",t) * ACP_PURCHASES.l(RPSCat,"voluntary",htype,t) }
                 * load_frac_rt(r,t)
 
 ;
@@ -1753,7 +1753,7 @@ error_check('z') = round(error_check('z'), 6) ;
 error_check("gen") = sum{(i,v,r,allh,t)$[not valgen(i,v,r,t)], GEN.l(i,v,r,allh,t) } ;
 error_gen(i,v,r,allh,t)$[not valgen(i,v,r,t)] = GEN.l(i,v,r,allh,t) ;
 error_check("cap") = sum{(i,v,r,t)$[not valcap(i,v,r,t)], CAP.l(i,v,r,t) } ;
-error_check("RPS") = sum{(RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(RPSCat,i,st,ast,t) } ;
+error_check("RPS") = sum{(RPSCat,i,st,ast,htype,t)$[(not RecMap(i,RPSCat,st,ast,htype,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(RPSCat,i,st,ast,htype,t) } ;
 error_check("OpRes") = sum{(ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(ortype,i,v,r,h,t) } ;
 error_check("m_rsc_dat") = sum{(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap"), m_rsc_dat_init(r,i,rscbin) - m_rsc_dat(r,i,rscbin,"cap") } ;
 
@@ -1901,7 +1901,7 @@ expenditure_flow('oper_res',r,rr,t)$[tmodel_new(t)$sum{trtype, routes(r,rr,trtyp
   sum{(h,ortype), hours(h) * reqt_price('oper_res',ortype,r,h,t) * OPRES_FLOW.l(ortype,r,rr,h,t) } ;
 *unlike for the three services above, use the destination price rather than the sending price for calculating RPS expenditure flows
 expenditure_flow_rps(st,ast,t)$[tmodel_new(t)$[not sameas(st,ast)]] =
-  (1 / cost_scale) * (1 / pvf_onm(t)) * sum{RPSCat, eq_REC_Requirement.m(RPSCat,ast,t) * sum{i, RECS.l(RPSCat,i,st,ast,t) } } ;
+  (1 / cost_scale) * (1 / pvf_onm(t)) * sum{(RPSCat,htype), eq_REC_Requirement.m(RPSCat,ast,htype,t) * sum{i, RECS.l(RPSCat,i,st,ast,htype,t) } } ;
 *International exports are negative expenditures, imports are positive. Use prices from the region where the imports/exports occur.
 expenditure_flow_int(r,t)$tmodel_new(t) =
   sum{(i,v,h)$[canada(i)$valgen(i,v,r,t)], GEN.l(i,v,r,h,t) * hours(h) * reqt_price('load','na',r,h,t) }  - sum{h, hours(h) * reqt_price('load','na',r,h,t) * can_exports_h(r,h,t) } ;
