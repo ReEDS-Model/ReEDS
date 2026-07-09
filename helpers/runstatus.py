@@ -1,14 +1,11 @@
 #%% Imports
 import os
 import re
-import sys
 import datetime
 import subprocess
 import argparse
 from glob import glob
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
-import reeds
 
 # #%% Inputs for debugging
 # batch_name = 'v20250812_mcK0'
@@ -96,7 +93,8 @@ if __name__ == '__main__':
     verbose = args.verbose
 
     #%%### Loop through categories and runs and report their status
-    dictruns = get_run_status(reeds.io.reeds_path, batch_name)
+    reeds_path = Path(__file__).parent.parent
+    dictruns = get_run_status(reeds_path, batch_name)
     for key, runs in dictruns.items():
         text = f'{key}: {len(runs)}'
         print(f"\n{text}\n{'-'*len(text)}")
@@ -179,6 +177,8 @@ if __name__ == '__main__':
                         # check if infeasible
                         elif "3_solve_oneyear.gms failed with return code 3" in slurm:
                             errortext = "(infeasible)"
+                        elif "Out of Memory" in slurm or "OOM Killed" in slurm:
+                            errortext = "(out of memory)"
                         else:
                             errortext = ""
                     print(f"{case:<{longest}}: failed in {last_lst} {errortext}")

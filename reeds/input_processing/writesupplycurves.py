@@ -71,15 +71,10 @@ def agg_supplycurve(
     scpath,
     inputs_case,
     numbins_tech,
-    agglevel,
-    AggregateRegions,
     bin_method='equal_cap_cut',
     bin_col='supply_curve_cost_per_mw',
-    spur_cutoff=1e7, 
-    agglevel_variables=None,
+    spur_cutoff=1e7,
     deflate=None,
-    sw=None,
-    write=False,
 ):
     """
     """
@@ -87,9 +82,6 @@ def agg_supplycurve(
     dfin = reeds.io.assemble_supplycurve(
         scfile=scpath,
         case=os.path.dirname(os.path.normpath(inputs_case)),
-        agg=AggregateRegions,
-        ## TEMPORARY 20260402
-        **({'GSw_ZoneSet': 'z134'} if not AggregateRegions else {}),
     ).reset_index().drop(columns=['FIPS','cf'], errors='ignore')
     ## Convert dollar year and recalculate total cost
     transcost_cols = [c for c in dfin if 'cost' in c]
@@ -133,13 +125,11 @@ def agg_supplycurve(
 
 
 def main(
-    reeds_path, inputs_case, AggregateRegions=1, rsc_wsc_dat=None, write=True, **kwargs
+    reeds_path, inputs_case, write=True, **kwargs
 ):
     # #%% Settings for testing
     # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # inputs_case = os.path.join(reeds_path,'runs','v20251209_scM0_Pacific','inputs_case')
-    # AggregateRegions = 1
-    # rsc_wsc_dat = None
     # write = True
     # kwargs = {}
 
@@ -148,8 +138,6 @@ def main(
     ### Overwrite switches with keyword arguments
     for kw, arg in kwargs.items():
         sw[kw] = arg
-    endyear = int(sw.endyear)
-    startyear = int(sw.startyear)
     geohydrosupplycurve = sw.geohydrosupplycurve
     egssupplycurve = sw.egssupplycurve
     egsnearfieldsupplycurve = sw.egsnearfieldsupplycurve
@@ -162,10 +150,6 @@ def main(
         "geohydro": int(sw.numbins_geohydro_allkm),
         "egs": int(sw.numbins_egs_allkm),
     }
-
-    # Use agglevel_variables function to obtain spatial resolution variables 
-    agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
-    agglevel = agglevel_variables['agglevel']
 
     val_r_all = pd.read_csv(
         os.path.join(inputs_case,'val_r_all.csv'), header=None).squeeze(1).tolist()
@@ -190,14 +174,9 @@ def main(
     ).squeeze(1)
     deflate = dollaryear.map(deflator).rename('Deflator')
 
-    #%% Load the existing RSC capacity (PV plants, wind, and CSP) if not provided in main function call
-    if rsc_wsc_dat is None:
-        # writesupplycurves.py is being run as a main input processing script
-        rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
-    else:
-        # writesupplycurves.py is being passed rsc_wsc data from an aggregate_regions.py call
-        rsc_wsc = rsc_wsc_dat.copy()
-    
+    #%% Load the existing RSC capacity (PV plants, wind, and CSP)
+    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
+
     # Group CSP tech
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'
     rsc_wsc = rsc_wsc.groupby(["r", "i"]).sum().reset_index()
@@ -233,12 +212,11 @@ def main(
     for s in wind_types:
         windin[s], wind[s] = agg_supplycurve(
             scpath=os.path.join(inputs_case,f'supplycurve_wind-{s}.csv'),
-            inputs_case=inputs_case, 
-            agglevel=agglevel, AggregateRegions=AggregateRegions, 
-            numbins_tech=numbins[f'wind-{s}'], spur_cutoff=spur_cutoff,
-            agglevel_variables=agglevel_variables, deflate=deflate,
-            sw=sw, write=write
-            )
+            inputs_case=inputs_case,
+            numbins_tech=numbins[f'wind-{s}'],
+            spur_cutoff=spur_cutoff,
+            deflate=deflate,
+        )
         
         cost_components = (
             wind[s][["cost_total_trans_usd_per_mw", "capital_adder_per_mw"]]
@@ -331,11 +309,10 @@ def main(
     upvin, upv = agg_supplycurve(
         scpath=os.path.join(inputs_case, 'supplycurve_upv.csv'),
         inputs_case=inputs_case,
-        agglevel=agglevel, AggregateRegions=AggregateRegions,
-        numbins_tech=numbins['upv'], spur_cutoff=spur_cutoff,
-        agglevel_variables=agglevel_variables, deflate=deflate,
-        sw=sw, write=write
-        )
+        numbins_tech=numbins['upv'],
+        spur_cutoff=spur_cutoff,
+        deflate=deflate,
+    )
 
     # Similar to wind, save the trans vs cap components and then concatenate them below just
     # before outputting rsc_combined.csv
@@ -409,13 +386,12 @@ def main(
     ###################
 
     if int(sw["GSw_CSP"]):
-        cspin, csp = agg_supplycurve(
+        _, csp = agg_supplycurve(
             scpath=os.path.join(inputs_case, 'supplycurve_csp.csv'),
             inputs_case=inputs_case,
-            agglevel=agglevel, AggregateRegions=AggregateRegions, 
-            numbins_tech=numbins['csp'], spur_cutoff=spur_cutoff,
-            agglevel_variables=agglevel_variables, deflate=deflate,
-            sw=sw, write=False
+            numbins_tech=numbins['csp'],
+            spur_cutoff=spur_cutoff,
+            deflate=deflate,
         )
 
         ### Normalize formatting
@@ -491,11 +467,12 @@ def main(
             geoin[s], geo[s] = agg_supplycurve(
                 scpath=os.path.join(
                     inputs_case,
-                    f'supplycurve_{s}.csv'),
-                numbins_tech=numbins[s], inputs_case=inputs_case,
-                agglevel=agglevel, AggregateRegions=AggregateRegions,
-                spur_cutoff=spur_cutoff,agglevel_variables=agglevel_variables, deflate=deflate,
-                sw=sw, write=False
+                    f'supplycurve_{s}.csv'
+                ),
+                numbins_tech=numbins[s],
+                inputs_case=inputs_case,
+                spur_cutoff=spur_cutoff,
+                deflate=deflate
             )
             spurout_list.append(
                 geo[s]
@@ -987,10 +964,7 @@ def main(
     sitemap = reeds.io.get_sitemap()
     county2zone = reeds.io.get_county2zone(os.path.dirname(os.path.normpath(inputs_case)))
     interconnection_cost['r'] = interconnection_cost.index.map(sitemap.FIPS).map(county2zone)
-    val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
-        header=None,
-    ).squeeze(1).values
+    val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
     spursites = interconnection_cost.loc[interconnection_cost.r.isin(val_r)].copy()
     spursites['x'] = 'i' + spursites.index.astype(str)
     if write:

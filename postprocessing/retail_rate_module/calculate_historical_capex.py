@@ -13,10 +13,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import reeds
 
 def get_historical_units(inputs_case):
-    # Read generator database and map units to the model regions for this run
-    r_county = pd.read_csv(os.path.join(inputs_case, 'r_county.csv'))
+    # Read generator database
     gendb = pd.read_csv(os.path.join(inputs_case, 'unitdata.csv'), low_memory=False)
-    gendb = gendb.merge(r_county, left_on='FIPS', right_on='county', how='left')
 
     # Select units existing before or during the model start year
     sw = reeds.io.get_switches(inputs_case)
@@ -33,22 +31,16 @@ def get_historical_units(inputs_case):
 
     # Rename techs for consistency with capital cost data from inputs.gdx
     tech_name_map = {
-        'coal-igcc': 'Coal-IGCC',
-        'coaloldscr': 'CoalOldScr',
-        'coalolduns': 'CoalOldUns',
         'csp-ns': 'csp1_1',
         'dupv': 'upv_1',
-        'gas-cc': 'Gas-CC',
-        'gas-ct': 'Gas-CT',
         'geohydro_allkm': 'geohydro_allkm_1',
-        'hydED': 'hydND',
-        'hydEND': 'hydND',
-        'nuclear': 'Nuclear',
+        'hyded': 'hydnd',
+        'hydend': 'hydnd',
         'pvb': 'upv_1',
         'upv': 'upv_1',
         'wind-ons': 'wind-ons_1'
     }
-    init_cap['i'] = init_cap['i'].replace(tech_name_map)
+    init_cap['i'] = init_cap['i'].str.lower().replace(tech_name_map)
 
     return init_cap
 
@@ -60,11 +52,13 @@ def get_earliest_cap_costs(inputs_case):
         'cost_cap',
         old_interface=False
     )
+    cost_cap.i = cost_cap.i.str.lower()
     cost_cap_energy = gdxpds.to_dataframe(
         os.path.join(inputs_case, 'inputs.gdx'),
         'cost_cap_energy',
         old_interface=False
     )
+    cost_cap_energy.i = cost_cap_energy.i.str.lower()
     cost_cap = (
         pd.concat([cost_cap, cost_cap_energy])
         .groupby(['i', 't'], as_index=False)
@@ -85,6 +79,7 @@ def get_earliest_cap_costs(inputs_case):
         'cost_cap_fin_mult_out',
         old_interface=False
     )
+    cost_cap_mult.i = cost_cap_mult.i.str.lower()
     cost_cap_mult['t'] = cost_cap_mult['t'].astype(int)
     cost_cap_mult = cost_cap_mult.rename(
         columns={'Value': 'cap_cost_mult_for_ratebase'}
@@ -114,6 +109,7 @@ def get_earliest_cap_costs(inputs_case):
         'rsc_dat',
         old_interface=False
     )
+    rsc_dat.i = rsc_dat.i.str.lower()
     cost_cap_rsc = (
         rsc_dat.loc[~rsc_dat.i.isin(cost_cap_earliest['i'])]
         .pivot_table(

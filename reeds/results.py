@@ -321,10 +321,7 @@ def calc_systemcost(
     scalars = reeds.io.get_scalars(case)  
 
     # Valid regions
-    val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
-        header=None,
-    ).squeeze(1).values
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).values
 
     # Rename columns to match the expected format
     systemcost.rename(columns={'t':'year', 'sys_costs':'cost_cat'}, inplace=True)
@@ -533,10 +530,7 @@ def calc_reinforcement_spur_capacity_miles(case):
     scalars = reeds.io.get_scalars(case)  
 
     # Valid regions
-    val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
-        header=None,
-    ).squeeze(1).values
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).values
 
     # Get the spur/reinforcement distance for each i/r/rscbin  
     spur_parameters = pd.read_csv(os.path.join(inputs_case, 'spur_parameters.csv'))
@@ -592,25 +586,15 @@ def calc_reinforcement_spur_capacity_miles(case):
         .sort_values(by=['r', 'trtype', 'year'])
     )
 
-    if sw['GSw_RegionResolution'] in ['county', 'mixed']:
-        """
-        Due to some old ReEDS outputs runs we need to zero out 
-        the reinforcement line for county level regions 
-        (This can be removed in the future if countly level
-        supply curves get reinforcement distance zeroed out)
-        """
-        # Get county level regions
-        county_regions = pd.read_csv(
-            os.path.join(inputs_case, 'county2zone.csv'),
-            dtype={'FIPS':str},
-        )
-
-        county_regions['county'] = 'p' + county_regions.FIPS
-
-        # Set reinforcement distance to zero for county level regions  
+    sw = reeds.io.get_switches(case)
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        # Set reinforcement distance to zero for county level regions
+        county_regions = reeds.io.get_county_zones(case)
         tech_trans_out = tech_trans_out.loc[  
             ~(  
-                tech_trans_out.r.isin(county_regions['county'])  
+                tech_trans_out.r.isin(county_regions)
                 & (tech_trans_out.trtype == 'reinforcement')  
             )  
         ]    
@@ -662,8 +646,9 @@ def calc_transmission_capacity(case,levels):
 
     # pull intra and interregional transmission data into dictionaries for processing
     dict_inter = {}
-    level_map = get_level_map(case)
+    level_map = get_level_map()
     hierarchy = reeds.io.get_hierarchy(case)
+    hierarchy['r'] = hierarchy.index
     for level in levels:
         
         # Translate the level to a cleaner spatial resolution for publishing csvs. Ex. st --> State, transgrp --> Transmission Planning Subregion.
@@ -720,15 +705,11 @@ def calc_transmission_capacity(case,levels):
     
     return intraregional, interregional
 
-def get_level_map(case):
+def get_level_map():
     # for all regions available in ReEDS/inputs/hierarchy.csv, map them to a clean display name
     level_map = pd.read_csv(
         os.path.join(reeds_path, 'postprocessing', 'plots', 'level_map.csv'), 
         index_col='raw').squeeze(1)
-    
-    # add a value to level map for 'r' based on the spatial resolution of the run
-    sw = reeds.io.get_switches(case)
-    level_map['r'] = level_map.get(sw.GSw_RegionResolution)
       
     return level_map
 

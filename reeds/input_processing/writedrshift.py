@@ -59,12 +59,7 @@ if __name__ == "__main__":
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
-
-    val_r = (
-        pd.read_csv(os.path.join(inputs_case, "val_r.csv"), header=None)
-        .squeeze(1)
-        .tolist()
-    )
+    val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).tolist()
 
     ### Create empty EVMC data files if GSw_EVMC == 0:
     evmc_files = [

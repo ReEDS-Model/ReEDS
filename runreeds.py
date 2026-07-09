@@ -144,7 +144,7 @@ def get_ivt_numclass(reeds_path, casedir, caseSwitches):
     return numclass
 
 
-def get_rev_paths(revswitches, caseSwitches):
+def get_rev_paths(revswitches):
     # Expand on reV path based on where this run is happening
     # when running on the HPC this links to the shared-projects folder
     hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
@@ -169,15 +169,10 @@ def get_rev_paths(revswitches, caseSwitches):
     revswitches['rev_path'] = revswitches.apply(lambda row: os.path.join(row.sc_path, "reV", row.rev_case), axis=1)
 
     # link to the pre-processed reV supply curves from hourlize
-    def get_rev_sc_file_name(caseSwitches, rev_row, use_hpc=False):
+    def get_rev_sc_file_name(rev_row, use_hpc=False):
         if pd.isnull(rev_row.original_sc_file):
             return ""
         else:
-            if caseSwitches['GSw_RegionResolution'] == "county":
-                sc_folder_suffix = "_county"
-            else:
-                sc_folder_suffix = "_ba"
-
             # link to HPC or other sc_path
             if use_hpc:
                 sc_path = rev_row.hpc_sc_path
@@ -186,14 +181,15 @@ def get_rev_paths(revswitches, caseSwitches):
 
             # supply curve name should be in format of {tech}_rev_supply_curves_raw.csv
             # in the hourlize results folder (must match format in 'save_sc_outputs' function of hourlize/resource.py)
-            sc_file = os.path.join(sc_path,
-                            rev_row.tech + "_" + rev_row.access_case + sc_folder_suffix,
-                            "results",
-                            rev_row.tech + "_supply_curve_raw.csv"
-                            )
+            sc_file = os.path.join(
+                sc_path,
+                f"{rev_row.tech}_{rev_row.access_case}_county",
+                "results",
+                f"{rev_row.tech}_supply_curve_raw.csv"
+            )
             return sc_file
-    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row), axis=1)
-    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row, use_hpc=True), axis=1)
+    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row), axis=1)
+    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row, use_hpc=True), axis=1)
 
     return revswitches
 
@@ -291,28 +287,7 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
-    if sw['GSw_RegionResolution'] in ['county','mixed']:
-        err_switch_configs = []
-        if int(sw['GSw_OffshoreZones']):
-            err_switch_configs.append('GSw_OffshoreZones=1')
-        if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
-            err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
-
-        if len(err_switch_configs) > 0:
-            raise NotImplementedError(
-                'The following switch configurations are not implemented for '
-                'county/mixed resolution:\n{}\n'
-                .format('\n'.join(err_switch_configs))
-            )
-
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
-
-    ### Aggregation
-    if (sw['GSw_RegionResolution'] != 'aggreg') and (int(sw['GSw_NumCSPclasses']) != 12):
-        raise NotImplementedError(
-            'Aggregated CSP classes only work with aggregated regions. '
-            'GSw_NumCSPclasses is incompatible with '
-            'GSw_RegionResolution != aggreg')
 
     ### Parsed string switches
     ## Automatic inputs
@@ -386,6 +361,16 @@ def check_compatibility(sw):
             except ValueError:
                 raise ValueError(err)
 
+    if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
+        raise ValueError(
+            "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
+            "and GSw_PRM_StressIterateMax>0 is not supported.\n"
+            "To iteratively update the PRM, set GSw_PRM_UpdateMethod to an integer between 1-3:"
+            "\n1: static update set by GSw_PRM_UpdateFraction; "
+            "\n2: dynamic update informed by PRAS; "
+            "\n3: dynamic update but only after all new stress periods have been added"
+        )
+
     for bir in sw['GSw_PVB_BIR'].split('_'):
         if not (float(bir) >= 0):
             raise ValueError("Fix GSw_PVB_BIR")
@@ -450,8 +435,7 @@ def check_compatibility(sw):
         raise ValueError(err)
 
     # Add a row for each county
-    ## TEMPORARY 20260402 until the aggregation procedure is updated
-    county2zone = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
+    county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
     county2zone['county'] = 'p' + county2zone.FIPS
     # Add county info to hierarchy
     hierarchy = hierarchy.merge(county2zone.drop(columns=['FIPS','state']), on='r')
@@ -485,6 +469,15 @@ def check_compatibility(sw):
     ):
         err = f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} but the specified file does not exist"
         raise FileNotFoundError(err)
+
+    if sw['GSw_LoadProfiles'].startswith('EER2023'):
+        allowed_ra_years = range(2007,2014)
+        if not all([y in allowed_ra_years for y in resource_adequacy_years]):
+            err = (
+                f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} only supports resource_adequacy_years="
+                f"{list(allowed_ra_years)} but {resource_adequacy_years} was supplied"
+            )
+            raise ValueError(err)
 
     ### Dependent model availability
     if (
@@ -531,6 +524,14 @@ def check_compatibility(sw):
             )
             raise ModuleNotFoundError(err)
 
+# function to stop the model after input processing
+def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
+    comment('Exit after input_processing', OPATH)
+    OPATH.writelines(
+        f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
+        f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
+    )
+    OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
 
 def setup_sequential_year(
         cur_year, prev_year, next_year,
@@ -908,6 +909,9 @@ def setupEnvironment(
                 shutil.rmtree(outpath)
         else:
             keep = [i for (i,c) in enumerate(outpaths) if c not in existing_outpaths]
+            if len(keep) == 0:
+                print('All output directories already exist and were not overwritten. Exiting without starting runs.')
+                quit()
             caseList = [caseList[i] for i in keep]
             casenames = [casenames[i] for i in keep]
             caseSwitches = [caseSwitches[i] for i in keep]
@@ -920,6 +924,12 @@ def setupEnvironment(
             skip = str(input('Do you want to run them and skip the rest? [y]/n: ') or 'y')
             if skip.lower() not in ['y','yes']:
                 raise IsADirectoryError('\n'+'\n'.join(existing_outpaths))
+
+    # Exit early if no runnable cases remain after filtering
+    all_case_names = list(df_cases.columns)
+    if len(caseList) == 0:
+        print(f"All {len(all_case_names)} scenario(s) in {cases_filename} have ignore=1. Exiting without starting runs.")
+        quit()
 
     #%% User warnings
     if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and not skip_checks:
@@ -950,7 +960,9 @@ def setupEnvironment(
     elif simult_runs > 0:
         WORKERS = simult_runs
     else:
-        WORKERS = int(input('Number of simultaneous runs [integer]: '))
+        WORKERS = int(input('Number of simultaneous runs [positive integer]: '))
+        if WORKERS <= 0:
+            raise ValueError(f'Provided {WORKERS} but must be a positive integer')
 
     if 'int' in df_cases.loc['timetype'].tolist() or 'win' in df_cases.loc['timetype'].tolist():
         ccworkers = int(input('Number of simultaneous CC/Curt runs [integer]: '))
@@ -1122,7 +1134,7 @@ def write_batch_script(
     revswitches = revswitches.merge(binSwitches, on=['tech'], how='left')
 
     # format rev paths
-    revswitches = get_rev_paths(revswitches, caseSwitches)
+    revswitches = get_rev_paths(revswitches)
 
     # save rev paths file for run
     revswitches[['tech','access_switch','access_case','rev_case','bins','sc_path',
@@ -1266,7 +1278,6 @@ def write_batch_script(
         for s in [
             'copy_files',
             'mcs_sampler',
-            'aggregate_regions',
             'hydcf',
             'h2_storage',
             'calc_financial_inputs',
@@ -1283,6 +1294,7 @@ def write_batch_script(
             'transmission',
             'outage_rates',
             'hourly_repperiods',
+            'h5_to_gdx',
         ]:
             OPATH.writelines(f"echo {'-'*12+'-'*len(s)}\n")
             OPATH.writelines(f"echo 'starting {s}.py'\n")
@@ -1291,17 +1303,17 @@ def write_batch_script(
                 f"python {os.path.join(casedir,'reeds','input_processing',s)}.py {reeds_path} {inputs_case}\n")
             OPATH.writelines(writescripterrorcheck(s)+'\n')
 
+            # option to stop input processing after Monte Carlo sampler
+            if s == 'mcs_sampler' and int(caseSwitches['input_processing_only']) == 2:
+                stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches)
+
         OPATH.writelines(
             f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
             f"{casedir} --force --quiet\n"
         )
 
-        if int(caseSwitches['input_processing_only']):
-            OPATH.writelines(
-                f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
-                f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
-            )
-            OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
+        if int(caseSwitches['input_processing_only']) == 1:
+            stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches)
 
         big_comment('Compile model', OPATH)
 
@@ -1313,6 +1325,7 @@ def write_batch_script(
         OPATH.writelines(f'python {logger}\n')
         restartfile = batch_case
         OPATH.writelines(writeerrorcheck(os.path.join('g00files', restartfile + '.g*')))
+        OPATH.writelines(writescripterrorcheck(s)+'\n')
 
         ################################
         #    -- CORE MODEL SETUP --    #

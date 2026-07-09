@@ -1,5 +1,8 @@
 import datetime
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
+import generate_markdown
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -13,7 +16,11 @@ project = "ReEDS"
 copyright = "2024, NREL"
 author = "NLR"
 
-# -- General configuration ---------------------------------------------------
+# --setup function to run generate_markdown.py on 'make html' ---------------------------------
+def setup(app):
+    app.connect("builder-inited", generate_markdown.main)
+
+# -- General configuration ----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ["myst_parser", "sphinxcontrib.bibtex", "sphinx_design"]
@@ -32,15 +39,10 @@ numfig = True  # auto number figures when true
 # get GAMSLICE from environment variable
 gamslice_secret = os.getenv("GAMSLICE", "")
 
-# get BASE_URL from environment variable
-base_url = os.environ.get("BASE_URL", "https://github.com/ReEDS-Model/ReEDS")
-github_releases_url = base_url + "/releases"
 
 myst_enable_extensions = ["substitution", "dollarmath", "html_image"]
 
 myst_substitutions = {
-    "base_github_url": base_url,
-    "github_releases_url": github_releases_url,
     "gamslice": gamslice_secret,
     "cite_date_last_updated": datetime.date.today().strftime("%Y, %B"),
 }
@@ -57,10 +59,6 @@ html_css_files = [
 ]
 
 html_theme_options = {"navigation_depth": 3, "logo_only": True}
-
-html_context = {
-    "base_url": base_url,
-}
 
 html_logo = "_static/reeds-logo-white.png"
 

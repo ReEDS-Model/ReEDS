@@ -40,6 +40,7 @@ parameter
     sdbin_size_load(ccreg,ccseason,sdbin,t)  "--MW-- bin_size power loading in from the cc_out gdx file"
     cc_mar_load(i,r,ccreg,ccseason,t)        "--fraction-- cc_mar loading in from the cc_out gdx file"
     cc_evmc_load(i,r,ccseason,t)               "--fraction--  cc_evmc loading in from the cc_out gdx file"
+    mean_forced_outage_rate_load(i,r,ccseason,t)  "--fraction-- mean_forced_outage_rate loading in from the cc_out gdx file"
 ;
 
 
@@ -197,7 +198,6 @@ cc_old(i,r,ccseason,t) = 0 ;
 *following sets are needed for linear interpolation of price
 *that determine the year before the non-solved year and the year after
 set t_before, t_after ;
-alias(t,ttt) ;
 t_before(t,tt)$[tprev(t,tt)$(ord(tt) = smax{ttt, ord(ttt)$tprev(t,ttt) })] = yes ;
 t_after(t,tt)$tprev(tt,t) = yes ;
 

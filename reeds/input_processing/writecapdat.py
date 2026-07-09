@@ -66,11 +66,6 @@ def create_rsc_wsc(gendb,TECH,scalars,startyear):
 
 #########################
 ### STATIC DICTIONARY ###
-'''
-This dictionary must be placed at the module level of this script to be used with the 
-create_rsc_wsc() function in aggregate_regions
-'''
-
 TECH = {
     'capnonrsc': [
         'coaloldscr', 'coalolduns', 'biopower', 'coal-igcc',
@@ -125,7 +120,7 @@ TECH = {
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
 
-def main(reeds_path, inputs_case, agglevel, regions):
+def main(reeds_path, inputs_case):
     
     # #%% Settings for testing
     #reeds_path = "/Users/apham/Documents/GitHub/ReEDS/ReEDS/"
@@ -154,6 +149,8 @@ def main(reeds_path, inputs_case, agglevel, regions):
     years = pd.read_csv(
         os.path.join(inputs_case,'modeledyears.csv')
     ).columns.astype(int).values.tolist()
+
+    regions = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
 
     ####################
     ### DICTIONARIES ###
@@ -221,20 +218,6 @@ def main(reeds_path, inputs_case, agglevel, regions):
     #%%
     print('Importing generator database:')
     gdb_use = pd.read_csv(os.path.join(inputs_case,'unitdata.csv'), low_memory=False)
-
-    
-    rcol_dict = {'county':'FIPS', 'ba':'reeds_ba'}
-    # Create the 'r_col' column
-    if agglevel in ['county','ba']:
-        r_col = rcol_dict[agglevel]        
-        gdb_use['r'] = gdb_use[r_col].copy()
-        # Filter generator database to regions that match the spatial resolution of the run
-        gdb_use = gdb_use[gdb_use['r'].isin(regions)]
-    elif agglevel == 'aggreg':
-        rb_aggreg = pd.read_csv(os.path.join(inputs_case,'rb_aggreg.csv'), index_col='ba').squeeze(1)
-        gdb_use = gdb_use.assign(r=gdb_use.reeds_ba.map(rb_aggreg))
-        # Filter generator database to regions that match the spatial resolution of the run
-        gdb_use = gdb_use[gdb_use['r'].isin(regions)]
 
     # If PVB is turned off, consider all PVB as UPV and battery_li for existing and prescribed builds 
     # If PVB is turned on, consider all PVB as 'pvb'
@@ -763,6 +746,12 @@ def main(reeds_path, inputs_case, agglevel, regions):
         .stack().rename_axis(['*r','t']).rename('MW').round(3)
     )
 
+    #%% Prescribed capacity categories
+    fpath = Path(reeds.io.reeds_path, 'inputs', 'sets', '_pcat.csv')
+    _pcat = pd.read_csv(fpath, header=None).squeeze(1).tolist()
+    i = reeds.io.read_input(inputs_case, 'i').squeeze(1).tolist()
+    pcat = pd.Series(i + _pcat)
+
 
     #%%----------------------------------------------------------------------------
     ##############################
@@ -796,10 +785,14 @@ def main(reeds_path, inputs_case, agglevel, regions):
                 'hydcapadj_ccszn' : hydcapadj_ccszn[['*i','ccseason','r','value']],
                 'can_imports_capacity' : can_imports_capacity,
                 'geoexist' : geoexist,
-                'h2_ba_share': h2_ba_share_out
+                'h2_ba_share': h2_ba_share_out,
+                'pcat': pcat,
                 }
+    comments = {
+        'pcat': 'prescribed capacity categories',
+    }
 
-    return files_out 
+    return files_out, comments
 
 #%% ===========================================================================
 ### --- PROCEDURE ---
@@ -825,52 +818,7 @@ if __name__ == '__main__':
     )
     print('Starting writecapdat.py')
 
-
-    # Use agglevel_variables function to obtain spatial resolution variables 
-    agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
-
-    # For mixed resolution runs the main function of writecapdat needs to be executed separately for each desired resolution 
-    # Then the data from each resolution are combined and written to the inputs_case folder 
-    if agglevel_variables['lvl'] == 'mult':
-        for resolution in agglevel_variables['agglevel']:
-            if resolution == 'aggreg':
-                aggreg_data  = main(reeds_path, inputs_case, agglevel=resolution, 
-                                     regions=agglevel_variables['ba_regions'] )
-            if resolution == 'ba':
-                ba_data = main(reeds_path, inputs_case, agglevel=resolution, 
-                                regions=agglevel_variables['ba_regions'])
-            if resolution == 'county':
-                county_data = main(reeds_path, inputs_case, agglevel=resolution,
-                                     regions=agglevel_variables['county_regions'],)
-        
-        # Combine and write mixed resolution data
-        # ReEDS only supports county-BA, county-aggreg combinations 
-        combined_data = {}
-        if 'ba' in agglevel_variables['agglevel']:
-            for key in ba_data.keys() :
-                if county_data[key].empty:
-                    combined_data[key] = ba_data[key]
-                elif ba_data[key].empty:
-                    combined_data[key] = county_data[key]
-                else:
-                    combined_data[key] = pd.concat([ba_data[key], county_data[key]])
-
-        if 'aggreg' in agglevel_variables['agglevel']:
-            for key in aggreg_data.keys() :
-                if county_data[key].empty:
-                    combined_data[key] = aggreg_data[key]
-                elif aggreg_data[key].empty:
-                    combined_data[key] = county_data[key]
-                else:
-                    combined_data[key] = pd.concat([aggreg_data[key], county_data[key]])
-        
-        data = combined_data
-
-    # Single Resolution Procedure
-    else: 
-        agglevel = agglevel_variables['agglevel']
-        regions = pd.read_csv(os.path.join(inputs_case,f'val_{agglevel}.csv'),header=None).squeeze(1).values
-        data = main(reeds_path, inputs_case,agglevel, regions)
+    data, comments = main(reeds_path, inputs_case)
 
     # Write it
     print('Writing out capacity data')
@@ -885,11 +833,20 @@ if __name__ == '__main__':
         'cap_cspns': True,
         'can_imports_capacity': True,
     }
+    gamstype = {
+        'pcat': 'set',
+    }
     for key, df in data.items():
-        df.to_csv(
-            os.path.join(inputs_case, f'{outname.get(key, key)}.csv'),
-            index=keep_index.get(key, False),
-        )
+        if gamstype.get(key, False):
+            reeds.io.write_to_inputs_h5(
+                df=df, key=outname.get(key, key), case=inputs_case, gamstype=gamstype[key],
+                comment=comments.get(key, ''),
+            )
+        else:
+            df.to_csv(
+                os.path.join(inputs_case, f'{outname.get(key, key)}.csv'),
+                index=keep_index.get(key, False),
+            )
 
     reeds.log.toc(tic=tic, year=0, process='input_processing/writecapdat.py',
         path=os.path.join(inputs_case,'..'))
