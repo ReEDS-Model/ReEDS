@@ -84,7 +84,7 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
         print(tech)
         # Filter active plants
         cap_exog[tech]= gendb.loc[(gendb['tech']==tech) &
-                                  (gendb['StartYear'] <= startyear)  &
+                                  (gendb['StartYear'] < startyear)  &
                                   (gendb['RetireYear'] > startyear)].copy()
         if len(cap_exog[tech]) > 0:
             # Assigning each geothermal unit in unit database to a class based on groups' temperatures
@@ -1046,7 +1046,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_Mid_Atlantic','inputs_case')
+    #inputs_case = os.path.join(reeds_path,'runs','test_WA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
