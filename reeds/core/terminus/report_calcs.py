@@ -47,6 +47,7 @@ def combine_forward_reverse(df, agg:Literal['net','simult']='net', value='Level'
 def calc_iq(g):
     """Capacity above interconnection queue limit"""
     dfs = {}
+    ## (tg,r,t)
     dfs['cap_above_limit'] = g['CAP_ABOVE_LIM'].Level
     return dfs
 
@@ -54,19 +55,33 @@ def calc_iq(g):
 def calc_co2_stor(g):
     """CO2 capture, transport, and storage"""
     dfs = {}
+    ## (r,h,t)
     dfs['CO2_CAPTURED_out'] = g['CO2_CAPTURED'].Level
+    ## (r,t)
     dfs['CO2_CAPTURED_out_ann'] = (g['CO2_CAPTURED'].Level * g['hours']).groupby(['r','t']).sum()
+    ## (r,cs,h,t)
     dfs['CO2_STORED_out'] = g['CO2_STORED'].Level
+    ## (r,cs,t)
     dfs['CO2_STORED_out_ann'] = (g['CO2_STORED'].Level * g['hours']).groupby(['r','cs','t']).sum()
+    ## (r,rr,t)
     dfs['CO2_TRANSPORT_INV_out'] = g['CO2_TRANSPORT_INV'].Level
+    ## (r,cs,t)
     dfs['CO2_SPURLINE_INV_out'] = g['CO2_SPURLINE_INV'].Level
+    ## (r,rr,h,t)
     dfs['CO2_FLOW_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='simult')
+    ## (r,rr,t)
     dfs['CO2_FLOW_out_ann'] = (dfs['CO2_FLOW_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    ## (r,rr,h,t)
     dfs['CO2_FLOW_pos_out'] = get_flow(g['CO2_FLOW'], 'forward')
+    ## (r,rr,t)
     dfs['CO2_FLOW_pos_out_ann'] = (dfs['CO2_FLOW_pos_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    ## (r,rr,h,t)
     dfs['CO2_FLOW_neg_out'] = -get_flow(g['CO2_FLOW'], 'reverse')
+    ## (r,rr,t)
     dfs['CO2_FLOW_neg_out_ann'] = (dfs['CO2_FLOW_neg_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    ## (r,rr,h,t)
     dfs['CO2_FLOW_net_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='net')
+    ## (r,rr,t)
     dfs['CO2_FLOW_net_out_ann'] = (dfs['CO2_FLOW_net_out'] * g['hours']).groupby(['r','rr','t']).sum()
     return dfs
 
@@ -74,18 +89,31 @@ def calc_co2_stor(g):
 def calc_transmission(g):
     """Transmission capacity and flow"""
     dfs = {}
+    ## (r,rr,trtype,t)
     dfs['invtran_out'] = g['INVTRAN'].Level
+    ## (r,rr,trtype,t)
     dfs['tran_cap_energy'] = g['CAPTRAN_ENERGY'].Level
+    ## (r,rr,trtype,t)
     dfs['tran_cap_prm'] = g['CAPTRAN_PRM'].Level
+    ## (transgrp,transgrpp,t)
     dfs['tran_cap_grp'] = g['CAPTRAN_GRP'].Level
+    ## (r,rr,trtype,t)
     dfs['tran_out'] = combine_forward_reverse(dfs['tran_cap_energy'], agg='simult') / 2
+    ## (r,rr,trtype,t)
     dfs['tran_prm_out'] = combine_forward_reverse(dfs['tran_cap_prm'], agg='simult') / 2
+    ## (r,rr,trtype,t)
     dfs['tran_mi_out_detail'] = dfs['tran_out'] * g['distance']
+    ## (trtype,t)
     dfs['tran_mi_out'] = dfs['tran_mi_out_detail'].groupby(['trtype','t']).sum()
+    ## (trtype,t)
     dfs['tran_prm_mi_out'] = (dfs['tran_prm_out'] * g['distance']).groupby(['trtype','t']).sum()
+    ## (r,t)
     dfs['cap_converter_out'] = g['CAP_CONVERTER'].Level
+    ## (r,rr,h,trtype,t)
     dfs['tran_flow_all_rep'] = g['FLOW'].Level.xs(g['h_rep'], 0, 'h')
+    ## (r,rr,h,trtype,t)
     dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'], agg='net')
+    ## (r,rr,trtype,t)
     dfs['tran_flow_rep_ann'] = (dfs['tran_flow_rep'] * g['hours']).groupby(['r','rr','trtype','t']).sum()
     return dfs
 
