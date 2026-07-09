@@ -22,15 +22,18 @@ def get_flow(df, direction:Literal['forward','reverse']='forward', value='Level'
     r_indices = ['r', 'rr']
     other_indices = [i for i in df.index.names if i not in r_indices]
     if direction == 'forward':
-        out = df.loc[
-            df.index.get_level_values('r') < df.index.get_level_values('rr'),
-            value,
-        ]
+        mask = df.index.get_level_values('r') < df.index.get_level_values('rr')
+        if isinstance(df, pd.Series):
+            out = df.loc[mask]
+        elif isinstance(df, pd.DataFrame):
+            out = df.loc[mask, value]
     elif direction == 'reverse':
-        out = df.loc[
-            df.index.get_level_values('r') > df.index.get_level_values('rr'),
-            value,
-        ].rename_axis(['rr', 'r'] + other_indices).reorder_levels(r_indices + other_indices)
+        mask = df.index.get_level_values('r') > df.index.get_level_values('rr')
+        if isinstance(df, pd.Series):
+            _out = df.loc[mask]
+        elif isinstance(df, pd.DataFrame):
+            _out = df.loc[mask, value]
+        out = _out.rename_axis(['rr', 'r'] + other_indices).reorder_levels(r_indices + other_indices)
     return out
 
 
@@ -109,12 +112,38 @@ def calc_transmission(g):
     dfs['tran_prm_mi_out'] = (dfs['tran_prm_out'] * g['distance']).groupby(['trtype','t']).sum()
     ## (r,t)
     dfs['cap_converter_out'] = g['CAP_CONVERTER'].Level
-    ## (r,rr,h,trtype,t)
-    dfs['tran_flow_all_rep'] = g['FLOW'].Level.xs(g['h_rep'], 0, 'h')
-    ## (r,rr,h,trtype,t)
-    dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'], agg='net')
+    ## (r,rr,h,trtype,t)       (r,rr,allh,t,trtype)
+    dfs['tran_flow_all_rep'] = g['FLOW'].Level.loc[:,:,g['h_rep'].index]
+    ## (r,rr,allh,trtype,t)
+    dfs['tran_flow_all_stress'] = (
+        g['FLOW'].Level.reset_index()
+        .merge(g['h_stress_t'], left_on=['allh','t'], right_on=['allh','allt'])
+        .set_index(['r','rr','allh','trtype','t']).Level
+    )
+    ## (r,rr,h,trtype,t)   (r,rr,allh,t,trtype)
+    dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'], agg='net').loc[:,:,g['h_rep'].index]
+    ## (r,rr,allh,trtype,t)
+    dfs['tran_flow_stress'] = (
+        combine_forward_reverse(g['FLOW']).reset_index()
+        .merge(g['h_stress_t'], left_on=['allh','t'], right_on=['allh','allt'])
+        .set_index(['r','rr','allh','trtype','t']).Level
+    )
     ## (r,rr,trtype,t)
     dfs['tran_flow_rep_ann'] = (dfs['tran_flow_rep'] * g['hours']).groupby(['r','rr','trtype','t']).sum()
+    ## (r,rr,h,trtype,t)
+    dfs['tran_util_h_rep'] = dfs['tran_flow_all_rep'] / dfs['tran_cap_energy']
+    ## (r,rr,allh,trtype,t)
+    dfs['tran_util_h_stress'] = dfs['tran_flow_all_stress'] / dfs['tran_cap_prm']
+    ## (r,rr,trtype,t)
+    dfs['tran_util_ann_rep'] = (
+        (dfs['tran_flow_all_rep'] * g['hours'] / dfs['tran_cap_energy']).groupby(['r','rr','trtype','t']).sum()
+        / g['hours'].sum()
+    )
+    ## (r,rr,trtype,t)
+    dfs['tran_util_ann_stress'] = (
+        (dfs['tran_flow_all_stress'] * g['hours'] / dfs['tran_cap_prm']).groupby(['r','rr','trtype','t']).sum()
+        / g['hours'].drop(g['h_rep'].index).sum()
+    )
     return dfs
 
 
@@ -129,5 +158,5 @@ def main(case):
     ## Drop zeros to reduce file size and match GAMS convention
     for key, df in dictout.items():
         _df = df.rename('Value').reset_index()
-        dictout[key] = _df.loc[_df.Value != 0].copy()
+        dictout[key] = _df.loc[_df.Value != 0].dropna().copy()
     return dictout

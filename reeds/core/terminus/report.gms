@@ -1781,39 +1781,6 @@ excess_load(r,h,t) = EXCESS.l(r,h,t) ;
 *======================
 * Transmission
 *======================
-tran_flow_all_stress(r,rr,allh,trtype,t)
-    $[tmodel_new(t)$routes(r,rr,trtype,t)$h_stress_t(allh,t)] = FLOW.l(r,rr,allh,t,trtype) ;
-
-tran_flow_stress(r,rr,allh,trtype,t)
-    $[tmodel_new(t)$routes(r,rr,trtype,t)$(ord(r) < ord(rr))$h_stress_t(allh,t)] =
-    FLOW.l(r,rr,allh,t,trtype) - FLOW.l(rr,r,allh,t,trtype)
-;
-
-tran_util_h_rep(r,rr,h,trtype,t)
-    $[tmodel_new(t)$routes(r,rr,trtype,t)$tran_cap_energy(r,rr,trtype,t)] =
-    FLOW.l(r,rr,h,t,trtype) / tran_cap_energy(r,rr,trtype,t)
-;
-
-tran_util_h_stress(r,rr,allh,trtype,t)
-    $[tmodel_new(t)$routes(r,rr,trtype,t)$tran_cap_prm(r,rr,trtype,t)$h_stress_t(allh,t)] =
-    FLOW.l(r,rr,allh,t,trtype) / tran_cap_prm(r,rr,trtype,t)
-;
-
-tran_util_ann_rep(r,rr,trtype,t)
-    $[tmodel_new(t)$routes(r,rr,trtype,t)$tran_cap_energy(r,rr,trtype,t)] =
-    sum{h, FLOW.l(r,rr,h,t,trtype) * hours(h) / tran_cap_energy(r,rr,trtype,t) }
-    / sum{h, hours(h) }
-;
-
-tran_util_ann_stress(r,rr,trtype,t)
-    $[tmodel_new(t)
-    $routes(r,rr,trtype,t)$tran_cap_prm(r,rr,trtype,t)
-    $sum{allh$h_stress_t(allh,t), hours(allh)}] =
-    sum{allh$h_stress_t(allh,t),
-        FLOW.l(r,rr,allh,t,trtype) * hours(allh) / tran_cap_prm(r,rr,trtype,t) }
-    / sum{allh$h_stress_t(allh,t), hours(allh) }
-;
-
 import_h_rep(r,h,t)
     $[tmodel_new(t)] =
 * Imports with losses

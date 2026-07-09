@@ -3,6 +3,7 @@
 ***
 distance
 h_rep
+h_stress_t
 hours
 r
 routes
@@ -12,6 +13,7 @@ routes
 CAP_ABOVE_LIM
 CAP_CONVERTER
 CAPTRAN_ENERGY
+CAPTRAN_GRP
 CAPTRAN_PRM
 CO2_CAPTURED
 CO2_FLOW
