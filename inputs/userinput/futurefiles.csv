@@ -144,6 +144,7 @@ exog_wind_ons_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 f.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 financials_hydrogen.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; input data extends to 2100,
 financials_sys.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
+financials_sys_full.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 financials_tech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used as input for calc_financials_inputs.py so no need to forecast,
 financials_transmission.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; input data extends to 2100,
 financing_risk_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
@@ -180,15 +181,15 @@ gswitches.txt,.txt,1,None,9999,None,9999,0,constant,None,None,new,
 gwp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h_dt_szn.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 h2_ba_share.csv,.csv,0,None,t,*r,0,0,constant,0,None,done,constant
-h2_compressor_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
+h2_cap_cost_mult_compressor.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
 h2_existing_smr_cap.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_exogenous_demand.csv,.csv,0,None,t,*p,1,0,linear_5,0,None,done,constant
 h2_leakage_rate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-h2_pipeline_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+h2_cap_cost_mult_pipeline.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_ptc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 h2_st.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_stor.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-h2_storage_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
+h2_cap_cost_mult_storage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
 h2_storage_rb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_transport_and_storage_costs.csv,.csv,0,None,t,"*h2_stor_trans,parameter",0,0,constant,None,None,new,
 heat_rate_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -444,8 +445,8 @@ tg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 threads.txt,.txt,1,None,9999,None,9999,0,constant,None,None,done,constant
 trancap_fut_cat.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 tranloss.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-trans_cap_cost_mult_noITC.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
-trans_cap_cost_mult.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
+trans_cost_cap_fin_mult_noITC.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
+trans_cost_cap_fin_mult.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
 trans_intra_cost_adder.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 trans_itc_fractions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,constant or expire?,constant
 transmission_distance_cost_500kVac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
