@@ -131,7 +131,7 @@ def main(case, overwrite=True, verbose=1):
     gdxpath = Path(reeds.io.standardize_case(case), 'inputs_case', 'inputs_0.gdx')
     ## Some sets need to be defined first to conserve ordering
     keys_in = list(dictin.keys())
-    special_keys = ['r']
+    special_keys = ['r', 'v']
     keys = special_keys + [i for i in keys_in if i not in special_keys]
     ## Load each h5 key and write it to gdx
     declare_sets = []
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     case = reeds.io.standardize_case(Path(args.inputs_case))
 
     # #%% Inputs for testing
-    # case = Path(reeds.io.reeds_path, 'runs', 'v20260427_inputsM0_github_Everything')
+    # case = Path(reeds.io.reeds_path, 'runs', 'v20260708_inputsM1_Pacific')
 
     #%% Set up logger
     log = reeds.log.makelog(
