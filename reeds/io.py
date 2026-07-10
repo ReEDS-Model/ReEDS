@@ -1798,7 +1798,7 @@ def write_to_inputs_h5(
         dfwrite['Value'] = dfwrite['Value'].astype(np.float32)
     ### Write record to h5 file
     calling_file = Path(inspect.stack()[-1][1]).name
-    attrs = {'gamstype': gamstype.lower(), 'written_by': calling_file}
+    attrs = {'gamstype': gamstype.lower(), 'units':units, 'written_by': calling_file}
     if len(units):
         attrs['comment'] = f'[{units}] {comment} (written by {calling_file})'
     else:
