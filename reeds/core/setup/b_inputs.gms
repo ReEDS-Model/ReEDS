@@ -259,6 +259,7 @@ set
   combustion_turbine(i)"combustion turbine technologies",
   consume(i)           "technologies that consume electricity and add to load",
   conv(i)              "conventional generation technologies",
+  temp_derate(i)       "generation technologies derated based on ambient temperature",
   csp_storage(i)       "csp generation technologies with thermal storage",
   csp(i)               "csp generation technologies",
   csp1(i)              "csp-tes generation technologies 1",
@@ -717,6 +718,7 @@ combined_cycle(i)$(not ban(i))      = yes$i_subsets(i,'combined_cycle') ;
 combustion_turbine(i)$(not ban(i))  = yes$i_subsets(i,'combustion_turbine') ;
 consume(i)$(not ban(i))             = yes$i_subsets(i,'consume') ;
 conv(i)$(not ban(i))                = yes$i_subsets(i,'conv') ;
+temp_derate(i)$(not ban(i))         = yes$i_subsets(i,'temp_derate') ;
 csp_storage(i)$(not ban(i))         = yes$i_subsets(i,'csp_storage') ;
 csp(i)$(not ban(i))                 = yes$i_subsets(i,'csp') ;
 csp1(i)$(not ban(i))                = yes$i_subsets(i,'csp1') ;
@@ -5264,6 +5266,7 @@ $onlisting
 $offempty
 
 * Note that this PSH duration overwrites what is contained in storage_duration.csv
+* and will be overridden by data in storage_duration_pshdata.csv if durations for existing PSH are used
 storage_duration(i)$psh(i) = psh_sc_duration ;
 
 storage_duration(i)$[i_water_cooling(i)$Sw_WaterMain] =
@@ -6110,7 +6113,8 @@ Parameter
     cc_excess(i,r,ccseason,t)              "--MW-- this is the excess capacity credit when assuming marginal capacity credit in intertemporal solve"
     vre_gen_last_year(r,allh,t)            "--MW-- generation from VRE generators in the prior solve year"
     hybrid_cc_derate(i,r,ccseason,sdbin,t) "--fraction-- derate factor for hybrid PV+battery storage capacity credit"
-    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit",
+    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit"
+    mean_forced_outage_rate(i,r,ccseason,t)"--fraction-- mean forced outage rate for each technology, region, and ccseason - used to derate thermal generator capacity"
 * Heuristic climate impacts
     trans_cap_delta(allh,allt)             "--fraction-- fractional adjustment to transmission capacity from climate heuristics"
 * Emissions and policies
@@ -6132,6 +6136,7 @@ cc_excess(i,r,ccseason,t) = 0 ;
 cc_old(i,r,ccseason,t) = 0 ;
 m_cc_mar(i,r,ccseason,t) = 0 ;
 hybrid_cc_derate(i,r,ccseason,sdbin,t)$[pvb(i)$valcap_irt(i,r,t)] = 1 ;
+mean_forced_outage_rate(i,r,ccseason,t) = 0 ;
 
 * Trim some of the largest matrices to reduce file sizes
 cost_vom(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
