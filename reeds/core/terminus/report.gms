@@ -2105,7 +2105,7 @@ employment_transmission_interface("construction",r,rr,t) =
         + sum{trtype
             $[routes_inv(r,rr,trtype,t)
             $(not aclike(trtype))],
-            * transmission_cost_nonac(r,rr,trtype)
+            transmission_cost_nonac(r,rr,trtype)
             * INVTRAN.l(r,rr,trtype,t) / 2
         }
     )
