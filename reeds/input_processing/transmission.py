@@ -779,36 +779,41 @@ def main(case):
         'tscbin': False,
     }
     sets = ['tscbin', 'routes_adjacent', 'r_cs', 'cs']
-    comment = {
-        'co2_injection_limit': '--metric tons/hr-- co2 site injection rate upper bound',
-        'co2_storage_limit': '--metric tons-- total cumulative storage capacity per carbon storage site',
-        'cost_co2_stor_bec': '--$/metric ton-- breakeven cost for storing carbon - CF determined by GSw_CO2_BEC',
-        'cost_hurdle_rate1': '--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp1',
-        'cost_hurdle_rate2': '--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp2',
-        'cs': 'CO2 storage sites',
-        'distance': '--miles-- distance between BAs by line type',
-        'firm_import_limit': '--fraction-- limit on net firm imports into NERC regions',
-        'pipeline_cost_mult': '--fraction-- cost multiplier for H2 pipelines (will be added to 1)',
-        'r_cs_distance': '--mi-- euclidean distance between BA transmission endpoints and storage formations',
-        'r_cs': 'mapping from BA to carbon storage sites',
-        'routes_adjacent': 'all pairs of adjacent land-based BAs',
-        'trancap_fut': '--MW-- potential future transmission capacity by type (one direction)',
-        'trancap_init_energy': '--MW-- initial transmission capacity for energy trading (both directions)',
-        'trancap_init_prm': '--MW-- initial transmission capacity for capacity (PRM) trading (both directions)',
-        'trancap_init_transgroup': '--MW-- initial upper limit on interface AC flows',
-        'tranloss': '--fraction-- transmission loss between r and rr',
-        'transmission_cost_nonac': '--$/MW-- expansion cost for DC interfaces (only lines; converters handled separately)',
-        'transmission_line_fom': '--$/MW-year-- fixed O&M cost of transmission lines',
-        'tsc_binwidth': '--$-- investment bin widths for transmission interfaces',
-        'tsc_forward': '--$/MW-- transmission upgrade cost for forward direction',
-        'tsc_reverse': '--$/MW-- transmission upgrade cost for reverse direction',
-        'tscbin': 'transmission upgrade supply curve bins',
+    ## Write some copies for r2x (would be better to avoid by adding compatibility with inputs.h5)
+    csvs = ['trancap_init_energy']
+    units_comment = {
+        'co2_injection_limit': ('metric tons/hr', 'co2 site injection rate upper bound'),
+        'co2_storage_limit': ('metric tons', 'total cumulative storage capacity per carbon storage site'),
+        'cost_co2_stor_bec': ('$/metric ton', 'breakeven cost for storing carbon - CF determined by GSw_CO2_BEC'),
+        'cost_hurdle_rate1': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp1'),
+        'cost_hurdle_rate2': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp2'),
+        'cs': ('', 'CO2 storage sites'),
+        'distance': ('miles', 'distance between BAs by line type'),
+        'firm_import_limit': ('fraction', 'limit on net firm imports into NERC regions'),
+        'pipeline_cost_mult': ('fraction', 'cost multiplier for H2 pipelines (will be added to 1)'),
+        'r_cs_distance': ('miles', 'Euclidean distance between BA transmission endpoints and storage formations'),
+        'r_cs': ('', 'mapping from BA to carbon storage sites'),
+        'routes_adjacent': ('', 'all pairs of adjacent land-based BAs'),
+        'trancap_fut': ('MW', 'potential future transmission capacity by type (one direction)'),
+        'trancap_init_energy': ('MW', 'initial transmission capacity for energy trading (both directions)'),
+        'trancap_init_prm': ('MW', 'initial transmission capacity for capacity (PRM) trading (both directions)'),
+        'trancap_init_transgroup': ('MW', 'initial upper limit on interface AC flows'),
+        'tranloss': ('fraction', 'transmission loss between r and rr'),
+        'transmission_cost_nonac': ('$/MW', 'expansion cost for DC interfaces (only lines; converters handled separately)'),
+        'transmission_line_fom': ('$/MW-year', 'fixed O&M cost of transmission lines'),
+        'tsc_binwidth': ('$', 'investment bin widths for transmission interfaces'),
+        'tsc_forward': ('$/MW', 'transmission upgrade cost for forward direction'),
+        'tsc_reverse': ('$/MW', 'transmission upgrade cost for reverse direction'),
+        'tscbin': ('', 'transmission upgrade supply curve bins'),
     }
     for key, df in outputs.items():
-        if key in comment:
+        if key in units_comment:
             gamstype = 'set' if key in sets else 'parameter'
-            reeds.io.write_to_inputs_h5(df, key, case, gamstype=gamstype, comment=comment[key])
-        else:
+            reeds.io.write_to_inputs_h5(
+                df, key, case, gamstype=gamstype,
+                units=units_comment[key][0], comment=units_comment[key][1],
+            )
+        if (key not in units_comment) or (key in csvs):
             df.to_csv(
                 Path(case, 'inputs_case', f'{key}.csv'),
                 index=False, header=header.get(key, True),
