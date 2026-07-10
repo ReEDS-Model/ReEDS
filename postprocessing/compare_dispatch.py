@@ -387,10 +387,8 @@ techmap = {
 techcatmap = {
     **dict(zip(
         ['distpv','upv', 'wind-ons', 'wind-ofs',
-        'geothermal','hydro','lfill-gas','can-imports',
-        'nuclear','nuclear-smr',
         ],
-        ['High fixed cost generation']*20)),
+        ['Variable generation']*20)),
     **dict(zip(
         ['biopower','coal',
          'gas-cc_re-cc','gas-ct_re-ct','re-cc','re-ct',
@@ -398,8 +396,10 @@ techcatmap = {
          'gas-cc','gas-ct', 'o-g-s',
          'gas-cc-ccs_mod','gas-cc-ccs_max',
          'coal-ccs_mod','coal-ccs_max',
+         'geothermal','hydro','lfill-gas','can-imports',
+         'nuclear','nuclear-smr',
          ],
-        ['High operational cost generation']*40)),
+        ['Dispatchable generation']*40)),
     **dict(zip(
         ['battery_li','pumped-hydro'],
         ['Storage']*20)),    
@@ -945,7 +945,7 @@ for cat in price_cats:
             f"{renameprice.get(cat, cat)}{time_suffix} national average price difference "
             f"[{unit}]"
         )
-        print(pricediff.mean().to_string())
+        print(pricediff.describe())
 
         ### Get colorbar limits
         absmax = price.stack().max()
