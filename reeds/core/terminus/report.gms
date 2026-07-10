@@ -2114,7 +2114,7 @@ employment_transmission_interface("construction",r,rr,t) =
 employment_transmission_interface("fom",r,rr,t) =
     employment_factor_inter_transmission("construction")
     * sum{trtype$routes(r,rr,trtype,t),
-          transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2
+          transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY.l(r,rr,trtype,t) / 2
     }
 ;
 * Assign to regions evenly across each interface
