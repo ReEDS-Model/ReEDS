@@ -137,7 +137,8 @@ eq_MGA_Objective$Sw_MGA..
         }
 * DC: INVTRAN is defined in both directions so needs to be divided by 2
         + sum{trtype
-            $[routes_inv(r,rr,trtype,t)
+            $[tmodel(t)
+            $routes_inv(r,rr,trtype,t)
             $(not aclike(trtype))],
 *           [job-years/$] * [$/MW] * [MW] = [job-years]
             transmission_cost_nonac(r,rr,trtype)
@@ -149,7 +150,7 @@ eq_MGA_Objective$Sw_MGA..
     + pvf_onm(t)
       * employment_factor_inter_transmission("construction")
 * AC and DC together; divide by 2 since defined in both directions
-      * sum{(r,rr,trtype)$routes(r,rr,trtype,t),
+      * sum{(r,rr,trtype)$[tmodel(t)$routes(r,rr,trtype,t)],
 *           [years] * [job-years/$] * [$/MW-year] * [MW] = [job-years]
             transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2
       }
