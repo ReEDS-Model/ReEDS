@@ -135,33 +135,39 @@ Interconnection queue
 CO2 storage and flows
     CO2_CAPTURED_out
     CO2_CAPTURED_out_ann
-    CO2_STORED_out
-    CO2_STORED_out_ann
-    CO2_TRANSPORT_INV_out
-    CO2_SPURLINE_INV_out
-    CO2_FLOW_out
-    CO2_FLOW_out_ann
-    CO2_FLOW_pos_out
-    CO2_FLOW_pos_out_ann
     CO2_FLOW_neg_out
     CO2_FLOW_neg_out_ann
     CO2_FLOW_net_out
     CO2_FLOW_net_out_ann
+    CO2_FLOW_out
+    CO2_FLOW_out_ann
+    CO2_FLOW_pos_out
+    CO2_FLOW_pos_out_ann
+    CO2_SPURLINE_INV_out
+    CO2_STORED_out
+    CO2_STORED_out_ann
+    CO2_TRANSPORT_INV_out
 
 Transmission
+    cap_converter_out
     invtran_out
     tran_cap_energy
-    tran_cap_prm
     tran_cap_grp
-    tran_out
-    tran_prm_out
-    tran_mi_out_detail
-    tran_mi_out
-    tran_prm_mi_out
-    cap_converter_out
+    tran_cap_prm
     tran_flow_all_rep
+    tran_flow_all_stress
     tran_flow_rep
     tran_flow_rep_ann
+    tran_flow_stress
+    tran_mi_out
+    tran_mi_out_detail
+    tran_out
+    tran_prm_mi_out
+    tran_prm_out
+    tran_util_ann_rep
+    tran_util_ann_stress
+    tran_util_h_rep
+    tran_util_h_stress
 $offtext
 
 *=========================

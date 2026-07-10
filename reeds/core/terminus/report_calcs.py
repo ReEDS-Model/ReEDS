@@ -149,6 +149,8 @@ def calc_transmission(g):
 
 #%% Procedure
 def main(case):
+    ## NOTE: If calculations slow down for large runs, consider dropping zeros upfront
+    ## in get_gams_results() to speed up processing
     dictin = get_gams_results(case)
     dictout = {
         **calc_iq(dictin),
