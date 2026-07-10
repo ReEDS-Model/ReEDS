@@ -2113,7 +2113,7 @@ employment_transmission_interface("construction",r,rr,t) =
 * AC and DC together; divide by 2 since defined in both directions
 employment_transmission_interface("fom",r,rr,t) =
     employment_factor_inter_transmission("construction")
-    * sum{(r,rr,trtype)$routes(r,rr,trtype,t),
+    * sum{trtype$routes(r,rr,trtype,t),
           transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2
     }
 ;
