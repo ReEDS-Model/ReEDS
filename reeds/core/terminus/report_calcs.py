@@ -139,11 +139,12 @@ def calc_transmission(g):
         (dfs['tran_flow_all_rep'] * g['hours'] / dfs['tran_cap_energy']).groupby(['r','rr','trtype','t']).sum()
         / g['hours'].sum()
     )
+    ## NOTE: We here assume that all solve years use the same total weighting for stress
+    ## periods and weight all stress hours the same, so we don't weight by the number of hours.
+    ## If we switch to different weightings for different stress periods,
+    ## should add an hours(allh,t) parameter.
     ## (r,rr,trtype,t)
-    dfs['tran_util_ann_stress'] = (
-        (dfs['tran_flow_all_stress'] * g['hours'] / dfs['tran_cap_prm']).groupby(['r','rr','trtype','t']).sum()
-        / g['hours'].drop(g['h_rep'].index).sum()
-    )
+    dfs['tran_util_ann_stress'] = dfs['tran_util_h_stress'].groupby(['r','rr','trtype','t']).mean()
     return dfs
 
 
