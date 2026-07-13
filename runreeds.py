@@ -280,7 +280,13 @@ def check_compatibility(sw):
             f"GSw_H2_SMR is set to 0, but GSw_H2_Demand_Case is set to '{sw['GSw_H2_Demand_Case']}', which requires SMR set to 1.\n"
             "When GSw_H2_SMR is 0, GSw_H2_Demand_Case must be one of: 'none', 'Decarb', or 'LTS'."
         )
-
+    
+    if int(sw['GSw_H2FuelCell']) == 1 and int(sw['GSw_H2Combustion']) == 0:
+        raise ValueError(
+            'H2 fuel cells technology belong to the H2_COMBUSTION tech subset, so they are '
+            'banned when GSw_H2Combustion=0. Set GSw_H2Combustion=1 to include H2 fuel cells.\n'
+            f"GSw_H2FuelCell={sw['GSw_H2FuelCell']}, GSw_H2Combustion={sw['GSw_H2Combustion']}"
+        )
     if ('usa' not in sw['GSw_Region'].lower()) and (int(sw['GSw_GasCurve']) != 2):
         raise ValueError(
             'Should use GSw_GasCurve=2 (fixed prices) when running sub-nationally\n'
