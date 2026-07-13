@@ -1,4 +1,4 @@
-# Fuel prices input files
+## Fuel Prices Input Files
 
 - `alpha_AEO_{YYYY}_*.csv`: census division alpha values, used in the calculation of natural gas demand curves ($2004 dollar year)
   - `alpha_AEO_{YYYY}_HOG.csv`: High Oil and Gas Resource and Technology scenario

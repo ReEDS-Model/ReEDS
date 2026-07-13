@@ -1,4 +1,4 @@
-# Demand Response input files
+## Demand Response Input Files
 
 - `dr_shed_avail_scalar.csv`: 
 

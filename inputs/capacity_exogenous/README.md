@@ -1,4 +1,4 @@
-# Capacity exogenous input files
+## Capacity Exogenous Input Files
 
 - `cappayments.csv`: 
 

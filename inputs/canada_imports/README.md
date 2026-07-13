@@ -1,4 +1,4 @@
-# Canadian input files
+## Canadian Input Files
 
 - `can_exports_szn_frac.csv`: Annual exports [MWh] to Canada by BA
 

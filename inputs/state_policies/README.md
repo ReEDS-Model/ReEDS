@@ -1,4 +1,4 @@
-# State Policies input files
+## State Policies Input Files
 
 - `acp_disallowed.csv`: List of states which do not allow alternative compliance payments in place of meeting RPS or CES requirements 
 

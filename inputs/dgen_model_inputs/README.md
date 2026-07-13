@@ -1,4 +1,4 @@
-# dGen Model Inputs input files
+## dGen Model Inputs Files
 
 - `stscen2023_electrification/distpvcap_stscen2023_electrification.csv`:
 

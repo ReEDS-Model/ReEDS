@@ -1,4 +1,5 @@
-# Reserves input files
+## Reserves Input Files
+
 - `ccseason_dates.csv`: Defines the time resolution (`ccseason`) on which the capacity market is cleared when using the capacity credit resource adequacy method.
 New `ccseason` definitions may be added as new columns
 (and added to the choices for the `GSw_PRM_CapCreditSeasons` switch in `cases.csv`),

@@ -1,4 +1,4 @@
-# Waterclimate input files
+## Waterclimate Input Files
 
 - `cost_cap_mult.csv`:
 

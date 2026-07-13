@@ -1,4 +1,4 @@
-# Hydro input files
+## Hydro Input Files
 
 - `cap_existing_hydro.csv`: Annual capacities [MW] for hydro plants spanning 2007-2022, which come from ORNL's Existing Hydropower Assets dataset
 

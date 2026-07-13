@@ -1,4 +1,4 @@
-# Geothermal input files
+## Geothermal Input Files
 
 - `geo_discovery_BAU.csv`: 
 

@@ -1,4 +1,4 @@
-# Consume input files
+## Consume Input Files
 
 - `consume_char_*.csv`: Cost (capex, FOM, VOM) and efficiency (gas and electrical) as well as storage and transmission adder (`stortran_adder`) inputs for various H2 producing technologies. Units vary by parameter; refer to [b_inputs.gms](https://github.com/ReEDS-Model/ReEDS/blob/main/reeds/core/setup/b_inputs.gms)
   - `consume_char_low.csv`: Conservative assumptions
@@ -27,5 +27,5 @@
 - `h2_transport_and_storage_costs.csv`: Transport and storage costs of hydrogen per year (in $2004)
 
 
-## References
+### References- 
 - `REF-DAC-VALENTINE-2022`: J. Valentine and A. Zoelle, "Direct Air Capture Case Studies: Sorbent System," National Energy Technology Laboratory, Pittsburgh, PA, July 8, 2022. https://doi.org/10.2172/1879535

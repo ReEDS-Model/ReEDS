@@ -1,4 +1,4 @@
-# Growth Constraints input files
+## Growth Constraints Input Files
 
 - `gbin_min.csv`: 
 

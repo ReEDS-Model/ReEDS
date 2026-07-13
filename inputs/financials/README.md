@@ -1,4 +1,4 @@
-# Financials input files
+## Financials Input Files
 
 - `cap_penalty.csv`: 
 

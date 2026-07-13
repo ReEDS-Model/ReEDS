@@ -1,4 +1,4 @@
-# Plant characteristics input files
+## Plant Characteristics Input Files
 
 - `battery_ATB_2024_*.csv`:
   - `battery_ATB_2024_advanced.csv`:

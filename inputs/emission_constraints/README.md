@@ -1,3 +1,4 @@
+## Emission Constraints Input Files
 ### CO<sub>2</sub> and CO<sub>2</sub>e Caps
 CO<sub>2</sub> and CO<sub>2</sub>e emissions caps are defined in `co2_cap.csv`, which includes a range of different emission cap trajectories until 2050. CO<sub>2</sub> tax for varying scenarios are defined in `co2_tax.csv`.
 

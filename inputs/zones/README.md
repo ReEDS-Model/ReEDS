@@ -1,4 +1,4 @@
-# Model zone definitions
+## Model Zone Definitions
 
 Model zones are defined by the following user-generated files:
 
@@ -21,21 +21,18 @@ The lat/lon is used for plotting, representative least-cost paths and greenfield
   - If the centroid is NOT within the zone polygon, the node location is the "most interior" point in the polygon
   (determined by iteratively inward-buffering the polygon until it disappears, then keeping the centroid of the penultimate iteration).
 
-## Creating a new set of model zones
-
+### Creating a new set of model zones
 Start by copying the `county2zone.csv` and `hierarchy.csv` file for an existing set of zones to a new folder (named with a memorable name for your new set of zones) in the [ReEDS_Input_Processing/zones](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones) directory.
 
 
-### Deciding on the zones
-
+#### Deciding on the zones
 The [ReEDS_Input_Processing/zones/make_maps.py](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones/make_maps.py) script creates a collection of static and interactive maps based on the user-supplied `county2zone.csv` and `hierarchy.csv` files, intended to help decide on the new zone boundaries.
 These maps show the new zones alongside existing grid features (transmission lines and planning area boundaries from various sources) and geographic features (mountain ranges).
 Maps are also created to show the average load and sum of existing generation capacity by zone.
 The resulting static maps are saved to a `.pptx` file, and an interactive/zoomable map is saved to a `.html` file.
 
 
-### Generating the rest of the inputs
-
+#### Generating the rest of the inputs
 ```{CEII}
 The following steps require CEII access and are only available to NLR staff.
 For questions, contact [Patrick Brown](patrick.brown@nlr.gov).
@@ -69,8 +66,7 @@ Once you're happy with your zone and hierarchy level definitions, run the follow
         - All the interfaces specified by `interfaces_r.csv`, and `interfaces_transgrp.csv` should have data in `itl_NARIS.csv`
         - `hierarchy.csv` should have all the required columns (`st`, `interconnect`, `transreg`, `transgrp`, and `nercr`)
 
-## Additional input files
-
+### Additional input files
 - `county_state.csv`: Mapping from 5-digit county FIPS codes to county names and 2-letter state abbreviations.
 
 - `hierarchy_offshore.csv`: Spatial hierarchy levels for offshore zones.

@@ -1,4 +1,4 @@
-# Upgrades input files
+## Upgrades Input Files
 
 - `i_coolingtech_watersource_upgrades.csv`: List of cooling technologies for water sources that can be upgraded.
 
