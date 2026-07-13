@@ -43,12 +43,13 @@ def _write_inputs_md(output_path: Path, readmes: list[Path]) -> None:
         folder = readme.parent.name
         lines.append(f"- [inputs/{folder}](#inputs{folder})")
 
+    # Do not add an additional markdown section header here.
+    # Each included README already contains its own heading.
     for readme in readmes:
         folder = readme.parent.name
         include_rel = os.path.relpath(readme, output_path.parent).replace(os.sep, "/")
         lines.append("")
         lines.append(f"<a id='inputs{folder}'></a>")
-        lines.append(f"## inputs/{folder}")
         lines.append("")
         lines.append("```{include} " + include_rel)
         lines.append("```")
