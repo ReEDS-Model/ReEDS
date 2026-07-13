@@ -502,10 +502,9 @@ repbioprice(r,t)$tmodel_new(t) = max{0, smax{bioclass$BIOUSED.l(bioclass,r,t), e
 bioused_out(bioclass,r,t)$tmodel_new(t) = BIOUSED.l(bioclass,r,t) / bio_energy_content ;
 bioused_usda(bioclass,usda_region,t)$tmodel_new(t) = sum{r$r_usda(r,usda_region), bioused_out(bioclass,r,t) } ;
 
-
-
 * 1e9 converts from MMBtu to Quads
-repgasquant_gb(cendiv,gb,t) = sum{h, GASUSED.l(cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
+repgasquant_gb(cendiv,gb,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
+    sum{h, GASUSED.l(cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
 
 repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
     sum{gb, repgasquant_gb(cendiv,gb,t) };
