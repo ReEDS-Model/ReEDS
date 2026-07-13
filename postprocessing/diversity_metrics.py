@@ -51,6 +51,9 @@ def main():
     case_file = pd.read_csv(case_file)
     optimal_case = case_file['scenario'].iloc[0]
     rv_cases = case_file['scenario'].iloc[1:].values.tolist()
+    min_max_cases = case_file[(case_file['scenario'].str.contains('min')) | 
+                          (case_file['scenario'].str.contains('max'))]['scenario'].tolist()
+    rv_cases = [x for x in rv_cases if x not in min_max_cases]  
 
     if metric == 'capacity':
         file = 'cap.csv'
