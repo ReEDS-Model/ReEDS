@@ -47,7 +47,7 @@ retscen,Retirement Scenario,Nuke60RetireYear; Nuke80RetireYear; NukeEarlyRetireY
 supplycurve,Wind and Solar Supply Curves,default; 0; naris; 2018,default,
 uraniumscen,Uranium price scenario,AEO_2025_reference; AEO_2026_baseline,AEO_2026_baseline,
 GSw_Region,Specify {column of hierarchy.csv}/{period-delimited entries to keep from that column},N/A,country/USA,
-GSw_ZoneSet,Set of geospatial zones to use as balancing areas (described in inputs/zones/README.md),^(z48|z54|z69|z90|z132|z134|z3109|UTcounty|PJMcounty)$,z132,
+GSw_ZoneSet,Set of geospatial zones to use as balancing areas (described in inputs/zones/README.md),^(z48|z54|z69|z90|z132|z134|z3109|UTcounty|PJMcounty)$,z90,
 capcredit_hierarchy_level,Select level at which to aggregate net load for capacity-credit calculation,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region,transreg,
 construction_schedules_suffix,File suffix for construction schedules,default,default,
 construction_times_suffix,File suffix for construction times by technology,default,default,
