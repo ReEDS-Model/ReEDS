@@ -502,9 +502,13 @@ repbioprice(r,t)$tmodel_new(t) = max{0, smax{bioclass$BIOUSED.l(bioclass,r,t), e
 bioused_out(bioclass,r,t)$tmodel_new(t) = BIOUSED.l(bioclass,r,t) / bio_energy_content ;
 bioused_usda(bioclass,usda_region,t)$tmodel_new(t) = sum{r$r_usda(r,usda_region), bioused_out(bioclass,r,t) } ;
 
+
+
 * 1e9 converts from MMBtu to Quads
+repgasquant_gb(cendiv,gb,t) = sum{h, GASUSED.l(cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
+
 repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
-    sum{(gb,h), GASUSED.l(cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
+    sum{gb, repgasquant_gb(cendiv,gb,t) };
 
 repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tmodel_new(t)] =
     ( sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
@@ -528,12 +532,11 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 
 *for reported gasprice (not that used to compute system costs)
 *scale back to $ / mmbtu and apply annual consumption-weighted gas price multipliers
-gas_consumption(cendiv,gb,t) = sum{h, GASUSED.l(cendiv,gb,h,t) } ;
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
-    smax{gb$[gas_consumption(cendiv,gb,t)],
+    smax{gb$[repgasquant_gb(cendiv,gb,t)],
         gasprice(cendiv,gb,t)
-        * sum{h, gasprice_adj_cendiv(cendiv,h) * GASUSED.l(cendiv,gb,h,t) / gas_consumption(cendiv,gb,t) / hours(h) }
-        } / gas_scale ;
+        * sum{h, gasprice_adj_cendiv(cendiv,h) * GASUSED.l(cendiv,gb,h,t) * hours(h) / repgasquant_gb(cendiv,gb,t) }
+    } ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
