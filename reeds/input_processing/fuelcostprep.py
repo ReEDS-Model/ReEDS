@@ -130,7 +130,7 @@ def calculate_daily_state_degree_days(
 
 def calculate_daily_gasreg_degree_days(
     inputs_case: str,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """
     Calculate daily gasreg-level heating and cooling degree days.
     This is done by calculating daily state-level degree days for
@@ -141,7 +141,7 @@ def calculate_daily_gasreg_degree_days(
         inputs_case: Path to the inputs case directory.
 
     Returns:
-        (pd.DataFrame, pd.DataFrame)
+        dict[str, pd.DataFrame]
     """
     # Calculate population-based state-gasreg weights
     state_gasreg_weights = (
@@ -174,12 +174,17 @@ def calculate_daily_gasreg_degree_days(
     )
     cdd_daily_gasreg = cdd_daily_gasreg.rename_axis(index='datetime')
 
-    return hdd_daily_gasreg, cdd_daily_gasreg
+    degree_days_daily = {
+        'hdd': hdd_daily_gasreg,
+        'cdd': cdd_daily_gasreg
+    }
+
+    return degree_days_daily
 
 
 def calculate_daily_gasprice_multipliers(
     inputs_case: str
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """
     Calculate daily gas price multipliers at the r and cendiv levels.
     This is done by calculating daily gasreg-level heating and cooling
@@ -199,7 +204,7 @@ def calculate_daily_gasprice_multipliers(
         inputs_case: Path to the inputs case directory.
 
     Returns:
-        (pd.DataFrame, pd.DataFrame)
+        dict[str, pd.DataFrame]
     """
     # Get degree day-price multiplier regression parameters. These
     # parameters represent a regression model where heating and
@@ -215,9 +220,9 @@ def calculate_daily_gasprice_multipliers(
     )
 
     # Calculate daily gasreg-level HDDs and CDDs
-    hdd_daily_gasreg, cdd_daily_gasreg = calculate_daily_gasreg_degree_days(
-        inputs_case
-    )
+    degree_days_daily_gasreg = calculate_daily_gasreg_degree_days(inputs_case)
+    hdd_daily_gasreg = degree_days_daily_gasreg['hdd']
+    cdd_daily_gasreg = degree_days_daily_gasreg['cdd']
 
     # Apply regression parameters to daily HDD/CDDs
     # to get daily gasreg-level price multipliers
@@ -280,7 +285,12 @@ def calculate_daily_gasprice_multipliers(
         gasreg_cendiv_map
     )
 
-    return df_out_r, df_out_cendiv
+    dict_out = {
+        'r': df_out_r,
+        'cendiv': df_out_cendiv
+    }
+
+    return dict_out
 
 
 #%% Procedure
@@ -406,9 +416,11 @@ if __name__ == '__main__':
             print(err)
 
     # Daily gas price multipliers
-    daily_gasprice_multipliers_r, daily_gasprice_multipliers_cendiv = (
-        calculate_daily_gasprice_multipliers(inputs_case)
+    daily_gasprice_multipliers = calculate_daily_gasprice_multipliers(
+        inputs_case
     )
+    daily_gasprice_multipliers_r = daily_gasprice_multipliers['r']
+    daily_gasprice_multipliers_cendiv = daily_gasprice_multipliers['cendiv']
 
     # Combine all fuel data
     fuel = coal.merge(uranium,on=['t','r'],how='left')
