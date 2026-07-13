@@ -169,7 +169,7 @@ GSw_H2_StorTimestep,Indicate resolution at which to model H2 storage level: 1=re
 GSw_H2_Transport,Indicate whether to allow interregional H2 transport via pipelines (only has an effect if GSw_H2=2),0; 1,0,
 GSw_H2_TransportLevel,hierarchy level within which to allow H2 pipelines,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region,cendiv,
 GSw_H2_TransportUniform,"Option to override H2 storage/transport costs. Value of 0 (default) defers to default tech-specific, time-varying cost settings specified via H2 inputs when GSw_H2=1 or the H2 nework costs when GSw_H2=2. Specify in $2004 per metric ton.",N/A,0,
-GSw_H2Combustion,Switch to turn on/off H2CT and H2CC techs,0; 1,1,
+GSw_H2Combustion,Switch to turn on/off H2CT , H2CC, H2 FUEL CELL techs,0; 1,1,
 GSw_H2Combustionupgrade,Indicate whether to allow gas-CC and gas-CT to upgrade to H2-CT and H2-CC,0; 1,1,
 GSw_H2CombinedCycle,Indicate whether to allow H2-CC,0; 1,1,
 GSw_H2LeakageScen,Scenarios of H2 leakage rates from upstream and process of producing electricity by technology; scenario name options from emission_constraints/h2_leakage_rate.csv,N/A,Fan_et_al_2022/Med,
