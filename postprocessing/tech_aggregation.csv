@@ -36,7 +36,7 @@ can-imports,Canadian Imports,Remove,Remove,Canadian Imports
 canada,Canadian Imports,Remove,Remove,Canadian Imports
 h2-ct,H2-CT,Hydrogen Combustion,Thermal,H2-CT
 h2-cc,H2-CC,Hydrogen Combustion,Thermal,H2-CC
-h2-fuel-cell,H2-Fuel-Cell,Hydrogen Combustion,Remove,H2-Fuel-Cell
+h2-fuel-cell,H2-Fuel-Cell,Hydrogen Combustion,Thermal,H2-Fuel-Cell
 smr,SMR,Remove,Remove,SMR
 smr_ccs,SMR-CCS,Remove,Remove,SMR-CCS
 electrolyzer,Electrolyzer,Remove,Remove,Electrolyzer
