@@ -41,9 +41,9 @@ def main():
     submetrics = ['pv','wind-ons','wind-ofs','gas','coal','all']           
     year = 2050
     number_of_max_diff_case = 100
-    #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
+    #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'          # Path of runs folder
     #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
-    runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
+    runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
     case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
@@ -57,7 +57,6 @@ def main():
     elif metric == 'generation':
         file = 'gen_ann.csv'
    
-    
     for submetric in submetrics:
         if submetric != 'all':
             col_ED = 'ED_'+submetric
@@ -79,9 +78,13 @@ def main():
         
         # Identify top most maximally different solutions
         max_diff_solutions = case_file.sort_values(by=rank_HMSED)
-        max_diff_solutions = max_diff_solutions.loc[max_diff_solutions[rank_HMSED]<=number_of_max_diff_case]
+        max_diff_solutions = max_diff_solutions.loc[(max_diff_solutions[rank_HMSED]<=number_of_max_diff_case) & 
+                                                    (max_diff_solutions[rank_HMSED]>0)]
         max_diff_solutions = max_diff_solutions[['scenario',col_HMSED,rank_HMSED]]
-        max_diff_solutions.to_csv(os.path.join(runs_path,'top_'+str(number_of_max_diff_case) + '_maximally_diff_solutions_'+submetric+'.csv'))
+        max_diff_solutions.to_csv(os.path.join(runs_path,
+                                               'top_'+str(number_of_max_diff_case) + 
+                                               '_maximally_diff_solutions_'+submetric+'.csv'),
+                                               index=False)
         
         # Calculate Gini index 
         if submetric == 'all':
@@ -98,13 +101,19 @@ def main():
 
 
         spatially_diff_solutions = spatially_diff_solutions[['scenario',col_gini]]
-        spatially_diff_solutions.to_csv(os.path.join(runs_path,'top_'+str(number_of_max_diff_case) + '_spatially_diff_solutions_'+submetric+'.csv'))
+        spatially_diff_solutions.to_csv(os.path.join(runs_path,
+                                                     'top_'+str(number_of_max_diff_case) + 
+                                                     '_spatially_diff_solutions_'+submetric+'.csv'),
+                                                     index=False)
 
         # Save all metrics
         case_file = case_file[['scenario',col_HMSED,rank_HMSED,col_gini]]
         case_file.to_csv(os.path.join(runs_path,'case_diversity_metrics_'+submetric+'.csv')) 
 
-        # Plot HMSED and gini index  
+        ## Plot HMSED and gini index
+        plot_HMSED_gini(runs_path, metric, submetric, rank_HMSED, col_HMSED, col_gini,
+                        max_diff_solutions, spatially_diff_solutions)
+        
 
 
 ######################################################################################################
@@ -123,7 +132,7 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
     
     data_rv = data_optimal
     for case in rv_cases:
-        print(case)
+        #print(case)
         output_path_rv = os.path.join(runs_path,case,'outputs')
           
         data = pd.read_csv(os.path.join(output_path_rv,file)).rename(columns={'Value':case})
@@ -207,5 +216,58 @@ def gini_coefficient_cal(case_file, runs_path, submetric, file, year, col_gini):
         case_file.loc[case_file['scenario']==case,col_gini] = gini  
 
     return case_file  
-    
+
+def plot_HMSED_gini(runs_path, metric, submetric, rank_HMSED, col_HMSED, col_gini,
+                    max_diff_solutions, spatially_diff_solutions):
+    color_techs = {'coal':'#222222','gas':'#52216B',
+                        'nuclear':'#820000','storage':'#CC0079',
+                        'pv':'#FFC903','wind-ons':'#00B6EF',
+                        'wind-ofs':'#106BA7', 'all':'C3'}
+    titles = {'coal': 'Coal', 'gas':'Gas', 'nuclear':'Nulear',
+                'wind-ons':'Land-based wind','wind-ofs':'Offshore wind',
+                'pv':'Solar PV','all':'Generating technologies'}
+    # Plot HMSED
+    #max_diff_solutions = pd.read_csv(os.path.join(runs_path,'top_100_maximally_diff_solutions_pv.csv'))
+    hmsed_output = max_diff_solutions[~max_diff_solutions['scenario'].str.contains('Optimal')]
+    fig,ax = plt.subplots(figsize=(6,3))
+    ax.plot(hmsed_output[rank_HMSED].values, hmsed_output[col_HMSED].values, alpha=1,
+            color=color_techs[submetric], linewidth=1.5)
+    ax.tick_params(axis='both', which='major', width=0.5, length=1.5, pad=2)
+    ax.tick_params(axis='both', which='minor', width=0.3, length=1, pad=2)
+    ax.tick_params(top=False, right=False)
+    #ax.tick_params(axis='x', labelrotation=90)
+    ax.tick_params(labelsize=11)
+    ax.set_ylabel('HMSED', fontsize=12,fontweight='bold',fontname="Arial", labelpad=2)
+    ax.set_xlabel('MGA sample number', fontsize=12,fontweight='bold',fontname="Arial", labelpad=2)
+    ax.set_title(titles[submetric] + ' ' + metric + ', 2050',
+                    fontsize=13,fontweight='bold',fontname="Arial",pad=0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.grid(color='lightgray', linestyle='dashed', linewidth=0.5, axis='y',zorder=0)
+    fig.savefig(os.path.join(runs_path,'HMSED_'+submetric+'.png'), dpi=600, bbox_inches='tight')
+
+    # Plot gini index
+    #spatially_diff_solutions = pd.read_csv(os.path.join(runs_path,'top_100_spatially_diff_solutions_pv.csv'))
+    gini_output = spatially_diff_solutions[~spatially_diff_solutions['scenario'].str.contains('Optimal')]
+    gini_output_sorted = gini_output.sort_values(by=col_gini, ascending=False)
+    gini_output_sorted = gini_output_sorted.reset_index()
+    gini_output_sorted['sample'] = gini_output_sorted.index + 1
+    fig,ax = plt.subplots(figsize=(6,3))
+    ax.plot(gini_output_sorted['sample'].values, gini_output_sorted[col_gini].values, alpha=1,
+            color=color_techs[submetric], linewidth=1.5)
+    ax.tick_params(axis='both', which='major', width=0.5, length=1.5, pad=2)
+    ax.tick_params(axis='both', which='minor', width=0.3, length=1, pad=2)
+    ax.tick_params(top=False, right=False)
+    #ax.set_ylim(0,1)
+    #ax.tick_params(axis='x', labelrotation=90)
+    ax.tick_params(labelsize=11)
+    ax.set_ylabel('Gini coefficient', fontsize=12,fontweight='bold',fontname="Arial", labelpad=2)
+    ax.set_xlabel('MGA sample number', fontsize=12,fontweight='bold',fontname="Arial", labelpad=2)
+    ax.set_title(titles[submetric] + ' ' + metric + ', 2050',
+                    fontsize=13,fontweight='bold',fontname="Arial",pad=0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.grid(color='lightgray', linestyle='dashed', linewidth=0.5, axis='y',zorder=0)
+    fig.savefig(os.path.join(runs_path,'gini_'+submetric+'.png'), dpi=600, bbox_inches='tight')
+
 main()
