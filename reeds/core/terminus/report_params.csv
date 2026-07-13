@@ -2,6 +2,7 @@
 # This parameter list is in alphabetical order - please add new entries that way,,,,,
 param,units,comment,reeds2x,output_rename,input
 "acp_purchases_out(rpscat,st,htype,t)",MWh,Annual alternative compliance credits from the variable ACP_PURCHASES for representative (htype=rep) or stress (htype=stress) periods,,,
+"acp_purchases_stressperiod_out(rpscat,st,allszn,t)",MWh,Alternative compliance credits from ACP_PURCHASES_STRESSPD for the per-stress-period clean generation floor (eq_REC_Requirement_stressperiod); allszn used (not szn) since szn is pruned to representative periods earlier in this file,,,
 "avg_cf(i,v,r,t)",frac,Annual average capacity factor for rsc technologies,,,
 "avg_avail(i,v,r)",frac,Annual average avail factor,,,
 "bioused_out(bioclass,r,t)",dry tons (imperial),biomass used by class in each model region (-> bioused.csv),,,
@@ -147,8 +148,9 @@ repgasprice_nat(t),2004$/MMBtu,weighted-average national natural gas price assum
 "repgasquant(cendiv,t)",Quads,quantity of gas consumed in each census division,,,
 "repgasquant_irt(i,r,t)",Quads,quantity of gas consumed by tech and region,,,
 repgasquant_nat(t),Quads,national consumption of natural gas,,,
-"reqt_price(*,*,r,*,t)",varies,Price of requirements,,,
+"reqt_price(*,*,r,*,t)",varies,"Price of requirements (includes 'state_rps' [rep-only REC price] and 'state_rps_stress' [pooled stress-period REC price] categories; the per-individual-stress-period price is reported separately in reqt_price_stressperiod_out since it doesn't fit the 'ann' time bucket used here)",,,
 "reqt_price_sys(*,*,*,t)",varies,System-average price of requirements,,,
+"reqt_price_stressperiod_out(RPSCat,st,allszn,t)",$/MWh,"Shadow price of the per-stress-period clean generation floor (eq_REC_Requirement_stressperiod), one value per individual stress period",,,
 "reqt_quant(*,*,r,*,t)",varies,Requirement quantity,,,
 "reqt_quant_sys(*,*,*,t)",varies,System-wide requirement quantity,,,
 "ret_ann(i,r,t)",MW/yr,annual retired capacity by region,,,

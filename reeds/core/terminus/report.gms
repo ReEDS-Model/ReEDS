@@ -319,6 +319,18 @@ reqt_price('oper_res',ortype,r,h,t)$tmodel_new(t) =
 reqt_price('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
     (1 / cost_scale) * (1 / pvf_onm(t)) * sum{st$r_st(r,st), eq_REC_Requirement.m(RPSCat,st,"rep",t) } ;
 
+* Shadow price of the annual-pooled stress-period requirement (eq_REC_Requirement,
+* htype=stress) -- reported separately from 'state_rps' above (which is rep-only)
+* because the two are duals of different constraints on different RHS bases and
+* shouldn't be blended into one number. Note the rep-only price above can go DOWN
+* when Sw_StateRPS_Stress is on, even though total compliance cost goes up: the
+* extra clean capacity a state builds to satisfy the stress requirement also
+* generates during rep hours, which slackens the rep constraint as a side effect.
+* This output (plus reqt_price_stressperiod_out below, for the per-period floor
+* eq_REC_Requirement_stressperiod) is where that added cost actually shows up.
+reqt_price('state_rps_stress',RPSCat,r,'ann',t)$[tmodel_new(t)$Sw_StateRPS_Stress] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) * sum{st$r_st(r,st), eq_REC_Requirement.m(RPSCat,st,"stress",t) } ;
+
 reqt_price('nat_gen','na',r,'ann',t)$tmodel_new(t) =
     (1 / cost_scale) * (1 / pvf_onm(t)) * eq_national_gen.m(t) ;
 
@@ -483,6 +495,13 @@ tran_hurdle_cost_ann(r,rr,trtype,t)$[tmodel_new(t)$routes(r,rr,trtype,t)$cost_hu
 
 rec_outputs(RPSCat,i,st,ast,htype,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(RPSCat,i,st,ast,htype,t) ;
 acp_purchases_out(rpscat,st,htype,t) = ACP_PURCHASES.l(RPSCat,st,htype,t) ;
+acp_purchases_stressperiod_out(rpscat,st,allszn,t)$szn_stress(allszn) = ACP_Purchases_StressPd.l(RPSCat,st,allszn,t) ;
+* Shadow price ($/MWh) of the per-stress-period clean generation floor
+* (eq_REC_Requirement_stressperiod), one value per individual stress period --
+* this is where the marginal cost of the per-period-floor mechanism actually
+* shows up (see the note above 'state_rps_stress' in the reqt_price block).
+reqt_price_stressperiod_out(RPSCat,st,allszn,t)$[szn_stress(allszn)$Sw_StateRPS_Stress] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_REC_Requirement_stressperiod.m(RPSCat,st,allszn,t) ;
 ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) ;
 
 *========================================
@@ -1610,6 +1629,14 @@ systemcost_ba("op_acp_compliance_costs",r,t)$[tmodel_new(t)$(yeart(t)>=firstyear
                        acp_price(st,t) * ACP_PURCHASES.l(RPSCat,st,htype,t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
                        / sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }
                    }
+* plus per-stress-period ACP purchase costs (eq_REC_Requirement_stressperiod), attributed to bas
+* the same way as the annual ACP purchase costs above
+              + sum{(st,RPSCat,szn)
+                    $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,"stress",t)$szn_stress(szn)
+                    $sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }],
+                       acp_price(st,t) * ACP_Purchases_StressPd.l(RPSCat,st,szn,t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
+                       / sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }
+                   }$Sw_StateRPS_Stress
 * spread voluntary purchase costs based on BA load frac
               + sum{(RPSCat,htype)$RecPerc(RPSCat,"voluntary",htype,t), acp_price("voluntary",t) * ACP_PURCHASES.l(RPSCat,"voluntary",htype,t) }
                 * load_frac_rt(r,t)

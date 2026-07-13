@@ -300,6 +300,11 @@ eq_Objfn_op(t)$tmodel(t)..
                     acp_price(st,t) * ACP_PURCHASES(RPSCat,st,htype,t)
                    }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS]
 
+* ---per-stress-period RPS alternative compliance payments (eq_REC_Requirement_stressperiod)---
+              + sum{(RPSCat,st,szn)$[(stfeas(st) or sameas(st,"voluntary"))$RecPerc(RPSCat,st,"stress",t)$szn_stress(szn)$(not acp_disallowed(st,RPSCat))],
+                    acp_price(st,t) * ACP_PURCHASES_STRESSPD(RPSCat,st,szn,t)
+                   }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS$Sw_StateRPS_Stress]
+
 * --- revenues from purchases of curtailed VRE---
               - sum{(r,h), CURT(r,h,t) * hours(h) * cost_curt(t) }$Sw_CurtMarket
 

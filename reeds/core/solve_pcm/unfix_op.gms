@@ -69,6 +69,8 @@ RECS.lo(RPSCat,i,st,ast,htype,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,htype,
 RECS.up(RPSCat,i,st,ast,htype,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,htype,t_unfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = +inf ;
 ACP_PURCHASES.lo(RPSCat,st,htype,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = 0 ;
 ACP_PURCHASES.up(RPSCat,st,htype,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = +inf ;
+ACP_Purchases_StressPd.lo(RPSCat,st,szn,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS$Sw_StateRPS_Stress] = 0 ;
+ACP_Purchases_StressPd.up(RPSCat,st,szn,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS$Sw_StateRPS_Stress] = +inf ;
 
 * transmission
 CONVERSION.lo(r,h,intype,outtype,t_unfix)$Sw_VSC = 0 ;
