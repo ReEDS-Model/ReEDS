@@ -163,6 +163,7 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
     # HMSED formula from https://doi.org/10.1016/j.energy.2017.03.043 
     #for case_max_diff in list(range(len(rv_cases)-1)):
     for case_max_diff in list(range(number_of_max_diff_case)):
+        print(case_max_diff)
         
         # set of selected cases (cost+optimal + previous maximally different scenarios)
         rv_cases_i = case_file.loc[case_file[rank_ED]>case_max_diff+1, 'scenario'].tolist()
