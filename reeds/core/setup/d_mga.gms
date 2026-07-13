@@ -11,6 +11,23 @@ eq_MGA_CostEnvelope(t)$[tmodel(t)$Sw_MGA]..
 
 * ---------------------------------------------------------------------------
 
+Equation eq_MGA_CapEnvelopeHi(tg,t) "--MW-- National capacity must be within allowed envelope" ;
+eq_MGA_CapEnvelopeHi(tg,t)$[tmodel(t)$Sw_MGA$Sw_MGA_CapDelta]..
+    cap_tg_total(tg,t) * (1 + Sw_MGA_CapDelta)
+    =g=
+    sum{(i,v,r)$[valcap(i,v,r,t)$tg_i(tg,i)], CAP(i,v,r,t)}
+;
+
+* ---------------------------------------------------------------------------
+
+Equation eq_MGA_CapEnvelopeLo(tg,t) "--MW-- National capacity must be within allowed envelope" ;
+eq_MGA_CapEnvelopeLo(tg,t)$[tmodel(t)$Sw_MGA$Sw_MGA_CapDelta]..
+    sum{(i,v,r)$[valcap(i,v,r,t)$tg_i(tg,i)], CAP(i,v,r,t)}
+    =g=
+    cap_tg_total(tg,t) * (1 - Sw_MGA_CapDelta)
+;
+
+* ---------------------------------------------------------------------------
 $ifthen.mgaobj %GSw_MGA_Objective% == 'capacity'
 Equation eq_MGA_Objective "--MW-- Defines generation capacity for MGA" ;
 Variable MGA_OBJ "--MW-- Capacity of technology to be minimized/maximied" ;

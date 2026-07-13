@@ -5993,9 +5993,11 @@ parameter
     z_rep(t)      "--$-- objective function value by year"
     z_rep_inv(t)  "--$-- investment component of objective function by year"
     z_rep_op(t)   "--$-- operation component of objective function by year"
+    cap_tg_total(tg,t) "--MW-- optimized capacity by technology group"
 ;
 z_rep_inv(t) = 0 ;
 z_rep_op(t) = 0 ;
+cap_tg_total(tg,t) = 0 ;
 
 *====================================
 *     --- Employment Factors ---

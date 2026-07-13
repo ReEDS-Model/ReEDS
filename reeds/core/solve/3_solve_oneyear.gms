@@ -259,7 +259,10 @@ tsolved(t)$tmodel(t) = yes ;
 z_rep(t)$tmodel(t) = Z.l ;
 z_rep_inv(t)$tmodel(t) = Z_inv.l(t) ;
 z_rep_op(t)$tmodel(t) = Z_op.l(t) ;
-
+cap_tg_total(tg,t)$tmodel(t) = sum{
+    (i,v,r)$[valcap(i,v,r,t)$tg_i(tg,i)],
+    CAP.l(i,v,r,t) / ilr(i)
+} ;
 
 * ---------------------------------
 * Modeling to Generate Alternatives

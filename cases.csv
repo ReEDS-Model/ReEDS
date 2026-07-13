@@ -220,6 +220,7 @@ GSw_LoadSiteTrajectory,inputs/load/loadsite_{GSw_LoadSiteTrajectory={hierarchy l
 GSw_MaxCaptureCCSTechs,Switch to enable max capture (_max) CCS techs in addition to _mod. Note that you’ll need to add your own cost and performance for Gas-CC-CCS_max and coal-CCS_max,0; 1,0,
 GSw_MaxDailyCF,Turn on/off daily maximum capacity factor constraint,0; 1,1,
 GSw_MethaneLeakageScen,Fractional leakage of methane from upstream natural gas production: either float (fixed rate) or scenario name from emission_constraints/methane_leakage_rate.csv,N/A,Alvarez2018_30by2030,
+GSw_MGA_CapDelta,MGA: Fraction by which to allow national tech-group capacity to change (constraint bounding national capacity is turned off if set to 0),float,0
 GSw_MGA_CostDelta,MGA: Fraction by which to allow objective function to increase when using Modeling to Generate Alternatives (MGA is turned off if set to 0; a common choice for MGA is 0.01),float,0,
 GSw_MGA_Direction,MGA: Directionality of second optimization,(min|max),min,
 GSw_MGA_Objective,MGA: Objective for MGA (uses GSw_MGA_SubObjective to specify technology subset if set to capacity),(capacity|generation|transmission|rasharing|co2|employment),capacity,
