@@ -40,7 +40,7 @@ def main():
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
     submetrics = ['pv','wind-ons','wind-ofs','gas','coal','all']           
     year = 2050
-    number_of_max_diff_case = 160
+    number_of_max_diff_case = 100
     #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
     #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
     runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
@@ -74,7 +74,7 @@ def main():
         
         # Find maximally different solutions
         case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, 
-                                            rv_cases, submetric, file, year,
+                                            rv_cases, submetric, file, year,number_of_max_diff_case,
                                             col_ED, rank_ED, col_HMSED, rank_HMSED)
         
         # Identify top most maximally different solutions
@@ -110,7 +110,7 @@ def main():
 ######################################################################################################
 #%% FUNCTIONS ###
 def euclidean_distance_calc(runs_path, case_file, optimal_case,
-                            rv_cases, submetric, file, year, 
+                            rv_cases, submetric, file, year, number_of_max_diff_case,
                             col_ED, rank_ED, col_HMSED, rank_HMSED):
 
     output_path_optimal = os.path.join(runs_path,optimal_case,'outputs')
@@ -161,7 +161,8 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
     # calculate harmonic mean squared of euclidean distance (HMSED) 
     # to find the next number_of_max_diff_case maximally different solutions
     # HMSED formula from https://doi.org/10.1016/j.energy.2017.03.043 
-    for case_max_diff in list(range(len(rv_cases)-1)):
+    #for case_max_diff in list(range(len(rv_cases)-1)):
+    for case_max_diff in list(range(number_of_max_diff_case)):
         
         # set of selected cases (cost+optimal + previous maximally different scenarios)
         rv_cases_i = case_file.loc[case_file[rank_ED]>case_max_diff+1, 'scenario'].tolist()
