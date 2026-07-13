@@ -2083,7 +2083,7 @@ h2_usage(r,h,t)$tmodel_new(t) =
 employment_generator(i,"fom",r,t) = sum{v, CAP.l(i,v,r,t)$valcap(i,v,r,t) 
                                            * employment_factor_plant(i,"fom")} ;
 employment_generator(i,"vom",r,t) = sum{(v,h), GEN.l(i,v,r,h,t)$valgen(i,v,r,t) 
-                                               * hours(h)* employment_factor_plant(i,"vom")} ;
+                                               * hours(h) * employment_factor_plant(i,"vom")} ;
 * Generator construction job-years
 employment_generator(i,"construction",r,t) = sum{v, INV.l(i,v,r,t)$valinv(i,v,r,t)  
                                                     * employment_factor_plant(i,"construction")} ;
