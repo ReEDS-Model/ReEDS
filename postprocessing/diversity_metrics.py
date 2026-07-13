@@ -40,109 +40,153 @@ def main():
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
     submetrics = ['pv','wind-ons','wind-ofs','gas','coal','all']           
     year = 2050
-    number_of_max_diff_case = 2
-    runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
-    case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
-    #runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
-    #case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_gentech_completed.csv'  # Case file in csv that includes all case names to compare
+    number_of_max_diff_case = 160
+    #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'     # Path of runs folder
+    #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
+    runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'     # Path of runs folder
+    case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
     case_file = pd.read_csv(case_file)
     optimal_case = case_file['scenario'].iloc[0]
     rv_cases = case_file['scenario'].iloc[1:].values.tolist()
+
+    if metric == 'capacity':
+        file = 'cap.csv'
+    elif metric == 'generation':
+        file = 'gen_ann.csv'
+   
     
     for submetric in submetrics:
-        # Find maximally different solutions
-        case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, 
-                                            number_of_max_diff_case, metric, submetric, year)
+        if submetric != 'all':
+            col_ED = 'ED_'+submetric
+            rank_ED = 'ED_rank_'+submetric
+            col_HMSED = 'HMSED_'+submetric
+            rank_HMSED = 'HMSED_rank_'+submetric
+            col_gini = 'gini_'+submetric
+        else:
+            col_ED = 'ED'
+            rank_ED = 'ED_rank'
+            col_HMSED = 'HMSED'
+            rank_HMSED = 'HMSED_rank'
+            col_gini = 'gini' 
         
-        # Calculate Gini index and final most spatially diverse solutions
+        # Find maximally different solutions
+        case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, 
+                                            rv_cases, submetric, file, year,
+                                            col_ED, rank_ED, col_HMSED, rank_HMSED)
+        
+        # Identify top most maximally different solutions
+        max_diff_solutions = case_file.sort_values(by=rank_HMSED)
+        max_diff_solutions = max_diff_solutions.loc[max_diff_solutions[rank_HMSED]<=number_of_max_diff_case]
+        max_diff_solutions = max_diff_solutions[['scenario',col_HMSED,rank_HMSED]]
+        max_diff_solutions.to_csv(os.path.join(runs_path,'top_'+str(number_of_max_diff_case) + '_maximally_diff_solutions_'+submetric+'.csv'))
+        
+        # Calculate Gini index 
         if submetric == 'all':
             continue
         else:
-            case_file = gini_coefficient_cal(case_file, runs_path, metric, submetric, year)
+            case_file = gini_coefficient_cal(case_file, runs_path, submetric, file, year, col_gini)
+        # Identify most spatially diverse solutions
+        spatially_diff_solutions = case_file.sort_values(by=col_gini)
+        spatially_diff_solutions = spatially_diff_solutions.iloc[:number_of_max_diff_case]
+        # Append optimal solution if it is not included
+        if optimal_case not in spatially_diff_solutions['scenario'].tolist():
+            opt_solution = case_file[case_file['scenario']==optimal_case]
+            spatially_diff_solutions = pd.concat([opt_solution, spatially_diff_solutions], ignore_index=True)
 
-    case_file.to_csv(os.path.join(runs_path,'case_diversity_metrics.csv'))    
+
+        spatially_diff_solutions = spatially_diff_solutions[['scenario',col_gini]]
+        spatially_diff_solutions.to_csv(os.path.join(runs_path,'top_'+str(number_of_max_diff_case) + '_spatially_diff_solutions_'+submetric+'.csv'))
+
+        # Save all metrics
+        case_file = case_file[['scenario',col_HMSED,rank_HMSED,col_gini]]
+        case_file.to_csv(os.path.join(runs_path,'case_diversity_metrics_'+submetric+'.csv')) 
+
+        # Plot HMSED and gini index  
 
 
 ######################################################################################################
 #%% FUNCTIONS ###
-def euclidean_distance_calc(runs_path, case_file, optimal_case, rv_cases, 
-                            number_of_max_diff_case, metric, submetric, year):
+def euclidean_distance_calc(runs_path, case_file, optimal_case,
+                            rv_cases, submetric, file, year, 
+                            col_ED, rank_ED, col_HMSED, rank_HMSED):
+
+    output_path_optimal = os.path.join(runs_path,optimal_case,'outputs')
+    data_optimal = pd.read_csv(os.path.join(output_path_optimal,file)).rename(columns={'Value':optimal_case})
+
+    case_file[col_ED] = 0
+    case_file[rank_ED] = 0
+    case_file[col_HMSED] = 0   
+    case_file[rank_HMSED] = 0  
+    
+    data_rv = data_optimal
     for case in rv_cases:
         print(case)
         output_path_rv = os.path.join(runs_path,case,'outputs')
-        output_path_optimal = os.path.join(runs_path,optimal_case,'outputs')
-        if metric == 'capacity':
-            file = 'cap.csv'
-        elif metric == 'generation':
-            file = 'gen_ann.csv'
-        data = pd.read_csv(os.path.join(output_path_rv,file))
-        data_optimal = pd.read_csv(os.path.join(output_path_optimal,file)).rename(columns={'Value':'Value_opt'})
-
-        data = data.merge(data_optimal, on=['i','r','t'], how='left')
-        data = data.fillna(0)
-        data = data[data['t']==year]
-
-        if submetric != 'all':
-            data = data[data['i'].str.contains(submetric)]
-            col = 'ED_'+submetric
-            rank = 'rank_'+submetric
-        else:
-            col = 'ED'
-            rank = 'rank'
+          
+        data = pd.read_csv(os.path.join(output_path_rv,file)).rename(columns={'Value':case})
         
-        data = data.reset_index().drop(columns='index')
+        data_rv = data_rv.merge(data, on=['i','r','t'], how='outer')
+        data_rv = data_rv.fillna(0)
+        data_rv_sub = data_rv[data_rv['t']==year]
+        if submetric != 'all':
+            data_rv_sub = data_rv_sub[data_rv_sub['i'].str.contains(submetric)]
+        
+        data_rv_sub = data_rv_sub.reset_index().drop(columns='index')
 
         # calculate euclidean distance (ED) to identify solution that 
         # is furthest away from cost-optimal
         # ED formula from https://doi.org/10.1016/j.energy.2017.03.043 
         sum_diff = 0
-        for i in list(range(len(data['Value']))):
-            sum_diff += (data['Value'][i]-data['Value_opt'][i])**2
+        for i in list(range(len(data_rv_sub[case]))):
+            sum_diff += (data_rv_sub[case][i]-data_rv_sub[optimal_case][i])**2
         ed = sum_diff
-
-        #data['distance'] = (data['Value']-data['Value_opt'])**2
-        #euclidean_dist = data['distance'].sum()
+        
+        # another way
+        #data_rv_sub['distance'] = (data_rv_sub['Value']-data_rv_sub['Value_opt'])**2
+        #euclidean_dist = data_rv_sub['distance'].sum()
         #print(f"Case {case}'s distance from optimal: {euclidean_dist}")
-       
-        case_file[col] = 0
-        case_file.loc[case_file['scenario']==case,col] = ed
-        case_file[rank] = 0
-        case_file.loc[case_file['scenario']==case_file.loc[case_file[col].idxmax(), 'scenario'], rank] = 1
-        case_file.loc[(case_file[rank]!=1) & (case_file['scenario']!=optimal_case), rank] = 999
+        
+        case_file.loc[case_file['scenario']==case,col_ED] = ed
 
-        # calculate harmonic mean squared of euclidean distance (HMSED) 
-        # to find the next number_of_max_diff_case maximallty different solutions
-        # HMSED formula from https://doi.org/10.1016/j.energy.2017.03.043 
-        # only calculate HMSED if number_of_max_diff_case > 1 
-        if number_of_max_diff_case > 1:
-            for i in list(range(number_of_max_diff_case)):
-                
-                # set of selected cases (cost+optimal + previous maximally different scenarios)
-                sel_cases_i = case_file.loc[case_file[rank]>i+1, 'scenario'].tolist()
-                # set of random vector cases to calculate HMSED
-                rv_cases_i = [x for x in case_file['scenario'].tolist() if x not in sel_cases_i]
+    case_file[rank_ED] = 0
+    case_file.loc[case_file['scenario']==case_file.loc[case_file[col_ED].idxmax(), 'scenario'], rank_ED] = 1
+    case_file.loc[(case_file[rank_ED]!=1) & (case_file['scenario']!=optimal_case), rank_ED] = 9999999
 
-                # calculate HMSED from each case in set of rv cases to set of selected cases:
-                inverse_sum_diff = 0
-                for i in rv_cases_i:
-                    for j in sel_cases_i:
-                        inverse_sum_diff += (data['Value'][i]-data['Value_opt'][i])**2
-                ed = sum_diff
+    case_file.loc[case_file[rank_ED]==1,col_HMSED] = case_file.loc[case_file[rank_ED]==1,col_ED].iloc[0]
+    case_file.loc[case_file[rank_ED]==1,rank_HMSED] = case_file.loc[case_file[rank_ED]==1,rank_ED].iloc[0]
 
+    # calculate harmonic mean squared of euclidean distance (HMSED) 
+    # to find the next number_of_max_diff_case maximally different solutions
+    # HMSED formula from https://doi.org/10.1016/j.energy.2017.03.043 
+    for case_max_diff in list(range(len(rv_cases)-1)):
+        
+        # set of selected cases (cost+optimal + previous maximally different scenarios)
+        rv_cases_i = case_file.loc[case_file[rank_ED]>case_max_diff+1, 'scenario'].tolist()
+        # set of random vector cases to calculate HMSED
+        sel_cases_i = [x for x in case_file['scenario'].tolist() if x not in rv_cases_i]
 
-                
+        # calculate HMSED from each case in set of rv cases to set of selected cases:
+        inverse_sum_diff = 0
+        for i in rv_cases_i:
+            for j in sel_cases_i:
+                inverse_sum_diff += 1/sum((data_rv_sub[i]-data_rv_sub[j])**2)
+            inverse_sum_diff_i = inverse_sum_diff**(-1)
+            case_file.loc[case_file['scenario']==i,col_HMSED] = inverse_sum_diff_i 
+        max_diff_case = case_file.loc[case_file['scenario'].isin(rv_cases_i)]
+        max_diff_case = max_diff_case.loc[max_diff_case[col_HMSED].idxmax(), 'scenario']
+        case_file.loc[case_file['scenario']==max_diff_case, rank_HMSED] = case_max_diff + 2
+        case_file.loc[case_file['scenario']==max_diff_case, rank_ED] = case_file[rank_HMSED]
+
     return case_file
 
-def gini_coefficient_cal(case_file, runs_path, metric, submetric, year):
-    for case in case_file['scenario'].unique().tolist():
-        if metric == 'capacity':
-            file = 'cap.csv'
-        elif metric == 'generation':
-            file = 'gen_ann.csv'
+def gini_coefficient_cal(case_file, runs_path, submetric, file, year, col_gini):
 
+    case_file[col_gini] = 0    
+    
+    for case in case_file['scenario'].unique().tolist():
         output_path_gi = os.path.join(runs_path,case,'outputs')    
         data = pd.read_csv(os.path.join(output_path_gi,file))
         data = data[data['t']==year]
@@ -157,10 +201,8 @@ def gini_coefficient_cal(case_file, runs_path, metric, submetric, year):
         for i, xi in enumerate(data['Value'][:-1],1):
             sum_diff += np.sum(np.abs(xi-data['Value'][i:]))
         gini = sum_diff / (len(data['Value'])**2 * np.mean(data['Value']))
-        
-        col = 'gini_'+submetric
-        case_file[col] = 0
-        case_file.loc[case_file['scenario']==case,col] = gini  
+    
+        case_file.loc[case_file['scenario']==case,col_gini] = gini  
 
     return case_file  
     
