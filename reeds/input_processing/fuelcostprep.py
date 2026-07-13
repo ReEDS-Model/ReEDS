@@ -88,7 +88,7 @@ def plot_cendivweights(inputs_case, dfmap, cendivweights):
 
 def calculate_daily_state_degree_days(
     inputs_case: str
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """
     Calculate daily historical heating and cooling degree days for each state
     and each weather year (based on the GSw_HourlyWeatherYears switch) using
@@ -98,7 +98,7 @@ def calculate_daily_state_degree_days(
         inputs_case: Path to the inputs case directory.
 
     Returns:
-        (pd.DataFrame, pd.DataFrame)
+        dict[str, pd.DataFrame]
     """
     # Get hourly state-level temperatures
     temp_hourly = reeds.io.get_temperatures(inputs_case)
@@ -120,7 +120,12 @@ def calculate_daily_state_degree_days(
     cdd_hourly = (temp_hourly - base_temp).clip(lower=0)
     cdd_daily = cdd_hourly.resample('D').mean()
 
-    return hdd_daily, cdd_daily
+    degree_days_daily = {
+        'hdd': hdd_daily,
+        'cdd': cdd_daily
+    }
+
+    return degree_days_daily
 
 
 def calculate_daily_gasreg_degree_days(
@@ -148,9 +153,9 @@ def calculate_daily_gasreg_degree_days(
     )
 
     # Calculate state-level daily HDDs and CDDs
-    hdd_daily_st, cdd_daily_st = (
-        calculate_daily_state_degree_days(inputs_case)
-    )
+    degree_days_daily_st = calculate_daily_state_degree_days(inputs_case)
+    hdd_daily_st = degree_days_daily_st['hdd']
+    cdd_daily_st = degree_days_daily_st['cdd']
 
     # Aggregate daily state-level degree days to
     # the gasreg level via population-weighted average
