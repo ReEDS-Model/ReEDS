@@ -28,7 +28,7 @@ eq_MGA_Objective$Sw_MGA..
 * ---------------------------------------------------------------------------
 
 $elseif.mgaobj %GSw_MGA_Objective% == 'generation'
-Equation eq_MGA_Objective "--MW-- Defines generation for MGA" ;
+Equation eq_MGA_Objective "--MWh-- Defines generation for MGA" ;
 Variable MGA_OBJ "--MWh-- Generation of technology to be minimized/maximied" ;
 eq_MGA_Objective$Sw_MGA..
     MGA_OBJ
