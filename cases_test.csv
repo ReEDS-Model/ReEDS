@@ -31,7 +31,7 @@ GSw_HourlyClusterAlgorithm,,,,,,,,,,,,,,,,,,,,user,user,,,,,,,,,,
 MCS_runs,,,,,,,,,,,,,,,,,,,,2,2,,,,,,,,,,
 MCS_dist_groups,,,,,,,,,,,,,,,,,,,,tech.hydro.nuclear.gas.coal.load_country,upv_tri.nuclear_tri.ng_fuel_price_tri.load_country_unif,,,,,,,,,,
 MCS_lhs,,,,,,,,,,,,,,,,,,,,,1,,,,,,,,,,
-GSw_PRM_StressIterateMax,,,,,,,,0,,,,,,,,0,0,,,1,1,,,,,,,,,,2
+GSw_PRM_StressIterateMax,,,,,,,,0,,,,,,,,0,0,,,1,1,,,,,,,,,,
 GSw_ReducedResource,,,,,,,1,,,,,,,,,,,,,,,1,,,,,,,,,
 GSw_SitingUPV,,,,,,limited,limited,limited,,,,,,,,,,,,,,limited,,,,,,,,,
 GSw_SitingWindOfs,,,,,,limited,limited,limited,,,,,,,,,,,,,,open,,,,,,,,,
@@ -41,14 +41,14 @@ GSw_CO2_Detail,,,,,,,1,,,,,,,,,,,,,,,1,,,,,,,,,
 GSw_DAC,,,,,,,1,,,,,,,,,,,,,,,1,,,,,,,,,
 GSw_NoFossilOffsetCDR,,,,,,,1,,,,,,,,,,,,,,,1,,,,,,,,,
 GSw_Biopower,,,,,,,,,,,,,,,,,,,,,,,0,,0,,,,,,
-GSw_HourlyChunkLengthRep,,,,,,,,,,,,,,,,,,,,,,,6,4,4,,,,,,
-GSw_HourlyChunkLengthStress,,,,,,,,,,,,,,,,,,,,,,,6,4,4,,,,,,
+GSw_HourlyChunkLengthRep,,,,,,,,,,,,,,,,,,,,,,,6,4,4,,,,,,4
+GSw_HourlyChunkLengthStress,,,,,,,,,,,,,,,,,,,,,,,6,4,4,,,,,,4
 GSw_LfillGas,,,,,,,,,,,,,,,,,,,,,,,0,,0,,,,,,
 GSw_Nuclear,,,,,,,,,,,,,,,,,,,,,,,0,,0,,,,,,
 GSw_OpRes,,,,,,,,,,,,,,,,,,,,,,,0,,0,,,,,,
-GSw_StartCost,,,,,,,,,,,,,,,,,,,,,,,0,0,0,,,,,,
-GSw_H2,,,,,,,,,,,,,,,,,,,,,,,,0,0,,,,,,
-GSw_H2_PTC,,,,,,,,,,,,,,,,,,,,,,,,0,0,,,,,,
+GSw_StartCost,,,,,,,,,,,,,,,,,,,,,,,0,0,0,,,,,,0
+GSw_H2,,,,,,,,,,,,,,,,,,,,,,,,0,0,,,,,,0
+GSw_H2_PTC,,,,,,,,,,,,,,,,,,,,,,,,0,0,,,,,,0
 GSw_H2Combustion,,,,,,,,,,,,,,,,,,,,,,,,,0,,,,,,
 GSw_DRShed,,,,,,,,,,,,,,,,,,,,,,,,,,1,,,,,
 GSw_MGA_CostDelta,,,,,,,,,,,,,,,,,,,,,,,,,,,0.01,,,,
@@ -61,6 +61,6 @@ pras_existing_unit_size,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,
 pras_scheduled_outage,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,
 pras_unitsize_source,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,r2x,
 pras_vre_combine,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,
-pras_samples,,,,,,10,10,10,,,,,,,,,,,,,,,,10,10,,,,,,
+pras_samples,,,,,,10,10,10,,,,,,,,,,,,,,,,10,10,,,,,,10
 GSw_FINITO_Link,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
 finito_dir,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,/projects/futuregrid/mmowers/FINITO
