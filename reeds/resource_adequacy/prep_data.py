@@ -175,9 +175,10 @@ def main(t, casedir, iteration=0):
         # convert timezone and fill any missing columns
         load_finito.index = load_finito.index.tz_convert(load_year.index.tz)
         load_finito = load_finito.reindex(columns=load_year.columns, fill_value=0)
+        load_finito = load_finito.fillna(0)
 
         # add to load
-        load_new = load_year + load_finito
+        load_year = load_year + load_finito
 
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
