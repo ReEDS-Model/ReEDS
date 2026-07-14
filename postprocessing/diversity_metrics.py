@@ -68,14 +68,14 @@ def main():
             rank_HMSED = 'HMSED_rank_'+submetric
             col_gini = 'gini_'+submetric
 
-            rv_cases = [item for item in rv_cases if submetric in item]
         else:
             col_ED = 'ED'
             rank_ED = 'ED_rank'
             col_HMSED = 'HMSED'
             rank_HMSED = 'HMSED_rank'
             col_gini = 'gini' 
-
+        
+        rv_cases = [item for item in rv_cases if submetric in item]
         case_file = case_file_orig[case_file_orig['scenario'].str.contains(submetric)]
     
         # Find maximally different solutions
