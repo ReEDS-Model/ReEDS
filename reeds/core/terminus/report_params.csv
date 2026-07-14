@@ -148,7 +148,7 @@ repgasprice_nat(t),2004$/MMBtu,weighted-average national natural gas price assum
 "repgasquant(cendiv,t)",Quads,quantity of gas consumed in each census division,,,
 "repgasquant_irt(i,r,t)",Quads,quantity of gas consumed by tech and region,,,
 repgasquant_nat(t),Quads,national consumption of natural gas,,,
-"reqt_price(*,*,r,*,t)",varies,"Price of requirements,,,
+"reqt_price(*,*,r,*,t)",varies,Price of requirements,,,
 "reqt_price_sys(*,*,*,t)",varies,System-average price of requirements,,,
 "reqt_price_stressperiod_out(RPSCat,st,allszn,t)",$/MWh,"Shadow price of the per-stress-period clean generation floor (eq_REC_Requirement_stressperiod), one value per individual stress period",,,
 "reqt_quant(*,*,r,*,t)",varies,Requirement quantity,,,
