@@ -1347,7 +1347,7 @@ def plot_time_series_item_r(
     unique_col_keys = data['region'].unique()
 
     # Separate the data on base and sample
-    base_identifiers = ["base", "ref", "reference"]
+    base_identifiers = ["base", "ref", "reference", "optimal"]
     is_base_case = data["case"].str.split("|").str[0].str.lower().isin(base_identifiers)
     is_highlight = data["case"].isin([c[0] for c in highlight_runs])
 
@@ -2486,7 +2486,8 @@ class DataPlotter:
             hierarchy_group=hierarchy_group,
         )
 
-        plot_row_keys = ['PV', 'Wind','Fossil', 'Nuclear', 'Storage']
+        #plot_row_keys = ['PV', 'Wind','Fossil', 'Nuclear', 'Storage']
+        plot_row_keys = ['PV', 'Wind','Gas']
 
         fig, ax, data = plot_time_series_item_r(
             data=data,
