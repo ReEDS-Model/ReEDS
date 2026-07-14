@@ -38,7 +38,7 @@ def main():
     
     ######################################### FOR TESTING/DEBUGGING #########################################
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
-    submetrics = ['pv','wind-ons','wind-ofs','gas','coal','all']           
+    submetrics = ['pv','wind-ons','wind-ofs','gas','coal','gentech']           
     year = 2050
     number_of_max_diff_case = 100
     #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'          # Path of runs folder
@@ -61,14 +61,13 @@ def main():
         file = 'gen_ann.csv'
    
     for submetric in submetrics:
-        if submetric != 'all':
+        if submetric != 'gentech':
             col_ED = 'ED_'+submetric
             rank_ED = 'ED_rank_'+submetric
             col_HMSED = 'HMSED_'+submetric
             rank_HMSED = 'HMSED_rank_'+submetric
             col_gini = 'gini_'+submetric
 
-            case_file = case_file_orig[case_file_orig['scenario'].str.contains(submetric)]
             rv_cases = [item for item in rv_cases if submetric in item]
         else:
             col_ED = 'ED'
@@ -77,8 +76,7 @@ def main():
             rank_HMSED = 'HMSED_rank'
             col_gini = 'gini' 
 
-            case_file = case_file_orig
-        
+        case_file = case_file_orig[case_file_orig['scenario'].str.contains(submetric)]
     
         # Find maximally different solutions
         case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, 
@@ -96,7 +94,7 @@ def main():
                                                index=False)
         
         # Calculate Gini index 
-        if submetric == 'all':
+        if submetric == 'gentech':
             continue
         else:
             case_file = gini_coefficient_cal(case_file, runs_path, submetric, file, year, col_gini)
@@ -149,7 +147,7 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
         data_rv = data_rv.merge(data, on=['i','r','t'], how='outer')
         data_rv = data_rv.fillna(0)
         data_rv_sub = data_rv[data_rv['t']==year]
-        if submetric != 'all':
+        if submetric != 'gentech':
             data_rv_sub = data_rv_sub[data_rv_sub['i'].str.contains(submetric)]
         
         data_rv_sub = data_rv_sub.reset_index().drop(columns='index')
@@ -231,10 +229,10 @@ def plot_HMSED_gini(runs_path, metric, submetric, rank_HMSED, col_HMSED, col_gin
     color_techs = {'coal':'#222222','gas':'#52216B',
                         'nuclear':'#820000','storage':'#CC0079',
                         'pv':'#FFC903','wind-ons':'#00B6EF',
-                        'wind-ofs':'#106BA7', 'all':'C3'}
+                        'wind-ofs':'#106BA7', 'gentech':'C3'}
     titles = {'coal': 'Coal', 'gas':'Gas', 'nuclear':'Nulear',
                 'wind-ons':'Land-based wind','wind-ofs':'Offshore wind',
-                'pv':'Solar PV','all':'Generating technologies'}
+                'pv':'Solar PV','gentech':'Generating technologies'}
     # Plot HMSED
     #max_diff_solutions = pd.read_csv(os.path.join(runs_path,'top_100_maximally_diff_solutions_pv.csv'))
     hmsed_output = max_diff_solutions[~max_diff_solutions['scenario'].str.contains('Optimal')]
