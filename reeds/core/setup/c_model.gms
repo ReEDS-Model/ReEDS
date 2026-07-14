@@ -1417,7 +1417,8 @@ eq_interconnection_queues(tg,r,t)
 eq_supply_demand_balance(r,h,t)$tmodel(t)..
 
 * generation from all land-based sources, including storage discharge
-    sum{(i,v)$[valgen(i,v,r,t)$land(r)], GEN(i,v,r,h,t) }
+    sum{(i,v)$[valgen(i,v,r,t)$land(r)
+    $((not storage_standalone(i)) or (not h_rep(h)))], GEN(i,v,r,h,t) }
 
 * [plus] net AC and LCC DC transmission with imports reduced by losses
     + sum{(trtype,rr)$[routes(rr,r,trtype,t)$notvsc(trtype)],
@@ -1432,7 +1433,8 @@ eq_supply_demand_balance(r,h,t)$tmodel(t)..
     - (CONVERSION(r,h,"AC","VSC",t) / converter_efficiency_vsc)$[Sw_VSC$val_converter(r,t)]
 
 * [minus] storage charging; not hybrid+storage
-    - sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN(i,v,r,h,t) }
+    - sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))
+    $((not storage_standalone(i)) or (not h_rep(h)))], STORAGE_IN(i,v,r,h,t) }
 
 * [minus] energy into storage for hybrid+storage from grid
     - sum{(i,v)$[valcap(i,v,r,t)$storage_hybrid(i)$(not csp(i))], STORAGE_IN_GRID(i,v,r,h,t) }$Sw_HybridPlant
