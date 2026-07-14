@@ -38,13 +38,14 @@ def main():
     
     ######################################### FOR TESTING/DEBUGGING #########################################
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
-    submetrics = ['pv','wind-ons','wind-ofs','gas','coal','gentech']           
+    #submetrics = ['pv','wind-ons','wind-ofs','gas','coal','gentech']      
+    submetrics = ['gentech']     
     year = 2050
     number_of_max_diff_case = 100
     #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'          # Path of runs folder
     #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
     runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
-    case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
+    case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_gentech_completed.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
