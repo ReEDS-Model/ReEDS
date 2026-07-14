@@ -67,7 +67,7 @@ def main():
             col_HMSED = 'HMSED_'+submetric
             rank_HMSED = 'HMSED_rank_'+submetric
             col_gini = 'gini_'+submetric
-            rv_cases = [item for item in rv_cases if submetric not in item]
+            rv_cases = [item for item in rv_cases if submetric in item]
         else:
             col_ED = 'ED'
             rank_ED = 'ED_rank'
@@ -138,7 +138,7 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
     
     data_rv = data_optimal
     for case in rv_cases:
-        #print(case)
+        print(f"Calculate ED from optimal for {case}")
         output_path_rv = os.path.join(runs_path,case,'outputs')
           
         data = pd.read_csv(os.path.join(output_path_rv,file)).rename(columns={'Value':case})
