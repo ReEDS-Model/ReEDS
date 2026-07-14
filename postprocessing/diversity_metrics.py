@@ -67,6 +67,8 @@ def main():
             col_HMSED = 'HMSED_'+submetric
             rank_HMSED = 'HMSED_rank_'+submetric
             col_gini = 'gini_'+submetric
+
+            case_file = case_file[case_file['scenario'].str.contains(submetric)]
             rv_cases = [item for item in rv_cases if submetric in item]
         else:
             col_ED = 'ED'
