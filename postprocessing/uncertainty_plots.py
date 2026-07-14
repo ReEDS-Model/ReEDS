@@ -141,7 +141,7 @@ class Conventions:
         'PV': '#FFC903', 'CSP': '#FC761A', 'Wind': '#00B6EF', 'Offshore wind': '#106BA7',
         'Hydro': '#187F94', 'Geothermal': '#A96235',
         'Nuclear': '#820000', 'Nuclear-SMR': '#D40000',
-        'Storage': '#FF4A88',
+        'Storage': '#FF4A88','Gas': '#5E1688',
         'Fossil': '#5E1688', 'Fossil+CCS': '#9467BD', 'Coal': '#000000', 'Coal + CCS': '#666666',
         'Gas CC': '#5E1688', 'Gas CT': '#C2A1DB', 'Gas + CCS': '#9467BD', 'o-g-s': '#3D3376',
         'H2 turbine': '#708238', 'CO2 Removal': '#66C238', 'Others': '#A0A0A0',
@@ -1259,7 +1259,8 @@ def plot_time_series_item_r(
     data: pd.DataFrame,
     dfmap: pd.DataFrame,
     items_column: str = 'tech',
-    plot_row_keys: list = ['Fossil', 'PV', 'Wind'],
+    #plot_row_keys: list = ['Fossil', 'PV', 'Wind'],
+    plot_row_keys: list = ['Gas', 'PV', 'Wind'],
     value_col: str = 'Capacity (GW)',
     highlight_runs: list = None,
     color_map: dict = Conventions.items_color_map['tech_map1'][1],
@@ -2531,7 +2532,7 @@ class DataPlotter:
             hierarchy_group=hierarchy_group,
         )
 
-        #plot_row_keys = ['PV', 'Wind','Fossil', 'Nuclear', 'Storage']
+        plot_row_keys = ['PV', 'Wind','Fossil', 'Nuclear', 'Storage']
 
         fig, ax, data = plot_time_series_item_r(
             data=data,
