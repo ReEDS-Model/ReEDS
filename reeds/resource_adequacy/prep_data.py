@@ -165,7 +165,6 @@ def main(t, casedir, iteration=0):
         # map from rep day to actual hour
         # since we don't have multi-year profiles for FINITO load 
         # we assume they repeat across all weather years
-        # TODO: test that this works with multiple regions
         load_finito = pd.merge(load_finito, h_dt_szn.reset_index(), on='h', how='outer')[['timestamp', 'r', 'load_MW']]
         load_finito = load_finito.rename(columns={'timestamp':'datetime'})
         # add model year back in 
