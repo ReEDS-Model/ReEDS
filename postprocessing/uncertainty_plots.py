@@ -61,8 +61,10 @@ class Conventions:
         **{f'battery_{i}':'Storage' for i in range(20)},
         **{'battery_li':'Storage', 'pumped-hydro':'Storage'},
         **dict(zip(
-            ['coal-igcc', 'coaloldscr', 'coalolduns', 'gas-cc', 'gas-ct', 'coal-new', 'o-g-s',],
-            ['Fossil']*20)),
+            #['coal-igcc', 'coaloldscr', 'coalolduns', 'gas-cc', 'gas-ct', 'coal-new', 'o-g-s',],
+            #['Fossil']*20)),
+            ['gas-cc', 'gas-ct'],
+            ['Gas']*20)),
         **dict(zip(
             ['gas-cc_gas-cc-ccs_mod','gas-cc_gas-cc-ccs_max','gas-cc-ccs_mod','gas-cc-ccs_max',
             'gas-cc_gas-cc-ccs_mod','coal-igcc_coal-ccs_mod','coal-new_coal-ccs_mod',
@@ -2529,7 +2531,7 @@ class DataPlotter:
             hierarchy_group=hierarchy_group,
         )
 
-        plot_row_keys = ['PV', 'Wind','Fossil', 'Nuclear', 'Storage']
+        #plot_row_keys = ['PV', 'Wind','Fossil', 'Nuclear', 'Storage']
 
         fig, ax, data = plot_time_series_item_r(
             data=data,
