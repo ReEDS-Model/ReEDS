@@ -297,6 +297,7 @@ def get_regions_and_agglevel(
             'transgrp': 'sub-FERC-1000 region',
             'transreg': 'Transmission Planning Regions from FERC Order 1000',
             'usda_region': 'biomass supply curve region',
+            'gasreg': 'gas price region (for applying daily temperature-based price adjustments)',
         }
         for level, comment in comments.items():
             df = pd.Series(hier_sub[level].unique())

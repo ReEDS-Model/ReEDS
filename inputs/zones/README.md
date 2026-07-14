@@ -89,6 +89,7 @@ The offshore zones are not user-adjustable.
   - `cendiv`: [Census divisions](https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf)
   - `usda_region`: [USDA Farm Production Regions](https://www.ers.usda.gov/data-products/arms-farm-financial-and-crop-production-practices/documentation)
   - `h2ptcreg`: Hydrogen tax credit regions ([DOE 2023, Figure 2](https://www.energy.gov/sites/default/files/2023-12/greet-manual_2023-12-20.pdf))
+  - `gasreg`: Gas price regions. These are specific to the ReEDS model and are based on a mix of [census divisions](https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf), EIA-NEMS natural gas regions used to report regional flows and capacity ([EIA Natural Gas Market Module of the National Energy Modeling System: Model Documentation 2025, Figure 2.5](https://www.eia.gov/outlooks/aeo/nems/documentation/ngmm/pdf/NGMM_AEO2025.pdf)), and EIA-NEMS Natural Gas-Electricity Market Module regions ([EIA Natural Gas Market Module of the National Energy Modeling System: Model Documentation 2025, Figure 2.7](https://www.eia.gov/outlooks/aeo/nems/documentation/ngmm/pdf/NGMM_AEO2025.pdf))
 
 - `zoneset_config.yaml`: Settings for zoneset-specific processing.
 If `GSw_ZoneSet` is listed beneath one of the following switch names, the described behavior is applied during input processing at the beginning of each ReEDS run using that `GSw_ZoneSet`.

@@ -145,6 +145,7 @@ RE_gen_price_nat(t),2004$/MWh,marginal cost of the national RE generation constr
 "repgasprice_r(r,t)",2004$/MMBtu,highest marginal gas price of utilized gas bins for each region,1,,
 repgasprice_nat(t),2004$/MMBtu,weighted-average national natural gas price assuming that plants pay the marginal price,,,
 "repgasquant(cendiv,t)",Quads,quantity of gas consumed in each census division,,,
+"repgasquant_gb(cendiv,gb,t)",Quads,quantity of gas consumed in each census division and gas bin,,,
 "repgasquant_irt(i,r,t)",Quads,quantity of gas consumed by tech and region,,,
 repgasquant_nat(t),Quads,national consumption of natural gas,,,
 "reqt_price(*,*,r,*,t)",varies,Price of requirements,,,
