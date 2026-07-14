@@ -961,7 +961,7 @@ rsc_agg(i,ii)$[ban(i) or ban(ii)] = no ;
 *     --- Region hierarchy ---
 *======================================
 
-set hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) "hierarchy of various regional definitions"
+set hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) "hierarchy of various regional definitions"
 /
 $offlisting
 $ondelim
@@ -986,17 +986,17 @@ set r_itlgrp(r,itlgrp)
     r_ccreg(r,ccreg)
 ;
 
-r_nercr(r,nercr)                      $sum{(      transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_transreg(r,transreg)                $sum{(nercr,         transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_transgrp(r,transgrp)                $sum{(nercr,transreg,         cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_cendiv(r,cendiv)                    $sum{(nercr,transreg,transgrp,       st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_st(r,st)                            $sum{(nercr,transreg,transgrp,cendiv,   interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_interconnect(r,interconnect)        $sum{(nercr,transreg,transgrp,cendiv,st,             country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_country(r,country)                  $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,        usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_usda(r,usda_region)                 $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,            h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_h2ptcreg(r,h2ptcreg)                $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,         hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_hurdlereg(r,hurdlereg)              $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,          ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_ccreg(r,ccreg)                      $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg      ) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
+r_nercr(r,nercr)                      $sum{(      transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_transreg(r,transreg)                $sum{(nercr,         transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_transgrp(r,transgrp)                $sum{(nercr,transreg,         cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_cendiv(r,cendiv)                    $sum{(nercr,transreg,transgrp,       st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_st(r,st)                            $sum{(nercr,transreg,transgrp,cendiv,   interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_interconnect(r,interconnect)        $sum{(nercr,transreg,transgrp,cendiv,st,             country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_country(r,country)                  $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,        usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_usda(r,usda_region)                 $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,            h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_h2ptcreg(r,h2ptcreg)                $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,         hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_hurdlereg(r,hurdlereg)              $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,          gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_ccreg(r,ccreg)                      $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg      ) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
 
 set r_itlgrp(r,itlgrp) "mapping of r to itlgrp"
 /
@@ -6130,6 +6130,8 @@ Parameter
 * Fossil gas supply curve
     gasadder_cd(cendiv,t,allh)             "--$/MMbtu-- adder for NG census division"
     szn_adj_gas(allh)                      "--fraction-- seasonal adjustment for gas prices"
+    gasprice_adj_r(r,allh)                 "--fraction-- adjustment for zonal gas prices"
+    gasprice_adj_cendiv(cendiv,allh)       "--fraction-- adjustment for cendiv-level gas prices"
 ;
 
 * Initialize some parameters

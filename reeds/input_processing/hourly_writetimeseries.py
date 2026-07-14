@@ -257,6 +257,56 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
 
         return df_out
 
+
+def get_daily_gasprice_multipliers(
+    sw,
+    hmap_myr,
+    hmap_allyrs,
+    inputs_case,
+    periodtype='rep',
+    region_level='r'
+):
+    """
+    After identifying the modeled days, load the daily gas price
+    multipliers for the given region level and extract the multipliers
+    on the modeled days for each year.
+    """
+    ### Get daily gas price multipliers for region_level
+    dfin = reeds.io.read_file(
+        os.path.join(inputs_case, f'daily_gasprice_multipliers_{region_level}.h5'),
+        parse_timestamps=True
+    )
+    dfin.columns = dfin.columns.rename(region_level)
+
+    ### Add time index and forward fill so that the multiplier for
+    ### each day is copied to each hour of that day
+    dfin = dfin.reindex(hmap_allyrs.timestamp).ffill()
+    dfin.index = (
+        dfin.index
+        .map(hmap_allyrs.set_index('timestamp')['actual_h'])
+        .rename('h')
+    )
+
+    ### For full year, keep all periods in the modeled years
+    if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
+        dfout = dfin.loc[
+            dfin.index.map(hmap_allyrs.set_index('actual_h').year)
+            .isin(sw['GSw_HourlyWeatherYears'])
+        ].copy()
+    ### Otherwise, pull out the specified periods
+    else:
+        dfout = dfin.loc[hmap_myr.h.unique()].copy()
+
+    ### Reshape for ReEDS
+    dfout = (
+        dfout.stack(region_level)
+        .reorder_levels([region_level, "h"])
+        .sort_index()
+    )
+
+    return dfout
+
+
 def get_yearly_flexibility(
     sw,
     period_szn,
@@ -498,6 +548,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'evmc_storage_energy': ['*i','r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
+            'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
+            'daily_gasprice_multipliers_cendiv': ['*cendiv','h','multiplier'],
         }
         for f, columns in write.items():
             pd.DataFrame(columns=columns).to_csv(
@@ -1313,6 +1365,35 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .reset_index()
     )
 
+    #################################################################
+    #    -- Weather-based daily natural gas price multipliers --    #
+    #################################################################
+    daily_gasprice_multipliers_dict = {}
+    for region_level in ['r', 'cendiv']:
+        df = get_daily_gasprice_multipliers(
+            sw=sw,
+            hmap_myr=hmap_myr,
+            hmap_allyrs=hmap_allyrs,
+            inputs_case=inputs_case,
+            periodtype=periodtype,
+            region_level=region_level
+        )
+        # Update to GSw_HourlyChunkLength resolution.
+        # Note no aggregation method is needed because all hours within
+        # a given day have the same multiplier value, so we just select
+        # the set of hours in chunkmap.
+        df = (
+            df.loc[df.index.get_level_values('h').isin(chunkmap.values())]
+            .rename('multiplier')
+        )
+        # Renormalize so the average for each region is 1,
+        # ensuring the year-round average gas price doesn't change.
+        df = (
+            df.div(df.groupby(level=[region_level]).mean())
+            .reset_index()
+            [[region_level, 'h', 'multiplier']]
+        )
+        daily_gasprice_multipliers_dict[region_level] = df
 
     # %%###################################################################################
     #    -- Write outputs, aggregating hours to GSw_HourlyChunkLength if necessary --    #
@@ -1500,6 +1581,17 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             ),
             False,
             False,
+        ],
+        ## Gas price multipliers
+        'daily_gasprice_multipliers_r': [
+            daily_gasprice_multipliers_dict['r'].round(decimals),
+            False,
+            False
+        ],
+        'daily_gasprice_multipliers_cendiv': [
+            daily_gasprice_multipliers_dict['cendiv'].round(decimals),
+            False,
+            False
         ],
         ##################################################################################
         ###### The next parameters are just diagnostics and are not actually used in ReEDS

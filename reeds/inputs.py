@@ -774,6 +774,28 @@ def get_b2b(case=None, **kwargs) -> pd.DataFrame:
     return b2b
 
 
+def get_county_populations():
+    return pd.read_csv(
+        os.path.join(
+            reeds.io.reeds_path,
+            'inputs',
+            'disaggregation',
+            'county_population.csv'
+        )
+    )
+
+
+def get_state_groups():
+    return pd.read_csv(
+        os.path.join(
+            reeds.io.reeds_path,
+            'inputs',
+            'zones',
+            'state_groups.csv'
+        )
+    )
+
+
 def get_zoneset_config() -> dict:
     configpath = Path(reeds.io.reeds_path, 'inputs', 'zones', 'zoneset_config.yaml')
     with open(configpath, 'r') as f:

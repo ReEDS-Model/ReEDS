@@ -143,6 +143,7 @@ GSw_GasCurve,"Select natural gas supply curve (0 = cendiv, 1 = national + cendiv
 GSw_GasCC_H_1x1,Turn on/off both gas-CC_H_1x1 and gas-CC_H_1x1-CCS_mod/max plant options,0; 1,0,
 GSw_GasCC_H_2x1,Turn on/off both gas-CC_H_2x1 and gas-CC_H_2x1-CCS_mod/max plant options,0; 1,0,
 GSw_GasCT_Aero,Turn on/off gas-CT_aeroderivative technology option,0; 1,0,
+GSw_GasPriceAdjMethod,"Select method for adjusting gas prices (0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures)",0; 1; 2,1,
 GSw_GasRegionSmooth,Exponential decay length [km] to use when smoothing regional (census division) gas prices together (if 0 then no smoothing is applied and r:cendiv map is used 1:1),float,150,
 GSw_GasSector,Select sector scope of gas curves,electric_sector; energy_sector,electric_sector,
 GSw_GenMandate,Turn on/off national Gen Requirement. 2 turns on and applies constraint at busbar.,0; 1; 2,0,

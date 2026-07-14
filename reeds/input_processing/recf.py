@@ -533,6 +533,7 @@ def main(reeds_path, inputs_case):
             'usda_region',
             'h2ptcreg',
             'hurdlereg',
+            'gasreg',
             'ccreg'
         ]]
         .to_csv(os.path.join(inputs_case, 'hierarchy.csv'), index=True, header=True)

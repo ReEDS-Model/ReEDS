@@ -92,6 +92,7 @@ forced_retirements.csv,inputs/state_policies/forced_retirements.csv,1,ignore,ign
 fuel2tech.csv,inputs/sets/fuel2tech.csv,1,ignore,ignore,,,,,0,,,set,fuel2tech,mapping between fuel types and generations,
 fuelbin.csv,inputs/sets/fuelbin.csv,1,ignore,ignore,,,,,,,,set,fuelbin,gas usage bracket,
 futurefiles.csv,inputs/userinput/futurefiles.csv,1,ignore,ignore,,,,,0,,,,,,
+gasreg_price_adj_regression_params.csv,inputs/fuelprices/gasreg_price_adj_regression_params.csv,int(sw.GSw_GasPriceAdjMethod) == 2,ignore,ignore,wide_gasreg,param,,1,0,,,,,,
 gb.csv,inputs/sets/gb.csv,1,ignore,ignore,,,,,,,,set,gb,gas price bins; must have an odd number of bins; e.g. gb1*gb15,
 gbin.csv,inputs/sets/gbin.csv,1,ignore,ignore,,,,,,,,set,gbin,growth bins,
 gbin_min.csv,inputs/growth_constraints/gbin_min.csv,1,ignore,ignore,,,,,0,,,,,,
