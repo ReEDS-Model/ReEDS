@@ -289,7 +289,7 @@ TECH = {
     ],
     'storage'  : ['battery_li', 'pumped-hydro'
     ],
-    'rsc_all': ['upv','dpv','pvb','csp-ns'],
+    'rsc_all': ['upv','pvb','csp-ns'],
     'rsc_w': ['wind-ons','wind-ofs'],
     'rsc_csp': ['csp-ns'],
     'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
