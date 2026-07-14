@@ -2,7 +2,6 @@ filename,filetype,ignore,key,year_col,fix_cols,wide,header,forecast_fit,clip_min
 aclike.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 acp_disallowed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 acp_prices.csv,.csv,0,None,wide,st,1,0,constant,None,None,done,constant
-agglevels.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 allout_RSC.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 allt.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 alpha.csv,.csv,0,None,t,None,1,0,constant,None,None,done,linear_10
@@ -198,7 +197,6 @@ heat_rate_penalty_spin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,
 heat_rate.csv,.csv,0,None,t,"i,v,r",0,0,constant,0,None,done,constant
 hierarchy_itlgrp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hierarchy_original.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-hierarchy_with_res.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hierarchy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hintage_char.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hintage_data.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -256,7 +254,6 @@ min_retire_age.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 minCF.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 mingen_fixed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 minloadfrac0.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-modeled_regions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 modeledyears.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 month.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 month2quarter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -364,7 +361,6 @@ pvbcapcostmult.csv,.csv,0,None,t,None,0,0,constant,None,None,done,constant
 pvf_cap.csv,.csv,1,None,*t,None,0,0,linear_5,0,None,done (but double-check that it is written correctly by calc_financial_inputs.py),linear_5
 pvf_onm_int.csv,.csv,1,None,*t,None,0,0,linear_10,0,None,done (but double-check that it is written correctly by calc_financial_inputs.py),linear_10
 quarter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-r_ba.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_cendiv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_county.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_cs_distance_mi.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -479,8 +475,6 @@ upgrade_mult_mid.csv,.csv,0,None,wide,dummy,1,0,linear_5,0,None,new,
 upgradelink_water.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 uranium_price.csv,.csv,0,None,year,None,0,0,linear_5,0,None,new,
 va_ng_crf_penalty.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
-val_ba.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-county.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_cs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_r_all.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 var_map.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant

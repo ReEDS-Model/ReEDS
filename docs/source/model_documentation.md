@@ -1643,7 +1643,11 @@ In the static case, fuel prices are not responsive to demand.
 The switch `GSw_GasCurve` controls the choice of natural gas supply curve.
 0 = census-division-only, 1 = national + census division, 2 = static, 3 = national-only
 
-The file `inputs/fuelprices/cendivweights.csv` contains the weights applied to the fuel prices to help smooth the prices across census divisions when setting `GSw_GasCurve` to 1. This file was created by taking an input file of county-level spatial resolution and assigning a weight to each balancing area.  The highest weight is farthest from the census region border and an exponential decay length of 150 km is applied, blending the weight values across balancing areas and census regions.
+Gas prices vary by census division.
+To avoid sharp boundaries between regions, the gas price in each model zone can be defined as the average over multiple census divisions, weighted by the distance from the zone centroid to the census division boundary.
+The distance weighting is controlled by the `GSw_GasRegionSmooth` switch;
+an exponential decay length of 150 km is used by default.
+If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {numref}`figure-hierarchy` is instead used directly.
 ```
 
 The natural gas fuel prices also include a seasonal price adjustor, making winter prices higher than the natural gas prices seen during the other seasons of the year.
@@ -1653,7 +1657,7 @@ For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-
 ## Electricity Demand
 
 End-use electricity demand is an exogenous input to ReEDS represented by hourly profiles.
-The available load profile options fall into three categories: 1) load projections from Evolved Energy Research, 2) load projections developed as part of the Electrification Futures Study and 3) historic load multiplied by annual load growth factors from AEO.
+The available load profile options fall into three categories: 1) load projections from Evolved Energy Research, 2) load projections developed as part of the Electrification Futures Study and 3) historic load multiplied by state-level annual load growth factors from AEO.
 When applicable, ReEDS will modify the exogenously specified profiles by applying a load shape adjustment method that incorporates analysis from other modeling tools or by adding load from endogenously built electricity-consuming technologies.
 
 ReEDS includes interzonal transmission system losses in the optimization.
@@ -1896,7 +1900,7 @@ in general, the ITL for power flow from Zone A to Zone B is not the same as the 
 
 As discussed in {cite}`brownGeneralMethodEstimating2023`, because of the constraints imposed by Kirchhoff's voltage law and nodal load participation factors, the ITL tends to be smaller than the sum of line ratings that cross an interface;
 that is, every transmission line between a pair of regions cannot in general be used at its rated capacity at the same time.
-{numref}`figure-transmission-itl-r` illustrates this effect for the default 134 ReEDS zones.
+{numref}`figure-transmission-itl-r` illustrates this effect for the traditional 134 ReEDS zones.
 The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.

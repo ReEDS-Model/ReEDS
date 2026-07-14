@@ -106,22 +106,7 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
     for case in cases:
         sw = dfcases[case]
         new_switches[case] = {}
-        ### TEMPORARY 20260402: The GSw_RegionResolution switch is deprecated;
-        ### for now, hardcode its value for the region resolutions that use it
-        match sw['GSw_ZoneSet']:
-            case 'z134':
-                GSw_RegionResolution = 'ba'
-            case 'z3109':
-                GSw_RegionResolution = 'county'
-            case 'PJMcounty' | 'UTcounty':
-                GSw_RegionResolution = 'mixed'
-            case _:
-                GSw_RegionResolution = 'aggreg'
-        new_switches[case]['GSw_RegionResolution'] = GSw_RegionResolution
         ### TEMPORARY 20260402: Turn off itlgrp constraint until it's fixed
-        # new_switches[case]['GSw_itlgrpConstraint'] = str(int(
-        #     sw['GSw_RegionResolution'] in ['county', 'mixed']
-        # ))
         new_switches[case]['GSw_itlgrpConstraint'] = '0'
         ## 'meshed' offshore files are only used when offshore zones are turned on
         new_switches[case]['GSw_OffshoreFiles'] = (
@@ -789,25 +774,25 @@ def get_b2b(case=None, **kwargs) -> pd.DataFrame:
     return b2b
 
 
-def check_aggreg_unique(hierarchy):
+def get_zoneset_config() -> dict:
+    configpath = Path(reeds.io.reeds_path, 'inputs', 'zones', 'zoneset_config.yaml')
+    with open(configpath, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
+
+
+def get_applicable_zonesets(setting: str) -> list[str]:
     """
-    Make sure each aggreg is only assigned to a single transreg / transgrp / st / etc.
+    Get the list of zonesets that a setting should apply to. The provided
+    setting should be a field in 'inputs/zones/zoneset_config.yaml'.
     """
-    testcols = [i for i in hierarchy.columns if i != 'aggreg']
-    aggreg_errors = {}
-    for col in testcols:
-        unique_aggregs = (
-            hierarchy[[col,'aggreg']]
-            .drop_duplicates()
-            .groupby('aggreg')[col].count()
+    zoneset_config = get_zoneset_config()
+    if setting not in zoneset_config:
+        raise NotImplementedError(
+            f"The provided setting '{setting}' is invalid. "
+            "Update inputs/zones/zoneset_config.yaml to include it."
         )
-        duplicated = unique_aggregs.loc[unique_aggregs>1]
-        if len(duplicated):
-            aggreg_errors[col] = hierarchy.loc[
-                hierarchy.aggreg.isin(duplicated.index),
-                [col,'aggreg']
-            ]
-    return aggreg_errors
+    return zoneset_config[setting]
 
 
 def validate_zoneset(GSw_ZoneSet):
@@ -896,19 +881,3 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
-    ## TEMPORARY 20260402: Is each aggreg only assigned to a single hierarchy level?
-    fpath_134 = Path(zonepath, 'hierarchy_from134.csv')
-    if fpath_134.is_file():
-        hierarchy_134 = pd.read_csv(fpath_134, index_col='ba')
-        errors = check_aggreg_unique(hierarchy_134)
-        if len(errors):
-            for v in errors.values():
-                print(v)
-                print()
-            err = (
-                "There are aggreg values spanning multiple hierarchy levels for:\n > "
-                + '\n > '.join(errors.keys())
-                + f"\nPlease modify {fpath_134}\n"
-                "to ensure each aggreg is only assigned to a single hierarchy level."
-            )
-            raise ValueError(err)

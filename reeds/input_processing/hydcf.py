@@ -321,22 +321,16 @@ def get_hydro_plants(inputs_case: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame
     """
-    # Get county-to-region mapping
-    county2zone = reeds.io.get_county2zone(os.path.dirname(inputs_case))
-    county2zone.index = 'p' + county2zone.index
     # Get plant database and filter down to hydro plants
     gendb = pd.read_csv(
         os.path.join(inputs_case, 'unitdata.csv'),
-        usecols=['T_PID', 'tech', 'FIPS']
+        usecols=['T_PID', 'tech', 'r']
     )
     hydro_plants = (
         gendb.loc[gendb.tech.str.startswith('hyd')]
         .drop_duplicates('T_PID')
         .set_index('T_PID')
     )
-    # Assign each plant to a model region and reformat
-    hydro_plants['r'] = hydro_plants['FIPS'].map(county2zone)
-    hydro_plants = hydro_plants.drop(columns='FIPS')
     hydro_plants.index = hydro_plants.index.astype(str)
 
     return hydro_plants

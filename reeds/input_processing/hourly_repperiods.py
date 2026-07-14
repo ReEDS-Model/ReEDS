@@ -258,27 +258,15 @@ def main(
         os.path.join(inputs_case, 'val_r_all.csv'), header=None).squeeze(1).tolist()
     modelyears = pd.read_csv(
         os.path.join(inputs_case, 'modeledyears.csv')).columns.astype(int)
-    # Use agglevel_variables function to obtain spatial resolution variables 
-    agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
 
     #%% Get map from yperiod, hour, and h_of_period to timestamp
     timestamps = reeds.timeseries.make_timestamps(sw)
     timestamps_myr = timestamps.loc[timestamps.year.isin(sw['GSw_HourlyWeatherYears'])].copy()
 
-    ### Get region hierarchy for use with GSw_HourlyClusterRegionLevel
+    ### Get region hierarchy and rmap
     hierarchy = pd.read_csv(
         os.path.join(inputs_case,'hierarchy.csv')).rename(columns={'*r':'r'}).set_index('r')
-    hierarchy_orig = pd.read_csv(
-        os.path.join(inputs_case,'hierarchy_original.csv'))
-    
-    if sw.GSw_HourlyClusterRegionLevel == 'r':
-        rmap = pd.Series(hierarchy_orig.index, index=hierarchy_orig.index)
-    elif agglevel_variables['agglevel'] == 'county' or 'county' in agglevel_variables['agglevel']:
-        rmap = hierarchy[sw['GSw_HourlyClusterRegionLevel']]
-    elif agglevel_variables['agglevel'] in ['ba','aggreg']:
-        rmap = (hierarchy_orig.loc[hierarchy_orig['ba'].isin(val_r_all)]
-                [['aggreg',sw['GSw_HourlyClusterRegionLevel']]]
-                .drop_duplicates().set_index('aggreg')).squeeze(1)
+    rmap = reeds.io.get_rmap(inputs_case, sw['GSw_HourlyClusterRegionLevel'])
 
     #%% Load supply curves to use for available capacity weighting
     sc = {
