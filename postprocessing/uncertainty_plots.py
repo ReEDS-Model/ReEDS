@@ -2100,17 +2100,17 @@ class DataPlotter:
 
         self.output_plot_methods = {
             "capacity_year_tech_r": self.plot_capacity_year_tech_r,
-            "generation_year_tech_r": self.plot_generation_year_tech_r,
-            "gen_penetration_tech_year_r": self.plot_gen_penetration_tech_year_r,
-            "transmission_year_tw_mi_r": self.plot_transmission_year_tw_mi_r,
-            "transmission_year_tw_mi_interface": self.plot_transmission_year_tw_mi_interface,
-            "transmission_year_cap_interface": self.plot_transmission_year_cap_interface,
-            "emissions_year_r": self.plot_emissions_r,
-            "system_npv_prefix_comparison": self.plot_system_npv_prefix_comparison,
-            "tech_cap_prefix_comp_year": self.plot_tech_cap_prefix_comp_year,
-            "tech_gen_prefix_comp_year": self.plot_tech_gen_prefix_comp_year,
-            "tech_cap_lastyear_prefix_comp": self.plot_tech_cap_lastyear_prefix_comp,
-            "tech_gen_lastyear_prefix_comp": self.plot_tech_gen_lastyear_prefix_comp,
+            #"generation_year_tech_r": self.plot_generation_year_tech_r,
+            #"gen_penetration_tech_year_r": self.plot_gen_penetration_tech_year_r,
+            #"transmission_year_tw_mi_r": self.plot_transmission_year_tw_mi_r,
+            #"transmission_year_tw_mi_interface": self.plot_transmission_year_tw_mi_interface,
+            #"transmission_year_cap_interface": self.plot_transmission_year_cap_interface,
+            #"emissions_year_r": self.plot_emissions_r,
+            #"system_npv_prefix_comparison": self.plot_system_npv_prefix_comparison,
+            #"tech_cap_prefix_comp_year": self.plot_tech_cap_prefix_comp_year,
+            #"tech_gen_prefix_comp_year": self.plot_tech_gen_prefix_comp_year,
+            #"tech_cap_lastyear_prefix_comp": self.plot_tech_cap_lastyear_prefix_comp,
+            #"tech_gen_lastyear_prefix_comp": self.plot_tech_gen_lastyear_prefix_comp,
         }
 
         self.plot_methods = {
