@@ -302,7 +302,8 @@ ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 
 * FINITO load
 $ifthene.linked_load Sw_FINITO_Link==1
-    load_finito_rt(r,h,t) = USE_ELE_FINITO.l(r,h,t) ;
+* limit to representative timeslices since prep_data.py maps these to rep-period timestamps
+    load_finito_rt(r,h,t)$h_rep(h) = USE_ELE_FINITO.l(r,h,t) ;
 $else.linked_load
     load_finito_rt(r,h,t) = 0 ; 
 $endif.linked_load
