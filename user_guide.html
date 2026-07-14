@@ -551,7 +551,7 @@ This press release has a nice <a class="reference external" href="https://home.t
 Example: if an electrolyzer is put in service in 2028, only generators whose commercial operations dates are between 2025-2028 may qualify to power this electrolyzer.
 This requirement starts immediately. There are special exceptions for nuclear, CCS and states with robust GHG emission caps - we do not model these additional pathways in ReEDS.</p></li>
 <li><p>Hourly matching: each MWh must be consumed by an electrolyzer in the same hour of the year in which it was generated.</p></li>
-<li><p>Deliverablity: each MWh must be consumed by an electrolyzer in the same region in which it was generated. Regional matching is required at the National Transmission Needs Study region level, which corresponds to the H<sub>2</sub> PTC region level shown in <a class="reference internal" href="model_documentation.html#figure-hierarchy"><span class="std std-numref">Fig. 17</span></a>.</p></li>
+<li><p>Deliverablity: each MWh must be consumed by an electrolyzer in the same region in which it was generated. Regional matching is required at the National Transmission Needs Study region level, which corresponds to the H<sub>2</sub> PTC region level shown in <a class="reference internal" href="model_documentation.html#figure-spatial-layers-states"><span class="std std-numref">Fig. 18</span></a>.</p></li>
 </ol>
 <p>Source: <a class="reference external" href="https://www.energy.gov/sites/default/files/2023-12/greet-manual_2023-12-20.pdf">Guidelines to Determine Well-to-Gate GHG Emissions of Hydrogen Production Pathways using 45VH2-GREET 2023</a>, 2023, Figure 2</p>
 <p>These three pillars are combined differently depending on which year it is:</p>
@@ -1003,17 +1003,17 @@ Dirichlet sampling tends to favor combinations that lean toward central scenario
 “medium”, and “high” pathways.</p></li>
 </ul>
 <p>See below examples of weights for Dirichlet distributions using different concentration parameters and an arbitrary set of
-Low, Mod, and High values (<a class="reference internal" href="#figure-mcs-three-param-dirichlet"><span class="std std-numref">Fig. 71</span></a> and <a class="reference internal" href="#figure-mcs-two-param-dirichlet"><span class="std std-numref">Fig. 72</span></a>).</p>
+Low, Mod, and High values (<a class="reference internal" href="#figure-mcs-three-param-dirichlet"><span class="std std-numref">Fig. 74</span></a> and <a class="reference internal" href="#figure-mcs-two-param-dirichlet"><span class="std std-numref">Fig. 75</span></a>).</p>
 <figure class="align-default" id="figure-mcs-three-param-dirichlet">
 <a class="reference internal image-reference" href="_images/mcs-three-param-dirichlet.png"><img alt="_images/mcs-three-param-dirichlet.png" src="_images/mcs-three-param-dirichlet.png" style="width: 82.4%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 71 </span><span class="caption-text">Samples from a Dirichlet distribution with three concentration parameters applied to Low, Mod, High options</span><a class="headerlink" href="#figure-mcs-three-param-dirichlet" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 74 </span><span class="caption-text">Samples from a Dirichlet distribution with three concentration parameters applied to Low, Mod, High options</span><a class="headerlink" href="#figure-mcs-three-param-dirichlet" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="figure-mcs-two-param-dirichlet">
 <a class="reference internal image-reference" href="_images/mcs-two-param-dirichlet.png"><img alt="_images/mcs-two-param-dirichlet.png" src="_images/mcs-two-param-dirichlet.png" style="width: 80%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 72 </span><span class="caption-text">Samples from a Dirichlet distribution with two concentration parameters applied to Low and High options</span><a class="headerlink" href="#figure-mcs-two-param-dirichlet" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 75 </span><span class="caption-text">Samples from a Dirichlet distribution with two concentration parameters applied to Low and High options</span><a class="headerlink" href="#figure-mcs-two-param-dirichlet" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Built-in plotting functionality for Monte Carlo runs is described under <a class="reference internal" href="#uncertainty-plots"><span class="xref myst">Uncertainty Plots</span></a>.</p>
@@ -1108,19 +1108,19 @@ presentation with key trends and uncertainty ranges, along with an Excel workboo
 <figure class="align-default" id="figure-mcs-load-sample">
 <a class="reference internal image-reference" href="_images/mcs-load-sample.png"><img alt="_images/mcs-load-sample.png" src="_images/mcs-load-sample.png" style="width: 80%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 73 </span><span class="caption-text">MCS Example: Total system load trajectories across regions.</span><a class="headerlink" href="#figure-mcs-load-sample" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 76 </span><span class="caption-text">MCS Example: Total system load trajectories across regions.</span><a class="headerlink" href="#figure-mcs-load-sample" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="figure-mcs-fuel-prices-sample">
 <a class="reference internal image-reference" href="_images/mcs-fuel-prices-sample.png"><img alt="_images/mcs-fuel-prices-sample.png" src="_images/mcs-fuel-prices-sample.png" style="width: 80%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 74 </span><span class="caption-text">MCS Example: Natural gas price paths.</span><a class="headerlink" href="#figure-mcs-fuel-prices-sample" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 77 </span><span class="caption-text">MCS Example: Natural gas price paths.</span><a class="headerlink" href="#figure-mcs-fuel-prices-sample" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="figure-mcs-tech-costs-sample">
 <a class="reference internal image-reference" href="_images/mcs-tech-costs-sample.png"><img alt="_images/mcs-tech-costs-sample.png" src="_images/mcs-tech-costs-sample.png" style="width: 50%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 75 </span><span class="caption-text">MCS Example: Technology cost trajectories.</span><a class="headerlink" href="#figure-mcs-tech-costs-sample" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 78 </span><span class="caption-text">MCS Example: Technology cost trajectories.</span><a class="headerlink" href="#figure-mcs-tech-costs-sample" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
@@ -1132,19 +1132,19 @@ as the goal is simply to demonstrate the plotting capabilities.</em></p>
 <figure class="align-default" id="figure-mcs-capacity-growth-sample">
 <a class="reference internal image-reference" href="_images/mcs-capacity-growth-sample.png"><img alt="_images/mcs-capacity-growth-sample.png" src="_images/mcs-capacity-growth-sample.png" style="width: 80%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 76 </span><span class="caption-text">MCS Example: Installed capacity by technology over time.</span><a class="headerlink" href="#figure-mcs-capacity-growth-sample" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 79 </span><span class="caption-text">MCS Example: Installed capacity by technology over time.</span><a class="headerlink" href="#figure-mcs-capacity-growth-sample" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="figure-mcs-energy-penetration">
 <a class="reference internal image-reference" href="_images/mcs-energy-penetration.png"><img alt="_images/mcs-energy-penetration.png" src="_images/mcs-energy-penetration.png" style="width: 80%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 77 </span><span class="caption-text">MCS Example: Share of generation by technology.</span><a class="headerlink" href="#figure-mcs-energy-penetration" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 80 </span><span class="caption-text">MCS Example: Share of generation by technology.</span><a class="headerlink" href="#figure-mcs-energy-penetration" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="figure-mcs-transmission-buildout">
 <a class="reference internal image-reference" href="_images/mcs-transmission.png"><img alt="_images/mcs-transmission.png" src="_images/mcs-transmission.png" style="width: 80%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 78 </span><span class="caption-text">MCS Example: Total transmission capacity by interface.</span><a class="headerlink" href="#figure-mcs-transmission-buildout" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 81 </span><span class="caption-text">MCS Example: Total transmission capacity by interface.</span><a class="headerlink" href="#figure-mcs-transmission-buildout" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <!-- ## Hourlize -->
@@ -1780,7 +1780,7 @@ These characteristics include:</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on July 08, 2026.
+      <span class="lastupdated">Last updated on July 14, 2026.
       </span></p>
   </div>
 
