@@ -1290,7 +1290,8 @@ eq_curt_gen_balance(r,h,t)$tmodel(t)..
 * ---------------------------------------------------------------------------
 * Generation in each timeslice must be greater than mingen_fixed * available capacity
 eq_mingen_fixed(i,v,r,h,t)
-    $[Sw_MingenFixed$tmodel(t)$mingen_fixed(i)$valgen(i,v,r,t)]..
+    $[Sw_MingenFixed$tmodel(t)$mingen_fixed(i)$valgen(i,v,r,t)
+    $(yeart(t)>=Sw_StartMarkets)]..
 
     GEN(i,v,r,h,t)
 
