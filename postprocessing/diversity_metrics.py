@@ -44,15 +44,15 @@ def main():
     #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'          # Path of runs folder
     #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
     runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
-    case_file = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
+    case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
-    case_file = pd.read_csv(case_file)
-    optimal_case = case_file['scenario'].iloc[0]
-    rv_cases = case_file['scenario'].iloc[1:].values.tolist()
-    min_max_cases = case_file[(case_file['scenario'].str.contains('min')) | 
-                          (case_file['scenario'].str.contains('max'))]['scenario'].tolist()
+    case_file_orig = pd.read_csv(case_file_orig)
+    optimal_case = case_file_orig['scenario'].iloc[0]
+    rv_cases = case_file_orig['scenario'].iloc[1:].values.tolist()
+    min_max_cases = case_file_orig[(case_file_orig['scenario'].str.contains('min')) | 
+                          (case_file_orig['scenario'].str.contains('max'))]['scenario'].tolist()
     rv_cases = [x for x in rv_cases if x not in min_max_cases]
 
     if metric == 'capacity':
@@ -68,7 +68,7 @@ def main():
             rank_HMSED = 'HMSED_rank_'+submetric
             col_gini = 'gini_'+submetric
 
-            case_file = case_file[case_file['scenario'].str.contains(submetric)]
+            case_file = case_file_orig[case_file_orig['scenario'].str.contains(submetric)]
             rv_cases = [item for item in rv_cases if submetric in item]
         else:
             col_ED = 'ED'
@@ -76,9 +76,10 @@ def main():
             col_HMSED = 'HMSED'
             rank_HMSED = 'HMSED_rank'
             col_gini = 'gini' 
-        
-        
 
+            case_file = case_file_orig
+        
+    
         # Find maximally different solutions
         case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, 
                                             rv_cases, submetric, file, year,number_of_max_diff_case,
