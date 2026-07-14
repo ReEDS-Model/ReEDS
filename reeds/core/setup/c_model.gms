@@ -79,7 +79,7 @@ positive variables
 * RECS variables
   RECS(RPSCat,i,st,ast,htype,t)         "--MWh-- renewable energy credits from state st to state ast, for representative (htype=rep) or stress (htype=stress) periods",
   ACP_PURCHASES(RPSCat,st,htype,t)      "--MWh-- purchases of ACP credits to meet the RPS constraints, for representative (htype=rep) or stress (htype=stress) periods",
-  ACP_PURCHASES_STRESSPD(RPSCat,st,szn,t) "--MWh-- purchases of ACP credits to meet the per-stress-period clean generation floor (eq_REC_Requirement_stressperiod); separate from ACP_PURCHASES because that floor is checked independently for each stress period rather than pooled across the year",
+  ACP_PURCHASES_STRESSPD(RPSCat,st,allszn,t) "--MWh-- per-period ACP credits for eq_REC_Requirement_stressperiod; kept separate from ACP_PURCHASES because of different indexing",
 
 * transmission variables
   CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
@@ -229,7 +229,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_REC_launder(RPSCat,st,htype,t)         "--RECs-- RECs laundering constraint"
  eq_REC_BundleLimit(RPSCat,st,ast,htype,t) "--RECS-- trade in bundle recs must be less than interstate electricity transmission"
  eq_REC_unbundledLimit(RPScat,st,htype,t)  "--RECS-- unbundled RECS cannot exceed some percentage of total REC requirements"
- eq_REC_Requirement_stressperiod(RPSCat,st,szn,t) "--RECs-- in-state qualifying generation (plus a dedicated per-period ACP release valve) must independently meet the stress-period RPS/CES requirement for each individual stress period, preventing a state's compliance on one stress period from offsetting a shortfall on another"
+ eq_REC_Requirement_stressperiod(RPSCat,st,allszn,t) "--RECs-- in-state generation (plus per-period ACP) must meet the stress requirement independently for each stress period, so one period can't offset a shortfall on another"
  eq_RPS_OFSWind(st,t)                      "--MW-- MW of offshore wind capacity must be greater than or equal to RPS amount"
  eq_national_gen(t)                        "--MWh-- e.g. a national RPS or CES. require a certain amount of total generation to be from specified sources."
 
@@ -2753,16 +2753,7 @@ eq_REC_unbundledLimit(RPSCat,st,htype,t)$[st_unbundled_limit(RPScat,st)$tmodel(t
 
 * ---------------------------------------------------------------------------
 
-* eq_REC_Requirement (htype=stress) pools all stress hours into one annual sum,
-* which lets a state's strong performance on one stress period (e.g. a min-wind
-* day) offset a shortfall on a completely different, unrelated stress period
-* (e.g. a different region's peak-load day). This equation instead checks the
-* same RecPerc(...,"stress",...) target independently for each individual
-* stress period (szn_stress(szn)), so no such offsetting is possible. Because
-* RECS stays annual (not period-indexed), only in-state qualifying generation
-* can satisfy it here -- imported/bundled credit is not allowed toward this
-* floor; ACP_PURCHASES_STRESSPD is a dedicated per-period release valve so a
-* genuinely hard period doesn't force infeasibility or extreme overbuild.
+* eq_REC_Requirement equivalent that applies for each stress period invidiually
 eq_REC_Requirement_stressperiod(RPSCat,st,szn,t)$[RecPerc(RPSCat,st,"stress",t)$szn_stress(szn)
                                 $(not tfirst(t))$tmodel(t)$Sw_StateRPS$Sw_StateRPS_Stress
                                 $(yeart(t)>=firstyear_RPS)

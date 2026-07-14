@@ -495,13 +495,13 @@ tran_hurdle_cost_ann(r,rr,trtype,t)$[tmodel_new(t)$routes(r,rr,trtype,t)$cost_hu
 
 rec_outputs(RPSCat,i,st,ast,htype,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(RPSCat,i,st,ast,htype,t) ;
 acp_purchases_out(rpscat,st,htype,t) = ACP_PURCHASES.l(RPSCat,st,htype,t) ;
-acp_purchases_stressperiod_out(rpscat,st,allszn,t)$szn_stress(allszn) = ACP_Purchases_StressPd.l(RPSCat,st,allszn,t) ;
+acp_purchases_stressperiod_out(rpscat,st,szn,t)$szn_stress(szn) = ACP_Purchases_StressPd.l(RPSCat,st,szn,t) ;
 * Shadow price ($/MWh) of the per-stress-period clean generation floor
 * (eq_REC_Requirement_stressperiod), one value per individual stress period --
 * this is where the marginal cost of the per-period-floor mechanism actually
 * shows up (see the note above 'state_rps_stress' in the reqt_price block).
-reqt_price_stressperiod_out(RPSCat,st,allszn,t)$[szn_stress(allszn)$Sw_StateRPS_Stress] =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_REC_Requirement_stressperiod.m(RPSCat,st,allszn,t) ;
+reqt_price_stressperiod_out(RPSCat,st,szn,t)$[szn_stress(szn)$Sw_StateRPS_Stress] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_REC_Requirement_stressperiod.m(RPSCat,st,szn,t) ;
 ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) ;
 
 *========================================
@@ -1631,10 +1631,10 @@ systemcost_ba("op_acp_compliance_costs",r,t)$[tmodel_new(t)$(yeart(t)>=firstyear
                    }
 * plus per-stress-period ACP purchase costs (eq_REC_Requirement_stressperiod), attributed to bas
 * the same way as the annual ACP purchase costs above
-              + sum{(st,RPSCat,szn)
-                    $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,"stress",t)$szn_stress(szn)
+              + sum{(st,RPSCat,allszn)
+                    $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,"stress",t)$szn_stress(allszn)
                     $sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }],
-                       acp_price(st,t) * ACP_Purchases_StressPd.l(RPSCat,st,szn,t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
+                       acp_price(st,t) * ACP_Purchases_StressPd.l(RPSCat,st,allszn,t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
                        / sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }
                    }$Sw_StateRPS_Stress
 * spread voluntary purchase costs based on BA load frac
