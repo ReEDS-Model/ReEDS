@@ -53,7 +53,7 @@ def main():
     rv_cases = case_file['scenario'].iloc[1:].values.tolist()
     min_max_cases = case_file[(case_file['scenario'].str.contains('min')) | 
                           (case_file['scenario'].str.contains('max'))]['scenario'].tolist()
-    rv_cases = [x for x in rv_cases if x not in min_max_cases]  
+    rv_cases = [x for x in rv_cases if x not in min_max_cases]
 
     if metric == 'capacity':
         file = 'cap.csv'
@@ -67,6 +67,7 @@ def main():
             col_HMSED = 'HMSED_'+submetric
             rank_HMSED = 'HMSED_rank_'+submetric
             col_gini = 'gini_'+submetric
+            rv_cases = rv_cases[rv_cases['scenario'].str.contains(submetric)]
         else:
             col_ED = 'ED'
             rank_ED = 'ED_rank'
@@ -74,6 +75,8 @@ def main():
             rank_HMSED = 'HMSED_rank'
             col_gini = 'gini' 
         
+        
+
         # Find maximally different solutions
         case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, 
                                             rv_cases, submetric, file, year,number_of_max_diff_case,

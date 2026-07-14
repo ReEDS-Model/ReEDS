@@ -141,7 +141,7 @@ class Conventions:
         'PV': '#FFC903', 'CSP': '#FC761A', 'Wind': '#00B6EF', 'Offshore wind': '#106BA7',
         'Hydro': '#187F94', 'Geothermal': '#A96235',
         'Nuclear': '#820000', 'Nuclear-SMR': '#D40000',
-        'Storage': '#FF4A88','Gas': '#5E1688',
+        'Storage': '#FF4A88','Gas': '#9467BD',
         'Fossil': '#5E1688', 'Fossil+CCS': '#9467BD', 'Coal': '#000000', 'Coal + CCS': '#666666',
         'Gas CC': '#5E1688', 'Gas CT': '#C2A1DB', 'Gas + CCS': '#9467BD', 'o-g-s': '#3D3376',
         'H2 turbine': '#708238', 'CO2 Removal': '#66C238', 'Others': '#A0A0A0',
