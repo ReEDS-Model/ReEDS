@@ -27,9 +27,9 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 | Transmission-230kW AC   | WIRED Transmission Line Model (TL.12.23.16) based on [JEDI Transmission Line Model](https://www.nlr.gov/analysis/jedi/transmission-line)                                               |
 | UPV                     | [JEDI Photovoltaics Model (PV05.20.21)](https://www.nlr.gov/analysis/jedi/pv)                                             |
 
-- `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- [Mayfield et al. (2023)](https://10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://10.1016/j.rser.2025.115339), and [Ram et al. (2020)](https://10.1016/j.techfore.2019.06.008).
+- `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- [Mayfield et al. (2023)](https://doi.org/10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://doi.org/10.1016/j.rser.2025.115339), and [Ram et al. (2020)](https://doi.org/10.1016/j.techfore.2019.06.008).
 
-- `employment_factor_inter_transmission.csv`: Employment factor data for transmission line construction, taken from the four data source mentioned above - [JEDI/WIRED models](https://www.nlr.gov/analysis/jedi/transmission-line), [Mayfield et al. (2023)](https://10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://10.1016/j.rser.2025.115339) and [Ram et al. (2020)](https://10.1016/j.techfore.2019.06.008).
+- `employment_factor_inter_transmission.csv`: Employment factor data for transmission line construction, taken from the four data source mentioned above - [JEDI/WIRED models](https://www.nlr.gov/analysis/jedi/transmission-line), [Mayfield et al. (2023)](https://doi.org/10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://doi.org/10.1016/j.rser.2025.115339) and [Ram et al. (2020)](https://doi.org/10.1016/j.techfore.2019.06.008).
 
 ## Employment factor unit
 - Power plants:
