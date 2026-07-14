@@ -40,7 +40,7 @@ def main():
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
     submetrics = ['pv','wind-ons','wind-ofs','gas','coal','all']           
     year = 2050
-    number_of_max_diff_case = 10
+    number_of_max_diff_case = 100
     #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'          # Path of runs folder
     #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
     runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
