@@ -2102,20 +2102,26 @@ employment_transmission_interface("construction",r,rr,t) =
     employment_factor_inter_transmission("construction")
     * trans_cost_cap_fin_mult(t)
     * (
-* AC: TRAN_CAPEX_BINS is only defined for r < rr so is not divided by 2
+* AC: TRAN_CAPEX_BINS is only defined for r < rr so add the reverse direction (r,rr) + (rr,r)
         sum{tscbin
             $[routes_inv(r,rr,"AC",t)
             $tsc_binwidth(r,rr,tscbin)],
             TRAN_CAPEX_BINS.l(r,rr,tscbin,t) - sum{tt$tprev(t,tt), TRAN_CAPEX_BINS.l(r,rr,tscbin,tt)}
         }
-* DC: INVTRAN is defined in both directions so needs to be divided by 2
+        + sum{tscbin
+            $[routes_inv(rr,r,"AC",t)
+            $tsc_binwidth(rr,r,tscbin)],
+            TRAN_CAPEX_BINS.l(rr,r,tscbin,t) - sum{tt$tprev(t,tt), TRAN_CAPEX_BINS.l(rr,r,tscbin,tt)}
+        }
+* DC: INVTRAN is defined in both directions
         + sum{trtype
             $[routes_inv(r,rr,trtype,t)
             $(not aclike(trtype))],
             transmission_cost_nonac(r,rr,trtype)
-            * INVTRAN.l(r,rr,trtype,t) / 2
+            * INVTRAN.l(r,rr,trtype,t)
         }
-    )
+* Since we now have both AC and DC in both directions, divide everything by 2    
+    )  / 2
 ;
 * AC and DC together; divide by 2 since defined in both directions
 employment_transmission_interface("fom",r,rr,t) =
