@@ -909,6 +909,18 @@ gasprice_adj_r(r,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 
 
+$onempty
+parameter trans_cap_delta(r,rr,allh)
+/ 
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%trans_cap_delta.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+
 *=============================================
 * -- Round parameters for GAMS --
 *=============================================
@@ -930,6 +942,7 @@ gasprice_adj_cendiv(cendiv,h)$gasprice_adj_cendiv(cendiv,h) = round(gasprice_adj
 cap_hyd_szn_adj(i,szn,r)$cap_hyd_szn_adj(i,szn,r) = round(cap_hyd_szn_adj(i,szn,r),3) ;
 peakdem_static_ccseason(r,ccseason,t)$peakdem_static_ccseason(r,ccseason,t) = round(peakdem_static_ccseason(r,ccseason,t),2) ;
 seas_cap_frac_delta(i,v,r,szn,t)$seas_cap_frac_delta(i,v,r,szn,t) = round(seas_cap_frac_delta(i,v,r,szn,t),3) ;
+trans_cap_delta(r,rr,allh)$trans_cap_delta(r,rr,allh) = round(trans_cap_delta(r,rr,allh), 3) ;
 
 
 * Write the inputs for debugging purposes
