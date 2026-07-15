@@ -2081,6 +2081,65 @@ h2_usage(r,h,t)$tmodel_new(t) =
     + sum{(i,v)$[valgen(i,v,r,t)$h2_combustion(i)],
           GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t) } ;
 
+*=========================
+* EMPLOYMENT
+*=========================
+* Employment from generators (job-years)
+* Generator O&M job-years: These represent snapshot values for the modeled year t and
+* are not discounted or multiplied by present value factors to account for unmodeled years
+employment_generator(i,"fom",r,t) = sum{v, CAP.l(i,v,r,t)$valcap(i,v,r,t) 
+                                           * employment_factor_plant(i,"fom")} ;
+employment_generator(i,"vom",r,t) = sum{(v,h), GEN.l(i,v,r,h,t)$valgen(i,v,r,t) 
+                                               * hours(h) * employment_factor_plant(i,"vom")} ;
+* Generator construction job-years
+employment_generator(i,"construction",r,t) = sum{v, INV.l(i,v,r,t)$valinv(i,v,r,t)  
+                                                    * employment_factor_plant(i,"construction")} ;
+
+* Employment from transmission (job-years)
+* Transmission construction job-years
+parameter employment_transmission_interface(jtype,r,rr,t) "Transmission job-years by interface" ;
+employment_transmission_interface("construction",r,rr,t) =
+    employment_factor_inter_transmission("construction")
+    * trans_cost_cap_fin_mult(t)
+    * (
+* AC: TRAN_CAPEX_BINS is only defined for r < rr so add the reverse direction (r,rr) + (rr,r)
+        sum{tscbin
+            $[routes_inv(r,rr,"AC",t)
+            $tsc_binwidth(r,rr,tscbin)],
+            TRAN_CAPEX_BINS.l(r,rr,tscbin,t) - sum{tt$tprev(t,tt), TRAN_CAPEX_BINS.l(r,rr,tscbin,tt)}
+        }
+        + sum{tscbin
+            $[routes_inv(rr,r,"AC",t)
+            $tsc_binwidth(rr,r,tscbin)],
+            TRAN_CAPEX_BINS.l(rr,r,tscbin,t) - sum{tt$tprev(t,tt), TRAN_CAPEX_BINS.l(rr,r,tscbin,tt)}
+        }
+* DC: INVTRAN is defined in both directions
+        + sum{trtype
+            $[routes_inv(r,rr,trtype,t)
+            $(not aclike(trtype))],
+            transmission_cost_nonac(r,rr,trtype)
+            * INVTRAN.l(r,rr,trtype,t)
+        }
+* Since we now have both AC and DC in both directions, divide everything by 2    
+    )  / 2
+;
+* Transmission fom job-years
+* AC and DC together; divide by 2 since defined in both directions
+employment_transmission_interface("fom",r,rr,t) =
+    employment_factor_inter_transmission("construction")
+    * sum{trtype$routes(r,rr,trtype,t),
+          transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY.l(r,rr,trtype,t) / 2
+    }
+;
+* Assign to regions evenly across each interface
+employment_transmission(jtype,r,t) = sum{rr, employment_transmission_interface(jtype,r,rr,t) / 2 } ;
+
+* Total employment (generator + transmission) by region and solveyear
+employment_tot(r,t) =
+    sum{(i,jtype), employment_generator(i,jtype,r,t) }
+    + sum{jtype, employment_transmission(jtype,r,t) }
+;
+
 *========================================
 * Calculate powfrac
 *========================================
