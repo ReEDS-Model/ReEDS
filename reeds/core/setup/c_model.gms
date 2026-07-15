@@ -1603,7 +1603,7 @@ eq_PRMTRADELimit(r,rr,trtype,ccseason,t)
     $(not Sw_PCM)]..
 
 *[plus] transmission capacity
-    + CAPTRAN_PRM(r,rr,trtype,t) * sum{h$h_ccseason_prm(h,ccseason) }
+    + CAPTRAN_PRM(r,rr,trtype,t)
 
     =g=
 
