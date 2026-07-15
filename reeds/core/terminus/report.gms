@@ -2085,7 +2085,8 @@ h2_usage(r,h,t)$tmodel_new(t) =
 * EMPLOYMENT
 *=========================
 * Employment from generators (job-years)
-* Generator O&M job-years
+* Generator O&M job-years: These represent snapshot values for the modeled year t and
+* are not discounted or multiplied by present value factors to account for unmodeled years
 employment_generator(i,"fom",r,t) = sum{v, CAP.l(i,v,r,t)$valcap(i,v,r,t) 
                                            * employment_factor_plant(i,"fom")} ;
 employment_generator(i,"vom",r,t) = sum{(v,h), GEN.l(i,v,r,h,t)$valgen(i,v,r,t) 
