@@ -354,29 +354,40 @@ Methane leakage is not included in emissions estimates for transportation or res
 ### Spatial Resolution
 
 ReEDS is typically used to study the CONUS.[^ref9]
-By default, two of the smaller regions are aggregated into neighboring regions, producing 132 regions (with region p119 aggregated into p122 and region p30 aggregated into p28).
-ReEDS model regions can be seen in {numref}`figure-hierarchy`.
+The 132 default ReEDS model zones are shown in {numref}`figure-spatial_layers_zones`.
 The model zones comprise groups of counties and do not align perfectly with real balancing authority areas.
 The zones respect state boundaries, allowing the model to represent individual state regulations and incentives.
-Transmission flows across the roughly 300 interfaces between model zones are subject to transfer limits, as discussed in the [Transmission](#transmission) section.
-Additional geographical layers used to define model characteristics include 3 synchronous interconnections,
-18 planning subregions designed after existing regional transmission organizations (RTOs),
-13 North American Electric Reliability Corporation (NERC) reliability subregions,
-9 census divisions as defined by the U.S. Census Bureau,
-and 48 states.[^ref10]
-The spatial configuration in the model is flexible so the model can be run at various resolutions (i.e., aggregations of model zones), and data within the model are filtered to include data only for the regions being modeled in a given scenario.
+Transmission flows across the interfaces between model zones are subject to transfer limits, as discussed in the [Transmission](#transmission) section.
 
 [^ref9]: A ReEDS-India model version has also been developed.
 Details of the implementation are not discussed here.
 
+```{figure} figs/docs/spatial_layers_zones.png
+:name: figure-spatial_layers_zones
+
+Default 132 model zones and spatial layers defined by groups of zones.
+```
+
+Additional spatial layers are used in different parts of the model.[^ref10]
+Layers defined by groups of zones are shown in {numref}`figure-spatial_layers_zones`.
+Layers defined by groups of states (and a subset of the ~50,000 resource sites, which are held fixed across different model zone resolutions) are shown in {numref}`figure-spatial_layers_states`.
+
 [^ref10]: These additional geographical layers defined in ReEDS do not necessarily align perfectly with the actual regions, except for state boundaries, which are accurately represented.
 
+```{figure} figs/docs/spatial_layers_states.png
+:name: figure-spatial_layers_states
+
+A subset of the ~50,000 resource sites (lower left) and spatial layers defined by groups of states.
+```
+
+The spatial resolution is flexible, such that model zones can be defined by groups of counties within the same state.
+{numref}`figure-spatial_zonesets` shows the currently supported spatial resolutions for model zones.
 For more information on the spatial flexibility in the model, including running the model at county resolution, see the [Spatial Resolution Capabilities](#spatial-resolution-capabilities) section.
 
-```{figure} figs/docs/hierarchy.png
-:name: figure-hierarchy
+```{figure} figs/docs/spatial_zonesets.png
+:name: figure-spatial_zonesets
 
-Levels of spatial resolution used in ReEDS.
+Currently supported model zone definitions.
 ```
 
 
@@ -423,7 +434,7 @@ The optimization approach is used by default and is briefly described here.
 
 The optimized method considers three "features" (wind capacity factor, solar capacity factor, and electricity demand)
 and their daily average values over a user-specified number of regions.
-The 18 planning subregions shown in {numref}`figure-hierarchy` are used by default, resulting in 3 × 18 = 54 combinations of features and regions.
+The 18 planning subregions shown in {numref}`figure-spatial_layers_zones` are used by default, resulting in 3 × 18 = 54 combinations of features and regions.
 The two-step optimization method is illustrated graphically in {numref}`figure-temporal-repdays`.
 First, a linear optimization is performed to identify a set of daily "weights" that,
 when multiplied by the observed daily feature values in each region and summed over the year,
@@ -1650,8 +1661,16 @@ an exponential decay length of 150 km is used by default.
 If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {numref}`figure-hierarchy` is instead used directly.
 ```
 
-The natural gas fuel prices also include a seasonal price adjustor, making winter prices higher than the natural gas prices seen during the other seasons of the year.
+The natural gas fuel prices also include time-based price adjustors.
+The default option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
 For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
+The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+For details, see the [Daily Natural Gas Price Adjustments section](#daily-natural-gas-price-adjustments) of the appendix.
+
+```{admonition} Natural gas price adjustments
+The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 1)
+```
 
 
 ## Electricity Demand
@@ -1905,7 +1924,7 @@ The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.
 For this reason, transmission flows are constrained by ITLs at two levels within ReEDS:
-between the model zones and between the planning subregions (see {numref}`figure-hierarchy` for maps of each).
+between the model zones and between the planning subregions (see {numref}`figure-spatial_layers_zones` for maps of each).
 When running the model at a resolution that includes individual counties, the ReEDS BA interface limits are still enforced,
 meaning that the sum of county-to-county flows across a BA interface cannot exceed the BA interface limit.
 
@@ -2074,13 +2093,13 @@ If `GSw_OffshoreBackflow` is set to `0`, transmission flows from land to offshor
 ReEDS includes a default hurdle rate of \$0.01/MWh (in 2004\$) to reduce degeneracy by marginally incentivizing local energy consumption over interzonal energy trades.
 
 Higher hurdle rates, although not turned on by default, can also be used.
-Different hurdle rates can be applied at different levels of the regional structure shown in {numref}`figure-hierarchy`.
+Different hurdle rates can be applied at different levels of the regional structure shown in {numref}`figure-spatial_layers_zones`.
 For example, a higher hurdle rate can be applied to flows between planning regions than to flows within planning regions.
 
 ```{admonition} Hurdle rates
 Higher hurdle rates can be turned on by setting `GSw_TransHurdleRate=1`.
 When this setting is activated, the hurdle rate for flows between planning subregions starts at 8 \$2020/MWh {cite}`johntsoukalis_et_al_2020` and linearly declines to half of that value between 2026 and 2050.
-The hurdle rate for flows between hurdle regions ({numref}`figure-hierarchy`) starts at the same value but declines to zero by 2050.
+The hurdle rate for flows between hurdle regions ({numref}`figure-spatial_layers_zones`) starts at the same value but declines to zero by 2050.
 Within hurdle regions, only the nominal \$0.01/MWh hurdle rate is applied.
 These region boundaries can be changed using the `GSw_TransHurdleLevel1` and `GSw_TransHurdleLevel2` switches.
 ```
@@ -2159,7 +2178,7 @@ The estimated regulation requirements (0.5% wind generation and 0.3% PV capacity
 
 All ancillary reserve requirements must be satisfied in each zone for each time slice;
 however, reserve provision can be traded between zones using AC transmission interfaces.
-Trades are allowed only within planning regions ({numref}`figure-hierarchy`) and not across planning region boundaries.
+Trades are allowed only within planning regions ({numref}`figure-spatial_layers_zones`) and not across planning region boundaries.
 The amount of reserves that can be traded is limited by the amount of carrying capacity of an AC transmission interface that is not already being used for trading energy.
 
 The ability of technologies to contribute to reserves is limited by the ramping requirement for a given reserve product, the plant ramp rate, and online capacity (see {numref}`generation-techs-flexibility-params`).
@@ -2252,7 +2271,7 @@ If a stress period has no consecutively adjacent stress periods, it is modeled w
 (the same treatment as representative periods, as long as [interday storage operation](#inter-day-storage-operation) is not enabled).
 - Interregional transmission flows are allowed during stress periods by default, allowing interregional coordination to help meet resource adequacy needs.
 New transmission capacity is derated by 15% during stress periods to approximate contingency considerations.
-- Coincident net imports into NERC regions ({numref}`figure-hierarchy`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
+- Coincident net imports into NERC regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
 
 
 
@@ -2368,7 +2387,7 @@ The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss 
 Iterative capacity expansion and resource adequacy model flow for an illustrative scenario, reproduced from {cite}`maiIncorporatingStressfulGrid2024`.
 **a**, "Seed" stress periods.
 **b**, ReEDS capacity expansion results for the first iteration using only the "seed" stress periods.
-Actual results are at zonal resolution but are aggregated here to the level of the 18 planning subregions ({numref}`figure-hierarchy`) for clarity.
+Actual results are at zonal resolution but are aggregated here to the level of the 18 planning subregions ({numref}`figure-spatial_layers_zones`) for clarity.
 **c**, Regional NEUE determined by PRAS for the ReEDS system shown in **b**.
 Some regions do not meet the 1 ppm NEUE threshold, triggering a second iteration in the process.
 **d**, Hourly expected unserved energy (EUE) for the 2007--2013 weather years as determined by PRAS.
@@ -2490,7 +2509,7 @@ In all cases, the VRE profile is compared against the aggregated regional load p
 
 ```{admonition} Capacity credit settings
 Many settings related to capacity credit calculations can be adjusted by the user.
-- `capcredit_hierarchy_level` (default `transreg` for the 11 planning regions shown in {numref}`figure-hierarchy`): Level at which to aggregate net load for capacity credit calculation
+- `capcredit_hierarchy_level` (default `transreg` for the 11 planning regions shown in {numref}`figure-spatial_layers_zones`): Level at which to aggregate net load for capacity credit calculation
 - `GSw_PRM_CapCreditHours` (default 20): Number of peak net load hours per capacity credit season considered in capacity credit calculation
 - `marg_vre_mw` (default 1000): Amount of marginal VRE capacity to add in MW for marginal capacity credit calculation
 - `marg_stor_mw` (default 100): Amount of marginal storage capacity to add in MW for marginal capacity credit calculation
@@ -3460,7 +3479,7 @@ Rather, a regional supply curve representation is used to approximate the NG sys
 For more information on the impact of natural gas representation in ReEDS, see {cite}`coleViewFutureNatural`.
 
 The premise of using regional supply curves is that the price in each region will be a function of both the regional and national NG demand.
-The supply curves are parameterized from AEO scenarios for each of the nine EIA census divisions (shown in {numref}`figure-hierarchy`).
+The supply curves are parameterized from AEO scenarios for each of the nine EIA census divisions (shown in {numref}`figure-spatial_layers_states`).
 Two methods exist to parameterize the natural gas supply curves; both are discussed here.
 The first method involves estimating a linear regression of prices on regional and national quantities.
 The second method involves parameterizing a constant elasticity of supply curve.
@@ -3611,6 +3630,27 @@ where $P$ is the natural gas price for the period indicated by the subscript,
 $W_\text{winter}$ is the fraction of natural gas consumption that occurs in the winter months,
 and $\rho$ and $\sigma$ are the seasonal multipliers for winter and nonwinter, respectively.
 The multipliers $\rho$ and $\sigma$ are determined by solving {eq}`gas-year` through {eq}`gas-nonwinter`.
+
+
+### Daily Natural Gas Price Adjustments
+
+Daily gas price adjustments use coefficients and intercepts derived from regional ordinary least squares regression models with monthly fixed effects.
+The regression models regress daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+The regions used in the regression mostly correspond to census divisions, except in two cases where census divisions are broken up into two smaller regions.
+The Pacific census division is broken up into the subregions "Northwest" (Oregon and Washington) and "California" (California).
+The Mountain census division is broken up into the subregions "Southwest" (Arizona and New Mexico) and "Mountain" (all remaining states in the Mountain census division).
+
+Depending on the spatial resolution of the gas prices being used in the model, the daily gas price adjustments are either downscaled to the zone level by copying each regression region's adjustments to their constituent zones or upscaled to the census division level via population-weighted average.
+In the default national case, zonal gas prices and price adjustments are used.
+Once representative periods are selected in the model, the daily adjustments are filtered to include only the representative periods and then renormalized so that the average price multiplier for each zone or census division is one, thus ensuring the year-round average gas price remains unchanged.
+{numref}`figure-natural-gas-price-adjustments` shows an example set of price adjustments including the national wintertime markup and daily adjustments for each census division.
+
+```{figure} figs/docs/natural-gas-price-adjustments.png
+:name: figure-natural-gas-price-adjustments
+
+Seasonal and daily natural gas price adjustments for weather year 2012.
+This example uses one weather year, but the method can also be applied across multiple weather years.
+```
 
 
 ### Capital Cost Financial Multipliers
@@ -3964,7 +4004,7 @@ DNI resource is used to show opportunities to charge the storage.
 
 ### Spatial Resolution Capabilities
 
-The default model zones are shown in {numref}`figure-hierarchy`.
+The default model zones are shown in {numref}`figure-spatial_layers_zones`.
 Depending on the needs of the user, different spatial resolutions can also be used.
 The default zones can be aggregated into larger regions,
 or collections of zones can be disaggregated into their constituent counties ({numref}`figure-counties`).
@@ -3985,14 +4025,6 @@ And regardless of spatial extent or resolution, all decision variables will stil
 The model also has the capability to use mixed resolutions.
 For example, California can be represented using the default model zones while the rest of the United States is represented at state resolution.
 This approach can enable finer detail for a specific region of interest while capturing trades with neighboring regions at lower resolution but with a reasonable solution time.
-
-
-#### Data inputs and handling
-
-Nearly all ReEDS data inputs that include a spatial dimension are specified at the 134-zone model resolution.[^ref67]
-To be able to perform runs at county-level resolution, some inputs are included at both the county level and zonal resolution.
-
-[^ref67]: Exceptions include state-level policies, which are specified at the state level; NO<sub>x</sub> emission trading groups; and transmission interface limits between system operator boundaries.
 
 
 #### Transmission data
@@ -4071,7 +4103,7 @@ The shapefiles are converted to the ESRI:102008 coordinate reference system, and
 
 #### Scaling datasets to county resolution
 
-All datasets besides those described above were downscaled from 134-zone resolution to county-level resolution using one of the following three methods.
+All datasets besides those described above were downscaled to county-level resolution using one of the following three methods.
 
 **Uniform disaggregation:**
 All counties within a model zone are assigned the same value as the one used for the zone.

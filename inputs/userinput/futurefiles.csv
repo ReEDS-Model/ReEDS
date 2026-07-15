@@ -91,6 +91,8 @@ d_szn_7yr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 dac_assumptions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 dac_elec.csv,.csv,0,None,t,i,1,0,linear_10,None,None,new,
 dac_gas.csv,.csv,0,None,t,i,1,0,linear_10,None,None,new,
+daily_gasprice_multipliers_r.h5,.h5,0,None,year,datetime,1,keepindex,linear_5,None,None,done,linear_5
+daily_gasprice_multipliers_cendiv.h5,.h5,0,None,year,datetime,1,keepindex,linear_5,None,None,done,linear_5
 deflator.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 degradation_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 degradation_annual.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -157,6 +159,7 @@ fuel2tech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 fuelbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 futurefiles.csv,.csv,1,None,9999,None,9999,0,constant,None,None,so meta,constant
 gasprice_ref.csv,.csv,0,None,wide,cendiv,1,0,constant,0,None,done,linear_5
+gasreg_price_adj_regression_params.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin_min.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
