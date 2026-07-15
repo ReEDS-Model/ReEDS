@@ -1030,12 +1030,12 @@ def get_itl_deltas_hourly(
         reeds.io.reeds_path,
         'inputs',
         'profiles_itl_deltas',
-        'itl_deltas_NLR_z90.h5'
+        'itl_deltas_DLR_z90.h5'
     )
     
     ## Add one more year on either end of weather years to allow for timezone conversion
     weather_years = [int(y) for y in sw['GSw_HourlyWeatherYears'].split('_')]
-    read_years = range(min(weather_years)-1, max(weather_years)+2)
+    read_years = range(min(weather_years), max(weather_years)+2)
     ### Load ITL deltas
     _itl_deltas = []
     with h5py.File(h5path, 'r') as f:
