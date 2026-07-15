@@ -2123,6 +2123,7 @@ employment_transmission_interface("construction",r,rr,t) =
 * Since we now have both AC and DC in both directions, divide everything by 2    
     )  / 2
 ;
+* Transmission fom job-years
 * AC and DC together; divide by 2 since defined in both directions
 employment_transmission_interface("fom",r,rr,t) =
     employment_factor_inter_transmission("construction")
