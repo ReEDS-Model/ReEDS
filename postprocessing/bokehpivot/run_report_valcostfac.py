@@ -153,6 +153,18 @@ df_gen_frac = df_gen_frac.rename(columns={'Gen Frac of Load': 'gen_frac'})
 df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
 df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
 
+print('Override gen_twh for storage using discharge')
+#The 'gen' sheet reports storage as net generation (negative round-trip losses), so storage
+#gen_twh is overridden with gross discharge. No gen_frac override is needed: the gen_frac
+#sheet is built from gen_ivrt, which is already gross discharge for storage.
+stor_report_techs = ['Battery']
+df_dis = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='stor_discharge')
+df_dis = df_dis.rename(columns={'TWh': 'discharge_twh'})[['scenario','tech','year','discharge_twh']]
+df = df.merge(df_dis, on=['scenario','tech','year'], how='left')
+stor_cond = df['tech'].isin(stor_report_techs)
+df.loc[stor_cond, 'gen_twh'] = df.loc[stor_cond, 'discharge_twh']
+df = df.drop(columns=['discharge_twh'])
+
 print('output valcostfac.csv')
 df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
 
@@ -204,16 +216,19 @@ print('Limit further to just the core tech-scenario combinations')
 df_plot_core = df_plot_lim[df_plot_lim['core']==1].copy()
 conv_techs = ['Gas-CC','Gas-CC-CCS','Nuclear','Coal']
 re_techs = ['Onshore Wind','Offshore Wind','Geothermal','UPV']
+stor_techs = ['Battery'] #Storage value declines with penetration like RE, so use the same intercept normalization.
 
-print('Add cost_factor_adj') #For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs, this is equal to cost_factor divided by the intercept of the ols line fit.
+print('Add cost_factor_adj') #For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs and stor_techs, this is equal to cost_factor divided by the intercept of the ols line fit.
 for tech in df_plot_core['tech'].unique():
     df_tech = df_plot_core[df_plot_core['tech']==tech].copy()
     if tech in conv_techs:
         scale = df_tech['cost_factor'].mean()
-    elif tech in re_techs:
+    elif tech in re_techs + stor_techs:
         #Get the intercept of the ols line fit
         lg = scipy.stats.linregress(df_tech['gen_frac'], df_tech['cost_factor'])
         scale = lg.intercept
+    else:
+        raise ValueError(f'tech {tech} is not in conv_techs, re_techs, or stor_techs, so cost_factor_adj cannot be calculated.')
     df_plot_core.loc[df_plot_core['tech']==tech, 'cost_factor_adj'] = df_plot_core['cost_factor'] / scale
     df_plot_core.loc[df_plot_core['tech']==tech, 'lcoe_base_adj'] = df_plot_core['lcoe_base'] * scale
     df_plot_core.loc[df_plot_core['tech']==tech, 'lcoe_base_orig_adj'] = df_plot_core['lcoe_base_orig'] * scale
@@ -285,6 +300,13 @@ for subreg in subregs:
     df_sub['vf'] = df_sub['lvoe'] / df_sub['lvoe_bench']
     df_gen_sub = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name=f'gen_{subreg}')
     df_sub = df_sub.merge(df_gen_sub, on=['scenario','tech','year',subreg], how='left')
+    #Use gross discharge rather than (negative) net generation for storage
+    df_dis_sub = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name=f'stor_discharge_{subreg}')
+    df_dis_sub = df_dis_sub.rename(columns={'TWh': 'discharge_twh'})[['scenario','tech','year',subreg,'discharge_twh']]
+    df_sub = df_sub.merge(df_dis_sub, on=['scenario','tech','year',subreg], how='left')
+    stor_cond_sub = df_sub['tech'].isin(stor_report_techs)
+    df_sub.loc[stor_cond_sub, 'Generation (TWh)'] = df_sub.loc[stor_cond_sub, 'discharge_twh']
+    df_sub = df_sub.drop(columns=['discharge_twh'])
     df_sub['gen_frac'] = df_sub['Generation (TWh)']*1e6 / df_sub['mwh_bench']
     #Merge in lcoe_base and use to calculate vcf.
     df_sub = df_sub.merge(df[['scenario','tech','year','lcoe_base']], on=['scenario','tech','year'], how='left')

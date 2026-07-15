@@ -22,6 +22,12 @@ static_presets = [
     #Note that this result is built from gen_ivrt, so storage shows gross discharge (positive),
     #not net generation, making the metric work for storage techs as well.
     {'name': 'Gen Frac', 'sheet_name':'gen_frac', 'result': 'Generation National with Uncurt and Load (TWh)', 'preset': 'Stacked Bars Gen Frac of Load'},
+    #Storage discharge sheets: the 'gen' and 'gen_<subreg>' sheets report storage as net generation
+    #(negative round-trip losses), so storage generation is overridden with discharge in
+    #run_report_valcostfac.py using these sheets.
+    {'name': 'Storage Discharge (TWh)', 'sheet_name':'stor_discharge', 'result': 'Storage Charge/Discharge (TWh)', 'config':{'x':'year', 'y':'TWh', 'series':'tech', 'explode':'scenario', 'filter':{'type':['out']}, 'render_plots':'No'}},
+    {'name': 'Storage Discharge Transreg (TWh)', 'sheet_name':'stor_discharge_transreg', 'result': 'Storage Charge/Discharge (TWh)', 'config':{'x':'year', 'y':'TWh', 'series':'tech', 'explode':'transreg', 'explode_group':'scenario', 'filter':{'type':['out']}, 'render_plots':'No'}},
+    {'name': 'Storage Discharge Interconnect (TWh)', 'sheet_name':'stor_discharge_interconnect', 'result': 'Storage Charge/Discharge (TWh)', 'config':{'x':'year', 'y':'TWh', 'series':'tech', 'explode':'interconnect', 'explode_group':'scenario', 'filter':{'type':['out']}, 'render_plots':'No'}},
     {'name': 'Cap Frac', 'sheet_name':'cap_frac', 'result': 'Capacity National (GW)', 'preset': 'Stacked Bars Cap Frac'},
     {'name': 'LVOE by Year', 'sheet_name':'lvoe', 'result': 'Value New Techs', 'preset': 'LVOE by Year'},
     {'name': 'LVOE Energy by Year', 'sheet_name':'lvoe_energy', 'result': 'Value New Techs', 'preset': 'LVOE Energy by Year'},
