@@ -1611,6 +1611,7 @@
   - [i_water_nocooling.csv](/inputs/sets/i_water_nocooling.csv)
     - **File Type:** GAMS set
     - **Description:** set of technologies that use water, but are not differentiated by cooling tech and water source
+  - [jtype.csv](/inputs/sets/jtype.csv)
   - [lcclike.csv](/inputs/sets/lcclike.csv)
     - **File Type:** GAMS set
     - **Description:** set of transmission capacity types where lines are bundled with AC/DC converters

@@ -978,7 +978,7 @@ for example, if you ran already 200 runs and now want to add 100 more, set the s
 new sampled runs.</p>
 <p>The second approach, Latin Hypercube sampling (LHS), utilizes a quasi-Monte Carlo sampling method that is
 designed to improve efficiency by reducing overlap of the sampled values. An overview of this method
-can be found in <span id="id2">[<a class="reference internal" href="model_documentation.html#id2292" title="Razi Sheikholeslami and Saman Razavi. Progressive Latin Hypercube Sampling: An efficient approach for robust sampling-based analysis of environmental models. Environmental Modelling &amp; Software, 93:109–126, July 2017. URL: https://www.sciencedirect.com/science/article/pii/S1364815216305096 (visited on 2025-10-13), doi:10.1016/j.envsoft.2017.03.010.">Sheikholeslami and Razavi, 2017</a>]</span>. For this method, an NxD matrix is generated upfront
+can be found in <span id="id2">[<a class="reference internal" href="model_documentation.html#id2296" title="Razi Sheikholeslami and Saman Razavi. Progressive Latin Hypercube Sampling: An efficient approach for robust sampling-based analysis of environmental models. Environmental Modelling &amp; Software, 93:109–126, July 2017. URL: https://www.sciencedirect.com/science/article/pii/S1364815216305096 (visited on 2025-10-13), doi:10.1016/j.envsoft.2017.03.010.">Sheikholeslami and Razavi, 2017</a>]</span>. For this method, an NxD matrix is generated upfront
 for all model runs based on the number of samples (N) and the independent dimensions being sampled (D).
 The values in this matrix represent sampling of the cumulative probability distribution functions,
 and are later used by the inverse CDF (percent point) functions to derive the actual sample values.
@@ -1028,8 +1028,8 @@ MGA is turned off if set to 0; a reasonable choice for MGA is in the range of 0.
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_MGA_Direction</span></code> (default <code class="docutils literal notranslate"><span class="pre">min</span></code>): Directionality of the second optimization.
 Options are <code class="docutils literal notranslate"><span class="pre">min</span></code> or <code class="docutils literal notranslate"><span class="pre">max</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_MGA_Objective</span></code> (default <code class="docutils literal notranslate"><span class="pre">capacity</span></code>): Objective for MGA (uses <code class="docutils literal notranslate"><span class="pre">GSw_MGA_SubObjective</span></code> to specify technology subset if set to <code class="docutils literal notranslate"><span class="pre">capacity</span></code>).
-Options are <code class="docutils literal notranslate"><span class="pre">capacity</span></code>, <code class="docutils literal notranslate"><span class="pre">transmission</span></code>, <code class="docutils literal notranslate"><span class="pre">rasharing</span></code>, and <code class="docutils literal notranslate"><span class="pre">co2</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_MGA_SubObjective</span></code> (default <code class="docutils literal notranslate"><span class="pre">fossil</span></code>): Technology subset to minimize or maximize the capacity of (only used for <code class="docutils literal notranslate"><span class="pre">GSw_MGA_Objective</span> <span class="pre">=</span> <span class="pre">capacity</span></code>).
+Options are <code class="docutils literal notranslate"><span class="pre">capacity</span></code>, <code class="docutils literal notranslate"><span class="pre">generation</span></code>, <code class="docutils literal notranslate"><span class="pre">transmission</span></code>, <code class="docutils literal notranslate"><span class="pre">rasharing</span></code>, and <code class="docutils literal notranslate"><span class="pre">co2</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_MGA_SubObjective</span></code> (default <code class="docutils literal notranslate"><span class="pre">gentech</span></code>): Technology subset to minimize or maximize the capacity of (only used for <code class="docutils literal notranslate"><span class="pre">GSw_MGA_Objective</span> <span class="pre">=</span> <span class="pre">(capacity</span> <span class="pre">or</span> <span class="pre">generation)</span></code>).
 Options are the column names in the <code class="docutils literal notranslate"><span class="pre">inputs/tech-subset-table.csv</span></code> file.</p></li>
 </ul>
 <p>Users familiar with GAMS can add alternative objective functions to the <code class="docutils literal notranslate"><span class="pre">d_mga.gms</span></code> file and associated options to the <code class="docutils literal notranslate"><span class="pre">GSw_MGA_Objective</span></code> switch in <code class="docutils literal notranslate"><span class="pre">cases.csv</span></code>.</p>
@@ -1780,7 +1780,7 @@ These characteristics include:</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on July 14, 2026.
+      <span class="lastupdated">Last updated on July 15, 2026.
       </span></p>
   </div>
 
