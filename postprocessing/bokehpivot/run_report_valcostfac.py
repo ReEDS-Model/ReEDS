@@ -147,9 +147,9 @@ df_gen = df_gen.rename(columns={'Generation (TWh)': 'gen_twh'})
 df_gen = df_gen[['scenario','tech','year','gen_twh']].copy()
 df = df.merge(df_gen, on=['scenario','tech','year'], how='left')
 
-print('Merge with generation fraction')
+print('Merge with market share (generation fraction of load)')
 df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
-df_gen_frac = df_gen_frac.rename(columns={'Generation (TWh)': 'gen_frac'})
+df_gen_frac = df_gen_frac.rename(columns={'Gen Frac of Load': 'gen_frac'})
 df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
 df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
 

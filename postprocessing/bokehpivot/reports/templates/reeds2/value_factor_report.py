@@ -3,7 +3,6 @@ This makes a report of value and value factor outputs. Gen Frac is included
 so that the value factors can be compared to market share. See comments in
 in reeds2.py for a description of each preset.
 '''
-storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES']
 
 static_presets = [
     {'name': 'Generation (TWh)', 'sheet_name':'gen', 'result': 'Generation National (TWh)', 'preset': 'Stacked Bars'},
@@ -19,7 +18,10 @@ static_presets = [
     {'name': 'Emissions National (metric tons)', 'sheet_name':'emissions', 'result': 'Emissions National (metric tons)', 'preset': 'Scenario Lines Over Time'},
     {'name': 'Runtime (hours)', 'sheet_name':'runtime', 'result': 'Runtime', 'preset': 'Stacked Bars'},
     {'name': 'Full Value New Techs', 'sheet_name':'vf_full', 'result': 'Value New Techs', 'download_full_source': True},
-    {'name': 'Gen Frac', 'sheet_name':'gen_frac', 'result': 'Generation National (TWh)', 'preset': 'Stacked Bars Gen Frac', 'config':{'filter':{'tech':{'exclude':storage_techs}}}},
+    #Market share is defined as generation divided by load (rather than by total generation).
+    #Note that this result is built from gen_ivrt, so storage shows gross discharge (positive),
+    #not net generation, making the metric work for storage techs as well.
+    {'name': 'Gen Frac', 'sheet_name':'gen_frac', 'result': 'Generation National with Uncurt and Load (TWh)', 'preset': 'Stacked Bars Gen Frac of Load'},
     {'name': 'Cap Frac', 'sheet_name':'cap_frac', 'result': 'Capacity National (GW)', 'preset': 'Stacked Bars Cap Frac'},
     {'name': 'LVOE by Year', 'sheet_name':'lvoe', 'result': 'Value New Techs', 'preset': 'LVOE by Year'},
     {'name': 'LVOE Energy by Year', 'sheet_name':'lvoe_energy', 'result': 'Value New Techs', 'preset': 'LVOE Energy by Year'},
