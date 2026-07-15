@@ -1,0 +1,19 @@
+--- Job report.gms Start 07/07/26 11:11:49 51.3.0 38407a9b LEX-LEG x86 64bit/Linux
+*** Unable to open output file (RC=2) /kfs2/projects/atm/Bcakire/ReEDS/lstfiles/report_NY_CVAR_debug_merged_MultiMetricRA.lst
+*** SysMsg: No such file or directory
+--- Applying:
+    /nopt/nrel/apps/software/gams/51.3.0/gmsprmun.txt
+--- GAMS Parameters defined
+    Restart /kfs2/projects/atm/Bcakire/ReEDS/gdxcompress=1.g0?
+    Input /kfs2/projects/atm/Bcakire/ReEDS/reeds/core/terminus/report.gms
+    Output /kfs2/projects/atm/Bcakire/ReEDS/lstfiles/report_NY_CVAR_debug_merged_MultiMetricRA.lst
+    ScrDir /kfs2/projects/atm/Bcakire/ReEDS/225a/
+    SysDir /nopt/nrel/apps/software/gams/51.3.0/
+    LogOption 4
+    LogFile /kfs2/projects/atm/Bcakire/ReEDS/gamslog.txt
+    AppendLog 1
+    License gamslice.txt
+    --fname NY_CVAR_debug_merged_MultiMetricRA
+    --GSw_calc_powfrac 0
+*** Status: Terminated due to parameter errors
+--- Job report.gms Stop 07/07/26 11:11:49 elapsed 0:00:00.003

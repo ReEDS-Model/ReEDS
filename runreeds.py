@@ -849,7 +849,7 @@ def setupEnvironment(
             "To build the environment for the first time, run:\n"
             "    `conda env create -f environment.yml`\n"
             "To activate the created environment, run:\n"
-            "    `conda activate reeds2` (or `activate reeds2` on Windows)\n"
+            "    `conda activate reeds2_atm` (or `activate reeds2` on Windows)\n"
             "Do you want to continue without activating the environment?"
         )
         confirm_env = str(input("Continue? y/[n]: ") or 'n')
@@ -1282,7 +1282,9 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda activate reeds2 \n")
+            OPATH.writelines(
+                ". /kfs2/projects/atm/Bcakire/conda_envs/reeds2_atm/bin/activate \n"
+            )
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls

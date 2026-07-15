@@ -173,100 +173,24 @@ def _sample_cvar(samples, alpha=0.95):
     n_tail = max(1, int(np.ceil((1 - alpha) * len(x))))
     return x.sort_values(ascending=False).iloc[:n_tail].mean()
 
+def calc_cvar(shortfall_samples_agg, alpha=0.95):
+    """
+    CVAR from total shortfall by PRAS sample.
+    """
+    cvar = shortfall_samples_agg.apply(
+        lambda s: _sample_cvar(s, alpha=alpha),
+        axis=0,
+    )
+    return cvar
 
-def get_annual_cvar_stress_metric(case, t, stress_metric='NCVAR', iteration=0, alpha=0.95):
-    stress_metric = stress_metric.upper()
-    if stress_metric not in CVAR_METRICS:
-        raise NotImplementedError(f"get_annual_cvar_stress_metric only supports {CVAR_METRICS}. Got {stress_metric}.")
 
-    ### Read per-sample total shortfall by region from PRAS.
-    shortfall_samples = get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration).drop(columns=['USA'], errors='ignore')
+def calc_ncvar(cvar, dfload_agg):
+    """
+    NCVAR = CVAR / total load, in ppm.
+    """
+    ncvar = cvar / dfload_agg.sum().reindex(cvar.index) * 1e6
+    return ncvar
 
-    ### Read hourly PRAS load. This is used to normalize CVAR into NCVAR.
-    dfload = reeds.io.read_h5py_file(os.path.join(case, 'handoff', 'reeds_data', f'pras_load_{t}.h5'))
-
-    ### Calculate CVAR/NCVAR at each supported hierarchy level.
-    levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
-    _metric = {}
-    for hierarchy_level in levels:
-        ### Aggregate sample-level regional shortfall to the requested hierarchy level.
-        rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
-        regions = [c for c in shortfall_samples.columns if c in rmap.index]
-        if not regions:
-            continue
-
-        shortfall_agg = shortfall_samples[regions].rename(columns=rmap).groupby(axis=1, level=0).sum()
-
-        ### CVAR is the average of the highest-shortfall samples in the alpha tail.
-        cvar = shortfall_agg.apply(lambda s: _sample_cvar(s, alpha=alpha), axis=0)
-
-        if stress_metric == 'NCVAR':
-            ### NCVAR normalizes CVAR by total load over the PRAS time period and reports ppm.
-            load_regions = [c for c in dfload.columns if c in rmap.index]
-            load_agg = dfload[load_regions].rename(columns=rmap).groupby(axis=1, level=0).sum().sum()
-            cvar = cvar / load_agg.reindex(cvar.index) * 1e6
-
-        _metric[hierarchy_level,'cvar'] = cvar
-
-    return pd.concat(_metric, names=['level','metric','region']).rename(stress_metric)
-
-def evaluate_cvar_target_check(sw, t, iteration=0, stress_metrics=None):
-    if stress_metrics is None:
-        stress_metrics = sw.GSw_PRM_StressThresholdMetrics.split('/')
-
-    ### Only evaluate CVAR/NCVAR here. Standard metrics are handled by _evaluate_stress_threshold_criterion(), which can add stress periods.
-    stress_metrics = [m.upper() for m in stress_metrics if str(m).strip()]
-    cvar_metrics = [m for m in stress_metrics if m in CVAR_METRICS]
-    if not cvar_metrics:
-        return pd.DataFrame()
-
-    records = []
-    for metric in cvar_metrics:
-        switch_name = f'GSw_PRM_StressThreshold{metric}'
-        if switch_name not in sw.index:
-            print(f"Warning: {metric} is listed in GSw_PRM_StressThresholdMetrics, but {switch_name} is not defined. Skipping {metric} target check.")
-            continue
-
-        for criterion in str(sw[switch_name]).split('/'):
-            criterion = criterion.strip()
-            if not criterion:
-                continue
-
-            ### CVAR/NCVAR criteria are check-only and use: HierarchyLevel_Threshold_Metric_cvar
-            hierarchy_level, stress_level, stress_metric, metric_name = criterion.split('_')
-            stress_metric = stress_metric.upper()
-            metric_name = metric_name.lower()
-
-            if stress_metric not in CVAR_METRICS:
-                raise ValueError(f"Invalid CVAR criterion: {criterion}. Metric must be one of {CVAR_METRICS}.")
-            if metric_name != 'cvar':
-                raise ValueError(f"Invalid CVAR criterion: {criterion}. The fourth field must be 'cvar'.")
-
-            ### Read the annual CVAR/NCVAR metric written earlier in main().
-            stress_vals = pd.read_csv(
-                os.path.join(sw.casedir, 'outputs', f'{stress_metric.lower()}_{t}i{iteration}.csv'),
-                index_col=['level','metric','region'],
-            ).squeeze(1)
-
-            ### Compare each region against the check-only threshold.
-            this_test = stress_vals.xs((hierarchy_level, 'cvar'), level=['level','metric'])
-            threshold = float(stress_level)
-
-            for region, value in this_test.items():
-                records.append({'criterion':criterion, 'level':hierarchy_level, 'metric':stress_metric, 'region':region, 'alpha':get_cvar_alpha(sw), 'threshold':threshold, 'value':value, 'passed':value <= threshold})
-
-            failed = this_test.loc[this_test > threshold]
-            if len(failed):
-                print(f"GSw_PRM_StressThreshold = {criterion} failed for:")
-                print(failed)
-                print(f"{stress_metric} is check-only: no stress periods and no PRM increment will be added.")
-            else:
-                print(f"GSw_PRM_StressThreshold = {criterion} passed")
-
-    dfcheck = pd.DataFrame(records)
-    if not dfcheck.empty:
-        dfcheck.to_csv(os.path.join(sw.casedir, 'outputs', f'cvar_target_check_{t}i{iteration}.csv'), index=False)
-    return dfcheck
 
 def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute']='peak'):
     """
@@ -317,6 +241,19 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
+    cvar_metrics = {
+        i.strip().upper()
+        for i in sw.GSw_PRM_StressThresholdMetrics.split('/')
+        if i.strip().upper() in CVAR_METRICS
+    }
+
+    if len(cvar_metrics):
+        shortfall_samples = (
+            get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
+            .drop(columns=['USA'], errors='ignore')
+        )
+        cvar_alpha = get_cvar_alpha(sw)
+
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
     for level in levels:
@@ -337,6 +274,22 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
+        if len(cvar_metrics):
+            regions = [c for c in shortfall_samples.columns if c in rmap.index]
+            if len(regions):
+                shortfall_samples_agg = (
+                    shortfall_samples[regions]
+                    .rename(columns=rmap)
+                    .groupby(axis=1, level=0)
+                    .sum()
+                )
+                cvar = calc_cvar(shortfall_samples_agg, alpha=cvar_alpha)
+
+                if 'CVAR' in cvar_metrics:
+                    ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
+
+                if 'NCVAR' in cvar_metrics:
+                    ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
@@ -924,40 +877,6 @@ def main(sw, t, iteration=0, logging=True):
     eue_events.profile = eue_events.profile.map(lambda x: '|'.join(str(i) for i in x))
     eue_events.round(3).to_csv(
         os.path.join(sw.casedir, 'outputs', f'eue_events_{t}i{iteration}.csv')
-    )
-
-    #%% Write CVAR / NCVAR check-only metrics
-    cvar_metrics = []
-    for metric in sw.GSw_PRM_StressThresholdMetrics.split('/'):
-        metric = str(metric).strip().upper()
-        if metric and metric in CVAR_METRICS:
-            cvar_metrics.append(metric)
-
-    for stress_metric in cvar_metrics:
-        print(f"Calculating and writing annual {stress_metric} for iteration {iteration}")
-        dfmetric = get_annual_cvar_stress_metric(
-            case=sw.casedir,
-            t=t,
-            stress_metric=stress_metric,
-            iteration=iteration,
-            alpha=get_cvar_alpha(sw),
-        )
-
-        # CVAR is absolute MWh across all RA years, so convert to annual average.
-        # NCVAR is normalized by total load and remains in ppm.
-        if stress_metric == 'CVAR':
-            dfmetric /= len(sw['resource_adequacy_years'])
-
-        dfmetric.round(2).to_csv(
-            os.path.join(sw.casedir, 'outputs', f'{stress_metric.lower()}_{t}i{iteration}.csv')
-        )
-
-    # CVAR / NCVAR are check-only: no stress periods and no PRM increment.
-    evaluate_cvar_target_check(
-        sw=sw,
-        t=t,
-        iteration=iteration,
-        stress_metrics=cvar_metrics,
     )
 
     #%% Stop here if not iterating or if before ReEDS can build new capacity
