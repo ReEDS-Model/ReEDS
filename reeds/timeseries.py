@@ -525,3 +525,19 @@ def match_act2rep_bestfirst(
     out.index = out.index.tolist()
     out.index = out.index.rename('act')
     return out
+
+
+def truncate_leap_years(dfin):
+    dfout = dfin.copy()
+    ### On leap years, drop Dec 31
+    leap_year = dfout.iloc[:,:1].groupby(dfout.index.year).count().squeeze(1) == 8784
+    years = dfout.index.year.unique()
+    for year in years:
+        if leap_year[year]:
+            dfout.drop(dfout.loc[f'{year}-12-31'].index, inplace=True)
+    if len(dfout) != len(years) * 8760:
+        raise ValueError(
+            f'len(df) = {len(dfout)} but should be {len(years) * 8760}'
+        )
+
+    return dfout

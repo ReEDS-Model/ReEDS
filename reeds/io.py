@@ -1016,6 +1016,81 @@ def read_pras_results(filepath):
         return df
 
 
+
+def get_itl_deltas_hourly(
+    case=None,
+    tz_in='UTC',
+    tz_out='Etc/GMT+6',
+    **kwargs
+):
+    """
+    """
+    sw = reeds.io.get_switches(case, **kwargs)
+    h5path = Path(
+        reeds.io.reeds_path,
+        'inputs',
+        'profiles_itl_deltas',
+        'itl_deltas_NLR_z90.h5'
+    )
+    
+    ## Add one more year on either end of weather years to allow for timezone conversion
+    weather_years = [int(y) for y in sw['GSw_HourlyWeatherYears'].split('_')]
+    read_years = range(min(weather_years)-1, max(weather_years)+2)
+    ### Load ITL deltas
+    _itl_deltas = []
+    with h5py.File(h5path, 'r') as f:
+        columns = pd.MultiIndex.from_tuples(
+            tuple(zip(
+                pd.Series(f['columns_r'][:]).str.decode('utf-8'),
+                pd.Series(f['columns_rr'][:]).str.decode('utf-8')
+            )),
+            names=['r', 'rr']
+        )
+        for year in read_years:
+            time_index = pd.to_datetime(
+                pd.Series(f[f'time_index_{year}'][:])
+                .str
+                .decode('utf-8')
+            )
+            delta_values = (
+                f[f'itl_deltas_{year}'][:]
+                * f[f'itl_deltas_{year}'].attrs['scale']
+            )
+            df = pd.DataFrame(
+                index=time_index,
+                columns=columns,
+                data=delta_values
+            )
+            _itl_deltas.append(df)
+
+    itl_deltas = (
+        pd.concat(_itl_deltas)
+        .rename_axis(index='datetime')
+        .tz_localize(tz_in)
+        .tz_convert(tz_out)
+    )
+    ## Subset to weather years used in ReEDS
+    itl_deltas = itl_deltas.loc[itl_deltas.index.year.isin(weather_years)].copy()
+    ### On leap years, drop Dec 31
+    itl_deltas = reeds.timeseries.truncate_leap_years(itl_deltas)
+    ### Subset to valid regions
+    if case is not None:
+        val_r = (
+            reeds.io.read_input(standardize_case(case), 'r')
+            .squeeze(1)
+            .tolist()
+        )
+        itl_deltas = (
+            itl_deltas.loc[:, (
+                itl_deltas.columns.get_level_values('r').isin(val_r)
+                & itl_deltas.columns.get_level_values('rr').isin(val_r)
+            )]
+            .copy()
+        )
+
+    return itl_deltas
+
+
 def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     ### Derived inputs
     inputs_case = case if 'inputs_case' in case else os.path.join(case, 'inputs_case')
@@ -1053,14 +1128,7 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     ## Subset to weather years used in ReEDS
     temperatures = temperatures.loc[temperatures.index.year.isin(weather_years)].copy()
     ### On leap years, drop Dec 31
-    leap_year = temperatures.iloc[:,:1].groupby(temperatures.index.year).count().squeeze(1) == 8784
-    for year in weather_years:
-        if leap_year[year]:
-            temperatures.drop(temperatures.loc[f'{year}-12-31'].index, inplace=True)
-    if len(temperatures) != len(weather_years) * 8760:
-        raise ValueError(
-            f'len(temperatures) = {len(temperatures)} but should be {len(weather_years) * 8760}'
-        )
+    temperatures = reeds.timeseries.truncate_leap_years(temperatures)
     ### Subset to states used in this run
     temperatures = temperatures[[c for c in temperatures if c in val_st]].copy()
 

@@ -6118,8 +6118,6 @@ Parameter
     hybrid_cc_derate(i,r,ccseason,sdbin,t) "--fraction-- derate factor for hybrid PV+battery storage capacity credit"
     m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit"
     mean_forced_outage_rate(i,r,ccseason,t)"--fraction-- mean forced outage rate for each technology, region, and ccseason - used to derate thermal generator capacity"
-* Heuristic climate impacts
-    trans_cap_delta(allh,allt)             "--fraction-- fractional adjustment to transmission capacity from climate heuristics"
 * Emissions and policies
     h_weight_csapr(allh)                   "hour weights for CSAPR ozone season constraints"
 * Water access
@@ -6130,6 +6128,8 @@ Parameter
 * Fossil gas supply curve
     gasadder_cd(cendiv,t,allh)             "--$/MMbtu-- adder for NG census division"
     szn_adj_gas(allh)                      "--fraction-- seasonal adjustment for gas prices"
+* Hourly line ratings
+    trans_cap_delta(r,rr,allh)             "--fraction-- fractional adjustment to transmission capacity from variable line ratings"
 ;
 
 * Initialize some parameters

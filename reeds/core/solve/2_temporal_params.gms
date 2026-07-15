@@ -262,16 +262,6 @@ hours_daily(h_rep) = %GSw_HourlyChunkLengthRep% ;
 hours_daily(h_stress) = %GSw_HourlyChunkLengthStress% ;
 
 
-*===============================================
-* -- Climate Adjustments to Transmission --
-*===============================================
-
-trans_cap_delta(allh,t) = 0 ;
-trans_cap_delta(h,t) = 
-    climate_heuristics_finalyear('trans_summer_cap_delta') * climate_heuristics_yearfrac(t)
-    * sum{quarter$sameas(quarter,"summ"), frac_h_quarter_weights(h,quarter) };
-
-
 *=============================================
 * -- Mexico and Canada --
 *=============================================
