@@ -31,7 +31,7 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 
 - `employment_factor_inter_transmission.csv`: Employment factor data for transmission line construction, taken from the four data source mentioned above - [JEDI/WIRED models](https://www.nlr.gov/analysis/jedi/transmission-line), [Mayfield et al. (2023)](https://doi.org/10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://doi.org/10.1016/j.rser.2025.115339) and [Ram et al. (2020)](https://doi.org/10.1016/j.techfore.2019.06.008).
 
-## Employment factor unit
+## Employment factor units
 - Power plants:
   - Construction: [job-years/MW]
   - FOM: [job-years/MW-year]
