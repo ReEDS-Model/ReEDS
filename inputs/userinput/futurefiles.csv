@@ -91,6 +91,8 @@ d_szn_7yr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 dac_assumptions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 dac_elec.csv,.csv,0,None,t,i,1,0,linear_10,None,None,new,
 dac_gas.csv,.csv,0,None,t,i,1,0,linear_10,None,None,new,
+daily_gasprice_multipliers_r.h5,.h5,0,None,year,datetime,1,keepindex,linear_5,None,None,done,linear_5
+daily_gasprice_multipliers_cendiv.h5,.h5,0,None,year,datetime,1,keepindex,linear_5,None,None,done,linear_5
 deflator.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 degradation_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 degradation_annual.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -123,6 +125,8 @@ e.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 eall.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 emit_rate.csv,.csv,0,None,t,"etype,e,i,v,r",0,0,constant,0,None,done,constant
 emitrate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
+employment_factor_plant.csv,.csv,1,ignore,9999,None,9999,0,constant,0,None,,
+employment_factor_inter_transmission.csv,.csv,1,ignore,9999,None,9999,0,constant,0,None,,
 energy_communities.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 etype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ev_baseline_load.csv,.csv,0,None,2,"0,1",0,None,linear_5,None,None,linear or saturate?,linear_5
@@ -157,6 +161,7 @@ fuel2tech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 fuelbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 futurefiles.csv,.csv,1,None,9999,None,9999,0,constant,None,None,so meta,constant
 gasprice_ref.csv,.csv,0,None,wide,cendiv,1,0,constant,0,None,done,linear_5
+gasreg_price_adj_regression_params.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin_min.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -238,6 +243,7 @@ ivt_default.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done (special ca
 ivt_small.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done (special case: ivt is extended in calc_financial_inputs.py since ivt is needed there),constant
 ivt_step.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 ivt.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done (special case: ivt is extended in calc_financial_inputs.py since ivt is needed there),constant
+jtype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,
 lcclike.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 load_2010.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 load_allyear.csv,.csv,0,None,t,"*r,h",0,0,linear_5,0,None,done,linear_5

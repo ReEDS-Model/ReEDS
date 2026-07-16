@@ -68,7 +68,7 @@ jobs:
         
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: |
             inputs/remote/
@@ -126,7 +126,7 @@ jobs:
 
       - name: Restore LFS cache
         id: lfs-restore
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: .git/lfs
           key: lfs-${{ runner.os }}-${{ hashFiles('.lfs-assets-id') }}-v1
@@ -137,7 +137,7 @@ jobs:
 
       - name: Save the updated LFS cache
         if: steps.lfs-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: .git/lfs
           key: ${{ steps.lfs-restore.outputs.cache-primary-key }}
@@ -149,7 +149,7 @@ jobs:
 
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: |
             inputs/remote/
