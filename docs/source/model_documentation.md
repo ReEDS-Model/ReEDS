@@ -1371,6 +1371,7 @@ The hydrogen fuel cell is disabled by default and is enabled with `GSw_H2FuelCel
 Three cost-and-performance trajectories (conservative, moderate, and advanced) are available and selected with the `plantchar_h2fuelcell` switch (default `h2fuelcell_moderate`); the three trajectories share the same near-term cost and differ in the rate of capital-cost decline after 2025.
 Because point-source values are used, the fuel cell is assigned zero direct CO<sub>2</sub> and SO<sub>2</sub> emissions (emissions associated with upstream hydrogen production are accounted for separately).
 Financing and reserve provision are assumed to be the same as for a gas combustion turbine (Gas-CT).
+Fixed and variable O&M assumptions are taken from Exhibit 5-19 (Case B31A) of {cite:t}`schmittFossilEnergyBaseline2022`.
 
 {numref}`h2-fuel-cell-assumptions` summarizes the key assumptions for the moderate cost case.
 
