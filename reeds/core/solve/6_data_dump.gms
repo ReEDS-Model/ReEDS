@@ -68,9 +68,6 @@ minloadfrac_filt(r,i,allszn)       "--fraction-- modelled mingen fraction filter
 prod_filt(i,v,r,allh)              "--MW-- power consumed for PRODUCE.l"
 ra_cap_loadsite(r,t)               "--MW-- capacity of flexibly sited load"
 repbioprice_filt(r)                "--2004$/MWh-- marginal price for biofuel in region where biofuel was used"
-repgasprice_filt(r)                "--$/mmBTU-- NG prices in ReEDS filtered for the previous solve year"
-repgasprice_r(r,t)                 "--$/mmBTU-- NG prices in ReEDS, switch-dependent, at the BA level"
-repgasprice(cendiv,t)              "--$/mmBTU-- NG prices in ReEDS, the calculation of which depends on what switch is used"
 repgasquant(cendiv,t)              "--mmBTU-- NG fuel usage in ReEDS - used to determine NG price"
 ret_ivrt(i,v,r,t)                  "--MW-- retirements of generation capacity"
 ret(i,v,r)                         "--MW-- retirements of generation capacity"
@@ -192,32 +189,6 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)
        } ;
-
-repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tcur(t)] =
-    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) }], gasprice(cendiv,gb,t) } ;
-
-repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tcur(t)$repgasquant(cendiv,t)] =
-    sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h)*heat_rate(i,v,r,t)*fuel_price(i,r,t)*GEN.l(i,v,r,h,t)
-       } / (repgasquant(cendiv,t)) ;
-
-repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tcur(t)] = sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ;
-
-repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tcur(t)] =
-              ( sum{(h,cendiv),
-                   gasmultterm(cendiv,t) * szn_adj_gas(h) * cendiv_weights(r,cendiv) *
-                   hours(h) } / sum{h, hours(h) }
-
-              + smax((fuelbin,cendiv)$[VGASBINQ_REGIONAL.l(fuelbin,cendiv,t)$r_cendiv(r,cendiv)], gasbinp_regional(fuelbin,cendiv,t) )
-
-              + smax(fuelbin$VGASBINQ_NATIONAL.l(fuelbin,t), gasbinp_national(fuelbin,t) )
-              ) ;
-
-* catch any infinite values, assign to reference gas price
-repgasprice_r(r,t)$[(repgasprice_r(r,t) = -inf or repgasprice_r(r,t) = inf)$tcur(t)] =
-    smax{cendiv$r_cendiv(r,cendiv), gasprice_ref(cendiv,t) } ;
-
-repgasprice_filt(r) = sum{t$tcur(t), repgasprice_r(r,t) } ;
 
 *============================
 * Filter necessary input data
@@ -396,7 +367,6 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     r_cendiv
     ra_cap_loadsite
     repbioprice_filt
-    repgasprice_filt
     ret
     ret_ivrt
     routes_filt

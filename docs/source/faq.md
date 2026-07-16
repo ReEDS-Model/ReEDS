@@ -57,31 +57,35 @@ Yes, you can configure ReEDS as a single interconnect. Limiting the spatial exte
 
 ### How do I change the spatial resolution of a ReEDS case?
 
-The ReEDS model is capable of capturing several spatial resolutions. This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` switches.
+The ReEDS model is capable of capturing several spatial resolutions.
+This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` switches.
 
-- Balancing areas (BAs) and aggregated groups of BAs: Aggregation level is controlled by the 'aggreg' column of the `inputs/zones/GSw_ZoneSet/hierarchy_from134.csv` file.
+- Default zone set:
+  - 90 zones: `GSw_ZoneSet = z90`
+- Zone sets based on the traditional 134 ReEDS zones:
   - 134 zones: `GSw_ZoneSet = z134`
-  - 132 zones (**default**): `GSw_ZoneSet = z132`. Merges p119 into p122 and p30 into p28.
-  - 69 zones: `GSw_ZoneSet = z69`. Obeys state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
-  - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
-  - 48 zones: `GSw_ZoneSet = z48`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states (highly simplified).
-- Counties: `GSw_ZoneSet = z3109`. Only solves in tolerable time when running a subset of the U.S. as specified by the `GSw_Region` switch.
-- Mixed resolution: `GSw_ZoneSet` = `PJMcounty` or `UTcounty`. Can be used to model some regions at county resolution and others at BA or aggregated-region resolution.
+  - 132 zones: `GSw_ZoneSet = z132`. Identical to z134 except merges p119 into p122 and p30 into p28.
+  - 69 zones: `GSw_ZoneSet = z69`. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
+  - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries from z134 to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
+  - Counties for Utah, 134 zones for the rest: `GSw_ZoneSet = UTcounty`
+  - Counties for PJM and a few adjacent states, 134 zones for the rest: `GSw_ZoneSet = PJMcounty`
+- Zone sets based on counties:
+  - Single counties (3109 zones): `GSw_ZoneSet = z3109`. Only solves in tolerable time when running a subset of the U.S. as specified by the `GSw_Region` switch.
+- Zone sets based on states:
+  - Single states (48 zones): `GSw_ZoneSet = z48`
 
 ### How can I reduce solve time?
 
 If you'd like to reduce the model solve time, consider making some of the following changes:
 
-- `yearset = 2010_2015_2020_2025_2030_2035_2040_2045_2050`
+- `yearset = 2010..2050..5`
   - Solve in 5-year steps
-- `GSw_OpRes = 0`
-  - Turn off operating reserves
-- `GSw_MinLoading = 0`
-  - Turn off the sliding-window representation of minimum-generation limits
+- `GSw_StartCost = 0`
+  - Turn off linearized startup costs
 - `GSw_HourlyNumClusters = 25` (or lower)
   - Reduce the number of representative periods
 - `GSw_ZoneSet = z54`
-  - Aggregate the native 134 zones into 54 (larger) zones
+  - Reduce the number of model zones
 
 ### How often are updates made to ReEDS?
 

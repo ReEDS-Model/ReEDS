@@ -1569,6 +1569,12 @@
     - **Description:** Dollar year mapping for each fuel price scenario
 ---
 
+  - [gasreg_price_adj_regression_params.csv](/inputs/fuelprices/gasreg_price_adj_regression_params.csv)
+    - **File Type:** Input
+    - **Description:** Parameters derived from regression with monthly fixed effects regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual averages (https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/temperature_gas_price_adj_regression). "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
+    - **Indices:** param
+---
+
   - [h2-combustion_10.csv](/inputs/fuelprices/h2-combustion_10.csv)
     - **Description:** price of hydrogen for combustion technologies (h2-ct and cc) at $10/MMBtu for all years
 ---
@@ -3432,10 +3438,6 @@
 
   - [ivt_step.csv](/inputs/userinput/ivt_step.csv)
     - **Description:** ivt steps for endyears beyond 2050
----
-
-  - [modeled_regions.csv](/inputs/userinput/modeled_regions.csv)
-    - **Description:** Sets of BA regions that a user can model in a run. Each column is a different region option and can be specified in cases using GSw_Region.
 ---
 
   - [windows_2100.csv](/inputs/userinput/windows_2100.csv)
