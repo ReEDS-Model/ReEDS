@@ -53,6 +53,7 @@ gen_frac_max = 0.65 #Upper limit on gen_frac for the intermediary "lim" plots
 vcf_min = 0 #Minimum value_cost_factor_adj2 to retain in df_plot_core
 stor_report_techs = ['Battery'] #Techs whose gen_twh/generation is overridden with gross discharge
 storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES'] #Techs excluded from the total-generation market-share denominator
+metrics_subreg = ['vf','vcf'] #Metrics to plot vs gen_frac for each subregion (transreg/interconnect)
 
 out_txt = f'{output_dir}/out.txt'
 with open(out_txt, 'w') as f:
@@ -332,12 +333,11 @@ for subreg in subregs:
     dfs_subreg[subreg] = df_sub.copy()
 
 print('Make subregion plots')
-metrics = ['vf','vcf']
 for subreg in subregs:
     df_sub = dfs_subreg[subreg]
     for scenario in df_sub['scenario'].unique():
         df_plt = df_sub[df_sub['scenario']==scenario]
-        for metric in metrics:
+        for metric in metrics_subreg:
             fig = px.scatter(df_plt, x='gen_frac', y=metric, color=subreg,
                 hover_data=[subreg, 'year', 'gen_frac', metric], trendline='ols',
                 template='plotly_white', width=950, height=630)
