@@ -28,6 +28,8 @@ static_presets = [
     {'name': 'Annual Revenue per Capacity National ($/kW-yr)', 'result': 'Annual Revenue National', 'preset': '$/kW-yr Tech Lines Explode Services'},
     {'name': 'Annual Revenue per Generation National ($/MWh)', 'result': 'Annual Revenue National', 'preset': '$/MWh Tech Lines Explode Services'},
     {'name': 'Present Value of System Cost through 2050 (Bil $)', 'result': 'Sys Cost Annualized (Bil $)', 'preset': 'Discounted through 2050'},
+    {'name': 'NPV of System Cost 2026-2034 (Bil $)', 'result': 'Sys Cost Annualized (Bil $)', 'preset': 'Discounted through 2034'},
+    {'name': 'Discounted Annualized System Cost (Bil $)', 'result': 'Sys Cost Annualized (Bil $)', 'preset': 'Discounted by Year'},
     {'name': 'Emissions National (metric tons)', 'result': 'Emissions National (metric tons)', 'preset': 'Scenario Lines Over Time'},
     {'name': 'Net CO2e Emissions National (MMton)', 'result': 'Net CO2e Emissions National (MMton)', 'preset': 'Stacked Bars Over Time'},
     {'name': 'CO2 Abatement Cost ($/metric ton)', 'result': 'CO2 Price ($/metric ton)', 'preset': 'CO2 price over time'},
