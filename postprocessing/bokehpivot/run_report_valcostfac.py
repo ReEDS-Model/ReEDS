@@ -48,7 +48,7 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 
 #USER SWITCHES
 start_year = 2025 #First year of results to include (first endogenous year, without prescribed builds)
-share_basis = 'load' #Denominator for gen_frac (used by all plots and adjusted metrics): 'load' = benchmark load; 'gen' = total generation excluding storage. Both columns (gen_frac_load, gen_frac_gen) are retained in valcostfac.csv regardless.
+share_basis = 'gen' #Denominator for gen_frac (used by all plots and adjusted metrics): 'load' = busbar load; 'gen' = total generation excluding storage. Both columns (gen_frac_load, gen_frac_gen) are retained in valcostfac.csv regardless.
 gen_frac_max = 0.65 #Upper limit on gen_frac for the intermediary "lim" plots
 vcf_min = 0 #Minimum value_cost_factor_adj2 to retain in df_plot_core
 stor_report_techs = ['Battery'] #Techs whose gen_twh/generation is overridden with gross discharge
