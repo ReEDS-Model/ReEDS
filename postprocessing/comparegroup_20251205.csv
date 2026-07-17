@@ -1,0 +1,12 @@
+casepath,casename,color
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_NoNewTrans_CurrentPol_DemMd_core,Mid_NoNewTrans,C0
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_Recon3yr_CurrentPol_DemMd_core,Mid_Recon3yr,C1
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_ReconTrnsfrm3yr_CurrentPol_DemMd_core,Mid_ReconTrnsfrm3yr,C2
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_NoNewTrans_CurrentPol_DemHi_core,Hi_NoNewTrans,C0
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_Recon3yr_CurrentPol_DemHi_core,Hi_Recon3yr,C1
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_ReconTrnsfrm3yr_CurrentPol_DemHi_core,Hi_ReconTrnsfrm3yr,C2
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_NoNewTrans_CurrentPol_DemMd_2yr,Mid2yr_NoNewTrans,C0
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_Recon3yr_CurrentPol_DemMd_2yr,Mid2yr_Recon3yr,C1
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_ReconTrnsfrm3yr_CurrentPol_DemMd_2yr,Mid2yr_ReconTrnsfrm3yr,C2
+/projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_Recon3yr_CurrentPol_DemMd_core,Mid_Recon3yr,C4
+/projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251205_reconductorK1_Recon3yr_CurrentPol_DemHi_core,Hi_Recon3yr,C3

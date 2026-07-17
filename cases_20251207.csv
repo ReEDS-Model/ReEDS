@@ -1,0 +1,11 @@
+,Default Value,NoNewTrans_CurrentPol_DemMd_core,NoNewTrans_CurrentPol_DemHi_core,Recon3yr_CurrentPol_DemMd_core,Recon3yr_CurrentPol_DemHi_core,ReconSub3yr_CurrentPol_DemMd_core,ReconSub3yr_CurrentPol_DemHi_core,ReconSubTfm3yr_CurrentPol_DemMd_core,ReconSubTfm3yr_CurrentPol_DemHi_core,NoNewTrans_CurrentPol_DemMd_2yr,Recon3yr_CurrentPol_DemMd_2yr,ReconSub3yr_CurrentPol_DemMd_2yr,ReconSubTfm3yr_CurrentPol_DemMd_2yr
+ignore,0,,,,,,,,,,,,
+yearset_suffix,3yr,,,,,,,,,biennial,biennial,biennial,biennial
+endyear,2032,,,,,,,,,,,,
+GSw_RegionResolution,ba,,,,,,,,,,,,
+incentives_suffix,obbba,obbba,obbba,obbba,obbba,obbba,obbba,obbba,obbba,obbba,obbba,obbba,obbba
+GSw_EFS1_AllYearLoad,EER_IRAlow,EER_IRAlow,EER_100by2050,EER_IRAlow,EER_100by2050,EER_IRAlow,EER_100by2050,EER_IRAlow,EER_100by2050,EER_IRAlow,EER_IRAlow,EER_IRAlow,EER_IRAlow
+GSw_TransHVDC,0,,,,,,,,,,,,
+GSw_TransRestrict,country,r,r,,,,,,,r,,,
+GSw_TransUpgradeMethod,500kv,,,NARIS_r1t0s0l0,NARIS_r1t0s0l0,NARIS_r1t0s1l0,NARIS_r1t0s1l0,NARIS_r1t1s1l0,NARIS_r1t1s1l0,,NARIS_r1t0s0l0,NARIS_r1t0s1l0,NARIS_r1t1s1l0
+GSw_TransYearsUntilEndog,8,,,3,3,3,3,3,3,,3,3,3

@@ -1,0 +1,19 @@
+casepath,casename,color
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_NoNewTrans_CurrentPol_DemMd_core,Dmid_NoNewTrans,C0
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_Recon3yr_CurrentPol_DemMd_core,Dmid_Recon3yr,C2
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_ReconSub3yr_CurrentPol_DemMd_core,Dmid_ReconSub3yr,C1
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_ReconSubTfm3yr_CurrentPol_DemMd_core,Dmid_ReconSubTfm3yr,C3
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_NoNewTrans_CurrentPol_DemHi_core,Dhi_NoNewTrans,C0
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_Recon3yr_CurrentPol_DemHi_core,Dhi_Recon3yr,C2
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_ReconSub3yr_CurrentPol_DemHi_core,Dhi_ReconSub3yr,C1
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_ReconSubTfm3yr_CurrentPol_DemHi_core,Dhi_ReconSubTfm3yr,C3
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_NoNewTrans_CurrentPol_DemMd_2yr,Dmid2yr_NoNewTrans,C0
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_Recon3yr_CurrentPol_DemMd_2yr,Dmid2yr_Recon3yr,C2
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_ReconSub3yr_CurrentPol_DemMd_2yr,Dmid2yr_ReconSub3yr,C1
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_ReconSubTfm3yr_CurrentPol_DemMd_2yr,Dmid2yr_ReconSubTfm3yr,C3
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_Recon3yr_CurrentPol_DemMd_core,Dmid_Recon3yr,C4
+# /projects/reedsweto/pbrown/github3/ReEDS-2.0/runs/v20251207_reconductorK0_Recon3yr_CurrentPol_DemHi_core,Dhi_Recon3yr,C5
+/Users/pbrown/Projects/ATM/TSC/reeds_runs/v20251207_reconductorK0_NoNewTrans_CurrentPol_DemHi_core,NoNewInterzonal,C0
+/Users/pbrown/Projects/ATM/TSC/reeds_runs/v20251207_reconductorK0_Recon3yr_CurrentPol_DemHi_core,Recon,C2
+/Users/pbrown/Projects/ATM/TSC/reeds_runs/v20251207_reconductorK0_ReconSub3yr_CurrentPol_DemHi_core,ReconSub,C1
+/Users/pbrown/Projects/ATM/TSC/reeds_runs/v20251207_reconductorK0_ReconSubTfm3yr_CurrentPol_DemHi_core,ReconSubTrnsfm,C3
