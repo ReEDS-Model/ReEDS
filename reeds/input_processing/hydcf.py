@@ -536,5 +536,3 @@ if __name__ == '__main__':
         path=os.path.join(inputs_case,'..'))
     
     print('Finished hydcf.py')
-
-# %%
