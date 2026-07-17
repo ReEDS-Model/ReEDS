@@ -620,13 +620,19 @@ def get_hourly_finito_load(
 
 def remove_finito_load(
     load_hourly: pd.DataFrame,
-    inputs_case: str, 
+    inputs_case: str,
+    distloss: float,
 ) -> pd.DataFrame:
 
     # get FINITO reference load
     load_hourly_finito = get_hourly_finito_load(inputs_case)
 
-    # subtract FINITO reference load from ReEDS load data, 
+    # FINITO reference load is end-use (facility consumption), so convert to
+    # busbar for consistency with the busbar load it is subtracted from
+    # (and with the same gross-up applied to USE_ELE_FINITO in eq_loadcon)
+    load_hourly_finito = load_hourly_finito / (1 - distloss)
+
+    # subtract FINITO reference load from ReEDS load data,
     # aligning by model year (index) and region (columns)
     result = load_hourly - load_hourly_finito
 
@@ -741,7 +747,9 @@ def main(reeds_path, inputs_case):
     # note that this step occurs after peakload calculation so that the latter
     # includes a baseline estimate of industrial load captured by FINITO
     if int(sw.GSw_FINITO_Link):
-        regional_load_hourly = remove_finito_load(regional_load_hourly, inputs_case)
+        regional_load_hourly = remove_finito_load(
+            regional_load_hourly, inputs_case, scalars['distloss']
+        )
 
     #############################################
     #    -- DR Shed Load Modifications --    #
