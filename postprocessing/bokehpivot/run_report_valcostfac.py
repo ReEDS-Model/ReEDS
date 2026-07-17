@@ -250,9 +250,11 @@ print('Recalculate VCF')
 df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_core['cost_factor_adj']
 #Find average VCF for all conv_techs, and use that to scale the VCF for all techs
 VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
+if pd.isna(VCF_adj):
+    print('WARNING: no conv_techs core runs present, so VCF_adj is NaN')
 df_plot_core['value_cost_factor_adj2'] = df_plot_core['value_cost_factor_adj'] / VCF_adj
-#Apply minimum vcf to df_plot_core, if desired
-df_plot_core = df_plot_core[df_plot_core['value_cost_factor_adj2'] >= vcf_min].copy()
+#Apply minimum vcf to df_plot_core, if desired. Use ~(< vcf_min) rather than (>= vcf_min) so that NaN value_cost_factor_adj2 rows are retained rather than silently dropped.
+df_plot_core = df_plot_core[~(df_plot_core['value_cost_factor_adj2'] < vcf_min)].copy()
 with open(out_txt, 'a') as f:
     print(f'VCF_adj: {VCF_adj}', file=f)
 
@@ -285,6 +287,9 @@ for plot in plots + plots_core:
     else:
         df_plt = df_plot
         lim_str = ''
+    if df_plt[plot['y']].isna().all():
+        print(f'Skipping plot {plot["y"]}-vs-{plot["x"]}{lim_str}: no non-NaN data.')
+        continue
     fig = px.scatter(df_plt, x=plot['x'], y=plot['y'], color='tech scenario',
         hover_data=['tech scenario', 'year', 'gen_frac', plot['y']], trendline='ols',
         template='plotly_white', width=950, height=630)
