@@ -1,0 +1,59 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010_2015_2020..2050..3
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  demand:
+    DemMd:
+      GSw_LoadProfiles: /projects/reedsweto/pbrown/github/ReEDS/inputs/profiles_demand/demand_normaldatacenter_baseline_EER2025_Baseline_AEO2023.h5
+    DemHi:
+      GSw_LoadProfiles: /projects/reedsweto/pbrown/github/ReEDS/inputs/profiles_demand/demand_highdatacenter_baseline_EER2025_Baseline_AEO2023.h5
+  ra_boundary:
+    RAcountry:
+      GSw_PRMTRADE_level: country
+    RAinterconnect:
+      GSw_PRMTRADE_level: interconnect
+    RAtransreg:
+      GSw_PRMTRADE_level: transreg
+    RAtransgrp:
+      GSw_PRMTRADE_level: transgrp
+    RAnercr:
+      GSw_PRMTRADE_level: nercr
+    RAst:
+      GSw_PRMTRADE_level: st
+  ra_import_limit:
+      ImportLimit0:
+        GSw_PRM_NetImportLimit: 0
+      ImportLimitRamp:
+        GSw_PRM_NetImportLimit: 1
+        GSw_PRM_NetImportLimitScen: 2031_hist/2050_100
+      ImportLimitHist:
+        GSw_PRM_NetImportLimit: 1
+        GSw_PRM_NetImportLimitScen: 2031_hist
+  sensitivity:
+    core: {}
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+casegroups:
+  - [[], [], [], core]
+  # ## (All policy scenarios) × (all demand scenarios) × (single core sensitivity)
+  # - [[], [], core]
+  # ## (OBBBA policy) × (mid demand) × (all sensitivity settings)
+  # - [OBBBA, DemMd, []]
+  # ## (2 policies) × (1 demand) × (2 sensitivity settings)
+  # - [[OBBBA, OBBBAcon], DemMd, [GasPriceLo, GasPriceHi]]
