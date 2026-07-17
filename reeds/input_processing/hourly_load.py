@@ -632,8 +632,8 @@ def remove_finito_load(
 
     #TODO: add this
     # Validation check: confirm that total load - FINITO load > 0
-    
-    return load_hourly
+
+    return result
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
