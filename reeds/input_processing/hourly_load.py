@@ -634,8 +634,26 @@ def remove_finito_load(
     # aligning by model year (index) and region (columns)
     result = load_hourly - load_hourly_finito
 
-    #TODO: add this
-    # Validation check: confirm that total load - FINITO load > 0
+    # any missing region or model year in load_finito.csv shows up as NaN
+    if result.isnull().any().any():
+        raise ValueError(
+            'FINITO reference load is missing regions or years present in the '
+            'ReEDS load data; check load_finito.csv'
+        )
+
+    # Validation check: FINITO reference load should not exceed baseline load.
+    # If it does, clip to zero and report
+    negative = result < 0
+    if negative.any().any():
+        clipped = (-result[negative]).groupby('year').sum()
+        clipped = clipped.stack().loc[lambda x: x > 0].rename('clipped_MWh')
+        print(
+            'WARNING: FINITO reference load exceeds baseline load; clipping '
+            f'{clipped.sum():.0f} MWh (summed over weather years) to zero.\n'
+            'Clipped MWh by (year, region):\n'
+            + clipped.to_string()
+        )
+        result = result.clip(lower=0)
 
     return result
 
