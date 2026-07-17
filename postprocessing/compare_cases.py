@@ -141,6 +141,8 @@ central_health = {'cr':'ACS', 'model':'EASIUR'}
 reeds_dollaryear = 2004
 output_dollaryear = DEFAULT_DOLLAR_YEAR
 startyear_notes = DEFAULT_PV_YEAR
+# npv_cost_sheet = 'Present Value of System Cost'
+npv_cost_sheet = 'NPV of System Cost 2026-2034'
 
 colors_social = {
     'CO2': plt.cm.tab20b(4),
@@ -192,7 +194,7 @@ plotdiffvals = [
     'Transmission (PRM) (GW-mi)',
     'Bulk System Electricity Pric',
     'National Average Electricity',
-    'Present Value of System Cost',
+    npv_cost_sheet,
     'NEUE (ppm)',
     'Runtime (hours)',
     'Runtime by year (hours)',
@@ -232,8 +234,12 @@ def plot_bars_abs_stacked(
                 if np.around(val, 0) == 0:
                     continue
                 _ax.annotate(
-                    f'{val:.0f}', (x, val - _ypad), ha='center', va='top',
-                    color='k', size=fontsize,
+                    f'{val:.0f}',
+                    (x, val - (0 if row == 0 else _ypad)),
+                    ha='center',
+                    va=('bottom' if row == 0 else 'top'),
+                    color='k',
+                    size=fontsize,
                     path_effects=[pe.withStroke(linewidth=2.0, foreground='w', alpha=0.7)],
                 )
     ## Legend info
@@ -394,7 +400,7 @@ costcat_rename = {
 dictin_npv = {}
 for case in tqdm(cases, desc='NPV of system cost'):
     dictin_npv[case] = (
-        reeds.io.read_report(cases[case], 'Present Value of System Cost', val2sheet)
+        reeds.io.read_report(cases[case], npv_cost_sheet, val2sheet)
         .set_index('cost_cat')['Discounted Cost (Bil $)']
     )
     dictin_npv[case].index = pd.Series(dictin_npv[case].index).replace(costcat_rename)
@@ -1249,6 +1255,177 @@ try:
     reeds.report_utils.add_to_pptx(slide=slide, prs=prs, width=width, top=7.5)
 except Exception:
     print(traceback.format_exc())
+
+
+# #%% Paper: BCR
+# # dfplot.sum(axis=1).diff().round(1)
+# # dfplot.diff().T.round(1).replace(0,np.nan).dropna(how='all')
+# ## Cost difference
+# (dfplot - dfplot.loc[basecase]).sum(axis=1)
+# (dfplot - dfplot.loc[basecase]).T.round(1).replace(0,np.nan).dropna(how='all')
+# #%% BCR for transmission additions
+# transmission_categories = ['Transmission Capex', 'Transmission O&M']
+# benefit = (
+#     (dfplot - dfplot.loc[basecase])
+#     [[c for c in dfplot if c not in transmission_categories]]
+#     .sum(axis=1)
+# )
+# cost = (dfplot - dfplot.loc[basecase])[transmission_categories].sum(axis=1)
+# print((benefit / cost).round(1))
+
+
+# #%% Paper: New groups: interzonal transmission; all other capex; all other opex
+# projpath = os.path.expanduser('~/Projects/ATM/TSC')
+# savepath = os.path.join(projpath, 'figures', '20251217')
+
+# cost_agg_colors = pd.Series({
+#     'Other capex': plt.cm.tab20(10),
+#     'Other opex': plt.cm.tab20(11),
+#     'Interzonal transmission': 'C9',
+# })
+# cost_agg = {
+#     'PTC': 'Other opex',
+#     'ITC': 'Other capex',
+#     'CCS Incentives': 'Other opex',
+#     'DAC Capex': 'Other capex',
+#     'H2 Revenue': 'Other opex',
+#     'Gen & Stor Capex': 'Other capex',
+#     'Gen & Stor O&M': 'Other opex',
+#     'Fuel': 'Other opex',
+#     'Transmission Capex': 'Interzonal transmission',
+#     'Transmission O&M': 'Interzonal transmission',
+#     'Interconnection Capex': 'Other capex',
+#     'Interconnection O&M': 'Other opex',
+#     'CO2 T&S Capex': 'Other capex',
+#     'CO2 T&S O&M': 'Other opex',
+#     'H2 Prod Capex': 'Other capex',
+#     'H2 Prod O&M': 'Other opex',
+#     'H2 PTC': 'Other opex',
+#     'ACP': 'Other capex',
+#     'Emissions Tax': 'Other opex',
+#     'Other': 'Other opex',
+# }
+
+# cap_agg = {
+#     'h2-cc':'h2-turbine',
+#     'h2-ct':'h2-turbine',
+# }
+# special_colors = bokehcolors.copy()
+# special_colors.index = special_colors.index.map(lambda x: cap_agg.get(x,x))
+
+# width = max(7.5, len(cases)*1.3)
+# plt.close()
+# f,ax = plt.subplots(
+#     2, 3, figsize=(width, SLIDE_HEIGHT), sharex=True,
+#     sharey=('col' if (sharey is True) else False),
+# )
+# handles = {}
+
+# ### Final capacity and generation
+# toplot = {
+#     'Capacity': {
+#         'data': dictin_cap,
+#         'values':'Capacity (GW)',
+#         'label':f'{lastyear} generation + storage capacity [GW]'},
+# }
+# ax[0,1].axhline(0, c='k', ls='--', lw=0.75)
+# for col, (datum, data) in enumerate(toplot.items()):
+#     ax[0,col].set_ylabel(data['label'], y=-0.075)
+#     dfplot = pd.concat(
+#         {case:
+#          data['data'][case].loc[data['data'][case].year==lastyear]
+#          .set_index('tech')[data['values']]
+#          for case in cases},
+#         axis=1,
+#     ).T
+#     dfplot = dfplot.rename(columns=cap_agg)
+#     dfplot = (
+#         dfplot[[c for c in special_colors.index if c in dfplot and c not in ['Canada']]]
+#         .round(3).replace(0,np.nan).dropna(axis=1, how='all')
+#     )
+
+#     handles[datum] = plot_bars_abs_stacked(
+#         dfplot=dfplot, basecase=basemap,
+#         colors=special_colors.to_dict(), fontsize=8,
+#         ax=ax, col=col, net=(True if datum == 'Generation' else False),
+#         label=(False if lesslabels else True),
+#         ypad=0.03,
+#     )
+
+# ### Interregional transmission
+# col = 1
+# ax[0,col].set_ylabel(f'{lastyear} interregional transmission capacity [GW]', y=-0.075)
+# dftrans = pd.concat({
+#     case: dictin_trans_r[case].loc[
+#         (dictin_trans_r[case]['inter_transreg'] == 1)
+#         & (dictin_trans_r[case].t == lastyear)
+#     ].groupby('trtype').MW.sum() / 1e3
+#     for case in cases
+# }, axis=1).T.rename(columns={'LCC':'DC'})
+# dftrans = dftrans[[c for c in colors_trans.index if c in dftrans]].copy()
+
+# handles['Transmission'] = plot_bars_abs_stacked(
+#     dfplot=dftrans, basecase=basemap,
+#     colors=colors_trans,
+#     ax=ax, col=col, net=False,
+#     label=(False if lesslabels else True),
+#     ypad=0.03,
+# )
+
+# ### NPV
+# col = 2
+# ax[0,col].set_ylabel('NPV of system cost [$billion]', y=-0.075)
+# dfplot = pd.concat(
+#     {case: dictin_npv[case] for case in cases},
+#     axis=1).T.fillna(0)
+# dfplot.columns = dfplot.columns.map(cost_agg)
+# dfplot = dfplot.groupby(axis=1, level='cost_cat').sum()
+# dfplot = dfplot[[c for c in cost_agg_colors.index if c in dfplot]].copy()
+
+# handles['System cost'] = plot_bars_abs_stacked(
+#     dfplot=dfplot, basecase=basemap,
+#     colors=cost_agg_colors,
+#     ax=ax, col=col, net=False,
+#     label=(False if lesslabels else True),
+#     ypad=0.03,
+# )
+
+# ### Formatting
+# ax[0,0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(100))
+# ax[1,0].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+# ax[1,1].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+# ax[0,2].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(100))
+# ax[1,2].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(1))
+# for col in range(3):
+#     ax[1,col].set_xticks(range(len(cases)))
+#     ax[1,col].set_xticklabels(cases.keys(), rotation=90)
+#     ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
+#     ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
+# plt.tight_layout()
+# plots.despine(ax)
+# plt.draw()
+# ### Save it
+# slide = reeds.report_utils.add_to_pptx(
+#     'Capacity, transmission, NPV', prs=prs, width=width)
+# plt.savefig(os.path.join(savepath, 'reeds-cap_trans_npv-results.png'))
+# plt.savefig(os.path.join(savepath, 'reeds-cap_trans_npv-results.pdf'))
+# if interactive:
+#     plt.show()
+
+# ### Add legends as separate figure below the slide
+# plt.close()
+# f,ax = plt.subplots(1, 3, figsize=(11, 0.1))
+# for col, datum in enumerate(handles):
+#     leg = ax[col].legend(
+#         handles=handles[datum][::-1], loc='upper center', bbox_to_anchor=(0.5,1.0), 
+#         fontsize='medium', ncol=1, frameon=False,
+#         handletextpad=0.3, handlelength=0.7, columnspacing=0.5, 
+#     )
+#     ax[col].axis('off')
+# reeds.report_utils.add_to_pptx(slide=slide, prs=prs, width=width, top=7.5)
+# plt.savefig(os.path.join(savepath, 'reeds-cap_trans_npv-legends.png'))
+# plt.savefig(os.path.join(savepath, 'reeds-cap_trans_npv-legends.pdf'))
+
 
 #%% Costs: NPV of system cost, NPV of climate + health costs
 try:
