@@ -46,7 +46,9 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
-start_year = 2025
+#USER SWITCHES
+start_year = 2025 #First year of results to include (first endogenous year, without prescribed builds)
+share_basis = 'load' #Denominator for gen_frac (used by all plots and adjusted metrics): 'load' = benchmark load; 'gen' = total generation excluding storage. Both columns (gen_frac_load, gen_frac_gen) are retained in valcostfac.csv regardless.
 
 out_txt = f'{output_dir}/out.txt'
 with open(out_txt, 'w') as f:
@@ -147,16 +149,9 @@ df_gen = df_gen.rename(columns={'Generation (TWh)': 'gen_twh'})
 df_gen = df_gen[['scenario','tech','year','gen_twh']].copy()
 df = df.merge(df_gen, on=['scenario','tech','year'], how='left')
 
-print('Merge with market share (generation fraction of load)')
-df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
-df_gen_frac = df_gen_frac.rename(columns={'Gen Frac of Load': 'gen_frac'})
-df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
-df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
-
 print('Override gen_twh for storage using discharge')
 #The 'gen' sheet reports storage as net generation (negative round-trip losses), so storage
-#gen_twh is overridden with gross discharge. No gen_frac override is needed: the gen_frac
-#sheet is built from gen_ivrt, which is already gross discharge for storage.
+#gen_twh is overridden with gross discharge.
 stor_report_techs = ['Battery']
 df_dis = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='stor_discharge')
 df_dis = df_dis.rename(columns={'TWh': 'discharge_twh'})[['scenario','tech','year','discharge_twh']]
@@ -164,6 +159,22 @@ df = df.merge(df_dis, on=['scenario','tech','year'], how='left')
 stor_cond = df['tech'].isin(stor_report_techs)
 df.loc[stor_cond, 'gen_twh'] = df.loc[stor_cond, 'discharge_twh']
 df = df.drop(columns=['discharge_twh'])
+
+print('Calculate market share on both load and total-generation bases')
+storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES'] #Techs excluded from the total-generation market-share denominator
+#Load basis comes from the gen_frac sheet (generation / load; already gross discharge for storage
+#since that sheet is built from gen_ivrt).
+df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
+df_gen_frac = df_gen_frac.rename(columns={'Gen Frac of Load': 'gen_frac_load'})
+df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac_load']].copy()
+df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
+#Generation basis divides gen_twh (discharge for storage) by total generation excluding storage.
+df_totgen = df_gen[~df_gen['tech'].isin(storage_techs)].groupby(
+    ['scenario','year'], as_index=False)['gen_twh'].sum().rename(columns={'gen_twh':'total_gen_twh'})
+df = df.merge(df_totgen, on=['scenario','year'], how='left')
+df['gen_frac_gen'] = df['gen_twh'] / df['total_gen_twh']
+df = df.drop(columns=['total_gen_twh'])
+df['gen_frac'] = df[f'gen_frac_{share_basis}']
 
 print('output valcostfac.csv')
 df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
@@ -307,7 +318,14 @@ for subreg in subregs:
     stor_cond_sub = df_sub['tech'].isin(stor_report_techs)
     df_sub.loc[stor_cond_sub, 'Generation (TWh)'] = df_sub.loc[stor_cond_sub, 'discharge_twh']
     df_sub = df_sub.drop(columns=['discharge_twh'])
-    df_sub['gen_frac'] = df_sub['Generation (TWh)']*1e6 / df_sub['mwh_bench']
+    #Market share on both bases, with gen_frac set by share_basis (same convention as national)
+    df_totgen_sub = df_gen_sub[~df_gen_sub['tech'].isin(storage_techs)].groupby(
+        ['scenario','year',subreg], as_index=False)['Generation (TWh)'].sum().rename(columns={'Generation (TWh)':'total_gen_twh'})
+    df_sub = df_sub.merge(df_totgen_sub, on=['scenario','year',subreg], how='left')
+    df_sub['gen_frac_load'] = df_sub['Generation (TWh)']*1e6 / df_sub['mwh_bench']
+    df_sub['gen_frac_gen'] = df_sub['Generation (TWh)'] / df_sub['total_gen_twh']
+    df_sub = df_sub.drop(columns=['total_gen_twh'])
+    df_sub['gen_frac'] = df_sub[f'gen_frac_{share_basis}']
     #Merge in lcoe_base and use to calculate vcf.
     df_sub = df_sub.merge(df[['scenario','tech','year','lcoe_base']], on=['scenario','tech','year'], how='left')
     df_sub['vcf'] = df_sub['lcoe_base'] / df_sub['lvoe_bench']
