@@ -402,7 +402,7 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
     print(f"Mapping county to zone from {reg_map_file}")
     df['county'] = 'p' + df.FIPS.astype(str).map('{:>05}'.format)
     # map the regions from county to zone using the mapping file supplied
-    county2zone = pd.read_csv(reg_map_file, dtype={'FIPS':str}, index_col='FIPS').ba
+    county2zone = pd.read_csv(reg_map_file, dtype={'FIPS':str}, index_col='FIPS').r
     ## Offshore zones have ba in FIPS column, so fall back to FIPS value if not in county2zone
     df['ba'] = df.FIPS.map(lambda x: county2zone.get(x,x))
 
@@ -426,7 +426,12 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
             'Unique ID':'UID', 'StartYear':'Commercial.Online.Year',
         }).copy()
         df_exist = df_exist[(df_exist['tech'].str.lower().str.contains(tech.lower())) & (df_exist['RetireYear'] > start_year)].reset_index(drop=True)
-        df_exist['LONG'] = df_exist['LONG'] * -1
+        if (df_exist['LONG'] > 0).any():
+            err = (
+                f'Some longitudes in {existing_sites} are positive; '
+                'for the contiguous US they should all be negative'
+            )
+            raise ValueError(err)
         df_exist.sort_values('cap', ascending=False, inplace=True)
 
         #Map the state codes of df_exist to the state names in df

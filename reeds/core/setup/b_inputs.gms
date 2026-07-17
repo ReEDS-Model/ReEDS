@@ -259,6 +259,7 @@ set
   combustion_turbine(i)"combustion turbine technologies",
   consume(i)           "technologies that consume electricity and add to load",
   conv(i)              "conventional generation technologies",
+  temp_derate(i)       "generation technologies derated based on ambient temperature",
   csp_storage(i)       "csp generation technologies with thermal storage",
   csp(i)               "csp generation technologies",
   csp1(i)              "csp-tes generation technologies 1",
@@ -278,6 +279,7 @@ set
   gas_cc(i)            "techs that are gas combined cycle",
   gas_ct(i)            "techs that are gas combustion turbine",
   gas(i)               "techs that use gas (but not o-g-s)",
+  gentech(i)           "generation technologies",
   geo(i)               "geothermal technologies",
   geo_base(i)          "geothermal technologies typically considered in model runs",
   geo_hydro(i)         "geothermal hydrothermal technologies",
@@ -717,6 +719,7 @@ combined_cycle(i)$(not ban(i))      = yes$i_subsets(i,'combined_cycle') ;
 combustion_turbine(i)$(not ban(i))  = yes$i_subsets(i,'combustion_turbine') ;
 consume(i)$(not ban(i))             = yes$i_subsets(i,'consume') ;
 conv(i)$(not ban(i))                = yes$i_subsets(i,'conv') ;
+temp_derate(i)$(not ban(i))         = yes$i_subsets(i,'temp_derate') ;
 csp_storage(i)$(not ban(i))         = yes$i_subsets(i,'csp_storage') ;
 csp(i)$(not ban(i))                 = yes$i_subsets(i,'csp') ;
 csp1(i)$(not ban(i))                = yes$i_subsets(i,'csp1') ;
@@ -736,6 +739,7 @@ gas_cc_ccs(i)$(not ban(i))          = yes$i_subsets(i,'gas_cc_ccs') ;
 gas_cc(i)$(not ban(i))              = yes$i_subsets(i,'gas_cc') ;
 gas_ct(i)$(not ban(i))              = yes$i_subsets(i,'gas_ct') ;
 gas(i)$(not ban(i))                 = yes$i_subsets(i,'gas') ;
+gentech(i)$(not ban(i))             = yes$i_subsets(i,'gentech') ;
 geo(i)$(not ban(i))                 = yes$i_subsets(i,'geo') ;
 geo_base(i)$(not ban(i))            = yes$i_subsets(i,'geo_base') ;
 geo_hydro(i)$(not ban(i))           = yes$i_subsets(i,'geo_hydro') ;
@@ -959,7 +963,7 @@ rsc_agg(i,ii)$[ban(i) or ban(ii)] = no ;
 *     --- Region hierarchy ---
 *======================================
 
-set hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) "hierarchy of various regional definitions"
+set hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) "hierarchy of various regional definitions"
 /
 $offlisting
 $ondelim
@@ -984,17 +988,17 @@ set r_itlgrp(r,itlgrp)
     r_ccreg(r,ccreg)
 ;
 
-r_nercr(r,nercr)                      $sum{(      transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_transreg(r,transreg)                $sum{(nercr,         transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_transgrp(r,transgrp)                $sum{(nercr,transreg,         cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_cendiv(r,cendiv)                    $sum{(nercr,transreg,transgrp,       st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_st(r,st)                            $sum{(nercr,transreg,transgrp,cendiv,   interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_interconnect(r,interconnect)        $sum{(nercr,transreg,transgrp,cendiv,st,             country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_country(r,country)                  $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,        usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_usda(r,usda_region)                 $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,            h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_h2ptcreg(r,h2ptcreg)                $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,         hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_hurdlereg(r,hurdlereg)              $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,          ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_ccreg(r,ccreg)                      $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg      ) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
+r_nercr(r,nercr)                      $sum{(      transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_transreg(r,transreg)                $sum{(nercr,         transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_transgrp(r,transgrp)                $sum{(nercr,transreg,         cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_cendiv(r,cendiv)                    $sum{(nercr,transreg,transgrp,       st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_st(r,st)                            $sum{(nercr,transreg,transgrp,cendiv,   interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_interconnect(r,interconnect)        $sum{(nercr,transreg,transgrp,cendiv,st,             country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_country(r,country)                  $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,        usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_usda(r,usda_region)                 $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,            h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_h2ptcreg(r,h2ptcreg)                $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,         hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_hurdlereg(r,hurdlereg)              $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,          gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_ccreg(r,ccreg)                      $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg      ) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
 
 set r_itlgrp(r,itlgrp) "mapping of r to itlgrp"
 /
@@ -5274,6 +5278,7 @@ $onlisting
 $offempty
 
 * Note that this PSH duration overwrites what is contained in storage_duration.csv
+* and will be overridden by data in storage_duration_pshdata.csv if durations for existing PSH are used
 storage_duration(i)$psh(i) = psh_sc_duration ;
 
 storage_duration(i)$[i_water_cooling(i)$Sw_WaterMain] =
@@ -5998,6 +6003,52 @@ parameter
 z_rep_inv(t) = 0 ;
 z_rep_op(t) = 0 ;
 
+*====================================
+*     --- Employment Factors ---
+*====================================
+* Employment factors of construction and operation of power plants
+$onempty
+Table employment_factor_plant(i,jtype) "--job-years/MW (construction), job-years/MW-year (fom) or job-years/MWh (vom)-- employment factors of power plants by technology and job type"
+$offlisting
+$ondelim
+$include inputs_case%ds%employment_factor_plant.csv
+$offdelim
+$onlisting
+;
+$offempty
+
+* Employment factors of transmission deployment and flow
+parameter employment_factor_inter_transmission(jtype)  "--job-years/$ (construction) -- construction employment factors of transmission lines"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%employment_factor_inter_transmission.csv
+$offdelim
+$onlisting
+/ ;
+
+* If upgrade techs, construction employment factor is adjusted by upgrade ratio
+* calculated as the ratio of the difference in capital costs between the initial 
+* techs and the upgraded tech divided by the capital costs of the initial techs
+parameter upgrade_ratio(i) ;
+upgrade_ratio(i)$upgrade(i) = 1 ;
+upgrade_ratio(i)$[upgrade(i)
+                $(sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) }
+                 - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } > 0)] 
+                  = (sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) } 
+                    - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } )
+                    / sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ;
+
+* Only apply this ratio to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
+$ifthen.upgrade_ef %GSw_EmploymentFactor% == "jedi"
+employment_factor_plant(i,"construction")
+    $[upgrade(i)$(not ccs(i))]
+    = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
+$else.upgrade_ef
+employment_factor_plant(i,"construction")
+    $upgrade(i)
+    = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
+$endif.upgrade_ef
 
 *================================================================================================
 *== h- and szn-dependent sets and parameters (declared here, populated in 2_temporal_params) ===
@@ -6120,7 +6171,8 @@ Parameter
     cc_excess(i,r,ccseason,t)              "--MW-- this is the excess capacity credit when assuming marginal capacity credit in intertemporal solve"
     vre_gen_last_year(r,allh,t)            "--MW-- generation from VRE generators in the prior solve year"
     hybrid_cc_derate(i,r,ccseason,sdbin,t) "--fraction-- derate factor for hybrid PV+battery storage capacity credit"
-    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit",
+    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit"
+    mean_forced_outage_rate(i,r,ccseason,t)"--fraction-- mean forced outage rate for each technology, region, and ccseason - used to derate thermal generator capacity"
 * Heuristic climate impacts
     trans_cap_delta(allh,allt)             "--fraction-- fractional adjustment to transmission capacity from climate heuristics"
 * Emissions and policies
@@ -6133,6 +6185,8 @@ Parameter
 * Fossil gas supply curve
     gasadder_cd(cendiv,t,allh)             "--$/MMbtu-- adder for NG census division"
     szn_adj_gas(allh)                      "--fraction-- seasonal adjustment for gas prices"
+    gasprice_adj_r(r,allh)                 "--fraction-- adjustment for zonal gas prices"
+    gasprice_adj_cendiv(cendiv,allh)       "--fraction-- adjustment for cendiv-level gas prices"
 ;
 
 * Initialize some parameters
@@ -6142,6 +6196,7 @@ cc_excess(i,r,ccseason,t) = 0 ;
 cc_old(i,r,ccseason,t) = 0 ;
 m_cc_mar(i,r,ccseason,t) = 0 ;
 hybrid_cc_derate(i,r,ccseason,sdbin,t)$[pvb(i)$valcap_irt(i,r,t)] = 1 ;
+mean_forced_outage_rate(i,r,ccseason,t) = 0 ;
 
 * Trim some of the largest matrices to reduce file sizes
 cost_vom(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
