@@ -49,6 +49,10 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #USER SWITCHES
 start_year = 2025 #First year of results to include (first endogenous year, without prescribed builds)
 share_basis = 'load' #Denominator for gen_frac (used by all plots and adjusted metrics): 'load' = benchmark load; 'gen' = total generation excluding storage. Both columns (gen_frac_load, gen_frac_gen) are retained in valcostfac.csv regardless.
+gen_frac_max = 0.65 #Upper limit on gen_frac for the intermediary "lim" plots
+vcf_min = 0 #Minimum value_cost_factor_adj2 to retain in df_plot_core
+stor_report_techs = ['Battery'] #Techs whose gen_twh/generation is overridden with gross discharge
+storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES'] #Techs excluded from the total-generation market-share denominator
 
 out_txt = f'{output_dir}/out.txt'
 with open(out_txt, 'w') as f:
@@ -152,7 +156,6 @@ df = df.merge(df_gen, on=['scenario','tech','year'], how='left')
 print('Override gen_twh for storage using discharge')
 #The 'gen' sheet reports storage as net generation (negative round-trip losses), so storage
 #gen_twh is overridden with gross discharge.
-stor_report_techs = ['Battery']
 df_dis = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='stor_discharge')
 df_dis = df_dis.rename(columns={'TWh': 'discharge_twh'})[['scenario','tech','year','discharge_twh']]
 df = df.merge(df_dis, on=['scenario','tech','year'], how='left')
@@ -161,7 +164,6 @@ df.loc[stor_cond, 'gen_twh'] = df.loc[stor_cond, 'discharge_twh']
 df = df.drop(columns=['discharge_twh'])
 
 print('Calculate market share on both load and total-generation bases')
-storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES'] #Techs excluded from the total-generation market-share denominator
 #Load basis comes from the gen_frac sheet (generation / load; already gross discharge for storage
 #since that sheet is built from gen_ivrt).
 df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
@@ -217,7 +219,6 @@ plots = [
 ]
 
 print('Add an upper limit on gen_frac and add intermediary "lim" plots, if desired') #We probably should also have a lower limit for value factors
-gen_frac_max = 0.65
 df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_max)].copy()
 plots_lim = copy.deepcopy(plots)
 for p in plots_lim:
@@ -250,7 +251,6 @@ df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_c
 VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
 df_plot_core['value_cost_factor_adj2'] = df_plot_core['value_cost_factor_adj'] / VCF_adj
 #Apply minimum vcf to df_plot_core, if desired
-vcf_min = 0
 df_plot_core = df_plot_core[df_plot_core['value_cost_factor_adj2'] >= vcf_min].copy()
 with open(out_txt, 'a') as f:
     print(f'VCF_adj: {VCF_adj}', file=f)
