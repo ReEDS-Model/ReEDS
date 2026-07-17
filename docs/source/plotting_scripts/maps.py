@@ -193,6 +193,7 @@ for level in dfmap:
         alpha_region = alpha
     else:
         colors = 'C' + mapclassify.greedy(dfregion, strategy='smallest_last').astype(str)
+        colors = colors.str.replace('C3','C4')
         alpha_region = 0.4
 
     plt.close()
