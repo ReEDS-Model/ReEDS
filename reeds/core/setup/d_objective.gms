@@ -175,9 +175,9 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(i,v,r)$[valcap(i,v,r,t)$battery(i)],
                    cost_fom_energy(i,v,r,t) * CAP_ENERGY(i,v,r,t) }
 
-* transmission lines
+* transmission lines (defined in both directions so divide by 2)
               + sum{(r,rr,trtype)$routes(r,rr,trtype,t),
-                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) }
+                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2 }
 
 * LCC and B2B AC/DC converter stations
               + sum{(r,rr,trtype)$[lcclike(trtype)$routes(r,rr,trtype,t)],

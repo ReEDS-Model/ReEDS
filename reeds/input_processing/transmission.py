@@ -184,8 +184,12 @@ def get_interface_params(case, **kwargs):
 
 
 def get_trancap_fut(case):
-    """Get certain and possible transmission additions"""
+    """
+    Get certain and possible transmission additions.
+    Additions between model years are moved to the next modeled year.
+    """
     sw = reeds.io.get_switches(case)
+    years = pd.Series(reeds.inputs.parse_yearset(sw.yearset))
     ## Always-included lines
     planned_capacity = reeds.inputs.map_hvdc_lines_to_interfaces(
         case=case, filename='hvdc_planned-baseline.csv',
@@ -225,6 +229,7 @@ def get_trancap_fut(case):
             .assign(MW=100000)
         ).set_index(['r','rr','trtype','year_online','certain'])
         planned_capacity = pd.concat([planned_capacity, offshore_links])
+    ## Reshape for ReEDS
     trancap_fut = (
         planned_capacity.reset_index()
         .rename(columns={'year_online':'t', 'certain':'status'})
@@ -238,6 +243,12 @@ def get_trancap_fut(case):
         [['r', 'rr', 'status', 'trtype', 't', 'MW']]
         .astype({'t':int}).round(3)
     )
+    ## Move additions between model years to the next modeled year
+    for i, row in trancap_fut.iterrows():
+        if row.t not in years.values:
+            newyear = years.loc[years > row.t].min()
+            trancap_fut.loc[i,'t'] = newyear
+            print(f'trancap_fut: Moved {row.values} to {newyear}')
 
     return trancap_fut
 
@@ -781,7 +792,7 @@ if __name__ == '__main__':
     case = Path(args.inputs_case).parent
 
     # #%% Settings for testing ###
-    # case = str(Path(reeds.io.reeds_path, 'runs', 'v20260601_transcostM1_USA_faster'))
+    # case = str(Path(reeds.io.reeds_path, 'runs', 'v20260716_bugsM0_AZNM'))
 
     #%% Set up logger
     log = reeds.log.makelog(scriptname=__file__, logpath=Path(case, 'gamslog.txt'))
