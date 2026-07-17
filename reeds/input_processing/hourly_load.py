@@ -627,9 +627,7 @@ def remove_finito_load(
     # get FINITO reference load
     load_hourly_finito = get_hourly_finito_load(inputs_case)
 
-    # FINITO reference load is end-use (facility consumption), so convert to
-    # busbar for consistency with the busbar load it is subtracted from
-    # (and with the same gross-up applied to USE_ELE_FINITO in eq_loadcon)
+    # Convert to busbar
     load_hourly_finito = load_hourly_finito / (1 - distloss)
 
     # subtract FINITO reference load from ReEDS load data,
