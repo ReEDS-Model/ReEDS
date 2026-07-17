@@ -87,15 +87,6 @@ spurline_cost:
   - xfeas
   switchon:
     Sw_SpurScen: 1
-tsc_forward:
-  indexsets:
-  - interfaces_inv
-tsc_reverse:
-  indexsets:
-  - interfaces_inv
-tsc_binwidth:
-  indexsets:
-  - interfaces_inv
 trans_cost_cap_fin_mult:
   indexsets:
   - t
