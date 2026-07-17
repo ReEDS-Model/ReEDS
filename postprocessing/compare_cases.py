@@ -1919,7 +1919,7 @@ except Exception:
 
 #%%### Transmission
 try:
-    startyear_transgrowth = min(int(scalars.firstyear_trans_longterm), max(years[basecase]))
+    startyear_transgrowth = min(int(sw.firstyear_trans), max(years[basecase]))
     for interzonal_only in [False, True]:
         if interzonal_only:
             labelline = 'Interzonal transmission [TW-mi]'

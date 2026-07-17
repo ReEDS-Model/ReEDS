@@ -263,7 +263,7 @@ def calc_financial_inputs(inputs_case):
     ### The transmission ITC is not meant to apply to currently-planned transmission.
     ### So for years before firstyear_trans, use cap_cost_mult_noITC;
     ### i.e. only start applying the ITC once the model switches to endogenous transmission.
-    firstyear_trans = int(scalars['firstyear_trans_longterm'])
+    firstyear_trans = int(sw['firstyear_trans'])
     dftrans.loc[dftrans.t<firstyear_trans, 'cap_cost_mult'] = (
         dftrans.loc[dftrans.t<firstyear_trans, 'cap_cost_mult_noITC'])
 

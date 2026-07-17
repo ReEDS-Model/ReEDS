@@ -100,6 +100,7 @@ def parse_yearset(yearset:str) -> list:
 
 def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
     """Determine some switch settings from other switches"""
+    scalars = reeds.io.get_scalars()
     ignore_columns = ['Choices', 'Description', 'Default Value']
     cases = [i for i in dfcases if i not in ignore_columns]
     new_switches = {}
@@ -111,6 +112,9 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
         ## 'meshed' offshore files are only used when offshore zones are turned on
         new_switches[case]['GSw_OffshoreFiles'] = (
             'meshed' if int(sw['GSw_OffshoreZones']) else 'radial'
+        )
+        new_switches[case]['firstyear_trans'] = str(
+            int(sw['GSw_TransYearsUntilEndog']) + int(scalars['this_year'])
         )
         ## Load site region level (GSw_LoadSiteReg) is embedded in GSw_LoadSiteTrajectory
         new_switches[case]['GSw_LoadSiteReg'] = sw['GSw_LoadSiteTrajectory'].split('_')[0]

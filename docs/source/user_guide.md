@@ -380,8 +380,7 @@ In addition, the `GSw_ReducedResource` switch allows for a uniform reduction of 
 
 1. `GSw_ZoneSet`: Defines the model zones via the `inputs/zones/{GSw_ZoneSet}` files.
     1. By default the transreg boundaries are used for operating reserve sharing, capacity credit calculations, and the boundaries for limited-transmission cases.
-1. `GSw_TransInvMaxLongTerm`: Limit on annual transmission deployment nationwide **IN/AFTER** `firstyear_trans_longterm`, measured in TW-miles
-1. `GSw_TransInvMaxNearTerm`: Limit on annual transmission deployment nationwide **BEFORE** `firstyear_trans_longterm`, measured in TW-miles
+1. `GSw_TransInvMax`: Limit on annual transmission deployment nationwide **IN/AFTER** `firstyear_trans`, measured in TW-miles
 1. `GSw_TransInvPRMderate`: By default, adding 1 MW of transmission capacity between two zones increases the energy transfer capability by 1 MW but the PRM trading capability by only 0.85 MW; here you can adjust that derate
 1. `GSw_TransConductor`: Conductor type assumed for new interzonal AC transmission.
 `acss` applies the assumptions from the [MISO Transmission Cost Estimation Guide](https://www.misoenergy.org/planning/transmission-planning/mtep), using either ACSS or ACSR depending on voltage level;

@@ -53,7 +53,7 @@ Sw_Timetype("%timetype%") = 1 ;
 
 * Sw_PCM is always 0 except when running solve_pcm.gms, where it's set to 1
 scalar Sw_PCM "Internal switch used when running PCM mode" / 0 / ;
-* Sw_MGA is always 0 except when running the optimization a second time for MGA, where it's set to 1
+* Sw_MGA is always 0 except when running the optimization a second time for MGA, where it's set to 1P
 scalar Sw_MGA "Internal switch used when running MGA mode" / 0 / ;
 
 *============================
@@ -63,7 +63,9 @@ scalar Sw_MGA "Internal switch used when running MGA mode" / 0 / ;
 *year-related switches that define retirement and upgrade start dates
 scalar retireyear  "first year to allow capacity to start retiring" /%GSw_Retireyear%/
        upgradeyear "first year to allow capacity to upgrade"        /%GSw_Upgradeyear%/
-       climateyear "first year to apply climate impacts"            /%GSw_ClimateStartYear%/ ;
+       climateyear "first year to apply climate impacts"            /%GSw_ClimateStartYear%/
+       firstyear_trans "first year for endogenous transmission"     /%firstyear_trans%/
+;
 
 *** Scalars: copied from inputs/scalars.csv to inputs_case/scalars.txt in runreeds.py
 $include inputs_case%ds%scalars.txt
@@ -2999,16 +3001,16 @@ Sw_VSC = sum{routes(r,rr,trtype,t)$sameas(trtype,'VSC'), 1} ;
 routes_inv(r,rr,trtype,t) = no ;
 * allow new investment along existing routes
 routes_inv(r,rr,trtype,t)$[notvsc(trtype)$routes(r,rr,trtype,t)] = yes ;
-* Do not allow transmission expansion on most interfaces until firstyear_trans_nearterm
-routes_inv(r,rr,trtype,t)$[yeart(t)<firstyear_trans_nearterm] = no ;
-* If not allowing near-term transmission, turn those off until firstyear_trans_longterm
-routes_inv(r,rr,trtype,t)$[(not Sw_TransInvNearTerm)$(yeart(t)<firstyear_trans_longterm)] = no ;
+* Do not allow transmission expansion on most interfaces until firstyear_trans
+routes_inv(r,rr,trtype,t)$[yeart(t)<firstyear_trans] = no ;
 * Allow interfaces with planned expansions to be expanded
 routes_inv(r,rr,trtype,t)
     $[sum{(tt,trancap_fut_cat)$[yeart(tt)<=yeart(t)],
           trancap_fut(r,rr,trancap_fut_cat,trtype,tt) + trancap_fut(rr,r,trancap_fut_cat,trtype,tt) }
     $routes(r,rr,trtype,t)] = yes ;
 routes_inv(rr,r,trtype,t)$[not routes_inv(r,rr,trtype,t)] = no ;
+* Turn off all HVDC/B2B if specified
+routes_inv(r,rr,trtype,t)$[(not Sw_TransHVDC)$(not aclike(trtype))] = no ;
 
 * Restrict transmission builds to the level indicated by GSw_TransRestrict
 $ifthen.transrestrict %GSw_TransRestrict% == 'r'
@@ -3314,14 +3316,8 @@ transmission_line_fom(r,rr,"VSC")$sum{t, routes(r,rr,"VSC",t) } = transmission_l
 parameter trans_inv_max(allt) "--TWmile/year-- annual limit on transmission investments" ;
 trans_inv_max(t)$[
     tmodel_new(t)
-    $(yeart(t) >= firstyear_trans_nearterm)
-    $(yeart(t) < firstyear_trans_longterm)
-] = Sw_TransInvMaxNearterm ;
-
-trans_inv_max(t)$[
-    tmodel_new(t)
-    $(yeart(t) >= firstyear_trans_longterm)
-] = Sw_TransInvMaxLongterm ;
+    $(yeart(t) >= firstyear_trans)
+] = Sw_TransInvMax ;
 
 *============================
 *   --- Fuel Prices ---

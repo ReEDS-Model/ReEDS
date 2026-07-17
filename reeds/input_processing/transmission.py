@@ -186,7 +186,6 @@ def get_interface_params(case, **kwargs):
 def get_trancap_fut(case):
     """Get certain and possible transmission additions"""
     sw = reeds.io.get_switches(case)
-    scalars = reeds.io.get_scalars(case)
     ## Always-included lines
     planned_capacity = reeds.inputs.map_hvdc_lines_to_interfaces(
         case=case, filename='hvdc_planned-baseline.csv',
@@ -233,7 +232,7 @@ def get_trancap_fut(case):
         ## '0' is used as a filler value in the t column for firstyear_trans,
         ## so we replace it whenever we load a transmission_capacity_future file.
         .replace({
-            't': {0: int(scalars['firstyear_trans_longterm'])},
+            't': {0: int(sw['firstyear_trans'])},
             'status': {0:'possible', 1:'certain'}
         })
         [['r', 'rr', 'status', 'trtype', 't', 'MW']]

@@ -1883,7 +1883,8 @@ eq_INVTRAN_AC(r,rr,t)
 
     =e=
 
-    sum{tscbin, INVTRAN_AC(r,rr,tscbin,t) }
+    sum{tscbin$(tsc_binwidth(r,rr,tscbin) or tsc_binwidth(rr,r,tscbin)),
+        INVTRAN_AC(r,rr,tscbin,t) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -1974,7 +1975,7 @@ eq_CAPTRAN_PRM(r,rr,trtype,t)
 
 eq_prescribed_transmission(r,rr,trtype,t)
     $[routes_inv(r,rr,trtype,t)
-    $tmodel(t)$(yeart(t)<firstyear_trans_nearterm)
+    $tmodel(t)$(yeart(t)<firstyear_trans)
     $(not Sw_PCM)]..
 
 *all available transmission capacity expansion that is 'possible'

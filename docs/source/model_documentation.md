@@ -1977,7 +1977,7 @@ All components and types of interzonal transmission (including both per-mile lin
 These transmission assumptions (and others described below) are controlled by parameters in the `inputs/scalars.csv` file.
 For example:
 - `trans_crp`: Capital recovery period for interzonal transmission (default 40 years)
-- `years_until_trans_longterm`: Years after present until endogenous transmission expansion is allowed (default 8 years).
+- `years_until_trans`: Years after present until endogenous transmission expansion is allowed (default 8 years).
 ```
 
 

@@ -331,16 +331,14 @@
 ### ---------------------------------------------------###
 - name: transmission_1
   assignments_list:
-    - GSw_TransInvMaxLongTerm: [0.9]
-    - GSw_TransInvMaxNearTerm: [0.9]
+    - GSw_TransInvMax: [0.9]
   dist: triangular_multiplier
   dist_params: [1, 1, 2]
   weight_r: country
   
 - name: transmission_2
   assignments_list:
-    - GSw_TransInvMaxLongTerm: [1.4]
-    - GSw_TransInvMaxNearTerm: [1.4]
+    - GSw_TransInvMax: [1.4]
   dist: uniform_multiplier
   dist_params: [0.5, 1]
   weight_r: country

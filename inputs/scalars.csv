@@ -90,5 +90,3 @@ vom_hyd,1.0244,"--2004$/MWh-- hydropower VOM (only one for all hydro)"
 upgrade_inflator,1.72,inflator for 1987 cost values of upgrade costs in the generator database
 years_until_min,1,"--years-- minimum years until generation capacity can be built endogenously"
 years_until_RPS,1,"--years-- years until state RPS policies start being enforced"
-years_until_trans_longterm,8,"--years-- years until transmission expansion within Sw_TransInvMaxLongterm is allowed (assuming 8 years for planning + construction based on MISO LRTP 2022 https://www.misoenergy.org/meet-miso/media-center/2022/miso-board-approves-$10.3-in-transmission-projects)"
-years_until_trans_nearterm,1,"--years-- years until transmission expansion within Sw_TransInvMaxNearterm is allowed"
