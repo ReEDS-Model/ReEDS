@@ -65,10 +65,11 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
         gdf_joined['FIPS'] = gdf_joined['FIPS_nearest']
 
         # Update ba since FIPS have been updated
-        df_county = pd.read_csv(os.path.join(inputs_case,'county2zone.csv'))
-        df_county = df_county[['FIPS','ba']]
-        df_county['FIPS'] = 'p' + df_county['FIPS'].astype(str)
-        df_county = df_county.rename(columns={'ba':'reeds_ba_nearest'})
+        sw = reeds.io.get_switches(inputs_case)
+        df_county = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
+        df_county['FIPS'] = 'p' + df_county.FIPS
+        df_county = df_county[['FIPS','r']]
+        df_county = df_county.rename(columns={'r':'reeds_ba_nearest'})
 
         gdf_joined = gdf_joined.merge(df_county, on='FIPS', how='left')
         gdf_joined['reeds_ba'] = gdf_joined['reeds_ba_nearest']
@@ -167,8 +168,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
     
     # for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    reeds_path = reeds.io.reeds_path
+    inputs_case = os.path.join(reeds_path,'runs','test_WA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
