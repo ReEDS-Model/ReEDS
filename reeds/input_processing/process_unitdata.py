@@ -168,8 +168,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
     
     # for testing
-    reeds_path = reeds.io.reeds_path
-    inputs_case = os.path.join(reeds_path,'runs','test_WA','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_WA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
