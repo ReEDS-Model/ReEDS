@@ -126,9 +126,7 @@ def calc_lole(dflole_agg, threshold=0):
 
 
 def calc_lolh(dflole_agg):
-    """Event-hours, where an event-hour is >threshold LOLE"""
-    ## Get the loss-of-load events, keeping the max hourly probability for each
-    ## (not really right probabilistically)
+    """Event-hours, given by the sum of hourly LOLP across hours"""
     lolh = dflole_agg.sum()
     return lolh
 
@@ -627,7 +625,7 @@ def get_stress_periods(case, sw, t, iteration):
 
     ### Get lists of stress periods: new (added this iteration) and all
     if len(_failed):
-        failed = pd.concat(_failed)
+        failed = pd.concat(_failed, names=['stress_metric', 'criterion'])
         high_stress_periods = pd.concat(_high_stress_periods)
         shoulder_periods = pd.concat(_shoulder_periods)
         new_stress_periods = pd.concat(
@@ -804,33 +802,48 @@ def update_prm(sw, t, iteration, failed, combined_periods_write):
         sw (pd.series): ReEDS switches for this run.
         t (int): Model solve year.
         iteration (int): ReEDS-PRAS iteration
-        failed (dict): Dictionary of regions with unserved energy at the hierarchy_level
-                       and their criterion evaluations
+        failed (pd.Series): Series of failed regions with unserved energy at the
+                       hierarchy_level, indexed by (stress_metric, criterion, region)
         combined_periods_write (pd.DataFrame): Data frame of combined stress periods
 
     Returns:
         pd.DataFrame: Table of prm levels for the next PRAS iteration
     """
+    ## Existing PRM, in case there's nothing to update it with below
+    prm = pd.read_csv(
+        os.path.join(sw['casedir'], 'inputs_case', f'stress{t}i{iteration}', 'prm.csv'),
+        index_col='*r',
+    ).fraction
+
     # Get regions that failed criteria
-    # Use NEUE-based failed regions only
+    # Use NEUE-based failed regions only, since the PRM update is computed from the
+    # NEUE-based shortfall (in ppm) and doesn't generalize to the other stress metrics.
+    # NEUE may not appear in `failed` at all this iteration (either it's not a configured
+    # stress metric, or it simply didn't fail while another metric did) -- in that case
+    # there's nothing to update the PRM with, so leave it unchanged.
     _failed_regions = []
-    for criterion in failed:
-        if not failed[criterion].name == 'NEUE':
-            continue
-        # Example: criterion = 'transgrp_10'
-        hierarchy_level, metric_threshold = criterion.split('_')
-        # Recover regions where the PRM criterion failed
-        rmap = reeds.io.get_rmap(sw['casedir'], hierarchy_level=hierarchy_level).reset_index()
-        df = rmap.loc[
-            rmap[hierarchy_level].isin(failed[criterion].index)
-        ].rename(columns={hierarchy_level:'region'})
-        df['hierarchy_level'] = hierarchy_level
-        df['metric_threshold'] = float(metric_threshold)
-        _failed_regions.append(df)
+    if 'neue' in failed.index.get_level_values('stress_metric'):
+        neue_failed = failed.xs('neue', level='stress_metric')
+        for criterion in neue_failed.index.get_level_values('criterion').unique():
+            sub = neue_failed.xs(criterion, level='criterion')
+            # Example: criterion = 'transgrp_10'
+            hierarchy_level, metric_threshold = criterion.split('_')
+            # Recover regions where the PRM criterion failed
+            rmap = reeds.io.get_rmap(sw['casedir'], hierarchy_level=hierarchy_level).reset_index()
+            df = rmap.loc[
+                rmap[hierarchy_level].isin(sub.index)
+            ].rename(columns={hierarchy_level:'region'})
+            df['hierarchy_level'] = hierarchy_level
+            df['ppm'] = float(metric_threshold)
+            _failed_regions.append(df)
+
+    if not len(_failed_regions):
+        return prm.round(3)
+
     # For zones that failed multiple criteria, use the most stringent (lowest EUE target)
     failed_regions = (
         pd.concat(_failed_regions)
-        .sort_values(by=['metric_threshold'])
+        .sort_values(by=['ppm'])
         .drop_duplicates(subset='r', keep='first')
     )
 
@@ -853,10 +866,6 @@ def update_prm(sw, t, iteration, failed, combined_periods_write):
     )
 
     ## Add the PRM increment to last iteration's PRM
-    prm = pd.read_csv(
-        os.path.join(sw['casedir'], 'inputs_case', f'stress{t}i{iteration}', 'prm.csv'),
-        index_col='*r',
-    ).fraction
     prm_next_iteration = prm.add(prm_increment, fill_value=0).round(3)
 
     return prm_next_iteration

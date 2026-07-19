@@ -45,10 +45,6 @@ def delete_temporary_files(sw):
 
 #%% Input-loading function
 def get_inputs(sw):
-    ### Make savepath
-    sw['savepath'] = os.path.join(sw['casedir'], 'outputs', 'figures', 'resource_adequacy')
-    os.makedirs(sw['savepath'], exist_ok=True)
-
     ##### Load shared parameters
     fulltimeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years)
 
@@ -389,23 +385,24 @@ def map_dropped_load(sw, dfs, level='r'):
     dropped = dfs['pras'][
         [c for c in dfs['pras'] if c.endswith('_EUE') and (not c.startswith('USA'))]
     ].copy()
-    dropped.columns = dropped.columns.map(lambda x: x.split('_')[0])
+    dropped.columns = dropped.columns.map(lambda x: x[:-len('_EUE')])
     units = {
         ('EUE','max'): ('MW',1), ('EUE','mean'): ('MW',1), ('EUE','sum'): ('GWh',1e-3),
         ('NEUE','max'): ('%',1e2), ('NEUE','sum'): ('ppm',1e6),
     }
     load = dfs['pras_load']
+    rmap = reeds.io.get_rmap(sw['casedir'], level)
 
     ### Plot it
     for metric in ['EUE','NEUE']:
         ## Aggregate if necessary
         if level not in ['r','rb','ba']:
             dropped = (
-                dropped.rename(columns=dfs['hierarchy'][level])
+                dropped.rename(columns=rmap)
                 .groupby(level=0, axis=1).sum().copy()
             )
             load = (
-                load.rename(columns=dfs['hierarchy'][level])
+                load.rename(columns=rmap)
                 .groupby(level=0, axis=1).sum().copy()
             )
         for agg in ['max','sum','mean']:
@@ -415,7 +412,7 @@ def map_dropped_load(sw, dfs, level='r'):
 
             dfplot = dfba.copy()
             if level not in ['r','rb','ba']:
-                dfplot[level] = dfs['hierarchy'][level]
+                dfplot[level] = dfplot.index.map(rmap)
                 dfplot = dfplot.dissolve(level)
                 dfplot['centroid_x'] = dfplot.geometry.centroid.x
                 dfplot['centroid_y'] = dfplot.geometry.centroid.y
@@ -1042,7 +1039,7 @@ def map_outagerate_new_stressperiods(sw, dfs):
     vmax = {'forced': 40, 'scheduled': 25, 'both': 50}
     aggfunc = 'max'
     for outage_type in vmax:
-        savename = f'map-outage_{outage_type}_{aggfunc}-{t}i{iteration}.png'
+        savename = f'map-outage_{outage_type}_{aggfunc}-{sw.t}i{sw.iteration}.png'
         plt.close()
         f, ax, _ = reeds.reedsplots.map_outage_days(
             sw.casedir,
@@ -1214,24 +1211,24 @@ def plot_stressors(sw, dfs):
     """
     Map demand/CF/FOR (organized differently to allow for independent use)
     """
-    for iteration in range(sw['iteration']):
-        plot_generator = reeds.reedsplots.map_stressors(
-            case=sw['casedir'], t=sw['t'], iteration=iteration,
-            seed=(True if t == int(sw['endyear']) else False),
-        )
-        while True:
-            try:
-                f, ax, df, plotlabel = next(plot_generator)
-                savename = (
-                    f"stress{t}i{iteration}-"
-                    + plotlabel.split(':')[0].replace('-','')
-                )
-                if savefig:
-                    plt.savefig(os.path.join(sw.casedir, 'outputs', 'figures', f'{savename}.png'))
-                if interactive:
-                    plt.show()
-            except StopIteration:
-                break
+    plot_generator = reeds.reedsplots.map_stressors(
+        case=sw['casedir'], t=sw['t'], iteration=sw['iteration'],
+        seed=(True if t == int(sw['endyear']) else False),
+    )
+    while True:
+        try:
+            f, ax, df, plotlabel = next(plot_generator)
+            savename = (
+                f"stress{sw.t}i{sw.iteration}-"
+                + plotlabel.split(':')[0].replace('-','')
+                + '.png'
+            )
+            if savefig:
+                plt.savefig(os.path.join(sw['savepath'],savename))
+            if interactive:
+                plt.show()
+        except StopIteration:
+            break
 
 
 #%%### Main function
@@ -1361,8 +1358,8 @@ if __name__ == '__main__':
 
     # #%%### Inputs for debugging
     # reeds_path = reeds.io.reeds_path
-    # casedir = os.path.join(reeds_path, 'runs', 'v20251111_15M0_Pacific')
-    # t = 2026
+    # casedir = os.path.join(reeds_path, 'runs', 'v20260715_stressM3_MultiMetricRA')
+    # t = 2050
     # interactive = True
     # iteration = 0
     # debug = True
@@ -1371,6 +1368,9 @@ if __name__ == '__main__':
     ### Switches
     sw = reeds.io.get_switches(casedir)
     sw['t'] = t
+    sw['savepath'] = os.path.join(sw['casedir'], 'outputs', 'figures', 'resource_adequacy')
+    ## Make savepath
+    os.makedirs(sw['savepath'], exist_ok=True)
     ## Debugging
     # sw['reeds_path'] = reeds_path
     # sw['casedir'] = casedir
@@ -1386,7 +1386,7 @@ if __name__ == '__main__':
     else:
         sw['iteration'] = iteration
 
-    ### Make the plots
+    #%% Make the plots
     print('plotting intermediate resource adequacy results...')
     try:
         main(sw, debug)
@@ -1394,6 +1394,6 @@ if __name__ == '__main__':
         print('diagnostic_plots.py failed with the following exception:')
         print(traceback.format_exc())
 
-    ### Remove intermediate csv files to save drive space
+    #%% Remove intermediate csv files to save drive space
     if (not int(sw['keep_resource_adequacy_files'])) and (not int(sw['debug'])):
         delete_temporary_files(sw)

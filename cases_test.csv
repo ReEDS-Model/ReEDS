@@ -1,6 +1,6 @@
 ,Default Value,Pacific,USA_defaults,Mid_Case,USA_decarb,github_Pacific,github_Everything,github_MA_county_CC,Pacific_CC,Pacific_weks,Pacific_full_year,Interday_storage,Pacific_2020,Pacific_rep15,WY_county,WECC_county,PJM_county_CC,NYVT_mixed,OR_water,MonteCarlo_Random,MonteCarlo_LHS,Everything,Simple,USA_fast,USA_faster,MultiMetricRA,Pacific_DR,Pacific_MGA,Pacific_LoadSite95,MARICTNYNJPAOH_Offshore,R2P
 ignore,1,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-GSw_Region,cendiv/Pacific,,country/USA,country/USA,country/USA,,st/ID.WY.NE.IA.IL,st/MA,,,,,,,st/WY,interconnect/western,transreg/PJM,st/NY.VT,st/OR,st/NE.NY.PA,st/NE.NY.PA,st/ID.WY.NE.IA.IL,st/KS,country/USA,country/USA,st/NY,,,,st/MA.RI.CT.NY.NJ.PA.OH,
+GSw_Region,cendiv/Pacific,,country/USA,country/USA,country/USA,,st/ID.WY.NE.IA.IL,st/MA,,,,,,,st/WY,interconnect/western,transreg/PJM,st/NY.VT,st/OR,st/NE.NY.PA,st/NE.NY.PA,st/ID.WY.NE.IA.IL,st/KS,country/USA,country/USA,st/NY.NJ,,,,st/MA.RI.CT.NY.NJ.PA.OH,
 endyear,2032,,2050,2050,2050,2029,2060,2026,,,,,,,,,,,2035,2030,2030,2060,2035,2050,2050,2050,,,,,
 yearset,,,,,,,2010..2060..10,,,,,,,,,,,,,2010..2050..5,2010..2050..5,2010..2060..10,,,2010_2025_2050,2010..2050..5,,,,,
 GSw_ZoneSet,,,,,,,z54,z3109,,,,,,,z3109,z3109,z3109,PJMcounty,,,,z54,,z54,z48,z132,,,,,

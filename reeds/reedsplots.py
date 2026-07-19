@@ -98,7 +98,6 @@ def plot_diff(
     """
     """
     ### Shared inputs
-    sw = reeds.io.get_switches(casebase)
     ycol = {
         'Error Check': 'Value',
         'Generation (TWh)': 'Generation (TWh)',
@@ -116,7 +115,6 @@ def plot_diff(
         'Present Value of System Cost': 'Discounted Cost (Bil $)',
         'Runtime (hours)': 'processtime',
         'Runtime by year (hours)': 'processtime',
-        'NEUE (ppm)': 'neue',
     }
     xcol = {
         'Error Check': 'dummy',
@@ -135,7 +133,6 @@ def plot_diff(
         'Present Value of System Cost': 'dummy',
         'Runtime (hours)': 'dummy',
         'Runtime by year (hours)': 'year',
-        'NEUE (ppm)': 'year',
     }
     width = {
         'Error Check': 20,
@@ -154,7 +151,6 @@ def plot_diff(
         'Present Value of System Cost': 20,
         'Runtime (hours)': 20,
         'Runtime by year (hours)': 2.9,
-        'NEUE (ppm)': 2.9,
     }
     colorcol = {
         'Error Check': 'dummy',
@@ -173,7 +169,6 @@ def plot_diff(
         'Present Value of System Cost': 'cost_cat',
         'Runtime (hours)': 'process',
         'Runtime by year (hours)': 'process',
-        'NEUE (ppm)': 'dummy',
     }
     fixcol = {
         'Error Check': {'type':'z'},
@@ -192,7 +187,6 @@ def plot_diff(
         'Present Value of System Cost': {},
         'Runtime (hours)': {},
         'Runtime by year (hours)': {},
-        'NEUE (ppm)': {},
     }
     ylabel = {
         'Error Check': 'System cost error [fraction]',
@@ -211,7 +205,6 @@ def plot_diff(
         'Present Value of System Cost': '[$Billion]',
         'Runtime (hours)': 'Runtime [hours]',
         'Runtime by year (hours)': 'Runtime [hours]',
-        'NEUE (ppm)': 'NEUE [ppm]',
     }
     scaler = {
         'Error Check': 1,
@@ -230,7 +223,6 @@ def plot_diff(
         'Present Value of System Cost': 1,
         'Runtime (hours)': 1,
         'Runtime by year (hours)': 1,
-        'NEUE (ppm)': 1,
     }
 
     output_formatting = reeds.io.get_plot_formatting()
@@ -250,11 +242,12 @@ def plot_diff(
         output_formatting['tech_color'] = colors
 
     ### Parse the sheet name
-    val2sheet = reeds.io.get_report_sheetmap(casebase)
-    sheet = val2sheet[val]
+    val2sheet = {case: reeds.io.get_report_sheetmap(case) for case in [casebase, casecomp]}
 
     ### Load the data
-    dfbase = reeds.io.read_report(casebase, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
+    dfbase = reeds.io.read_report(
+        casebase, val2sheet[casebase][val], val2sheet[casebase]
+    ).rename(columns={'trtype':'type','i':'tech'})
     if 'tech' in dfbase.columns:
         dfbase.tech = simplify_techs(dfbase.tech, display_level = simple_techs)
         dfbase = (
@@ -272,7 +265,9 @@ def plot_diff(
             fixval = fixcol[val][col]
         dfbase = dfbase.loc[dfbase[col] == fixval].copy()
 
-    dfcomp = reeds.io.read_report(casecomp, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
+    dfcomp = reeds.io.read_report(
+        casecomp, val2sheet[casecomp][val], val2sheet[casecomp]
+    ).rename(columns={'trtype':'type','i':'tech'})
     if 'tech' in dfcomp.columns:
         dfcomp.tech = simplify_techs(dfcomp.tech, display_level = simple_techs)
         dfcomp = (
@@ -464,11 +459,6 @@ def plot_diff(
     ## axes 0 and 1 use the same y limits
     ymax = max(ax[0].get_ylim()[1], ax[1].get_ylim()[1])
     ymin = min(ax[0].get_ylim()[0], ax[1].get_ylim()[0])
-    if val == 'NEUE (ppm)':
-        neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
-        ymax = max(ymax, 10, neue_threshold*1.05)
-        ax[0].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
-        ax[1].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
     for col in range(2):
         ax[col].set_ylim(ymin,ymax)
     ## axis 2 uses the same y limits as 0 and 1; axis 3 uses its own limits
@@ -4329,7 +4319,7 @@ def plot_ra_metrics_bylevel(
 
 
 def map_neue(
-        case, year=2050, iteration='last', samples=None, metric='sum',
+        case, year=2050, iteration='last', samples=None,
         vmax=10., cmap=cmocean.cm.rain, label=True,
         over_vmax_mapcolor=None,
         over_threshold_textcolor='C3',
@@ -4338,7 +4328,6 @@ def map_neue(
     """
     """
     ### Parse inputs
-    assert metric in ['sum','max']
     cm = cmap.copy()
     if over_vmax_mapcolor:
         cm.set_over(over_vmax_mapcolor)
@@ -4349,8 +4338,8 @@ def map_neue(
             case=case, year=year, samples=samples)
     else:
         _iteration = iteration
-    neue = reeds.io.read_output(case, f'ra_metrics_{year}i{_iteration}.csv')
-    neue = neue.loc[neue.metric==metric].set_index(['level','region']).NEUE
+    ra_metrics = reeds.io.read_output(case, f'ra_metrics_{year}i{_iteration}.csv')
+    neue = ra_metrics.loc[ra_metrics.metric=='neue_ppm'].set_index(['level','region']).value
     sw = reeds.io.get_switches(case)
     neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
     neue_threshold_level = sw.GSw_PRM_StressThresholdNEUE.split('_')[0]
@@ -5819,19 +5808,26 @@ def plot_capacity_offline(
     bokehcolors.drop(['Electrolyzer','SMR','SMR-CCS','Canadian Imports','Remove','Dropped'], errors='ignore', inplace = True)
     bokehcolors = bokehcolors.squeeze(1)
 
+    ### Get temperatures for model zones
+    temperatures = reeds.io.get_temperatures(case)
+    temperatures_r = (
+        pd.concat({r: temperatures[st] for r, st in hierarchy['st'].items()}, axis=1)
+        .rename_axis('r', axis=1)
+    )
+
     dftemp = pd.concat({
         which: (
-            temperatures.rename(columns=hierarchy[level]).T.groupby(level='r').agg(which)
+            temperatures_r.rename(columns=hierarchy[level]).T.groupby(level='r').agg(which)
             .T.groupby([
-                temperatures.index.year,
-                temperatures.index.month,
-                temperatures.index.day,
+                temperatures_r.index.year,
+                temperatures_r.index.month,
+                temperatures_r.index.day,
             ]).agg(which)
         )
         for which in ['min', 'max']
     }, axis=1)
     dftemp.index = pd.to_datetime(
-        temperatures.index.strftime('%Y-%m-%d').drop_duplicates())
+        temperatures_r.index.strftime('%Y-%m-%d').drop_duplicates())
     ## Include all weather years so we don't interpolate the gap
     dftemp = dftemp.reindex(pd.date_range(dftemp.index[0], dftemp.index[-1], freq='D'))
 
@@ -6241,8 +6237,6 @@ def map_stressors(
         names=['i','r'],
     )
 
-    load = reeds.io.read_file(ra_files['load'], parse_timestamps=True)
-
     recf = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'recf.h5'),
         parse_timestamps=True,
@@ -6251,6 +6245,8 @@ def map_stressors(
         recf.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
+
+    load = reeds.io.read_file(ra_files['load'], parse_timestamps=True).tz_convert(recf.index.tz)
 
     temperatures = reeds.io.get_temperatures(case)
     hierarchy = reeds.io.get_hierarchy(case)
@@ -6290,7 +6286,7 @@ def map_stressors(
     vre_gen_region = {
         (tech, region):
         (
-            vre_gen[tech][region2rs[region]].sum(axis=1)
+            vre_gen[tech].reindex(region2rs[region], axis=1).fillna(0.).sum(axis=1)
             .groupby([vre_gen.index.year, vre_gen.index.month, vre_gen.index.day])
             .sum()
             .sort_values()
@@ -6333,17 +6329,17 @@ def map_stressors(
     nrows, ncols = 3, 4
     vmin = {
         'load': (pd.concat(load_region, axis=1).min() / pd.concat(load_region, axis=1).max()).min(),
-        'wind-ons': 0,
-        'upv': 0,
+        'wind-ons': 0.,
+        'upv': 0.,
         'temperature': reeds.units.c2f(-20),
-        'outage': 0,
+        'outage': 0.,
     }
     vmax = {
-        'load': 1,
+        'load': 1.,
         'wind-ons': 0.8,
         'upv': 0.5,
         'temperature': reeds.units.c2f(40),
-        'outage': 40,
+        'outage': 40.,
     }
 
     ### Get the days to run
