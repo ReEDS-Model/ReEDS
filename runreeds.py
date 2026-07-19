@@ -237,10 +237,10 @@ def check_compatibility(sw):
             '\nGSw_HourlyWindow = {}\nGSw_HourlyWindowOverlap = {}'.format(
                 sw['GSw_HourlyWindow'], sw['GSw_HourlyWindowOverlap'])))
 
-    if ((sw['GSw_HourlyClusterAlgorithm'] not in ['hierarchical','optimized','kmeans','kmedoids'])
+    if ((sw['GSw_HourlyClusterAlgorithm'] not in ['hierarchical','optimized','kmeans','kmedoids','hieropt'])
         and ('user' not in sw['GSw_HourlyClusterAlgorithm'])
     ):
-        if sw['GSw_HourlyClusterAlgorithm'].startswith('hierarchical'):
+        if sw['GSw_HourlyClusterAlgorithm'].startswith('hier'):
             args = sw['GSw_HourlyClusterAlgorithm'].split('_')
             assert len(args) == 3
             ## https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html

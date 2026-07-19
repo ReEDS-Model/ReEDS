@@ -111,6 +111,34 @@ def identify_min_periods(df, hierarchy, level, prefix=''):
     return forceperiods
 
 
+def assign_actual_to_representative(
+    sw:pd.Series,
+    profiles_period_mean:pd.DataFrame,
+    iweights:pd.Series,
+    mapfunc,
+    forceperiods_yearperiod:list,
+):
+    """Optimize the assignment of actual days to representative days"""
+    a2r = mapfunc(
+        profiles_period_mean=profiles_period_mean.round(4),
+        iweights=iweights,
+    )
+    if len(iweights) < int(sw['GSw_HourlyNumClusters']):
+        print(
+            'Asked for {} representative periods but only needed {}'.format(
+                sw['GSw_HourlyNumClusters'], len(iweights)))
+
+    period_szn = pd.concat([
+        a2r.reset_index().rename(columns={'act':'period','rep':'szn'}),
+        pd.DataFrame({'period':list(forceperiods_yearperiod),
+                        'szn':list(forceperiods_yearperiod)})
+        if len(forceperiods_yearperiod) else None
+    ]).sort_values('period').set_index('period').szn
+    period_szn = period_szn.map(lambda x: f'y{x[0]}{sw.GSw_HourlyType[0]}{x[1]:>03}')
+
+    return period_szn
+
+
 def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
     """
     Cluster the load and (optionally) RE profiles to find representative days for dispatch in ReEDS.
@@ -128,9 +156,17 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
     period_szn - day indices of each cluster center
     """
     ###### Run the clustering
+    profiles_period_mean = (
+        profiles_fitperiods.groupby(['property','region'], axis=1)
+        .mean()
+    )
+    mapfunc = {
+        'milp': reeds.timeseries.match_act2rep_milp,
+        'bestfirst': reeds.timeseries.match_act2rep_bestfirst,
+    }[sw['GSw_HourlyClusterMapMethod']]
     print(f"Performing {sw.GSw_HourlyClusterAlgorithm} clustering")
     if (
-        sw['GSw_HourlyClusterAlgorithm'].startswith('hierarchical')
+        sw['GSw_HourlyClusterAlgorithm'].startswith('hier')
         or sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kme')
     ):
         ### Generate the fits
@@ -153,54 +189,48 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
             ).nsmallest(1).index[0]
             for i in range(int(sw['GSw_HourlyNumClusters']))
         }
-
-        period_szn = pd.DataFrame({
-            'period': profiles_fitperiods.index.values,
-            'szn': [f"y{i[0]}{sw['GSw_HourlyType'][0]}{i[1]:>03}"
-                       for i in pd.Series(cluster_assignment).map(nearest_period)]
-        ### Add the force-include periods to the end of the list of seasons
-        })
-        period_szn = pd.concat([
-            period_szn,
-            pd.DataFrame({
-                'period': list(forceperiods_yearperiod),
+        if sw['GSw_HourlyClusterAlgorithm'].split('_')[0].endswith('opt'):
+            ### Optimize the weights for each cluster,
+            ### then optimize the assignment of actual to rep periods
+            iweights, weights = reeds.timeseries.optimize_defined_period_weights(
+                basis_periods=profiles_period_mean.loc[nearest_period.values()],
+                target_feature_mean=profiles_period_mean.mean(),
+                numperiods=len(profiles_period_mean),
+            )
+            period_szn = assign_actual_to_representative(
+                sw=sw, profiles_period_mean=profiles_period_mean,
+                iweights=iweights, mapfunc=mapfunc,
+                forceperiods_yearperiod=forceperiods_yearperiod,
+            )
+        else:
+            ### Assign the actual periods in each cluster to the period nearest to the centroid
+            period_szn = pd.DataFrame({
+                'period': profiles_fitperiods.index.values,
                 'szn': [f"y{i[0]}{sw['GSw_HourlyType'][0]}{i[1]:>03}"
-                        for i in forceperiods_yearperiod]
+                        for i in pd.Series(cluster_assignment).map(nearest_period)]
             })
-        ]).sort_values('period').set_index('period').szn
+            ### Add the force-include periods to the end of the list of seasons
+            period_szn = pd.concat([
+                period_szn,
+                pd.DataFrame({
+                    'period': list(forceperiods_yearperiod),
+                    'szn': [f"y{i[0]}{sw['GSw_HourlyType'][0]}{i[1]:>03}"
+                            for i in forceperiods_yearperiod]
+                })
+            ]).sort_values('period').set_index('period').szn
 
     elif sw['GSw_HourlyClusterAlgorithm'] in ['opt','optimized','optimize']:
-        profiles_period_mean = (
-            profiles_fitperiods.groupby(['property','region'], axis=1)
-            .mean()
-        )
-        ### Optimize the weights of representative days
+        ### Optimize the weights of representative periods
         iweights, weights = reeds.timeseries.optimize_period_weights(
             profiles_period_mean=profiles_period_mean,
             GSw_HourlyNumClusters=int(sw['GSw_HourlyNumClusters']),
         )
-        ### Optimize the assignment of actual days to representative days
-        mapfunc = {
-            'milp': reeds.timeseries.match_act2rep_milp,
-            'bestfirst': reeds.timeseries.match_act2rep_bestfirst,
-        }[sw.get('GSw_HourlyClusterMapMethod', 'milp')]
-        a2r = mapfunc(
-            profiles_period_mean=profiles_period_mean.round(4),
-            iweights=iweights,
+        ### Optimize the assignment of actual periods to representative periods
+        period_szn = assign_actual_to_representative(
+            sw=sw, profiles_period_mean=profiles_period_mean,
+            iweights=iweights, mapfunc=mapfunc,
+            forceperiods_yearperiod=forceperiods_yearperiod,
         )
-
-        if len(iweights) < int(sw['GSw_HourlyNumClusters']):
-            print(
-                'Asked for {} representative periods but only needed {}'.format(
-                    sw['GSw_HourlyNumClusters'], len(iweights)))
-
-        period_szn = pd.concat([
-            a2r.reset_index().rename(columns={'act':'period','rep':'szn'}),
-            pd.DataFrame({'period':list(forceperiods_yearperiod),
-                          'szn':list(forceperiods_yearperiod)})
-            if len(forceperiods_yearperiod) else None
-        ]).sort_values('period').set_index('period').szn
-        period_szn = period_szn.map(lambda x: f'y{x[0]}{sw.GSw_HourlyType[0]}{x[1]:>03}')
 
     elif 'user' in sw['GSw_HourlyClusterAlgorithm'].lower():
         print('Using user-defined representative period weights')
@@ -689,7 +719,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20260525_repM0_USA_fast','inputs_case','')
+    #     'v20260717_clusterM0_Everything','inputs_case','')
     # interactive = True
 
     #%% Set up logger

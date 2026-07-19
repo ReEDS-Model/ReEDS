@@ -197,7 +197,7 @@ def get_clusters(
     of each period to a cluster.
     """
     import sklearn.cluster
-    if GSw_HourlyClusterAlgorithm.startswith('hierarchical'):
+    if GSw_HourlyClusterAlgorithm.startswith('hier'):
         args = GSw_HourlyClusterAlgorithm.split('_')
         if len(args) > 1:
             metric = args[1]
@@ -327,6 +327,28 @@ def optimize_period_weights(
     num_actual_periods = len(profiles_period_mean)
     rweights *= num_actual_periods / rweights.sum()
     iweights = round_to_integers(rweights, num_actual_periods)
+
+    return iweights, weights
+
+
+def optimize_defined_period_weights(
+    basis_periods,
+    target_feature_mean,
+    numperiods=365,
+):
+    """
+    Similar to optimize_period_weights(), but here we provide the basis set instead of
+    letting the solver do it.
+    """
+    ### Get weights
+    weights = minimize_abs_error_in_means(basis_periods, target_feature_mean)
+
+    ### Truncate based on numperiods, scale appropriately, and convert to integers
+    ### Keep the the 'numperiods' highest-weighted days
+    rweights = (weights.sort_values(ascending=False)[:len(basis_periods)])
+    ### Scale so that the weights sum to numperiods (have to do if numperiods is small)
+    rweights *= numperiods / rweights.sum()
+    iweights = round_to_integers(rweights, numperiods)
 
     return iweights, weights
 
