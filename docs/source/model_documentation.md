@@ -149,7 +149,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | WECC | Western Electricity Coordinating Council |
 | WIND | Wind Integration National Dataset |
 | WinDS | Wind Deployment System |
-
+| WIRED | Workforce Impacts and Regional Economic Development |
 
 ## Introduction
 
@@ -2839,8 +2839,11 @@ SO<sub>2</sub> and NO<sub>x</sub> are also included in the [cost of health damag
 
 
 
+## Power Sector Employment
 
+Power sector employment is an output calculated based on employment factors for construction of new power plants and transmission lines, and operation \& maintenance of existing and new power plants. Users have several options of employment factor data to choose from---the Jobs and Economic Development Impact (JEDI) models {cite}`JobsEconomicDevelopment`, which is the default data, and published literature (Mayfield et al. (2023) {cite}`mayfieldLaborPathwaysAchieve2023`, Rutovitz et al. (2025) {cite}`rutovitzUpdatedEmploymentFactors2025`, and Ram et al. (2010) {cite}`ramJobCreationGlobal2020`. )
 
+For JEDI employment data, employment factors for biopower, solar PV, hydropower, pumped storage, and land-based wind are derived respectively from JEDI models of individual technologies, all of which are publicly available. Employment factors for battery storage, coal, natural gas, geothermal, offshore wind, and transmission lines are derived respectively from the Workforce Impacts and Regional Economic Development (WIRED) models of individual technologies, all of which are not yet publicly available but are based on publicly available data inputs.|
 
 
 ## Federal, State, and Local Policies
