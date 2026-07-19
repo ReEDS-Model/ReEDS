@@ -384,12 +384,12 @@ def main(reeds_path, inputs_case):
     gdb_use.loc[
         (gdb_use['tech']=='hydEND') & 
         (gdb_use['StartYear'] >= startyear) & 
-        (gdb_use['StartYear'] <= endyear), 
+        (gdb_use['StartYear'] < endyear), 
         'tech'] = 'hydUND'
     gdb_use.loc[
         (gdb_use['tech']=='hydED') & 
         (gdb_use['StartYear'] >= startyear) & 
-        (gdb_use['StartYear'] <= endyear), 
+        (gdb_use['StartYear'] < endyear), 
         'tech'] = 'hydUD'
 
     # We model csp-ns (CSP No Storage) as upv throughout ReEDS, but switch it back for reporting.
@@ -432,7 +432,7 @@ def main(reeds_path, inputs_case):
 
     # Multiply all PV capacities by ILR
     # Capacity of tech rsc_all is MWac measured at the power block, while PV capacity is MWdc,
-    # so multiply csp-ns capacity by the ILR [MWdc/MWac] of PV
+    # so multiply rsc_all capacity by the ILR [MWdc/MWac] of PV
     gdb_use.loc[gdb_use['tech'].isin(TECH['rsc_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
     
     #%%##################################
@@ -497,7 +497,7 @@ def main(reeds_path, inputs_case):
     ### prescribed power capacity
     prescribed_nonRSC = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC'])) &
                                     (gdb_use['StartYear'] >= startyear) &
-                                    (gdb_use['StartYear'] <= endyear)
+                                    (gdb_use['StartYear'] < endyear)
                                     ]
     prescribed_nonRSC['tech'] = prescribed_nonRSC['tech'].str.lower()
     ### assign vintage based on start year of the unit
@@ -526,7 +526,7 @@ def main(reeds_path, inputs_case):
     ### prescribed energy capacity
     prescribed_nonRSC_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC_energy'])) &
                                     (gdb_use['StartYear'] >= startyear) &
-                                    (gdb_use['StartYear'] <= endyear)
+                                    (gdb_use['StartYear'] < endyear)
                                     ]
 
     ### assign vintage based on start year of the unit
@@ -561,7 +561,7 @@ def main(reeds_path, inputs_case):
     caprsc['v']='init-1'
     caprsc = caprsc[COLNAMES['rsc'][0]]
     caprsc.columns = COLNAMES['rsc'][1]
-    caprsc = caprsc.groupby(COLNAMES['rsc'][1][:-3]).value.sum().reset_index().rename(columns={'i':'*i'})
+    caprsc = caprsc.groupby(COLNAMES['rsc'][1][:-2]).value.sum().reset_index()
 
 
     # Add existing CSP builds:
@@ -590,8 +590,8 @@ def main(reeds_path, inputs_case):
     hyd['ctt'] = 'n'
     hyd['v'] = 'init-1'
     # Concat all RSC Existing Data to one dataframe:
-    # caprsc = pd.concat([caprsc, csp, hyd])
-    caprsc = hyd
+    caprsc = pd.concat([caprsc, csp, hyd]).rename(columns={'i':'*i'})
+    # caprsc = hyd
     # Export Existing RSC data specifically used in writesupplycurves.py
     rsc_wsc = create_rsc_wsc(gdb_use, TECH=TECH, startyear=startyear)
 
@@ -623,11 +623,11 @@ def main(reeds_path, inputs_case):
     for tech in TECH['rsc_wsc']:
         cap_pres[tech]= gdb_use.loc[(gdb_use['tech']==tech) &
                     (gdb_use['StartYear'] >= startyear) &
-                    (gdb_use['StartYear'] <= endyear)
+                    (gdb_use['StartYear'] < endyear)
                     ].copy()
         mask = ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
         if len(cap_pres[tech]) != 0:
-            # DUPV and UPV values are collected at the same time here:
+            # DUPV, PVB and UPV values are collected at the same time here:
             if tech in TECH['prsc_upv']:
                 print(tech)
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
@@ -801,7 +801,7 @@ def main(reeds_path, inputs_case):
     rets = rets.groupby(COLNAMES['retirements'][1][:-1]).sum().reset_index().rename(columns={'i':'*i'})
 
     rets_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements_energy'])) &
-                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<endyear) &
+                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
                     (gdb_use['StartYear'] <= endyear)
                     ].copy()
     # Assign the retirements type based on whether the unit was online before or after startyear
@@ -942,7 +942,7 @@ def main(reeds_path, inputs_case):
         prescribed_nonRSC_energy.columns = ['*i','v','r','t','value']
 
     # Final Groupby step for capacity groupings not affected by GSw_WaterMain:
-    caprsc = caprsc.groupby(['i','v','r']).value.sum().reset_index().rename(columns={'i':'*i'})
+    caprsc = caprsc.groupby(['*i','v','r']).value.sum().reset_index()
     prescribed_rsc = prescribed_rsc.groupby(['i','v','r','t']).value.sum().reset_index().rename(columns={'i':'*i'})
 
 
@@ -1046,7 +1046,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_WA','inputs_case')
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
