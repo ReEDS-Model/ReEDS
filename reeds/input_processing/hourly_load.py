@@ -610,6 +610,25 @@ def get_hourly_finito_load(
     load_finito = load_finito.pivot(index='year', columns='r', values='load_MWh')
     load_finito.columns.name = None
 
+    # load_finito.csv is at z134 (p) resolution, so aggregate to this
+    # run's model regions
+    county2p = reeds.io.get_county2zone(GSw_ZoneSet='z134')
+    county2zone = reeds.io.get_county2zone(case=Path(inputs_case).parent)
+    p2zone = (
+        pd.concat({'p': county2p, 'zone': county2zone}, axis=1)
+        .dropna()
+        .drop_duplicates()
+    )
+    zones_per_p = p2zone.groupby('p')['zone'].nunique()
+    if (zones_per_p > 1).any():
+        raise ValueError(
+            'Cannot aggregate load_finito.csv from z134 to model regions because '
+            'these p regions span multiple model regions: '
+            f'{zones_per_p.loc[zones_per_p > 1].index.tolist()}'
+        )
+    p2zone = p2zone.set_index('p')['zone']
+    load_finito = load_finito.rename(columns=p2zone).T.groupby(level=0).sum().T
+
     # allocate annual load to hours, assuming flat demand
     # TODO: should this use h_weight_finito?
     hours_per_year = 8760
