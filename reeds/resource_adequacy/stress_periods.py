@@ -170,7 +170,7 @@ def _sample_cvar(samples, alpha=0.95):
     x = pd.Series(samples).dropna().astype(float)
     if x.empty:
         return np.nan
-    n_tail = max(1, int(np.ceil((1 - alpha) * len(x))))
+    n_tail = max(1, int(np.ceil(round((1 - alpha) * len(x), 12))),)
     return x.sort_values(ascending=False).iloc[:n_tail].mean()
 
 def calc_cvar(shortfall_samples_agg, alpha=0.95):

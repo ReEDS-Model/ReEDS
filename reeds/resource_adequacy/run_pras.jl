@@ -1,6 +1,5 @@
 #%% Imports
 import ArgParse
-import CSV
 import DataFrames
 import Logging
 import LoggingExtras
@@ -219,39 +218,36 @@ function run_pras(pras_system_path::String, args::Dict)
     @info "$(PRAS.EUE(results["short"]))"
     @info "$(PRAS.NEUE(results["short"]))"
 
-    # CVAR results
-    if haskey(results, "short_samples")
-        _,_,_,_,energyunit = PRAS.get_params(sys)
+    #%% Print CVAR and NCVAR for the entire modeled region
+    if args["write_shortfall_samples_totals"] == 1 && haskey(results, "short_samples")
+        _, _, _, _, energyunit = PRAS.get_params(sys)
         alpha = Float64(args["cvar_alpha"])
-        cvar_obj = PRAS.CVAR(energyunit, results["short_samples"], alpha)
 
-        cvar_value = PRAS.val(cvar_obj.cvar)
-        cvar_stderr = PRAS.stderror(cvar_obj.cvar)
-        cvar_var = cvar_obj.var
-
-        ### Normalize CVaR by total load over the full PRAS time period and report NCVAR in ppm.
-        total_load = sum(sys.regions.load)
-        ncvar_value  = cvar_value  / total_load * 1e6
-        ncvar_stderr = cvar_stderr / total_load * 1e6
-        ncvar_var    = cvar_var    / total_load * 1e6
-
-        @info "CVAR = $(cvar_value)±$(cvar_stderr) MWh; VaR = $(cvar_var) MWh; alpha = $(alpha)"
-        @info "NCVAR = $(ncvar_value)±$(ncvar_stderr) ppm; VaR = $(ncvar_var) ppm; alpha = $(alpha)"
-
-        ### Write risk metrics to CSV
-        base = replace(pras_system_path, ".pras"=>"")
-        riskfile = base * "-risk_metrics.csv"
-        dfrisk = DF.DataFrame(
-            metric = ["CVAR",       "NCVAR"],
-            alpha  = [alpha,        alpha],
-            region = ["USA",        "USA"],
-            unit   = ["MWh",        "ppm"],
-            value  = [cvar_value,   ncvar_value],
-            stderr = [cvar_stderr,  ncvar_stderr],
-            var    = [cvar_var,     ncvar_var],
+        cvar_result = PRAS.CVAR(
+            energyunit,
+            results["short_samples"],
+            alpha,
         )
-        CSV.write(riskfile, dfrisk)
-        @info("Wrote risk metrics to $(riskfile)")
+
+        cvar_value = PRAS.val(cvar_result.cvar)
+        cvar_stderr = PRAS.stderror(cvar_result.cvar)
+        cvar_var = cvar_result.var
+
+        ### Normalize CVaR by total load over the full PRAS time period.
+        total_load = sum(sys.regions.load)
+
+        ncvar_value = cvar_value / total_load * 1e6
+        ncvar_stderr = cvar_stderr / total_load * 1e6
+        ncvar_var = cvar_var / total_load * 1e6
+
+        @info(
+            "CVAR = $(cvar_value)±$(cvar_stderr) MWh; " *
+            "VaR = $(cvar_var) MWh; alpha = $(alpha)"
+        )
+        @info(
+            "NCVAR = $(ncvar_value)±$(ncvar_stderr) ppm; " *
+            "VaR = $(ncvar_var) ppm; alpha = $(alpha)"
+        )
     end
 
     ## Filter out DC regions used for VSC HVDC transmission
@@ -537,7 +533,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     #%% Include ReEDS2PRAS
     include(joinpath(
-        args["reeds_path"], "reeds", "resource_adequacy", "reeds2pras", "src", "ReEDS2PRAS.jl"
+        args["reedscase"], "reeds", "resource_adequacy", "reeds2pras", "src", "ReEDS2PRAS.jl"
     ))
 
     #%% Run it

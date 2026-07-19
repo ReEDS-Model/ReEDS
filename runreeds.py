@@ -300,39 +300,35 @@ def check_compatibility(sw):
         i.lower(): f'GSw_PRM_StressThreshold{i}'
         for i in ['Depth', 'Duration', 'LOLD', 'LOLE', 'LOLH', 'NEUE']
     }
-    check_only_metrics = ['cvar', 'ncvar']
-
-    used_metrics = [
-        i.strip().lower()
-        for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')
-        if i.strip()
-    ]
+    used_metrics = [i.lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')]
     allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
 
     for metric in used_metrics:
-        if metric in check_only_metrics:
-            continue
-
         if metric not in ra_switches:
-            raise NotImplementedError(
-                f"GSw_PRM_StressThresholdMetrics = {metric} is not supported"
-            )
+            raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
 
         for threshold in sw[ra_switches[metric]].split('/'):
             ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
-            hierarchy_level, stress_value = threshold.split('_')
-
+            (hierarchy_level, stress_value) = threshold.split('_')
             if hierarchy_level not in allowed_levels:
                 raise ValueError(
                     f"{ra_switches[metric]}: level={hierarchy_level} but must be in:\n"
                     + '\n'.join(allowed_levels)
                 )
-
             if not (float(stress_value) >= 0):
                 raise ValueError(
                     f"stress value in {ra_switches[metric]} must be a positive number "
                     f"but '{stress_value}' was provided"
                 )
+
+    ### GSw_PRM_UpdateMethod 1-3 (static or PRAS-informed PRM update) is computed from the
+    ### NEUE-based shortfall, so it requires NEUE to be an active stress metric
+    if int(sw['GSw_PRM_UpdateMethod']) in [1, 2, 3] and 'neue' not in used_metrics:
+        raise ValueError(
+            f"GSw_PRM_UpdateMethod={sw['GSw_PRM_UpdateMethod']} requires 'NEUE' to be included "
+            f"in GSw_PRM_StressThresholdMetrics (={sw['GSw_PRM_StressThresholdMetrics']}), "
+            "since PRM updates are computed from the NEUE-based shortfall."
+        )
 
     if sw['GSw_PRM_StressStorageCutoff'].lower() not in ['off','0','false']:
         metric, value = sw['GSw_PRM_StressStorageCutoff'].split('_')
@@ -849,7 +845,7 @@ def setupEnvironment(
             "To build the environment for the first time, run:\n"
             "    `conda env create -f environment.yml`\n"
             "To activate the created environment, run:\n"
-            "    `conda activate reeds2_atm` (or `activate reeds2` on Windows)\n"
+            "    `conda activate reeds2` (or `activate reeds2` on Windows)\n"
             "Do you want to continue without activating the environment?"
         )
         confirm_env = str(input("Continue? y/[n]: ") or 'n')
@@ -1282,9 +1278,7 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines(
-                ". /kfs2/projects/atm/Bcakire/conda_envs/reeds2_atm/bin/activate \n"
-            )
+            OPATH.writelines("conda activate reeds2 \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls
