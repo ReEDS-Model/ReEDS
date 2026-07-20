@@ -53,7 +53,7 @@ def main():
         case_file_orig = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
     elif run_on == 'kestrel':
         runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
-        case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
+        case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/uncertainty_plots_all_cases.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
