@@ -48,37 +48,37 @@ cm2 = plt.cm.tab20c
 c = {'r':cm(7), 'g':cm(5), 'b':cm(1), 'y':cm(3)}
 cmap = {
     'transreg': {
-        'CAISO':plt.cm.tab20(3),
-        'NorthernGrid':plt.cm.tab20(1),
-        'WestConnect':plt.cm.tab20(5),
-        'SPP':plt.cm.tab20(3),
-        'MISO':plt.cm.tab20(5),
-        'ERCOT':plt.cm.tab20(1),
-        'PJM':plt.cm.tab20(3),
-        'SERTP':plt.cm.tab20(1),
-        'FRCC':plt.cm.tab20(5),
-        'NYISO':plt.cm.tab20(1),
-        'ISONE':plt.cm.tab20(5),
+        'CAISO':cm(3),
+        'NorthernGrid':cm(1),
+        'WestConnect':cm(5),
+        'SPP':cm(3),
+        'MISO':cm(5),
+        'ERCOT':cm(1),
+        'PJM':cm(3),
+        'SERTP':cm(1),
+        'FRCC':cm(5),
+        'NYISO':cm(1),
+        'ISONE':cm(5),
     },
     'transgrp': {
-        'CAISO':plt.cm.tab20c(6),
-        'NorthernGrid_West':plt.cm.tab20c(1),
-        'NorthernGrid_East':plt.cm.tab20c(2),
-        'NorthernGrid_South':plt.cm.tab20c(3),
-        'WestConnect_North':plt.cm.tab20c(9),
-        'WestConnect_South':plt.cm.tab20c(10),
-        'SPP_North':plt.cm.tab20c(5),
-        'SPP_South':plt.cm.tab20c(6),
-        'MISO_North':plt.cm.tab20c(9),
-        'MISO_Central':plt.cm.tab20c(10),
-        'MISO_South':plt.cm.tab20c(11),
-        'ERCOT':plt.cm.tab20c(2),
-        'PJM_West':plt.cm.tab20c(5),
-        'PJM_East':plt.cm.tab20c(6),
-        'SERTP':plt.cm.tab20c(2),
-        'FRCC':plt.cm.tab20c(10),
-        'NYISO':plt.cm.tab20c(2),
-        'ISONE':plt.cm.tab20c(10),
+        'CAISO':cm2(6),
+        'NorthernGrid_West':cm2(1),
+        'NorthernGrid_East':cm2(2),
+        'NorthernGrid_South':cm2(3),
+        'WestConnect_North':cm2(9),
+        'WestConnect_South':cm2(10),
+        'SPP_North':cm2(5),
+        'SPP_South':cm2(6),
+        'MISO_North':cm2(9),
+        'MISO_Central':cm2(10),
+        'MISO_South':cm2(11),
+        'ERCOT':cm2(2),
+        'PJM_West':cm2(5),
+        'PJM_East':cm2(6),
+        'SERTP':cm2(2),
+        'FRCC':cm2(10),
+        'NYISO':cm2(2),
+        'ISONE':cm2(10),
     },
     'st': {
         'WA':c['b'], 'OR':c['y'], 'CA':c['b'], 'ID':c['r'], 'NV':c['g'],
@@ -112,6 +112,19 @@ cmap = {
     'cendiv': {
         'Pacific':c['b'],
         'Mountain':c['y'],
+        'West_North_Central':c['b'],
+        'West_South_Central':c['g'],
+        'East_North_Central':c['g'],
+        'East_South_Central':c['y'],
+        'South_Atlantic':c['b'],
+        'Mid_Atlantic':c['y'],
+        'New_England':c['b'],
+    },
+    'gasreg': {
+        'California':cm2(2),
+        'Northwest':cm2(3),
+        'Mountain':cm2(6),
+        'Southwest':cm2(7),
         'West_North_Central':c['b'],
         'West_South_Central':c['g'],
         'East_North_Central':c['g'],
@@ -154,8 +167,21 @@ offset = {
 ### Plot it
 alpha = 0.8
 draw_states = True
-draw_zones = True
-label_zones = {'r': False}
+draw_zones = {
+    'st':False,
+    'cendiv':False,
+    'usda_region':False,
+    'h2ptcreg':False,
+    'gasreg':False,
+}
+label_zones = {
+    'r':False,
+    'st':False,
+    'cendiv':False,
+    'usda_region':False,
+    'h2ptcreg':False,
+    'gasreg':False,
+}
 draw_lakes = True
 draw_counties = False
 label_regions = {'hurdlereg': False}
@@ -176,7 +202,7 @@ for level in dfmap:
     )
     if draw_states:
         dfmap['st'].plot(ax=ax, facecolor='none', edgecolor='C7', lw=0.6, zorder=1e8)
-    if draw_zones:
+    if draw_zones.get(level, True):
         dfmap['r'].plot(ax=ax, facecolor='none', edgecolor='C7', lw=0.3, zorder=1e7)
     if draw_counties:
         dfcounty.plot(ax=ax, facecolor='none', edgecolor='C7', lw=0.02, zorder=1e6)
@@ -210,7 +236,7 @@ for level in dfmap:
     ax.axis('off')
     savename = (
         f"{level}"
-        f"-z{int(draw_zones)}"
+        f"-z{int(draw_zones.get(level, True))}"
         f"-s{int(draw_states)}"
         f"-l{int(draw_lakes)}"
         f"-zl{int(label_zones.get(level, True))}"

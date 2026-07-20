@@ -446,3 +446,107 @@ def upscale_from_county_to_zone(
         )
 
     return df
+
+
+def calculate_region_aggregion_population_weights(
+    inputs_case: str | Path,
+    region_level: str,
+    aggregion_level: str,
+) -> pd.Series:
+    """
+    For a given region level and aggregated region (aggregion)
+    level, calculate each region's share of its corresponding
+    aggregion's total population.
+    
+    Args:
+        inputs_case: Path to the inputs case directory.
+        region_level: Region level (example: 'state')
+        aggregion_level: Aggregated region level
+            (example: 'cendiv')
+
+    Returns:
+        pd.Series
+    """
+    # Get county populations
+    county_populations = reeds.inputs.get_county_populations()
+    county_populations = county_populations.rename(
+        columns={'value': 'population'}
+    )
+
+    # Get county-to-region mapping
+    county2zone = reeds.io.get_county2zone(
+        os.path.dirname(inputs_case),
+        as_map=False
+    )
+    county2zone['FIPS'] = (
+        'p' + county2zone['FIPS'].astype(str).str.zfill(5)
+    )
+    state_groups = reeds.inputs.get_state_groups()
+    county2zone = county2zone.merge(
+        state_groups,
+        left_on='state',
+        right_on='st'
+    )
+    county_region_map = county2zone.set_index('FIPS')[region_level]
+
+    # Calculate regional populations
+    county_populations[region_level] = (
+        county_populations['FIPS'].map(county_region_map)
+    )
+    region_populations = (
+        county_populations.groupby(region_level, as_index=False)
+        ['population']
+        .sum()
+    )
+
+    # Calculate each region's percentage of aggregion population
+    region2aggregion = dict(zip(
+        county2zone[region_level],
+        county2zone[aggregion_level]
+    ))
+    region_populations[aggregion_level] = (
+        region_populations[region_level].map(region2aggregion)
+    )
+    region_populations['weight'] = (
+        region_populations['population']
+        / (
+            region_populations.groupby(aggregion_level)
+            ['population']
+            .transform('sum')
+        )
+    )
+    region_aggregion_weights = (
+        region_populations.set_index(region_level)['weight']
+    )
+
+    return region_aggregion_weights
+
+
+def aggregate_by_weighted_average(
+    regional_data: pd.DataFrame,
+    region_aggregion_weights: pd.Series,
+    region2aggregion: dict[str, str]
+) -> pd.DataFrame:
+    """
+    Aggregate region-level data to the aggregated region
+    ("aggregion") level via weighted average.
+
+    Args:
+        regional_data: Region-level data.
+        region_aggregion_weights: The "weight" of each region
+            corresponding to its aggregion to use in weighted
+            average calculation.
+        region2aggregion: Mapping between regions and aggregions.
+
+    Returns:
+        pd.DataFrame
+    """
+    aggregional_data = (
+        regional_data.mul(region_aggregion_weights)
+        .transpose()
+        .rename(region2aggregion)
+        .groupby(level=0)
+        .sum()
+        .transpose()
+    )
+    return aggregional_data

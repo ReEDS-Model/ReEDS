@@ -268,6 +268,7 @@ $ifthene.mga %GSw_MGA_CostDelta%>0
 $ifthene.mga1 %cur_year%>=%GSw_StartMarkets%
 *## Activate MGA mode
 Sw_MGA = 1 ;
+ReEDSmodel.optfile = %GSw_gopt_mga%  ;
 solve ReEDSmodel %GSw_MGA_Direction%imizing MGA_OBJ using lp ;
 *## Deactivate MGA mode
 Sw_MGA = 0 ;
