@@ -23,11 +23,6 @@ This page aggregates documentation from each folder README under the inputs dire
 - [inputs/load](#inputsload)
 - [inputs/national_generation](#inputsnational_generation)
 - [inputs/plant_characteristics](#inputsplant_characteristics)
-- [inputs/profiles_cf](#inputsprofiles_cf)
-- [inputs/profiles_demand](#inputsprofiles_demand)
-- [inputs/profiles_dr](#inputsprofiles_dr)
-- [inputs/profiles_temperature](#inputsprofiles_temperature)
-- [inputs/remote](#inputsremote)
 - [inputs/reserves](#inputsreserves)
 - [inputs/sets](#inputssets)
 - [inputs/shapefiles](#inputsshapefiles)
@@ -136,31 +131,6 @@ This page aggregates documentation from each folder README under the inputs dire
 <a id='inputsplant_characteristics'></a>
 
 ```{include} ../../inputs/plant_characteristics/README.md
-```
-
-<a id='inputsprofiles_cf'></a>
-
-```{include} ../../inputs/profiles_cf/README.md
-```
-
-<a id='inputsprofiles_demand'></a>
-
-```{include} ../../inputs/profiles_demand/README.md
-```
-
-<a id='inputsprofiles_dr'></a>
-
-```{include} ../../inputs/profiles_dr/README.md
-```
-
-<a id='inputsprofiles_temperature'></a>
-
-```{include} ../../inputs/profiles_temperature/README.md
-```
-
-<a id='inputsremote'></a>
-
-```{include} ../../inputs/remote/README.md
 ```
 
 <a id='inputsreserves'></a>
