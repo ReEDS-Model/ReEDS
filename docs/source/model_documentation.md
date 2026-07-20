@@ -1856,10 +1856,10 @@ Because new generation capacity is assumed to reuse the network infrastructure f
 This generation-technology-neutral intrazone transmission cost adder uses a financial multiplier calculated using a 40-year capital recovery period.
 
 By default the intrazone adder is flat (`GSw_TransIntraCost`, applied to every MW of net new capacity in the zone).
-It can optionally be represented as a regional *increasing-cost supply curve* by setting `numpoibins` greater than 1.
-In that case successive amounts of new point-of-interconnection (POI) capacity in each zone are priced in increasing cost bins (built at run time from `inputs/transmission/raw_interconnection_TSC_data.csv`), with an unlimited backstop bin priced at `GSw_POIUpperCost` so that reinforcement above the binned capacities remains feasible at a high cost.
-When this binned POI supply curve is active (`numpoibins` > 1 and `GSw_TransIntraCost` > 0), the geographically resolved network reinforcement cost embedded in the wind, solar, CSP, and geothermal supply curves is dropped entirely (and their total interconnection cost is recomputed as spur line plus substation/POI connection only) so that network reinforcement is not double counted between the two representations.
-With `numpoibins` = 1 (the default flat adder) the wind, solar, CSP, and geothermal supply-curve reinforcement cost is retained.
+It can optionally be represented as a regional *increasing-cost supply curve* by setting `GSw_RegIntraCurve` to 1.
+In that case successive amounts of new point-of-interconnection (POI) capacity in each zone are priced in increasing cost bins taken directly from `inputs/transmission/raw_interconnection_TSC_data.csv` (one bin per segment of the raw cumulative curve, so the number of bins per zone follows the input data), with an unlimited backstop bin priced at `GSw_POIUpperCost` so that reinforcement above the binned capacities remains feasible at a high cost.
+When this regional POI supply curve is active (`GSw_RegIntraCurve` = 1 and `GSw_TransIntraCost` > 0), the geographically resolved network reinforcement cost embedded in the wind, solar, CSP, and geothermal supply curves is dropped entirely (and their total interconnection cost is recomputed as spur line plus substation/POI connection only) so that network reinforcement is not double counted between the two representations.
+With `GSw_RegIntraCurve` = 0 (the default flat adder) the wind, solar, CSP, and geothermal supply-curve reinforcement cost is retained.
 
 
 

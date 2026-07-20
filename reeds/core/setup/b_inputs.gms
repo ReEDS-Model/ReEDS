@@ -332,14 +332,7 @@ set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
     rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
 * Sets involved with the POI / network-reinforcement cost supply curve.
-* POI reinforcement is charged on a single increasing-cost zonal curve that applies to every
-* technology. bin_upper is an unlimited backstop bin priced at GSw_POIUpperCost. When numpoibins=0
-* (full-reV resolution) the bins are loaded from data (rtscbin.csv written by transmission.py).
-$ifThenE.poifr %numpoibins%==0
-* rtscbin.csv is a single column (one bin label per line, no header), so $ondelim is neither
-* needed nor allowed here (the set's dimension is the universe, which $ondelim cannot infer):
-* a plain $include pastes the labels straight into the set body.
-set rtscbin "POI / network-reinforcement supply curve bins (full-reV; loaded from data)"
+set rtscbin "POI / network-reinforcement supply curve bins (loaded from data)"
 /
 $offlisting
 $include inputs_case%ds%rtscbin.csv
@@ -1323,16 +1316,9 @@ $onlisting
 $offempty
 / ;
 
-* Default (single flat bin) reproduces the legacy flat Sw_TransIntraCost: bin1 is available at the
-* flat cost with no bin-width limit. This is the fallback for any region the poi_supply_curve.csv
-* file does not cover.
-cost_poi_bin(r,"bin1")$Sw_TransIntraCost = Sw_TransIntraCost * 1000 ;
+cost_poi_bin(r,"bin1")$[Sw_TransIntraCost$(not sum{rtscbin, poi_sc_dat(r,rtscbin,"cost") })]
+    = Sw_TransIntraCost * 1000 ;
 
-* Overlay the supply-curve data for any (region,bin) it covers (only model regions r match).
-* poi_sc_dat costs are already in the model dollar year (2004$): transmission.py deflates them from
-* their input dollar year (USD2024, registered in inputs/transmission/dollaryear.csv) when writing
-* poi_supply_curve.csv, so here they are only unit-converted from $/kW to $/MW with *1000
-* (capacities in MW are used as-is), exactly as for the flat Sw_TransIntraCost.
 cost_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cost") = poi_sc_dat(r,rtscbin,"cost") * 1000 ;
 cap_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cap")   = poi_sc_dat(r,rtscbin,"cap") ;
 

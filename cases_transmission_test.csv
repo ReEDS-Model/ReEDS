@@ -1,7 +1,7 @@
 ,Default Value,ERCOT_default,ERCOT_0,ERCOT_regional
-ignore,1,0,0,0
+ignore,1,,,0
 endyear,2032,,,
 GSw_Region,interconnect/texas,,,
 GSw_GasCurve,2,,,
-numpoibins,1,,,6
+GSw_RegIntraCurve,0,,,1
 GSw_TransIntraCost,,,0.0001,

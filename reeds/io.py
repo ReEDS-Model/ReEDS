@@ -1510,21 +1510,16 @@ def assemble_supplycurve(
 
     ## Drop embedded reinforcement cost where network reinforcement is represented elsewhere:
     ##  - always for counties (county-resolution reinforcement is handled at the BA level), and
-    ##  - for all regions when the POI reinforcement curve is active (numpoibins != 1, i.e. the
-    ##    binned or native curve, with GSw_TransIntraCost>0), to avoid double-counting reinforcement
-    ##    now captured by the POI supply curve (INV_POI / eq_POI_cap).
+    ##  - for all regions when the regional POI reinforcement curve is active
     ## In both cases cost_total_trans is recomputed as spur + connection (POI) only.
     if case is not None:
         agglevel_variables = reeds.spatial.get_agglevel_variables(
             reeds_path, os.path.join(case, 'inputs_case')
         )
         counties = agglevel_variables['county_regions']
-        ## assemble_supplycurve also runs in postprocessing (input plots, reeds_to_rev) against
-        ## completed runs; a pre-feature run's switches file has no numpoibins/GSw_TransIntraCost,
-        ## so read these with legacy defaults (1 / 0 -> use_poi_bins False) rather than raising.
         use_poi_bins = (
-            (int(sw.get('numpoibins', 1)) != 1)
-            and (float(sw.get('GSw_TransIntraCost', 0) or 0) != 0)
+            int(sw['GSw_RegIntraCurve'])
+            and (float(sw['GSw_TransIntraCost'] or 0) != 0)
         )
     else:
         counties = []
@@ -1534,9 +1529,6 @@ def assemble_supplycurve(
         else dfout.region.isin(counties)
     )
     if drop_reinforcement.any():
-        ## When the binned POI method is active the per-site reinforcement is replaced by the zonal
-        ## INV_POI supply curve (built from raw_interconnection_TSC_data.csv), so it is zeroed here
-        ## to avoid double-counting. cost_total_trans is recomputed as spur + connection (POI) only.
         zerocols = ['cost_reinforcement_usd_per_mw', 'dist_reinforcement_km']
         dfout.loc[drop_reinforcement, zerocols] = 0
         dfout.loc[drop_reinforcement, 'cost_total_trans_usd_per_mw'] = dfout.loc[

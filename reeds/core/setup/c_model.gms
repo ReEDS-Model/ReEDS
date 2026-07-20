@@ -2000,14 +2000,7 @@ eq_prescribed_transmission(r,rr,trtype,t)
 
 * ---------------------------------------------------------------------------
 
-* Point-of-interconnection (POI) / intra-zone network-reinforcement COST accounting.
-* This is a PRICE-ONLY mechanism: new generation is charged a per-MW reinforcement cost off the
-* supply curve and NO deliverable intra-zone transmission capacity is created. INV_POI never
-* enters the power balance, the transmission flow limits, or CAPTRAN; it relieves no flow. The
-* accounting quantity is sized to the zone's interconnected generation capacity (CAP/ilr, AC)
-* solely so the curve price can be levied on it -- it is a cost basis, not transmission capability.
-* A single zonal reinforcement curve covers all technologies (the free existing capacity
-* poi_cap_init and the non-generator POI terms -- spur, converter, LCC -- attach here too).
+* Point-of-interconnection (POI) / intra-zone network-reinforcement accounting.
 eq_POI_cap(r,t)
     $[tmodel(t)
     $Sw_TransIntraCost
@@ -2036,11 +2029,7 @@ eq_POI_cap(r,t)
 
 * ---------------------------------------------------------------------------
 
-* Cumulative POI investment in each reinforcement cost bin cannot exceed the incremental capacity
-* available in that bin. Because cost_poi_bin increases across bins, the LP fills the cheapest bins
-* first, producing an increasing marginal reinforcement cost (same mechanism as the VRE resource
-* supply curve, eq_rsc_INVlim). Bins with cap_poi_bin = 0 are treated as unlimited (no constraint
-* generated), e.g. the flat single-bin case or an unbounded top bin.
+* Cumulative POI investment in each reinforcement cost bin 
 eq_POI_binlim(r,rtscbin,t)
     $[tmodel(t)
     $Sw_TransIntraCost
@@ -2048,10 +2037,12 @@ eq_POI_binlim(r,rtscbin,t)
     $cap_poi_bin(r,rtscbin)
     $(not Sw_PCM)]..
 
+* consumed reinforcment bin capacity must be greater than or equal to ...
     cap_poi_bin(r,rtscbin)
 
     =g=
 
+* the invested capacity in that bin up to and including the present year
     sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI(r,rtscbin,tt) }
 ;
 

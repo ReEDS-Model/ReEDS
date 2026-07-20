@@ -291,13 +291,15 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
-    if (int(sw['numpoibins']) != 1) and (float(sw['GSw_TransIntraCost']) == 0):
+    if int(sw['GSw_RegIntraCurve']) and (float(sw['GSw_TransIntraCost']) == 0):
         raise ValueError(
-            'The binned/native POI reinforcement curve (numpoibins != 1) is gated on '
+            'The regional POI reinforcement curve (GSw_RegIntraCurve=1) is gated on '
             'GSw_TransIntraCost > 0; with GSw_TransIntraCost=0 the entire curve is silently '
             'disabled (no reinforcement cost is charged).\n'
-            'Set GSw_TransIntraCost > 0 to use the curve, or numpoibins = 1 for the flat legacy '
-            f"cost.\nnumpoibins={sw['numpoibins']}, GSw_TransIntraCost={sw['GSw_TransIntraCost']}"
+            'Set GSw_TransIntraCost > 0 to use the curve, or GSw_RegIntraCurve = 0 for '
+            'the flat legacy cost.\n'
+            f"GSw_RegIntraCurve={sw['GSw_RegIntraCurve']}, "
+            f"GSw_TransIntraCost={sw['GSw_TransIntraCost']}"
         )
 
     if sw['GSw_RegionResolution'] in ['county','mixed']:
