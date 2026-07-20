@@ -300,21 +300,28 @@ def check_compatibility(sw):
         i.lower(): f'GSw_PRM_StressThreshold{i}'
         for i in ['Depth', 'Duration', 'LOLD', 'LOLE', 'LOLH', 'NEUE']
     }
-    used_metrics = [i.lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')]
+    report_only_metrics = {'cvar', 'ncvar'}
+
+    used_metrics = [i.strip().lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/') if i.strip()]
     allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
 
     for metric in used_metrics:
+        if metric in report_only_metrics:
+            continue
+
         if metric not in ra_switches:
             raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
 
         for threshold in sw[ra_switches[metric]].split('/'):
             ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
-            (hierarchy_level, stress_value) = threshold.split('_')
+            hierarchy_level, stress_value = threshold.split('_')
+
             if hierarchy_level not in allowed_levels:
                 raise ValueError(
                     f"{ra_switches[metric]}: level={hierarchy_level} but must be in:\n"
                     + '\n'.join(allowed_levels)
                 )
+
             if not (float(stress_value) >= 0):
                 raise ValueError(
                     f"stress value in {ra_switches[metric]} must be a positive number "
