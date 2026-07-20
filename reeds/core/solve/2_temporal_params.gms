@@ -472,29 +472,6 @@ $onlisting
 / ;
 $offempty
 
-$ifthen.climatehydro %GSw_ClimateHydro% == 1
-
-* Written by climateprep.py
-table climate_hydro_seasonal(r,allszn,allt)  "annual/seasonal nondispatchable hydropower availability"
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%climate_hydadjsea.csv
-$offdelim
-$onlisting
-;
-
-* adjust cf_hyd based on annual/seasonal climate multipliers
-* non-dispatchable hydro gets new seasonal profiles as well as annually-varying CF
-* dispatchable hydro keeps the original seasonal profiles; only annual CF changes. Reflects the assumption
-* that reservoirs will be utilized in the same seasonal pattern even if seasonal inflows change.
-cf_hyd(i,szn,r,t)$[hydro_nd(i)$(yeart(t)>=Sw_ClimateStartYear)] =
-    sum{allt$att(allt,t), cf_hyd(i,szn,r,t) * climate_hydro_seasonal(r,szn,allt) } ;
-
-cf_hyd(i,szn,r,t)$[hydro_d(i)$(yeart(t)>=Sw_ClimateStartYear)]  =
-    sum{allt$att(allt,t), cf_hyd(i,szn,r,t) * climate_hydro_annual(r,allt) } ;
-
-$endif.climatehydro
-
 *created by reeds/input_processing/writecapdat.py
 parameter cap_hyd_szn_adj(i,allszn,r) "--fraction-- seasonal max capacity adjustment for dispatchable hydro"
 /
