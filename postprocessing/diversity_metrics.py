@@ -37,15 +37,19 @@ def main():
     #case_file = args.case_file                      # Case file in csv that includes all case names to compare.
     
     ######################################### FOR TESTING/DEBUGGING #########################################
+    run_on = 'local'                                                                # kestrel vs local  
     metric = 'capacity'                                                               # Metric to calculate distance: 'capacity', 'generation'
     #submetrics = ['pv','wind-ons','wind-ofs','gas','coal','gentech']      
     submetrics = ['gentech']     
     year = 2050
     number_of_max_diff_case = 100
-    #runs_path = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/runs/rvs'          # Path of runs folder
-    #case_file = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
-    runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
-    case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_gentech_completed.csv'  # Case file in csv that includes all case names to compare
+
+    if run_on == 'local':
+        runs_path = '/Users/apham/Documents/Projects/ReEDS_Projects/FY26/Uncertainty/MGA_Paper_2/runs'          # Path of runs folder
+        case_file_orig = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
+    elif run_on == 'kestrel':
+        runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
+        case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/rv_runs_gentech_completed.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
     
     # Read in data case file:
