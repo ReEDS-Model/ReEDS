@@ -37,21 +37,23 @@ def main():
     #case_file = args.case_file                      # Case file in csv that includes all case names to compare.
     
     ######################################### FOR TESTING/DEBUGGING #########################################
-    run_on = 'kestrel'                                                    # kestrel vs local  
-    metric = 'cap'                                                      # Metric to calculate distance:
+    run_on = 'local'                                                    # kestrel vs local  
+    metric = 'gen'                                                      # Metric to calculate distance:
                                                                         # 'cap', 'gen', 'weighted_gen', 'emission', 
                                                                         # 'weighted_emission', 'employment', 
                                                                         # 'weighted_employment'
-    #submetrics = ['pv','wind-ons','wind-ofs','gas','coal','gentech']   # only if metric = cap or gen  
+    #submetrics = ['Solar PV','Land-based Wind','Offshore Wind','Gas','Coal','gentech']   # only if metric = cap or gen  
     submetrics = ['gentech']     
     year = 2050
     ed_or_hmsed = 'ED'                                                  # 'ED' or 'HMSED'
     number_of_max_diff_case = 100                                       # Only if ed_or_hmsed = 'HMSED'
 
     if run_on == 'local':
+        dir = '/Users/apham/Documents/Projects/ReEDS_Projects/FY26/Uncertainty/MGA_Paper_2'
         runs_path = '/Users/apham/Documents/Projects/ReEDS_Projects/FY26/Uncertainty/MGA_Paper_2/runs'          # Path of runs folder
-        case_file_orig = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_test.csv'  # Case file in csv that includes all case names to compare
+        case_file_orig = '/Users/apham/Documents/GitHub/ReEDS/public_ReEDS/ReEDS/rv_runs_all_completed.csv'  # Case file in csv that includes all case names to compare
     elif run_on == 'kestrel':
+        dir = '/kfs2/projects/uncertainty/apham/ReEDS/runs'
         runs_path = '/kfs2/projects/uncertainty/apham/ReEDS/runs'                       # Path of runs folder
         case_file_orig = '/kfs2/projects/uncertainty/apham/ReEDS/uncertainty_plots_all_cases.csv'  # Case file in csv that includes all case names to compare
     #########################################################################################################
@@ -73,12 +75,26 @@ def main():
     elif (metric == 'employment') | (metric == 'weighted_employment'):
         file = 'employment_tot.csv'
 
-    data = data_clean(runs_path,case_file,file,year,metric)
-    data.to_csv(os.path.join(runs_path,metric+'.csv'),index=False)
+    #data = data_clean(runs_path,case_file,file,year,metric)
+    #data.to_csv(os.path.join(dir,'csv',metric+'.csv'),index=False)
+
+    data = pd.read_csv(os.path.join(dir,'csv',metric+'.csv'))
+
+    # Filter out chosen scenarios only:
+    # Read in chosen scenarios:
+    scenarios_chosen = pd.read_csv(os.path.join(reeds_path,'uncertainty_selected_cases.csv'))
+    scenarios_chosen = scenarios_chosen['scenario'].unique().tolist()
+    
+    if ('emission' in metric) | ('employment' in metric):
+        col = ["r"] + scenarios_chosen
+    else:
+        col = ["tech", "r"] + scenarios_chosen
+    data_chosen = data[col]
+    data_chosen.to_csv(os.path.join(dir,'csv',metric+'_chosen.csv'),index=False)
 
    
     for submetric in submetrics:
-        if submetric != 'gentech':
+        if (submetric != 'gentech') & (('emission' not in metric) & ('employment' not in metric)):
             col_ED = 'ED_'+submetric
             rank_ED = 'ED_rank_'+submetric
             col_HMSED = 'HMSED_'+submetric
@@ -94,27 +110,39 @@ def main():
         
         #rv_cases = [item for item in rv_cases if submetric in item]
         #case_file = case_file[case_file['scenario'].str.contains(submetric)]
-    '''
+
         # Find maximally different solutions
-        case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, 
+        case_file = euclidean_distance_calc(runs_path, case_file, optimal_case, data, metric,
                                             rv_cases, submetric, file, year,number_of_max_diff_case,
                                             col_ED, rank_ED, col_HMSED, rank_HMSED, ed_or_hmsed)
         
         # Identify top most maximally different solutions
-        max_diff_solutions = case_file.sort_values(by=rank_HMSED)
-        max_diff_solutions = max_diff_solutions.loc[(max_diff_solutions[rank_HMSED]<=number_of_max_diff_case) & 
-                                                    (max_diff_solutions[rank_HMSED]>0)]
-        max_diff_solutions = max_diff_solutions[['scenario',col_HMSED,rank_HMSED]]
-        max_diff_solutions.to_csv(os.path.join(runs_path,
-                                               'top_'+str(number_of_max_diff_case) + 
-                                               '_maximally_diff_solutions_'+submetric+'.csv'),
-                                               index=False)
+
+        if ed_or_hmsed == 'HMSED':
+            max_diff_solutions = case_file.sort_values(by=rank_HMSED)
+            max_diff_solutions = max_diff_solutions.loc[(max_diff_solutions[rank_HMSED]<=number_of_max_diff_case) & 
+                                                        (max_diff_solutions[rank_HMSED]>0)]
+            max_diff_solutions = max_diff_solutions[['scenario',col_HMSED,rank_HMSED]]
+            max_diff_solutions.to_csv(os.path.join(runs_path,
+                                                'top_'+str(number_of_max_diff_case) + 
+                                                '_maximally_diff_solutions_'+submetric+'.csv'),
+                                                index=False)
+        elif ed_or_hmsed == 'ED':
+            if ('emission' in metric) | ('employment' in metric):
+                case_file.to_csv(os.path.join(dir,'csv',
+                                            'ED_'+metric +'.csv'),
+                                            index=False)
+            else:
+                case_file.to_csv(os.path.join(dir,'csv',
+                                            'ED_'+metric + 
+                                            '_'+submetric+'.csv'),
+                                            index=False)
         
         # Calculate Gini index 
-        if submetric == 'gentech':
-            continue
-        else:
-            case_file = gini_coefficient_cal(case_file, runs_path, submetric, file, year, col_gini)
+        if (metric == 'gen') | (metric == 'weighted_gen'):
+            submetric_gini = 'gentech'
+        
+        case_file = gini_coefficient_cal(case_file, runs_path, data, metric, submetric_gini, file, year, col_gini)
         # Identify most spatially diverse solutions
         spatially_diff_solutions = case_file.sort_values(by=col_gini)
         spatially_diff_solutions = spatially_diff_solutions.iloc[:number_of_max_diff_case]
@@ -125,10 +153,14 @@ def main():
 
 
         spatially_diff_solutions = spatially_diff_solutions[['scenario',col_gini]]
-        spatially_diff_solutions.to_csv(os.path.join(runs_path,
-                                                     'top_'+str(number_of_max_diff_case) + 
-                                                     '_spatially_diff_solutions_'+submetric+'.csv'),
-                                                     index=False)
+        if ('emission' in metric) | ('employment' in metric):
+                spatially_diff_solutions.to_csv(os.path.join(dir,'csv',
+                                                        'Gini_' +metric+'.csv'),
+                                                        index=False)
+        else:
+            spatially_diff_solutions.to_csv(os.path.join(dir,'csv',
+                                                        'Gini_' +metric+ '_' + submetric_gini+'.csv'),
+                                                        index=False)
 
         # Save all metrics
         case_file = case_file[['scenario',col_HMSED,rank_HMSED,col_gini]]
@@ -139,7 +171,6 @@ def main():
                         max_diff_solutions, spatially_diff_solutions)
         
 
-'''
 ######################################################################################################
 #%% FUNCTIONS ###
 def data_clean(runs_path,case_file,file,year,metric):
@@ -197,12 +228,14 @@ def data_clean(runs_path,case_file,file,year,metric):
 
     return data_scenario_base
         
-def euclidean_distance_calc(runs_path, case_file, optimal_case,
+def euclidean_distance_calc(runs_path, case_file, optimal_case, data_all, metric,
                             rv_cases, submetric, file, year, number_of_max_diff_case,
                             col_ED, rank_ED, col_HMSED, rank_HMSED, ed_or_hmsed):
-
-    output_path_optimal = os.path.join(runs_path,optimal_case,'outputs')
-    data_optimal = pd.read_csv(os.path.join(output_path_optimal,file)).rename(columns={'Value':optimal_case})
+    
+    if ('emission' in metric) | ('employment' in metric):
+        data_optimal = data_all[['r',optimal_case]]
+    else:
+        data_optimal = data_all[['tech','r',optimal_case]]
 
     case_file[col_ED] = 0
     case_file[rank_ED] = 0
@@ -212,29 +245,32 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
     data_rv = data_optimal
     for case in rv_cases:
         print(f"Calculate ED from optimal for {case}")
-        output_path_rv = os.path.join(runs_path,case,'outputs')
-          
-        data = pd.read_csv(os.path.join(output_path_rv,file)).rename(columns={'Value':case})
         
-        data_rv = data_rv.merge(data, on=['i','r','t'], how='outer')
-        data_rv = data_rv.fillna(0)
-        data_rv_sub = data_rv[data_rv['t']==year]
-        if submetric != 'gentech':
-            data_rv_sub = data_rv_sub[data_rv_sub['i'].str.contains(submetric)]
+        if ('emission' in metric) | ('employment' in metric):
+            data = data_all[['r',case]]
+            data_rv = data_rv.merge(data, on='r', how='outer')
+            data_rv = data_rv.fillna(0)
+        else:
+            data = data_all[['tech','r',case]]
+            data_rv = data_rv.merge(data, on=['tech','r'], how='outer')
+            data_rv = data_rv.fillna(0)
+
+            if submetric != 'gentech':
+                data_rv = data_rv[data_rv['tech'].str.contains(submetric)]
         
-        data_rv_sub = data_rv_sub.reset_index().drop(columns='index')
+        data_rv = data_rv.reset_index().drop(columns='index')
 
         # calculate euclidean distance (ED) to identify solution that 
         # is furthest away from cost-optimal
         # ED formula from https://doi.org/10.1016/j.energy.2017.03.043 
         sum_diff = 0
-        for i in list(range(len(data_rv_sub[case]))):
-            sum_diff += (data_rv_sub[case][i]-data_rv_sub[optimal_case][i])**2
+        for i in list(range(len(data_rv[case]))):
+            sum_diff += (data_rv[case][i]-data_rv[optimal_case][i])**2
         ed = sum_diff
         
         # another way
-        #data_rv_sub['distance'] = (data_rv_sub['Value']-data_rv_sub['Value_opt'])**2
-        #euclidean_dist = data_rv_sub['distance'].sum()
+        #data_rv['distance'] = (data_rv[case]-data_rv[optimal_case])**2
+        #euclidean_dist = data_rv['distance'].sum()
         #print(f"Case {case}'s distance from optimal: {euclidean_dist}")
         
         case_file.loc[case_file['scenario']==case,col_ED] = ed
@@ -263,7 +299,7 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
             inverse_sum_diff = 0
             for i in rv_cases_i:
                 for j in sel_cases_i:
-                    inverse_sum_diff += 1/sum((data_rv_sub[i]-data_rv_sub[j])**2)
+                    inverse_sum_diff += 1/sum((data_rv[i]-data_rv[j])**2)
                 inverse_sum_diff_i = inverse_sum_diff**(-1)
                 case_file.loc[case_file['scenario']==i,col_HMSED] = inverse_sum_diff_i 
             max_diff_case = case_file.loc[case_file['scenario'].isin(rv_cases_i)]
@@ -273,25 +309,27 @@ def euclidean_distance_calc(runs_path, case_file, optimal_case,
 
     return case_file
 
-def gini_coefficient_cal(case_file, runs_path, submetric, file, year, col_gini):
+def gini_coefficient_cal(case_file, runs_path, data_all, metric, submetric, file, year, col_gini):
 
     case_file[col_gini] = 0    
     
-    for case in case_file['scenario'].unique().tolist():
-        output_path_gi = os.path.join(runs_path,case,'outputs')    
-        data = pd.read_csv(os.path.join(output_path_gi,file))
-        data = data[data['t']==year]
-        data = data[data['i'].str.contains(submetric)]
-        data = data.drop(columns=['i','t'])
-        data = data.groupby(['r'], as_index=False).agg({'Value': 'sum'})
+    for case in case_file['scenario'].unique().tolist():        
+        if ('emission' in metric) | ('employment' in metric):
+            data = data_all[['r',case]]
+        else:    
+            data = data_all[['tech','r',case]]
+            if submetric != 'gentech':
+                data = data[data['tech'].str.contains(submetric)]
+            data = data.drop(columns='tech')
+            data = data.groupby(['r'], as_index=False).agg({case: 'sum'})
         
         # Calculate gini coefficient based on classical definition from
         # https://www.statsdirect.com/help/nonparametric_methods/gini.htm (first formula)
         # gini index = (sum(i,j) |x_i-x_j|)/(2*n^2*mean(x))
         sum_diff = 0
-        for i, xi in enumerate(data['Value'][:-1],1):
-            sum_diff += np.sum(np.abs(xi-data['Value'][i:]))
-        gini = sum_diff / (len(data['Value'])**2 * np.mean(data['Value']))
+        for i, xi in enumerate(data[case][:-1],1):
+            sum_diff += np.sum(np.abs(xi-data[case][i:]))
+        gini = sum_diff / (len(data[case])**2 * np.mean(data[case]))
     
         case_file.loc[case_file['scenario']==case,col_gini] = gini  
 
