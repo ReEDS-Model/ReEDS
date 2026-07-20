@@ -14,6 +14,7 @@ This page aggregates documentation from each folder README under the inputs dire
 - [inputs/dgen_model_inputs](#inputsdgen_model_inputs)
 - [inputs/disaggregation](#inputsdisaggregation)
 - [inputs/emission_constraints](#inputsemission_constraints)
+- [inputs/employment](#inputsemployment)
 - [inputs/financials](#inputsfinancials)
 - [inputs/fuelprices](#inputsfuelprices)
 - [inputs/geothermal](#inputsgeothermal)
@@ -90,6 +91,11 @@ This page aggregates documentation from each folder README under the inputs dire
 <a id='inputsemission_constraints'></a>
 
 ```{include} ../../inputs/emission_constraints/README.md
+```
+
+<a id='inputsemployment'></a>
+
+```{include} ../../inputs/employment/README.md
 ```
 
 <a id='inputsfinancials'></a>

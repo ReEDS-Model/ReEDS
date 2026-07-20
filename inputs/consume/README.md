@@ -19,7 +19,7 @@
 - `dollaryear.csv`: Dollar year for various Beyond VRE scenarios
 
 - `h2_demand_county_share.csv`: The fraction of national hydrogen demand in that year that corresponds to each county
-  - Demand estimates come from https://data.openei.org/submissions/5655
+  - Demand estimates come from [https://data.openei.org/submissions/5655](https://data.openei.org/submissions/5655)
   - 2021 demand shares correspond to the "Reference" scenario with light-duty vehicles / biofuels / methanol demand removed and 2050 shares correspond to the "Low Cost Electrolysis" scenario
 
 - `h2_exogenous_demand.csv`: Exogenous hydrogen demand by industries other than the power sector per year
@@ -28,4 +28,4 @@
 
 
 ### References- 
-- `REF-DAC-VALENTINE-2022`: J. Valentine and A. Zoelle, "Direct Air Capture Case Studies: Sorbent System," National Energy Technology Laboratory, Pittsburgh, PA, July 8, 2022. https://doi.org/10.2172/1879535
+- `REF-DAC-VALENTINE-2022`: J. Valentine and A. Zoelle, "Direct Air Capture Case Studies: Sorbent System," National Energy Technology Laboratory, Pittsburgh, PA, July 8, 2022. [https://doi.org/10.2172/1879535](https://doi.org/10.2172/1879535)

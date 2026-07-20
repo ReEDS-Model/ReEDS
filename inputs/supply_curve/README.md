@@ -26,7 +26,7 @@
 
 - `interconnection_offshore.h5`:
 
-- `PSH_supply_curves_capacity_*.csv`: Pumped storage hydropower supply curve capacity as used in 2025 Annual Technology Baseline. Citation: https://www.nlr.gov/gis/psh-supply-curves
+- `PSH_supply_curves_capacity_*.csv`: Pumped storage hydropower supply curve capacity as used in 2025 Annual Technology Baseline. Citation: [https://www.nlr.gov/gis/psh-supply-curves](https://www.nlr.gov/gis/psh-supply-curves)
   - `PSH_supply_curves_capacity_10hr_ref_apr2025.csv`: supply curve capacity assuming 10 hour duration and reference exclusions
   - `PSH_supply_curves_capacity_10hr_wEph_apr2025.csv`: supply curve capacity assuming 10 hour duration and allowing sites on ephemeral streams 
   - `PSH_supply_curves_capacity_10hr_wExist_apr2025.csv`: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs 
@@ -40,7 +40,7 @@
   - `PSH_supply_curves_capacity_8hr_wExist_apr2025.csv`: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs
   - `PSH_supply_curves_capacity_8hr_wExist_wEph_apr2025.csv`: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams
 
-- `PSH_supply_curves_cost_*.csv`: Pumped storage hydropower supply curve cost as used in 2025 Annual Technology Baseline. Citation: https://www.nlr.gov/gis/psh-supply-curves
+- `PSH_supply_curves_cost_*.csv`: Pumped storage hydropower supply curve cost as used in 2025 Annual Technology Baseline. Citation: [https://www.nlr.gov/gis/psh-supply-curves](https://www.nlr.gov/gis/psh-supply-curves)
   - `PSH_supply_curves_cost_10hr_ref_apr2025.csv`: assuming 10 hour duration and reference exclusions 
   - `PSH_supply_curves_cost_10hr_wEph_apr2025.csv`: assuming 10 hour duration and allowing sites on ephemeral streams
   - `PSH_supply_curves_cost_10hr_wExist_apr2025.csv`: assuming 10 hour duration and allowing sites using existing reservoirs
@@ -62,17 +62,17 @@
 
 - `supplycurve_egs-reference.csv`:
 
-- `supplycurve_upv-*.csv:`: UPV supply curve from reV. Capacity numbers are in MW_DC and cost numbers are in $/MW_AC. Citation: https://docs.nlr.gov/docs/fy25osti/91900.pdf
+- `supplycurve_upv-*.csv:`: UPV supply curve from reV. Capacity numbers are in MW_DC and cost numbers are in $/MW_AC. Citation: [https://docs.nlr.gov/docs/fy25osti/91900.pdf](https://docs.nlr.gov/docs/fy25osti/91900.pdf)
   - `supplycurve_upv-limited.csv`: limited siting scenario
   - `supplycurve_upv-open.csv`: open siting scenario
   - `supplycurve_upv-reference.csv`: reference siting scenario
 
-- `supplycurve_wind-ofs-*.csv`: Offshore wind supply curve from reV. Citation: https://docs.nlr.gov/docs/fy25osti/91900.pdf
+- `supplycurve_wind-ofs-*.csv`: Offshore wind supply curve from reV. Citation: [https://docs.nlr.gov/docs/fy25osti/91900.pdf](https://docs.nlr.gov/docs/fy25osti/91900.pdf)
   - `supplycurve_wind-ofs-limited.csv`: limited siting scenario
   - `supplycurve_wind-ofs-open.csv`: open siting scenario 
   - `supplycurve_wind-ofs-reference.csv`: reference siting scenario
 
-- `supplycurve_wind-ons-*.csv`: Land-based wind supply curve. Citation: https://docs.nlr.gov/docs/fy25osti/91900.pdf
+- `supplycurve_wind-ons-*.csv`: Land-based wind supply curve. Citation: [https://docs.nlr.gov/docs/fy25osti/91900.pdf](https://docs.nlr.gov/docs/fy25osti/91900.pdf)
   - `supplycurve_wind-ons-limited.csv`: limited siting scenario
   - `supplycurve_wind-ons-open.csv`: open siting scenario
   - `supplycurve_wind-ons-reference.csv`: reference siting scenario

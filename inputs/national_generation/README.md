@@ -26,7 +26,7 @@ The BSERs are listed below:
 
 The second compliance mechanism, which is slightly more lenient, is a emissions rate-based mechanism.
 This is enforced at the state level.
-If a state opts into this compliance mechanism, the emisisons rate (tons CO<sub>2</sub>/MWh) of their coal fleet must be less than or equal to the emissions rate of a 90% coal-CCS plant.
+If a state opts into this compliance mechanism, the emissions rate (tons CO<sub>2</sub>/MWh) of their coal fleet must be less than or equal to the emissions rate of a 90% coal-CCS plant.
 This in theory enables some unabated coal plants to remain online after 2032, even though they won't be able to generate much.
 This is only possible if that state also has coal-CCS plants with high capture rates that stay online and generate, to average out the emissions rate to below the threshold.
 

@@ -17,7 +17,7 @@
 
 - `dollaryear.csv`: Dollar year mapping for each fuel price scenario
 
-- `h2-combustion_*.csv`: price of hydrogren for combustion technologies (h2-ct and cc) at $X/MMBtu for all years
+- `h2-combustion_*.csv`: price of hydrogen for combustion technologies (h2-ct and cc) at $X/MMBtu for all years
   - `h2-combustion_10.csv`: $10/MMBtu
   - `h2-combustion_30.csv`: $30/MMBtu
   - `h2-combustion_reference.csv`: $20/MMBtu
