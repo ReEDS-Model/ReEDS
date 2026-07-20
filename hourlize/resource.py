@@ -324,7 +324,7 @@ def add_ilr(tech, df, reeds_path, casename):
 
 def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize_path, outpath,
                                     reg_map_file, min_cap, capacity_col,
-                                    existing_sites, state_abbrev, start_year, casename,
+                                    state_abbrev, start_year, casename,
                                     filter_cols={}, profile_id_col="sc_point_gid",
                                     offshore_meshed=False):
     """processes reV supply curve file; output is a dataframe with a row for each supply curve point
@@ -345,8 +345,6 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
         capacity threshold for filtering out sites
     capacity_col
         column in supply curve file to use for 'capacity'
-    existing_sites
-        path to existing sites file
     state_abbrev
         path to state abbreviation file
     start_year
@@ -405,95 +403,6 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
     county2zone = pd.read_csv(reg_map_file, dtype={'FIPS':str}, index_col='FIPS').r
     ## Offshore zones have ba in FIPS column, so fall back to FIPS value if not in county2zone
     df['ba'] = df.FIPS.map(lambda x: county2zone.get(x,x))
-
-    ## process existing sites
-    if existing_sites is not None:
-        print('Assigning existing sites...')
-        #Read in existing sites and filter
-        df_exist = pd.read_csv(existing_sites, low_memory=False)
-        ## Assign BA based on county
-        df_exist['reeds_ba'] = df_exist.FIPS.str.strip('p').map(county2zone)
-        assert df_exist.reeds_ba.isnull().sum() == 0, f'Unmatched counties in {existing_sites}'
-        ## If meshed, assign existing offshore wind to offshore zones
-        if (tech == 'wind-ofs') and (offshore_meshed):
-            df_exist = reeds.spatial.assign_to_offshore_zones(df_exist)
-
-        df_exist = df_exist[
-            ['tech','TSTATE','reeds_ba','Unique ID',
-            'T_LONG','T_LAT','summer_power_capacity_MW','StartYear','RetireYear']
-        ].rename(columns={
-            'TSTATE':'STATE', 'T_LAT':'LAT', 'T_LONG':'LONG', 'summer_power_capacity_MW':'cap', 'reeds_ba':'pca',
-            'Unique ID':'UID', 'StartYear':'Commercial.Online.Year',
-        }).copy()
-        df_exist = df_exist[(df_exist['tech'].str.lower().str.contains(tech.lower())) & (df_exist['RetireYear'] > start_year)].reset_index(drop=True)
-        if (df_exist['LONG'] > 0).any():
-            err = (
-                f'Some longitudes in {existing_sites} are positive; '
-                'for the contiguous US they should all be negative'
-            )
-            raise ValueError(err)
-        df_exist.sort_values('cap', ascending=False, inplace=True)
-
-        #Map the state codes of df_exist to the state names in df
-        df_cp = df.copy()
-        df_st = pd.read_csv(state_abbrev, low_memory=False)
-        dict_st = dict(zip(df_st['ST'], df_st['State']))
-        df_exist['STATE'] = df_exist['STATE'].map(dict_st)
-        df_cp = df_cp[[profile_id_col, 'STATE','latitude','longitude','capacity']].copy()
-        df_cp['existing_capacity'] = 0.0
-        df_cp['existing_uid'] = 0
-        df_cp['online_year'] = 0
-        df_cp['retire_year'] = 0
-        df_cp_out = pd.DataFrame()
-
-        #Restrict matching to within the same state
-        print("{:<18} {:>} MW".format("Total", round(df_exist.cap.sum())))
-        print("{:<18} {:>}".format("-------", "-------"))
-        for st in df_exist['STATE'].unique():
-            df_exist_st = df_exist[df_exist['STATE'] == st].copy()
-            print("{:<18} {:>} MW".format(st, round(df_exist_st.cap.sum())))
-            df_cp_st = df_cp[df_cp['STATE'] == st].copy()
-            for i_exist, r_exist in df_exist_st.iterrows():
-                #Current way to deal with lats and longs that don't exist
-                if r_exist['LONG'] == 0:
-                    continue
-                #Assume each lat is ~69 miles and each long is ~53 miles
-                # TODO FIXME: If this calculation matters, use meters from equal-area projection
-                # (fixed lat/lon-to-miles is inaccurate over areas as large as the USA)
-                df_cp_st['mi_sq'] =  ((df_cp_st['latitude'] - r_exist['LAT'])*69)**2 + ((df_cp_st['longitude'] - r_exist['LONG'])*53)**2
-                #Sort by closest
-                df_cp_st.sort_values(['mi_sq'], inplace=True)
-                #Step through the available sites and fill up the closest ones until we are done with this existing capacity
-                exist_cap_remain = r_exist['cap']
-                for i_avail, r_avail in df_cp_st.iterrows():
-                    avail_cap = df_cp_st.at[i_avail, 'capacity']
-                    # TODO: handle missing UIDs
-                    try:
-                        df_cp_st.at[i_avail, 'existing_uid'] = r_exist['UID']
-                    except Exception:
-                        df_cp_st.at[i_avail, 'existing_uid'] = 0
-                    df_cp_st.at[i_avail, 'online_year'] = r_exist['Commercial.Online.Year']
-                    df_cp_st.at[i_avail, 'retire_year'] = r_exist['RetireYear']
-                    if exist_cap_remain <= avail_cap:
-                        df_cp_st.at[i_avail, 'existing_capacity'] = exist_cap_remain
-                        exist_cap_remain = 0
-                        break
-                    else:
-                        df_cp_st.at[i_avail, 'existing_capacity'] = avail_cap
-                        exist_cap_remain = exist_cap_remain - avail_cap
-                if exist_cap_remain > 0:
-                    print('WARNING: Existing site shortfall: ' + str(exist_cap_remain))
-                #Build output and take the available sites with existing capacity out of consideration for the next exisiting site
-                df_cp_out_add = df_cp_st[df_cp_st['existing_capacity'] > 0].copy()
-                df_cp_out = pd.concat([df_cp_out, df_cp_out_add], sort=False).reset_index(drop=True)
-                df_cp_st = df_cp_st[df_cp_st['existing_capacity'] == 0].copy()
-        df_cp_out['exist_mi_diff'] = df_cp_out['mi_sq']**0.5
-        df_cp_out = df_cp_out[[profile_id_col, 'existing_capacity', 'existing_uid', 'online_year', 'retire_year', 'exist_mi_diff']].copy()
-        df = pd.merge(left=df, right=df_cp_out, how='left', on=profile_id_col, sort=False)
-        df[['existing_capacity','existing_uid','online_year','retire_year','exist_mi_diff']] = df[['existing_capacity','existing_uid','online_year','retire_year','exist_mi_diff']].fillna(0)
-        df[['existing_uid','online_year','retire_year']] = df[['existing_uid','online_year','retire_year']].astype(int)
-    else:
-        df['existing_capacity'] = 0.0
 
     if min_cap > 0:
         #Remove sites with less than minimum capacity threshold, but keep sites that have existing capacity
@@ -758,7 +667,6 @@ def convert_upv_ac_profiles_to_dc(df_prof, df_sc):
 
 def save_sc_outputs(
     df_sc,
-    existing_sites,
     start_year,
     outpath,
     tech,
@@ -940,7 +848,6 @@ if __name__== '__main__':
         reg_map_file=cf.reg_map_file,
         min_cap=cf.min_cap,
         capacity_col=cf.capacity_col,
-        existing_sites=cf.existing_sites,
         state_abbrev=cf.state_abbrev,
         start_year=cf.start_year,
         casename=cf.casename,
@@ -960,7 +867,6 @@ if __name__== '__main__':
     #%% Save the supply curve
     df_sc_out = save_sc_outputs(
         df_sc=df_sc,
-        existing_sites=cf.existing_sites,
         start_year=cf.start_year,
         outpath=cf.outpath,
         tech=cf.tech,
