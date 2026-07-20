@@ -41,7 +41,7 @@ def is_required_file(runfiles_row, sw):
     return is_required
 
 
-def read_runfiles(reeds_path, inputs_case, sw, agglevel_variables):
+def read_runfiles(reeds_path, sw):
     """
     Read runfiles.csv and return the runfiles dataframe
     Identify files that have a region index versus those that do not.
@@ -64,50 +64,20 @@ def read_runfiles(reeds_path, inputs_case, sw, agglevel_variables):
         args=(sw,),
     )
 
-    # If a filepath isn't specified, that means it is already in the
-    # inputs_case folder, otherwise use the filepath
-    # We leave the 'lvl' portion of 'full_filepath' unformatted because
-    # we may need to read multiple 'lvl' variants of the file at once later
+    # Determine existence of each file
     runfiles['full_filepath'] = runfiles.apply(
         axis=1,
-        func=lambda row: os.path.join(inputs_case, row['filename'])
-        if pd.isna(row['filepath'])
-        else os.path.join(reeds_path, row['filepath'].format(**{**sw, **{'lvl': '{lvl}'}}))
+        func=lambda row: os.path.join(reeds_path, row['filepath'].format(**sw))
+    )
+    runfiles['file_exists'] = (
+        runfiles['full_filepath'].apply(lambda x: os.path.exists(x))
     )
 
-    # Create a copy of runfiles that specifies the 'lvl' that applies to each file
-    # (only used to determine missing files, the original runfiles is used later).
-    # In general, the 'lvl' corresponds to GSw_RegionResolution.
-    # For mixed resolution, each 'lvl'-indexed file is split into two rows -
-    # one for the BA-level file and the other for the county-level file.
-    runfiles_with_lvls = runfiles.assign(lvl='')
-    lvl_indexed_file_mask = (
-        (runfiles_with_lvls.filepath.notna())
-        & (runfiles_with_lvls.filepath.str.contains('{lvl}'))
-    )
-    if agglevel_variables['lvl'] == 'mult':
-        runfiles_with_lvls.loc[lvl_indexed_file_mask, 'lvl'] = 'ba,county'
-        runfiles_with_lvls['lvl'] = runfiles_with_lvls['lvl'].str.split(',')
-        runfiles_with_lvls = runfiles_with_lvls.explode('lvl')
-    else:
-        runfiles_with_lvls.loc[lvl_indexed_file_mask, 'lvl'] = agglevel_variables['lvl']
-
-    # Determine existence of each file
-    runfiles_with_lvls['full_filepath'] = runfiles_with_lvls.apply(
-        axis=1,
-        func=lambda x: x['full_filepath'].format(**{'lvl': x['lvl']})
-    )
-    runfiles_with_lvls['file_exists'] = (
-        runfiles_with_lvls['full_filepath'].apply(lambda x: os.path.exists(x))
-    )
-
-    # Raise an error if any of the required files with specified filepaths are missing
-    missing_required_files = list(
-        runfiles_with_lvls.loc[(
-            runfiles_with_lvls['file_is_required']
-            & ~runfiles_with_lvls['file_exists']
-            & ~runfiles_with_lvls['filepath'].isna()
-        )]['filepath']
+    # Raise an error if any of the required files are missing
+    missing_required_files = (
+        runfiles.loc[runfiles['file_is_required'] & ~runfiles['file_exists']]
+        ['filepath']
+        .tolist()
     )
     if len(missing_required_files) > 0:
         raise FileNotFoundError(
@@ -115,15 +85,6 @@ def read_runfiles(reeds_path, inputs_case, sw, agglevel_variables):
             'to the inputs directory or update runfiles.csv to specify optionality:\n{}\n'
             .format('\n'.join(missing_required_files))
         )
-
-    # Add file existence information to runfiles (for lvl-indexed files, the file must exist
-    # at all resolutions required for the run).
-    # We have to add this to runfiles rather than using runfiles_with_lvls because later
-    # sections require the 'lvl' placeholder in the filename to be unformatted and the file
-    # to be represented by one row rather than the multiple split up rows in runfiles_with_lvls.
-    runfiles['file_exists'] = (
-        runfiles['filename'].map(runfiles_with_lvls.groupby('filename')['file_exists'].min())
-    )
 
     # Non-region files that need copied either do not have an entry in region_col
     # or have 'ignore' as the entry. They also have a filepath specified.
@@ -193,20 +154,24 @@ def get_regions_and_agglevel(
     """
     sw = reeds.io.get_switches(inputs_case)
 
-    ## TEMPORARY 20260402: Load the full regions list
-    ## Use the line below once we make the switch
-    # hierarchy = reeds.io.assemble_hierarchy(inputs_case)
-    hierarchy = pd.read_csv(
-        Path(reeds.io.reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'hierarchy_from134.csv')
-    )
+    hierarchy = reeds.io.assemble_hierarchy(inputs_case, extra=False)
     hierarchy['offshore'] = 0
-    # Append offshore zones if using
+    # Label offshore zones if using
     if int(sw.GSw_OffshoreZones):
-        hierarchy_offshore = reeds.io.assemble_hierarchy(
-            fpath=os.path.join(reeds_path, 'inputs', 'zones', 'hierarchy_offshore.csv'),
-            extra=False,
-        ).assign(offshore=1)
-        hierarchy = pd.concat([hierarchy, hierarchy_offshore], ignore_index=True)
+        offshore_zones = (
+            reeds.io.assemble_hierarchy(
+                fpath=os.path.join(
+                    reeds_path,
+                    'inputs',
+                    'zones',
+                    'hierarchy_offshore.csv'
+                ),
+                extra=False,
+            )
+            ['ba']
+            .tolist()
+        )
+        hierarchy.loc[hierarchy.r.isin(offshore_zones), 'offshore'] = 1
 
     # Save the original hierarchy file: used in recf.py and hourly_*.py scripts
     if save_regions_and_agglevel:
@@ -216,9 +181,8 @@ def get_regions_and_agglevel(
             )
 
     # Add a row for each county
-    ## TEMPORARY 20260402: Use the old 134-zone county2zone until the aggregation approach is updated
     county2zone = (
-        reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
+        reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
         .rename(columns={'r':'ba'})
     )
     county2zone['county'] = 'p' + county2zone.FIPS
@@ -228,7 +192,19 @@ def get_regions_and_agglevel(
     )
 
     # Add county info to hierarchy
-    hierarchy = hierarchy.merge(county2zone.drop(columns=['FIPS','state']), on='ba', how='outer')
+    hierarchy = hierarchy.merge(
+        county2zone.drop(columns=['FIPS','state']),
+        left_on='r',
+        right_on='ba',
+        how='outer'
+    )
+
+    # Add legacy zone (z134) info to hierarchy
+    # This is needed because some inputs still have data at z134 resolution,
+    # so we need to capture these legacy zones when subsetting to valid regions
+    county2zone_z134 = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=True)
+    county2zone_z134.index = 'p' + county2zone_z134.index
+    hierarchy['legacy_ba'] = hierarchy['county'].map(county2zone_z134)
 
     # Subset hierarchy for the region of interest (based on the GSw_Region switch)
     # Parse the GSw_Region switch. If it includes a '/' character, it has the format
@@ -247,43 +223,8 @@ def get_regions_and_agglevel(
 
         hier_sub = pd.concat([hier_sub, hier_sub_partial])
 
-    # Read region resolution switch to determine agglevel
-    agglevel = sw['GSw_RegionResolution'].lower()
-
-    # Check if desired spatial resolution is mixed
-    if agglevel == 'mixed':
-        #Set value in resolution column of hier_sub to match value assigned in modeled_regions.csv
-        region_def = pd.read_csv(
-            os.path.join(reeds_path,'inputs','userinput','modeled_regions.csv')
-        )[['r', sw.GSw_ZoneSet]]
-
-        res_map = region_def.set_index('r').squeeze(1).to_dict()
-        hier_sub['resolution'] = hier_sub['ba'].map(res_map)
-    else:
-        hier_sub['resolution'] = agglevel
-
-
-    # Write out all unique aggregation levels present in the hierarchy resolution column
-    agglevels = hier_sub['resolution'].unique()
-
-    # Write agglevel
-    if save_regions_and_agglevel:
-        pd.DataFrame(agglevels, columns=['agglevels']).to_csv(
-            os.path.join(inputs_case, 'agglevels.csv'), index=False)
-
-
-    # Create an r column at the front of the dataframe and populate it with the
-    # county-level regions (overwritten if needed)
-    hier_sub.insert(0,'r',hier_sub['county'])
-
-    # Overwrite the regions with the ba, state, or aggreg values as specififed
-    for level in ['ba','aggreg']:
-        hier_sub.loc[hier_sub['resolution'] == level, 'r'] = (
-            hier_sub.loc[hier_sub['resolution'] == level, level])
-
     # Write out mappings of r and ba to all counties
     r_county = hier_sub[['r','county']].dropna(subset='county')
-    ba_county = hier_sub[['ba','county']]
 
     # Rewrite county2zone for this case
     county2zone_agg = county2zone.merge(r_county, on='county')
@@ -296,22 +237,9 @@ def get_regions_and_agglevel(
         r_county.to_csv(
             os.path.join(inputs_case, 'r_county.csv'), index=False)
 
-        # Write out a mapping of r to ba regions
-        hier_sub[['r','ba']].drop_duplicates().to_csv(
-            os.path.join(inputs_case, 'r_ba.csv'), index=False)
         # Write out mapping of r to census divisions
         hier_sub[['r','cendiv']].drop_duplicates().to_csv(
             os.path.join(inputs_case, 'r_cendiv.csv'), index=False)
-
-        # Write out mapping of rb to aggreg (for writesupplycurves.py)
-        hier_sub[['ba','aggreg']].drop_duplicates().to_csv(
-            os.path.join(inputs_case, 'rb_aggreg.csv'), index=False)
-
-        # Write out val_county and val_ba before collapsing to unique regions
-        hier_sub['county'].dropna().to_csv(
-            os.path.join(inputs_case, 'county.csv'), header=False, index=False)
-        hier_sub['ba'].drop_duplicates().to_csv(
-            os.path.join(inputs_case, 'val_ba.csv'), header=False, index=False)
 
     # Find all the unique elements that might define a region
     val_r_all = []
@@ -325,12 +253,8 @@ def get_regions_and_agglevel(
         pd.Series(val_r_all).to_csv(
             os.path.join(inputs_case, 'val_r_all.csv'), header=False, index=False)
 
-    # Rename columns and save as hierarchy_with_res.csv for use in agglevel_variables function
-    hier_sub.drop(columns='offshore', errors='ignore').rename(columns={'r':'*r'}).to_csv(
-        os.path.join(inputs_case, 'hierarchy_with_res.csv'), index=False)
-
     # Drop county name and resolution columns
-    hier_sub = hier_sub.drop(['county_name','resolution'],axis=1)
+    hier_sub = hier_sub.drop(['county_name'],axis=1)
 
 
     # Collapse to only unique regions
@@ -341,18 +265,8 @@ def get_regions_and_agglevel(
     hier_sub['numeric_value'] = hier_sub['r'].str.extract('(\d+)').astype(float)
     hier_sub = hier_sub.sort_values(by='numeric_value').drop('numeric_value', axis=1)
 
-    # Output the itlgrp files for mixed and county resolution
-
-    if sw.GSw_RegionResolution == 'aggreg':
-        hier_sub['itlgrp'] = hier_sub['aggreg']
-    else:
-        hier_sub['itlgrp'] = hier_sub['ba']
-
-    if sw.GSw_RegionResolution == 'mixed':
-        mod_reg = pd.read_csv(
-            os.path.join(reeds_path,'inputs','userinput','modeled_regions.csv'))
-        if 'aggreg' in mod_reg[sw.GSw_ZoneSet].tolist():
-            hier_sub['itlgrp'] = hier_sub['aggreg']
+    ### TEMPORARY 20260402: For now just assign 'itlgrp' hierarchy level to 'r'
+    hier_sub['itlgrp'] = hier_sub['r']
     hier_sub[['r','itlgrp']].rename(columns={'r':'*r'}).to_csv(
         os.path.join(inputs_case, 'hierarchy_itlgrp.csv'), index=False)
 
@@ -374,7 +288,6 @@ def get_regions_and_agglevel(
     # Note the conversion to a pd Series is necessary to leverage the to_csv function
     if save_regions_and_agglevel:
         comments = {
-            'aggreg': 'aggregated region',
             'cendiv': 'census division',
             'country': 'nation',
             'h2ptcreg': 'H2 production tax credit region',
@@ -384,6 +297,7 @@ def get_regions_and_agglevel(
             'transgrp': 'sub-FERC-1000 region',
             'transreg': 'Transmission Planning Regions from FERC Order 1000',
             'usda_region': 'biomass supply curve region',
+            'gasreg': 'gas price region (for applying daily temperature-based price adjustments)',
         }
         for level, comment in comments.items():
             df = pd.Series(hier_sub[level].unique())
@@ -403,7 +317,7 @@ def get_regions_and_agglevel(
         (
             hier_sub
             .rename(columns={'r':'*r'})
-            .drop(columns=['aggreg','offshore'], errors='ignore')
+            .drop(columns=['legacy_ba', 'offshore'], errors='ignore')
         ).to_csv(os.path.join(inputs_case, 'hierarchy.csv'), index=False)
 
         # Write offshore zones
@@ -430,7 +344,6 @@ def get_regions_and_agglevel(
         "val_r_all": val_r_all,
         "val_st": val_st,
         "r_county": r_county,
-        "ba_county": ba_county,
         "levels": levels
     }
 
@@ -507,7 +420,6 @@ def read_banned_tech_file(full_path, filepath, inputs_case, r_county):
 def subset_to_valid_regions(
     sw,
     region_file_entry,
-    agglevel_variables,
     regions_and_agglevel,
     inputs_case=None,
     agg=True,
@@ -531,145 +443,55 @@ def subset_to_valid_regions(
     region_col = region_file_entry['region_col']
     fix_cols = [i for i in region_file_entry['fix_cols'].split(',') if i != '']
 
-    sc_point_gid_index = False
-    if (
-        filename.startswith('supplycurve')
-        or filename.startswith('exog_cap')
-        or filename.startswith('prescribed_builds')
-    ):
-        sc_point_gid_index = True
-
-    # When running at mixed resolution we need to copy both ba and county resolution data
-    if (agglevel_variables['lvl'] == 'mult') and ('lvl' in filepath) and (not sc_point_gid_index):
-        full_path_ba = full_path.replace('{lvl}', 'ba')
-        full_path_county = full_path.replace('{lvl}', 'county')
-        match filetype_in:
-            case 'h5':
-                df_ba = reeds.io.read_file(full_path_ba, parse_timestamps=True)
-                df_county = reeds.io.read_file(full_path_county, parse_timestamps=True)
-            case 'csv':
-                df_ba = pd.read_csv(
-                    full_path_ba,
-                    dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#',
-                )
-                df_county = pd.read_csv(
-                    full_path_county,
-                    dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#',
-                )
-            case _:
-                raise TypeError(f'filetype for {full_path} is not .csv or .h5')
-
-    # Single resolution procedure
+    # Replace '{switchnames}' in full_path with corresponding switch values
+    full_path = full_path.format(**sw)
+    ## Filename conditions
+    if filename.startswith('supplycurve'):
+        df = reeds.io.assemble_supplycurve(
+            full_path,
+            case=os.path.dirname(os.path.normpath(inputs_case)),
+            agg=agg,
+        ).reset_index()
+    elif filename.startswith('exog_cap'):
+        df = reeds.io.assemble_exog_cap(
+            full_path,
+            case=os.path.dirname(os.path.normpath(inputs_case)),
+        )
+    elif filename.startswith('prescribed_builds'):
+        df = reeds.io.assemble_prescribed_builds(
+            full_path,
+            case=os.path.dirname(os.path.normpath(inputs_case)),
+        )
+    elif filename == 'techs_banned.csv':
+        df, nuclear_ban_regions = read_banned_tech_file(
+            full_path,
+            filepath,
+            inputs_case,
+            r_county=regions_and_agglevel['r_county']
+        )
+        nuclear_ban_regions.to_csv(
+            os.path.join(inputs_case,'nuclear_ba_ban_list.csv'),
+            index=False
+        )
+    ## Filetype conditions
+    elif filetype_in == 'h5':
+        df = reeds.io.read_file(full_path, parse_timestamps=True)
+    elif filetype_in == 'csv':
+        df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
     else:
-        # Replace '{switchnames}' in full_path with corresponding switch values
-        full_path = full_path.format(**{**sw, **{'lvl':agglevel_variables['lvl']}})
-        ## Filename conditions
-        if filename.startswith('supplycurve'):
-            df = reeds.io.assemble_supplycurve(
-                full_path,
-                case=os.path.dirname(os.path.normpath(inputs_case)),
-                agg=agg,
-            ).reset_index()
-        elif filename.startswith('exog_cap'):
-            df = reeds.io.assemble_exog_cap(
-                full_path,
-                case=os.path.dirname(os.path.normpath(inputs_case)),
-            )
-        elif filename.startswith('prescribed_builds'):
-            df = reeds.io.assemble_prescribed_builds(
-                full_path,
-                case=os.path.dirname(os.path.normpath(inputs_case)),
-            )
-        elif filename == 'techs_banned.csv':
-            df, nuclear_ban_regions = read_banned_tech_file(
-                full_path,
-                filepath,
-                inputs_case,
-                r_county=regions_and_agglevel['r_county']
-            )
-            nuclear_ban_regions.to_csv(
-                os.path.join(inputs_case,'nuclear_ba_ban_list.csv'),
-                index=False
-            )
-        ## Filetype conditions
-        elif filetype_in == 'h5':
-            df = reeds.io.read_file(full_path, parse_timestamps=True)
-        elif filetype_in == 'csv':
-            df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
-        else:
-            raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
+        raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
 
-    # ---- Filter data to valid regions ----
-    # If running at mixed resolution we need to remove BA level data for regions that are being solved at county resolution
-    if (agglevel_variables['lvl'] == 'mult') and ('lvl' in filepath) and (not sc_point_gid_index):
-        hier = pd.read_csv(os.path.join(inputs_case,'hierarchy_with_res.csv')).rename(columns = {'*r':'r'})
-        # Filter function parameters to only include BA resolution regions
-        valid_regions_ba = {level: list(hier[hier['r']
-                                .isin(agglevel_variables['ba_regions'])][level].unique()) for level in levels}
-        val_st_ba = valid_regions_ba['st']
-        val_r_all_ba = []
-        for value in valid_regions_ba.values():
-            val_r_all_ba.extend(value)
-        val_r_all_ba = list(set(val_r_all_ba))
-        # Add BA regions associated with states and aggregs being run at BA resolution
-        val_r_all_ba.extend(x for x in agglevel_variables['ba_regions']if x not in val_r_all_ba)
-        df_ba = filter_data(
-            df_ba,
-            region_col,
-            fix_cols,levels,
-            val_r_all=val_r_all_ba,
-            valid_regions=valid_regions_ba,
-            val_st=val_st_ba,
-            filename=filename
-        )
-        # Filter function parameters to only include county resolution regions
-        valid_regions_county = {level: (hier[hier['r']
-                                .isin(agglevel_variables['county_regions'])][level].unique()) for level in levels}
-        val_st_county = valid_regions_county['st']
-        val_r_all_county = []
-        for value in valid_regions_county.values():
-            val_r_all_county.extend(value)
-        val_r_all_county = list(dict.fromkeys(val_r_all_county))
-
-        df_county = filter_data(
-            df_county,
-            region_col,
-            fix_cols,
-            levels,
-            val_r_all=val_r_all_county,
-            valid_regions=valid_regions_county,
-            val_st=val_st_county,
-            filename=filename
-        )
-
-        # Combine BA and county data
-        # The filter data function returns a dataframe with NAN values to prevent empty H5 files
-        # If either the BA data or county data are populated we can drop the nan data
-        if df_county.isna().all().all() and not df_ba.isna().all().all():
-            df = df_ba
-        elif not df_county.isna().all().all() and df_ba.isna().all().all():
-            df = df_county
-        else:
-            # Combine BA and county data
-            if region_file_entry['wide'] == 1 :
-                df = pd.concat([df_ba,df_county],axis =1)
-            else:
-                df = pd.concat([df_ba,df_county])
-
-    # Single resolution procedure
-    # Or procedure for input data that exist at single resolution and
-    # are aggregated/disaggregated later
-    else:
-        df = filter_data(
-            df,
-            region_col,
-            fix_cols,
-            levels,
-            val_r_all,
-            valid_regions,
-            val_st,
-            filename=filename
-        )
+    # Filter data to valid regions
+    df = filter_data(
+        df,
+        region_col,
+        fix_cols,
+        levels,
+        val_r_all,
+        valid_regions,
+        val_st,
+        filename=filename
+    )
 
     return df
 
@@ -947,31 +769,28 @@ def write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglev
             )
 
     
-def calculate_county_fractions(df, county2zone):
+def calculate_county_fractions(df, county2zone_with_legacy_bas):
     """
     Calculates the values associated with each county as a percentage
-    of the total values for the county's state, BA, and model region
-    (where "BA" means a zone from the set of default 134 zones and 
-    "model region" means a zone from the set of zones specific to this run).
-    Note the calculation of the county-to-BA fractions will eventually
+    of the total values for the county's state, zone, and legacy BA
+    (where "zone" means a region from the zone set corresponding to
+    the current run and "legacy BA" means a region from the z134 zone set).
+    Note the calculation of the county-to-legacy BA fractions will eventually
     be deprecated once the 134-zone structure is removed from all spatial
     inputs (see https://github.com/ReEDS-Model/ReEDS/issues/16).
-    The provided dataframe must have columns 'FIPS' and 'value'.
+
+    The provided dataframe "df" must have columns 'FIPS' and 'value'.
+    The provided dataframe "county2zone_with_legacy_bas" must have columns
+    'FIPS', 'state', 'r', and 'legacy_ba'.
     """
     required_columns = ['FIPS', 'value']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if len(missing_columns) > 0:
         raise KeyError(f"Provided dataframe is missing required columns {missing_columns}")
 
-    df = (
-        df.merge(
-            county2zone.drop(columns='FIPS')
-            .rename(columns={'county': 'FIPS'})
-        )
-        .rename(columns={'ba': 'PCA_REG'})
-    )
+    df = df.merge(county2zone_with_legacy_bas)
     df['fracdata'] = (
-        df.groupby('PCA_REG')
+        df.groupby('legacy_ba')
         ['value']
         .transform(lambda x: x / x.sum())
     )
@@ -984,7 +803,7 @@ def calculate_county_fractions(df, county2zone):
 
     df = (
         df.dropna(subset='r')
-        [['PCA_REG', 'FIPS', 'fracdata', 'r', 'state', 'r_frac', 'state_frac']]
+        [['legacy_ba', 'FIPS', 'fracdata', 'r', 'state', 'r_frac', 'state_frac']]
     )
 
     return df
@@ -993,19 +812,22 @@ def write_disagg_data_files(runfiles, inputs_case):
     """
     Write files that will be used for disaggregation.
     """
-    # Get the county2zone file specific to this run (a mapping from counties
-    # to model regions) and the original county2zone file (including all
-    # counties) and combine them. The former is needed to calculate model
-    # region-to-county fractions, and the latter is needed to calculate
-    # state-to-county and BA-to-county fractions.
-    county_r_map = reeds.io.get_county2zone(os.path.dirname(inputs_case))
-    ## TEMPORARY 20260402: Use the old 134-zone county2zone until the aggregation approach is updated
-    county2zone = (
+    # Get the county2zone file for the z134 zone set and append the zones
+    # corresponding to this run. The z134 file is needed to calculate
+    # state-to-county fractions (since it includes all counties in the CONUS)
+    # and legacy BA-to-county fractions (which are needed to disaggregate
+    # inputs that are still at the z134 resolution).
+    county2zone_with_legacy_bas = (
         reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
-        .rename(columns={'r':'ba'})
+        .rename(columns={'r': 'legacy_ba'})
     )
-    county2zone['county'] = 'p' + county2zone['FIPS'].astype(str).str.zfill(5)
-    county2zone['r'] = county2zone['FIPS'].map(county_r_map)
+    county_r_map = reeds.io.get_county2zone(os.path.dirname(inputs_case))
+    county2zone_with_legacy_bas['r'] = (
+        county2zone_with_legacy_bas['FIPS'].map(county_r_map)
+    )
+    county2zone_with_legacy_bas['FIPS'] = (
+        'p' + county2zone_with_legacy_bas['FIPS']
+    )
 
     filename_filepath_map = runfiles.set_index('filename')['full_filepath']
     for filename in [
@@ -1031,38 +853,10 @@ def write_disagg_data_files(runfiles, inputs_case):
     
         # Calculate state/region/BA-to-county fractions for the
         # disagg variable and write to inputs_case
-        df = calculate_county_fractions(df, county2zone)
+        df = calculate_county_fractions(df, county2zone_with_legacy_bas)
         df.to_csv(os.path.join(inputs_case, filename), index=False)
 
     return
-
-def map_and_aggregate(
-    df,
-    regions_and_agglevel,
-    region_file_entry,
-    region_col,
-    aggfunc=None
-):
-    '''
-    Maps counties to BAs and aggregates according to aggfunc if provided.
-    '''
-    merged = (
-            df.set_index(region_col)
-            .merge(regions_and_agglevel['ba_county'], left_index=True, right_on='county')
-            .drop('county', axis=1)
-            .rename(columns={'ba': region_col})
-        )
-
-    if aggfunc:
-        fix_cols = region_file_entry['fix_cols'].split(',')
-        if all([fix_col in merged.columns for fix_col in fix_cols]):
-            groupby_cols = list(set(fix_cols + [region_col]))
-            df = merged.groupby(groupby_cols, as_index=False).agg(aggfunc)
-        else:
-            df = merged.groupby(region_col, as_index=False).agg(aggfunc)
-
-
-    return df
 
 
 def write_region_indexed_file(
@@ -1070,8 +864,7 @@ def write_region_indexed_file(
     dir_dst,
     source_deflator_map,
     sw,
-    region_file_entry,
-    regions_and_agglevel
+    region_file_entry
 ):
     """
     Write a single region-indexed file to the dir_dst directory
@@ -1112,15 +905,17 @@ def write_region_indexed_file(
                 # Adjust for inflation
                 df['price'] = df['price'].astype(float) * source_deflator_map[filepath]
             case 'unitdata.csv':
-                fips_ba_map = regions_and_agglevel['ba_county'].dropna().set_index('county')['ba']
-                df['reeds_ba'] = df['FIPS'].map(fips_ba_map)
+                # Map counties to zones
+                county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
+                county2zone.index = 'p' + county2zone.index
+                df['r'] = df['FIPS'].map(county2zone)
                 ## If using offshore zones, map offshore wind units from land to offshore zones
                 if int(sw.GSw_OffshoreZones):
                     df = reeds.spatial.assign_to_offshore_zones(df)
-                num_units_missing_bas = len(df.loc[df.reeds_ba.isna()])
-                if num_units_missing_bas > 0:
+                num_units_missing_zones = len(df.loc[df.r.isna()])
+                if num_units_missing_zones > 0:
                     raise ValueError(
-                        f"{num_units_missing_bas} units were not mapped to any BAs."
+                        f"{num_units_missing_zones} units were not mapped to any zones."
                     )
             case _:
                 pass
@@ -1133,7 +928,6 @@ def write_region_indexed_files(
     sw,
     region_files,
     regions_and_agglevel,
-    agglevel_variables,
     source_deflator_map
 ):
     """
@@ -1155,7 +949,6 @@ def write_region_indexed_files(
             df = subset_to_valid_regions(
                 sw,
                 region_file_entry,
-                agglevel_variables,
                 regions_and_agglevel,
                 inputs_case
             )
@@ -1164,15 +957,12 @@ def write_region_indexed_files(
                 inputs_case,
                 source_deflator_map,
                 sw,
-                region_file_entry,
-                regions_and_agglevel
+                region_file_entry
             )
 
 
 def write_miscellaneous_files(
     sw,
-    regions_and_agglevel,
-    agglevel_variables,
     inputs_case,
     reeds_path
 ):
@@ -1199,6 +989,10 @@ def write_miscellaneous_files(
                 ][0:len(sw['GSw_PVB_Types'].split('_'))]}
     ).to_csv(os.path.join(inputs_case, 'pvb_bir.csv'), index=False)
 
+    ### County-to-zone mapping
+    county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
+    county2zone.index = 'p' + county2zone.index
+
     # Constant value if input is float, otherwise named profile
     # Methane leakage rate:
     try:
@@ -1219,6 +1013,13 @@ def write_miscellaneous_files(
     )[sw['GSw_H2LeakageScen']].rename_axis('*i').round(5).to_csv(
         os.path.join(inputs_case,'h2_leakage_rate.csv'))
 
+    # Transmission employment factors:
+    ef_trans = pd.read_csv(
+        os.path.join(reeds_path,'inputs','employment','employment_factor_inter_transmission.csv'),
+        index_col=0)
+    ef_trans[ef_trans.index == sw['GSw_EmploymentFactor']].T.round(8).to_csv(
+        os.path.join(inputs_case,'employment_factor_inter_transmission.csv'),header=False)
+    
     # Add this_year to years_until_endogenous to generate the tech-specific firstyear.csv file
     scalars = reeds.io.get_scalars(full=True)
     (
@@ -1274,12 +1075,13 @@ def write_miscellaneous_files(
             reeds_path,'inputs','emission_constraints','county_co2_share_egrid_2022.csv'),
         index_col=0)
 
-    # Filter the counties that are in chosen GSw_Region
-    val_county = pd.read_csv(os.path.join(inputs_case,'county.csv'),names=['r'])
-
     # Merge emission share by county with the counties in GSw_Region and calculate emission share of GSw_Region
-    region_em_share = val_county.merge(em_share, on='r', how='left').fillna(0)
-    region_em_share = region_em_share['share'].sum()
+    region_em_share = (
+        em_share.reindex(county2zone.index)
+        .fillna(0)
+        ['share']
+        .sum()
+    )
 
     # Apply the emission share to national cap to get the emission cap trajectory of GSw_Region
     co2_cap *= region_em_share
@@ -1403,31 +1205,9 @@ def write_miscellaneous_files(
     # Add capacity deployment limits based on interconnection queue data
     cap_queue = pd.read_csv(
         os.path.join(reeds_path,'inputs','capacity_exogenous','interconnection_queues.csv'))
-    # Filter the counties that are in chosen GSw_Region
-    cap_queue = cap_queue[cap_queue['r'].isin(val_county['r'])]
-
-    # Single resolution procedure
-    if (agglevel_variables["lvl"] != 'county') and ('county' not in agglevel_variables['agglevel']):
-        cap_queue = cap_queue.rename(columns={'r':'county'})
-        cap_queue = pd.merge(cap_queue, regions_and_agglevel["r_county"], on='county', how='left').dropna()
-        cap_queue = cap_queue.drop('county', axis=1)
-
-    # Mixed resolution procedure
-    elif agglevel_variables['lvl'] == 'mult':
-        # Filter out BA regions and aggregate
-        cap_queue_ba = cap_queue[cap_queue['r'].isin(agglevel_variables['BA_county_list'])].copy()
-        if 'aggreg' in agglevel_variables['agglevel'] :
-            r_county_dict = regions_and_agglevel["r_county"].set_index('county')['r'].to_dict()
-            cap_queue_ba['r'] = cap_queue_ba['r'].map(r_county_dict)
-
-        else:
-            cap_queue_ba['r'] = cap_queue_ba['r'].map(agglevel_variables['BA_2_county'])
-
-        # Filter out county regions
-        cap_queue_county = cap_queue[cap_queue['r'].isin(agglevel_variables['county_regions'])]
-
-        #combine BA and county
-        cap_queue = pd.concat([cap_queue_ba,cap_queue_county])
+    # Map counties to zones
+    cap_queue['r'] = cap_queue['r'].map(county2zone)
+    cap_queue = cap_queue.dropna(subset='r')
 
     cap_queue = cap_queue.groupby(['tg','r'],as_index=False).sum()
     cap_queue.to_csv(os.path.join(inputs_case,'cap_limit.csv'), index=False)
@@ -1506,8 +1286,6 @@ def main(reeds_path, inputs_case):
     ### ===========================================================================
     # Obtain data necessary to filter and aggregate regions
     regions_and_agglevel = get_regions_and_agglevel(reeds_path, inputs_case)
-    # Use agglevel_variables function to obtain spatial resolution variables
-    agglevel_variables = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
 
     #%% ===========================================================================
     ### --- Copying files ---
@@ -1515,12 +1293,7 @@ def main(reeds_path, inputs_case):
 
     sw = reeds.io.get_switches(inputs_case)
 
-    runfiles, non_region_files, region_files = read_runfiles(
-        reeds_path,
-        inputs_case,
-        sw,
-        agglevel_variables
-    )
+    runfiles, non_region_files, region_files = read_runfiles(reeds_path, sw)
 
     # Rewrite the switches tables as GAMS-readable definition
     # (gswitches.csv is first written at runreeds.py)
@@ -1540,16 +1313,8 @@ def main(reeds_path, inputs_case):
         sw,
         region_files,
         regions_and_agglevel,
-        agglevel_variables,
         source_deflator_map
     )
-
-    # Create a maps.gpkg for this run
-    # Skip if using region dis/aggregation, maps will be written in aggregation_regions.py.
-    # Run if using mixed resolution aggreg-county combination 
-    if agglevel_variables['lvl'] == 'ba' or (
-        agglevel_variables['lvl'] == 'mult' and 'aggreg' in agglevel_variables['agglevel']):
-        generate_maps_gpkg(inputs_case)
 
     #%% ===========================================================================
     ### --- Exceptions ---
@@ -1558,11 +1323,12 @@ def main(reeds_path, inputs_case):
     # Needs to run after copy of non-region files
     write_miscellaneous_files(
         sw,
-        regions_and_agglevel,
-        agglevel_variables,
         inputs_case,
         reeds_path
     )
+
+    # Create a maps.gpkg for this run
+    generate_maps_gpkg(inputs_case)
 
 
 #%% Procedure

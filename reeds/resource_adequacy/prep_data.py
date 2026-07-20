@@ -78,7 +78,7 @@ def errorcheck_reeds2pras(casedir, csvout, h5out):
     ### Make sure there are no missing values in data sent to ReEDS2PRAS
     for key in ['pras_load', 'pras_vre_gen']:
         if h5out[key].isnull().sum().sum() > 0:
-            missing_data_cols = [i for i in h5out[key] if h5out[key].isnull().sum(axis=0) > 0]
+            missing_data_cols = [i for i in h5out[key] if h5out[key][i].isnull().sum(axis=0) > 0]
             print(missing_data_cols)
             raise ValueError(f'{key} has NaN values in {len(missing_data_cols)} columns')
 
@@ -510,11 +510,13 @@ def main(t, casedir, iteration=0):
     ).round().astype(int).rename_axis('r').rename('mw')
     ## Turn off for counties by setting to zero (zeros in this file mean the max unit
     ## size is not enforced for that region in ReEDS2PRAS)
-    agglevel_variables = reeds.spatial.get_agglevel_variables(
-        reeds.io.reeds_path, os.path.join(casedir, 'inputs_case')
+    counties = reeds.io.get_county_zones(casedir)
+    unconstrain_counties = sw.GSw_ZoneSet in (
+        reeds.inputs.get_applicable_zonesets(
+            'reeds2pras_unitsize_unconstrain_counties'
+        )
     )
-    counties = agglevel_variables['county_regions']
-    if len(counties):
+    if len(counties) and unconstrain_counties:
         csvout['max_unitsize'].loc[counties] = 0
 
     #%% Strip water tech suffixes from water-dependent technologies
