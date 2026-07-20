@@ -384,7 +384,7 @@ eq_Objfn_op(t)$tmodel(t)..
 * Note to self: transmission costs are all those in objective function from line 94 - 113 
 * add on additional cost of materials from price shocks used in investment for transmission technologies (dollar increase in costs from reference price which is assumed to be incorporated in capital costs)
 * price change [$ / metric ton] * transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
-               + sum((r,rr,trtype)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
+               + sum((r,rr,trtype,mat)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
                     (matprice_multiplier(mat) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
                     (INVTRAN(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype)) 
 

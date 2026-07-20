@@ -3977,13 +3977,11 @@ eq_ccsflex_sto_storage_level_max(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)$ccs
 
 *-- begin materials --
 
-positive variable MAT_DEMAND, MAT_SLACK ; 
-* MAT_SUPPLY
-equation eq_mat_track, eq_mat_procure ; 
-* eq_mat_supply
+positive variables MAT_DEMAND, MAT_SLACK, MAT_SUPPLY ;
+equations eq_mat_demand, eq_mat_supply, eq_mat_balance ;
 
 * Material tracking equation (metric tons of material)
-eq_mat_track(mat,t)$tmodel(t)..
+eq_mat_demand(mat,t)$tmodel(t)..
 
     MAT_DEMAND(mat,t) 
 
@@ -4004,32 +4002,8 @@ eq_mat_track(mat,t)$tmodel(t)..
          trt_int(trtype,mat) * (INVTRAN(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype)) 
 ;
 
-* material demand cannot exceed materials produced domestically (metric tons of materials)
-eq_mat_procure(mat,t)$[tmodel(t)$Sw_mat_restrict$[t.val>=2029]]..
-
-* materials produced domestically (metric tons) * last year weight (multiplier) + slack variable for unmet demand (metric tons)
-* domestic production (without the specific material(s) being restricted)
-      (sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))
-* add domestic byproduct recovery (without the specific material(s) being restricted)
-    + (sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t))$Sw_byproduct
-* add domestic reserves (without the specific material(s) being restricted)
-    + (sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)} * yearweight(t))$Sw_reserve
-* add allied production
-    + (sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_allies
-* add global production outside US (without the specific material(s) being restricted globally)
-    + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_glb
-* material slack to meet demand
-    + MAT_SLACK(mat,t)
-
-    =g=
-
-* material demand (metric tons)
-    MAT_DEMAND(mat,t)
-;
-
-$ontext
 * total material supply 
-eq_mat_supply(mat,t)$[tmodel(t)$[t.val>=2029]]..
+eq_mat_supply(mat,t)$[tmodel(t)]..
 
     MAT_SUPPLY(mat,t) 
 
@@ -4037,11 +4011,11 @@ eq_mat_supply(mat,t)$[tmodel(t)$[t.val>=2029]]..
 
 * materials produced domestically (metric tons) * last year weight (multiplier) + slack variable for unmet demand (metric tons)
 * domestic production (without the specific material(s) being restricted)
-      (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))
+      (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_domestic
 * add domestic byproduct recovery (without the specific material(s) being restricted)
-    + (Sw_byproduct_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t))$Sw_byproduct
+    + (Sw_byproduct_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t))$Sw_mat_byproduct
 * add domestic reserves (without the specific material(s) being restricted)
-    + (Sw_reserve_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)} * yearweight(t))$Sw_reserve
+    + (Sw_reserve_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)} * yearweight(t))$Sw_mat_reserve
 * add allied production
     + (Sw_prod_multiplier_allies * sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_allies
 * add global production outside US (without the specific material(s) being restricted globally)
@@ -4049,16 +4023,16 @@ eq_mat_supply(mat,t)$[tmodel(t)$[t.val>=2029]]..
 ;
 
 * material demand cannot exceed the historic share of total materials produced (metric tons)
-eq_mat_procure(mat,t)$[tmodel(t)$Sw_mat_restrict$[t.val>=2029]]..
-* pull from 2026
+eq_mat_balance(mat,t)$[tmodel(t)$Sw_mat_restrict$[t.val>=2029]]..
+* material supply is limited to historical consumption from the power sector (2020 to 2026)
     MAT_SUPPLY(mat,t) * share_consumption(mat)
 
-* material slack to meet demand
+* material slack to meet power sector demand
     + MAT_SLACK(mat,t)
 
     =g=
-
+    
+* power sector material demand 
     MAT_DEMAND(mat,t) 
 
 ;
-$offtext

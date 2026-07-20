@@ -6269,6 +6269,14 @@ $include ../../cmm_global_mat_price.csv
 $offdelim
 $onlisting
 /
+share_consumption(mat)           "-- share of total material supply that is consumed by power sector"
+/
+$offlisting
+$ondelim
+$include ../../cmm_consumption_share.csv
+$offdelim
+$onlisting
+/
 i_theta(i,mat,t)        "-- share -- share of capital costs attributable to materials for each technology, by year"
 matprice_multiplier(mat) "-- multiplier -- multiplier on material prices"
 ;
@@ -6289,11 +6297,4 @@ i_theta(i,mat,t)$[i_int(i,mat)$cost_cap(i,t)] = i_int(i,mat) * mat_price(mat) / 
 
 * set price multiplier for materials
 matprice_multiplier(mat) = 1;
-matprice_multiplier(mat)$[(sameas(mat,'%GSw_specmat_price%'))] = %GSw_matprice_multiplier% ;
-
-$ontext
-* addition for consumption restriction
-Parameter share_consumption(mat) "share of material supply that is consumed by power sector" ;
-*placeholder - pull from a previous reference run
-share_consumption(mat) = 0.1 ; 
-$offtext
+*matprice_multiplier(mat)$[(sameas(mat,'%GSw_specmat_price%'))] = %GSw_matprice_multiplier% ;
