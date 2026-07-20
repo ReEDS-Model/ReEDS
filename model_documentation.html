@@ -782,14 +782,14 @@ In the same way, a clean energy standard constraint can be implemented to includ
 <section id="spatial-resolution">
 <h3>Spatial Resolution<a class="headerlink" href="#spatial-resolution" title="Link to this heading"></a></h3>
 <p>ReEDS is typically used to study the CONUS.<a class="footnote-reference brackets" href="#ref9" id="id24" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a>
-The 132 default ReEDS model zones are shown in <a class="reference internal" href="#figure-spatial-layers-zones"><span class="std std-numref">Fig. 17</span></a>.
+The 90 default ReEDS model zones are shown in <a class="reference internal" href="#figure-spatial-layers-zones"><span class="std std-numref">Fig. 17</span></a>.
 The model zones comprise groups of counties and do not align perfectly with real balancing authority areas.
 The zones respect state boundaries, allowing the model to represent individual state regulations and incentives.
 Transmission flows across the interfaces between model zones are subject to transfer limits, as discussed in the <a class="reference internal" href="#transmission"><span class="xref myst">Transmission</span></a> section.</p>
 <figure class="align-default" id="figure-spatial-layers-zones">
 <img alt="_images/spatial_layers_zones.png" src="_images/spatial_layers_zones.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 17 </span><span class="caption-text">Default 132 model zones and spatial layers defined by groups of zones.</span><a class="headerlink" href="#figure-spatial-layers-zones" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 17 </span><span class="caption-text">Default model zones and spatial layers defined by groups of zones.</span><a class="headerlink" href="#figure-spatial-layers-zones" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Additional spatial layers are used in different parts of the model.<a class="footnote-reference brackets" href="#ref10" id="id25" role="doc-noteref"><span class="fn-bracket">[</span>5<span class="fn-bracket">]</span></a>
@@ -2527,7 +2527,7 @@ A separate, independent optimization is performed for each direction on each int
 in general, the ITL for power flow from Zone A to Zone B is not the same as the ITL for power flow from Zone B to Zone A.</p>
 <p>As discussed in <span id="id164">[<a class="reference internal" href="#id535" title="Patrick R. Brown, Clayton P. Barrows, Jarrad G. Wright, Gregory L. Brinkman, Sourabh Dalvi, Jiazi Zhang, and Trieu Mai. A general method for estimating zonal transmission interface limits from nodal network data. August 2023. URL: http://arxiv.org/abs/2308.03612 (visited on 2023-09-26), arXiv:2308.03612.">Brown <em>et al.</em>, 2023</a>]</span>, because of the constraints imposed by Kirchhoff’s voltage law and nodal load participation factors, the ITL tends to be smaller than the sum of line ratings that cross an interface;
 that is, every transmission line between a pair of regions cannot in general be used at its rated capacity at the same time.
-<a class="reference internal" href="#figure-transmission-itl-r"><span class="std std-numref">Fig. 50</span></a> illustrates this effect for the traditional 134 ReEDS zones.
+<a class="reference internal" href="#figure-transmission-itl-r"><span class="std std-numref">Fig. 50</span></a> illustrates this effect at the level of model zones.
 The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.
@@ -2547,7 +2547,7 @@ meaning that the sum of county-to-county flows across a BA interface cannot exce
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">reeds</span>
 <span class="c1"># GSw_ZoneSet can be any of the supported values listed in the &quot;Choices&quot; column</span>
 <span class="c1"># for the `GSw_ZoneSet` switch in `cases.csv`</span>
-<span class="n">GSw_ZoneSet</span> <span class="o">=</span> <span class="s1">&#39;z132&#39;</span>
+<span class="n">GSw_ZoneSet</span> <span class="o">=</span> <span class="s1">&#39;z90&#39;</span>
 <span class="n">reeds</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">get_itls</span><span class="p">(</span><span class="n">GSw_ZoneSet</span><span class="o">=</span><span class="n">GSw_ZoneSet</span><span class="p">)</span>
 </pre></div>
 </div>

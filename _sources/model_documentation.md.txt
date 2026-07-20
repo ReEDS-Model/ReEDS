@@ -354,7 +354,7 @@ Methane leakage is not included in emissions estimates for transportation or res
 ### Spatial Resolution
 
 ReEDS is typically used to study the CONUS.[^ref9]
-The 132 default ReEDS model zones are shown in {numref}`figure-spatial_layers_zones`.
+The 90 default ReEDS model zones are shown in {numref}`figure-spatial_layers_zones`.
 The model zones comprise groups of counties and do not align perfectly with real balancing authority areas.
 The zones respect state boundaries, allowing the model to represent individual state regulations and incentives.
 Transmission flows across the interfaces between model zones are subject to transfer limits, as discussed in the [Transmission](#transmission) section.
@@ -365,7 +365,7 @@ Details of the implementation are not discussed here.
 ```{figure} figs/docs/spatial_layers_zones.png
 :name: figure-spatial_layers_zones
 
-Default 132 model zones and spatial layers defined by groups of zones.
+Default model zones and spatial layers defined by groups of zones.
 ```
 
 Additional spatial layers are used in different parts of the model.[^ref10]
@@ -1919,7 +1919,7 @@ in general, the ITL for power flow from Zone A to Zone B is not the same as the 
 
 As discussed in {cite}`brownGeneralMethodEstimating2023`, because of the constraints imposed by Kirchhoff's voltage law and nodal load participation factors, the ITL tends to be smaller than the sum of line ratings that cross an interface;
 that is, every transmission line between a pair of regions cannot in general be used at its rated capacity at the same time.
-{numref}`figure-transmission-itl-r` illustrates this effect for the traditional 134 ReEDS zones.
+{numref}`figure-transmission-itl-r` illustrates this effect at the level of model zones.
 The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.
@@ -1940,7 +1940,7 @@ To read the ITL data for a given set of model zones, you can activate the `reeds
 import reeds
 # GSw_ZoneSet can be any of the supported values listed in the "Choices" column
 # for the `GSw_ZoneSet` switch in `cases.csv`
-GSw_ZoneSet = 'z132'
+GSw_ZoneSet = 'z90'
 reeds.inputs.get_itls(GSw_ZoneSet=GSw_ZoneSet)
 ```
 
