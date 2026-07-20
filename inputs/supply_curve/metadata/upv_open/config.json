@@ -19,7 +19,6 @@
     "decimals": 4,
     "driver": "H5FD_CORE",
     "dtype": "np.uint16",
-    "existing_sites": "/kfs2/projects/reedsdemand/cobika/ReEDS-2.0/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv",
     "filetype": "h5",
     "filter_cols": {
         "capacity": [

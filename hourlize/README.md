@@ -181,7 +181,6 @@ The `resource.py` script follows the following logic (in order of execution):
 
 1. `get_supply_curve_and_preprocess()`
     * The supply curve is filtered if necessary, based on `filter_cols`.
-    * Existing and planned sites from a generator database (`existing_sites`) are assigned to supply curve points for exogenous and prescribed capacity outputs respectively.
     * If we have minimum capacity thresholds for the supply curve points, these are applied to further filter the supply curve.
 1. `add_classes()`
     * A 'class' column is added to the supply curve and filled with the associated class. Classes can be based on statically defined conditions for columns in the supply curve (`class_path`). Otherwise (or layered on top of static class definitions), dynamic classes can be assigned (`class_bin`=true) using a binning method (`class_bin_method`, e.g. "kmeans"), a number of bins (`class_bin_num`), and the supply curve column to bin (`class_bin_col`). The binning logic itself is in `reeds.inputs.get_bin()`. The current default classes for onshore wind and utility-scale PV are based on national k-means clustering of average annual capacity factor (where higher class number corresponds with higher annual CF). Offshore wind, by contrast, uses statically defined classes from `hourlize/inputs/resource/wind-ofs_resource_classes.csv`.
@@ -229,7 +228,6 @@ This section provides some descriptions and typical values for the settings in t
 | copy_to_shared  | Copy hourlize outputs to the shared drive |  False |
 | driver  | 'H5FD_CORE', None. H5FD_CORE will load the h5 into memory for better perforamnce, but None must be used for low-memory machines. |  'H5FD_CORE' |
 | dtype  | data type used to save hourly profiles |  np.uint16 |
-| existing_sites  | None or path to file with existing capacity |  '{reeds_path}/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv' |
 | gather_method  |  'list', 'slice', 'smart'. This setting will take a slice of profile ids from the min to max, rather than using a list of ids, for improved performance when ids are close together for each group. |  'smart' |
 | hourly_out_years  | e.g. [2012] for just 2012 or a list of year [2011, 2012, 2013] | [2007, 2008, 2009, 2010, 2011, 2012, 2013], |
 | inputfiles | list of files to copy over to hourlize input folder | ["reg_map_file", "class_path"] |

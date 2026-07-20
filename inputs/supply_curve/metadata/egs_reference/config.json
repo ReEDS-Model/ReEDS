@@ -27,7 +27,6 @@
     ],
     "driver": "H5FD_CORE",
     "dtype": "np.float16",
-    "existing_sites": null,
     "filetype": "h5",
     "filter_cols": {},
     "gather_method": "smart",
