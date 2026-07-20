@@ -110,9 +110,9 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
         if len(cap_exog[tech]) > 0:
             cap_exog[tech] = pd.concat([expand_exog_cap(row, startyear) for _, row in cap_exog[tech].iterrows()],
                 ignore_index=True)
-    if len(cap_exog["upv"]) > 0:
-        cap_exog["upv"] = pd.concat([cap_exog[tech] for tech in TECH["rsc_all"] 
-                                    if tech in cap_exog and not cap_exog[tech].empty],ignore_index=True)
+    #if len(cap_exog["upv"]) > 0:
+    #    cap_exog["upv"] = pd.concat([cap_exog[tech] for tech in TECH["rsc_all"] 
+    #                                if tech in cap_exog and not cap_exog[tech].empty],ignore_index=True)
 
     return cap_exog, rsc_class
 
@@ -363,6 +363,9 @@ def main(reeds_path, inputs_case):
     print('Importing generator database:')
     gdb_use = pd.read_csv(os.path.join(inputs_case,'unitdata.csv'), low_memory=False)
 
+    # Preserve a version of gdb_use with all pv techs separated for cap_exog
+    gdb_use_cap_exog = gdb_use.copy()
+
     # If PVB is turned off, consider all PVB as UPV and battery_li for existing and prescribed builds 
     # If PVB is turned on, consider all PVB as 'pvb'
     if GSw_PVB == 0:
@@ -373,7 +376,7 @@ def main(reeds_path, inputs_case):
         gdb_use['tech'] = gdb_use['tech'].replace('pvb_pv','pvb')
 
 
-    # Consider all DUPV and pvb_pv as UPV for existing and prescribed builds.
+    # Consider all DUPV as UPV for existing and prescribed builds.
     gdb_use['tech'] = gdb_use['tech'].replace('dupv','upv')
 
     # Change tech category of hydro that will be prescribed to use upgrade tech
@@ -553,12 +556,14 @@ def main(reeds_path, inputs_case):
     '''
     print('Gathering RSC Existing Capacity...')
 
-    # DUPV and UPV values are collected at the same time here:
+    # PVB and UPV values are collected at the same time here:
     caprsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['rsc_all'][:2])) &
                         (gdb_use['StartYear'] < startyear)  &
                         (gdb_use['RetireYear'] > startyear)
                         ]
+    
     caprsc['v']='init-1'
+    caprsc.loc[caprsc['tech']=='upv','tech']='upv_5'
     caprsc = caprsc[COLNAMES['rsc'][0]]
     caprsc.columns = COLNAMES['rsc'][1]
     caprsc = caprsc.groupby(COLNAMES['rsc'][1][:-2]).value.sum().reset_index()
@@ -611,7 +616,7 @@ def main(reeds_path, inputs_case):
     #    -- RSC Exogenous Capacity --    #
     ######################################
 
-    (cap_exog, rsc_class) = create_exog_rsc(reeds_path, inputs_case, gdb_use, TECH, COLNAMES, sw, startyear)
+    (cap_exog, rsc_class) = create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear)
     
     
     #%%####################################
