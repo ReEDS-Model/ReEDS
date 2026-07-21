@@ -387,12 +387,12 @@ def main(reeds_path, inputs_case):
     gdb_use.loc[
         (gdb_use['tech']=='hydEND') & 
         (gdb_use['StartYear'] >= startyear) & 
-        (gdb_use['StartYear'] < endyear), 
+        (gdb_use['StartYear'] <= endyear), 
         'tech'] = 'hydUND'
     gdb_use.loc[
         (gdb_use['tech']=='hydED') & 
         (gdb_use['StartYear'] >= startyear) & 
-        (gdb_use['StartYear'] < endyear), 
+        (gdb_use['StartYear'] <= endyear), 
         'tech'] = 'hydUD'
 
     # We model csp-ns (CSP No Storage) as upv throughout ReEDS, but switch it back for reporting.
@@ -500,7 +500,7 @@ def main(reeds_path, inputs_case):
     ### prescribed power capacity
     prescribed_nonRSC = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC'])) &
                                     (gdb_use['StartYear'] >= startyear) &
-                                    (gdb_use['StartYear'] < endyear)
+                                    (gdb_use['StartYear'] <= endyear)
                                     ]
     prescribed_nonRSC['tech'] = prescribed_nonRSC['tech'].str.lower()
     ### assign vintage based on start year of the unit
@@ -529,7 +529,7 @@ def main(reeds_path, inputs_case):
     ### prescribed energy capacity
     prescribed_nonRSC_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC_energy'])) &
                                     (gdb_use['StartYear'] >= startyear) &
-                                    (gdb_use['StartYear'] < endyear)
+                                    (gdb_use['StartYear'] <= endyear)
                                     ]
 
     ### assign vintage based on start year of the unit
@@ -628,7 +628,7 @@ def main(reeds_path, inputs_case):
     for tech in TECH['rsc_wsc']:
         cap_pres[tech]= gdb_use.loc[(gdb_use['tech']==tech) &
                     (gdb_use['StartYear'] >= startyear) &
-                    (gdb_use['StartYear'] < endyear)
+                    (gdb_use['StartYear'] <= endyear)
                     ].copy()
         mask = ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
         if len(cap_pres[tech]) != 0:
