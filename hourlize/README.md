@@ -169,7 +169,6 @@ By default, the outputs will be dumped to a subdirectory named `results` within 
 
 * `supplycurve_{tech}.csv`: A supply curve with rows for each site and columns for region, class, available capacity, and costs. E.g. see `inputs/supply_curve/wind-ons_supply_curve-reference_ba.csv` (within ReEDS repo)
 * `{tech}_.h5`: Hourly capacity factor profiles for each region/class. See `inputs/profiles_cf/cf_wind-ons_reference_ba.h5` within the ReEDS repository as an example. These files include datasets with column names (class|region) and an index with datetime and timezone information.
-* `classification_{tech}.csv`: Tech classes based on capacity factors.
 
 ### Shared Drive Locations
 

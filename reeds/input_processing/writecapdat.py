@@ -596,7 +596,7 @@ def main(reeds_path, inputs_case):
     hyd['v'] = 'init-1'
     # Concat all RSC Existing Data to one dataframe:
     caprsc = pd.concat([caprsc, csp, hyd]).rename(columns={'i':'*i'})
-    # caprsc = hyd
+    
     # Export Existing RSC data specifically used in writesupplycurves.py
     rsc_wsc = create_rsc_wsc(gdb_use, TECH=TECH, startyear=startyear)
 
