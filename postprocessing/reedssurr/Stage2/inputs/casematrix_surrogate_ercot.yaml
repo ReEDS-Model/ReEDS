@@ -1,0 +1,81 @@
+### Case matrix for the ERCOT 2050 surrogate model study.
+### For use with casemaker.py.
+### Generates a full factorial design: 3×3×3×3×3×2 = 486 cases.
+
+##############
+### Shared ###
+### Settings applied to all cases. ERCOT-only, solve through 2050.
+shared:
+  GSw_Region: interconnect/texas
+  GSw_GasCurve: "2"
+
+##################
+### Dimensions ###
+### Each dimension groups related switches into named levels.
+### Dimension names and level names must not contain underscores.
+dimensions:
+  demand:
+    DemLo:
+      GSw_LoadProfiles: EER2025_Baseline_AEO2023
+    DemMd:
+      GSw_LoadProfiles: EER2025_IRAlow
+    DemHi:
+      GSw_LoadProfiles: EER2025_100by2050
+
+  fuelprice:
+    FuelLo:
+      ngscen: AEO_2025_LOG
+    FuelMd:
+      ngscen: AEO_2025_reference
+    FuelHi:
+      ngscen: AEO_2025_HOG
+
+  renewcost:
+    REcostLo:
+      plantchar_upv: upv_ATB_2024_advanced
+      plantchar_onswind: ons-wind_ATB_2024_advanced
+      plantchar_ofswind: ofs-wind_ATB_2024_advanced
+    REcostMd:
+      plantchar_upv: upv_ATB_2024_moderate
+      plantchar_onswind: ons-wind_ATB_2024_moderate
+      plantchar_ofswind: ofs-wind_ATB_2024_moderate
+    REcostHi:
+      plantchar_upv: upv_ATB_2024_conservative
+      plantchar_onswind: ons-wind_ATB_2024_conservative
+      plantchar_ofswind: ofs-wind_ATB_2024_conservative
+
+  siting:
+    SitingOpen:
+      GSw_SitingUPV: open
+      GSw_SitingWindOns: open
+      GSw_SitingWindOfs: open
+    SitingRef:
+      GSw_SitingUPV: reference
+      GSw_SitingWindOns: reference
+      GSw_SitingWindOfs: reference
+    SitingLim:
+      GSw_SitingUPV: limited
+      GSw_SitingWindOns: limited
+      GSw_SitingWindOfs: limited
+
+  battcost:
+    BattLo:
+      plantchar_battery: battery_ATB_2024_advanced
+    BattMd:
+      plantchar_battery: battery_ATB_2024_moderate
+    BattHi:
+      plantchar_battery: battery_ATB_2024_conservative
+
+  policy:
+    PolIRA:
+      incentives_suffix: ira
+      GSw_TCPhaseout_forceyear: 0
+    PolOBBBA:
+      incentives_suffix: obbba
+      GSw_TCPhaseout_forceyear: 2032
+
+##################
+### Casegroups ###
+### Full factorial: all levels of all dimensions → 486 cases.
+casegroups:
+  - [[], [], [], [], [], []]

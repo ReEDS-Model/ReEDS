@@ -1,0 +1,165 @@
+﻿python.exe : C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-pack
+ages\sklearn\linear_model\_coordinate_descent.py:631: ConvergenceWarning: 
+Objective did not converge. You might want to increase the number of 
+iterations, check the scale of the features or consider increasing 
+regularisation. Duality gap: 0.000e+00, tolerance: 0.000e+00
+At line:1 char:211
++ ... verall..."; & 'C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\p ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\ychen1...ance: 0.000e+00 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  model = cd_fast.enet_coordinate_descent(
+======================================================================
+ReEDS SURROGATE MODEL ù ML PIPELINE
+======================================================================
+
+[1/4] Loading data...
+Loaded data: 486 samples, 105 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 98
+  Removed 12 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 86
+
+[2/4] Evaluation strategy: 10-fold CV on all 486 samples
+       Final model: trained on all 486 samples
+
+[3/4] Training models: ['knn', 'ridge', 'lasso', 'rf', 'xgb', 'nn', 'ngboost']
+
+  --- KNN ---
+    Computing OOF predictions (10-fold CV)...
+    OOF R▓ mean: 0.5984, median: 0.7204
+    Outputs with R▓>0.9: 4/86
+    Outputs with R▓>0.95: 0/86
+    Training final model on all 486 samples...
+    Saved final model: knn.joblib
+
+  --- RIDGE ---
+    Computing OOF predictions (10-fold CV)...
+    OOF R▓ mean: 0.4610, median: 0.4564
+    Outputs with R▓>0.9: 1/86
+    Outputs with R▓>0.95: 0/86
+    Training final model on all 486 samples...
+    Saved final model: ridge.joblib
+
+  --- LASSO ---
+    Computing OOF predictions (10-fold CV)...
+    OOF R▓ mean: 0.4606, median: 0.4564
+    Outputs with R▓>0.9: 1/86
+    Outputs with R▓>0.95: 0/86
+    Training final model on all 486 samples...
+    Saved final model: lasso.joblib
+
+  --- RF ---
+    Computing OOF predictions (10-fold CV)...
+    OOF R▓ mean: 0.7560, median: 0.8929
+    Outputs with R▓>0.9: 41/86
+    Outputs with R▓>0.95: 28/86
+    Training final model on all 486 samples...
+    Saved final model: rf.joblib
+
+  --- XGB (using sklearn GradientBoosting) ---
+    Computing OOF predictions (10-fold CV)...
+    OOF R▓ mean: 0.6226, median: 0.8744
+    Outputs with R▓>0.9: 40/86
+    Outputs with R▓>0.95: 31/86
+    Training final model on all 486 samples...
+    Saved final model: xgb.joblib
+
+  --- NN ---
+    Computing OOF predictions (10-fold CV)...
+    OOF R▓ mean: 0.7176, median: 0.8848
+    Outputs with R▓>0.9: 40/86
+    Outputs with R▓>0.95: 23/86
+    Training final model on all 486 samples...
+    Saved final model: nn.joblib
+
+  --- NGBOOST ---
+    Computing OOF predictions (10-fold CV)...
+joblib.externals.loky.process_executor._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\externals\loky\process_executor.py", line 463, in _process_worker
+    r = call_item()
+        ^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\externals\loky\process_executor.py", line 291, in __call__
+    return self.fn(*self.args, **self.kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 598, in __call__
+    return [func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 598, in <listcomp>
+    return [func(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+sklearn\utils\parallel.py", line 123, in __call__
+    return self.function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+sklearn\multioutput.py", line 49, in _fit_estimator
+    estimator.fit(X, y, **fit_params)
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+ngboost\ngboost.py", line 258, in fit
+    return self.partial_fit(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+ngboost\ngboost.py", line 384, in partial_fit
+    X, Y = check_X_y(
+           ^^^^^^^^^^
+TypeError: check_X_y() got an unexpected keyword argument 'ensure_all_finite'
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"C:\ReEDS\ReEDS\postprocessing\reedssurr\Stage2\code\surrogate_ml_models.py", 
+line 827, in <module>
+    main()
+  File 
+"C:\ReEDS\ReEDS\postprocessing\reedssurr\Stage2\code\surrogate_ml_models.py", 
+line 823, in main
+    run_pipeline(config)
+  File 
+"C:\ReEDS\ReEDS\postprocessing\reedssurr\Stage2\code\surrogate_ml_models.py", 
+line 601, in run_pipeline
+    oof_preds = compute_oof_predictions(X, Y, model_name, config)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\ReEDS\ReEDS\postprocessing\reedssurr\Stage2\code\surrogate_ml_models.py", 
+line 387, in compute_oof_predictions
+    model.fit(X_train_s, Y_train_s)
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+sklearn\multioutput.py", line 216, in fit
+    self.estimators_ = Parallel(n_jobs=self.n_jobs)(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+sklearn\utils\parallel.py", line 63, in __call__
+    return super().__call__(iterable_with_config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 2007, in __call__
+    return output if self.return_generator else list(output)
+                                                ^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 1650, in _get_outputs
+    yield from self._retrieve()
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 1754, in _retrieve
+    self._raise_error_fast()
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 1789, in _raise_error_fast
+    error_job.get_result(self.timeout)
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 745, in get_result
+    return self._return_or_raise()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ychen10\AppData\Local\anaconda3\envs\reeds2\Lib\site-packages\
+joblib\parallel.py", line 763, in _return_or_raise
+    raise self._result
+TypeError: check_X_y() got an unexpected keyword argument 'ensure_all_finite'

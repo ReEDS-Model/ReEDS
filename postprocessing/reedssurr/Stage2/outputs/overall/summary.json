@@ -1,0 +1,93 @@
+{
+  "models": {
+    "knn": {
+      "display_name": "k-NN (k=3, baseline)",
+      "oof_r2_mean": 0.5951553555834074,
+      "oof_r2_median": 0.6954853557247919,
+      "oof_r2_min": -0.5571536420096224,
+      "oof_r2_max": 0.9165284650214987,
+      "n_outputs_r2_above_0.9": 7,
+      "n_outputs_r2_above_0.95": 0,
+      "artifact": "models/knn.joblib"
+    },
+    "ridge": {
+      "display_name": "Ridge Regression",
+      "oof_r2_mean": 0.445424368277806,
+      "oof_r2_median": 0.449228669387626,
+      "oof_r2_min": -0.01327937705336657,
+      "oof_r2_max": 0.9287117675543605,
+      "n_outputs_r2_above_0.9": 3,
+      "n_outputs_r2_above_0.95": 0,
+      "artifact": "models/ridge.joblib"
+    },
+    "lasso": {
+      "display_name": "Lasso Regression",
+      "oof_r2_mean": 0.4448645495106197,
+      "oof_r2_median": 0.4492084018516969,
+      "oof_r2_min": -0.006898915351437607,
+      "oof_r2_max": 0.9287097238409425,
+      "n_outputs_r2_above_0.9": 3,
+      "n_outputs_r2_above_0.95": 0,
+      "artifact": "models/lasso.joblib"
+    },
+    "rf": {
+      "display_name": "Random Forest",
+      "oof_r2_mean": 0.749017138119661,
+      "oof_r2_median": 0.8818578937616269,
+      "oof_r2_min": -0.3619588176269064,
+      "oof_r2_max": 1.0,
+      "n_outputs_r2_above_0.9": 29,
+      "n_outputs_r2_above_0.95": 18,
+      "artifact": "models/rf.joblib"
+    },
+    "xgb": {
+      "display_name": "XGBoost (Gradient Boosting, monotone)",
+      "oof_r2_mean": 0.5316342347914651,
+      "oof_r2_median": 0.8196095518215353,
+      "oof_r2_min": -2.157473185442873,
+      "oof_r2_max": 0.9999998215072071,
+      "n_outputs_r2_above_0.9": 21,
+      "n_outputs_r2_above_0.95": 12,
+      "artifact": "models/xgb.joblib"
+    },
+    "nn": {
+      "display_name": "Neural Network (MLP (64, 32))",
+      "oof_r2_mean": 0.7121870807925501,
+      "oof_r2_median": 0.8695864880852301,
+      "oof_r2_min": -0.8109766829784615,
+      "oof_r2_max": 0.9875565987927322,
+      "n_outputs_r2_above_0.9": 28,
+      "n_outputs_r2_above_0.95": 17,
+      "artifact": "models/nn.joblib"
+    },
+    "ngboost": {
+      "display_name": "NGBoost (distributional, UQ-native)",
+      "oof_r2_mean": 0.7106779271379117,
+      "oof_r2_median": 0.8147365595521859,
+      "oof_r2_min": -0.05846311706562224,
+      "oof_r2_max": 0.9999999846092461,
+      "n_outputs_r2_above_0.9": 23,
+      "n_outputs_r2_above_0.95": 16,
+      "artifact": "models/ngboost.joblib"
+    }
+  },
+  "config": {
+    "data_path": "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\inputs\\overall_ml_numeric_merged.csv",
+    "n_folds": 10,
+    "cv_type": "10-fold CV",
+    "n_samples": 486,
+    "n_x_features": 6,
+    "n_y_outputs": 66,
+    "evaluation": "Out-of-fold predictions (all samples used for both training and evaluation)"
+  },
+  "constant_outputs": {
+    "cap_distpv": 12994.628098999998,
+    "cap_hydED": 142.0,
+    "cap_hydEND": 405.8000000000002,
+    "cap_lfill-gas": 24.399999999999995,
+    "gen_Gas-CT_H2-CT": 0.0,
+    "gen_coal-igcc": 0.0,
+    "gen_coal-new": 0.0,
+    "gen_wind-ofs": 0.0
+  }
+}
