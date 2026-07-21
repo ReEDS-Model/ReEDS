@@ -397,6 +397,69 @@ def assemble_hydcf(
 
     return hydcf
 
+def apply_hydro_climate_adjustments(
+    hydcf_unadjusted: pd.DataFrame,
+    inputs_case: str
+) -> pd.DataFrame:
+    """
+    Applies climate adjustment factors to hydropower capacity factors, if applicable.
+    
+    Non-dispatchable hydro gets new seasonal profiles as well as annually-varying CFs.
+    Dispatchable hydro keeps the original seasonal profiles; only annual CF changes. 
+        Reflects the assumption that reservoirs will be utilized in the same seasonal pattern 
+        even if seasonal inflows change.
+    
+    Args:
+        hydcf_unadjusted: Monthly regional CFs prior to climate adjustments
+        inputs_case: Path to the inputs case directory.
+    Returns:
+        pd.DataFrame
+    """
+    # Exit function if climate adjustments to hydropower are turned OFF, otherwise continue
+    sw = reeds.io.get_switches(inputs_case)
+    if not int(sw.GSw_ClimateHydro):
+        return hydcf_unadjusted
+    
+    # Get sets for dispatchable/non-dispatchable hydro from tech subset table
+    tech_subsets = pd.read_csv(
+        os.path.join(inputs_case, 'tech-subset-table.csv'),
+        index_col=0
+    )
+    hydro_d = set(tech_subsets.loc[tech_subsets['HYDRO_D']=='YES'].index)
+    hydro_nd = set(tech_subsets.loc[tech_subsets['HYDRO_ND']=='YES'].index)
+    
+    # Separate data into dispatchable vs non-dispatchable hydropower
+    hydcf_d = hydcf_unadjusted[hydcf_unadjusted.index.isin(hydro_d, level='*i')].reset_index().copy()
+    hydcf_nd = hydcf_unadjusted[hydcf_unadjusted.index.isin(hydro_nd, level='*i')].reset_index().copy()
+    assert len(hydcf_d)+len(hydcf_nd) == len(hydcf_unadjusted), "At least 1 hydro tech is unaccounted for from hydcf.csv"
+    
+    # Read hydropower CF climate adjustment factors
+    adj_factors_ann = pd.read_csv(
+        os.path.join(inputs_case, 'climate_hydadjann.csv'),
+        dtype={'r':str,'t':int}
+    ).rename(columns={'Value':'Factor'})
+    adj_factors_sea = pd.read_csv(
+        os.path.join(inputs_case, 'climate_hydadjsea.csv'),
+        dtype={'r':str,'t':int,'month':str}
+    ).rename(columns={'Value':'Factor'})
+    
+    # Apply adjustment factors only to years >= GSw_ClimateStartYear - set years before to 1
+    adj_factors_ann.loc[adj_factors_ann['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
+    adj_factors_sea.loc[adj_factors_sea['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
+    
+    # Merge and apply adjustment factors
+    hydcf_d = pd.merge(hydcf_d, adj_factors_ann, how='left', on=['r','t'])
+    hydcf_d['value_adj'] = hydcf_d['value'] * hydcf_d['Factor']
+    hydcf_d = hydcf_d.drop(columns=['value','Factor']).rename(columns={'value_adj':'value'})
+    hydcf_nd = pd.merge(hydcf_nd, adj_factors_sea, how='left', on=['r','month','t'])
+    hydcf_nd['value_adj'] = hydcf_nd['value'] * hydcf_nd['Factor']
+    hydcf_nd = hydcf_nd.drop(columns=['value','Factor']).rename(columns={'value_adj':'value'})
+    
+    # Reassemble hydcf
+    hydcf = pd.concat([hydcf_d,hydcf_nd],axis=0).set_index(['t','*i','month','r'])
+    
+
+    return hydcf
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
@@ -425,6 +488,11 @@ def main(reeds_path, inputs_case):
         future_monthly_regional_cf,
         inputs_case
     )
+    hydcf = apply_hydro_climate_adjustments(
+        hydcf,
+        inputs_case
+    )
+
     hydcf.to_csv(os.path.join(inputs_case, 'hydcf.csv'))
 
 
@@ -448,6 +516,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Settings for testing
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(
+    #     reeds_path,'runs',
+    #     'InstantiateRepo_USA_defaults','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(

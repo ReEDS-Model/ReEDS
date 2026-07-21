@@ -115,6 +115,8 @@ heat_rate_mult.csv,inputs/waterclimate/heat_rate_mult.csv,int(sw.GSw_WaterMain) 
 heat_rate_penalty_spin.csv,inputs/plant_characteristics/heat_rate_penalty_spin.csv,1,ignore,ignore,,,,,0,,,,,,
 hintage_char.csv,inputs/sets/hintage_char.csv,1,ignore,ignore,,,,,,,,set,hintage_char,characteristics available in hintage_data,
 hyd_add_upg_cap.csv,inputs/supply_curve/hyd_add_upg_cap.csv,int(sw.GSw_HydroCapEnerUpgradeType) == 2,sum,hydroexist,r,"i,rscbin,wide",,1,0,,,,,,
+hydadjann.csv,inputs/climate/{climatescen}/hydadjann.csv,int(sw.GSw_ClimateHydro) != 0,mean,uniform,r,t,,0,0,,,,,,
+hydadjsea.csv,inputs/climate/{climatescen}/hydadjsea.csv,int(sw.GSw_ClimateHydro) != 0,mean,uniform,r,"month,t",,0,0,,,,,,
 hyd_fom.csv,inputs/hydro/hyd_fom.csv,1,mean,uniform,wide,i,,1,0,,,,,,
 hydcap.csv,inputs/supply_curve/hydcap.csv,1,sum,geosize,wide,"tech,class",,1,0,,,,,,
 hydcapadj.csv,inputs/hydro/SeaCapAdj_hy.csv,1,mean,uniform,r,"*i,month",,0,0,,,,,,
