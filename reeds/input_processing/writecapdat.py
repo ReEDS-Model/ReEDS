@@ -94,7 +94,7 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
                 cap_exog[tech]["tech"] = (cap_exog[tech]["tech"].astype(str) + "_" + 
                                     cap_exog[tech]["class"].astype(str))   
             # Assigning each solar, wind unit in unit database to a class based on groups' minimum and maximum capacity factors
-            elif tech in TECH['rsc_all']:
+            elif tech in TECH['rsc_pv_all']:
                 cap_exog[tech]["class"] = cap_exog[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class['upv']))
                 cap_exog[tech]["tech"] = ('upv' + "_" + 
@@ -111,7 +111,7 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
             cap_exog[tech] = pd.concat([expand_exog_cap(row, startyear) for _, row in cap_exog[tech].iterrows()],
                 ignore_index=True)
     #if len(cap_exog["upv"]) > 0:
-    #    cap_exog["upv"] = pd.concat([cap_exog[tech] for tech in TECH["rsc_all"] 
+    #    cap_exog["upv"] = pd.concat([cap_exog[tech] for tech in TECH["rsc_pv_all"] 
     #                                if tech in cap_exog and not cap_exog[tech].empty],ignore_index=True)
 
     return cap_exog, rsc_class
@@ -289,12 +289,13 @@ TECH = {
     ],
     'storage'  : ['battery_li', 'pumped-hydro'
     ],
-    'rsc_all': ['upv','pvb','csp-ns'],
+    'rsc_pv_all': ['upv','pvb','csp-ns'],
+    'rsc_upv': ['upv','pvb'],
     'rsc_w': ['wind-ons','wind-ofs'],
     'rsc_csp': ['csp-ns'],
     'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
                 'geohydro_allkm','egs_allkm'],
-    'prsc_all': ['upv','pvb','csp-ns','csp-ws'],
+    'prsc_pv_all': ['upv','pvb','csp-ns','csp-ws'],
     'prsc_upv': ['upv','pvb'],
     'prsc_w': ['wind-ons','wind-ofs'],
     'prsc_csp': ['csp-ns','csp-ws'],
@@ -365,6 +366,8 @@ def main(reeds_path, inputs_case):
 
     # Preserve a version of gdb_use with all pv techs separated for cap_exog
     gdb_use_cap_exog = gdb_use.copy()
+    # Multiply all PV capacities by ILR to convert AC to DC
+    gdb_use_cap_exog.loc[gdb_use_cap_exog['tech'].isin(TECH['rsc_pv_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
 
     # If PVB is turned off, consider all PVB as UPV and battery_li for existing and prescribed builds 
     # If PVB is turned on, consider all PVB as 'pvb'
@@ -374,7 +377,6 @@ def main(reeds_path, inputs_case):
     else:
         gdb_use['tech'] = gdb_use['tech'].replace('pvb_battery','pvb')
         gdb_use['tech'] = gdb_use['tech'].replace('pvb_pv','pvb')
-
 
     # Consider all DUPV as UPV for existing and prescribed builds.
     gdb_use['tech'] = gdb_use['tech'].replace('dupv','upv')
@@ -434,9 +436,9 @@ def main(reeds_path, inputs_case):
                                                     'tech']
 
     # Multiply all PV capacities by ILR
-    # Capacity of tech rsc_all is MWac measured at the power block, while PV capacity is MWdc,
-    # so multiply rsc_all capacity by the ILR [MWdc/MWac] of PV
-    gdb_use.loc[gdb_use['tech'].isin(TECH['rsc_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
+    # Capacity of tech rsc_pv_all is MWac measured at the power block, while PV capacity is MWdc,
+    # so multiply rsc_pv_all capacity by the ILR [MWdc/MWac] of PV
+    gdb_use.loc[gdb_use['tech'].isin(TECH['rsc_pv_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
     
     #%%##################################
     #    -- All Existing Capacity --    #
@@ -557,7 +559,7 @@ def main(reeds_path, inputs_case):
     print('Gathering RSC Existing Capacity...')
 
     # PVB and UPV values are collected at the same time here:
-    caprsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['rsc_all'][:2])) &
+    caprsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['rsc_upv'])) &
                         (gdb_use['StartYear'] < startyear)  &
                         (gdb_use['RetireYear'] > startyear)
                         ]
@@ -596,7 +598,7 @@ def main(reeds_path, inputs_case):
     hyd['v'] = 'init-1'
     # Concat all RSC Existing Data to one dataframe:
     caprsc = pd.concat([caprsc, csp, hyd]).rename(columns={'i':'*i'})
-    
+
     # Export Existing RSC data specifically used in writesupplycurves.py
     rsc_wsc = create_rsc_wsc(gdb_use, TECH=TECH, startyear=startyear)
 
