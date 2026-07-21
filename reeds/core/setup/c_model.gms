@@ -4010,16 +4010,17 @@ eq_mat_supply(mat,t)$[tmodel(t)]..
     =e= 
 
 * materials produced domestically (metric tons) * last year weight (multiplier) + slack variable for unmet demand (metric tons)
-* domestic production (without the specific material(s) being restricted)
-      (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_domestic
-* add domestic byproduct recovery (without the specific material(s) being restricted)
-    + (Sw_byproduct_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t))$Sw_mat_byproduct
-* add domestic reserves (without the specific material(s) being restricted)
-    + (Sw_reserve_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)} * yearweight(t))$Sw_mat_reserve
+
+* domestic production 
+      (sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_domestic
+* add global production outside US 
+    + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_glb
+* add domestic byproduct recovery 
+    + (sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_byproduct
+* add domestic reserves 
+    + (sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_reserve
 * add allied production
-    + (Sw_prod_multiplier_allies * sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_allies
-* add global production outside US (without the specific material(s) being restricted globally)
-    + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_glb
+    + (sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_allies
 ;
 
 * material demand cannot exceed the historic share of total materials produced (metric tons)
