@@ -126,8 +126,7 @@ def calculate_regional_generation(
 def calculate_historical_monthly_regional_cf(
     monthly_plant_net_generation: pd.DataFrame,
     monthly_plant_max_generation: pd.DataFrame,
-    hydro_plants: pd.DataFrame,
-    inputs_case: str
+    hydro_plants: pd.DataFrame
 ) -> pd.DataFrame:
     """
     Calculate monthly CFs for each model region in historical years.
@@ -161,12 +160,6 @@ def calculate_historical_monthly_regional_cf(
         .rename_axis(columns=['r'])
         .reorder_levels(order=['t', '*i', 'month'])
     )
-    # Downselect to model years
-    sw = reeds.io.get_switches(inputs_case)
-    startyear = int(sw.startyear)
-    monthly_regional_cf = monthly_regional_cf.loc[(
-        monthly_regional_cf.index.get_level_values('t') >= startyear
-    )]
     
     return monthly_regional_cf
 
@@ -394,6 +387,9 @@ def assemble_hydcf(
     hydcf.loc[data_endyear:] = hydcf.loc[data_endyear:].ffill()
     # Convert from "wide" to "long" format
     hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').to_frame()
+    # Downselect to model solve years
+    model_startyear = int(sw.startyear)
+    hydcf = hydcf.loc[model_startyear:model_endyear]
 
     return hydcf
 
@@ -474,8 +470,7 @@ def main(reeds_path, inputs_case):
     historical_monthly_regional_cf = calculate_historical_monthly_regional_cf(
         monthly_plant_net_generation,
         monthly_plant_max_generation,
-        hydro_plants,
-        inputs_case
+        hydro_plants
     )
     future_monthly_regional_cf = calculate_future_monthly_regional_cf(
         monthly_plant_net_generation,
