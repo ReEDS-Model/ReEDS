@@ -1019,6 +1019,7 @@ def read_pras_results(filepath):
 
 def get_itl_deltas_hourly(
     case=None,
+    rating_type='DLR',
     tz_in='UTC',
     tz_out='Etc/GMT+6',
     **kwargs
@@ -1030,7 +1031,7 @@ def get_itl_deltas_hourly(
         reeds.io.reeds_path,
         'inputs',
         'profiles_itl_deltas',
-        'itl_deltas_DLR_z90.h5'
+        f'itl_deltas_{rating_type}_z90.h5'
     )
     
     ## Add one more year on either end of weather years to allow for timezone conversion
