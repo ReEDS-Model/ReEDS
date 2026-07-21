@@ -52,7 +52,10 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
             sc_point_pid_pdf = offland_gdf[offland_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
         else:
             sc_point_pid_pdf = land_gdf[land_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
-        
+        # Rename FIPS and lon/lat as nearest FIPS and lon/lat #
+        # as after matching them to units in unitdata by distance later 
+        # these FIPS and lon/lat are the nearest ones to these units 
+        # and not the FIPS and lon/lat these units are located at  
         sc_point_pid_pdf = sc_point_pid_pdf.rename(columns={'FIPS':'FIPS_nearest',
                                                             'latitude':'T_LAT_nearest',
                                                             'longitude':'T_LONG_nearest'})
@@ -60,19 +63,26 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
         
         gdf_joined = gpd.sjoin_nearest(df_sub, sc_point_pid_pdf, distance_col='distance', how='left')
         # Replace lon/lat and FIPS with the ones closest to them with resources
+        # (This is to make sure all units are matched to available resources 
+        # and their associated FIPS and lon/lat are those of the resources 
+        # they are matched to, and not necessarily their actual physical locations) 
         gdf_joined['T_LONG'] = gdf_joined['T_LONG_nearest']
         gdf_joined['T_LAT'] = gdf_joined['T_LAT_nearest']
         gdf_joined['FIPS'] = gdf_joined['FIPS_nearest']
 
-        # Update ba since FIPS have been updated
+        # Update ReEDS region (r) since FIPS have been updated to FIPS_nearest
+        # Load FIPS-r mapping
         sw = reeds.io.get_switches(inputs_case)
-        df_county = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
-        df_county['FIPS'] = 'p' + df_county.FIPS
-        df_county = df_county[['FIPS','r']]
-        df_county = df_county.rename(columns={'r':'reeds_ba_nearest'})
+        county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
+        county2zone['FIPS'] = 'p' + county2zone.FIPS
+        county2zone = county2zone[['FIPS','r']]
+        # Convert r into r_nearest as these are the regions
+        # matched with FIPS_nearest of units in unitdata
+        county2zone = county2zone.rename(columns={'r':'r_nearest'})
 
-        gdf_joined = gdf_joined.merge(df_county, on='FIPS', how='left')
-        gdf_joined['reeds_ba'] = gdf_joined['reeds_ba_nearest']
+        gdf_joined = gdf_joined.merge(county2zone, on='FIPS', how='left')
+        # Assign units' regions as regions with resources they are matched to
+        gdf_joined['r'] = gdf_joined['r_nearest']
 
         # Merge unit database with VRE supply curves to assign AC capacity factors to VRE units
         # and mean resource temp for geothermal units
@@ -100,12 +110,11 @@ def main(inputs_case):
 
     # Read unitdata
     unitdata = pd.read_csv(os.path.join(inputs_case, 'unitdata_orig.csv'))
-    unitdata = unitdata.rename(columns={'r':'reeds_ba'})
     
     ## Assign sc_point_gids and pv, wind capacity factors, and geothermal resource temperature to NEMS unit
     # Using 'EPSG:5070' projection for nearest distance calculation
     crs = 'EPSG:5070'
-    # Convert NEMS data base to geopandas dataframe by lon/lat
+    # Convert unitdata to geopandas dataframe by lon/lat
     unitdata = reeds.plots.df2gdf(
         unitdata,
         lat='T_LAT',
@@ -114,7 +123,7 @@ def main(inputs_case):
     
     unitdata['temp_id'] = unitdata.index
     
-    # Assign sc_point_gids to units based on distance
+    # Assign sc_point_gids to units based on distance using interconnection_land/offshore data
     land_gdf = reeds.io.get_sitemap(crs=crs)
     offland_gdf = reeds.io.get_sitemap(offshore=True, crs=crs)
     
@@ -123,33 +132,38 @@ def main(inputs_case):
     df_rev = assign_gids_to_unitdata(unitdata, offland_gdf, land_gdf)
         
     # Clean up merged data
-    unitdata = unitdata.rename(columns={'FIPS':'FIPS_org',
-                                        'T_LONG':'T_LONG_org',
-                                        'T_LAT':'T_LAT_org',
-                                        'reeds_ba':'reeds_ba_org'})   
+    # Keep the original FIPS, r, and lon/lat data to separate them 
+    # from the FIPS, r, and lon/lat (which are the nearest ones) 
+    # in df_rev which will be merged in
+    unitdata = unitdata.rename(columns={'FIPS':'FIPS_orig',
+                                        'T_LONG':'T_LONG_orig',
+                                        'T_LAT':'T_LAT_orig',
+                                        'r':'r_orig'})   
     if 'reV_mean_resource_temp' in df_rev.columns:
         unitdata = unitdata.merge(df_rev[['sc_point_gid','temp_id',
                                           'reV_capacity_factor_ac',
                                           'reV_mean_resource_temp',
                                           'T_LONG','T_LAT','FIPS',
-                                          'reeds_ba']],
+                                          'r']],
                                           on = 'temp_id',how = 'left') 
     else:
         unitdata = unitdata.merge(df_rev[['sc_point_gid','temp_id',
                                           'reV_capacity_factor_ac',
                                           'T_LONG','T_LAT','FIPS',
-                                          'reeds_ba']],
+                                          'r']],
                                           on = 'temp_id',how = 'left') 
     
-    unitdata['FIPS'] = unitdata['FIPS'].fillna(unitdata['FIPS_org'])
-    unitdata['T_LONG'] = unitdata['T_LONG'].fillna(unitdata['T_LONG_org'])
-    unitdata['T_LAT'] = unitdata['T_LAT'].fillna(unitdata['T_LAT_org'])
-    unitdata['reeds_ba'] = unitdata['reeds_ba'].fillna(unitdata['reeds_ba_org'])
+    # Return original FIPS, r, and lon/lat to non rsc (pv, wind) and 
+    # non-geothermal units since these units are not assigned to nearest 
+    # FIPS, r, and lon/lat with resources
+    unitdata['FIPS'] = unitdata['FIPS'].fillna(unitdata['FIPS_orig'])
+    unitdata['T_LONG'] = unitdata['T_LONG'].fillna(unitdata['T_LONG_orig'])
+    unitdata['T_LAT'] = unitdata['T_LAT'].fillna(unitdata['T_LAT_orig'])
+    unitdata['r'] = unitdata['r'].fillna(unitdata['r_orig'])
 
     # Rearrange column orders
     cols = df_rev.columns.to_list()
     unitdata = unitdata[cols].drop(columns=['temp_id'])
-    unitdata = unitdata.rename(columns={'reeds_ba':'r'})
     
     # Save processed unitdata
     unitdata.to_csv(os.path.join(inputs_case,'unitdata.csv'),index=False)
@@ -169,7 +183,7 @@ if __name__ == '__main__':
     
     # for testing
     #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_WA','inputs_case')
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
