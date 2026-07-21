@@ -1,0 +1,2 @@
+model,n_outputs,mean_delta_r2,n_outputs_clipping_helps,n_outputs_clipping_hurts
+rf,382,7.264633920600848e-10,31,0
