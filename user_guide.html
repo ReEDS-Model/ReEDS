@@ -978,7 +978,7 @@ for example, if you ran already 200 runs and now want to add 100 more, set the s
 new sampled runs.</p>
 <p>The second approach, Latin Hypercube sampling (LHS), utilizes a quasi-Monte Carlo sampling method that is
 designed to improve efficiency by reducing overlap of the sampled values. An overview of this method
-can be found in <span id="id2">[<a class="reference internal" href="model_documentation.html#id2296" title="Razi Sheikholeslami and Saman Razavi. Progressive Latin Hypercube Sampling: An efficient approach for robust sampling-based analysis of environmental models. Environmental Modelling &amp; Software, 93:109–126, July 2017. URL: https://www.sciencedirect.com/science/article/pii/S1364815216305096 (visited on 2025-10-13), doi:10.1016/j.envsoft.2017.03.010.">Sheikholeslami and Razavi, 2017</a>]</span>. For this method, an NxD matrix is generated upfront
+can be found in <span id="id2">[<a class="reference internal" href="model_documentation.html#id2297" title="Razi Sheikholeslami and Saman Razavi. Progressive Latin Hypercube Sampling: An efficient approach for robust sampling-based analysis of environmental models. Environmental Modelling &amp; Software, 93:109–126, July 2017. URL: https://www.sciencedirect.com/science/article/pii/S1364815216305096 (visited on 2025-10-13), doi:10.1016/j.envsoft.2017.03.010.">Sheikholeslami and Razavi, 2017</a>]</span>. For this method, an NxD matrix is generated upfront
 for all model runs based on the number of samples (N) and the independent dimensions being sampled (D).
 The values in this matrix represent sampling of the cumulative probability distribution functions,
 and are later used by the inverse CDF (percent point) functions to derive the actual sample values.
