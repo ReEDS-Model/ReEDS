@@ -178,4 +178,4 @@ if __name__ == '__main__':
     )
     print('Starting process_unitdata.py')
     main(inputs_case)
-    print('Complete processsing process_unitdata.py')
+    print('Finished process_unitdata.py')
