@@ -231,7 +231,11 @@ eq_Objfn_op(t)$tmodel(t)..
 * plus cost of H2 fuel when using fixed price (Sw_H2=0) or during stress periods.
 * When using endogenous H2 price (Sw_H2=1 or Sw_H2=2), H2 fuel cost is captured elsewhere
 * via the capex + opex costs of H2 production and its associated electricity demand.
-              + sum{(i,v,r,h)$[tfuel(t)$valgen(i,v,r,t)$heat_rate(i,v,r,t)
+* Note on FINITO linkage: tfuel(t)=no for linked years, which hands fuel costs to
+* FINITO. Coal/nuclear/gas remain in FINITO's fe_reeds accounting, but H2 combustion is
+* excluded there (linked_finito_input.gms), so keep charging it here via the fixed price
+* (Sw_H2=0) so power-sector H2 fuel is not free in linked runs.
+              + sum{(i,v,r,h)$[[tfuel(t) or h2_combustion(i)]$valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
                              $((not h2_combustion(i)) or h2_combustion(i)$[(Sw_H2=0) or h_stress(h)])],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
