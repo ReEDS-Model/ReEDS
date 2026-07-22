@@ -354,7 +354,7 @@ Methane leakage is not included in emissions estimates for transportation or res
 ### Spatial Resolution
 
 ReEDS is typically used to study the CONUS.[^ref9]
-The 132 default ReEDS model zones are shown in {numref}`figure-spatial_layers_zones`.
+The 90 default ReEDS model zones are shown in {numref}`figure-spatial_layers_zones`.
 The model zones comprise groups of counties and do not align perfectly with real balancing authority areas.
 The zones respect state boundaries, allowing the model to represent individual state regulations and incentives.
 Transmission flows across the interfaces between model zones are subject to transfer limits, as discussed in the [Transmission](#transmission) section.
@@ -365,7 +365,7 @@ Details of the implementation are not discussed here.
 ```{figure} figs/docs/spatial_layers_zones.png
 :name: figure-spatial_layers_zones
 
-Default 132 model zones and spatial layers defined by groups of zones.
+Default model zones and spatial layers defined by groups of zones.
 ```
 
 Additional spatial layers are used in different parts of the model.[^ref10]
@@ -1919,7 +1919,7 @@ in general, the ITL for power flow from Zone A to Zone B is not the same as the 
 
 As discussed in {cite}`brownGeneralMethodEstimating2023`, because of the constraints imposed by Kirchhoff's voltage law and nodal load participation factors, the ITL tends to be smaller than the sum of line ratings that cross an interface;
 that is, every transmission line between a pair of regions cannot in general be used at its rated capacity at the same time.
-{numref}`figure-transmission-itl-r` illustrates this effect for the traditional 134 ReEDS zones.
+{numref}`figure-transmission-itl-r` illustrates this effect at the level of model zones.
 The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.
@@ -1940,7 +1940,7 @@ To read the ITL data for a given set of model zones, you can activate the `reeds
 import reeds
 # GSw_ZoneSet can be any of the supported values listed in the "Choices" column
 # for the `GSw_ZoneSet` switch in `cases.csv`
-GSw_ZoneSet = 'z132'
+GSw_ZoneSet = 'z90'
 reeds.inputs.get_itls(GSw_ZoneSet=GSw_ZoneSet)
 ```
 
@@ -3004,7 +3004,7 @@ In addition, in recent years there have been numerous changes to RPS legislation
 We periodically update our representation to capture the recent changes to the legislation;
 however, the numerous and frequent changes to state laws make it difficult to precisely represent all RPS legislation.
 
-RPS targets---along with many other data that we use to represent nuanced RPS rules---are based on data compiled by Lawrence Berkeley National Laboratory, which takes into account the in-state REC multiplier incentives and load adjustments (e.g., sales-weighted RPS targets considering different load-serving entities subject to compliance, such as investor-owned utilities, municipal utilities, and cooperatives) {cite}`barboseStateRenewablesPortfolio2024,lbnlRenewablesPortfolioStandards2025`.
+RPS targets---along with many other data that we use to represent nuanced RPS rules---are based on data compiled by Lawrence Berkeley National Laboratory, which takes into account the in-state REC multiplier incentives and load adjustments (e.g., sales-weighted RPS targets considering different load-serving entities subject to compliance, such as investor-owned utilities, municipal utilities, and cooperatives) {cite}`barboseStateRenewablesPortfolio2026,lbnlRenewablesPortfolioStandards2025`.
 Solar includes UPV and ro­oftop PV, wind includes both land-based and offshore technologies, and distributed generation (DG) includes rooftop PV and ground-mounted PV systems located within the distribution network.
 ReEDS also models alternative compliance payments for unmet RPS requirement for both the main RPS targets and solar/wind set-asides, consistent with the available data.
 
@@ -3014,7 +3014,7 @@ RPS targets and technology set-asides for 2010-2050 can be found in `/inputs/sta
 
 Technology eligibility for state RPS requirements is modeled for each state.[^ref55] For instance, California's RPS does not allow in-state rooftop solar technologies to contribute toward its RPS.
 In addition, every state has specific rules regarding hydropower generation's eligibility toward contributing RECs, which are usually based on each unit's vintage and size (e.g., small hydropower with specific capacity cutoffs is eligible in some states).
-ReEDS models these rules as allowable generation fractions, taken from {cite}`barboseStateRenewablesPortfolio2024`, which are imposed on each state's total hydropower generation, limiting the amount of hydropower RECs that each state could produce.
+ReEDS models these rules as allowable generation fractions, taken from {cite}`barboseStateRenewablesPortfolio2026`, which are imposed on each state's total hydropower generation, limiting the amount of hydropower RECs that each state could produce.
 
 [^ref55]: See Database of State Incentives for Renewables & Efficiency (DSIRE) website at [dsireusa.org](http://www.dsireusa.org/).
 If data are unavailable, ReEDS forces RPS targets to be met by using a default alternative compliance payment \$200/MWh (in 2004\$).
@@ -3035,12 +3035,12 @@ Policy-mandated capacity additions may be delayed if there is insufficient capac
 The projects are based on tracking conducted for the NLR Offshore Wind Technologies Market Report, and state totals are shown in {numref}`offshore-wind-capacity`.[^refoffshorenote] The model allows economic deployment of offshore wind capacity beyond these levels.
 All policy-mandated offshore wind capacity is assumed to be rebuilt if retiring the capacity would bring the total below the mandated limit.
 
-[^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2024` shows a nonzero offshore wind carveout beginning in 2024.
+[^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2026` shows a nonzero offshore wind carveout beginning in 2024.
 However, the ReEDS offshore wind mandate for Maryland already captures this requirement, so we zero out the wind carveout.
 
 Finally, voluntary renewable energy credits are also represented in ReEDS.
 Only renewable energy technologies are allowed to supply voluntary RECs, and Canadian imports are not allowed.
-The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1624% in absolute terms).
+The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1208% in absolute terms).
 The voluntary requirement includes an alternative compliance payment of \$10/MWh (in 2004\$).
 
 ```{table} Cumulative Offshore Wind Capacity (MW) Mandated in ReEDS
@@ -3063,8 +3063,8 @@ The voluntary requirement includes an alternative compliance payment of \$10/MWh
 
 ### Clean Energy Standards
 
-As of November 2024, 16 states had clean energy standards (see {numref}`clean-energy-req`).
-CES values are effective values[^ref56] and are taken from {cite}`barboseStateRenewablesPortfolio2024`.
+As of June 2026, 16 states had clean energy standards (see {numref}`clean-energy-req`, which shows the modeled CES values).
+CES values are effective values[^ref56] and are taken from {cite}`barboseStateRenewablesPortfolio2026`.
 These CESs are in effect generalized versions of RPSs; their model representations are very similar, with technology eligibility being the primary difference.
 
 ```{admonition} CES input data
@@ -3092,27 +3092,27 @@ The modeled CES for Massachusetts begins at 16% in 2018 and increases to 80% by 
 This multiplier shortens the cost recovery period of the plant.
 For example, when evaluating whether to build a gas-CC unit 5 years before the scheduled phaseout, the financial multiplier for gas-CC includes a 5-year cost recovery period.
 
-```{table} Clean Energy Requirement as a Percentage of In-State Sales
+```{table} Modeled Clean Energy Requirement as a Percentage of In-State Sales
 :name: clean-energy-req
 
 | **State** | **2020** | **2025** | **2030** | **2035** | **2040** | **2045** | **2050** |
 |----|---:|---:|---:|---:|---:|---:|---:|
-| CA | 0% | 0% | 57% | 86% | 90% | 95% | 95% |
-| CO | 0% | 0% | 47% | 48% | 48% | 48% | 56% |
-| CT | 0% | 0% | 43% | 71% | 99% | 99% | 99% |
-| IL | 0% | 0% | 35% | 48% | 62% | 75% | 89% |
-| MA | 23% | 55% | 64% | 72% | 80% | 88% | 96% |
-| ME | 0% | 0% | 76% | 81% | 86% | 90% | 95% |
-| MI | 0% | 42% | 61% | 72% | 80% | 100% | 100% |
-| MN | 0% | 0% | 74% | 90% | 100% | 100% | 100% |
-| NC | 0% | 0% | 40% | 50% | 60% | 70% | 80% |
-| NE | 0% | 0% | 0% | 0% | 10% | 50% | 100% |
-| NM | 0% | 0% | 0% | 0% | 68% | 83% | 90% |
-| NV | 0% | 0% | 43% | 56% | 68% | 80% | 90% |
-| NY | 0% | 0% | 70% | 70% | 100% | 100% | 100% |
-| OR | 0% | 20% | 55% | 62% | 68% | 68% | 68% |
-| VA | 0% | 36% | 44% | 54% | 66% | 78% | 80% |
-| WA | 13% | 56% | 100% | 100% | 100% | 100% | 100% |
+| CA | 32% | 45% | 61% | 87% | 92% | 97% | 97% |
+| CO | 19% | 32% | 64% | 68% | 73% | 80% | 88% |
+| CT | 25% | 38% | 59% | 79% | 100% | 100% | 100% |
+| IL | 15% | 23% | 34% | 40% | 43% | 65% | 90% |
+| MA | 24% | 56% | 65% | 73% | 80% | 88% | 96% |
+| ME | 44% | 58% | 77% | 87% | 97% | 97% | 97% |
+| MI | 12% | 21% | 39% | 80% | 100% | 100% | 100% |
+| MN | 24% | 35% | 72% | 90% | 100% | 100% | 100% |
+| NC | 6% | 11% | 25% | 39% | 53% | 67% | 81% |
+| NE | 0% | 1% | 4% | 7% | 9% | 54% | 99% |
+| NM | 16% | 36% | 45% | 56% | 67% | 82% | 90% |
+| NV | 17% | 30% | 45% | 57% | 69% | 81% | 93% |
+| NY | 34% | 49% | 70% | 84% | 100% | 100% | 100% |
+| OR | 14% | 24% | 51% | 57% | 63% | 63% | 63% |
+| VA | 0% | 32% | 39% | 47% | 58% | 70% | 72% |
+| WA | 13% | 38% | 100% | 100% | 100% | 100% | 100% |
 ```
 
 ### Storage Mandates

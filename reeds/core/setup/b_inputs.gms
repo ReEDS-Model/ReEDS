@@ -4115,24 +4115,6 @@ fuel_price(i,r,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), fuel_price(ii,r,t) } ;
 * -- Climate impacts on nondispatchable hydropower --
 *=====================================================
 
-$ifthen.climatehydro %GSw_ClimateHydro% == 1
-
-* declared over allt to allow for external data files that extend beyond end_year
-* Written by climateprep.py
-table climate_hydro_annual(r,allt)  "annual dispatchable hydropower availability"
-$offlisting
-$ondelim
-$include inputs_case%ds%climate_hydadjann.csv
-$offdelim
-$onlisting
-;
-$endif.climatehydro
-
-
-*=====================================================
-* -- Climate impacts on nondispatchable hydropower --
-*=====================================================
-
 $ifthen.climatewater %GSw_ClimateWater% == 1
 
 * Written by climateprep.py
