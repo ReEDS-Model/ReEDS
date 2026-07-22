@@ -164,6 +164,8 @@ def main(inputs_case):
     # Rearrange column orders
     cols = df_rev.columns.to_list()
     unitdata = unitdata[cols].drop(columns=['temp_id'])
+    # Make sure sc_point_gid is saved as integer
+    unitdata['sc_point_gid'] = unitdata['sc_point_gid'].astype('Int64')
     
     # Save processed unitdata
     unitdata.to_csv(os.path.join(inputs_case,'unitdata.csv'),index=False)

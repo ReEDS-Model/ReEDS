@@ -87,13 +87,15 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
                                   (gendb['StartYear'] < startyear)  &
                                   (gendb['RetireYear'] > startyear)].copy()
         if len(cap_exog[tech]) > 0:
-            # Assigning each geothermal unit in unit database to a class based on groups' temperatures
+            # Assigning each geothermal unit in unit database to a class based on 
+            # groups' temperatures
             if tech in ['geohydro_allkm','egs_allkm']:
                 cap_exog[tech]["class"] = cap_exog[tech]["reV_mean_resource_temp"].apply(
                         lambda x: assign_class(x, tech, rsc_class[tech]))
                 cap_exog[tech]["tech"] = (cap_exog[tech]["tech"].astype(str) + "_" + 
                                     cap_exog[tech]["class"].astype(str))   
-            # Assigning each solar, wind unit in unit database to a class based on groups' minimum and maximum capacity factors
+            # Assigning each solar, wind unit in unit database to a class based on 
+            # groups' minimum and maximum capacity factors
             elif tech in TECH['rsc_pv_all']:
                 cap_exog[tech]["class"] = cap_exog[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class['upv']))
@@ -109,10 +111,7 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
         cap_exog[tech].columns = COLNAMES['capexog_rsc'][1]
         if len(cap_exog[tech]) > 0:
             cap_exog[tech] = pd.concat([expand_exog_cap(row, startyear) for _, row in cap_exog[tech].iterrows()],
-                ignore_index=True)
-    #if len(cap_exog["upv"]) > 0:
-    #    cap_exog["upv"] = pd.concat([cap_exog[tech] for tech in TECH["rsc_pv_all"] 
-    #                                if tech in cap_exog and not cap_exog[tech].empty],ignore_index=True)
+                                       ignore_index=True)
 
     return cap_exog, rsc_class
 
@@ -180,7 +179,9 @@ def assign_class(cf, tech, df_class):
 
 # Expand each row into multiple rows (startyear → retirement_year)
 def expand_exog_cap(row, start_year):
-    # List the years between start_year and retirement_year (not including the retirement_year itself since unit is retired at the start of the year)
+    # List the years between start_year and retirement_year 
+    # (not including the retirement_year itself since unit is 
+    # retired at the start of the year)
     years = np.arange(start_year, row["year"])
     df = pd.DataFrame({
         "*tech": [row["*tech"]] * len(years),
@@ -190,12 +191,17 @@ def expand_exog_cap(row, start_year):
         "MW": [row["MW"]] * len(years)})
     return df
 
+# Assign each calendar year to its appropriate modeledyear
+# (For example: capacity that comes online in 2016 will 
+# show up in modeled year 2020)
 def assign_modeledyear(x,years_list):
     for m in years_list:
         if x <= m:         
             return m
     return None            
 
+# Only keep neccessary columns from unitdata to work with
+# And rename column names for easier processing
 def COLNAMES_define(retscen):
     return {
         'capexog_rsc': (
@@ -362,7 +368,9 @@ def main(reeds_path, inputs_case):
 
     #%%
     print('Importing generator database:')
-    gdb_use = pd.read_csv(os.path.join(inputs_case,'unitdata.csv'), low_memory=False)
+    gdb_use = pd.read_csv(os.path.join(inputs_case,'unitdata.csv'), 
+                          #dtype={"sc_point_gid": "Int64"},
+                          low_memory=False)
 
     # Preserve a version of gdb_use with all pv techs separated for cap_exog
     gdb_use_cap_exog = gdb_use.copy()
@@ -785,7 +793,7 @@ def main(reeds_path, inputs_case):
     ################################
     print('Gathering Retirement Data...')
     rets = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements'])) &
-                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<endyear) &
+                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
                     (gdb_use['StartYear'] <= endyear) 
                     ].copy()
     
@@ -1052,8 +1060,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    reeds_path = reeds.io.reeds_path
+    inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
