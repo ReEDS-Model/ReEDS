@@ -80,18 +80,8 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
                                                             'classification_geothermal.csv')).query(f"access_case == '{sw.GSw_SitingGeo}'")
 
     # Check if any rsc_wsc tech class in unitdata does not match with a resource class
-    # Find the tech classes in unitdata that need to be matched to resource classes
-    matched_techs = [i for i in gendb['tech'].unique().tolist() if i in TECH['rsc_wsc']]
-    # Do not count csp-ns as it is matched to upv resources 
-    matched_techs = [i for i in matched_techs if i not in TECH['rsc_csp'] ]
-    # Find tech classes in unitdata that are without assigned resource classes
-    missing_techs = list(set(matched_techs) - set(rsc_class))
-    if len(missing_techs) > 0:
-        raise ValueError(f'{missing_techs} are in unitdata but not matched with any resource classes. Exiting program.')
-    else:
-        print('All rsc/geothermal tech classes in unitdata are matched with available resource classes.')
-        
-
+    missing_resource_class(gendb,rsc_class)
+    
     cap_exog = {}
     for tech in TECH['rsc_wsc']:
         print(tech)
@@ -212,6 +202,19 @@ def assign_modeledyear(x,years_list):
         if x <= m:         
             return m
     return None            
+
+# Check if there are any rsc techs in unitdata without resource classes
+def missing_resource_class(gendb,rsc_class):
+    # Find the tech classes in unitdata that need to be matched to resource classes
+    matched_techs = [i for i in gendb['tech'].unique().tolist() if i in TECH['rsc_wsc']]
+    # Do not count csp-ns as it is matched to upv resources 
+    matched_techs = [i for i in matched_techs if i not in TECH['rsc_csp'] ]
+    # Find tech classes in unitdata that are without assigned resource classes
+    missing_techs = list(set(matched_techs) - set(rsc_class))
+    if len(missing_techs) > 0:
+        raise ValueError(f'{missing_techs} are in unitdata but not matched with any resource classes. Exiting program.')
+    else:
+        print('All rsc/geothermal tech classes in unitdata are matched with available resource classes.')
 
 # Only keep neccessary columns from unitdata to work with
 # And rename column names for easier processing
