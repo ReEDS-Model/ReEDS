@@ -1450,7 +1450,8 @@ def get_sitemap(offshore=False, geo=True, crs=None):
         + (['ba', 'always_radial'] if offshore else [])
     ]
     if geo:
-        crs = 'EPSG:5070' if (offshore or (crs is not None)) else 'ESRI:102008'
+        if crs is None:
+            crs = 'EPSG:5070' if offshore else 'ESRI:102008'
         sitemap = reeds.plots.df2gdf(sitemap, crs=crs)
     return sitemap
 

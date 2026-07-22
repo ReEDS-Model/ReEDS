@@ -28,6 +28,7 @@ cap_existing_hydro.csv,inputs/hydro/cap_existing_hydro.csv,1,ignore,ignore,,t,,0
 cap_existing_psh.csv,inputs/storage/cap_existing_psh.csv,(int(sw.GSw_Storage) != 0) and ((int(sw.GSw_HydroPSHDurData) == 1) or (sw.GSw_HydroStorInMaxFrac == 'data')),sum,ignore,r,"*i,v",,0,0,,,,,,
 cap_penalty.csv,inputs/financials/cap_penalty.csv,1,ignore,ignore,,tg,,,0,,,,,,
 cappayments_ba.csv,inputs/capacity_exogenous/cappayments_ba.csv,1,ignore,ignore,,*r,,0,0,,,,,,not done but not used
+captype.csv,inputs/sets/captype.csv,1,ignore,ignore,,,,,,,,set,captype,capacity types ( existing and prescribed),
 ccs_link.csv,inputs/emission_constraints/ccs_link.csv,1,ignore,ignore,,,,,0,,,,,,
 ccs_link_water.csv,inputs/emission_constraints/ccs_link_water.csv,1,ignore,ignore,,,,,0,,,,,,
 ccsflex_cat.csv,inputs/sets/ccsflex_cat.csv,1,ignore,ignore,,,,,,,,set,ccsflex_cat,flexible ccs performance parameter categories,

@@ -1242,13 +1242,6 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 * -- existing capacity --
 *==========================
 
-set captype  "existed capacity types ,i.e. existing (pre-start year) or prescribed (post-start year) based on model start year"
-/
-existing 
-prescribed
-/
-;
-
 *Begin loading of capacity data
 parameter poi_cap_init(r) "--MW-- initial (pre-2010) capacity of all types"
 /
@@ -1259,7 +1252,7 @@ $offdelim
 $onlisting
 / ;
 
-*created by /input_processing/writecapdat.py
+*created by reeds/input_processing/writecapdat.py
 $onempty
 parameter capnonrsc(i,r) "--MW-- existing (pre startyear) power capacity data for non resource supply curve (RSC) technologies"
 /
@@ -1331,7 +1324,7 @@ $onlisting
 / ;
 $offempty
 
-*created by /input_processing/writecapdat.py
+*created by reeds/input_processing/writecapdat.py
 *following does not include wind
 *Retirements for techs binned by heatrates are handled in hintage_data.csv
 $onempty
