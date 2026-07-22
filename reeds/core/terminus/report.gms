@@ -1652,10 +1652,10 @@ systemcost_ba_bulk_ew(sys_costs_op,r,t)$tlast(t) = systemcost_ba(sys_costs_op,r,
 *=========================
 * National System Cost
 *=========================
+systemcost(sys_costs,t) = sum{r, systemcost_ba(sys_costs,r,t)}  ;
 systemcost("inv_transmission_material_adjustment",t) = sum((r,rr,trtype,mat)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
                                                         (matprice_multiplier(mat,t) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
                                                         (INVTRAN.l(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype))  ;
-systemcost(sys_costs,t) = sum{r, systemcost_ba(sys_costs,r,t)}  ;
 systemcost_bulk(sys_costs,t) = systemcost(sys_costs,t) ;
 systemcost_bulk(sys_costs_op,t) = systemcost(sys_costs_op,t) * pvf_onm_undisc(t) ;
 
