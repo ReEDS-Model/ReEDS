@@ -1443,7 +1443,7 @@ systemcost_techba("materials_adjustment",i,r,t)$[tmodel_new(t)$sum{mat,i_theta(i
                         cost_cap_fin_mult_out(i,r,t) * cost_cap(i,t) * INV.l(i,v,r,t)
                       }
                + sum{(v,mat)$[valinv(i,v,r,t)$i_int(i,mat)], 
-                     cost_cap_fin_mult_out(i,r,t) * matprice_multiplier(mat) * i_int(i,mat) * mat_price(mat) * INV.l(i,v,r,t)} 
+                     cost_cap_fin_mult_out(i,r,t) * matprice_multiplier(mat,t) * i_int(i,mat) * mat_price(mat) * INV.l(i,v,r,t)} 
 ;
 
 *For bulk system costs present value as of model year, capital costs are unchanged,
@@ -1651,7 +1651,7 @@ systemcost_ba_bulk_ew(sys_costs_op,r,t)$tlast(t) = systemcost_ba(sys_costs_op,r,
 * National System Cost
 *=========================
 systemcost("transmission-material-adjustment",t) = sum((r,rr,trtype,mat)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
-                                                        (matprice_multiplier(mat) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
+                                                        (matprice_multiplier(mat,t) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
                                                         (INVTRAN.l(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype))  ;
 systemcost(sys_costs,t) = sum{r, systemcost_ba(sys_costs,r,t)}  ;
 systemcost_bulk(sys_costs,t) = systemcost(sys_costs,t) ;
