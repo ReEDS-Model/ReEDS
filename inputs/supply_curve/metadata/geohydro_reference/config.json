@@ -27,6 +27,7 @@
     ],
     "driver": "H5FD_CORE",
     "dtype": "np.float16",
+    "existing_sites": "{reedspath}/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv",
     "filetype": "h5",
     "filter_cols": {},
     "gather_method": "smart",
