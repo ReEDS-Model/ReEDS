@@ -45,7 +45,7 @@ def create_rsc_wsc(gendb,TECH,startyear):
 
     rsc_wsc = gendb.loc[(gendb['tech'].isin(TECH['rsc_wsc'])) &
                         (gendb['StartYear'] < startyear) &
-                        (gendb['RetireYear']     > startyear)
+                        (gendb['RetireYear'] > startyear)
                         ]
     
     rsc_wsc = rsc_wsc[['r','tech','summer_power_capacity_MW']].rename(columns={'tech':'i',
@@ -78,7 +78,20 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
     # Read resource classification inputs for geothermal
     rsc_class["geohydro_allkm"]  = pd.read_csv(os.path.join(inputs_case,
                                                             'classification_geothermal.csv')).query(f"access_case == '{sw.GSw_SitingGeo}'")
-    
+
+    # Check if any rsc_wsc tech class in unitdata does not match with a resource class
+    # Find the tech classes in unitdata that need to be matched to resource classes
+    matched_techs = [i for i in gendb['tech'].unique().tolist() if i in TECH['rsc_wsc']]
+    # Do not count csp-ns as it is matched to upv resources 
+    matched_techs = [i for i in matched_techs if i not in TECH['rsc_csp'] ]
+    # Find tech classes in unitdata that are without assigned resource classes
+    missing_techs = list(set(matched_techs) - set(rsc_class))
+    if len(missing_techs) > 0:
+        raise ValueError(f'{missing_techs} are in unitdata but not matched with any resource classes. Exiting program.')
+    else:
+        print('All rsc/geothermal tech classes in unitdata are matched with available resource classes.')
+        
+
     cap_exog = {}
     for tech in TECH['rsc_wsc']:
         print(tech)
