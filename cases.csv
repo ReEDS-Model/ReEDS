@@ -329,7 +329,7 @@ GSw_TransHurdleLevel1,Apply hurdle rates from inputs/transmission/cost_hurdle_in
 GSw_TransHurdleLevel2,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,hurdlereg,
 GSw_TransHurdleRate,Turn on (1) or off (0) hurdle rates between hierarchy regions as defined by GSw_TransHurdleLevel1/GSw_TransHurdleLevel2 and inputs/transmission/cost_hurdle_intra.csv,0; 1,1,
 GSw_TransNetworkSource,Network source for the initial transmission network used in the model,NARIS2024,NARIS2024,
-GSw_TransRestrict,hierarchy level within which to allow new transmission lines,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region,country,
+GSw_TransRestrict,hierarchy level within which to allow new transmission lines,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region,interconnect,
 GSw_TransScen,Transmission expansion scenario (options in inputs/transmission),N/A,default,
 GSw_TransSquiggliness,Transmission distance multiplier to approximate the squigglier paths followed by actual lines (only applied to NEW lines),float,1,
 GSw_TransUpgradeMethod,Method for calculating AC transmission upgrade costs,500kv,500kv,
