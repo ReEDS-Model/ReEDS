@@ -6303,11 +6303,11 @@ years_matshock(t) /%GSw_years_matshock%/
 * set price multiplier for materials
 matprice_multiplier(mat,t) = 1;
 
-$ifthene.priceshockone %GSw_priceshock_one% = 1
+$ifthene.priceshockone %GSw_priceshock_one% == 1
 matprice_multiplier(mat,t)$[(sameas(mat,'%GSw_matprice_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockone
 
-$ifthene.priceshockall %GSw_priceshock_all% = 1
+$ifthene.priceshockall %GSw_priceshock_all% == 1
 matprice_multiplier(mat,t)$[(not sameas(mat,'%GSw_matsupply_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockall
 
