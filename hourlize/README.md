@@ -233,7 +233,6 @@ This section provides some descriptions and typical values for the settings in t
 | profile_id_col  | Unique identifier for reV supply curve and profiles |  'sc_point_gid' |
 | resource_source_timezone  | UTC would be 0, Eastern standard time would be -5 | 0 |
 | scale_factor  | Factor by which capacity factor values are scaled up when writing hourly profiles. | 1e4 |
-| start_year  | The start year of the model, for existing capacity purposes. | 2010 |
 | state_abbrev  | Path to file with state abbreviations  | '{hourlize_path}/inputs/resource/state_abbrev.csv' |
 |   subsetvars | list of columns in the rev_paths file to use to select the appropriate rev_path   | ['tech', 'access_case'] |
 | subtract_exog  | Indicate whether to remove exogenous (pre-start_year) capacity from the supply curve [default False] |  False |

@@ -324,7 +324,7 @@ def add_ilr(tech, df, reeds_path, casename):
 
 def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize_path, outpath,
                                     reg_map_file, min_cap, capacity_col,
-                                    state_abbrev, start_year, casename,
+                                    state_abbrev, casename,
                                     filter_cols={}, profile_id_col="sc_point_gid",
                                     offshore_meshed=False):
     """processes reV supply curve file; output is a dataframe with a row for each supply curve point
@@ -347,8 +347,6 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
         column in supply curve file to use for 'capacity'
     state_abbrev
         path to state abbreviation file
-    start_year
-        start year to use for existing sites
     filter_cols, optional
         dictionary identifying columns to filter as well as filtering condition, by default {}
     profile_id_col, optional
@@ -667,7 +665,6 @@ def convert_upv_ac_profiles_to_dc(df_prof, df_sc):
 
 def save_sc_outputs(
     df_sc,
-    start_year,
     outpath,
     tech,
     subtract_exog,
@@ -849,7 +846,6 @@ if __name__== '__main__':
         min_cap=cf.min_cap,
         capacity_col=cf.capacity_col,
         state_abbrev=cf.state_abbrev,
-        start_year=cf.start_year,
         casename=cf.casename,
         filter_cols=cf.filter_cols,
         profile_id_col=cf.profile_id_col,
@@ -867,7 +863,6 @@ if __name__== '__main__':
     #%% Save the supply curve
     df_sc_out = save_sc_outputs(
         df_sc=df_sc,
-        start_year=cf.start_year,
         outpath=cf.outpath,
         tech=cf.tech,
         subtract_exog=cf.subtract_exog,
