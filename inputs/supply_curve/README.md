@@ -1,4 +1,4 @@
-## Renewable Energy Supply Curve Files
+## Renewable Energy Supply Curve Input Files
 
 - CSP (concentrated solar thermal power): 
   - The CSP resource classes are defined as follows: 

@@ -1,4 +1,4 @@
-## Power sector employment data
+## Power Sector Employment Data
 ### Data input options
 - `employment_factor_plant_jedi.csv`: Employment factor data for power plants of different technologies, taken from the JEDI/WIRED model.
 Sources for employment data of individual technologies in JEDI/WIRED are shown in the table below.
