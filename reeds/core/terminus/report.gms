@@ -26,6 +26,7 @@ sys_costs /
   inv_transmission_interzone_ac_investment
   inv_transmission_interzone_dc_investment
   inv_transmission_intrazone_investment
+  inv_transmission_material_adjustment
   materials_adjustment
   op_acp_compliance_costs
   op_co2_incentive_negative
@@ -74,6 +75,7 @@ sys_costs_inv(sys_costs) /
   inv_transmission_interzone_ac_investment
   inv_transmission_interzone_dc_investment
   inv_transmission_intrazone_investment
+  inv_transmission_material_adjustment
   materials_adjustment
 /,
 
@@ -1650,7 +1652,7 @@ systemcost_ba_bulk_ew(sys_costs_op,r,t)$tlast(t) = systemcost_ba(sys_costs_op,r,
 *=========================
 * National System Cost
 *=========================
-systemcost("transmission-material-adjustment",t) = sum((r,rr,trtype,mat)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
+systemcost("inv_transmission_material_adjustment",t) = sum((r,rr,trtype,mat)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
                                                         (matprice_multiplier(mat,t) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
                                                         (INVTRAN.l(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype))  ;
 systemcost(sys_costs,t) = sum{r, systemcost_ba(sys_costs,r,t)}  ;
