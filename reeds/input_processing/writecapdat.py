@@ -369,7 +369,7 @@ def main(reeds_path, inputs_case):
     #%%
     print('Importing generator database:')
     gdb_use = pd.read_csv(os.path.join(inputs_case,'unitdata.csv'), 
-                          #dtype={"sc_point_gid": "Int64"},
+                          dtype={"sc_point_gid": "Int64"},
                           low_memory=False)
 
     # Preserve a version of gdb_use with all pv techs separated for cap_exog
@@ -1060,8 +1060,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    reeds_path = reeds.io.reeds_path
-    inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
