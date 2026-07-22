@@ -6278,7 +6278,7 @@ $offdelim
 $onlisting
 /
 i_theta(i,mat,t)        "-- share -- share of capital costs attributable to materials for each technology, by year"
-matprice_multiplier(mat) "-- multiplier -- multiplier on material prices"
+matprice_multiplier(mat,t) "-- multiplier -- multiplier on material prices"
 ;
 
 i_int(i,mat) = sum(tcat$i_tcat(i,tcat),mat_int(tcat,mat)) / 1000 ;
@@ -6295,14 +6295,19 @@ yearweight(t)$tlast(t) = 3 ;
 * [metric tonnes / MW] * [$2004 / metric tonne] / [$2004 / MW]
 i_theta(i,mat,t)$[i_int(i,mat)$cost_cap(i,t)] = i_int(i,mat) * mat_price(mat) / cost_cap(i,t) ; 
 
+* set years shocks apply
+set
+years_matshock(t) /%GSw_years_matshock%/ 
+;
+
 * set price multiplier for materials
-matprice_multiplier(mat) = 1;
+matprice_multiplier(mat,t) = 1;
 
 $ifthene.priceshockone %GSw_priceshock_one% = 1
-matprice_multiplier(mat)$[(sameas(mat,'%GSw_matprice_spec%'))] = %GSw_matprice_multiplier% ;
+matprice_multiplier(mat,t)$[(sameas(mat,'%GSw_matprice_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockone
 
 $ifthene.priceshockall %GSw_priceshock_all% = 1
-matprice_multiplier(mat)$[(not sameas(mat,'%GSw_matsupply_spec%'))] = %GSw_matprice_multiplier% ;
+matprice_multiplier(mat,t)$[(not sameas(mat,'%GSw_matsupply_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockall
 

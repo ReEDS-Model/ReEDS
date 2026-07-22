@@ -4024,7 +4024,7 @@ eq_mat_supply(mat,t)$[tmodel(t)]..
 ;
 
 * material demand cannot exceed the historic share of total materials produced (metric tons)
-eq_mat_balance(mat,t)$[tmodel(t)$Sw_mat_restrict$[t.val>=2029]]..
+eq_mat_balance(mat,t)$[tmodel(t)$Sw_mat_restrict$years_matshock(t)]..
 * material supply is limited to historical consumption from the power sector (2020 to 2026)
     MAT_SUPPLY(mat,t) * share_consumption(mat)
 
