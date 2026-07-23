@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import traceback
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -285,23 +286,27 @@ if __name__ == '__main__':
     except ValueError:
         year = args.year
 
-    f, ax = plot_hourly_demand_profiles(
-        cases,
-        colors,
-        year=year,
-        weatheryear=args.weatheryear,
-    )
+    try:
+        f, ax = plot_hourly_demand_profiles(
+            cases,
+            colors,
+            year=year,
+            weatheryear=args.weatheryear,
+        )
+        outfile = os.path.join(outpath, f'demand_daily-profile_{year}.png')
+        f.savefig(outfile, dpi=250)
+        print(f'Saved: {outfile}')
+    except Exception as e:
+        print(traceback.format_exc())
 
-    f_modelyear, _, _ = plot_modelyear_load_stats(
-        cases,
-        colors,
-        weatheryear=args.weatheryear,
-    )
-
-    outfile = os.path.join(outpath, f'demand_daily-profile_{year}.png')
-    f.savefig(outfile, dpi=250)
-    print(f'Saved: {outfile}')
-
-    outfile_modelyear = os.path.join(outpath, f'demand_annual-total-peak_by-modelyear_wy{args.weatheryear}.png')
-    f_modelyear.savefig(outfile_modelyear, dpi=250)
-    print(f'Saved: {outfile_modelyear}')
+    try:
+        f_modelyear, _, _ = plot_modelyear_load_stats(
+            cases,
+            colors,
+            weatheryear=args.weatheryear,
+        )
+        outfile_modelyear = os.path.join(outpath, f'demand_annual-total-peak_by-modelyear_wy{args.weatheryear}.png')
+        f_modelyear.savefig(outfile_modelyear, dpi=250)
+        print(f'Saved: {outfile_modelyear}')
+    except Exception as e:
+        print(traceback.format_exc())
