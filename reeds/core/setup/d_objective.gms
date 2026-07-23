@@ -367,7 +367,7 @@ eq_Objfn_op(t)$tmodel(t)..
 *-- begin materials --
 
 * allow for material slack at a high penalty cost to avoid infeasibility when material constraints are binding
-              + mat_slackprice(mat) * sum(mat, MAT_SLACK(mat,t))
+              + sum(mat, mat_slackprice(mat) * MAT_SLACK(mat,t))
 
 * --- materials costs --- 
 
