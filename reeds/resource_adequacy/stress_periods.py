@@ -6,6 +6,9 @@ import numpy as np
 from glob import glob
 import re
 import matplotlib.pyplot as plt
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import reeds
 from reeds.input_processing import hourly_writetimeseries
@@ -709,14 +712,14 @@ def main(sw, t, iteration=0, logging=True):
     return
 
 
-# if __name__ == '__main__':
-#     #%%###  option to run script directly for debugging
-#     casedir =  "/path/to/ReEDS/runs/runname"
-#     t = 2030 # previous solve year
-#     iteration = 0
-#     # load switches
-#     sw = reeds.io.get_switches(casedir)
-#     sw['t'] = t
-#     sw['GSw_PRM_UpdateMethod'] = 2
-#     #%%###
-#     main(sw, t, iteration, logging=False)
+if __name__ == '__main__':
+    #%%###  option to run script directly for debugging
+    casedir =  "/projects/largeload/ReEDS_trees_github.com/large-load/runs/v20260710_central"
+    t = 2030 # previous solve year
+    iteration = 0
+    # load switches
+    sw = reeds.io.get_switches(casedir)
+    sw['t'] = t
+    sw['GSw_PRM_UpdateMethod'] = 2
+    #%%###
+    main(sw, t, iteration, logging=False)
