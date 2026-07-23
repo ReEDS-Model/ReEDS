@@ -17,6 +17,7 @@ from itertools import product
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  
 import reeds  
+import postprocessing.retail_rate_module.calculate_historical_capex as calc_hist_capex
 reeds_path = reeds.io.reeds_path  
 
 sys.path.append(os.path.join(reeds_path, 'postprocessing', 'bokehpivot'))
@@ -315,6 +316,8 @@ def calc_systemcost(
     pvf_capital = reeds.io.read_output(case, 'pvf_capital', valname='pvfcap')
     pvf_onm = reeds.io.read_output(case, 'pvf_onm', valname='pvfonm')
     crf_in = pd.read_csv(os.path.join(inputs_case, 'crf.csv'))
+    if not Path(inputs_case, 'df_capex_init.csv').exists():
+        calc_hist_capex.main(Path(inputs_case).parent)
     df_capex_init = pd.read_csv(os.path.join(inputs_case, 'df_capex_init.csv'))
 
     sw = reeds.io.get_switches(case)  

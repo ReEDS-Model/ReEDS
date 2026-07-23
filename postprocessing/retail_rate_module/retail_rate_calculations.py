@@ -10,6 +10,7 @@ import numpy as np
 import os
 import sys
 import urllib
+from pathlib import Path
 ### Local imports
 import ferc_distadmin
 import calculate_historical_capex
@@ -268,8 +269,9 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
     """
     """
     print('Starting retail_rate_calculations.py')
-    # Run historical capex calculation
-    calculate_historical_capex.main(run_dir)
+    # Run historical capex calculation if needed
+    if not Path(run_dir, 'inputs_case', 'df_capex_init.csv').exists():
+        calculate_historical_capex.main(run_dir)
 
     # Get module directory for relative paths
     mdir = os.path.dirname(os.path.abspath(__file__))
