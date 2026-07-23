@@ -52,7 +52,7 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
     ```python
     import reeds
     ## GSw_ZoneSet can be any of the supported zone resolutions listed in the `GSw_ZoneSet` row of `cases.csv`
-    GSw_ZoneSet = 'z134'
+    GSw_ZoneSet = 'z90'
     reeds.inputs.get_itls(GSw_ZoneSet=GSw_ZoneSet)
     ```
 

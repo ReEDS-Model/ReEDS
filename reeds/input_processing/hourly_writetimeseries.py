@@ -232,7 +232,6 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
         szn_month_weights
         """
         climate_index = {
-            'temp_hydadjsea': ['r','season','t'],
             'temp_UnappWaterMult': ['wst','r','season','t'],
             'temp_UnappWaterSeaAnnDistr': ['wst','r','season','t']
         }
@@ -1157,10 +1156,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .rename(columns={"season": "szn"})
     )
     
-    ### Import and format monthly climate_{hydadjsea/UnappWaterMult/UnappWaterSeaAnnDistr}.csv
+    ### Import and format monthly climate_{UnappWaterMult/UnappWaterSeaAnnDistr}.csv
     climate_files = {}   
-    if int(sw.GSw_ClimateHydro):
-        climate_files['temp_hydadjsea'] = format_climate_inputs('temp_hydadjsea', inputs_case, szn_month_weights)
     if int(sw.GSw_ClimateWater):
         for file in ['temp_UnappWaterMult', 'temp_UnappWaterSeaAnnDistr']:
             climate_files[file] = format_climate_inputs(file, inputs_case, szn_month_weights)
@@ -1624,10 +1621,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "peak_h": [pd.DataFrame(columns=["*r", "h", "t", "MW"]), True, False],
     }
 
-    # Add climate inputs based on GSw_Climate* switch selection
-    if int(sw.GSw_ClimateHydro):
-        ## Climate-adjusted annual/seasonal nondispatchable hydropower availability
-        write['climate_hydadjsea'] = [climate_files['temp_hydadjsea'], True, True]
+    # Add climate inputs to write dictionary based on GSw_ClimateWater
     if int(sw.GSw_ClimateWater):
         ## Climate-adjusted time-varying annual/seasonal water supply
         write['climate_UnappWaterMult'] = [climate_files['temp_UnappWaterMult'], True, True]
