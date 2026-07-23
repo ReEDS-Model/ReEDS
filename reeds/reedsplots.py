@@ -5183,14 +5183,19 @@ def plot_repdays(case=None, year=None, actualday2repday=None, cmap=cmocean.cm.ph
         hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
         hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
 
-        if year is None:
-            year = int(sw.GSw_HourlyWeatherYears.split('_')[0])
+    if year is None:
+        year = int(sw.GSw_HourlyWeatherYears.split('_')[0])
 
-        actualday2repday = (
-            hmap_myr.loc[str(year)]
-            .drop_duplicates(['year','yearperiod'], keep='first')
-            .timestamp_rep
-        )
+    actualday2repday1yr = (
+        hmap_myr.loc[str(year)]
+        .drop_duplicates(['year','yearperiod'], keep='first')
+        .timestamp_rep
+    )
+    actualday2repday = (
+        hmap_myr
+        .drop_duplicates(['year','yearperiod'], keep='first')
+        .timestamp_rep
+    )
     repdaycounts = actualday2repday.value_counts()
 
     ### Plot it
@@ -5206,7 +5211,7 @@ def plot_repdays(case=None, year=None, actualday2repday=None, cmap=cmocean.cm.ph
         ax[row].set_yticks([])
         ax[row].set_xticks([])
     ### Data
-    for actualday, repday in actualday2repday.items():
+    for actualday, repday in actualday2repday1yr.items():
         row = actualday.month - 1
         xstart = actualday.day - 1
         xend = xstart + (5 if sw.GSw_HourlyType == 'wek' else 1)
@@ -5226,7 +5231,7 @@ def plot_repdays(case=None, year=None, actualday2repday=None, cmap=cmocean.cm.ph
                 f'×{repdaycounts[repday]}', (xend-0.03, 0.05), ha='right', fontsize=7,
             )
 
-    return f, ax, actualday2repday
+    return f, ax, actualday2repday1yr
 
 
 def get_tech_colors_order(order='fuel_storage_vre'):
