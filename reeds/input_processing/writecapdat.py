@@ -787,7 +787,7 @@ def main(reeds_path, inputs_case):
                 }
     comments = {
         'pcat': 'prescribed capacity categories',
-        'poi_cap_init': '--MW-- initial (pre-2010) capacity of all types',
+        'poi_cap_init': '--MW-- initial (pre-startyear) capacity of all types',
     }
 
     return files_out, comments
