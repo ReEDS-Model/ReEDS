@@ -963,6 +963,13 @@ def pre_prices(dfs, **kw):
     #Calculate $
     df['$'] = df['p'] * df['q']
     df.drop(['p', 'q'], axis='columns',inplace=True)
+    #Combine the stress-period state RPS/CES price component into the base state_rps category.
+    #state_rps and state_rps_stress use different quantity bases (MWh vs. per-stress-instance), so only
+    #their $ (price*quantity) values are combined here, not price or quantity individually.
+    if (df['type'] == 'state_rps_stress').any():
+        df['type'] = df['type'].replace({'state_rps_stress': 'state_rps'})
+        group_cols = [c for c in ['type', 'subtype', 'rb', 'timeslice', 'year'] if c in df.columns]
+        df = df.groupby(group_cols, sort=False, as_index=False)['$'].sum()
     #Calculate total $
     df_tot = df[df['type'].isin(price_types)].copy()
     df_tot = df_tot.drop(columns=['type','subtype'])
