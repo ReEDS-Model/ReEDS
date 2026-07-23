@@ -307,6 +307,6 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     #%% All done
     print("Completed report_dump.py")
     try:
-        toc(tic=tic, year=0, path=case, process="report_dump.py")
+        reeds.log.toc(tic=tic, year=0, path=case, process="report_dump.py")
     except NameError:
         print("reeds/log.py not found, so not logging output")
