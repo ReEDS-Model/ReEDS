@@ -1,12 +1,12 @@
 #%% Imports
 import argparse
 import os
+import re
 import sys
 import traceback
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -18,20 +18,72 @@ reeds.plots.plotparams()
 
 #%% Plotting
 
-def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
+def _parse_weatheryears(weatheryear):
+    """Parse a weather-year input into a sorted list of unique integer years."""
+    if isinstance(weatheryear, int):
+        return [weatheryear]
+
+    if isinstance(weatheryear, str):
+        tokens = [tok.strip() for tok in re.split(r'[\s,]+', weatheryear) if tok.strip()]
+    else:
+        try:
+            tokens = list(weatheryear)
+        except TypeError as exc:
+            raise ValueError(
+                f'Invalid weather year input: {weatheryear}. Provide an integer year '
+                'or comma/space-delimited list of years.'
+            ) from exc
+
+    if not tokens:
+        raise ValueError('No weather years provided.')
+
+    try:
+        years = sorted(set(int(token) for token in tokens))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f'Invalid weather year input: {weatheryear}. All weather years must be integers.'
+        ) from exc
+
+    return years
+
+
+def _weatheryears_label(weatheryears):
+    """Create a compact weather-year label for titles and output names."""
+    if len(weatheryears) == 1:
+        return str(weatheryears[0])
+    return ','.join(str(y) for y in weatheryears)
+
+
+def _validate_selected_weatheryears(selected_years, available_years, case_label, modelyear=None):
+    """Ensure selected weather years exist in available years for a given case/model year."""
+    missing = sorted(set(selected_years) - set(available_years))
+    if missing:
+        where = f' for case {case_label}'
+        if modelyear is not None:
+            where += f', model year {modelyear}'
+        raise ValueError(
+            f'Weather year(s) {missing} not found{where}. '
+            f'Available weather years: {sorted(available_years)}'
+        )
+
+def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
     """
-    Compare hourly demand profiles across cases for a given weather year.
-    Overlays the selected weather year demand and fills envelope of min/max across weather years.
+    Compare mean daily demand profiles across cases for one or more weather years.
+    Overlays the selected weather year profile(s) and fills envelope of min/max across all weather years.
     """
     if len(cases) < 2:
         raise ValueError('Need at least 2 cases to compare inputs.')
 
+    selected_weatheryears = _parse_weatheryears(weatheryear)
+    selected_label = _weatheryears_label(selected_weatheryears)
+
     plt.close()
     f, ax = plt.subplots(figsize=(12, 4.5))
     x_start, x_end = None, None
+    year_linestyles = ['-', '--', '-.', ':']
 
     for idx, (casename, casepath) in enumerate(cases.items()):
-        print(f'  {casename}: loading hourly demand...')
+        print(f'  {casename}: loading demand...')
         color = colors.get(casename, f'C{idx}')
 
         # Parse inputs
@@ -66,22 +118,30 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
         hourly_stats = dfprofile.groupby(doy).agg(['min', 'max'])
         hourly_stats.columns = ['min', 'max']
 
-        selected_profile = dfprofile.loc[dfprofile.index.year == int(weatheryear)]
-        if selected_profile.empty:
-            available_years = sorted(dfprofile.index.year.unique().tolist())
-            raise ValueError(
-                f'Weather year {weatheryear} not found for case {casename}. '
-                f'Available weather years: {available_years}'
-            )
-        hourly_stats['selected'] = selected_profile.groupby(selected_profile.index.dayofyear).mean()
+        available_years = sorted(dfprofile.index.year.unique().tolist())
+        _validate_selected_weatheryears(selected_weatheryears, available_years, casename)
+        selected_daily_profiles = {}
+        for wy in selected_weatheryears:
+            selected_profile = dfprofile.loc[dfprofile.index.year == wy]
+            daily_profile = selected_profile.groupby(selected_profile.index.dayofyear).mean()
+            selected_daily_profiles[wy] = daily_profile.reindex(hourly_stats.index)
 
         # Create date x-axis for a standard year
         date_range = pd.date_range('2025-01-01', periods=len(hourly_stats), freq='D')
         if x_start is None:
             x_start, x_end = date_range[0], date_range[-1]
 
-        # Plot selected weather year
-        ax.plot(date_range, hourly_stats['selected'], lw=1.0, color=color, label=casename)
+        # Plot selected weather year(s)
+        for iwy, wy in enumerate(selected_weatheryears):
+            label = casename if len(selected_weatheryears) == 1 else f'{casename} WY{wy}'
+            ax.plot(
+                date_range,
+                selected_daily_profiles[wy].values,
+                lw=1.0,
+                linestyle=year_linestyles[iwy % len(year_linestyles)],
+                color=color,
+                label=label,
+            )
 
         # Fill envelope (min/max across weather years)
         ax.fill_between(
@@ -107,9 +167,11 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
     ax.grid(True, which='major', axis='y', alpha=0.3)
 
     yearlabel = year if year not in [0, None, 'last'] else 'last model year'
+    wy_title_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
     ax.set_title(
-        f'Daily mean demand in {yearlabel} for weather year {weatheryear} with min/max envelope across all weather years',
-        x=0, ha='left'
+        f'Daily mean demand in {yearlabel} for {wy_title_label} {selected_label} with min/max envelope across all weather years',
+        x=0,
+        ha='left',
     )
     ax.legend(frameon=False, loc='lower center', ncol=len(cases))
     reeds.plots.despine(ax)
@@ -117,19 +179,23 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
     return f, ax
 
 
-def plot_modelyear_load_stats(cases, colors, weatheryear=2012):
+def plot_peak_and_total_load(cases, colors, weatheryear=2012):
     """
     Compare annual total load and annual peak load by model year.
     For each model year and case, compute min/max across weather years and
-    the value for the selected weather year.
+    the value for each selected weather year.
     """
     if len(cases) < 2:
         raise ValueError('Need at least 2 cases to compare inputs.')
+
+    selected_weatheryears = _parse_weatheryears(weatheryear)
+    selected_label = _weatheryears_label(selected_weatheryears)
 
     f, (ax_total, ax_peak) = plt.subplots(
         1, 2, figsize=(12, 4.5), constrained_layout=True
     )
     stats_by_case = {}
+    year_linestyles = ['-', '--', '-.', ':']
 
     for idx, (casename, casepath) in enumerate(cases.items()):
         print(f'  {casename}: loading annual and peak stats by model year...')
@@ -162,22 +228,28 @@ def plot_modelyear_load_stats(cases, colors, weatheryear=2012):
             annual_total_by_wy = profile.groupby(profile.index.year).sum() / 1e3
             annual_peak_by_wy = profile.groupby(profile.index.year).max()
 
-            if int(weatheryear) not in annual_total_by_wy.index:
-                available_years = sorted(annual_total_by_wy.index.tolist())
-                raise ValueError(
-                    f'Weather year {weatheryear} not found for case {casename}, '
-                    f'model year {t}. Available weather years: {available_years}'
-                )
+            _validate_selected_weatheryears(
+                selected_weatheryears,
+                annual_total_by_wy.index.tolist(),
+                casename,
+                modelyear=t,
+            )
 
             rows.append(
                 {
                     't': t,
                     'total_min': annual_total_by_wy.min(),
                     'total_max': annual_total_by_wy.max(),
-                    'total_selected': annual_total_by_wy.loc[int(weatheryear)],
                     'peak_min': annual_peak_by_wy.min(),
                     'peak_max': annual_peak_by_wy.max(),
-                    'peak_selected': annual_peak_by_wy.loc[int(weatheryear)],
+                    **{
+                        f'total_selected_{wy}': annual_total_by_wy.loc[wy]
+                        for wy in selected_weatheryears
+                    },
+                    **{
+                        f'peak_selected_{wy}': annual_peak_by_wy.loc[wy]
+                        for wy in selected_weatheryears
+                    },
                 }
             )
 
@@ -186,20 +258,39 @@ def plot_modelyear_load_stats(cases, colors, weatheryear=2012):
 
         x = dfstats.index.values
 
-        ax_total.plot(x, dfstats['total_selected'].values, lw=1.2, color=color, label=casename)
+        for iwy, wy in enumerate(selected_weatheryears):
+            label = casename if len(selected_weatheryears) == 1 else f'{casename} WY{wy}'
+            ax_total.plot(
+                x,
+                dfstats[f'total_selected_{wy}'].values,
+                lw=1.2,
+                linestyle=year_linestyles[iwy % len(year_linestyles)],
+                color=color,
+                label=label,
+            )
         ax_total.fill_between(x, dfstats['total_max'].values, dfstats['total_min'].values, lw=0, alpha=0.15, color=color)
         ax_total.plot(x, dfstats['total_max'].values, lw=0.8, linestyle=':', color=color, alpha=0.7)
         ax_total.plot(x, dfstats['total_min'].values, lw=0.8, linestyle=':', color=color, alpha=0.7)
 
-        ax_peak.plot(x, dfstats['peak_selected'].values, lw=1.2, color=color, label=casename)
+        for iwy, wy in enumerate(selected_weatheryears):
+            label = casename if len(selected_weatheryears) == 1 else f'{casename} WY{wy}'
+            ax_peak.plot(
+                x,
+                dfstats[f'peak_selected_{wy}'].values,
+                lw=1.2,
+                linestyle=year_linestyles[iwy % len(year_linestyles)],
+                color=color,
+                label=label,
+            )
         ax_peak.fill_between(x, dfstats['peak_max'].values, dfstats['peak_min'].values, lw=0, alpha=0.15, color=color)
         ax_peak.plot(x, dfstats['peak_max'].values, lw=0.8, linestyle=':', color=color, alpha=0.7)
         ax_peak.plot(x, dfstats['peak_min'].values, lw=0.8, linestyle=':', color=color, alpha=0.7)
 
     ax_total.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax_total.set_ylabel('Annual total load [TWh]')
+    wy_total_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
     ax_total.set_title(
-        f'Annual total load by model year (weather year {weatheryear}, min/max envelope)',
+        f'Annual total load by model year ({wy_total_label} {selected_label}, min/max envelope)',
         x=0,
         ha='left',
     )
@@ -213,7 +304,7 @@ def plot_modelyear_load_stats(cases, colors, weatheryear=2012):
     ax_peak.set_xlabel('Model year')
     ax_peak.set_ylabel('Annual peak load [GW]')
     ax_peak.set_title(
-        f'Annual peak load by model year (weather year {weatheryear}, min/max envelope)',
+        f'Annual peak load by model year ({wy_total_label} {selected_label}, min/max envelope)',
         x=0,
         ha='left',
     )
@@ -253,12 +344,15 @@ parser.add_argument(
     help='Case-path suffix to force as base case (kept for parity with compare_cases.py).',
 )
 parser.add_argument(
+    '--output', '-o', choices=['pdf', 'png', 'ppt', 'pptx'], default='png',
+    help='Output format (png or pptx)')
+parser.add_argument(
     '--year', '-y', type=str, default='2050',
     help='Model year for hourly demand plot (integer year or "last").',
 )
 parser.add_argument(
     '--weatheryear', '-w', type=str, default='2012',
-    help='Actual weather year to plot.',
+    help='Actual weather year(s) to plot (single year or comma/space-delimited list, e.g., "2012" or "2007,2012").',
 )
 
 
@@ -281,32 +375,57 @@ if __name__ == '__main__':
     outpath = os.path.join(firstcasepath, 'outputs', 'comparisons','inputs')
     os.makedirs(outpath, exist_ok=True)
 
+    #%% Create output container
+    suffix = args.output.strip('.')
+    if suffix in ['pdf', 'png']:
+        savepath = os.path.join(firstcasepath, 'outputs', 'comparisons','inputs')
+        os.makedirs(savepath, exist_ok=True)
+
+        def saveit(savename):
+            outpath = os.path.join(savepath, savename.lower().replace(' ', '-') + f'.{suffix}')
+            plt.savefig(outpath)
+            print(os.path.basename(outpath))
+            if mpl.interactive:
+                plt.show()
+
+    elif suffix in ['ppt', 'pptx']:
+        savepath = os.path.join(firstcasepath, 'outputs', 'comparisons', 'inputs', 'inputs.pptx')
+        prs = reeds.report_utils.init_pptx()
+        def saveit(savename, **kwargs):
+            reeds.report_utils.add_to_pptx(savename, prs=prs, **kwargs)
+            if mpl.interactive:
+                plt.show()
+
     try:
         year = int(args.year)
     except ValueError:
         year = args.year
 
+    selected_weatheryears = _parse_weatheryears(args.weatheryear)
+    weatheryear_label = _weatheryears_label(selected_weatheryears)
+
     try:
-        f, ax = plot_hourly_demand_profiles(
+        f, ax = plot_daily_demand_profiles(
             cases,
             colors,
             year=year,
-            weatheryear=args.weatheryear,
+            weatheryear=selected_weatheryears,
         )
-        outfile = os.path.join(outpath, f'demand_daily-profile_{year}.png')
-        f.savefig(outfile, dpi=250)
-        print(f'Saved: {outfile}')
+        saveit(f'demand daily profile my{year} wy{weatheryear_label}')
     except Exception as e:
         print(traceback.format_exc())
 
     try:
-        f_modelyear, _, _ = plot_modelyear_load_stats(
+        f_modelyear, _, _ = plot_peak_and_total_load(
             cases,
             colors,
-            weatheryear=args.weatheryear,
+            weatheryear=selected_weatheryears,
         )
-        outfile_modelyear = os.path.join(outpath, f'demand_annual-total-peak_by-modelyear_wy{args.weatheryear}.png')
-        f_modelyear.savefig(outfile_modelyear, dpi=250)
-        print(f'Saved: {outfile_modelyear}')
+        saveit(f'demand by modelyear wy{weatheryear_label}')
     except Exception as e:
         print(traceback.format_exc())
+
+    #%% Save the powerpoint file if necessary
+    if suffix in ['ppt', 'pptx']:
+        print(f'\ninput_plots.py results saved to:\n{savepath}')
+        prs.save(savepath)
