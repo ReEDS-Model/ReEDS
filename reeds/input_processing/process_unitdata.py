@@ -18,7 +18,7 @@ import reeds
 ### ===========================================================================
 def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
     '''
-    Function to merge NEMS unitdata with interconnection_land/offshore data by 
+    Merge NEMS unitdata with interconnection_land/offshore data by 
     mapping each unit in NEMS by lon/lat to its closest sc_point_gid
     '''
 

@@ -287,8 +287,13 @@ def check_missing_class_resource(existing_techs, resources):
         
         if len(missing_class_resource) > 0:
             # Print out missing classes
-            missing_class_resource.to_csv(os.path.join(inputs_case,'missing_class_resource.csv'), index=False)
-            raise ValueError('There are mismatched tech class capacities and resources. Exiting program.')
+    fpath = os.path.join(inputs_case, 'missing_class_resource.csv')
+    missing_class_resource.to_csv(fpath, index=False)
+    err = (
+        f'{len(missing_class_resources)} mismatched tech class capacities and resources.\n'
+        f'Details can be found in {fpath}.'
+    )
+    raise ValueError(err)
         else:
             print('All capacities and resources are matched.')
             

@@ -76,8 +76,10 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
     rsc_class["wind-ofs"] = pd.concat(wind_ofs_class_all, ignore_index=True) 
 
     # Read resource classification inputs for geothermal
-    rsc_class["geohydro_allkm"]  = pd.read_csv(os.path.join(inputs_case,
-                                                            'classification_geothermal.csv')).query(f"access_case == '{sw.GSw_SitingGeo}'")
+    rsc_class["geohydro_allkm"] = (
+        pd.read_csv(os.path.join(inputs_case, 'classification_geothermal.csv'))
+        .query(f"access_case == '{sw.GSw_SitingGeo}'")
+    )
 
     # Check if any rsc_wsc tech class in unitdata does not match with a resource class
     missing_resource_class(gendb,rsc_class)
@@ -118,8 +120,8 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
 
     return cap_exog, rsc_class
 
-# Establish class cut offs based on capacity factors
 def prep_supply_curve(reeds_path, tech, access_case, subtech):
+    """Establish class cut offs based on capacity factors"""
     class_def_name = 'reV_cf_ac'
 
     # Load the supply curve raw file produced by reV
@@ -143,7 +145,7 @@ def prep_supply_curve(reeds_path, tech, access_case, subtech):
         summary_df.columns = ['class', f'min_{class_def_name}',
                                f'max_{class_def_name}', 'access_case']
     
-    # Only use max capacity factors as class cut offs to avoid gaps
+    # Pin each class's min CF to the max CF of the previous class to avoid gaps
     summary_df = summary_df.sort_values(by=['class',f'min_{class_def_name}'])
     for c in summary_df['class'].unique().tolist():
         if c > min(summary_df['class'].unique().tolist()):
@@ -159,18 +161,13 @@ def prep_supply_curve(reeds_path, tech, access_case, subtech):
 
 # Assign each wind, solar and geothermal unit in unit database to a class
 def assign_class(cf, tech, df_class):
-    # Each geothermal unit is assigned to the class associated with the min and max temperatures its mean temperature falls between
-    if tech in ['geohydro_allkm', 'egs_allkm']:
-        row = df_class[(df_class['min_reV_mean_temp'] < cf) & (cf <= df_class['max_reV_mean_temp'])]
-        # Handle min cutoff point
-        if cf == df_class['min_reV_mean_temp'].min():
-            row = df_class[cf == df_class['min_reV_mean_temp']]
-    # Each wind or solar unit is assigned to the class associated with the min and max capacity factors its capacity factor falls between
-    else:
-        row = df_class[(df_class['min_reV_cf_ac'] < cf) & (cf <= df_class['max_reV_cf_ac'])]
-        # Handle min cutoff point
-        if cf == df_class['min_reV_cf_ac'].min():
-            row = df_class[cf == df_class['min_reV_cf_ac']]    
+    # Each unit is assigned to the class associated with the min and max performance
+    # its mean performance falls between
+    value = 'mean_temp' if tech in ['geohydro_allkm', 'egs_allkm'] else 'cf_ac'
+    row = df_class[(df_class[f'min_reV_{value}'] < cf) & (cf <= df_class[f'max_reV_{value}'])]
+    # Handle min cutoff point
+    if cf == df_class[f'min_reV_{value}'].min():
+        row = df_class[cf == df_class[f'min_reV_{value}']]
     
     if not row.empty:
         return row.iloc[0]['class']
@@ -460,8 +457,8 @@ def main(reeds_path, inputs_case):
                                                     'tech']
 
     # Multiply all PV capacities by ILR
-    # Capacity of tech rsc_pv_all is MWac measured at the power block, while PV capacity is MWdc,
-    # so multiply rsc_pv_all capacity by the ILR [MWdc/MWac] of PV
+    # EIA-NEMS PV capacity is in MWac while ReEDS uses MWdc internally,
+    # so multiply PV capacity by the ILR [MWdc/MWac] of PV
     gdb_use.loc[gdb_use['tech'].isin(TECH['rsc_pv_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
     
     #%%##################################
