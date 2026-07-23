@@ -275,7 +275,7 @@ def calc_financial_inputs(inputs_case):
         comment='capital cost multiplier for transmission - used in the objective function'
     )
     reeds.io.write_to_inputs_h5(
-        dftrans[['allt','cap_cost_mult']], 'trans_cost_cap_fin_mult_noITC', inputs_case,
+        dftrans[['allt','cap_cost_mult_noITC']], 'trans_cost_cap_fin_mult_noITC', inputs_case,
         gamstype='parameter', units='fraction',
         comment='capital cost multiplier for transmission excluding ITC - used only in outputs',
     )
