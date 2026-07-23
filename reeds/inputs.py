@@ -345,6 +345,7 @@ def solvestring_sequential(
             'GSw_ClimateHydro',
             'GSw_ClimateWater',
             'GSw_gopt',
+            'GSw_gopt_mga',
             'GSw_HourlyChunkLengthRep',
             'GSw_HourlyChunkLengthStress',
             'GSw_HourlyType',

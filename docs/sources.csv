@@ -508,6 +508,7 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/sets/e.csv,/inputs/sets,e,.csv,set of emission categories used in model,,,,GAMS set,
 /inputs/sets/eall.csv,/inputs/sets,eall,.csv,set of emission categories used in reporting,,,,GAMS set,
 /inputs/sets/etype.csv,/inputs/sets,etype,.csv,,,,,,
+/inputs/sets/jtype.csv,/inputs/sets,jtype,.csv,,,,,,
 /inputs/sets/f.csv,/inputs/sets,f,.csv,set of fuel types,,,,GAMS set,
 /inputs/sets/flex_type.csv,/inputs/sets,flex_type,.csv,set of demand flexibility types,,,,GAMS set,
 /inputs/sets/fuel2tech.csv,/inputs/sets,fuel2tech,.csv,mapping between fuel types and generations,,,,GAMS set,

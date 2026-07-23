@@ -125,6 +125,8 @@ e.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 eall.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 emit_rate.csv,.csv,0,None,t,"etype,e,i,v,r",0,0,constant,0,None,done,constant
 emitrate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
+employment_factor_plant.csv,.csv,1,ignore,9999,None,9999,0,constant,0,None,,
+employment_factor_inter_transmission.csv,.csv,1,ignore,9999,None,9999,0,constant,0,None,,
 energy_communities.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 etype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ev_baseline_load.csv,.csv,0,None,2,"0,1",0,None,linear_5,None,None,linear or saturate?,linear_5
@@ -241,6 +243,7 @@ ivt_default.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done (special ca
 ivt_small.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done (special case: ivt is extended in calc_financial_inputs.py since ivt is needed there),constant
 ivt_step.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 ivt.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done (special case: ivt is extended in calc_financial_inputs.py since ivt is needed there),constant
+jtype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,
 lcclike.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 load_2010.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 load_allyear.csv,.csv,0,None,t,"*r,h",0,0,linear_5,0,None,done,linear_5

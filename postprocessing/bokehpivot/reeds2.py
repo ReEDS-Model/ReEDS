@@ -2761,19 +2761,6 @@ results_meta = collections.OrderedDict((
         }
     ),
 
-    ('Resource adequacy',
-        {'file':'neue.csv',
-        'columns': ['year', 'iteration', 'neue'],
-        'index': ['year', 'iteration'],
-        'preprocess': [
-            {'func': pre_neue, 'args': {}},
-        ],
-        'presets': collections.OrderedDict((
-            ('Normalized expected unserved energy [%]', {'x':'year', 'y':'neue', 'chart_type':'Bar', 'explode':'scenario', 'bar_width':'1.75'}),
-        )),
-        }
-    ),
-
     ('Average VRE Curtailment',
         {'file':'curt_rate',
         'columns': ['year', 'Curt Rate'],

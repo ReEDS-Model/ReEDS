@@ -625,8 +625,8 @@ MGA is turned off if set to 0; a reasonable choice for MGA is in the range of 0.
 - `GSw_MGA_Direction` (default `min`): Directionality of the second optimization.
 Options are `min` or `max`.
 - `GSw_MGA_Objective` (default `capacity`): Objective for MGA (uses `GSw_MGA_SubObjective` to specify technology subset if set to `capacity`).
-Options are `capacity`, `transmission`, `rasharing`, and `co2`.
-- `GSw_MGA_SubObjective` (default `fossil`): Technology subset to minimize or maximize the capacity of (only used for `GSw_MGA_Objective = capacity`).
+Options are `capacity`, `generation`, `transmission`, `rasharing`, and `co2`.
+- `GSw_MGA_SubObjective` (default `gentech`): Technology subset to minimize or maximize the capacity of (only used for `GSw_MGA_Objective = (capacity or generation)`).
 Options are the column names in the `inputs/tech-subset-table.csv` file.
 
 Users familiar with GAMS can add alternative objective functions to the `d_mga.gms` file and associated options to the `GSw_MGA_Objective` switch in `cases.csv`.
