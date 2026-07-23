@@ -716,7 +716,7 @@ def write_non_region_file(
                     case=case,
                     gamstype=row.GAMStype.lower(),
                     name=(None if isinstance(row.GAMSname, float) else row.GAMSname),
-                    comment=(row.comment if isinstance(row.comment, str) else ''),
+                    comment=(row.GAMScomment if isinstance(row.GAMScomment, str) else ''),
                 )
             else:
                 shutil.copy(row.full_filepath, os.path.join(dir_dst, row.filename))
@@ -918,8 +918,8 @@ def write_region_indexed_file(
                 case=reeds.io.standardize_case(inputs_case),
                 gamstype=region_file_entry.GAMStype.lower(),
                 comment=(
-                    region_file_entry.comment
-                    if isinstance(region_file_entry.comment, str) else ''
+                    region_file_entry.GAMScomment
+                    if isinstance(region_file_entry.GAMScomment, str) else ''
                 ),
             )
         else:

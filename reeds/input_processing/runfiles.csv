@@ -1,4 +1,4 @@
-filename,filepath,required_if,aggfunc,disaggfunc,region_col,fix_cols,i_col,wide,header,key,post_copy,GAMStype,GAMSname,comment,notes
+filename,filepath,required_if,aggfunc,disaggfunc,region_col,fix_cols,i_col,wide,header,key,post_copy,GAMStype,GAMSname,GAMScomment,notes
 #,for input files only,"conditions determinining whether or not the file is required (1 if always required, 0 if always optional)",,,,,,1 if any parameters are in wide format,0 if file has column labels,,files are created after copy_files,for auto-imported files,,,
 i.csv,inputs/sets/i.csv,1,ignore,ignore,,,,,,,1,set,i,generation technologies,
 ctt.csv,inputs/sets/ctt.csv,1,ignore,ignore,,,,,,,1,set,ctt,cooling technology type,
