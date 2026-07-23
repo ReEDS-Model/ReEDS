@@ -44,6 +44,19 @@ def get_pras_eue(case, t, iteration=0):
 
     return dfeue
 
+def get_pras_shortfall(case, t, iteration=0):
+   
+    ### Get PRAS outputs
+    df_shortfall = reeds.io.read_pras_results(
+        os.path.join(case, 'handoff', 'PRAS', f"PRAS_{t}i{iteration}-shortfall_samples.h5")
+    )
+
+    ### Create the time index
+    sw = reeds.io.get_switches(case)
+    for key in df_shortfall.keys():
+        df_shortfall[key].index = reeds.timeseries.get_timeindex(sw['resource_adequacy_years'])
+
+    return df_shortfall
 
 def get_eue_periods(
         case, t, iteration=0,
@@ -208,30 +221,43 @@ def get_annual_neue(case, t, iteration=0):
     """
     """
     ### Get EUE from PRAS
-    dfeue = get_pras_eue(case=case, t=t, iteration=iteration)
+    df_shortfall = get_pras_shortfall(case=case, t=t, iteration=iteration)
 
     ### Get load (for calculating NEUE)
     dfload = reeds.io.read_h5py_file(
         os.path.join(
             case,'handoff','reeds_data',f'pras_load_{t}.h5')
     )
-    dfload.index = dfeue.index
+    sample_index = next(iter(df_shortfall.values())).index
+    dfload.index = sample_index
 
     levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
     _neue = {}
     for hierarchy_level in levels:
         ### Get the region aggregator
         rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
-        ### Get NEUE summed over year
-        _neue[hierarchy_level,'sum'] = (
-            dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum().sum()
-            / dfload.rename(columns=rmap).groupby(axis=1, level=0).sum().sum()
-        ) * 1e6
-        ### Get max NEUE hour
-        _neue[hierarchy_level,'max'] = (
-            dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum()
-            / dfload.rename(columns=rmap).groupby(axis=1, level=0).sum()
-        ).max() * 1e6
+
+        ### Aggregate load once per hierarchy level for normalization.
+        dfload_agg = dfload.rename(columns=rmap).groupby(axis=1, level=0).sum()
+        load_sum = dfload_agg.sum(axis=0)
+        load_max_hour = dfload_agg.max(axis=0)
+
+        sample_sum_shortfall = []
+        sample_max_hour_shortfall = []
+        for key in df_shortfall:
+            dfshort_agg = df_shortfall[key].rename(columns=rmap).groupby(axis=1, level=0).sum()
+            sample_sum_shortfall.append(dfshort_agg.sum(axis=0))
+            sample_max_hour_shortfall.append(dfshort_agg.max(axis=0))
+
+        sample_sum_shortfall = pd.DataFrame(sample_sum_shortfall)
+        sample_max_hour_shortfall = pd.DataFrame(sample_max_hour_shortfall)
+
+        sum_mean = sample_sum_shortfall.mean(axis=0)
+        sum_sem = sample_sum_shortfall.sem(axis=0)
+
+        ### Keep `sum` and `max` as the sample means for compatibility.
+        _neue[hierarchy_level,'mean'] = (sum_mean / load_sum) * 1e6
+        _neue[hierarchy_level,'stderr'] = (sum_sem / load_sum) * 1e6
 
     ### Combine it
     neue = pd.concat(_neue, names=['level','metric','region']).rename('NEUE_ppm')
@@ -714,7 +740,7 @@ def main(sw, t, iteration=0, logging=True):
 
 if __name__ == '__main__':
     #%%###  option to run script directly for debugging
-    casedir =  "/projects/largeload/ReEDS_trees_github.com/large-load/runs/v20260710_central"
+    casedir =  "/projects/largeload/ReEDS_trees_github.com/large-load/runs/v20260710_lowgas_high"
     t = 2030 # previous solve year
     iteration = 0
     # load switches

@@ -154,7 +154,7 @@ def main(
         recordtime=False,
         repo=repo,
         overwrite=overwrite,
-        include_samples=True,
+        include_samples=False,
         write_flow=write_flow,
         write_surplus=write_surplus,
         write_energy=write_energy,
