@@ -1016,10 +1016,9 @@ def read_pras_results(filepath):
         return df
 
 
-
-def get_itl_deltas_hourly(
+def get_itl_hourly(
     case=None,
-    rating_type='DLR',
+    periodtype='rep',
     tz_in='UTC',
     tz_out='Etc/GMT+6',
     **kwargs
@@ -1027,18 +1026,34 @@ def get_itl_deltas_hourly(
     """
     """
     sw = reeds.io.get_switches(case, **kwargs)
+    match periodtype:
+        case 'rep':
+            rating_type = sw.GSw_HourlyLineRatingTypeRep
+            weather_years = [
+                int(y)
+                for y
+                in sw['GSw_HourlyWeatherYears'].split('_')
+            ]
+        case _ if periodtype.startswith('stress'):
+            rating_type = sw.GSw_HourlyLineRatingTypeStress
+            weather_years = sw.resource_adequacy_years_list
+        case _:
+            raise NotImplementedError(
+                f"{periodtype} is not a valid periodtype. "
+            )
+
     h5path = Path(
         reeds.io.reeds_path,
         'inputs',
-        'profiles_itl_deltas',
-        f'itl_deltas_{rating_type}_z90.h5'
+        'profiles_itl',
+        f'itl_NARIS_{rating_type}.h5'
     )
     
-    ## Add one more year on either end of weather years to allow for timezone conversion
-    weather_years = [int(y) for y in sw['GSw_HourlyWeatherYears'].split('_')]
+    ## Add one more year to the end of desired weather
+    ## years to allow for timezone conversion
     read_years = range(min(weather_years), max(weather_years)+2)
-    ### Load ITL deltas
-    _itl_deltas = []
+    ### Load ITLs
+    _itls = []
     with h5py.File(h5path, 'r') as f:
         columns = pd.MultiIndex.from_tuples(
             tuple(zip(
@@ -1053,27 +1068,23 @@ def get_itl_deltas_hourly(
                 .str
                 .decode('utf-8')
             )
-            delta_values = (
-                f[f'itl_deltas_{year}'][:]
-                * f[f'itl_deltas_{year}'].attrs['scale']
-            )
             df = pd.DataFrame(
                 index=time_index,
                 columns=columns,
-                data=delta_values
+                data=f[f'itl_{year}'][:]
             )
-            _itl_deltas.append(df)
+            _itls.append(df)
 
-    itl_deltas = (
-        pd.concat(_itl_deltas)
+    itl_hourly = (
+        pd.concat(_itls)
         .rename_axis(index='datetime')
         .tz_localize(tz_in)
         .tz_convert(tz_out)
     )
     ## Subset to weather years used in ReEDS
-    itl_deltas = itl_deltas.loc[itl_deltas.index.year.isin(weather_years)].copy()
+    itl_hourly = itl_hourly.loc[itl_hourly.index.year.isin(weather_years)].copy()
     ### On leap years, drop Dec 31
-    itl_deltas = reeds.timeseries.truncate_leap_years(itl_deltas)
+    itl_hourly = reeds.timeseries.truncate_leap_years(itl_hourly)
     ### Subset to valid regions
     if case is not None:
         val_r = (
@@ -1081,15 +1092,15 @@ def get_itl_deltas_hourly(
             .squeeze(1)
             .tolist()
         )
-        itl_deltas = (
-            itl_deltas.loc[:, (
-                itl_deltas.columns.get_level_values('r').isin(val_r)
-                & itl_deltas.columns.get_level_values('rr').isin(val_r)
+        itl_hourly = (
+            itl_hourly.loc[:, (
+                itl_hourly.columns.get_level_values('r').isin(val_r)
+                & itl_hourly.columns.get_level_values('rr').isin(val_r)
             )]
             .copy()
         )
 
-    return itl_deltas
+    return itl_hourly
 
 
 def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):

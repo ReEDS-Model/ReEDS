@@ -1603,7 +1603,7 @@ eq_PRMTRADELimit(r,rr,trtype,ccseason,t)
     $(not Sw_PCM)]..
 
 *[plus] transmission capacity
-    + CAPTRAN_PRM(r,rr,trtype,t)
+    + CAPTRAN_PRM(r,rr,trtype,t) * sum{h$h_ccseason_prm(h,ccseason), (1 + trans_cap_delta(r,rr,h)) }
 
     =g=
 
@@ -2035,7 +2035,7 @@ eq_transmission_limit(r,rr,h,t,trtype)$[tmodel(t)$routes(r,rr,trtype,t)]..
 * Stress periods use the PRM capacity
 * Because these periods are assumed to be mutually exclusive, each timeslice should only
 * have a single capacity applied.
-    + CAPTRAN_PRM(r,rr,trtype,t)$[h_stress(h)$routes_prm(r,rr)]
+    + (CAPTRAN_PRM(r,rr,trtype,t) * (1 + trans_cap_delta(r,rr,h)))$[h_stress(h)$routes_prm(r,rr)]
 
     =g=
 
