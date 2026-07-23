@@ -227,11 +227,12 @@ if __name__ == '__main__':
     for col in ['key','fix_cols','header','clip_min','clip_max']:
         futurefiles[col] = futurefiles[col].fillna('None')
     ### If any files are missing, stop and alert the user
-    inputfiles = [
+    inputs_files = [
         Path(f).stem for f in glob(os.path.join(inputs_case,'*')) if not Path(f).is_dir()
     ]
     with h5py.File(Path(inputs_case, 'inputs.h5'), 'r') as f:
-        inputfiles += list(f)
+        inputs_h5 = list(f)
+    inputfiles = inputs_files + inputs_h5
     missingfiles = [
         f for f in inputfiles if f not in futurefiles.filename.map(lambda x: Path(x).stem).values]
     if any(missingfiles):
@@ -464,8 +465,10 @@ if __name__ == '__main__':
         dfout.rename(columns=the_unnamer, inplace=True)
 
         #%% Write it
-        if filetype == 'inputs.h5':
-            reeds.io.write_to_inputs_h5(dfout, filename, inputs_case, gamstype='parameter')
+        if Path(filename).stem in inputs_h5:
+            reeds.io.write_to_inputs_h5(
+                dfout, Path(filename).stem, inputs_case, gamstype='parameter',
+            )
         elif filetype in ['.csv', '.csv.gz']:
             dfout.round(decimals).to_csv(
                 os.path.join(outpath, filename),
