@@ -59,13 +59,12 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
 - `newlinks_offshore_backbone.csv`: Candidate connections between offshore zones
   - Similarly formatted files for candidate connections between offshore and coastal land-based zones are found at `inputs/zones/{GSw_ZoneSet}/newlinks_offshore_radial.csv`
 
-- `raw_interconnection_TSC_data.csv`: Raw cumulative interconnection / network-reinforcement cost curve per ReEDS zone from the [TSC](https://github.nrel.gov/ReEDS/TSC) model (nodal network data as described by [Brown et al.](https://arxiv.org/abs/2308.03612)). This is the **single source** for the point-of-interconnection (POI) / network-reinforcement cost supply curve at every spatial resolution (region names span all zone sets' `hierarchy.csv` vocabularies, analogous to the hashed transmission cost files); there is no per-zone-set fallback. One cumulative supply-curve point per row:
-  - `region`: ReEDS zone (must match the zone set's `hierarchy.csv`)
-  - `capacity_GW`: cumulative POI capacity [GW]; the row with zero cumulative cost marks the zone's existing (free) capacity
-  - `cum_cost_$`: cumulative reinforcement cost [USD2024]
-  - `slope_$/kW`: marginal cost from the previous point [USD2024/kW] (informational)
-  - When `GSw_RegIntraCurve = 1`, `reeds/input_processing/transmission.py` builds the native curve `inputs_case/poi_supply_curve.csv` (`*r, rtscbin, sc_cat in {cost, cap}, value`) from this file — one bin per raw segment, no re-segmentation — deflating the costs from USD2024 (registered in `dollaryear.csv`) to the model dollar year; with `GSw_RegIntraCurve = 0` the model instead uses the flat `GSw_TransIntraCost` adder. A run whose model regions this file does not cover fails loudly (matching the transmission cost/distance validation). See `poi_supply_curve.md` in this folder for the full method.
-  - **TODO:** confirm the exact TSC dataset version / study citation before publishing.
+- `reinforcement_upgrade_cost_z90.csv`: Cumulative interconnection / network-reinforcement cost curve per ReEDS zone from the [TSC](https://github.nrel.gov/ReEDS/TSC) model (nodal network data as described by [Brown et al.](https://arxiv.org/abs/2308.03612)). One cumulative supply-curve point per row:
+    - `region`: ReEDS zone (must match the zone set's `hierarchy.csv`)
+    - `capacity_GW`: cumulative POI capacity [GW]; the row with zero cumulative cost marks the zone's existing (free) capacity
+    - `cum_cost_$`: cumulative reinforcement cost [USD2024]
+    - `slope_$/kW`: marginal cost from the previous point [USD2024/kW] (informational)
+  - When `GSw_RegIntraCurve = 1`, `reeds/input_processing/transmission.py` builds the curve from this file — one bin per raw segment, no re-segmentation.
 
 - `transmission_cost_ac_500kv_z134.h5`: Example file illustrating the required format when using the transmission upgrade supply curve ([TSC](https://github.nrel.gov/ReEDS/TSC)) method for `GSw_ZoneSet = z134`
   - The full method is not yet supported; when implemented, it will only be supported for a limited number of `GSw_ZoneSet` definitions

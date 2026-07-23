@@ -333,16 +333,7 @@ set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
     rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
 * Sets involved with the POI / network-reinforcement cost supply curve.
-set rtscbin "POI / network-reinforcement supply curve bins (loaded from data)"
-/
-$offlisting
-$include inputs_case%ds%rtscbin.csv
-$onlisting
-/ ;
-$else.poifr
-set rtscbin "POI / network-reinforcement supply curve bins" /bin1*bin%numpoibins%, bin_upper/ ;
-$endIf.poifr
-set poi_bin_feas(r,rtscbin) "feasibility set for POI bins that have a defined reinforcement cost" ;
+set poi_bin_feas(r,icbin) "feasibility set for POI bins that have a defined reinforcement cost" ;
 
 parameter yeart(t) "numeric value for year",
           year(allt) "numeric year value for allt" ;
@@ -1294,38 +1285,8 @@ $offdelim
 $onlisting
 / ;
 
-* POI / network-reinforcement cost supply curve, indexed by region and bin.
-* Costs are provided in $/kW of new POI capacity above the existing capacity (poi_cap_init),
-* binned so that the marginal cost increases with cumulative new capacity (cheapest bin fills
-* first under cost minimization). cost_poi_bin is stored internally in $/MW (input $/kW * 1000,
-* as for the flat Sw_TransIntraCost) so it multiplies INV_POI [MW] directly in the objective.
-parameter cost_poi_bin(r,rtscbin) "--$/MW-- POI / network-reinforcement cost in each bin" ;
-parameter cap_poi_bin(r,rtscbin)  "--MW-- incremental capacity width available in each POI bin (0 = unlimited)" ;
-
-* Binned POI supply curve loaded from inputs_case/poi_supply_curve.csv (long format:
-* r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), written by transmission.py. The region
-* dimension is read against the GAMS universe (*) rather than the model region set r so that
-* regions present in the file but filtered out of the model by GSw_Region do not raise a domain
-* error.
-parameter poi_sc_dat(*,rtscbin,sc_cat) "--$/kW or MW-- POI / network-reinforcement supply curve data by region, bin, and category"
-/
-$onempty
-$offlisting
-$ondelim
-$include inputs_case%ds%poi_supply_curve.csv
-$offdelim
-$onlisting
-$offempty
-/ ;
-
-cost_poi_bin(r,"bin1")$[Sw_TransIntraCost$(not sum{rtscbin, poi_sc_dat(r,rtscbin,"cost") })]
-    = Sw_TransIntraCost * 1000 ;
-
-cost_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cost") = poi_sc_dat(r,rtscbin,"cost") * 1000 ;
-cap_poi_bin(r,rtscbin)$poi_sc_dat(r,rtscbin,"cap")   = poi_sc_dat(r,rtscbin,"cap") ;
-
 * A POI bin is feasible (i.e. can be built into) if it has a defined cost.
-poi_bin_feas(r,rtscbin)$cost_poi_bin(r,rtscbin) = yes ;
+poi_bin_feas(r,icbin)$cost_poi_bin(r,icbin) = yes ;
 
 *created by reeds/input_processing/writecapdat.py
 table capnonrsc(i,r,*) "--MW-- raw power capacity data for non-RSC tech"

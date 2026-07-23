@@ -249,6 +249,26 @@ except Exception:
     print(traceback.format_exc())
 
 
+#%% POI / network-reinforcement supply curve
+try:
+    plt.close()
+    figs, axes, df = reedsplots.plot_poi_supply_curve(case=case, year=year)
+    for i, f in enumerate(figs):
+        savename = (
+            f'poi_supply_curve-{year}.png' if len(figs) == 1
+            else f'poi_supply_curve-{year}-{i+1}.png'
+        )
+        if write:
+            f.savefig(os.path.join(savepath, savename))
+        if interactive:
+            plt.show()
+        print(savename)
+    plt.close('all')
+except Exception:
+    print('plot_poi_supply_curve failed:')
+    print(traceback.format_exc())
+
+
 #%% Macrogrid map
 try:
     plt.close()

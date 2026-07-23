@@ -1492,8 +1492,8 @@ loop(t$[tmodel_new(t)$(not tfirst(t))],
 
 systemcost_ba("inv_transmission_intrazone_investment",r,t)$[tmodel_new(t)$Sw_TransIntraCost] =
 * cost of intra-zone network reinforcement (cost_poi_bin in $/MW, increasing across bins)
-              sum{rtscbin$poi_bin_feas(r,rtscbin),
-                  trans_cost_cap_fin_mult(t) * cost_poi_bin(r,rtscbin) * INV_POI.l(r,rtscbin,t) }
+              sum{icbin$poi_bin_feas(r,icbin),
+                  trans_cost_cap_fin_mult(t) * cost_poi_bin(r,icbin) * INV_POI.l(r,icbin,t) }
 ;
 
 systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
@@ -1510,8 +1510,8 @@ systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
 systemcost_ba("op_transmission_intrazone_fom",r,t)$[tmodel_new(t)$Sw_TransIntraCost] =
 * FOM cost for intra-zone network reinforcement
               trans_fom_frac
-              * sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
-                    cost_poi_bin(r,rtscbin) * INV_POI.l(r,rtscbin,tt) }
+              * sum{(icbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+                    cost_poi_bin(r,icbin) * INV_POI.l(r,icbin,tt) }
 ;
 
 systemcost_ba("inv_converter_costs",r,t)$tmodel_new(t)  =
@@ -1895,15 +1895,15 @@ net_import_ann_stress(r,t)
 * cost/plot diagnostics -- it is NOT deliverable transmission capacity and relieves no flow.
 poi_capacity(r,t)$tmodel_new(t) =
   poi_cap_init(r)
-  + sum{(rtscbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
-        INV_POI.l(r,rtscbin,tt) }
+  + sum{(icbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+        INV_POI.l(r,icbin,tt) }
 ;
 
 * POI reinforcement cost basis by cost bin (for the plot). Same caveat as poi_capacity above:
 * a cost-accounting quantity, not deliverable transmission capacity.
-poi_capacity_bin(r,rtscbin,t)$tmodel_new(t) =
-  sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,rtscbin)],
-        INV_POI.l(r,rtscbin,tt) }
+poi_capacity_bin(r,icbin,t)$tmodel_new(t) =
+  sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+        INV_POI.l(r,icbin,tt) }
 ;
 
 *==========================

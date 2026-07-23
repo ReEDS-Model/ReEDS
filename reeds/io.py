@@ -1539,10 +1539,7 @@ def assemble_supplycurve(
     ##  - for all regions when the regional POI reinforcement curve is active
     ## In both cases cost_total_trans is recomputed as spur + connection (POI) only.
     if case is not None:
-        agglevel_variables = reeds.spatial.get_agglevel_variables(
-            reeds_path, os.path.join(case, 'inputs_case')
-        )
-        counties = agglevel_variables['county_regions']
+        counties = get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet)
         use_poi_bins = (
             int(sw['GSw_RegIntraCurve'])
             and (float(sw['GSw_TransIntraCost'] or 0) != 0)

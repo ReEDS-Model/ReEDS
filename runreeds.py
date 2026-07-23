@@ -287,13 +287,15 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
+    reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
+
     if int(sw['GSw_RegIntraCurve']) and (float(sw['GSw_TransIntraCost']) == 0):
         raise ValueError(
             'The regional POI reinforcement curve (GSw_RegIntraCurve=1) is gated on '
-            'GSw_TransIntraCost > 0; with GSw_TransIntraCost=0 the entire curve is silently '
-            'disabled (no reinforcement cost is charged).\n'
-            'Set GSw_TransIntraCost > 0 to use the curve, or GSw_RegIntraCurve = 0 for '
-            'the flat legacy cost.\n'
+            'GSw_TransIntraCost > 0; with GSw_TransIntraCost=0 the entire curve is disabled '
+            '(no reinforcement cost is charged).\n'
+            'Set GSw_TransIntraCost > 0 to use the curve, or GSw_RegIntraCurve = 0 to '
+            'to use GSw_TransIntraCost for all capacity additions\n'
             f"GSw_RegIntraCurve={sw['GSw_RegIntraCurve']}, "
             f"GSw_TransIntraCost={sw['GSw_TransIntraCost']}"
         )
@@ -309,6 +311,14 @@ def check_compatibility(sw):
                 'county/mixed resolution:\n{}\n'
                 .format('\n'.join(err_switch_configs))
             )
+
+    if int(sw['GSw_RegIntraCurve']) and (sw['GSw_ZoneSet'] != 'z90'):
+        raise ValueError(
+            'The regional POI reinforcement curve (GSw_RegIntraCurve=1) requires\n'
+            'z90 zoneset; others are not supported.\n'
+            f"GSw_RegIntraCurve={sw['GSw_RegIntraCurve']}, "
+            f"GSw_ZoneSet={sw['GSw_ZoneSet']}"
+        )
 
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
 

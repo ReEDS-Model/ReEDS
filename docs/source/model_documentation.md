@@ -1842,6 +1842,9 @@ Substation POIs incur a substation upgrade cost of \$15/kW; transmission line PO
 
 Network reinforcement represents upgrades to the existing transmission network required to avoid congestion when moving power from the POI for a new generator to load centers.
 It is intended to represent the costs associated with interconnection queues, which represent a major bottleneck for the deployment of new wind and solar in the United States. {cite}`gormanGridConnectionBarriers2025`.
+There are two methods for including these costs: a) per-site reinforcement costs with optional flat adders, or b) regional reinforcement cost curves.
+
+##### per-site reinforcement costs
 Network reinforcement costs are approximated by tracing a path along existing transmission lines from each wind/solar POI to a nearby urban center.
 An urban center is defined as the centroid of a ≥100 km<sup>2</sup> urban area from [2020 U.S. Census data](https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2025&layergroup=Urban+Areas).
 POIs are assumed to connect to the urban center that minimizes the combined interconnection cost;
@@ -1869,7 +1872,7 @@ Data are for utility-scale PV with open-access siting but are similar for other 
 Spur lines and network reinforcement use the same financial multiplier as the generation technology they are associated with.
 
 
-#### Intrazone transmission cost adder for net increases in generation capacity
+##### Intrazone transmission cost adder for net increases in generation capacity
 
 In addition to the interconnection costs described above, a flat intrazone transmission cost adder of \$100/kW is also applied to net increases in generation and AC/DC converter capacity within each model zone.
 This value is taken from historical interconnection costs for fossil gas capacity {cite}`seelGeneratorInterconnectionCosts2023` and is taken to represent a "floor" for network upgrades that are required even if new capacity is added at the optimal location (assuming past additions of fossil capacity have been placed to minimize interconnection costs).
@@ -1879,12 +1882,13 @@ Because new generation capacity is assumed to reuse the network infrastructure f
 This generation-technology-neutral intrazone transmission cost adder uses a financial multiplier calculated using a 40-year capital recovery period.
 
 By default the intrazone adder is flat (`GSw_TransIntraCost`, applied to every MW of net new capacity in the zone).
-It can optionally be represented as a regional *increasing-cost supply curve* by setting `GSw_RegIntraCurve` to 1.
-In that case successive amounts of new point-of-interconnection (POI) capacity in each zone are priced in increasing cost bins taken directly from `inputs/transmission/raw_interconnection_TSC_data.csv` (one bin per segment of the raw cumulative curve, so the number of bins per zone follows the input data), with an unlimited backstop bin priced at `GSw_POIUpperCost` so that reinforcement above the binned capacities remains feasible at a high cost.
-When this regional POI supply curve is active (`GSw_RegIntraCurve` = 1 and `GSw_TransIntraCost` > 0), the geographically resolved network reinforcement cost embedded in the wind, solar, CSP, and geothermal supply curves is dropped entirely (and their total interconnection cost is recomputed as spur line plus substation/POI connection only) so that network reinforcement is not double counted between the two representations.
-With `GSw_RegIntraCurve` = 0 (the default flat adder) the wind, solar, CSP, and geothermal supply-curve reinforcement cost is retained.
 
-
+##### regional reinforcement cost curves
+Optionally, reinforcement costs can be represented by regionally specific transmission upgrade curves.
+We derive the regional curves using the same principles of power flow informed capacity interconnection maximization as outlined in {cite}`brownGeneralMethodEstimating2023`.
+In this method, we iteratively maximize the amount of generation capacity that can be installed in a ReEDS region and then upgrade the best value binding transmission system elements.
+To functionally intergrate this upgrade curve, we take the convex hull of this data, producing binned investment costs (e.g., 400 MW of generation capacity is available at \$100/kW, the next 2 GW at \$200/kW, and so on).
+To avoid double counting, when regional curves are active, the site-based reinforcement costs are subtracted from the wind, solar, CSP, and geothermal technologies while retaining the spur line and substation/POI costs.
 
 
 ### Interzonal Transmission

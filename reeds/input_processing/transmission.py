@@ -680,11 +680,10 @@ def regional_poi_bins(g, deflator, upper_cost, existing_mw, min_bin_mw=1):
     return free_mw, [(w, c) for w, c in zip(widths, costs) if w >= min_bin_mw]
 
 
-def write_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
+def get_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
     """
-    Write the model-facing inputs_case/poi_supply_curve.csv in long format
-    (*r, rtscbin, sc_cat in {cost ($/kW), cap (MW)}, value), plus rtscbin.csv (the bin label set
-    used to size the GAMS rtscbin set). 
+    Build the POI / network-reinforcement supply curve for inputs.h5 as the icbin
+    set and the cost_poi_bin ($/MW) and cap_poi_bin (MW) parameters.
 
     GSw_RegIntraCurve=0 -> flat GSw_TransIntraCost
     GSw_RegIntraCurve=1 -> the regional curve
@@ -697,12 +696,12 @@ def write_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
     if not int(sw.GSw_RegIntraCurve):
         ## Flat POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
         reg = pd.DataFrame({
-            'r': valid_regions['r'], 'rtscbin': 'bin1', 'sc_cat': 'cost',
+            'r': valid_regions['r'], 'icbin': 'bin1', 'sc_cat': 'cost',
             'value': float(sw.GSw_TransIntraCost)})
     else:
         ## Build the zonal curve from the cumulative interconnection data
-        raw_poi = os.path.join(
-            reeds_path, 'inputs', 'transmission', 'raw_interconnection_TSC_data.csv')
+        costfile = f'reinforcement_upgrade_cost_{sw.GSw_ZoneSet}.csv'
+        raw_poi = os.path.join(reeds_path, 'inputs', 'transmission', costfile)
         if not os.path.exists(raw_poi):
             raise FileNotFoundError(
                 'The regional POI reinforcement curve (GSw_RegIntraCurve=1) requires '
@@ -711,16 +710,23 @@ def write_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
             os.path.join(reeds_path, 'inputs', 'transmission', 'dollaryear.csv'), index_col=0,
         ).squeeze(1)
         inflatable = reeds.io.get_inflatable()
-        poi_deflator = inflatable[
-            int(input_dollar_year['raw_interconnection_TSC_data.csv']), int(sw.dollar_year)]
+        poi_deflator = inflatable[int(input_dollar_year[costfile]), int(sw.dollar_year)]
         upper_cost = float(sw.GSw_POIUpperCost)
+
+        hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+        zonehash = pd.read_csv(
+            os.path.join(reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
+            index_col='r')[hashfunc]
+        hash2zone = pd.Series(zonehash.index.values, index=zonehash.values)
+
         raw = pd.read_csv(raw_poi)
+        raw['r'] = raw['region'].map(hash2zone)
         ## Validate coverage against the raw data
-        missing = sorted(set(valid_regions['r']) - set(raw['region'].unique()))
+        missing = sorted(set(valid_regions['r']) - set(raw['r'].dropna().unique()))
         if missing:
             raise ValueError(
                 f'Missing POI / network-reinforcement curve for {len(missing)} of '
-                f'{len(valid_regions["r"])} model regions in raw_interconnection_TSC_data.csv '
+                f'{len(valid_regions["r"])} model regions in {costfile} '
                 f'(GSw_RegIntraCurve=1, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing}')
 
         poi_cap_init = pd.read_csv(
@@ -734,8 +740,7 @@ def write_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
                 f'(GSw_RegIntraCurve=1, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing_init}')
 
         rows = []
-        for region, g in raw.loc[raw['region'].isin(valid_regions['r'])].groupby(
-                'region', sort=True):
+        for region, g in raw.loc[raw['r'].isin(valid_regions['r'])].groupby('r', sort=True):
             free_mw, bins = regional_poi_bins(
                 g, poi_deflator, upper_cost, float(poi_cap_init[region]), min_bin_mw)
             k = 0
@@ -747,20 +752,24 @@ def write_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
                 k += 1
                 rows.append((region, f'bin{k}', 'cost', round(float(cost_kw), 2)))
                 rows.append((region, f'bin{k}', 'cap', round(float(width_mw), 1)))
-        reg = pd.DataFrame(rows, columns=['r', 'rtscbin', 'sc_cat', 'value'])
+        reg = pd.DataFrame(rows, columns=['r', 'icbin', 'sc_cat', 'value'])
         reg = pd.concat([reg, pd.DataFrame({
-            'r': sorted(valid_regions['r']), 'rtscbin': 'bin_upper', 'sc_cat': 'cost',
+            'r': sorted(valid_regions['r']), 'icbin': 'bin_upper', 'sc_cat': 'cost',
             'value': upper_cost})], ignore_index=True)
-    poi_model = reg[['r', 'rtscbin', 'sc_cat', 'value']]
-
-    poi_model.rename(columns={'r': '*r'}).to_csv(
-        os.path.join(inputs_case, 'poi_supply_curve.csv'), index=False)
-
+    
+    cost = reg.loc[reg['sc_cat'] == 'cost', ['r', 'icbin', 'value']].copy()
+    cost['value'] = cost['value'].astype(float) * 1000.0
+    cap = reg.loc[reg['sc_cat'] == 'cap', ['r', 'icbin', 'value']].copy()
+    
     def _binkey(b):
         return (1, 0) if b == 'bin_upper' else (0, int(str(b).replace('bin', '')))
-    rtscbins = sorted(poi_model['rtscbin'].unique(), key=_binkey)
-    pd.Series(rtscbins).to_csv(os.path.join(inputs_case, 'rtscbin.csv'), index=False, header=False)
-
+    icbins = sorted(reg['icbin'].unique(), key=_binkey)
+    
+    return {
+        'icbin': pd.Series(icbins),
+        'cost_poi_bin': cost,
+        'cap_poi_bin': cap,
+    }
 
 #%% Main function
 def main(case):
@@ -831,9 +840,8 @@ def main(case):
     outputs['transmission_cost_ac'] = transmission_cost_ac
 
     ### POI / network-reinforcement cost supply curve
-    ## Writes poi_supply_curve.csv (and rtscbin.csv) directly; already region-scoped, so it
-    ## bypasses the outputs/hierarchy-downselect mechanism below.
-    write_poi_supply_curve(case)
+    for key, df in get_poi_supply_curve(case).items():
+        outputs[key] = df
 
     ### Pipelines
     outputs['pipeline_cost_mult'] = get_pipeline_cost_mult(
@@ -857,7 +865,11 @@ def main(case):
     outputs['co2_site_char'] = co2_site_char.loc[co2_site_char['cs'].isin(val_cs)]
 
     #%% Downselect to active regions
-    table = {'co2_site_char': True}
+    table = {
+        'co2_site_char': True,
+        'cost_poi_bin': True,
+        'cap_poi_bin': True,
+    }
     hierarchy = reeds.io.get_hierarchy(case).reset_index()
     for key, df in outputs.items():
         columns = df.columns if isinstance(df, pd.DataFrame) else []
@@ -881,12 +893,18 @@ def main(case):
         'tscbin': False,
     }
     inputs_h5 = {
-        'tscbin': ('set', 'transmission upgrade supply curve bins'),
+        'tscbin': ('set', 'transmission upgrade supply curve bins', ''),
+        'icbin': ('set', 'POI / network-reinforcement supply curve bins', ''),
+        'cost_poi_bin': ('parameter', 'POI / network-reinforcement cost in each bin', '$/MW'),
+        'cap_poi_bin': ('parameter',
+                        'incremental capacity width available in each POI bin (no row = unlimited)',
+                        'MW'),
     }
     for key, df in outputs.items():
         if key in inputs_h5:
-            gamstype, comment = inputs_h5[key]
-            reeds.io.write_to_inputs_h5(df, key, case, gamstype=gamstype, comment=comment)
+            gamstype, comment, units = inputs_h5[key]
+            reeds.io.write_to_inputs_h5(
+                df, key, case, gamstype=gamstype, comment=comment, units=units)
         else:
             df.to_csv(
                 Path(case, 'inputs_case', f'{key}.csv'),
