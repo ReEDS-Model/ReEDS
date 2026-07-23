@@ -193,7 +193,6 @@ plotdiffvals = [
     'Bulk System Electricity Pric',
     'National Average Electricity',
     'Present Value of System Cost',
-    'NEUE (ppm)',
     'Runtime (hours)',
     'Runtime by year (hours)',
 ]
@@ -340,7 +339,7 @@ aggregation_mapping = pd.read_csv(
         os.path.join(reeds_path,'postprocessing','tech_aggregation.csv'))
 
 #%% Parse excel report sheet names
-val2sheet = reeds.io.get_report_sheetmap(cases[basecase])
+val2sheet = {case: reeds.io.get_report_sheetmap(cases[case]) for case in cases}
 
 #%% Read input files
 dictin_sw = {case: reeds.io.get_switches(cases[case]) for case in cases}
@@ -394,7 +393,7 @@ costcat_rename = {
 dictin_npv = {}
 for case in tqdm(cases, desc='NPV of system cost'):
     dictin_npv[case] = (
-        reeds.io.read_report(cases[case], 'Present Value of System Cost', val2sheet)
+        reeds.io.read_report(cases[case], 'Present Value of System Cost', val2sheet[case])
         .set_index('cost_cat')['Discounted Cost (Bil $)']
     )
     dictin_npv[case].index = pd.Series(dictin_npv[case].index).replace(costcat_rename)
@@ -402,7 +401,7 @@ for case in tqdm(cases, desc='NPV of system cost'):
 
 dictin_scoe = {}
 for case in tqdm(cases, desc='SCOE'):
-    dictin_scoe[case] = reeds.io.read_report(cases[case], 'National Average Electricity', val2sheet)
+    dictin_scoe[case] = reeds.io.read_report(cases[case], 'National Average Electricity', val2sheet[case])
     dictin_scoe[case].cost_cat = dictin_scoe[case].cost_cat.replace(
         {**costcat_rename,**{'CO2 Incentives':'CCS Incentives'}})
     dictin_scoe[case] = (
@@ -411,7 +410,7 @@ for case in tqdm(cases, desc='SCOE'):
 
 dictin_syscost = {}
 for case in tqdm(cases, desc='annual system cost'):
-    dictin_syscost[case] = reeds.io.read_report(cases[case], 'Undiscounted Annualized Syst', val2sheet)
+    dictin_syscost[case] = reeds.io.read_report(cases[case], 'Undiscounted Annualized Syst', val2sheet[case])
     dictin_syscost[case].cost_cat = dictin_syscost[case].cost_cat.replace(
         {**costcat_rename,**{'CO2 Incentives':'CCS Incentives'}})
     dictin_syscost[case] = (
@@ -466,22 +465,30 @@ for case in tqdm(cases, desc='firm capacity'):
 dictin_runtime = {}
 for case in tqdm(cases, desc='runtime'):
     dictin_runtime[case] = (
-        reeds.io.read_report(cases[case], 'Runtime by year (hours)', val2sheet)
+        reeds.io.read_report(cases[case], 'Runtime by year (hours)', val2sheet[case])
         .drop(columns='Net Level processtime')
     )
 
 dictin_neue = {}
 dictin_neue_all = {}
 for case in tqdm(cases, desc='NEUE'):
-    infiles = sorted(glob(os.path.join(cases[case],'outputs','neue_*.csv')))
-    if not len(infiles):
-        continue
+    ## Backwards compatibility
+    old_infiles = sorted(glob(os.path.join(cases[case],'outputs','neue_*.csv')))
+    new_infiles = sorted(glob(os.path.join(cases[case],'outputs','ra_metrics_*.csv')))
+    if len(old_infiles):
+        infiles = old_infiles
+        fstrip = 'neue_.csv'
+        metric = 'sum'
+    else:
+        infiles = new_infiles
+        fstrip = 'ra_metrics_.csv'
+        metric = 'neue_ppm'
     df = {}
     for f in infiles:
-        y, i = [int(s) for s in os.path.basename(f).strip('neue_.csv').split('i')]
-        df[y,i] = pd.read_csv(f, index_col=['level', 'metric', 'region']).squeeze(1)
+        y, i = [int(s) for s in os.path.basename(f).strip(fstrip).split('i')]
+        df[y,i] = pd.read_csv(f, index_col=['metric', 'level', 'region']).squeeze(1).loc[metric]
     dictin_neue_all[case] = pd.concat(df, names=('t', 'iteration'))
-    indices = ['t', 'level', 'metric', 'region']
+    indices = ['t', 'level', 'region']
     dictin_neue[case] = (
         dictin_neue_all[case]
         .reset_index()
@@ -498,7 +505,7 @@ for case in cases:
     yearstep[case] = years[case][-1] - years[case][-2]
 lastyear = max(years[case])
 ## Years for which to add data notes
-startyear_sums = 2023
+startyear_sums = int(sw.GSw_StartMarkets)
 allyears = range(startyear_sums,lastyear+1)
 noteyears = [2035, 2050]
 if all([lastyear < y for y in noteyears]):
@@ -903,7 +910,8 @@ if (len(cases) == 2) and (not forcemulti):
                 val, casebase=casebase, casecomp=casecomp,
                 casebase_name=casebase_name, casecomp_name=casecomp_name,
                 onlytechs=onlytechs, titleshorten=titleshorten,
-                yearmin=(2025 if 'NEUE' in val else startyear), yearmax=lastyear,
+                yearmin=(int(sw.GSw_StartMarkets) if 'NEUE' in val else startyear),
+                yearmax=lastyear,
                 simple_techs = simple_techs,
                 # plot_kwds={'figsize':(4,4), 'gridspec_kw':{'wspace':0.7}},
             )
@@ -1436,7 +1444,9 @@ except Exception:
 
 #%%### SCOE, NEUE
 try:
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
+    ## Backwards compatibility
+    GSw_PRM_StressThresholdNEUE = sw.get('GSw_PRM_StressThresholdNEUE', 'transgrp_1')
+    neue_threshold = float(GSw_PRM_StressThresholdNEUE.split('/')[0].split('_')[1])
     width = 9 + len(cases)*0.5
     plt.close()
     f,ax = plt.subplots(
@@ -1477,10 +1487,9 @@ try:
             dfneue[case] = (
                 dictin_neue[case]
                 .xs('country',0,'level')
-                .xs('sum',0,'metric')
                 .dropna()
                 .reset_index('region', drop=True)
-                .loc[2025:]
+                .loc[int(sw.GSw_StartMarkets):]
             )
             ax[col].plot(dfneue[case].index, dfneue[case].values, label=case, color=colors[case], marker = 'o')
             ymax = max([ymax,max(dfneue[case].values)])
@@ -1549,9 +1558,11 @@ except Exception:
 
 #%% Regional NEUE
 try:
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
+    ## Backwards compatibility
+    GSw_PRM_StressThresholdNEUE = sw.get('GSw_PRM_StressThresholdNEUE', 'transgrp_1')
+    neue_threshold = float(GSw_PRM_StressThresholdNEUE.split('/')[0].split('_')[1])
     dfmap = reeds.io.get_dfmap(cases[basecase])
-    level = sw.GSw_PRM_StressThreshold.split('_')[0]
+    level = GSw_PRM_StressThresholdNEUE.split('/')[0].split('_')[0]
     regions = dfmap[level].loc[hierarchy[basecase][level].unique()].bounds.minx.sort_values().index
     _nrows, _ncols, _coords = reeds.plots.get_coordinates(regions, ncols=6)
     labelcoords = {
@@ -1562,7 +1573,7 @@ try:
     f,ax = plt.subplots(_nrows, _ncols, figsize=(SLIDE_WIDTH, SLIDE_HEIGHT), sharex=True, sharey=True)
     ymax = neue_threshold*1.05
     for case in cases:
-        df = dictin_neue[case].xs(level,0,'level').xs('sum',0,'metric').unstack('region').loc[2025:]
+        df = dictin_neue[case].xs(level,0,'level').unstack('region').loc[int(sw.GSw_StartMarkets):]
         for i, region in enumerate(regions):
             _ax = ax[_coords[region]]
             _ax.plot(df.index, df[region].values, color=colors[case], label=case)
@@ -1868,7 +1879,7 @@ try:
                 cap_total = (
                     dictin_cap[case]
                     .loc[dictin_cap[case].tech.isin(techs)]
-                    .groupby('year')['Capacity (GW)'].sum().rename('GW').loc[2025:]
+                    .groupby('year')['Capacity (GW)'].sum().rename('GW').loc[int(sw.GSw_StartMarkets):]
                 )
                 capcredit = cap_firm.divide(cap_total, axis=0).dropna()
                 # for ccseason in lss:
@@ -2500,7 +2511,6 @@ if detailed:
 
 
 #%%### Copy some premade single-case plots
-level = dictin_sw[basecase]['GSw_PRM_StressThreshold'].split('_')[0]
 wide = 1 if len(hierarchy[basecase]['transreg'].unique()) > 6 else 0
 weatheryear = sw.GSw_HourlyWeatherYears.split('_')[0]
 metrics = [
@@ -2515,9 +2525,10 @@ metrics = [
 ]
 for figname, width, height in [
     (f'map_gencap_transcap-{lastyear}', None, SLIDE_HEIGHT),
-    (f'plot_stressperiod_evolution-sum-{level}', SLIDE_WIDTH, None),
+    ('plot_stressperiod_evolution-neue', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}', SLIDE_WIDTH, None),
     ## Include both versions for backwards compatibility
+    ('plot_stressperiod_evolution-sum-transgrp', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}-w{weatheryear}', SLIDE_WIDTH, None),
 ] + [
     (

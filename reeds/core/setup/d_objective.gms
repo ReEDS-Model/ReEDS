@@ -240,27 +240,27 @@ eq_Objfn_op(t)$tmodel(t)..
 *Sw_GasCurve = 2 (static natural gas prices)
 *first - gas consumed for electricity generation
               + sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - gas consumed by gas-powered DAC
               + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
                    hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
 
 *Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{(cendiv,gb), sum{h, hours(h) * GASUSED(cendiv,gb,h,t) }
+              + sum{(cendiv,gb), sum{h, hours(h) * GASUSED(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }
                    * gasprice(cendiv,gb,t)
                    }$(Sw_GasCurve = 0)
 
 *Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
               + sum{(h,cendiv,gb), hours(h) * GASUSED(cendiv,gb,h,t)
-                   * gasadder_cd(cendiv,t,h) + gasprice_nat_bin(gb,t)
+                   * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
                    }$(Sw_GasCurve = 3)
 
 *Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
               + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)],
-                   gasmultterm(cendiv,t) * szn_adj_gas(h) * cendiv_weights(r,cendiv) *
-                   hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) }
+                   gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
+                   hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin,cendiv),
