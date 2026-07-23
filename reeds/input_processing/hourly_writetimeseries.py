@@ -197,9 +197,6 @@ def get_minloading_windows(sw, h_szn, chunkmap):
 def get_trans_cap_delta(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     """
     """
-    ### Get hourly ITLs
-    itl_hourly = reeds.io.get_itl_hourly(inputs_case, periodtype=periodtype)
-
     ### Get static ITLs
     _itl_static = reeds.inputs.get_itls(inputs_case)
     itl_static_forward = _itl_static.set_index(['r', 'rr'])['MW_forward']
@@ -207,8 +204,12 @@ def get_trans_cap_delta(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'
     itl_static = (
         pd.concat([itl_static_forward, itl_static_reverse])
         .rename_axis(index=['r', 'rr'])
-        .loc[itl_hourly.columns]
     )
+
+    ### Get hourly ITLs
+    itl_hourly = reeds.io.get_itl_hourly(inputs_case, periodtype=periodtype)
+    itl_hourly = itl_hourly.loc[:, itl_hourly.columns.isin(itl_static.index)]
+    itl_static = itl_static.loc[itl_hourly.columns]
 
     ### Calculate hourly deltas
     trans_cap_delta = itl_hourly / itl_static - 1
