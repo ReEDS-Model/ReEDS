@@ -589,6 +589,7 @@ def main(reeds_path, inputs_case):
                         ]
     
     caprsc['v']='init-1'
+    # Assign existing upv as upv_5 based on their average cf
     caprsc.loc[caprsc['tech']=='upv','tech']='upv_5'
     caprsc = caprsc[COLNAMES['rsc'][0]]
     caprsc.columns = COLNAMES['rsc'][1]

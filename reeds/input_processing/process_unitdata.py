@@ -46,22 +46,22 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
         else:
             supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+tech+'.csv'))
 
-        # Only consider the sc_point_pids that are in supply curves
+        # Only consider the sc_point_gids that are in supply curves
         # (to avoid unmatched units later)
         if tech == 'wind-ofs':
-            sc_point_pid_pdf = offland_gdf[offland_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
+            sc_point_gid_gdf = offland_gdf[offland_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
         else:
-            sc_point_pid_pdf = land_gdf[land_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
+            sc_point_gid_gdf = land_gdf[land_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
         # Rename FIPS and lon/lat as nearest FIPS and lon/lat #
         # as after matching them to units in unitdata by distance later 
         # these FIPS and lon/lat are the nearest ones to these units 
         # and not the FIPS and lon/lat these units are located at  
-        sc_point_pid_pdf = sc_point_pid_pdf.rename(columns={'FIPS':'FIPS_nearest',
+        sc_point_gid_gdf = sc_point_gid_gdf.rename(columns={'FIPS':'FIPS_nearest',
                                                             'latitude':'T_LAT_nearest',
                                                             'longitude':'T_LONG_nearest'})
-        sc_point_pid_pdf['FIPS_nearest'] = 'p' + sc_point_pid_pdf['FIPS_nearest']
+        sc_point_gid_gdf['FIPS_nearest'] = 'p' + sc_point_gid_gdf['FIPS_nearest']
         
-        gdf_joined = gpd.sjoin_nearest(df_sub, sc_point_pid_pdf, distance_col='distance', how='left')
+        gdf_joined = gpd.sjoin_nearest(df_sub, sc_point_gid_gdf, distance_col='distance', how='left')
         # Replace lon/lat and FIPS with the ones closest to them with resources
         # (This is to make sure all units are matched to available resources 
         # and their associated FIPS and lon/lat are those of the resources 
