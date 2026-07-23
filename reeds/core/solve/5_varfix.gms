@@ -84,7 +84,6 @@ BIOUSED.fx(bioclass,r,tfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,tfix)
 * RECS variables
 RECS.fx(RPSCat,i,st,ast,htype,tfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,htype,tfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = RECS.l(RPSCat,i,st,ast,htype,tfix) ;
 ACP_Purchases.fx(RPSCat,st,htype,tfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = ACP_Purchases.l(RPSCat,st,htype,tfix) ;
-ACP_Purchases_StressPd.fx(RPSCat,st,szn,tfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS$Sw_StateRPS_Stress] = ACP_Purchases_StressPd.l(RPSCat,st,szn,tfix) ;
 EMIT.fx(etype,e,r,tfix)$emit_modeled(e,r,tfix) = EMIT.l(etype,e,r,tfix) ;
 
 * transmission variables

@@ -79,7 +79,6 @@ positive variables
 * RECS variables
   RECS(RPSCat,i,st,ast,htype,t)         "--MWh-- renewable energy credits from state st to state ast, for representative (htype=rep) or stress (htype=stress) periods",
   ACP_PURCHASES(RPSCat,st,htype,t)      "--MWh-- purchases of ACP credits to meet the RPS constraints, for representative (htype=rep) or stress (htype=stress) periods",
-  ACP_PURCHASES_STRESSPD(RPSCat,st,allszn,t) "--MWh-- per-period ACP credits for eq_REC_Requirement_stressperiod; kept separate from ACP_PURCHASES because of different indexing",
 
 * transmission variables
   CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
@@ -229,7 +228,6 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_REC_launder(RPSCat,st,htype,t)         "--RECs-- RECs laundering constraint"
  eq_REC_BundleLimit(RPSCat,st,ast,htype,t) "--RECS-- trade in bundle recs must be less than interstate electricity transmission"
  eq_REC_unbundledLimit(RPScat,st,htype,t)  "--RECS-- unbundled RECS cannot exceed some percentage of total REC requirements"
- eq_REC_Requirement_stressperiod(RPSCat,st,allszn,t) "--RECs-- in-state generation (plus per-period ACP) must meet the stress requirement independently for each stress period, so one period can't offset a shortfall on another"
  eq_RPS_OFSWind(st,t)                      "--MW-- MW of offshore wind capacity must be greater than or equal to RPS amount"
  eq_national_gen(t)                        "--MWh-- e.g. a national RPS or CES. require a certain amount of total generation to be from specified sources."
 
@@ -2749,51 +2747,6 @@ eq_REC_unbundledLimit(RPSCat,st,htype,t)$[st_unbundled_limit(RPScat,st)$tmodel(t
 
     - sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,htype,t)$stfeas(ast)$(not sameas(st,ast))],
         RECS("CES_Bundled",i,ast,st,htype,t) }$sameas(RPSCat,"CES")
-;
-
-* ---------------------------------------------------------------------------
-
-* eq_REC_Requirement equivalent that applies for each stress period invidiually
-eq_REC_Requirement_stressperiod(RPSCat,st,szn,t)$[RecPerc(RPSCat,st,"stress",t)$szn_stress(szn)
-                                $(not tfirst(t))$tmodel(t)$Sw_StateRPS$Sw_StateRPS_Stress
-                                $(yeart(t)>=firstyear_RPS)
-                                $(stfeas(st) or sameas(st,"voluntary"))
-                                $(not sameas(RPSCat,"RPS_Bundled"))
-                                $(not sameas(RPSCat,"CES_Bundled"))]..
-
-* in-state qualifying generation during this specific stress period
-    + sum{(i,v,r,h)$[valgen(i,v,r,t)$RecTech(RPSCat,i,st,t)$r_st(r,st)$h_szn(h,szn)$h_stress(h)],
-          RPSTechMult(RPSCat,i,st)
-          * (GEN(i,v,r,h,t)
-          - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC]
-          - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] )
-         }
-
-* per-period ACP release valve
-    + ACP_PURCHASES_STRESSPD(RPSCat,st,szn,t)$(not acp_disallowed(st,RPSCat))
-
-    =g=
-
-    RecPerc(RPSCat,st,"stress",t) * sum{(r,h)$[r_st_rps(r,st)$h_szn(h,szn)$h_stress(h)], (
-* RecStyle(st,RPSCat)=0 means end-use sales.
-        ( (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
-        - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
-        )$(RecStyle(st,RPSCat)=0)
-
-* RecStyle(st,RPSCat)=1 means bus-bar sales.
-      + ( LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
-        - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }
-        )$(RecStyle(st,RPSCat)=1)
-
-* RecStyle(st,RPSCat)=2 means generation (including distPV), but subtracting canadian exports
-*for CES (similar to the left-hand-side). Also, because GEN from pvb(i) includes grid charging,
-*subtract out its grid charging (see the generation term above).
-      + ( sum{(i,v)$[valgen(i,v,r,t)$(not storage_standalone(i))], GEN(i,v,r,h,t)
-          - (distloss * GEN(i,v,r,h,t))$(distpv(i))
-          - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] }
-          - can_exports_h(r,h,t)$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
-        )$(RecStyle(st,RPSCat)=2)
-    )}
 ;
 
 * ---------------------------------------------------------------------------
