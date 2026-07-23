@@ -327,7 +327,7 @@ GSw_TransInvPRMderate,[fraction] amount by which to derate the capacity of new t
 GSw_TransCostMult,Multiplier for bulk BA-BA transmission costs,float,1,
 GSw_TransHurdleLevel1,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,transgrp,
 GSw_TransHurdleLevel2,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,hurdlereg,
-GSw_TransHurdleRate,Turn on (1) or off (0) hurdle rates between hierarchy regions as defined by GSw_TransHurdleLevel1/GSw_TransHurdleLevel2 and inputs/transmission/cost_hurdle_intra.csv,0; 1,1,
+GSw_TransHurdleRate,Turn on (1) or off (0) hurdle rates between hierarchy regions as defined by GSw_TransHurdleLevel1/GSw_TransHurdleLevel2 and inputs/transmission/cost_hurdle_intra.csv,0; 1,0,
 GSw_TransNetworkSource,Network source for the initial transmission network used in the model,NARIS2024,NARIS2024,
 GSw_TransRestrict,hierarchy level within which to allow new transmission lines,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region,interconnect,
 GSw_TransScen,Transmission expansion scenario (options in inputs/transmission),N/A,default,
