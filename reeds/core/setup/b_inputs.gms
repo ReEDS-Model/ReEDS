@@ -6269,7 +6269,7 @@ $include ../../cmm_global_mat_price.csv
 $offdelim
 $onlisting
 /
-share_consumption(mat)           "-- share of total material supply that is consumed by power sector"
+share_consumption(mat)        "-- share of total material supply that is consumed by power sector"
 /
 $offlisting
 $ondelim
@@ -6277,8 +6277,9 @@ $include ../../cmm_consumption_share.csv
 $offdelim
 $onlisting
 /
-i_theta(i,mat,t)        "-- share -- share of capital costs attributable to materials for each technology, by year"
-matprice_multiplier(mat,t) "-- multiplier -- multiplier on material prices"
+i_theta(i,mat,t)            "-- share -- share of capital costs attributable to materials for each technology, by year"
+matprice_multiplier(mat,t)  "-- multiplier -- multiplier on material prices"
+mat_slackprice(mat)         "-- 2004$ / metric ton -- slack price for material supply"
 ;
 
 i_int(i,mat) = sum(tcat$i_tcat(i,tcat),mat_int(tcat,mat)) / 1000 ;
@@ -6311,3 +6312,5 @@ $ifthene.priceshockall %GSw_priceshock_all% == 1
 matprice_multiplier(mat,t)$[(not sameas(mat,'%GSw_matsupply_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockall
 
+* set slack price for materials to be 10x the base price to avoid infeasibilities in the model
+mat_slackprice(mat) = 10 * mat_price(mat) ;

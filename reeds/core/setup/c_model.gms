@@ -3999,7 +3999,7 @@ eq_mat_demand(mat,t)$tmodel(t)..
 * Materials needed for investment in transmission capacity 
 * transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
     + sum((r,rr,trtype)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)],
-         trt_int(trtype,mat) * (INVTRAN(r,rr,trtype,t) + invtran_exog(r,rr,trtype,t)) * distance(r,rr,trtype)) 
+         trt_int(trtype,mat) * (INVTRAN(r,rr,trtype,t)) * distance(r,rr,trtype)) 
 ;
 
 * total material supply 
