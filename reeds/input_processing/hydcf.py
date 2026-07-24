@@ -386,7 +386,7 @@ def assemble_hydcf(
     hydcf = hydcf.reindex(reindex)
     hydcf.loc[data_endyear:] = hydcf.loc[data_endyear:].ffill()
     # Convert from "wide" to "long" format
-    hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').to_frame()
+    hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').dropna().to_frame()
     # Downselect to model solve years
     model_startyear = int(sw.startyear)
     hydcf = hydcf.loc[model_startyear:model_endyear]

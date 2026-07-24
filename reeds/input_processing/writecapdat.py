@@ -173,8 +173,8 @@ def assign_class(cf, tech, df_class):
     
     if len(row) == 1:
         return row.iloc[0]['class']
-    # If a wind cf matches with both fixed and floating resources,
-    # assign a fixed resource
+    # If a offshore wind cf matches with both fixed and floating 
+    # resources, assign a fixed resource
     elif (len(row) > 1) & (tech == 'wind-ofs'):
         row = row[row['subtech']=='fixed']
         return row.iloc[0]['class']
