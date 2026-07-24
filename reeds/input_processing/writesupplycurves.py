@@ -176,23 +176,15 @@ def main(
     rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
 
     #%% Load the existing RSC capacity (PV plants, wind, and CSP) if not provided in main function call
-    if exog_rsc_dat is None:
-        # writesupplycurves.py is being run as a main input processing script
-        dfwindonsexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_wind-ons.csv")).rename(
-                                    columns={"capacity": "MW"})
-        dfwindofsexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_wind-ofs.csv")).rename(
-                                    columns={"capacity": "MW"})
-        dfupvexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_upv.csv")).rename(
-                                    columns={"capacity": "MW"})
-        dfgeohydroexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_geohydro.csv")).rename(
-                                    columns={"capacity": "MW"})
-
-    else:
-        # writesupplycurves.py is being passed exog_rsc data from an aggregate_regions.py call
-        dfwindonsexog = exog_rsc_dat['wind-ons'].copy()
-        dfwindofsexog = exog_rsc_dat['wind-ofs'].copy()
-        dfupvexog = exog_rsc_dat['upv'].copy()
-        dfgeohydroexog = exog_rsc_dat['geohydro_allkm'].copy()
+    # writesupplycurves.py is being run as a main input processing script
+    dfwindonsexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_wind-ons.csv")).rename(
+                                columns={"capacity": "MW"})
+    dfwindofsexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_wind-ofs.csv")).rename(
+                                columns={"capacity": "MW"})
+    dfupvexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_upv.csv")).rename(
+                                columns={"capacity": "MW"})
+    dfgeohydroexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_geohydro.csv")).rename(
+                                columns={"capacity": "MW"})
 
     # Group CSP tech    
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'

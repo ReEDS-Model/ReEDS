@@ -276,26 +276,26 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
 # Identify resources with missing classes and assign them to 
 # closest resources of similar classes
 def check_missing_class_resource(existing_techs, resources):
-        missing_class_resource = existing_techs.merge(resources[['i','r']],
-                                                      on=['i','r'],
-                                                      how='left',
-                                                      indicator=True)
-        missing_class_resource = missing_class_resource[
-            missing_class_resource['i'].str.contains('upv|wind')].reset_index(drop=True)
-        missing_class_resource = missing_class_resource[
-            missing_class_resource['_merge'] == 'left_only'][['i','r']].copy()
-        
-        if len(missing_class_resource) > 0:
+    missing_class_resource = existing_techs.merge(resources[['i','r']],
+                                                    on=['i','r'],
+                                                    how='left',
+                                                    indicator=True)
+    missing_class_resource = missing_class_resource[
+        missing_class_resource['i'].str.contains('upv|wind')].reset_index(drop=True)
+    missing_class_resource = missing_class_resource[
+        missing_class_resource['_merge'] == 'left_only'][['i','r']].copy()
+    
+    if len(missing_class_resource) > 0:
             # Print out missing classes
-    fpath = os.path.join(inputs_case, 'missing_class_resource.csv')
-    missing_class_resource.to_csv(fpath, index=False)
-    err = (
-        f'{len(missing_class_resources)} mismatched tech class capacities and resources.\n'
+        fpath = os.path.join(inputs_case, 'missing_class_resource.csv')
+        missing_class_resource.to_csv(fpath, index=False)
+        err = (
+            f'{len(missing_class_resource)} mismatched tech class capacities and resources.\n'
         f'Details can be found in {fpath}.'
     )
-    raise ValueError(err)
-        else:
-            print('All capacities and resources are matched.')
+        raise ValueError(err)
+    else:
+        print('All capacities and resources are matched.')
             
 
 #%% ===========================================================================
