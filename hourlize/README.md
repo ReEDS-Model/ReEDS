@@ -72,6 +72,7 @@ Follow setup details in the [Running hourlize](#running-hourlize) section.
 
 Hourlize relies on a set of columns being in the reV supply curve. In some cases hourlize can fill in missing columns hourlize in a pre-processing step, but in others these missing columns can cause hourlize to fall. A list of required columns can be found in `hourlize/inputs/resource/rev_sc_columns.csv`
 
+
 ### 4. Synchronize shared directories
 
 By default hourlize will copy the required files in your ReEDS repository (`copy_to_reeds=True`). You can also copy the hourlize outputs back to the shared repository by setting `copy_to_shared=True`.

@@ -37,6 +37,8 @@ import reeds
 
 #%%#################
 ### FIXED INPUTS ###
+WINDOFS_FIXED_CLASSES = list(range(5))
+WINDOFS_FLOATING_CLASSES = list(range(6,11))
 
 #%% ===========================================================================
 ### --- FUNCTIONS ---
@@ -132,7 +134,7 @@ def prep_supply_curve(reeds_path, tech, access_case, subtech):
     # Aggregate min/max by class and attach access_case
     if tech == 'wind-ofs':
         df['subtech'] = 'fixed'
-        df.loc[df['class']>=6,'subtech'] = 'floating'
+        df.loc[df['class'].isin(WINDOFS_FLOATING_CLASSES),'subtech'] = 'floating'
         df_sub = df[df['subtech']==subtech]
         summary_df = df_sub.groupby('class')['cf'].agg(['min', 'max']).reset_index()
         summary_df['subtech'] = subtech
@@ -308,7 +310,7 @@ TECH = {
     ],
     'storage'  : ['battery_li', 'pumped-hydro'
     ],
-    'rsc_pv_all': ['upv','pvb','csp-ns'],
+    'rsc_pv_all': ['upv','pvb','pvb_pv','csp-ns'],
     'rsc_upv': ['upv','pvb'],
     'rsc_w': ['wind-ons','wind-ofs'],
     'rsc_csp': ['csp-ns'],
@@ -855,10 +857,13 @@ def main(reeds_path, inputs_case):
     #    -- Wind Retirements --    #
     ################################
     print('Gathering Wind Retirement Data...')
+    maxage_data = pd.read_csv(os.path.join(inputs_case, 'maxage.csv'))
+    wind_maxage = maxage_data[maxage_data.iloc[:,0].str.contains('wind-ons')].values[0,1]
+    
     wind_rets = gdb_use.loc[(gdb_use['tech'].isin(TECH['windret'])) &
                             (gdb_use['StartYear'] <= startyear) &
                             (gdb_use['RetireYear'] >  startyear) &
-                            (gdb_use['RetireYear'] <  startyear + 30)
+                            (gdb_use['RetireYear'] <  startyear + wind_maxage)
                             ]
     wind_rets = wind_rets[COLNAMES['windret'][0]]
     wind_rets.columns = COLNAMES['windret'][1]
@@ -873,10 +878,11 @@ def main(reeds_path, inputs_case):
     #   --- Geothermal Retirements ---
     #================================
     print('Gathering Geothermal Retirement Data...')
+    geo_maxage = maxage_data[maxage_data.iloc[:,0].str.contains('geothermal')].values[0,1]
     geo_retirements = gdb_use.loc[(gdb_use['tech'].isin(TECH['georet'])) &
                     (gdb_use['StartYear'] <= startyear) &
                     (gdb_use['RetireYear'] >  startyear) &
-                    (gdb_use['RetireYear'] <  startyear + 30)
+                    (gdb_use['RetireYear'] <  startyear + geo_maxage)
                     ]
     geo_retirements = geo_retirements[COLNAMES['georet'][0]]
     geo_retirements.columns = COLNAMES['georet'][1]
@@ -1069,13 +1075,13 @@ if __name__ == '__main__':
     parser.add_argument("reeds_path", help="ReEDS directory")
     parser.add_argument("inputs_case", help="path to runs/{case}/inputs_case")
 
-    args = parser.parse_args()
-    reeds_path = args.reeds_path
-    inputs_case = args.inputs_case
+    #args = parser.parse_args()
+    #reeds_path = args.reeds_path
+    #inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    reeds_path = reeds.io.reeds_path
+    inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
