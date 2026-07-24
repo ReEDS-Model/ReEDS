@@ -492,6 +492,8 @@ def read_output(
     """
     if case.endswith('.h5'):
         h5path = case
+    elif 'pcm' in case:
+        h5path = os.path.join(case, 'outputs.h5')
     else:
         h5path = os.path.join(case, 'outputs', 'outputs.h5')
     if os.path.exists(h5path) and not filename.endswith('.csv'):

@@ -246,7 +246,11 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     #%% Set up logger
     reeds_path = os.path.abspath(os.path.dirname(__file__))
-    log = reeds.log.makelog(scriptname=__file__, logpath=os.path.join(case, "gamslog.txt"))
+    if 'pcm' not in case:
+        log = reeds.log.makelog(scriptname=__file__, logpath=os.path.join(case, "gamslog.txt"))
+    else: 
+        log = reeds.log.makelog(scriptname=__file__, logpath=os.path.join(case, '..', f"{Path(case).name}_gamslog.txt"))
+
 
     print("Starting report_dump.py")
 
