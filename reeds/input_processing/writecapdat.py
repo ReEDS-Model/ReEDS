@@ -1075,13 +1075,13 @@ if __name__ == '__main__':
     parser.add_argument("reeds_path", help="ReEDS directory")
     parser.add_argument("inputs_case", help="path to runs/{case}/inputs_case")
 
-    #args = parser.parse_args()
-    #reeds_path = args.reeds_path
-    #inputs_case = args.inputs_case
+    args = parser.parse_args()
+    reeds_path = args.reeds_path
+    inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    reeds_path = reeds.io.reeds_path
-    inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
