@@ -718,10 +718,10 @@ def diff_outputs(
     casebase:str|Path,
     casecomp:str|Path,
     outpath:str|Path|None|bool=None,
-    threshold_abs=0,
-    threshold_rel=0,
-    verbose=0,
-):
+    threshold_abs:float=0,
+    threshold_rel:float=0,
+    verbose:int=0,
+) -> dict:
     """
     Diff two {case}/outputs/outputs.h5 files and save the result to outpath.
 
@@ -729,8 +729,9 @@ def diff_outputs(
         casebase: Absolute path to base ReEDS case
         casecomp: Absolute path to comparison ReEDS case
         outpath: Absolute path to resulting difference .h5 file
-            If None, difference file is saved to
-            {casebase}/comparisons/diff_{casebase.stem}_{casecomp.stem}.h5
+            If None or True, difference file is saved to
+                {casebase}/comparisons/diff_{casebase.stem}_{casecomp.stem}.h5.
+            If False, no difference file is written.
         threshold_abs: Absolute cutoff for differences to include
             (i.e., to ignore differences of 0.1 MW in an output parameter in units of MW,
             set to 0.1)
