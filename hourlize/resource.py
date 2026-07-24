@@ -788,7 +788,7 @@ def save_sc_outputs(
             ret_year_ls = list(range(start_year,max_exog_ret_year + 1))
             df_exog = df_exog.pivot_table(index=[profile_id_col,'class'], columns='retire_year', values='existing_capacity')
             # Make a column for every year until the largest retirement year
-            df_exog = df_exog.reindex(columns=ret_year_ls).fillna(method='bfill', axis='columns')
+            df_exog = df_exog.reindex(columns=ret_year_ls).bfill(axis='columns')
             df_exog = pd.melt(
                 df_exog.reset_index(), id_vars= [profile_id_col,'class'],
                 value_vars=ret_year_ls, var_name='year', value_name='capacity')
