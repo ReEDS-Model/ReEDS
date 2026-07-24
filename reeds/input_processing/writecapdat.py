@@ -173,6 +173,11 @@ def assign_class(cf, tech, df_class):
     
     if len(row) == 1:
         return row.iloc[0]['class']
+    # If a wind cf matches with both fixed and floating resources,
+    # assign a fixed resource
+    elif (len(row) > 1) & (tech == 'wind-ofs'):
+        row = row[row['subtech']=='fixed']
+        return row.iloc[0]['class']
     else:
         # If a unit's capacity factor/mean temp does not fall between any two max and min values
         # specified in the classificalion file, it is unclassified and gives an error
@@ -1080,8 +1085,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','test_github_MA_county_CC','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
