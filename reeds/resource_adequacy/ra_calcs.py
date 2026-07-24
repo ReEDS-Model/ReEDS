@@ -24,6 +24,7 @@ def run_pras(
         write_surplus=False,
         write_energy=False,
         write_shortfall_samples=False,
+        write_shortfall_samples_totals=False,
         write_availability_samples=False,
         **kwargs,
     ):
@@ -68,7 +69,9 @@ def run_pras(
         f"--write_surplus={int(write_surplus)}",
         f"--write_energy={int(write_energy)}",
         f"--write_shortfall_samples={int(write_shortfall_samples)}",
+        f"--write_shortfall_samples_totals={int(write_shortfall_samples_totals)}",
         f"--write_availability_samples={int(write_availability_samples)}",
+        f"--cvar_alpha={float(sw['GSw_PRM_CVARAlpha'])}",
         f"--iteration={iteration}",
         f"--samples={sw['pras_samples']}",
         f"--overwrite={int(overwrite)}",
@@ -153,13 +156,25 @@ def main(t, tnext, casedir, iteration=0):
         2: True,
     }[int(sw['pras'])]
     if pras_this_solve_year or int(sw.GSw_PRM_StressIterateMax):
+        stress_metrics = [
+            m.strip().upper()
+            for m in sw.GSw_PRM_StressThresholdMetrics.split('/')
+            if m.strip()
+        ]
+        write_shortfall_samples_totals = any(
+            metric in {'CVAR', 'NCVAR'}
+            for metric in stress_metrics
+        )
+
         result = run_pras(
             casedir, t,
             iteration=iteration,
             write_flow=(True if t == max(solveyears) else False),
             write_energy=True,
             write_shortfall_samples=(True if int(sw.GSw_PRM_UpdateMethod) > 1 else False),
+            write_shortfall_samples_totals=write_shortfall_samples_totals,
         )
+
         if result.returncode:
             raise Exception(
                 f"run_pras.jl returned code {result.returncode}. Check gamslog.txt for error trace."

@@ -14,6 +14,8 @@ from reeds.input_processing import hourly_writetimeseries
 # import importlib
 # importlib.reload(functions)
 
+CVAR_METRICS = {'CVAR', 'NCVAR'}
+
 
 #%%### Constants
 RA_SWITCHES = {
@@ -142,6 +144,51 @@ def calc_neue(dfeue_agg, dfload_agg):
     neue = dfeue_agg.sum() / dfload_agg.sum() * 1e6
     return neue
 
+def get_cvar_alpha(sw):
+    alpha = float(sw.GSw_PRM_CVARAlpha)
+    if not (0 <= alpha < 1):
+        raise ValueError(f"GSw_PRM_CVARAlpha must be in [0, 1). Got {alpha}")
+    return alpha
+
+
+def get_shortfall_totals_by_sample(case, t, iteration=0):
+    filepath = os.path.join(case, 'handoff', 'PRAS', f'PRAS_{t}i{iteration}-shortfall_totals_by_sample.h5')
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"{filepath} not found. Re-run PRAS with --write_shortfall_samples_totals 1.")
+    df = reeds.io.read_pras_results(filepath)
+    df.columns = df.columns.astype(str)
+    if 'sample' in df.columns:
+        df = df.set_index('sample')
+    elif df.index.name != 'sample':
+        df.index = pd.RangeIndex(1, len(df) + 1, name='sample')
+    return df.apply(pd.to_numeric, errors='coerce').clip(lower=0)
+
+
+def _sample_cvar(samples, alpha=0.95):
+    x = pd.Series(samples).dropna().astype(float)
+    if x.empty:
+        return np.nan
+    n_tail = max(1, int(np.ceil(round((1 - alpha) * len(x), 12))),)
+    return x.sort_values(ascending=False).iloc[:n_tail].mean()
+
+def calc_cvar(shortfall_samples_agg, alpha=0.95):
+    """
+    CVAR from total shortfall by PRAS sample.
+    """
+    cvar = shortfall_samples_agg.apply(
+        lambda s: _sample_cvar(s, alpha=alpha),
+        axis=0,
+    )
+    return cvar
+
+
+def calc_ncvar(cvar, dfload_agg):
+    """
+    NCVAR = CVAR / total load, in ppm.
+    """
+    ncvar = cvar / dfload_agg.sum().reindex(cvar.index) * 1e6
+    return ncvar
+
 
 def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute']='peak'):
     """
@@ -192,6 +239,19 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
+    cvar_metrics = {
+        i.strip().upper()
+        for i in sw.GSw_PRM_StressThresholdMetrics.split('/')
+        if i.strip().upper() in CVAR_METRICS
+    }
+
+    if len(cvar_metrics):
+        shortfall_samples = (
+            get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
+            .drop(columns=['USA'], errors='ignore')
+        )
+        cvar_alpha = get_cvar_alpha(sw)
+
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
     for level in levels:
@@ -200,9 +260,9 @@ def calc_ra_metrics(
         rmap = reeds.io.get_rmap(case=case, hierarchy_level=level)
         ## If multiple zones in one level and hour have LOLE, count that as one event,
         ## so take the max LOLE across the zones
-        dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T
-        dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
-        dfload_agg = dfload.rename(columns=rmap).T.groupby(level=0).sum().T
+        dflole_agg = dflole.rename(columns=rmap).groupby(axis=1, level=0).max()
+        dfeue_agg = dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum()
+        dfload_agg = dfload.rename(columns=rmap).groupby(axis=1, level=0).sum()
         ## Calculate the full-timeseries metrics for each region
         ra_metrics[level, 'lold_peryear'] = calc_lold(dflole_agg) / numyears
         ra_metrics[level, 'lole_peryear'] = calc_lole(dflole_agg) / numyears
@@ -212,6 +272,22 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
+        if len(cvar_metrics):
+            regions = [c for c in shortfall_samples.columns if c in rmap.index]
+            if len(regions):
+                shortfall_samples_agg = (
+                    shortfall_samples[regions]
+                    .rename(columns=rmap)
+                    .groupby(axis=1, level=0)
+                    .sum()
+                )
+                cvar = calc_cvar(shortfall_samples_agg, alpha=cvar_alpha)
+
+                if 'CVAR' in cvar_metrics:
+                    ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
+
+                if 'NCVAR' in cvar_metrics:
+                    ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
@@ -232,7 +308,7 @@ def get_eue_events(
     events = {}
     for level in levels:
         rmap = reeds.io.get_rmap(case=case, hierarchy_level=level)
-        dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
+        dfeue_agg = dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum()
         events[level] = pd.concat({r: get_events(dfeue_agg[r]) for r in dfeue_agg})
     dfout = pd.concat(events, names=['level','region','number'])
     return dfout
@@ -268,7 +344,7 @@ def get_longest_events(
     dates = []
     for i, row in eue_events.iterrows():
         dates.append(
-            pd.Series(index=pd.date_range(row.start, row.end, freq='h'), data=1)
+            pd.Series(index=pd.date_range(row.start, row.end, freq='H'), data=1)
             .resample('D').count()
         )
     if len(dates):
@@ -486,7 +562,7 @@ def get_stress_periods(case, sw, t, iteration):
     dfenergy = (
         dfenergy_unit
         .rename(columns={c: c.split('|')[1] for c in dfenergy_unit.columns})
-        .T.groupby(level=0).sum().T
+        .groupby(axis=1, level=0).sum()
     )
 
     ### Load this year's stress periods so we don't duplicate
@@ -501,23 +577,26 @@ def get_stress_periods(case, sw, t, iteration):
         stressperiods_this_iteration['start']
         + (
             (pd.Timedelta('5D') if sw.GSw_HourlyType == 'wek' else pd.Timedelta('1D'))
-             - pd.Timedelta('1h')
+             - pd.Timedelta('1H')
         )
     )
     ## Get already-modeled stress hours so we can exclude them from the hourly
     ## EUE and LOLE profiles used to determine new stress periods
     covered_hours = [
-        pd.date_range(row.start, row.end, freq='1h')
+        pd.date_range(row.start, row.end, freq='1H')
         for i,row in stressperiods_this_iteration.iterrows()
     ]
     covered_hours = [i for sublist in covered_hours for i in sublist]
-
-    ### Check all stress criteria; for regions that fail, add new stress periods
     _failed = {}
     _high_stress_periods = {}
     _shoulder_periods = {}
 
-    stress_metrics = [i.lower() for i in sw.GSw_PRM_StressThresholdMetrics.split('/')]
+    stress_metrics = []
+    for metric in sw.GSw_PRM_StressThresholdMetrics.split('/'):
+        metric = str(metric).strip()
+        if metric and metric.upper() not in CVAR_METRICS:
+            stress_metrics.append(metric.lower())
+
     for stress_metric in stress_metrics:
         switch = RA_SWITCHES[stress_metric]
         for criterion in sw[switch].split('/'):
@@ -525,9 +604,9 @@ def get_stress_periods(case, sw, t, iteration):
             ## Example: criterion = 'transgrp_1'
             hierarchy_level, metric_threshold = criterion.split('_')
             rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
-            dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
-            dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T.drop(covered_hours)
-            dfenergy_agg = dfenergy.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
+            dfeue_agg = dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum().drop(covered_hours)
+            dflole_agg = dflole.rename(columns=rmap).groupby(axis=1, level=0).max().drop(covered_hours)
+            dfenergy_agg = dfenergy.rename(columns=rmap).groupby(axis=1, level=0).sum().drop(covered_hours)
             ## Get the stress periods
             dictout = check_threshold_and_choose_periods(
                 stress_metric,
@@ -864,6 +943,9 @@ def main(sw, t, iteration=0, logging=True):
     prm_next_iteration.to_csv(
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'prm.csv'),
     )
+
+    #%% Done
+    return
 
 
 # #%%### Option to run script directly for debugging

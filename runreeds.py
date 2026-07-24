@@ -300,21 +300,28 @@ def check_compatibility(sw):
         i.lower(): f'GSw_PRM_StressThreshold{i}'
         for i in ['Depth', 'Duration', 'LOLD', 'LOLE', 'LOLH', 'NEUE']
     }
-    used_metrics = [i.lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')]
+    report_only_metrics = {'cvar', 'ncvar'}
+
+    used_metrics = [i.strip().lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/') if i.strip()]
     allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
 
     for metric in used_metrics:
+        if metric in report_only_metrics:
+            continue
+
         if metric not in ra_switches:
             raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
 
         for threshold in sw[ra_switches[metric]].split('/'):
             ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
-            (hierarchy_level, stress_value) = threshold.split('_')
+            hierarchy_level, stress_value = threshold.split('_')
+
             if hierarchy_level not in allowed_levels:
                 raise ValueError(
                     f"{ra_switches[metric]}: level={hierarchy_level} but must be in:\n"
                     + '\n'.join(allowed_levels)
                 )
+
             if not (float(stress_value) >= 0):
                 raise ValueError(
                     f"stress value in {ra_switches[metric]} must be a positive number "
@@ -835,19 +842,22 @@ def setupEnvironment(
 
     #%% Check whether the ReEDS conda environment is activated
     if (not skip_checks) and (
-        ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
-        or (not pd.__version__.startswith('3'))
+        ('reeds2' not in os.environ['CONDA_DEFAULT_ENV'].lower())
+        or (not pd.__version__.startswith('2'))
     ):
-        err = (
+        print(
             f"Your environment is {os.environ['CONDA_DEFAULT_ENV']} and your pandas "
-            f"version is {pd.__version__}.\nThe supported environment is 'reeds', with\n"
-            "pandas version 3.x.\n"
+            f"version is {pd.__version__}.\nThe default environment is 'reeds2', with\n"
+            "pandas version 2.x, so the python parts of ReEDS are unlikely to work.\n"
             "To build the environment for the first time, run:\n"
             "    `conda env create -f environment.yml`\n"
             "To activate the created environment, run:\n"
-            "    `conda activate reeds` (or `activate reeds` on Windows)"
+            "    `conda activate reeds2` (or `activate reeds2` on Windows)\n"
+            "Do you want to continue without activating the environment?"
         )
-        raise ValueError(err)
+        confirm_env = str(input("Continue? y/[n]: ") or 'n')
+        if confirm_env not in ['y','Y','yes','Yes','YES']:
+            quit()
 
     #%% Load specified case file, infer other settings from cases.csv
     if cases_suffix in ['', 'default']:
@@ -1275,7 +1285,7 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda activate reeds \n")
+            OPATH.writelines("conda activate reeds2 \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls
@@ -1283,7 +1293,6 @@ def write_batch_script(
         for s in [
             'copy_files',
             'mcs_sampler',
-            'climateprep',            
             'hydcf',
             'h2_storage',
             'calc_financial_inputs',
@@ -1292,6 +1301,7 @@ def write_batch_script(
             'writesupplycurves',
             'writedrshift',
             'plantcostprep',
+            'climateprep',
             'hourly_load',
             'recf',
             'forecast',
