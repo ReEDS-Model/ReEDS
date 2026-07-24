@@ -36,10 +36,11 @@ GSw_mat_allies,Switch to enable material production from allies,0,,,,,,
 GSw_mat_glb,Switch to enable global material production,0,,,,1,,1
 GSw_mat_byproduct,Switch to enable material production from byproduct recovery,0,,,,,,
 GSw_mat_reserve,Switch to enable material production from reserves,0,,,,,,
-GSw_matprice_multiplier,Multiplier on material prices,1,,,,,,
+GSw_matprice_multiplier,Multiplier on material prices,1,,,,,2,
 GSw_matprice_spec,Material that price multiplier applies for,0,,,,,Copper,
 GSw_matsupply_spec,Material that supply restriction applies for,0,,,,,,Copper
 GSw_priceshock_one,Switch if applying a price shock to one matierial,0,,,,,1,
 GSw_priceshock_all,Switch if applying a price shock to all but one material,0,,,,,,
 GSw_years_matshock,Switch to choose the years that a shock (price or supply) applies,"2029,2032",,,,,,
 GSw_GasCurve,"Select natural gas supply curve (0 = cendiv, 1 = national + cendiv, 2 = static, 3 = national)",2,,,,,,
+GSw_prod_multiplier_usa,Multiplier on domestic production of a material,1,,,0.25,,,
