@@ -89,7 +89,7 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
         df_rev = gdf_joined[['sc_point_gid'] + df.drop(columns=['geometry']).columns.to_list()]
 
         if len(df_rev) > 0:
-            df_rev.loc[:, ['sc_point_gid']] = df_rev.loc[:, ['sc_point_gid']].fillna(0).astype(np.int64)
+            df_rev.loc[:, ['sc_point_gid']] = df_rev.loc[:, ['sc_point_gid']].fillna(0)
             if (tech == 'geohydro') or (tech == 'egs'):
                 df_rev = df_rev.merge(supply_curve[['sc_point_gid','mean_resource_temp']],
                                         on='sc_point_gid',
