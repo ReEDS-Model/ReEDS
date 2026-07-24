@@ -185,7 +185,7 @@ jobs:
           GAMSLICE_CONTENT: ${{ secrets.GAMSLICE }}
           MAMBA_ENV_PATH: ${{ steps.setup-env.outputs.mamba-env-path }}
         run: |
-          echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.11/site-packages/gamspy_base/gamslice.txt"
+          echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.14/site-packages/gamspy_base/gamslice.txt"
 
       - name: Set run folder
         env:

@@ -195,8 +195,7 @@ def calculate_class_region_cf_hourly(
         weather_year_class_region_cf_hourly = (
             weather_year_site_cf_hourly.mul(df_sc['capacity'])
             .rename(columns=df_sc['class_region'])
-            .groupby(axis=1, level=0)
-            .sum()
+            .T.groupby(level=0).sum().T
             .div(class_region_cap)
         )
         # For timezone conversion, we need a few hours of CF data for the next
@@ -266,8 +265,7 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
     regional_distpv_cf = (
         county_distpv_cf.mul(county_distpv_cap)
         .rename(columns=county2zone)
-        .groupby(axis=1, level=0)
-        .sum()
+        .T.groupby(level=0).sum().T
         .div(regional_distpv_cap)
     )
 
@@ -392,7 +390,6 @@ def main(reeds_path, inputs_case):
     else:
         cspcf = reeds.io.read_file(
             os.path.join(inputs_case, 'recf_csp.h5'),
-            parse_timestamps=True,
         )
 
     ### Format PV+battery profiles
@@ -412,7 +409,6 @@ def main(reeds_path, inputs_case):
         infile = 'recf_upv' if ilr == scalars['ilr_utility'] * 100 else f'recf_upv_{ilr}AC'
         df_pvb[pvb_type] = reeds.io.read_file(
             os.path.join(inputs_case,infile+'.h5'),
-            parse_timestamps=True,
         )
         df_pvb[pvb_type].columns = [f'pvb{pvb_type}_{c}'
                                     for c in df_pvb[pvb_type].columns]

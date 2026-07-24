@@ -328,7 +328,7 @@ If you would like to see what the documentation will look like when developing l
 1. Navigate to the "docs/" folder
 
 2. Run the command `make html` to build the documentation locally
-   - Ensure you have the 'reeds2' environment activated
+   - Ensure you have the `reeds` environment activated
   
 3. Open `/ReEDS/docs/build/html/index.html` to view the documentation.
    - If you make changes and wish to see how they are reflected in the documentation, you can run the `make html` command again and refresh the window you already have open
