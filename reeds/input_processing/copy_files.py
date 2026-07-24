@@ -142,7 +142,7 @@ def get_regions_and_agglevel(
     reeds_path,
     inputs_case,
     save_regions_and_agglevel=True,
-    overwrite=False,
+    overwrite=True,
 ):
     """
     Create a regional mapping to help filter for specific regions and aggregation levels.
@@ -262,7 +262,7 @@ def get_regions_and_agglevel(
 
     # Sort hier_sub by r so that "ord(r)" commands in GAMS result in the properly
     # ordered outputs
-    hier_sub['numeric_value'] = hier_sub['r'].str.extract('(\d+)').astype(float)
+    hier_sub['numeric_value'] = hier_sub['r'].str.extract(r'(\d+)').astype(float)
     hier_sub = hier_sub.sort_values(by='numeric_value').drop('numeric_value', axis=1)
 
     ### TEMPORARY 20260402: For now just assign 'itlgrp' hierarchy level to 'r'
@@ -297,6 +297,7 @@ def get_regions_and_agglevel(
             'transgrp': 'sub-FERC-1000 region',
             'transreg': 'Transmission Planning Regions from FERC Order 1000',
             'usda_region': 'biomass supply curve region',
+            'gasreg': 'gas price region (for applying daily temperature-based price adjustments)',
         }
         for level, comment in comments.items():
             df = pd.Series(hier_sub[level].unique())
@@ -386,25 +387,10 @@ def read_banned_tech_file(full_path, filepath, inputs_case, r_county):
         # Apply county-wide bans to regions where all of the counties have banned the tech
         if 'county' in ban_lists.keys():
             ban_counties = ['p' + str(fips).zfill(5) for fips in ban_lists['county']]
-            r_ban_counties_map = (
-                r_county.loc[r_county.county.isin(ban_counties)]
-                .groupby('r')
-                ['county']
-                .apply(list)
-                .apply(sorted)
-            )
-            r_all_counties_map = (
-                r_county.groupby('r')
-                ['county']
-                .apply(list)
-                .apply(sorted)
-            )
-            county_ban_regions = list(
-                r_ban_counties_map
-                .loc[(r_ban_counties_map.isin(r_all_counties_map))]
-                .index
-            )
-            ban_regions.extend(county_ban_regions)
+            num_counties = r_county.r.value_counts()
+            num_bans = r_county.loc[r_county.county.isin(ban_counties)].r.value_counts()
+            fully_banned = num_counties.loc[num_counties - num_bans == 0].index.tolist()
+            ban_regions.extend(fully_banned)
 
         if tech == 'nuclear':
             nuclear_ban_regions['*r'] = ban_regions
@@ -474,7 +460,7 @@ def subset_to_valid_regions(
         )
     ## Filetype conditions
     elif filetype_in == 'h5':
-        df = reeds.io.read_file(full_path, parse_timestamps=True)
+        df = reeds.io.read_file(full_path)
     elif filetype_in == 'csv':
         df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
     else:
@@ -656,7 +642,7 @@ def write_scalars(scalars, inputs_case):
     scalars_write = pd.concat([scalars, toadd], axis=0)
 
     # Trim trailing decimal zeros
-    scalars_write.value = scalars_write.value.astype(str).replace('\.0+$', '', regex=True)
+    scalars_write.value = scalars_write.value.astype(str).replace(r'\.0+$', '', regex=True)
     scalars_write.to_csv(os.path.join(inputs_case, 'scalars.csv'), header=False)
 
     # Rewrite the scalar tables as GAMS-readable definition
@@ -1012,6 +998,13 @@ def write_miscellaneous_files(
     )[sw['GSw_H2LeakageScen']].rename_axis('*i').round(5).to_csv(
         os.path.join(inputs_case,'h2_leakage_rate.csv'))
     
+    # Transmission employment factors:
+    ef_trans = pd.read_csv(
+        os.path.join(reeds_path,'inputs','employment','employment_factor_inter_transmission.csv'),
+        index_col=0)
+    ef_trans[ef_trans.index == sw['GSw_EmploymentFactor']].T.round(8).to_csv(
+        os.path.join(inputs_case,'employment_factor_inter_transmission.csv'),header=False)
+    
     # Add coal emission rate multiplier by FIPS
     emitrate_coal_mult = pd.read_csv(os.path.join(inputs_case,'emitrate_coal_multiplier.csv'))
     # Aggregate based on spatial resolution
@@ -1333,6 +1326,7 @@ def main(reeds_path, inputs_case):
     )
 
     # Create a maps.gpkg for this run
+    reeds.spatial.validate_proj()
     generate_maps_gpkg(inputs_case)
 
 
@@ -1348,8 +1342,8 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     inputs_case = args.inputs_case
 
     # #%% Settings for testing ###
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_em_Pacific','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','v20260722_envM0_Pacific','inputs_case')
 
 
     # ---- Set up logger ----
