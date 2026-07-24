@@ -7,7 +7,7 @@ from typing import Literal
 
 #%% Helper functions
 def get_gams_results(case):
-    print('Loading resultsgdx')
+    print('Loading results.gdx')
     dictin = gdxpds.to_dataframes(Path(case, 'outputs', 'results.gdx'))
     ## Set indices as multiindex
     valcols = ['Value','Level','Marginal','Lower','Upper','Scale']
