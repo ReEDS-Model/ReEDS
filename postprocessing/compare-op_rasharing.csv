@@ -1,0 +1,32 @@
+casepath,casename,color
+### Examples
+## nrelnas01 on windows
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092424_main_ERCOT_county,main,
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092524_dev_check_ERCOT_county,dev check,
+## nrelnas01 on mac
+# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA,Ref,C1
+# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA_decarb,Z35,plt.cm.tab20(4)
+## kestrel
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA,main_Ref,plt.cm.tab20(0)
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1)
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
+### Add your cases below (don't commit them) or create a new csv file with the same format
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAtransgrp_ImportLimit0_core,DemHi_RAtransgrp
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAtransreg_ImportLimit0_core,DemHi_RAtransreg
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAinterconnect_ImportLimit0_core,DemHi_RAinterconnect
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAcountry_ImportLimit0_core,DemHi_RAcountry
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAtransgrp_ImportLimit0_core,DemMd_RAtransgrp
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAtransreg_ImportLimit0_core,DemMd_RAtransreg
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAinterconnect_ImportLimit0_core,DemMd_RAinterconnect
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAcountry_ImportLimit0_core,DemMd_RAcountry
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAcountry_ImportLimitHist_core,DemMd_RAcountry_ImportLimitHist
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAcountry_ImportLimitRamp_core,DemMd_RAcountry_ImportLimitRamp
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAcountry_ImportLimit0_core,DemMd_RAcountry_ImportLimit0
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAcountry_ImportLimitHist_core,DemHi_RAcountry_ImportLimitHist
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAcountry_ImportLimitRamp_core,DemHi_RAcountry_ImportLimitRamp
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAcountry_ImportLimit0_core,DemHi_RAcountry_ImportLimit0
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAcountry_ImportLimitHist_core,DemMd_ImportLimitHist,C0
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAcountry_ImportLimitHist_core,DemHi_ImportLimitHist,C3
+/projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemMd_RAcountry_ImportLimitRamp_core,DemMd_defaults,C0
+/projects/reedsweto/pbrown/github/ReEDS/runs/v20260717_opK0_DemHi_RAcountry_ImportLimitRamp_core,DemHi_defaults,C3

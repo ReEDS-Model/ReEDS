@@ -86,7 +86,7 @@ parser.add_argument(
 
 #%% Inputs for testing
 # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# caselist = [os.path.join(reeds_path,'postprocessing','example.csv')]
+# caselist = [os.path.join(reeds_path,'postprocessing','compare-op_rasharing.csv')]
 # casenames = ''
 # titleshorten = 0
 # startyear = 2020
@@ -204,6 +204,7 @@ onlytechs = None
 def plot_bars_abs_stacked(
         dfplot, basecase, colors, ax, col=0,
         net=True, label=True, ypad=0.02, fontsize=9,
+        netdiff=True,
     ):
     """
     * ax must have at least 2 rows
@@ -222,7 +223,7 @@ def plot_bars_abs_stacked(
 
     for (row, df) in enumerate([dfplot, dfdiff]):
         _ax = ax[row] if (col == -1) else ax[row,col]
-        plots.stackbar(df=df, ax=_ax, colors=colors, net=(net or row), width=0.8)
+        plots.stackbar(df=df, ax=_ax, colors=colors, net=(net or (row and netdiff)), width=0.8)
         ymin, ymax = _ax.get_ylim()
         _ypad = (ymax - ymin) * ypad
         ## label net value
@@ -265,7 +266,7 @@ os.makedirs(outpath, exist_ok=True)
 max_filename_length = 250
 savename = os.path.join(
     outpath,
-    (f"results-{','.join(cases.keys())}"
+    (f"results_v1-{','.join(cases.keys())}"
      .replace(':','').replace('/','').replace(' ','').replace('\\n','').replace('\n','')
      [:max_filename_length-len('.pptx')]) + '.pptx'
 )
@@ -1146,6 +1147,10 @@ except Exception:
     print(traceback.format_exc())
 
 #%%### Hodgepodge: Final capacity, final generation, final transmission, NPV
+plotyear = 2035
+tstart = 2027
+tend = 2035
+
 try:
     width = max(11, len(cases)*1.3)
     plt.close()
@@ -1160,18 +1165,18 @@ try:
         'Capacity': {
             'data': dictin_cap,
             'values':'Capacity (GW)',
-            'label':f'{lastyear} Capacity [GW]'},
+            'label':f'{plotyear} Capacity [GW]'},
         'Generation': {
             'data': dictin_gen,
             'values':'Generation (TWh)',
-            'label':f'{lastyear} Generation [TWh]'},
+            'label':f'{plotyear} Generation [TWh]'},
     }
     ax[0,1].axhline(0, c='k', ls='--', lw=0.75)
     for col, (datum, data) in enumerate(toplot.items()):
         ax[0,col].set_ylabel(data['label'], y=-0.075)
         dfplot = pd.concat(
             {case:
-            data['data'][case].loc[data['data'][case].year==lastyear]
+            data['data'][case].loc[data['data'][case].year==plotyear]
             .set_index('tech')[data['values']]
             for case in cases},
             axis=1,
@@ -1189,7 +1194,7 @@ try:
 
     ### Total transmission
     col = 2
-    ax[0,col].set_ylabel(f'{lastyear} Transmission capacity [TW-mi]', y=-0.075)
+    ax[0,col].set_ylabel(f'{plotyear} Transmission capacity [TW-mi]', y=-0.075)
     dftrans = pd.concat({
         case:
         dictin_trans[case].groupby(['year','trtype'])['Amount (GW-mi)'].sum()
@@ -1197,7 +1202,7 @@ try:
         .reindex(allyears).interpolate('linear')
         / 1e3
         for case in cases
-    }, axis=1).loc[lastyear].unstack('trtype')
+    }, axis=1).loc[plotyear].unstack('trtype')
 
     handles['Transmission'] = plot_bars_abs_stacked(
         dfplot=dftrans, basecase=basemap,
@@ -1206,18 +1211,26 @@ try:
         label=(False if lesslabels else True),
     )
 
-    ### NPV
+    ### Average SCOE
     col = 3
-    ax[0,col].set_ylabel('NPV of system cost [$B]', y=-0.075)
-    dfplot = pd.concat(
-        {case: dictin_npv[case] for case in cases},
-        axis=1).T.fillna(0)
-    dfplot = dfplot[[c for c in output_formatting['cost_cat_colors'].index if c in dfplot]].copy()
+    dfplot = pd.Series({
+        case: (
+            dictin_scoe[case].groupby('year')['Average cost ($/MWh)'].sum()
+            .loc[tstart:tend]
+            .mean()
+        )
+        for case in cases
+    }).rename('SCOE').to_frame()
+    ax[0,col].set_ylabel(f'System cost of electricity,\n{tstart}–{tend} average [$/MWh]', y=-0.075)
+    # dfplot = pd.concat(
+    #     {case: dictin_npv[case] for case in cases},
+    #     axis=1).T.fillna(0)
+    # dfplot = dfplot[[c for c in output_formatting['cost_cat_colors'].index if c in dfplot]].copy()
 
-    handles['NPV'] = plot_bars_abs_stacked(
+    handles['SCOE'] = plot_bars_abs_stacked(
         dfplot=dfplot, basecase=basemap,
-        colors=output_formatting['cost_cat_colors'],
-        ax=ax, col=col, net=False,
+        colors={'SCOE':'C0'},
+        ax=ax, col=col, net=False, netdiff=False,
         label=(False if lesslabels else True),
     )
 
@@ -1232,7 +1245,7 @@ try:
     plt.draw()
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
-        'Capacity, Generation, Transmission, NPV', prs=prs, width=width)
+        'Capacity, Generation, Transmission, SCOE', prs=prs, width=width)
     if interactive:
         plt.show()
 
