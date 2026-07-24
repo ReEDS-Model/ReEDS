@@ -1,0 +1,221 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010_2015_2020..2050..3
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  shock:
+    2xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 2
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 1
+      GSw_mat_allies: 0
+      GSw_mat_byproduct: 0
+    4xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 4
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 1
+      GSw_mat_allies: 0
+      GSw_mat_byproduct: 0
+    8xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 8
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 1
+      GSw_mat_allies: 0
+      GSw_mat_byproduct: 0
+    nosupply:
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 1
+      GSw_mat_allies: 0
+      GSw_mat_byproduct: 0
+    domestic:
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 0
+      GSw_mat_allies: 0
+      GSw_mat_byproduct: 0
+    quarterdomestic:
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 0
+      GSw_mat_allies: 0
+      GSw_mat_byproduct: 0
+      GSw_prod_multiplier_usa: 0.25
+    allies:
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+      GSw_mat_glb: 0
+      GSw_mat_allies: 1
+      GSw_mat_byproduct: 0
+  duration: 
+    long: 
+      GSw_years_matshock: "2029,2032,2035,2038,2041"
+    med:
+      GSw_years_matshock: "2029,2032,2035"
+    short:
+      GSw_years_matshock: "2029"
+    volatile: 
+      GSw_years_matshock: "2029,2035,2041"
+  material:
+    all: {}
+    aluminumprice:
+      GSw_matprice_spec: Aluminum
+    aluminumsupply:
+      GSw_matsupply_spec: Aluminum
+    cobaltprice:
+      GSw_matprice_spec: Cobalt
+    cobaltsupply:
+      GSw_matsupply_spec: Cobalt
+    copperprice:
+      GSw_matprice_spec: Copper
+    coppersupply:
+      GSw_matsupply_spec: Copper
+    dysprosiumprice:
+      GSw_matprice_spec: Dysprosium
+    dysprosiumsupply:
+      GSw_matsupply_spec: Dysprosium
+    galliumprice:
+      GSw_matprice_spec: Gallium
+    galliumsupply:
+      GSw_matsupply_spec: Gallium
+    hafniumprice:
+      GSw_matprice_spec: Hafnium
+    hafniumsupply:
+      GSw_matsupply_spec: Hafnium
+    indiumprice:
+      GSw_matprice_spec: Indium
+    indiumsupply:
+      GSw_matsupply_spec: Indium
+    lithiumprice:
+      GSw_matprice_spec: Lithium
+    lithiumsupply:
+      GSw_matsupply_spec: Lithium
+    magnesiumprice:
+      GSw_matprice_spec: Magnesium
+    magnesiumsupply:
+      GSw_matsupply_spec: Magnesium
+    manganeseprice:
+      GSw_matprice_spec: Manganese
+    manganesesupply:
+      GSw_matsupply_spec: Manganese      
+    neodymiumprice:
+      GSw_matprice_spec: Neodymium
+    neodymiumsupply:
+      GSw_matsupply_spec: Neodymium
+    nickelprice:
+      GSw_matprice_spec: Nickel
+    nickelsupply:
+      GSw_matsupply_spec: Nickel
+    praseodymiumprice:
+      GSw_matprice_spec: Praseodymium
+    praseodymiumsupply:
+      GSw_matsupply_spec: Praseodymium
+    silverprice:
+      GSw_matprice_spec: Silver
+    silversupply:
+      GSw_matsupply_spec: Silver
+    telluriumprice:
+      GSw_matprice_spec: Tellurium
+    telluriumsupply:
+      GSw_matsupply_spec: Tellurium
+    terbiumprice:
+      GSw_matprice_spec: Terbium
+    terbiumsupply:
+      GSw_matsupply_spec: Terbium
+    tinprice:
+      GSw_matprice_spec: Tin
+    tinsupply:
+      GSw_matsupply_spec: Tin
+    vanadiumprice:
+      GSw_matprice_spec: Vanadium
+    vanadiumsupply:
+      GSw_matsupply_spec: Vanadium
+    yttriumprice:
+      GSw_matprice_spec: Yttrium
+    yttriumsupply:
+      GSw_matsupply_spec: Yttrium
+  sensitivity: 
+    reference: {}
+    lowdem:
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_low.h5
+    highdem:
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+    hog: 
+      ngscen: AEO_2026_HOG
+    log: 
+      ngscen: AEO_2026_LOG
+    advrest: 
+      distpvscen: stscen2023_lowre
+      plantchar_battery: battery_ATB_2024_advanced
+      plantchar_upv: upv_ATB_2024_advanced
+      plantchar_onswind: ons-wind_ATB_2024_advanced
+      plantchar_ofswind: ofs-wind_ATB_2024_advanced
+    conrest:
+      distpvscen: stscen2023_highre
+      plantchar_battery: battery_ATB_2024_conservative
+      plantchar_upv: upv_ATB_2024_conservative
+      plantchar_onswind: ons-wind_ATB_2024_conservative
+      plantchar_ofswind: ofs-wind_ATB_2024_conservative
+    best:
+      ngscen: AEO_2026_HOG
+      distpvscen: stscen2023_highre
+      plantchar_battery: battery_ATB_2024_conservative
+      geodiscov: TI
+      plantchar_geo: geo_ATB_2024_advanced
+      plantchar_upv: upv_ATB_2024_conservative
+      plantchar_onswind: ons-wind_ATB_2024_conservative
+      plantchar_ofswind: ofs-wind_ATB_2024_conservative
+      plantchar_nuclear_smr: nuclear-smr_ATB_2024_advanced
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+    worst: 
+      ngscen: AEO_2026_LOG
+      distpvscen: stscen2023_lowre
+      plantchar_battery: battery_ATB_2024_advanced
+      geodiscov: BAU
+      plantchar_geo: geo_ATB_2024_conservative
+      plantchar_upv: upv_ATB_2024_advanced
+      plantchar_onswind: ons-wind_ATB_2024_advanced
+      plantchar_ofswind: ofs-wind_ATB_2024_advanced
+      plantchar_nuclear_smr: nuclear-smr_ATB_2024_conservative
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+## dimensions:
+# shock (6): 2xprice,4xprice,8xprice,nosupply,domestic,allies
+# duration (4): long, med, short, volatile
+# material (39): aluminumprice, aluminumsupply.. etc.
+# sensitivity (9) 
+# NEXT
+# note: run reference across range of sensitivities separately.
+# run restriction of ALL materials to full restrict, domestic, allied, and global separately
+
+casegroups:
+  ## run restriction of 
+  ## (All policy scenarios) × (all demand scenarios) × (single core sensitivity)
+  - [[nosupply],[long],[coppersupply],[]]
+  - [[nosupply],[med,short,volatile],[coppersupply],[reference,best,worst]]
+  - [[2xprice],[long],[copperprice],[]]
+  - [[4xprice,8xprice],[med,short,volatile],[copperprice],[reference,best,worst]]
+

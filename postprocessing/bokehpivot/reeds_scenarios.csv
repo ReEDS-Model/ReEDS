@@ -1,21 +1,59 @@
 name,color,path
-Scenario 1,#1f77b4,/path/to/Scen1
-Scenario 2,#ff7f0e,/path/to/Scen2
-Scenario 3,#2ca02c,/path/to/Scen3
-Scenario 4,#d62728,/path/to/Scen4
-Scenario 5,#9467bd,/path/to/Scen5
-Scenario 6,#8c564b,/path/to/Scen6
-Scenario 7,#e377c2,/path/to/Scen7
-Scenario 8,#7f7f7f,/path/to/Scen8
-Scenario 9,#bcbd22,/path/to/Scen9
-Scenario 10,#17becf,/path/to/Scen10
-Scenario 11,#aec7e8,/path/to/Scen11
-Scenario 12,#ffbb78,/path/to/Scen12
-Scenario 13,#98df8a,/path/to/Scen13
-Scenario 14,#ff9896,/path/to/Scen14
-Scenario 15,#c5b0d5,/path/to/Scen15
-Scenario 16,#c49c94,/path/to/Scen16
-Scenario 17,#f7b6d2,/path/to/Scen17
-Scenario 18,#c7c7c7,/path/to/Scen18
-Scenario 19,#dbdb8d,/path/to/Scen19
-Scenario 20,#9edae5,/path/to/Scen20
+reference,#d84b69,/projects/finitoreeds/kpitman/ReEDS/runs/base_reference
+advrest,#4bd8bb,/projects/finitoreeds/kpitman/ReEDS/runs/base_advrest
+allies,#4bd8ca,/projects/finitoreeds/kpitman/ReEDS/runs/base_allies
+best,#4bd8d8,/projects/finitoreeds/kpitman/ReEDS/runs/base_best
+conrest,#4bcad8,/projects/finitoreeds/kpitman/ReEDS/runs/base_conrest
+domestic,#4bbbd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_domestic
+fullrestrict,#4badd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_fullrestrict
+global,#4b9ed8,/projects/finitoreeds/kpitman/ReEDS/runs/base_global
+highdem,#4b8fd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_highdem
+hog,#4b81d8,/projects/finitoreeds/kpitman/ReEDS/runs/base_hog
+log,#4b72d8,/projects/finitoreeds/kpitman/ReEDS/runs/base_log
+lowdem,#4b64d8,/projects/finitoreeds/kpitman/ReEDS/runs/base_lowdem
+worst,#d84b5a,/projects/finitoreeds/kpitman/ReEDS/runs/base_worst
+2xprice_long_copperprice_advrest,#d84b4b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_advrest
+2xprice_long_copperprice_best,#d85a4b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_best
+2xprice_long_copperprice_conrest,#d8694b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_conrest
+2xprice_long_copperprice_highdem,#d8774b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_highdem
+2xprice_long_copperprice_hog,#d8864b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_hog
+2xprice_long_copperprice_log,#d8944b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_log
+2xprice_long_copperprice_lowdem,#d8a34b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_lowdem
+2xprice_long_copperprice_reference,#d8b14b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_reference
+2xprice_long_copperprice_worst,#d8c04b,/projects/finitoreeds/kpitman/ReEDS/runs/base_2xprice_long_copperprice_worst
+4xprice_med_copperprice_best,#d8cf4b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_med_copperprice_best
+4xprice_med_copperprice_reference,#d3d84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_med_copperprice_reference
+4xprice_med_copperprice_worst,#c5d84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_med_copperprice_worst
+4xprice_short_copperprice_best,#b6d84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_short_copperprice_best
+4xprice_short_copperprice_reference,#a8d84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_short_copperprice_reference
+4xprice_short_copperprice_worst,#99d84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_short_copperprice_worst
+4xprice_volatile_copperprice_best,#8bd84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_volatile_copperprice_best
+4xprice_volatile_copperprice_reference,#7cd84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_volatile_copperprice_reference
+4xprice_volatile_copperprice_worst,#6dd84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_4xprice_volatile_copperprice_worst
+8xprice_med_copperprice_best,#5fd84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_med_copperprice_best
+8xprice_med_copperprice_reference,#50d84b,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_med_copperprice_reference
+8xprice_med_copperprice_worst,#4bd855,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_med_copperprice_worst
+8xprice_short_copperprice_best,#4bd864,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_short_copperprice_best
+8xprice_short_copperprice_reference,#4bd872,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_short_copperprice_reference
+8xprice_short_copperprice_worst,#4bd881,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_short_copperprice_worst
+8xprice_volatile_copperprice_best,#4bd88f,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_volatile_copperprice_best
+8xprice_volatile_copperprice_reference,#4bd89e,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_volatile_copperprice_reference
+8xprice_volatile_copperprice_worst,#4bd8ad,/projects/finitoreeds/kpitman/ReEDS/runs/base_8xprice_volatile_copperprice_worst
+nosupply_long_coppersupply_advrest,#4b55d8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_advrest
+nosupply_long_coppersupply_best,#504bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_best
+nosupply_long_coppersupply_conrest,#5f4bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_conrest
+nosupply_long_coppersupply_highdem,#6d4bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_highdem
+nosupply_long_coppersupply_hog,#7c4bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_hog
+nosupply_long_coppersupply_log,#8b4bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_log
+nosupply_long_coppersupply_lowdem,#994bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_lowdem
+nosupply_long_coppersupply_reference,#a84bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_reference
+nosupply_long_coppersupply_worst,#b64bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_long_coppersupply_worst
+nosupply_med_coppersupply_best,#c54bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_med_coppersupply_best
+nosupply_med_coppersupply_reference,#d34bd8,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_med_coppersupply_reference
+nosupply_med_coppersupply_worst,#d84bcf,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_med_coppersupply_worst
+nosupply_short_coppersupply_best,#d84bc0,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_short_coppersupply_best
+nosupply_short_coppersupply_reference,#d84bb1,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_short_coppersupply_reference
+nosupply_short_coppersupply_worst,#d84ba3,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_short_coppersupply_worst
+nosupply_volatile_coppersupply_best,#d84b94,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_volatile_coppersupply_best
+nosupply_volatile_coppersupply_reference,#d84b86,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_volatile_coppersupply_reference
+nosupply_volatile_coppersupply_worst,#d84b77,/projects/finitoreeds/kpitman/ReEDS/runs/base_nosupply_volatile_coppersupply_worst
