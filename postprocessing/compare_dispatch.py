@@ -186,7 +186,7 @@ dfdropped = pd.Series({
 for case in dfdropped.loc[dfdropped > 0].index:
     sw = reeds.io.get_switches(cases[case])
     y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
-    fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
+    fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='h', tz='Etc/GMT+6')[:8760]
     df = (dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]).groupby('h').Value.sum()
     df.index = df.index.map(reeds.timeseries.h2timestamp)
     df = df.reindex(fullyear).fillna(0)
@@ -228,7 +228,7 @@ for r in plot_regions:
             continue
         sw = reeds.io.get_switches(cases[case])
         y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
-        fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
+        fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='h', tz='Etc/GMT+6')[:8760]
         ## Dispatch
         plt.close()
         f, ax, dfplot = reeds.reedsplots.plot_dispatch_yearbymonth(
