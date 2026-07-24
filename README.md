@@ -58,8 +58,8 @@ A step-by-step guide for getting started with ReEDS is available [here](https://
 4. Open a command-line interface and set up your environments:
     1. Clone the ReEDS repository: `git clone git@github.com:ReEDS-Model/ReEDS.git` or `git clone https://github.com/ReEDS-Model/ReEDS.git`
     2. Navigate to the cloned repository
-    3. Create the `reeds2` [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html): `conda env create -f environment.yml`
-    4. Activate the `reeds2` environment: `conda activate reeds2`
+    3. Create the `reeds` [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html): `conda env create -f environment.yml`
+    4. Activate the `reeds` environment: `conda activate reeds`
     5. Instantiate the Julia environment: `julia --project=. instantiate.jl`
     6. (Optional) Several large data files are hosted remotely.
     These files are downloaded automatically as needed during a ReEDS run, but to finish all the internet-requiring steps up front, you can download them all by running `python reeds/remote.py`.
