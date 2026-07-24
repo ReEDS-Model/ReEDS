@@ -1935,7 +1935,7 @@ Existing AC transfer limits in ReEDS.
 ```
 
 ```{admonition} Existing transmission data
-To read the ITL data for a given set of model zones, you can activate the `reeds2` conda environment, then run the following commands in Python from the root of the ReEDS folder:
+To read the ITL data for a given set of model zones, you can activate the `reeds` conda environment, then run the following commands in Python from the root of the ReEDS folder:
 ```python
 import reeds
 # GSw_ZoneSet can be any of the supported values listed in the "Choices" column

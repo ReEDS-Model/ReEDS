@@ -260,7 +260,7 @@ def main(reeds_path, inputs_case):
                 ) for (i,row) in csp_units.iterrows()},
                 axis=1)
             .rename(columns=csp_units['r']).fillna(0)
-            .groupby(axis=1, level=0).sum()
+            .T.groupby(level=0).sum().T
             .stack().replace(0,np.nan).dropna()
             .rename_axis(['t','*r']).reorder_levels(['*r','t']).rename('MWac')
         )
@@ -498,7 +498,7 @@ def main(reeds_path, inputs_case):
     ## If a region has no data for 2021, it's zero (GAMS convention)
     h2_ba_share.loc[2021] = h2_ba_share.loc[2021].fillna(0)
     ## Backfill before 2021
-    h2_ba_share.loc[:2021] = h2_ba_share.loc[:2021].fillna(method='bfill')
+    h2_ba_share.loc[:2021] = h2_ba_share.loc[:2021].bfill()
     ## Interpolate between 2021-2050
     h2_ba_share.loc[2021:] = h2_ba_share.loc[2021:].interpolate('index')
     ## Only keep the modeled years
@@ -720,7 +720,7 @@ def main(reeds_path, inputs_case):
 
     ## Get hours per quarter
     year = sw['GSw_HourlyWeatherYears'].split('_')[0]
-    timestamps = pd.Series(index=pd.date_range(f'{year}-01-01', periods=8760, freq='H'))
+    timestamps = pd.Series(index=pd.date_range(f'{year}-01-01', periods=8760, freq='h'))
 
     month2quarter = pd.read_csv(
         os.path.join(inputs_case, 'month2quarter.csv'),
@@ -741,7 +741,7 @@ def main(reeds_path, inputs_case):
         ## Divide by hours per season to get average MW by season
         .divide(quarterhours, axis=0, level='szn')
         ## Keep the max value across seasons
-        .groupby('r', axis=0).max()
+        .groupby('r').max()
         ## Reshape for GAMS
         .stack().rename_axis(['*r','t']).rename('MW').round(3)
     )

@@ -417,7 +417,7 @@ def calc_systemcost(
             crf = crf_in.copy()
             crf = crf.set_index('year').reindex(full_yrs)
             crf = crf.interpolate(method='linear')
-            crf['crf'] = crf['crf'].fillna(method='bfill')
+            crf['crf'] = crf['crf'].bfill()
             
         if shift_capital:
             # This means we start capital payments in the year of the investment,
@@ -465,7 +465,7 @@ def calc_systemcost(
 
         df.loc[:,op_type_ls] = (
             df.groupby('r')[op_type_ls]
-            .fillna(method='ffill', limit=sys_eval_years-1)
+            .ffill(limit=sys_eval_years-1)
         )
         df = df.fillna(0)
 

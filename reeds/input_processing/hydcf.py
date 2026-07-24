@@ -52,7 +52,7 @@ def get_monthly_plant_generation(inputs_case: str) -> (
     monthly_plant_capacities = annual_plant_capacities.reindex(
         monthly_plant_net_generation.index,
         level=0
-    )
+    ).copy()
     # Assign number of hours to each month
     monthly_plant_capacities['date'] = pd.to_datetime(
         (
@@ -74,7 +74,7 @@ def get_monthly_plant_generation(inputs_case: str) -> (
     monthly_plant_max_generation[monthly_plant_net_generation.isna()] = np.nan
     monthly_plant_net_generation[monthly_plant_max_generation.isna()] = np.nan
 
-    return monthly_plant_net_generation, monthly_plant_max_generation
+    return monthly_plant_net_generation.copy(), monthly_plant_max_generation.copy()
 
 
 def calculate_regional_generation(
@@ -93,13 +93,13 @@ def calculate_regional_generation(
     """
     # Reformat plant generation data and append tech and region information
     index_cols = list(plant_generation.index.names)
-    plant_generation = pd.melt(
+    _plant_generation = pd.melt(
         plant_generation.reset_index(),
         id_vars=index_cols,
         var_name='EIA_PlantID'
     )
-    plant_generation = (
-        plant_generation.merge(
+    _plant_generation = (
+        _plant_generation.merge(
             hydro_plants,
             left_on=['EIA_PlantID'],
             right_index=True
@@ -108,7 +108,7 @@ def calculate_regional_generation(
     )
     # Group by tech and region and calculate total generation
     groupby_cols = index_cols + ['*i', 'r']
-    regional_generation = plant_generation.groupby(groupby_cols).sum()
+    regional_generation = _plant_generation.groupby(groupby_cols).sum()
     regional_generation = (
         pd.pivot_table(
             regional_generation,
@@ -146,12 +146,12 @@ def calculate_historical_monthly_regional_cf(
     """
     # Calculate monthly net and max generation for each model region
     monthly_regional_net_generation = calculate_regional_generation(
-        monthly_plant_net_generation,
-        hydro_plants
+        plant_generation=monthly_plant_net_generation,
+        hydro_plants=hydro_plants,
     )
     monthly_regional_max_generation = calculate_regional_generation(
-        monthly_plant_max_generation,
-        hydro_plants
+        plant_generation=monthly_plant_max_generation,
+        hydro_plants=hydro_plants,
     )
     # Calculate monthly CFs for each model region
     monthly_regional_cf = (
@@ -202,8 +202,8 @@ def calculate_regional_average_generation(
     )
     # Aggregate average plant-level generation to the model region level
     regional_average_generation = calculate_regional_generation(
-        plant_average_generation,
-        hydro_plants
+        plant_generation=plant_average_generation,
+        hydro_plants=hydro_plants,
     )
 
     return regional_average_generation
@@ -393,7 +393,7 @@ def assemble_hydcf(
     hydcf = hydcf.reindex(reindex)
     hydcf.loc[data_endyear:] = hydcf.loc[data_endyear:].ffill()
     # Convert from "wide" to "long" format
-    hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').to_frame()
+    hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').dropna().to_frame()
 
     return hydcf
 
