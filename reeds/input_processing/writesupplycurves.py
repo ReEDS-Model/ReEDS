@@ -106,7 +106,7 @@ def agg_supplycurve(
             dfin
             .groupby(['region','class'], sort=False, group_keys=True)
             .apply(reeds.inputs.get_bin, numbins_tech, bin_method, bin_col)
-            .reset_index(drop=True)
+            .reset_index(level=['region','class'])
             .sort_values('sc_point_gid')
         )
     ### Aggregate it
@@ -126,8 +126,8 @@ def main(
     reeds_path, inputs_case, write=True, **kwargs
 ):
     # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # inputs_case = os.path.join(reeds_path,'runs','v20251209_scM0_Pacific','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','v20260609_envM0_Pacific','inputs_case')
     # write = True
     # kwargs = {}
 

@@ -835,22 +835,19 @@ def setupEnvironment(
 
     #%% Check whether the ReEDS conda environment is activated
     if (not skip_checks) and (
-        ('reeds2' not in os.environ['CONDA_DEFAULT_ENV'].lower())
-        or (not pd.__version__.startswith('2'))
+        ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
+        or (not pd.__version__.startswith('3'))
     ):
-        print(
+        err = (
             f"Your environment is {os.environ['CONDA_DEFAULT_ENV']} and your pandas "
-            f"version is {pd.__version__}.\nThe default environment is 'reeds2', with\n"
-            "pandas version 2.x, so the python parts of ReEDS are unlikely to work.\n"
+            f"version is {pd.__version__}.\nThe supported environment is 'reeds', with\n"
+            "pandas version 3.x.\n"
             "To build the environment for the first time, run:\n"
             "    `conda env create -f environment.yml`\n"
             "To activate the created environment, run:\n"
-            "    `conda activate reeds2` (or `activate reeds2` on Windows)\n"
-            "Do you want to continue without activating the environment?"
+            "    `conda activate reeds` (or `activate reeds` on Windows)"
         )
-        confirm_env = str(input("Continue? y/[n]: ") or 'n')
-        if confirm_env not in ['y','Y','yes','Yes','YES']:
-            quit()
+        raise ValueError(err)
 
     #%% Load specified case file, infer other settings from cases.csv
     if cases_suffix in ['', 'default']:
@@ -1278,7 +1275,7 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda activate reeds2 \n")
+            OPATH.writelines("conda activate reeds \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls
