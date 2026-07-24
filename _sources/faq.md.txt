@@ -110,7 +110,7 @@ git checkout tags/v2024.0.0
 ### Help, I'm getting lots of log messages about missing fonts
 
 We use the `mscorefonts` package to get nicer-looking fonts in plots.
-If you had `matplotlib` installed before running a script from the `reeds2` environment,
+If you had `matplotlib` installed before running a script from the `reeds` environment,
 you might need to clear your fonts cache (you can back it up first if you like).
 
 - On Mac/Linux, try deleting `~/.cache/matplotlib` or `~/.matplotlib`

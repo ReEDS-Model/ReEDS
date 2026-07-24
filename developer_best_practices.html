@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,24 +8,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Developer Resources &mdash; ReEDS  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
       <link rel="stylesheet" type="text/css" href="_static/customtheme.css?v=299ffeb9" />
 
   
     <link rel="shortcut icon" href="_static/reeds-icon.png"/>
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script src="_static/design-tabs.js?v=f930bc37"></script>
-        <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -386,7 +384,7 @@ Use absolute filepaths whenever possible.</p></li>
 </li>
 <li><p>Input files should be included in the repository when possible.</p>
 <ul>
-<li><p>Files too large to include in the repository or unnecessary for the repository (e.g., files used only for special circumstances, such as individual sites for wind and solar) should be uploaded to <a class="reference external" href="https://zenodo.org/communities/nrel-reeds/records?q=&amp;amp;l=list&amp;amp;p=1&amp;amp;s=10&amp;amp;sort=newest">Zenodo</a> and can be copied to the local repository in the preprocessing steps.</p></li>
+<li><p>Files too large to include in the repository or unnecessary for the repository (e.g., files used only for special circumstances, such as individual sites for wind and solar) should be uploaded to <a class="reference external" href="https://zenodo.org/communities/nrel-reeds/records?q=&amp;l=list&amp;p=1&amp;s=10&amp;sort=newest">Zenodo</a> and can be copied to the local repository in the preprocessing steps.</p></li>
 <li><p><strong>Note:</strong> files should only be added to Zenodo if they are of interest to users outside of ReEDS, well documented, and unlikely to change frequently.</p></li>
 </ul>
 </li>
@@ -426,7 +424,7 @@ Use absolute filepaths whenever possible.</p></li>
 <li><p>Use for files larger than 10 MB that are long-lived and of interest to external users</p></li>
 <li><p>Ideal for input files that rarely change</p></li>
 <li><p>Files can be downloaded programmatically during preprocessing steps</p></li>
-<li><p>Upload to the <a class="reference external" href="https://zenodo.org/communities/nrel-reeds/records?q=&amp;amp;l=list&amp;amp;p=1&amp;amp;s=10&amp;amp;sort=newest">NLR ReEDS Zenodo community</a></p></li>
+<li><p>Upload to the <a class="reference external" href="https://zenodo.org/communities/nrel-reeds/records?q=&amp;l=list&amp;p=1&amp;s=10&amp;sort=newest">NLR ReEDS Zenodo community</a></p></li>
 <li><p>Include clear documentation and version information</p></li>
 </ul>
 </li>
@@ -576,7 +574,7 @@ Use absolute filepaths whenever possible.</p></li>
 <li><p>Navigate to the “docs/” folder</p></li>
 <li><p>Run the command <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> to build the documentation locally</p>
 <ul class="simple">
-<li><p>Ensure you have the ‘reeds2’ environment activated</p></li>
+<li><p>Ensure you have the <code class="docutils literal notranslate"><span class="pre">reeds</span></code> environment activated</p></li>
 </ul>
 </li>
 <li><p>Open <code class="docutils literal notranslate"><span class="pre">/ReEDS/docs/build/html/index.html</span></code> to view the documentation.</p>
@@ -938,7 +936,7 @@ If you have a charge code for your project, share it with the reviewers to cover
 }
 </pre></div>
 </div>
-<p>For more on debugging, you can watch the following video: <a class="reference external" href="https://nrel.sharepoint.com/:v:/s/6A90-GridPlanningandAnalysisCenterGPAC/ERsyIuWezH1Mix2ZoGiGJk4B3S8u0KNqsIDG6QVbPQK3rw?e=FhUWGx&amp;amp;nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D">GPAC’s WEI Tips and Tricks Series: Introduction to Debugging</a></p>
+<p>For more on debugging, you can watch the following video: <a class="reference external" href="https://nrel.sharepoint.com/:v:/s/6A90-GridPlanningandAnalysisCenterGPAC/ERsyIuWezH1Mix2ZoGiGJk4B3S8u0KNqsIDG6QVbPQK3rw?e=FhUWGx&amp;nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D">GPAC’s WEI Tips and Tricks Series: Introduction to Debugging</a></p>
 </section>
 <section id="debugging-gams-code">
 <h3>Debugging GAMS Code<a class="headerlink" href="#debugging-gams-code" title="Link to this heading"></a></h3>
@@ -1006,15 +1004,15 @@ If you have a charge code for your project, share it with the reviewers to cover
 <li><p>If you’re on Mac and would like to have the terminal always show what branch you’re on, you can set up Git Bash for Mac with the following: <a class="reference external" href="https://github.com/fabriziocucci/git-bash-for-mac">Git Bash for Mac</a></p></li>
 <li><p>Using the following run name format keeps your runs folder organized: ‘vYYYYMMDD’</p></li>
 </ul>
+</section>
+</section>
+</section>
 <aside class="footnote-list brackets">
 <aside class="footnote brackets" id="example" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>The footnote text.</p>
 </aside>
 </aside>
-</section>
-</section>
-</section>
 
 
            </div>
@@ -1028,7 +1026,7 @@ If you have a charge code for your project, share it with the reviewers to cover
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on July 21, 2026.
+      <span class="lastupdated">Last updated on July 24, 2026.
       </span></p>
   </div>
 
