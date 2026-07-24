@@ -1,0 +1,23 @@
+,Default Value,fullrestrict,domestic,allies,global,reference,lowdem,highdem,hog,log,advrest,conrest,best,worst
+ignore,0,,,,,,,,,,,,,
+yearset,2010_2015_2020..2050..3,,,,,,,,,,,,,
+distpvscen,stscen2023_mid_case,,,,,,,,,,stscen2023_lowre,stscen2023_highre,stscen2023_highre,stscen2023_lowre
+plantchar_battery,battery_ATB_2024_moderate,,,,,,,,,,battery_ATB_2024_advanced,battery_ATB_2024_conservative,battery_ATB_2024_conservative,battery_ATB_2024_advanced
+plantchar_geo,geo_ATB_2024_moderate,,,,,,,,,,,,geo_ATB_2024_advanced,geo_ATB_2024_conservative
+plantchar_nuclear_smr,nuclear-smr_ATB_2024_moderate,,,,,,,,,,,,nuclear-smr_ATB_2024_advanced,nuclear-smr_ATB_2024_conservative
+plantchar_ofswind,ofs-wind_ATB_2024_moderate,,,,,,,,,,ofs-wind_ATB_2024_advanced,ofs-wind_ATB_2024_conservative,ofs-wind_ATB_2024_conservative,ofs-wind_ATB_2024_advanced
+plantchar_onswind,ons-wind_ATB_2024_moderate,,,,,,,,,,ons-wind_ATB_2024_advanced,ons-wind_ATB_2024_conservative,ons-wind_ATB_2024_conservative,ons-wind_ATB_2024_advanced
+plantchar_upv,upv_ATB_2024_moderate,,,,,,,,,,upv_ATB_2024_advanced,upv_ATB_2024_conservative,upv_ATB_2024_conservative,upv_ATB_2024_advanced
+geodiscov,BAU,,,,,,,,,,,,TI,BAU
+ngscen,AEO_2026_baseline,,,,,,,,AEO_2026_HOG,AEO_2026_LOG,,,AEO_2026_HOG,AEO_2026_LOG
+GSw_LoadProfiles,/projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_reference.h5,,,,,,/projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_low.h5,/projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5,,,,,/projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5,/projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+GSw_mat_restrict,0,1,1,1,1,,,,,,,,,
+GSw_mat_domestic,0,0,1,1,1,,,,,,,,,
+GSw_mat_allies,0,0,0,1,0,,,,,,,,,
+GSw_mat_glb,0,0,0,0,1,,,,,,,,,
+GSw_mat_byproduct,0,0,0,0,0,,,,,,,,,
+GSw_matprice_multiplier,1,,,,,,,,,,,,,
+GSw_matprice_spec,0,,,,,,,,,,,,,
+GSw_matsupply_spec,0,,,,,,,,,,,,,
+GSw_priceshock_one,0,,,,,,,,,,,,,
+GSw_years_matshock,"2029,2032,2035,2038,2041",,,,,,,,,,,,,
