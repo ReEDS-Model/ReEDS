@@ -2619,7 +2619,7 @@ eq_REC_Generation(RPSCat,i,st,htype,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
 *because GEN can only generate a H2 PTC credit or a REC, not both, subtract out the generation which produces a hydrogen PTC credit
 *because GEN from pvb(i) includes grid charging, subtract out its grid charging
     + sum{(v,r,h)$[valgen(i,v,r,t)$r_st(r,st)$h_htype(h,htype)],
-          RPSTechMult(RPSCat,i,st) * rps_hours(h,htype)
+          RPSTechMult(RPSCat,i,st) * rps_hours(h,st,htype)
           * (GEN(i,v,r,h,t)
           - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC]
           - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] )
@@ -2675,13 +2675,13 @@ eq_REC_Requirement(RPSCat,st,htype,t)$[RecPerc(RPSCat,st,htype,t)$(not tfirst(t)
 
 * Exports to Canada are assumed to be clean, and therefore consume CES credits
     - sum{(r,h)$[r_st(r,st)$h_htype(h,htype)],
-          can_exports_h(r,h,t) * rps_hours(h,htype) }$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
+          can_exports_h(r,h,t) * rps_hours(h,st,htype) }$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
 
     =g=
 
 * note here we do not pre-define the rec requirement since load_exog(r,h,t)
 * changes when sent to/from the demand side
-    RecPerc(RPSCat,st,htype,t) * sum{(r,h)$[r_st_rps(r,st)$h_htype(h,htype)], rps_hours(h,htype) * (
+    RecPerc(RPSCat,st,htype,t) * sum{(r,h)$[r_st_rps(r,st)$h_htype(h,htype)], rps_hours(h,st,htype) * (
 * RecStyle(st,RPSCat)=0 means end-use sales.
         ( (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
         - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
@@ -2713,8 +2713,12 @@ eq_REC_BundleLimit(RPSCat,st,ast,htype,t)$[stfeas(st)$stfeas(ast)$tmodel(t)
                               $(yeart(t)>=firstyear_RPS)]..
 
 *amount of net transmission flows from state st to state ast
+*the min() of both states' rps_hours has no effect for htype=rep (both are identical)
+*for htype=stress under GSw_StateRPS_Stress=2 (peak), both are 0/1, so this
+*counts flow only on hours eligible for both the exporting and importing state's own
+*peak-load stress periods.
     sum{(h,r,rr,trtype)$[r_st(r,st)$r_st(rr,ast)$routes(r,rr,trtype,t)$h_htype(h,htype)],
-          rps_hours(h,htype) * FLOW(r,rr,h,t,trtype)
+          min(rps_hours(h,st,htype), rps_hours(h,ast,htype)) * FLOW(r,rr,h,t,trtype)
       }
 
     =g=
@@ -2732,7 +2736,7 @@ eq_REC_unbundledLimit(RPSCat,st,htype,t)$[st_unbundled_limit(RPScat,st)$tmodel(t
 *the limit on unbundled RECS times the REC requirement (based on end-use sales)
       REC_unbundled_limit(RPSCat,st,t) * RecPerc(RPSCat,st,htype,t) *
         sum{(r,h)$[r_st(r,st)$h_htype(h,htype)],
-            rps_hours(h,htype) *
+            rps_hours(h,st,htype) *
             (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1] - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
            }
       =g=
@@ -2760,7 +2764,7 @@ eq_REC_ooslim(RPSCat,st,htype,t)$[RecPerc(RPSCat,st,htype,t)$(yeart(t)>=firstyea
 *the fraction of imported recs times the requirement (based on end-use sales)
     RPS_oosfrac(st) * RecPerc(RPSCat,st,htype,t) *
         sum{(r,h)$[r_st(r,st)$h_htype(h,htype)],
-            rps_hours(h,htype) *
+            rps_hours(h,st,htype) *
             (LOAD(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1] - sum{v$valgen("distpv",v,r,t), GEN("distpv",v,r,h,t) }) * (1.0 - distloss)
            }
     =g=
@@ -2790,7 +2794,7 @@ eq_REC_launder(RPSCat,st,htype,t)$[RecStates(RPSCat,st,t)$(not tfirst(t))$(yeart
 
 *in-state REC generation
     + sum{(i,v,r,h)$[valgen(i,v,r,t)$RecTech(RPSCat,i,st,t)$r_st(r,st)$h_htype(h,htype)],
-          rps_hours(h,htype) * (GEN(i,v,r,h,t) - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC])
+          rps_hours(h,st,htype) * (GEN(i,v,r,h,t) - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC])
          }
 
 *minus ACP_PURCHASES with a 10x multiplier (the multiplier discourages the model from

@@ -6057,7 +6057,7 @@ alias(actualszn,actualsznn,actualsznnn) ;
 Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
-    rps_hours(allh,htype)                  "--hours-- state RPS/CES weight: hours(h) for htype=rep, 1 for htype=stress"
+    rps_hours(allh,st,htype)               "--hours-- state RPS/CES weight: hours(h) for htype=rep, 1 for htype=stress on eligible hours (see GSw_StateRPS_Stress), 0 otherwise"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"

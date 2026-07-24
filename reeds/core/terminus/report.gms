@@ -399,7 +399,7 @@ reqt_quant('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
     )} ;
 
 reqt_quant('state_rps_stress',RPSCat,r,'ann',t)$tmodel_new(t) =
-    sum{(st,allh)$[r_st_rps(r,st)$h_htype(allh,"stress")], RecPerc(RPSCat,st,"stress",t) * rps_hours(allh,"stress") *(
+    sum{(st,allh)$[r_st_rps(r,st)$h_htype(allh,"stress")], RecPerc(RPSCat,st,"stress",t) * rps_hours(allh,st,"stress") *(
         ( (LOAD.l(r,allh,t) - can_exports_h(r,allh,t)$[Sw_Canada=1]
         - sum{v$valgen("distpv",v,r,t), GEN.l("distpv",v,r,allh,t) }) * (1.0 - distloss)
         )$(RecStyle(st,RPSCat)=0)

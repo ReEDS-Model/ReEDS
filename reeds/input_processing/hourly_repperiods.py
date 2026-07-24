@@ -519,6 +519,27 @@ def main(
         + stressperiods_write.yperiod.map('{:>03}'.format)
     )
 
+    ## Expand load-peak stress periods from their seed-level grouping (e.g. transgrp)
+    ## down to the member states, for use by the state RPS/CES peak-day-only weighting
+    ## (GSw_StateRPS_Stress=2). Only 'load'/'peak-containing' rows are relevant --
+    ## min-VRE seed periods aren't tied to a compliance day.
+    ces_peakday_write = stressperiods_write.loc[
+        (stressperiods_write.property == 'load') & (stressperiods_write.reason == 'peak-containing')
+    ].reset_index()
+    if len(ces_peakday_write):
+        level = sw['GSw_PRM_StressSeedLoadLevel']
+        region2st = (
+            hierarchy.reset_index()[['st', level]]
+            .drop_duplicates().rename(columns={level: 'region'})
+        )
+        ces_peakday_write = (
+            ces_peakday_write.merge(region2st, on='region', how='inner')
+            [['modelyear', 'st', 'szn']].drop_duplicates()
+            .set_index('modelyear')
+        )
+    else:
+        ces_peakday_write = pd.DataFrame(columns=['st', 'szn']).rename_axis('modelyear')
+
 
     #%%### Get the representative and force periods
     period_szn_write = period_szn.rename('season').reset_index()
@@ -659,6 +680,14 @@ def main(
             else:
                 stressperiods_write.loc[[t]].to_csv(
                     os.path.join(inputs_case, f'stress{t}i0', 'forceperiods.csv'), index=False)
+            if ces_peakday_write.empty:
+                pd.DataFrame(columns=['st','szn']).to_csv(
+                    os.path.join(inputs_case, f'stress{t}i0', 'ces_peakday_st.csv'),
+                    index=False, header=False)
+            else:
+                ces_peakday_write.loc[[t]][['st','szn']].to_csv(
+                    os.path.join(inputs_case, f'stress{t}i0', 'ces_peakday_st.csv'),
+                    index=False, header=False)
             if stress_period_szn.empty:
                 pd.DataFrame(columns=['rep_period','year','yperiod','actual_period']).to_csv(
                     os.path.join(inputs_case, f'stress{t}i0', 'period_szn.csv'), index=False)
