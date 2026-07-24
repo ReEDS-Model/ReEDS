@@ -1955,7 +1955,7 @@ parameter prescribed_build(i,v,r,t) "--MW-- prescribed capacity that comes onlin
 * need to fill in for unmodeled, gap years via tprev but
 * tprev is not defined with tprev(t,tfirst)
 prescribed_build(i,v,r,t)$tmodel_new(t)
-                                  = sum{(tt)$[(yeart(tt)<=yeart(t)
+                                  = sum{tt$[(yeart(tt)<=yeart(t)
 * this condition populates values of tt which exist between the
 * previous modeled year and the current year
                                           $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
@@ -1965,7 +1965,7 @@ prescribed_build(i,v,r,t)$tmodel_new(t)
 
 parameter prescribed_build_energy(i,v,r,t) "--MWh-- prescribed energy capacity that comes online in a given year" ;
 prescribed_build_energy(i,v,r,t)$tmodel_new(t)
-                                  = sum{(tt)$[(yeart(tt)<=yeart(t)
+                                  = sum{tt$[(yeart(tt)<=yeart(t)
                                           $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
                                           ],
                                         prescribednonrsc_energy(i,v,r,tt)

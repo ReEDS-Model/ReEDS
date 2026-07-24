@@ -169,7 +169,7 @@ def assign_class(cf, tech, df_class):
     if cf == df_class[f'min_reV_{value}'].min():
         row = df_class[cf == df_class[f'min_reV_{value}']]
     
-    if not row.empty:
+    if len(row) == 1:
         return row.iloc[0]['class']
     else:
         # If a unit's capacity factor/mean temp does not fall between any two max and min values
