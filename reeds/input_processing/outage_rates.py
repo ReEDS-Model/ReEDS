@@ -262,7 +262,10 @@ def calc_outage_forced(
 
         ### Get temperature-dependent outage rate by prime mover and state
         forcedoutage_pm = pd.concat(
-            {pm: temperatures.replace(fits_forcedoutage[pm]) for pm in fits_forcedoutage},
+            {
+                pm: temperatures.replace({col: fits_forcedoutage[pm] for col in temperatures})
+                for pm in fits_forcedoutage
+            },
             axis=1, names=('prime_mover',),
         ).astype(np.float32)
 
@@ -482,8 +485,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260113_temperatureM1_Everything', 'inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260611_envM0_Pacific', 'inputs_case')
     # interactive = True
     # debug = 1
 

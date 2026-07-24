@@ -2390,7 +2390,7 @@ if detailed:
                 if r > rr:
                     rename[interface] = f'{rr}|{r}'
                     df[interface] *= -1
-            df = df.rename(columns=rename).groupby(axis=1, level=0).sum()
+            df = df.rename(columns=rename).T.groupby(level=0).sum().T
             ## Now reorder interfaces by flow
             rename = {}
             for interface in df:
