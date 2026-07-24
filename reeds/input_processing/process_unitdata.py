@@ -22,8 +22,8 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
     mapping each unit in NEMS by lon/lat to its closest sc_point_gid
     '''
 
-    offland_gdf['sc_point_gid'] = offland_gdf.index
-    land_gdf['sc_point_gid'] = land_gdf.index
+    offland_gdf['gid'] = offland_gdf.index
+    land_gdf['gid'] = land_gdf.index
 
     # Technologies to map - pv, wind, and geothermal
     tech_match = {'upv': ['upv','dupv','pvb_pv','csp-wp','csp-ns'],
@@ -49,9 +49,9 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
         # Only consider the sc_point_gids that are in supply curves
         # (to avoid unmatched units later)
         if tech == 'wind-ofs':
-            sc_point_gid_gdf = offland_gdf[offland_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
+            sc_point_gid_gdf = offland_gdf[offland_gdf['gid'].isin(supply_curve['sc_point_gid'].to_list())]
         else:
-            sc_point_gid_gdf = land_gdf[land_gdf['sc_point_gid'].isin(supply_curve['sc_point_gid'].to_list())]
+            sc_point_gid_gdf = land_gdf[land_gdf['gid'].isin(supply_curve['sc_point_gid'].to_list())]
         # Rename FIPS and lon/lat as nearest FIPS and lon/lat #
         # as after matching them to units in unitdata by distance later 
         # these FIPS and lon/lat are the nearest ones to these units 
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     
     # for testing
     #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
