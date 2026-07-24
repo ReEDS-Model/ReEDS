@@ -287,11 +287,12 @@ set
   geo_extra(i)         "geothermal technologies not typically considered in model runs",
   geo_egs_allkm(i)     "egs (covering deep egs depths of all km) technologies",
   geo_egs_nf(i)        "egs (near-field) technologies",
-  h2_combustion(i)     "h2-ct, h2-cc and fuel cell technologies",
+  h2_combustion(i)     "h2-ct and h2-cc technologies",
   h2_cc(i)             "h2-cc technologies",
   h2_ct(i)             "h2-ct technologies",
   h2(i)                "hydrogen-producing technologies",
   h2_fuel_cell(i)      "H2 fuel cell technologies",
+  h2_gen(i)            "hydrogen-consuming generation technologies (h2-ct, h2-cc, h2 fuel cell)",
   hyd_add_pump(i)      "hydro techs with an added pump",
   hydro_d(i)           "dispatchable hydro technologies",
   hydro_nd(i)          "non-dispatchable hydro technologies",
@@ -518,7 +519,7 @@ if(Sw_H2Combustionupgrade = 0,
   ban(i)$[i_subsets(i,'h2_combustion')$upgrade(i)] = yes ;
 ) ;
 
-if(Sw_FuelCell = 0,
+if(Sw_GasFuelCell = 0,
   ban('ng-fuel-cell') = yes ;
 ) ;
 
@@ -757,6 +758,7 @@ h2_cc(i)$(not ban(i))               = yes$i_subsets(i,'h2_cc') ;
 h2_ct(i)$(not ban(i))               = yes$i_subsets(i,'h2_ct') ;
 h2(i)$(not ban(i))                  = yes$i_subsets(i,'h2') ;
 h2_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'h2_fuel_cell') ;
+h2_gen(i)$(not ban(i))              = yes$i_subsets(i,'h2_gen') ;
 hydro_d(i)$(not ban(i))             = yes$i_subsets(i,'hydro_d') ;
 hydro_nd(i)$(not ban(i))            = yes$i_subsets(i,'hydro_nd') ;
 hydro(i)$(not ban(i))               = yes$i_subsets(i,'hydro') ;
@@ -802,7 +804,7 @@ tg_i('coal',i)$coal(i) = yes ;
 tg_i('nuclear',i)$nuclear(i) = yes ;
 tg_i('battery',i)$battery(i) = yes ;
 tg_i('hydro',i)$hydro(i) = yes ;
-tg_i('h2',i)$h2_combustion(i) = yes ;
+tg_i('h2',i)$h2_gen(i) = yes ;
 tg_i('geothermal',i)$geo(i) = yes ;
 tg_i('biomass',i)$bio(i) = yes ;
 tg_i('pumped-hydro',i)$psh(i) = yes ;
@@ -1860,7 +1862,7 @@ scalar h2_demand_start  "--year-- first year that h2 demand should be modeled"
 ;
 
 * Identify the first year that hydrogen generation technologies are allowed
-h2_gen_firstyear = smin{i$[h2_combustion(i)$(not ban(i))], firstyear(i) } ;
+h2_gen_firstyear = smin{i$[h2_gen(i)$(not ban(i))], firstyear(i) } ;
 
 * Set h2_demand_start to the first year that there is data
 * in h2_exogenous_demand
@@ -5631,7 +5633,7 @@ valret(i,v)$[(Sw_Retire=2)$initv(v)$(not noretire(i))
 *All new and existing nuclear, coal, gas, and hydrogen are retirable if Sw_Retire = 3
 *Existing plants have to meet the min_retire_age before retiring
 valret(i,v)$[((Sw_Retire=3) or (Sw_Retire=5))$(not noretire(i))
-            $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_combustion(i) or h2(i))] = yes ;
+            $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_gen(i) or h2(i))] = yes ;
 
 *new and existings plants of any technology can be retired if Sw_Retire = 4
 valret(i,v)$[(Sw_Retire=4)$(not noretire(i))] = yes ;
@@ -5640,7 +5642,7 @@ retiretech(i,v,r,t)$[valret(i,v)$valcap(i,v,r,t)] = yes ;
 
 * when Sw_Retire = 3 ensure that plants do not retire before their minimum age
 retiretech(i,v,r,t)$[((Sw_Retire=3) or (Sw_Retire=5))$initv(v)$(not noretire(i))$(plant_age(i,v,r,t) <= min_retire_age(i))
-                    $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_combustion(i) or h2(i))] = no ;
+                    $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_gen(i) or h2(i))] = no ;
 
 * for sw_retire=5, don't allow nuclear to retire until 2030
 retiretech(i,v,r,t)$[(Sw_Retire=5)$nuclear(i)$(yeart(t)<=2030)] = no ;

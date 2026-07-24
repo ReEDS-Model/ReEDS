@@ -1,0 +1,11 @@
+,Default Value,USA_defaults_pr,USA_defaults_fc_high,USA_defaults_fc_mid,USA_defaults_fc_low,USA_defaults_fc_mid_ngfc,USA_defaults_fc_mid_no_h2combust,USA_defaults_fc_mid_no_h2cc
+ignore,1,,,,,,,
+GSw_Region,cendiv/Pacific,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA
+endyear,2032,2050,2050,2050,2050,2050,2050,2050
+GSw_GasCurve,2,1,1,1,1,1,1,1
+plantchar_h2fuelcell,h2fuelcell_moderate,,h2fuelcell_conservative,h2fuelcell_moderate,h2fuelcell_advanced,h2fuelcell_moderate,h2fuelcell_moderate,h2fuelcell_moderate
+plantchar_h2combustion,h2-combustion_ATB_2024,,,,,,,
+GSw_H2FuelCell,0,,1,1,1,1,1,1
+GSw_H2Combustion,1,,,,,,0,
+GSw_GasFuelCell,0,,,,,1,,
+GSw_H2CombinedCycle,1,,,,,,,0
