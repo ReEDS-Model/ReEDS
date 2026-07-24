@@ -264,7 +264,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
         dfmap[key]['centroid_y'] = dfmap[key].centroid.y
 
     ### Get the CF data over all years, take the mean over weather years
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
     recf = recf.loc[recf.index.year.isin(GSw_HourlyWeatherYears)].mean()
 
     ### Get the hourly data
@@ -551,7 +551,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
 def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
     def get_profiles(regions, year):
         """Assemble 8760 profiles from original and representative days"""
-        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='h',inclusive='left')[:8760]
+        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='H',inclusive='left')[:8760]
         props = profiles.columns.get_level_values('property').unique()
         ### Original profiles
         dforig = {}
@@ -716,3 +716,80 @@ def plot_load_days(profiles, rep_periods, period_szn, sw, reeds_path, figpath):
     if interactive:
         plt.show()
     plt.close()
+
+
+def plot_itl_hourly_rep(case, figpath):
+    """Plot hourly duration curve of hourly ITL at full hourly and rep-hour resolution"""
+    # #%% Inputs for testing
+    # caselabel, case = 'NLR', str(Path(reeds.io.reeds_path, 'runs', 'v20260724_dlrK0_USA_repNLR'))
+    # caselabel, case = 'DLR', str(Path(reeds.io.reeds_path, 'runs', 'v20260724_dlrK0_USA_repDLR'))
+    #%% Get static ITLs
+    _itl_static = reeds.inputs.get_itls(case)
+    itl_static_forward = _itl_static.set_index(['r', 'rr'])['MW_forward']
+    itl_static_reverse = _itl_static.set_index(['rr', 'r'])['MW_reverse']
+    itl_static = (
+        pd.concat([itl_static_forward, itl_static_reverse])
+        .rename_axis(index=['r', 'rr'])
+    )
+
+    #%% Get full hourly ratings
+    itl_full = (
+        reeds.io.get_itl_hourly(case=case, periodtype='rep')
+        / itl_static - 1
+    )
+    tz = itl_full.index.tz
+    #%% Get rep hourly ratings and broadcast to hours
+    fpath_itl_rep = Path(case, 'inputs_case', 'rep', 'trans_cap_delta.csv')
+    itl_rep = (
+        pd.read_csv(fpath_itl_rep).rename(columns={'*r':'r'})
+        .pivot(columns=['r','rr'], index='h', values='delta')
+    )
+    hmap_repyr = (
+        pd.read_csv(
+            Path(case,'inputs_case','rep','hmap_myr.csv'), index_col=0,
+            parse_dates=True,
+        )
+        .tz_convert(tz)
+    )
+    h2datetime = pd.Series(index=hmap_repyr.h, data=hmap_repyr.index)
+    itl_rep_dt = itl_rep.loc[h2datetime.index.values]
+    itl_rep_dt.index = h2datetime.index
+    #%% Set up plot
+    interfaces = itl_rep_dt.columns.values
+    nrows, ncols, coords = reeds.plots.get_coordinates(interfaces, aspect=1.2)
+    scale = 1
+    xscale = 1.3
+    colors = {'actual': 'C0', 'rep': 'C1'}
+    xs = np.linspace(0,100,len(itl_full))
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*scale*xscale, nrows*scale), sharex=True, sharey=True,
+    )
+    for interface in interfaces:
+        _ax = ax[coords[interface]]
+        for label, df in [('actual',itl_full), ('rep',itl_rep_dt)]:
+            _ax.plot(
+                xs, df[interface].sort_values(ascending=False) * 100,
+                color=colors[label], label=label,
+            )
+        ## Formatting
+        _ax.annotate(
+            '\n'.join(interface), (0.95,0.95), xycoords='axes fraction',
+            ha='right', va='top', zorder=-1e6,
+            weight='bold', fontsize='large', color='C7',
+        )
+        _ax.axhline(0, c='k', ls=':', lw=0.5)
+    ## Formatting
+    _ax.legend(
+        loc='upper left', bbox_to_anchor=(1,1), frameon=False,
+        handletextpad=0.3, handlelength=0.7, fontsize='x-large',
+        # title=caselabel, title_fontsize='x-large',
+    )
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(interfaces))
+    ax[-1,0].set_ylabel('Hourly – static [%]', y=0, ha='left')
+    ax[-1,0].set_xlabel('Fraction of year [%]', x=0, ha='left')
+    reeds.plots.despine(ax)
+    plt.savefig(os.path.join(figpath,'inputs_ldc_itl.png'))
+    if interactive:
+        plt.show()
