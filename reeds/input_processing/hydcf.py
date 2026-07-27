@@ -52,7 +52,7 @@ def get_monthly_plant_generation(inputs_case: str) -> (
     monthly_plant_capacities = annual_plant_capacities.reindex(
         monthly_plant_net_generation.index,
         level=0
-    )
+    ).copy()
     # Assign number of hours to each month
     monthly_plant_capacities['date'] = pd.to_datetime(
         (
@@ -74,7 +74,7 @@ def get_monthly_plant_generation(inputs_case: str) -> (
     monthly_plant_max_generation[monthly_plant_net_generation.isna()] = np.nan
     monthly_plant_net_generation[monthly_plant_max_generation.isna()] = np.nan
 
-    return monthly_plant_net_generation, monthly_plant_max_generation
+    return monthly_plant_net_generation.copy(), monthly_plant_max_generation.copy()
 
 
 def calculate_regional_generation(
@@ -93,13 +93,13 @@ def calculate_regional_generation(
     """
     # Reformat plant generation data and append tech and region information
     index_cols = list(plant_generation.index.names)
-    plant_generation = pd.melt(
+    _plant_generation = pd.melt(
         plant_generation.reset_index(),
         id_vars=index_cols,
         var_name='EIA_PlantID'
     )
-    plant_generation = (
-        plant_generation.merge(
+    _plant_generation = (
+        _plant_generation.merge(
             hydro_plants,
             left_on=['EIA_PlantID'],
             right_index=True
@@ -108,7 +108,7 @@ def calculate_regional_generation(
     )
     # Group by tech and region and calculate total generation
     groupby_cols = index_cols + ['*i', 'r']
-    regional_generation = plant_generation.groupby(groupby_cols).sum()
+    regional_generation = _plant_generation.groupby(groupby_cols).sum()
     regional_generation = (
         pd.pivot_table(
             regional_generation,
@@ -146,12 +146,12 @@ def calculate_historical_monthly_regional_cf(
     """
     # Calculate monthly net and max generation for each model region
     monthly_regional_net_generation = calculate_regional_generation(
-        monthly_plant_net_generation,
-        hydro_plants
+        plant_generation=monthly_plant_net_generation,
+        hydro_plants=hydro_plants,
     )
     monthly_regional_max_generation = calculate_regional_generation(
-        monthly_plant_max_generation,
-        hydro_plants
+        plant_generation=monthly_plant_max_generation,
+        hydro_plants=hydro_plants,
     )
     # Calculate monthly CFs for each model region
     monthly_regional_cf = (
@@ -202,8 +202,8 @@ def calculate_regional_average_generation(
     )
     # Aggregate average plant-level generation to the model region level
     regional_average_generation = calculate_regional_generation(
-        plant_average_generation,
-        hydro_plants
+        plant_generation=plant_average_generation,
+        hydro_plants=hydro_plants,
     )
 
     return regional_average_generation
@@ -321,22 +321,16 @@ def get_hydro_plants(inputs_case: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame
     """
-    # Get county-to-region mapping
-    county2zone = reeds.io.get_county2zone(os.path.dirname(inputs_case))
-    county2zone.index = 'p' + county2zone.index
     # Get plant database and filter down to hydro plants
     gendb = pd.read_csv(
         os.path.join(inputs_case, 'unitdata.csv'),
-        usecols=['T_PID', 'tech', 'FIPS']
+        usecols=['T_PID', 'tech', 'r']
     )
     hydro_plants = (
         gendb.loc[gendb.tech.str.startswith('hyd')]
         .drop_duplicates('T_PID')
         .set_index('T_PID')
     )
-    # Assign each plant to a model region and reformat
-    hydro_plants['r'] = hydro_plants['FIPS'].map(county2zone)
-    hydro_plants = hydro_plants.drop(columns='FIPS')
     hydro_plants.index = hydro_plants.index.astype(str)
 
     return hydro_plants
@@ -399,10 +393,73 @@ def assemble_hydcf(
     hydcf = hydcf.reindex(reindex)
     hydcf.loc[data_endyear:] = hydcf.loc[data_endyear:].ffill()
     # Convert from "wide" to "long" format
-    hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').to_frame()
+    hydcf = hydcf.stack(['*i', 'month']).stack().rename('value').dropna().to_frame()
 
     return hydcf
 
+def apply_hydro_climate_adjustments(
+    hydcf_unadjusted: pd.DataFrame,
+    inputs_case: str
+) -> pd.DataFrame:
+    """
+    Applies climate adjustment factors to hydropower capacity factors, if applicable.
+    
+    Non-dispatchable hydro gets new seasonal profiles as well as annually-varying CFs.
+    Dispatchable hydro keeps the original seasonal profiles; only annual CF changes. 
+        Reflects the assumption that reservoirs will be utilized in the same seasonal pattern 
+        even if seasonal inflows change.
+    
+    Args:
+        hydcf_unadjusted: Monthly regional CFs prior to climate adjustments
+        inputs_case: Path to the inputs case directory.
+    Returns:
+        pd.DataFrame
+    """
+    # Exit function if climate adjustments to hydropower are turned OFF, otherwise continue
+    sw = reeds.io.get_switches(inputs_case)
+    if not int(sw.GSw_ClimateHydro):
+        return hydcf_unadjusted
+    
+    # Get sets for dispatchable/non-dispatchable hydro from tech subset table
+    tech_subsets = pd.read_csv(
+        os.path.join(inputs_case, 'tech-subset-table.csv'),
+        index_col=0
+    )
+    hydro_d = set(tech_subsets.loc[tech_subsets['HYDRO_D']=='YES'].index)
+    hydro_nd = set(tech_subsets.loc[tech_subsets['HYDRO_ND']=='YES'].index)
+    
+    # Separate data into dispatchable vs non-dispatchable hydropower
+    hydcf_d = hydcf_unadjusted[hydcf_unadjusted.index.isin(hydro_d, level='*i')].reset_index().copy()
+    hydcf_nd = hydcf_unadjusted[hydcf_unadjusted.index.isin(hydro_nd, level='*i')].reset_index().copy()
+    assert len(hydcf_d)+len(hydcf_nd) == len(hydcf_unadjusted), "At least 1 hydro tech is unaccounted for from hydcf.csv"
+    
+    # Read hydropower CF climate adjustment factors
+    adj_factors_ann = pd.read_csv(
+        os.path.join(inputs_case, 'climate_hydadjann.csv'),
+        dtype={'r':str,'t':int}
+    ).rename(columns={'Value':'Factor'})
+    adj_factors_sea = pd.read_csv(
+        os.path.join(inputs_case, 'climate_hydadjsea.csv'),
+        dtype={'r':str,'t':int,'month':str}
+    ).rename(columns={'Value':'Factor'})
+    
+    # Apply adjustment factors only to years >= GSw_ClimateStartYear - set years before to 1
+    adj_factors_ann.loc[adj_factors_ann['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
+    adj_factors_sea.loc[adj_factors_sea['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
+    
+    # Merge and apply adjustment factors
+    hydcf_d = pd.merge(hydcf_d, adj_factors_ann, how='left', on=['r','t'])
+    hydcf_d['value_adj'] = hydcf_d['value'] * hydcf_d['Factor']
+    hydcf_d = hydcf_d.drop(columns=['value','Factor']).rename(columns={'value_adj':'value'})
+    hydcf_nd = pd.merge(hydcf_nd, adj_factors_sea, how='left', on=['r','month','t'])
+    hydcf_nd['value_adj'] = hydcf_nd['value'] * hydcf_nd['Factor']
+    hydcf_nd = hydcf_nd.drop(columns=['value','Factor']).rename(columns={'value_adj':'value'})
+    
+    # Reassemble hydcf
+    hydcf = pd.concat([hydcf_d,hydcf_nd],axis=0).set_index(['t','*i','month','r'])
+    
+
+    return hydcf
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
@@ -431,6 +488,11 @@ def main(reeds_path, inputs_case):
         future_monthly_regional_cf,
         inputs_case
     )
+    hydcf = apply_hydro_climate_adjustments(
+        hydcf,
+        inputs_case
+    )
+
     hydcf.to_csv(os.path.join(inputs_case, 'hydcf.csv'))
 
 
@@ -454,6 +516,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Settings for testing
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(
+    #     reeds_path,'runs',
+    #     'InstantiateRepo_USA_defaults','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(

@@ -1,4 +1,5 @@
 *** https://www.gams.com/latest/docs/S_CPLEX.html
+***This setting is specifically for MGA runs which have difficulties with both cplex.opt and cplex.op2
 *** threads (integer): global default thread count
 threads = 8
 
@@ -42,7 +43,7 @@ barepcomp = 1e-8
 *## https://www.slideshare.net/IEA-ETSAP/improving-the-solution-time-of-times-by-playing-with-cplexbarrier
 *## https://iea-etsap.org/webinar/CPLEX%20options%20for%20running%20TIMES%20models.pdf
 *## This setting is specifically for MGA runs which have difficulties with cplex.opt and cplex.op2
-*## This setting differs from cplex.opt and cplex.op2 in that it: 1. sets predual = -1, which does not
+*## This setting differs from cplex.opt and cplex.op2 in that it: 1. sets predual = -1, which does not send
 *## dual to optimizer to reduce time; 2. sets barcrossalg = 1, which only performs primal crossover;
 *## and 3, sets baralg = 3
 
