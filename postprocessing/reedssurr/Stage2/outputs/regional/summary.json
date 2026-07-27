@@ -59,6 +59,16 @@
       "n_outputs_r2_above_0.9": 76,
       "n_outputs_r2_above_0.95": 34,
       "artifact": "models/nn.joblib"
+    },
+    "ngboost": {
+      "display_name": "NGBoost (distributional, UQ-native)",
+      "oof_r2_mean": 0.558842281505659,
+      "oof_r2_median": 0.5897757133679618,
+      "oof_r2_min": -0.15705046033167935,
+      "oof_r2_max": 0.9999999999975514,
+      "n_outputs_r2_above_0.9": 59,
+      "n_outputs_r2_above_0.95": 26,
+      "artifact": "models/ngboost.joblib"
     }
   },
   "config": {
