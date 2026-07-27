@@ -709,7 +709,7 @@ try:
             'variables': {'title': f'{lastyear} Variables', 'yaxis':'count'},
             'non_zero_elements': {'title': f'{lastyear} Non-zero\nelements', 'yaxis':'count'},
             'peak_memory': {'title': f'{lastyear} Peak\nGAMS memory\n[GB]', 'yaxis':'GB'},
-            'directory_size': {'title': 'Directory size\n[GB]', 'yaxis':'GB'},
+            'directory_size': {'title': 'Directory size\n[MB]', 'yaxis':'MB'},
         }
 
     plt.close()
