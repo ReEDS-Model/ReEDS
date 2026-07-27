@@ -1894,26 +1894,20 @@ def main_mga_rv(
     hierarchy_val_r = hierarchy.loc[hierarchy.r.isin(val_r)]
     sampling_regions = hierarchy_val_r[sw['GSw_MGA_RV_region']].unique()
 
-    ## objective 
-    if sw.GSw_MGA_Objective in ['capacity', 'generation']:
-        ## if the subojective is an aggregated category, break it up into smaller groups
-        ## otherwise just use the subobjective as the group
-        mapped_categories ={
-            'gentech': ['coal', 'gas', 'nuclear', 'h2_combustion', 'geo', 'hydro', 'ofswind', 'onswind', 'storage', 'upv'],
-            'fossil' : ['coal', 'gas'],
-            're': ['geo', 'hydro', 'ofswind', 'onswind', 'pv', 'vre', 'wind'],
-            'vre': ['ofswind', 'onswind', 'upv'],
-        }
-        if sw.GSw_MGA_SubObjective in mapped_categories:
-            subsets = mapped_categories[sw.GSw_MGA_SubObjective]
-        else:
-            subsets = [sw.GSw_MGA_SubObjective]
-        
-        ## sample weights for each subojective group and sampling region
-        dimensions = len(subsets) * len(sampling_regions)
-
-    else:
-        raise NotImplementedError(f"Objective '{sw.GSw_MGA_Objective}' is not yet supported for MGA random vector sampling.")
+    ## objective (assumes sw.GSw_MGA_Objective in ['capacity', 'generation'] based on 
+    ## check in runreeds.check_compatibility()
+    ## if the subojective is an aggregated category, break it up into smaller groups
+    ## otherwise just use the subobjective as the group
+    mapped_categories ={
+        'gentech': ['coal', 'gas', 'nuclear', 'h2_combustion', 'geo', 'hydro', 'ofswind', 'onswind', 'storage', 'upv'],
+        'fossil' : ['coal', 'gas'],
+        're': ['geo', 'hydro', 'ofswind', 'onswind', 'pv', 'vre', 'wind'],
+        'vre': ['ofswind', 'onswind', 'upv'],
+    }
+    subsets = mapped_categories.get(sw.GSw_MGA_SubObjective, [sw.GSw_MGA_SubObjective])
+    
+    ## sample weights for each subojective group and sampling region
+    dimensions = len(subsets) * len(sampling_regions)
 
     # setup output
     runs_folder_name = os.path.basename(os.path.dirname(inputs_case.rstrip(os.path.sep)))

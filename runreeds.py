@@ -487,6 +487,11 @@ def check_compatibility(sw):
             )
             raise ValueError(err)
 
+    if (sw['GSw_MGA_Objective'] not in ['capacity', 'generation']) and int(sw['GSw_MGA_RV_runs']) > 0:
+        raise NotImplementedError(
+            f"GSw_MGA_Objective='{sw['GSw_MGA_Objective']}' is not yet supported for MGA random vector sampling."
+        )
+
     ### Dependent model availability
     if (
         ((int(sw['pras']) == 2) or int(sw['GSw_PRM_StressIterateMax']))
