@@ -153,7 +153,7 @@ def rainbowmapper(
     elif categorical:
         colors = categoricalrainbow * (len(iterable)//20 + 1)
     else:
-        colors=[cmap_large(i) for i in np.linspace(0,1,len(iterable))]
+        colors = [cmap_large(i) for i in np.linspace(0,1,len(iterable))]
     out = dict(zip(iterable, colors))
     if explicitcolors:
         explicit = {
