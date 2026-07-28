@@ -3167,12 +3167,6 @@
   - [rev_paths.csv](/inputs/supply_curve/rev_paths.csv)
 ---
 
-  - [sc_point_gid_old2new.csv](/inputs/supply_curve/sc_point_gid_old2new.csv)
----
-
-  - [sitemap.h5](/inputs/supply_curve/sitemap.h5)
----
-
   - [supplycurve_egs-reference.csv](/inputs/supply_curve/supplycurve_egs-reference.csv)
 ---
 
