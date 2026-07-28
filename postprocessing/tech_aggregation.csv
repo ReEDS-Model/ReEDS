@@ -17,8 +17,8 @@ coaloldscr_coal-ccs_max,Coal-CCS_Upgrade,Coal-CCS,Thermal,Coal-CCS_Upgrade
 coalolduns_coal-ccs_max,Coal-CCS_Upgrade,Coal-CCS,Thermal,Coal-CCS_Upgrade
 cofirenew_coal-ccs_max,Coal-CCS_Upgrade,Coal-CCS,Thermal,Coal-CCS_Upgrade
 cofireold_coal-ccs_max,Coal-CCS_Upgrade,Coal-CCS,Thermal,Coal-CCS_Upgrade
-gas-ct_h2-ct,H2-CT_Upgrade,Hydrogen Combustion,Thermal,H2-CT_Upgrade
-gas-cc_h2-cc,H2-CC_Upgrade,Hydrogen Combustion,Thermal,H2-CC_Upgrade
+gas-ct_h2-ct,H2-CT_Upgrade,Hydrogen Generation,Thermal,H2-CT_Upgrade
+gas-cc_h2-cc,H2-CC_Upgrade,Hydrogen Generation,Thermal,H2-CC_Upgrade
 beccs_mod,BECCS,Biopower,Thermal,BECCS
 beccs_max,BECCS,Biopower,Thermal,BECCS
 distpv,DPV,Solar,VRE,DPV
@@ -34,9 +34,9 @@ caes,CAES,Storage,Storage,CAES
 pumped-hydro,Pumped-Hydro,Storage,Storage,Pumped-Hydro
 can-imports,Canadian Imports,Remove,Remove,Canadian Imports
 canada,Canadian Imports,Remove,Remove,Canadian Imports
-h2-ct,H2-CT,Hydrogen Combustion,Thermal,H2-CT
-h2-cc,H2-CC,Hydrogen Combustion,Thermal,H2-CC
-h2-fuel-cell,H2-Fuel-Cell,Hydrogen Combustion,Remove,H2-Fuel-Cell
+h2-ct,H2-CT,Hydrogen Generation,Thermal,H2-CT
+h2-cc,H2-CC,Hydrogen Generation,Thermal,H2-CC
+h2-fuel-cell,H2-Fuel-Cell,Hydrogen Generation,Remove,H2-Fuel-Cell
 smr,SMR,Remove,Remove,SMR
 smr_ccs,SMR-CCS,Remove,Remove,SMR-CCS
 electrolyzer,Electrolyzer,Remove,Remove,Electrolyzer
