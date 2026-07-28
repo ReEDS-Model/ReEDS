@@ -2114,14 +2114,14 @@ def get_folder_size(casedir):
 
     Returns
     -------
-    directory size in GB
+    directory size in MB
     """
     total_size = 0
-    for dirpath, dirnames, filenames in os.walk(os.path.join(casedir,'outputs')):
+    for dirpath, dirnames, filenames in os.walk(casedir):
         for f in filenames:
             fp = os.path.join(dirpath, f)
             if os.path.exists(fp):
                 total_size += os.path.getsize(fp)
-    # convert to GB
-    total_size /= 1e9
+    # convert to MB
+    total_size /= 1e6
     return total_size
