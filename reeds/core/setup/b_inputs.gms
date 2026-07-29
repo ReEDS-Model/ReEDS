@@ -4122,24 +4122,6 @@ fuel_price(i,r,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), fuel_price(ii,r,t) } ;
 * -- Climate impacts on nondispatchable hydropower --
 *=====================================================
 
-$ifthen.climatehydro %GSw_ClimateHydro% == 1
-
-* declared over allt to allow for external data files that extend beyond end_year
-* Written by climateprep.py
-table climate_hydro_annual(r,allt)  "annual dispatchable hydropower availability"
-$offlisting
-$ondelim
-$include inputs_case%ds%climate_hydadjann.csv
-$offdelim
-$onlisting
-;
-$endif.climatehydro
-
-
-*=====================================================
-* -- Climate impacts on nondispatchable hydropower --
-*=====================================================
-
 $ifthen.climatewater %GSw_ClimateWater% == 1
 
 * Written by climateprep.py
@@ -6105,6 +6087,7 @@ alias(actualszn,actualsznn,actualsznnn) ;
 Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
+    hours_t(allh,allt)                     "--hours-- number of hours in each time block by model year"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"

@@ -56,9 +56,9 @@ def get_load(inputs_case, sw, keep_modelyear=None, keep_weatheryears=[2012]):
     """
     """
     ### Subset to modeled regions
-    load = reeds.io.read_file(os.path.join(inputs_case,'load.h5'), parse_timestamps=True)
+    load = reeds.io.read_file(os.path.join(inputs_case,'load.h5'))
 
-    ### When running the linked model (GSw_FINITO_Link=1) we add reference load estimates 
+    ### When running the linked model (GSw_FINITO_Link=1) we add reference load estimates
     ### for FINITO load back in to use when selecting representative periods
     if int(sw.GSw_FINITO_Link):
         load_hourly_finito = hourly_load.get_hourly_finito_load(inputs_case)
@@ -90,7 +90,7 @@ def identify_peak_containing_periods(df, hierarchy, level):
         rmap = hierarchy[level]
     dfmod = df.copy()
     dfmod.columns = dfmod.columns.map(lambda x: x.split('|')[-1]).map(rmap)
-    dfmod = dfmod.groupby(axis=1, level=0).sum()
+    dfmod = dfmod.T.groupby(level=0).sum().T
     ### Get the max value by (year,yperiod)
     dfmax = dfmod.groupby(['year','yperiod']).max()
     ### Get the max (year,yperiod) for each column
@@ -111,9 +111,9 @@ def identify_min_periods(df, hierarchy, level, prefix=''):
         rmap = hierarchy[level]
     dfmod = df[[c for c in df if c.startswith(prefix)]].copy()
     dfmod.columns = dfmod.columns.map(lambda x: x.split('|')[-1]).map(rmap)
-    dfmod = dfmod.groupby(axis=1, level=0).sum()
+    dfmod = dfmod.T.groupby(level=0).sum().T
     ### Get the mean value by (year,yperiod)
-    dfmean = dfmod.groupby(['year','yperiod']).mean()
+    dfmean = dfmod.groupby(['year','yperiod']).mean().astype(float)
     ### Get the min (year,yperiod) for each column
     forceperiods = set([(c, 'min average', *dfmean[c].nsmallest(1).index[0]) for c in dfmean])
 
@@ -180,8 +180,8 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
 
     elif sw['GSw_HourlyClusterAlgorithm'] in ['opt','optimized','optimize']:
         profiles_period_mean = (
-            profiles_fitperiods.groupby(['property','region'], axis=1)
-            .mean()
+            profiles_fitperiods.T.groupby(['property','region'])
+            .mean().T
         )
         ### Optimize the weights of representative days
         iweights, weights = reeds.timeseries.optimize_period_weights(
@@ -295,7 +295,7 @@ def main(
 
     #%%### Load RE CF data, then take available-capacity-weighted average by (tech,region)
     print("Collecting 8760 capacity factor data")
-    recf_ra = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf_ra = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     ### Downselect to techs used for rep-period selection
     recf_ra = recf_ra[[c for c in recf_ra if any([c.startswith(p) for p in techs_vre])]].copy()
     ### Multiply by available capacity for weighted average
@@ -327,7 +327,7 @@ def main(
     recf_agg = recf_agg[tmp.index]
     columns['region'] = columns.region.map(rmap)
     recf_agg.columns = pd.MultiIndex.from_frame(columns[['tech','region']])
-    recf_agg = recf_agg.groupby(axis=1, level=['tech','region']).sum()
+    recf_agg = recf_agg.T.groupby(level=['tech','region']).sum().T
 
     ### Divide by aggregated capacity to get back to CF
     recf_agg /= sc.groupby(['tech','aggreg']).capacity.sum().rename_axis(['tech','region'])
@@ -357,7 +357,7 @@ def main(
     ### Aggregate to GSw_HourlyClusterRegionLevel
     load_agg = load.copy()
     load_agg.columns = load_agg.columns.map(rmap)
-    load_agg = load_agg.groupby(axis=1, level=0).sum()
+    load_agg = load_agg.T.groupby(level=0).sum().T
     match sw.GSw_HourlyClusterLoadNorm:
         case 'none':
             ## Don't normalize load
@@ -423,7 +423,7 @@ def main(
     ### Aggregate from hours to periods if necessary
     if sw.GSw_HourlyClusterTimestep in ['period','day','wek','week']:
         profiles_fitperiods = (
-            profiles_fitperiods_hourly.groupby(axis=1, level=['property','region']).mean())
+            profiles_fitperiods_hourly.T.groupby(level=['property','region']).mean().T)
     else:
         profiles_fitperiods = profiles_fitperiods_hourly.copy()
 
@@ -702,7 +702,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20260525_repM0_USA_fast','inputs_case','')
+    #     'v20260709_envM0_Simple','inputs_case','')
     # interactive = True
 
     #%% Set up logger

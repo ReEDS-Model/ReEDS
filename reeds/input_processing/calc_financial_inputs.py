@@ -42,8 +42,8 @@ def calc_financial_inputs(inputs_case):
     print('Starting calculation of financial parameters')
 
     # #%% Settings for testing
-    # reeds_path = '/Users/pbrown/github/ReEDS/'
-    # inputs_case = os.path.join(reeds_path,'runs','v20220621_NTPm0_ercot_seq_test','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = Path(reeds_path, 'runs', 'v20260612_envM0_Pacific', 'inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -93,8 +93,14 @@ def calc_financial_inputs(inputs_case):
 
     # Import system-wide real discount rates, calculate present-value-factors, merge onto df's
     financials_sys = reeds.financials.import_sys_financials(
-        sw['financials_sys_suffix'], inflation_df, modeled_years, 
-        years, year_map, sw['sys_eval_years'], scen_settings, scalars['co2_capture_incentive_length'],scalars['h2_ptc_length'])
+        sw,
+        scalars,
+        inflation_df,
+        modeled_years, 
+        years,
+        year_map,
+        scen_settings,
+    )
     financials_sys.to_csv(os.path.join(inputs_case,'financials_sys.csv'),index=False)
     df_ivt = df_ivt.merge(
         financials_sys[['t', 'pvf_capital', 'crf', 'crf_co2_incentive','crf_h2_incentive','d_real', 'd_nom', 'interest_rate_nom', 
@@ -116,7 +122,7 @@ def calc_financial_inputs(inputs_case):
     ### Import financial assumptions
     financials_tech = reeds.financials.import_data(
         file_root='financials_tech', file_suffix=sw['financials_tech_suffix'], 
-        indices=['i','country','t'], scen_settings=scen_settings)
+        indices=['i','t'], scen_settings=scen_settings)
     # Apply the values for standalone batteries to PV+B batteries
     financials_tech = reeds.financials.append_pvb_parameters(
         dfin=financials_tech, 
@@ -124,21 +130,24 @@ def calc_financial_inputs(inputs_case):
     # If the battery in PV+B gets the ITC, it gets 5-year MACRS depreciation as well
     if float(scen_settings.sw['GSw_PVB_BatteryITC']) >= 0.75:
         financials_tech.loc[
-            financials_tech.i.str.startswith('pvb') & (financials_tech.country == 'usa'),
+            financials_tech.i.str.startswith('pvb'),
             'depreciation_sch'
         ] = 5
 
     ### Project financials_tech forward
-    financials_tech_projected = financials_tech.pivot(
-        index=['i','country','depreciation_sch','eval_period','construction_sch'], 
-        columns=['t'])['finance_diff_real']
-    lastdatayear = max(financials_tech_projected.columns)
-    for addyear in range(lastdatayear+1, sw['endyear']+1):
-        financials_tech_projected[addyear] = financials_tech_projected[lastdatayear]
+    financials_tech_projected = (
+        financials_tech.pivot(
+            index=['t'],
+            columns=['i'],
+            values=['depreciation_sch','eval_period','construction_sch','finance_diff_real']
+        )
+        .reindex(range(int(sw.startyear), max(financials_tech.t.max(), int(sw.endyear))+1))
+        .ffill()
+    )
     # Overwrite with projected values
-    financials_tech = financials_tech_projected.stack().rename('finance_diff_real').reset_index()
+    financials_tech = financials_tech_projected.stack().reset_index()
     # Merge with df_ivt
-    df_ivt = df_ivt.merge(financials_tech, on=['i', 't', 'country'], how='left')
+    df_ivt = df_ivt.merge(financials_tech, on=['i', 't'], how='left')
     
     # Calculate multipliers to account for evaluation periods. If a tech's eval period is
     # the system-wide default, this will be 1. If not, the capital costs are adjusted accordingly. 
@@ -329,13 +338,19 @@ def calc_financial_inputs(inputs_case):
     dfhydrogen_storage.rename(columns={'t':'*t'})[['*t','cap_cost_mult_storage']].round(6).to_csv(
         os.path.join(inputs_case, 'h2_storage_cap_cost_mult.csv'), index=False)
 
-    #%% Import regional capital cost differences
+    #%% Import regional capital cost differences (county resolution)
     reg_cap_cost_diff = reeds.financials.import_data(
-        file_root='regional_cap_cost_diff', file_suffix=sw['reg_cap_cost_diff_suffix'], 
+        file_root='reg_cap_cost_diff', file_suffix=sw['reg_cap_cost_diff_suffix'], 
         indices=['i','r'], scen_settings=scen_settings)
-
-    # Trim down to just the techs in this run
-    reg_cap_cost_diff = reg_cap_cost_diff.loc[reg_cap_cost_diff['i'].isin(list(techs['i']))].copy()
+    # Map to zones and take average
+    county2zone = reeds.io.get_county2zone(reeds.io.standardize_case(inputs_case))
+    reg_cap_cost_diff.r = reg_cap_cost_diff.r.str.strip('p').map(county2zone)
+    reg_cap_cost_diff = (
+        # Trim down to just the techs in this run
+        reg_cap_cost_diff.loc[reg_cap_cost_diff['i'].isin(list(techs['i']))]
+        .dropna()
+        .groupby(['r','i'], as_index=False).mean()
+    ).copy()
 
 
     #%% Before writing outputs, change "x" to "newx" in [v]
@@ -480,10 +495,10 @@ def calc_financial_inputs(inputs_case):
     retail_eval_period = df_ivt[['i', 't', 'eval_period']].drop_duplicates(['i', 't'])
     retail_depreciation_sch = df_ivt[
         ['i', 't', 'depreciation_sch']].drop_duplicates(['i', 't'])
-    retail_eval_period.astype({'i':'category'}).to_hdf(
+    retail_eval_period.astype({'i':'category', 'eval_period':int}).to_hdf(
         os.path.join(inputs_case, 'retail_eval_period.h5'),
         key='data', complevel=4, index=False, format='table')
-    retail_depreciation_sch.astype({'i':'category'}).to_hdf(
+    retail_depreciation_sch.astype({'i':'category', 'depreciation_sch':int}).to_hdf(
         os.path.join(inputs_case, 'retail_depreciation_sch.h5'),
         key='data', complevel=4, index=False, format='table')
 

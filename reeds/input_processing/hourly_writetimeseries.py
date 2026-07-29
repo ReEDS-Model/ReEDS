@@ -204,7 +204,7 @@ def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     ### (GSw_FINITO_Link=1) even though the reference estimates for that load is used when
     ### identifying the representative days
     load_in = reeds.io.read_file(
-        os.path.join(inputs_case,'load.h5'), parse_timestamps=True).unstack(level=0)
+        os.path.join(inputs_case,'load.h5')).unstack(level=0)
     load_in.columns = load_in.columns.rename(['r','t'])
     ### load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
     scalars = reeds.io.get_scalars(inputs_case)
@@ -235,7 +235,6 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
         szn_month_weights
         """
         climate_index = {
-            'temp_hydadjsea': ['r','season','t'],
             'temp_UnappWaterMult': ['wst','r','season','t'],
             'temp_UnappWaterSeaAnnDistr': ['wst','r','season','t']
         }
@@ -277,7 +276,6 @@ def get_daily_gasprice_multipliers(
     ### Get daily gas price multipliers for region_level
     dfin = reeds.io.read_file(
         os.path.join(inputs_case, f'daily_gasprice_multipliers_{region_level}.h5'),
-        parse_timestamps=True
     )
     dfin.columns = dfin.columns.rename(region_level)
 
@@ -589,9 +587,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     #%%### Load full hourly RE CF, for downselection below
     #%% VRE
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     ### Overwrite CSP CF (which in recf.h5 is post-storage) with solar field CF
-    cspcf = reeds.io.read_file(os.path.join(inputs_case, 'csp.h5'), parse_timestamps=True)
+    cspcf = reeds.io.read_file(os.path.join(inputs_case, 'csp.h5'))
     recf = (
         recf.drop([c for c in recf if c.startswith('csp')], axis=1)
         .merge(cspcf, left_index=True, right_index=True)
@@ -1160,10 +1158,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .rename(columns={"season": "szn"})
     )
     
-    ### Import and format monthly climate_{hydadjsea/UnappWaterMult/UnappWaterSeaAnnDistr}.csv
+    ### Import and format monthly climate_{UnappWaterMult/UnappWaterSeaAnnDistr}.csv
     climate_files = {}   
-    if int(sw.GSw_ClimateHydro):
-        climate_files['temp_hydadjsea'] = format_climate_inputs('temp_hydadjsea', inputs_case, szn_month_weights)
     if int(sw.GSw_ClimateWater):
         for file in ['temp_UnappWaterMult', 'temp_UnappWaterSeaAnnDistr']:
             climate_files[file] = format_climate_inputs(file, inputs_case, szn_month_weights)
@@ -1214,7 +1210,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         # prior years assume 2030 data
         t_set = max(t, 2030)
             
-        dr_shed_avail_allyears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'), parse_timestamps=True)
+        dr_shed_avail_allyears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'))
         dr_shed_avail_allyears['year'] = round(dr_shed_avail_allyears['year'],0).astype(int)
         dr_shed_avail = dr_shed_avail_allyears.loc[dr_shed_avail_allyears['year']==t_set].copy().drop('year', axis=1)
 
@@ -1627,10 +1623,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "peak_h": [pd.DataFrame(columns=["*r", "h", "t", "MW"]), True, False],
     }
 
-    # Add climate inputs based on GSw_Climate* switch selection
-    if int(sw.GSw_ClimateHydro):
-        ## Climate-adjusted annual/seasonal nondispatchable hydropower availability
-        write['climate_hydadjsea'] = [climate_files['temp_hydadjsea'], True, True]
+    # Add climate inputs to write dictionary based on GSw_ClimateWater
     if int(sw.GSw_ClimateWater):
         ## Climate-adjusted time-varying annual/seasonal water supply
         write['climate_UnappWaterMult'] = [climate_files['temp_UnappWaterMult'], True, True]
