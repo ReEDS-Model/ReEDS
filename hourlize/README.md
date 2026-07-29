@@ -188,7 +188,7 @@ The `resource.py` script follows the following logic (in order of execution):
     * A column of overall supply curve costs is added to the supply curve (`supply_curve_cost_per_mw`), as well as certain components of that cost (e.g. `trans_adder_per_mw` and `capital_adder_per_mw`). Logic for these costs depends on `tech`, and the value of `cost_out` in config (e.g. `combined_eos_trans` for onshore wind).
     * A column of overall supply curve costs is added to the supply curve (`supply_curve_cost_per_mw`), as well as certain components of that cost (e.g. `trans_adder_per_mw` and `capital_adder_per_mw`). Logic for these costs depends on `tech`, and the value of `cost_out` in config (e.g. `combined_eos_trans` for onshore wind).
 1. `save_sc_outputs()`
-    * Supply curve outputs are saved (`supplycurve_{tech}.csv`) as well as exogenous capacity (`{tech}_exog_cap.csv`), which is built pre-2010, and prescribed builds (`{tech}_prescribed_builds.csv`), which are built between 2010 and present day.
+    * Supply curve outputs are saved (`supplycurve_{tech}.csv`).
 1. `process_cf_profiles()`
     * The hourly generation profiles are gathered and applicable conversions (AC-to-DC, scaling) are applied. The processed profiles are saved to a `{tech}.h5` file. This method makes use of the same h5 format specified in the `get_site_cf_hourly` function used by `recf.py` in ReEDS.
 1. `copy_outputs()`

@@ -119,15 +119,6 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/capacity_exogenous/demonstration_plants.csv,/inputs/capacity_exogenous,demonstration_plants,.csv,Nuclear-smr demonstration plants; active when GSw_NuclearDemo=1,"t,r,i,coolingwatertech,ctt,wst,value",,See 'notes' column in the file and https://www.energy.gov/oced/advanced-reactor-demonstration-projects-0,Prescribed capacity,MW
 /inputs/supply_curve/classification_geothermal.csv,/inputs/capacity_exogenous,classification_geothermal,.csv,Tempurature ranges of geothermal facilities classes defined based on reV resource supply curves and are aligned with 2024 ATB assumptions. Table 6 of the model documentation summarizes these classifications https://reeds-model.github.io/ReEDS/model_documentation.html#technical-resource-potential ,"class,access_case,min_reV_mean_temp,max_reV_mean_temp",,,Use to define prescribed capacity class of rsc technology,degree celsius
 /inputs/capacity_exogenous/interconnection_queues.csv,/inputs/capacity_exogenous,interconnection_queues,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ofs_meshed_limited,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ofs_meshed_open,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ofs_meshed_reference,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ofs_radial_limited,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ofs_radial_open,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ofs_radial_reference,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ons_limited,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ons_open,.csv,,,,,,
-/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv,/inputs/capacity_exogenous,prescribed_builds_wind-ons_reference,.csv,,,,,,
 /inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv,/inputs/capacity_exogenous,ReEDS_generator_database_final_EIA-NEMS,.csv,EIA-NEMS database of existing generators,,,,Input,
 /inputs/climate/climate_heuristics_finalyear.csv,/inputs/climate,climate_heuristics_finalyear,.csv,,,,,,
 /inputs/climate/climate_heuristics_yearfrac.csv,/inputs/climate,climate_heuristics_yearfrac,.csv,,,,,,

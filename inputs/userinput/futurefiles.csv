@@ -140,14 +140,6 @@ evmc_shape_profile_increase.csv,.csv,1,None,9999,None,9999,0,constant,None,None,
 evmc_storage_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
 evmc_storage_profile_decrease.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
 evmc_storage_profile_increase.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
-exog_cap_geohydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-exog_cap_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-exog_cap_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-exog_cap_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-exog_geohydro_allkm_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-exog_upv_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-exog_wind_ons_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-exog_wind_ofs_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 f.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 financials_hydrogen.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; input data extends to 2100,
 financials_sys.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
@@ -344,11 +336,6 @@ plantcharout.txt,.txt,0,None,1,"0,2",0,None,constant,None,None,"done. consider f
 plexos_inputs.gdx,.gdx,1,None,9999,None,9999,0,constant,None,None,done (wouldn't exist yet in normal run),constant
 poi_cap_init.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prepost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-prescribed_builds_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-prescribed_builds_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-prescribed_nonRSC_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-prescribed_nonRSC.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-prescribed_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 prm_initial.csv,.csv,0,None,t,*r,0,0,constant,None,None,done,constant
 psh_sc_duration.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 psh_supply_curves_capacity.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

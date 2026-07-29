@@ -437,16 +437,6 @@ def subset_to_valid_regions(
             case=os.path.dirname(os.path.normpath(inputs_case)),
             agg=agg,
         ).reset_index()
-    elif filename.startswith('exog_cap'):
-        df = reeds.io.assemble_exog_cap(
-            full_path,
-            case=os.path.dirname(os.path.normpath(inputs_case)),
-        )
-    elif filename.startswith('prescribed_builds'):
-        df = reeds.io.assemble_prescribed_builds(
-            full_path,
-            case=os.path.dirname(os.path.normpath(inputs_case)),
-        )
     elif filename == 'techs_banned.csv':
         df, nuclear_ban_regions = read_banned_tech_file(
             full_path,

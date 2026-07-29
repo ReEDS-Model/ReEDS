@@ -200,8 +200,6 @@ plantchar_pvb.csv,inputs/plant_characteristics/pvb_{pvbscen}.csv,int(sw.GSw_PVB)
 plantchar_upgrades.csv,inputs/upgrades/{upgradescen}.csv,sw.upgradescen != 'default',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upv.csv,inputs/plant_characteristics/{plantchar_upv}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 prepost.csv,inputs/sets/prepost.csv,1,ignore,ignore,,,,,,,,set,prepost,defines pre-2010 versus post-2010 years,
-prescribed_builds_wind-ofs.csv,inputs/capacity_exogenous/prescribed_builds_wind-ofs_{GSw_OffshoreFiles}_{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,year,,0,0,,,,,,aggfunc and disaggfunc set to ignore because data will be read in at the correct spatial resolution
-prescribed_builds_wind-ons.csv,inputs/capacity_exogenous/prescribed_builds_wind-ons_{GSw_SitingWindOns}.csv,1,ignore,ignore,region,year,,0,0,,,,,,aggfunc and disaggfunc set to ignore because data will be read in at the correct spatial resolution
 psh_supply_curves_duration.csv,inputs/storage/PSH_supply_curves_durations.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,1,,,,
 psh_supply_curves_capacity.csv,inputs/supply_curve/PSH_supply_curves_capacity_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,sum,geosize,r,wide,,1,0,,,,,,
 psh_supply_curves_cost.csv,inputs/supply_curve/PSH_supply_curves_cost_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,mean,uniform,r,wide,,1,0,,,,,,

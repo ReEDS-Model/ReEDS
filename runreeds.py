@@ -219,6 +219,9 @@ def check_compatibility(sw):
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
 
+    if int(sw['GSw_SkipRAyear']) <= int(sw['startyear']):
+            raise ValueError(f"GSw_SkipRAyear = {sw['GSw_SkipRAyear']} but must be > {sw['startyear']}")
+
     if (sw['GSw_HourlyType'] in ['year']) and int(sw['GSw_InterDayLinkage']):
         raise ValueError(
             "GSw_HourlyType cannot be 'year' when GSw_InterDayLinkage is enabled. "
