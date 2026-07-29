@@ -7,7 +7,9 @@ import traceback
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib import patheffects as pe
 import pandas as pd
+from adjustText import adjust_text
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
@@ -316,6 +318,341 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
 
     return f, (ax_total, ax_peak), stats_by_case
 
+def plot_regional_peak_demand_maps(cases, colors, year='last'):
+    """
+    Map the max peak demand per state, comparing across cases.
+
+    For each state, peak demand is the highest simultaneous (summed across
+    BAs in that state) hourly value across ALL available weather years for
+    the given model year.
+
+    Layout: 1 row x N-cases columns.
+      Base case (first case): absolute peak demand [GW] with a sequential colormap.
+      All other cases: percent difference vs. the base case with a diverging colormap.
+
+    Parameters
+    ----------
+    cases : dict  {casename: casepath}
+    colors : dict {casename: color}  (unused in maps but kept for API parity)
+    year : int or 'last'
+        Model year to plot. Defaults to the last solved year of the base case.
+
+    Returns
+    -------
+    f, ax, df_peak
+        df_peak has one column per case, indexed by state, values in GW.
+    """
+    if len(cases) < 2:
+        raise ValueError('Need at least 2 cases to compare inputs.')
+
+    basecasename = list(cases.keys())[0]
+    basecasepath = list(cases.values())[0]
+
+    if year in [0, None, 'last']:
+        t = reeds.io.get_years(basecasepath)[-1]
+    else:
+        t = int(year)
+
+    dfmap = reeds.io.get_dfmap(basecasepath)
+    dfstates = dfmap['st']
+
+    peak_st = {}
+    for casename, casepath in cases.items():
+        print(f'  {casename}: loading state-level peak demand...')
+        sw = reeds.io.get_switches(casepath)
+        rs = reeds.inputs.parse_regions(casepath)
+        case_weatheryears = sw.resource_adequacy_years_list
+        region_to_state = reeds.io.get_hierarchy(casepath)['st']
+
+        dfprofile = (
+            reeds.io.read_file(
+                os.path.join(casepath, 'inputs_case', 'load.h5'),
+                parse_timestamps=True,
+            )
+            / 1e3  # MW -> GW
+        )
+        valid_cols = [r for r in dfprofile.columns if r in rs]
+        dfprofile = dfprofile[valid_cols]
+
+        try:
+            df_t = dfprofile.loc[t].copy()
+        except KeyError:
+            raise KeyError(f'Model year {t} not found in load.h5 for case {casename}.')
+
+        df_t.index = pd.to_datetime(df_t.index)
+        # Use the full weather-year range — max across ALL years
+        df_t = df_t.loc[
+            str(min(case_weatheryears)) : str(max(case_weatheryears))
+        ]
+        # Aggregate BAs to states, then take the max simultaneous hour
+        df_t_st = df_t.T.groupby(df_t.columns.map(region_to_state)).sum().T
+        peak_st[casename] = df_t_st.max()
+
+    ncols = len(cases)
+    cmap_abs = plt.cm.YlOrRd
+    cmap_diff = plt.cm.RdBu_r
+
+    plt.close()
+    f, ax = plt.subplots(
+        1, ncols,
+        figsize=(max(5 * ncols, 10), 5),
+        gridspec_kw={'wspace': 0.0},
+    )
+    if ncols == 1:
+        ax = [ax]
+
+    base_vals = peak_st[basecasename]
+    abs_vmax = max(
+        (peak_st[c].reindex(dfstates.index).fillna(0).max() for c in cases),
+        default=0.0,
+    )
+    pct_diffs = {
+        c: ((peak_st[c] - base_vals) / base_vals * 100)
+           .replace([float('inf'), float('-inf')], float('nan'))
+        for c in list(cases.keys())[1:]
+    }
+    diff_absmax = max(
+        (pct_diffs[c].abs().max()
+         for c in pct_diffs if not pct_diffs[c].dropna().empty),
+        default=1.0,
+    )
+
+    for col, casename in enumerate(cases):
+        _ax = ax[col]
+        dfplot = dfstates.copy()
+
+        if casename == basecasename:
+            dfplot['val'] = base_vals.reindex(dfstates.index).fillna(0)
+            _cmap, vmin, vmax = cmap_abs, 0, abs_vmax
+            cbar_label = 'Peak demand [GW]'
+        else:
+            dfplot['val'] = pct_diffs[casename].reindex(dfstates.index)
+            _cmap, vmin, vmax = cmap_diff, -diff_absmax, diff_absmax
+            cbar_label = f'Change in peak demand [%]'
+
+        dfstates.plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2, zorder=10000)
+        dfplot.plot(ax=_ax, column='val', cmap=_cmap, vmin=vmin, vmax=vmax, legend=False)
+
+        # Value labels for states
+        texts = []
+        for st, row in dfplot.iterrows():
+            if pd.isna(row['val']):
+                continue
+            centroid = dfstates.loc[st, 'geometry'].representative_point()
+            label = f'{row["val"]:.0f}' if casename == basecasename else f'{row["val"]:+.0f}'
+            texts.append(_ax.text(
+                centroid.x, centroid.y, label,
+                fontsize=7, ha='center', va='center', color='k',
+                path_effects=[pe.withStroke(linewidth=1.5, foreground='white')],
+                zorder=20000,
+            ))
+        adjust_text(
+            texts, 
+            ax=_ax, 
+            avoid_self=False,
+        )
+
+        if col == 0 or col == 1:
+            reeds.plots.addcolorbarhist(
+                f=f, ax0=_ax, data=dfplot['val'].dropna().values,
+                title=cbar_label, cmap=_cmap, vmin=vmin, vmax=vmax,
+                orientation='horizontal', labelpad=2.25, histratio=0.,
+                cbarwidth=0.05, cbarheight=0.85,
+                cbarbottom=-0.05, cbarhoffset=0.,
+            )
+
+        _ax.annotate(casename, (0.1, 1), xycoords='axes fraction', fontsize=14)
+        _ax.axis('off')
+
+    f.suptitle(
+        f'Peak demand in {t} (max across all weather years)',
+        fontsize=18,
+        y=0.9,
+    )
+
+    df_peak = pd.DataFrame(peak_st).reindex(dfstates.index)
+    return f, ax, df_peak
+
+
+def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012):
+    """
+    Map total annual demand per state, comparing across cases.
+
+    For each state, total demand is summed across all BAs in that state over
+    the selected weather year(s) and averaged if more than one year is given.
+
+    Layout: 1 row x N-cases columns.
+      Base case (first case): absolute total demand [TWh] with a sequential colormap.
+      All other cases: percent difference vs. the base case with a diverging colormap.
+
+    Parameters
+    ----------
+    cases : dict  {casename: casepath}
+    colors : dict {casename: color}  (unused in maps but kept for API parity)
+    year : int or 'last'
+        Model year to plot. Defaults to the last solved year of the base case.
+    weatheryear : int, str, or iterable
+        Weather year(s) to use. Values are averaged when multiple are given.
+
+    Returns
+    -------
+    f, ax, df_total
+        df_total has one column per case, indexed by state, values in TWh.
+        df_total has one column per case, indexed by region, values in TWh.
+    """
+    if len(cases) < 2:
+        raise ValueError('Need at least 2 cases to compare inputs.')
+
+    selected_weatheryears = _parse_weatheryears(weatheryear)
+    wy_label = _weatheryears_label(selected_weatheryears)
+    basecasename = list(cases.keys())[0]
+    basecasepath = list(cases.values())[0]
+
+    if year in [0, None, 'last']:
+        t = reeds.io.get_years(basecasepath)[-1]
+    else:
+        t = int(year)
+
+    dfmap = reeds.io.get_dfmap(basecasepath)
+    dfstates = dfmap['st']
+
+    total_st = {}
+    for casename, casepath in cases.items():
+        print(f'  {casename}: loading state-level total demand...')
+        sw = reeds.io.get_switches(casepath)
+        rs = reeds.inputs.parse_regions(casepath)
+        case_weatheryears = sw.resource_adequacy_years_list
+        region_to_state = reeds.io.get_hierarchy(casepath)['st']
+
+        dfprofile = (
+            reeds.io.read_file(
+                os.path.join(casepath, 'inputs_case', 'load.h5'),
+                parse_timestamps=True,
+            )
+            / 1e3  # MW -> GW
+        )
+        valid_cols = [r for r in dfprofile.columns if r in rs]
+        dfprofile = dfprofile[valid_cols]
+
+        try:
+            df_t = dfprofile.loc[t].copy()
+        except KeyError:
+            raise KeyError(f'Model year {t} not found in load.h5 for case {casename}.')
+
+        df_t.index = pd.to_datetime(df_t.index)
+        df_t = df_t.loc[
+            str(min(case_weatheryears)) : str(max(case_weatheryears))
+        ]
+        available_wy = sorted(df_t.index.year.unique().tolist())
+        _validate_selected_weatheryears(selected_weatheryears, available_wy, casename, t)
+        df_t = df_t.loc[df_t.index.year.isin(selected_weatheryears)]
+
+        # Aggregate BAs to states, then average annual total across selected weather years
+        df_t_st = df_t.T.groupby(df_t.columns.map(region_to_state)).sum().T
+        wy_totals = pd.concat(
+            [df_t_st.loc[df_t_st.index.year == wy].sum() / 1e3  # GWh -> TWh
+             for wy in selected_weatheryears],
+            axis=1,
+        ).mean(axis=1)
+        total_st[casename] = wy_totals
+
+    ncols = len(cases)
+    cmap_abs = plt.cm.YlOrRd
+    cmap_diff = plt.cm.RdBu_r
+
+    plt.close()
+    f, ax = plt.subplots(
+        1, ncols,
+        figsize=(max(5 * ncols, 10), 5),
+        gridspec_kw={'wspace': 0.0},
+    )
+    if ncols == 1:
+        ax = [ax]
+
+    base_vals = total_st[basecasename]
+    abs_vmax = max(
+        (total_st[c].reindex(dfstates.index).fillna(0).max() for c in cases),
+        default=0.0,
+    )
+    pct_diffs = {
+        c: ((total_st[c] - base_vals) / base_vals * 100)
+           .replace([float('inf'), float('-inf')], float('nan'))
+        for c in list(cases.keys())[1:]
+    }
+    diff_absmax = max(
+        (pct_diffs[c].abs().max()
+         for c in pct_diffs if not pct_diffs[c].dropna().empty),
+        default=1.0,
+    )
+
+    for col, casename in enumerate(cases):
+        _ax = ax[col]
+        dfplot = dfstates.copy()
+
+        if casename == basecasename:
+            dfplot['val'] = base_vals.reindex(dfstates.index).fillna(0)
+            _cmap, vmin, vmax = cmap_abs, 0, abs_vmax
+            cbar_label = 'Annual demand [TWh]'
+        else:
+            dfplot['val'] = pct_diffs[casename].reindex(dfstates.index)
+            _cmap, vmin, vmax = cmap_diff, -diff_absmax, diff_absmax
+            cbar_label = f'Change in annual demand [%]'
+
+        dfstates.plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2, zorder=10000)
+        dfplot.plot(ax=_ax, column='val', cmap=_cmap, vmin=vmin, vmax=vmax, legend=False)
+
+        # Value labels for states
+        texts = []
+        for st, row in dfplot.iterrows():
+            if pd.isna(row['val']):
+                continue
+            centroid = dfstates.loc[st, 'geometry'].representative_point()
+            label = f'{row["val"]:.0f}' if casename == basecasename else f'{row["val"]:+.0f}'
+            texts.append(_ax.text(
+                centroid.x, centroid.y, label,
+                fontsize=7, ha='center', va='center', color='k',
+                path_effects=[pe.withStroke(linewidth=1.5, foreground='white')],
+                zorder=20000,
+            ))
+        adjust_text(
+            texts, 
+            ax=_ax, 
+            avoid_self=False,
+        )
+        
+        if col == 0 or col == 1:
+            reeds.plots.addcolorbarhist(
+                f=f, ax0=_ax, data=dfplot['val'].dropna().values,
+                title=cbar_label, cmap=_cmap, vmin=vmin, vmax=vmax,
+                orientation='horizontal', labelpad=2.25, histratio=0.,
+                cbarwidth=0.05, cbarheight=0.85,
+                cbarbottom=-0.05, cbarhoffset=0.,
+            )
+
+        _ax.annotate(casename, (0.1, 1), xycoords='axes fraction', fontsize=14)
+        _ax.axis('off')
+
+    wy_title = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
+    f.suptitle(
+        f'Annual demand in {t}, {wy_title} {wy_label}',
+        fontsize=18,
+        y=0.9,
+    )
+
+    df_total = pd.DataFrame(total_st).reindex(dfstates.index)
+    return f, ax, df_total
+
+
+def plot_peak_and_total_load_maps(cases, colors, year='last', weatheryear=2012):
+    """
+    Convenience wrapper: calls plot_regional_peak_demand_maps and
+    plot_regional_total_demand_maps and returns their results as a tuple.
+    """
+    f_peak, ax_peak, df_peak = plot_regional_peak_demand_maps(cases, colors, year=year)
+    f_total, ax_total, df_total = plot_regional_total_demand_maps(
+        cases, colors, year=year, weatheryear=weatheryear
+    )
+    return (f_peak, f_total), (ax_peak, ax_total), (df_peak, df_total)
 
 #%% Main
 parser = argparse.ArgumentParser(
@@ -422,6 +759,27 @@ if __name__ == '__main__':
             weatheryear=selected_weatheryears,
         )
         saveit(f'demand by modelyear wy{weatheryear_label}')
+    except Exception as e:
+        print(traceback.format_exc())
+    
+    try:
+        f_peak, _, _ = plot_regional_peak_demand_maps(
+            cases,
+            colors,
+            year=year,
+        )
+        saveit(f'demand peak by region my{year}')
+    except Exception as e:
+        print(traceback.format_exc())
+
+    try:
+        f_total, _, _ = plot_regional_total_demand_maps(
+            cases,
+            colors,
+            year=year,
+            weatheryear=selected_weatheryears,
+        )
+        saveit(f'demand total by region my{year} wy{weatheryear_label}')
     except Exception as e:
         print(traceback.format_exc())
 
