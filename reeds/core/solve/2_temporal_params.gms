@@ -204,6 +204,9 @@ $offdelim
 $onlisting
 / ;
 
+hours_t(allh,t)$tmodel(t) = 0 ;
+hours_t(h,t)$tmodel(t) = hours(h) ;
+
 parameter numdays(allszn) "--number of days-- number of days for each season" ;
 numdays(allszn) = 0 ;
 numdays(szn) = sum{h$h_szn(h,szn),hours(h) } / 24 ;

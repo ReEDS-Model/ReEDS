@@ -1708,13 +1708,6 @@ def plot_prmtrade(
     val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     dfba = dfba.loc[val_r].copy()
 
-    endpoints = reeds.plots.df2gdf(
-        reeds.io.assemble_hierarchy(case).set_index('r'),
-        lat='node_lat', lon='node_lon',
-    )
-    dfba['x'] = dfba.index.map(endpoints.centroid.x)
-    dfba['y'] = dfba.index.map(endpoints.centroid.y)
-
     ### Get scaling and layout
     _vmax = dfplot.MW.abs().max() if vmax in [None, 0, 0.] else vmax
     if int(sw.get('GSw_PRM_CapCredit', 1)):
@@ -3040,7 +3033,7 @@ def get_gen_capacity(case, year=2050, level='r', units='GW'):
     ## Aggregate if necessary
     if level != 'r':
         dfcap.index = dfcap.index.map(hierarchy[level])
-        dfcap = dfcap.groupby(axis=0, level='r').sum()
+        dfcap = dfcap.groupby(level='r').sum()
 
     return dfcap
 
@@ -3264,7 +3257,7 @@ def map_zone_capacity(
             .unstack('i') / 1e3
         )
         dfco2.columns = simplify_techs(dfco2.columns)
-        dfco2 = dfco2.groupby(axis=1, level='i').sum()
+        dfco2 = dfco2.T.groupby(level='i').sum().T
         dfco2 = (
             dfco2[[c for c in bokehcolors.index if c in dfco2]]
             .round(3).replace(0,np.nan)
@@ -3819,7 +3812,7 @@ def plot_interday_soc(
         data.rename(columns={'Level_x': 'interday_level', 'Level_y': 'net_day_change', 'Value': 'partition'}, inplace=True)
 
         # Fill missing values
-        data['interday_level'] = data['interday_level'].fillna(method='ffill').fillna(0)
+        data['interday_level'] = data['interday_level'].ffill().fillna(0)
         data['net_day_change'] = data['net_day_change'].fillna(0)
 
         # Sort by time to ensure proper ordering
@@ -4017,19 +4010,19 @@ def plot_stressperiod_days(case, repcolor='k', sharey=False, figsize=(10,5)):
     period_days = 5 if sw['GSw_HourlyType'] == 'wek' else 1
     yplot = 2012
     timeindex = pd.date_range(
-        f'{yplot}-01-01', f'{yplot+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
+        f'{yplot}-01-01', f'{yplot+1}-01-01', freq='h', tz='Etc/GMT+6')[:8760]
     ### Get rep periods
     szn_rep = pd.read_csv(
         os.path.join(case, 'inputs_case', 'rep', 'period_szn.csv')
     ).rep_period.sort_values()
     rep_starts = [reeds.timeseries.h2timestamp(d+'h01') for d in szn_rep]
     rep_hours = np.ravel([
-        pd.date_range(h, h+pd.Timedelta(f'{period_days}D'), freq='H', inclusive='left')
+        pd.date_range(h, h+pd.Timedelta(f'{period_days}D'), freq='h', inclusive='left')
         for h in rep_starts
     ])
     dfrep = pd.Series(
         index=timeindex,
-        data=timeindex.map(lambda x: x.isin(rep_hours)).astype(int),
+        data=timeindex.isin(rep_hours).astype(int),
     )
     ### Want a dict of dataframes with 8760 index, columns for 'rep' + RA years,
     ### and keys for solve years
@@ -4064,12 +4057,12 @@ def plot_stressperiod_days(case, repcolor='k', sharey=False, figsize=(10,5)):
             ]
             yearhours = np.ravel([
                 pd.date_range(
-                    h, h+pd.Timedelta(f'{period_days}D'), freq='H', inclusive='left')
+                    h, h+pd.Timedelta(f'{period_days}D'), freq='h', inclusive='left')
                 for h in yearstarts_aligned
             ])
             dictout[y] = pd.Series(
                 index=timeindex,
-                data=timeindex.map(lambda x: x.isin(yearhours)).astype(int),
+                data=timeindex.isin(yearhours).astype(int),
             )
         dfplot[t] = pd.concat(dictout, axis=1)
 
@@ -4639,9 +4632,9 @@ def plot_h2_timeseries(
         fontsize=12,
     )
     ### Scales
-    ymax = (dfchunk.groupby(axis=1, level='datum').sum()
+    ymax = (dfchunk.T.groupby(level='datum').sum().T
             [['production','stor_discharge']].sum(axis=1).max()) * 24
-    ymin = (dfchunk.groupby(axis=1, level='datum').sum()
+    ymin = (dfchunk.T.groupby(level='datum').sum().T
             [['usage','stor_charge']].sum(axis=1).min()) * 24
     scalerows = [v for k,v in rows.items() if 'level' not in k]
     for row in scalerows:
@@ -4869,7 +4862,7 @@ def map_period_dispatch(
             if regions_sorted.index(r2) < regions_sorted.index(r1):
                 dftrans[interface] *= -1
                 dftrans = dftrans.rename(columns={interface:f'{r2}|{r1}'})
-        dftrans = dftrans.groupby(axis=1, level='interface').sum()
+        dftrans = dftrans.T.groupby(level='interface').sum().T
     else:
         dftrans = pd.DataFrame()
 
@@ -5795,8 +5788,6 @@ def plot_capacity_offline(
         drawgrid=True, plot_for=False,
     ):
     """Plot capacity offline and temperature for rep and stress periods"""
-    ### Get temperatures
-    temperatures = reeds.io.get_temperatures(case)
 
     ### Get switches
     sw = reeds.io.get_switches(case)
@@ -6087,7 +6078,7 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     if recf is None:
         ## Get CF
         recf = reeds.io.read_file(
-            os.path.join(case, 'inputs_case', 'recf.h5'), parse_timestamps=True,
+            os.path.join(case, 'inputs_case', 'recf.h5'),
         )
     if not isinstance(recf.columns, pd.core.indexes.multi.MultiIndex):
         recf.columns = pd.MultiIndex.from_tuples(
@@ -6231,7 +6222,7 @@ def map_stressors(
     if any([not os.path.exists(fpath) for fpath in ra_files.values()]):
         reeds.resource_adequacy.prep_data.main(t, case, iteration)
 
-    vre_gen = reeds.io.read_file(ra_files['vre_gen'], parse_timestamps=True)
+    vre_gen = reeds.io.read_file(ra_files['vre_gen'])
     vre_gen.columns = pd.MultiIndex.from_tuples(
         vre_gen.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
@@ -6239,14 +6230,13 @@ def map_stressors(
 
     recf = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'recf.h5'),
-        parse_timestamps=True,
     )
     recf.columns = pd.MultiIndex.from_tuples(
         recf.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
 
-    load = reeds.io.read_file(ra_files['load'], parse_timestamps=True).tz_convert(recf.index.tz)
+    load = reeds.io.read_file(ra_files['load']).tz_convert(recf.index.tz)
 
     temperatures = reeds.io.get_temperatures(case)
     hierarchy = reeds.io.get_hierarchy(case)
@@ -6323,7 +6313,7 @@ def map_stressors(
 
     outage_region = outage_daily.copy()
     outage_region.columns = outage_daily.columns.map(lambda x: (x[0], hierarchy[level][x[1]]))
-    outage_region = outage_region.groupby(['i','r'], axis=1).mean()
+    outage_region = outage_region.T.groupby(['i','r']).mean().T
 
     ### Set up the plot
     nrows, ncols = 3, 4
@@ -6588,7 +6578,10 @@ def plot_eue_events(
     for iteration in iterations:
         ## Get events
         fpath = Path(case, 'outputs', f'eue_events_{year}i{iteration}.csv')
-        events = pd.read_csv(fpath, index_col=['level','region','number']).loc[level]
+        events = pd.read_csv(fpath, index_col=['level','region','number'])
+        if events.empty:
+            continue
+        events = events.loc[level]
         events['mean'] = events['sum'] / events['timesteps']
         dictout[iteration] = events
         ## Plot for each region and iteration
@@ -6626,7 +6619,9 @@ def plot_eue_events(
                 if iteration == max(iterations):
                     _ax.set_ylabel(f'EUE {yval} [{units[yval]}]', y=0, ha='left')
                     _ax.set_xlabel(f'EUE {xval} [{units[xval]}]', x=0, ha='left')
-    ## Formatting
+    ## Formatting (stop here if there are no events)
+    if not len(dictout):
+        return f, ax, dictout
     _ax.set_xlim(0, _ax.get_xlim()[1])
     _ax.set_ylim(0, _ax.get_ylim()[1])
     for iteration in iterations:

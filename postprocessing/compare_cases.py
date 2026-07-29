@@ -709,7 +709,7 @@ try:
             'variables': {'title': f'{lastyear} Variables', 'yaxis':'count'},
             'non_zero_elements': {'title': f'{lastyear} Non-zero\nelements', 'yaxis':'count'},
             'peak_memory': {'title': f'{lastyear} Peak\nGAMS memory\n[GB]', 'yaxis':'GB'},
-            'directory_size': {'title': 'Directory size\n[GB]', 'yaxis':'GB'},
+            'directory_size': {'title': 'Directory size\n[MB]', 'yaxis':'MB'},
         }
 
     plt.close()
@@ -2390,7 +2390,7 @@ if detailed:
                 if r > rr:
                     rename[interface] = f'{rr}|{r}'
                     df[interface] *= -1
-            df = df.rename(columns=rename).groupby(axis=1, level=0).sum()
+            df = df.rename(columns=rename).T.groupby(level=0).sum().T
             ## Now reorder interfaces by flow
             rename = {}
             for interface in df:

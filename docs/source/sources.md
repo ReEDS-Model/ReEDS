@@ -1886,8 +1886,6 @@
     - **Dollar year:** 2004
     - **Citation:** [https://www.nlr.gov/gis/psh-supply-curves.html](https://www.nlr.gov/gis/psh-supply-curves.html)
   - [rev_paths.csv](/inputs/supply_curve/rev_paths.csv)
-  - [sc_point_gid_old2new.csv](/inputs/supply_curve/sc_point_gid_old2new.csv)
-  - [sitemap.h5](/inputs/supply_curve/sitemap.h5)
   - [supplycurve_egs-reference.csv](/inputs/supply_curve/supplycurve_egs-reference.csv)
   - [supplycurve_upv-limited.csv](/inputs/supply_curve/supplycurve_upv-limited.csv)
     - **Description:** UPV supply curve from reV for the limited siting scenario

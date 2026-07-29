@@ -92,7 +92,6 @@ def get_inputs(sw):
     try:
         vre_gen = reeds.io.read_file(
             os.path.join(sw['casedir'],'handoff','reeds_data',f'pras_vre_gen_{sw.t}.h5'),
-            parse_timestamps=True,
         )
     except FileNotFoundError:
         vre_gen = None
@@ -101,7 +100,7 @@ def get_inputs(sw):
     vre_gen_usa = (
         vre_gen
         .rename(columns=dict(zip(vre_gen.columns, vre_gen.columns.map(lambda x: x.split('|')[0]))))
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
         .set_index(fulltimeindex)
     )
     vre_gen_usa.columns = reeds.reedsplots.simplify_techs(vre_gen_usa.columns, display_level = 'diagnostics')
@@ -113,7 +112,7 @@ def get_inputs(sw):
     vre_gen_r = (
         vre_gen
         .rename(columns=dict(zip(vre_gen.columns, vre_gen.columns.map(lambda x: x.split('|')[1]))))
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
     )
 
     ### Load hourly demand
@@ -130,7 +129,6 @@ def get_inputs(sw):
     try:
         pras_load = reeds.io.read_file(
             os.path.join(sw['casedir'],'handoff','reeds_data',f'pras_load_{sw.t}.h5'),
-            parse_timestamps=True,
         )
     except FileNotFoundError:
         pras_load = None
@@ -140,7 +138,6 @@ def get_inputs(sw):
             os.path.join(
                 sw['casedir'],'handoff','reeds_data',
                 f"pras_h2dac_load_{sw['t']}.h5"),
-            parse_timestamps=True,
         )
     except FileNotFoundError:
         pras_h2dac_load = pd.DataFrame(columns=pras_load.columns)
@@ -187,7 +184,7 @@ def get_inputs(sw):
     ### Get net load by BA
     net_load_r = load_r - vre_gen_r
     ### Get net load by ccreg
-    net_load_ccreg = net_load_r.rename(columns=hierarchy.ccreg).groupby(axis=1, level=0).sum()
+    net_load_ccreg = net_load_r.rename(columns=hierarchy.ccreg).T.groupby(level=0).sum().T
     ### Get net load for the USA
     net_load_usa = net_load_r.set_index(fulltimeindex).sum(axis=1)
 
@@ -280,7 +277,7 @@ def plot_dropped_load_timeseries_full(sw, dfs):
     """
     dropped = dfs['pras']['USA_EUE'].copy()
     timeindex_y = pd.date_range(
-        f"{sw['t']}-01-01", f"{sw['t']+1}-01-01", inclusive='left', freq='H',
+        f"{sw['t']}-01-01", f"{sw['t']+1}-01-01", inclusive='left', freq='h',
         tz='Etc/GMT+6')[:8760]
     savename = f"dropped_load-timeseries-wfull-{sw['t']}.png"
     weatheryears = sw.resource_adequacy_years_list
@@ -399,11 +396,11 @@ def map_dropped_load(sw, dfs, level='r'):
         if level not in ['r','rb','ba']:
             dropped = (
                 dropped.rename(columns=rmap)
-                .groupby(level=0, axis=1).sum().copy()
+                .T.groupby(level=0).sum().T.copy()
             )
             load = (
                 load.rename(columns=rmap)
-                .groupby(level=0, axis=1).sum().copy()
+                .T.groupby(level=0).sum().T.copy()
             )
         for agg in ['max','sum','mean']:
             if (metric,agg) not in units:
@@ -458,16 +455,16 @@ def plot_pras_ICAP(sw, dfs):
         return
     ### Collect the PRAS system capacities
     cap = pd.concat([
-        dfs['pras_system']['gencap'].groupby(axis=1, level=0).sum(),
-        dfs['pras_system']['storcap'].groupby(axis=1, level=0).sum(),
-        dfs['pras_system']['genstorcap'].groupby(axis=1, level=0).sum(),
+        dfs['pras_system']['gencap'].T.groupby(level=0).sum().T,
+        dfs['pras_system']['storcap'].T.groupby(level=0).sum().T,
+        dfs['pras_system']['genstorcap'].T.groupby(level=0).sum().T,
     ], axis=1)
     ## Drop any empties
     cap = cap.replace(0,np.nan).dropna(axis=1, how='all').fillna(0).astype(int)
     ## Get the colors
     tech_style = dfs['tech_style']['color'].squeeze()
     ## Aggregate by type
-    cap = cap.groupby(axis=1, level=0).sum()
+    cap = cap.T.groupby(level=0).sum().T
     order = [c for c in tech_style.index if c in cap]
     cap = cap[order]
     if cap.shape[1] != len(order):
@@ -524,7 +521,7 @@ def plot_reeds_pras_capacity(sw, dfs):
     cap['pras'] = cap['pras'].replace(0,np.nan).dropna(axis=1, how='all').fillna(0)
     ## Aggregate by type
     cap['pras'] = (cap['pras']
-        .groupby(axis=1, level=[1,0]).sum().max().rename('MW')
+        .T.groupby(level=[1,0]).sum().T.max().rename('MW')
     )
 
     ### Collect the ReEDS capacities
@@ -618,7 +615,7 @@ def plot_pras_ICAP_regional(sw, dfs, numdays=5):
     ## Get the colors
     tech_style = dfs['tech_style']['color'].squeeze()
     ## Aggregate by type
-    cap = cap.groupby(axis=1, level=[1,0]).sum()
+    cap = cap.T.groupby(level=[1,0]).sum().T
 
     ### Get coordinates
     zones = dfs['hierarchy'].index
@@ -643,7 +640,7 @@ def plot_pras_ICAP_regional(sw, dfs, numdays=5):
             ### Plot it
             plots.stackbar(
                 df=df, ax=ax[coords[r]], colors=tech_style, net=False, align='edge',
-                width=pd.Timedelta('1H'),
+                width=pd.Timedelta('1h'),
             )
             ax[coords[r]].plot(
                 load.loc[date].index, load.loc[date][r].values, c='k', lw=1,
@@ -653,7 +650,7 @@ def plot_pras_ICAP_regional(sw, dfs, numdays=5):
             ax[coords[r]].set_title(r)
         ### Formatting
         plots.trim_subplots(ax=ax, nrows=nrows, ncols=ncols, nsubplots=len(zones))
-        ax[coords[zones[0]]].set_xlim(df.index[0], df.index[-1] + pd.Timedelta('1H'))
+        ax[coords[zones[0]]].set_xlim(df.index[0], df.index[-1] + pd.Timedelta('1h'))
         ax[coords[zones[0]]].set_xticks([])
         ax[-1, 0].set_xlabel(date, x=0, ha='left', labelpad=10)
         ax[-1, 0].set_ylabel('ICAP [GW]', y=0, ha='left')
@@ -817,7 +814,7 @@ def plot_pras_load_units(sw, dfs):
         vre_gen.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
-    net_demand = (dfs['pras_system']['load'] - vre_gen.groupby('r', axis=1).sum()) / 1e3
+    net_demand = (dfs['pras_system']['load'] - vre_gen.T.groupby('r').sum().T) / 1e3
     ## Remaining unit capacity
     units = cap.loc[
             ~cap.i.isin(
