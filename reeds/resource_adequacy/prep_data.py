@@ -187,6 +187,47 @@ def main(t, casedir, iteration=0):
     else:
         trancap_reeds = gdxreeds['cap_trans_energy']
 
+    trans_cap_delta_hourly = reeds.io.get_trans_cap_delta_hourly(
+        inputs_case,
+        periodtype=f"stress{t}"
+    )
+    ac_trancap_hourly = (
+        (
+            trancap_reeds.loc[trancap_reeds.trtype == 'AC']
+            .set_index(['r', 'rr'])
+            ['Value']
+        )
+        * (1 + trans_cap_delta_hourly)
+    )
+    interfaces = reeds.inputs.get_interface_data(inputs_case)['interface']
+    ac_trancap_hourly_forward = (
+        ac_trancap_hourly.loc[:, (
+            ac_trancap_hourly.columns.get_level_values('r')
+            + '~~'
+            + ac_trancap_hourly.columns.get_level_values('rr')
+        ).isin(interfaces)]
+    )
+    ac_trancap_hourly_forward.columns = (
+        ac_trancap_hourly_forward.columns.get_level_values('r')
+        + '~~'
+        + ac_trancap_hourly_forward.columns.get_level_values('rr')
+    )
+    ac_trancap_hourly_reverse = (
+        ac_trancap_hourly.loc[:, (
+            ac_trancap_hourly.columns.get_level_values('rr')
+            + '~~'
+            + ac_trancap_hourly.columns.get_level_values('r')
+        ).isin(interfaces)]
+    )
+    ac_trancap_hourly_reverse.columns = (
+        ac_trancap_hourly_reverse.columns.get_level_values('rr')
+        + '~~'
+        + ac_trancap_hourly_reverse.columns.get_level_values('r')
+    )
+
+    h5out['pras_tran_cap_hourly_forward'] = ac_trancap_hourly_forward
+    h5out['pras_tran_cap_hourly_reverse'] = ac_trancap_hourly_reverse
+
     #%%### Efficiencies and storage parameters
     duration = gdxreeds['storage_duration'].loc[
         gdxreeds['storage_duration'].i.isin(gdxreeds['storage_standalone'].i)

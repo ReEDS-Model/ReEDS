@@ -40,8 +40,8 @@ struct Line
     category::String
     region_from::String
     region_to::String
-    forward_cap::Float64
-    backward_cap::Float64
+    forward_cap::Vector{Float64}
+    backward_cap::Vector{Float64}
     legacy::String
     FOR::Float64
     MTTR::Int64
@@ -50,13 +50,13 @@ struct Line
 
     # Inner Constructors & Checks
     function Line(;
-        name = "init_name",
-        timesteps = 8760,
-        category = "AC",
-        region_from = "init_reg_from",
-        region_to = "init_reg_to",
-        forward_cap = 0.0,
-        backward_cap = 0.0,
+        name,
+        timesteps,
+        category,
+        region_from,
+        region_to,
+        forward_cap = zeros(Float64, timesteps),
+        backward_cap = zeros(Float64, timesteps),
         legacy = "New",
         FOR = 0.0,
         MTTR = 24,
@@ -70,8 +70,11 @@ struct Line
             error("Region_From and Region_To cannot be the same for $(name). PRAS only
                    considers inter-regional lines in zonal analysis")
 
-        all([forward_cap, backward_cap] .>= 0.0) ||
-            error("$(name) forward/backward capacity value < 0")
+        all(forward_cap .>= 0.0) ||
+            error("$(name) forward capacity value < 0")
+
+        all(backward_cap .>= 0.0) ||
+            error("$(name) backward capacity value < 0")
 
         legacy in ["Existing", "New"] ||
             error("$(name) has legacy $(legacy) which is not in [Existing, New]")
@@ -107,9 +110,9 @@ get_name(ln::Line) = ln.name
 
 get_category(ln::Line) = ln.category
 
-get_forward_capacity(ln::Line) = fill(round(Int, ln.forward_cap), 1, ln.timesteps)
+get_forward_capacity(ln::Line) = permutedims(round.(Int, ln.forward_cap))
 
-get_backward_capacity(ln::Line) = fill(round(Int, ln.backward_cap), 1, ln.timesteps)
+get_backward_capacity(ln::Line) = permutedims(round.(Int, ln.backward_cap))
 
 get_region_from(ln::Line) = ln.region_from
 

@@ -59,6 +59,12 @@ function process_lines(
 )
     #it is assumed this has prm line capacity data
     line_base_cap_data = get_line_capacity_data(ReEDS_data)
+    line_base_cap_data_hourly_forward = (
+        get_line_capacity_data_hourly_forward(ReEDS_data)
+    )
+    line_base_cap_data_hourly_reverse = (
+        get_line_capacity_data_hourly_reverse(ReEDS_data)
+    )
 
     converter_capacity_data = get_converter_capacity_data(ReEDS_data)
     converter_capacity_dict = Dict(
@@ -81,18 +87,25 @@ function process_lines(
 
     lines_array = Line[]
     for row in eachrow(system_line_naming_data)
-        forward_cap = sum(
-            line_base_cap_data[
-                (line_base_cap_data.r .== row.r) .& (line_base_cap_data.rr .== row.rr) .& (line_base_cap_data.trtype .== row.trtype),
-                "MW",
-            ],
-        )
-        backward_cap = sum(
-            line_base_cap_data[
-                (line_base_cap_data.r .== row.rr) .& (line_base_cap_data.rr .== row.r) .& (line_base_cap_data.trtype .== row.trtype),
-                "MW",
-            ],
-        )
+        if row.trtype != "AC"
+            forward_cap = sum(
+                line_base_cap_data[
+                    (line_base_cap_data.r .== row.r) .& (line_base_cap_data.rr .== row.rr) .& (line_base_cap_data.trtype .== row.trtype),
+                    "MW",
+                ],
+            )
+            forward_cap = fill(forward_cap, size(line_base_cap_data_hourly_forward, 1))
+            backward_cap = sum(
+                line_base_cap_data[
+                    (line_base_cap_data.r .== row.rr) .& (line_base_cap_data.rr .== row.r) .& (line_base_cap_data.trtype .== row.trtype),
+                    "MW",
+                ],
+            )
+            backward_cap = fill(backward_cap, size(line_base_cap_data_hourly_reverse, 1))
+        else
+            forward_cap = line_base_cap_data_hourly_forward[!, row.r * "~~" * row.rr]
+            backward_cap = line_base_cap_data_hourly_reverse[!, row.r * "~~" * row.rr]
+        end
 
         name = "$(row.r)|$(row.rr)|$(row.trtype)"
         @debug(
