@@ -892,6 +892,7 @@ parameter trans_cap_delta(r,rr,allh)
 $offlisting
 $ondelim
 $include inputs_case%ds%%temporal_inputs%%ds%trans_cap_delta.csv
+$include inputs_case%ds%stress%stress_year%%ds%trans_cap_delta.csv
 $offdelim
 $onlisting
 / ;
