@@ -495,26 +495,7 @@ def main(reeds_path, inputs_case):
     ###########################################
 
     print('Gathering non-RSC Prescribed Capacity...')
-    ivt_df= pd.read_csv(os.path.join(inputs_case,'ivt.csv'))
-
-    ### modify set of technology name as lower case and convert all columns except the first to string
-    ivt_df.iloc[:, 0] = ivt_df.iloc[:, 0].str.lower()
-    ivt_df=ivt_df.astype(str)
-    ivt_df = ivt_df[[ivt_df.columns[0]] + [str(y) for y in years]] 
-     
-
-    full_range = list(range(years[0], years[-1] + 1))
-
-    for y in full_range:
-        y_str = str(y)
-        if y_str not in ivt_df.columns:
-            # Find closest *future* year that exists
-            future_years = [fy for fy in years if fy >= y]
-            closest_future = min(future_years)
-            ivt_df[y_str] = ivt_df[str(closest_future)]
-
-    ivt_df = ivt_df[[ivt_df.columns[0]] + [str(x) for x in full_range]]
-
+    ivt_df= process_ivt(years)
 
     ### prescribed power capacity
     prescribed_nonRSC = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC'])) &
@@ -802,50 +783,35 @@ def main(reeds_path, inputs_case):
     #    -- Retirements Data --    #
     ################################
     print('Gathering Retirement Data...')
-    rets = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements'])) &
-                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
-                    (gdb_use['StartYear'] <= endyear) 
-                    ].copy()
-    
-    # Assign the retirements type based on whether the unit was online before or after startyear
-    rets['type'] = None
-    if len(rets) > 0:
-        rets.loc[rets['StartYear'] >= startyear,'type']='prescribed'
-        rets.loc[rets['StartYear'] < startyear, 'type']='existing'
-        
-    rets['tech'] = rets['tech'].str.lower()
-    rets= pd.merge(rets, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
-    rets['v'] = rets.apply(lambda row: f"new{row[str(row['StartYear'])]}" 
-                        if row['StartYear'] >= startyear 
-                        else "init-1",axis=1)
-    rets['StartYear']=rets['StartYear'].apply(lambda x: assign_modeledyear(x, years))
-    rets[retscen]=rets[retscen].apply(lambda x: assign_modeledyear(x, years))
-    rets = rets[COLNAMES['retirements'][0]]
-    rets.columns = COLNAMES['retirements'][1]
-    rets.sort_values(by=COLNAMES['retirements'][1],inplace=True)
-    rets = rets.groupby(COLNAMES['retirements'][1][:-1]).sum().reset_index().rename(columns={'i':'*i'})
 
-    rets_energy = gdb_use.loc[(gdb_use['tech'].isin(TECH['retirements_energy'])) &
-                    (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
-                    (gdb_use['StartYear'] <= endyear)
-                    ].copy()
-    # Assign the retirements type based on whether the unit was online before or after startyear
-    rets_energy['type'] = None
-    if len(rets_energy) > 0:
-        rets_energy.loc[rets_energy['StartYear'] >= startyear,'type']='prescribed'
-        rets_energy.loc[rets_energy['StartYear'] < startyear, 'type']='existing'
-        
-    rets_energy['tech'] = rets_energy['tech'].str.lower()
-    rets_energy= pd.merge(rets_energy, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
-    rets_energy['v'] = rets_energy.apply(lambda row: f"new{row[str(row['StartYear'])]}" 
-                        if row['StartYear'] >= startyear 
-                        else "init-1",axis=1)
-    rets_energy['StartYear']=rets_energy['StartYear'].apply(lambda x: assign_modeledyear(x, years))
-    rets_energy[retscen]=rets_energy[retscen].apply(lambda x: assign_modeledyear(x, years))
-    rets_energy = rets_energy[COLNAMES['retirements_energy'][0]]
-    rets_energy.columns = COLNAMES['retirements_energy'][1]
-    rets_energy.sort_values(by=COLNAMES['retirements_energy'][1],inplace=True)
-    rets_energy = rets_energy.groupby(COLNAMES['retirements_energy'][1][:-1]).sum().reset_index().rename(columns={'i':'*i'})
+    rets_data = {}
+    for rettype in ['retirements','retirements_energy']:
+        rets_df = gdb_use.loc[(gdb_use['tech'].isin(TECH[rettype])) &
+                        (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
+                        (gdb_use['StartYear'] <= endyear) 
+                        ].copy()
+    
+        # Assign the retirements type based on whether the unit was online before or after startyear
+        rets_df['type'] = None
+        if len(rets_df) > 0:
+            rets_df.loc[rets_df['StartYear'] >= startyear,'type']='prescribed'
+            rets_df.loc[rets_df['StartYear'] < startyear, 'type']='existing'
+            
+        rets_df['tech'] = rets_df['tech'].str.lower()
+        rets_df= pd.merge(rets_df, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
+        rets_df['v'] = rets_df.apply(lambda row: f"new{row[str(row['StartYear'])]}" 
+                            if row['StartYear'] >= startyear 
+                            else "init-1",axis=1)
+        rets_df['StartYear']=rets_df['StartYear'].apply(lambda x: assign_modeledyear(x, years))
+        rets_df[retscen]=rets_df[retscen].apply(lambda x: assign_modeledyear(x, years))
+        rets_df = rets_df[COLNAMES[rettype][0]]
+        rets_df.columns = COLNAMES[rettype][1]
+        rets_df.sort_values(by=COLNAMES[rettype][1],inplace=True)
+        rets_df = rets_df.groupby(COLNAMES[rettype][1][:-1]).sum().reset_index().rename(columns={'i':'*i'})
+        rets_data[rettype] = rets_df.copy()
+    ## Unpack
+    rets = rets_data['retirements']
+    rets_energy = rets_data['retirements_energy']
 
     ################################
     #    -- Wind Retirements --    #
@@ -1055,6 +1021,28 @@ def main(reeds_path, inputs_case):
                 }
 
     return files_out
+
+def process_ivt(years):
+
+    ivt_df= pd.read_csv(os.path.join(inputs_case,'ivt.csv'))
+    ### modify set of technology name as lower case and convert all columns except the first to string
+    ivt_df.iloc[:, 0] = ivt_df.iloc[:, 0].str.lower()
+    ivt_df=ivt_df.astype(str)
+    ivt_df = ivt_df[[ivt_df.columns[0]] + [str(y) for y in years]] 
+     
+    full_range = list(range(years[0], years[-1] + 1))
+
+    for y in full_range:
+        y_str = str(y)
+        if y_str not in ivt_df.columns:
+            # Find closest *future* year that exists
+            future_years = [fy for fy in years if fy >= y]
+            closest_future = min(future_years)
+            ivt_df[y_str] = ivt_df[str(closest_future)]
+
+    ivt_df = ivt_df[[ivt_df.columns[0]] + [str(x) for x in full_range]]
+
+    return ivt_df
 
 #%% ===========================================================================
 ### --- PROCEDURE ---
