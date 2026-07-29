@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 
 # process the export control dataset
-
+# source: https://www.oecd.org/en/topics/export-restrictions-on-critical-raw-materials.html
+# documentation: https://www.oecd.org/content/dam/oecd/en/topics/policy-sub-issues/export-restrictions-on-critical-raw-materials/methodological-note-inventory-export-restrictions-industrial-raw-materials_2025.pdf
 export_control_df = pd.read_csv('cmm_export_controls.csv',skiprows=1)
 cmm_hs_codes = pd.read_csv('cmm_hs_codes.csv')
 cmm_countries = pd.read_csv('cmm_countries.csv', skiprows=2)
@@ -118,3 +119,5 @@ realized_risk['tax_restricted_prod'] = realized_risk['tax_restricted_prod'].fill
 realized_risk['share_restricted'] = round(realized_risk['restricted_prod'] / realized_risk['total_prod_material'], 2)
 realized_risk['share_supply_restricted'] = round(realized_risk['supply_restricted_prod'] / realized_risk['total_prod_material'], 2)
 realized_risk['share_tax_restricted'] = round(realized_risk['tax_restricted_prod'] / realized_risk['total_prod_material'], 2)
+
+# need to update this to include the changes to trade policy with new administration. 
