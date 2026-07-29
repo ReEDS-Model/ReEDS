@@ -542,19 +542,31 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
         #In this case, class names in class_path must be numbered, starting at 1
         df_sc = df_sc.rename(columns={'class':'class_orig'})
         df_sc['class_orig'] = df_sc['class_orig'].astype(int)
-        df_sc = (
-            df_sc
-            .groupby(['class_orig'], sort=False)
-            .apply(
-                reeds.inputs.get_bin,
-                bin_col=class_bin_col,
-                bin_out_col='class_bin',
-                weight_col='capacity',
-                bin_num=class_bin_num,
-                bin_method=class_bin_method,
+        national = 1 if 'region' not in df_sc.columns else 0
+        if national:
+            df_sc['region'] = 'CONUS'
+        else:
+            import reeds
+        dfreg = pd.DataFrame()
+        for r in df_sc['region'].unique():
+            df_noclass = df_sc.loc[df_sc['region']==r].copy()
+            df_noclass = (
+                df_sc
+                .groupby(['class_orig'], sort=False)
+                .apply(
+                    reeds.inputs.get_bin,
+                    bin_col=class_bin_col,
+                    bin_out_col='class_bin',
+                    weight_col='capacity',
+                    bin_num=class_bin_num,
+                    bin_method=class_bin_method.split('_')[0],            
+                )
+                .reset_index(drop=True)
             )
-            .reset_index(drop=True)
-        )
+            dfreg = pd.concat([dfreg,df_noclass])
+        if national:
+            dfreg = dfreg.drop(columns=['region'])
+        df_sc = dfreg.copy()
         df_sc['class'] = (df_sc['class_orig'] - 1) * class_bin_num + df_sc['class_bin']
     print('Done adding classes: '+ str(datetime.datetime.now() - startTime))
     return df_sc
