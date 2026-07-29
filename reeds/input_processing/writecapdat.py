@@ -256,14 +256,6 @@ def COLNAMES_define(retscen):
             ['r','tech','summer_power_capacity_MW'],
             ['r','i','value']
         ),
-        'prsc_upv': (
-            ['StartYear','r','tech','summer_power_capacity_MW'],
-            ['t','r','i','value']
-        ),
-        'prsc_w': (
-            ['StartYear','r','tech','summer_power_capacity_MW'],
-            ['t','r','i','value']
-        ),
         'prsc_csp': (
             ['StartYear','r','tech','ctt','wst','summer_power_capacity_MW'],
             ['t','r','i','ctt','wst','value']
@@ -321,9 +313,6 @@ TECH = {
     'rsc_csp': ['csp-ns'],
     'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
                 'geohydro_allkm','egs_allkm'],
-    'prsc_pv_all': ['upv','pvb','csp-ns','csp-ws'],
-    'prsc_upv': ['upv','pvb'],
-    'prsc_w': ['wind-ons','wind-ofs'],
     'prsc_csp': ['csp-ns','csp-ws'],
     'prsc_geo': ['geohydro_allkm','egs_allkm'],
     'retirements': [
@@ -664,14 +653,14 @@ def main(reeds_path, inputs_case):
         mask = ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
         if len(cap_pres[tech]) != 0:
             # DUPV, PVB and UPV values are collected at the same time here:
-            if tech in TECH['prsc_upv']:
+            if tech in TECH['rsc_upv']:
                 print(tech)
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class['upv']))
                 cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" + 
                                     cap_pres[tech]["class"].astype(str))
             # Load in wind builds:  
-            elif tech in TECH['prsc_w']:
+            elif tech in TECH['rsc_w']:
                 print(tech)
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class[tech]))
