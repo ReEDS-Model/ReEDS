@@ -1016,7 +1016,7 @@ def read_pras_results(filepath):
         return df
 
 
-def get_itl_hourly(
+def get_trans_cap_delta_hourly(
     case=None,
     periodtype='rep',
     tz_in='UTC',
@@ -1045,15 +1045,14 @@ def get_itl_hourly(
     h5path = Path(
         reeds.io.reeds_path,
         'inputs',
-        'profiles_itl',
-        f'itl_NARIS_{rating_type}.h5'
+        'profiles_tran_cap_delta',
+        f"delta_{rating_type}.h5"
     )
-    
     ## Add one more year to the end of desired weather
     ## years to allow for timezone conversion
-    read_years = range(min(weather_years), max(weather_years)+2)
-    ### Load ITLs
-    _itls = []
+    read_years = range(min(weather_years), max(weather_years)+1)
+    ### Load deltas
+    _deltas = []
     with h5py.File(h5path, 'r') as f:
         columns = pd.MultiIndex.from_tuples(
             tuple(zip(
@@ -1068,39 +1067,70 @@ def get_itl_hourly(
                 .str
                 .decode('utf-8')
             )
+            delta_values = (
+                f[f'delta_{year}'][:]
+                * f[f'delta_{year}'].attrs['scale']
+            )
             df = pd.DataFrame(
                 index=time_index,
                 columns=columns,
-                data=f[f'itl_{year}'][:]
+                data=delta_values
             )
-            _itls.append(df)
 
-    itl_hourly = (
-        pd.concat(_itls)
+            next_year = year + 1
+            if next_year not in read_years:
+                next_year_first_day_data = df.tail(24)
+                next_year_first_day_data.index += pd.Timedelta(days=1)
+                df = pd.concat([df, next_year_first_day_data])
+
+            _deltas.append(df)
+
+    delta_hourly = (
+        pd.concat(_deltas)
         .rename_axis(index='datetime')
         .tz_localize(tz_in)
         .tz_convert(tz_out)
     )
     ## Subset to weather years used in ReEDS
-    itl_hourly = itl_hourly.loc[itl_hourly.index.year.isin(weather_years)].copy()
-    ### On leap years, drop Dec 31
-    itl_hourly = reeds.timeseries.truncate_leap_years(itl_hourly)
-    ### Subset to valid regions
+    delta_hourly = (
+        delta_hourly.loc[delta_hourly.index.year.isin(weather_years)]
+        .copy()
+    )
+    ## On leap years, drop Dec 31
+    delta_hourly = reeds.timeseries.truncate_leap_years(delta_hourly)
+
+    ## Subset to valid regions and interfaces
     if case is not None:
         val_r = (
             reeds.io.read_input(standardize_case(case), 'r')
             .squeeze(1)
             .tolist()
         )
-        itl_hourly = (
-            itl_hourly.loc[:, (
-                itl_hourly.columns.get_level_values('r').isin(val_r)
-                & itl_hourly.columns.get_level_values('rr').isin(val_r)
+        delta_hourly = (
+            delta_hourly.loc[:, (
+                delta_hourly.columns.get_level_values('r').isin(val_r)
+                & delta_hourly.columns.get_level_values('rr').isin(val_r)
             )]
             .copy()
         )
 
-    return itl_hourly
+        valid_interfaces = reeds.inputs.get_itls(case)['interface']
+        forward_interfaces = (
+            delta_hourly.columns.get_level_values('r')
+            + '~~'
+            + delta_hourly.columns.get_level_values('rr')
+        )
+        reverse_interfaces = (
+            delta_hourly.columns.get_level_values('rr')
+            + '~~'
+            + delta_hourly.columns.get_level_values('r')
+        )
+        delta_hourly = delta_hourly.loc[:, (
+            forward_interfaces.isin(valid_interfaces)
+            | reverse_interfaces.isin(valid_interfaces)
+        )]
+
+    return delta_hourly
 
 
 def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
