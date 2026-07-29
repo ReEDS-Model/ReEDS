@@ -108,6 +108,37 @@ def read_runfiles(reeds_path, sw):
 
     return runfiles, non_region_files, region_files
 
+def get_source_deflator_map(reeds_path):
+    """
+    Get the deflator for each input file
+
+    """
+
+    # Inflation-adjusted inputs
+    sources_dollaryear = pd.read_csv(
+        os.path.join(reeds_path,'docs','sources.csv'),
+        usecols=["RelativeFilePath", "DollarYear"]
+    )
+    deflator = pd.read_csv(
+        os.path.join(reeds_path,'inputs','financials','deflator.csv'),
+        header=0, names=['Dollar.Year','Deflator'], index_col='Dollar.Year').squeeze(1)
+    # Create a mapping between inputs' relative filepaths and their deflation
+    # multipliers based on the dollar years their monetary values are in
+    sources_dollaryear = (
+        # Filter out rows that don't contain a valid dollar year
+        sources_dollaryear[pd.to_numeric(sources_dollaryear['DollarYear'], errors='coerce').notnull()]
+        # Note: We must remove the backslash that prepends each relative filepath
+        # for compatibility with the 'os' package (otherwise it is treated as an absolute path)
+        .assign(RelativeFilePath=sources_dollaryear["RelativeFilePath"].str[1:])
+        .astype({"DollarYear": "int64"})
+        .rename(columns={"DollarYear": "Dollar.Year"})
+        .merge(deflator,on="Dollar.Year",how="left")
+    )
+
+    source_deflator_map = dict(zip(sources_dollaryear["RelativeFilePath"], sources_dollaryear["Deflator"]))
+
+    return source_deflator_map
+
 def get_deflator_from_dollaryear_file(reeds_path, input_folder, filename):
     """
         given an input_folder and filename, get the deflator from the dollaryear.csv file
