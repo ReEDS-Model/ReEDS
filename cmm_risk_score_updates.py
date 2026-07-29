@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 export_control_df = pd.read_csv('cmm_export_controls.csv',skiprows=1)
 cmm_hs_codes = pd.read_csv('cmm_hs_codes.csv')
 cmm_countries = pd.read_csv('cmm_countries.csv', skiprows=2)
+cmm_prod = pd.read_csv('cmm_global_mat_prod.csv', names=['Material', 'Country', 'Production'],skiprows=1)
 
 # filter down to relevant hs codes, group by country and hs6, keep most recent year, remove eliminated policies
 
@@ -55,6 +56,10 @@ ec_df_wide = ec_df_wide.sort_values(['Country', 'Material'])
 ec_df_wide = ec_df_wide.drop('HS6', axis=1)
 ec_df_wide = ec_df_wide.drop_duplicates()
 
+# Collapse Country-Material combinations by taking max of policy columns
+# This combines rows for the same country-material pair with different policies
+ec_df_wide = ec_df_wide.groupby(['Country', 'Material'], as_index=False).max()
+
 # Add indicator columns from type columns
 id_cols = ['Country', 'Material']
 type_cols = [c for c in ec_df_wide.columns if c not in id_cols]
@@ -73,11 +78,43 @@ else:
     ec_df_wide['supply_restrict'] = 0
 
 # 1 if any tax-related type is present
-tax_cols = [c for c in type_cols if 'tax_restrict' in c.lower()]
+tax_cols = [c for c in type_cols if 'tax' in c.lower()]
 if tax_cols:
-    ec_df_wide['tax'] = ec_df_wide[tax_cols].gt(0).any(axis=1).astype(int)
+    ec_df_wide['tax_restrict'] = ec_df_wide[tax_cols].gt(0).any(axis=1).astype(int)
 else:
-    ec_df_wide['tax'] = 0
+    ec_df_wide['tax_restrict'] = 0
 
-## we probably want one row per country and material, 
-# with the type columns having more than one positive value depending the type that exists.. update?
+# Merge with production data
+ec_df_wide = ec_df_wide.merge(cmm_prod, on=['Country', 'Material'], how='left')
+ec_df_wide['Production'] = ec_df_wide['Production'].fillna(0)
+
+# Create realized_risk summary by material
+# Total production by material
+total_prod_material = cmm_prod.groupby('Material')['Production'].sum().reset_index()
+total_prod_material.columns = ['Material', 'total_prod_material'] 
+
+# Production from countries with restrictions
+restricted_prod = ec_df_wide[ec_df_wide['any_restrict'] == 1].groupby('Material')['Production'].sum().reset_index()
+restricted_prod.columns = ['Material', 'restricted_prod']
+
+# Production from countries with supply restrictions
+supply_restricted_prod = ec_df_wide[ec_df_wide['supply_restrict'] == 1].groupby('Material')['Production'].sum().reset_index()
+supply_restricted_prod.columns = ['Material', 'supply_restricted_prod']
+
+
+# Production from countries with taxrestrictions
+tax_restricted_prod = ec_df_wide[ec_df_wide['tax_restrict'] == 1].groupby('Material')['Production'].sum().reset_index()
+tax_restricted_prod.columns = ['Material', 'tax_restricted_prod']
+
+# Merge to create realized_risk
+realized_risk = total_prod_material.merge(restricted_prod, on='Material', how='left')
+realized_risk['restricted_prod'] = realized_risk['restricted_prod'].fillna(0)
+realized_risk = realized_risk.merge(supply_restricted_prod, on='Material', how='left')
+realized_risk['supply_restricted_prod'] = realized_risk['supply_restricted_prod'].fillna(0)
+realized_risk = realized_risk.merge(tax_restricted_prod, on='Material', how='left')
+realized_risk['tax_restricted_prod'] = realized_risk['tax_restricted_prod'].fillna(0)
+
+# Calculate share of production from restricted countries
+realized_risk['share_restricted'] = round(realized_risk['restricted_prod'] / realized_risk['total_prod_material'], 2)
+realized_risk['share_supply_restricted'] = round(realized_risk['supply_restricted_prod'] / realized_risk['total_prod_material'], 2)
+realized_risk['share_tax_restricted'] = round(realized_risk['tax_restricted_prod'] / realized_risk['total_prod_material'], 2)
