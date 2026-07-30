@@ -196,7 +196,7 @@ def calibrate_hourly_state_load_to_historical_annuals(
             )]
             .copy()
         )
-        calibration_factors = model_year_historical_load.div(
+        calibration_factors = 1 / (
             state_load_hourly_model_year
             .groupby(
                 state_load_hourly_model_year.index
@@ -204,7 +204,7 @@ def calibrate_hourly_state_load_to_historical_annuals(
                 .year
             )
             .transform('sum')
-        )
+        ).div(model_year_historical_load)
         state_load_hourly_model_year_scaled = (
             state_load_hourly_model_year.mul(calibration_factors)
         )
@@ -222,7 +222,7 @@ def calibrate_hourly_state_load_to_historical_annuals(
     state_load_hourly_calibration_year = (
         state_load_hourly.loc[max_historical_model_year]
     )
-    calibration_diffs = calibration_year_historical_load.sub(
+    calibration_diffs = -(
         state_load_hourly_calibration_year
         .groupby(
             state_load_hourly_calibration_year.index
@@ -230,7 +230,7 @@ def calibrate_hourly_state_load_to_historical_annuals(
             .year
         )
         .transform('sum')
-    )
+    ).sub(calibration_year_historical_load)
 
     # For post-historical model years, scale state_load_hourly so that its
     # annual totals match the sum of each model year's projected annual loads
@@ -525,14 +525,14 @@ def calculate_peak_load(
         _peakload[_level] = (
             ## Aggregate to level
             load_hourly.rename(columns=hierarchy[_level])
-            .groupby(axis=1, level=0).sum()
+            .T.groupby(level=0).sum().T
             ## Calculate peak
-            .groupby(axis=0, level='year').max()
+            .groupby(level='year').max()
             .T
         )
 
     ## Also calculate it at r level
-    _peakload['r'] = load_hourly.groupby(axis=0, level='year').max().T
+    _peakload['r'] = load_hourly.groupby(level='year').max().T
     peakload = pd.concat(_peakload, names=['level','region']).round(3)
 
     return peakload
@@ -767,6 +767,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Inputs for testing
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = str(Path(reeds_path, 'runs', 'v20260610_envM0_Pacific', 'inputs_case'))
 
     #%% Set up logger
     log = reeds.log.makelog(

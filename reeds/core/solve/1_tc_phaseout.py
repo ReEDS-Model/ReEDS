@@ -190,13 +190,13 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
         # If no years fell below the trigger value, tc phaseout has not begun,
         # so just set tc_phaseout_mult to 1.0 for all techs
         else:
-            tc_phaseout_mult = const_times[['i']].copy()
+            tc_phaseout_mult = const_times[['i']].drop_duplicates().copy()
             tc_phaseout_mult['tc_phaseout_mult'] = 1.0
 
     # If the first allowable trigger year has not yet been reached, tc phaseout has not begun,
     # so just set tc_phaseout_mult to 1.0 for all techs
     else:
-        tc_phaseout_mult = const_times[['i']].copy()
+        tc_phaseout_mult = const_times[['i']].drop_duplicates().copy()
         tc_phaseout_mult['tc_phaseout_mult'] = 1.0
 
     # Round for GAMS
@@ -204,7 +204,7 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
     tc_phaseout_mult['t'] = year
 
     data = {'tc_phaseout_mult_t':tc_phaseout_mult[['i', 't', 'tc_phaseout_mult']]}
-    gdxpds.to_gdx(data, os.path.join(tc_file_dir, 'tc_phaseout_mult_%s.gdx' % year))
+    gdxpds.to_gdx(data, os.path.join(tc_file_dir, f'tc_phaseout_mult_{year}.gdx'))
 
 
 #############

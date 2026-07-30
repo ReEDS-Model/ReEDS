@@ -232,7 +232,8 @@ def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
 def get_zones(
     case=None,
     crs='ESRI:102008',
-    exclude_water_areas=True,
+    tolerance:float=100,
+    exclude_water_areas:bool=True,
     **kwargs,
 ) -> gpd.GeoDataFrame:
     """
@@ -240,6 +241,8 @@ def get_zones(
         case (str, Path, or None): Path to a ReEDS case.
             If None, uses the default GSw_ZoneSet from cases.csv.
         crs (str): Coordinate reference system
+        tolerance (float) [m]: Degree of simplification of aggregated geometries
+            (passed to gpd.GeoSeries.simplify_coverage())
         **kwargs: ReEDS switch:value pairs (overrides case argument)
     """
     dfcounty = reeds.spatial.get_map('county', source='tiger', crs=crs)
@@ -251,6 +254,9 @@ def get_zones(
         dfstates = reeds.spatial.get_map('states', source='census', crs=crs)
         country = dfstates.dissolve().geometry[0]
         dfzones.geometry = dfzones.intersection(country).buffer(0)
+
+    if tolerance:
+        dfzones.geometry = dfzones.geometry.simplify_coverage(tolerance=tolerance)
 
     return dfzones[['geometry']]
 
@@ -427,7 +433,7 @@ def read_h5(h5path:str|Path, key:str) -> pd.DataFrame:
         except KeyError:
             df = pd.DataFrame(columns=columns)
     for col in df:
-        if df[col].dtype == 'O':
+        if pd.api.types.is_string_dtype(df[col].dtype):
             df[col] = df[col].str.decode('utf-8')
     return df
 
@@ -704,23 +710,24 @@ def get_switches(case=None, **kwargs):
             (case if case is not None else reeds_path),
             'reeds', 'resource_adequacy', 'ra_switches.csv',
         )
-        asw = pd.read_csv(fpath_asw, index_col='key')
-        for i, row in asw.iterrows():
+        dfra = pd.read_csv(fpath_asw, index_col='key', dtype='object')
+        ra_switches = {}
+        for key, row in dfra.iterrows():
             if row['dtype'] == 'list':
-                row.value = row.value.split(',')
+                ra_switches[key] = row.value.split(',')
                 try:
-                    row.value = [int(i) for i in row.value]
+                    ra_switches[key] = [int(i) for i in row.value]
                 except ValueError:
                     pass
             elif row['dtype'] == 'boolean':
-                row.value = False if row.value.lower() == 'false' else True
+                ra_switches[key] = False if row.value.lower() == 'false' else True
             elif row['dtype'] == 'str':
-                row.value = str(row.value)
+                ra_switches[key] = str(row.value)
             elif row['dtype'] == 'int':
-                row.value = int(row.value)
+                ra_switches[key] = int(row.value)
             elif row['dtype'] == 'float':
-                row.value = float(row.value)
-        sw = pd.concat([sw, asw.value])
+                ra_switches[key] = float(row.value)
+        sw = pd.concat([sw, pd.Series(ra_switches)])
     except FileNotFoundError:
         print(f"{fpath_asw} not found so leaving out resource adequacy switches")
     ### Add derivative switches
@@ -788,7 +795,7 @@ def get_scalars(case=None, full=False):
     return scalars
 
 
-def read_h5py_file(filename, decode_strings=False):
+def read_h5py_file(filename):
     """Return dataframe object for a h5py file.
 
     This function returns a pandas dataframe of a h5py file. If the file has multiple dataset on it
@@ -836,7 +843,7 @@ def read_h5py_file(filename, decode_strings=False):
             idx_cols.sort()
             for idx_col in idx_cols:
                 df[idx_col] = pd.Series(f[idx_col]).values
-                if str(df[idx_col].dtype).startswith('|S') and decode_strings:
+                if str(df[idx_col].dtype).startswith('|S'):
                     df[idx_col] = df[idx_col].str.decode('utf-8')
             df = df.set_index(idx_cols)
 
@@ -857,7 +864,7 @@ def read_h5py_file(filename, decode_strings=False):
     return df
 
 
-def read_file(filename, parse_timestamps=False, decode_strings=False):
+def read_file(filename, parse_timestamps=True):
     """Return dataframe object of input file for multiple file formats.
 
     This function read multiple file formats for h5 file sand returns a dataframe from the file.
@@ -887,7 +894,7 @@ def read_file(filename, parse_timestamps=False, decode_strings=False):
     # datasets that composes the h5 file. For a single dataset we use pandas (since it is the most
     # convenient) and h5py for the custom h5 file.
     try:
-        df = read_h5py_file(filename, decode_strings=decode_strings)
+        df = read_h5py_file(filename)
     except TypeError:
         df = pd.read_hdf(filename)
 
@@ -895,9 +902,9 @@ def read_file(filename, parse_timestamps=False, decode_strings=False):
     if (
         parse_timestamps
         and ('datetime' in df.index.names)
-        and (isinstance(df.index.get_level_values('datetime')[0], bytes))
+        and not isinstance(df.index, pd.DatetimeIndex)
     ):
-        df = decode_h5_timestamps(df)
+        df = parse_h5_timestamps(df)
 
     # All values being NaN indicates that the region filtering in copy_files.py removed all
     # data, leaving an empty dataframe.
@@ -914,16 +921,34 @@ def read_file(filename, parse_timestamps=False, decode_strings=False):
     return df
 
 
-def decode_h5_timestamps(df):
+def parse_h5_timestamps(df):
     """
-    Decode a dataframe's "datetime" index whose index values are stored as bytes.
+    Parse a dataframe's "datetime" index into pandas timestamps
     """
-    unique_indices = df.index.get_level_values('datetime').unique()
-    index2datetime = dict(zip(
-        unique_indices,
-        pd.to_datetime(unique_indices.str.decode('utf-8'), format='ISO8601')
-    ))
-    df['datetime'] = df.index.get_level_values('datetime').map(index2datetime)
+    try:
+        index = df.index.get_level_values('datetime')
+    except KeyError:
+        index = df.index
+    unique_indices = index.unique()
+    dtype = index.dtype
+
+    if pd.api.types.is_datetime64_any_dtype(dtype):
+        index2datetime = {}
+    elif isinstance(index[0], bytes):
+        index2datetime = dict(zip(
+            unique_indices,
+            pd.to_datetime(unique_indices.str.decode('utf-8'), format='ISO8601')
+        ))
+    elif pd.api.types.is_string_dtype(dtype):
+        index2datetime = dict(zip(
+            unique_indices,
+            pd.to_datetime(unique_indices, format='ISO8601')
+        ))
+    else:
+        raise TypeError(f'Unsupported index type: {dtype}')
+
+    if len(index2datetime):
+        df['datetime'] = df.index.get_level_values('datetime').map(index2datetime)
 
     # Convert timezone format from 'UTC-[number]:00' to
     # 'Etc/GMT+[number]' for consistency with broader codebase
@@ -945,7 +970,7 @@ def decode_h5_timestamps(df):
     return df
 
 
-def read_h5_groups(filepath, parse_timestamps=False):
+def read_h5_groups(filepath, parse_timestamps=True):
     """
     Read a .h5 file with the following format,
     where r = numrows and c = numcols for each group (r and c can vary across groups):
@@ -986,9 +1011,8 @@ def read_h5_groups(filepath, parse_timestamps=False):
             if (
                 parse_timestamps
                 and ('datetime' in dfout.index.names)
-                and (isinstance(dfout.index.get_level_values('datetime')[0], bytes))
             ):
-                dfout = decode_h5_timestamps(dfout)
+                dfout = parse_h5_timestamps(dfout)
 
             dictout[group] = dfout
                 
@@ -1196,7 +1220,7 @@ def get_load_hourly(case=None, **kwargs):
             h5path = Path(reeds_path, 'inputs', 'profiles_demand', f'{fname}.h5')
 
     try:
-        load_hourly = pd.concat(read_h5_groups(h5path, parse_timestamps=True))
+        load_hourly = pd.concat(read_h5_groups(h5path))
         load_hourly = load_hourly.set_index(
             load_hourly.index.set_levels(
                 [int(i) for i in load_hourly.index.levels[0]],
@@ -1205,7 +1229,7 @@ def get_load_hourly(case=None, **kwargs):
             .rename("year", level=0)
         )
     except ValueError:
-        load_hourly = read_file(h5path, parse_timestamps=True)
+        load_hourly = read_file(h5path)
 
     return load_hourly
 
@@ -1270,7 +1294,7 @@ def get_distpv_cf_hourly():
         'profiles_cf',
         'cf_distpv_county.h5'
     )
-    return read_file(h5path, parse_timestamps=True)
+    return read_file(h5path)
 
 def get_years(case):
     return pd.read_csv(
@@ -1422,7 +1446,6 @@ def get_available_capacity_weighted_cf(case, level='country'):
     ## Get CF
     recf = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'recf.h5'),
-        parse_timestamps=True,
     )
     ## CF * cap / cap = available-capacity-weighted-average CF
     recapcf = (recf * sc.set_index('resource')['capacity']).dropna(axis=1, how='all')
@@ -1431,7 +1454,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
         recapcf.columns.map(lambda x: r2region[x.split('|')[1]]),
     ], names=['i', 'r'])
     dfout = (
-        recapcf.groupby(['i','r'], axis=1).sum()
+        recapcf.T.groupby(['i','r']).sum().T
         / sc.groupby(['tech','aggreg']).capacity.sum().rename_axis(['i','r'])
     )
     ## UPV is AC_out/DC_cap = CF_DC, so multiply by ILR to get CF_AC
@@ -1441,7 +1464,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
     return dfout
 
 
-def get_sitemap(offshore=False, geo=True):
+def get_sitemap(case=None, offshore=False, geo=True):
     """
     Get mapping from sc_point_gid to geographic points and counties.
     """
@@ -1453,10 +1476,28 @@ def get_sitemap(offshore=False, geo=True):
         ['latitude', 'longitude', 'FIPS']
         + (['ba', 'always_radial'] if offshore else [])
     ]
+    if offshore:
+        county2zone = get_county2zone(case)
+        sitemap.loc[sitemap.always_radial, 'ba'] = (
+            sitemap.loc[sitemap.always_radial, 'FIPS'].map(county2zone)
+        )
+        sitemap = sitemap.dropna(subset='ba')
     if geo:
         crs = 'EPSG:5070' if offshore else 'ESRI:102008'
         sitemap = reeds.plots.df2gdf(sitemap, crs=crs)
     return sitemap
+
+
+def floatify(df:pd.DataFrame, col_label:str='cost') -> pd.DataFrame:
+    """
+    Convert all columns with col_label in the name to floats.
+    Used for cost data (which may be integers) so they can be
+    adjusted for dollar year without changing type.
+    """
+    costcols = [c for c in df if col_label in c]
+    dtypes = dict(zip(costcols, [np.float32]*len(costcols)))
+    dfout = df.astype(dtypes)
+    return dfout
 
 
 def assemble_supplycurve(
@@ -1503,12 +1544,12 @@ def assemble_supplycurve(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
     )
-    interconnection_cost = reeds.io.read_h5_groups(fpath_interconnection)
+    interconnection_cost = floatify(reeds.io.read_h5_groups(fpath_interconnection))
     if scfile is None:
         return interconnection_cost
 
     ### Get supply curve
-    dfin = pd.read_csv(scfile)
+    dfin = floatify(pd.read_csv(scfile))
     if 'sc_point_gid' in dfin.columns:
         dfin = dfin.set_index('sc_point_gid')
     ## If derived columns are already in file, it's already been assembled, so stop here
@@ -1714,7 +1755,7 @@ def write_to_h5(
     key,
     filepath,
     attrs={},
-    overwrite=False,
+    overwrite=True,
     compression='gzip',
     compression_opts=4,
     **kwargs,
@@ -1724,6 +1765,7 @@ def write_to_h5(
         if key in list(f):
             if overwrite:
                 del f[key]
+                print(f'{key} was already used in {filepath} but is being overwritten')
             else:
                 raise ValueError(f'{key} is already used in {filepath}')
 
@@ -1747,7 +1789,7 @@ def write_to_h5(
                     data = dfwrite[col]
                     dtype = (
                         f"S{data.str.len().max()}"
-                        if dfwrite.dtypes[col] == 'O'
+                        if pd.api.types.is_string_dtype(dfwrite.dtypes[col])
                         else dfwrite.dtypes[col]
                     )
 
@@ -1863,7 +1905,7 @@ def write_csv_to_inputs_h5(
         df.columns = df.loc[0].str.replace('*','').values
         df = df.drop(0)
     ## No other *'s are allowed
-    if df.applymap(lambda x: '*' in x).any().any():
+    if df.map(lambda x: '*' in x).any().any():
         err = (
             "'*' characters are only allowed in subset headers.\n"
             f"{filepath} has at least one disallowed '*' character."
@@ -1955,7 +1997,7 @@ def write_profile_to_h5(df, filename, outfolder, compression_opts=4):
                     indexvals.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
                 )
                 f.create_dataset(f'index_{i}', data=timeindex.str.encode('utf-8'), dtype='S30')
-            elif indexvals.dtype == 'O':
+            elif pd.api.types.is_string_dtype(indexvals.dtype):
                 f.create_dataset(f'index_{i}', data=indexvals, dtype=f'S{indexvals.map(len).max()}')
             else:
                 # Other indices can be saved using their data type
@@ -2103,14 +2145,14 @@ def get_folder_size(casedir):
 
     Returns
     -------
-    directory size in GB
+    directory size in MB
     """
     total_size = 0
-    for dirpath, dirnames, filenames in os.walk(os.path.join(casedir,'outputs')):
+    for dirpath, dirnames, filenames in os.walk(casedir):
         for f in filenames:
             fp = os.path.join(dirpath, f)
             if os.path.exists(fp):
                 total_size += os.path.getsize(fp)
-    # convert to GB
-    total_size /= 1e9
+    # convert to MB
+    total_size /= 1e6
     return total_size

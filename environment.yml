@@ -1,50 +1,50 @@
-name: reeds2
+name: reeds
 channels:
-  - defaults
   - conda-forge
+  - nodefaults
 dependencies:
-  - python=3.11
-  - bokeh=3.2
-  - click=8.0
-  - git-lfs=2.13
+  - python=3.14
+  - python_abi=3.14=*_cp314
+  - bokeh=3.9
+  - click=8.4
+  - cmocean=4.0
+  - geopandas=1.1
+  - git-lfs=3.7
   - gitpython=3.1
-  - h5py=3.9
-  - matplotlib=3.7
-  - numpy=1.26
-  - openpyxl=3.0
-  - pandas=2.0
-  - pip=23.2
-  - pytables=3.8
-  - pytest=7.4
-  - requests=2.31
-  - scikit-learn=1.2
-  - scipy=1.11
-  - tqdm=4.65
+  - h5py=3.16
+  - matplotlib=3.11
+  - numpy=2.5
+  - openpyxl=3.1
+  - pandas=3.0
+  - pip=26.1
+  - pytables=3.11
+  - pytest=9.1
+  - pyyaml=6.0
+  - requests=2.34
+  - scikit-learn=1.9
+  - scipy=1.18
+  - shapely=2.1
+  - tqdm=4.68
   ## vvv The next packages are optional for default settings and may
   ## vvv be excluded if you're having trouble building the environment.
-  - ipykernel=6.25 # for interactive python in VS Code
-  - ipywidgets=8.0 # for jupyter notebooks
-  - mapclassify=2.5 # more mapping tools
+  - fiona=1.10 # for interactive maps
+  - folium=0.20 # for interactive maps
+  - ipykernel=7.3 # for interactive python in VS Code
+  - ipywidgets=8.1 # for jupyter notebooks
+  - mapclassify=2.10 # more mapping tools
   - mscorefonts=0.0 # extra fonts for plotting (only relevant on linux/HPC)
-  - networkx=3.1 # for uncommonly-used network analysis postprocessing
-  - notebook=6.5 # for jupyter notebooks
+  - myst-parser=5.1 # for building documentation
+  - notebook=7.6 # for jupyter notebooks
+  - python-pptx=1.0 # for postprocessing/compare_cases.py
+  - sphinx<9 # for building documentation
+  - sphinx_rtd_theme=3.1 # for documentation
+  - sphinx-design=0.7 # for documentation
+  - sphinxcontrib-bibtex=2.7 # for documentation
   ## ^^^
   - pip:
-    - cmocean==3.0.3
-    - gdxpds==1.4.0
-    - geopandas==0.14.0
-    - pulp==2.7.0
-    - shapely==2.0.1
+    - gamsapi[transfer]==53.5.0
+    - gdxpds==4.0.0
+    - pulp==3.3.2
     ## vvv The next packages are optional for default settings and may
     ## vvv be excluded if they cause trouble building the environment.
-    - fiona==1.9.5 # for interactive maps
-    - folium==0.14.0 # for interactive maps
-    - gamspy_base==50.5.0 # for tests on the github runner
-    - myst-parser==2.0.0 # for building documentation
-    - proj==0.2.0 # for plotting maps
-    - pyproj==3.6.1 # for plotting maps
-    - python-pptx==0.6.22 # for postprocessing/compare_cases.py
-    - sphinx_rtd_theme==2.0.0 # for documentation
-    - sphinx==7.2.6 # for building documentation
-    - sphinxcontrib-bibtex==2.6.2 # for documentation
-    ## ^^^
+    - gamspy_base==53.5.0 # for tests on the github runner
