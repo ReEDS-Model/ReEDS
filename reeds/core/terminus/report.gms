@@ -1534,10 +1534,10 @@ systemcost_ba("inv_transmission_intrazone_investment",r,t)$[tmodel_new(t)$Sw_Tra
 systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
 *fixed O&M costs for transmission lines
               sum{(rr,trtype)$routes(r,rr,trtype,t),
-                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY.l(r,rr,trtype,t) }
+                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY.l(r,rr,trtype,t) / 2 }
 *fixed O&M costs for LCC AC/DC converters
               + sum{(rr,trtype)$[lcclike(trtype)$routes(r,rr,trtype,t)],
-                    cost_acdc_lcc * 2 * trans_fom_frac * CAPTRAN_ENERGY.l(r,rr,trtype,t) }
+                    cost_acdc_lcc * trans_fom_frac * CAPTRAN_ENERGY.l(r,rr,trtype,t) }
 *fixed O&M costs for VSC AC/DC converters
               + cost_acdc_vsc * trans_fom_frac * CAP_CONVERTER.l(r,t)
 ;
@@ -1878,10 +1878,10 @@ tran_util_ann_rep(r,rr,trtype,t)
 tran_util_ann_stress(r,rr,trtype,t)
     $[tmodel_new(t)
     $routes(r,rr,trtype,t)$tran_cap_prm(r,rr,trtype,t)
-    $sum{allh$h_stress_t(allh,t), hours(allh)}] =
+    $sum{allh$h_stress_t(allh,t), hours_t(allh,t)}] =
     sum{allh$h_stress_t(allh,t),
-        FLOW.l(r,rr,allh,t,trtype) * hours(allh) / tran_cap_prm(r,rr,trtype,t) }
-    / sum{allh$h_stress_t(allh,t), hours(allh) }
+        FLOW.l(r,rr,allh,t,trtype) * hours_t(allh,t) / tran_cap_prm(r,rr,trtype,t) }
+    / sum{allh$h_stress_t(allh,t), hours_t(allh,t) }
 ;
 
 import_h_rep(r,h,t)
@@ -1926,7 +1926,7 @@ net_import_ann_rep(r,t)
 
 net_import_ann_stress(r,t)
     $[tmodel_new(t)] =
-    sum{allh$h_stress_t(allh,t), net_import_h_stress(r,allh,t) * hours(allh) }
+    sum{allh$h_stress_t(allh,t), net_import_h_stress(r,allh,t) * hours_t(allh,t) }
 ;
 
 poi_capacity(r,t)$tmodel_new(t) =
