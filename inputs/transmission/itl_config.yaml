@@ -6,27 +6,29 @@ candidate_reeds_paths:
 - ~/github/ReEDS-2.0
 - /projects/reedsweto/pbrown/github/ReEDS-2.0
 - ~//Downloads/TSC/TSC/ReEDS-2.0
+- ../ReEDS
 routes_fpath:
   HIFLD: '{tscpath}/data/routes/HIFLD/Electric__Power_Transmission_Lines'
-  OSM: '{tscpath}/data/routes/OSM/USA.gpkg'
+  OSM: '{tscpath}/data/routes/OpenInfraMap/USA.gpkg'
 
 ### Branch/route matchup
+maximum_endpoint_distance_km: 2.5
+minimum_branch_length_km: 1
 routesource: HIFLD
 ## HIFLD
-volt_class_endpoint_threshold_km_map:
-  735 AND ABOVE: 2
-  "500": 5
-  "345": 10
-  220-287: 10
-  100-161: 10
-  UNDER 100: 10
-
+volt_class_range_map:
+  735 AND ABOVE: [600, 800]
+  "500": [400, 600]
+  "345": [300, 400]
+  220-287: [200, 300]
+  100-161: [100, 200]
+  UNDER 100: [0, 100]
 ### Node location cleanup
 apply_osm_snapping: true
 apply_osm_snapping_same_voltage: true
 generate_flagged_centroids: true
 buffer_type: radial
-out_dirpath: ~/TSC/node_cleanup_methods/test_run
+node_cleanup_out_dirpath: '{tscpath}/preprocessing/node_cleanup_methods/test_run'
 volt_class_km_flag_heuristic:
   735 AND ABOVE: 250
   "500": 100
@@ -34,6 +36,8 @@ volt_class_km_flag_heuristic:
   220-287: 50
   100-161: 25
   UNDER 100: 25
+node_name_match_score_threshold: 0.5
+use_updated_node_locations: True
 
 ### Network subset
 ## [km] from interface
@@ -46,6 +50,12 @@ branch_hops_from_interface: 10
 ## If to/from voltage is different, they're treated as transformers and incur the normal
 ## upgrade cost.
 ignore_zero_length_same_voltage: False
+## Branches with to/from voltages below min_voltage_rating are not subject to rating
+## constraints and do not count toward the ITL (but are still included in the PTDF & BODF)
+min_voltage_rating: 0
+## Logic: 'and' (both nodes must be < min_voltage_rating to be ignored)
+## or 'or' (branch is ignored if either node is < min_voltage_rating)
+min_voltage_rating_logic: 'or'
 
 ### ITL settings
 ## Load participation factors (LPF)
@@ -84,6 +94,9 @@ bodf_minimum: 0.05
 ## - 200 × 1000 elements if bodf_downselect = monitored
 ## - 200 × 200 elements if bodf_downselect = both
 bodf_downselect: none
+## Emergency ratings are used to limit contingency flows via the BODF matrix.
+## They are provided as a ratio relative to the static rating and are used for all lines.
+emergency_rating_ratio: 1
 
 ## Whether to apply hourly rating multipliers to line ratings and
 ## use the hourly ratings to calculate hourly ITLs
