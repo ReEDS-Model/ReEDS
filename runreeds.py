@@ -100,23 +100,18 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
                 continue
         # Add switch settings to list of options passed to GAMS
         shcom = f' --case={BatchName}_{case}'
+
         # (ReEDS-FINITO) Combine the cases files for the linked model
         if int(df_cases[case].loc['GSw_FINITO_Link']) == 1 :
             # add the FINITO switches to the caseSwitches
-            df_cases_combine=linked_cases(df_cases,case)
-            for i,v in df_cases_combine.items():
-                #exclude certain switches that don't need to be passed to GAMS
-                if i not in ['file_replacements','keep_run_terminal']:
-                    shcom = shcom + ' --' + i + '=' + v
-            caseList.append(shcom)
-            caseSwitches.append(df_cases_combine.to_dict())
-        else:
-            for i,v in df_cases[case].items():
-            #exclude certain switches that don't need to be passed to GAMS
-                if i not in ['file_replacements','keep_run_terminal']:
-                    shcom += f' --{i}={v}'
-            caseList.append(shcom)
-            caseSwitches.append(df_cases[case].to_dict())
+            df_cases=linked_cases(df_cases,case)
+
+        #exclude certain switches that don't need to be passed to GAMS
+        for i,v in df_cases[case].items():
+            if i not in ['file_replacements','keep_run_terminal']:
+                shcom += f' --{i}={v}'
+        caseList.append(shcom)
+        caseSwitches.append(df_cases[case].to_dict())
 
     return caseSwitches, casenames, caseList
 
