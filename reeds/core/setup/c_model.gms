@@ -81,12 +81,12 @@ positive variables
   ACP_PURCHASES(RPSCat,st,t)            "--MWh-- purchases of ACP credits to meet the RPS constraints",
 
 * transmission variables
-  CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
-  CAPTRAN_PRM(r,rr,trtype,t)                     "--MW-- capacity of transmission for PRM trading"
-  CAPTRAN_GRP(transgrp,transgrpp,t)              "--MW-- capacity of groups of transmission interfaces"
-  CAPTRAN_ITL(itlgrp,itlgrpp,t)                  "--MW-- capacity of groups of transmission interfaces for county and mixed"
-  INVTRAN(r,rr,trtype,t)                         "--MW-- investment in transmission capacity (defined for both directions)"
-  INVTRAN_AC(r,rr,tscbin,t)                      "--MW-- transmission capacity added to transmission supply curve bin (defined for both directions)"
+  CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading. Defined for both directions (r < rr and r > rr)"
+  CAPTRAN_PRM(r,rr,trtype,t)                     "--MW-- capacity of transmission for PRM trading. Defined for both directions (r < rr and r > rr)"
+  CAPTRAN_GRP(transgrp,transgrpp,t)              "--MW-- capacity of groups of transmission interfaces. Defined for both directions (transgrp < transgrpp and transgrp > transgrpp)"
+  CAPTRAN_ITL(itlgrp,itlgrpp,t)                  "--MW-- capacity of groups of transmission interfaces for county and mixed. Defined for both directions (itlgrp < itlgrpp and itlgrp > itlgrpp)"
+  INVTRAN(r,rr,trtype,t)                         "--MW-- investment in transmission capacity. Defined for both directions (r < rr and r > rr)"
+  INVTRAN_AC(r,rr,tscbin,t)                      "--MW-- transmission capacity added to transmission supply curve bin. Defined for both directions (r < rr and r > rr)"
   CAP_CONVERTER(r,t)                             "--MW-- VSC AC/DC converter capacity"
   INV_CONVERTER(r,t)                             "--MW-- investment in AC/DC converter capacity"
   CONVERSION(r,allh,intype,outtype,t)            "--MW-- conversion of AC->DC or DC->AC"
@@ -94,7 +94,7 @@ positive variables
   CAP_SPUR(x,t)                                  "--MW-- capacity of spur lines"
   INV_SPUR(x,t)                                  "--MW-- investment in spur line capacity"
   INV_POI(r,t)                                   "--MW-- investment in new POI capacity (for network reinforcement costs)"
-  TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins (defined for r < rr)"
+  TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins. Defined only for interfaces (r < rr)"
 
 * production-, CO2-, and hydrogen-specific variables
   PRODUCE(p,i,v,r,allh,t)               "--metric tons per hour-- production of hydrogen or DAC capture"
@@ -1603,7 +1603,7 @@ eq_PRMTRADELimit(r,rr,trtype,ccseason,t)
     $(not Sw_PCM)]..
 
 *[plus] transmission capacity
-    + CAPTRAN_PRM(r,rr,trtype,t) * sum{h$h_ccseason_prm(h,ccseason), (1 + trans_cap_delta(h,t)) }
+    + CAPTRAN_PRM(r,rr,trtype,t) * sum{h$h_ccseason_prm(h,ccseason), (1 + trans_cap_delta(r,rr,h)) }
 
     =g=
 
@@ -2031,11 +2031,11 @@ eq_POI_cap(r,t)
 eq_transmission_limit(r,rr,h,t,trtype)$[tmodel(t)$routes(r,rr,trtype,t)]..
 
 * Representative periods use the energy capacity
-    (CAPTRAN_ENERGY(r,rr,trtype,t) * (1 + trans_cap_delta(h,t)))$h_rep(h)
+    (CAPTRAN_ENERGY(r,rr,trtype,t) * (1 + trans_cap_delta(r,rr,h)))$h_rep(h)
 * Stress periods use the PRM capacity
 * Because these periods are assumed to be mutually exclusive, each timeslice should only
 * have a single capacity applied.
-    + (CAPTRAN_PRM(r,rr,trtype,t) * (1 + trans_cap_delta(h,t)))$[h_stress(h)$routes_prm(r,rr)]
+    + (CAPTRAN_PRM(r,rr,trtype,t) * (1 + trans_cap_delta(r,rr,h)))$[h_stress(h)$routes_prm(r,rr)]
 
     =g=
 
@@ -2084,7 +2084,7 @@ eq_transgrp_limit_energy(transgrp,transgrpp,h,t)
     $Sw_TransGroupContraint
     $sum{(r,rr), routes_transgroup(transgrp,transgrpp,r,rr) }]..
 
-    CAPTRAN_GRP(transgrp,transgrpp,t) * (1 + trans_cap_delta(h,t))
+    CAPTRAN_GRP(transgrp,transgrpp,t)
 
     =g=
 
@@ -2102,7 +2102,6 @@ eq_transgrp_limit_prm(transgrp,transgrpp,ccseason,t)
     $(not Sw_PCM)]..
 
     CAPTRAN_GRP(transgrp,transgrpp,t)
-    * sum{h$h_ccseason_prm(h,ccseason), (1 + trans_cap_delta(h,t)) }
 
     =g=
 
@@ -2144,7 +2143,7 @@ eq_itlgrp_limit_energy(itlgrp,itlgrpp,h,t)
     $Sw_itlgrpConstraint
     $sum{(r,rr), routes_itlgrp(itlgrp,itlgrpp,r,rr)}]..
 
-    CAPTRAN_ITL(itlgrp,itlgrpp,t) * (1 + trans_cap_delta(h,t))
+    CAPTRAN_ITL(itlgrp,itlgrpp,t)
 
     =g=
 
@@ -2162,7 +2161,6 @@ eq_itlgrp_limit_prm(itlgrp,itlgrpp,ccseason,t)
     $(not Sw_PCM)]..
 
     CAPTRAN_ITL(itlgrp,itlgrpp,t)
-    * sum{h$h_ccseason_prm(h,ccseason), (1 + trans_cap_delta(h,t)) }
 
     =g=
 

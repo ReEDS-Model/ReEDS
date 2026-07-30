@@ -1040,6 +1040,123 @@ def read_pras_results(filepath):
         return df
 
 
+def get_trans_cap_delta_hourly(
+    case=None,
+    periodtype='rep',
+    tz_in='UTC',
+    tz_out='Etc/GMT+6',
+    **kwargs
+):
+    """
+    """
+    sw = reeds.io.get_switches(case, **kwargs)
+    match periodtype:
+        case 'rep':
+            rating_type = sw.GSw_HourlyLineRatingTypeRep
+            weather_years = [
+                int(y)
+                for y
+                in sw['GSw_HourlyWeatherYears'].split('_')
+            ]
+        case _ if periodtype.startswith('stress'):
+            rating_type = sw.GSw_HourlyLineRatingTypeStress
+            weather_years = sw.resource_adequacy_years_list
+        case _:
+            raise NotImplementedError(
+                f"{periodtype} is not a valid periodtype. "
+            )
+
+    h5path = Path(
+        reeds.io.reeds_path,
+        'inputs',
+        'profiles_tran_cap_delta',
+        f"delta_{rating_type}.h5"
+    )
+    ## Add one more year to the end of desired weather
+    ## years to allow for timezone conversion
+    read_years = range(min(weather_years), max(weather_years)+1)
+    ### Load deltas
+    _deltas = []
+    with h5py.File(h5path, 'r') as f:
+        columns = pd.MultiIndex.from_tuples(
+            tuple(zip(
+                pd.Series(f['columns_r'][:]).str.decode('utf-8'),
+                pd.Series(f['columns_rr'][:]).str.decode('utf-8')
+            )),
+            names=['r', 'rr']
+        )
+        for year in read_years:
+            time_index = pd.to_datetime(
+                pd.Series(f[f'time_index_{year}'][:])
+                .str
+                .decode('utf-8')
+            )
+            delta_values = (
+                f[f'delta_{year}'][:]
+                * f[f'delta_{year}'].attrs['scale']
+            )
+            df = pd.DataFrame(
+                index=time_index,
+                columns=columns,
+                data=delta_values
+            )
+
+            next_year = year + 1
+            if next_year not in read_years:
+                next_year_first_day_data = df.tail(24)
+                next_year_first_day_data.index += pd.Timedelta(days=1)
+                df = pd.concat([df, next_year_first_day_data])
+
+            _deltas.append(df)
+
+    delta_hourly = (
+        pd.concat(_deltas)
+        .rename_axis(index='datetime')
+        .tz_localize(tz_in)
+        .tz_convert(tz_out)
+    )
+    ## Subset to weather years used in ReEDS
+    delta_hourly = (
+        delta_hourly.loc[delta_hourly.index.year.isin(weather_years)]
+        .copy()
+    )
+    ## On leap years, drop Dec 31
+    delta_hourly = reeds.timeseries.truncate_leap_years(delta_hourly)
+
+    ## Subset to valid regions and interfaces
+    if case is not None:
+        val_r = (
+            reeds.io.read_input(standardize_case(case), 'r')
+            .squeeze(1)
+            .tolist()
+        )
+        delta_hourly = (
+            delta_hourly.loc[:, (
+                delta_hourly.columns.get_level_values('r').isin(val_r)
+                & delta_hourly.columns.get_level_values('rr').isin(val_r)
+            )]
+            .copy()
+        )
+
+        valid_interfaces = reeds.inputs.get_itls(case)['interface']
+        forward_interfaces = (
+            delta_hourly.columns.get_level_values('r')
+            + '~~'
+            + delta_hourly.columns.get_level_values('rr')
+        )
+        reverse_interfaces = (
+            delta_hourly.columns.get_level_values('rr')
+            + '~~'
+            + delta_hourly.columns.get_level_values('r')
+        )
+        delta_hourly = delta_hourly.loc[:, (
+            forward_interfaces.isin(valid_interfaces)
+            | reverse_interfaces.isin(valid_interfaces)
+        )]
+
+    return delta_hourly
+
+
 def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     ### Derived inputs
     inputs_case = case if 'inputs_case' in case else os.path.join(case, 'inputs_case')
@@ -1077,14 +1194,7 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     ## Subset to weather years used in ReEDS
     temperatures = temperatures.loc[temperatures.index.year.isin(weather_years)].copy()
     ### On leap years, drop Dec 31
-    leap_year = temperatures.iloc[:,:1].groupby(temperatures.index.year).count().squeeze(1) == 8784
-    for year in weather_years:
-        if leap_year[year]:
-            temperatures.drop(temperatures.loc[f'{year}-12-31'].index, inplace=True)
-    if len(temperatures) != len(weather_years) * 8760:
-        raise ValueError(
-            f'len(temperatures) = {len(temperatures)} but should be {len(weather_years) * 8760}'
-        )
+    temperatures = reeds.timeseries.truncate_leap_years(temperatures)
     ### Subset to states used in this run
     temperatures = temperatures[[c for c in temperatures if c in val_st]].copy()
 
@@ -2127,14 +2237,14 @@ def get_folder_size(casedir):
 
     Returns
     -------
-    directory size in GB
+    directory size in MB
     """
     total_size = 0
-    for dirpath, dirnames, filenames in os.walk(os.path.join(casedir,'outputs')):
+    for dirpath, dirnames, filenames in os.walk(casedir):
         for f in filenames:
             fp = os.path.join(dirpath, f)
             if os.path.exists(fp):
                 total_size += os.path.getsize(fp)
-    # convert to GB
-    total_size /= 1e9
+    # convert to MB
+    total_size /= 1e6
     return total_size

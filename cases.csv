@@ -188,6 +188,8 @@ GSw_HourlyMinRElevel,Indicate the region hierarchy level at which to include min
 GSw_HourlyNormProfiles,Indicate whether to normalize load/wind/solar profiles before identification of representative periods,0; 1,0,
 GSw_HourlyNumClusters,Number of clusters to create (i.e. number of representative days or weks),int,33,
 GSw_HourlyPeakLevel,Indicate the region hierarchy level at which to include peak coincident load days (or False to ignore peaks),false; False; FALSE; r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; ccreg,interconnect,
+GSw_HourlyLineRatingTypeRep,"Type of transmission line ratings to use in representative periods (SLR=static ratings, NLR=ambient-adjusted ratings as defined by FERC-881, DLR=dynamic ratings). For non-static ratings, must be the name of an ITL profile matching 'inputs/profiles_itl/itl_NARIS_{GSw_HourlyLineRatingTypeRep}.h5'",SLR; NLR; DLR,SLR,
+GSw_HourlyLineRatingTypeStress,"Type of transmission line ratings to use in stress periods (SLR=static ratings, NLR=ambient-adjusted ratings as defined by FERC-881, DLR=dynamic ratings). For non-static ratings, must be the name of an ITL profile matching 'inputs/profiles_itl/itl_NARIS_{GSw_HourlyLineRatingTypeStress}.h5'",SLR; NLR; DLR,SLR,
 GSw_HourlyType,Indicate the type of representative period modeled (day=24-hour periods; wek=24×5=120-hour periods; year=8760-hour periods),day; wek; year,day,
 GSw_HourlyWeatherYears,_-delimited years from which to construct weather profiles for energy/representative periods,N/A,2012,
 GSw_HourlyWindow,Number of timeslices (GSw_HourlyChunkLengthRep hours long) to consider for minloading constraint,int,2,

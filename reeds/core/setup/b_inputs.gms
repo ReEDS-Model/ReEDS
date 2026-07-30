@@ -5464,6 +5464,7 @@ alias(actualszn,actualsznn,actualsznnn) ;
 Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
+    hours_t(allh,allt)                     "--hours-- number of hours in each time block by model year"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"
@@ -5532,8 +5533,8 @@ Parameter
     hybrid_cc_derate(i,r,ccseason,sdbin,t) "--fraction-- derate factor for hybrid PV+battery storage capacity credit"
     m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit"
     mean_forced_outage_rate(i,r,ccseason,t)"--fraction-- mean forced outage rate for each technology, region, and ccseason - used to derate thermal generator capacity"
-* Heuristic climate impacts
-    trans_cap_delta(allh,allt)             "--fraction-- fractional adjustment to transmission capacity from climate heuristics"
+* Hourly line ratings
+    trans_cap_delta(r,rr,allh)             "--fraction-- fractional adjustment to transmission capacity from variable line ratings"
 * Emissions and policies
     h_weight_csapr(allh)                   "hour weights for CSAPR ozone season constraints"
 * Water access

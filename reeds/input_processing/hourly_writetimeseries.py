@@ -194,6 +194,43 @@ def get_minloading_windows(sw, h_szn, chunkmap):
     return hour_szn_group
 
 
+def get_trans_cap_delta(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
+    """
+    """
+    trans_cap_delta = reeds.io.get_trans_cap_delta_hourly(
+        case=inputs_case,
+        periodtype=periodtype,
+    )
+
+    ### Add time index
+    trans_cap_delta.index = (
+        trans_cap_delta.index
+        .map(hmap_allyrs.set_index('timestamp')['actual_h'])
+        .rename('h')
+    )
+
+    ### For full year, keep all periods in the modeled years
+    if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
+        trans_cap_delta = trans_cap_delta.loc[
+            trans_cap_delta.index.map(hmap_allyrs.set_index('actual_h').year)
+            .isin(sw['GSw_HourlyWeatherYears'])
+        ].copy()
+    ### Otherwise, pull out the specified periods
+    else:
+        trans_cap_delta = trans_cap_delta.loc[hmap_myr.h.unique()].copy()
+
+    ### Reshape for ReEDS
+    trans_cap_delta = (
+        trans_cap_delta.stack(["r", "rr"])
+        .reorder_levels(["r", "rr", "h"])
+        .sort_index()
+        .rename('delta')
+        .reset_index()
+    )
+
+    return trans_cap_delta
+
+
 def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     """
     After clustering based on GSw_HourlyClusterYear and identifying the modeled days,
@@ -548,6 +585,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'peak_h': ['*r','h','t','MW'],
             'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
             'daily_gasprice_multipliers_cendiv': ['*cendiv','h','multiplier'],
+            'trans_cap_delta': ['*r', 'rr', 'h', 'delta'],
         }
         for f, columns in write.items():
             pd.DataFrame(columns=columns).to_csv(
@@ -1311,6 +1349,26 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         evmc_storage_energy = pd.DataFrame(columns=["*i", "r", "h", "t"])
         evmc_baseline_load_out = pd.DataFrame(columns=["r", "h", "t", "MWh"])
 
+    #################################################################
+    # -- Transmission capacity deltas -- #
+    #################################################################
+    if (
+        (periodtype == 'rep' and sw.GSw_HourlyLineRatingTypeRep == 'SLR')
+        or (
+            periodtype.startswith('stress')
+            and sw.GSw_HourlyLineRatingTypeStress == 'SLR'
+        )
+    ):
+        trans_cap_delta = pd.DataFrame(columns=['r', 'rr', 'h', 'delta'])
+    else:
+        trans_cap_delta = get_trans_cap_delta(
+            sw=sw,
+            hmap_myr=hmap_myr,
+            hmap_allyrs=hmap_allyrs,
+            inputs_case=inputs_case,
+            periodtype=periodtype,
+        )
+
 
     #%% Chunk the profiles
     if sw.GSw_HourlyChunkAggMethod == 'mean':
@@ -1359,6 +1417,13 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .agg(aggmethod_load, *args)
         .set_index(['r','h','t'])
         .reset_index()
+    )
+
+    trans_cap_delta = (
+        trans_cap_delta
+        .assign(h=trans_cap_delta.h.map(chunkmap))
+        .groupby(['r','rr','h'], as_index=False)
+        .agg(aggmethod, *args)
     )
 
     #################################################################
@@ -1589,6 +1654,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False
         ],
+        # Hourly transmission capacity deltas
+        'trans_cap_delta': [trans_cap_delta.round(decimals), False, False],
         ##################################################################################
         ###### The next parameters are just diagnostics and are not actually used in ReEDS
         ## Representative period weights for postprocessing (szn)

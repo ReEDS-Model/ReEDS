@@ -234,6 +234,32 @@ function get_line_capacity_data(data::ReEDSdatapaths)
     return DataFrames.DataFrame(CSV.File(filepath))
 end
 
+function get_line_capacity_data_hourly_forward(data::ReEDSdatapaths)
+    filepath = joinpath(
+        data.ReEDSfilepath,
+        "handoff",
+        "reeds_data",
+        "pras_tran_cap_hourly_forward_$(string(data.year)).h5",
+    )
+    columns = HDF5.h5read(filepath, "columns")
+    data = HDF5.h5read(filepath, "data")
+    df = DataFrames.DataFrame(transpose(data), columns)
+    return df
+end
+
+function get_line_capacity_data_hourly_reverse(data::ReEDSdatapaths)
+    filepath = joinpath(
+        data.ReEDSfilepath,
+        "handoff",
+        "reeds_data",
+        "pras_tran_cap_hourly_reverse_$(string(data.year)).h5",
+    )
+    columns = HDF5.h5read(filepath, "columns")
+    data = HDF5.h5read(filepath, "data")
+    df = DataFrames.DataFrame(transpose(data), columns)
+    return df
+end
+
 """
     Get the converter capacity data associated with the given ReEDSdatapaths
     object.
