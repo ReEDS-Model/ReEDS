@@ -175,13 +175,16 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(i,v,r)$[valcap(i,v,r,t)$battery(i)],
                    cost_fom_energy(i,v,r,t) * CAP_ENERGY(i,v,r,t) }
 
-* transmission lines
+* transmission lines (defined in both directions so divide by 2)
               + sum{(r,rr,trtype)$routes(r,rr,trtype,t),
-                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) }
+                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2 }
 
-* LCC and B2B AC/DC converter stations
+* LCC and B2B AC/DC converter stations. For each MW of linking capacity we add 1 MW of converter
+* capacity to each end of the link. But because CAPTRAN_ENERGY is defined in both directions
+* (r < rr and rr < r), we already count the link capacity twice, so don't need to multiply
+* by 2 to get the converter capacity.
               + sum{(r,rr,trtype)$[lcclike(trtype)$routes(r,rr,trtype,t)],
-                    cost_acdc_lcc * 2 * trans_fom_frac * CAPTRAN_ENERGY(r,rr,trtype,t) }
+                    cost_acdc_lcc * trans_fom_frac * CAPTRAN_ENERGY(r,rr,trtype,t) }
 
 * VSC AC/DC converter stations
               + sum{r$val_converter(r,t),
