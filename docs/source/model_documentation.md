@@ -1366,14 +1366,23 @@ Modeling hydrogen transport in ReEDS is an experimental feature and, because thi
 #### Hydrogen fuel cells
 
 In addition to H<sub>2</sub>-CTs and H<sub>2</sub>-CCs, ReEDS can represent a stationary hydrogen fuel cell (`h2-fuel-cell`) as a power-sector consumer of hydrogen.
-The technology is based on a heavy-duty-vehicle proton-exchange-membrane (PEM) fuel cell adapted for stationary power, with cost and performance assumptions drawn from {cite:t}`reznicekCostAnalysisHeavyDuty2026` ([https://doi.org/10.2172/3018256](https://doi.org/10.2172/3018256)).
-The fuel cell draws on the same regional hydrogen balance described above as the H<sub>2</sub>-CT/H<sub>2</sub>-CC technologies; when endogenous hydrogen production is disabled (`GSw_H2=0`), it instead consumes a drop-in hydrogen fuel at the price set by the fuel-cost switch.
+The technology is based on a heavy-duty-vehicle proton-exchange-membrane (PEM) fuel cell adapted for stationary power, with cost and performance assumptions drawn from {cite:t}`reznicekCostAnalysisHeavyDuty2026`.
+The fuel cell draws on the same regional hydrogen balance described above as the H<sub>2</sub>-CT/H<sub>2</sub>-CC technologies; when endogenous hydrogen production is disabled, it instead consumes a drop-in hydrogen fuel at the price set by the fuel-cost switch.
 
-The hydrogen fuel cell is disabled by default and is enabled with `GSw_H2FuelCell=1`.
-Three cost-and-performance trajectories (conservative, moderate, and advanced) are available and selected with the `plantchar_h2fuelcell` switch (default `h2fuelcell_moderate`); the three trajectories share the same near-term cost and differ in the rate of capital-cost decline after 2025.
+The hydrogen fuel cell is disabled by default.
+Three cost-and-performance trajectories (conservative, moderate, and advanced) are available; they share the same near-term cost and differ in the rate of capital-cost decline after 2025.
 Because point-source values are used, the fuel cell is assigned zero direct CO<sub>2</sub> and SO<sub>2</sub> emissions (emissions associated with upstream hydrogen production are accounted for separately).
 Financing and reserve provision are assumed to be the same as for a gas combustion turbine (Gas-CT).
 Fixed and variable O&M assumptions are taken from Exhibit 5-19 (Case B31A) of {cite:t}`schmittFossilEnergyBaseline2022`.
+
+```{admonition} Hydrogen fuel cell options
+
+- `GSw_H2FuelCell` (default `0`): Turn the hydrogen fuel cell (`h2-fuel-cell`) on (`1`) or off (`0`). Independent of the natural gas fuel cell switch (`GSw_GasFuelCell`) and the hydrogen combustion switches (`GSw_H2Combustion`).
+- `plantchar_h2fuelcell` (default `h2fuelcell_moderate`): Cost-and-performance trajectory — one of `h2fuelcell_conservative`, `h2fuelcell_moderate`, or `h2fuelcell_advanced`.
+- When `GSw_H2=0` (drop-in hydrogen fuel), the fuel cell consumes hydrogen at the price set by the fuel-cost switch rather than drawing on endogenous hydrogen production.
+
+These options are configured in `cases.csv` or a user-defined `cases_{label}.csv` file.
+```
 
 {numref}`h2-fuel-cell-assumptions` summarizes the key assumptions for the moderate cost case.
 
