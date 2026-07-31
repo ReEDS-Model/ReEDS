@@ -6,6 +6,7 @@
   - [Table of Contents](#table-of-contents)
     - [How much are the GAMS licensing fees?](#how-much-are-the-gams-licensing-fees)
     - [Is there a trial version of the GAMS license so that I can test ReEDS?](#is-there-a-trial-version-of-the-gams-license-so-that-i-can-test-reeds)
+    - [What if the GAMS community license isn't enough to run my ReEDS case?](#what-if-the-gams-community-license-isnt-enough-to-run-my-reeds-case)
     - [What computer hardware is necessary to run ReEDS?](#what-computer-hardware-is-necessary-to-run-reeds)
     - [Can I configure a ReEDS case to run as an isolated interconnect?](#can-i-configure-a-reeds-case-to-run-as-an-isolated-interconnect)
     - [How do I change the spatial resolution of a ReEDS case?](#how-do-i-change-the-spatial-resolution-of-a-reeds-case)
@@ -25,6 +26,12 @@ Please contact GAMS for more information.
 ### Is there a trial version of the GAMS license so that I can test ReEDS?
 
 We have created a reduced size version of the ReEDS model that has less than 5,000 rows and columns, and therefore should be compatible with the GAMS community license ([https://www.gams.com/try_gams/](https://www.gams.com/try_gams/) -- Please contact GAMS if you need additional information regarding the community license). You can run this reduced model version by using the cases_small.csv input file. This reduced model uses a smaller technology subset, smaller geographic extent, and simplifies several model constraints.
+
+### What if the GAMS community license isn't enough to run my ReEDS case?
+
+If you'd like to test ReEDS without the community license row/column limit, GAMS offers time-limited evaluation licenses. To request an evaluation license, [email GAMS](mailto:sales@gams.com?subject=Request%20for%20Evaluation%20License&body=Hello%2C%20%0A%0AI'd%20like%20to%20request%20an%20evaluation%20license%20for%20GAMS.%20I%20plan%20to%20use%20it%20to%20run%20the%20ReEDS.%20%0A%0AContact%20information%3A%20%0A-%20Full%20name%3A%20%0A-%20Company%3A%0A-%20Department%3A%20%0A-%20Full%20postal%20address%3A%0A-%20Country%3A%0A%0ALicense%20information%20(select%20one)%3A%20%0A-%20%5B%20%5D%20Single%20user%20-%20one%20named%20individual%0A-%20%5B%20%5D%20Shared%20team%20-%20N%20concurrent%20sessions%2C%20shared%20across%20a%20group%0A-%20%5B%20%5D%20Server%2Fmachine%20-%20tied%20to%20a%20specific%20machine%20(e.g.%20for%20batch%2FHPC%20use)%0A%0ANumber%20of%20users%2Fmachines%3A%20%0ANumber%20of%20cores%20on%20the%20machine%20that%20you%E2%80%99ll%20be%20using%3A%0ARequired%20solvers%3A%20GAMS%2FCPLEX%0A%0AAny%20additional%20comments%20regarding%20your%20setup%3A%20%0A%0AThank%20you%2C%20%0A%5BYour%20Name%5D).
+
+To see more about the different GAMS licenses, see their [general licensing information page](https://www.gams.com/sales/licensing/).
 
 ### What computer hardware is necessary to run ReEDS?
 
@@ -50,37 +57,41 @@ Yes, you can configure ReEDS as a single interconnect. Limiting the spatial exte
 
 ### How do I change the spatial resolution of a ReEDS case?
 
-The ReEDS model is capable of capturing several spatial resolutions. This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` switches.
+The ReEDS model is capable of capturing several spatial resolutions.
+This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` switches.
 
-- Balancing areas (BAs) and aggregated groups of BAs: Aggregation level is controlled by the 'aggreg' column of the `inputs/zones/GSw_ZoneSet/hierarchy_from134.csv` file.
+- Default zone set:
+  - 90 zones: `GSw_ZoneSet = z90`
+- Zone sets based on the traditional 134 ReEDS zones:
   - 134 zones: `GSw_ZoneSet = z134`
-  - 132 zones (**default**): `GSw_ZoneSet = z132`. Merges p119 into p122 and p30 into p28.
-  - 69 zones: `GSw_ZoneSet = z69`. Obeys state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
-  - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
-  - 48 zones: `GSw_ZoneSet = z48`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries to align with states (highly simplified).
-- Counties: `GSw_ZoneSet = z3109`. Only solves in tolerable time when running a subset of the U.S. as specified by the `GSw_Region` switch.
-- Mixed resolution: `GSw_ZoneSet` = `PJMcounty` or `UTcounty`. Can be used to model some regions at county resolution and others at BA or aggregated-region resolution.
+  - 132 zones: `GSw_ZoneSet = z132`. Identical to z134 except merges p119 into p122 and p30 into p28.
+  - 69 zones: `GSw_ZoneSet = z69`. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
+  - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries from z134 to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
+  - Counties for Utah, 134 zones for the rest: `GSw_ZoneSet = UTcounty`
+  - Counties for PJM and a few adjacent states, 134 zones for the rest: `GSw_ZoneSet = PJMcounty`
+- Zone sets based on counties:
+  - Single counties (3109 zones): `GSw_ZoneSet = z3109`. Only solves in tolerable time when running a subset of the U.S. as specified by the `GSw_Region` switch.
+- Zone sets based on states:
+  - Single states (48 zones): `GSw_ZoneSet = z48`
 
 ### How can I reduce solve time?
 
 If you'd like to reduce the model solve time, consider making some of the following changes:
 
-- `yearset = 2010_2015_2020_2025_2030_2035_2040_2045_2050`
+- `yearset = 2010..2050..5`
   - Solve in 5-year steps
-- `GSw_OpRes = 0`
-  - Turn off operating reserves
-- `GSw_MinLoading = 0`
-  - Turn off the sliding-window representation of minimum-generation limits
+- `GSw_StartCost = 0`
+  - Turn off linearized startup costs
 - `GSw_HourlyNumClusters = 25` (or lower)
   - Reduce the number of representative periods
 - `GSw_ZoneSet = z54`
-  - Aggregate the native 134 zones into 54 (larger) zones
+  - Reduce the number of model zones
 
 ### How often are updates made to ReEDS?
 
 Every year we target June 1 for the bulk of model changes to be completed, which allows us to meet the hard deadline for having a working, updated version of the model by June 30. We typically make minor updates to the model over the summer and tag a final version for that year in August or September. This version is then used to produce the Standard Scenarios and Cambium data products.
 
-Additionally, changes are made throughout the year and a new version is created and published roughly every month. You can find current and past ReEDS versions here: {{ '[ReEDS Releases]({}/releases)'.format(base_github_url) }}
+Additionally, changes are made throughout the year and a new version is created and published roughly every month. You can find current and past ReEDS versions here: '[ReEDS Releases](https://github.com/reeds-model/reeds/releases)
 
 If you would like to run ReEDS with a previous version, you can either download the source code directly or check out that version using the tag.
 
@@ -99,7 +110,7 @@ git checkout tags/v2024.0.0
 ### Help, I'm getting lots of log messages about missing fonts
 
 We use the `mscorefonts` package to get nicer-looking fonts in plots.
-If you had `matplotlib` installed before running a script from the `reeds2` environment,
+If you had `matplotlib` installed before running a script from the `reeds` environment,
 you might need to clear your fonts cache (you can back it up first if you like).
 
 - On Mac/Linux, try deleting `~/.cache/matplotlib` or `~/.matplotlib`

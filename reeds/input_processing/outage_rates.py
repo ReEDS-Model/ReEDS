@@ -218,10 +218,7 @@ def calc_outage_forced(
     ### Derived inputs
     sw = reeds.io.get_switches(inputs_case)
     hierarchy = reeds.io.get_hierarchy(reeds.io.standardize_case(inputs_case))
-    val_ba = (
-        pd.read_csv(os.path.join(inputs_case, 'val_ba.csv'), header=None)
-        .squeeze(1).values
-    )
+    val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
     ## Static forced outage rates (for filling empties)
     outage_forced_static = pd.read_csv(
         os.path.join(inputs_case, 'outage_forced_static.csv'),
@@ -243,7 +240,7 @@ def calc_outage_forced(
     if sw.GSw_OutageScen.lower() == 'static':
         ### Fill static data for all techs and modeled regions
         df = pd.concat(
-            {r: outage_forced_static for r in val_ba},
+            {r: outage_forced_static for r in val_r},
             axis=0,
             names=('r','i'),
         ).reorder_levels(['i','r']).sort_index()
@@ -265,7 +262,10 @@ def calc_outage_forced(
 
         ### Get temperature-dependent outage rate by prime mover and state
         forcedoutage_pm = pd.concat(
-            {pm: temperatures.replace(fits_forcedoutage[pm]) for pm in fits_forcedoutage},
+            {
+                pm: temperatures.replace({col: fits_forcedoutage[pm] for col in temperatures})
+                for pm in fits_forcedoutage
+            },
             axis=1, names=('prime_mover',),
         ).astype(np.float32)
 
@@ -485,8 +485,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260113_temperatureM1_Everything', 'inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260611_envM0_Pacific', 'inputs_case')
     # interactive = True
     # debug = 1
 

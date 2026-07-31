@@ -1535,11 +1535,6 @@
     - **Dollar year:** 2004
 ---
 
-  - [cendivweights.csv](/inputs/fuelprices/cendivweights.csv)
-    - **Description:** weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders
-    - **Indices:** r,cendiv
----
-
   - [coal_AEO_2025_reference.csv](/inputs/fuelprices/coal_AEO_2025_reference.csv)
     - **File Type:** Input
     - **Description:** AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
@@ -1572,6 +1567,12 @@
 
   - [dollaryear.csv](/inputs/fuelprices/dollaryear.csv)
     - **Description:** Dollar year mapping for each fuel price scenario
+---
+
+  - [gasreg_price_adj_regression_params.csv](/inputs/fuelprices/gasreg_price_adj_regression_params.csv)
+    - **File Type:** Input
+    - **Description:** Parameters derived from regression with monthly fixed effects regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual averages (https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/temperature_gas_price_adj_regression). "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
+    - **Indices:** param
 ---
 
   - [h2-combustion_10.csv](/inputs/fuelprices/h2-combustion_10.csv)
@@ -1842,23 +1843,6 @@
 
   - [cangrowth.csv](/inputs/load/cangrowth.csv)
     - **Description:** Canada load growth multiplier
----
-
-  - [demand_AEO_2023_high.csv](/inputs/load/demand_AEO_2023_high.csv)
-    - **Description:** Load growth projection from the AEO2023 High Economic Growth scenario
-    - **Units:** unitless
-
----
-
-  - [demand_AEO_2023_low.csv](/inputs/load/demand_AEO_2023_low.csv)
-    - **Description:** Load growth projection from the AEO2023 Low Economic Growth scenario
-    - **Units:** unitless
-
----
-
-  - [demand_AEO_2023_reference.csv](/inputs/load/demand_AEO_2023_reference.csv)
-    - **Description:** Load growth projection from the AEO2023 Reference scenario
-    - **Units:** unitless
 
 ---
 
@@ -1876,6 +1860,24 @@
 
   - [demand_AEO_2025_reference.csv](/inputs/load/demand_AEO_2025_reference.csv)
     - **Description:** Load growth projection from the AEO2025 Reference scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_high.csv](/inputs/load/demand_AEO_2026_high.csv)
+    - **Description:** Load growth projection from the AEO2026 High Economic Growth scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_low.csv](/inputs/load/demand_AEO_2026_low.csv)
+    - **Description:** Load growth projection from the AEO2026 Low Economic Growth scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_baseline.csv](/inputs/load/demand_AEO_2026_reference.csv)
+    - **Description:** Load growth projection from the AEO2026 Counterfactual Baseline scenario
     - **Units:** unitless
 
 ---
@@ -3165,12 +3167,6 @@
   - [rev_paths.csv](/inputs/supply_curve/rev_paths.csv)
 ---
 
-  - [sc_point_gid_old2new.csv](/inputs/supply_curve/sc_point_gid_old2new.csv)
----
-
-  - [sitemap.h5](/inputs/supply_curve/sitemap.h5)
----
-
   - [supplycurve_egs-reference.csv](/inputs/supply_curve/supplycurve_egs-reference.csv)
 ---
 
@@ -3436,10 +3432,6 @@
 
   - [ivt_step.csv](/inputs/userinput/ivt_step.csv)
     - **Description:** ivt steps for endyears beyond 2050
----
-
-  - [modeled_regions.csv](/inputs/userinput/modeled_regions.csv)
-    - **Description:** Sets of BA regions that a user can model in a run. Each column is a different region option and can be specified in cases using GSw_Region.
 ---
 
   - [windows_2100.csv](/inputs/userinput/windows_2100.csv)
@@ -3978,4 +3970,3 @@
 - [sources.csv](/sources.csv)
   - **Description:** CSV file containing a list of all input files (csv, h5, csv.gz)
 ---
-

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# Note: this script does not need to be run manually, 
+# sources.md is updated automatically when the documentation is built with `make html`
+
 # In[1]:
 
 import os
@@ -10,7 +13,7 @@ import re
 
 def slugify(text: str) -> str:
     """
-    Convert a string to a stable anchor id for markdow.
+    Convert a string to a stable anchor id for markdown.
     Lowercase, replace spaces and slashes with hyphens, remove special characters except hyphens, and collapse multiple hyphens into one.
 
     Args:
@@ -86,9 +89,6 @@ def write_file_entries(data, main_file, file_entries, indent, githubURL):
                 if unit:
                     main_file.write(f"{indent}  - **Units:** {unit}\n\n")
 
-                
-                main_file.write("---\n\n")
-
 #Function to generate Table of Contents using folder hierarchy
 def write_folder_hierarchy(main_file, folder_hierarchy, depth=1, parent_folder=None):
     """
@@ -153,39 +153,44 @@ def write_folder_sections(data, main_file,folder_hierarchy, githubURL, depth=1, 
             write_folder_sections(data, main_file, contents, githubURL, depth + 1, full_path)         
 
 
-def main():
+def main(app=None):
     """
     Main function to generate markdown documentation for ReEDS sources.
     Reads sources.csv, builds folder hierarchy, and writes a markdown file with file metadata and structure.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--githubURL', '-g', type=str, default='', help='base github url')
-    parser.add_argument('--reedsPath', '-r', type=str, default='', help='path to reeds directory' )
-    args = parser.parse_args()
-    githubURL = args.githubURL
-    reedsPath = args.reedsPath
+    # When invoked by Sphinx (builder-inited), an app object is passed in.
+    # In that context, do not parse CLI args from sys.argv.
+    if app is None:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--githubURL', '-g', type=str, default='', help='base github url')
+        parser.add_argument('--reedsPath', '-r', type=str, default='', help='path to reeds directory' )
+        args = parser.parse_args()
+        githubURL = args.githubURL
+        reedsPath = args.reedsPath
+    else:
+        githubURL = os.environ.get("https://github.com/reeds-model/reeds/", "")
+        reedsPath = ''
 
     #Conversion of latest version of sources.csv to markdown/readme format
 
     # Description holder file
-    desc_holder = 'docs/sources.csv'
-    desc_holder = desc_holder.replace("\\","/")
-
+    desc_holder = 'sources.csv'
 
     #Setting correct path to main ReEDS folder
     if reedsPath != '':
         reeds_path = reedsPath
-    else:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        reeds_path = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
+    elif app is not None and hasattr(app, "srcdir"):
+        reeds_path = os.path.dirname(os.path.dirname(app.srcdir))
+    else: 
+        reeds_path = os.path.dirname(os.path.dirname(os.path.dirname(current_path)))
         reeds_path = reeds_path.replace("\\","/")
 
+    reeds_docs_path = os.path.join(reeds_path, "docs")
                
-    desc_file_path = os.path.join(reeds_path, desc_holder).replace("\\","/")
+    desc_file_path = os.path.join(reeds_docs_path, desc_holder).replace("\\","/")
 
-
-    #Dataframe to store the newly generated sources.csv data
-    with open(desc_file_path, "r") as csv_file:
+    # Dataframe to store the newly generated sources.csv data
+    with open(desc_file_path, "r", newline="", encoding="utf-8") as csv_file:
         reader = csv.DictReader(csv_file)
         data = list(reader)
 
@@ -219,12 +224,13 @@ def main():
         current_folder["files"].append((file_name, file_ext, rel_file_path))
         
     #Generate separate readme for ReEDS 2.0 Sources files
-    main_readme_file = "docs/sources_documentation.md"
-    main_readme_file_path = os.path.join(reeds_path, main_readme_file).replace("\\","/")
+    main_readme_file = "sources.md"
+    main_readme_file_path = os.path.join(reeds_docs_path, "source", main_readme_file).replace("\\","/")
 
     #Open markdown file for entries
-    with open(main_readme_file_path, "w") as main_file:
-        main_file.write("## Table of Contents\n\n")    
+    with open(main_readme_file_path, "w", encoding="utf-8") as main_file:
+        main_file.write("# Sources Documentation\n")
+        main_file.write("## Table of Contents\n")    
 
                             
         main_file.write("\n")    
@@ -243,7 +249,7 @@ def main():
             main_file.write("\n## Files \n\n")
             write_file_entries(data, main_file, folder_hierarchy["files"], "", githubURL)
 
-    print("Sources Documentation Markdown file has been generated!")
+    print("sources.md has been updated!")
 
 if __name__ == "__main__":
     main()

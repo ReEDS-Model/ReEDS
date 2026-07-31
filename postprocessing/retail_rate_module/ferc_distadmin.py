@@ -407,7 +407,7 @@ def get_ferc_costs(
             'state':['UT','UT','UT'],
             'entry_type':['backfilled','backfilled','backfilled']})
         dfout = pd.concat([dfout,insert]).sort_values(['state','t']).reset_index(drop=True)
-        dfout.loc[(dfout.state=='UT')] = dfout.loc[dfout.state=='UT'].interpolate('bfill')
+        dfout.loc[(dfout.state=='UT')] = dfout.loc[dfout.state=='UT'].bfill()
         # dfout.loc[(dfout.state=='MT')] = dfout.loc[dfout.state=='MT'].interpolate('linear')
 
     #%% Shared parameters for projection
@@ -446,7 +446,7 @@ def get_ferc_costs(
         df_extrapolate_dim['t'] = df_extrapolate_dim['index'] + df_loop['t'].max() + 1
 
         df_extrapolate_dim['index'] = numprojyears - df_extrapolate_dim['index']
-        df_extrapolate_dim['index'].values[df_extrapolate_dim['index'].values < 0] = 0
+        df_extrapolate_dim['index'][df_extrapolate_dim['index'].values < 0] = 0
 
         # List the years of historical data used for extrapolation
         slopeyears = np.array(df_loop['t'].tail(numslopeyears))
