@@ -6052,10 +6052,6 @@ $endif.mga_rv
 $endif.mgaobj
 
 
-*TODO: add different handling for other subobjectives with different dimensions
-* should we also include error checking?
-
-
 *================================================================================================
 *== h- and szn-dependent sets and parameters (declared here, populated in 2_temporal_params) ===
 *================================================================================================
