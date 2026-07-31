@@ -498,6 +498,17 @@ ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t)
 repbioprice(r,t)$[tmodel_new(t)$tfuel(t)] = max{0, smax{bioclass$BIOUSED.l(bioclass,r,t), eq_bioused.m(r,t) -
                                               sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(bioclass,usda_region,t) } } } / pvf_onm(t) ;
 
+* when running linked model use FINITO biomass clearing prices
+$ifthene.finitobioprice Sw_FINITO_Link == 1
+* here we take the weighted average of prices across biomass products used for power
+repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))] =
+    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') * 
+    sum{(i,v,bs), USE_BS_REEDS(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) } 
+    / sum{(i,v,bs), USE_BS_REEDS(i,v,bs,r,t) } 
+;
+$endif.finitobioprice
+
+
 * quantity of biomass used (convert from mmBTU to dry tons using biomass energy content)
 bioused_out(bioclass,r,t)$[tmodel_new(t)$tfuel(t)] = BIOUSED.l(bioclass,r,t) / bio_energy_content ;
 bioused_usda(bioclass,usda_region,t)$[tmodel_new(t)$tfuel(t)] = sum{r$r_usda(r,usda_region), bioused_out(bioclass,r,t) } ;
@@ -547,22 +558,21 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 * We maybe should be taking weighted averages instead of max across regions and categories (pool vs roi etc.)
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
-    ( 1/obj_scale * 1/pvf_onm(t) * deflator('2018') *
-        [ max{
-            smax{(eus,usep,r)$[map_roe_ec_usep("NG",eus,usep)$r_cendiv(r,cendiv)], eq_supplydemand_fe_pool.m("NG",eus,usep,r,h,t)},
-            smax{(usep,r)$[map_roi_ec_usep("NG",usep)$r_cendiv(r,cendiv)],eq_supplydemand_fe_roi.m("NG",usep,r,h,t)},
-            smax{(cfp2,cfvin2,fi,r)$[map_ec_ei("NG",fi)$valei_cf(cfp2,cfvin2,fi,r,t)$r_cendiv(r,cendiv)],eq_use_fi_cf.m(cfp2,cfvin2,fi,r,h,t)},
-            smax{(tech,vin,fi,r)$[map_ec_ei("NG",fi)$valei_ind(tech,vin,fi,r,t)$r_cendiv(r,cendiv)],eq_use_fi_ind.m(tech,vin,fi,r,h,t)}
-            } / hours(h)
-        ]
-    )
+*   citygate price of natural gas
+    deflator('2018') * [
+        ( 1/(obj_scale) * 1/(pvf_onm(t)) * smax{(cfp,st)$r_st(r,st), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) )
+*   electric-sector markup for natural gas
+* TODO: activate after FINITO pricing PR is merged
+*       + smax{(cfp,cendiv)$[r_cendiv(r,cendiv)$gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],cf_markup(cfp,'NG','Electric_Power',cendiv,t)}
+    ]
 ;
 $else.finitogasprice
     repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] = 0 ;
 $endif.finitogasprice
 
+* when linked, overwrite ReEDS values with gas prices from FINITO 
+* for any years that aren't using the ReEDS supply curves
 repgasprice(cendiv,t)$[tmodel_new(t)$(not tfuel(t))] =
-* average price over hours when linked with FINITO
     sum{h, hours(h) * repgasprice_finito(cendiv,h,t) }
 ;
 
