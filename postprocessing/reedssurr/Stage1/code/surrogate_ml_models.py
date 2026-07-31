@@ -42,6 +42,8 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
+from surrogate_paths import resolve_models_dir
+
 # Try importing XGBoost (optional)
 try:
     from xgboost import XGBRegressor
@@ -473,8 +475,10 @@ def run_pipeline(config: Config):
     """Run the full ML surrogate model pipeline."""
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    models_dir = output_dir / "models"
-    models_dir.mkdir(exist_ok=True)
+    # Model artefacts (*.joblib) live OUTSIDE the repo (e.g. OneDrive); see
+    # surrogate_paths.resolve_models_dir. Everything else stays under output_dir.
+    models_dir = resolve_models_dir(output_dir)
+    models_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 70)
     print("ReEDS SURROGATE MODEL — ML PIPELINE")

@@ -73,6 +73,7 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 from surrogate_predict import DIMENSION_ENCODING, clip_physical_bounds, load_artifact, predict   # noqa: E402
+from surrogate_paths import resolve_models_dir   # noqa: E402
 from surrogate_constraints import dgen_distpv_cap_mw   # STAGE 2
 from surrogate_plots import (                                              # noqa: E402
     _build_tech_lookup,
@@ -167,7 +168,7 @@ _INITIAL_STAGE = next(iter(STAGE_CONFIG))
 # so reassignment is picked up automatically.
 RESULTS_DIR: Path = STAGE_CONFIG[_INITIAL_STAGE]["results_dir"]
 DATA_PATH: Path = STAGE_CONFIG[_INITIAL_STAGE]["data_path"]
-MODELS_DIR: Path = RESULTS_DIR / "models"
+MODELS_DIR: Path = resolve_models_dir(RESULTS_DIR)
 
 
 # ---------------------------------------------------------------------------
@@ -186,7 +187,7 @@ def _layer_paths(short: str):
     target = "overall" if "overall" in short.lower() else "regional"
     for label, cfg in STAGE_CONFIG.items():
         if target in label.lower():
-            return cfg["results_dir"], cfg["data_path"], cfg["results_dir"] / "models"
+            return cfg["results_dir"], cfg["data_path"], resolve_models_dir(cfg["results_dir"])
     return None, None, None
 
 
@@ -4034,7 +4035,7 @@ def _set_active_stage(label: str) -> None:
     global TRAINING_DF, MODEL_PATHS, MODEL_CACHE, SUMMARY
     RESULTS_DIR = cfg["results_dir"]
     DATA_PATH = cfg["data_path"]
-    MODELS_DIR = RESULTS_DIR / "models"
+    MODELS_DIR = resolve_models_dir(RESULTS_DIR)
     TRAINING_DF = _load_training_data()
     MODEL_PATHS = _discover_models()
     MODEL_CACHE = {}  # invalidate — different stage = different artifacts

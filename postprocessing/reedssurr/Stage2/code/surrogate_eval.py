@@ -76,6 +76,7 @@ from surrogate_predict import (   # noqa: E402
     _is_storage_gen,
     clip_physical_bounds,
 )
+from surrogate_paths import resolve_models_dir  # noqa: E402
 from surrogate_uq import (        # noqa: E402
     _ngboost_estimators,
     conformal_widths,
@@ -299,7 +300,7 @@ def load_all_oof(cfg: EvalConfig) -> tuple[dict[str, ModelOOF], np.ndarray, list
     case_names
         Row labels for the 486 cases.
     """
-    models_dir = Path(cfg.output_dir) / "models"
+    models_dir = resolve_models_dir(cfg.output_dir)
     if not models_dir.exists():
         raise FileNotFoundError(f"Models directory not found: {models_dir}")
     X, Y_full, x_cols, y_cols_full, case_names = _load_training_arrays(cfg)

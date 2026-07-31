@@ -20,6 +20,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from surrogate_predict import load_artifact, predict  # noqa: E402
+from surrogate_paths import resolve_models_dir  # noqa: E402
 from surrogate_uq import (  # noqa: E402
     conformal_widths,
     empirical_coverage,
@@ -65,7 +66,7 @@ def main(results_dir: Path):
         "Siting": "Ref", "Batt": "Md", "Pol": "IRA",
     }
     print(f"Reference design: {levels}\n")
-    models_dir = results_dir / "models"
+    models_dir = resolve_models_dir(results_dir)
     if not models_dir.exists():
         print(f"!! No models/ dir under {results_dir}")
         sys.exit(1)

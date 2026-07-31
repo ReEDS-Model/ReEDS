@@ -80,6 +80,7 @@ except ImportError:
 
 # Stage 2 domain constraints (train-time non-negativity + XGB monotone hints).
 # Stage 1 does not import this module; Stage 2 does.
+from surrogate_paths import resolve_models_dir  # noqa: E402
 from surrogate_constraints import (  # noqa: E402
     clip_train_targets,
     xgb_monotone_vector,
@@ -571,8 +572,10 @@ def run_pipeline(config: Config):
     """Run the full ML surrogate model pipeline."""
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    models_dir = output_dir / "models"
-    models_dir.mkdir(exist_ok=True)
+    # Model artefacts (*.joblib) live OUTSIDE the repo (e.g. OneDrive); see
+    # surrogate_paths.resolve_models_dir. Everything else stays under output_dir.
+    models_dir = resolve_models_dir(output_dir)
+    models_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 70)
     print("ReEDS SURROGATE MODEL — ML PIPELINE")

@@ -25,7 +25,8 @@ MODELS_ORDER = (
     "rf", "xgb", "nn", "ngboost",
 )
 LOG_PATHS = {L: HERE / f"train_{L}.log" for L in LAYERS}
-MODELS_DIRS = {L: STAGE1 / "outputs" / L / "models" for L in LAYERS}
+from surrogate_paths import resolve_models_dir  # noqa: E402
+MODELS_DIRS = {L: resolve_models_dir(STAGE1 / "outputs" / L) for L in LAYERS}
 # Plain-text mirror of the dashboard, refreshed every cycle.  Open this
 # file in VS Code as a regular editor tab to watch progress without ever
 # needing to switch terminals.
