@@ -25,8 +25,7 @@ eq_ObjFn.. Z =e= cost_scale * (
 * economy-wide costs from FINITO: deflate from $2018 to $2004 
 * and remove any FINITO scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
-                    + deflator('2018') / obj_scale 
-                     * sum{t$[t_finito(t)], Z_finito(t) }
+                    + deflator('2018') / obj_scale * sum{t$[t_finito(t)], Z_finito(t) }
 $endif.linked_objective 
      )
 ;

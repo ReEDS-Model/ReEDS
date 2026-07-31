@@ -902,7 +902,6 @@ gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 *=============================================
 * ----- ReEDS-FINITO temporal parameters -----
 *=============================================
-* remove focused sectors load from load_exog_static
 $ifthene.linked_finito_temporal_params %GSw_FINITO_Link% ==1
 $include finito/model/linked_finito_temporal_params.gms
 $endif.linked_finito_temporal_params

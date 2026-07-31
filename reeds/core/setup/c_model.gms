@@ -2982,7 +2982,7 @@ eq_gasbinlimit_national(fuelbin,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
 *==============================
 * -- Bioenergy Supply Curve --
 *==============================
-* defer to FINITO representation when models are linked
+* defer to FINITO representation when models are linked (see eq_use_bs_reeds)
 
 * ---------------------------------------------------------------------------
 eq_bioused(r,t)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }$tmodel(t)$tfuel(t)]..
@@ -3575,7 +3575,8 @@ eq_h2_demand(p,t)$[(sameas(p,"H2"))$tmodel(t)$(yeart(t)>=h2_demand_start)$(Sw_H2
             GEN(i,v,r,h,t) * hours(h) * h2_combustion_intensity * heat_rate(i,v,r,t)
     }
 
-* hydrogen demand from indusrty (FINITO): FINITO demand [MMBtu/yr] * conversion [metric tons-H2/MMBtu-H2]
+* hydrogen demand from industry when linked with FINITO: demand [MMBtu/yr] * conversion [metric tons-H2/MMBtu-H2]
+* TODO: should we disable exogenous H2 demand when linked?
 $ifthene.linked_h2_nat Sw_FINITO_Link==1
     + [sum{(r,h)$h_rep(h), hours(h) * USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu }]$t_finito(t)
 $endif.linked_h2_nat
@@ -3611,7 +3612,7 @@ eq_h2_demand_regional(r,h,t)
             GEN(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)
        }
 
-* regional hydrogen demand for industry (FINITO)
+* when linked includeregional hydrogen demand for industry from FINITO
 $ifthene.linked_h2_reg Sw_FINITO_Link==1
     + [ USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu ]$t_finito(t)
 $endif.linked_h2_reg
@@ -3857,7 +3858,7 @@ eq_co2_capture(r,h,t)
 
 * capture from DAC
     + sum{(i,v)$[dac(i)$valcap(i,v,r,t)$i_p(i,"DAC")], PRODUCE("DAC",i,v,r,h,t) }$Sw_DAC
-* (ReEDS-FINITO) capture from industry [metric_tons-CO2/hr]: 
+* capture from industry when linked with FINITO [metric_tons-CO2/hr]: 
 * calculation: hours_per_year [yrs/hr] * capture [scaled_metric_tons-CO2/yr] / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]
 $ifthene.linked_co2_capture Sw_FINITO_Link==1
     + [CAPTURE_CO2EM(r,h,t) / co2_scale]$[t_finito(t)$h_rep(h)]
