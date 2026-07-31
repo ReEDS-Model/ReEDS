@@ -29,23 +29,6 @@ eq_MGA_Objective$Sw_MGA..
 * ---------------------------------------------------------------------------
 
 $elseif.mgaobj %GSw_MGA_Objective% == 'generation'
-Equation eq_MGA_Objective "--MW-- Defines generation for MGA" ;
-Variable MGA_OBJ "--MWh-- Generation of technology to be minimized/maximied" ;
-eq_MGA_Objective$Sw_MGA..
-    MGA_OBJ
-    =e=
-    sum{(i,v,r,h,t)
-        $[tmodel(t)
-        $valgen(i,v,r,t)
-        $%GSw_MGA_SubObjective%(i)],
-        GEN(i,v,r,h,t) * hours(h) 
-        * sum{i_subtech$i_subsets(i,i_subtech), mga_weights(r,i_subtech)}
-    }
-;
-
-* ---------------------------------------------------------------------------
-
-$elseif.mgaobj %GSw_MGA_Objective% == 'generation'
 Equation eq_MGA_Objective "--MWh-- Defines generation for MGA" ;
 Variable MGA_OBJ "--MWh-- Generation of technology to be minimized/maximied" ;
 eq_MGA_Objective$Sw_MGA..
@@ -56,6 +39,7 @@ eq_MGA_Objective$Sw_MGA..
         $valgen(i,v,r,t)
         $%GSw_MGA_SubObjective%(i)],
         GEN(i,v,r,h,t) * hours(h)
+        * sum{i_subtech$i_subsets(i,i_subtech), mga_weights(r,i_subtech)}
     }
 ;
 
