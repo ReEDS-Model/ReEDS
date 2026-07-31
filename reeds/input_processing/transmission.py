@@ -242,7 +242,7 @@ def get_trancap_fut(case):
             'trancap_fut_cat': {0:'possible', 1:'certain'}
         })
         [['r', 'rr', 'trancap_fut_cat', 'trtype', 't', 'MW']]
-        .astype({'t':int}).round(3).rename(columns={'t':'allt'})
+        .astype({'t':int}).round(3)
     )
     ## Move additions between model years to the next modeled year
     for i, row in trancap_fut.iterrows():
@@ -251,7 +251,7 @@ def get_trancap_fut(case):
             trancap_fut.loc[i,'t'] = newyear
             print(f'trancap_fut: Moved {row.values} to {newyear}')
 
-    return trancap_fut
+    return trancap_fut.rename(columns={'t':'allt'})
 
 
 def get_firm_import_limit(case):
@@ -845,7 +845,7 @@ if __name__ == '__main__':
     case = Path(args.inputs_case).parent
 
     # #%% Settings for testing ###
-    # case = str(Path(reeds.io.reeds_path, 'runs', 'v20260716_bugsM0_AZNM'))
+    # case = str(Path(reeds.io.reeds_path, 'runs', 'v20260724_inputsM0_MARICTNYNJPAOH_Offshore'))
 
     #%% Set up logger
     log = reeds.log.makelog(scriptname=__file__, logpath=Path(case, 'gamslog.txt'))
