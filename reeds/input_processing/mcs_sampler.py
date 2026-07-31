@@ -1887,7 +1887,7 @@ def main_mga_rv(
 
     ## regions
     # get list of valid regions (val_r generated in copy_files.py)
-    val_r = list(reeds.io.read_input(inputs_case, 'r')['*'])
+    val_r = list(reeds.io.read_input(inputs_case, 'r').squeeze(1))
 
     # option to draw samples based on aggregated regions (samples will be mapped back to r regions)
     hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
@@ -1910,7 +1910,7 @@ def main_mga_rv(
     dimensions = len(subsets) * len(sampling_regions)
 
     # setup output
-    runs_folder_name = os.path.basename(os.path.dirname(inputs_case.rstrip(os.path.sep)))
+    runs_folder_name = Path(reeds.io.standardize_case(inputs_case)).name
     mga_run_number = int((runs_folder_name.split('_')[-1]).replace('R', ''))
     region_labels = np.repeat(sampling_regions, len(subsets))
     subset_labels = np.tile(subsets, len(sampling_regions))
@@ -1948,7 +1948,11 @@ def main_mga_rv(
             mga_weights_raw = np.random.uniform(-1, 1, dimensions)
 
     # save vector of weights for this run, mapped back to r regions and rounded to 6 decimal places
-    mga_weights = pd.DataFrame({sw['GSw_MGA_RV_region']: region_labels, 'i_subtech': subset_labels, 'weight': mga_weights_raw.round(6)})
+    mga_weights = pd.DataFrame({  
+        sw['GSw_MGA_RV_region']: region_labels,  
+        'i_subtech': subset_labels,  
+        'weight': mga_weights_raw.round(6)  
+    })  
     if sw['GSw_MGA_RV_region'] != 'r':
         mga_weights = pd.merge(mga_weights, hierarchy_val_r[[sw['GSw_MGA_RV_region'], 'r']], on=sw['GSw_MGA_RV_region'])
     mga_weights = mga_weights.rename(columns={'r':'*r'})[['*r','i_subtech','weight']]
@@ -2011,4 +2015,3 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         path=os.path.join(os.path.dirname(inputs_case))
     )
 
-# %%
