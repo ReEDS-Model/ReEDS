@@ -537,6 +537,7 @@ def main(
             [['modelyear', 'st', 'szn']].drop_duplicates()
             .set_index('modelyear')
         )
+        ces_peakday_write['szn'] = 's' + ces_peakday_write['szn']
     else:
         ces_peakday_write = pd.DataFrame(columns=['st', 'szn']).rename_axis('modelyear')
 
