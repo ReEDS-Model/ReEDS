@@ -633,12 +633,12 @@ Users familiar with GAMS can add alternative objective functions to the `d_mga.g
 
 By default the MGA min/max is applied to the sum of the variable across all regions being modeled.
 The MGA approach also supports an option to randomly sample of a vector of weights to apply to the regional values of the variable being optimized.
-This method can be useful to characterizing the uncertainty in the regional distribution of the results.
-Weights are sampled as discrete values from a support of {-1,1} to allow for simultaneous minimization and maximization.
+This method can be used to characterize the uncertainty in the regional distribution of the results.
+Weights are sampled as discrete values from {-1,1} to allow for simultaneous minimization and maximization.
 
 The MGA random vector capability is controlled by the following switches:
 - `GSw_MGA_RV_runs` (default `0`): Number of random samples of weight vectors to draw; corresponds to the number of runs.
-- `GSw_MGA_RV_region` (default `r`): Regionality level (specified by hierarhcy file) over which to sample the random weights. 
+- `GSw_MGA_RV_region` (default `r`): Regionality level (specified by hierarchy file) over which to sample the random weights. 
 
 Note that this capability is currently only supported when `GSw_MGA_Objective = (capacity or generation)`. 
 Weights for each run are stored in the `mga_weights` parameter.
