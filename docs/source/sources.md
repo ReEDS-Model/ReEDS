@@ -999,9 +999,6 @@
     - **Description:** reference census division beta levels all sectors
     - **Indices:** cendiv
     - **Dollar year:** 2004
-  - [cendivweights.csv](/inputs/fuelprices/cendivweights.csv)
-    - **Description:** weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders
-    - **Indices:** r,cendiv
   - [coal_AEO_2025_reference.csv](/inputs/fuelprices/coal_AEO_2025_reference.csv)
     - **File Type:** Input
     - **Description:** AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
@@ -1220,18 +1217,6 @@
 
   - [cangrowth.csv](/inputs/load/cangrowth.csv)
     - **Description:** Canada load growth multiplier
-  - [demand_AEO_2023_high.csv](/inputs/load/demand_AEO_2023_high.csv)
-    - **Description:** Load growth projection from the AEO2023 High Economic Growth scenario
-    - **Units:** unitless
-
-  - [demand_AEO_2023_low.csv](/inputs/load/demand_AEO_2023_low.csv)
-    - **Description:** Load growth projection from the AEO2023 Low Economic Growth scenario
-    - **Units:** unitless
-
-  - [demand_AEO_2023_reference.csv](/inputs/load/demand_AEO_2023_reference.csv)
-    - **Description:** Load growth projection from the AEO2023 Reference scenario
-    - **Units:** unitless
-
   - [demand_AEO_2025_high.csv](/inputs/load/demand_AEO_2025_high.csv)
     - **Description:** Load growth projection from the AEO2025 High Economic Growth scenario
     - **Units:** unitless
@@ -1244,8 +1229,22 @@
     - **Description:** Load growth projection from the AEO2025 Reference scenario
     - **Units:** unitless
 
+  - [demand_AEO_2026_baseline.csv](/inputs/load/demand_AEO_2026_baseline.csv)
+    - **Description:** Load growth projection from the AEO2026 Counterfactual Baseline scenario
+    - **Units:** unitless
+
+  - [demand_AEO_2026_high.csv](/inputs/load/demand_AEO_2026_high.csv)
+    - **Description:** Load growth projection from the AEO2026 High Economic Growth scenario
+    - **Units:** unitless
+
+  - [demand_AEO_2026_low.csv](/inputs/load/demand_AEO_2026_low.csv)
+    - **Description:** Load growth projection from the AEO2026 Low Economic Growth scenario
+    - **Units:** unitless
+
   - [EIA_loadbystate.csv](/inputs/load/EIA_loadbystate.csv)
+    - **File Type:** /
   - [loadsite_country_test.csv](/inputs/load/loadsite_country_test.csv)
+    - **File Type:** /
   - [mex_growth_rate.csv](/inputs/load/mex_growth_rate.csv)
     - **Description:** Mexico load growth multiplier
 
@@ -1887,8 +1886,6 @@
     - **Dollar year:** 2004
     - **Citation:** [https://www.nlr.gov/gis/psh-supply-curves.html](https://www.nlr.gov/gis/psh-supply-curves.html)
   - [rev_paths.csv](/inputs/supply_curve/rev_paths.csv)
-  - [sc_point_gid_old2new.csv](/inputs/supply_curve/sc_point_gid_old2new.csv)
-  - [sitemap.h5](/inputs/supply_curve/sitemap.h5)
   - [supplycurve_egs-reference.csv](/inputs/supply_curve/supplycurve_egs-reference.csv)
   - [supplycurve_upv-limited.csv](/inputs/supply_curve/supplycurve_upv-limited.csv)
     - **Description:** UPV supply curve from reV for the limited siting scenario

@@ -14,7 +14,6 @@ import os
 import pandas as pd
 import scipy.stats
 import sys
-import re
 import yaml
 from typing import Tuple, List
 from collections import defaultdict
@@ -167,7 +166,6 @@ def read_csv_h5_file(sw_runfiles_csv, aux_files, reeds_path, inputs_case) -> pd.
         df = copy_files.subset_to_valid_regions(
             aux_files['sw'],
             sw_runfiles_csv,
-            aux_files['agglevel_variables'],
             aux_files['regions_and_agglevel'],
             inputs_case,
             agg=False,
@@ -204,36 +202,6 @@ def read_csv_h5_file(sw_runfiles_csv, aux_files, reeds_path, inputs_case) -> pd.
         raise ValueError(error_message)
 
     return df
-
-
-def get_hierarchy_file(inputs_case: str, ReEDS_resolution: str) -> pd.DataFrame:
-    """
-    The hierarchy file in `{inputs_case}/hierarchy.csv` does not contain a
-    differentiation between "ba" and "aggreg" resolution. This function
-    reconstructs the hierarchy file with all possible combinations relevant
-    to the MCS.
-
-    Args:
-        inputs_case (str): Path to the inputs case directory.
-        ReEDS_resolution (str): The spatial resolution used in ReEDS (e.g., 'ba', 'aggreg').
-
-    Returns:
-        pd.DataFrame: A DataFrame with the hierarchy information relevant to the regions
-            considered in the inputs_casse run.
-    """
-    original_hierarchy_file = pd.read_csv(
-        os.path.join(inputs_case, "hierarchy_original.csv")
-    )
-
-    valid_regions = pd.read_csv(
-        os.path.join(inputs_case, "hierarchy.csv")
-    )['*r'].values
-
-    filtered_hierarchy  = original_hierarchy_file[
-        original_hierarchy_file[ReEDS_resolution].isin(valid_regions)
-    ].reset_index(drop=True)
-
-    return filtered_hierarchy
 
 def check_lhs_param_order(lower, upper):
     """Ensure lower bounds are less than upper bounds, swapping where necessary.
@@ -570,19 +538,11 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
     df_input_dist_ex['reeds_path'] = reeds_path
     df_input_dist_ex['inputs_case'] = inputs_case
 
-    agglevel_variables = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
     # Read runfiles.csv to get instructions on how files must be copied.
-    runfiles, nonregion_files, region_files = copy_files.read_runfiles(
-        reeds_path, inputs_case, sw, agglevel_variables)
+    runfiles, nonregion_files, region_files = copy_files.read_runfiles(reeds_path, sw)
 
-    ReEDS_resolution = sw['GSw_RegionResolution']
     # Process each distribution instruction.
     for i, input_dist_row in df_input_dist.iterrows():
-
-        # If ReEDS_resolution is aggreg but weight_r is 'ba' change it to aggreg
-        if ReEDS_resolution == 'aggreg' and input_dist_row['weight_r'] == 'ba':
-            df_input_dist_ex.at[i, 'weight_r'] = 'aggreg'
-            print(f"[Warning]: The weight_r for {input_dist_row['name']} was changed to 'aggreg'")
 
         # Iterate over each switch in the instruction.
         for sw_i, assignments_list in enumerate(input_dist_row['assignments_list']):
@@ -614,7 +574,7 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
 
     source_deflator_map = copy_files.get_source_deflator_map(reeds_path)
 
-    hierarchy_file = get_hierarchy_file(inputs_case, sw['GSw_RegionResolution'])
+    hierarchy_file = reeds.io.get_hierarchy(inputs_case).reset_index()
 
     # Save the auxiliary info in a dictionary.
     aux_files = {
@@ -623,7 +583,6 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
         'region_files': region_files,
         'source_deflator_map': source_deflator_map,
         'regions_and_agglevel': regions_and_agglevel,
-        'agglevel_variables': agglevel_variables,
         'hierarchy_file': hierarchy_file,
     }
 
@@ -680,7 +639,8 @@ def get_all_region_weights(
     Args:
         distribution (str): The distribution to use for sampling.
         dist_params (list): The parameters for the distribution.
-        hierarchy_file (pd.DataFrame): DataFrame with the hierarchy information from get_hierarchy_file (.)
+        hierarchy_file (pd.DataFrame): DataFrame with the hierarchy information from
+            reeds.io.get_hierarchy()
         sample_hierarchy_lvl (str): The hierarchy level which will be assigned unique weights.
 
     Returns:
@@ -697,7 +657,7 @@ def get_all_region_weights(
         r_weights = get_region_weights(distribution, dist_params)
 
         # Retrieve all BAs linked to the current region
-        bas = hierarchy_file.loc[hierarchy_file[sample_hierarchy_lvl] == region, "ba"].values
+        bas = hierarchy_file.loc[hierarchy_file[sample_hierarchy_lvl] == region, "r"].values
 
         # Assign weights to each BA, cendiv, and aggreg
         for ba in bas:
@@ -742,15 +702,6 @@ class WeightCalculator:
         # Get all general region weights
         self.r_weights = get_all_region_weights(
             self.distribution, self.dist_params, self.hierarchy_file, self.sample_hierarchy_lvl)
-        ## Include aggregated region weights
-        if aux_files['sw']['GSw_RegionResolution'] == 'aggreg':
-            self.r_weights = {
-                **self.r_weights,
-                **{
-                    aux_files['hierarchy_file'].set_index('ba').aggreg.get(k,k): v
-                    for k,v in self.r_weights.items()
-                },
-            }
 
         # Store the weights for the recf files (CF files)
         # Those are computed during the the supply curve file sampling 
@@ -1146,14 +1097,10 @@ class MCS_Sampler:
         self.inputs_case = sample_group['inputs_case']
         self.distribution = sample_group['dist']
         self.dist_params = sample_group['dist_params']
-        self.ReEDS_resolution = aux_files['sw']['GSw_RegionResolution']
-        if self.ReEDS_resolution=='aggreg' and sample_group['weight_r']=='ba':
-            self.sample_hierarchy_lvl = 'aggreg'
-        else:
-            self.sample_hierarchy_lvl = sample_group['weight_r']
+        self.sample_hierarchy_lvl = sample_group['weight_r']
 
         # Inputs that require special treatment
-        self.hierarchy_file = get_hierarchy_file(self.inputs_case, self.ReEDS_resolution)
+        self.hierarchy_file = reeds.io.get_hierarchy(self.inputs_case).reset_index()
 
         # Store the samples for each switch (a single sw may have multiple files that is
         # why we refer to the switch by its adjusted name)
@@ -1830,8 +1777,7 @@ def write_samples(
             # Get the row of the region-indexed file
             region_files_row = aux_files['region_files'].query('filename == @file_name').iloc[0]
             copy_files.write_region_indexed_file(sample_values, dir_dst, aux_files['source_deflator_map'],
-                                                    aux_files['sw'], region_files_row,
-                                                    aux_files['regions_and_agglevel'])
+                                                    aux_files['sw'], region_files_row)
         # ...if we have a csv file that isn't region-indexed (including switches.csv)
         elif file_termination == '.csv':
             if file_name == 'switches.csv':
@@ -1939,34 +1885,34 @@ def main_mga_rv(
     # get dimensions based on number of regions and subojectives
 
     ## regions
-    # val_r generated in copy_files.py
-    val_r = list(reeds.io.read_input(inputs_case, 'r')['*'])
+    # get list of valid regions (val_r generated in copy_files.py)
+    val_r = list(reeds.io.read_input(inputs_case, 'r').squeeze(1))
 
-    ## objective 
-    if sw.GSw_MGA_Objective in ['capacity', 'generation']:
-        ## if the subojective is an aggregated category, break it up into smaller groups
-        ## otherwise just use the subobjective as the group
-        mapped_categories ={
-            'gentech': ['coal', 'gas', 'nuclear', 'h2_combustion', 'geo', 'hydro', 'ofswind', 'onswind', 'storage', 'upv'],
-            'fossil' : ['coal', 'gas'],
-            're': ['geo', 'hydro', 'ofswind', 'onswind', 'pv', 'vre', 'wind'],
-            'vre': ['ofswind', 'onswind', 'upv'],
-        }
-        if sw.GSw_MGA_SubObjective in mapped_categories:
-            subsets = mapped_categories[sw.GSw_MGA_SubObjective]
-        else:
-            subsets = [sw.GSw_MGA_SubObjective]
-        
-        ## sample weights for each subojective group and region
-        dimensions = len(subsets) * len(val_r)
+    # option to draw samples based on aggregated regions (samples will be mapped back to r regions)
+    hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
+    hierarchy_val_r = hierarchy.loc[hierarchy.r.isin(val_r)]
+    sampling_regions = hierarchy_val_r[sw['GSw_MGA_RV_region']].unique()
 
-    else:
-        raise NotImplementedError(f"Objective '{sw.GSw_MGA_Objective}' is not yet supported for MGA random vector sampling.")
+    ## objective (assumes sw.GSw_MGA_Objective in ['capacity', 'generation'] based on 
+    ## check in runreeds.check_compatibility()
+    ## if the subojective is an aggregated category, break it up into smaller groups
+    ## otherwise just use the subobjective as the group
+    mapped_categories ={
+        'gentech': ['coal', 'gas', 'nuclear', 'h2_combustion', 'geo', 'hydro', 'ofswind', 'onswind', 'storage', 'upv'],
+        'fossil' : ['coal', 'gas'],
+        're': ['geo', 'hydro', 'ofswind', 'onswind', 'pv', 'vre', 'wind'],
+        'vre': ['ofswind', 'onswind', 'upv'],
+    }
+    subsets = mapped_categories.get(sw.GSw_MGA_SubObjective, [sw.GSw_MGA_SubObjective])
+    
+    ## sample weights for each subojective group and sampling region
+    dimensions = len(subsets) * len(sampling_regions)
 
-    runs_folder_name = os.path.basename(os.path.dirname(inputs_case.rstrip(os.path.sep)))
+    # setup output
+    runs_folder_name = Path(reeds.io.standardize_case(inputs_case)).name
     mga_run_number = int((runs_folder_name.split('_')[-1]).replace('R', ''))
-    region_labels = np.repeat(val_r, len(subsets))
-    subset_labels = np.tile(subsets, len(val_r))
+    region_labels = np.repeat(sampling_regions, len(subsets))
+    subset_labels = np.tile(subsets, len(sampling_regions))
     
     # sample using LHS or random approach
     if lhs_sampling:
@@ -2000,8 +1946,16 @@ def main_mga_rv(
         else:
             mga_weights_raw = np.random.uniform(-1, 1, dimensions)
 
-    # save vector of weights for this run (rounded to 6 decimal places) 
-    mga_weights = pd.DataFrame({'*r': region_labels, 'i_subtech': subset_labels, 'weight': mga_weights_raw.round(6)})
+    # save vector of weights for this run, mapped back to r regions and rounded to 6 decimal places
+    mga_weights = pd.DataFrame({  
+        sw['GSw_MGA_RV_region']: region_labels,  
+        'i_subtech': subset_labels,  
+        'weight': mga_weights_raw.round(6)  
+    })  
+    if sw['GSw_MGA_RV_region'] != 'r':
+        mga_weights = pd.merge(mga_weights, hierarchy_val_r[[sw['GSw_MGA_RV_region'], 'r']], on=sw['GSw_MGA_RV_region'])
+    mga_weights = mga_weights.rename(columns={'r':'*r'})[['*r','i_subtech','weight']]
+    mga_weights = mga_weights.sort_values(by=['*r', 'i_subtech'], ascending=True)
     mga_weights.to_csv(os.path.join(inputs_case, "mga_weights.csv"), index=False)
     
 
@@ -2059,3 +2013,4 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         process='input_processing/mcs_sampler.py',
         path=os.path.join(os.path.dirname(inputs_case))
     )
+

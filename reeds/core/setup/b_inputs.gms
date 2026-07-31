@@ -965,7 +965,7 @@ rsc_agg(i,ii)$[ban(i) or ban(ii)] = no ;
 *     --- Region hierarchy ---
 *======================================
 
-set hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) "hierarchy of various regional definitions"
+set hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) "hierarchy of various regional definitions"
 /
 $offlisting
 $ondelim
@@ -990,17 +990,17 @@ set r_itlgrp(r,itlgrp)
     r_ccreg(r,ccreg)
 ;
 
-r_nercr(r,nercr)                      $sum{(      transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_transreg(r,transreg)                $sum{(nercr,         transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_transgrp(r,transgrp)                $sum{(nercr,transreg,         cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_cendiv(r,cendiv)                    $sum{(nercr,transreg,transgrp,       st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_st(r,st)                            $sum{(nercr,transreg,transgrp,cendiv,   interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_interconnect(r,interconnect)        $sum{(nercr,transreg,transgrp,cendiv,st,             country,usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_country(r,country)                  $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,        usda_region,h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_usda(r,usda_region)                 $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,            h2ptcreg,hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_h2ptcreg(r,h2ptcreg)                $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,         hurdlereg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_hurdlereg(r,hurdlereg)              $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,          ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
-r_ccreg(r,ccreg)                      $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg      ) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,ccreg),1} = yes ;
+r_nercr(r,nercr)                      $sum{(      transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_transreg(r,transreg)                $sum{(nercr,         transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_transgrp(r,transgrp)                $sum{(nercr,transreg,         cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_cendiv(r,cendiv)                    $sum{(nercr,transreg,transgrp,       st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_st(r,st)                            $sum{(nercr,transreg,transgrp,cendiv,   interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_interconnect(r,interconnect)        $sum{(nercr,transreg,transgrp,cendiv,st,             country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_country(r,country)                  $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,        usda_region,h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_usda(r,usda_region)                 $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,            h2ptcreg,hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_h2ptcreg(r,h2ptcreg)                $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,         hurdlereg,gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_hurdlereg(r,hurdlereg)              $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,          gasreg,ccreg) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
+r_ccreg(r,ccreg)                      $sum{(nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg      ) $hierarchy(r,nercr,transreg,transgrp,cendiv,st,interconnect,country,usda_region,h2ptcreg,hurdlereg,gasreg,ccreg),1} = yes ;
 
 set r_itlgrp(r,itlgrp) "mapping of r to itlgrp"
 /
@@ -4117,24 +4117,6 @@ fuel_price(i,r,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), fuel_price(ii,r,t) } ;
 * -- Climate impacts on nondispatchable hydropower --
 *=====================================================
 
-$ifthen.climatehydro %GSw_ClimateHydro% == 1
-
-* declared over allt to allow for external data files that extend beyond end_year
-* Written by climateprep.py
-table climate_hydro_annual(r,allt)  "annual dispatchable hydropower availability"
-$offlisting
-$ondelim
-$include inputs_case%ds%climate_hydadjann.csv
-$offdelim
-$onlisting
-;
-$endif.climatehydro
-
-
-*=====================================================
-* -- Climate impacts on nondispatchable hydropower --
-*=====================================================
-
 $ifthen.climatewater %GSw_ClimateWater% == 1
 
 * Written by climateprep.py
@@ -5273,6 +5255,7 @@ $onlisting
 $offempty
 
 * Note that this PSH duration overwrites what is contained in storage_duration.csv
+* and will be overridden by data in storage_duration_pshdata.csv if durations for existing PSH are used
 storage_duration(i)$psh(i) = psh_sc_duration ;
 
 storage_duration(i)$[i_water_cooling(i)$Sw_WaterMain] =
@@ -6004,7 +5987,7 @@ cap_tg_total(tg,t) = 0 ;
 *====================================
 * Employment factors of construction and operation of power plants
 $onempty
-Table employment_factor_plant(i,jtype) "--job-years/MW or job-years/MWh-- employment factors of power plants by technology and job type (construction and o&m jobs)"
+Table employment_factor_plant(i,jtype) "--job-years/MW (construction), job-years/MW-year (fom) or job-years/MWh (vom)-- employment factors of power plants by technology and job type"
 $offlisting
 $ondelim
 $include inputs_case%ds%employment_factor_plant.csv
@@ -6014,7 +5997,7 @@ $onlisting
 $offempty
 
 * Employment factors of transmission deployment and flow
-parameter employment_factor_inter_transmission(jtype)  "--job-years/MW or job-years/$M-- employment factors of transmission lines by job type (construction or o&m jobs)"
+parameter employment_factor_inter_transmission(jtype)  "--job-years/$ (construction) -- construction employment factors of transmission lines"
 /
 $offlisting
 $ondelim
@@ -6023,13 +6006,27 @@ $offdelim
 $onlisting
 / ;
 
-* If upgrade techs, construction employment factor is half
-* Only apply this to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
-$ifthen.upgrade_ef %GSw_EmploymentFactor% == "JEDI"
-employment_factor_plant(i,"construction")$[upgrade(i)
-                                         $(not ccs(i))] = employment_factor_plant(i,"construction") * 0.5 ;
+* If upgrade techs, construction employment factor is adjusted by upgrade ratio
+* calculated as the ratio of the difference in capital costs between the initial 
+* techs and the upgraded tech divided by the capital costs of the initial techs
+parameter upgrade_ratio(i) ;
+upgrade_ratio(i)$upgrade(i) = 1 ;
+upgrade_ratio(i)$[upgrade(i)
+                $(sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) }
+                 - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } > 0)] 
+                  = (sum{(ii,t)$upgrade_to(i,ii), cost_cap(ii,t)$tmodel_new(t) } 
+                    - sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } )
+                    / sum{(ii,t)$upgrade_from(i,ii), cost_cap(ii,t)$tmodel_new(t) } ;
+
+* Only apply this ratio to non CCS upgrades if using JEDI EFs since JEDI already specifies CCS upgrade EFs
+$ifthen.upgrade_ef %GSw_EmploymentFactor% == "jedi"
+employment_factor_plant(i,"construction")
+    $[upgrade(i)$(not ccs(i))]
+    = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
 $else.upgrade_ef
-employment_factor_plant(i,"construction")$upgrade(i) = employment_factor_plant(i,"construction") * 0.5 ;
+employment_factor_plant(i,"construction")
+    $upgrade(i)
+    = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
 $endif.upgrade_ef
 
 *====================================
@@ -6116,6 +6113,7 @@ alias(actualszn,actualsznn,actualsznnn) ;
 Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
+    hours_t(allh,allt)                     "--hours-- number of hours in each time block by model year"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"
@@ -6196,6 +6194,8 @@ Parameter
 * Fossil gas supply curve
     gasadder_cd(cendiv,t,allh)             "--$/MMbtu-- adder for NG census division"
     szn_adj_gas(allh)                      "--fraction-- seasonal adjustment for gas prices"
+    gasprice_adj_r(r,allh)                 "--fraction-- adjustment for zonal gas prices"
+    gasprice_adj_cendiv(cendiv,allh)       "--fraction-- adjustment for cendiv-level gas prices"
 ;
 
 * Initialize some parameters

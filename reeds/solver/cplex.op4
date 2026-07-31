@@ -1,4 +1,5 @@
 *** https://www.gams.com/latest/docs/S_CPLEX.html
+***This setting is specifically for MGA runs which have difficulties with both cplex.opt and cplex.op2
 *** threads (integer): global default thread count
 threads = 8
 
@@ -42,9 +43,10 @@ barepcomp = 1e-8
 *## https://www.slideshare.net/IEA-ETSAP/improving-the-solution-time-of-times-by-playing-with-cplexbarrier
 *## https://iea-etsap.org/webinar/CPLEX%20options%20for%20running%20TIMES%20models.pdf
 *## This setting is specifically for MGA runs which have difficulties with cplex.opt, cplex.op2, and cplex.op3
-*## This setting differs from cplex.opt and cplex.op2 in that it: 1. sets predual = -1, which does not
+*## This setting differs from cplex.opt and cplex.op2 in that it: 1. sets predual = -1, which does not send
 *## dual to optimizer to reduce time; 2. sets barcrossalg = 1, which only performs primal crossover.
-*## It also differs from cplex.op3 in that it keeps baralg at default value (=0)
+*## It also differs from cplex.op3 in that it sets barcolnz = 300
+*## baralg can be set at default value (=0) or = 3 depending on runs.
 
 *** numericalemphasis (boolean): emphasizes precision in numerically unstable or difficult problems [default 0]
 * numericalemphasis 1
@@ -54,7 +56,7 @@ barepcomp = 1e-8
 
 *** barcolnz (integer): specifies the number of entries in columns to be considered as dense [default 0]
 *** 0 lets CPLEX choose; values ranging from 30-300 can sometimes shorten runtime
-barcolnz 100
+barcolnz 300
 
 *** barorder (integer): row ordering algorithm selection. 1 = approximate minimum degree (AMD) [default 0]
 * barorder 1

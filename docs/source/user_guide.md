@@ -236,7 +236,7 @@ To ensure the low carbon intensity of the electricity powering electrolyzers, th
 Example: if an electrolyzer is put in service in 2028, only generators whose commercial operations dates are between 2025-2028 may qualify to power this electrolyzer.
 This requirement starts immediately. There are special exceptions for nuclear, CCS and states with robust GHG emission caps - we do not model these additional pathways in ReEDS.
 2. Hourly matching: each MWh must be consumed by an electrolyzer in the same hour of the year in which it was generated.
-3. Deliverablity: each MWh must be consumed by an electrolyzer in the same region in which it was generated. Regional matching is required at the National Transmission Needs Study region level, which corresponds to the H<sub>2</sub> PTC region level shown in {numref}`figure-hierarchy`.
+3. Deliverablity: each MWh must be consumed by an electrolyzer in the same region in which it was generated. Regional matching is required at the National Transmission Needs Study region level, which corresponds to the H<sub>2</sub> PTC region level shown in {numref}`figure-spatial_layers_states`.
 
 Source: [Guidelines to Determine Well-to-Gate GHG Emissions of Hydrogen Production Pathways using 45VH2-GREET 2023](https://www.energy.gov/sites/default/files/2023-12/greet-manual_2023-12-20.pdf), 2023, Figure 2
 
@@ -631,8 +631,17 @@ Options are the column names in the `inputs/tech-subset-table.csv` file.
 
 Users familiar with GAMS can add alternative objective functions to the `d_mga.gms` file and associated options to the `GSw_MGA_Objective` switch in `cases.csv`.
 
+By default the MGA min/max is applied to the sum of the variable across all regions being modeled.
+The MGA approach also supports an option to randomly sample of a vector of weights to apply to the regional values of the variable being optimized.
+This method can be used to characterize the uncertainty in the regional distribution of the results.
+Weights are sampled as discrete values from {-1,1} to allow for simultaneous minimization and maximization.
 
+The MGA random vector capability is controlled by the following switches:
+- `GSw_MGA_RV_runs` (default `0`): Number of random samples of weight vectors to draw; corresponds to the number of runs.
+- `GSw_MGA_RV_region` (default `r`): Regionality level (specified by hierarchy file) over which to sample the random weights. 
 
+Note that this capability is currently only supported when `GSw_MGA_Objective = (capacity or generation)`. 
+Weights for each run are stored in the `mga_weights` parameter.
 
 ## Uncertainty Plots
 

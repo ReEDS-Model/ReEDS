@@ -34,7 +34,7 @@ jobs:
       contents: read
       actions: write # Required to save/update micromamba cache.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Setup ReEDS environments
@@ -52,7 +52,7 @@ jobs:
       contents: read
       actions: write # Required to save/update Zenodo data cache.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
           lfs: false
@@ -68,7 +68,7 @@ jobs:
         
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: |
             inputs/remote/
@@ -115,7 +115,7 @@ jobs:
     env:
       batch: test
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
           lfs: false
@@ -126,7 +126,7 @@ jobs:
 
       - name: Restore LFS cache
         id: lfs-restore
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: .git/lfs
           key: lfs-${{ runner.os }}-${{ hashFiles('.lfs-assets-id') }}-v1
@@ -137,7 +137,7 @@ jobs:
 
       - name: Save the updated LFS cache
         if: steps.lfs-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: .git/lfs
           key: ${{ steps.lfs-restore.outputs.cache-primary-key }}
@@ -149,7 +149,7 @@ jobs:
 
       - name: Restore Zenodo files from cache
         id: cache-zenodo
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: |
             inputs/remote/
@@ -185,7 +185,7 @@ jobs:
           GAMSLICE_CONTENT: ${{ secrets.GAMSLICE }}
           MAMBA_ENV_PATH: ${{ steps.setup-env.outputs.mamba-env-path }}
         run: |
-          echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.11/site-packages/gamspy_base/gamslice.txt"
+          echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.14/site-packages/gamspy_base/gamslice.txt"
 
       - name: Set run folder
         env:
@@ -264,7 +264,7 @@ jobs:
             solve-year: 2026
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Retrieve ReEDS runs for ${{ matrix.scenario }}
@@ -274,7 +274,7 @@ jobs:
           path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
 
       - name: Install uv and set Python version
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
           python-version: "3.11"
           enable-cache: true
