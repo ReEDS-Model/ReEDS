@@ -132,7 +132,7 @@ i_p.csv,inputs/sets/i_p.csv,1,ignore,ignore,,,,,0,,,set,i_p,mapping from technol
 i_water_nocooling.csv,inputs/sets/i_water_nocooling.csv,1,ignore,ignore,,,,,0,,,set,i_water_nocooling,technologies that use water but are not differentiated by cooling tech and water source,
 inflation.csv,inputs/financials/inflation_{inflation_suffix}.csv,1,ignore,ignore,,,,0,0,,,,,,
 interconnection_queues.csv,inputs/capacity_exogenous/interconnection_queues.csv,1,ignore,ignore,r,"tg,r",,1,0,,,,,,
-jtype.csv,inputs/sets/jtype.csv,1,ignore,ignore,,,,,0,,,set,jtype,job types used in model (construction and om),
+jtype.csv,inputs/sets/jtype.csv,1,ignore,ignore,,,,,,,,set,jtype,job types used in model (construction and om),
 lcclike.csv,inputs/sets/lcclike.csv,1,ignore,ignore,,,,,0,,,set,lcclike,transmission capacity types where lines are bundled with AC/DC converters,
 load_multiplier.csv,inputs/load/demand_{demandscen}.csv,1,ignore,ignore,,,,,0,,,,,,
 loadsite_annual.csv,inputs/load/loadsite_{GSw_LoadSiteTrajectory}.csv,float(sw.GSw_LoadSiteCF) > 0,ignore,ignore,*loadsitereg,t,,,0,,,,,,
