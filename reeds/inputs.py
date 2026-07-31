@@ -258,12 +258,13 @@ def parse_cases(
             ):
                 # Warn user if the hourly clustering algorithm is not fixed for Monte Carlo runs
                 if (
-                    not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
+                    int(dfcases.loc['MCS_runs',c]) > 0
+                    and not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
                     and not warned_about_cluster_alg
                 ):
                     print(f"\n[Warning] Case Column: '{c}'")
                     print(
-                        "You are attempting to run a Monte Carlo or MGA Random Vector simulation with "
+                        "You are attempting to run a Monte Carlo simulation with "
                         "`GSw_HourlyClusterAlgorithm` set to a value other than 'user'.\n"
                         "This may result in inconsistent representative days across MCS runs.\n\n"
                         "To ensure consistency, we strongly recommend setting "
