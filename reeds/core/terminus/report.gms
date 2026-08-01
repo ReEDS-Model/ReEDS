@@ -1893,6 +1893,8 @@ poi_capacity(r,t)$tmodel_new(t) =
   + sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI.l(r,tt) }
 ;
 
+cap_pvb(r,t)$tmodel_new(t) = CAP_PV_BATTERY.l(r,t) ;
+
 *==========================
 * Expenditures Exchanged
 *==========================

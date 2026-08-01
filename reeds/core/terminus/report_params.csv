@@ -29,6 +29,7 @@ param,units,comment,reeds2x,output_rename,input
 "cap_energy_new_out(i,v,r,t)",MWh,"new energy capacity by region, which are investments from one solve year to the next",,,
 "cap_out(i,r,t)",MW,capacity by region,1,cap,
 "cap_out_ivrt(i,v,r,t)",MW,capacity by region and vintage,,,
+"cap_pvb(r,t)",MW,larger of PV and battery capacity by zone,,,
 "capacity_offline(i,r,allh,t)",MW,capacity offline due to forced or scheduled outages,,,
 "capex_ivrt(i,v,r,t)",$,"capital expenditure for new capacity, no ITC/depreciation/PTC reductions",,,
 "cap_upgrade(i,r,t)",MW,upgraded capacity by region,,,

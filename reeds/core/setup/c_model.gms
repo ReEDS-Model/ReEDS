@@ -40,6 +40,7 @@ positive variables
   INV_RSC(i,v,r,rscbin,t)                  "--MW-- investment in technologies that use a resource supply curve"
   UPGRADES(i,v,r,t)                        "--MW-- investments in upgraded capacity from ii to i"
   UPGRADES_RETIRE(i,v,r,t)                 "--MW-- upgrades that have been retired - used as a free slack variable in eq_cap_upgrade"
+  CAP_PV_BATTERY(r,t)                      "--MW-- larger of PV and battery capacity by zone"
 
 * The units for all of the operational variables are average MW or MWh/time-slice hours
 * generation and storage variables
@@ -321,6 +322,8 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_hybrid_plant_energy_limit(i,v,r,allh,t) "--MW-- PV energy to storage (no curtailment recovery) + PV energy to inverter <= PV resource"
  eq_plant_capacity_limit(i,v,r,allh,t)      "--MW-- energy moving through the inverter cannot exceed the inverter capacity"
  eq_pvb_itc_charge_reqt(i,v,r,t)            "--MWh-- total energy charged from local PV >= ITC qualification fraction * total energy charged"
+ eq_PVB_cap(tg,r,t)                         "--MW-- defines CAP_PV_BATTERY as the larger of PV and battery capacity by zone"
+ eq_PVB_injection(r,allh,t)                 "--MW-- limit simultaneous injections of PV and battery when hybridized"
 
 * Canadian imports balance
  eq_Canadian_Imports(r,allszn,t)          "--MWh-- Balance of Canadian imports by season"
@@ -1999,6 +2002,34 @@ eq_prescribed_transmission(r,rr,trtype,t)
 
 * ---------------------------------------------------------------------------
 
+eq_PVB_cap(tg,r,t)
+    $[tmodel(t)
+    $Sw_PVB_InterconnectionShare
+    $(sameas(tg,"PV") or sameas(tg,"BATTERY"))
+    $(not Sw_PCM)]..
+
+    CAP_PV_BATTERY(r,t)
+
+    =g=
+
+    sum{(i,v)$[valcap(i,v,r,t)$tg_i(tg,i)], CAP(i,v,r,t) / ilr(i)}
+;
+
+* ---------------------------------------------------------------------------
+
+eq_PVB_injection(r,h,t)
+    $[tmodel(t)
+    $Sw_PVB_InterconnectionShare]..
+
+    CAP_PV_BATTERY(r,t)
+
+    =g=
+
+    sum{(i,v)$[valgen(i,v,r,t)$(upv(i) or battery(i))], GEN(i,v,r,h,t)}
+;
+
+* ---------------------------------------------------------------------------
+
 * New point-of-interconnection (POI) intra-zone transmission capacity must be
 * added for new generation capacity
 eq_POI_cap(r,t)
@@ -2013,7 +2044,12 @@ eq_POI_cap(r,t)
     =g=
 
 * must be greater than the sum of all generation capacity [AC] without explicit spur lines...
-    sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
+    sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }$(not Sw_PVB_InterconnectionShare)
+* OR the sum of non-PV-battery and PV+battery capacity...
+    + (
+        sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))$(not upv(i))$(not battery(i))], CAP(i,v,r,t) / ilr(i) }
+        + CAP_PV_BATTERY(r,t)
+    )$Sw_PVB_InterconnectionShare
 * and spur-line capacity if explicitly tracked (use total capacity, not just new investments,
 * to make sure we account for the existing spur line capacity already included in poi_cap_init)...
     + sum{x$[xfeas(x)$x_r(x,r)$Sw_SpurScen], CAP_SPUR(x,t) }

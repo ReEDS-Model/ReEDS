@@ -43,6 +43,7 @@ UPGRADES.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$upgrade(i)] = UPGRADES.l(i,v,r,tfix)
 UPGRADES_RETIRE.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$upgrade(i)] = UPGRADES_RETIRE.l(i,v,r,tfix) ;
 EXTRA_PRESCRIP.fx(pcat,r,tfix)$[force_pcat(pcat,tfix)$sum{(i,newv)$[prescriptivelink(pcat,i)], valinv(i,newv,r,tfix) }] = EXTRA_PRESCRIP.l(pcat,r,tfix) ;
 EXTRA_PRESCRIP_ENERGY.fx(pcat,r,tfix)$[force_pcat(pcat,tfix)$sum{(i,newv)$[prescriptivelink(pcat,i)], valinv(i,newv,r,tfix) }] = EXTRA_PRESCRIP_ENERGY.l(pcat,r,tfix) ;
+CAP_PV_BATTERY.fx(r,tfix)$[Sw_PVB_InterconnectionShare] = CAP_PV_BATTERY.l(r,tfix) ;
 
 * generation and storage variables
 GEN.fx(i,v,r,h,tfix)$valgen(i,v,r,tfix) = GEN.l(i,v,r,h,tfix) ;

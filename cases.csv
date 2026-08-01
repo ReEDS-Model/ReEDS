@@ -293,6 +293,7 @@ GSw_PVB_ILR,'_'-delimited inverter loading ratio for the three PVB types express
 GSw_PVB_BatteryITC,Switch to apply ITC to battery in PV+B.,0; 1,1,
 GSw_PVB_Charge_Constraint,Fraction of battery charging in PV+B that is constrained to be from coupled PV; a value of zero turns off the constraint.,N/A,0,
 GSw_PVB_Types,'_'-delimited PV+battery types to include (i.e. 1 or 1_2 or 1_2_3),N/A,1,
+GSw_PVB_InterconnectionShare,Allow PV+battery to share interconnection costs,^[0-1]$,0,
 GSw_ReducedResource,Turn on/off switch to reduce the RE resource available,0; 1,0,
 GSw_Refurb,Turn on/off refurbishments,0; 1,1,
 GSw_RemoveSmallNumbers,Turn on/off rounding of variables known to cause very small values on the RHS of certain constraints (improve numerical stability),0; 1,1,

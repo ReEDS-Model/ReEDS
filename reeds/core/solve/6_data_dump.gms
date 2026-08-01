@@ -41,7 +41,6 @@ cap_hyd_szn_adj_filt(i,allszn,r)   "--fraction-- seasonal hydro capacity adjustm
 cap_init(i,v,r)                    "--MW-- initial capacity"
 cap_ivrt(i,v,r,t)                  "--MW-- generation power capacity"
 cap_energy_ivrt(i,v,r,t)           "--MWh-- generation energy capacity"
-cap_pvb(i,v,r)                     "--MW-- Hybrid PV+battery capacity (PV)"
 cap_trans_energy(r,rr,trtype)      "--MW-- transmission capacity for energy trading"
 cap_trans_prm(r,rr,trtype)         "--MW-- transmission capacity for PRM trading"
 cf_adj_t_filt(i,v,t)               "--fraction-- capacity factor adjustment for wind"
