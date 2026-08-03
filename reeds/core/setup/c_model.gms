@@ -81,12 +81,12 @@ positive variables
   ACP_PURCHASES(RPSCat,st,t)            "--MWh-- purchases of ACP credits to meet the RPS constraints",
 
 * transmission variables
-  CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
-  CAPTRAN_PRM(r,rr,trtype,t)                     "--MW-- capacity of transmission for PRM trading"
-  CAPTRAN_GRP(transgrp,transgrpp,t)              "--MW-- capacity of groups of transmission interfaces"
-  CAPTRAN_ITL(itlgrp,itlgrpp,t)                  "--MW-- capacity of groups of transmission interfaces for county and mixed"
-  INVTRAN(r,rr,trtype,t)                         "--MW-- investment in transmission capacity (defined for both directions)"
-  INVTRAN_AC(r,rr,tscbin,t)                      "--MW-- transmission capacity added to transmission supply curve bin (defined for both directions)"
+  CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading. Defined for both directions (r < rr and r > rr)"
+  CAPTRAN_PRM(r,rr,trtype,t)                     "--MW-- capacity of transmission for PRM trading. Defined for both directions (r < rr and r > rr)"
+  CAPTRAN_GRP(transgrp,transgrpp,t)              "--MW-- capacity of groups of transmission interfaces. Defined for both directions (transgrp < transgrpp and transgrp > transgrpp)"
+  CAPTRAN_ITL(itlgrp,itlgrpp,t)                  "--MW-- capacity of groups of transmission interfaces for county and mixed. Defined for both directions (itlgrp < itlgrpp and itlgrp > itlgrpp)"
+  INVTRAN(r,rr,trtype,t)                         "--MW-- investment in transmission capacity. Defined for both directions (r < rr and r > rr)"
+  INVTRAN_AC(r,rr,tscbin,t)                      "--MW-- transmission capacity added to transmission supply curve bin. Defined for both directions (r < rr and r > rr)"
   CAP_CONVERTER(r,t)                             "--MW-- VSC AC/DC converter capacity"
   INV_CONVERTER(r,t)                             "--MW-- investment in AC/DC converter capacity"
   CONVERSION(r,allh,intype,outtype,t)            "--MW-- conversion of AC->DC or DC->AC"
@@ -94,7 +94,7 @@ positive variables
   CAP_SPUR(x,t)                                  "--MW-- capacity of spur lines"
   INV_SPUR(x,t)                                  "--MW-- investment in spur line capacity"
   INV_POI(r,t)                                   "--MW-- investment in new POI capacity (for network reinforcement costs)"
-  TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins (defined for r < rr)"
+  TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins. Defined only for interfaces (r < rr)"
 
 * production-, CO2-, and hydrogen-specific variables
   PRODUCE(p,i,v,r,allh,t)               "--metric tons per hour-- production of hydrogen or DAC capture"
