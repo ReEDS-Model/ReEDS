@@ -786,3 +786,74 @@ def param_exporter(df, parameter, file_name, output_dir):
     ### Add '*' to first column name so GAMS reads it as a comment
     df = df.rename(columns={c: (f'*{c}' if not i else c) for i, c in enumerate(df.columns)})
     df.round(5).to_csv(os.path.join(output_dir, f'{file_name}.csv'), index=False, header=True)
+
+
+def calc_ng_crf_penalty_st(inputs_case, years, financials_sys, sw):
+    """
+    Compute the CRF-based cost penalty for natural gas plants in states with
+    forced retirement policies.
+
+    For each (state, forced-retirement year) pair in ng_st_forced.csv, this
+    function calculates how much of a plant's remaining economic life is cut
+    short by the policy. The penalty is the ratio of the CRF over the
+    truncated remaining life to the CRF over the full evaluation period:
+      - value = 100  for years after the forced retirement year 
+      - value > 1    if the plant would be forced to retire before its full economic life 
+
+    States not present in hierarchy.csv (i.e. outside the modeled region) are
+    dropped before any computation. If no forced-retirement states remain,
+    returns an empty DataFrame with columns ['t', 'st', 'value'].
+    """
+    # Load state-level forced retirement years for NG plants
+    ng_st_forced = pd.read_csv(os.path.join(inputs_case, 'ng_st_forced.csv'))
+
+    # Keep only states that exist in this run's modeled region
+    hierarchy = pd.read_csv(os.path.join(inputs_case, 'hierarchy.csv'))
+    valid_states = hierarchy['st'].unique()
+    ng_st_forced = ng_st_forced[ng_st_forced['st'].isin(valid_states)]
+
+    # No forced retirements in this region — return empty result
+    if ng_st_forced.empty:
+        ng_crf_penalty_st=pd.DataFrame(columns=['*t', 'st', 'value'])
+        ng_crf_penalty_st.to_csv(os.path.join(inputs_case, 'ng_crf_penalty_st.csv'),
+                             index=False)
+        return ng_crf_penalty_st
+
+    # Years when retirements are forced, and the model's active year range
+    forced_years = ng_st_forced['*t'].astype(int).unique()
+    years_arr = np.asarray([y for y in years if int(sw['startyear']) <= y <= int(sw['endyear'])])
+
+    # Real discount rate and full-life CRF for each year (the baseline)
+    d_real_arr  = financials_sys.set_index('t')['d_real'].reindex(years_arr).values
+    base_crf_arr = np.array([calc_crf(d, sw['sys_eval_years']) for d in d_real_arr])
+
+    # How many years remain between each build year t and each forced retirement year
+    # shape: (len(years_arr), len(forced_years))
+    diff  = forced_years[None, :] - years_arr[:, None]
+    # Effective remaining life: at least 1 year, at most the full evaluation period
+    n_eff = np.clip(diff, 1, sw['sys_eval_years'])
+
+    # CRF over the truncated life, then normalize by the full-life baseline
+    crf_vals     = np.vectorize(calc_crf)(d_real_arr[:, None], n_eff)
+    value_matrix = np.where(diff <= 0, 100.0, crf_vals / base_crf_arr[:, None])
+
+    # Wrap results in a DataFrame indexed by build year, columns = forced years
+    crf_table = pd.DataFrame(value_matrix, index=years_arr,
+                             columns=forced_years, dtype=float)
+    crf_table.index.name = 't'
+
+    # Reshape to long format: one row per (build year, forced year)
+    crf_long = (
+        crf_table.stack().rename('value')
+        .rename_axis(['t', '*t']).reset_index()
+    )
+
+    # Attach state labels by merging on the forced retirement year
+    ng_crf_penalty_st = (
+        ng_st_forced[['*t', 'st']].merge(crf_long, on='*t', how='left')
+        [['t', 'st', 'value']]
+        .rename(columns={'t': '*t'}))
+
+    ng_crf_penalty_st.to_csv(os.path.join(inputs_case, 'ng_crf_penalty_st.csv'),
+                             index=False)
+    return ng_crf_penalty_st

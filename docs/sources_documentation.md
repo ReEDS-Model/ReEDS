@@ -2851,13 +2851,13 @@
   - [hydrofrac_policy.csv](/inputs/state_policies/hydrofrac_policy.csv)
 ---
 
-  - [ng_crf_penalty_st.csv](/inputs/state_policies/ng_crf_penalty_st.csv)
+  - [ng_st_forced.csv](/inputs/state_policies/ng_st_forced.csv)
     - **File Type:** Inputs
-    - **Description:** Cost adjustment for NG techs in states where all NG techs must be retired by a certain year
-    - **Indices:** allt,st
+    - **Description:** The year for specific states in which natural gas techs must be retired
+    - **Indices:** t,st
     - **Dollar year:** N/A
     - **Citation:** [https://github.nrel.gov/ReEDS/ReEDS-2.0/pull/1220](https://github.nrel.gov/ReEDS/ReEDS-2.0/pull/1220)
-    - **Units:** rate (unitless)
+    - **Units:** year
 
 ---
 

@@ -563,7 +563,7 @@ RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,I
 /inputs/state_policies/ces_fraction.csv,/inputs/state_policies,ces_fraction,.csv,Annual compliance for states with a CES policy,,,,,
 /inputs/state_policies/forced_retirements.csv,/inputs/state_policies,forced_retirements,.csv,List of regions with mandatory retirement policies for certain technologies,,,,,
 /inputs/state_policies/hydrofrac_policy.csv,/inputs/state_policies,hydrofrac_policy,.csv,,,,,,
-/inputs/state_policies/ng_crf_penalty_st.csv,/inputs/state_policies,ng_crf_penalty_st,.csv,Cost adjustment for NG techs in states where all NG techs must be retired by a certain year,"allt,st",N/A,https://github.nrel.gov/ReEDS/ReEDS-2.0/pull/1220,Inputs,rate (unitless)
+/inputs/state_policies/ng_st_forced.csv,/inputs/state_policies,ng_st_forced,.csv,List of states where natural gas plants must be retired by a certain year,"t,st",N/A,https://github.nrel.gov/ReEDS/ReEDS-2.0/pull/1220,Inputs,year
 /inputs/state_policies/nuclear_subsidies.csv,/inputs/state_policies,nuclear_subsidies,.csv,,,,,,
 /inputs/state_policies/offshore_req_default.csv,/inputs/state_policies,offshore_req_default,.csv,"default state mandates of offshore wind capacity, updated in November 2025","st,allt",,,Inputs,MW
 /inputs/state_policies/oosfrac.csv,/inputs/state_policies,oosfrac,.csv,Defines the fraction of renewable and clean energy credits can be purchased from out of state (oos). Applied for RPS and CES,,,,,
