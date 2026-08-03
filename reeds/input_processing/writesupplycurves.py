@@ -308,10 +308,10 @@ def main(
 
     if write:
         ## Exogenous wind capacity
-        dfwindonsexog = get_exog_cap(dfwindonsexog, dfsc=wind['ons'])
-        dfwindonsexog.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
-        dfwindofsexog = get_exog_cap(dfwindofsexog, dfsc=wind['ofs'])
-        dfwindofsexog.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
+        exog_wind_ons_rsc = get_exog_cap(dfwindonsexog, dfsc=wind['ons'])
+        exog_wind_ons_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
+        exog_wind_ofs_rsc = get_exog_cap(dfwindofsexog, dfsc=wind['ofs'])
+        exog_wind_ofs_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
 
     # %%###############
     #    -- PV --    #

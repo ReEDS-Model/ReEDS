@@ -289,8 +289,8 @@ def check_missing_class_resource(existing_techs, resources):
         missing_class_resource.to_csv(fpath, index=False)
         err = (
             f'{len(missing_class_resource)} mismatched tech class capacities and resources.\n'
-        f'Details can be found in {fpath}.'
-    )
+            f'Details can be found in {fpath}.'
+        )
         raise ValueError(err)
     else:
         print('All capacities and resources are matched.')
