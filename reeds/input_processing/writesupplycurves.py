@@ -116,7 +116,7 @@ def agg_supplycurve(
             dfin
             .groupby(groupby_cols, sort=False, group_keys=True)
             .apply(reeds.inputs.get_bin, numbins_tech, bin_method, bin_col)
-            .reset_index(level=['region','class'])
+            .reset_index(level=groupby_cols)
             .sort_values('sc_point_gid')
         )
     ### Aggregate it

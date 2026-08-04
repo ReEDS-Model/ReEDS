@@ -1616,9 +1616,6 @@ $onlisting
 
 **rsc_dat adjustments (see additional adjustments to m_rsc_dat further below)
 
-*need to adjust units for pumped hydro costs from $ / KW to $ / MW
-rsc_dat("pumped-hydro",r,"cost",rscbin) = rsc_dat("pumped-hydro",r,"cost",rscbin) * 1000 ;
-
 *need to adjust units for hydro costs from $ / KW to $ / MW
 rsc_dat(i,r,"cost",rscbin)$hydro(i) = rsc_dat(i,r,"cost",rscbin) * 1000 ;
 
