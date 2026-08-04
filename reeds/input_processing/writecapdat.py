@@ -62,18 +62,17 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
 
 
     rsc_class = {}
-    rsc_class["upv"] = prep_supply_curve(reeds_path, tech='upv', 
-                                         access_case=sw.GSw_SitingUPV, subtech='')
-    rsc_class["wind-ons"]  = prep_supply_curve(reeds_path, tech='wind-ons', 
-                                               access_case=sw.GSw_SitingWindOns, subtech='')
+    rsc_class["upv"] = get_class_cf_bounds(reeds_path, tech='upv', 
+                                           access_case=sw.GSw_SitingUPV, subtech='')
+    rsc_class["wind-ons"]  = get_class_cf_bounds(reeds_path, tech='wind-ons', 
+                                                 access_case=sw.GSw_SitingWindOns, subtech='')
     
     # for offshore wind, specify 'fixed' or 'floating' tech
     wind_ofs_subtech_list = ['fixed','floating']
     wind_ofs_class_all = []
     for wind_ofs_subtech in wind_ofs_subtech_list:
-        wind_ofs_class_subtech = prep_supply_curve(reeds_path, tech='wind-ofs', 
-                                                   access_case=sw.GSw_SitingWindOfs,
-                                                   subtech=wind_ofs_subtech)
+        wind_ofs_class_subtech = get_class_cf_bounds(reeds_path, tech='wind-ofs', 
+                                                     access_case=sw.GSw_SitingWindOfs,subtech=wind_ofs_subtech)
         wind_ofs_class_all.append(wind_ofs_class_subtech)
     rsc_class["wind-ofs"] = pd.concat(wind_ofs_class_all, ignore_index=True) 
 
@@ -122,7 +121,7 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
 
     return cap_exog, rsc_class
 
-def prep_supply_curve(reeds_path, tech, access_case, subtech):
+def get_class_cf_bounds(reeds_path, tech, access_case, subtech):
     """Establish class cut offs based on capacity factors"""
     class_def_name = 'reV_cf_ac'
 
@@ -495,7 +494,7 @@ def main(reeds_path, inputs_case):
     ###########################################
 
     print('Gathering non-RSC Prescribed Capacity...')
-    ivt_df= process_ivt(years)
+    ivt_df= process_ivt(years, inputs_case)
 
     ### prescribed power capacity
     prescribed_nonRSC = gdb_use.loc[(gdb_use['tech'].isin(TECH['prescribed_nonRSC'])) &

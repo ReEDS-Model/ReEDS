@@ -125,11 +125,6 @@ def agg_supplycurve(
 def main(
     reeds_path, inputs_case, write=True, **kwargs
 ):
-    # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260609_envM0_Pacific','inputs_case')
-    # write = True
-    # kwargs = {}
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -1105,6 +1100,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    #write = True
+    #kwargs = {}
 
     #%% Set up logger
     log = reeds.log.makelog(
