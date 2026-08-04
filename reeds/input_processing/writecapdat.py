@@ -1021,7 +1021,7 @@ def main(reeds_path, inputs_case):
 
     return files_out
 
-def process_ivt(years):
+def process_ivt(years, inputs_case):
 
     ivt_df= pd.read_csv(os.path.join(inputs_case,'ivt.csv'))
     ### modify set of technology name as lower case and convert all columns except the first to string
