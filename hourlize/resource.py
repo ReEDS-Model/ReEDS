@@ -646,6 +646,11 @@ def read_cf_file(
     dfall.columns = dfall.columns.map(df_meta[profile_id_col])
     
     ## Add time index
+    # first decode from bytes
+    if df_index.dtype.kind == "S":
+        df_index = df_index.str.decode("utf-8").str.rstrip("\x00")
+    # now save as datetime and add as index
+    df_index = pd.to_datetime(df_index, errors="raise")
     dfall = dfall.set_index(df_index)
     
     return dfall
