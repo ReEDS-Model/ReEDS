@@ -820,6 +820,28 @@ if not int(sw.GSw_PRM_CapCredit):
             print(f'plot_stress_mix failed for {metric}:')
             print(traceback.format_exc())
 
+    for metric in [
+        'stress_top5_load',
+        'stress_top5_netload',
+        'stress_top5_price',
+        'stress_bottom5_vregen',
+    ]:
+        savename = f"plot_stress_cf-{level}-{metric}.png"
+        try:
+            plt.close()
+            f, ax, dictout = reedsplots.plot_stress_cf(
+                case=case, level='transreg', metric=metric,
+            )
+            if write:
+                plt.savefig(os.path.join(savepath, savename))
+            if interactive:
+                plt.show()
+            plt.close()
+            print(savename)
+        except Exception:
+            print(f'{savename} failed:')
+            print(traceback.format_exc())
+
 
 #%% PRM if iterating
 if int(sw.GSw_PRM_StressIterateMax) and int(sw.GSw_PRM_UpdateMethod):
