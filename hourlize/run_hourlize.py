@@ -443,22 +443,75 @@ def setup_resource_run(casename, case, args):
     launch_batch_file(casename, configpath, outpath, args)
 
 
+def get_cases(args):
+    """Build resource run cases from rev_paths.csv with optional filters."""
+    # Load base config and resolve rev_paths_file.
+    config = load_base_config()
+    resource_config = dict(config['resource'])
+    config_string_formatter(resource_config, args.verbose)
+
+    # check file exists and then load rev_paths file
+    rev_paths_file = resource_config.get('rev_paths_file')
+    if not rev_paths_file:
+        raise Exception("'rev_paths_file' is not set in config_base.json under 'resource'.")
+    if not os.path.exists(rev_paths_file):
+        raise Exception(f"Could not find rev_paths file at {rev_paths_file}.")
+    df_rev = pd.read_csv(rev_paths_file)
+   
+    # Keep rows with valid selector values and apply filters
+    df_rev = df_rev[df_rev['tech'].notna() & df_rev['access_case'].notna()].copy()
+    df_rev['tech'] = df_rev['tech'].astype(str).str.strip()
+    df_rev['access_case'] = df_rev['access_case'].astype(str).str.strip()
+
+    tech_filter = [t.strip() for t in args.tech] if args.tech else None
+    access_case_filter = [a.strip() for a in args.access_case] if args.access_case else None
+    if tech_filter:
+        df_rev = df_rev[df_rev['tech'].isin(tech_filter)]
+    if access_case_filter:
+        df_rev = df_rev[df_rev['access_case'].isin(access_case_filter)]
+
+    if df_rev.empty:
+        valid_techs = sorted(pd.read_csv(rev_paths_file)['tech'].dropna().astype(str).str.strip().unique())
+        valid_access = sorted(pd.read_csv(rev_paths_file)['access_case'].dropna().astype(str).str.strip().unique())
+        raise Exception(
+            "No rev_paths rows matched the requested filters. "
+            f"tech={tech_filter}, access_case={access_case_filter}. "
+            f"Valid tech values: {valid_techs}. "
+            f"Valid access_case values: {valid_access}."
+        )
+
+    # Guard against ambiguous case definitions.
+    dupes = df_rev.duplicated(subset=['tech', 'access_case'], keep=False)
+    if dupes.any():
+        dup_pairs = (
+            df_rev.loc[dupes, ['tech', 'access_case']]
+            .drop_duplicates()
+            .sort_values(['tech', 'access_case'])
+        )
+        dup_msg = ", ".join(
+            f"{row.tech}/{row.access_case}" for row in dup_pairs.itertuples(index=False)
+        )
+        raise Exception(
+            "Duplicate (tech, access_case) pairs found in rev_paths file: "
+            f"{dup_msg}. Please update rev_paths file to ensure each row is unique."
+        )
+
+    cases = {}
+    for row in df_rev[['tech', 'access_case']].drop_duplicates().itertuples(index=False):
+        casename = f"{row.tech}_{row.access_case}"
+        cases[casename] = {
+            'tech': row.tech,
+            'access_case': row.access_case,
+        }
+
+    return cases
+
+
 def setup_resource(args):
     """procedure for setting up resource.py runs"""
     ## Cases to run
-    # load cases from json using specified suffix (default: "cases_default.json")
-    if args.cases == "default":
-        print("Loading cases from cases.json")
-        casepath = os.path.join(hourlize_path, "inputs", "configs", "cases.json")
-    else:
-        print(f"Loading cases from cases_{args.cases}.json")
-        casepath = os.path.join(hourlize_path, "inputs", "configs", f"cases_{args.cases}.json")
-    # confirm that cases file exists
-    if not os.path.exists(casepath):
-        raise Exception(f"Could not find cases json at {casepath}.")
-    # load cases
-    with open(casepath, "r") as f:
-        cases = json.load(f, object_pairs_hook=OrderedDict)
+    print("Loading resource cases from rev_paths.csv")
+    cases = get_cases(args)
 
     print("\nSetting up resource.py runs for the following cases:\n")
     for c in cases:
@@ -508,8 +561,10 @@ if __name__== '__main__':
     parser.add_argument('mode', type=str,
                         choices=['load', 'resource'],
                         help='Setup runs for load.py or resource.py?')
-    parser.add_argument('--cases', '-c', type=str, default='default',
-                    help='Suffix for cases json file (currently only used for resource.py)')
+    parser.add_argument('--tech', nargs='+',
+                    help='Optional tech filter(s) for resource mode, e.g. --tech upv wind-ons')
+    parser.add_argument('--access_case', nargs='+',
+                    help='Optional access_case filter(s) for resource mode, e.g. --access_case reference limited')
     parser.add_argument('--debugnode', '-d', default=False, action='store_true',
                     help='Run using debug specifications for slurm on an hpc system')
     parser.add_argument('--local', '-l', default=False, action='store_true',
@@ -528,7 +583,8 @@ if __name__== '__main__':
     # class Args:
     #     def __init__(self):
     #         self.mode = 'resource'
-    #         self.cases = 'default'
+    #         self.tech = ['upv']
+    #         self.access_case = ['reference']
     #         self.debugnode = False
     #         self.local = True
     #         self.nosubmit = False
