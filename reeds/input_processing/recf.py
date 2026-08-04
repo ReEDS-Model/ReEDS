@@ -271,17 +271,36 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
 
     return regional_distpv_cf
 
+# Identify resources with missing classes and assign them to 
+# closest resources of similar classes
+def check_missing_class_resource(existing_techs, resources):
+    missing_class_resource = existing_techs.merge(resources[['i','r']],
+                                                    on=['i','r'],
+                                                    how='left',
+                                                    indicator=True)
+    missing_class_resource = missing_class_resource[
+        missing_class_resource['i'].str.contains('upv|wind')].reset_index(drop=True)
+    missing_class_resource = missing_class_resource[
+        missing_class_resource['_merge'] == 'left_only'][['i','r']].copy()
+    
+    if len(missing_class_resource) > 0:
+            # Print out missing classes
+        fpath = os.path.join(inputs_case, 'missing_class_resource.csv')
+        missing_class_resource.to_csv(fpath, index=False)
+        err = (
+            f'{len(missing_class_resource)} mismatched tech class capacities and resources.\n'
+            f'Details can be found in {fpath}.'
+        )
+        raise ValueError(err)
+    else:
+        print('All capacities and resources are matched.')
+            
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
 def main(reeds_path, inputs_case):
     print('Starting recf.py')
-    
-    # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20260601_repM0_USA_H20_ramp3_yr12_ys1623','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -496,6 +515,26 @@ def main(reeds_path, inputs_case):
     recf = pd.concat([recf, csp_system_cf], axis=1)
     resources = pd.concat([resources, csp_resources], axis=0)
 
+    #%% Assign existing and prescribed generator technology classes if it is not exist in resouces. 
+    ### Collect all existing and prescribed generator technology classes - region combinations
+    upv_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_upv.csv'))
+    wind_ons_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_wind-ons.csv'))
+    wind_ofs_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_wind-ofs.csv'))
+    existing_exog_techs = pd.concat(
+        [upv_exog_cap, wind_ons_exog_cap, wind_ofs_exog_cap],
+        axis=0, ignore_index=True
+    )[['*tech','region']].drop_duplicates()
+    existing_exog_techs.columns = ['i','r']
+    prescribed_rsc = (pd.read_csv(os.path.join(inputs_case, 'prescribed_rsc.csv')).rename(columns={'*i':'i'})
+                      [['i', 'r']].drop_duplicates())
+    existing_techs = pd.concat(
+        [existing_exog_techs, prescribed_rsc],
+        axis=0, ignore_index=True
+    )[['i','r']].drop_duplicates()
+
+    # Check missing technology-class - region combinations in resources
+    check_missing_class_resource(existing_techs, resources)
+    
     #%% Check for errors
     nulls = recf.isnull().sum()
     missing = nulls.loc[nulls > 0]
@@ -503,7 +542,6 @@ def main(reeds_path, inputs_case):
         print(missing)
         err = f"Missing RECF values for {len(missing)} columns"
         raise ValueError(err)
-
 
     #%%###########################
     #    -- Data Write-Out --    #
@@ -560,7 +598,10 @@ if __name__ == '__main__':
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
 
-    #%% Set up logger
+    # #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    
     log = reeds.log.makelog(
         scriptname=__file__,
         logpath=os.path.join(inputs_case,'..','gamslog.txt'),

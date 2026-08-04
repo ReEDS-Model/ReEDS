@@ -1460,7 +1460,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
     return dfout
 
 
-def get_sitemap(case=None, offshore=False, geo=True):
+def get_sitemap(case=None, offshore=False, geo=True, crs=None):
     """
     Get mapping from sc_point_gid to geographic points and counties.
     """
@@ -1479,7 +1479,8 @@ def get_sitemap(case=None, offshore=False, geo=True):
         )
         sitemap = sitemap.dropna(subset='ba')
     if geo:
-        crs = 'EPSG:5070' if offshore else 'ESRI:102008'
+        if crs is None:
+            crs = 'EPSG:5070' if offshore else 'ESRI:102008'
         sitemap = reeds.plots.df2gdf(sitemap, crs=crs)
     return sitemap
 
@@ -1627,54 +1628,6 @@ def map_sc_points_to_regions(dfin, case=None, offshore=False, **kwargs):
         dfout['region'] = dfin.index.map(sitemap.FIPS).map(county2zone)
     ## Drop nulls because they represent capacity outside the model area
     dfout = dfout.dropna(subset='region')
-    return dfout
-
-
-def assemble_exog_cap(exogpath, case=None):
-    """
-    Join on sc_point_gid column:
-    - Exogenous capacity (indicated by exogpath input)
-    - Model zone
-
-    Returns: pd.DataFrame with [*tech, region, year, sc_point_gid] index and capacity data
-
-    Inputs for testing:
-    exogpath = os.path.join(reeds_path, 'inputs', 'capacity_exogenous', 'exog_cap_upv_reference.csv')
-    """
-    dfin = pd.read_csv(exogpath, index_col='sc_point_gid')
-    offshore = True if 'wind-ofs' in os.path.basename(exogpath) else False
-    dfout = map_sc_points_to_regions(dfin, case, offshore)
-    dfout = (
-        dfout.reset_index()
-        [['*tech','region','year','sc_point_gid','capacity']]
-    )
-    return dfout
-
-
-def assemble_prescribed_builds(filepath, case=None, **kwargs):
-    """
-    Join on sc_point_gid column and aggregate to model regions:
-    - Prescribed builds (indicated by filepath input)
-    - Model zone
-
-    Returns: pd.DataFrame with [region, year] index and capacity data
-
-    Inputs for testing:
-    filepath = os.path.join(
-        reeds_path,
-        'inputs',
-        'capacity_exogenous',
-        'prescribed_builds_wind-ons_reference.csv'
-    )
-    """
-    dfin = pd.read_csv(filepath, index_col='sc_point_gid')
-    offshore = True if 'wind-ofs' in os.path.basename(filepath) else False
-    dfout = map_sc_points_to_regions(dfin, case, offshore, **kwargs)
-    dfout = (
-        dfout.groupby(['region', 'year'], as_index=False)
-        ['capacity']
-        .sum()
-    )
     return dfout
 
 
