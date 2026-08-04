@@ -63,3 +63,12 @@ slurm_parallel_runs/
 
 # documentation files 
 docs/build/*
+
+# reeds_copilot
+reeds_copilot/frontend/node_modules/
+reeds_copilot/frontend/dist/
+reeds_copilot/frontend/.vite/
+reeds_copilot/chat_history/
+reeds_copilot/.user/
+reeds_copilot/pp_job_history/
+reeds_copilot/run_history/
