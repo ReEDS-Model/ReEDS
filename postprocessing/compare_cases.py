@@ -1155,10 +1155,11 @@ except Exception:
 
 #%%### Hodgepodge: Final capacity, final generation, final transmission, NPV
 try:
-    width = max(11, len(cases)*1.3)
+    width = max(13.33, len(cases)*1.6)
+    _ncols = 5
     plt.close()
     f,ax = plt.subplots(
-        2, 4, figsize=(width, SLIDE_HEIGHT), sharex=True,
+        2, _ncols, figsize=(width, SLIDE_HEIGHT), sharex=True,
         sharey=('col' if (sharey is True) else False),
     )
     handles = {}
@@ -1229,8 +1230,23 @@ try:
         label=(False if lesslabels else True),
     )
 
+    ### Runtime
+    col = 4
+    ax[0,col].set_ylabel('Runtime [hours]', y=-0.075)
+    dfplot = pd.concat(
+        {case: dictin_runtime[case].groupby('process').processtime.sum() for case in cases},
+        axis=1).T.fillna(0)
+    dfplot = dfplot[[c for c in output_formatting['time_colors'].index if c in dfplot]].copy()
+
+    handles['Runtime'] = plot_bars_abs_stacked(
+        dfplot=dfplot, basecase=basemap,
+        colors=output_formatting['time_colors'],
+        ax=ax, col=col, net=False,
+        label=(False if lesslabels else True),
+    )
+
     ### Formatting
-    for col in range(4):
+    for col in range(_ncols):
         ax[1,col].set_xticks(range(len(cases)))
         ax[1,col].set_xticklabels(cases.keys(), rotation=90)
         ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
@@ -1240,13 +1256,13 @@ try:
     plt.draw()
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
-        'Capacity, Generation, Transmission, NPV', prs=prs, width=width)
+        'Capacity, Generation, Transmission, NPV, Runtime', prs=prs, width=width)
     if interactive:
         plt.show()
 
     ### Add legends as separate figure below the slide
     plt.close()
-    f,ax = plt.subplots(1, 4, figsize=(11, 0.1))
+    f,ax = plt.subplots(1, _ncols, figsize=(11, 0.1))
     for col, datum in enumerate(handles):
         leg = ax[col].legend(
             handles=handles[datum][::-1], loc='upper center', bbox_to_anchor=(0.5,1.0),
