@@ -6313,4 +6313,4 @@ matprice_multiplier(mat,t)$[(not sameas(mat,'%GSw_matsupply_spec%'))$years_matsh
 $endif.priceshockall
 
 * set slack price for materials to be 10x the base price to avoid infeasibilities in the model
-mat_slackprice(mat) = 10 * mat_price(mat) ;
+mat_slackprice(mat) = 100 * mat_price(mat) ;

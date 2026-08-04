@@ -4003,7 +4003,7 @@ eq_mat_demand(mat,t)$tmodel(t)..
 ;
 
 * total material supply 
-eq_mat_supply(mat,t)$[tmodel(t)]..
+eq_mat_supply(mat,t)$[tmodel(t)$(not sameas(mat,'%GSw_matsupply_spec%'))]..
 
     MAT_SUPPLY(mat,t) 
 
@@ -4012,15 +4012,15 @@ eq_mat_supply(mat,t)$[tmodel(t)]..
 * materials produced domestically (metric tons) * last year weight (multiplier) + slack variable for unmet demand (metric tons)
 
 * domestic production 
-      (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_domestic
+      (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_domestic
 * add global production outside US 
-    + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_glb
+    + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_glb
 * add domestic byproduct recovery 
-    + (sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_byproduct
+    + (sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t))$Sw_mat_byproduct
 * add domestic reserves 
-    + (sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_reserve
+    + (sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)} * yearweight(t))$Sw_mat_reserve
 * add allied production
-    + (sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)$(not sameas(mat,"GSw_matsupply_spec"))} * yearweight(t))$Sw_mat_allies
+    + (sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_allies
 ;
 
 * material demand cannot exceed the historic share of total materials produced (metric tons)
