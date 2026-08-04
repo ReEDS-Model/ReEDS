@@ -997,13 +997,30 @@ def write_miscellaneous_files(
         index_col='i',
     )[sw['GSw_H2LeakageScen']].rename_axis('*i').round(5).to_csv(
         os.path.join(inputs_case,'h2_leakage_rate.csv'))
-
+    
+    ## Employment factors
     # Transmission employment factors:
     ef_trans = pd.read_csv(
         os.path.join(reeds_path,'inputs','employment','employment_factor_inter_transmission.csv'),
         index_col=0)
-    ef_trans[ef_trans.index == sw['GSw_EmploymentFactor']].T.round(8).to_csv(
-        os.path.join(inputs_case,'employment_factor_inter_transmission.csv'),header=False)
+    ef_trans = ef_trans[ef_trans.index == sw['GSw_EmploymentFactor']].T.round(8)
+    ef_trans.index.name = 'jtype'
+    ef_trans = ef_trans.rename(columns={sw['GSw_EmploymentFactor']:'Value'})
+    reeds.io.write_to_inputs_h5(
+        ef_trans, 'employment_factor_inter_transmission', inputs_case, gamstype='parameter',
+        comment='--job-years/$ (construction)-- construction employment factors of transmission lines',
+    )
+ 
+    # Plant employment factors:
+    employment_factor_plant = pd.read_csv(
+        os.path.join(inputs_case, 'employment_factor_plant.csv'), index_col=0
+        ).rename_axis('i').reset_index().melt(id_vars='i', var_name='jtype', value_name='Value')
+
+    reeds.io.write_to_inputs_h5(
+        employment_factor_plant, 'employment_factor_plant', inputs_case, gamstype='parameter',
+        comment='--job-years/MW (construction), job-years/MW-year (fom) or job-years/MWh (vom)-- '
+                'employment factors of power plants by technology and job type',
+    )
     
     # Add this_year to years_until_endogenous to generate the tech-specific firstyear.csv file
     scalars = reeds.io.get_scalars(full=True)
@@ -1335,10 +1352,10 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # ---- Set up logger ----
     tic = datetime.datetime.now()
-    log = reeds.log.makelog(
-        scriptname=__file__,
-        logpath=os.path.join(inputs_case,'..','gamslog.txt'),
-    )
+    # log = reeds.log.makelog(
+    #     scriptname=__file__,
+    #     logpath=os.path.join(inputs_case,'..','gamslog.txt'),
+    # )
 
     print('Starting copy_files.py')
     main(reeds_path, inputs_case)

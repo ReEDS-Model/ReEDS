@@ -5983,26 +5983,6 @@ z_rep_op(t) = 0 ;
 *====================================
 *     --- Employment Factors ---
 *====================================
-* Employment factors of construction and operation of power plants
-$onempty
-Table employment_factor_plant(i,jtype) "--job-years/MW (construction), job-years/MW-year (fom) or job-years/MWh (vom)-- employment factors of power plants by technology and job type"
-$offlisting
-$ondelim
-$include inputs_case%ds%employment_factor_plant.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-* Employment factors of transmission deployment and flow
-parameter employment_factor_inter_transmission(jtype)  "--job-years/$ (construction) -- construction employment factors of transmission lines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%employment_factor_inter_transmission.csv
-$offdelim
-$onlisting
-/ ;
 
 * If upgrade techs, construction employment factor is adjusted by upgrade ratio
 * calculated as the ratio of the difference in capital costs between the initial 
