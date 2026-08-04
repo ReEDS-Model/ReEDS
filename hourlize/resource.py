@@ -16,6 +16,7 @@ import os
 import pandas as pd
 import shutil
 import site
+import copy_rev_folders
 from collections import OrderedDict
 from types import SimpleNamespace
 from glob import glob
@@ -957,6 +958,9 @@ if __name__== '__main__':
     with open(configpath, "r") as f:
         config = json.load(f, object_pairs_hook=OrderedDict)
     cf = SimpleNamespace(**config)
+
+    #%% copy reV folders
+    copy_rev_folders.main(cf.rev_paths_file, [cf.tech], overwrite=True)
 
     #%% look for upv output type (AC or DC)
     if cf.tech == "upv":
