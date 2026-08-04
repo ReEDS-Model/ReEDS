@@ -160,14 +160,11 @@ mapdiff = 'cap'
 if args.map:
     maptechs = {
         'Battery/PSH': ['Battery', 'Pumped-Hydro', 'Pumped-Hydro-Flex'],
-        'Biopower': ['Biopower', 'BECCS'],
         'Coal': ['Coal'],
-        'Demand Response': ['DR Shed','EVMC_Shape','EVMC_Storage'],
         'Fossil+CCS': ['Coal-CCS-Flex', 'Coal-CCS', 'Coal-CCS_Upgrade','Gas-CCS',
             'Gas-CC-CCS', 'Gas-CC-CCS-Flex', 'Gas-CC-CCS_Upgrade'],
-        'Geothermal': ['Geothermal'],
         'H2 Turbine': ['H2-CC_Upgrade', 'H2-CC', 'H2-CT_Upgrade', 'H2-CT', 'Hydrogen'],
-        'Natural Gas': ['Gas-CC','Gas-CT','Oil/Gas Steam'],
+        'Gas': ['Gas-CC', 'Gas-CT'],
         'Nuclear': ['Nuclear', 'Nuclear-SMR'],
         'Offshore Wind': ['Offshore Wind'],
         'Onshore Wind': ['Onshore Wind'],
