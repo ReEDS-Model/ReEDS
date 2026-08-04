@@ -54,7 +54,7 @@ construction_times_suffix,File suffix for construction times by technology,defau
 degrade_suffix,File suffix for annual degredation by technology,default,default,
 depreciation_schedules_suffix,File suffix for depreciation schedules,default,default,
 financials_sys_suffix,File suffix for the system-wide system discount rate,ATB(2023|2024),ATB2024,
-financials_tech_suffix,File suffix for technology-specific financial assumptions (see inputs\financials_tech),ATB(2023|2023_CRP20|2024),ATB2024,
+financials_tech_suffix,File suffix for technology-specific financial assumptions (see inputs\financials_tech),ATB(2023|2023_CRP20|2024|2024_batt30),ATB2024,
 financials_trans_suffix,File suffix for transmission financial assumptions,default; 30ITC_0pen_2022_2031,default,
 incentives_suffix,File suffix for incentive definition,ira; obbba; obbba_conservative; annual; biennial; ira_45q_45v_extension; none,obbba,
 inflation_suffix,File suffix for historical inflation schedule,default,default,
