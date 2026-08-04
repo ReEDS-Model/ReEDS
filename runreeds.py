@@ -216,8 +216,11 @@ def check_cases_format(df_cases):
 
 
 def check_compatibility(sw):
-    if int(sw['startyear']) < 2010:
-        raise ValueError(f"startyear = {sw['startyear']} but must be ≥ 2010")
+    if int(sw['startyear']) != 2010:
+        raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
+
+    if int(sw['GSw_SkipRAyear']) <= int(sw['startyear']):
+            raise ValueError(f"GSw_SkipRAyear = {sw['GSw_SkipRAyear']} but must be > {sw['startyear']}")
 
     if (sw['GSw_HourlyType'] in ['year']) and int(sw['GSw_InterDayLinkage']):
         raise ValueError(
@@ -1282,6 +1285,7 @@ def write_batch_script(
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
+            'process_unitdata',
             'mcs_sampler',
             'climateprep',            
             'hydcf',
