@@ -553,7 +553,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                 bin_num=class_bin_num,
                 bin_method=class_bin_method,
             )
-            .reset_index(drop=True)
+            .reset_index()
         )
         df_sc['class'] = (df_sc['class_orig'] - 1) * class_bin_num + df_sc['class_bin']
     print('Done adding classes: '+ str(datetime.datetime.now() - startTime))
@@ -643,6 +643,7 @@ def read_cf_file(
     ## Change hourly profile column names from simple index to
     ## associated id specified by profile_id_col (usually sc_point_gid)
     dfall.columns = dfall.columns.map(df_meta[profile_id_col])
+    
     ## Add time index
     dfall = dfall.set_index(df_index)
     
@@ -698,7 +699,7 @@ def process_cf_profiles(
         df_prof_out = df_prof_out * scale_factor
 
         ### Convert dtype
-        if 'int' in dtype and scale_factor < 100:
+        if np.issubdtype(dtype, np.integer) and scale_factor < 100:
             raise ValueError(
                 "scale_factor must be greater than 100 when converting "
                 "CF values to ints. Update scale_factor or dtype."
