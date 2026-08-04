@@ -170,7 +170,7 @@ def main(
     deflate = dollaryear.map(deflator).rename('Deflator')
 
     #%% Load the existing RSC capacity (PV plants, wind, and CSP)
-    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
+    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv")).rename(columns={'*r':'r'})
 
     # Group CSP tech
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'
