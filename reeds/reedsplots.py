@@ -5804,7 +5804,7 @@ def plot_stress_cf(
     plot_settings = reeds.io.get_plot_formatting()
     tech_map = plot_settings['tech_map']
     tech_color = plot_settings['tech_color'].color
-    droptechs = ['beccs', 'canad', 'bio', 'o-g-s', 'csp', 'distpv']
+    droptechs = ['beccs', 'canad', 'bio', 'o-g-s', 'lfill', 'csp', 'distpv']
     droplabels = []
     for _tech in droptechs:
         droplabels.extend(tech_map.loc[tech_map.index.str.lower().str.contains(_tech)].tolist())
