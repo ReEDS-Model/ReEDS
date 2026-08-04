@@ -820,7 +820,8 @@ if not int(sw.GSw_PRM_CapCredit):
             print(f'plot_stress_mix failed for {metric}:')
             print(traceback.format_exc())
 
-    level = 'transreg'
+    level, figheight = 'transreg', 1.2
+    level, figheight = 'interconnect', 1.8
     for metric in [
         'stress_top5_load',
         'stress_top5_netload',
@@ -831,7 +832,7 @@ if not int(sw.GSw_PRM_CapCredit):
         try:
             plt.close()
             f, ax, dictout = reedsplots.plot_stress_cf(
-                case=case, level=level, metric=metric,
+                case=case, level=level, metric=metric, figheight=figheight,
             )
             if write:
                 plt.savefig(os.path.join(savepath, savename))
