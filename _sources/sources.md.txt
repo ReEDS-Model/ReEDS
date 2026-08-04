@@ -489,6 +489,12 @@
 
   - [cappayments.csv](/inputs/capacity_exogenous/cappayments.csv)
   - [cappayments_ba.csv](/inputs/capacity_exogenous/cappayments_ba.csv)
+  - [classification_geothermal.csv](/inputs/supply_curve/classification_geothermal.csv)
+    - **File Type:** Use to define prescribed capacity class of rsc technology
+    - **Description:** Tempurature ranges of geothermal facilities classes defined based on reV resource supply curves and are aligned with 2024 ATB assumptions. Table 6 of the model documentation summarizes these classifications https://reeds-model.github.io/ReEDS/model_documentation.html#technical-resource-potential 
+    - **Indices:** class,access_case,min_reV_mean_temp,max_reV_mean_temp
+    - **Units:** degree celsius
+
   - [demonstration_plants.csv](/inputs/capacity_exogenous/demonstration_plants.csv)
     - **File Type:** Prescribed capacity
     - **Description:** Nuclear-smr demonstration plants; active when GSw_NuclearDemo=1
@@ -496,24 +502,7 @@
     - **Citation:** See 'notes' column in the file and https://www.energy.gov/oced/advanced-reactor-demonstration-projects-0
     - **Units:** MW
 
-  - [exog_cap_geohydro_allkm_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_allkm_reference.csv)
-  - [exog_cap_geohydro_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_reference.csv)
-  - [exog_cap_upv_limited.csv](/inputs/capacity_exogenous/exog_cap_upv_limited.csv)
-  - [exog_cap_upv_open.csv](/inputs/capacity_exogenous/exog_cap_upv_open.csv)
-  - [exog_cap_upv_reference.csv](/inputs/capacity_exogenous/exog_cap_upv_reference.csv)
-  - [exog_cap_wind-ons_limited.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_limited.csv)
-  - [exog_cap_wind-ons_open.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_open.csv)
-  - [exog_cap_wind-ons_reference.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_reference.csv)
   - [interconnection_queues.csv](/inputs/capacity_exogenous/interconnection_queues.csv)
-  - [prescribed_builds_wind-ofs_meshed_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv)
-  - [prescribed_builds_wind-ofs_meshed_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv)
-  - [prescribed_builds_wind-ofs_meshed_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv)
-  - [prescribed_builds_wind-ofs_radial_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv)
-  - [prescribed_builds_wind-ofs_radial_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv)
-  - [prescribed_builds_wind-ofs_radial_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv)
-  - [prescribed_builds_wind-ons_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv)
-  - [prescribed_builds_wind-ons_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv)
-  - [prescribed_builds_wind-ons_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv)
   - [ReEDS_generator_database_final_EIA-NEMS.csv](/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv)
     - **File Type:** Input
     - **Description:** EIA-NEMS database of existing generators
@@ -1638,17 +1627,11 @@
   - [p.csv](/inputs/sets/p.csv)
     - **File Type:** GAMS set
     - **Description:** set of products produced
-  - [pcat.csv](/inputs/sets/pcat.csv)
-    - **File Type:** GAMS set
-    - **Description:** set of prescribed technology categories
   - [plantcat.csv](/inputs/sets/plantcat.csv)
     - **File Type:** GAMS set
     - **Description:** set of categories for plant characteristics
   - [prepost.csv](/inputs/sets/prepost.csv)
     - **File Type:** GAMS set
-  - [prescriptivelink0.csv](/inputs/sets/prescriptivelink0.csv)
-    - **File Type:** GAMS set
-    - **Description:** initial set of prescribed categories and their technologies - used in assigning prescribed builds
   - [pvb_agg.csv](/inputs/sets/pvb_agg.csv)
     - **File Type:** GAMS set
     - **Description:** crosswalk between hybrid pv+battery configurations and technology options

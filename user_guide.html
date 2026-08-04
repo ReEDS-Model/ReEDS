@@ -1328,8 +1328,6 @@ python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<sp
 <p>By default, the outputs will be dumped to a subdirectory named <code class="docutils literal notranslate"><span class="pre">results</span></code> within <code class="docutils literal notranslate"><span class="pre">hourlize/out/[casename]</span></code>. In addition, with <code class="docutils literal notranslate"><span class="pre">copy_to_reeds</span></code> set to true (as is default), we’ll copy the results to the ReEDS repo containing this hourlize directory, and with<code class="docutils literal notranslate"><span class="pre">copy_to_shared</span></code> set to true (not default), we’ll copy to the shared drive (see Shared Drive Locations below).</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_{tech}.csv</span></code>: A supply curve with rows for each site and columns for region, class, available capacity, and costs. E.g. see <code class="docutils literal notranslate"><span class="pre">inputs/supply_curve/wind-ons_supply_curve-reference_ba.csv</span></code> (within ReEDS repo)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">{tech}_exog_cap.csv</span></code>: Exogenous (built pre-2010) capacity with columns for region, site and year. This is not capacity builds in each year, but rather cumulative capacity of each existing site over time. E.g. see <code class="docutils literal notranslate"><span class="pre">inputs/capacity_exogenous/wind-ons_exog_cap_reference_ba.csv</span></code> (within ReEDS repo)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">{tech}_prescribed_builds.csv</span></code>: Capacity prescribed builds (2010 - present) with columns for region, year, capacity. This is the installed capacity in each year rather than cumulative capacity over time. E.g. see <code class="docutils literal notranslate"><span class="pre">inputs/capacity_exogenous/wind-ons_prescribed_builds_reference_ba.csv</span></code> (within ReEDS repo)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">{tech}_.h5</span></code>: Hourly capacity factor profiles for each region/class. See <code class="docutils literal notranslate"><span class="pre">inputs/profiles_cf/cf_wind-ons_reference_ba.h5</span></code> within the ReEDS repository as an example. These files include datasets with column names (class|region) and an index with datetime and timezone information.</p></li>
 </ul>
 </section>
@@ -1344,7 +1342,6 @@ python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<sp
 <li><p><code class="docutils literal notranslate"><span class="pre">get_supply_curve_and_preprocess()</span></code></p>
 <ul class="simple">
 <li><p>The supply curve is filtered if necessary, based on <code class="docutils literal notranslate"><span class="pre">filter_cols</span></code>.</p></li>
-<li><p>Existing and planned sites from a generator database (<code class="docutils literal notranslate"><span class="pre">existing_sites</span></code>) are assigned to supply curve points for exogenous and prescribed capacity outputs respectively.</p></li>
 <li><p>If we have minimum capacity thresholds for the supply curve points, these are applied to further filter the supply curve.</p></li>
 </ul>
 </li>
@@ -1361,7 +1358,7 @@ python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<sp
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">save_sc_outputs()</span></code></p>
 <ul class="simple">
-<li><p>Supply curve outputs are saved (<code class="docutils literal notranslate"><span class="pre">supplycurve_{tech}.csv</span></code>) as well as exogenous capacity (<code class="docutils literal notranslate"><span class="pre">{tech}_exog_cap.csv</span></code>), which is built pre-2010, and prescribed builds (<code class="docutils literal notranslate"><span class="pre">{tech}_prescribed_builds.csv</span></code>), which are built between 2010 and present day.</p></li>
+<li><p>Supply curve outputs are saved (<code class="docutils literal notranslate"><span class="pre">supplycurve_{tech}.csv</span></code>).</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">process_cf_profiles()</span></code></p>
@@ -1463,37 +1460,29 @@ python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<sp
 <td class="text-left"><p>data type used to save hourly profiles</p></td>
 <td class="text-left"><p>np.uint16</p></td>
 </tr>
-<tr class="row-even"><td class="text-left"><p>existing_sites</p></td>
-<td class="text-left"><p>None or path to file with existing capacity</p></td>
-<td class="text-left"><p>‘{reeds_path}/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv’</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p>gather_method</p></td>
+<tr class="row-even"><td class="text-left"><p>gather_method</p></td>
 <td class="text-left"><p>‘list’, ‘slice’, ‘smart’. This setting will take a slice of profile ids from the min to max, rather than using a list of ids, for improved performance when ids are close together for each group.</p></td>
 <td class="text-left"><p>‘smart’</p></td>
 </tr>
-<tr class="row-even"><td class="text-left"><p>hourly_out_years</p></td>
+<tr class="row-odd"><td class="text-left"><p>hourly_out_years</p></td>
 <td class="text-left"><p>e.g. [2012] for just 2012 or a list of year [2011, 2012, 2013]</p></td>
 <td class="text-left"><p>[2007, 2008, 2009, 2010, 2011, 2012, 2013],</p></td>
 </tr>
-<tr class="row-odd"><td class="text-left"><p>inputfiles</p></td>
+<tr class="row-even"><td class="text-left"><p>inputfiles</p></td>
 <td class="text-left"><p>list of files to copy over to hourlize input folder</p></td>
 <td class="text-left"><p>[“reg_map_file”, “class_path”]</p></td>
 </tr>
-<tr class="row-even"><td class="text-left"><p>profile_id_col</p></td>
+<tr class="row-odd"><td class="text-left"><p>profile_id_col</p></td>
 <td class="text-left"><p>Unique identifier for reV supply curve and profiles</p></td>
 <td class="text-left"><p>‘sc_point_gid’</p></td>
 </tr>
-<tr class="row-odd"><td class="text-left"><p>resource_source_timezone</p></td>
+<tr class="row-even"><td class="text-left"><p>resource_source_timezone</p></td>
 <td class="text-left"><p>UTC would be 0, Eastern standard time would be -5</p></td>
 <td class="text-left"><p>0</p></td>
 </tr>
-<tr class="row-even"><td class="text-left"><p>scale_factor</p></td>
+<tr class="row-odd"><td class="text-left"><p>scale_factor</p></td>
 <td class="text-left"><p>Factor by which capacity factor values are scaled up when writing hourly profiles.</p></td>
 <td class="text-left"><p>1e4</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p>start_year</p></td>
-<td class="text-left"><p>The start year of the model, for existing capacity purposes.</p></td>
-<td class="text-left"><p>2010</p></td>
 </tr>
 <tr class="row-even"><td class="text-left"><p>state_abbrev</p></td>
 <td class="text-left"><p>Path to file with state abbreviations</p></td>
@@ -1786,7 +1775,7 @@ These characteristics include:</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on July 28, 2026.
+      <span class="lastupdated">Last updated on August 04, 2026.
       </span></p>
   </div>
 

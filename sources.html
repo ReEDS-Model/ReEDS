@@ -766,6 +766,14 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="#/inputs/capacity_exogenous/cappayments.csv"><span class="xref myst">cappayments.csv</span></a></p></li>
 <li><p><a class="reference internal" href="#/inputs/capacity_exogenous/cappayments_ba.csv"><span class="xref myst">cappayments_ba.csv</span></a></p></li>
+<li><p><a class="reference internal" href="#/inputs/supply_curve/classification_geothermal.csv"><span class="xref myst">classification_geothermal.csv</span></a></p>
+<ul>
+<li><p><strong>File Type:</strong> Use to define prescribed capacity class of rsc technology</p></li>
+<li><p><strong>Description:</strong> Tempurature ranges of geothermal facilities classes defined based on reV resource supply curves and are aligned with 2024 ATB assumptions. Table 6 of the model documentation summarizes these classifications https://reeds-model.github.io/ReEDS/model_documentation.html#technical-resource-potential</p></li>
+<li><p><strong>Indices:</strong> class,access_case,min_reV_mean_temp,max_reV_mean_temp</p></li>
+<li><p><strong>Units:</strong> degree celsius</p></li>
+</ul>
+</li>
 <li><p><a class="reference internal" href="#/inputs/capacity_exogenous/demonstration_plants.csv"><span class="xref myst">demonstration_plants.csv</span></a></p>
 <ul>
 <li><p><strong>File Type:</strong> Prescribed capacity</p></li>
@@ -775,24 +783,7 @@
 <li><p><strong>Units:</strong> MW</p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_geohydro_allkm_reference.csv"><span class="xref myst">exog_cap_geohydro_allkm_reference.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_geohydro_reference.csv"><span class="xref myst">exog_cap_geohydro_reference.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_upv_limited.csv"><span class="xref myst">exog_cap_upv_limited.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_upv_open.csv"><span class="xref myst">exog_cap_upv_open.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_upv_reference.csv"><span class="xref myst">exog_cap_upv_reference.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_wind-ons_limited.csv"><span class="xref myst">exog_cap_wind-ons_limited.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_wind-ons_open.csv"><span class="xref myst">exog_cap_wind-ons_open.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/exog_cap_wind-ons_reference.csv"><span class="xref myst">exog_cap_wind-ons_reference.csv</span></a></p></li>
 <li><p><a class="reference internal" href="#/inputs/capacity_exogenous/interconnection_queues.csv"><span class="xref myst">interconnection_queues.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv"><span class="xref myst">prescribed_builds_wind-ofs_meshed_limited.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv"><span class="xref myst">prescribed_builds_wind-ofs_meshed_open.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv"><span class="xref myst">prescribed_builds_wind-ofs_meshed_reference.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv"><span class="xref myst">prescribed_builds_wind-ofs_radial_limited.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv"><span class="xref myst">prescribed_builds_wind-ofs_radial_open.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv"><span class="xref myst">prescribed_builds_wind-ofs_radial_reference.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv"><span class="xref myst">prescribed_builds_wind-ons_limited.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv"><span class="xref myst">prescribed_builds_wind-ons_open.csv</span></a></p></li>
-<li><p><a class="reference internal" href="#/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv"><span class="xref myst">prescribed_builds_wind-ons_reference.csv</span></a></p></li>
 <li><p><a class="reference internal" href="#/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv"><span class="xref myst">ReEDS_generator_database_final_EIA-NEMS.csv</span></a></p>
 <ul>
 <li><p><strong>File Type:</strong> Input</p></li>
@@ -2481,12 +2472,6 @@
 <li><p><strong>Description:</strong> set of products produced</p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#/inputs/sets/pcat.csv"><span class="xref myst">pcat.csv</span></a></p>
-<ul>
-<li><p><strong>File Type:</strong> GAMS set</p></li>
-<li><p><strong>Description:</strong> set of prescribed technology categories</p></li>
-</ul>
-</li>
 <li><p><a class="reference internal" href="#/inputs/sets/plantcat.csv"><span class="xref myst">plantcat.csv</span></a></p>
 <ul>
 <li><p><strong>File Type:</strong> GAMS set</p></li>
@@ -2496,12 +2481,6 @@
 <li><p><a class="reference internal" href="#/inputs/sets/prepost.csv"><span class="xref myst">prepost.csv</span></a></p>
 <ul>
 <li><p><strong>File Type:</strong> GAMS set</p></li>
-</ul>
-</li>
-<li><p><a class="reference internal" href="#/inputs/sets/prescriptivelink0.csv"><span class="xref myst">prescriptivelink0.csv</span></a></p>
-<ul>
-<li><p><strong>File Type:</strong> GAMS set</p></li>
-<li><p><strong>Description:</strong> initial set of prescribed categories and their technologies - used in assigning prescribed builds</p></li>
 </ul>
 </li>
 <li><p><a class="reference internal" href="#/inputs/sets/pvb_agg.csv"><span class="xref myst">pvb_agg.csv</span></a></p>
@@ -3661,7 +3640,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on July 28, 2026.
+      <span class="lastupdated">Last updated on August 04, 2026.
       </span></p>
   </div>
 
