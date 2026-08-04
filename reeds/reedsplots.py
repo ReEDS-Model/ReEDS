@@ -5794,7 +5794,7 @@ def plot_stress_cf(
     Plot stress dispatch over capacity, in the style of a capacity credit.
     Rows are hierarchy levels, columns are techs, x axis is years.
     """
-    ### Parse inputs
+    ### Check inputs
     check_metric(metric)
     ### Get all the data
     dfstress = get_cap_rep_stress_mix(
@@ -5824,6 +5824,9 @@ def plot_stress_cf(
     regions = dfmap[level].bounds.minx.sort_values().index
     nrows, ncols, coords = layout_subplots(row_list=regions, col_list=techs)
     metriclabel = stress_mix_label(case, metric).split(': ')[1]
+    sw = reeds.io.get_switches(case)
+    yearmin = int(sw.GSw_StartMarkets)
+    yearmax = int(sw.endyear)
     ### Plot it
     plt.close()
     f,ax = plt.subplots(
@@ -5863,10 +5866,14 @@ def plot_stress_cf(
                     )
             _ax.set_xlabel(None)
     ## Formatting
-    _ax.set_ylim(0,100)
+    _ax.set_ylim(0, 100)
+    _ax.set_xlim(yearmin, yearmax)
     _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
     _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
     reeds.plots.despine(ax)
+    plt.draw()
+    plots.shorten_years(_ax, start_shortening_in=yearmin+1)
     return f, ax, {'stress': capcredit, 'rep': repfraction}
 
 
