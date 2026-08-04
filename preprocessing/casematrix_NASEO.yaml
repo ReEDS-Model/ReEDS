@@ -1,0 +1,89 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010..2050..5
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  region:
+    IL:
+      GSw_Region: st/IL
+      GSw_TransInvScalar: 0.02
+      GSw_GasCurve: 2
+    PJM-MISO-TVA:
+      GSw_Region: nerc/PJM.MISO.SERC_C
+      GSw_TransInvScalar: 0.3
+      GSw_GasCurve: 2
+    EI:
+      GSw_Region: interconnect/eastern
+      GSw_TransInvScalar: 0.5
+      GSw_GasCurve: 2
+    USA:
+      GSw_Region: country/USA
+      GSw_TransInvScalar: 1
+  tranCap:
+    flat:
+      GSw_TransInvMaxLongTerm: 0.0001
+    low:
+      GSw_TransInvMaxLongTerm: 1.82
+    hist:
+      GSw_TransInvMaxLongTerm: 3.64
+    unlim:
+      GSw_TransInvMaxLongTerm: 0
+  rps:
+    active:
+      GSw_StateRPS: 1
+    none:
+      GSw_StateRPS: 0
+  coal:
+    active:
+      GSw_RetireYears_Coal: 0
+    none:
+      GSw_RetireYears_Coal: 100
+    early:
+      GSw_RetireYears_Coal: -10
+#  load:
+#    midcase:
+#
+#    high:
+#
+  PRM:
+    none:
+      GSw_PRM_NetImportLimitScen: 
+    hist:
+      GSw_PRM_NetImportLimitScen: 2031_hist/2050_100
+  hurdles:
+    zero:
+      GSw_TransHurdleRate: 0
+    active:
+      GSw_TransHurdleRate: 1
+    state:
+      GSw_TransHurdleRate: 1
+      GSw_TransHurdleLevel1: st
+    market:
+      GSw_TransHurdleRate: 1
+      GSw_TransHurdleLevel1: transreg
+    both:
+      GSw_TransHurdleRate: 1
+      GSw_TransHurdleLevel1: transreg
+      GSw_TransHurdleLevel2: st
+
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+casegroups:
+  - [[IL],[unlim],[],[],[hist],[zero]]
+  - [[PJM-MISO,EI],[],[],[active,none],[hist],[zero,active]]
+

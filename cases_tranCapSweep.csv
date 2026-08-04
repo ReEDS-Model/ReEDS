@@ -1,0 +1,11 @@
+,Default Value,PJM-MISO-TVA_refall_allRPS_hist_interzonal,PJM-MISO-TVA_refall_allRPS_hist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_2xhist_interzonal,PJM-MISO-TVA_refall_allRPS_2xhist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_3xhist_interzonal,PJM-MISO-TVA_refall_allRPS_3xhist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_4xhist_interzonal,PJM-MISO-TVA_refall_allRPS_4xhist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_5xhist_interzonal,PJM-MISO-TVA_refall_allRPS_5xhist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_unlim_interzonal,PJM-MISO-TVA_refall_allRPS_unlim_interzonal-reinforce
+ignore,0,,,,,,,,,,,,
+yearset,2010..2050..5,,,,,,,,,,,,
+demandscen,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline
+rpsscen,all,all,all,all,all,all,all,all,all,all,all,all,all
+GSw_Region,country/USA,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C
+GSw_GasCurve,1,2,2,2,2,2,2,2,2,2,2,2,2
+GSw_StateRPS,1,1,1,1,1,1,1,1,1,1,1,1,1
+GSw_TransInvScalar,1,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3
+GSw_TransInvMaxLongTerm,0,3.64,3.64,7.28,7.28,10.92,10.92,14.56,14.56,18.2,18.2,0,0
+GSw_TransInvMaxTypes,1,1,2,1,2,1,2,1,2,1,2,1,2

@@ -1,0 +1,93 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010..2050..5
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  region:
+    IL:
+      GSw_Region: st/IL
+      GSw_TransInvScalar: 0.02
+      GSw_GasCurve: 2
+    PJM-MISO-TVA:
+      GSw_Region: nercr/PJM.MISO.SERC_C
+      GSw_TransInvScalar: 0.3
+      GSw_GasCurve: 2
+    EI:
+      GSw_Region: interconnect/eastern
+      GSw_TransInvScalar: 0.5
+      GSw_GasCurve: 2
+  load:
+    refall:
+      demandscen: AEO_2026_baseline
+    hiILrefGen:
+      demandscen: AEO_2026_hiILrefGen
+    refILhiGen:
+      demandscen: AEO_2026_refILhiGen
+    high:
+      demandscen: AEO_2026_high
+  rps:
+    allRPS:
+      GSw_StateRPS: 1
+      rpsscen: all
+    noILRPS:
+      GSw_StateRPS: 1
+      rpsscen: noIL
+    onlyILRPS:
+      GSw_StateRPS: 1
+      rpsscen: onlyIL
+    noRPS:
+      GSw_StateRPS: 0
+  tranCap:
+    flat:
+      GSw_TransInvMaxLongTerm: 0.0001
+    hist:
+      GSw_TransInvMaxLongTerm: 3.64
+    025pctHist:
+      GSw_TransInvMaxLongTerm: 0.91
+    050pctHist:
+      GSw_TransInvMaxLongTerm: 1.82
+    075pctHist:
+      GSw_TransInvMaxLongTerm: 2.73
+    125pctHist:
+      GSw_TransInvMaxLongTerm: 4.55
+    150pctHist:
+      GSw_TransInvMaxLongTerm: 5.46
+    175pctHist:
+      GSw_TransInvMaxLongTerm: 6.37
+    2xhist:
+      GSw_TransInvMaxLongTerm: 7.28
+    3xhist:
+      GSw_TransInvMaxLongTerm: 10.92
+    4xhist:
+      GSw_TransInvMaxLongTerm: 14.56
+    5xhist:
+      GSw_TransInvMaxLongTerm: 18.20
+    unlim:
+      GSw_TransInvMaxLongTerm: 0
+  tranInvTypes:
+    interzonal:
+      GSw_TransInvMaxTypes: 1
+    interzonal-reinforce:
+      GSw_TransInvMaxTypes: 2
+
+
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+casegroups:
+  - [[IL,PJM-MISO-TVA,EI],[refall],[allRPS],[flat,025pctHist,050pctHist,hist],[]]
+

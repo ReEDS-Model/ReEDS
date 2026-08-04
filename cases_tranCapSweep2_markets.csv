@@ -1,0 +1,11 @@
+,Default Value,PJM-MISO-TVA_refall_allRPS_flat_interzonal,PJM-MISO-TVA_refall_allRPS_flat_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_025pctHist_interzonal,PJM-MISO-TVA_refall_allRPS_025pctHist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_050pctHist_interzonal,PJM-MISO-TVA_refall_allRPS_050pctHist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_075pctHist_interzonal,PJM-MISO-TVA_refall_allRPS_075pctHist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_125pctHist_interzonal,PJM-MISO-TVA_refall_allRPS_125pctHist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_150pctHist_interzonal,PJM-MISO-TVA_refall_allRPS_150pctHist_interzonal-reinforce,PJM-MISO-TVA_refall_allRPS_175pctHist_interzonal,PJM-MISO-TVA_refall_allRPS_175pctHist_interzonal-reinforce
+ignore,0,,,,,,,,,,,,,,
+yearset,2010..2050..5,,,,,,,,,,,,,,
+demandscen,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline,AEO_2026_baseline
+rpsscen,all,all,all,all,all,all,all,all,all,all,all,all,all,all,all
+GSw_Region,country/USA,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C,nercr/PJM.MISO.SERC_C
+GSw_GasCurve,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+GSw_StateRPS,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+GSw_TransInvScalar,1,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3
+GSw_TransInvMaxLongTerm,0,0.0001,0.0001,0.91,0.91,1.82,1.82,2.73,2.73,4.55,4.55,5.46,5.46,6.37,6.37
+GSw_TransInvMaxTypes,1,1,2,1,2,1,2,1,2,1,2,1,2,1,2
