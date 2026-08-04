@@ -501,6 +501,7 @@ yearafter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 years_until_endogenous.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 allh,inputs.h5,1,,,,9999,,,,,,
 allszn,inputs.h5,1,,,,9999,,,,,,
+captype,inputs.h5,1,,,,9999,,,,,,
 cendiv,inputs.h5,1,,,,9999,,,,,,
 co2_captured_incentive_in,inputs.h5,1,,,,9999,,,,,,
 co2_injection_limit,inputs.h5,1,,,,9999,,,,,,
