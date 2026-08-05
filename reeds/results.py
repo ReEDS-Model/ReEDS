@@ -303,19 +303,15 @@ def calc_systemcost(
         crf_from_user (bool): Use a user-specified Capital Recovery Factor (CRF) instead of the model’s.
             (Only used if cost_type == 'annualized'.)
     """
-    # Identify the inputs_case directory based on provided path
-    inputs_case = (
-        os.path.abspath(os.path.join(case, '..', '..', 'inputs_case'))
-        if case.endswith('.h5')
-        else os.path.join(case, 'inputs_case')
-    )
-
     # Get case inputs
     systemcost = reeds.io.read_output(case, 'systemcost_ba')
     pvf_capital = reeds.io.read_output(case, 'pvf_capital', valname='pvfcap')
     pvf_onm = reeds.io.read_output(case, 'pvf_onm', valname='pvfonm')
-    crf_in = pd.read_csv(os.path.join(inputs_case, 'crf.csv'))
-    df_capex_init = pd.read_csv(os.path.join(inputs_case, 'df_capex_init.csv'))
+    crf_in = reeds.io.read_input(case, 'crf')
+    df_capex_init = (
+        reeds.io.read_input(case, 'df_capex_init')
+        .astype({'cap_new':np.float32, 'capex':np.float32})
+    )
 
     sw = reeds.io.get_switches(case)  
     scalars = reeds.io.get_scalars(case)  
@@ -327,7 +323,7 @@ def calc_systemcost(
     systemcost.rename(columns={'t':'year', 'sys_costs':'cost_cat'}, inplace=True)
     pvf_capital.rename(columns={'t':'year'}, inplace=True)
     pvf_onm.rename(columns={'t':'year'}, inplace=True)
-    crf_in.rename(columns={'*t':'year'}, inplace=True)
+    crf_in.rename(columns={'t':'year', 'Value':'crf'}, inplace=True)
     df_capex_init.rename(columns={'t':'year','region':'r'}, inplace=True)
 
     # Convert to Billion dollars
