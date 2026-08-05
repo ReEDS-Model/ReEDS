@@ -23,7 +23,7 @@ AZ_N,AZ,WestConnect,WestConnect_South,WECC_SW,western,Arizona_Public_Service_Co
 AZ_S,AZ,WestConnect,WestConnect_South,WECC_SW,western,Arizona_Public_Service_Co
 NM_W,NM,WestConnect,WestConnect_South,WECC_SW,western,Public_Service_Co_of_New_Mexico
 NM_E,NM,SPP,SPP_South,SPP,eastern,SPP
-TX_EP,TX,WestConnect,WestConnect_South,WestConnect,western,ERCOT
+TX_EP,TX,WestConnect,WestConnect_South,WECC_SW,western,ERCOT
 TX_N,TX,ERCOT,ERCOT,ERCOT,texas,ERCOT
 TX_W,TX,ERCOT,ERCOT,ERCOT,texas,ERCOT
 TX_S,TX,ERCOT,ERCOT,ERCOT,texas,ERCOT
