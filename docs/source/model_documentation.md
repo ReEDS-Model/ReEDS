@@ -60,6 +60,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | GW | gigawatt |
 | GWP | global warming potential |
 | H<sub>2</sub> | hydrogen |
+| HHV | higher heating value |
 | HMI | U.S. Bureau of Reclamation Hydropower Modernization Initiative |
 | HVDC | high-voltage direct current |
 | IGCC | integrated gasification combined cycle |
@@ -680,6 +681,7 @@ Fossil and nuclear technologies are characterized by the following parameters:
 - Scheduled and forced outage rates (%).
 
 Cost and performance assumptions for all new fossil and nuclear technologies are taken from the ATB {cite}`nrel2024AnnualTechnology2024` with options to use the Conservative, Moderate, or Advanced trajectories.
+Thermal plant heat rates and fuel costs are specified in higher heating value (HHV) terms, consistent with the EIA and the ATB. 
 Regional variations and adjustments are described below.
 Fixed operation and maintenance costs for coal plants increase over time with the plant's age. Fixed operation and maintenance costs for nuclear plants increase by a fixed amount after 50 years of being online. These escalation factors are taken from the Annual Energy Outlook 2025 {cite}`eiaAnnualEnergyOutlook2025`.
 

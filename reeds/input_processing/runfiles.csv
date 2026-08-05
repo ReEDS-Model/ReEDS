@@ -28,12 +28,14 @@ cap_existing_hydro.csv,inputs/hydro/cap_existing_hydro.csv,1,ignore,ignore,,t,,0
 cap_existing_psh.csv,inputs/storage/cap_existing_psh.csv,(int(sw.GSw_Storage) != 0) and ((int(sw.GSw_HydroPSHDurData) == 1) or (sw.GSw_HydroStorInMaxFrac == 'data')),sum,ignore,r,"*i,v",,0,0,,,,,,
 cap_penalty.csv,inputs/financials/cap_penalty.csv,1,ignore,ignore,,tg,,,0,,,,,,
 cappayments_ba.csv,inputs/capacity_exogenous/cappayments_ba.csv,1,ignore,ignore,,*r,,0,0,,,,,,not done but not used
+captype.csv,inputs/sets/captype.csv,1,ignore,ignore,,,,,,,,set,captype,capacity types ( existing and prescribed),
 ccs_link.csv,inputs/emission_constraints/ccs_link.csv,1,ignore,ignore,,,,,0,,,,,,
 ccs_link_water.csv,inputs/emission_constraints/ccs_link_water.csv,1,ignore,ignore,,,,,0,,,,,,
 ccsflex_cat.csv,inputs/sets/ccsflex_cat.csv,1,ignore,ignore,,,,,,,,set,ccsflex_cat,flexible ccs performance parameter categories,
 cd_beta0.csv,inputs/fuelprices/cd_beta0.csv,1,ignore,ignore,*cendiv,,,,0,,,,,,
 cd_beta0_allsector.csv,inputs/fuelprices/cd_beta0_allsector.csv,1,ignore,ignore,*cendiv,,,,0,,,,,,
 ces_fraction.csv,inputs/state_policies/ces_fraction.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,st,,1,0,,,,,,
+classification_geothermal.csv,inputs/supply_curve/classification_geothermal.csv,1,ignore,ignore,,,,,,,,,,,
 climate_param.csv,inputs/sets/climate_param.csv,1,ignore,ignore,,,,,,,,set,climate_param,parameters defined in climate_heuristics_finalyear,
 co2_site_char.csv,inputs/ctus/co2_site_char.csv,1,ignore,ignore,,,,0,,,,,,,
 coal_price.csv,inputs/fuelprices/coal_{coalscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
@@ -80,9 +82,6 @@ emitrate_coal_multiplier.csv,inputs/emission_constraints/emitrate_coal_multiplie
 employment_factor_plant.csv,inputs/employment/employment_factor_plant_{GSw_EmploymentFactor}.csv,1,ignore,ignore,,,,,0,,,,,,
 energy_communities.csv,inputs/financials/energy_communities.csv,1,ignore,ignore,,,,,0,,,,,,region aggregation and filtering is handled in copy_files
 etype.csv,inputs/sets/etype.csv,1,ignore,ignore,,,,,,,,set,etype,emission types used in model (upstream and process),
-exog_cap_geohydro.csv,inputs/capacity_exogenous/exog_cap_geohydro_{GSw_SitingGeo}.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,region,"*tech,sc_point_gid,year",,0,0,,,,,,
-exog_cap_upv.csv,inputs/capacity_exogenous/exog_cap_upv_{GSw_SitingUPV}.csv,1,ignore,ignore,region,"*tech,sc_point_gid,year",,0,0,,,,,,
-exog_cap_wind-ons.csv,inputs/capacity_exogenous/exog_cap_wind-ons_{GSw_SitingWindOns}.csv,1,ignore,ignore,region,"*tech,sc_point_gid,year",,0,0,,,,,,
 f.csv,inputs/sets/f.csv,1,ignore,ignore,,,,,,,,set,f,fuel types,
 financials_hydrogen.csv,inputs/financials/financials_hydrogen.csv,int(sw.GSw_H2) != 0,ignore,ignore,,,,,0,,,,,,
 financials_transmission.csv,inputs/financials/financials_transmission_{financials_trans_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
@@ -202,9 +201,6 @@ plantchar_pvb.csv,inputs/plant_characteristics/pvb_{pvbscen}.csv,int(sw.GSw_PVB)
 plantchar_upgrades.csv,inputs/upgrades/{upgradescen}.csv,sw.upgradescen != 'default',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upv.csv,inputs/plant_characteristics/{plantchar_upv}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 prepost.csv,inputs/sets/prepost.csv,1,ignore,ignore,,,,,,,,set,prepost,defines pre-2010 versus post-2010 years,
-prescribed_builds_wind-ofs.csv,inputs/capacity_exogenous/prescribed_builds_wind-ofs_{GSw_OffshoreFiles}_{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,year,,0,0,,,,,,aggfunc and disaggfunc set to ignore because data will be read in at the correct spatial resolution
-prescribed_builds_wind-ons.csv,inputs/capacity_exogenous/prescribed_builds_wind-ons_{GSw_SitingWindOns}.csv,1,ignore,ignore,region,year,,0,0,,,,,,aggfunc and disaggfunc set to ignore because data will be read in at the correct spatial resolution
-prescriptivelink0.csv,inputs/sets/prescriptivelink0.csv,1,ignore,ignore,,,,,0,,,set,prescriptivelink0,initial set of prescribed categories and their technologies - used in assigning prescribed builds,
 psh_supply_curves_duration.csv,inputs/storage/PSH_supply_curves_durations.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,1,,,,
 psh_supply_curves_capacity.csv,inputs/supply_curve/PSH_supply_curves_capacity_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,sum,geosize,r,wide,,1,0,,,,,,
 psh_supply_curves_cost.csv,inputs/supply_curve/PSH_supply_curves_cost_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,mean,uniform,r,wide,,1,0,,,,,,
@@ -252,7 +248,7 @@ UnappWaterMultAnn.csv,inputs/climate/{climatescen}/UnappWaterMultAnn.csv,int(sw.
 UnappWaterSeaAnnDistr.csv,inputs/climate/{climatescen}/UnappWaterSeaAnnDistr.csv,int(sw.GSw_ClimateWater) != 0,mean,uniform,r,"wst,month,t",,0,0,,,,,,
 unbundled_limit_ces.csv,inputs/state_policies/unbundled_limit_ces.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,,,,0,,,,,,
 unbundled_limit_rps.csv,inputs/state_policies/unbundled_limit_rps.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,,,,0,,,,,,
-unitdata.csv,inputs/capacity_exogenous/ReEDS_generator_database_final_{unitdata}.csv,1,ignore,ignore,FIPS,,,,0,,,,,,
+unitdata_orig.csv,inputs/capacity_exogenous/ReEDS_generator_database_final_{unitdata}.csv,1,ignore,ignore,FIPS,,,,0,,,,,,
 unitspec_upgrades.csv,inputs/sets/unitspec_upgrades.csv,1,ignore,ignore,,,,,0,,,set,unitspec_upgrades,upgraded technologies that get unit-specific characteristics,
 upgrade_hintage_char.csv,inputs/sets/upgrade_hintage_char.csv,1,ignore,ignore,,,,,0,,,set,upgrade_hintage_char,sets to operate over in extension of hintage_data characteristics when sw_upgrades = 1,
 upgrade_link.csv,inputs/upgrades/upgrade_link.csv,1,ignore,ignore,,,,,0,,,,,,
