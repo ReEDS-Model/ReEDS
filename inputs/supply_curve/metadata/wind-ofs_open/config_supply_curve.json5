@@ -1,18 +1,19 @@
 {
     "execution_control": {
         "allocation": "wetosa",
-        "feature": "-p debug",
         "option": "kestrel",
-        "walltime": 1
+        "nodes": 1,
+        "walltime": 1,
+        "feature": "-p debug"
     },
     "log_directory": "./logs",
     "log_level": "INFO",
     "trans_table": [
-        "/projects/rev/data/transmission/north_america/conus/fy25/nrel_build/build/final/all_transmission_reinforced_128.csv"
+        "/kfs2/projects/rev/data/transmission/north_america/conus/fy25/nrel_build/build/offshore/osw_final/offshore_transmission_reinforced_128.csv"
     ],
-    "sc_points": "./wind_limited_bespoke.h5",
+    "sc_points": "PIPELINE",
     "sc_capacity_col": "capacity_ac_mw",
     "simple": true,
     "sort_on": "lcoe_all_in_usd_per_mwh",
-    "fixed_charge_rate": 0.07140832
+    "fixed_charge_rate": 0.055560
 }
