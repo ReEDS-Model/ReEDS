@@ -406,7 +406,9 @@ def main(reeds_path, inputs_case):
     # Preserve a version of gdb_use with all pv techs separated for cap_exog
     gdb_use_cap_exog = gdb_use.copy()
     # Multiply all PV capacities by ILR to convert AC to DC
-    gdb_use_cap_exog.loc[gdb_use_cap_exog['tech'].isin(TECH['rsc_pv_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
+    gdb_use_cap_exog.loc[
+        gdb_use_cap_exog['tech'].isin(TECH['rsc_pv_all']), 'summer_power_capacity_MW'
+    ] *= scalars['ilr_utility']
 
     # If PVB is turned off, consider all PVB as UPV and battery_li for existing and prescribed builds
     # If PVB is turned on, consider all PVB as 'pvb'
@@ -477,7 +479,9 @@ def main(reeds_path, inputs_case):
     # Multiply all PV capacities by ILR
     # EIA-NEMS PV capacity is in MWac while ReEDS uses MWdc internally,
     # so multiply PV capacity by the ILR [MWdc/MWac] of PV
-    gdb_use.loc[gdb_use['tech'].isin(TECH['rsc_pv_all']) ,'summer_power_capacity_MW'] *= scalars['ilr_utility']
+    gdb_use.loc[
+        gdb_use['tech'].isin(TECH['rsc_pv_all']), 'summer_power_capacity_MW'
+    ] *= scalars['ilr_utility']
 
     #%%##################################
     #    -- All Existing Capacity --    #
@@ -552,21 +556,22 @@ def main(reeds_path, inputs_case):
                                     (gdb_use['StartYear'] >= startyear) &
                                     (gdb_use['StartYear'] <= endyear)
                                     ]
+    if len(prescribed_nonRSC_energy):
+        ### assign vintage based on start year of the unit
+        prescribed_nonRSC_energy= pd.merge(prescribed_nonRSC_energy, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
+        prescribed_nonRSC_energy['vin'] = prescribed_nonRSC_energy.apply(lambda row: f"new{row[str(row['StartYear'])]}", axis=1)
 
-    ### assign vintage based on start year of the unit
-    prescribed_nonRSC_energy= pd.merge(prescribed_nonRSC_energy, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
-    prescribed_nonRSC_energy['vin'] = prescribed_nonRSC_energy.apply(lambda row: f"new{row[str(row['StartYear'])]}", axis=1)
+        prescribed_nonRSC_energy = prescribed_nonRSC_energy[COLNAMES['prescribed_nonRSC_energy'][0]]
+        prescribed_nonRSC_energy.columns = COLNAMES['prescribed_nonRSC_energy'][1]
+        # Remove ctt and wst data from storage, set coolingwatertech to tech type ('i')
+        for j, row in prescribed_nonRSC_energy.iterrows():
+            if row['i'] in TECH['storage']:
+                prescribed_nonRSC_energy.loc[j,['ctt','wst','coolingwatertech']] = ['n','n',row['i']]
 
-    prescribed_nonRSC_energy = prescribed_nonRSC_energy[COLNAMES['prescribed_nonRSC_energy'][0]]
-    prescribed_nonRSC_energy.columns = COLNAMES['prescribed_nonRSC_energy'][1]
-    # Remove ctt and wst data from storage, set coolingwatertech to tech type ('i')
-    for j, row in prescribed_nonRSC_energy.iterrows():
-        if row['i'] in TECH['storage']:
-            prescribed_nonRSC_energy.loc[j,['ctt','wst','coolingwatertech']] = ['n','n',row['i']]
-
-    prescribed_nonRSC_energy = (
-        prescribed_nonRSC_energy.groupby(COLNAMES['prescribed_nonRSC_energy'][1][:-1]).sum().reset_index())
-
+        prescribed_nonRSC_energy = (
+            prescribed_nonRSC_energy.groupby(COLNAMES['prescribed_nonRSC_energy'][1][:-1]).sum().reset_index())
+    else:
+        prescribed_nonRSC_energy = pd.DataFrame(columns=COLNAMES['prescribed_nonRSC_energy'][1])
 
 
     #%%##################################
@@ -633,7 +638,7 @@ def main(reeds_path, inputs_case):
     geoexist = geoexist.groupby(['i','r']).sum().reset_index()
     # Rename generic geothermal tech category to geohydro_allkm_1
     geoexist['i'] = 'geohydro_allkm_1'
-#%%----------------------------------------------------------------------------
+
     ######################################
     #    -- RSC Exogenous Capacity --    #
     ######################################
@@ -1060,7 +1065,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260804_inputsM0_OR_water','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20260804_inputsM0_Simple','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
@@ -1080,10 +1085,6 @@ if __name__ == '__main__':
         'wind_rets': 'wind_retirements',
         'hydcapadj_ccszn': 'cap_hyd_ccseason_adj',
     }
-    keep_index = {
-        'cap_cspns': True,
-        'can_imports_capacity': True,
-    }
     gamstype = {
         'poi_cap_init': 'parameter',
     }
@@ -1097,10 +1098,8 @@ if __name__ == '__main__':
                 comment=comment.get(key, ''),
             )
         else:
-            reeds.io.gamsify_header(df).to_csv(
-                os.path.join(inputs_case, f'{outname.get(key, key)}.csv'),
-                index=keep_index.get(key, False),
-            )
+            fpath = os.path.join(inputs_case, f'{outname.get(key, key)}.csv')
+            reeds.io.gamsify_header(df).to_csv(fpath, index=False)
 
     reeds.log.toc(tic=tic, year=0, process='input_processing/writecapdat.py',
         path=os.path.join(inputs_case,'..'))
