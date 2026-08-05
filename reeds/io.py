@@ -1641,6 +1641,15 @@ def map_sc_points_to_regions(dfin, case=None, offshore=False, **kwargs):
 
 
 ### Write files
+def gamsify_header(df):
+    """Add '*' to the beginning so GAMS reads the header as a comment"""
+    if isinstance(df, pd.DataFrame):
+        dfout = df.rename(columns={df.columns[0]: '*' + str(df.columns[0])})
+    else:
+        dfout = df.rename('*' + df.name) if df.name else df
+    return dfout
+
+
 def get_dtype(col, df=None):
     if col.lower() == "value":
         return np.float32
@@ -1780,9 +1789,10 @@ def write_to_inputs_h5(
     ## should contain the data as floats; all the other columns are treated as indices
     if gamstype == 'parameter':
         dfwrite.columns = dfwrite.columns.tolist()[:-1] + ['Value']
+        dfwrite['Value'] = dfwrite['Value'].astype(np.float32)
     ### Write record to h5 file
     calling_file = Path(inspect.stack()[-1][1]).name
-    attrs = {'gamstype': gamstype.lower(), 'written_by': calling_file}
+    attrs = {'gamstype': gamstype.lower(), 'units':units, 'written_by': calling_file}
     if len(units):
         attrs['comment'] = f'[{units}] {comment} (written by {calling_file})'
     else:
@@ -1802,6 +1812,7 @@ def write_csv_to_inputs_h5(
     filepath:str|Path,
     case:str|Path,
     gamstype:Literal['set','parameter'],
+    name:str|None=None,
     comment:str='',
     **kwargs,
 ):
@@ -1810,7 +1821,10 @@ def write_csv_to_inputs_h5(
     and write it to inputs.h5
     """
     df = pd.read_csv(filepath, dtype=str, header=None)
-    key = Path(filepath).stem
+    if isinstance(name, str):
+        if not len(name):
+            name = None
+    key = (Path(filepath).stem if name is None else name)
     if df.shape[1] == 1:
         ## Subsets have a header column beginning with '*';
         ## primary sets do not have a header
