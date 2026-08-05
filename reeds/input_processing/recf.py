@@ -274,10 +274,9 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
 # Identify resources with missing classes and assign them to 
 # closest resources of similar classes
 def check_missing_class_resource(existing_techs, resources):
-    missing_class_resource = existing_techs.merge(resources[['i','r']],
-                                                    on=['i','r'],
-                                                    how='left',
-                                                    indicator=True)
+    missing_class_resource = existing_techs.merge(
+        resources[['i','r']], on=['i','r'], how='left', indicator=True,
+    )
     missing_class_resource = missing_class_resource[
         missing_class_resource['i'].str.contains('upv|wind')].reset_index(drop=True)
     missing_class_resource = missing_class_resource[
@@ -291,6 +290,8 @@ def check_missing_class_resource(existing_techs, resources):
             f'{len(missing_class_resource)} mismatched tech class capacities and resources.\n'
             f'Details can be found in {fpath}.'
         )
+        if len(missing_class_resource) <= 100:
+            print(missing_class_resource)
         raise ValueError(err)
     else:
         print('All capacities and resources are matched.')
@@ -498,8 +499,7 @@ def main(reeds_path, inputs_case):
     ### Get solar multiples
     sms = {tech: scalars[f'csp_sm_{tech.strip("csp")}'] for tech in csptechs}
     ### Get storage durations
-    storage_duration = pd.read_csv(
-        os.path.join(inputs_case,'storage_duration.csv'), header=None, index_col=0).squeeze(1)
+    storage_duration = reeds.io.read_input(inputs_case, 'storage_duration').set_index('i').squeeze(1)
     ## All CSP resource classes have the same duration for a given tech, so just take the first one
     durations = {tech: storage_duration[f'csp{tech.strip("csp")}_1'] for tech in csptechs}
     ### Run the dispatch simulation for modeled regions
@@ -518,16 +518,15 @@ def main(reeds_path, inputs_case):
 
     #%% Assign existing and prescribed generator technology classes if it is not exist in resouces. 
     ### Collect all existing and prescribed generator technology classes - region combinations
-    upv_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_upv.csv'))
-    wind_ons_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_wind-ons.csv'))
-    wind_ofs_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_wind-ofs.csv'))
-    existing_exog_techs = pd.concat(
-        [upv_exog_cap, wind_ons_exog_cap, wind_ofs_exog_cap],
-        axis=0, ignore_index=True
-    )[['*tech','region']].drop_duplicates()
-    existing_exog_techs.columns = ['i','r']
-    prescribed_rsc = (pd.read_csv(os.path.join(inputs_case, 'prescribed_rsc.csv')).rename(columns={'*i':'i'})
-                      [['i', 'r']].drop_duplicates())
+    existing_exog_techs = pd.concat([
+        pd.read_csv(Path(inputs_case,f'exog_cap_{i}.csv'))
+        .rename(columns={'*tech':'i', 'region':'r'})
+        for i in ['upv', 'wind-ons', 'wind-ofs']
+    ])[['i','r']].drop_duplicates()
+    prescribed_rsc = (
+        pd.read_csv(os.path.join(inputs_case, 'prescribed_rsc.csv')).rename(columns={'*i':'i'})
+        [['i', 'r']].drop_duplicates()
+    )
     existing_techs = pd.concat(
         [existing_exog_techs, prescribed_rsc],
         axis=0, ignore_index=True
@@ -600,8 +599,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','v20260804_inputsM0_MARICTNYNJPAOH_Offshore','inputs_case')
     
     log = reeds.log.makelog(
         scriptname=__file__,

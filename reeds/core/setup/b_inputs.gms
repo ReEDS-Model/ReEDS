@@ -72,16 +72,6 @@ $include inputs_case%ds%scalars.txt
 * --- Set Declarations ---
 *==========================
 
-* written by copy_files.py
-$onempty
-set cs(*) "carbon storage sites"
-/
-$offlisting
-$include inputs_case%ds%val_cs.csv
-$onlisting
-/ ;
-$offempty
-
 * Written by h5_to_gdx.py
 $include autocode%ds%b_declare_sets.gms
 $include autocode%ds%b_declare_parameters.gms
@@ -212,30 +202,6 @@ set i_numeraire(i) "numeraire techs that need cooling" ;
 *expanded to non-numeraire techs. valcap will have non-numeraire techs if Sw_WaterMain=1
 *or will have numeraire techs otherwise.
 i_numeraire(ii)$sum{(wst,ctt,i)$i_ii_ctt_wst(i,ii,ctt,wst), 1 } = yes ;
-
-table ctt_hr_mult(i,ctt) "heatrate multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%heat_rate_mult.csv
-$offdelim
-$onlisting
-;
-
-table ctt_cc_mult(i,ctt) "capital cost multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_cap_mult.csv
-$offdelim
-$onlisting
-;
-
-table ctt_cost_vom_mult(i,ctt) "VOM cost multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_vom_mult.csv
-$offdelim
-$onlisting
-;
 
 set
 *technology-specific subsets
@@ -640,14 +606,6 @@ $endif.naris
 
 parameter resourceclassnum(resourceclass) "numeric value for resource class" ;
 resourceclassnum(resourceclass) = resourceclass.val ;
-set tech_resourceclass(i,resourceclass) "map from CSP/DUPV techs to resource classes"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tech_resourceclass.csv
-$offdelim
-$onlisting
-/ ;
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
@@ -808,18 +766,6 @@ tg_i("csp",i)$[(csp1(i) or csp2(i) or csp3(i) or csp4(i))$Sw_WaterMain] = yes ;
 storage_interday(i)$(Sw_InterDayLinkage = 0) = no ;
 
 $onempty
-parameter water_with_cons_rate(i,ctt,w) "--gal/MWh-- technology specific-cooling tech based water withdrawal and consumption data"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%water_with_cons_rate.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
-$onempty
 * Water requirement if all filling takes place in 1 year and minimum reservoir level is 15% of max volume
 table water_req_psh(r,rscbin) "--Mgal/MW/yr-- required water for PSH during construction to fill reservoir"
 $offlisting
@@ -874,27 +820,9 @@ sccapcosttech(i)$[hydro(i) or psh(i) or dr_shed(i)] = yes ;
 retiretech(i,v,r,t) = no ;
 inv_cond(i,v,r,t,tt) = no ;
 
-parameter min_retire_age(i) "minimum retirement age by technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%min_retire_age.csv
-$offdelim
-$onlisting
-/ ;
-
 min_retire_age(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), min_retire_age(ii) } ;
 * if GSw_Clean_Air_Act is enabled, there is no minimum retire age for coal plants
 min_retire_age(i)$[coal(i)$Sw_Clean_Air_Act] = no ;
-
-parameter retire_penalty(allt) "--fraction-- penalty for retiring a power plant expressed as a fraction of FOM"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%retire_penalty.csv
-$offdelim
-$onlisting
- / ;
 
 
 set rsc_agg(i,ii)   "rsc technologies that belong to the same class" ;
@@ -1105,81 +1033,12 @@ one_newv(i)$sum{(v,t)$[not sameas(v,"new1")], ivt(i,v,t) } = no ;
 *--- basic parameter declarations ---
 *=====================================
 
-parameter crf(t) "--unitless-- capital recovery factor"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf.csv
-$offdelim
-$onlisting
-/,
-          crf_co2_incentive(t) "--unitless-- capital recovery factor using a 12-year economic lifetime"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf_co2_incentive.csv
-$offdelim
-$onlisting
-/,
-
-          crf_h2_incentive(t) "--unitless-- capital recovery factor using a 10-year economic lifetime"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf_h2_incentive.csv
-$offdelim
-$onlisting
-/,
-
-* pvf_capital and pvf_onm here are for intertemporal mode. These parameters
-* are overwritten for sequential mode in e_solveprep.gms.
-          pvf_capital(t) "--unitless-- present value factor for overnight capital costs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pvf_cap.csv
-$offdelim
-$onlisting
-/,
-          pvf_onm(t)"--unitless-- present value factor of operations and maintenance costs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pvf_onm_int.csv
-$offdelim
-$onlisting
-/,
+parameter
           tc_phaseout_mult(i,v,t)                 "--unitless-- multiplier that reduces the value of the PTC and ITC after the phaseout trigger has been hit",
           tc_phaseout_mult_t(i,t)                 "--unitless-- a single year's multiplier of tc_phaseout_mult",
           tc_phaseout_mult_t_load(i,t)            "--unitless-- a single year's multiplier of tc_phaseout_mult",
           co2_captured_incentive(i,v,r,allt)      "--$/tco2 stored-- incentive on CO2 captured dependent on technology"
-          co2_captured_incentive_in(i,v,allt)     "--$/tco2 stored-- incentive on CO2 captured dependent on technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%co2_capture_incentive.csv
-$offdelim
-$onlisting
-/,
-
           h2_ptc(i,v,r,allt)        "--2004$/kg h2 produced -- incentive on hydrogen production by electrolyzers which purchase Energy Attribute Credits"
-          h2_ptc_in(i,v,allt)       "--2004$/kg h2 produced -- incentive on hydrogen production by electrolyzers which purchase Energy Attribute Credits, this parameter is used to build h2_ptc"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_ptc.csv
-$offdelim
-$onlisting
-/,
-
-          ptc_value_scaled(i,v,allt) "--$/MWh-- value of the PTC incorporating adjustments for monetization costs, tax grossup benefits, and the difference between ptc duration and reeds evaluation period"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ptc_value_scaled.csv
-$offdelim
-$onlisting
-/,
           pvf_onm_undisc(t) "--unitless-- undiscounted present value factor of operations and maintenance costs"
 ;
 
@@ -1201,15 +1060,6 @@ pvf_onm_undisc(t)$pvf_capital(t) = pvf_onm(t) / pvf_capital(t) ;
 *==========================================
 
 * Note that some techs have a dummy firstyear of 2500
-parameter firstyear(i) "first year where new investment is allowed"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%firstyear.csv
-$offdelim
-$onlisting
-/ ;
-
 *---Add first year that capacity can be built:
 firstyear(i)$[(firstyear(i) < firstyear_min)$firstyear(i)] = firstyear_min ;
 
@@ -1241,16 +1091,6 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 *==========================
 * -- existing capacity --
 *==========================
-
-*Begin loading of capacity data
-parameter poi_cap_init(r) "--MW-- initial (pre-2010) capacity of all types"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%poi_cap_init.csv
-$offdelim
-$onlisting
-/ ;
 
 *created by reeds/input_processing/writecapdat.py
 $onempty
@@ -1350,18 +1190,6 @@ $offdelim
 $onlisting
 / ;
 $offempty
-
-$onempty
-parameter forced_retirements(i,st) "--integer-- year in which to force retirements of certain techs by state"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%forced_retirements.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 
 set forced_retire(i,r,t) ;
 
@@ -2639,18 +2467,6 @@ $offdelim
 $onlisting
 ;
 
-$onempty
-parameter acp_disallowed(st,RPSCat) "--integer-- Indication for whether ACP purchases are disallowed (1) or allowed (0)."
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%acp_disallowed.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
 RecStates(RPSCat,st,t)$[RecPerc(RPSCat,st,t) or sum{ast, rectable(ast,st) }] = yes ;
 
 *If both states have an RPS for the RPSCat and if they're allowed to trade, they can trade
@@ -2902,43 +2718,6 @@ trtypemax(trtype)$[(Sw_TransCapMaxTypes=1)] = yes ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=2)$sameas(trtype,'VSC')] = yes ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=3)$(not sameas(trtype,'AC'))] = yes ;
 
-* --- initial transmission capacity ---
-* transmission capacity input data are defined in both directions for each region-to-region pair
-* Written by transmission.py
-$onempty
-parameter trancap_init_energy(r,rr,trtype) "--MW-- initial transmission capacity for energy trading"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_energy.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter trancap_init_prm(r,rr,trtype) "--MW-- initial transmission capacity for capacity (PRM) trading"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_prm.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-* --- future transmission capacity ---
-* Transmission additions are defined in one direction for each region-to-region pair with the lowest region number listed first
-* Written by transmission.py
-$onempty
-parameter trancap_fut(r,rr,trancap_fut_cat,trtype,allt) "--MW-- potential future transmission capacity by type (one direction)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_fut.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 * --- exogenously specified transmission capacity ---
 * Transmission additions are defined in one direction for each region-to-region pair with the lowest region number listed first
 parameter invtran_exog(r,rr,trtype,t) "--MW-- exogenous transmission capacity investment (one direction)" ;
@@ -3043,18 +2822,6 @@ $endif.oprestradelevel
 Scalar opres_mult "multiplier on opres flow in transmission constraint" ;
 opres_mult = Sw_OpResTradeMult;
 
-* Interfaces are collections of routes with an additional constraint on total flows
-$onempty
-parameter trancap_init_transgroup(transgrp,transgrpp,trtype) "--MW-- initial upper limit on interface AC flows"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_transgroup.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 $onempty
 parameter trancap_init_itlgrp(itlgrp,itlgrpp,trtype) "--MW-- initial upper limit on interface flows between itlgrps"
 /
@@ -3094,64 +2861,6 @@ routes_itlgrp(itlgrp,itlgrpp,r,rr)$[
     $(not sameas(r,rr))
     $[not((sameas(itlgrp,r)) AND (sameas(itlgrpp,rr)))]
 ] = yes ;
-* --- transmission cost ---
-
-* Transmission line capex cost (generated from reV tables)
-* Written by transmission.py
-$onempty
-parameter tsc_binwidth(r,rr,tscbin) "--$-- investment bin widths for transmission interfaces"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_binwidth.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tsc_forward(r,rr,tscbin) "--$/MW-- transmission upgrade cost for forward direction"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_forward.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tsc_reverse(r,rr,tscbin) "--$/MW-- transmission upgrade cost for reverse direction"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_reverse.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter transmission_cost_nonac(r,rr,trtype) "--$/MW-- expansion cost for DC interfaces (only lines; converters handled separately)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_cost_nonac.csv
-$offdelim
-$onlisting
-/ ;
-
-* Scale transmission line costs by Sw_TransCostMult (for sensitivity analysis)
-tsc_binwidth(r,rr,tscbin) = tsc_binwidth(r,rr,tscbin) * Sw_TransCostMult ;
-tsc_forward(r,rr,tscbin) = tsc_forward(r,rr,tscbin) * Sw_TransCostMult ;
-tsc_reverse(r,rr,tscbin) = tsc_reverse(r,rr,tscbin) * Sw_TransCostMult ;
-transmission_cost_nonac(r,rr,trtype) = transmission_cost_nonac(r,rr,trtype) * Sw_TransCostMult ;
-
-* Transmission line FOM cost
-* Written by transmission.py
-parameter transmission_line_fom(r,rr,trtype) "--$/MW/year-- fixed O&M cost of transmission lines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_line_fom.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 parameter cost_hurdle(r,rr,allt) "--$ per MWh-- cost for transmission hurdle rate" ;
 parameter cost_hurdle_regiongrp1(r,rr,allt) "--$ per MWh-- cost for transmission hurdle rate between regiongrp1" ;
@@ -3169,28 +2878,6 @@ $onlisting
 $offempty
 
 * Assign hurdle rates to chosen GSw_TransHurdLevel
-$onempty
-parameter cost_hurdle_rate1(allt) "--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp1"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_hurdle_rate1.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-$onempty
-parameter cost_hurdle_rate2(allt) "--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp2"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_hurdle_rate2.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 * define hurdle rates across international lines
 * first determine whether the regions are of different countries..
 cost_hurdle_regiongrp1(r,rr,t)$[sum{country$r_country(r,country),ord(country) }
@@ -3240,36 +2927,6 @@ $endif.hurdlelevel_regiongrp2
 
 * The final hurdle cost is the higher cost among regiongrp1 and regiongrp2, and hurdle_rate_floor
 cost_hurdle(r,rr,t)$[sum{trtype, routes(r,rr,trtype,t) }] = max{cost_hurdle_regiongrp1(r,rr,t),cost_hurdle_regiongrp2(r,rr,t), hurdle_rate_floor} ;
-
-* --- transmission distance ---
-
-* The distance for a transmission interface is calculated in reV using the same "least-cost-path"
-* algorithm and cost tables as for wind and solar spur lines.
-* Distances are more representative of new greenfield lines than existing lines.
-* Written by transmission.py
-$onempty
-parameter distance(r,rr,trtype) "--miles-- distance between BAs by line type"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_miles.csv
-$offdelim
-$onlisting
-/ ;
-
-
-* --- transmission losses ---
-* Written by transmission.py
-parameter tranloss(r,rr,trtype)    "--fraction-- transmission loss between r and rr"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tranloss.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 
 * --- VSC HVDC macrogrid ---
 set val_converter(r,t) "BAs where VSC converter investment is allowed" ;
@@ -3389,16 +3046,6 @@ ccseason_cap_frac_delta(i,v,r,ccseason,t)$[conv(i)$sameas(ccseason,'hot')] =
 * -- Consume technologies specification --
 *============================================
 
-$onempty
-set routes_adjacent(r,rr) "all pairs of adjacent land-based BAs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%routes_adjacent.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 * Remove offshore zones
 routes_adjacent(r,rr)$(offshore(r) or offshore(rr)) = no ;
 
@@ -3583,45 +3230,6 @@ parameter cost_h2_transport_cap(r,rr,allt)          "--$/(metric ton/hour)-- cap
           cost_h2_storage_fom(h2_stor,allt)         "--$/(metric ton*yr)-- fixed OM cost of H2 storage per metric ton"
           h2_network_load(h2_st,allt)               "--MWh/metric ton-- electricity consumption of H2 network components"
 ;
-
-* read in capital cost multiplier from financial processing script
-parameter h2_cap_cost_mult_pipeline(allt) "capital cost multiplier for h2 pipelines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_pipeline_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter h2_cap_cost_mult_compressor(allt) "capital cost multiplier for h2 compressors"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_compressor_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter h2_cap_cost_mult_storage(allt) "capital cost multiplier for h2 storage"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_storage_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-$onempty
-parameter pipeline_cost_mult(r,rr) "--fraction-- cost multiplier for H2 pipelines (will be added to 1)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pipeline_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 * here computing capital and FOM costs as $/metric ton-hour for all possible routes
 * including capital cost multipliers, which are different for pipelines and compressors
@@ -4370,15 +3978,6 @@ $include inputs_case%ds%cangrowth.csv
 $offdelim
 $onlisting
 ;
-
-parameter mex_growth_rate(allt) "growth rate for mexican demand - national"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%mex_growth_rate.csv
-$offdelim
-$onlisting
-/ ;
 $offempty
 
 
@@ -4395,114 +3994,11 @@ $offdelim
 $onlisting
 / ;
 
-$onempty
-parameter firm_import_limit(nercr,allt) "--fraction-- limit on net firm imports into NERC regions"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%firm_import_limit.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter peakload_nercr(nercr,allt) "--MW-- Peak exogenous demand across all weather years by NERC region"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%peakload_nercr.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 
 * ===========================================================================
 * Regional and temporal capital cost multipliers
 * ===========================================================================
-* Load scenario-specific capital cost multiplier components
-
-parameter ccmult(i,allt) "construction cost multiplier"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ccmult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tax_rate(allt) "all-in tax rate"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tax_rate.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter itc_frac_monetized(i,allt) "fractional value of the ITC, after adjusting for the costs of monetization"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%itc_frac_monetized.csv
-$offdelim
-$onlisting
-/ ;
-
-$onempty
-parameter itc_energy_comm_bonus(i,r) "energy community tax credit bonus factor"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%itc_energy_comm_bonus.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-parameter pv_frac_of_depreciation(i,allt) "present value of depreciation, expressed as a fraction of the capital cost of the investment"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pv_frac_of_depreciation.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter degradation_adj(i,allt) "adjustment to reflect degradation over the lifetime of an asset"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%degradation_adj.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter financing_risk_mult(i,allt) "multiplier to reflect higher financing costs for riskier assets"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%financing_risk_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter reg_cap_cost_diff(i,r) "regional capital cost difference [fraction] (note that wind-ons and upv have separate multiplers in the supply curve cost)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%reg_cap_cost_diff.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter eval_period_adj_mult(i,allt) "adjustment multiplier for the capital costs of techs with non-standard evaluation periods"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%eval_period_adj_mult.csv
-$offdelim
-$onlisting
-/ ;
 
 eval_period_adj_mult(i,t)$[i_water_cooling(i)$Sw_WaterMain] =
   sum{ii$ctt_i_ii(i,ii), eval_period_adj_mult(ii,t) } ;
@@ -4517,24 +4013,6 @@ cost_cap_fin_mult(i,r,t) "final capital cost multiplier for regions and technolo
 cost_cap_fin_mult_noITC(i,r,t) "final capital cost multiplier excluding ITC - used only in outputs",
 cost_cap_fin_mult_no_credits(i,r,t) "final capital cost multiplier ITC/PTC/Depreciation (i.e. the actual expenditures) - used only in outputs",
 cost_cap_fin_mult_out(i,r,t) "final capital cost multiplier for system cost outputs" ;
-
-parameter trans_cost_cap_fin_mult(allt) "capital cost multiplier for transmission - used in the objective function"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trans_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter trans_cost_cap_fin_mult_noITC(allt) "capital cost multiplier for transmission excluding ITC - used only in outputs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trans_cap_cost_mult_noITC.csv
-$offdelim
-$onlisting
-/ ;
 
 
 * --- Hybrid PV+Battery ---
@@ -4634,29 +4112,9 @@ capture_rate_fuel(i,"CO2")$beccs(i) = - emit_rate_fuel(i,"process","CO2")
 
 parameter capture_rate(e,i,v,r,t) "--metric tons per MWh-- emissions capture rate" ;
 
-parameter methane_leakage_rate(allt) "--fraction-- methane leakage as fraction of gross production"
-* best estimate for fixed leakage rate is 0.023 (Alvarez et al. 2018, https://dx.doi.org/10.1126/science.aar7204)
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%methane_leakage_rate.csv
-$offdelim
-$onlisting
-/ ;
-
 scalar methane_tonperMMBtu "--metric tons per MMBtu-- methane content of natural gas" ;
 * [ton CO2 / MMBtu] * [ton CH4 / ton CO2]
 methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","CO2") * molWeightCH4 / molWeightCO2 ;
-
-* H2 leakage rate by technology and etype (broken down to process and upstream)
-parameter h2_leakage_rate(i)  "--fraction-- h2 leakage rate as a fraction of total production by technology and emission type"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_leakage_rate.csv
-$offdelim
-$onlisting
-/ ;
 
 parameter prod_emit_rate(etype,e,i,allt) "--metric tons emitted per metric ton product-- emissions rate per metric ton of product (e.g. tonCO2/tonH2 for SMR & SMR-CCS)" ;
 * Steam methane reformer (SMR)'s process emission here refers to emissions from steam methane reforming process
@@ -5213,15 +4671,6 @@ resourcescaler(i)$csp(i) = CSP_SM(i) / csp_sm_baseline ;
 * For PSH, tech-specific storage duration sets a default value.
 *   Then when when GSw_HydroPSHDurData = 1,
 *   region- and vintage-specific durations are defined where data exists.
-parameter storage_duration(i)   "--hours-- storage duration by tech"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%storage_duration.csv
-$offdelim
-$onlisting
-/ ;
-
 $onempty
 scalar psh_sc_duration "--hours-- PSH storage duration corresponding to selected supply curve"
 /
@@ -5309,30 +4758,12 @@ cost_vom(i,v,r,t)$[storage(i)$valgen(i,v,r,t)$(not cost_vom(i,v,r,t))] = storage
 parameter minCF(i,t)      "--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)"
           maxdailycf(i,t) "--fraction-- maximum daily capacity factor" ;
 
-* 6% for H2-CT and H2-CC is based on unpublished PLEXOS runs of 100% RE scenarios performed in summer 2019
-parameter minCF_input(i) "--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%minCF.csv
-$offdelim
-$onlisting
-/ ;
 minCF(i,t) = minCF_input(i) ;
 minCF(i,t)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), minCF(ii,t) } ;
 minCF(i,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), minCF(ii,t) } ;
 
 * adjust fleet mincf for nuclear when using flexible nuclear
 minCF(i,t)$[nuclear(i)$Sw_NukeFlex] = minCF_nuclear_flex ;
-
-parameter maxdailycf_input(i) "--fraction-- maximum daily capacity factor for a technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%maxdailycf.csv
-$offdelim
-$onlisting
-/ ;
 
 maxdailycf(i,t) = maxdailycf_input(i) ;
 maxdailycf(i,t)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), maxdailycf(ii,t) } ;
@@ -5623,18 +5054,6 @@ retiretech(i,v,r,t)$[(Sw_Retire=5)$nuclear(i)$(yeart(t)<=2030)] = no ;
 *several states have subsidies for nuclear power, so do not allow nuclear to retire in these states
 *before the year specified (see https://www.eia.gov/todayinenergy/detail.php?id=41534)
 *Note that Ohio has since repealed their nuclear subsidy, so is no longer included
-$onempty
-parameter nuclear_subsidies(st) '--year-- the year a nuclear subsidy ends in a given state'
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%nuclear_subsidies.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
 retiretech(i,initv,r,t)$[(yeart(t) < sum{st$r_st(r,st), nuclear_subsidies(st) })$valcap(i,initv,r,t)$nuclear(i)] = no ;
 
 * if Sw_NukeNoRetire is enabled, don't allow nuclear to retire through Sw_NukeNoRetireYear
@@ -5889,37 +5308,14 @@ m_rsc_dat_init(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap") = m_rsc_dat(r,i,rscbin,"c
 *========================================
 * -- CO2 Capture and Storage Network --
 *========================================
-$onempty
 set csfeas(cs)         "carbon storage sites with available capacity"
-    r_cs(r,cs)         "mapping from BA to carbon storage sites"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%r_cs.csv
-$offdelim
-$onlisting
-/ ,
     co2_routes(r,rr)   "set of available inter-ba co2 trade relationships" ;
 
-parameter co2_storage_limit(cs)         "--metric tons-- total cumulative storage capacity per carbon storage site",
-          co2_injection_limit(cs)       "--metric tons/hr-- co2 site injection rate upper bound",
-          cost_co2_pipeline_cap(r,rr,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in co2 pipeline infrastructure",
+parameter cost_co2_pipeline_cap(r,rr,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in co2 pipeline infrastructure",
           cost_co2_pipeline_fom(r,rr,t) "--$2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 pipeline infrastructure",
-          cost_co2_stor_bec(cs,t)       "--$2004/metric ton-- breakeven cost for storing carbon - CF determined by GSw_CO2_BEC",
           cost_co2_spurline_cap(r,cs,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in spur lines to injection sites",
-          cost_co2_spurline_fom(r,cs,t) "--2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 spurline infrastructure",
-          r_cs_distance(r,cs)           "--mi-- euclidean distance between BA transmission endpoints and storage formations"
-/
-$offlisting
-$offdigit
-$ondelim
-$include inputs_case%ds%r_cs_distance_mi.csv
-$offdelim
-$ondigit
-$onlisting
-/
+          cost_co2_spurline_fom(r,cs,t) "--2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 spurline infrastructure"
 ;
-$offempty
 
 * Assign spurline costs
 cost_co2_spurline_cap(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_cost * r_cs_distance(r,cs) ;
@@ -5930,19 +5326,6 @@ cost_co2_pipeline_fom(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pip
 
 co2_routes(r,rr)$[routes_adjacent(r,rr)$pipeline_distance(r,rr)] = yes ;
 
-$onempty
-table co2_char(cs,*) "co2 site characteristics including injection rate limit, total storage limit, and break even cost"
-$ondelim
-$include inputs_case%ds%co2_site_char.csv
-$offdelim
-;
-$offempty
-
-*note that original units Mton == 'million tons'
-co2_storage_limit(cs)   = 1e6 * co2_char(cs,"max_stor_cap") ;
-co2_injection_limit(cs) = co2_char(cs,"max_inj_rate") ;
-cost_co2_stor_bec(cs,t) = co2_char(cs,"bec_%GSw_CO2_BEC%");
-
 * only want to consider storage sites that have both available capacity and injection limits
 csfeas(cs)$[co2_storage_limit(cs)$co2_injection_limit(cs)] = yes ;
 * only want to consider r_cs pairs which have available capacity
@@ -5952,7 +5335,7 @@ cost_co2_spurline_fom(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_fom *
 
 cost_co2_pipeline_cap(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_cap(r,rr,t);
 cost_co2_pipeline_fom(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_fom(r,rr,t);
-cost_co2_stor_bec(cs,t) =        %GSw_CO2_CostAdj% * cost_co2_stor_bec(cs,t) ;
+cost_co2_stor_bec(cs) =          %GSw_CO2_CostAdj% * cost_co2_stor_bec(cs) ;
 cost_co2_spurline_fom(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_fom(r,cs,t) ;
 cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,t) ;
 

@@ -26,6 +26,8 @@ def validate_proj():
 
 def assign_to_offshore_zones(unitdata):
     """Map offshore wind units to offshore zones based on lat/lon and zone outlines"""
+    ### Make sure the conda environment is set up correctly
+    validate_proj()
     ### Get offshore zones
     dfzones = gpd.read_file(
         os.path.join(reeds.io.reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
