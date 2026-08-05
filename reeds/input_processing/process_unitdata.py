@@ -15,7 +15,7 @@ import reeds
 #%% ===========================================================================
 ### --- General Read Functions---
 ### ===========================================================================
-def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
+def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
     '''
     Merge NEMS unitdata with interconnection_land/offshore data by 
     mapping each unit in NEMS by lon/lat to its closest sc_point_gid
@@ -71,7 +71,6 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
 
         # Update ReEDS region (r) since FIPS have been updated to FIPS_nearest
         # Load FIPS-r mapping
-        sw = reeds.io.get_switches(inputs_case)
         county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
         county2zone['FIPS'] = 'p' + county2zone.FIPS
         county2zone = county2zone[['FIPS','r']]
@@ -107,6 +106,9 @@ def assign_gids_to_unitdata(df, offland_gdf, land_gdf):
 ### ===========================================================================
 def main(inputs_case):
 
+    # Load switches
+    sw = reeds.io.get_switches(inputs_case)
+
     # Read unitdata
     unitdata = pd.read_csv(os.path.join(inputs_case, 'unitdata_orig.csv'))
     
@@ -128,7 +130,7 @@ def main(inputs_case):
     
     # Merge NEMS unitdata with interconnection_land/offshore data by 
     # mapping each unit in NEMS by lon/lat to its closest sc_point_gid  
-    df_rev = assign_gids_to_unitdata(unitdata, offland_gdf, land_gdf)
+    df_rev = assign_gids_to_unitdata(sw, unitdata, offland_gdf, land_gdf)
         
     # Clean up merged data
     # Keep the original FIPS, r, and lon/lat data to separate them 
@@ -160,12 +162,16 @@ def main(inputs_case):
     unitdata['T_LAT'] = unitdata['T_LAT'].fillna(unitdata['T_LAT_orig'])
     unitdata['r'] = unitdata['r'].fillna(unitdata['r_orig'])
 
+    # Update RetireYear column based on nukeretscen
+    unitdata.loc[unitdata['tech']=='nuclear', 'RetireYear'] = unitdata['StartYear'] + sw['nukeretscen']
+
     # Rearrange column orders
     cols = df_rev.columns.to_list()
     unitdata = unitdata[cols].drop(columns=['temp_id'])
+
     # Make sure sc_point_gid is saved as integer
     unitdata['sc_point_gid'] = unitdata['sc_point_gid'].astype('Int64')
-    
+
     # Save processed unitdata
     unitdata.to_csv(os.path.join(inputs_case,'unitdata.csv'),index=False)
 
