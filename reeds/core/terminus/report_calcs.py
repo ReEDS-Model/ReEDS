@@ -117,7 +117,7 @@ def calc_transmission(g):
     ## (r,rr,allh,trtype,t)
     dfs['tran_flow_all_stress'] = (
         g['FLOW'].Level.reset_index()
-        .merge(g['h_stress_t'], left_on=['allh','t'], right_on=['allh','allt'])
+        .merge(g['h_stress_t'], on=['allh','t'])
         .set_index(['r','rr','allh','trtype','t']).Level
     )
     ## (r,rr,h,trtype,t)   (r,rr,allh,t,trtype)
@@ -125,7 +125,7 @@ def calc_transmission(g):
     ## (r,rr,allh,trtype,t)
     dfs['tran_flow_stress'] = (
         combine_forward_reverse(g['FLOW']).reset_index()
-        .merge(g['h_stress_t'], left_on=['allh','t'], right_on=['allh','allt'])
+        .merge(g['h_stress_t'], on=['allh','t'])
         .set_index(['r','rr','allh','trtype','t']).Level
     )
     ## (r,rr,trtype,t)
@@ -139,12 +139,11 @@ def calc_transmission(g):
         (dfs['tran_flow_all_rep'] * g['hours'] / dfs['tran_cap_energy']).groupby(['r','rr','trtype','t']).sum()
         / g['hours'].sum()
     )
-    ## NOTE: We here assume that all solve years use the same total weighting for stress
-    ## periods and weight all stress hours the same, so we don't weight by the number of hours.
-    ## If we switch to different weightings for different stress periods,
-    ## should add an hours(allh,t) parameter.
     ## (r,rr,trtype,t)
-    dfs['tran_util_ann_stress'] = dfs['tran_util_h_stress'].groupby(['r','rr','trtype','t']).mean()
+    dfs['tran_util_ann_stress'] = (
+        (dfs['tran_flow_all_stress'] * g['hours_t'] / dfs['tran_cap_prm']).groupby(['r','rr','trtype','t']).sum()
+        / g['hours_t'].loc[g['h_stress_t'].index].groupby('t').sum()
+    )
     return dfs
 
 

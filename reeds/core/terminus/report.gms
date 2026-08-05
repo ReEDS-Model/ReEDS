@@ -127,7 +127,7 @@ szn(szn)$[not szn_rep(szn)] = no ;
 *=====================================
 
 $ontext
-The calculation of the following output parameters has been moved to report_calcs.py:
+The calculation of the following output parameters occurs in report_calcs.py:
 
 Interconnection queue
     cap_above_limit
