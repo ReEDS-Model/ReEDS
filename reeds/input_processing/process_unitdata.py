@@ -163,7 +163,7 @@ def main(inputs_case):
     unitdata['r'] = unitdata['r'].fillna(unitdata['r_orig'])
 
     # Update RetireYear column based on nukeretscen
-    unitdata.loc[unitdata['tech']=='nuclear', 'RetireYear'] = unitdata['StartYear'] + sw['nukeretscen']
+    unitdata.loc[unitdata['tech']=='nuclear', 'RetireYear'] = unitdata['StartYear'] + int(sw['nukeretscen'])
 
     # Rearrange column orders
     cols = df_rev.columns.to_list()
