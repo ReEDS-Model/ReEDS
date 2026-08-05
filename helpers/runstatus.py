@@ -1,14 +1,11 @@
 #%% Imports
 import os
 import re
-import sys
 import datetime
 import subprocess
 import argparse
 from glob import glob
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
-import reeds
 
 # #%% Inputs for debugging
 # batch_name = 'v20250812_mcK0'
@@ -20,7 +17,7 @@ def parse_multiple_runs_per_node(runs_running):
     expanded_runs = []
     for i in runs_running:
         ## Matches the form used for multiple runs per node: foo_(bar,baz[,etc])
-        if re.match('^\w+_\(\w+,\w+(,\w+)*\)$', i):
+        if re.match(r'^\w+_\(\w+,\w+(,\w+)*\)$', i):
             batch_ = i.split('(')[0]
             constituents = i.split('(')[1].strip(')').split(',')
             expanded_runs.extend([batch_+c for c in constituents])
@@ -96,7 +93,8 @@ if __name__ == '__main__':
     verbose = args.verbose
 
     #%%### Loop through categories and runs and report their status
-    dictruns = get_run_status(reeds.io.reeds_path, batch_name)
+    reeds_path = Path(__file__).parent.parent
+    dictruns = get_run_status(reeds_path, batch_name)
     for key, runs in dictruns.items():
         text = f'{key}: {len(runs)}'
         print(f"\n{text}\n{'-'*len(text)}")

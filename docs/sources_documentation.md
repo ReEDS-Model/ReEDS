@@ -63,6 +63,7 @@
     - [userinput](#inputs-userinput)
     - [valuestreams](#inputs-valuestreams)
     - [waterclimate](#inputs-waterclimate)
+    - [zones](#inputs-zones)
   - [postprocessing](#postprocessing)
     - [air_quality](#postprocessing-air-quality)
       - [rcm_data](#postprocessing-air-quality-rcm-data)
@@ -96,9 +97,6 @@
   - **File Type:** Switches file
   - **Description:** Contains the configuration settings for the ReEDS run(s).
   - **Dollar year:** 2004
----
-
-- [cases_county.csv](/cases_county.csv)
 ---
 
 - [cases_examples.csv](/cases_examples.csv)
@@ -689,9 +687,6 @@
   - [hierarchy_agg69.csv](/inputs/hierarchy_agg69.csv)
 ---
 
-  - [hierarchy_offshore.csv](/inputs/zones/hierarchy_offshore.csv)
----
-
   - [remote_files.csv](/inputs/remote_files.csv)
 ---
 
@@ -757,58 +752,7 @@
 
 ---
 
-  - [exog_cap_geohydro_allkm_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_allkm_reference.csv)
----
-
-  - [exog_cap_geohydro_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_reference.csv)
----
-
-  - [exog_cap_upv_limited.csv](/inputs/capacity_exogenous/exog_cap_upv_limited.csv)
----
-
-  - [exog_cap_upv_open.csv](/inputs/capacity_exogenous/exog_cap_upv_open.csv)
----
-
-  - [exog_cap_upv_reference.csv](/inputs/capacity_exogenous/exog_cap_upv_reference.csv)
----
-
-  - [exog_cap_wind-ons_limited.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_limited.csv)
----
-
-  - [exog_cap_wind-ons_open.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_open.csv)
----
-
-  - [exog_cap_wind-ons_reference.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_reference.csv)
----
-
   - [interconnection_queues.csv](/inputs/capacity_exogenous/interconnection_queues.csv)
----
-
-  - [prescribed_builds_wind-ofs_meshed_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv)
----
-
-  - [prescribed_builds_wind-ofs_meshed_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv)
----
-
-  - [prescribed_builds_wind-ofs_meshed_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv)
----
-
-  - [prescribed_builds_wind-ofs_radial_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv)
----
-
-  - [prescribed_builds_wind-ofs_radial_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv)
----
-
-  - [prescribed_builds_wind-ofs_radial_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv)
----
-
-  - [prescribed_builds_wind-ons_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv)
----
-
-  - [prescribed_builds_wind-ons_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv)
----
-
-  - [prescribed_builds_wind-ons_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv)
 ---
 
   - [ReEDS_generator_database_final_EIA-NEMS.csv](/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv)
@@ -827,12 +771,8 @@
 ---
 
 
-
 <a id='inputs-climate-gfdl-esm2m-rcp4p5-wm'></a>
 ##### inputs/climate/GFDL-ESM2M_RCP4p5_WM
-
-  - [HDDCDD.csv](/inputs/climate/GFDL-ESM2M_RCP4p5_WM/HDDCDD.csv)
----
 
   - [hydadjann.csv](/inputs/climate/GFDL-ESM2M_RCP4p5_WM/hydadjann.csv)
     - **Description:** Climate-impact capacity factor multipliers for annual dispatchable hydropower for the GFDL-ESM2M_RCP4p5_WM climate scenario
@@ -873,9 +813,6 @@
 <a id='inputs-climate-hadgem2-es-rcp2p6'></a>
 ##### inputs/climate/HadGEM2-ES_RCP2p6
 
-  - [HDDCDD.csv](/inputs/climate/HadGEM2-ES_RCP2p6/HDDCDD.csv)
----
-
   - [UnappWaterMult.csv](/inputs/climate/HadGEM2-ES_RCP2p6/UnappWaterMult.csv)
     - **Description:** Climate-impact water availability multipliers for annual/monthly unappropriated fresh surface water for the HadGEM2-ES_RCP2p6 climate scenario
     - **Indices:** wst,r,month,t
@@ -900,9 +837,6 @@
 
 <a id='inputs-climate-hadgem2-es-rcp45-at'></a>
 ##### inputs/climate/HadGEM2-ES_rcp45_AT
-
-  - [HDDCDD.csv](/inputs/climate/HadGEM2-ES_rcp45_AT/HDDCDD.csv)
----
 
   - [hydadjann.csv](/inputs/climate/HadGEM2-ES_rcp45_AT/hydadjann.csv)
     - **Description:** Climate-impact capacity factor multipliers for annual dispatchable hydropower for the HadGEM2-ES_rcp45_AT climate scenario
@@ -943,9 +877,6 @@
 <a id='inputs-climate-hadgem2-es-rcp4p5'></a>
 ##### inputs/climate/HadGEM2-ES_RCP4p5
 
-  - [HDDCDD.csv](/inputs/climate/HadGEM2-ES_RCP4p5/HDDCDD.csv)
----
-
   - [UnappWaterMult.csv](/inputs/climate/HadGEM2-ES_RCP4p5/UnappWaterMult.csv)
     - **Description:** Climate-impact water availability multipliers for annual/monthly unappropriated fresh surface water for the HadGEM2-ES_RCP4p5 climate scenario
     - **Indices:** wst,r,month,t
@@ -970,9 +901,6 @@
 
 <a id='inputs-climate-hadgem2-es-rcp85-at'></a>
 ##### inputs/climate/HadGEM2-ES_rcp85_AT
-
-  - [HDDCDD.csv](/inputs/climate/HadGEM2-ES_rcp85_AT/HDDCDD.csv)
----
 
   - [hydadjann.csv](/inputs/climate/HadGEM2-ES_rcp85_AT/hydadjann.csv)
     - **Description:** Climate-impact capacity factor multipliers for annual dispatchable hydropower for the HadGEM2-ES_rcp85_AT climate scenario
@@ -1013,9 +941,6 @@
 <a id='inputs-climate-hadgem2-es-rcp8p5'></a>
 ##### inputs/climate/HadGEM2-ES_RCP8p5
 
-  - [HDDCDD.csv](/inputs/climate/HadGEM2-ES_RCP8p5/HDDCDD.csv)
----
-
   - [UnappWaterMult.csv](/inputs/climate/HadGEM2-ES_RCP8p5/UnappWaterMult.csv)
     - **Description:** Climate-impact water availability multipliers for annual/monthly unappropriated fresh surface water for the HadGEM2-ES_RCP8p5 climate scenario
     - **Indices:** wst,r,month,t
@@ -1040,9 +965,6 @@
 
 <a id='inputs-climate-ipsl-cm5a-lr-rcp8p5-wm'></a>
 ##### inputs/climate/IPSL-CM5A-LR_RCP8p5_WM
-
-  - [HDDCDD.csv](/inputs/climate/IPSL-CM5A-LR_RCP8p5_WM/HDDCDD.csv)
----
 
   - [hydadjann.csv](/inputs/climate/IPSL-CM5A-LR_RCP8p5_WM/hydadjann.csv)
     - **Description:** Climate-impact capacity factor multipliers for annual dispatchable hydropower for the IPSL-CM5A-LR_RCP8p5_WM climate scenario
@@ -1204,7 +1126,7 @@
   - [dr_shed_avail_scalar.csv](/inputs/demand_response/dr_shed_avail_scalar.csv)
 ---
 
-  - [dr_shed_capacity_scalar_demo_data_IEF_January_2025.csv](/inputs/demand_response/dr_shed_capacity_scalar_demo_data_IEF_January_2025.csv)
+  - [dr_shed_capacity_scalar_demo_data_January_2025.csv](/inputs/demand_response/dr_shed_capacity_scalar_demo_data_January_2025.csv)
 ---
 
   - [dr_shed_hourly.h5](/inputs/demand_response/dr_shed_hourly.h5)
@@ -1562,25 +1484,44 @@
     - **Dollar year:** 2004
 ---
 
-  - [cendivweights.csv](/inputs/fuelprices/cendivweights.csv)
-    - **Description:** weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders
-    - **Indices:** r,cendiv
----
-
-  - [coal_AEO_2023_reference.csv](/inputs/fuelprices/coal_AEO_2023_reference.csv)
-    - **Description:** reference case census division fuel price of coal
-    - **Indices:** t,cendiv
-    - **Dollar year:** 2022
----
-
   - [coal_AEO_2025_reference.csv](/inputs/fuelprices/coal_AEO_2025_reference.csv)
-    - **Description:** reference case census division fuel price of coal with missing values forward-filled from earlier years
+    - **File Type:** Input
+    - **Description:** AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
     - **Indices:** t,cendiv
     - **Dollar year:** 2024
+    - **Citation:** AEO2025
+    - **Units:** $/MMBtu
+
+---
+
+  - [coal_AEO_2026_altelec.csv](/inputs/fuelprices/coal_AEO_2026_altelec.csv)
+    - **File Type:** Input
+    - **Description:** AEO2026 Alternative Electricity case census division fuel price of coal with missing New England values set to Mid Atlantic
+    - **Indices:** t,cendiv
+    - **Dollar year:** 2025
+    - **Citation:** AEO2026
+    - **Units:** $/MMBtu
+
+---
+
+  - [coal_AEO_2026_baseline.csv](/inputs/fuelprices/coal_AEO_2026_baseline.csv)
+    - **File Type:** Input
+    - **Description:** AEO2026 Counterfactual Baseline case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
+    - **Indices:** t,cendiv
+    - **Dollar year:** 2025
+    - **Citation:** AEO2026
+    - **Units:** $/MMBtu
+
 ---
 
   - [dollaryear.csv](/inputs/fuelprices/dollaryear.csv)
     - **Description:** Dollar year mapping for each fuel price scenario
+---
+
+  - [gasreg_price_adj_regression_params.csv](/inputs/fuelprices/gasreg_price_adj_regression_params.csv)
+    - **File Type:** Input
+    - **Description:** Parameters derived from regression with monthly fixed effects regressing daily gasreg heating/cooling degree days on daily deviations of gas prices from their annual averages (https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/temperature_gas_price_adj_regression). "Beta" values are HDD/CDD coefficients and "alpha" values are intercepts and monthly fixed effects.
+    - **Indices:** param
 ---
 
   - [h2-combustion_10.csv](/inputs/fuelprices/h2-combustion_10.csv)
@@ -1851,23 +1792,6 @@
 
   - [cangrowth.csv](/inputs/load/cangrowth.csv)
     - **Description:** Canada load growth multiplier
----
-
-  - [demand_AEO_2023_high.csv](/inputs/load/demand_AEO_2023_high.csv)
-    - **Description:** Load growth projection from the AEO2023 High Economic Growth scenario
-    - **Units:** unitless
-
----
-
-  - [demand_AEO_2023_low.csv](/inputs/load/demand_AEO_2023_low.csv)
-    - **Description:** Load growth projection from the AEO2023 Low Economic Growth scenario
-    - **Units:** unitless
-
----
-
-  - [demand_AEO_2023_reference.csv](/inputs/load/demand_AEO_2023_reference.csv)
-    - **Description:** Load growth projection from the AEO2023 Reference scenario
-    - **Units:** unitless
 
 ---
 
@@ -1885,6 +1809,24 @@
 
   - [demand_AEO_2025_reference.csv](/inputs/load/demand_AEO_2025_reference.csv)
     - **Description:** Load growth projection from the AEO2025 Reference scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_high.csv](/inputs/load/demand_AEO_2026_high.csv)
+    - **Description:** Load growth projection from the AEO2026 High Economic Growth scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_low.csv](/inputs/load/demand_AEO_2026_low.csv)
+    - **Description:** Load growth projection from the AEO2026 Low Economic Growth scenario
+    - **Units:** unitless
+
+---
+
+  - [demand_AEO_2026_baseline.csv](/inputs/load/demand_AEO_2026_reference.csv)
+    - **Description:** Load growth projection from the AEO2026 Counterfactual Baseline scenario
     - **Units:** unitless
 
 ---
@@ -2715,11 +2657,6 @@
     - **Description:** set of products produced
 ---
 
-  - [pcat.csv](/inputs/sets/pcat.csv)
-    - **File Type:** GAMS set
-    - **Description:** set of prescribed technology categories
----
-
   - [plantcat.csv](/inputs/sets/plantcat.csv)
     - **File Type:** GAMS set
     - **Description:** set of categories for plant characteristics
@@ -2727,11 +2664,6 @@
 
   - [prepost.csv](/inputs/sets/prepost.csv)
     - **File Type:** GAMS set
----
-
-  - [prescriptivelink0.csv](/inputs/sets/prescriptivelink0.csv)
-    - **File Type:** GAMS set
-    - **Description:** initial set of prescribed categories and their technologies - used in assigning prescribed builds
 ---
 
   - [pvb_agg.csv](/inputs/sets/pvb_agg.csv)
@@ -2925,12 +2857,13 @@
   - [cap_existing_psh.csv](/inputs/storage/cap_existing_psh.csv)
     - **Description:** County-wide PSH operational capacity, pump capacity, and max energy, based on plant-level data from https://www.hydropower.org/hydropower-pumped-storage-tool
     - **Units:** MW/MWh
+
 ---
 
   - [PSH_supply_curves_durations.csv](/inputs/storage/PSH_supply_curves_durations.csv)
 ---
 
-  - [storinmaxfrac.csv](/inputs/storage/storinmaxfrac.csv)
+  - [storage_duration.csv](/inputs/storage/storage_duration.csv)
 ---
 
 
@@ -3173,12 +3106,6 @@
   - [rev_paths.csv](/inputs/supply_curve/rev_paths.csv)
 ---
 
-  - [sc_point_gid_old2new.csv](/inputs/supply_curve/sc_point_gid_old2new.csv)
----
-
-  - [sitemap.h5](/inputs/supply_curve/sitemap.h5)
----
-
   - [supplycurve_egs-reference.csv](/inputs/supply_curve/supplycurve_egs-reference.csv)
 ---
 
@@ -3339,34 +3266,6 @@
     - **Indices:** r,rr
 ---
 
-  - [transmission_capacity_init_AC_ba_NARIS2024.csv](/inputs/transmission/transmission_capacity_init_AC_ba_NARIS2024.csv)
-    - **Description:** Initial AC transmission capacity from the NARIS 2024 system at the BA resolution - 'NARIS2024' is a better starting point for future-oriented studies, but it becomes increasingly inaccurate for years earlier than 2024
----
-
-  - [transmission_capacity_init_AC_ba_REFS2009.csv](/inputs/transmission/transmission_capacity_init_AC_ba_REFS2009.csv)
-    - **Description:** Initial AC transmission capacity from the 2009 transmission system for ReEDS at the BA resolution - 'REFS2009' does not include direction-dependent capacities or differentiated capacities for energy and PRM trading but it better represents historical additions between 2010-2024
----
-
-  - [transmission_capacity_init_AC_county_NARIS2024.csv](/inputs/transmission/transmission_capacity_init_AC_county_NARIS2024.csv)
-    - **Description:** Initial AC transmission capacity modified from the NARIS 2024 file to eliminate most supply (with county transmission) demand mismatches for the 2024 solve year
----
-
-  - [transmission_capacity_init_AC_county_NARIS2024_base.csv](/inputs/transmission/transmission_capacity_init_AC_county_NARIS2024_base.csv)
-    - **Description:** Initial AC transmission capacity from the NARIS 2024 system at the county resolution
----
-
-  - [transmission_capacity_init_AC_transgrp_NARIS2024.csv](/inputs/transmission/transmission_capacity_init_AC_transgrp_NARIS2024.csv)
-    - **Description:** Initial AC transmission capacity from the NARIS 2024 system at the transgrp resolution
----
-
-  - [transmission_capacity_init_nonAC_ba.csv](/inputs/transmission/transmission_capacity_init_nonAC_ba.csv)
-    - **Description:** Initial non-AC transmission capacity at the BA resolution
----
-
-  - [transmission_capacity_init_nonAC_county.csv](/inputs/transmission/transmission_capacity_init_nonAC_county.csv)
-    - **Description:** Initial non-AC transmission capacity at the county resolution
----
-
   - [transmission_cost_ac_500kv_ba.h5](/inputs/transmission/transmission_cost_ac_500kv_ba.h5)
     - **Description:** Transmission costs for new 500 kV AC at BA resolution
 ---
@@ -3474,10 +3373,6 @@
     - **Description:** ivt steps for endyears beyond 2050
 ---
 
-  - [modeled_regions.csv](/inputs/userinput/modeled_regions.csv)
-    - **Description:** Sets of BA regions that a user can model in a run. Each column is a different region option and can be specified in cases using GSw_Region.
----
-
   - [windows_2100.csv](/inputs/userinput/windows_2100.csv)
     - **Description:** Window size for using window solve method to 2100
 ---
@@ -3533,6 +3428,13 @@
 ---
 
   - [water_with_cons_rate.csv](/inputs/waterclimate/water_with_cons_rate.csv)
+---
+
+
+<a id='inputs-zones'></a>
+#### inputs/zones
+
+  - [hierarchy_offshore.csv](/inputs/zones/hierarchy_offshore.csv)
 ---
 
 
@@ -3763,12 +3665,15 @@
 ##### postprocessing/retail_rate_module/inputs
 
   - [Electric O & M Expenses-IOU-1993-2019.csv](/postprocessing/retail_rate_module/inputs/Electric%20O%20&%20M%20Expenses-IOU-1993-2019.csv)
+    - **Description:** values taken from FERC Form 1 -- see https://docs.nlr.gov/docs/fy22osti/78224.pdf sections 2.2.2 and 2.2.3
 ---
 
   - [Electric Operating Revenues-IOU-1993-2019.csv](/postprocessing/retail_rate_module/inputs/Electric%20Operating%20Revenues-IOU-1993-2019.csv)
+    - **Description:** values taken from FERC Form 1 -- see https://docs.nlr.gov/docs/fy22osti/78224.pdf sections 2.2.2 and 2.2.3
 ---
 
   - [Electric Plant in Service-IOU-1993-2019.csv](/postprocessing/retail_rate_module/inputs/Electric%20Plant%20in%20Service-IOU-1993-2019.csv)
+    - **Description:** values taken from FERC Form 1 -- see https://docs.nlr.gov/docs/fy22osti/78224.pdf sections 2.2.2 and 2.2.3
 ---
 
   - [f861_cust_counts.csv](/postprocessing/retail_rate_module/inputs/f861_cust_counts.csv)
@@ -3975,7 +3880,6 @@
   - **File Type:** Switches file
   - **Description:** Contains the configuration settings for the ReEDS run(s).
   - **Dollar year:** 2004
-  - **Citation:** [https://github.nrel.gov/ReEDS/ReEDS-2.0/blob/38e6610a8c6a92291804598c95c11b707bf187b9/cases.csv](https://github.nrel.gov/ReEDS/ReEDS-2.0/blob/38e6610a8c6a92291804598c95c11b707bf187b9/cases.csv)
 ---
 
 - [cases_examples.csv](/cases_examples.csv)

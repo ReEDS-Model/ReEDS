@@ -195,8 +195,7 @@ def calculate_class_region_cf_hourly(
         weather_year_class_region_cf_hourly = (
             weather_year_site_cf_hourly.mul(df_sc['capacity'])
             .rename(columns=df_sc['class_region'])
-            .groupby(axis=1, level=0)
-            .sum()
+            .T.groupby(level=0).sum().T
             .div(class_region_cap)
         )
         # For timezone conversion, we need a few hours of CF data for the next
@@ -221,16 +220,15 @@ def calculate_class_region_cf_hourly(
     # Concatenate all CF data
     class_region_cf_hourly = pd.concat(df_list)
 
-    # Shift timezone from UTC to tz_out
+    # Shift timezone from UTC to tz_out and trim to modeled years
+    timeindex = reeds.timeseries.get_timeindex(weather_years)
     utc_offset = -1 * int(tz_out.split('Etc/GMT')[1])
     class_region_cf_hourly = (
         class_region_cf_hourly.shift(utc_offset)
         .tz_localize(None)
         .tz_localize(tz_out)
+        .loc[timeindex]
     )
-    class_region_cf_hourly = class_region_cf_hourly.loc[(
-        class_region_cf_hourly.index.year.isin(weather_years)
-    )]
     class_region_cf_hourly.index.names = ['datetime']
 
     return class_region_cf_hourly
@@ -267,24 +265,42 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
     regional_distpv_cf = (
         county_distpv_cf.mul(county_distpv_cap)
         .rename(columns=county2zone)
-        .groupby(axis=1, level=0)
-        .sum()
+        .T.groupby(level=0).sum().T
         .div(regional_distpv_cap)
     )
 
     return regional_distpv_cf
 
+# Identify resources with missing classes and assign them to 
+# closest resources of similar classes
+def check_missing_class_resource(existing_techs, resources):
+    missing_class_resource = existing_techs.merge(resources[['i','r']],
+                                                    on=['i','r'],
+                                                    how='left',
+                                                    indicator=True)
+    missing_class_resource = missing_class_resource[
+        missing_class_resource['i'].str.contains('upv|wind')].reset_index(drop=True)
+    missing_class_resource = missing_class_resource[
+        missing_class_resource['_merge'] == 'left_only'][['i','r']].copy()
+    
+    if len(missing_class_resource) > 0:
+            # Print out missing classes
+        fpath = os.path.join(inputs_case, 'missing_class_resource.csv')
+        missing_class_resource.to_csv(fpath, index=False)
+        err = (
+            f'{len(missing_class_resource)} mismatched tech class capacities and resources.\n'
+            f'Details can be found in {fpath}.'
+        )
+        raise ValueError(err)
+    else:
+        print('All capacities and resources are matched.')
+            
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
 def main(reeds_path, inputs_case):
     print('Starting recf.py')
-    
-    # #%% Settings for testing
-    # reeds_path = os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))
-    # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20260416_mainM0_Pacific','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -393,7 +409,6 @@ def main(reeds_path, inputs_case):
     else:
         cspcf = reeds.io.read_file(
             os.path.join(inputs_case, 'recf_csp.h5'),
-            parse_timestamps=True,
         )
 
     ### Format PV+battery profiles
@@ -413,7 +428,6 @@ def main(reeds_path, inputs_case):
         infile = 'recf_upv' if ilr == scalars['ilr_utility'] * 100 else f'recf_upv_{ilr}AC'
         df_pvb[pvb_type] = reeds.io.read_file(
             os.path.join(inputs_case,infile+'.h5'),
-            parse_timestamps=True,
         )
         df_pvb[pvb_type].columns = [f'pvb{pvb_type}_{c}'
                                     for c in df_pvb[pvb_type].columns]
@@ -502,6 +516,26 @@ def main(reeds_path, inputs_case):
     recf = pd.concat([recf, csp_system_cf], axis=1)
     resources = pd.concat([resources, csp_resources], axis=0)
 
+    #%% Assign existing and prescribed generator technology classes if it is not exist in resouces. 
+    ### Collect all existing and prescribed generator technology classes - region combinations
+    upv_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_upv.csv'))
+    wind_ons_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_wind-ons.csv'))
+    wind_ofs_exog_cap = pd.read_csv(os.path.join(inputs_case,'exog_cap_wind-ofs.csv'))
+    existing_exog_techs = pd.concat(
+        [upv_exog_cap, wind_ons_exog_cap, wind_ofs_exog_cap],
+        axis=0, ignore_index=True
+    )[['*tech','region']].drop_duplicates()
+    existing_exog_techs.columns = ['i','r']
+    prescribed_rsc = (pd.read_csv(os.path.join(inputs_case, 'prescribed_rsc.csv')).rename(columns={'*i':'i'})
+                      [['i', 'r']].drop_duplicates())
+    existing_techs = pd.concat(
+        [existing_exog_techs, prescribed_rsc],
+        axis=0, ignore_index=True
+    )[['i','r']].drop_duplicates()
+
+    # Check missing technology-class - region combinations in resources
+    check_missing_class_resource(existing_techs, resources)
+    
     #%% Check for errors
     nulls = recf.isnull().sum()
     missing = nulls.loc[nulls > 0]
@@ -509,7 +543,6 @@ def main(reeds_path, inputs_case):
         print(missing)
         err = f"Missing RECF values for {len(missing)} columns"
         raise ValueError(err)
-
 
     #%%###########################
     #    -- Data Write-Out --    #
@@ -521,10 +554,29 @@ def main(reeds_path, inputs_case):
     cspcf = cspcf.rename(columns=dict(zip(cspcf.columns, [f'csp_{i}' for i in cspcf.columns])))
     reeds.io.write_profile_to_h5(cspcf.astype(np.float32), 'csp.h5', inputs_case)
     ### Overwrite the original hierarchy.csv based on capcredit_hierarchy_level
-    hierarchy.rename_axis('*r').to_csv(
-        os.path.join(inputs_case, 'hierarchy.csv'), index=True, header=True)
-    pd.Series(hierarchy.ccreg.unique()).to_csv(
-        os.path.join(inputs_case,'ccreg.csv'), index=False, header=False)
+    (
+        hierarchy.rename_axis('*r')
+        [[
+            'nercr',
+            'transreg',
+            'transgrp',
+            'cendiv',
+            'st',
+            'interconnect',
+            'country',
+            'usda_region',
+            'h2ptcreg',
+            'hurdlereg',
+            'gasreg',
+            'ccreg'
+        ]]
+        .to_csv(os.path.join(inputs_case, 'hierarchy.csv'), index=True, header=True)
+    )
+    ccreg = pd.Series(hierarchy.ccreg.unique())
+    reeds.io.write_to_inputs_h5(
+        ccreg, 'ccreg', inputs_case, gamstype='set', comment='capacity credit region',
+    )
+
 
 
 #%% ===========================================================================
@@ -547,7 +599,10 @@ if __name__ == '__main__':
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
 
-    #%% Set up logger
+    # #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    
     log = reeds.log.makelog(
         scriptname=__file__,
         logpath=os.path.join(inputs_case,'..','gamslog.txt'),

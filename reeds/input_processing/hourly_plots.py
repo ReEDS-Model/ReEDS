@@ -14,7 +14,6 @@ import cmocean
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
-from reeds.input_processing import hourly_repperiods
 from reeds import plots
 plots.plotparams()
 
@@ -135,9 +134,9 @@ def plot_ldc(
     ### Get clustered load, repeating representative periods based on how many
     ### periods they represent
     numperiods = period_szn.value_counts().rename('numperiods').to_frame()
-    numperiods['yearperiod'] = numperiods.index.map(hourly_repperiods.szn2yearperiod).values
-    numperiods['year'] = numperiods.index.map(hourly_repperiods.szn2yearperiod).map(lambda x: x[0])
-    numperiods['yperiod'] = numperiods.index.map(hourly_repperiods.szn2period)
+    numperiods['yearperiod'] = numperiods.index.map(reeds.timeseries.szn2yearperiod).values
+    numperiods['year'] = numperiods.index.map(reeds.timeseries.szn2yearperiod).map(lambda x: x[0])
+    numperiods['yperiod'] = numperiods.index.map(reeds.timeseries.szn2period)
     periods = [[row.yearperiod] * row.numperiods for (i,row) in numperiods.iterrows()]
     periods = [item for sublist in periods for item in sublist]
 
@@ -150,11 +149,11 @@ def plot_ldc(
     hourly_out = hourly_in.unstack('h_of_period').loc[periods].stack('h_of_period')
 
     #### Daily
-    periodly_in = hourly_in.groupby('yperiod').mean()
+    periodly_in = hourly_in.groupby(['year','yperiod']).mean()
     ## Index doesn't matter; replace it so we can take daily mean
     periodly_out = hourly_out.copy()
     hourly_out.index = hourly_in.index.copy()
-    periodly_out = hourly_out.groupby('yperiod').mean()
+    periodly_out = hourly_out.groupby(['year','yperiod']).mean()
 
     ### Get axis coordinates: properties = rows, regions = columns
     properties = periodly_out.columns.get_level_values('property').unique().values
@@ -265,7 +264,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
         dfmap[key]['centroid_y'] = dfmap[key].centroid.y
 
     ### Get the CF data over all years, take the mean over weather years
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf = recf.loc[recf.index.year.isin(GSw_HourlyWeatherYears)].mean()
 
     ### Get the hourly data
@@ -552,7 +551,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
 def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
     def get_profiles(regions, year):
         """Assemble 8760 profiles from original and representative days"""
-        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='H',inclusive='left')[:8760]
+        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='h',inclusive='left')[:8760]
         props = profiles.columns.get_level_values('property').unique()
         ### Original profiles
         dforig = {}
@@ -563,7 +562,7 @@ def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
         dforig = pd.concat(dforig, axis=1)
 
         ### Representative profiles
-        periodmap = period_szn.map(hourly_repperiods.szn2yearperiod).to_frame()
+        periodmap = period_szn.map(reeds.timeseries.szn2yearperiod).to_frame()
         periodmap['year'] = periodmap.szn.map(lambda x: x[0])
         periodmap['yperiod'] = periodmap.szn.map(lambda x: x[1])
         periodmap = periodmap.loc[periodmap.year==year].yperiod
@@ -657,7 +656,7 @@ def plot_load_days(profiles, rep_periods, period_szn, sw, reeds_path, figpath):
     """
     """
     ### Input processing
-    idx_reedsyr = period_szn.map(hourly_repperiods.szn2yearperiod)
+    idx_reedsyr = period_szn.map(reeds.timeseries.szn2yearperiod)
     medoid_profiles = profiles.loc[rep_periods]
     centroids = profiles.loc[rep_periods]
     centroid_profiles = centroids * profiles.stack('h_of_period').max()
