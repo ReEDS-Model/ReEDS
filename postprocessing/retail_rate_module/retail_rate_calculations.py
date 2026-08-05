@@ -141,7 +141,7 @@ def distribute_between_solve_years(df, value_col, modeled_years, years):
 
     year_expander = pd.DataFrame(index=years)
     year_expander['t_modeled'] = None
-    year_expander['alloc_f'] = 0
+    year_expander['alloc_f'] = 0.
     year_expander.loc[first_year, ['t_modeled', 'alloc_f']] = [first_year, 1.0]
     for year in year_expander.index[1:]:
         preceding_model_year = np.max([x for x in modeled_years if x<year])
@@ -1137,7 +1137,7 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
         .sort_values(['state','t']).reset_index(drop=True))
     ### Backward-fill for only the per_mwh columns
     bfillcols = [c for c in dist_admin_costs if c.endswith('_per_mwh')]
-    dist_admin_costs[bfillcols] = dist_admin_costs[bfillcols].interpolate('bfill')
+    dist_admin_costs[bfillcols] = dist_admin_costs[bfillcols].bfill()
     dist_admin_costs.loc[dist_admin_costs.entry_type.isnull(), 'entry_type'] = 'bfill'
 
     #%% Add excluded costs back in with specialized amortization assumptions
