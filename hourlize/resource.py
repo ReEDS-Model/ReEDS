@@ -55,15 +55,24 @@ def copy_rev_jsons(outpath, rev_path):
 ### --- SUPPLY CURVE PROCESSING ---
 ### ===========================================================================
 
-def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path):
+def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path, atb_scenario=None):
     """Only used for geothermal"""
-    raw_sc_files = os.path.join(rev_cases_path, "raw_supply_curves")
+    # get reV supply curves at different depths
+    sc_files = glob(os.path.join(rev_cases_path, "**", "*.csv"), recursive=True)
+    # if ATB scenario is specified, subset to only those files
+    if atb_scenario is not None:
+        sc_files = [path for path in sc_files if atb_scenario in os.path.basename(path)]
 
-    sc_list = []
-    for _, _, files in os.walk(raw_sc_files):
-        for file in files:
-            sc_list.append(pd.read_csv(os.path.join(raw_sc_files, file)))
-    
+    # raise error if no files are identified
+    if len(sc_files) == 0:
+        raise FileNotFoundError(
+            f"No geothermal supply curve CSVs found under {rev_cases_path}"
+            + (f" for atb_scenario='{atb_scenario}'" if atb_scenario is not None else "")
+        )
+    else:
+        print(f"Loading the following files:\n{'\n'.join([os.path.basename(f) for f in sc_files])}")
+        sc_list = [pd.read_csv(path) for path in sorted(sc_files)]
+
     df_sc_agg = pd.concat(sc_list)
     df_sc_lowest_lcoe = (
         df_sc_agg.sort_values(["lcoe_all_in_usd_per_mwh", "lcoe_site_usd_per_mwh"], ascending=True)
@@ -995,6 +1004,7 @@ if __name__== '__main__':
                 aggregate_supply_curves_by_lowest_lcoe(
                     rev_cases_path=cf.rev_path,
                     rev_sc_file_path=cf.original_sc_file,
+                    atb_scenario=cf.atb_scenario
                 )
             else:
                 raise NotImplementedError(
