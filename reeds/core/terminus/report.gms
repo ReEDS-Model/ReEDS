@@ -503,8 +503,8 @@ $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
 repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))] =
     1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') * 
-    sum{(i,v,bs), USE_BS_REEDS(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) } 
-    / sum{(i,v,bs), USE_BS_REEDS(i,v,bs,r,t) } 
+    sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
+    / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
 ;
 $endif.finitobioprice
 
