@@ -2577,6 +2577,8 @@ try:
     dfmap = reeds.io.get_dfmap(base)
     dfba = dfmap['r']
     dfstates = dfmap['st']
+    resolutions = list(set([sw.GSw_ZoneSet for sw in dictin_sw.values()]))
+    level = 'r' if len(resolutions) == 1 else 'st'
     if (len(cases) == 2) and (not forcemulti):
         for i_plot in maptechs.keys():
             plt.close()
@@ -2589,6 +2591,7 @@ try:
             _,_,dfplot = reedsplots.plot_diff_maps(
                 val=mapdiff, i_plot=i_plot, titles = maptechs[i_plot],
                 year=lastyear, casebase=casebase, casecomp=casecomp,
+                level=level,
                 plot='base', f=f, ax=ax[0],
                 cmap=cmocean.cm.rain,
             )
@@ -2599,6 +2602,7 @@ try:
             _,_,dfplot = reedsplots.plot_diff_maps(
                 val=mapdiff, i_plot=i_plot, titles = maptechs[i_plot],
                 year=lastyear, casebase=casebase, casecomp=casecomp,
+                level=level,
                 plot='comp', f=f, ax=ax[1],
                 cmap=cmocean.cm.rain,
             )
@@ -2609,6 +2613,7 @@ try:
             _,_,dfplot = reedsplots.plot_diff_maps(
                 val=mapdiff, i_plot=i_plot, titles = maptechs[i_plot],
                 year=lastyear, casebase=casebase, casecomp=casecomp,
+                level=level,
                 plot='absdiff', f=f, ax=ax[2],
                 cmap=plt.cm.RdBu_r,
             )

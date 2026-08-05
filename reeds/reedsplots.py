@@ -909,10 +909,13 @@ def plot_trans_onecase(
     return f, ax, dfplot
 
 
-def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
-                 plot='diff', f=None, ax=None, cmap=plt.cm.Blues,
-                 zmax=None, zlim=None,
-                 legend_kwds=None, plot_kwds=None,):
+def plot_diff_maps(
+    val, i_plot, titles, year, casebase, casecomp,
+    level:Literal['r','st']='r',
+    plot='diff', f=None, ax=None, cmap=plt.cm.Blues,
+    zmax=None, zlim=None,
+    legend_kwds=None, plot_kwds=None,
+):
     """
     Inputs
     ------
@@ -952,12 +955,18 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
 
     ### Get the maps
     dfmap = reeds.io.get_dfmap(casecomp)
-    dfba = dfmap['r']
+    dfba = dfmap[level]
     dfstates = dfmap['st']
 
     ### Load the data, sum over hours
     dfbase = reeds.io.read_output(casebase, val, valname=valcol)
     dfcomp = reeds.io.read_output(casecomp, val, valname=valcol)
+
+    if level != 'r':
+        hierarchy_base = reeds.io.get_hierarchy(casebase)
+        hierarchy_comp = reeds.io.get_hierarchy(casecomp)
+        dfbase.r = dfbase.r.map(hierarchy_base[level])
+        dfcomp.r = dfcomp.r.map(hierarchy_comp[level])
 
     ### Simplify the i names
     dfbase.i = simplify_techs(dfbase.i)
@@ -1419,12 +1428,13 @@ def plot_max_imports(
         flow[level] = flow.r.map(r2agg)
         flow[levell] = flow.rr.map(r2agg)
 
-        tranloss = pd.read_csv(
-            os.path.join(c,'inputs_case','tranloss.csv')
-        ).rename(columns={'*r':'r'}).set_index(['r','rr','trtype']).squeeze(1)
+        tranloss = (
+            reeds.io.read_input(c, 'tranloss')
+            .rename(columns={'*r':'r'}).set_index(['r','rr','trtype']).squeeze(1)
+        )
 
         peakload = (
-            pd.read_csv(os.path.join(c,'inputs_case','peakload.csv'))
+            reeds.io.read_input(c, 'peakload')
             .set_index(['level','region']).loc[level].stack()
             .rename_axis(['r','t']).rename('MW')
             .reset_index().astype({'t':int}).set_index(['r','t']).squeeze()
@@ -1433,9 +1443,10 @@ def plot_max_imports(
         if _draw_limit:
             ## Fraction
             try:
-                firm_import_limit = pd.read_csv(
-                    os.path.join(c, 'inputs_case', 'firm_import_limit.csv')
-                ).rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze()
+                firm_import_limit = (
+                    reeds.io.read_input(c, 'firm_import_limit')
+                    .rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze(1)
+                )
             except FileNotFoundError:
                 print("firm_import_limit.csv not found, so it won't be plotted")
                 _draw_limit = False
