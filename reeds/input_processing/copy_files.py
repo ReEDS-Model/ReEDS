@@ -437,16 +437,6 @@ def subset_to_valid_regions(
             case=os.path.dirname(os.path.normpath(inputs_case)),
             agg=agg,
         ).reset_index()
-    elif filename.startswith('exog_cap'):
-        df = reeds.io.assemble_exog_cap(
-            full_path,
-            case=os.path.dirname(os.path.normpath(inputs_case)),
-        )
-    elif filename.startswith('prescribed_builds'):
-        df = reeds.io.assemble_prescribed_builds(
-            full_path,
-            case=os.path.dirname(os.path.normpath(inputs_case)),
-        )
     elif filename == 'techs_banned.csv':
         df, nuclear_ban_regions = read_banned_tech_file(
             full_path,
@@ -462,7 +452,12 @@ def subset_to_valid_regions(
     elif filetype_in == 'h5':
         df = reeds.io.read_file(full_path)
     elif filetype_in == 'csv':
-        df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
+        # do not read in # as comment if reading unitdata_orig.csv to avoid omitting data
+        # (temporary. will remove after updating NEMS and remove # from unit ID columns)
+        if filename == 'unitdata_orig.csv':
+            df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str})
+        else:
+            df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
     else:
         raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
 
@@ -889,7 +884,7 @@ def write_region_indexed_file(
             case 'bio_supplycurve.csv':
                 # Adjust for inflation
                 df['price'] = df['price'].astype(float) * source_deflator_map[filepath]
-            case 'unitdata.csv':
+            case 'unitdata_orig.csv':
                 # Map counties to zones
                 county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
                 county2zone.index = 'p' + county2zone.index

@@ -52,11 +52,9 @@ def wm(df):
     return _wm
 
 
-def get_exog_cap(inputs_case, tech, dfsc):
+def get_exog_cap(dfexogtech,dfsc):
     """Get exogenous capacity by class, region, rscbin, and year"""
-    dfexog = (
-        pd.read_csv(os.path.join(inputs_case, f'exog_cap_{tech}.csv'))
-        .merge(
+    dfexog = (dfexogtech.merge(
             dfsc.explode('sc_point_gid').reset_index()[['sc_point_gid','bin']],
             on='sc_point_gid',
         )
@@ -127,11 +125,6 @@ def agg_supplycurve(
 def main(
     reeds_path, inputs_case, write=True, **kwargs
 ):
-    # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260609_envM0_Pacific','inputs_case')
-    # write = True
-    # kwargs = {}
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -174,10 +167,21 @@ def main(
     ).squeeze(1)
     deflate = dollaryear.map(deflator).rename('Deflator')
 
-    #%% Load the existing RSC capacity (PV plants, wind, and CSP)
+    ##%% Load the existing RSC capacity (PV plants, wind, and CSP)
     rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
 
-    # Group CSP tech
+    #%% Load the existing RSC capacity (PV plants, wind, and CSP) if not provided in main function call
+    # writesupplycurves.py is being run as a main input processing script
+    dfwindonsexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_wind-ons.csv")).rename(
+                                columns={"capacity": "MW"})
+    dfwindofsexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_wind-ofs.csv")).rename(
+                                columns={"capacity": "MW"})
+    dfupvexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_upv.csv")).rename(
+                                columns={"capacity": "MW"})
+    dfgeohydroexog = pd.read_csv(os.path.join(inputs_case, "exog_cap_geohydro.csv")).rename(
+                                columns={"capacity": "MW"})
+
+    # Group CSP tech    
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'
     rsc_wsc = rsc_wsc.groupby(["r", "i"]).sum().reset_index()
     rsc_wsc.i = rsc_wsc.i.str.lower()
@@ -299,8 +303,10 @@ def main(
 
     if write:
         ## Exogenous wind capacity
-        dfwindexog = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
-        dfwindexog.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
+        exog_wind_ons_rsc = get_exog_cap(dfwindonsexog, dfsc=wind['ons'])
+        exog_wind_ons_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
+        exog_wind_ofs_rsc = get_exog_cap(dfwindofsexog, dfsc=wind['ofs'])
+        exog_wind_ofs_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
 
     # %%###############
     #    -- PV --    #
@@ -339,7 +345,7 @@ def main(
 
     if write:    
         ## Exogenous UPV capacity
-        dfupvexog = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
+        dfupvexog = get_exog_cap(dfupvexog, dfsc=upv)
         dfupvexog.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
 
     ### Normalize formatting
@@ -557,7 +563,7 @@ def main(
 
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
-                dfgeohydroexog = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
+                dfgeohydroexog = get_exog_cap(dfgeohydroexog , dfsc=geo['geohydro'])
                 dfgeohydroexog.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
@@ -1094,6 +1100,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    #write = True
+    #kwargs = {}
 
     #%% Set up logger
     log = reeds.log.makelog(
