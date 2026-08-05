@@ -4009,8 +4009,6 @@ eq_mat_supply(mat,t)$[tmodel(t)$(not sameas(mat,'%GSw_matsupply_spec%'))]..
 
     =e= 
 
-* materials produced domestically (metric tons) * last year weight (multiplier) + slack variable for unmet demand (metric tons)
-
 * domestic production 
       (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_domestic
 * add global production outside US 
