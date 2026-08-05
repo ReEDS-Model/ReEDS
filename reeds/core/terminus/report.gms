@@ -560,7 +560,8 @@ $ifthene.finitogasprice Sw_FINITO_Link == 1
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
 *   citygate price of natural gas
     deflator('2018') * [
-        ( 1/(obj_scale) * 1/(pvf_onm(t)) * smax{(cfp,st)$r_st(r,st), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) )
+*   (st_cendiv is not carried into report.gms's restart, so derive st-in-cendiv from r_st + r_cendiv)
+        ( 1/(obj_scale) * 1/(pvf_onm(t)) * smax{(cfp,st)$sum{r$[r_st(r,st)$r_cendiv(r,cendiv)],1}, eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) )
 *   electric-sector markup for natural gas
 * TODO: activate after FINITO pricing PR is merged
 *       + smax{(cfp,cendiv)$[r_cendiv(r,cendiv)$gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],cf_markup(cfp,'NG','Electric_Power',cendiv,t)}
