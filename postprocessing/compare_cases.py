@@ -1095,9 +1095,13 @@ try:
         ### Labels
         for x, case in enumerate(cases):
             labels = (dfcumsum.loc[case] - dfplot.loc[case]/2).rename('middle').to_frame()
-            labels['ylabel'] = plots.optimize_label_positions(
-                ydata=labels.middle.values, mindistance=mindistance, ypad=0,
-            )
+            try:
+                labels['ylabel'] = plots.optimize_label_positions(
+                    ydata=labels.middle.values, mindistance=mindistance, ypad=0,
+                )
+            except Exception as err:
+                print(err)
+                labels['ylabel'] = labels.middle.values
             labels['yval'] = labels.index.map(dfplot.loc[case])
             for i, row in labels.iterrows():
                 ## Draw the line
@@ -2543,6 +2547,7 @@ for figname, width, height in [
     ## Include both versions for backwards compatibility
     ('plot_stressperiod_evolution-sum-transgrp', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}-w{weatheryear}', SLIDE_WIDTH, None),
+    ('plot_stress_cf-interconnect-stress_top10_price', SLIDE_WIDTH, None),
 ] + [
     (
         f"plot_techmix-transreg-{lastyear}-{units}-{reedsplots.stress_metrics_shorten(metrics)}",

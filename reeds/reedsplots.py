@@ -5796,7 +5796,7 @@ def plot_stress_mix(
 def plot_stress_cf(
     case:str|Path,
     level='transreg',
-    metric='stress_top5_load',
+    metric='stress_top10_netload',
     include_rep=True,
     figwidth=1.2,
     figheight=1.2,
@@ -5884,7 +5884,11 @@ def plot_stress_cf(
     _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
     reeds.plots.despine(ax)
     plt.draw()
-    plots.shorten_years(_ax, start_shortening_in=yearmin+1)
+    try:
+        plots.shorten_years(_ax, start_shortening_in=yearmin+1)
+    except ValueError:
+        _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(5))
+        _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(1))
     return f, ax, {'stress': capcredit, 'rep': repfraction}
 
 

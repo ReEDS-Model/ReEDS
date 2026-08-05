@@ -72,10 +72,10 @@ else:
 year = args.year
 
 # #%% Inputs for testing
-# case = os.path.join(reeds_path,'runs','v20260624_raM1_MultiMetricRA')
+# case = os.path.join(reeds_path,'runs','v20260804_compareM0_Pacific')
 # year = 0
 # interactive = True
-# write = False
+# write = True
 # import importlib
 # importlib.reload(reedsplots)
 
@@ -823,10 +823,10 @@ if not int(sw.GSw_PRM_CapCredit):
     level, figheight = 'transreg', 1.2
     level, figheight = 'interconnect', 1.8
     for metric in [
-        'stress_top5_load',
-        'stress_top5_netload',
-        'stress_top5_price',
-        'stress_bottom5_vregen',
+        'stress_top10_price',
+        'stress_top10_netload',
+        'stress_top10_load',
+        'stress_bottom10_vregen',
     ]:
         savename = f"plot_stress_cf-{level}-{metric}.png"
         try:
