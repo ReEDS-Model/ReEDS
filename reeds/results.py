@@ -780,9 +780,11 @@ def diff_outputs(
         dictin[case] = _dictin
     ## Take diff
     allkeys = sorted(set(keys['base'] + keys['comp']))
+    max_key_length = max([len(i) for i in allkeys])
     dictout = {}
     for key in allkeys:
         df = pd.concat({case:dictin[case].get(key, None) for case in dictin}, axis=1)
+        entries = df.shape[0]
         ## Sets have no value column; ignore them
         if df.shape[1] == 0:
             continue
@@ -792,7 +794,11 @@ def diff_outputs(
         if len(df):
             dictout[key] = df
         if (verbose > 1) or (((verbose > 0) and len(df))):
-            print(f'{key}: {len(df)} differences')
+            msg = (
+                f'{key:·<{max_key_length}}·{len(df):·>5} differences out of '
+                f'{entries:>5} entries ({len(df)/entries*100:>4.1f}%)'
+            )
+            print(msg)
     ## Write it
     if outpath:
         if outpath.is_file():
