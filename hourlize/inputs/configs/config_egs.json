@@ -1,4 +1,5 @@
 {
+    "atb_scenario": "moderate",
     "cost_out": "combined_trans" ,
     "capacity_col": "capacity_ac_mw",
     "class_bin_col": "capacity_factor_ac",
