@@ -635,13 +635,13 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR.
 gen_h("csp-ns",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
-    = cap_cspns(r,t) * m_cf("upv_6","new1",r,h,t) ;
-* We have to take csp-ns generation from somewhere, so take it from upv_6 (which all the
+    = cap_cspns(r,t) * m_cf("upv_5","new1",r,h,t) ;
+* We have to take csp-ns generation from somewhere, so take it from upv_5 (which all the
 * csp-ns-containing regions have)
-gen_h("upv_6",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
-    = gen_h("upv_6",r,h,t) - gen_h("csp-ns",r,h,t) ;
+gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
+    = gen_h("upv_5",r,h,t) - gen_h("csp-ns",r,h,t) ;
 * Make sure it doesn't go negative, just in case
-gen_h("upv_6",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)$(gen_h("upv_6",r,h,t) < 0)] = 0 ;
+gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)$(gen_h("upv_5",r,h,t) < 0)] = 0 ;
 gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 
 * Do it again for stress periods
@@ -811,9 +811,9 @@ cap_out(i,r,t)$[valcap_irt(i,r,t)$tmodel_new(t)] = sum{v$valcap(i,v,r,t), cap_iv
 cap_out("csp-ns",r,t)$[cap_cspns(r,t)$tmodel_new(t)] = cap_cspns(r,t) ;
 * We have to take csp-ns capacity from somewhere, so take it from upv_6 (which all the
 * csp-ns-containing regions have)
-cap_out("upv_6",r,t)$[cap_cspns(r,t)$tmodel_new(t)] = cap_out("upv_6",r,t) - cap_cspns(r,t) ;
+cap_out("upv_5",r,t)$[cap_cspns(r,t)$tmodel_new(t)] = cap_out("upv_5",r,t) - cap_cspns(r,t) ;
 * Make sure it doesn't go negative, just in case
-cap_out("upv_6",r,t)$[cap_cspns(r,t)$tmodel_new(t)$(cap_out("upv_6",r,t) < 0)] = 0 ;
+cap_out("upv_5",r,t)$[cap_cspns(r,t)$tmodel_new(t)$(cap_out("upv_5",r,t) < 0)] = 0 ;
 cap_nat(i,t)$tmodel_new(t) = sum{r, cap_out(i,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)
@@ -1564,7 +1564,7 @@ systemcost_ba("inv_h2_storage",r,t)$[tmodel_new(t)$(Sw_H2 = 2)] =
 *===============
 
 systemcost_ba("op_co2_storage",r,t)$[tmodel_new(t)$Sw_CO2_Detail] =
-              + sum{(h,cs)$r_cs(r,cs), hours(h) * CO2_STORED.l(r,cs,h,t) * cost_co2_stor_bec(cs,t) }
+              + sum{(h,cs)$r_cs(r,cs), hours(h) * CO2_STORED.l(r,cs,h,t) * cost_co2_stor_bec(cs) }
 ;
 
 * here following same logic of transmission pipelines

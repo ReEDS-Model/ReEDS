@@ -752,58 +752,7 @@
 
 ---
 
-  - [exog_cap_geohydro_allkm_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_allkm_reference.csv)
----
-
-  - [exog_cap_geohydro_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_reference.csv)
----
-
-  - [exog_cap_upv_limited.csv](/inputs/capacity_exogenous/exog_cap_upv_limited.csv)
----
-
-  - [exog_cap_upv_open.csv](/inputs/capacity_exogenous/exog_cap_upv_open.csv)
----
-
-  - [exog_cap_upv_reference.csv](/inputs/capacity_exogenous/exog_cap_upv_reference.csv)
----
-
-  - [exog_cap_wind-ons_limited.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_limited.csv)
----
-
-  - [exog_cap_wind-ons_open.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_open.csv)
----
-
-  - [exog_cap_wind-ons_reference.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_reference.csv)
----
-
   - [interconnection_queues.csv](/inputs/capacity_exogenous/interconnection_queues.csv)
----
-
-  - [prescribed_builds_wind-ofs_meshed_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv)
----
-
-  - [prescribed_builds_wind-ofs_meshed_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv)
----
-
-  - [prescribed_builds_wind-ofs_meshed_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv)
----
-
-  - [prescribed_builds_wind-ofs_radial_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv)
----
-
-  - [prescribed_builds_wind-ofs_radial_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv)
----
-
-  - [prescribed_builds_wind-ofs_radial_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv)
----
-
-  - [prescribed_builds_wind-ons_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv)
----
-
-  - [prescribed_builds_wind-ons_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv)
----
-
-  - [prescribed_builds_wind-ons_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv)
 ---
 
   - [ReEDS_generator_database_final_EIA-NEMS.csv](/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv)
@@ -2708,11 +2657,6 @@
     - **Description:** set of products produced
 ---
 
-  - [pcat.csv](/inputs/sets/pcat.csv)
-    - **File Type:** GAMS set
-    - **Description:** set of prescribed technology categories
----
-
   - [plantcat.csv](/inputs/sets/plantcat.csv)
     - **File Type:** GAMS set
     - **Description:** set of categories for plant characteristics
@@ -2720,11 +2664,6 @@
 
   - [prepost.csv](/inputs/sets/prepost.csv)
     - **File Type:** GAMS set
----
-
-  - [prescriptivelink0.csv](/inputs/sets/prescriptivelink0.csv)
-    - **File Type:** GAMS set
-    - **Description:** initial set of prescribed categories and their technologies - used in assigning prescribed builds
 ---
 
   - [pvb_agg.csv](/inputs/sets/pvb_agg.csv)
