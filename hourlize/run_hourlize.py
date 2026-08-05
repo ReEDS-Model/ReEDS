@@ -464,9 +464,12 @@ def get_cases(args):
     df_rev['access_case'] = df_rev['access_case'].astype(str).str.strip()
 
     tech_filter = [t.strip() for t in args.tech] if args.tech else None
+    exclude_techs = [t.strip() for t in args.exclude_tech] if args.exclude_tech else None
     access_case_filter = [a.strip() for a in args.access_case] if args.access_case else None
     if tech_filter:
         df_rev = df_rev[df_rev['tech'].isin(tech_filter)]
+    if exclude_techs:
+        df_rev = df_rev[~df_rev['tech'].isin(exclude_techs)]
     if access_case_filter:
         df_rev = df_rev[df_rev['access_case'].isin(access_case_filter)]
 
@@ -561,9 +564,11 @@ if __name__== '__main__':
     parser.add_argument('mode', type=str,
                         choices=['load', 'resource'],
                         help='Setup runs for load.py or resource.py?')
-    parser.add_argument('--tech', nargs='+',
+    parser.add_argument('--tech', '-t', nargs='+',
                     help='Optional tech filter(s) for resource mode, e.g. --tech upv wind-ons')
-    parser.add_argument('--access_case', nargs='+',
+    parser.add_argument('--exclude_tech', '-e', nargs='+',
+                    help='Optional techs to exclude for resource mode, e.g. --exclude_tech geohydro')
+    parser.add_argument('--access_case', '-c',  nargs='+',
                     help='Optional access_case filter(s) for resource mode, e.g. --access_case reference limited')
     parser.add_argument('--debugnode', '-d', default=False, action='store_true',
                     help='Run using debug specifications for slurm on an hpc system')
