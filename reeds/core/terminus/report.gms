@@ -501,8 +501,8 @@ repbioprice(r,t)$[tmodel_new(t)$tfuel(t)] = max{0, smax{bioclass$BIOUSED.l(biocl
 * when running linked model use FINITO biomass clearing prices
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
-repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))] =
-    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') * 
+repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
+    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') *
     sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
     / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
 ;
