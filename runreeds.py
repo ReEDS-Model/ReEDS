@@ -1298,10 +1298,10 @@ def write_batch_script(
             'plantcostprep',
             'hourly_load',
             'recf',
-            'forecast',
             'WriteHintage',
             'transmission',
             'outage_rates',
+            'forecast',
             'hourly_repperiods',
             'h5_to_gdx',
         ]:

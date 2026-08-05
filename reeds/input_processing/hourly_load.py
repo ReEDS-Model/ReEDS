@@ -786,12 +786,15 @@ def main(reeds_path, inputs_case):
     reeds.io.write_profile_to_h5(regional_load_hourly, 'load.h5', inputs_case)
     peakload.to_csv(os.path.join(inputs_case,'peakload.csv'))
     ### Write peak demand by NERC region to use in firm net import constraint
-    (
+    peakload_nercr = (
         peakload.loc['nercr']
         .stack('year')
-        .rename_axis(['*nercr','t'])
+        .rename_axis(['nercr','t'])
         .rename('MW')
-        .to_csv(os.path.join(inputs_case,'peakload_nercr.csv'))
+    )
+    reeds.io.write_to_inputs_h5(
+        peakload_nercr, 'peakload_nercr', inputs_case, gamstype='parameter',
+        units='MW', comment='Peak exogenous demand across all weather years by NERC region',
     )
     if int(sw.GSw_DRShed):
         reeds.io.write_profile_to_h5(regional_dr_shed_hourly, 'dr_shed_hourly.h5', inputs_case)
