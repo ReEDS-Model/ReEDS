@@ -328,7 +328,7 @@ def calc_systemcost(
 
     # Valid regions
     val_r = pd.read_csv(
-        os.path.join(inputs_case, 'val_r.csv'),
+        os.path.join(inputs_case, 'val_r_all.csv'),
         header=None,
     ).squeeze(1).values
 
