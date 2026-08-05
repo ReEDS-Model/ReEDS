@@ -2,7 +2,7 @@
 timetype,Sequential or Intertemporal,seq; int; win,seq,
 ignore,"0=run this case, 1=ignore this case",0; 1,0,
 AWS,Switch for when running on AWS,0; 1,0,
-yearset,"_-delimited list of years to model OR bash-formatted year ranges (start..end..step). For example, 2010_2015_2020..2035..3_2040..2050..5 means: 2010, 2015, then 2020 through 2035 in 3-year steps, then 2040 through 2050 in 5-year steps. startyear will be the first year in the list. Truncated at endyear.",N/A,2010_2015_2020..2050..3,
+yearset,"_-delimited list of years to model OR bash-formatted year ranges (start..end..step). For example, 2010_2015_2020..2035..3_2040..2050..5 means: 2010, 2015, then 2020 through 2035 in 3-year steps, then 2040 through 2050 in 5-year steps. startyear will be the first year in the list. Truncated at endyear.",N/A,2010..2050..5,
 endyear,Last year to be modeled,N/A,2050,
 windows_suffix,Set of windows that are modeled,default; step5; step10; 2100,default,
 solver,Solver for GAMS to use,CPLEX; gurobi,CPLEX,
