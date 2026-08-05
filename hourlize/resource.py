@@ -515,9 +515,9 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
     startTime = datetime.datetime.now()
     #Create class column.
     if class_path is None:
-        df_sc['class'] = '1'
+        df_sc['class'] = 1
     else:
-        df_sc['class'] = 'NA' #Initialize to NA to make sure we have full coverage of classes here.
+        df_sc['class'] = pd.Series(pd.NA, index=df_sc.index, dtype='Int64')
         df_class = pd.read_csv(class_path, index_col='class')
         #Now loop through classes (rows in df_class). Classes may have multiple defining criteria (columns in df_class),
         #so we loop through columns to build the selection criteria for each class, building up a 'mask' of criteria for each class.
@@ -537,7 +537,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                     #No pipe symbol means we do a simple match.
                     mask = mask & (df_sc[col] == val)
             #Finally, apply the mask that has been built for this class.
-            df_sc.loc[mask, 'class'] = cname
+            df_sc.loc[mask, 'class'] = int(cname)
     # Add dynamic, region-specific class bins based on class_bin_method
     if class_bin:
         #In this case, class names in class_path must be numbered, starting at 1
