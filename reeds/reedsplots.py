@@ -981,6 +981,31 @@ def plot_diff_maps(
     dfbase[valcol] *= unitscaler
     dfcomp[valcol] *= unitscaler
 
+    ### Aggregate selected technologies to one value per region for the target year
+    dfbase_selected = (
+        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year), ['r', valcol]]
+        .groupby('r', as_index=False)[valcol].sum()
+        .rename(columns={valcol: f'{valcol}_base'})
+    )
+    dfcomp_selected = (
+        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year), ['r', valcol]]
+        .groupby('r', as_index=False)[valcol].sum()
+        .rename(columns={valcol: f'{valcol}_comp'})
+    )
+    dfdiff_selected = (
+        dfbase_selected
+        .merge(dfcomp_selected, on='r', how='outer')
+        .fillna(0)
+    )
+    dfdiff_selected[f'{valcol}_diff'] = (
+        dfdiff_selected[f'{valcol}_comp'] - dfdiff_selected[f'{valcol}_base']
+    )
+    dfdiff_selected[f'{valcol}_pctdiff'] = np.where(
+        dfdiff_selected[f'{valcol}_base'] != 0,
+        dfdiff_selected[f'{valcol}_diff'] / dfdiff_selected[f'{valcol}_base'] * 100,
+        np.nan,
+    )
+
     ### Start the plot
     # plt.close()
     if (f is None) and (ax is None):
@@ -988,32 +1013,18 @@ def plot_diff_maps(
     else:
         pass
 
-    ###### Calculate the diff
-    dfdiff = dfbase.merge(
-        dfcomp, on=['i','r','t'], how='outer', suffixes=('_base','_comp')).fillna(0)
-    if plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
-        ### Percent difference
-        dfdiff['{}_diff'.format(valcol)] = (
-            (dfdiff['{}_comp'.format(valcol)] - dfdiff['{}_base'.format(valcol)])
-            / dfdiff['{}_base'.format(valcol)] * 100
-        ).replace(np.inf,np.nan)
-    elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
-        ### Difference
-        dfdiff['{}_diff'.format(valcol)] = (
-            dfdiff['{}_comp'.format(valcol)] - dfdiff['{}_base'.format(valcol)])
-
     if zmax is None:
         zmax = max(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),valcol+'_base'].max(),
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),valcol+'_comp'].max(),
+            dfdiff_selected[f'{valcol}_base'].max(),
+            dfdiff_selected[f'{valcol}_comp'].max(),
         )
 
     ###### Plot the base
     if plot == 'base':
         dfplot = dfba.merge(
-            dfbase.loc[(dfbase.i.isin(titles))&(dfbase.t==year),['r',valcol]],
+            dfdiff_selected[['r', f'{valcol}_base']],
             left_index=True, right_on='r', how='left'
-        ).fillna(0).reset_index(drop=True)
+        ).fillna(0).reset_index(drop=True).rename(columns={f'{valcol}_base': valcol})
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
@@ -1021,9 +1032,9 @@ def plot_diff_maps(
     ###### Plot the comp
     elif plot == 'comp':
         dfplot = dfba.merge(
-            dfcomp.loc[(dfcomp.i.isin(titles))&(dfcomp.t==year),['r',valcol]],
+            dfdiff_selected[['r', f'{valcol}_comp']],
             left_index=True, right_on='r', how='left'
-        ).fillna(0).reset_index(drop=True)
+        ).fillna(0).reset_index(drop=True).rename(columns={f'{valcol}_comp': valcol})
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
@@ -1033,7 +1044,7 @@ def plot_diff_maps(
         legend_kwds['label'] = '{} {} {}\n[% diff]'.format(valcol,i_plot,year)
 
         dfplot = dfba.merge(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),['r',valcol+'_diff']],
+            dfdiff_selected[['r', f'{valcol}_pctdiff']],
             left_index=True, right_on='r', how='left'
         ).reset_index(drop=True)
 
@@ -1052,7 +1063,7 @@ def plot_diff_maps(
         legend_kwds['label'] = '{} diff {} [{}]'.format(valcol,i_plot,units)
 
         dfplot = dfba.merge(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),['r',valcol+'_diff']],
+            dfdiff_selected[['r', f'{valcol}_diff']],
             left_index=True, right_on='r', how='left'
         ).reset_index(drop=True)
 
