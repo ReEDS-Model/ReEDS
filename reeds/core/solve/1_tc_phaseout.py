@@ -68,9 +68,10 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
     # Note that even though we can specify incentive-level safe harbors in the inputs, we are
     # calculating the single phaseout mult with the maximum safe harbor. This is an expedient for
     # lack of time to create a phaseout for each incentive. 
-    safe_harbors = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'safe_harbor.csv')
-    ).rename(columns={'*i':'i', 't':'t_online'})
+    safe_harbors = (
+        reeds.io.read_input(case, 'safe_harbor')
+        .rename(columns={'t':'t_online', 'Value':'safe_harbor'})
+    )
 
     const_times = pd.read_csv(
         os.path.join(case, 'inputs_case', 'construction_times.csv'))
