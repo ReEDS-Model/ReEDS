@@ -714,19 +714,21 @@ def diff_outputs(
     casebase:str|Path,
     casecomp:str|Path,
     outpath:str|Path|None|bool=None,
-    threshold_abs:float=0,
-    threshold_rel:float=0,
-    verbose:int=0,
+    threshold_abs:float=1e-6,
+    threshold_rel:float=1e-6,
+    verbose:int=1,
 ) -> dict:
     """
     Diff two {case}/outputs/outputs.h5 files and save the result to outpath.
 
     Args:
-        casebase: Absolute path to base ReEDS case
-        casecomp: Absolute path to comparison ReEDS case
+        casebase: Absolute path to base ReEDS case OR an outputs.h5 file
+        casecomp: Absolute path to comparison ReEDS case OR an outputs.h5 file
         outpath: Absolute path to resulting difference .h5 file
             If None or True, difference file is saved to
                 {casebase}/comparisons/diff_{casebase.stem}_{casecomp.stem}.h5.
+                If full paths to outputs.h5 files are provided in casebase and/or casecomp,
+                outpath=None should be avoided; provide an explicit outpath instead.
             If False, no difference file is written.
         threshold_abs: Absolute cutoff for differences to include
             (i.e., to ignore differences of 0.1 MW in an output parameter in units of MW,
@@ -746,10 +748,9 @@ def diff_outputs(
     ## Check inputs
     casebase = Path(casebase)
     casecomp = Path(casecomp)
-    fpaths = {
-        'base': Path(casebase, 'outputs', 'outputs.h5'),
-        'comp': Path(casecomp, 'outputs', 'outputs.h5'),
-    }
+    fpaths = {}
+    fpaths['base'] = Path(casebase, 'outputs', 'outputs.h5') if casebase.is_dir() else casebase
+    fpaths['comp'] = Path(casecomp, 'outputs', 'outputs.h5') if casecomp.is_dir() else casecomp
     for key, fpath in fpaths.items():
         if not fpath.is_file():
             raise FileNotFoundError(fpath)
