@@ -245,8 +245,7 @@ def process_ivt(years, inputs_case):
 
 # Only keep neccessary columns from unitdata to work with
 # And rename column names for easier processing
-def COLNAMES_define():
-    return {
+COLNAMES = {
         'capexog_rsc': (
             ['tech','r','RetireYear','sc_point_gid','summer_power_capacity_MW'],
             ['tech','region','year','sc_point_gid','MW']
@@ -393,7 +392,6 @@ def main(reeds_path, inputs_case):
     ####################
     ### DICTIONARIES ###
 
-    COLNAMES = COLNAMES_define()
 
 
     #%%
