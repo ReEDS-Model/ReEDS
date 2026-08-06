@@ -1872,6 +1872,68 @@ def main_mcs(
         # Write Samples
         write_samples(sample_group, samples_dict, aux_files)
 
+def get_mga_rv_subsets(reeds_path: str, subobjective: str) -> List[str]:
+    """
+    Derive the relevant subcategory (or subcategories) for a given GSw_MGA_SubObjective.
+    If a subcategory is a superset of other categories, this function breaks them up into
+    their constituents after filtering for categories that are valid options 
+    for GSw_MGA_SubObjective.
+
+    Args:
+        reeds_path (str): path to the ReEDS directory.
+        subobjective (str): value of GSw_MGA_SubObjective.
+
+    Returns:
+        List[str]: list of subcategory to use for MGA randome vector
+    """
+    # Parse valid tech categories for GSw_MGA_SubObjective from default cases file
+    cases = pd.read_csv(
+        os.path.join(reeds_path, 'cases.csv'), header=None, index_col=0
+    )
+    choices_str = cases.loc['GSw_MGA_SubObjective', 2]
+    valid_options = [s.strip('()') for s in choices_str.split('|')]
+
+    # Read tech-subset-table.csv to get tech categories
+    tech_subset = pd.read_csv(
+        os.path.join(reeds_path, 'inputs', 'tech-subset-table.csv'), index_col=0
+    )
+    # Map each valid option to its uppercase column name if it exists in the table
+    col_map = {opt: opt.upper() for opt in valid_options if opt.upper() in tech_subset.columns}
+    
+    # Build a mapping of technologies associated with each tech group
+    tech_sets = {
+        opt: frozenset(tech_subset.index[tech_subset[col].fillna('') == 'YES'])
+        for opt, col in col_map.items()
+    }
+
+    # Identify aggregated options: X is aggregated if any other option Y has tech_sets[Y] ⊂ tech_sets[X]
+    aggregated_options = {
+        x for x in tech_sets
+        for y in tech_sets
+        if x != y and tech_sets[y] < tech_sets[x]
+    }
+
+    # If the subobjective is not an aggregated category, return it
+    if subobjective not in aggregated_options:
+        return [subobjective]
+    
+    # If it is an aggregated category, break into subcategories 
+    subobjective_techs = tech_sets[subobjective]
+    candidates = [
+        opt for opt, techs in tech_sets.items()
+        if opt != subobjective
+        and opt not in aggregated_options
+        and techs & subobjective_techs  # at least one technology in common
+    ]
+    # drop CCS if gas or coal are already included
+    candidates_set = set(candidates)
+    if 'ccs' in candidates_set and ('coal' in candidates_set or 'gas' in candidates_set):
+        subsets = sorted(opt for opt in candidates if opt != 'ccs')
+    else:
+        subsets = sorted(candidates)
+
+    return subsets
+
 def main_mga_rv(
     reeds_path: str,
     inputs_case: str,
@@ -1895,15 +1957,9 @@ def main_mga_rv(
 
     ## objective (assumes sw.GSw_MGA_Objective in ['capacity', 'generation'] based on 
     ## check in runreeds.check_compatibility()
-    ## if the subojective is an aggregated category, break it up into smaller groups
-    ## otherwise just use the subobjective as the group
-    mapped_categories ={
-        'gentech': ['coal', 'gas', 'nuclear', 'h2_combustion', 'geo', 'hydro', 'ofswind', 'onswind', 'storage', 'upv'],
-        'fossil' : ['coal', 'gas'],
-        're': ['geo', 'hydro', 'ofswind', 'onswind', 'pv', 'vre', 'wind'],
-        'vre': ['ofswind', 'onswind', 'upv'],
-    }
-    subsets = mapped_categories.get(sw.GSw_MGA_SubObjective, [sw.GSw_MGA_SubObjective])
+    ## if the subobjective is an aggregated category, break it up into leaf-level subcategories
+    ## derived from tech-subset-table.csv; otherwise just use the subobjective as the group
+    subsets = get_mga_rv_subsets(reeds_path, sw.GSw_MGA_SubObjective)
     
     ## sample weights for each subojective group and sampling region
     dimensions = len(subsets) * len(sampling_regions)
