@@ -137,7 +137,7 @@ def calc_transmission(g):
     ## (r,rr,trtype,t)
     dfs['tran_util_ann_rep'] = (
         (dfs['tran_flow_all_rep'] * g['hours'] / dfs['tran_cap_energy']).groupby(['r','rr','trtype','t']).sum()
-        / g['hours'].sum()
+        / g['hours'].loc[g['h_rep'].index].sum()
     )
     ## (r,rr,trtype,t)
     dfs['tran_util_ann_stress'] = (
