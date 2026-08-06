@@ -590,7 +590,7 @@ repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$tfuel(t)] =
               + smax(fuelbin$VGASBINQ_NATIONAL.l(fuelbin,t), gasbinp_national(fuelbin,t) )
               ) ;
 
-repgasprice(cendiv,t)$[((Sw_GasCurve = 1) or (Sw_FINITO_Link = 1))$tmodel_new(t)$repgasquant(cendiv,t)] =
+repgasprice(cendiv,t)$[((Sw_GasCurve = 1) or (Sw_FINITO_Link = 1))$tmodel_new(t)$repgasquant(cendiv,t)$tfuel(t)] =
     sum{(i,r)$r_cendiv(r,cendiv), repgasprice_r(r,t) * repgasquant_irt(i,r,t) } / repgasquant(cendiv,t) ;
 
 repgasprice_nat(t)$[tmodel_new(t)$sum{cendiv, repgasquant(cendiv,t) }] =
