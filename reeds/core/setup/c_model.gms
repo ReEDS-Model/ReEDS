@@ -4000,7 +4000,7 @@ eq_mat_demand(mat,t)$tmodel(t)..
 * transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
 * are we double counting here?
     + sum((r,rr,trtype)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)],
-         trt_int(trtype,mat) * (INVTRAN(r,rr,trtype,t)) * distance(r,rr,trtype)) 
+         trt_int(trtype,mat) * (INVTRAN(r,rr,trtype,t) / 2) * distance(r,rr,trtype)) 
 ;
 
 * material demand cannot exceed material supply, plus a slack

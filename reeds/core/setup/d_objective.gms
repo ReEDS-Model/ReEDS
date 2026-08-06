@@ -386,7 +386,7 @@ eq_Objfn_op(t)$tmodel(t)..
 * price change [$ / metric ton] * transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
                + sum((r,rr,trtype,mat)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)], trans_cost_cap_fin_mult(t) *
                     (matprice_multiplier(mat,t) - 1) * mat_price(mat) * trt_int(trtype,mat) * 
-                    (INVTRAN(r,rr,trtype,t)) * distance(r,rr,trtype)) 
+                    (INVTRAN(r,rr,trtype,t) / 2) * distance(r,rr,trtype)) 
 
 *end multiplier for pvf_onm
          )
