@@ -3977,8 +3977,8 @@ eq_ccsflex_sto_storage_level_max(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)$ccs
 
 *-- begin materials --
 
-positive variables MAT_DEMAND, MAT_SLACK, MAT_SUPPLY ;
-equations eq_mat_demand, eq_mat_supply, eq_mat_balance ;
+positive variables MAT_DEMAND, MAT_SLACK ;
+equations eq_mat_demand, eq_mat_balance ;
 
 * Material tracking equation (metric tons of material)
 eq_mat_demand(mat,t)$tmodel(t)..
@@ -3998,33 +3998,15 @@ eq_mat_demand(mat,t)$tmodel(t)..
 
 * Materials needed for investment in transmission capacity 
 * transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
+* are we double counting here?
     + sum((r,rr,trtype)$[routes_inv(r,rr,trtype,t)$trt_int(trtype,mat)],
          trt_int(trtype,mat) * (INVTRAN(r,rr,trtype,t)) * distance(r,rr,trtype)) 
 ;
 
-* total material supply 
-eq_mat_supply(mat,t)$[tmodel(t)$(not sameas(mat,'%GSw_matsupply_spec%'))]..
-
-    MAT_SUPPLY(mat,t) 
-
-    =e= 
-
-* domestic production 
-      (Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_domestic
-* add global production outside US 
-    + (sum{mat_ctry$[(not usa(mat_ctry))], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_glb
-* add domestic byproduct recovery 
-    + (sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t))$Sw_mat_byproduct
-* add domestic reserves 
-    + (sum{mat_ctry$[usa(mat_ctry)], mat_reserve(mat,mat_ctry)} * yearweight(t))$Sw_mat_reserve
-* add allied production
-    + (sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t))$Sw_mat_allies
-;
-
-* material demand cannot exceed the historic share of total materials produced (metric tons)
-eq_mat_balance(mat,t)$[tmodel(t)$Sw_mat_restrict$years_matshock(t)]..
-* material supply is limited to historical consumption from the power sector (2020 to 2026)
-    MAT_SUPPLY(mat,t) * share_consumption(mat)
+* material demand cannot exceed material supply, plus a slack
+eq_mat_balance(mat,t)$[tmodel(t)$Sw_mat_restrict]..
+* material supply 
+    mat_supply(mat,t) 
 
 * material slack to meet power sector demand
     + MAT_SLACK(mat,t)

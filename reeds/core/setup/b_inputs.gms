@@ -6278,6 +6278,11 @@ $offdelim
 $onlisting
 /
 i_theta(i,mat,t)            "-- share -- share of capital costs attributable to materials for each technology, by year"
+domestic_supply(mat,t)      "-- metric tons -- domestic material supply by year"
+global_supply(mat,t)        "-- metric tons -- global material supply by year"
+byproduct_supply(mat,t)     "-- metric tons -- domestic byproduct recovery supply by year"
+allied_supply(mat,t)        "-- metric tons -- allied country material supply by year"
+mat_supply(mat,t)           "-- metric tons -- total material supply by year"
 matprice_multiplier(mat,t)  "-- multiplier -- multiplier on material prices"
 mat_slackprice(mat)         "-- 2004$ / metric ton -- slack price for material supply"
 ;
@@ -6301,6 +6306,35 @@ set
 years_matshock(t) /%GSw_years_matshock%/ 
 ;
 
+**** material supply ****
+
+* domestic supply
+domestic_supply(mat,t) = Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t) ;
+
+* global supply
+global_supply(mat,t) = sum{mat_ctry, mat_prod(mat,mat_ctry)} * yearweight(t) ;
+
+* domestic byproduct recovery supply
+byproduct_supply(mat,t) = sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t) ;
+
+* allied country supply
+allied_supply(mat,t) = sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t) ;
+
+* set up reference supply 
+* by default material supply is set to zero
+mat_supply(mat,t) = 0;
+
+* include global supply if the reference supply switch is set to 1
+$ifthene.referencesupply %GSw_mat_glb% == 1
+mat_supply(mat,t) = global_supply(mat,t) * share_consumption(mat) ;
+$endif.referencesupply
+
+*** come add in domestic and allied cases once designed ***
+
+* reset supply to zero if no supply is allowed for a given material in a shock year
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = 0 ;
+
+**** price multiplier ****
 * set price multiplier for materials
 matprice_multiplier(mat,t) = 1;
 
@@ -6312,5 +6346,6 @@ $ifthene.priceshockall %GSw_priceshock_all% == 1
 matprice_multiplier(mat,t)$[(not sameas(mat,'%GSw_matsupply_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockall
 
-* set slack price for materials to be 10x the base price to avoid infeasibilities in the model
+**** slack price ****
+* set slack price for materials to be 100x the base price to avoid infeasibilities in the model
 mat_slackprice(mat) = 100 * mat_price(mat) ;
