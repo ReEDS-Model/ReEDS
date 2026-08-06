@@ -6,6 +6,7 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
+import cmocean
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
@@ -20,6 +21,7 @@ def plot_diff_maps(
     dfmap,
     data,
     title='',
+    value_name='CF',
     cmap=plt.cm.turbo,
     cmap_diff=plt.cm.RdBu_r,
     diffmax=2,
@@ -32,8 +34,9 @@ def plot_diff_maps(
             or a single geodataframe with `r` index
         data: Dictionary of pd.Series with `old` and `new` keys and `r` index
         title: String to print in top left of maps
+        value_name: Value label used in colorbar titles
         cmap: Colormap object for absolute maps
-        cmap: Colormap object for difference map
+        cmap_diff: Colormap object for difference map
         diffmax: Color axis limit for difference plots [%]
     
     Returns:
@@ -56,15 +59,15 @@ def plot_diff_maps(
     for (col, case) in enumerate(data.keys()):
         _ax = ax[col]
         df = dfr.copy()
-        df['cf'] = data[case] * 100
+        df['value'] = data[case] * 100
         if 'st' in dfmap:
             dfmap['st'].plot(ax=_ax, facecolor='none', edgecolor='w', lw=0.1, zorder=1e7)
         if 'country' in dfmap:
             dfmap['country'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2, zorder=1e8)
-        df.plot(ax=_ax, column='cf', vmin=vmin, vmax=vmax, cmap=cmap)
+        df.plot(ax=_ax, column='value', vmin=vmin, vmax=vmax, cmap=cmap)
         reeds.plots.addcolorbarhist(
-            f, _ax, df['cf'].values, vmin=vmin, vmax=vmax, cmap=cmap,
-            title=f"CF ({case}) [%]",
+            f, _ax, df['value'].values, vmin=vmin, vmax=vmax, cmap=cmap,
+            title=f"{value_name} ({case}) [%]",
             nbins=51, cbarheight=0.8, cbarwidth=0.04, histratio=2,
             orientation='horizontal', cbarbottom=-0.1, labelpad=3.3,
         )
@@ -73,24 +76,24 @@ def plot_diff_maps(
     col = 2
     _ax = ax[col]
     df = dfr.copy()
-    df['cf'] = (data['new'] - data['old']) * 100
-    _diffmax = (df['cf'].abs().max() if not diffmax else diffmax)
+    df['value'] = (data['new'] - data['old']) * 100
+    _diffmax = (df['value'].abs().max() if not diffmax else diffmax)
     if 'st' in dfmap:
         dfmap['st'].plot(ax=_ax, facecolor='none', edgecolor='0.9', lw=0.1, zorder=1e7)
     if 'country' in dfmap:
         dfmap['country'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2, zorder=1e8)
-    df.plot(ax=_ax, column='cf', vmin=-_diffmax, vmax=_diffmax, cmap=cmap_diff)
+    df.plot(ax=_ax, column='value', vmin=-_diffmax, vmax=_diffmax, cmap=cmap_diff)
     reeds.plots.addcolorbarhist(
-        f, _ax, df['cf'].values, vmin=-_diffmax, vmax=_diffmax, cmap=cmap_diff,
-        title="CF diff (new – old) [%]",
+        f, _ax, df['value'].values, vmin=-_diffmax, vmax=_diffmax, cmap=cmap_diff,
+        title=f"{value_name} diff (new - old) [%]",
         nbins=51, cbarheight=0.8, cbarwidth=0.04, histratio=2,
         orientation='horizontal', cbarbottom=-0.1, labelpad=3.3,
     )
     ## Label zones with differences above diffmax
     for r, row in df.iterrows():
-        if abs(row.cf) > _diffmax:
+        if abs(row.value) > _diffmax:
             _ax.annotate(
-                f"{row.cf:+.0f}", (row.geometry.centroid.x, row.geometry.centroid.y),
+                f"{row.value:+.0f}", (row.geometry.centroid.x, row.geometry.centroid.y),
                 ha='center', va='center', fontsize=8, alpha=0.8, zorder=1e9,
                 path_effects=[pe.withStroke(linewidth=2.5, foreground='#ffff00', alpha=0.8)],
             )
@@ -214,6 +217,61 @@ def plot_distpv_diff(
     return f, ax
 
 
+def plot_prm_diff(
+    repo_old,
+    repo_new,
+    prm_column='nerc',
+    year=None,
+    cmap=cmocean.cm.tempo,
+    cmap_diff=plt.cm.RdBu_r,
+    diffmax=False,
+):
+    repos = {'old': repo_old, 'new': repo_new}
+    dfprm = {}
+    for case in repos:
+        dfprm[case] = pd.read_csv(
+            os.path.join(
+                repos[case], 'inputs', 'reserves', 'prm_annual.csv',
+            )
+        ).rename(columns={'*nercr': 'nercr'})
+        if prm_column not in dfprm[case].columns:
+            raise KeyError(f"Column '{prm_column}' not found in prm_annual.csv for {case}")
+
+    common_years = sorted(set(dfprm['old'].t) & set(dfprm['new'].t))
+    if not common_years:
+        raise ValueError('No overlapping years found in prm_annual.csv between old and new repos')
+    plot_year = max(common_years) if year is None else year
+    if plot_year not in common_years:
+        raise ValueError(
+            f"Year {plot_year} is not available in both old and new prm_annual.csv files"
+        )
+
+    data = {
+        case: (
+            dfprm[case]
+            .loc[dfprm[case].t == plot_year, ['nercr', prm_column]]
+            .set_index('nercr')
+            .squeeze(1)
+        )
+        for case in repos
+    }
+
+    dfmap = reeds.io.get_dfmap()
+    dfmap['r'] = dfmap['nercr']
+
+    f, ax = plot_diff_maps(
+        dfmap=dfmap,
+        data=data,
+        title=f"PRM {prm_column} ({plot_year})",
+        value_name='PRM',
+        cmap=cmap,
+        cmap_diff=cmap_diff,
+        diffmax=diffmax,
+    )
+
+    return f, ax
+
+
 def main(repo_old, repo_new, outpath):
     ## Check inputs
     for repo in [repo_old, repo_new]:
@@ -239,6 +297,9 @@ def main(repo_old, repo_new, outpath):
 
     plot_distpv_diff(repo_old, repo_new, diffmax=diffmax)
     plt.savefig(os.path.join(outpath, 'cf_diff-distpv.png'))
+
+    plot_prm_diff(repo_old, repo_new, prm_column='nerc')
+    plt.savefig(os.path.join(outpath, 'prm_diff-nerc.png'))
 
 
 #%% Procedure
