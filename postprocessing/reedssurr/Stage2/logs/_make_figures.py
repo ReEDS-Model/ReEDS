@@ -108,27 +108,33 @@ plt.savefig(OUT_DIR / "fig3_rf_r2_histogram.png", dpi=140, bbox_inches="tight")
 plt.close()
 
 # --------- Fig 4: per-family RF parity plot (overall layer) ----------
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import KFold
+# Use the SAME out-of-fold predictions the training pipeline saved (in the RF
+# joblib artifact) instead of recomputing a fresh, UNCONSTRAINED RandomForest.
+# Recomputing here would ignore the Stage-2 physics constraints (e.g. exogenous
+# DistPV substitution) and produce R² values that disagree with
+# per_output_metrics_rf.csv, the R² ranking heatmap, and the report/slides.
+# Reconstructing OOF = Y - oof_residuals reproduces those metrics exactly.
+import sys as _sys
+import pickle as _pickle
+_CODE = str(REPO / "Stage2" / "code")
+if _CODE not in _sys.path:
+    _sys.path.insert(0, _CODE)
+from surrogate_paths import resolve_models_dir
 
-_data = pd.read_csv(REPO / "Stage2/inputs/overall_ml_numeric_merged.csv")
-_xcols = [c for c in _data.columns if c.startswith("x_")]
-_ynum = _data.select_dtypes(include=[np.number])
-_ycols = [c for c in _ynum.columns if not c.startswith("x_")]
-X = _data[_xcols].to_numpy()
-Y_all = _data[_ycols]
-# Drop constant / near-constant outputs (numerical noise, not real signal)
-_std = Y_all.std()
-_mean_abs = Y_all.abs().mean()
-_keep = Y_all.columns[(_std > 1.0) | (_std > 1e-6 * _mean_abs)].tolist()
-Y = Y_all[_keep].to_numpy()
 
-kf = KFold(n_splits=10, shuffle=True, random_state=42)
-oof = np.zeros_like(Y, dtype=float)
-for tr, te in kf.split(X):
-    m = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-    m.fit(X[tr], Y[tr])
-    oof[te] = m.predict(X[te])
+def _load_pipeline_oof(layer):
+    """Return (y_cols, Y, oof) from the trained RF artifact for ``layer``."""
+    mdir = resolve_models_dir(REPO / "Stage2" / "outputs" / layer)
+    art = _pickle.load(open(mdir / "rf.joblib", "rb"))
+    ycols = list(art["y_cols"])
+    res = np.asarray(art["oof_residuals"], dtype=float)
+    csv = REPO / "Stage2" / "inputs" / f"{layer}_ml_numeric_merged.csv"
+    df = pd.read_csv(csv)
+    Yv = df[ycols].to_numpy(dtype=float)
+    return ycols, Yv, Yv - res
+
+
+_keep, Y, oof = _load_pipeline_oof("overall")
 
 families = [
     ("cap_",  "Capacity (MW)",       "#4c78a8"),
@@ -210,22 +216,8 @@ for fam_key, (pfx, fam_title, color, k) in family_specs.items():
 
 
 # --------- Fig 4r: per-family pooled parity for REGIONAL layer ----------
-_data_r = pd.read_csv(REPO / "Stage2/inputs/regional_ml_numeric_merged.csv")
-_xcols_r = [c for c in _data_r.columns if c.startswith("x_")]
-_ynum_r = _data_r.select_dtypes(include=[np.number])
-_ycols_r = [c for c in _ynum_r.columns if not c.startswith("x_")]
-Xr = _data_r[_xcols_r].to_numpy()
-Yr_all = _data_r[_ycols_r]
-_std_r = Yr_all.std(); _mabs_r = Yr_all.abs().mean()
-_keep_r = Yr_all.columns[(_std_r > 1.0) | (_std_r > 1e-6 * _mabs_r)].tolist()
-Yr = Yr_all[_keep_r].to_numpy()
-
-print(f"[regional] {Xr.shape[0]} samples, {Yr.shape[1]} outputs — computing OOF...")
-oof_r = np.zeros_like(Yr, dtype=float)
-for tr, te in kf.split(Xr):
-    m = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-    m.fit(Xr[tr], Yr[tr])
-    oof_r[te] = m.predict(Xr[te])
+_keep_r, Yr, oof_r = _load_pipeline_oof("regional")
+print(f"[regional] {Yr.shape[0]} samples, {Yr.shape[1]} outputs (pipeline OOF)")
 
 fig, axes = plt.subplots(2, 2, figsize=(10, 9))
 for ax, (pfx, title, color) in zip(axes.flat, families):
