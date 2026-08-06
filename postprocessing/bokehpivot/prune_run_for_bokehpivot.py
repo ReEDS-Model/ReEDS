@@ -8,6 +8,7 @@ report plus any .goo files anywhere under the run folder.
 Required report-side files kept by default:
   - meta.csv
   - outputs/outputs.h5
+  - inputs_case/inputs.h5
   - inputs_case/crf.csv
   - inputs_case/val_r.csv
   - inputs_case/df_capex_init.csv
@@ -33,6 +34,7 @@ from pathlib import Path
 REQUIRED_RELATIVE_PATHS = {
     Path("meta.csv"),
     Path("outputs/outputs.h5"),
+    Path("inputs_case/inputs.h5"),
     Path("inputs_case/crf.csv"),
     Path("inputs_case/val_r.csv"),
     Path("inputs_case/df_capex_init.csv"),
@@ -46,7 +48,9 @@ REQUIRED_RELATIVE_PATHS = {
 
 
 def is_goo_file(path: Path) -> bool:
-    return path.suffix.lower() == ".goo"
+    if path.name.lower().endswith(".goo"):
+        return True
+    return any(sfx.lower() == ".goo" for sfx in path.suffixes)
 
 
 def should_keep(path: Path, run_root: Path) -> bool:
