@@ -1303,6 +1303,7 @@ def write_batch_script(
             'outage_rates',
             'forecast',
             'hourly_repperiods',
+            'create_sets',
             'h5_to_gdx',
         ]:
             OPATH.writelines(f"echo {'-'*12+'-'*len(s)}\n")
