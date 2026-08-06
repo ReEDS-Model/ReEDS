@@ -6,6 +6,7 @@ import sys
 import datetime
 import pandas as pd
 import geopandas as gpd
+from pathlib import Path
 import argparse
 
 # Local Imports
@@ -165,8 +166,13 @@ def main(inputs_case):
     # Update RetireYear column based on nukeretscen
     unitdata.loc[unitdata['tech']=='nuclear', 'RetireYear'] = unitdata['StartYear'] + int(sw['nukeretscen'])
 
+    # Add county and state
+    county_state = pd.read_csv(Path(reeds.io.reeds_path, 'inputs', 'zones', 'county_state.csv'), dtype=str)
+    county_state['FIPS'] = 'p' + county_state['FIPS']
+    unitdata = unitdata.merge(county_state, on='FIPS', how='left').rename(columns={'county_name':'county'})
     # Rearrange column orders
     cols = df_rev.columns.to_list()
+    cols[cols.index('FIPS') + 1:cols.index('FIPS') + 1] = ['county', 'state']
     unitdata = unitdata[cols].drop(columns=['temp_id'])
 
     # Make sure sc_point_gid is saved as integer
