@@ -574,7 +574,7 @@ $endif.finitogasprice
 * when linked, overwrite ReEDS values with gas prices from FINITO 
 * for any years that aren't using the ReEDS supply curves
 repgasprice(cendiv,t)$[tmodel_new(t)$(not tfuel(t))] =
-    sum{h, hours(h) * repgasprice_finito(cendiv,h,t) }
+    sum{h, hours(h) * repgasprice_finito(cendiv,h,t) } / sum{h, hours(h) }
 ;
 
 repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tmodel_new(t)$tfuel(t)] = 
