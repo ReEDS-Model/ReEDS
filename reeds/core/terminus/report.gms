@@ -575,7 +575,9 @@ repgasprice(cendiv,t)$[tmodel_new(t)$(not tfuel(t))] =
     sum{h, hours(h) * repgasprice_finito(cendiv,h,t) } / sum{h, hours(h) }
 ;
 
-repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tmodel_new(t)$tfuel(t)] = 
+*Anytime Sw_GasCurve = 0 or 2, apply repgasprice(cendiv,t) to repgasprice_r.
+*Do the same for finito-linked years (not tfuel(t)).
+repgasprice_r(r,t)$[((not tfuel(t)) or (Sw_GasCurve = 0 or Sw_GasCurve = 2))$tmodel_new(t)] = 
   [sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ];
 
 repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$tfuel(t)] =
@@ -588,7 +590,8 @@ repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$tfuel(t)] =
               + smax(fuelbin$VGASBINQ_NATIONAL.l(fuelbin,t), gasbinp_national(fuelbin,t) )
               ) ;
 
-repgasprice(cendiv,t)$[((Sw_GasCurve = 1) or (Sw_FINITO_Link = 1))$tmodel_new(t)$repgasquant(cendiv,t)$tfuel(t)] =
+*Now calculate the remaining repgasprice(cendiv,t) (for Sw_GasCurve = 1)
+repgasprice(cendiv,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$repgasquant(cendiv,t)$tfuel(t)] =
     sum{(i,r)$r_cendiv(r,cendiv), repgasprice_r(r,t) * repgasquant_irt(i,r,t) } / repgasquant(cendiv,t) ;
 
 repgasprice_nat(t)$[tmodel_new(t)$sum{cendiv, repgasquant(cendiv,t) }] =
