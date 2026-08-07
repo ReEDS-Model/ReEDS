@@ -13,6 +13,7 @@ years = [2030, 2040, 2050]
 max_plcoe = 200
 max_cost_value_factor = 5
 inv_value_factor_ylim = (0.8, 3)
+cost_factor_ylim = (0.8, 3)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
@@ -21,6 +22,7 @@ df_output_path = os.path.join(this_dir, 'plcoe_pitch_df.csv')
 df = pd.read_csv(valcostfac_core_path)
 df['cost_value_factor'] = 1 / df['value_cost_factor']
 df['inv_value_factor'] = 1 / df['value_factor']
+df['inv_cost_factor'] = 1 / df['cost_factor']
 
 df_lcoe = pd.read_csv(f'{this_dir}/LCOE_base.csv')
 df_lcoe_sel = df_lcoe[df_lcoe['year'].isin(years)].copy()
@@ -127,12 +129,23 @@ def plot_plcoe_pitch(
         )
 
     if use_cost_value_factor:
+        cf_col = 'cost_factor'
+        cf_title = 'Cost factor vs market share'
+        cf_ylabel = 'Cost factor'
+        cf_ylim = cost_factor_ylim
         ratio_col = 'cost_value_factor'
         ratio_title = '(cost factor)/(value factor) vs market share'
         ratio_ylabel = '(cost factor)/(value factor)'
         ratio_ylim = (0.8, max_cost_value_factor)
         formula_text = 'PLCOE = (LCOE base) * (cost factor)/(value factor)'
     else:
+        cf_col = 'inv_cost_factor'
+        cf_title = '1/(cost factor) vs market share'
+        cf_ylabel = '1/(cost factor)'
+        cf_ylim = (
+            0,
+            1 / cost_factor_ylim[0],
+        )
         ratio_col = 'value_cost_factor'
         ratio_title = '(value factor)/(cost factor) vs market share'
         ratio_ylabel = '(value factor)/(cost factor)'
@@ -170,7 +183,7 @@ def plot_plcoe_pitch(
             continue
         ax_cf.plot(
             tech_data['gen_frac'],
-            tech_data['cost_factor'],
+            tech_data[cf_col],
             color=colors[tech],
             alpha=0.9,
             linewidth=1.5,
@@ -178,10 +191,10 @@ def plot_plcoe_pitch(
             marker='o',
             markersize=3,
         )
-    ax_cf.set_title('Cost factor vs market share')
+    ax_cf.set_title(cf_title)
     ax_cf.set_xlabel('Market share (generation fraction)')
-    ax_cf.set_ylabel('Cost factor')
-    ax_cf.set_ylim(0.8, 3)
+    ax_cf.set_ylabel(cf_ylabel)
+    ax_cf.set_ylim(cf_ylim)
     ax_cf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
 
     # Ratio view vs market share (upper right)
