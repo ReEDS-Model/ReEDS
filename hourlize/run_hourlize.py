@@ -398,8 +398,12 @@ def setup_resource_run(casename, case, args):
     case['sc_path'] = os.path.join(remotepath, "Supply_Curve_Data", dct_rev['sc_path'])
     case['rev_path'] = os.path.join(remotepath, "Supply_Curve_Data", dct_rev['sc_path'], "reV", dct_rev['rev_case'])
     case['original_sc_file'] = os.path.join(remotepath, "Supply_Curve_Data", dct_rev['sc_path'], "reV", dct_rev['original_sc_file'])
+    case['original_rev_folder'] = dct_rev['original_rev_folder']
     case['sc_file'] = os.path.join(outpath, 'results', case['tech'] + '_supply_curve_raw.csv')
     case['rev_paths_file'] = rev_paths_file
+
+    # add date updated
+    case['date_updated'] = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
     # create combined config for run (add tech config later after additional processing)
     # order of dictionary merges here means that the precedence for overridding duplicated entries
@@ -712,14 +716,40 @@ if __name__== '__main__':
     #%% set paths
     hourlize_path = os.path.dirname(os.path.realpath(__file__))
     reeds_path = os.path.abspath(os.path.join(hourlize_path, ".."))
-    remotepath, args.local = get_remote_path(args.local)
 
     #%% run setup
-    print(f"\nSetting up hourlize calls to {args.mode}.py")
-    if args.mode == "load":
-        setup_load(args)
-    elif args.mode == "resource":
-        setup_resource(args)
+    if args.mode == 'status':
+        out_dir = args.out_dir if args.out_dir else os.path.join(hourlize_path, 'out')
+
+        # build optional case-name filter from --tech / --exclude_tech / --access_case
+        cases = None
+        if args.tech or args.exclude_tech or args.access_case:
+            if os.path.isdir(out_dir):
+                cases = []
+                for d in os.listdir(out_dir):
+                    if not os.path.isdir(os.path.join(out_dir, d)):
+                        continue
+                    # case folder names follow the pattern {tech}_{access_case};
+                    # split on the last underscore to recover the two parts
+                    last_us = d.rfind('_')
+                    tech = d[:last_us] if last_us != -1 else d
+                    access = d[last_us + 1:] if last_us != -1 else ''
+                    if args.tech and tech not in args.tech:
+                        continue
+                    if args.exclude_tech and tech in args.exclude_tech:
+                        continue
+                    if args.access_case and access not in args.access_case:
+                        continue
+                    cases.append(d)
+
+        check_status(out_dir, cases)
     else:
-        print("Unsupported method for hourlize")
-    print(f"Hourlize setup for {args.mode}.py complete\n")
+        remotepath, args.local = get_remote_path(args.local)
+        print(f"\nSetting up hourlize calls to {args.mode}.py")
+        if args.mode == "load":
+            setup_load(args)
+        elif args.mode == "resource":
+            setup_resource(args)
+        else:
+            print("Unsupported method for hourlize")
+        print(f"Hourlize setup for {args.mode}.py complete\n")
