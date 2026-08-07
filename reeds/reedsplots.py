@@ -1029,6 +1029,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
+        label_region_value(dfplot, ax=ax, column=valcol, fmt = '{:.1f}', fontsize=6)
 
     ###### Plot the comp
     elif plot == 'comp':
@@ -1039,6 +1040,8 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
+
+        label_region_value(dfplot, ax=ax, column=valcol, fmt = '{:.1f}', fontsize=6)
 
     ###### Plot the pct diff
     elif plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
@@ -1058,6 +1061,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_pctdiff', cmap=cmap, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
+        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fmt = '{:.1f}', fontsize=6)
 
     ###### Plot the absolute diff
     elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
@@ -1077,6 +1081,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_diff', cmap=plt.cm.RdBu_r, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
+        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fmt = '{:.1f}', fontsize=6)
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
@@ -6153,15 +6158,24 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
 def label_region_value(df, ax, column, fmt='{:.2f}', color='k', fontsize=8, **kwargs):
     """kwargs are passed to patheffects.withStroke()"""
     pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':1}, **kwargs}
+    text_artists = []
     for r, row in df.iterrows():
-        ax.annotate(
-            fmt.format(row[column]),
-            (row.geometry.centroid.x, row.geometry.centroid.y),
-            ha='center', va='center', fontsize=fontsize,
-            color=color,
-            path_effects=[pe.withStroke(**pe_kwargs)],
-            zorder=1e9,
+        value = row.get(column, np.nan)
+        if not np.isfinite(value):
+            continue
+        text_artists.append(
+            ax.annotate(
+                fmt.format(value),
+                (row.geometry.centroid.x, row.geometry.centroid.y),
+                ha='center', va='center', fontsize=fontsize,
+                color=color,
+                path_effects=[pe.withStroke(**pe_kwargs)],
+                zorder=1e9,
+            )
         )
+    adjust_text(text_artists, ax=ax,
+                avoid_self=False, ensure_inside_axes=True,
+            )
 
 
 def map_stressors(
