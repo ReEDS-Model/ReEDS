@@ -386,6 +386,9 @@ def setup_resource_run(casename, case, args):
     else:
         dct_rev = df_rev_case.squeeze().to_dict()
 
+    if dct_rev['original_rev_folder'].lower() == 'none':
+        raise Exception(f"original_rev_folder='none' for {dct_rev['tech']}--skipping hourlize.")
+
     # update relevant categories with full rev path information
     # rev_cases_path should have files for each year with hourly generation data for each supply curve point
     # or gen_gid, called [rev_case]_rep-profiles_[select_year].h5.
