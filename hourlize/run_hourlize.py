@@ -555,6 +555,111 @@ def setup_load(args):
     launch_batch_file(casename, configpath, outpath, args)
 
 
+def check_status(out_dir, cases=None):
+    """
+    Scan log files in out_dir and print a summary table of case outcomes.
+
+    Parameters
+    ----------
+    out_dir : str
+        Path to the hourlize output directory containing case subdirectories.
+    cases : list of str, optional
+        Subset of case folder names to check. If None, all subdirectories are scanned.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Table with columns: case, status, elapsed, last_error.
+        Status values: 'success', 'failed', 'running', 'not started'.
+    """
+    out_dir = os.path.abspath(out_dir)
+    if not os.path.isdir(out_dir):
+        print(f"Output directory not found: {out_dir}")
+        return pd.DataFrame(columns=['case', 'status', 'elapsed', 'last_error'])
+
+    # collect case folders to check
+    all_dirs = sorted([
+        d for d in os.listdir(out_dir)
+        if os.path.isdir(os.path.join(out_dir, d))
+    ])
+    if cases is not None:
+        all_dirs = [d for d in all_dirs if d in cases]
+
+    rows = []
+    for casename in all_dirs:
+        casedir = os.path.join(out_dir, casename)
+        logfile = os.path.join(casedir, f'log_{casename}.txt')
+
+        status = 'not started'
+        elapsed = ''
+        last_error = ''
+
+        if not os.path.exists(logfile):
+            pass  # status remains 'not started'
+        else:
+            with open(logfile, 'r', errors='replace') as f:
+                lines = [line.rstrip() for line in f if line.strip()]
+
+            if not lines:
+                pass  # empty log → 'not started'
+            elif 'All done! total time:' in lines[-1]:
+                status = 'success'
+                match = re.search(r'All done! total time:\s*(.+)$', lines[-1])
+                if match:
+                    elapsed = re.sub(r'\.\d+$', '', match.group(1).strip())
+            else:
+                # check for ERROR-level lines in the log
+                error_lines = [l for l in lines if '| ERROR |' in l]
+                if error_lines:
+                    status = 'failed'
+                    match = re.search(r'\| ERROR \|\s*(.+)$', error_lines[-1])
+                    if match:
+                        last_error = match.group(1).strip()
+                else:
+                    # fall back to SLURM output for traceback detection
+                    slurm_files = sorted([
+                        f for f in os.listdir(casedir)
+                        if f.startswith('slurm-') and f.endswith('.out')
+                    ])
+                    slurm_failed = False
+                    if slurm_files:
+                        slurm_path = os.path.join(casedir, slurm_files[-1])
+                        with open(slurm_path, 'r', errors='replace') as sf:
+                            slurm_lines = sf.readlines()
+                        if any('Traceback' in l or 'Error:' in l for l in slurm_lines):
+                            slurm_failed = True
+                            err_candidates = [
+                                l.strip() for l in slurm_lines
+                                if re.search(r'Error:', l)
+                            ]
+                            if err_candidates:
+                                last_error = err_candidates[-1][:120]
+                    status = 'failed' if slurm_failed else 'running'
+
+        rows.append({
+            'case': casename,
+            'status': status,
+            'elapsed': elapsed,
+            'last_error': last_error,
+        })
+
+    df = pd.DataFrame(rows, columns=['case', 'status', 'elapsed', 'last_error'])
+
+    # print status summary as a table
+    col_widths = [max(len(str(v)) for v in [col] + df[col].tolist()) for col in df.columns]
+    divider = '+' + '+'.join('-' * (w + 2) for w in col_widths) + '+'
+    def fmt_row(vals):
+        return '|' + '|'.join(f' {str(v):<{w}} ' for v, w in zip(vals, col_widths)) + '|'
+    print(divider)
+    print(fmt_row(df.columns))
+    print(divider)
+    for _, row in df.iterrows():
+        print(fmt_row(row))
+    print(divider)
+
+    return df
+
+
 #%% ===========================================================================
 ### --- PROCEDURE ---
 ### ===========================================================================
@@ -562,12 +667,15 @@ if __name__== '__main__':
     ## Command line arguments to script
     parser = argparse.ArgumentParser(description='Sets up hourlize resource or load runs.')
     parser.add_argument('mode', type=str,
-                        choices=['load', 'resource'],
-                        help='Setup runs for load.py or resource.py?')
+                        choices=['load', 'resource', 'status'],
+                        help='Setup runs for load.py or resource.py, or check status of existing runs.')
+    parser.add_argument('--out_dir', '-o', default=None,
+                    help='Path to hourlize output directory to scan (status mode only; '
+                         'defaults to hourlize/out/ relative to this script)')
     parser.add_argument('--tech', '-t', nargs='+',
-                    help='Optional tech filter(s) for resource mode, e.g. --tech upv wind-ons')
+                    help='Optional tech filter(s) for resource/status mode, e.g. --tech upv wind-ons')
     parser.add_argument('--exclude_tech', '-e', nargs='+',
-                    help='Optional techs to exclude for resource mode, e.g. --exclude_tech geohydro')
+                    help='Optional techs to exclude for resource/status mode, e.g. --exclude_tech geohydro')
     parser.add_argument('--access_case', '-c',  nargs='+',
                     help='Optional access_case filter(s) for resource mode, e.g. --access_case reference limited')
     parser.add_argument('--debugnode', '-d', default=False, action='store_true',
