@@ -554,16 +554,14 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
        } / (repgasquant(cendiv,t) * 1e9) ;
 
 
-* gas price by timeslice when linked with FINITO (see similar calculation in finito_report.gms) [$2004/MMBtu]
-* We maybe should be taking weighted averages instead of max across regions and categories (pool vs roi etc.)
+* gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
 *   citygate price of natural gas
     deflator('2018') * [
-*   (st_cendiv is not carried into report.gms's restart, so derive st-in-cendiv from r_st + r_cendiv)
-        ( 1/(obj_scale) * 1/(pvf_onm(t)) * smax{(cfp,st)$sum{r$[r_st(r,st)$r_cendiv(r,cendiv)],1}, eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) )
+        ( 1/(obj_scale) * 1/(pvf_onm(t)) * eq_supplydemand_fsc.m('NG',cendiv,t) )
 *   electric-sector markup for natural gas
-* TODO: activate after FINITO pricing PR is merged
+* TODO: activate after FINITO pricing PR is merged (note: the markup below is cf-based and needs rework since NG is fe_fsc, not fe_cf)
 *       + smax{(cfp,cendiv)$[r_cendiv(r,cendiv)$gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],cf_markup(cfp,'NG','Electric_Power',cendiv,t)}
     ]
 ;
