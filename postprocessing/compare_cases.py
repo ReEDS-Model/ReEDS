@@ -130,7 +130,7 @@ interactive = False
 
 
 #%%### Fixed inputs
-cmap = cmocean.cm.rain
+cmap = cmocean.cm.tempo
 cmap_diff = plt.cm.RdBu_r
 ## https://www.whitehouse.gov/wp-content/uploads/2023/11/CircularA-4.pdf
 discountrate_social = DEFAULT_DISCOUNT_RATE
@@ -2575,7 +2575,7 @@ try:
                 year=lastyear, casebase=casebase, casecomp=casecomp,
                 level=level,
                 plot='base', f=f, ax=ax[0],
-                cmap=cmocean.cm.rain,
+                cmap=cmocean.cm.tempo,
             )
             ax[0].annotate(
                 casebase_name,
@@ -2586,7 +2586,7 @@ try:
                 year=lastyear, casebase=casebase, casecomp=casecomp,
                 level=level,
                 plot='comp', f=f, ax=ax[1],
-                cmap=cmocean.cm.rain,
+                cmap=cmocean.cm.tempo,
             )
             ax[1].annotate(
                 casecomp_name,
