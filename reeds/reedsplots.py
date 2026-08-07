@@ -15,6 +15,7 @@ from warnings import warn
 import geopandas as gpd
 import shapely
 import cmocean
+from adjustText import adjust_text
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 from reeds import plots
@@ -5116,12 +5117,18 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
+        text_artists = []
         for i, _row in df.iterrows():
-            ax[row,col].annotate(
-                _row.date, (_row.centroid_x, _row.centroid_y),
-                ha='center', va='center', color='k', fontsize=fontsize,
-                path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+            text_artists.append(
+                ax[row,col].annotate(
+                    _row.date, (_row.centroid_x, _row.centroid_y),
+                    ha='center', va='center', color='k', fontsize=fontsize,
+                    path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+                )
             )
+        adjust_text(text_artists, ax=ax[row,col],
+                    avoid_self=False, ensure_inside_axes=True,
+                )
 
 
     ### Max load
@@ -5152,12 +5159,18 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
+        text_artists = []
         for i, _row in df.iterrows():
-            ax[row,col].annotate(
-                _row.date, (_row.centroid_x, _row.centroid_y),
-                ha='center', va='center', color='k', fontsize=fontsize,
-                path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+            text_artists.append(
+                ax[row,col].annotate(
+                    _row.date, (_row.centroid_x, _row.centroid_y),
+                    ha='center', va='center', color='k', fontsize=fontsize,
+                    path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+                )
             )
+        adjust_text(text_artists, ax=ax[row,col],
+                    avoid_self=False, ensure_inside_axes=True,
+                )
 
     ### Colorbar
     row, col = 0, 0
