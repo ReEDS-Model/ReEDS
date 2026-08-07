@@ -321,8 +321,9 @@ def make_plots(annual, regional_net, wy_slices, spotlight, outdir):
         for item in ['original', 'final']:
             a1.plot(pct, np.sort(sl[item].sum(axis=1).values)[::-1] / 1e3,
                     color=COLORS[item], linewidth=2, label=item, zorder=3)
-        a2.plot(pct, np.sort(sl['endogenous'].sum(axis=1).values)[::-1] / 1e3,
-                color=COLORS['endogenous'], linewidth=2, label='endogenous', zorder=3)
+        for item in ['endogenous', 'reference']:
+            a2.plot(pct, np.sort(sl[item].sum(axis=1).values)[::-1] / 1e3,
+                    color=COLORS[item], linewidth=2, label=item, zorder=3)
         _legend(a1)
         _legend(a2)
         a1.set_title(f'System load-duration curve, {spotlight} (weather year {wy})',
@@ -345,10 +346,11 @@ def make_plots(annual, regional_net, wy_slices, spotlight, outdir):
             a1.plot(s.groupby(s.index.hour).mean().index,
                     s.groupby(s.index.hour).mean().values / 1e3,
                     color=COLORS[item], linewidth=2, label=item, zorder=3)
-        se = sl['endogenous'].sum(axis=1)
-        a2.plot(se.groupby(se.index.hour).mean().index,
-                se.groupby(se.index.hour).mean().values / 1e3,
-                color=COLORS['endogenous'], linewidth=2, label='endogenous', zorder=3)
+        for item in ['endogenous', 'reference']:
+            s = sl[item].sum(axis=1)
+            a2.plot(s.groupby(s.index.hour).mean().index,
+                    s.groupby(s.index.hour).mean().values / 1e3,
+                    color=COLORS[item], linewidth=2, label=item, zorder=3)
         _legend(a1)
         _legend(a2)
         a1.set_title(f'Average diurnal system load, {spotlight} (weather year {wy})',
