@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+# User inputs
+valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv'
 years = [2030, 2040, 2050]
 max_plcoe = 200
 max_cost_value_factor = 5
@@ -16,7 +18,7 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
 df_output_path = os.path.join(this_dir, 'plcoe_pitch_df.csv')
 
-df = pd.read_csv(f'{this_dir}/valcostfac_core.csv')
+df = pd.read_csv(valcostfac_core_path)
 df['cost_value_factor'] = 1 / df['value_cost_factor']
 df['inv_value_factor'] = 1 / df['value_factor']
 
