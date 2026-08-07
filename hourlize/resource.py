@@ -413,8 +413,8 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
     df['ba'] = df.FIPS.map(lambda x: county2zone.get(x,x))
 
     if min_cap > 0:
-        #Remove sites with less than minimum capacity threshold, but keep sites that have existing capacity
-        df = df[(df['capacity'] >= min_cap) | (df['existing_capacity'] > 0)].copy()
+        #Remove sites with less than minimum capacity threshold
+        df = df[df['capacity'] >= min_cap].copy()
 
     print('Done reading supply curve inputs and filtering: '+ str(datetime.datetime.now() - startTime))
     return df
