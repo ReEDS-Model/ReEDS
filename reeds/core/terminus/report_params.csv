@@ -107,6 +107,7 @@ planned_outage(i),fraction,average scheduled outage rate (h-weighted) by technol
 "h2_usage(r,allh,t)",metric tons/hour,total H2 usage by hour (H2-CT/CC and non-electric H2 consumption),,,
 "load_cat(loadtype,r,t)",MWh,Annual exogenous load by category,,,
 "load_rt(r,t)",MWh,Annual exogenous load,,,
+"loadvar_rt(r,t)",MWh,Annual LOAD during rep periods,,,
 "load_stress(r,allh,t)",MW,Timeslice load during stress periods,,,
 "load_frac_rt(r,t)",fraction,Fraction of LOAD in each region,,,
 "loadsite_cap(r,t)",MW,Capacity of flexibly sited load,,,

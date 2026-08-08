@@ -460,6 +460,8 @@ reqt_price_sys('res_marg_ann','na','ann',t)$reqt_quant_sys('res_marg_ann','na','
 
 load_rt(r,t)$tmodel_new(t) = sum{h, hours(h) * load_exog(r,h,t) } ;
 
+loadvar_rt(r,t)$[tmodel_new(t)] = sum{h, hours(h) * LOAD.l(r,h,t) } ;
+
 load_stress(r,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = LOAD.l(r,allh,t) ;
 
 co2_price(t)$tmodel_new(t) = (1 / cost_scale) * (1 / pvf_onm(t)) * eq_annual_cap.m("CO2",t) ;
