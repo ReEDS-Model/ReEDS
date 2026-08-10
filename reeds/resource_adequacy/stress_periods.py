@@ -252,9 +252,9 @@ def calc_ra_metrics(
         rmap = reeds.io.get_rmap(case=case, hierarchy_level=level)
         ## If multiple zones in one level and hour have LOLE, count that as one event,
         ## so take the max LOLE across the zones
-        dflole_agg = dflole.rename(columns=rmap).groupby(axis=1, level=0).max()
-        dfeue_agg = dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum()
-        dfload_agg = dfload.rename(columns=rmap).groupby(axis=1, level=0).sum()
+        dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T
+        dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
+        dfload_agg = dfload.rename(columns=rmap).T.groupby(level=0).sum().T
         ## Calculate the full-timeseries metrics for each region
         ra_metrics[level, 'lold_peryear'] = calc_lold(dflole_agg) / numyears
         ra_metrics[level, 'lole_peryear'] = calc_lole(dflole_agg) / numyears
@@ -270,8 +270,8 @@ def calc_ra_metrics(
             shortfall_samples_agg = (
                 shortfall_samples[regions]
                 .rename(columns=rmap)
-                .groupby(axis=1, level=0)
-                .sum()
+                .T.groupby(level=0)
+                .sum().T
             )
             cvar = calc_cvar(shortfall_samples_agg, alpha=cvar_alpha)
             ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
@@ -296,7 +296,7 @@ def get_eue_events(
     events = {}
     for level in levels:
         rmap = reeds.io.get_rmap(case=case, hierarchy_level=level)
-        dfeue_agg = dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum()
+        dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
         events[level] = pd.concat({r: get_events(dfeue_agg[r]) for r in dfeue_agg})
     dfout = pd.concat(events, names=['level','region','number'])
     return dfout
@@ -550,7 +550,7 @@ def get_stress_periods(case, sw, t, iteration):
     dfenergy = (
         dfenergy_unit
         .rename(columns={c: c.split('|')[1] for c in dfenergy_unit.columns})
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
     )
 
     ### Load this year's stress periods so we don't duplicate
@@ -588,9 +588,9 @@ def get_stress_periods(case, sw, t, iteration):
             ## Example: criterion = 'transgrp_1'
             hierarchy_level, metric_threshold = criterion.split('_')
             rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
-            dfeue_agg = dfeue.rename(columns=rmap).groupby(axis=1, level=0).sum().drop(covered_hours)
-            dflole_agg = dflole.rename(columns=rmap).groupby(axis=1, level=0).max().drop(covered_hours)
-            dfenergy_agg = dfenergy.rename(columns=rmap).groupby(axis=1, level=0).sum().drop(covered_hours)
+            dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
+            dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T.drop(covered_hours)
+            dfenergy_agg = dfenergy.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
             ## Get the stress periods
             dictout = check_threshold_and_choose_periods(
                 stress_metric,
@@ -927,9 +927,6 @@ def main(sw, t, iteration=0, logging=True):
     prm_next_iteration.to_csv(
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'prm.csv'),
     )
-
-    #%% Done
-    return
 
 
 # #%%### Option to run script directly for debugging
