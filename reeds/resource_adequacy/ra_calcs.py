@@ -71,7 +71,7 @@ def run_pras(
         f"--write_shortfall_samples={int(write_shortfall_samples)}",
         f"--write_shortfall_samples_totals={int(write_shortfall_samples_totals)}",
         f"--write_availability_samples={int(write_availability_samples)}",
-        f"--cvar_alpha={float(sw['GSw_PRM_CVARAlpha'])}",
+        f"--cvar_alpha={float(sw['GSw_PRM_CVARalpha'])}",
         f"--iteration={iteration}",
         f"--samples={sw['pras_samples']}",
         f"--overwrite={int(overwrite)}",

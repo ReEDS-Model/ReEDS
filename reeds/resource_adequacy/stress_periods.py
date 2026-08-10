@@ -266,7 +266,7 @@ def calc_ra_metrics(
                 .T.groupby(level=0)
                 .sum().T
             )
-            cvar = calc_cvar(shortfall_samples_agg, alpha=float(sw.GSw_PRM_CVARAlpha))
+            cvar = calc_cvar(shortfall_samples_agg, alpha=float(sw.GSw_PRM_CVARalpha))
             ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
             ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
