@@ -187,12 +187,17 @@ def main(t, casedir, iteration=0):
     else:
         trancap_reeds = gdxreeds['cap_trans_energy']
 
+    ac_trancap_reeds = (
+        trancap_reeds.loc[trancap_reeds.trtype == 'AC']
+        .copy()
+    )
+
     if sw['GSw_HourlyLineRatingTypeStress'] == 'SLR':
         index = reeds.timeseries.get_timeindex(
             years=sw['resource_adequacy_years_list']
         )
         columns = pd.MultiIndex.from_tuples(
-            tuple(zip(trancap_reeds['r'], trancap_reeds['rr'])),
+            tuple(zip(ac_trancap_reeds['r'], ac_trancap_reeds['rr'])),
             names=['r', 'rr']
         )
         trans_cap_delta_hourly = (
@@ -210,11 +215,7 @@ def main(t, casedir, iteration=0):
         )
 
     ac_trancap_hourly = (
-        (
-            trancap_reeds.loc[trancap_reeds.trtype == 'AC']
-            .set_index(['r', 'rr'])
-            ['Value']
-        )
+        (ac_trancap_reeds.set_index(['r', 'rr'])['Value'])
         * (1 + trans_cap_delta_hourly)
     )
     interfaces = reeds.inputs.get_interface_data(inputs_case)['interface']
