@@ -1209,7 +1209,7 @@ Low, mid, and high cost projections are available.
 The capital cost of a battery comprises two components: the overnight power unit cost (in \$/kW), which reflects the cost associated with the battery's maximum power output, and the overnight energy unit cost (in \$/kWh), which represents the cost associated with its maximum energy storage capacity---allowing the model to independently size power and energy capacities based on the respective unit costs.
 FOM costs of the battery are divided into two components as well: a 2.5% per year power FOM based on the power-related capital cost and a 2.5% per year energy FOM based on the energy-related capital cost.
 The battery's power capacity is assumed to last 30 years.
-The energy capacity is assumed to last 15 years, and is therefore fully refurbished after 15 years, using the energy capacity costs in the refurbishment year.
+The energy capacity is assumed to last 15 years, and is therefore fully refurbished after 15 years using the energy capacity costs in the refurbishment year.
 Batteries are assumed to have a round-trip efficiency of 85% and a representative size of 60 MW.
 
 Existing PSH capacity is represented in the model according to the input plant database.
