@@ -323,7 +323,7 @@ def write_hpc_file(scen, reeds_path, output_path, hpc_settings):
         SPATH.writelines("#SBATCH --output=" + os.path.join(output_path, "slurm-%j.out") + "\n\n")
         SPATH.writelines("#load your default settings\n")
         SPATH.writelines(". $HOME/.bashrc" + "\n\n")
-        SPATH.writelines("conda activate reeds2 \n")  
+        SPATH.writelines("conda activate reeds \n")  
         SPATH.writelines(f"cd {os.path.join(reeds_path, 'postprocessing', 'combine_runs')}\n")            
         SPATH.writelines(f"python hpc_runner.py {scen} {reeds_path} {output_path}")
     return hpc_file
@@ -394,9 +394,9 @@ def main(reeds_path, batch_name, folder_name_suffix, runlist, keywords, local, d
             subprocess.Popen(batchcom.split())
         ## LOCAL
         else:
-            if 'reeds2' not in os.environ['CONDA_DEFAULT_ENV'].lower():
+            if 'reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower():
                 print('Caution: you are running locally but have not activated '
-                      'the "reeds2" environment.'
+                      'the "reeds" environment.'
                       )
             run_combine_case(scen, reeds_path, output_path)                    
         

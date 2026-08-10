@@ -45,10 +45,6 @@ def delete_temporary_files(sw):
 
 #%% Input-loading function
 def get_inputs(sw):
-    ### Make savepath
-    sw['savepath'] = os.path.join(sw['casedir'], 'outputs', 'figures', 'resource_adequacy')
-    os.makedirs(sw['savepath'], exist_ok=True)
-
     ##### Load shared parameters
     fulltimeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years)
 
@@ -85,12 +81,17 @@ def get_inputs(sw):
     resources['tech'] = reeds.reedsplots.simplify_techs(resources.i, display_level = 'diagnostics')
     resources['rb'] = resources.r
 
+    fpath = Path(sw.casedir, 'inputs_case', f'stress{sw.t}i{sw.iteration+1}', 'new_stress_periods.csv')
+    if fpath.is_file():
+        new_stress_periods = pd.read_csv(fpath)
+    else:
+        new_stress_periods = pd.DataFrame(columns=['period'])
+
     ##### Hourly dispatch by month
     ### Load and aggregate the VRE generation profiles by tech group
     try:
         vre_gen = reeds.io.read_file(
             os.path.join(sw['casedir'],'handoff','reeds_data',f'pras_vre_gen_{sw.t}.h5'),
-            parse_timestamps=True,
         )
     except FileNotFoundError:
         vre_gen = None
@@ -99,7 +100,7 @@ def get_inputs(sw):
     vre_gen_usa = (
         vre_gen
         .rename(columns=dict(zip(vre_gen.columns, vre_gen.columns.map(lambda x: x.split('|')[0]))))
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
         .set_index(fulltimeindex)
     )
     vre_gen_usa.columns = reeds.reedsplots.simplify_techs(vre_gen_usa.columns, display_level = 'diagnostics')
@@ -111,7 +112,7 @@ def get_inputs(sw):
     vre_gen_r = (
         vre_gen
         .rename(columns=dict(zip(vre_gen.columns, vre_gen.columns.map(lambda x: x.split('|')[1]))))
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
     )
 
     ### Load hourly demand
@@ -128,7 +129,6 @@ def get_inputs(sw):
     try:
         pras_load = reeds.io.read_file(
             os.path.join(sw['casedir'],'handoff','reeds_data',f'pras_load_{sw.t}.h5'),
-            parse_timestamps=True,
         )
     except FileNotFoundError:
         pras_load = None
@@ -138,7 +138,6 @@ def get_inputs(sw):
             os.path.join(
                 sw['casedir'],'handoff','reeds_data',
                 f"pras_h2dac_load_{sw['t']}.h5"),
-            parse_timestamps=True,
         )
     except FileNotFoundError:
         pras_h2dac_load = pd.DataFrame(columns=pras_load.columns)
@@ -185,7 +184,7 @@ def get_inputs(sw):
     ### Get net load by BA
     net_load_r = load_r - vre_gen_r
     ### Get net load by ccreg
-    net_load_ccreg = net_load_r.rename(columns=hierarchy.ccreg).groupby(axis=1, level=0).sum()
+    net_load_ccreg = net_load_r.rename(columns=hierarchy.ccreg).T.groupby(level=0).sum().T
     ### Get net load for the USA
     net_load_usa = net_load_r.set_index(fulltimeindex).sum(axis=1)
 
@@ -242,6 +241,7 @@ def get_inputs(sw):
     dfs['tech_style'] = tech_style
     dfs['vre_gen_usa'] = vre_gen_usa
     dfs['vre_gen'] = vre_gen
+    dfs['new_stress_periods'] = new_stress_periods
 
     return dfs
 
@@ -277,7 +277,7 @@ def plot_dropped_load_timeseries_full(sw, dfs):
     """
     dropped = dfs['pras']['USA_EUE'].copy()
     timeindex_y = pd.date_range(
-        f"{sw['t']}-01-01", f"{sw['t']+1}-01-01", inclusive='left', freq='H',
+        f"{sw['t']}-01-01", f"{sw['t']+1}-01-01", inclusive='left', freq='h',
         tz='Etc/GMT+6')[:8760]
     savename = f"dropped_load-timeseries-wfull-{sw['t']}.png"
     weatheryears = sw.resource_adequacy_years_list
@@ -382,24 +382,25 @@ def map_dropped_load(sw, dfs, level='r'):
     dropped = dfs['pras'][
         [c for c in dfs['pras'] if c.endswith('_EUE') and (not c.startswith('USA'))]
     ].copy()
-    dropped.columns = dropped.columns.map(lambda x: x.split('_')[0])
+    dropped.columns = dropped.columns.map(lambda x: x[:-len('_EUE')])
     units = {
         ('EUE','max'): ('MW',1), ('EUE','mean'): ('MW',1), ('EUE','sum'): ('GWh',1e-3),
         ('NEUE','max'): ('%',1e2), ('NEUE','sum'): ('ppm',1e6),
     }
     load = dfs['pras_load']
+    rmap = reeds.io.get_rmap(sw['casedir'], level)
 
     ### Plot it
     for metric in ['EUE','NEUE']:
         ## Aggregate if necessary
         if level not in ['r','rb','ba']:
             dropped = (
-                dropped.rename(columns=dfs['hierarchy'][level])
-                .groupby(level=0, axis=1).sum().copy()
+                dropped.rename(columns=rmap)
+                .T.groupby(level=0).sum().T.copy()
             )
             load = (
-                load.rename(columns=dfs['hierarchy'][level])
-                .groupby(level=0, axis=1).sum().copy()
+                load.rename(columns=rmap)
+                .T.groupby(level=0).sum().T.copy()
             )
         for agg in ['max','sum','mean']:
             if (metric,agg) not in units:
@@ -408,7 +409,7 @@ def map_dropped_load(sw, dfs, level='r'):
 
             dfplot = dfba.copy()
             if level not in ['r','rb','ba']:
-                dfplot[level] = dfs['hierarchy'][level]
+                dfplot[level] = dfplot.index.map(rmap)
                 dfplot = dfplot.dissolve(level)
                 dfplot['centroid_x'] = dfplot.geometry.centroid.x
                 dfplot['centroid_y'] = dfplot.geometry.centroid.y
@@ -454,16 +455,16 @@ def plot_pras_ICAP(sw, dfs):
         return
     ### Collect the PRAS system capacities
     cap = pd.concat([
-        dfs['pras_system']['gencap'].groupby(axis=1, level=0).sum(),
-        dfs['pras_system']['storcap'].groupby(axis=1, level=0).sum(),
-        dfs['pras_system']['genstorcap'].groupby(axis=1, level=0).sum(),
+        dfs['pras_system']['gencap'].T.groupby(level=0).sum().T,
+        dfs['pras_system']['storcap'].T.groupby(level=0).sum().T,
+        dfs['pras_system']['genstorcap'].T.groupby(level=0).sum().T,
     ], axis=1)
     ## Drop any empties
     cap = cap.replace(0,np.nan).dropna(axis=1, how='all').fillna(0).astype(int)
     ## Get the colors
     tech_style = dfs['tech_style']['color'].squeeze()
     ## Aggregate by type
-    cap = cap.groupby(axis=1, level=0).sum()
+    cap = cap.T.groupby(level=0).sum().T
     order = [c for c in tech_style.index if c in cap]
     cap = cap[order]
     if cap.shape[1] != len(order):
@@ -520,7 +521,7 @@ def plot_reeds_pras_capacity(sw, dfs):
     cap['pras'] = cap['pras'].replace(0,np.nan).dropna(axis=1, how='all').fillna(0)
     ## Aggregate by type
     cap['pras'] = (cap['pras']
-        .groupby(axis=1, level=[1,0]).sum().max().rename('MW')
+        .T.groupby(level=[1,0]).sum().T.max().rename('MW')
     )
 
     ### Collect the ReEDS capacities
@@ -544,9 +545,7 @@ def plot_reeds_pras_capacity(sw, dfs):
 
     ### Get coordinates
     zones = dfs['hierarchy'].index
-    ncols = int(np.around(np.sqrt(len(zones)) * 1.618, 0))
-    nrows = len(zones) // ncols + int(bool(len(zones) % ncols))
-    coords = dict(zip(zones, [(row,col) for row in range(nrows) for col in range(ncols)]))
+    nrows, ncols, coords = reeds.plots.get_coordinates(zones)
 
     ### Plot the capacities
     plt.close()
@@ -616,7 +615,7 @@ def plot_pras_ICAP_regional(sw, dfs, numdays=5):
     ## Get the colors
     tech_style = dfs['tech_style']['color'].squeeze()
     ## Aggregate by type
-    cap = cap.groupby(axis=1, level=[1,0]).sum()
+    cap = cap.T.groupby(level=[1,0]).sum().T
 
     ### Get coordinates
     zones = dfs['hierarchy'].index
@@ -641,7 +640,7 @@ def plot_pras_ICAP_regional(sw, dfs, numdays=5):
             ### Plot it
             plots.stackbar(
                 df=df, ax=ax[coords[r]], colors=tech_style, net=False, align='edge',
-                width=pd.Timedelta('1H'),
+                width=pd.Timedelta('1h'),
             )
             ax[coords[r]].plot(
                 load.loc[date].index, load.loc[date][r].values, c='k', lw=1,
@@ -651,7 +650,7 @@ def plot_pras_ICAP_regional(sw, dfs, numdays=5):
             ax[coords[r]].set_title(r)
         ### Formatting
         plots.trim_subplots(ax=ax, nrows=nrows, ncols=ncols, nsubplots=len(zones))
-        ax[coords[zones[0]]].set_xlim(df.index[0], df.index[-1] + pd.Timedelta('1H'))
+        ax[coords[zones[0]]].set_xlim(df.index[0], df.index[-1] + pd.Timedelta('1h'))
         ax[coords[zones[0]]].set_xticks([])
         ax[-1, 0].set_xlabel(date, x=0, ha='left', labelpad=10)
         ax[-1, 0].set_ylabel('ICAP [GW]', y=0, ha='left')
@@ -815,7 +814,7 @@ def plot_pras_load_units(sw, dfs):
         vre_gen.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
-    net_demand = (dfs['pras_system']['load'] - vre_gen.groupby('r', axis=1).sum()) / 1e3
+    net_demand = (dfs['pras_system']['load'] - vre_gen.T.groupby('r').sum().T) / 1e3
     ## Remaining unit capacity
     units = cap.loc[
             ~cap.i.isin(
@@ -1023,6 +1022,37 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
             plt.close()
 
 
+def map_outagerate_new_stressperiods(sw, dfs):
+    new_stress_periods = dfs['new_stress_periods']
+    if not len(new_stress_periods):
+        print('No new stress periods to plot')
+        return
+    dates = (
+        new_stress_periods
+        .period.map(reeds.timeseries.h2timestamp)
+        .dt.strftime('%Y-%m-%d')
+        .tolist()
+    )
+    vmax = {'forced': 40, 'scheduled': 25, 'both': 50}
+    aggfunc = 'max'
+    for outage_type in vmax:
+        savename = f'map-outage_{outage_type}_{aggfunc}-{sw.t}i{sw.iteration}.png'
+        plt.close()
+        f, ax, _ = reeds.reedsplots.map_outage_days(
+            sw.casedir,
+            dates=dates,
+            outage_type=outage_type,
+            aggfunc=aggfunc,
+            vmax=vmax[outage_type],
+        )
+        ## Save it
+        if savefig:
+            plt.savefig(os.path.join(sw['savepath'],savename))
+        if interactive:
+            plt.show()
+        plt.close()
+
+
 def plot_cc_mar(sw, dfs):
     """
     Marginal capacity credit
@@ -1178,24 +1208,24 @@ def plot_stressors(sw, dfs):
     """
     Map demand/CF/FOR (organized differently to allow for independent use)
     """
-    for iteration in range(sw['iteration']):
-        plot_generator = reeds.reedsplots.map_stressors(
-            case=sw['casedir'], t=sw['t'], iteration=iteration,
-            seed=(True if t == int(sw['endyear']) else False),
-        )
-        while True:
-            try:
-                f, ax, df, plotlabel = next(plot_generator)
-                savename = (
-                    f"stress{t}i{iteration}-"
-                    + plotlabel.split(':')[0].replace('-','')
-                )
-                if savefig:
-                    plt.savefig(os.path.join(sw.casedir, 'outputs', 'figures', f'{savename}.png'))
-                if interactive:
-                    plt.show()
-            except StopIteration:
-                break
+    plot_generator = reeds.reedsplots.map_stressors(
+        case=sw['casedir'], t=sw['t'], iteration=sw['iteration'],
+        seed=(True if t == int(sw['endyear']) else False),
+    )
+    while True:
+        try:
+            f, ax, df, plotlabel = next(plot_generator)
+            savename = (
+                f"stress{sw.t}i{sw.iteration}-"
+                + plotlabel.split(':')[0].replace('-','')
+                + '.png'
+            )
+            if savefig:
+                plt.savefig(os.path.join(sw['savepath'],savename))
+            if interactive:
+                plt.show()
+        except StopIteration:
+            break
 
 
 #%%### Main function
@@ -1260,6 +1290,11 @@ def main(sw, debug=False):
     except Exception:
         print('map_dropped_load() failed:', traceback.format_exc())
 
+    try:
+        map_outagerate_new_stressperiods(sw, dfs)
+    except Exception:
+        print('map_outagerate_new_stressperiods() failed:', traceback.format_exc())
+
     if int(sw['GSw_PRM_CapCredit']):
         try:
             plot_cc_mar(sw, dfs)
@@ -1320,8 +1355,8 @@ if __name__ == '__main__':
 
     # #%%### Inputs for debugging
     # reeds_path = reeds.io.reeds_path
-    # casedir = os.path.join(reeds_path, 'runs', 'v20251111_15M0_Pacific')
-    # t = 2026
+    # casedir = os.path.join(reeds_path, 'runs', 'v20260715_stressM3_MultiMetricRA')
+    # t = 2050
     # interactive = True
     # iteration = 0
     # debug = True
@@ -1330,6 +1365,9 @@ if __name__ == '__main__':
     ### Switches
     sw = reeds.io.get_switches(casedir)
     sw['t'] = t
+    sw['savepath'] = os.path.join(sw['casedir'], 'outputs', 'figures', 'resource_adequacy')
+    ## Make savepath
+    os.makedirs(sw['savepath'], exist_ok=True)
     ## Debugging
     # sw['reeds_path'] = reeds_path
     # sw['casedir'] = casedir
@@ -1345,7 +1383,7 @@ if __name__ == '__main__':
     else:
         sw['iteration'] = iteration
 
-    ### Make the plots
+    #%% Make the plots
     print('plotting intermediate resource adequacy results...')
     try:
         main(sw, debug)
@@ -1353,6 +1391,6 @@ if __name__ == '__main__':
         print('diagnostic_plots.py failed with the following exception:')
         print(traceback.format_exc())
 
-    ### Remove intermediate csv files to save drive space
+    #%% Remove intermediate csv files to save drive space
     if (not int(sw['keep_resource_adequacy_files'])) and (not int(sw['debug'])):
         delete_temporary_files(sw)
