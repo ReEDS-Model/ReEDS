@@ -1379,7 +1379,9 @@ Fixed and variable O&M assumptions are taken from Exhibit 5-19 (Case B31A) of th
 
 - `GSw_H2FuelCell` (default `0`): Turn the hydrogen fuel cell (`h2-fuel-cell`) on (`1`) or off (`0`). Independent of the natural gas fuel cell switch (`GSw_GasFuelCell`) and the hydrogen combustion switches (`GSw_H2Combustion`).
 - `plantchar_h2fuelcell` (default `h2fuelcell_moderate`): Cost-and-performance trajectory — one of `h2fuelcell_conservative`, `h2fuelcell_moderate`, or `h2fuelcell_advanced`.
-- Cost and performance inputs (capital cost, fixed and variable O&M, and heat rate) are in `inputs/plant_characteristics/h2fuelcell_{conservative,moderate,advanced}.csv`. Other operating assumptions (representative unit size, lifetime, outage rates, minimum load, ramp rate, minimum capacity factor, and start cost) are set in the `h2-fuel-cell` rows of the corresponding files under `inputs/plant_characteristics/`, and emission rates in `inputs/emission_constraints/emitrate.csv`.
+- Cost and performance inputs (capital cost, fixed and variable O&M, and heat rate) are in `inputs/plant_characteristics/h2fuelcell_{conservative,moderate,advanced}.csv`.
+- Other operating assumptions (representative unit size, lifetime, outage rates, minimum load, ramp rate, minimum capacity factor, and start cost) are set in the `h2-fuel-cell` rows of the corresponding files under `inputs/plant_characteristics/`.
+- Emission rates are in `inputs/emission_constraints/emitrate.csv`.
 ```
 
 
