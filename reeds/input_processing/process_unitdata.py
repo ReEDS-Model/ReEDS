@@ -164,7 +164,9 @@ def main(inputs_case):
     unitdata['r'] = unitdata['r'].fillna(unitdata['r_orig'])
 
     # Update RetireYear column based on nukeretscen
-    unitdata.loc[unitdata['tech']=='nuclear', 'RetireYear'] = unitdata['StartYear'] + int(sw['nukeretscen'])
+    unitdata.loc[(unitdata['tech']=='nuclear') & 
+                 (unitdata['status']== '(OP) Operating'), 
+                 'RetireYear'] = unitdata['StartYear'] + int(sw['nukeretscen'])
 
     # Add county and state
     county_state = pd.read_csv(Path(reeds.io.reeds_path, 'inputs', 'zones', 'county_state.csv'), dtype=str)
