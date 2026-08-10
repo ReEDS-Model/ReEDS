@@ -9,7 +9,7 @@ gas-CC_h_1x1,process,1.50E-06,9.07E-06,5.31E-02,1.00E-07,1.00E-06
 gas-CC_h_2x1,process,1.50E-06,9.07E-06,5.31E-02,1.00E-07,1.00E-06
 h2-ct,process,0,6.35E-05,0,0,0
 h2-cc,process,0,6.35E-05,0,0,0
-h2-fuel-cell,process,0,6.35E-05,0,0,0
+h2-fuel-cell,process,0,0,0,0,0
 ng-fuel-cell,process,0,0,5.31E-02,1.00E-07,1.00E-06
 CoalOldScr,process,9.07E-05,8.62E-05,9.55E-02,1.60E-06,1.10E-05
 CoalOldUns,process,1.51E-04,8.62E-05,9.55E-02,1.60E-06,1.10E-05
