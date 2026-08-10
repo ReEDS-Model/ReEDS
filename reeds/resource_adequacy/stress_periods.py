@@ -14,8 +14,6 @@ from reeds.input_processing import hourly_writetimeseries
 # import importlib
 # importlib.reload(functions)
 
-CVAR_METRICS = {'CVAR', 'NCVAR'}
-
 
 #%%### Constants
 RA_SWITCHES = {
@@ -239,18 +237,12 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
-    cvar_metrics = {
-        i.strip().upper()
-        for i in sw.GSw_PRM_StressThresholdMetrics.split('/')
-        if i.strip().upper() in CVAR_METRICS
-    }
-
-    if len(cvar_metrics):
-        shortfall_samples = (
-            get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
-            .drop(columns=['USA'], errors='ignore')
-        )
-        cvar_alpha = get_cvar_alpha(sw)
+    ### Get total shortfall samples for CVAR calculation
+    shortfall_samples = (
+        get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
+        .drop(columns=['USA'], errors='ignore')
+    )
+    cvar_alpha = get_cvar_alpha(sw)
 
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
@@ -272,22 +264,18 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
-        if len(cvar_metrics):
-            regions = [c for c in shortfall_samples.columns if c in rmap.index]
-            if len(regions):
-                shortfall_samples_agg = (
-                    shortfall_samples[regions]
-                    .rename(columns=rmap)
-                    .groupby(axis=1, level=0)
-                    .sum()
-                )
-                cvar = calc_cvar(shortfall_samples_agg, alpha=cvar_alpha)
-
-                if 'CVAR' in cvar_metrics:
-                    ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
-
-                if 'NCVAR' in cvar_metrics:
-                    ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
+        ## Calculate tail-based metrics (CVAR and NCVAR)
+        regions = [c for c in shortfall_samples.columns if c in rmap.index]
+        if len(regions):
+            shortfall_samples_agg = (
+                shortfall_samples[regions]
+                .rename(columns=rmap)
+                .groupby(axis=1, level=0)
+                .sum()
+            )
+            cvar = calc_cvar(shortfall_samples_agg, alpha=cvar_alpha)
+            ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
+            ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
@@ -591,11 +579,7 @@ def get_stress_periods(case, sw, t, iteration):
     _high_stress_periods = {}
     _shoulder_periods = {}
 
-    stress_metrics = []
-    for metric in sw.GSw_PRM_StressThresholdMetrics.split('/'):
-        metric = str(metric).strip()
-        if metric and metric.upper() not in CVAR_METRICS:
-            stress_metrics.append(metric.lower())
+    stress_metrics = [i.lower() for i in sw.GSw_PRM_StressThresholdMetrics.split('/')]
 
     for stress_metric in stress_metrics:
         switch = RA_SWITCHES[stress_metric]

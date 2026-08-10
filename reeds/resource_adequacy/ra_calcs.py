@@ -24,7 +24,7 @@ def run_pras(
         write_surplus=False,
         write_energy=False,
         write_shortfall_samples=False,
-        write_shortfall_samples_totals=False,
+        write_shortfall_samples_totals=True,
         write_availability_samples=False,
         **kwargs,
     ):
@@ -155,24 +155,13 @@ def main(t, tnext, casedir, iteration=0):
         1: True if t == max(solveyears) else False,
         2: True,
     }[int(sw['pras'])]
-    if pras_this_solve_year or int(sw.GSw_PRM_StressIterateMax):
-        stress_metrics = [
-            m.strip().upper()
-            for m in sw.GSw_PRM_StressThresholdMetrics.split('/')
-            if m.strip()
-        ]
-        write_shortfall_samples_totals = any(
-            metric in {'CVAR', 'NCVAR'}
-            for metric in stress_metrics
-        )
-
+    if pras_this_solve_year or int(sw.GSw_PRM_StressIterateMax):        
         result = run_pras(
             casedir, t,
             iteration=iteration,
             write_flow=(True if t == max(solveyears) else False),
             write_energy=True,
             write_shortfall_samples=(True if int(sw.GSw_PRM_UpdateMethod) > 1 else False),
-            write_shortfall_samples_totals=write_shortfall_samples_totals,
         )
 
         if result.returncode:
