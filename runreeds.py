@@ -323,6 +323,11 @@ def check_compatibility(sw):
                     f"stress value in {ra_switches[metric]} must be a positive number "
                     f"but '{stress_value}' was provided"
                 )
+    
+    ## CVAR value in [0,1)
+    alpha = float(sw['GSw_PRM_CVARAlpha'])
+    if not (0 <= alpha < 1):
+        raise ValueError(f"GSw_PRM_CVARAlpha must be in [0, 1). Got {alpha}")
 
     ### GSw_PRM_UpdateMethod 1-3 (static or PRAS-informed PRM update) is computed from the
     ### NEUE-based shortfall, so it requires NEUE to be an active stress metric

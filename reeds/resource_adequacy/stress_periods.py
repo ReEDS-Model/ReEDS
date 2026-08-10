@@ -142,12 +142,6 @@ def calc_neue(dfeue_agg, dfload_agg):
     neue = dfeue_agg.sum() / dfload_agg.sum() * 1e6
     return neue
 
-def get_cvar_alpha(sw):
-    alpha = float(sw.GSw_PRM_CVARAlpha)
-    if not (0 <= alpha < 1):
-        raise ValueError(f"GSw_PRM_CVARAlpha must be in [0, 1). Got {alpha}")
-    return alpha
-
 
 def get_shortfall_totals_by_sample(case, t, iteration=0):
     filepath = os.path.join(case, 'handoff', 'PRAS', f'PRAS_{t}i{iteration}-shortfall_totals_by_sample.h5')
@@ -242,7 +236,6 @@ def calc_ra_metrics(
         get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
         .drop(columns=['USA'], errors='ignore')
     )
-    cvar_alpha = get_cvar_alpha(sw)
 
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
@@ -273,7 +266,7 @@ def calc_ra_metrics(
                 .T.groupby(level=0)
                 .sum().T
             )
-            cvar = calc_cvar(shortfall_samples_agg, alpha=cvar_alpha)
+            cvar = calc_cvar(shortfall_samples_agg, alpha=float(sw.GSw_PRM_CVARAlpha))
             ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
             ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
