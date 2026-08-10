@@ -21,6 +21,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import h5py
 import shutil
 from glob import glob
 from warnings import warn
@@ -216,23 +217,24 @@ if __name__ == '__main__':
 
     ### Get the settings file
     futurefiles = pd.read_csv(
-        os.path.join(inputs_case,'futurefiles.csv'),
+        os.path.join(reeds.io.reeds_path, 'inputs', 'userinput', 'futurefiles.csv'),
         dtype={
-            'header':'category', 'ignore':int, 'wide':int,
+            'ignore':int, 'wide':int,
             'year_col':str, 'fix_cols':str, 'header':str, 'clip_min':str, 'clip_max':str,
         }
-    )
-    ### Fill in the missing parts of filenames
-    futurefiles.filename = futurefiles.filename.map(
-        lambda x: x.format(casename=casename, distpvscen=distpvscen)
     )
     ### Fix issue where columns with "None" entries are read in as NaN
     for col in ['key','fix_cols','header','clip_min','clip_max']:
         futurefiles[col] = futurefiles[col].fillna('None')
     ### If any files are missing, stop and alert the user
-    inputfiles = [os.path.basename(f) for f in glob(os.path.join(inputs_case,'*'))]
+    inputs_files = [
+        Path(f).stem for f in glob(os.path.join(inputs_case,'*')) if not Path(f).is_dir()
+    ]
+    with h5py.File(Path(inputs_case, 'inputs.h5'), 'r') as f:
+        inputs_h5 = list(f)
+    inputfiles = inputs_files + inputs_h5
     missingfiles = [
-        f for f in inputfiles if ((f not in futurefiles.filename.values) and ('.' in f))]
+        f for f in inputfiles if f not in futurefiles.filename.map(lambda x: Path(x).stem).values]
     if any(missingfiles):
         if missing == 'raise':
             raise Exception(
@@ -258,7 +260,7 @@ if __name__ == '__main__':
         print(f'{filename}', end='')
         
         ### If the file isn't in inputs_case, skip it and continue to the next file
-        if filename not in inputfiles:
+        if Path(filename).stem not in inputfiles:
             if verbose > 1:
                 print('  -> skipped since not in inputs_case')
             continue
@@ -321,8 +323,8 @@ if __name__ == '__main__':
         efs = False
 
         ### Load it
-        if filetype in ['.csv','.csv.gz']:
-            dfin = pd.read_csv(os.path.join(inputs_case,filename), header=header,)
+        if filetype in ['inputs.h5', '.csv', '.csv.gz']:
+            dfin = reeds.io.read_input(inputs_case, filename, header=header)
         elif filetype == '.h5':
             ### Currently load.h5 and dr_shed_hourly.h5 are the only h5 files we need to 
             ### project forward, so the procedure is currently specific to these files
@@ -462,7 +464,11 @@ if __name__ == '__main__':
         dfout.rename(columns=the_unnamer, inplace=True)
 
         #%% Write it
-        if filetype in ['.csv','.csv.gz']:
+        if Path(filename).stem in inputs_h5:
+            reeds.io.write_to_inputs_h5(
+                dfout, Path(filename).stem, inputs_case, gamstype='parameter',
+            )
+        elif filetype in ['.csv', '.csv.gz']:
             dfout.round(decimals).to_csv(
                 os.path.join(outpath, filename),
                 header=(False if header is None else True),
