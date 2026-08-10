@@ -281,7 +281,7 @@ mask = (consume_char['*i'].isin(['electrolyzer'])) & (consume_char['parameter'].
 elec_cost_future = consume_char[mask]['value'].values[0]
 
 # read in financials_sys from inputs_case and take the average of all past years to get an average discount rate
-financials_sys = pd.read_csv(os.path.join(inputs_case,'financials_sys.csv')) 
+financials_sys = pd.read_csv(os.path.join(inputs_case,'financials_sys_full.csv')) 
 discount_rate = np.average(financials_sys[(financials_sys['t'] <= current_year)]['d_real'].values)
 
 # the capital cost of electrolyzers needs to be increased by the cost to replace the stack ('h2_elec_stack_replace_perc')
