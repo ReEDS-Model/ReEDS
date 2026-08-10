@@ -5168,8 +5168,16 @@ cap_existing(i,r)$exog_rsc(i) = sum{(v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(
 cap_prescribed(i,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{v, prescribed_build(i,v,r,t) } ;
 cap_prescribed_ir(i,r)$rsc_i(i) = sum{t$tmodel_new(t), cap_prescribed(i,r,t) } ;
 
-*Get total available supply for all i .
-available_supply(i,r)$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))] = sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } ;
+*Loop over all regions
+loop(r,
+*Loop over non-geothermal rsc technologies
+  loop(i$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not prescriptivelink("geothermal",i))$(not geo_hydro(i))],
+
+*Get total available supply for all ii associated with pcat of i.
+*For example, if i = {upv_2}, then ii = {upv_2, upv_3, ...} and pcat = {UPV}.
+    available_supply(i,r) = sum{(pcat,ii,rscbin)$[prescriptivelink(pcat,i)
+                                                  $prescriptivelink(pcat,ii)], 
+                              m_rsc_dat(r,ii,rscbin,"cap") } ;
 
 *Apply multiplier if prescribed capacity exceeds available supply
 m_rsc_dat(r,i,rscbin,"cap")$[((cap_existing(i,r) + cap_prescribed_ir(i,r)) >  available_supply(i,r))
@@ -5190,44 +5198,32 @@ rsc_cap_diff(r,i,rscbin) = m_rsc_dat(r,i,rscbin,"cap") - m_rsc_dat_original(r,i,
 *Round up to the nearest 3rd decimal place
 m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rscbin,"cap") * 1000) / 1000 ;
 
-*Currently only geothermal and dr_shed have supply curve capacities that change over time
-* Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
-geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
+*Geothermal is not a tech with sameas(i,pcat), so handle it separately here.
+*Loop over regions that have geothermal prescribed builds (either pcat)
+set geo_pcat(pcat) "geothermal pcats that need discovery-aware feasibility adjustment" ;
+geo_pcat("geothermal") = yes ;
+geo_pcat("geohydro_allkm") = yes ;
 
-parameter geo_bin1_add_orig(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery"
-          geo_bin1_add(i,r)      "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with updated geo_discovery" ;
+parameter geo_prescrip_total(r) "--MW-- total geo prescribed capacity in a region across geo pcats" ;
+geo_prescrip_total(r) = sum{(pcat,t)$[geo_pcat(pcat)$tmodel_new(t)],
+                              noncumulative_prescriptions(pcat,r,t) } ;
 
-*Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
-*total geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
-geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
-
-* If there is not sufficient geothermal resource (i.e., geo_bin1_add_orig is positive), then
-* set geo_discovery to 1 for that region for years after the prescribed builds start
-geo_discovery(i,r,t)$[geo_hydro(i)$[geo_bin1_add_orig(i,r) > 0]
-                     $tmodel_new(t)$cap_prescribed_ir(i,r)
-                     $(yeart(t)>=smin{tt$[cap_prescribed(i,r,tt)], yeart(tt) })] = 1 ;
-
-* Now recompute the geo_bin1_add parameter with the updated geo_discovery values
-geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
-
-* Only use positive values of geo_bin1_add, as negative values would indicate that the
-* existing resource is already sufficient to cover prescriptions
-geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
-
-* Add any additional resource needed to the first bin of the supply curve
-m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
-    m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
-
-rsc_capacity_scalar(i,r,t) =  ceil(1000 *geo_discovery(i,r,t) + dr_shed_capacity_scalar(i,r,t) ) / 1000 ;
-rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
+loop(r$geo_prescrip_total(r),
+*Then loop over eligible geothermal technologies
+  loop(i$[sum{pcat$geo_pcat(pcat), prescriptivelink(pcat,i) }$sum{(v,t)$newv(v), valcap(i,v,r,t) }$geo_discovery(i,r,"%startyear%")],
+*If capacity is insufficient, add enough capacity to make the model feasible
+*Use the startyear geothermal discovery (geo_discovery) rate for the calculation. That will slightly
+*overestimate geothermal resource for any prescribed builds happening after the discovery rate
+*begins to increase (currently after 2021)
+    m_rsc_dat(r,i,"bin1","cap")$[((sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } * (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))) < geo_prescrip_total(r))
+                                $(1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))] =
+      (geo_prescrip_total(r)
+       - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") }
+       + m_rsc_dat(r,i,"bin1","cap")
+      ) / (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i)) ;
+    break ;
+  ) ;
+) ;
 
 * * Apply spur-line cost multiplier for relevant technologies
 * m_rsc_dat(r,i,rscbin,"cost")$(pv(i) or pvb(i) or wind(i) or csp(i)) =

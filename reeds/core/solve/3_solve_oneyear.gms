@@ -42,10 +42,15 @@ $ifthene.post_startyear %cur_year%>%startyear%
 * infeasible or result in very tiny number (order 1e-16) in the matrix
 rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)] = 
 
-*capacity indicated by the resource supply curve (with undiscovered geo available
-*at the "discovered" amount and hydro upgrade availability adjusted over time)
-    m_rsc_dat(r,i,rscbin,"cap") * (
-        1$[not geo_hydro(i)] + geo_discovery(i,r,t)$geo_hydro(i))
+*capacity indicated by the resource supply curve minus exogenous (pre-start-year)
+*capacity, using its level in the first year (tfirst), scaled by rsc_capacity_scalar
+*(which equals geo_discovery for geo_hydro and adjusts undiscovered geo to the
+*"discovered" amount), plus hydro upgrade availability adjusted over time
+    ( m_rsc_dat(r,i,rscbin,"cap")
+      - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
+             capacity_exog_rsc(ii,v,r,rscbin,tt) } )
+        * (1$[not rsc_capacity_scalar_i(i)]
+           + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 *minus the cumulative invested capacity in that region/class/bin...
 *Note that yeart(tt) is stricly < here, while it is <= in eq_rsc_INVlim. That is because
@@ -53,9 +58,6 @@ rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_
 *values from prior solve years.
     - sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))$rsc_agg(i,ii)],
          INV_RSC.l(ii,v,r,rscbin,tt) * resourcescaler(ii) }
-*minus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
-    - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
 ;
 
 
