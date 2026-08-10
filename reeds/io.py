@@ -1571,7 +1571,7 @@ def assemble_supplycurve(
         dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
     elif psh:
         # PSH supply curves need to be mapped to nearest sc_point_gid using lat/lon of lower reservoir
-        geometry_psh = [Point(xy) for xy in zip(dfout['lon'], dfout['lat'])]
+        geometry_psh = [Point(xy) for xy in zip(dfout['low_reservoir_longitude'], dfout['low_reservoir_latitude'])]
         gdf_psh = GeoDataFrame(dfout, crs='EPSG:5070', geometry=geometry_psh)
         geometry_ic = [Point(xy) for xy in zip(interconnection_cost['longitude'], interconnection_cost['latitude'])]
         gdf_ic = GeoDataFrame(interconnection_cost.reset_index(), crs='EPSG:5070', geometry=geometry_ic)
@@ -1612,16 +1612,6 @@ def assemble_supplycurve(
         'capital_adder_per_mw',
         'cost_total_trans_usd_per_mw',
     ]].sum(axis=1)
-
-    # # Add PSH classes based on supply curve costs using hourlize.resource.add_classes
-    # if psh:
-    #     dfout_class = add_classes(dfout, 
-    #                               class_path=None, 
-    #                               class_bin=True, 
-    #                               class_bin_col='supply_curve_cost_per_mw',
-    #                               class_bin_method="kmeans", 
-    #                               class_bin_num=15
-    #         ).drop(columns=['class_orig','class_bin'])
 
     if drop_extra:
         dfout = dfout.drop(
