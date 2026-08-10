@@ -1,5 +1,5 @@
-DEFAULT_DOLLAR_YEAR = 2024
-DEFAULT_PV_YEAR = 2024
+DEFAULT_DOLLAR_YEAR = 2025
+DEFAULT_PV_YEAR = 2026
 ### Source for default discount rate:
 ### https://www.whitehouse.gov/wp-content/uploads/2023/11/CircularA-4.pdf
 DEFAULT_DISCOUNT_RATE = 0.02
