@@ -1636,14 +1636,14 @@ systemcost_ba("op_h2_storage",r,t)$[tmodel_new(t)$(Sw_H2 = 2)] =
 ;
 
 systemcost_ba("op_acp_compliance_costs",r,t)$[tmodel_new(t)$(yeart(t)>=firstyear_RPS)]  =
-*plus ACP purchase costs, attributed to bas based on fraction of state requirement (rep periods)
+*plus ACP purchase costs, attributed to bas based on fraction of state requirement (for rep periods)
               + sum{(st,RPSCat)
                     $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,"rep",t)
                     $sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }],
                        acp_price(st,t) * ACP_PURCHASES.l(RPSCat,st,"rep",t) * reqt_quant('state_rps',RPSCat,r,'ann',t)
                        / sum{rr$r_st(rr,st), reqt_quant('state_rps',RPSCat,rr,'ann',t) }
                    }
-*plus ACP purchase costs, attributed to bas based on fraction of state requirement (stress periods)
+*plus ACP purchase costs, attributed to bas based on fraction of state requirement (for stress periods)
               + sum{(st,RPSCat)
                     $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,"stress",t)
                     $sum{rr$r_st(rr,st), reqt_quant('state_rps_stress',RPSCat,rr,'ann',t) }],

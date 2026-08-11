@@ -44,7 +44,7 @@ $onlisting
 $offempty
 
 $onempty
-st_szn_stresspeak(st,allszn) "seasons that are one of state st's own peak-load stress periods, for GSw_StateRPS_Stress=2 (peak)"
+st_szn_stresspeak(st,allszn) "seasons that are one of the state own peak-load stress periods"
 /
 $offlisting
 $ondelim
@@ -60,7 +60,6 @@ h(allh) = no ;
 h(allh)$[h_rep(allh)] = yes ;
 h(allh)$[h_stress(allh)] = yes ;
 
-* h_htype generalizes h_rep/h_stress for use in the htype-indexed state RPS/CES
 h_htype(h,htype) = no ;
 h_htype(h,"rep")$h_rep(h) = yes ;
 h_htype(h,"stress")$h_stress(h) = yes ;
@@ -221,7 +220,7 @@ $onlisting
 / ;
 
 rps_hours(h,st,htype) = 0 ;
-* For rep rep periods, rps_hours is the same as hours
+* For representative periods, rps_hours is the same as hours
 rps_hours(h,st,"rep")$h_rep(h) = hours(h) ;
 * For Sw_StateRPS_Stress=1, all hours are equally weighted (with value 1)
 rps_hours(h,st,"stress")$[h_stress(h)$(Sw_StateRPS_Stress=1)] = 1 ;

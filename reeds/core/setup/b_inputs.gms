@@ -2556,13 +2556,13 @@ hydro_capcredit_delta(i,t)$hydro_d(i) =
 *====================================
 
 set RPSCat_i(RPSCat,i,st)       "mapping between rps category and technologies for each state",
-    RecMap(i,RPSCat,st,ast,htype,t) "Mapping set for technologies to RPS categories and indicates if credits can be sent from st to ast, for representative (htype=rep) or stress (htype=stress) periods",
+    RecMap(i,RPSCat,st,ast,htype,t) "Mapping set for technologies to RPS categories and indicates if credits can be sent from st to ast",
     RecStates(RPSCat,st,t)    "states that can generate RECS for their own or other states' requirements",
     RecTrade(RPSCat,st,ast,t) "mapping set between states that can trade RECs with each other (from st to ast)",
     RecTech(RPSCat,i,st,t)    "set to indicate which technologies and classes can contribute to a state's RPSCat",
     r_st_rps(r,st)            "mapping of eligible regions to each state for RPS/CES purposes" ;
 
-Parameter RecPerc(RPSCat,st,htype,t) "--fraction-- fraction of total generation for each state that must be met by RECs for each category, for representative (htype=rep) or stress (htype=stress) periods"
+Parameter RecPerc(RPSCat,st,htype,t) "--fraction-- fraction of total generation for each state that must be met by RECs for each category"
           RPSTechMult(RPSCat,i,st) "--fraction-- fraction of generation from each technology that counts towards the requirement for each category"
 ;
 
@@ -2635,10 +2635,8 @@ RecPerc("CES",st,htype,t) = ces_fraction(t,st) ;
 * of its RPS or CES, we prevent the double-counting.
 RecPerc("CES",st,htype,t) = max(RecPerc("CES",st,htype,t), RecPerc("RPS_all",st,htype,t)) ;
 
-* The stress-period requirement (see eq_REC_Generation/eq_REC_Requirement/
-* eq_REC_BundleLimit/eq_REC_unbundledLimit/eq_REC_ooslim in c_model.gms) is populated
-* above with the same target as the representative-period requirement; zero it out
-* unless explicitly enabled.
+* The stress-period requirement is populated above with the same target as the
+* representative-period requirement; zero it out unless explicitly enabled.
 RecPerc(RPSCat,st,"stress",t)$[not Sw_StateRPS_Stress] = 0 ;
 
 *Some links (value in RECtable = 2) restricted to bundled trading, while
@@ -6011,7 +6009,7 @@ Set
     h_preh(allh, allh)                     "mapping set between one timeslice and all other timeslices earlier in that period"
     h_rep(allh)                            "representative timeslices"
     h_stress(allh)                         "stress timeslices"
-    h_htype(allh,htype)                    "mapping of representative/stress timeslices to htype, for use in htype-indexed state RPS/CES equations"
+    h_htype(allh,htype)                    "mapping of representative/stress timeslices to htype"
     h_t(allh,allt)                         "representative and stress timeslices by model year"
     h_stress_t(allh,allt)                  "stress timeslices by model year"
 * "Seasons" (both seasons and representative days/weks)
@@ -6057,7 +6055,7 @@ alias(actualszn,actualsznn,actualsznnn) ;
 Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
-    rps_hours(allh,st,htype)               "--hours-- state RPS/CES weight: hours(h) for htype=rep, 1 for htype=stress on eligible hours (see GSw_StateRPS_Stress), 0 otherwise"
+    rps_hours(allh,st,htype)               "--hours-- number of hours for weighting state RPS/CES requirements"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"
