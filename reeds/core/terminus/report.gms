@@ -558,13 +558,20 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 
 * gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
+* approach with GSw_FixedCostSupply=1 or default supply curves
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedFuels)] =
+    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+    * eq_supplydemand_fsc.m('NG',cendiv,t)
+;
+
+* approach with detailed fuels representation (GSw_DetailedFuels=1)
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedFuels] =
+    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
-    deflator('2018') * [
-        ( 1/(obj_scale) * 1/(pvf_onm(t)) * eq_supplydemand_fsc.m('NG',cendiv,t) )
+    * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
 *   electric-sector markup for natural gas
-* TODO: activate after FINITO pricing PR is merged (note: the markup below is cf-based and needs rework since NG is fe_fsc, not fe_cf)
-*       + smax{(cfp,cendiv)$[r_cendiv(r,cendiv)$gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],cf_markup(cfp,'NG','Electric_Power',cendiv,t)}
+* TODO: activate after FINITO pricing PR is merged
+*       + smax{cfp$[gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)], cf_markup(cfp,'NG','Electric_Power',cendiv,t) }
     ]
 ;
 $else.finitogasprice
