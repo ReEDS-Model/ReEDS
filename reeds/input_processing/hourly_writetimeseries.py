@@ -201,7 +201,7 @@ def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     """
     ### Get original demand data, subset to cluster year
     load_in = reeds.io.read_file(
-        os.path.join(inputs_case,'load.h5'), parse_timestamps=True).unstack(level=0)
+        os.path.join(inputs_case,'load.h5')).unstack(level=0)
     load_in.columns = load_in.columns.rename(['r','t'])
     ### load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
     scalars = reeds.io.get_scalars(inputs_case)
@@ -232,7 +232,6 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
         szn_month_weights
         """
         climate_index = {
-            'temp_hydadjsea': ['r','season','t'],
             'temp_UnappWaterMult': ['wst','r','season','t'],
             'temp_UnappWaterSeaAnnDistr': ['wst','r','season','t']
         }
@@ -256,6 +255,55 @@ def format_climate_inputs(filename, inputs_case, szn_month_weights):
         df_out = df_out.pivot_table(index=climate_index, columns='t', values='value')
 
         return df_out
+
+
+def get_daily_gasprice_multipliers(
+    sw,
+    hmap_myr,
+    hmap_allyrs,
+    inputs_case,
+    periodtype='rep',
+    region_level='r'
+):
+    """
+    After identifying the modeled days, load the daily gas price
+    multipliers for the given region level and extract the multipliers
+    on the modeled days for each year.
+    """
+    ### Get daily gas price multipliers for region_level
+    dfin = reeds.io.read_file(
+        os.path.join(inputs_case, f'daily_gasprice_multipliers_{region_level}.h5'),
+    )
+    dfin.columns = dfin.columns.rename(region_level)
+
+    ### Add time index and forward fill so that the multiplier for
+    ### each day is copied to each hour of that day
+    dfin = dfin.reindex(hmap_allyrs.timestamp).ffill()
+    dfin.index = (
+        dfin.index
+        .map(hmap_allyrs.set_index('timestamp')['actual_h'])
+        .rename('h')
+    )
+
+    ### For full year, keep all periods in the modeled years
+    if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
+        dfout = dfin.loc[
+            dfin.index.map(hmap_allyrs.set_index('actual_h').year)
+            .isin(sw['GSw_HourlyWeatherYears'])
+        ].copy()
+    ### Otherwise, pull out the specified periods
+    else:
+        dfout = dfin.loc[hmap_myr.h.unique()].copy()
+
+    ### Reshape for ReEDS
+    dfout = (
+        dfout.stack(region_level)
+        .reorder_levels([region_level, "h"])
+        .sort_index()
+    )
+
+    return dfout
+
 
 def get_yearly_flexibility(
     sw,
@@ -498,6 +546,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'evmc_storage_energy': ['*i','r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
+            'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
+            'daily_gasprice_multipliers_cendiv': ['*cendiv','h','multiplier'],
         }
         for f, columns in write.items():
             pd.DataFrame(columns=columns).to_csv(
@@ -534,9 +584,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     #%%### Load full hourly RE CF, for downselection below
     #%% VRE
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     ### Overwrite CSP CF (which in recf.h5 is post-storage) with solar field CF
-    cspcf = reeds.io.read_file(os.path.join(inputs_case, 'csp.h5'), parse_timestamps=True)
+    cspcf = reeds.io.read_file(os.path.join(inputs_case, 'csp.h5'))
     recf = (
         recf.drop([c for c in recf if c.startswith('csp')], axis=1)
         .merge(cspcf, left_index=True, right_index=True)
@@ -1105,10 +1155,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .rename(columns={"season": "szn"})
     )
     
-    ### Import and format monthly climate_{hydadjsea/UnappWaterMult/UnappWaterSeaAnnDistr}.csv
+    ### Import and format monthly climate_{UnappWaterMult/UnappWaterSeaAnnDistr}.csv
     climate_files = {}   
-    if int(sw.GSw_ClimateHydro):
-        climate_files['temp_hydadjsea'] = format_climate_inputs('temp_hydadjsea', inputs_case, szn_month_weights)
     if int(sw.GSw_ClimateWater):
         for file in ['temp_UnappWaterMult', 'temp_UnappWaterSeaAnnDistr']:
             climate_files[file] = format_climate_inputs(file, inputs_case, szn_month_weights)
@@ -1159,7 +1207,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         # prior years assume 2030 data
         t_set = max(t, 2030)
             
-        dr_shed_avail_allyears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'), parse_timestamps=True)
+        dr_shed_avail_allyears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'))
         dr_shed_avail_allyears['year'] = round(dr_shed_avail_allyears['year'],0).astype(int)
         dr_shed_avail = dr_shed_avail_allyears.loc[dr_shed_avail_allyears['year']==t_set].copy().drop('year', axis=1)
 
@@ -1313,6 +1361,35 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .reset_index()
     )
 
+    #################################################################
+    #    -- Weather-based daily natural gas price multipliers --    #
+    #################################################################
+    daily_gasprice_multipliers_dict = {}
+    for region_level in ['r', 'cendiv']:
+        df = get_daily_gasprice_multipliers(
+            sw=sw,
+            hmap_myr=hmap_myr,
+            hmap_allyrs=hmap_allyrs,
+            inputs_case=inputs_case,
+            periodtype=periodtype,
+            region_level=region_level
+        )
+        # Update to GSw_HourlyChunkLength resolution.
+        # Note no aggregation method is needed because all hours within
+        # a given day have the same multiplier value, so we just select
+        # the set of hours in chunkmap.
+        df = (
+            df.loc[df.index.get_level_values('h').isin(chunkmap.values())]
+            .rename('multiplier')
+        )
+        # Renormalize so the average for each region is 1,
+        # ensuring the year-round average gas price doesn't change.
+        df = (
+            df.div(df.groupby(level=[region_level]).mean())
+            .reset_index()
+            [[region_level, 'h', 'multiplier']]
+        )
+        daily_gasprice_multipliers_dict[region_level] = df
 
     # %%###################################################################################
     #    -- Write outputs, aggregating hours to GSw_HourlyChunkLength if necessary --    #
@@ -1501,6 +1578,17 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False,
         ],
+        ## Gas price multipliers
+        'daily_gasprice_multipliers_r': [
+            daily_gasprice_multipliers_dict['r'].round(decimals),
+            False,
+            False
+        ],
+        'daily_gasprice_multipliers_cendiv': [
+            daily_gasprice_multipliers_dict['cendiv'].round(decimals),
+            False,
+            False
+        ],
         ##################################################################################
         ###### The next parameters are just diagnostics and are not actually used in ReEDS
         ## Representative period weights for postprocessing (szn)
@@ -1532,10 +1620,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "peak_h": [pd.DataFrame(columns=["*r", "h", "t", "MW"]), True, False],
     }
 
-    # Add climate inputs based on GSw_Climate* switch selection
-    if int(sw.GSw_ClimateHydro):
-        ## Climate-adjusted annual/seasonal nondispatchable hydropower availability
-        write['climate_hydadjsea'] = [climate_files['temp_hydadjsea'], True, True]
+    # Add climate inputs to write dictionary based on GSw_ClimateWater
     if int(sw.GSw_ClimateWater):
         ## Climate-adjusted time-varying annual/seasonal water supply
         write['climate_UnappWaterMult'] = [climate_files['temp_UnappWaterMult'], True, True]

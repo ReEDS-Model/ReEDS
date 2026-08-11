@@ -167,10 +167,10 @@ def launch_batch_file(casename, configpath, outpath, args):
         if os.environ.get('NREL_CLUSTER') == 'kestrel':
             OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
             OPATH.writelines("module load anaconda3 \n")
-            OPATH.writelines("conda activate reeds2 \n\n")
+            OPATH.writelines("conda activate reeds \n\n")
         elif os.environ.get('NREL_CLUSTER') == 'eagle':
             OPATH.writelines("module load conda \n")
-            OPATH.writelines("conda activate reeds2 \n\n")
+            OPATH.writelines("conda activate reeds \n\n")
         # run hourlize
         OPATH.writelines(f"cd {hourlize_path}\n")
         if args.nolog:

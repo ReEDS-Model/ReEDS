@@ -32,8 +32,8 @@ positive variables
   GROWTH_BIN(gbin,i,st,t)                  "--MW-- total new (from INV) generation capacity in each growth bin by state and technology group"
   INV(i,v,r,t)                             "--MW-- generation capacity additions in year t"
   INV_ENERGY(i,v,r,t)                      "--MWh-- generation energy capacity additions in year t"
-  EXTRA_PRESCRIP(pcat,r,t)                 "--MW-- builds beyond those prescribed power capacity once allowed in firstyear(pcat) - exceptions for gas-ct, wind-ons, and wind-ofs"
-  EXTRA_PRESCRIP_ENERGY(pcat,r,t)          "--MWh-- builds beyond those prescribed battery energy capacity once allowed in firstyear(pcat)"
+  EXTRA_PRESCRIP(i,v,r,t)                  "--MW-- builds beyond those prescribed power capacity once allowed in firstyear(i) - exceptions for gas-ct, wind-ons, and wind-ofs"
+  EXTRA_PRESCRIP_ENERGY(i,v,r,t)           "--MWh-- builds beyond those prescribed battery energy capacity once allowed in firstyear(i)"
   INV_CAP_UP(i,v,r,rscbin,t)               "--MW-- upsized generation capacity addition in year t"
   INV_ENER_UP(i,v,r,rscbin,t)              "--MW-- upsized energy addition in year t using capacity factor to convert to capacity units"
   INV_REFURB(i,v,r,t)                      "--MW-- investment in refurbishments of technologies that use a resource supply curve"
@@ -81,12 +81,12 @@ positive variables
   ACP_PURCHASES(RPSCat,st,htype,t)      "--MWh-- purchases of ACP credits to meet the RPS constraints",
 
 * transmission variables
-  CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
-  CAPTRAN_PRM(r,rr,trtype,t)                     "--MW-- capacity of transmission for PRM trading"
-  CAPTRAN_GRP(transgrp,transgrpp,t)              "--MW-- capacity of groups of transmission interfaces"
-  CAPTRAN_ITL(itlgrp,itlgrpp,t)                  "--MW-- capacity of groups of transmission interfaces for county and mixed"
-  INVTRAN(r,rr,trtype,t)                         "--MW-- investment in transmission capacity (defined for both directions)"
-  INVTRAN_AC(r,rr,tscbin,t)                      "--MW-- transmission capacity added to transmission supply curve bin (defined for both directions)"
+  CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading. Defined for both directions (r < rr and r > rr)"
+  CAPTRAN_PRM(r,rr,trtype,t)                     "--MW-- capacity of transmission for PRM trading. Defined for both directions (r < rr and r > rr)"
+  CAPTRAN_GRP(transgrp,transgrpp,t)              "--MW-- capacity of groups of transmission interfaces. Defined for both directions (transgrp < transgrpp and transgrp > transgrpp)"
+  CAPTRAN_ITL(itlgrp,itlgrpp,t)                  "--MW-- capacity of groups of transmission interfaces for county and mixed. Defined for both directions (itlgrp < itlgrpp and itlgrp > itlgrpp)"
+  INVTRAN(r,rr,trtype,t)                         "--MW-- investment in transmission capacity. Defined for both directions (r < rr and r > rr)"
+  INVTRAN_AC(r,rr,tscbin,t)                      "--MW-- transmission capacity added to transmission supply curve bin. Defined for both directions (r < rr and r > rr)"
   CAP_CONVERTER(r,t)                             "--MW-- VSC AC/DC converter capacity"
   INV_CONVERTER(r,t)                             "--MW-- investment in AC/DC converter capacity"
   CONVERSION(r,allh,intype,outtype,t)            "--MW-- conversion of AC->DC or DC->AC"
@@ -94,7 +94,7 @@ positive variables
   CAP_SPUR(x,t)                                  "--MW-- capacity of spur lines"
   INV_SPUR(x,t)                                  "--MW-- investment in spur line capacity"
   INV_POI(r,t)                                   "--MW-- investment in new POI capacity (for network reinforcement costs)"
-  TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins (defined for r < rr)"
+  TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins. Defined only for interfaces (r < rr)"
 
 * production-, CO2-, and hydrogen-specific variables
   PRODUCE(p,i,v,r,allh,t)               "--metric tons per hour-- production of hydrogen or DAC capture"
@@ -160,8 +160,8 @@ EQUATION
  eq_cap_up(i,v,r,rscbin,t)                "--MW-- limit on capacity upsizing"
  eq_cap_upgrade(i,v,r,t)                  "--MW-- All purchased upgrades are greater than or equal to the sum of upgraded capacity"
  eq_ener_up(i,v,r,rscbin,t)               "--MW-- limit on energy upsizing"
- eq_forceprescription_power(pcat,r,t)     "--MW-- total power investment in prescribed capacity must equal amount from exogenous prescriptions"
- eq_forceprescription_energy(pcat,r,t)    "--MWh-- total energy investment in prescribed capacity must equal amount from exogenous prescriptions"
+ eq_forceprescription_power(i,v,r,t)     "--MW-- total power investment in prescribed capacity must equal amount from exogenous prescriptions"
+ eq_forceprescription_energy(i,v,r,t)    "--MWh-- total energy investment in prescribed capacity must equal amount from exogenous prescriptions"
  eq_refurblim(i,r,t)                      "--MW-- total refurbishments cannot exceed the amount of capacity that has reached the end of its life"
 
 * renewable supply curves
@@ -558,7 +558,7 @@ $ontext
 
 The following six equations dictate how capacity is represented in the model.
 
-The first three equations handle init-X vintages (those that existed pre-2010)
+The first three equations handle init-X vintages (those that existed pre-startyear)
 which are bounded by m_capacity_exog. With retirements (in the second and third
 equations), the constraints imply that capacity must be less than or
 equal to m_capacity_exog and monotonically decreasing over time -
@@ -692,9 +692,13 @@ eq_cap_init_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
 eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
-
+    
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
               degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+        }
+
+    - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
+               degrade(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
         }
 
 * Account for capacity upsizing within new vintages
@@ -726,7 +730,11 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * INV_ENERGY(i,v,r,tt)
+              degrade(i,tt,t) * (INV_ENERGY(i,v,r,tt))
+        }
+        
+    - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
+               degrade(i,ttt,tt) * prescribed_retirements_energy(i,v,r,tt,ttt)
         }
 
     + m_capacity_exog_energy(i,v,r,t)
@@ -745,6 +753,10 @@ eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
               degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
       }
+
+    - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
+              degrade(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
+        }
 
 * Account for capacity upsizing within new vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
@@ -915,29 +927,27 @@ eq_ener_up(i,v,r,rscbin,t)$[tmodel(t)$allow_ener_up(i,v,r,rscbin,t)$(not Sw_PCM)
 * ---------------------------------------------------------------------------
 
 * Prescribe power capacity
-eq_forceprescription_power(pcat,r,t)
-    $[tmodel(t)$force_pcat(pcat,t)$Sw_ForcePrescription
-    $sum{(i,newv)$[prescriptivelink(pcat,i)], valinv(i,newv,r,t) }
+eq_forceprescription_power(i,newv,r,t)
+    $[tmodel(t)$force_prescribe(i,newv,r,t)$Sw_ForcePrescription
+    $valinv(i,newv,r,t)
     $(not Sw_PCM)]..
 
 *capacity built in the current period or prior
-    sum{(i,newv,tt)$[valinv(i,newv,r,tt)$prescriptivelink(pcat,i)
-                     $(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))],
-        INV(i,newv,r,tt) + INV_REFURB(i,newv,r,tt)$[refurbtech(i)$Sw_Refurb]}
+
+        INV(i,newv,r,t) + INV_REFURB(i,newv,r,t)$[refurbtech(i)$Sw_Refurb]
 
     =e=
 
 *must equal the cumulative prescribed amount
-    sum{tt$[(yeart(tt)<=yeart(t))
-            $(tmodel(tt) or tfix(tt))],
-            noncumulative_prescriptions(pcat,r,tt)}
+
+        prescribed_build(i,newv,r,t)
 
 * plus any extra power buildouts (no penalty here - used as free slack)
 * only on or after the first year the techs are available
-    + EXTRA_PRESCRIP(pcat,r,t)$[yeart(t)>=firstyear_pcat(pcat)]
+        + EXTRA_PRESCRIP(i,newv,r,t)$[yeart(t)>=firstyear(i)]
 
 * or in regions where there is a offshore wind requirement
-    + EXTRA_PRESCRIP(pcat,r,t)$[r_offshore(r,t)$sameas(pcat,'wind-ofs')
+        + EXTRA_PRESCRIP(i,newv,r,t)$[r_offshore(r,t)$ofswind(i)
                                $(yeart(t)>=firstyear_RPS)
                                $sum{st$r_st(r,st), offshore_cap_req(st,t) }]
 ;
@@ -945,27 +955,23 @@ eq_forceprescription_power(pcat,r,t)
 * ---------------------------------------------------------------------------
 
 * Prescribe energy capacity
-eq_forceprescription_energy(pcat,r,t)
-    $[tmodel(t)$force_pcat(pcat,t)$Sw_ForcePrescription
-    $sum{(i,newv)$[prescriptivelink(pcat,i)], valinv(i,newv,r,t) }
-    $(not Sw_PCM)]..
+eq_forceprescription_energy(i,newv,r,t)
+    $[tmodel(t)$force_prescribe(i,newv,r,t)$Sw_ForcePrescription
+    $valinv(i,newv,r,t)
+    $(not Sw_PCM)
+    $battery(i)]..
 
 *energy capacity built in the current period or prior
-    sum{(i,newv,tt)$[valinv(i,newv,r,tt)$prescriptivelink(pcat,i)
-                     $(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))
-                     $battery(i)],
-        INV_ENERGY(i,newv,r,tt)}
+        INV_ENERGY(i,newv,r,t)
 
     =e=
 
 *must equal the cumulative prescribed energy amount
-    sum{tt$[(yeart(tt)<=yeart(t))
-            $(tmodel(tt) or tfix(tt))],
-            noncumulative_prescriptions_energy(pcat,r,tt)}
+        prescribed_build_energy(i,newv,r,t)
 
 * plus any extra energy buildouts (no penalty here - used as free slack)
 * only on or after the first year the techs are available
-    + EXTRA_PRESCRIP_ENERGY(pcat,r,t)$[yeart(t)>=firstyear_pcat(pcat)]
+    + EXTRA_PRESCRIP_ENERGY(i,newv,r,t)$[yeart(t)>=firstyear(i)]
 ;
 
 * ---------------------------------------------------------------------------
