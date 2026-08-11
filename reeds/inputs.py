@@ -948,7 +948,6 @@ def setup_finito(casedir, caseSwitches, BatchName):
         os._exit(1)   
     
     ## Populate sets for each linked run using autopop_set.py
-    #autopop_args = f" -c {casedir_finito} -d {inputs_case_finito} -a {aeo_year} -s {focus_sectors} -f {caseSwitches['GSw_FixedCostSupply']} -rwf {caseSwitches['GSw_Trade_Partners']} -e {caseSwitches['GSw_ROE_EndUses']}"
     os.system(
         'python ' + os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'autopop_set.py') + 
         f" -c {casedir_finito} -d {inputs_case_finito} --link"
