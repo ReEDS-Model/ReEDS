@@ -101,7 +101,7 @@ def calc_financial_inputs(inputs_case):
         year_map,
         scen_settings,
     )
-    financials_sys.to_csv(os.path.join(inputs_case,'financials_sys.csv'),index=False)
+    financials_sys.to_csv(os.path.join(inputs_case,'financials_sys_full.csv'),index=False)
     df_ivt = df_ivt.merge(
         financials_sys[['t', 'pvf_capital', 'crf', 'crf_co2_incentive','crf_h2_incentive','d_real', 'd_nom', 'interest_rate_nom', 
                         'tax_rate', 'debt_fraction', 'rroe_nom']], 
@@ -207,7 +207,7 @@ def calc_financial_inputs(inputs_case):
         h2_ptc_value = df_ivt[['i', 'v', 't', 'h2_ptc_value_monetized', 'h2_ptc_dur']].iloc[0:5,:]
     h2_ptc_value = h2_ptc_value.drop_duplicates(['i', 'v', 't'])
     h2_ptc_value['v'] = ['new%s' % v for v in h2_ptc_value['v']]
-    h2_ptc_value['t'] = h2_ptc_value['t'].astype(int)
+    h2_ptc_value['allt'] = h2_ptc_value['t'].astype(int)
     
     # Expand the various ptc values by the duration of the incentive. 
     # We are tracking various ptc_values (e.g. with and without tax grossups)
@@ -230,7 +230,7 @@ def calc_financial_inputs(inputs_case):
                             'ptc_value_monetized_posttax', 'ptc_grossup_value', 'ptc_value_scaled']].iloc[0:5,:] # this is just a hack because pjg didn't know how to have gams handle empty files
     ptc_values_df = ptc_values_df.drop_duplicates(['i', 'v', 't'])
     ptc_values_df['v'] = ['new%s' % v for v in ptc_values_df['v']]
-    ptc_values_df['t'] = ptc_values_df['t'].astype(int)
+    ptc_values_df['allt'] = ptc_values_df['t'].astype(int)
     
     
 
@@ -277,10 +277,17 @@ def calc_financial_inputs(inputs_case):
         dftrans.loc[dftrans.t<firstyear_trans, 'cap_cost_mult_noITC'])
 
     ### Write it
-    dftrans.rename(columns={'t':'*t'})[['*t','cap_cost_mult']].round(6).to_csv(
-        os.path.join(inputs_case, 'trans_cap_cost_mult.csv'), index=False)
-    dftrans.rename(columns={'t':'*t'})[['*t','cap_cost_mult_noITC']].round(6).to_csv(
-        os.path.join(inputs_case, 'trans_cap_cost_mult_noITC.csv'), index=False)
+    dftrans['allt'] = dftrans['t']
+    reeds.io.write_to_inputs_h5(
+        dftrans[['allt','cap_cost_mult']], 'trans_cost_cap_fin_mult', inputs_case,
+        gamstype='parameter', units='fraction',
+        comment='capital cost multiplier for transmission - used in the objective function'
+    )
+    reeds.io.write_to_inputs_h5(
+        dftrans[['allt','cap_cost_mult_noITC']], 'trans_cost_cap_fin_mult_noITC', inputs_case,
+        gamstype='parameter', units='fraction',
+        comment='capital cost multiplier for transmission excluding ITC - used only in outputs',
+    )
     dftrans.loc[
         dftrans.itc_frac != 0,
         ['t','itc_frac','itc_tax_equity_penalty','itc_frac_monetized']
@@ -304,6 +311,7 @@ def calc_financial_inputs(inputs_case):
     dfhydrogen = dfhydrogen.merge(financials_sys.dropna(how='any'), on='t', how='right')
         
     ### Get financial multipliers
+    dfhydrogen['allt'] = dfhydrogen['t']
     dfhydrogen_pipeline = dfhydrogen.copy().rename(columns={"eval_period_pipeline":"eval_period"})
     dfhydrogen_pipeline = reeds.financials.calc_financial_multipliers(
         df_inv=dfhydrogen_pipeline, construction_schedules=construction_schedules,
@@ -331,12 +339,18 @@ def calc_financial_inputs(inputs_case):
     dfhydrogen_storage["cap_cost_mult_storage"] = reeds.financials.calc_final_capital_cost_multiplier(dfhydrogen_storage)
     
     ### Write it
-    dfhydrogen_pipeline.rename(columns={'t':'*t'})[['*t','cap_cost_mult_pipeline']].round(6).to_csv(
-        os.path.join(inputs_case, 'h2_pipeline_cap_cost_mult.csv'), index=False)
-    dfhydrogen_compressor.rename(columns={'t':'*t'})[['*t','cap_cost_mult_compressor']].round(6).to_csv(
-        os.path.join(inputs_case, 'h2_compressor_cap_cost_mult.csv'), index=False)    
-    dfhydrogen_storage.rename(columns={'t':'*t'})[['*t','cap_cost_mult_storage']].round(6).to_csv(
-        os.path.join(inputs_case, 'h2_storage_cap_cost_mult.csv'), index=False)
+    reeds.io.write_to_inputs_h5(
+        dfhydrogen_pipeline[['allt','cap_cost_mult_pipeline']], 'h2_cap_cost_mult_pipeline',
+        inputs_case, 'parameter', units='fraction', comment='capital cost multiplier for h2 pipelines',
+    )
+    reeds.io.write_to_inputs_h5(
+        dfhydrogen_compressor[['allt','cap_cost_mult_compressor']], 'h2_cap_cost_mult_compressor',
+        inputs_case, 'parameter', units='fraction', comment='capital cost multiplier for h2 compressors',
+    )
+    reeds.io.write_to_inputs_h5(
+        dfhydrogen_storage[['allt','cap_cost_mult_storage']], 'h2_cap_cost_mult_storage',
+        inputs_case, 'parameter', units='fraction', comment='capital cost multiplier for h2 storage',
+    )
 
     #%% Import regional capital cost differences (county resolution)
     reg_cap_cost_diff = reeds.financials.import_data(
@@ -406,59 +420,85 @@ def calc_financial_inputs(inputs_case):
     #%% Write the scenario-specific output files
     
     # Write out the components of the financial multiplier
+    df_ivt['allt'] = df_ivt['t']
     reeds.financials.inv_param_exporter(
-        df_ivt, modeled_years, 'CCmult', ['i', 't'], 
-        'ccmult', inputs_case)
+        df_ivt, modeled_years, 'CCmult', ['i', 'allt'], 'ccmult', inputs_case,
+        units='fraction', comment='construction cost multiplier',
+    )
     reeds.financials.inv_param_exporter(
-        df_ivt, modeled_years, 'tax_rate', ['t'], 
-        'tax_rate', inputs_case)
+        df_ivt, modeled_years, 'tax_rate', ['allt'], 'tax_rate', inputs_case,
+        units='fraction', comment='all-in tax rate',
+    )
     reeds.financials.inv_param_exporter(
-        df_ivt, modeled_years, 'itc_frac_monetized', ['i', 't'], 
-        'itc_frac_monetized', inputs_case)
+        df_ivt, modeled_years, 'itc_frac_monetized', ['i', 'allt'], 'itc_frac_monetized', inputs_case,
+        units='fraction',
+        comment='fractional value of the ITC, after adjusting for the costs of monetization',
+    )
     reeds.financials.inv_param_exporter(
-        df_ivt, modeled_years, 'PV_fraction_of_depreciation', ['i', 't'], 
-        'pv_frac_of_depreciation', inputs_case)
+        df_ivt, modeled_years, 'PV_fraction_of_depreciation',
+        ['i', 'allt'], 'pv_frac_of_depreciation', inputs_case,
+        units='fraction',
+        comment='present value of depreciation, expressed as a fraction of the capital cost of the investment',
+    )
     reeds.financials.inv_param_exporter(
-        df_ivt, modeled_years, 'Degradation_Adj', ['i', 't'], 
-        'degradation_adj', inputs_case)  
+        df_ivt, modeled_years, 'Degradation_Adj', ['i', 'allt'], 'degradation_adj', inputs_case,
+        units='fraction', comment='adjustment to reflect degradation over the lifetime of an asset',
+    )
     reeds.financials.inv_param_exporter(
-        df_ivt, modeled_years, 'financing_risk_mult', ['i', 't'], 
-        'financing_risk_mult', inputs_case) 
+        df_ivt, modeled_years, 'financing_risk_mult', ['i', 'allt'], 'financing_risk_mult', inputs_case,
+        units='fraction', comment='multiplier to reflect higher financing costs for riskier assets',
+    )
     reeds.financials.inv_param_exporter(
-        reg_cap_cost_diff, None, 'reg_cap_cost_diff', ['i', 'r'], 
-        'reg_cap_cost_diff', inputs_case)
-    
+        reg_cap_cost_diff, None, 'reg_cap_cost_diff', ['i', 'r'], 'reg_cap_cost_diff', inputs_case,
+        units='fraction',
+        comment='regional capital cost difference (wind and PV have separate multiplers in the supply curve cost)',
+    )
+    reeds.financials.inv_param_exporter(
+        df_ivt, modeled_years, 'pvf_capital', ['t'], 'pvf_capital', inputs_case,
+        units='fraction', comment='present value factor for overnight capital costs',
+    )
+
     # Write out the energy community itc bonus
-    reeds.financials.param_exporter(
+    reeds.io.write_to_inputs_h5(
         e_df[['i','r','itc_energy_comm_bonus']],
-        'itc_energy_comm_bonus', 'itc_energy_comm_bonus', inputs_case
+        'itc_energy_comm_bonus', inputs_case, gamstype='parameter',
+        comment='energy community tax credit bonus factor',
     )
 
     # Write out the adjustment multiplier for non-standard evaluation periods
-    reeds.financials.param_exporter(
-        df_ivt[['i', 't', 'eval_period_adj_mult']], 
-        'eval_period_adj_mult', 'eval_period_adj_mult', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        df_ivt[['i', 't', 'eval_period_adj_mult']].rename(columns={'t':'allt'}),
+        'eval_period_adj_mult', inputs_case, gamstype='parameter',
+        comment='adjustment multiplier for the capital costs of techs with non-standard evaluation periods',
+    )
     
     # Write out the safe harbor window for each tech, for determining
     # the tax credit phaseout schedules
-    reeds.financials.param_exporter(
-        df_ivt[['i', 't', 'safe_harbor']], 
-        'safe_harbor', 'safe_harbor', inputs_case)
+    df_ivt[['i', 't', 'safe_harbor']].to_csv(Path(inputs_case, 'safe_harbor.csv'), index=False)
     
     # Write out the carbon capture incentive values
-    reeds.financials.param_exporter(
-        co2_capture_value[['i', 'v', 't', 'co2_capture_value_monetized']], 
-        'co2_capture_value_monetized', 'co2_capture_incentive', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        co2_capture_value[['i', 'v', 't', 'co2_capture_value_monetized']].rename(columns={'t':'allt'}),
+        'co2_captured_incentive_in', inputs_case, gamstype='parameter', units='$/tCO2 stored',
+        comment='incentive on CO2 captured dependent on technology',
+    )
 
     # Write out the H2 production incentive values
-    reeds.financials.param_exporter(
-        h2_ptc_value[['i', 'v', 't', 'h2_ptc_value_monetized']], 
-        'h2_ptc_value_monetized', 'h2_ptc', inputs_case)   
-    
+    reeds.io.write_to_inputs_h5(
+        h2_ptc_value[['i', 'v', 'allt', 'h2_ptc_value_monetized']],
+        'h2_ptc_in', inputs_case, gamstype='parameter', units='2004$/kg H2 produced',
+        comment='incentive on hydrogen production by electrolyzers that purchase Energy Attribute Credits',
+    )
+
     # Write out the ptc_value_scaled (which incorporates all the adjustments reeds expects)
-    reeds.financials.param_exporter(
-        ptc_values_df[['i', 'v', 't', 'ptc_value_scaled']], 
-        'ptc_value_scaled', 'ptc_value_scaled', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        ptc_values_df[['i', 'v', 'allt', 'ptc_value_scaled']], 
+        'ptc_value_scaled', inputs_case, gamstype='parameter', units='$/MWh',
+        comment=(
+            'value of the PTC incorporating adjustments for monetization costs, tax grossup '
+            'benefits, and the difference between ptc duration and reeds evaluation period'
+        )
+    )
 
     # Write out the PTC's nominal value, grossup value, tax equity penalty, and duration. This is
     # used in the retail rate module.
@@ -474,22 +514,33 @@ def calc_financial_inputs(inputs_case):
 
     # CRF used in sequential case for calculating pvf_onm values (pvf)
     crf_df = financials_sys[financials_sys['t']==financials_sys['modeled_year']].copy()
-    reeds.financials.param_exporter(crf_df[['t', 'crf']], 'crf', 'crf', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        crf_df[['t', 'crf']], 'crf', inputs_case, gamstype='parameter', units='fraction',
+        comment='capital recovery factor',
+    )
 
     # 12-year crf used in sequential case for calculating 12-year payback time of co2_captured_incentive
-    reeds.financials.param_exporter(crf_df[['t', 'crf_co2_incentive']], 'crf_co2_incentive', 'crf_co2_incentive', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        crf_df[['t', 'crf_co2_incentive']],
+        'crf_co2_incentive', inputs_case, gamstype='parameter', units='fraction',
+        comment='capital recovery factor using a 12-year economic lifetime',
+    )
 
     # 10-year crf used in sequential case for calculating 10-year payback time of h2_ptc
-    reeds.financials.param_exporter(crf_df[['t', 'crf_h2_incentive']], 'crf_h2_incentive', 'crf_h2_incentive', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        crf_df[['t', 'crf_h2_incentive']],
+        'crf_h2_incentive', inputs_case, gamstype='parameter', units='fraction',
+        comment='capital recovery factor using a 10-year economic lifetime',
+    )
 
     # pvf_onm used in intertemporal
     pvf_onm_int = financials_sys[['modeled_year', 'pvf_onm']].groupby(by=['modeled_year']).sum()
     pvf_onm_int = pvf_onm_int.reset_index()
     pvf_onm_int = pvf_onm_int.rename(columns={'modeled_year':'t'})
-    reeds.financials.param_exporter(pvf_onm_int, 'pvf_onm', 'pvf_onm_int', inputs_case)
-
-    # pvf_cap (used in both seq and int modes)
-    reeds.financials.inv_param_exporter(df_ivt, modeled_years, 'pvf_capital', ['t'], 'pvf_cap', inputs_case)
+    reeds.io.write_to_inputs_h5(
+        pvf_onm_int, 'pvf_onm', inputs_case, gamstype='parameter', units='fraction',
+        comment='present value factor of operations and maintenance costs',
+    )
 
     # Output some values used in the retail rate module
     retail_eval_period = df_ivt[['i', 't', 'eval_period']].drop_duplicates(['i', 't'])
