@@ -171,9 +171,9 @@ def readwrite(
         ## Switch column names from integer years to timestamps
         .rename(columns={c: pd.Timestamp(str(c)) for c in dfout.columns})
         ## Add empty columns at year-starts between existing data (mean doesn't do anything)
-        .resample('YS', axis=1).mean()
+        .T.resample('YS').mean()
         ## Interpolate linearly to fill the new columns
-        .T.interpolate('linear').T
+        .interpolate('linear').T
     )
     dfout = (
         ## Switch back to integer year column names

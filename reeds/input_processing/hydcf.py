@@ -442,6 +442,8 @@ def apply_hydro_climate_adjustments(
         os.path.join(inputs_case, 'climate_hydadjsea.csv'),
         dtype={'r':str,'t':int,'month':str}
     ).rename(columns={'Value':'Factor'})
+    ## Ensure months are in all-caps
+    adj_factors_sea['month'] = adj_factors_sea['month'].str.upper()
     
     # Apply adjustment factors only to years >= GSw_ClimateStartYear - set years before to 1
     adj_factors_ann.loc[adj_factors_ann['t'] < int(sw.GSw_ClimateStartYear),'Factor'] = 1
