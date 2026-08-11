@@ -396,6 +396,92 @@ def read_banned_tech_file(full_path, filepath, inputs_case, r_county):
     return df, nuclear_ban_regions
 
 
+def modify_bans(reeds_path, sw, df, r_county):
+    """
+    Modifies the ban matrix `df` to disallow technologies in regions where no technologies
+    from the same group have been previously deployed (based on NEMS unit data).
+
+    If resolution is BA/aggreg, we check if at least one county in the region
+    has the target technology group; if the resolution is county, we check if
+    the target tech group exists in the county.
+    """
+
+    # Parse selected tech groups from the switch string
+    tech_groups = sw["force_nems_sites"].split("/")[-1].split(".")
+
+    # Load tech group -> tech list mapping
+    tech_subset_path = os.path.join(reeds_path, "inputs", "tech-subset-table.csv")
+    tech_subsets = reeds.techs.import_tech_groups(tech_subset_path)
+
+    # Normalize all technologies to lowercase for consistent comparison
+    tech_subsets = {
+        group: [tech.lower() for tech in tech_list]
+        for group, tech_list in tech_subsets.items()
+    }
+    df["i"] = df["i"].str.lower()
+
+    # Validate tech groups
+    for group in tech_groups:
+        if group not in tech_subsets:
+            raise ValueError(f"Tech group '{group}' not found in tech-subset-table.csv.")
+
+    # Load unitdata file path
+    runfiles = pd.read_csv(os.path.join(reeds_path, "runfiles.csv"))
+    rel_path = runfiles.loc[runfiles["filename"] == "unitdata.csv", "filepath"].squeeze()
+    unitdata_file = os.path.join(reeds_path, rel_path.format(unitdata=sw["unitdata"]))
+
+    # List of counties in regions being evaluated
+    related_counties = r_county["county"].unique()
+
+    # Load and filter unitdata by county and tech
+    unit_df = pd.read_csv(unitdata_file, dtype={"FIPS": str})
+    unit_df = unit_df[unit_df["FIPS"].isin(related_counties)][["FIPS", "tech"]]
+    unit_df.columns = ["r", "i"]
+    unit_df["i"] = unit_df["i"].str.lower()
+
+    # Create a dictionary: county -> set of techs
+    techs_by_county = unit_df.groupby("r")["i"].apply(set).to_dict()
+
+    # Flatten list of techs from selected tech groups
+    techs_to_filter = set().union(*(tech_subsets[g] for g in tech_groups))
+    techs_to_filter = {t.lower() for t in techs_to_filter}
+
+    # Ensure all filter-tech rows exist in the df
+    missing_techs = set(techs_to_filter) - set(df["i"])
+    if missing_techs:
+        new_rows = pd.DataFrame([
+            {"i": tech, **{r: 0 for r in df.columns[1:]}}
+            for tech in missing_techs
+        ])
+        df = pd.concat([df, new_rows], ignore_index=True)
+
+    # Enforce bans by region
+    for region in df.columns[1:]:
+        counties_in_region = r_county[r_county["r"] == region]["county"].unique()
+        techs_in_region = set()
+
+        for county in counties_in_region:
+            # techs_by_county is lowercase 
+            techs_in_region.update(techs_by_county.get(county, set()))
+
+        # For each tech group, ban the whole group if none of its techs are found in region
+        for group in tech_groups:
+            group_techs = {t.lower() for t in tech_subsets[group]}
+
+            # No intersection means the group is banned
+            if not techs_in_region & group_techs:
+                df.loc[df["i"].str.lower().isin(group_techs), region] = 1
+
+    # Identify and return regions where nuclear is banned
+    nuclear_bans = df[df["i"].str.startswith("nuclear")].iloc[:, 1:] == 1
+    nuclear_ban_regions = nuclear_bans.any(axis=0)
+    nuclear_ban_regions = pd.DataFrame(
+        {"*r": nuclear_ban_regions[nuclear_ban_regions].index.tolist()}
+    ).reset_index(drop=True)
+
+    return df, nuclear_ban_regions
+
+
 def subset_to_valid_regions(
     sw,
     region_file_entry,
@@ -438,6 +524,12 @@ def subset_to_valid_regions(
             inputs_case,
             r_county=regions_and_agglevel['r_county']
         )
+        # Change the dfs to only allow new builds based on NEMS sites.
+        if sw["force_nems_sites"].lower().startswith("on"):
+            df, nuclear_ban_regions = modify_bans(
+                reeds_path, sw, df,
+                r_county=regions_and_agglevel['r_county']
+            )
         nuclear_ban_regions.to_csv(
             os.path.join(inputs_case,'nuclear_ba_ban_list.csv'),
             index=False

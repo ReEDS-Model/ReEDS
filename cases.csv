@@ -367,6 +367,7 @@ diagnose,Write A and B matrix of the model [0 = no diagnose ; 1 = diagnose ],0; 
 diagnose_year,Year in which to start report diagnose,N/A,2022,
 dump_alldata,switch to automatically dump data from final solve year into .gdx file,0; 1,0,
 file_replacements,"List of files to replace from run folder, e.g: inputs_case/national_gen_frac.csv << //nrelnas01/ReEDS/some_project/national_gen_frac.csv || c_model.gms << //nrelnas01/ReEDS/some_project/c_model.gms",N/A,none,
+force_nems_sites,If ON use `ON/TECHGROUP1.TECHGROUP2` to allow building only in regions where those tech groups exist in the NEMS database. Group names must match columns in tech-subset-table.csv. Set to OFF to disable,N/A,OFF,
 input_processing_only,Only run input_processing scripts; stop before creating and solving model (1) or stop right after Monte Carlo sampling (2),0; 1; 2,0,
 keep_resource_adequacy_files,Indicate whether to keep (1) or delete (0) resource adequacy csv and h5 files after RA calculations finish,0; 1,0,
 keep_g00_files,Keep (1) or delete (0) .g00 files for completed solve years,0; 1,0,
