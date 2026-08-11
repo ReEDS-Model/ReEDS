@@ -77,8 +77,8 @@ positive variables
   BIOUSED(bioclass,r,t)                 "--MMBtu-- total biomass used by biomass class"
 
 * RECS variables
-  RECS(RPSCat,i,st,ast,htype,t)         "--MWh-- renewable energy credits from state st to state ast, for representative (htype=rep) or stress (htype=stress) periods",
-  ACP_PURCHASES(RPSCat,st,htype,t)      "--MWh-- purchases of ACP credits to meet the RPS constraints, for representative (htype=rep) or stress (htype=stress) periods",
+  RECS(RPSCat,i,st,ast,htype,t)         "--MWh-- renewable energy credits from state st to state ast",
+  ACP_PURCHASES(RPSCat,st,htype,t)      "--MWh-- purchases of ACP credits to meet the RPS constraints",
 
 * transmission variables
   CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading"
@@ -2713,10 +2713,8 @@ eq_REC_BundleLimit(RPSCat,st,ast,htype,t)$[stfeas(st)$stfeas(ast)$tmodel(t)
                               $(yeart(t)>=firstyear_RPS)]..
 
 *amount of net transmission flows from state st to state ast
-*the min() of both states' rps_hours has no effect for htype=rep (both are identical)
-*for htype=stress under GSw_StateRPS_Stress=2 (peak), both are 0/1, so this
-*counts flow only on hours eligible for both the exporting and importing state's own
-*peak-load stress periods.
+*the min() requires the hour to be eligible for both the exporting and importing state
+*and only has an impact when htype = stress
     sum{(h,r,rr,trtype)$[r_st(r,st)$r_st(rr,ast)$routes(r,rr,trtype,t)$h_htype(h,htype)],
           min(rps_hours(h,st,htype), rps_hours(h,ast,htype)) * FLOW(r,rr,h,t,trtype)
       }

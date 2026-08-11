@@ -689,10 +689,9 @@ def main(sw, t, iteration=0, logging=True):
         logging=logging
     )
 
-    # Carry forward the state RPS/CES peak-day file (GSw_StateRPS_Stress=2). It is
-    # only computed once per model year, in stress{t}i0 (hourly_repperiods.py), and
-    # does not change across iterations. 2_temporal_params.gms reads it from the
-    # current iteration's folder every solve, so it needs to exist there.
+    # Carry forward the state RPS/CES peak-day file. It's computed once per model
+    # year and doesn't change across iterations, but each iteration's folder needs
+    # its own copy.
     shutil.copy2(
         os.path.join(sw.casedir, 'inputs_case', f'stress{t}i0', 'ces_peakday_st.csv'),
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'ces_peakday_st.csv'),

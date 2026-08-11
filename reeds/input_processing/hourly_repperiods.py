@@ -520,9 +520,8 @@ def main(
     )
 
     ## Expand load-peak stress periods from their seed-level grouping (e.g. transgrp)
-    ## down to the member states, for use by the state RPS/CES peak-day-only weighting
-    ## (GSw_StateRPS_Stress=2). Only 'load'/'peak-containing' rows are relevant --
-    ## min-VRE seed periods aren't tied to a compliance day.
+    ## down to the member states. Only 'load'/'peak-containing' rows are relevant --
+    ## min-VRE seed periods are not considered.
     ces_peakday_write = stressperiods_write.loc[
         (stressperiods_write.property == 'load') & (stressperiods_write.reason == 'peak-containing')
     ].reset_index()
