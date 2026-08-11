@@ -98,6 +98,8 @@ def download_remote_files(only=None, force=False, access_token=None):
                     "of inputs/remote_files.csv."
                 )
                 raise ValueError(err)
+        else:
+            print(f'local version ok: {filename}')
         ## Always update the link
         linkpath = Path(row.linkpath)
         linkpath.unlink(missing_ok=True)
@@ -118,12 +120,14 @@ def identify_required_remote_files(sw) -> list:
     Returns:
         required_files: List of file names (no directories)
     """
-    required_files = [
-        'temperature_state.h5',
-        f"cf_upv_{sw.GSw_SitingUPV}.h5",
-        f"cf_wind-ons_{sw.GSw_SitingWindOns}.h5"
-    ]
-    if int(sw.GSw_OfsWind):
+    fake = int(sw.GSw_FakeData)
+    required_files = ['temperature_state.h5']
+    if not fake:
+        required_files.extend([
+            f"cf_upv_{sw.GSw_SitingUPV}.h5",
+            f"cf_wind-ons_{sw.GSw_SitingWindOns}.h5"
+        ])
+    if int(sw.GSw_OfsWind) and not fake:
         required_files.append(f"cf_wind-ofs_{sw.GSw_SitingWindOfs}.h5")
     if int(sw.GSw_distpv):
         required_files.append("cf_distpv_county.h5")

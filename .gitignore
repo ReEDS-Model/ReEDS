@@ -43,16 +43,9 @@ retail_rate_module/inputs/EIA861/*
 postprocessing/retail_rate_module/inputs/EIA861/*
 
 # Large files from remote sources
-inputs/profiles_cf
-inputs/profiles_demand
-inputs/profiles_dr
-inputs/profiles_temperature
+inputs/profiles*
 inputs/remote
 inputs/shapefiles/cache
-
-# Old climate scenarios (temporarily ignore, remove this section once ESPRS data is available)
-inputs/climate/
-!inputs/climate/climate_heuristics_*.csv
 
 # IDE stuff
 *.vscode

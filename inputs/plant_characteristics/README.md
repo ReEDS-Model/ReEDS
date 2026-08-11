@@ -1,6 +1,6 @@
 # Files
 ### startcost.csv
-Most startup costs are taken from Lew et al 2013 - Western Wind and Solar Integration Study Phase 2 [(NREL/TP-5500-55588)](https://www.nrel.gov/docs/fy13osti/55588.pdf). The original data, reported in $2011/MW in Table 7, are:
+Most startup costs are taken from Lew et al 2013 - Western Wind and Solar Integration Study Phase 2 [(NREL/TP-5500-55588)](https://www.nlr.gov/docs/fy13osti/55588.pdf). The original data, reported in $2011/MW in Table 7, are:
 * Coal: 124
 * Gas-CC: 81
 * Gas-CT: 67

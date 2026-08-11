@@ -1,7 +1,7 @@
 """
 This script calculates the mean bias error between the bottom-up retail rates
 and reported state-level retail rates from EIA form 861 and writes the results
-to ReEDS-2.0/postprocessing/retail_rate_module/inputs/state-meanbiaserror_rate-aggregation.csv.
+to ReEDS/postprocessing/retail_rate_module/inputs/state-meanbiaserror_rate-aggregation.csv.
 The results are written in ¢/kWh in {out_dollar_year} dollars.
 """
 
@@ -32,7 +32,7 @@ run_dir = args.run_dir
 out_dollar_year = args.out_dollar_year
 
 # #%% Settings for testing/debugging
-# reeds_path = os.path.expanduser('~/github2/ReEDS-2.0/')
+# reeds_path = os.path.expanduser('~/github2/ReEDS/')
 # run_dir = os.path.join(reeds_path,'runs','v20210716_main_Ref_2026')
 # out_dollar_year = 2022
 

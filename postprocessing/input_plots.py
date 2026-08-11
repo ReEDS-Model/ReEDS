@@ -3,6 +3,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
@@ -42,7 +43,7 @@ def get_bokeh_colors():
             reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','tech_style.csv',
         ),
         index_col='order',
-    ).squeeze(1)
+    ).color
     return bokehcolors
 
 
@@ -98,7 +99,6 @@ def plot_profile(
     case,
     datum='demand',
     year=0,
-    region=None,
     weatheryears=None,
     color='k',
     hourly=False,
@@ -117,7 +117,7 @@ def plot_profile(
     ## Parse inputs
     sw = reeds.io.get_switches(case)
     t = reeds.io.get_years(case)[-1] if year in [0, None, 'last'] else year
-    rs = reeds.inputs.parse_regions((region if region else case), case)
+    rs = reeds.inputs.parse_regions(case)
     if weatheryears is None:
         weatheryears = sw.resource_adequacy_years_list
     elif isinstance(weatheryears, int):
@@ -128,7 +128,6 @@ def plot_profile(
         ylabel = 'Electricity demand [GW]'
         dfprofile = reeds.io.read_file(
             os.path.join(case, 'inputs_case', 'load.h5'),
-            parse_timestamps=True,
         ## Convert to GW
         ) / 1e3
         dfprofile = (
@@ -150,7 +149,7 @@ def plot_profile(
 
     dfprofile = dfprofile.loc[str(min(weatheryears)):str(max(weatheryears))].copy()
     ## Use a continuous set of datetimes to avoid interpolating over missing years
-    full_timeseries = pd.date_range(dfprofile.index[0], dfprofile.index[-1], freq='H')
+    full_timeseries = pd.date_range(dfprofile.index[0], dfprofile.index[-1], freq='h')
     dfprofile = dfprofile.reindex(full_timeseries)
 
     dayindex = pd.date_range(
@@ -207,7 +206,6 @@ def plot_modelyears_weatheryears(case, startyear=2020, year_buffer=1):
     ## Data
     dfdemand_profile = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'load.h5'),
-        parse_timestamps=True,
     ## Sum over country and convert to GW
     ).sum(axis=1) / 1e3
 
@@ -373,15 +371,13 @@ def plot_units_existing(
         fpath = os.path.join(case, 'inputs_case', 'unitdata.csv')
 
     dfunits = pd.read_csv(fpath)
-    dfunits = reeds.plots.df2gdf(
-        dfunits.assign(T_LONG=-dfunits.T_LONG.abs()), lat='T_LAT', lon='T_LONG',
-    )
-    dfunits.tech = reeds.reedsplots.simplify_techs(dfunits.tech)
+    dfunits = reeds.plots.df2gdf(dfunits, lat='T_LAT', lon='T_LONG')
     rename = {
         **{'dupv':'upv'},
         **{f'battery_{i}':'battery' for i in range(101)},
     }
     dfunits.tech = dfunits.tech.map(lambda x: rename.get(x,x))
+    dfunits.tech = reeds.reedsplots.simplify_techs(dfunits.tech)
     ## Downselect to specified year
     if year is None:
         if case is None:
@@ -407,21 +403,17 @@ def plot_units_existing(
             techs = [i for i in techs if i in onlytechs]
 
     ### Parse inputs
+    plot_settings = reeds.io.get_plot_formatting()
+    colors = plot_settings['tech_color'].squeeze(1)
+
     if markers is None:
-        techmarkers = reeds.reedsplots.techmarkers
+        techmarkers = plot_settings['tech_marker'].squeeze(1)
     elif isinstance(markers, str):
         techmarkers = dict(zip(techs, markers(len(techs))))
     elif isinstance(markers, dict):
         techmarkers = markers
     else:
         raise ValueError(f'Invalid markers ({type(markers)}): {markers}')
-
-    colors = pd.read_csv(
-        os.path.join(
-            reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','tech_style.csv'),
-        index_col='order',
-    ).squeeze(1)
-    colors.index = colors.index.str.lower()
 
     dfmap = reeds.io.get_dfmap(case)
 
@@ -453,7 +445,7 @@ def plot_units_existing(
     leg = ax.legend(
         loc='lower left', bbox_to_anchor=(0.04,0.04), ncol=2, frameon=False,
         handletextpad=0.3, handlelength=0.7, columnspacing=0.6, labelspacing=0.3,
-        title=('Tech (GW)' if gw_label else 'Tech'),
+        title=('Tech (GW)' if gw_label else 'Tech'), fontsize=9.5,
         alignment='left', title_fontproperties={'weight':'bold', 'size':12},
     )
     for handle in leg.legend_handles:
@@ -470,6 +462,64 @@ def plot_units_existing(
     ## Formatting
     ax.axis('off')
     return f, ax, dfunits
+
+
+def plot_exog_prescribed_cap(
+    case=None, year=None, crs='EPSG:5070',
+    markerscale=20, colors={'wind-ons':'C0', 'upv':'C1'},
+    **kwargs,
+):
+    """Plot exogenous and prescribed capacity (only applies to upv and wind-ons)"""
+    sw = reeds.io.get_switches(case=case, **kwargs)
+    if year is None:
+        scalars = reeds.io.get_scalars(case=case)
+        year = int(scalars.this_year)
+    sitemap = reeds.io.get_sitemap().to_crs(crs)
+    dfmap = reeds.io.get_dfmap(case=case, **kwargs)
+    for key, val in dfmap.items():
+        dfmap[key] = val.to_crs(crs)
+    
+    tech_access = [
+        ('wind-ons', sw.GSw_SitingWindOns),
+        ('upv', sw.GSw_SitingUPV),
+    ]
+    infiles = ['exog_cap', 'prescribed_builds']
+    ncols = len(tech_access)
+    nrows = len(infiles)
+
+    dfin = {}
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(4*ncols, 2.5*nrows), sharex=True, sharey=True,
+        gridspec_kw={'hspace':0, 'wspace':0},
+    )
+    for row, infile in enumerate(infiles):
+        for col, (tech, access) in enumerate(tech_access):
+            fpath = Path(
+                reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+                f'{infile}_{tech}_{access}.csv'
+            )
+            if fpath.is_file():
+                dfin[tech] = pd.read_csv(fpath)
+            else:
+                continue
+            _ax = ax[row,col]
+            _ax.set_title(f'{infile} {tech} ({access})', y=0.92)
+            dfplot = (
+                dfin[tech].loc[dfin[tech].year==year].groupby('sc_point_gid').capacity.sum()
+                .to_frame()
+            )
+            dfplot = sitemap.merge(dfplot, on='sc_point_gid', how='right')
+            dfmap['st'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2, zorder=1e6)
+            dfmap['r'].plot(ax=_ax, facecolor='none', edgecolor='0.5', lw=0.1, zorder=1e5)
+            dfplot.plot(
+                ax=_ax, color=colors[tech], lw=0,
+                markersize=(dfplot.capacity/dfplot.capacity.max()*markerscale),
+            )
+    for row in range(nrows):
+        for col in range(ncols):
+            ax[row,col].axis('off')
+    return f, ax, dfin
 
 
 def plot_existing_unitsize(
@@ -502,9 +552,9 @@ def plot_existing_unitsize(
                 'ReEDS_generator_database_final_EIA-NEMS.csv',
             )
         )
-        dfunits['reeds_ba'] = dfunits.FIPS.str.strip('p').map(county2zone)
     else:
         dfunits = pd.read_csv(os.path.join(case, 'inputs_case', 'unitdata.csv'))
+    dfunits['r'] = dfunits.FIPS.str.strip('p').map(county2zone)
 
     ### Subset to year, techs, and regions
     dfplot = dfunits.loc[
@@ -512,7 +562,7 @@ def plot_existing_unitsize(
         & (dfunits.RetireYear > year)
         & (dfunits.tech.isin(techs))
     ].copy()
-    dfplot['region'] = dfplot.reeds_ba.map(hierarchy[level])
+    dfplot['region'] = dfplot.r.map(hierarchy[level])
 
     ### Set up plot
     regions = hierarchy[level].unique()
@@ -603,20 +653,20 @@ def plot_regional_cost_difference(
 ):
     dfmap = reeds.io.get_dfmap(case)
     ### Get data
+    fpath = os.path.join(
+        reeds.io.reeds_path, 'inputs', 'financials', 'reg_cap_cost_diff_default.csv',
+    )
+    dfin = pd.read_csv(fpath, index_col='r') * 100
+    dfin.index = dfin.index.str.strip('p')
     if case is None:
-        ## County resolution
-        fpath = os.path.join(
-            reeds.io.reeds_path, 'inputs', 'financials', 'reg_cap_cost_diff_default.csv',
-        )
-        dfin = pd.read_csv(fpath, index_col='r') * 100
-        dfcounty = reeds.io.get_countymap().set_index('rb')
-        dfcounty.geometry = dfcounty.intersection(dfmap['country'].geometry.squeeze()).simplify(1000)
+        dfcounty = reeds.spatial.get_map('county', source='census')
         dfplot = dfcounty.merge(dfin, left_index=True, right_index=True)
     else:
-        ## Model zone resolution
-        fpath = os.path.join(case, 'inputs_case', 'regional_cap_cost_diff.csv')
-        dfin = pd.read_csv(fpath, index_col='r') * 100
-        dfplot = dfmap['r'].merge(dfin, left_index=True, right_index=True)
+        county2zone = reeds.io.get_county2zone(case)
+        dfmean = dfin.copy()
+        dfmean.index = dfmean.index.map(county2zone)
+        dfmean = dfmean.groupby(level=0).mean()
+        dfplot = dfmap['r'].merge(dfmean, left_index=True, right_index=True)
     ### Set up plot
     if vlim in [None, 0]:
         vlim = max(abs(dfin.min().min()), dfin.max().max())
@@ -657,9 +707,9 @@ def plot_fuel_prices(tstart=2010, tend=2050, figsize=(9, 3.75), datayear=2025, a
     dollaryear = datayear - 1
     bokehcolors = get_bokeh_colors()
     colors = {
-        'Gas': bokehcolors['gas-cc'],
-        'Coal': bokehcolors['coal'],
-        'Uranium': bokehcolors['nuclear'],
+        'Gas': bokehcolors['Gas-CC'],
+        'Coal': bokehcolors['Coal'],
+        'Uranium': bokehcolors['Nuclear'],
     }
     ## Get data
     dictin = {}
@@ -761,6 +811,158 @@ def map_gas_price(
         _ax.axis('off')
 
     return f, ax, dictin
+
+
+def plot_hvdc(case=None, crs='EPSG:5070', **kwargs):
+    """Plot existing/planned HVDC lines and B2B converters"""
+    ### Get maps for plot
+    dfstates = reeds.spatial.get_map('state', source='census', crs=crs)
+    dfmap = reeds.io.get_dfmap(case=case, **kwargs)
+
+    ### Get HVDC lines
+    hvdc = pd.concat({
+        'existing': reeds.inputs.get_hvdc_lines('hvdc_existing.csv').set_index('name'),
+        'planned': reeds.inputs.get_hvdc_lines('hvdc_planned-baseline.csv').set_index('name'),
+    }, names=('group',)).to_crs(crs)
+    hvdc.geometry = hvdc.buffer(hvdc.MW * 15)
+    nicelabels = {
+        'pacific_dc_intertie': 'Pacific DC Intertie',
+        'square_butte': 'Square Butte',
+        'cu': 'CU',
+        'path_27': 'Path 27',
+        'cross_sound_cable': 'Cross Sound Cable',
+        'neptune_cable': 'Neptune Cable',
+        'trans_bay_cable': 'Trans Bay Cable',
+        'sunzia': 'SunZia',
+        'transwestexpress': 'TransWestExpress',
+    }
+    offset = {
+        'pacific_dc_intertie': (-10, 30),
+        'square_butte': (0, 5),
+        'cu': (-5, -5),
+        'path_27': (5, -5),
+        'cross_sound_cable': (10, 0),
+        'neptune_cable': (5, -5),
+        'trans_bay_cable': (-1, 5),
+        'sunzia': (1, -10),
+        'transwestexpress': (1, -10),
+    }
+    colors = {'existing': 'C3', 'planned': 'C1'}
+
+    ### Get B2B converters
+    fpath = Path(reeds.io.reeds_path, 'inputs', 'transmission', 'b2b_converters.csv')
+    b2b = reeds.plots.df2gdf(pd.read_csv(fpath), crs=crs)
+    ## Rotated half-filled marker for B2B
+    t = mpl.transforms.Affine2D().rotate_deg(45)
+    markerstyle = {
+        'marker':mpl.markers.MarkerStyle('o', 'top', t),
+        'markersize':10,
+        'markerfacecolor':'0.9',
+        'markerfacecoloralt':'0.7',
+        'markeredgecolor':'k',
+    }
+
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(figsize=(12,9))
+    ## Background
+    if (case is None) and ('GSw_ZoneSet' not in kwargs):
+        dfstates.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.5)
+    else:
+        dfmap['r'].to_crs(crs).plot(ax=ax, facecolor='none', edgecolor='0.7', lw=0.5)
+        dfstates.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.8)
+        icolors = {
+            'western': plt.cm.Pastel2(0),
+            'eastern': plt.cm.Pastel2(1),
+            'texas': plt.cm.Pastel2(2),
+        }
+        for interconnection, color in icolors.items():
+            dfmap['interconnect'].loc[[interconnection]].to_crs(crs).plot(
+                ax=ax, facecolor=color, edgecolor='none', zorder=-10, alpha=0.2,
+            )
+    ## HVDC
+    for group, color in colors.items():
+        hvdc.loc[group].plot(
+            ax=ax, color=color, zorder=1e6,
+            path_effects=[pe.withStroke(linewidth=0.7, foreground='w', alpha=1)],
+        )
+    for i, row in hvdc.iterrows():
+        group, name = i
+        label = f'{nicelabels.get(name,name)}\n{row.MW} MW'
+        x, y = offset.get(name, (0, 0))
+        ha = 'right' if x < 0 else ('left' if x > 0 else 'center')
+        va = 'top' if y < 0 else ('bottom' if y > 0 else 'center')
+        ax.annotate(
+            label, (row.geometry.centroid.x, row.geometry.centroid.y),
+            xytext=(x, y), textcoords='offset points', ha=ha, va=va,
+            color=colors[group], fontsize=12, zorder=1e7,
+            path_effects=[pe.withStroke(linewidth=4, foreground='w', alpha=1)],
+        )
+    ## B2B
+    ax.plot(
+        b2b.geometry.x.values, b2b.geometry.y.values,
+        lw=0, alpha=1.0, **markerstyle,
+    )
+    ax.annotate(
+        'B2B\nconverter', (b2b.iloc[0].geometry.x, b2b.iloc[0].geometry.y),
+        xytext=(-7, 0), textcoords='offset points', ha='right', va='center',
+        color='0.5', fontsize=12, zorder=1e7,
+        path_effects=[pe.withStroke(linewidth=4, foreground='w', alpha=1)],
+    )
+    ax.axis('off')
+
+    return f, ax, {'hvdc': hvdc, 'b2b': b2b}
+
+
+def plot_voltage(case=None, crs='EPSG:5070', lw=1.5, legend=True, **kwargs):
+    """Plot AC voltage between zones"""
+    dfmap = reeds.io.get_dfmap(case=case, **kwargs)
+    for key in ['r', 'st', 'country']:
+        dfmap[key] = dfmap[key].to_crs(crs)
+
+    hierarchy = reeds.io.get_hierarchy(case, **kwargs)
+    dfplot = reeds.inputs.get_distances(case, **kwargs)
+    dfplot = dfplot.loc[
+        (dfplot.polarity == 'ac')
+        & (dfplot.r.map(hierarchy.interconnect) == dfplot.rr.map(hierarchy.interconnect))
+    ].copy()
+    def _make_line(row):
+        return shapely.LineString([[row.start_lon, row.start_lat], [row.end_lon, row.end_lat]])
+    dfplot['geometry'] = dfplot.apply(_make_line, axis=1)
+    dfplot = gpd.GeoDataFrame(dfplot, crs='EPSG:4326').to_crs(crs)
+
+    colors = {138:'C3', 161:'C1', 230:'C8', 345:'C2', 500:'C0', 765:'C4'}
+    ## Optional lighter version
+    # colors = {
+    #     138:'#e25856', 161:'#ff9a50', 230:'#caca5a',
+    #     345:'#5fb45b', 500:'#5393c4', 765:'#aa87cb',
+    # }
+
+    plt.close()
+    f,ax = plt.subplots()
+    dfmap['r'].plot(ax=ax, facecolor='none', edgecolor='0.5', lw=0.15)
+    dfmap['st'].plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
+    dfmap['country'].plot(ax=ax, facecolor='none', edgecolor='k', lw=0.3)
+    for kv, color in colors.items():
+        dfplot.loc[dfplot.voltage==kv].plot(ax=ax, lw=lw, color=color, alpha=1)
+    ax.set_title(f"{len(dfmap['r'])} zones", y=0.9)
+    ## Legend
+    if legend:
+        handles = [
+            mpl.patches.Patch(facecolor=c, edgecolor='none', label=f'{kv} kV')
+            for kv, c in colors.items()
+        ]
+        ax.legend(
+            handles=handles,
+            loc='lower left', ncol=2, bbox_to_anchor=(0.03, 0.03),
+            frameon=False, fontsize=9,
+            handletextpad=0.2, handlelength=0.4,
+            columnspacing=0.6, labelspacing=0.2,
+            labelcolor='linecolor',
+        )
+    ax.axis('off')
+
+    return f, ax, dfplot
 
 
 def map_supplycurves(
@@ -957,32 +1159,33 @@ if __name__ == '__main__':
         description='Check inputs.gdx parameters against objective_function_params.yaml',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('case', help='ReEDS-2.0/runs/{case} directory')
+    parser.add_argument('case', help='ReEDS/runs/{case} directory')
     parser.add_argument(
-        '--write', '-w', choices=['png', 'ppt', 'pptx'], default='png',
+        '--write', '-w', choices=['pdf', 'png', 'ppt', 'pptx'], default='png',
         help='Output format (png or pptx)')
     args = parser.parse_args()
     case = args.case
     write = args.write
 
     # #%% Inputs for testing
-    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20251209_scM0_USA_defaults')
+    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20260624_raM0_USA_fast')
     # interactive = True
     # write = 'png'
 
     #%% Create output container
-    if write.strip('.') == 'png':
+    suffix = write.strip('.')
+    if suffix in ['pdf', 'png']:
         savepath = os.path.join(case, 'outputs', 'figures', 'inputs')
         os.makedirs(savepath, exist_ok=True)
 
         def saveit(savename):
-            outpath = os.path.join(savepath, savename.lower().replace(' ', '-') + '.png')
+            outpath = os.path.join(savepath, savename.lower().replace(' ', '-') + f'.{suffix}')
             plt.savefig(outpath)
             print(os.path.basename(outpath))
             if interactive:
                 plt.show()
 
-    elif write.strip('.') in ['ppt', 'pptx']:
+    elif suffix in ['ppt', 'pptx']:
         savepath = os.path.join(case, 'outputs', 'figures', 'inputs.pptx')
         prs = reeds.report_utils.init_pptx()
         def saveit(savename, **kwargs):
@@ -1057,6 +1260,12 @@ if __name__ == '__main__':
     except Exception:
         print(traceback.format_exc())
 
+    try:
+        f, ax, df = plot_exog_prescribed_cap(case=case)
+        saveit('Exog and prescribed capacity')
+    except Exception:
+        print(traceback.format_exc())
+
     ## Size distribution
     try:
         f, ax, df = plot_existing_unitsize(case=case)
@@ -1084,10 +1293,24 @@ if __name__ == '__main__':
     except Exception:
         print(traceback.format_exc())
 
+    ### Existing/planned HVDC lines and B2B converters
+    try:
+        f, ax, df = plot_hvdc(case)
+        saveit('HVDC and B2B')
+    except Exception:
+        print(traceback.format_exc())
+
+    ### Interzonal AC transmission voltage
+    try:
+        f, ax, df = plot_voltage(case)
+        saveit('AC voltage')
+    except Exception:
+        print(traceback.format_exc())
+
     ### Supply curves
     extras = (True if 'usa' in sw.GSw_Region.lower() else False)
     try:
-        for tech in ['upv', 'wind-ons', 'wind-ofs', 'egs']:
+        for tech in [None, 'upv', 'wind-ons', 'wind-ofs', 'egs']:
             plot_generator = map_supplycurves(
                 case=case,
                 tech=tech,

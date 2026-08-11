@@ -7,8 +7,8 @@ casepath,casename,color
 # /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA,Ref,C1
 # /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA_decarb,Z35,plt.cm.tab20(4)
 ## kestrel
-# /projects/reedsweto/pbrown/github/ReEDS-2.0/runs/v20241028_mainK0_USA,main_Ref,plt.cm.tab20(0)
-# /projects/reedsweto/pbrown/github4/ReEDS-2.0/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1)
-# /projects/reedsweto/pbrown/github/ReEDS-2.0/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
-# /projects/reedsweto/pbrown/github4/ReEDS-2.0/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA,main_Ref,plt.cm.tab20(0)
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1)
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
 ### Add your cases below (don't commit them) or create a new csv file with the same format

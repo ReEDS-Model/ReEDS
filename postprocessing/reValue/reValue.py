@@ -75,39 +75,39 @@ def get_prices():
     df_pq_rm_adj = df_pq_rm.rename(columns={'h':'season'})
     df_seas_h_map = df_hmap[['season','h']].drop_duplicates()
     if res_marg_style == 'max_net_load_2012':
-        #Read in net_load_2012 of the appropriate ReEDS Augur file.
+        #Read in net_load_2012 of the appropriate capacity credit file.
         #The file we want is for the highest year that is lower than r['year']
         #TODO: Perhaps we should use the file that has the same year as r['year'],
         #depending on if it represents the system of that year better.
-        aug_files = os.listdir(f'{reeds_run_path}/ReEDS_Augur/augur_data')
-        aug_file_yrs = [f for f in aug_files if 'ReEDS_Augur_' in f]
-        yrs = [int(f.replace('ReEDS_Augur_','').replace('.gdx','')) for f in aug_file_yrs]
+        aug_files = os.listdir(f'{reeds_run_path}/handoff/reeds_data')
+        aug_file_yrs = [f for f in aug_files if 'ccdata_' in f]
+        yrs = [int(f.replace('ccdata_','').replace('.gdx','')) for f in aug_file_yrs]
         yrs_less = [y for y in yrs if y < year]
         max_yr = max(yrs_less)
-        df_aug = gdxpds.to_dataframe(f'{reeds_run_path}/ReEDS_Augur/augur_data/ReEDS_Augur_{max_yr}.gdx',
-            'net_load_2012', old_interface=False)
-        if int(df_aug['t'][0]) != year:
-            sys.exit(f'ERROR: Augur year ({int(df_aug["t"][0])}) does not match current scenario year ({year})')
-        df_aug = df_aug.sort_values('Value', ascending=False)
-        df_aug_top = df_aug.groupby(['ccreg','ccseason'], as_index=False).head(netload_num_hrs).copy()
-        df_aug_top = df_aug_top.rename(columns={'ccseason':'season'})
+        df_ra = gdxpds.to_dataframe(f'{reeds_run_path}/handoff/reeds_data/ccdata_{max_yr}.gdx',
+            'net_load_2012')
+        if int(df_ra['t'][0]) != year:
+            raise ValueError(f'RA year ({int(df_ra["t"][0])}) does not match current scenario year ({year})')
+        df_ra = df_ra.sort_values('Value', ascending=False)
+        df_ra_top = df_ra.groupby(['ccreg','ccseason'], as_index=False).head(netload_num_hrs).copy()
+        df_ra_top = df_ra_top.rename(columns={'ccseason':'season'})
         if netload_time_style == 'hour':
-            df_aug_top = df_aug_top[['ccreg','season','hour']].copy()
-            df_aug_top['hour'] = df_aug_top['hour'].astype(int)
+            df_ra_top = df_ra_top[['ccreg','season','hour']].copy()
+            df_ra_top['hour'] = df_ra_top['hour'].astype(int)
             #Convert the seasonal price to an hourly price over the set of hours assigned to that season (for that ba)
             df_pq_rm_adj['price'] = df_pq_rm_adj['price'] / netload_num_hrs
             #Restrict to prices only and add ccreg column
             df_p_rm = df_pq_rm_adj[['reeds_ba','season','price']].merge(df_ba_cc_map, on='reeds_ba', how='left')
             #Merge max net load hours into df_p_rm (which will duplicate rows if there are multiple timeslices in a ba/season)
-            df_p_rm = df_p_rm.merge(df_aug_top, on=['ccreg','season'], how='left')
+            df_p_rm = df_p_rm.merge(df_ra_top, on=['ccreg','season'], how='left')
             #Hour is one-indexed. Re-index to the 2012 set of 8760 hours (43801 to 52560)
             df_p_rm_h = df_p_rm.pivot_table(index=['hour'], columns='reeds_ba', values='price')
             df_p_rm_h = df_p_rm_h.reindex(range(43801,52561)).reset_index(drop=True)
         elif netload_time_style == 'timeslice':
             #We assign reserve margin prices to the entire timeslice(s) that contain the top net load hour(s) of each season
-            df_aug_top = df_aug_top[['ccreg','season','h']].drop_duplicates()
+            df_ra_top = df_ra_top[['ccreg','season','h']].drop_duplicates()
             #Find number of total hours that we're mapping prices to in each season
-            df_seas_hrs = df_aug_top.merge(df_h_num_hrs, on=['h'], how='left')
+            df_seas_hrs = df_ra_top.merge(df_h_num_hrs, on=['h'], how='left')
             df_seas_hrs = df_seas_hrs.groupby(['ccreg','season'], as_index=False)['num_hrs'].sum()
             #Add ccreg and num_hrs columns to df_pq_rm_adj
             df_pq_rm_adj = df_pq_rm_adj.merge(df_ba_cc_map, on='reeds_ba', how='left')
@@ -116,7 +116,7 @@ def get_prices():
             df_pq_rm_adj['price'] = df_pq_rm_adj['price'] / df_pq_rm_adj['num_hrs']
             #Merge in the timeslices to which we'll be mapping prices. This might duplicate rows if there are
             #multiple timeslices in a ba/season (which is possible if netload_num_hrs is greater than 1)
-            df_pq_rm_adj = df_pq_rm_adj.merge(df_aug_top, on=['ccreg','season'], how='left')
+            df_pq_rm_adj = df_pq_rm_adj.merge(df_ra_top, on=['ccreg','season'], how='left')
             #Isolate prices with h as first column and reeds_ba as other columns
             df_p_rm = df_pq_rm_adj.pivot_table(index=['h'], columns='reeds_ba', values='price').reset_index()
             #Merge with df_hmap, duplicating prices across all hours of the chosen timeslices.
@@ -193,25 +193,12 @@ def get_prices():
         #Roll prices from CST to UTC (this will bring prices from end of year to beginning of year)
         for col in df_p_h_serv[s]:
             df_p_h_serv[s][col] = np.roll(df_p_h_serv[s][col], 6)
-        if sw_reg != 'ba':
-            #In this case, we need to map prices to bas
-            df_hier_red = df_hier[df_hier[sw_reg].isin(df_p_h_serv[s].columns)]
-            df_p_h_serv[s] = df_p_h_serv[s][df_hier_red[sw_reg].tolist()]
-            df_p_h_serv[s].columns = df_hier_red['ba'].tolist()
     return df_pq, df_q_load, df_p_h_serv
 
 def calculate_benchmarks():
     print('Calculating benchmark annual average prices and system-wide price profile')
     #Calculate annual load by region and total load
     load_ba = df_q_load.drop(columns=['h']).sum()
-    if sw_reg != 'ba':
-        #In this case, we need to map load_ba from aggreg to ba, incorrectly assuming equal load for all bas in the same aggreg
-        df_load_ba = df_hier[df_hier['aggreg'].isin(load_ba.index)].copy()
-        df_load_ba['load'] = df_load_ba['aggreg'].map(load_ba.to_dict())
-        df_load_ba['ba_count'] = df_load_ba.groupby('aggreg')['ba'].transform('count')
-        df_load_ba['load'] = df_load_ba['load'] / df_load_ba['ba_count']
-        df_load_ba = df_load_ba.set_index('ba')
-        load_ba = df_load_ba['load']
     load_nat = load_ba.sum()
     #Calculate benchmark prices, assuming flat-block benchmark providing energy and firm capacity only,
     #so averages across time are simply time-weighted. But when averaging across space, we weight by load.
@@ -282,7 +269,7 @@ def calculate_metrics():
     print('Reducing profiles to only those that can be mapped to prices')
     #First find list of BAs associated with ReEDS run
     reg_set = df_pq['reeds_ba'].unique().tolist()
-    bas =  reg_set if sw_reg == 'ba' else df_hier[df_hier[sw_reg].isin(reg_set)]['ba'].tolist()
+    bas = reg_set
     df_p_h_s = df_p_h_serv.copy() #Shallow copy so we don't duplicate so much data
     if r['meta_path'] != 'none':
         df_meta = df_meta_full[df_meta_full['reeds_ba'].isin(bas)].copy()
@@ -367,12 +354,12 @@ for i,r in df_scens.iterrows():
     reeds_run_path = r['reeds_run_path'].replace('"', '')
     year = r['year']
     switches = reeds.io.get_switches(reeds_run_path)
-    sw_reg = switches['GSw_RegionResolution']
-    hier_file = f'{this_dir_path}/../../inputs/zones/{switches.GSw_ZoneSet}/hierarchy_from134.csv'
-    df_hier = pd.read_csv(hier_file, usecols=['ba',sw_reg]).drop_duplicates()
     df_hier_run = pd.read_csv(f'{reeds_run_path}/inputs_case/hierarchy.csv')
-    df_county_map = pd.read_csv(hier_file, usecols=['county','ba'])
-    df_county_map.columns = ['reeds_county', 'reeds_ba']
+    df_county_map = (
+        reeds.io.get_county2zone(reeds_run_path, as_map=False)
+        .rename(columns={'county': 'reeds_county', 'r': 'reeds_ba'})
+        [['reeds_county', 'reeds_ba']]
+    )
     df_hmap = pd.read_csv(f'{reeds_run_path}/inputs_case/rep/hmap_myr.csv')
     #Only fetch prices if we haven't already for this reeds run and year
     #TODO: Include tech here in the dct_prices tuple key? For now I disallow multiple techs

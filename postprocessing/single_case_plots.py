@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import traceback
+import itertools
 import cmocean
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
@@ -71,7 +72,7 @@ else:
 year = args.year
 
 # #%% Inputs for testing
-# case = os.path.join(reeds_path,'runs','v20251111_15M0_Pacific')
+# case = os.path.join(reeds_path,'runs','v20260624_raM1_MultiMetricRA')
 # year = 0
 # interactive = True
 # write = False
@@ -105,10 +106,25 @@ years = pd.read_csv(
     os.path.join(case,'inputs_case','modeledyears.csv')
 ).columns.astype(int).values
 yearstep = years[-1] - years[-2]
-val_r = pd.read_csv(
-    os.path.join(case, 'inputs_case', 'val_r.csv'), header=None).squeeze(1).tolist()
+val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
 ## If year not provided, use final solve year
 year = year if year > 0 else max(years)
+
+
+#%% Validation plots
+### Existing capacity vs last historical capacity
+try:
+    mapmethod = 'FIPS'
+    f, ax, df = reedsplots.validate_regional_capacity(case, mapmethod=mapmethod)
+    savename = f'validate_cap_regional-{mapmethod}.png'
+    if write:
+        plt.savefig(os.path.join(savepath, savename))
+    if interactive:
+        plt.show()
+    plt.close()
+    print(savename)
+except Exception:
+    print(traceback.format_exc())
 
 
 #%% Transmission line map with disaggregated transmission types
@@ -367,9 +383,7 @@ subtechs = {
 ### Specify BAs to plot (None = aggregate all together)
 bas = [None]
 if int(sw['plot_ba_level']):
-    bas += pd.read_csv(
-        os.path.join(case, 'inputs_case', 'val_r.csv'), header=None,
-    ).squeeze(1).tolist()
+    bas += reeds.io.read_input(case, 'r').squeeze(1).tolist()
     savepath_ba = os.path.join(savepath, 'ba')
     os.makedirs(savepath_ba, exist_ok=True)
 else:
@@ -383,21 +397,24 @@ for label, plottechs in subtechs.items():
             figpath = savepath_ba if ba else savepath
             for plottype in plottypes:
                 for v in ([1] if ba else [0, 1]):
-                    plt.close()
-                    f, ax, df = reedsplots.plot_dispatch_yearbymonth(
+                    plot_generator = reedsplots.plot_dispatch_yearbymonth(
                         case=case, t=year, plottype=plottype,
                         region=(None if ba is None else f"r/{ba}"),
                         techs=plottechs, highlight_rep_periods=v,
                     )
-                    savename = (
-                        f"plot_{plottype}{'_'+label if len(label) else ''}-yearbymonth"
-                        + f"{'-'+ba if ba else ''}-{v}-{year}.png")
-                    if write and (df is not None):
-                        plt.savefig(os.path.join(figpath, savename))
-                        print(savename)
-                    if interactive and (df is not None):
-                        plt.show()
-                    plt.close()
+                    while True:
+                        try:
+                            f, ax, df, weatheryear = next(plot_generator)
+                            savename = (
+                                f"plot_{plottype}{'_'+label if len(label) else ''}-yearbymonth"
+                                + f"{'-'+ba if ba else ''}-{v}-{year}-w{weatheryear}.png")
+                            if write and (df is not None):
+                                plt.savefig(os.path.join(figpath, savename))
+                                print(savename)
+                            if interactive and (df is not None):
+                                plt.show()
+                        except StopIteration:
+                            break
     except Exception:
         print('plot_dispatch-yearbymonth failed:')
         print(traceback.format_exc())
@@ -564,8 +581,8 @@ except Exception:
 try:
     plt.close()
     levels = ['country', 'interconnect', 'transreg', 'transgrp']
-    f, ax, _ = reedsplots.plot_neue_bylevel(case=case, levels=levels)
-    savename = f"plot_stressperiod_neue-{','.join(levels)}.png"
+    f, ax, _ = reedsplots.plot_ra_metrics_bylevel(case=case, levels=levels)
+    savename = f"plot_ra_metrics-{','.join(levels)}.png"
     if write:
         plt.savefig(os.path.join(savepath, savename))
     if interactive:
@@ -573,7 +590,28 @@ try:
     plt.close()
     print(savename)
 except Exception:
-    print('plot_stressperiod_neue failed:')
+    print('plot_ra_metrics_bylevel failed:')
+    print(traceback.format_exc())
+
+try:
+    plt.close()
+    level = 'transgrp'
+    xvals = ['timesteps']
+    yvals = ['mean','max']
+    for xval, yval in itertools.product(xvals, yvals):
+        f, ax, _ = reedsplots.plot_eue_events(
+            case=case, year=year, level=level,
+            xval=xval, yval=yval,
+        )
+        savename = f"plot_eue_events-{yval}_{xval}-{level}-{year}.png"
+        if write:
+            plt.savefig(os.path.join(savepath, savename))
+        if interactive:
+            plt.show()
+        plt.close()
+        print(savename)
+except Exception:
+    print('plot_eue_events failed:')
     print(traceback.format_exc())
 
 try:
@@ -701,17 +739,16 @@ if not int(sw.GSw_PRM_CapCredit):
         print(traceback.format_exc())
 
     try:
-        level, threshold, _, metric = sw['GSw_PRM_StressThreshold'].split('/')[0].split('_')
-        plt.close()
-        f,ax = reedsplots.plot_stressperiod_evolution(
-            case=case, level=level, metric=metric)
-        savename = f'plot_stressperiod_evolution-{metric}-{level}.png'
-        if write:
-            plt.savefig(os.path.join(savepath, savename))
-        if interactive:
-            plt.show()
-        plt.close()
-        print(savename)
+        for metric in ['neue','depth','duration','lolh','lole','lold']:
+            plt.close()
+            f,ax = reedsplots.plot_stressperiod_evolution(case=case, metric=metric)
+            savename = f'plot_stressperiod_evolution-{metric}.png'
+            if write:
+                plt.savefig(os.path.join(savepath, savename))
+            if interactive:
+                plt.show()
+            plt.close()
+            print(savename)
     except Exception:
         print('plot_stressperiod_evolution failed:')
         print(traceback.format_exc())

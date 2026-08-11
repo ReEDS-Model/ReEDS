@@ -22,7 +22,7 @@ from defaults import (DEFAULT_DOLLAR_YEAR, DEFAULT_PV_YEAR, DEFAULT_DISCOUNT_RAT
 
 this_dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(os.path.join(this_dir_path,'..','..')))
-from reeds.io import read_output
+from reeds.io import read_input, read_output
 
 logger = logging.getLogger('')
 #ReEDS globals
@@ -350,19 +350,22 @@ def get_src(scen, src):
         df_src = pd.DataFrame(data)
         df_src.columns = src['columns']
     elif src['file'].endswith('.csv'):
-        if 'header' in src and src['header'] == None:
-            df_src = pd.read_csv(filepath, low_memory=False, header=None)
-        else:
-            df_src = pd.read_csv(filepath, low_memory=False)
+        kwargs = {'header': None} if ('header' in src and src['header'] is None) else {}
+        try:
+            df_src = pd.read_csv(filepath, low_memory=False, **kwargs)
+        except FileNotFoundError:
+            df_src = read_input(scen['path'], src['name'], low_memory=False, **kwargs)
     else:
-        df_src = read_output(scen['path'], filepath)
+        if 'inputs_case' in filepath:
+            df_src = read_input(scen['path'], filepath)
+        else:
+            df_src = read_output(scen['path'], filepath)
     if 'transpose' in src and src['transpose'] is True:
         df_src = df_src.T
     if 'columns' in src:
         df_src.columns = src['columns']
     df_src.replace('Eps',0, inplace=True)
     df_src.replace('Undf',0, inplace=True)
-    df_src = df_src.apply(pd.to_numeric, errors='ignore')
     df_src = df_to_lowercase(df_src)
     return df_src
 
@@ -456,7 +459,7 @@ def process_reeds_data(topwdg, custom_sorts, custom_colors, result_dfs):
                 df[c] = df[c].astype(str)
 
     #categorize columns
-    cols['discrete'] = [x for x in cols['all'] if df[x].dtype == object]
+    cols['discrete'] = [x for x in cols['all'] if pd.api.types.is_object_dtype(df[x]) or pd.api.types.is_string_dtype(df[x])]
     cols['continuous'] = [x for x in cols['all'] if x not in cols['discrete']]
     cols['y-axis'] = [x for x in cols['continuous'] if not (x in reeds.columns_meta and 'y-allow' in reeds.columns_meta[x] and reeds.columns_meta[x]['y-allow'] is False)]
     cols['x-axis'] = [x for x in cols['all'] if x not in cols['y-axis']]
@@ -617,6 +620,6 @@ def update_reeds_presets(attr, old, new):
 
 def df_to_lowercase(df):
     for col in df:
-        if df[col].dtype == object:
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
             df[col] = df[col].str.lower()
     return df

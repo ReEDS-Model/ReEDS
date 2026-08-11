@@ -4,15 +4,14 @@
 import argparse
 import datetime
 import itertools
+import gdxpds
 import pandas as pd
 import numpy as np
-import gdxpds
 import os
 import sys
 import urllib
 ### Local imports
 import ferc_distadmin
-import calculate_historical_capex
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import reeds
 from reeds import plots
@@ -141,7 +140,7 @@ def distribute_between_solve_years(df, value_col, modeled_years, years):
 
     year_expander = pd.DataFrame(index=years)
     year_expander['t_modeled'] = None
-    year_expander['alloc_f'] = 0
+    year_expander['alloc_f'] = 0.
     year_expander.loc[first_year, ['t_modeled', 'alloc_f']] = [first_year, 1.0]
     for year in year_expander.index[1:]:
         preceding_model_year = np.max([x for x in modeled_years if x<year])
@@ -268,9 +267,6 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
     """
     """
     print('Starting retail_rate_calculations.py')
-    # Run historical capex calculation
-    calculate_historical_capex.main(run_dir)
-
     # Get module directory for relative paths
     mdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -462,7 +458,7 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
             'r':'receiving_region', 't':'t', 'Value':'expenditure_flow',
             'Dim1':'receiving_region','Dim2':'t','Val':'expenditure_flow'})
         )
-    ### According to e_report.gms, all international flows are load to/from Canada
+    ### According to report.gms, all international flows are load to/from Canada
     # (not capacity, reserves, rps, or Mexico)
     state_international_flows['price_type'] = 'load'
     state_international_flows['sending_state'] = 'Canadian Imports'
@@ -1137,7 +1133,7 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
         .sort_values(['state','t']).reset_index(drop=True))
     ### Backward-fill for only the per_mwh columns
     bfillcols = [c for c in dist_admin_costs if c.endswith('_per_mwh')]
-    dist_admin_costs[bfillcols] = dist_admin_costs[bfillcols].interpolate('bfill')
+    dist_admin_costs[bfillcols] = dist_admin_costs[bfillcols].bfill()
     dist_admin_costs.loc[dist_admin_costs.entry_type.isnull(), 'entry_type'] = 'bfill'
 
     #%% Add excluded costs back in with specialized amortization assumptions

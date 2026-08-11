@@ -9,7 +9,7 @@ We are especially grateful to Walter Short who first envisioned and developed th
 Finally, we are grateful to all those who helped sponsor ReEDS model development and analysis, particularly supporters from the U.S. Department of Energy (DOE) but also others who have funded our work over the years.
 
 ```{admonition} Suggested Citation
-National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model documentation — ReEDS 2.0*. https://natlabrockies.github.io/ReEDS-2.0/model_documentation.html
+National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model documentation — ReEDS 2.0*. https://reeds-model.github.io/ReEDS/model_documentation.html
 
 ```
 
@@ -60,6 +60,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | GW | gigawatt |
 | GWP | global warming potential |
 | H<sub>2</sub> | hydrogen |
+| HHV | higher heating value |
 | HMI | U.S. Bureau of Reclamation Hydropower Modernization Initiative |
 | HVDC | high-voltage direct current |
 | IGCC | integrated gasification combined cycle |
@@ -149,15 +150,15 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | WECC | Western Electricity Coordinating Council |
 | WIND | Wind Integration National Dataset |
 | WinDS | Wind Deployment System |
-
+| WIRED | Workforce Impacts and Regional Economic Development |
 
 ## Introduction
 
-This documentation describes the structure and key data elements of the [Regional Energy Deployment System](https://www.nrel.gov/analysis/reeds/) (ReEDS) model, which is maintained and operated by the National Laboratory of the Rockies (NLR).
+This documentation describes the structure and key data elements of the [Regional Energy Deployment System](https://www.nlr.gov/analysis/reeds/) (ReEDS) model, which is maintained and operated by the National Laboratory of the Rockies (NLR).
 In this introduction, we provide a high-level overview of ReEDS objectives, capabilities, and applications.
 We also provide a short discussion of important caveats that apply to any ReEDS analysis.
 
-The ReEDS model code and input data can be accessed at <https://github.com/NatLabRockies/ReEDS-2.0>.
+The ReEDS model code and input data can be accessed at <https://github.com/ReEDS-Model/ReEDS>.
 
 
 ### Overview
@@ -199,7 +200,7 @@ ReEDS has been the primary analytical tool in numerous studies, including the Re
 ReEDS has also been used to examine the impacts of a range of existing and proposed energy policies {cite:p}`lantzImplicationsPTCExtension2014, maiImpactFederalTax2015, gagnonImpactRetailElectricity2017, steinbergEvaluatingImpactsInflation2023, denholmExaminingSupplySideOptions2022`.
 Transmission and grid integration studies often require scenarios of future power systems, and ReEDS has been used in such studies, e.g., the National Transmission Planning Study {cite}`doeNationalTransmissionPlanning2024`, the Atlantic Offshore Wind Transmission Study {cite}`brinkmanAtlanticOffshoreWind2024a`, and the North American Renewable Integration Study {cite}`brinkmanNorthAmericanRenewable2021a`.
 Many other studies, conducted by NLR and non-NLR researchers, use ReEDS to evaluate diverse topics relevant to the power sector.
-The [ReEDS website](https://www.nrel.gov/analysis/reeds/) includes a list of publications with NLR co-authorship that use ReEDS.
+The [ReEDS website](https://www.nlr.gov/analysis/reeds/) includes a list of publications with NLR co-authorship that use ReEDS.
 
 
 ### Summary of Caveats
@@ -354,29 +355,40 @@ Methane leakage is not included in emissions estimates for transportation or res
 ### Spatial Resolution
 
 ReEDS is typically used to study the CONUS.[^ref9]
-By default, two of the smaller regions are aggregated into neighboring regions, producing 132 regions (with region p119 aggregated into p122 and region p30 aggregated into p28).
-ReEDS model regions can be seen in {numref}`figure-hierarchy`.
+The 90 default ReEDS model zones are shown in {numref}`figure-spatial_layers_zones`.
 The model zones comprise groups of counties and do not align perfectly with real balancing authority areas.
 The zones respect state boundaries, allowing the model to represent individual state regulations and incentives.
-Transmission flows across the roughly 300 interfaces between model zones are subject to transfer limits, as discussed in the [Transmission](#transmission) section.
-Additional geographical layers used to define model characteristics include 3 synchronous interconnections,
-18 planning subregions designed after existing regional transmission organizations (RTOs),
-13 North American Electric Reliability Corporation (NERC) reliability subregions,
-9 census divisions as defined by the U.S. Census Bureau,
-and 48 states.[^ref10]
-The spatial configuration in the model is flexible so the model can be run at various resolutions (i.e., aggregations of model zones), and data within the model are filtered to include data only for the regions being modeled in a given scenario.
+Transmission flows across the interfaces between model zones are subject to transfer limits, as discussed in the [Transmission](#transmission) section.
 
 [^ref9]: A ReEDS-India model version has also been developed.
 Details of the implementation are not discussed here.
 
+```{figure} figs/docs/spatial_layers_zones.png
+:name: figure-spatial_layers_zones
+
+Default model zones and spatial layers defined by groups of zones.
+```
+
+Additional spatial layers are used in different parts of the model.[^ref10]
+Layers defined by groups of zones are shown in {numref}`figure-spatial_layers_zones`.
+Layers defined by groups of states (and a subset of the ~50,000 resource sites, which are held fixed across different model zone resolutions) are shown in {numref}`figure-spatial_layers_states`.
+
 [^ref10]: These additional geographical layers defined in ReEDS do not necessarily align perfectly with the actual regions, except for state boundaries, which are accurately represented.
 
+```{figure} figs/docs/spatial_layers_states.png
+:name: figure-spatial_layers_states
+
+A subset of the ~50,000 resource sites (lower left) and spatial layers defined by groups of states.
+```
+
+The spatial resolution is flexible, such that model zones can be defined by groups of counties within the same state.
+{numref}`figure-spatial_zonesets` shows the currently supported spatial resolutions for model zones.
 For more information on the spatial flexibility in the model, including running the model at county resolution, see the [Spatial Resolution Capabilities](#spatial-resolution-capabilities) section.
 
-```{figure} figs/docs/hierarchy.png
-:name: figure-hierarchy
+```{figure} figs/docs/spatial_zonesets.png
+:name: figure-spatial_zonesets
 
-Levels of spatial resolution used in ReEDS.
+Currently supported model zone definitions.
 ```
 
 
@@ -423,7 +435,7 @@ The optimization approach is used by default and is briefly described here.
 
 The optimized method considers three "features" (wind capacity factor, solar capacity factor, and electricity demand)
 and their daily average values over a user-specified number of regions.
-The 18 planning subregions shown in {numref}`figure-hierarchy` are used by default, resulting in 3 × 18 = 54 combinations of features and regions.
+The 18 planning subregions shown in {numref}`figure-spatial_layers_zones` are used by default, resulting in 3 × 18 = 54 combinations of features and regions.
 The two-step optimization method is illustrated graphically in {numref}`figure-temporal-repdays`.
 First, a linear optimization is performed to identify a set of daily "weights" that,
 when multiplied by the observed daily feature values in each region and summed over the year,
@@ -489,6 +501,11 @@ Choices are `optimized` (for the method described above), `hierarchical` (for hi
 The default value of 33 periods is chosen as a trade-off between runtime and accuracy (both of which increase with the number of representative periods modeled).
 When using `GSw_HourlyClusterAlgorithm = optimized`, fewer periods may be required.
 If more periods are desired than the number identified by the optimized method, either set `GSw_HourlyClusterRegionLevel` to a finer region level (such as `r` or `st`) or set `GSw_HourlyClusterAlgorithm` to `hierarchical`.
+- `GSw_HourlyClusterMapMethod` (default `milp`): How to map actual periods to representative periods.
+'milp' minimizes the sum of absolute errors between representative and actual periods using a Mixed Integer Linear Program (MILP), but is slow;
+'bestfirst' is orders of magnitude faster when using many weather years in `GSw_HourlyWeatherYears`.
+The `bestfirst` algorithm iteratively matches representative periods to actual periods that are closest in (feature × region)-dimensional space,
+working its way out from each representative period until the representative period is mapped to a number of actual periods equal to its weight.
 ```
 
 
@@ -664,6 +681,7 @@ Fossil and nuclear technologies are characterized by the following parameters:
 - Scheduled and forced outage rates (%).
 
 Cost and performance assumptions for all new fossil and nuclear technologies are taken from the ATB {cite}`nrel2024AnnualTechnology2024` with options to use the Conservative, Moderate, or Advanced trajectories.
+Thermal plant heat rates and fuel costs are specified in higher heating value (HHV) terms, consistent with the EIA and the ATB. 
 Regional variations and adjustments are described below.
 Fixed operation and maintenance costs for coal plants increase over time with the plant's age. Fixed operation and maintenance costs for nuclear plants increase by a fixed amount after 50 years of being online. These escalation factors are taken from the Annual Energy Outlook 2025 {cite}`eiaAnnualEnergyOutlook2025`.
 
@@ -1196,7 +1214,7 @@ As a result, its capital cost is uprated by the ratio of a 15-year evaluation wi
 Batteries are assumed to have a round-trip efficiency of 85% and a representative size of 60 MW.
 
 Existing PSH capacity is represented in the model according to the input plant database.
-New PSH potential is derived from a national PSH resource assessment described in {cite}`rosenliebClosedLoopPumpedStorage2022` and at <https://www.nrel.gov/gis/psh-supply-curves.html>.
+New PSH potential is derived from a national PSH resource assessment described in {cite}`rosenliebClosedLoopPumpedStorage2022` and at <https://www.nlr.gov/gis/psh-supply-curves.html>.
 Several PSH supply curves are available in ReEDS, including alternative storage durations (8, 10, or 12 hours) and alternative environmental site exclusions specifying whether new PSH reservoir construction can occur where there are ephemeral streams as defined by the National Hydrography Dataset, or whether to include sites that utilize existing reservoirs.
 The PSH resource assessment includes site-level capital costs calculated from a detailed bottom-up cost model that incorporates dam, reservoir, and other site characteristics {cite}`cohenComponentLevelBottomUpCost2023`.
 PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020GridEnergy2020`, and PSH cost and resource assumptions are taken from the ATB {cite}`nrelAnnualTechnologyBaseline2024`.
@@ -1341,7 +1359,7 @@ At least 1% of the region's land area must overlap with the storage availability
 ReEDS requires any hydrogen storage be sized to hold at least 24 hours' worth of hydrogen to run the H<sub>2</sub>-CTs in a given region.
 
 ReEDS also allows the modeling of interzonal hydrogen transport.
-Transport requires the construction of hydrogen pipelines, and the model assumes cost estimates based on the H<sub>2</sub> [SERA model](https://www.nrel.gov/hydrogen/sera-model.html).
+Transport requires the construction of hydrogen pipelines, and the model assumes cost estimates based on the H<sub>2</sub> [SERA model](https://www.nlr.gov/hydrogen/sera-model.html).
 Modeling hydrogen transport in ReEDS is an experimental feature and, because this feature adds significant runtime, the model includes the option to model zonal balancing with transport disabled or a fixed \$/kg hydrogen transport cost.
 
 
@@ -1572,7 +1590,7 @@ Note the difference in color scales.
 
 
 Scheduled (planned and maintenance) outage rates are derived from the NERC GADS database {cite}`nercGeneratingAvailabilityData2023`.
-Scheduled outage rates for combined cycle, combustion turbine, nuclear, steam (coal), and hydro technologies are measured and applied at monthly resolution using GADS data from 2013 to 2023 {cite}`murphyGridReliabilityStatistics2025`.
+Scheduled outage rates for combined cycle, combustion turbine, nuclear, steam (coal), and hydro technologies are measured and applied at monthly resolution using GADS data from 2013 to 2023 {cite}`murphyGridReliabilityStatistics2025` (see the [scheduled outages](https://github.com/NatLabRockies/grid-reliability-statistics/blob/main/notebooks/scheduled_outages.ipynb) notebook for specific details).
 Scheduled outage rates for other technologies are measured as time-independent average values using GADS data from 2014 to 2018;
 scheduled outages for these technologies are applied only during spring and fall, with the outage rates during those months scaled to reproduce the measured time-independent averages.
 {numref}`figure-outage_scheduled` shows scheduled outage rates for the technologies used by default.
@@ -1601,13 +1619,13 @@ Air temperature, relative humidity, cold/icing shutoff indicators, modeled wind 
 
 ## Fuel Prices
 
-Natural gas, coal, and uranium prices in ReEDS are based on the AEO2025.
-Coal prices are taken from the Reference scenario, with any missing values from the Reference scenario forward-filled using prior years.
+Natural gas, coal, and uranium prices are based on the AEO2026 {cite}`eiaAnnualEnergyOutlook2026`.
+Coal prices are taken from the Alternative Electricity scenario because it provides a complete dataset through 2050 relative to the Counterfactual Baseline scenario (which has coal fully phasing out in many regions).
 Coal prices are provided for each of the nine EIA census divisions.
-Default natural gas prices and demand levels are from the AEO2025 Reference scenarios.
+Default natural gas prices and demand levels are from the AEO2026 Counterfactual Baseline scenarios.
 Low and high natural gas price alternatives are taken from the High and Low Oil and Gas Resource and Technology scenarios, respectively.
-ReEDS includes only a single national uranium price trajectory based on the AEO2025 Reference scenario.
-Base fuel price trajectories are shown in {numref}`figure-input-fuel-price-assumptions` for the AEO2025 {cite}`eiaAnnualEnergyOutlook2025`.
+ReEDS includes only a single national uranium price trajectory based on the AEO2026 Counterfactual Baseline scenario.
+Base fuel price trajectories are shown in {numref}`figure-input-fuel-price-assumptions`.
 Biomass fuel prices are represented using supply curves as described in the [Biopower section](#biopower).
 
 ```{figure} figs/docs/input-fuel-price-assumptions.png
@@ -1627,7 +1645,7 @@ Although there is no explicit representation of natural gas demand beyond the el
 For details, see the [Natural Gas Supply Curves](#natural-gas-supply-curves) section of the appendix.
 
 [^ref32]: Supply curves are nonlinear in practice, but a linear regression approximation has been observed to be satisfactory under most conditions.
-The elasticity coefficients are derived from all scenarios of AEO2018, but the price-demand setpoints are taken from any one single scenario of the AEO.
+The elasticity coefficients are derived from AEO2026 scenarios via a demeaned fixed-effects ordinary least squares regression, and the price-demand setpoints are taken from any one single scenario of the AEO.
 
 ReEDS includes options for other types of fuel supply curve representations.
 Supply curves can be national-only, census-division-only, or static.
@@ -1638,17 +1656,29 @@ In the static case, fuel prices are not responsive to demand.
 The switch `GSw_GasCurve` controls the choice of natural gas supply curve.
 0 = census-division-only, 1 = national + census division, 2 = static, 3 = national-only
 
-The file `inputs/fuelprices/cendivweights.csv` contains the weights applied to the fuel prices to help smooth the prices across census divisions when setting `GSw_GasCurve` to 1. This file was created by taking an input file of county-level spatial resolution and assigning a weight to each balancing area.  The highest weight is farthest from the census region border and an exponential decay length of 150 km is applied, blending the weight values across balancing areas and census regions.
+Gas prices vary by census division.
+To avoid sharp boundaries between regions, the gas price in each model zone can be defined as the average over multiple census divisions, weighted by the distance from the zone centroid to the census division boundary.
+The distance weighting is controlled by the `GSw_GasRegionSmooth` switch;
+an exponential decay length of 150 km is used by default.
+If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {numref}`figure-hierarchy` is instead used directly.
 ```
 
-The natural gas fuel prices also include a seasonal price adjustor, making winter prices higher than the natural gas prices seen during the other seasons of the year.
+The natural gas fuel prices also include time-based price adjustors.
+The default option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
 For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
+The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+For details, see the [Daily Natural Gas Price Adjustments section](#daily-natural-gas-price-adjustments) of the appendix.
+
+```{admonition} Natural gas price adjustments
+The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 1)
+```
 
 
 ## Electricity Demand
 
 End-use electricity demand is an exogenous input to ReEDS represented by hourly profiles.
-The available load profile options fall into three categories: 1) load projections from Evolved Energy Research, 2) load projections developed as part of the Electrification Futures Study and 3) historic load multiplied by annual load growth factors from AEO.
+The available load profile options fall into three categories: 1) load projections from Evolved Energy Research, 2) load projections developed as part of the Electrification Futures Study and 3) historic load multiplied by state-level annual load growth factors from AEO.
 When applicable, ReEDS will modify the exogenously specified profiles by applying a load shape adjustment method that incorporates analysis from other modeling tools or by adding load from endogenously built electricity-consuming technologies.
 
 ReEDS includes interzonal transmission system losses in the optimization.
@@ -1776,18 +1806,20 @@ Transmission costs are described first, followed by the separate representations
 Estimated costs for transmission lines are generated by defining a high-geographic-resolution cost surface, then using a least-cost-path algorithm to identify a representative transmission line path between two points {cite}`lopezRenewableEnergyTechnical2025`.
 The final \$/MW cost for a particular route is then given by the integrated \$/MW-mile values for the cost surface points traversed by the least-cost route.
 
-Base voltage-dependent \$/MW-mile transmission costs are taken from four sources:
-Southern California Edison for California Independent System Operator (CAISO) and the Northeast,
-Western Electricity Coordinating Council/Transmission Expansion Planning Policy Committee (WECC/TEPPC) for non-CAISO areas in the Western Interconnection,
-Midcontinent Independent System Operator (MISO) for the Midwest, and a representative utility for the Southeast.
-These base transmission costs are shown on the left side of {numref}`figure-transmission-cost-input-data`.
-Cost multipliers based on terrain type (hilly, with land slope between 2% and 8%, and mountainous, with ≥8% land slope) and land class (pasture/farmland, wetland, suburban, urban, and forest) are taken from the same four sources.
-A separate 90-m-resolution CONUS dataset of terrain and land classes is then combined with the base transmission costs, terrain multipliers, and land class multipliers to generate the cost surface used in the least-cost-path routing algorithm.
+Base voltage-dependent \$/mile transmission costs are taken from the Midcontinent Independent System Operator (MISO) Transmission Cost Estimation Guide {cite}`misoTransmissionCostEstimation2025`.
+The MISO Guide provides material, installation, and overhead cost estimates for transmission structures, conductors, and terrain adders, as well as right-of-way (ROW) width by voltage.
+We use MISO terrain cost adders for forests and wetlands.
+The MISO terrain adder for mountainous terrain is applied to "low mountain" areas from the USGS Global Mountain Explorer K3 dataset {cite}`sayreNewHighResolutionMap2018`;
+for "high mountain" areas (which are not found in the MISO footprint),
+we instead use an estimated 2.5× multiplier on base line costs from Southern California Edison 2023 {cite}`caisoParticipatingTransmissionOwner2023`,
+resulting in a \$310,000/ROW-acre adder (2024 dollars) for high mountain areas when averaged over 230–765 kV base costs.
+An additional adder for the direct cost of ROW land is taken from {cite}`nolteHighresolutionLandValue2020`.
+The land and terrain cost adders are implemented at 90-meter resolution across the CONUS ({numref}`figure-transmission-land-terrain`) and combined with the base per-mile costs to generate the cost surface used in the least-cost-path routing algorithm.
 
-```{figure} figs/docs/transmission-cost-input-data.png
-:name: figure-transmission-cost-input-data
+```{figure} figs/docs/transmission-land-terrain.png
+:name: figure-transmission-land-terrain
 
-Overview of transmission cost input data used in reV model calculations, used to generate ReEDS model inputs.
+Land and terrain cost adders used in reV transmission cost calculations, used to generate ReEDS model inputs.
 ```
 
 Transmission of all types (local and interzonal) incurs FOM costs, which are approximated as 1.5% of the upfront capital cost per year {cite}`weidnerEnergyTechnologyReference2014`.
@@ -1812,30 +1844,19 @@ Substation POIs incur a substation upgrade cost of \$15/kW; transmission line PO
 
 Network reinforcement represents upgrades to the existing transmission network required to avoid congestion when moving power from the POI for a new generator to load centers.
 It is intended to represent the costs associated with interconnection queues, which represent a major bottleneck for the deployment of new wind and solar in the United States. {cite}`gormanGridConnectionBarriers2025`.
-Network reinforcement costs are approximated by tracing a path along existing transmission lines from each wind/solar POI to each zone "center" within the same state;
-the zone center is usually taken as the largest population center in the model zone but is sometimes (for zones without large urban centers) assigned to a high-voltage substation within the zone.[^ref35]
-A cost for each reinforcement route is calculated using the cost surface described above, with capital expenditure (CAPEX) costs multiplied by 50% to approximate the lower cost for reconductoring compared to greenfield transmission construction.
+Network reinforcement costs are approximated by tracing a path along existing transmission lines from each wind/solar POI to a nearby urban center.
+An urban center is defined as the centroid of a ≥100 km<sup>2</sup> urban area from [2020 U.S. Census data](https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2025&layergroup=Urban+Areas).
+POIs are assumed to connect to the urban center that minimizes the combined interconnection cost;
+the least-cost urban center for a reV site is usually, but not always, in the same state as the reV site.
+A cost for each reinforcement route is calculated using the cost surface described above.
 The single lowest-cost route for each POI is then selected; the associated reinforcement cost [\$/MW] and transmission distance [MW-miles] are incurred for every MW of new wind/solar capacity added at all reV sites associated with that POI.
-(This heuristic method of tracing a path from the POI to the largest load center in the zone is highly simplified and does not represent all the considerations involved in an actual interconnection study.)
-
-[^ref35]: Some zone centers are also manually adjusted.
-For example, Vancouver and Portland are the largest population centers in the southern Washington and northern Oregon regions, respectively.
-However, these centers are only about 10 miles apart.
-Modeling such a short distance between these nodes could create a bias for interzonal transmission investments between Washington and Oregon.
-Therefore, Yakima was used in lieu of Vancouver as the node location for southern Washington.
-
-{numref}`figure-local-generation-interconnection-components` illustrates the concepts of spur lines and reinforcement lines, and {numref}`figure-interconnection-cost-distribution` shows the resulting distribution of interconnection costs for land-based wind and utility-scale PV under the three siting regimes.
+(This heuristic method of tracing a path from the POI to an urban center is highly simplified and does not represent all the considerations involved in an actual interconnection study.)
+{numref}`figure-local-generation-interconnection-components` illustrates the concepts of spur lines and reinforcement lines.
 
 ```{figure} figs/docs/local-generation-interconnection-components.png
 :name: figure-local-generation-interconnection-components
 
 Illustration of local generation interconnection components.
-```
-
-```{figure} figs/docs/interconnection-cost-distribution.png
-:name: figure-interconnection-cost-distribution
-
-Interconnection cost distribution for land-based wind (blue) and utility-scale PV (orange) under different siting assumptions.
 ```
 
 {numref}`figure-supplycurve-cost` shows maps of the estimated spur line costs, reinforcement costs, total interconnection costs, and total supply curve costs (including land-cost adders) by reV site.
@@ -1900,12 +1921,12 @@ in general, the ITL for power flow from Zone A to Zone B is not the same as the 
 
 As discussed in {cite}`brownGeneralMethodEstimating2023`, because of the constraints imposed by Kirchhoff's voltage law and nodal load participation factors, the ITL tends to be smaller than the sum of line ratings that cross an interface;
 that is, every transmission line between a pair of regions cannot in general be used at its rated capacity at the same time.
-{numref}`figure-transmission-itl-r` illustrates this effect for the default 134 ReEDS zones.
+{numref}`figure-transmission-itl-r` illustrates this effect at the level of model zones.
 The same effect is observed for larger interfaces;
 when modeled at nodal resolution,
 the maximum flow between SPP and MISO (for example) is smaller than the sum of the zonal ITLs for the zonal interfaces that span the larger SPP-MISO interface.
 For this reason, transmission flows are constrained by ITLs at two levels within ReEDS:
-between the model zones and between the planning subregions (see {numref}`figure-hierarchy` for maps of each).
+between the model zones and between the planning subregions (see {numref}`figure-spatial_layers_zones` for maps of each).
 When running the model at a resolution that includes individual counties, the ReEDS BA interface limits are still enforced,
 meaning that the sum of county-to-county flows across a BA interface cannot exceed the BA interface limit.
 
@@ -1916,38 +1937,24 @@ Existing AC transfer limits in ReEDS.
 ```
 
 ```{admonition} Existing transmission data
-To read the ITL data for a given set of model zones, you can activate the `reeds2` conda environment, then run the following commands in Python from the root of the ReEDS folder:
+To read the ITL data for a given set of model zones, you can activate the `reeds` conda environment, then run the following commands in Python from the root of the ReEDS folder:
 ```python
 import reeds
 # GSw_ZoneSet can be any of the supported values listed in the "Choices" column
 # for the `GSw_ZoneSet` switch in `cases.csv`
-GSw_ZoneSet = 'z132'
+GSw_ZoneSet = 'z90'
 reeds.inputs.get_itls(GSw_ZoneSet=GSw_ZoneSet)
-```
 ```
 
 
 ##### HVDC and B2B
 
-Existing HVDC and B2B connection capacities are taken from project websites and are listed in {numref}`dc-transmission-connections`.
+Existing and planned HVDC and B2B connection capacities are taken from project websites and are shown in {numref}`figure-transmission-hvdc_b2b`.
 
-```{table} Existing HVDC and B2B connection capacity
-:name: dc-transmission-connections
+```{figure} figs/docs/transmission-hvdc_b2b.png
+:name: figure-transmission-hvdc_b2b
 
-| **Project** | **Type** | **Capacity (MW)** |
-|-----|-----|----:|
-| Pacific DC Intertie | LCC | 2,780 |
-| Intermountain Power Project | LCC | 1,920 |
-| CU HVDC and Square Butte | LCC | 1,500 |
-| Welsh Intertie (ERCOT-East) | B2B | 600 |
-| Oklaunion Intertie (ERCOT-East) | B2B | 220 |
-| Lamar Intertie (West-East) | B2B | 210 |
-| Artesia Intertie (West-ERCOT) | B2B | 200 |
-| Blackwater Intertie (West-East) | B2B | 200 |
-| Miles City Intertie (West-East) | B2B | 200 |
-| Rapid City Intertie (West-East) | B2B | 200 |
-| Virginia Smith Intertie (West-East) | B2B | 200 |
-| Segall Intertie (West-East) | B2B | 110 |
+Existing (red) and planned (orange) HVDC lines and B2B converters (gray circles).
 ```
 
 
@@ -1958,19 +1965,12 @@ Existing HVDC and B2B connection capacities are taken from project websites and 
 
 #### New transmission capacity
 
-The cost of new interzonal transmission capacity between each pair of model zones is calculated in the reV model using the base costs shown in {numref}`figure-transmission-cost-input-data`.
-For each pair of zones, a [least-cost path](https://github.com/NatLabRockies/reVX/tree/main/reVX/least_cost_xmission) between the two zone "centers" (the same "centers" described in the [Network reinforcement](#network-reinforcement) section) is determined.
-(Example paths from Maine to each of the other ReEDS zones are shown in {numref}`figure-lcp-p134`.)
+The cost of new interzonal transmission capacity between each pair of model zones is calculated in the reV model as described in the [Transmission Costs](transmission-costs) section.
+For each pair of zones, a [least-cost path](https://github.com/NatLabRockies/reVRt) between the two zone "centers" is determined.
+(Example paths between connected zones for two different model resolutions are shown on the right side of {numref}`figure-transmission-cost-ac`.)
 The integrated \$/mile cost along the least-cost path determines the \$/MW cost for expanding the interface capacity between the linked zones;
 the length of the least-cost path determines the distance (used in the calculation of transmission losses within the model,
 and of the total TW-miles of transmission capacity calculated in postprocessing).
-
-```{figure} figs/docs/lcp-p134.png
-:name: figure-lcp-p134
-
-Example least-cost paths from Maine to each of the other model zones.
-Least-cost paths are determined between each pair of zones.
-```
 
 By default, endogenous expansion of interzonal transmission capacity is allowed to begin 8 years after the present year.
 All components and types of interzonal transmission (including both per-mile line costs and AC/DC converters) use a financial multiplier calculated using a 40-year capital recovery period.
@@ -1986,17 +1986,23 @@ For example:
 
 ##### AC and B2B
 
-New AC transmission capacity uses base costs representative of single-circuit 500-kV lines.
-By default, interfaces with existing AC capacity can be expanded endogenously.
-Interfaces crossing between the three asynchronous interconnections that are currently linked by B2B capacity can also be expanded endogenously.
-B2B connections are modeled as AC lines on either side of an AC/DC/AC converter, so the per-mile costs and distances use AC values.
-{numref}`figure-new-ac-transmission-cost-assumptions` shows the estimated per-mile interzonal transmission costs for each expandable interface, calculated using the cost surfaces described in the [Transmission costs](#transmission-costs) section and visualized using the least-cost paths described in the [New transmission capacity](#new-transmission-capacity) section.
+New AC transmission is assumed to be able to be added between pairs of model zones that are currently connected by AC transmission (referred to as "interfaces").
+The voltage for new AC transmission varies by interface and is taken as the voltage of the highest-voltage line that currently crosses the interface, with a floor of 138 kV.
+{numref}`figure-transmission-cost-ac` shows the voltage of existing transmission lines ({cite}`HIFLD`, top)
+alongside the assumed voltage levels for new expansion (left)
+and the estimated per-MW-mile expansion costs (right)
+for each expandable interface at two different model resolutions,
+calculated using the cost surfaces described in the [Transmission costs](#transmission-costs) section and visualized using the least-cost paths described in the [New transmission capacity](#new-transmission-capacity) section.
 
-```{figure} figs/docs/new-ac-transmission-cost-assumptions.png
-:name: figure-new-ac-transmission-cost-assumptions
+```{figure} figs/docs/transmission-cost-ac.png
+:name: figure-transmission-cost-ac
 
 Modeled per-mile costs for new AC and B2B transmission additions.
 ```
+
+Interfaces crossing between the three asynchronous interconnections that are currently linked by B2B capacity can also be expanded endogenously.
+B2B connections are modeled as AC lines on either side of two LCC AC/DC converters,
+so the per-mile costs and distances use AC values.
 
 As discussed in the [Existing transmission capacity](#existing-transmission-capacity) section,
 two levels of flow constraints are applied: one at the model zone level and one at the planning subregion level, with existing AC capacity between planning subregions assessed at the $n - 1$ contingency level.
@@ -2041,8 +2047,8 @@ Existing HVDC connections (all of which use LCC at the time of this writing) are
 
 ```{admonition} HVDC scenarios
 - Additional candidate point-to-point HVDC connections can be allowed using the `GSw_TransScen` switch.
-For example, the point-to-point connections shown in {numref}`figure-transmission-lcc-vsc` can be enabled by setting `GSw_TransScen=LCC_1000miles_demand1_wind1_subferc_20230629`.
-- Multiterminal HVDC expansion can be turned on by setting `GSw_TransScen=VSC_all`.
+For example, the point-to-point connections shown in {numref}`figure-transmission-lcc-vsc` can be enabled by setting `GSw_TransScen=NTP_P2P`.
+- Multiterminal HVDC expansion can be turned on by setting `GSw_TransScen=NTP_MT`.
 ```
 
 
@@ -2089,13 +2095,13 @@ If `GSw_OffshoreBackflow` is set to `0`, transmission flows from land to offshor
 ReEDS includes a default hurdle rate of \$0.01/MWh (in 2004\$) to reduce degeneracy by marginally incentivizing local energy consumption over interzonal energy trades.
 
 Higher hurdle rates, although not turned on by default, can also be used.
-Different hurdle rates can be applied at different levels of the regional structure shown in {numref}`figure-hierarchy`.
+Different hurdle rates can be applied at different levels of the regional structure shown in {numref}`figure-spatial_layers_zones`.
 For example, a higher hurdle rate can be applied to flows between planning regions than to flows within planning regions.
 
 ```{admonition} Hurdle rates
 Higher hurdle rates can be turned on by setting `GSw_TransHurdleRate=1`.
 When this setting is activated, the hurdle rate for flows between planning subregions starts at 8 \$2020/MWh {cite}`johntsoukalis_et_al_2020` and linearly declines to half of that value between 2026 and 2050.
-The hurdle rate for flows between hurdle regions ({numref}`figure-hierarchy`) starts at the same value but declines to zero by 2050.
+The hurdle rate for flows between hurdle regions ({numref}`figure-spatial_layers_zones`) starts at the same value but declines to zero by 2050.
 Within hurdle regions, only the nominal \$0.01/MWh hurdle rate is applied.
 These region boundaries can be changed using the `GSw_TransHurdleLevel1` and `GSw_TransHurdleLevel2` switches.
 ```
@@ -2174,7 +2180,7 @@ The estimated regulation requirements (0.5% wind generation and 0.3% PV capacity
 
 All ancillary reserve requirements must be satisfied in each zone for each time slice;
 however, reserve provision can be traded between zones using AC transmission interfaces.
-Trades are allowed only within planning regions ({numref}`figure-hierarchy`) and not across planning region boundaries.
+Trades are allowed only within planning regions ({numref}`figure-spatial_layers_zones`) and not across planning region boundaries.
 The amount of reserves that can be traded is limited by the amount of carrying capacity of an AC transmission interface that is not already being used for trading energy.
 
 The ability of technologies to contribute to reserves is limited by the ramping requirement for a given reserve product, the plant ramp rate, and online capacity (see {numref}`generation-techs-flexibility-params`).
@@ -2267,7 +2273,7 @@ If a stress period has no consecutively adjacent stress periods, it is modeled w
 (the same treatment as representative periods, as long as [interday storage operation](#inter-day-storage-operation) is not enabled).
 - Interregional transmission flows are allowed during stress periods by default, allowing interregional coordination to help meet resource adequacy needs.
 New transmission capacity is derated by 15% during stress periods to approximate contingency considerations.
-- Coincident net imports into NERC regions ({numref}`figure-hierarchy`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
+- Coincident net imports into NERC regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
 
 
 
@@ -2383,7 +2389,7 @@ The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss 
 Iterative capacity expansion and resource adequacy model flow for an illustrative scenario, reproduced from {cite}`maiIncorporatingStressfulGrid2024`.
 **a**, "Seed" stress periods.
 **b**, ReEDS capacity expansion results for the first iteration using only the "seed" stress periods.
-Actual results are at zonal resolution but are aggregated here to the level of the 18 planning subregions ({numref}`figure-hierarchy`) for clarity.
+Actual results are at zonal resolution but are aggregated here to the level of the 18 planning subregions ({numref}`figure-spatial_layers_zones`) for clarity.
 **c**, Regional NEUE determined by PRAS for the ReEDS system shown in **b**.
 Some regions do not meet the 1 ppm NEUE threshold, triggering a second iteration in the process.
 **d**, Hourly expected unserved energy (EUE) for the 2007--2013 weather years as determined by PRAS.
@@ -2460,10 +2466,11 @@ Adapted from {cite}`maiIncorporatingStressfulGrid2024`.
 
 The calculation of capacity credit for VRE is described in the [VRE capacity credit](#vre-capacity-credit) section;
 the method for storage is described in the [storage capacity credit](#storage-capacity-credit) section.
-Thermal generators are given a capacity credit of 100% in ReEDS;
-technology-specific [outage rates](#outage-rates) for thermal generators are not considered in this method
-and are instead assumed to be factored into the [planning reserve margin](#planning-reserve-margins).
 
+
+#### Thermal generation capacity credit
+
+For thermal generators (i.e. combined cycle, combustion turbine, nuclear (conventional and SMR), and steam (coal)), ReEDS estimates a seasonal capacity credit for each region/technology combination based on temperature-dependent forced outage rates (described in detail in [outage rates](#outage-rates)). To calculate each technology's contribution to the seasonal reserve margin, its nameplate capacity is multiplied by $(1 - \bar{FOR})$, where $\bar{FOR}$ is the mean forced outage rate during the top 20 net load hours cross all modeled [weather years](#weather-years) for each season. 
 
 
 #### VRE capacity credit
@@ -2504,7 +2511,7 @@ In all cases, the VRE profile is compared against the aggregated regional load p
 
 ```{admonition} Capacity credit settings
 Many settings related to capacity credit calculations can be adjusted by the user.
-- `capcredit_hierarchy_level` (default `transreg` for the 11 planning regions shown in {numref}`figure-hierarchy`): Level at which to aggregate net load for capacity credit calculation
+- `capcredit_hierarchy_level` (default `transreg` for the 11 planning regions shown in {numref}`figure-spatial_layers_zones`): Level at which to aggregate net load for capacity credit calculation
 - `GSw_PRM_CapCreditHours` (default 20): Number of peak net load hours per capacity credit season considered in capacity credit calculation
 - `marg_vre_mw` (default 1000): Amount of marginal VRE capacity to add in MW for marginal capacity credit calculation
 - `marg_stor_mw` (default 100): Amount of marginal storage capacity to add in MW for marginal capacity credit calculation
@@ -2834,8 +2841,11 @@ SO<sub>2</sub> and NO<sub>x</sub> are also included in the [cost of health damag
 
 
 
+## Power Sector Employment
 
+Power sector employment is an output calculated based on employment factors for construction of new power plants and transmission lines, and operation \& maintenance of existing and new power plants. Users have several options of employment factor data to choose from---the Jobs and Economic Development Impact (JEDI) models {cite}`JobsEconomicDevelopment`, which is the default data, and published literature (Mayfield et al. (2023) {cite}`mayfieldLaborPathwaysAchieve2023`, Rutovitz et al. (2025) {cite}`rutovitzUpdatedEmploymentFactors2025`, and Ram et al. (2010) {cite}`ramJobCreationGlobal2020`. )
 
+For JEDI employment data, employment factors for biopower, solar PV, hydropower, pumped storage, and land-based wind are derived respectively from JEDI models of individual technologies, all of which are publicly available. Employment factors for battery storage, coal, natural gas, geothermal, offshore wind, and transmission lines are derived respectively from the Workforce Impacts and Regional Economic Development (WIRED) models of individual technologies, all of which are not yet publicly available but are based on publicly available data inputs.|
 
 
 ## Federal, State, and Local Policies
@@ -2908,7 +2918,7 @@ We do not model banking of allowances, emissions offsets, or recycling of initia
 #### Federal tax credits for clean electricity and captured carbon
 
 Existing federal tax incentives are included in ReEDS, aligned with the One Big Beautiful Bill Act (OBBBA) passed in the summer of 2025.
-These include the production tax credit (PTC) and the ITC for several electricity generation technologies, the 45Q credit for capturing and storing carbon, the 45U credits for existing nuclear generation, the 45V credit for producing hydrogen, and the Modified Accelerated Cost Recovery System (MACRS) depreciation schedules.
+These include the production tax credit (PTC) and the ITC for several electricity generation technologies, the 45Q credit for capturing and storing carbon, the 45U credits for existing nuclear generation, the 45V credit for producing hydrogen, and the Modified Accelerated Cost Recovery System (MACRS) depreciation schedules.[^ref52]
 
 [^ref52]: Note the eligible cost basis for MACRS is reduced by one-half the value of the tax credit.
 
@@ -2996,7 +3006,7 @@ In addition, in recent years there have been numerous changes to RPS legislation
 We periodically update our representation to capture the recent changes to the legislation;
 however, the numerous and frequent changes to state laws make it difficult to precisely represent all RPS legislation.
 
-RPS targets---along with many other data that we use to represent nuanced RPS rules---are based on data compiled by Lawrence Berkeley National Laboratory, which takes into account the in-state REC multiplier incentives and load adjustments (e.g., sales-weighted RPS targets considering different load-serving entities subject to compliance, such as investor-owned utilities, municipal utilities, and cooperatives) {cite}`barboseStateRenewablesPortfolio2024,lbnlRenewablesPortfolioStandards2025`.
+RPS targets---along with many other data that we use to represent nuanced RPS rules---are based on data compiled by Lawrence Berkeley National Laboratory, which takes into account the in-state REC multiplier incentives and load adjustments (e.g., sales-weighted RPS targets considering different load-serving entities subject to compliance, such as investor-owned utilities, municipal utilities, and cooperatives) {cite}`barboseStateRenewablesPortfolio2026,lbnlRenewablesPortfolioStandards2025`.
 Solar includes UPV and ro­oftop PV, wind includes both land-based and offshore technologies, and distributed generation (DG) includes rooftop PV and ground-mounted PV systems located within the distribution network.
 ReEDS also models alternative compliance payments for unmet RPS requirement for both the main RPS targets and solar/wind set-asides, consistent with the available data.
 
@@ -3006,7 +3016,7 @@ RPS targets and technology set-asides for 2010-2050 can be found in `/inputs/sta
 
 Technology eligibility for state RPS requirements is modeled for each state.[^ref55] For instance, California's RPS does not allow in-state rooftop solar technologies to contribute toward its RPS.
 In addition, every state has specific rules regarding hydropower generation's eligibility toward contributing RECs, which are usually based on each unit's vintage and size (e.g., small hydropower with specific capacity cutoffs is eligible in some states).
-ReEDS models these rules as allowable generation fractions, taken from {cite}`barboseStateRenewablesPortfolio2024`, which are imposed on each state's total hydropower generation, limiting the amount of hydropower RECs that each state could produce.
+ReEDS models these rules as allowable generation fractions, taken from {cite}`barboseStateRenewablesPortfolio2026`, which are imposed on each state's total hydropower generation, limiting the amount of hydropower RECs that each state could produce.
 
 [^ref55]: See Database of State Incentives for Renewables & Efficiency (DSIRE) website at [dsireusa.org](http://www.dsireusa.org/).
 If data are unavailable, ReEDS forces RPS targets to be met by using a default alternative compliance payment \$200/MWh (in 2004\$).
@@ -3027,12 +3037,12 @@ Policy-mandated capacity additions may be delayed if there is insufficient capac
 The projects are based on tracking conducted for the NLR Offshore Wind Technologies Market Report, and state totals are shown in {numref}`offshore-wind-capacity`.[^refoffshorenote] The model allows economic deployment of offshore wind capacity beyond these levels.
 All policy-mandated offshore wind capacity is assumed to be rebuilt if retiring the capacity would bring the total below the mandated limit.
 
-[^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2024` shows a nonzero offshore wind carveout beginning in 2024.
+[^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2026` shows a nonzero offshore wind carveout beginning in 2024.
 However, the ReEDS offshore wind mandate for Maryland already captures this requirement, so we zero out the wind carveout.
 
 Finally, voluntary renewable energy credits are also represented in ReEDS.
 Only renewable energy technologies are allowed to supply voluntary RECs, and Canadian imports are not allowed.
-The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1624% in absolute terms).
+The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1208% in absolute terms).
 The voluntary requirement includes an alternative compliance payment of \$10/MWh (in 2004\$).
 
 ```{table} Cumulative Offshore Wind Capacity (MW) Mandated in ReEDS
@@ -3055,8 +3065,8 @@ The voluntary requirement includes an alternative compliance payment of \$10/MWh
 
 ### Clean Energy Standards
 
-As of November 2024, 16 states had clean energy standards (see {numref}`clean-energy-req`).
-CES values are effective values[^ref56] and are taken from {cite}`barboseStateRenewablesPortfolio2024`.
+As of June 2026, 16 states had clean energy standards (see {numref}`clean-energy-req`, which shows the modeled CES values).
+CES values are effective values[^ref56] and are taken from {cite}`barboseStateRenewablesPortfolio2026`.
 These CESs are in effect generalized versions of RPSs; their model representations are very similar, with technology eligibility being the primary difference.
 
 ```{admonition} CES input data
@@ -3084,27 +3094,27 @@ The modeled CES for Massachusetts begins at 16% in 2018 and increases to 80% by 
 This multiplier shortens the cost recovery period of the plant.
 For example, when evaluating whether to build a gas-CC unit 5 years before the scheduled phaseout, the financial multiplier for gas-CC includes a 5-year cost recovery period.
 
-```{table} Clean Energy Requirement as a Percentage of In-State Sales
+```{table} Modeled Clean Energy Requirement as a Percentage of In-State Sales
 :name: clean-energy-req
 
 | **State** | **2020** | **2025** | **2030** | **2035** | **2040** | **2045** | **2050** |
 |----|---:|---:|---:|---:|---:|---:|---:|
-| CA | 0% | 0% | 57% | 86% | 90% | 95% | 95% |
-| CO | 0% | 0% | 47% | 48% | 48% | 48% | 56% |
-| CT | 0% | 0% | 43% | 71% | 99% | 99% | 99% |
-| IL | 0% | 0% | 35% | 48% | 62% | 75% | 89% |
-| MA | 23% | 55% | 64% | 72% | 80% | 88% | 96% |
-| ME | 0% | 0% | 76% | 81% | 86% | 90% | 95% |
-| MI | 0% | 42% | 61% | 72% | 80% | 100% | 100% |
-| MN | 0% | 0% | 74% | 90% | 100% | 100% | 100% |
-| NC | 0% | 0% | 40% | 50% | 60% | 70% | 80% |
-| NE | 0% | 0% | 0% | 0% | 10% | 50% | 100% |
-| NM | 0% | 0% | 0% | 0% | 68% | 83% | 90% |
-| NV | 0% | 0% | 43% | 56% | 68% | 80% | 90% |
-| NY | 0% | 0% | 70% | 70% | 100% | 100% | 100% |
-| OR | 0% | 20% | 55% | 62% | 68% | 68% | 68% |
-| VA | 0% | 36% | 44% | 54% | 66% | 78% | 80% |
-| WA | 13% | 56% | 100% | 100% | 100% | 100% | 100% |
+| CA | 32% | 45% | 61% | 87% | 92% | 97% | 97% |
+| CO | 19% | 32% | 64% | 68% | 73% | 80% | 88% |
+| CT | 25% | 38% | 59% | 79% | 100% | 100% | 100% |
+| IL | 15% | 23% | 34% | 40% | 43% | 65% | 90% |
+| MA | 24% | 56% | 65% | 73% | 80% | 88% | 96% |
+| ME | 44% | 58% | 77% | 87% | 97% | 97% | 97% |
+| MI | 12% | 21% | 39% | 80% | 100% | 100% | 100% |
+| MN | 24% | 35% | 72% | 90% | 100% | 100% | 100% |
+| NC | 6% | 11% | 25% | 39% | 53% | 67% | 81% |
+| NE | 0% | 1% | 4% | 7% | 9% | 54% | 99% |
+| NM | 16% | 36% | 45% | 56% | 67% | 82% | 90% |
+| NV | 17% | 30% | 45% | 57% | 69% | 81% | 93% |
+| NY | 34% | 49% | 70% | 84% | 100% | 100% | 100% |
+| OR | 14% | 24% | 51% | 57% | 63% | 63% | 63% |
+| VA | 0% | 32% | 39% | 47% | 58% | 70% | 72% |
+| WA | 13% | 38% | 100% | 100% | 100% | 100% | 100% |
 ```
 
 ### Storage Mandates
@@ -3139,7 +3149,7 @@ For these states, the nuclear power plants are not allowed to retire until after
 The policy end dates are taken from EIA {cite:year}`eiaElectricPowerMonthly2019a`.
 
 In addition, there are [several states that do not allow new nuclear power](https://www.ncsl.org/environment-and-natural-resources/states-restrictions-on-new-nuclear-power-facility-construction).
-These states include California, Connecticut, Illinois, Maine, Massachusetts, Minnesota, New Jersey, New York (Long Island only), Oregon, Rhode Island, and Vermont.
+These states include California, Illinois, Maine, Massachusetts, Minnesota, New York (Long Island only), Oregon, Rhode Island, and Vermont. Nuclear ban is not imposed for Connecticut since Act25-127 allows construction of advanced nuclear facilities in municipalities with referendums.
 
 
 ### Other Policy Capabilities
@@ -3408,7 +3418,7 @@ To enable more detailed study of system operations, NLR has developed a translat
 expansion solution for any solve year in production cost models (PCMs).
 R2X supports translations to two PCMs: Sienna and PLEXOS.
 
-[Sienna](https://www.nrel.gov/analysis/sienna) is an open-source NLR modeling tool for scientific energy system analysis.
+[Sienna](https://www.nlr.gov/analysis/sienna) is an open-source NLR modeling tool for scientific energy system analysis.
 As part of its core capabilities, `Sienna\Ops` supports the simulation of system scheduling---including unit commitment and economic dispatch, automatic generation control, and nonlinear optimal power flow---along with sequential problem specifications to enable production cost modeling techniques.
 NLR has used Sienna in several analyses such as Puerto Rico 100 and the National Transmission Planning Study
 where it was used as the PCM tool for transmission planning and operational analysis for future scenarios {cite:p}`muralibagguPuertoRicoGrid2024, doeNationalTransmissionPlanning2024`.
@@ -3446,7 +3456,7 @@ such as a long-run marginal emission rate.[^ref64]
 [^ref64]: The long-run marginal emission rate is a metric designed to help estimate the emissions induced (or avoided) by a persistent change in electricity consumption.
 Unlike the short-run marginal emission rate, the long-run marginal emission rate reflects the structural changes to the grid that can be induced by a persistent change in electricity consumption.
 
-Datasets derived through Cambium can be viewed and downloaded at <https://cambium.nrel.gov/>.
+Datasets derived through Cambium can be viewed and downloaded at <https://www.nlr.gov/analysis/cambium/>.
 The documentation for Cambium contains descriptions of the metrics reported in the databases and the methods for calculating those metrics {cite}`gagnonCambium2022Scenario2023`.
 
 
@@ -3474,7 +3484,7 @@ Rather, a regional supply curve representation is used to approximate the NG sys
 For more information on the impact of natural gas representation in ReEDS, see {cite}`coleViewFutureNatural`.
 
 The premise of using regional supply curves is that the price in each region will be a function of both the regional and national NG demand.
-The supply curves are parameterized from AEO scenarios for each of the nine EIA census divisions (shown in {numref}`figure-hierarchy`).
+The supply curves are parameterized from AEO scenarios for each of the nine EIA census divisions (shown in {numref}`figure-spatial_layers_states`).
 Two methods exist to parameterize the natural gas supply curves; both are discussed here.
 The first method involves estimating a linear regression of prices on regional and national quantities.
 The second method involves parameterizing a constant elasticity of supply curve.
@@ -3499,13 +3509,27 @@ P_{r,t} = \alpha + \alpha_r + \alpha_t + \alpha_{r,t} + \beta_{\text{nat}}Q_{\te
 where $P_{r,t}$ is the price of natural gas (in \$/MMBtu) in region $r$ and year $t$; the $\alpha$ parameters are the intercept terms of the supply curves with adjustments made based on region ($\alpha_r$), year ($\alpha_t$), and the region-year interaction ($\alpha_{r,t}$); $\beta_{\text{nat}}$ is the coefficient for the national NG demand ($Q_{\text{nat}}$, in quads); and $\beta_r$ is the coefficient for the regional NG demand ($Q_{r,t}$) in region $r$.
 Note that the four $\alpha$ parameters in {eq}`ng-price-consumption` can in practice be represented using only $\alpha_{r,t}$.
 
-The $\beta$ terms are regressed from AEO2014 scenarios, with 9 of the 31 AEO2014 scenarios removed as outliers {cite}`eiaAnnualEnergyOutlook2014`.
-These outlier scenarios typically include cases of very low or very high natural gas resource availability, which are useful for estimating NG price as a function of supply but not for estimating NG price as a function of demand within a given supply scenario.
+The $\beta$ terms are regressed from AEO scenarios using a demeaned fixed-effects ordinary least squares approach in two stages.
+
+**Stage 1 — Beta regression.** The price-consumption relationship is modeled as:
+
+$$\text{price}(r, t, s) = \alpha_1(r, t) + \beta_{\text{reg}}(r) \cdot Q_{\text{reg}}(r, t, s) + \beta_{\text{nat}} \cdot Q_{\text{nat}}(t, s)$$
+
+where $s$ indexes AEO scenarios, $r$ indexes census divisions, $t$ indexes years, $\alpha_1(r,t)$ is a fixed effect shared across scenarios, $Q_{\text{reg}}$ is regional electric-sector NG demand (quads), and $Q_{\text{nat}}$ is national total NG demand (quads).
+The scenarios included are those that primarily vary demand-side assumptions (e.g., high/low macroeconomic growth, high/low zero-carbon technology costs, alternative electrification pathways); High/Low Oil & Gas Supply and High/Low Oil Price scenarios are excluded to avoid distorting the structural demand-price elasticities with supply-side variation.
+
+To remove the fixed effect $\alpha_1(r,t)$, each variable is demeaned by subtracting its mean across scenarios for each $(r,t)$ group:
+
+$$d\text{Price} = \text{Price} - \overline{\text{Price}}_{(r,t)}$$
+$$dQ_{\text{reg}} = Q_{\text{reg}} - \overline{Q}_{\text{reg},(r,t)}$$
+$$dQ_{\text{nat}} = Q_{\text{nat}} - \overline{Q}_{\text{nat},(r,t)}$$
+
+yielding the demeaned regression:
+
+$$d\text{Price}(r, t, s) = \beta_{\text{reg}}(r) \cdot dQ_{\text{reg}}(r, t, s) + \beta_{\text{nat}} \cdot dQ_{\text{nat}}(t, s)$$
+
+The 9 regional $\beta_{\text{reg}}$ values and 1 national $\beta_{\text{nat}}$ are then estimated jointly via ordinary least squares.
 The national and regional $\beta$ terms are reported in {numref}`figure-census-division-values`.
-We made a specific post hoc adjustment to the regression model's outputs for one region: The $\beta_r$ term for the West North Central division was originally an order of magnitude higher than the other $\beta_r$ values because the West North Central usage in the electricity sector is so low (0.05 quad[^ref65] in 2013, compared to ~0.5 quad or more in most regions).
-The overall natural gas usage (i.e., not just electricity sector usage) in West North Central is similar to the usage in East North Central, so intuitively it makes sense to have a $\beta_r$ for West North Central relatively close to that of East North Central.
-We therefore manually adjusted the West North Central $\beta_r$ term to be 0.6 (in 2004\$/MMBtu/quad) and recalculated the $\alpha$ terms with the new $\beta$ to achieve the AEO2014 target prices.
-The situation in West North Central whereby such a small fraction of NG demand goes to electricity is unique; we do not believe the other regions warrant similar treatment.
 
 [^ref65]: A quad is a quadrillion Btu, or 10<sup>15</sup> Btu.
 
@@ -3517,9 +3541,22 @@ The "National" value at the far left is $\beta_{\text{nat}}$.
 A $\beta$ of 0.2 means that if demand increases by 1 quad, the price will increase by \$0.20/MMBtu (see {eq}`ng-price-consumption`).
 ```
 
-The $\alpha$ terms are then regressed for each scenario assuming the same $\beta$ values for all scenarios.
-Although the $\beta$ terms are derived from AEO2014 data, $\alpha$ terms are regressed using the most recent AEO data.
-Thus, we assume natural gas price elasticity has remained constant, whereas price projections shift over time as represented by the $\alpha$ values.
+**Stage 2 — Alpha regression.** Using the $\beta_{\text{reg}}$ and $\beta_{\text{nat}}$ from Stage 1, the $\alpha$ intercept is computed for the three AEO cases used as ReEDS inputs ($c$): Reference, High Oil & Gas Supply (HOG), and Low Oil & Gas Supply (LOG):
+
+$$\text{price}(r, t, c) = \alpha_c(r, t, c) + \beta_{\text{reg}}(r) \cdot Q_{\text{reg}}(r, t, c) + \beta_{\text{nat}} \cdot Q_{\text{nat}}(t, c)$$
+
+Here $\alpha_c(r, t, c)$ captures the remaining price component for each region, year, and case after accounting for the regional and national quantity effects.
+It is solved as the residual: $\alpha_c = \text{price} - \beta_{\text{reg}} \cdot Q_{\text{reg}} - \beta_{\text{nat}} \cdot Q_{\text{nat}}$.
+
+For the ReEDS start year (2010), the supply curve regression is not applied; instead, the $\beta$ contributions are zeroed and $\alpha$ absorbs the full AEO price level.
+This provides a fixed initial price point from which the supply curve responds to subsequent demand changes, consistent with how ReEDS initializes its NG price model.
+
+All monetary values are deflated to 2004 dollars.
+
+```{seealso}
+The natural gas price regression implementation can be found in the
+[`aeo_updates/natural_gas_price_regression`](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/aeo_updates/natural_gas_price_regression) folder of the ReEDS_Input_Processing repository.
+```
 
 #### Comparison of elasticities from regression approach to literature values
 
@@ -3598,6 +3635,27 @@ where $P$ is the natural gas price for the period indicated by the subscript,
 $W_\text{winter}$ is the fraction of natural gas consumption that occurs in the winter months,
 and $\rho$ and $\sigma$ are the seasonal multipliers for winter and nonwinter, respectively.
 The multipliers $\rho$ and $\sigma$ are determined by solving {eq}`gas-year` through {eq}`gas-nonwinter`.
+
+
+### Daily Natural Gas Price Adjustments
+
+Daily gas price adjustments use coefficients and intercepts derived from regional ordinary least squares regression models with monthly fixed effects.
+The regression models regress daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+The regions used in the regression mostly correspond to census divisions, except in two cases where census divisions are broken up into two smaller regions.
+The Pacific census division is broken up into the subregions "Northwest" (Oregon and Washington) and "California" (California).
+The Mountain census division is broken up into the subregions "Southwest" (Arizona and New Mexico) and "Mountain" (all remaining states in the Mountain census division).
+
+Depending on the spatial resolution of the gas prices being used in the model, the daily gas price adjustments are either downscaled to the zone level by copying each regression region's adjustments to their constituent zones or upscaled to the census division level via population-weighted average.
+In the default national case, zonal gas prices and price adjustments are used.
+Once representative periods are selected in the model, the daily adjustments are filtered to include only the representative periods and then renormalized so that the average price multiplier for each zone or census division is one, thus ensuring the year-round average gas price remains unchanged.
+{numref}`figure-natural-gas-price-adjustments` shows an example set of price adjustments including the national wintertime markup and daily adjustments for each census division.
+
+```{figure} figs/docs/natural-gas-price-adjustments.png
+:name: figure-natural-gas-price-adjustments
+
+Seasonal and daily natural gas price adjustments for weather year 2012.
+This example uses one weather year, but the method can also be applied across multiple weather years.
+```
 
 
 ### Capital Cost Financial Multipliers
@@ -3751,7 +3809,9 @@ For all ReEDS system cost results, we assume the operational costs for the nonmo
 The marginal electricity prices in ReEDS are taken as the shadow prices from the constraints in the model that are directly impacted by the need to serve electricity. These include the load balance constraint, the operating reserve requirement, the RPS and CES requirements, and the planning reserve margin requirement (applied either in stress periods or seasonally via capacity credits). Taken together, these values show the total marginal cost of serving electricity in a given region and time slice. Weighted average versions are also calculated to report national annual marginal electricity prices. These marginal prices are most analogous to wholesale electricity prices but within a model that has full coordination and foresight.
 
 ```{admonition} Marginal Price Outputs
-Marginal electricity price outputs are calculated with `reqt_price` in `e_report.gms` and are outputs in `reqt_price.csv`. The quantity required by the model is reported in the `reqt_quant.csv` output. These two taken together can be used to calculate a $/MWh electricity price, which is done in make of the ReEDS outputs and reported as "Bulk System Electricity Price" in bokehpivot HTML outputs and in other output locations.
+Marginal electricity price outputs are recorded in `reqt_price.csv`.
+The quantity required by the model is reported in `reqt_quant.csv`.
+These two can be combined to calculate a \$/MWh electricity price.
 ```
 
 
@@ -3854,7 +3914,7 @@ In the example in {numref}`figure-energy-capacity-requirements-for-storage`, 5,0
 
 We repeat this process in each region for each season over a large range of storage power capacities (from 0% to 90% of peak demand in 100-MW increments).
 The result of each dispatch is used to produce the "power-energy curve" in {numref}`figure-storage-peak-capacity-determination`, which allows us to calculate the marginal capacity credit for additional storage.
-The curve gives storage energy capacity that is required for full capacity credit as a function of total storage capacity.[^ref45]
+The curve gives storage energy capacity that is required for full capacity credit as a function of total storage capacity.
 At any point along the curve, the slope of the tangent to the curve represents the number of hours needed for marginal storage to receive full capacity credit.
 The incremental capacity credit of an additional unit of storage is equal to the duration of the additional unit installed divided by the duration requirement (slope) at the point on the curve corresponding to the installed storage capacity.
 
@@ -3949,7 +4009,7 @@ DNI resource is used to show opportunities to charge the storage.
 
 ### Spatial Resolution Capabilities
 
-The default model zones are shown in {numref}`figure-hierarchy`.
+The default model zones are shown in {numref}`figure-spatial_layers_zones`.
 Depending on the needs of the user, different spatial resolutions can also be used.
 The default zones can be aggregated into larger regions,
 or collections of zones can be disaggregated into their constituent counties ({numref}`figure-counties`).
@@ -3970,14 +4030,6 @@ And regardless of spatial extent or resolution, all decision variables will stil
 The model also has the capability to use mixed resolutions.
 For example, California can be represented using the default model zones while the rest of the United States is represented at state resolution.
 This approach can enable finer detail for a specific region of interest while capturing trades with neighboring regions at lower resolution but with a reasonable solution time.
-
-
-#### Data inputs and handling
-
-Nearly all ReEDS data inputs that include a spatial dimension are specified at the 134-zone model resolution.[^ref67]
-To be able to perform runs at county-level resolution, some inputs are included at both the county level and zonal resolution.
-
-[^ref67]: Exceptions include state-level policies, which are specified at the state level; NO<sub>x</sub> emission trading groups; and transmission interface limits between system operator boundaries.
 
 
 #### Transmission data
@@ -4056,7 +4108,7 @@ The shapefiles are converted to the ESRI:102008 coordinate reference system, and
 
 #### Scaling datasets to county resolution
 
-All datasets besides those described above were downscaled from 134-zone resolution to county-level resolution using one of the following three methods.
+All datasets besides those described above were downscaled to county-level resolution using one of the following three methods.
 
 **Uniform disaggregation:**
 All counties within a model zone are assigned the same value as the one used for the zone.

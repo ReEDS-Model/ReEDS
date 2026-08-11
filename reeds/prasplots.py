@@ -42,7 +42,7 @@ def plot_interface_flows(
             case=case, year=year, datum='flow', samples=samples)
         dfflow = reeds.io.read_pras_results(infile).set_index(timeindex)
         ## Filter out AC/DC converters from scenarios with VSC
-        dfflow = dfflow[[c for c in dfflow if '"DC_' not in c]].copy()
+        dfflow = dfflow[[c for c in dfflow if '"DC|' not in c]].copy()
         ## Normalize the interface names
         renamer = {i: '→'.join(i.replace('"','').split(' => ')) for i in dfflow}
     else:
@@ -51,7 +51,7 @@ def plot_interface_flows(
     ### Group by hierarchy level
     df = dfflow.rename(columns=renamer)
     aggcols = {c: '→'.join([hierarchy[level][i] for i in c.split('→')]) for c in df}
-    df = df.rename(columns=aggcols).groupby(axis=1, level=0).sum()
+    df = df.rename(columns=aggcols).T.groupby(level=0).sum().T
     df = df[[c for c in df if c.split('→')[0] != c.split('→')[1]]].copy()
     if df.shape[1] == 0:
         raise NotImplementedError(
@@ -178,11 +178,11 @@ def plot_storage_soc(
     dfenergy_r = (
         dfenergy
         .rename(columns={c: c.split('|')[1] for c in dfenergy.columns})
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
     )
     dfenergy_agg = (
         dfenergy_r.rename(columns=hierarchy[level])
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
     )
     # dfheadspace_MWh = dfenergy_agg.max() - dfenergy_agg
     # dfheadspace_frac = dfheadspace_MWh / dfenergy_agg.max()
@@ -252,7 +252,7 @@ def plot_pras_eue_timeseries_full(
     else:
         _iteration = iteration
     infile = os.path.join(
-        case, 'ReEDS_Augur', 'PRAS',
+        case, 'handoff', 'PRAS',
         f"PRAS_{year}i{_iteration}" + (f'-{samples}' if samples is not None else '') + '.h5'
     )
     dfpras = reeds.io.read_pras_results(infile)
@@ -268,7 +268,7 @@ def plot_pras_eue_timeseries_full(
         dfpras
         .rename(columns={c: c[:-len('_EUE')] for c in dfpras})
         .rename(columns=hierarchy[level])
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
         / 1e3
     )
 
@@ -282,7 +282,7 @@ def plot_pras_eue_timeseries_full(
     f,ax = plt.subplots(len(wys), 1, sharex=False, sharey=True, figsize=figsize)
     for row, y in enumerate(wys):
         timeindex_y = pd.date_range(
-            f"{y}-01-01", f"{y+1}-01-01", inclusive='left', freq='H',
+            f"{y}-01-01", f"{y+1}-01-01", inclusive='left', freq='h',
             tz='Etc/GMT+6')[:8760]
         for region, color in colors.items():
             ax[row].fill_between(
@@ -317,7 +317,6 @@ def plot_pras_samples(
     tend='2012-08-07',
     plottype='outage',
     drawload=False,
-    region='country/USA',
     year=2050,
     iteration='last',
     samples=None,
@@ -339,7 +338,7 @@ def plot_pras_samples(
         reeds.io.get_last_iteration(case, t) if iteration in [None, 'last']
         else iteration
     )
-    rs = reeds.inputs.parse_regions(region, case)
+    rs = reeds.inputs.parse_regions(case)
 
     bokehcolors, plotorder = reeds.reedsplots.get_tech_colors_order(order='fuel_storage_vre')
 
@@ -363,7 +362,7 @@ def plot_pras_samples(
 
     ### Get unit availability
     filebase = os.path.join(
-        case, 'ReEDS_Augur', 'PRAS',
+        case, 'handoff', 'PRAS',
         f"PRAS_{t}i{_iteration}"
         f"{f'-{samples}' if isinstance(samples, int) else ''}"
     )
@@ -422,13 +421,13 @@ def plot_pras_samples(
         )
         ## Aggregate units
         dfslice.columns = reeds.reedsplots.simplify_techs(dfslice.columns)
-        dfslice = dfslice.groupby('i', axis=1).sum()
+        dfslice = dfslice.T.groupby('i').sum().T
         dfslice = dfslice[[c for c in plotorder if c in dfslice]].copy()
 
         ## Available capacity
         reeds.plots.stackbar(
             df=dfslice, ax=ax[row], colors=bokehcolors,
-            width=pd.Timedelta('1H'), net=False, align='center',
+            width=pd.Timedelta('1h'), net=False, align='center',
         )
         ## Load
         if (not plottype.lower().startswith('out')) and drawload:
@@ -443,8 +442,8 @@ def plot_pras_samples(
     locator = ax[-1].xaxis.get_major_locator()
     ax[-1].xaxis.set_major_formatter(mpl.dates.ConciseDateFormatter(locator))
     ax[0].set_xlim(
-        keeptimes[0] - pd.Timedelta('1H'),
-        keeptimes[-1] + pd.Timedelta('1H')
+        keeptimes[0] - pd.Timedelta('1h'),
+        keeptimes[-1] + pd.Timedelta('1h')
     )
     ax[-1].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax[-1].set_ylabel(

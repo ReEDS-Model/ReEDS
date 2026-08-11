@@ -1,5 +1,5 @@
 # Getting Started 
-The ReEDS model source code is available at no cost from the National Laboratory of the Rockies (NLR). The ReEDS model can be downloaded or cloned from [https://github.com/NatLabRockies/ReEDS-2.0](https://github.com/NatLabRockies/ReEDS-2.0).
+The ReEDS model source code is available at no cost from the National Laboratory of the Rockies (NLR). The ReEDS model can be downloaded or cloned from [https://github.com/ReEDS-Model/ReEDS](https://github.com/ReEDS-Model/ReEDS).
 
 New users may also wish to start with some ReEDS training videos which are available on the [NLR YouTube channel](https://youtu.be/aGj3Jnspk9M?si=iqCRNn5MbGZc8ZIO).
 
@@ -31,7 +31,8 @@ Screenshot of running "Command Prompt" with "Run as administrator"
 ```
 
 ### Python Configuration
-#### Windows
+`````{tab-set}
+````{tab-item} Windows
 Install Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download).
 
 **IMPORTANT** : Be sure to download the Windows version of the installer.
@@ -81,15 +82,10 @@ Append the Path environment
 
 Screenshot of a test of Python in the terminal window
 ```
+````
 
-#### MacOS
+````{tab-item} macOS / Linux
 Download the latest version of Anaconda: [https://www.anaconda.com/download](https://www.anaconda.com/download)
-
-**IMPORTANT**: Make sure to download the Intel version even if your machine has an Apple Silicon / ARM processor. 
-
-```{figure} figs/readme/anaconda-intel.png
-:name: figure-anaconda-intel
-```
 
 During Installation, select to install Anaconda for your machine only.
 
@@ -109,30 +105,42 @@ Image of Anaconda Install Mac - Customize Installation Type
 
 **To validate Python was installed properly** execute the following command from a new terminal (without quotes): "python"
 
-Python should initiate, looking similar to {numref}`figure-python-test`.
+Python should initiate ({numref}`figure-python-test2`).
 
+```{figure} figs/readme/py-test.png
+:name: figure-python-test2
+
+Screenshot of a test of Python in the terminal window
+```
+
+````
+`````
 
 #### Conda Environment Setup
 
-It is highly recommended to run ReEDS using the conda environment provided in the repository. This environment (named `reeds2`) is specified by the `environment.yml` and can be built with the following command - make sure you navigate to the ReEDS repository from terminal first: 
+It is highly recommended to run ReEDS using the conda environment provided in the repository. This environment (named `reeds`) is specified by the `environment.yml` and can be built with the following command - make sure you navigate to the ReEDS repository from terminal first:
 
-```
+```shell
 conda env create -f environment.yml
 ```
 
-You can verify that the environment was successfully created using the following (you should see `reeds2` in the list):
+You can verify that the environment was successfully created using the following (you should see `reeds` in the list):
 
-```
+```shell
 conda env list
 ```
 
-When creating the reeds2 environment locally, you might run into an SSL error that looks like: `CondaSSLError: Encountered an SSL error. Most likely a certificate verification issue.` To resolve this issue, run the following command before creating the environment again: `conda config --set ssl_verify false`.
+When creating the `reeds` environment locally, you might run into an SSL error that looks like: `CondaSSLError: Encountered an SSL error. Most likely a certificate verification issue.` To resolve this issue, run the following command before creating the environment again: `conda config --set ssl_verify false`.
 
 
 ### GAMS Configuration
 NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.
 
+For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
+
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)
+    
+    
     **If installing on Mac:** on the "Installation" page, click "customize" and ensure the box to "Add GAMS to PATH" is checked.
 
     ```{figure} figs/readme/gams-install-mac.png
@@ -153,7 +161,7 @@ Screenshot of a test of GAMS from the terminal window
 ```
 
 ### Repository Setup
-The ReEDS source code is hosted on GitHub: [https://github.com/NatLabRockies/ReEDS-2.0](https://github.com/NatLabRockies/ReEDS-2.0)
+The ReEDS source code is hosted on GitHub at <https://github.com/ReEDS-Model/ReEDS>.
 
 1. Install Git Large File Storage, instructions can be found here: [Installing Git Large File Storage](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage)
 
@@ -162,79 +170,136 @@ The ReEDS source code is hosted on GitHub: [https://github.com/NatLabRockies/ReE
 git lfs install
 ```
 
-3. Clone the ReEDS-2.0 repository on your desktop. Alternatively, download a ZIP from GitHub ({numref}`figure-github-download`).
-
-```{figure} figs/readme/github-download.png
-:name: figure-github-download
-
-Screenshot of GitHub links to clone the ReEDS repository or download ZIP of the ReEDS files
-```
+3. Clone the ReEDS repository on your desktop or download a ZIP from GitHub.
 
 ### ReEDS2PRAS, Julia, and Stress Periods Setup
-Julia will need to be installed and set up to successfully run the model since ReEDS uses stress periods by default. To get Julia and stress periods set up: 
+Julia will need to be installed and set up to successfully run the model since ReEDS uses stress periods by default. The recommended way to install Julia is via **juliaup**, the official Julia version manager, which makes it easy to install and switch between specific Julia versions. Julia `1.12.1` is the currently tested version across all platforms.
 
-1. Install Julia
-   1. [max/linux]: Julia is included in the conda environment so no additional installation is needed
-   2. [windows]: install Julia from [https://julialang.org/downloads/](https://julialang.org/downloads/)
+#### Step 1: Install juliaup
 
-2. Navigate to the ReEDS-2.0 directory from the command line, then run `julia --project=. instantiate.jl`
+`````{tab-set}
+````{tab-item} Windows
+Install juliaup using `winget` from a terminal (Command Prompt or PowerShell):
 
-#### Troubleshooting Issues with Julia Setup 
-When setting up julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get julia set up successfully: 
-1. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl) 
+    winget install --id Julialang.juliaup
 
-2. Re-run `julia --project=. instantiate.jl`
+Alternatively, install from the [Microsoft Store](https://www.microsoft.com/store/apps/9NJNWW8PVKMN).
+````
 
-If that doesn't resolve the issue, the following may help: 
-1. If you previously installed julia, uninstall it: `winget uninstall julia`
+````{tab-item} macOS / Linux
+Run the following command from a terminal:
 
-2. Manually install [Julia 1.8.5](https://julialang.org/downloads/oldreleases/#:~:text=ea85e0489c36324c4da62163aa1b82fcf2f52f72d173ee7dd213a3a92992cab7-,Windows,-x86_64)
+    curl -fsSL https://install.julialang.org | sh
 
-3. Add the julia bin path to your environment PATH variable
+Follow the on-screen prompts. When installation is complete, open a new terminal session (or run `source ~/.bashrc` / `source ~/.zshrc`) so that `juliaup` is available on your PATH.
 
-4. Install [MinGW](https://www.mingw-w64.org/downloads/) 
+macOS and Linux users can also install via Homebrew:
 
-5. Open the julia interactive command line: `julia`
+    brew install juliaup
+````
+`````
 
-6. Enter the julia package manager by pressing `]`, then run the following commands:
-    * `add Random123`   
+Verify the installation was successful:
+```
+juliaup status
+```
+
+#### Step 2: Install and pin the tested Julia version
+
+Install Julia `1.12.1` and set it as the default:
+```
+juliaup add 1.12.1
+juliaup default 1.12.1
+```
+
+Confirm the active version:
+```
+julia --version
+```
+
+You should see `julia version 1.12.1`.
+
+**NOTE**: If you need other versions of Julia for other purposes, you can run those other Julia versions using `julia +channel` (More info on the [juliaup README](https://github.com/JuliaLang/juliaup#using-juliaup)). Or you can easily switch between versions with juliaup. For example, to switch to version `1.11.2`, run `juliaup default 1.11.2`. To switch back to `1.12.1`, run `juliaup default 1.12.1`.
+
+#### Step 3: Instantiate the Julia environment
+
+Navigate to the ReEDS directory from the command line, then run:
+```
+julia --project=. instantiate.jl
+```
+
+#### Troubleshooting Issues with Julia Setup
+
+`````{tab-set}
+````{tab-item} Windows
+When setting up Julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get Julia set up successfully:
+
+1. If you've used another version of Julia (from the `reeds` conda environment or a previous installation), you may get errors about conflicting manifest. To get past this, you can delete the `Manifest.toml` file with `rm Manifest.toml` (on Unix systems) or `del Manifest.toml` (on Windows systems). 
+
+2. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl)
+
+3. Re-run `julia --project=. instantiate.jl`
+
+If that doesn't resolve the issue, try a clean install using juliaup:
+
+1. Remove any previously installed Julia version managed by juliaup: `juliaup remove 1.12.1`
+
+1. If Julia was installed outside of juliaup, uninstall it first: `winget uninstall julia`
+
+1. Re-install Julia `1.12.1` via juliaup: `juliaup add 1.12.1 && juliaup default 1.12.1`
+
+1. Open the Julia interactive command line: `julia`
+
+1. Enter the Julia package manager by pressing `]`, then run the following commands:
+    * `add Random123`
     * `registry add https://github.com/JuliaRegistries/General.git`
-    * `registry add https://github.com/NatLabRockies/JuliaRegistries.git`
     * `instantiate`
 
-7. Leave the package manager by pressing backspace or Ctrl+C
+1. Leave the package manager by pressing Backspace or Ctrl+C
 
-8. Run the following commands to finish setup: 
+1. Run the following commands to finish setup:
     * `import PRAS`
     * `import TimeZones`
     * `TimeZones.build()`
 
-9. You can then leave the julia command line by typing `exit()`
+1. You can then leave the Julia command line by typing `exit()`
+````
 
-**If you're experiencing issues on Mac, a possible solution is:**
-1. Update the version of julia
+````{tab-item} macOS / Linux
 
-2. Create the 'reeds2' conda environment with the environment.yml file
+If you experience issues, try the following:
 
-3. Run `julia` from the terminal to open the interactive command line
+1. Update to a known-good Julia version via juliaup:
+    ```
+    juliaup add 1.12.1
+    juliaup default 1.12.1
+    ```
 
-4. Run `import Pkg; Pkg.add("PRAS")`
+2. Run `julia` from the terminal to open the interactive command line
 
-5. Run `Pkg.add("TimeZones")`
+3. Run:
+    ```julia
+    import Pkg
+    Pkg.add("PRAS")
+    Pkg.add("TimeZones")
+    ```
 
-6. Exit julia with the command `exit()`, then run `julia instantiate.jl`
-
-7. Manually move the Manifest.toml file from the julia environment (~/miniconda3/envs/reeds2/share/julia/environments/reeds2/Manifest.toml) to the ReEDS repo
+4. Exit Julia with `exit()`, then re-run:
+    ```
+    julia --project=. instantiate.jl
+    ```
+````
+`````
 
 ## Running ReEDS
 
 **Quick Start:**
 1. Navigate to the ReEDS directory from the command line
-2. Activate environment: `conda activate reeds2`
-3. Run the model: `python runbatch.py`
+2. Activate environment: `conda activate reeds`
+3. Run the model: `python runreeds.py`
 4. Follow the prompts for batch configuration
-5. Check for a successful run: 
-   1. Look for CSV files in `runs/[batchname_scenario]/outputs` (a successful run should have 100+ csv files in the outputs folder)
+5. Check for a successful run:
+   1. Look for the `runs/[batchname_scenario]/outputs/outputs.h5` file
    2. Verify the reporting folders ("reeds-report", "reeds-report-reduced") exist in the outputs folder
 
 ### Understanding cases.csv
@@ -273,12 +338,10 @@ NLR has a YouTube channel that contains tutorial videos for ReEDS. The following
 If you'd like practice with running a specific ReEDS scenario, you can walk through the [ReEDS Training Homework](reeds_training_homework).
 
 Additional resources and learning:
-* [General information on ReEDS](https://www.nrel.gov/analysis/reeds/)
-* [ReEDS POC list](https://nrel.sharepoint.com/:w:/s/ReEDS/ES6GQTyzXo1DnnCPlnAhg5QB8cPY--_01HkQkiOnrPskxw?e=flEAtY)
-* [GitHub README](https://github.nrel.gov/ReEDS/ReEDS-2.0/blob/main/README.md)
+* [General information on ReEDS](https://www.nlr.gov/analysis/reeds/)
+* [GitHub README](https://github.com/ReEDS-Model/ReEDS/blob/main/README.md)
 * [YouTube tutorials](https://www.youtube.com/playlist?list=PLmIn8Hncs7bG558qNlmz2QbKhsv7QCKiC)
 * [GAMS language information](https://www.gams.com/latest/docs/UG_MAIN.html#UG_Language_Environment)
-* [Tips and tricks for the bash shell](https://nrel-my.sharepoint.com/:p:/r/personal/ssundar_nrel_gov/Documents/Microsoft%20Teams%20Chat%20Files/02062024_what_the_shell.pptx?d=wa7aea3514f814d51924bf2dfa737d414&csf=1&web=1&e=qr1YuP)
 
-### NLR Specific Setup
-See the [Internal ReEDS Documentation](https://nrel.sharepoint.com/:w:/s/ReEDS/Efathg8KjjtCkxW44vZpWQQBA2KsU3RadSsVauBMskEfUA?e=YaSIqc). Information on Yampa and HPC setup can be found there.
+## Internal ReEDS Documentation
+See the [NLR Specific ReEDS Documentation](https://nrel.sharepoint.com/:w:/s/ReEDS/Efathg8KjjtCkxW44vZpWQQBA2KsU3RadSsVauBMskEfUA?e=YaSIqc). Information on Yampa and HPC setup can be found there.

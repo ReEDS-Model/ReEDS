@@ -8,7 +8,7 @@ from pdb import set_trace as b
 
 #Inputs
 bldg_type = 'com' # 'com' for comstock or 'res' for resstock
-bldg_path = r'/projects/geohc/jm_ReEDS-2.0/postprocessing/reValue/parallel_agg/outputs/outputs_2025-01-20-15-17-29'
+bldg_path = r'/projects/geohc/jm_ReEDS/postprocessing/reValue/parallel_agg/outputs/outputs_2025-01-20-15-17-29'
 bldg_tech = 'upgrade0'
 
 shutil.copy2(os.path.realpath(__file__), bldg_path)
@@ -28,10 +28,10 @@ for f in eulp_files:
     cnty_fips = [int(c[1:3] + c[4:7]) for c in counties]
     bas = [county_map[c] if c in county_map else 'undefined' for c in cnty_fips]
     df.columns = bas
-    df_sum = df.groupby(df.columns, axis=1).sum()
+    df_sum = df.T.groupby(df.columns).sum().T
     ls_df.append(df_sum)
 
 df_sum = pd.concat(ls_df, axis=1)
-df_sum = df_sum.groupby(df_sum.columns, axis=1).sum()
+df_sum = df_sum.T.groupby(df_sum.columns).sum().T
 df_sum = df_sum/1000 #Convert to GWh
 df_sum.to_csv(f'{bldg_path}/agg_{bldg_type}_eulp_hvac_elec_GWh_{bldg_tech}.csv')

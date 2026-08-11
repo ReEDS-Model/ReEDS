@@ -47,8 +47,8 @@ def add_cooling_water(df, **kw):
     df_tech_ctt_wst['tech'] = df_tech_ctt_wst['tech'].str.lower()
     df = pd.merge(left=df, right=df_tech_ctt_wst, how='left', on=['tech'], sort=False)
     #fill na values
-    df['wst'].fillna('other', inplace=True)
-    df['ctt'].fillna('none', inplace=True)
+    df['wst'] = df['wst'].fillna('other')
+    df['ctt'] = df['ctt'].fillna('none')
     return df
 
 def scale_column_filtered(df, **kw):
@@ -99,7 +99,7 @@ def gather_cost_types(df):
 
 def pre_systemcost(dfs, **kw):
     df = dfs['sc'].copy()
-    sw = dfs['sw'].set_index('switch')['value'].copy()
+    sw = dfs['switches'].set_index('switch')['value'].copy()
     scalars = dfs['scalars'].set_index('scalar')['value'].copy()
     sim_years = sorted(dfs['sc']['year'].unique()) #Years Optimized
     sys_eval_years = int(sw['sys_eval_years'])
@@ -164,9 +164,12 @@ def pre_systemcost(dfs, **kw):
         ###### Add payments for pre-2010 capacity
         if ('remove_existing' not in kw) or (kw['remove_existing'] is False):
             ### Get modeled BAs
-            val_r = dfs['val_r'][0].values
+            val_r = dfs['r'].squeeze(1).values
             ### Get total historical capex in modeled BAs
             df_capex_init = dfs['df_capex_init']
+            ### Cast to float64 since assigning float64 values into a float32 column raises an error
+            if 'inv_investment_capacity_costs' in df:
+                df['inv_investment_capacity_costs'] = df['inv_investment_capacity_costs'].astype(float)
             if 'maintain_ba_index' in kw and kw['maintain_ba_index'] is True:
                 ### Keep data up until the year before the first modeled year
                 historical_capex = df_capex_init.rename(
@@ -210,7 +213,7 @@ def pre_systemcost(dfs, **kw):
             crf = dfs['crf']
             crf = crf.set_index('year').reindex(full_yrs)
             crf = crf.interpolate(method='linear')
-            crf['crf'] = crf['crf'].fillna(method='bfill')
+            crf['crf'] = crf['crf'].bfill()
 
         if 'shift_capital' in kw and kw['shift_capital'] is True:
             #This means we start capital payments in the year of the investment, even though loan payments
@@ -253,9 +256,9 @@ def pre_systemcost(dfs, **kw):
         df.loc[df['year'].isin(sim_years), op_type_ls] = df.loc[df['year'].isin(sim_years), op_type_ls].fillna(0)
 
         if 'r' in df.columns:
-            df.loc[:,op_type_ls] = df.groupby('r')[op_type_ls].fillna(method='ffill', limit=sys_eval_years-1)
+            df.loc[:,op_type_ls] = df.groupby('r')[op_type_ls].ffill(limit=sys_eval_years-1)
         else:
-            df.loc[:,op_type_ls] = df[op_type_ls].fillna(method='ffill', limit=sys_eval_years-1)
+            df.loc[:,op_type_ls] = df[op_type_ls].ffill(limit=sys_eval_years-1)
         df = df.fillna(0)
         df = pd.melt(df.reset_index(), id_vars=id_cols, value_vars=cap_type_ls + op_type_ls, var_name='cost_cat', value_name= 'Cost (Bil $)')
         
@@ -273,9 +276,9 @@ def pre_avgprice(dfs, **kw):
         df_load_nat = df_load_nat.to_frame()
         full_yrs = list(range(int(df['year'].min()), int(df['year'].max()) + 1))
         df_load_nat = df_load_nat.reindex(full_yrs)
-        df_load_nat = df_load_nat.interpolate(method='ffill')
+        df_load_nat = df_load_nat.ffill()
 
-        df_natavgprice = pd.merge(left=df, right=df_load_nat, how='left',on=['year'], sort=False)
+        df_natavgprice = pd.merge(left=df, right=df_load_nat.reset_index(), how='left',on=['year'], sort=False)
         df_natavgprice['Average cost ($/MWh)'] = df_natavgprice['Cost (Bil $)'] * 1e9 / df_natavgprice['q']
 
         return df_natavgprice
@@ -310,7 +313,7 @@ def pre_avgprice(dfs, **kw):
         crf = dfs['crf']
         crf = crf.set_index('year').reindex(full_yrs)
         crf = crf.interpolate(method ='linear')
-        crf['crf'] = crf['crf'].fillna(method='bfill')
+        crf['crf'] = crf['crf'].bfill()
         df = pd.merge(left=df, right=crf, how='left',on=['year'], sort=False)
         colname_ls = pd.MultiIndex.from_product([region_ls, cap_type_ls],names=['rb', 'cost_cat'])
         colname_ls = [c for c in colname_ls if c in df.columns.tolist()]
@@ -325,7 +328,7 @@ def pre_avgprice(dfs, **kw):
         #For operation costs, simply fill missing years with model year values.
         colname_ls = pd.MultiIndex.from_product([region_ls, op_type_ls],names=['rb', 'cost_cat'])
         colname_ls = [c for c in colname_ls if c in df.columns.tolist()]
-        df[colname_ls] = df[colname_ls].fillna(method='ffill')
+        df[colname_ls] = df[colname_ls].ffill()
         #The final year should only include capital payments because operation payments last for 20 yrs starting
         #in the model year, whereas capital payments last for 20 yrs starting in the year after the model year.
         df.loc[df.index.max(), colname_ls] = 0
@@ -457,7 +460,7 @@ def pre_abatement_cost(dfs, **kw):
         df_co2['val'] = df_co2['val'] * 1e-3 #converting to billion metric tons
         full_yrs = list(range(df_sc['year'].min(), df_sc['year'].max() + 1))
         df_co2 = df_co2.set_index('year').reindex(full_yrs).reset_index()
-        df_co2['val'] = df_co2['val'].fillna(method='ffill')
+        df_co2['val'] = df_co2['val'].ffill()
         df_co2['type'] = 'CO2 (Bil metric tons)'
         df_co2['cost_cat'] = 'CO2 (Bil metric tons)'
         #Concatenate costs and emissions
@@ -515,8 +518,8 @@ def pre_gen_w_load(dfs, **kw):
     dfs['gen_uncurt'] = sum_over_cols(dfs['gen_uncurt'], drop_cols=['rb','vintage'], group_cols=['tech', 'year'])
     #Outer join generation, fill any missing gen with 0, and then fill missing gen_uncurt with gen
     df = pd.merge(left=dfs['gen'], right=dfs['gen_uncurt'], how='outer', on=['tech','year'], sort=False)
-    df['Gen (TWh)'].fillna(0, inplace=True)
-    df['Gen Uncurt (TWh)'].fillna(df['Gen (TWh)'], inplace=True)
+    df['Gen (TWh)'] = df['Gen (TWh)'].fillna(0)
+    df['Gen Uncurt (TWh)'] = df['Gen Uncurt (TWh)'].fillna(df['Gen (TWh)'])
     #Scale generation to TWh
     df[['Gen (TWh)','Gen Uncurt (TWh)']] = df[['Gen (TWh)','Gen Uncurt (TWh)']] * 1e-6
     #Scale Load to TWh
@@ -631,7 +634,7 @@ def pre_val_streams(dfs, **kw):
         #Include all con_name options for each tech,rb,year combo and fill na with zero
         df = df.pivot_table(index=['tech','rb','year'], columns='con_name', values='$').reset_index()
         df = pd.melt(df, id_vars=['tech','rb','year'], var_name='con_name', value_name= '$')
-        df['$'].fillna(0, inplace=True)
+        df['$'] = df['$'].fillna(0)
         #convert value streams from bulk $ as of discount year to annual as of model year
         df = pd.merge(left=df, right=dfs['pvf_onm'], how='left', on=['year'], sort=False)
         df['$'] = df['$'] / dfs['cost_scale'].iloc[0,0] / df['pvfonm']
@@ -640,7 +643,7 @@ def pre_val_streams(dfs, **kw):
         #get requirement prices and quantities and build benchmark value streams
         dfs['p']['p'] = inflate_series(dfs['p']['p'])
         df_bm = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=['type', 'subtype', 'rb', 'timeslice', 'year'], sort=False)
-        df_bm['p'].fillna(0, inplace=True)
+        df_bm['p'] = df_bm['p'].fillna(0)
         #Add con_name:
         types = ['load','res_marg','oper_res','state_rps','curt_realize','curt_cause'] #the curt ones don't exist, they are just placeholders for the mapping.
         df_bm = df_bm[df_bm['type'].isin(types)].copy()
@@ -815,12 +818,12 @@ def pre_lcoe(dfs, **kw):
     dfs['lcoe']['$/MWh'] = inflate_series(dfs['lcoe']['$/MWh'])
     #Merge with available capacity
     df = pd.merge(left=dfs['lcoe'], right=dfs['avail'], how='left', on=['tech', 'rb', 'year', 'bin'], sort=False)
-    df['available MW'].fillna(0, inplace=True)
+    df['available MW'] = df['available MW'].fillna(0)
     df['available'] = 'no'
     df.loc[df['available MW'] > 0.001, 'available'] = 'yes'
     #Merge with chosen capacity
     df = pd.merge(left=df, right=dfs['inv'], how='left', on=['tech', 'vintage', 'rb', 'year', 'bin'], sort=False)
-    df['chosen MW'].fillna(0, inplace=True)
+    df['chosen MW'] = df['chosen MW'].fillna(0)
     df['chosen'] = 'no'
     df.loc[df['chosen MW'] != 0, 'chosen'] = 'yes'
     #Add icrb column
@@ -959,7 +962,7 @@ def pre_prices(dfs, **kw):
     #Join prices and quantities
     merge_cols = [c for c in ['type', 'subtype', 'rb', 'timeslice', 'year'] if c in dfs['q'].columns]
     df = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=merge_cols, sort=False)
-    df['p'].fillna(0, inplace=True)
+    df['p'] = df['p'].fillna(0)
     #Calculate $
     df['$'] = df['p'] * df['q']
     df.drop(['p', 'q'], axis='columns',inplace=True)
@@ -1014,7 +1017,7 @@ def pre_ng_price(dfs, **kw):
     dfs['p']['p'] = inflate_series(dfs['p']['p'])
     #Join prices and quantities
     df = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=['census', 'year'], sort=False)
-    df['p'].fillna(0, inplace=True)
+    df['p'] = df['p'].fillna(0)
     return df
 
 # calculate storage power (GW) and energy (GWh) capacity
@@ -1068,14 +1071,14 @@ def rgba2hex(rgba):
 def pre_runtime(dictin, **kw):
     """
     ### Use the code below to redefine the colormap when new scripts are added
-    augur_start = df.index.tolist().index('ReEDS_Augur/prep_data.py')
+    ra_start = df.index.tolist().index('ra/prep_data.py')
     for i, row in enumerate(df.index):
-        if i < augur_start:
+        if i < ra_start:
             colors[row.lower()] = rgba2hex(plt.cm.tab20b(i))
-        elif i < augur_start + 20:
-            colors[row.lower()] = rgba2hex(plt.cm.tab20c(i-augur_start))
+        elif i < ra_start + 20:
+            colors[row.lower()] = rgba2hex(plt.cm.tab20c(i-ra_start))
         else:
-            colors[row.lower()] = rgba2hex(plt.cm.tab20(i-augur_start-20))
+            colors[row.lower()] = rgba2hex(plt.cm.tab20(i-ra_start-20))
     """
     df = dictin['runtime'].copy()
 
@@ -1135,24 +1138,23 @@ def process_health_damage(df, **kw):
     rows = product(*allRows.values())
     df_all = pd.DataFrame.from_records(rows, columns=allRows.keys())
     df_new = df.merge(df_all, how='outer', on=['model', 'cr', 'e', 'rb', 'year'])
-    df_new['st'] = df_new['st'].interpolate(method="ffill")
     
     # sort by category and year
     df_new = df_new.sort_values(['model', 'cr', 'e', 'rb', 'year'])
 
     # interpolate any missing values 
-    df_new = df_new.groupby(['model', 'cr', 'e', 'rb']).apply(lambda group: group.interpolate(method='ffill'))
+    df_new = df_new.ffill()
 
     # sum over rb
-    df_out = df_new.groupby(['model', 'cr', 'e', 'year'])[
+    df_out = df_new.groupby(['model', 'cr', 'e', 'year'])[[
             'Emissions (thousand metric tons)', 'Health damages (billion $)', 
             'Health damages (lives)', 'Discounted health damages (billion $)'
-        ].sum().reset_index()
+    ]].sum().reset_index()
 
     # also sum over pollutant   
-    df_poll_agg = df_new.groupby(['model', 'cr', 'year'])[
+    df_poll_agg = df_new.groupby(['model', 'cr', 'year'])[[
             'Health damages (billion $)', 'Health damages (lives)', 'Discounted health damages (billion $)'
-        ].sum().reset_index()
+    ]].sum().reset_index()
 
     df_poll_agg.rename(columns={'Health damages (billion $)' : 'Total health damages (billion $)', 
                                 'Health damages (lives)' : 'Total health damages (lives)',
@@ -1174,7 +1176,7 @@ def process_social_costs(dfs, **kw):
     system_costs_agg.rename(columns={'Cost (Bil $)' : 'Cost (Bil $)-system', 
                                     'Discounted Cost (Bil $)' : 'Discounted Cost (Bil $)-system'}, inplace=True)
 
-    health_costs_agg = health_costs.groupby(['year', 'model', 'cr'])['Health damages (billion $)', 'Discounted health damages (billion $)'].sum().reset_index()
+    health_costs_agg = health_costs.groupby(['year', 'model', 'cr'])[['Health damages (billion $)', 'Discounted health damages (billion $)']].sum().reset_index()
     health_costs_agg.rename(columns={'Health damages (billion $)' : 'Cost (Bil $)-health', 
                                     'Discounted health damages (billion $)' : 'Discounted Cost (Bil $)-health'}, inplace=True)
 
@@ -2067,7 +2069,7 @@ results_meta = collections.OrderedDict((
 
     ('Health Damages from Emissions',
         {'file':'health_damages_caused_r.csv',
-        'columns': ['rb', 'st', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)'],
+        'columns': ['rb', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)'],
         'preprocess': [
             {'func': process_health_damage, 'args':{}},
         ],
@@ -2086,11 +2088,11 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'q', 'file': 'reqt_quant', 'columns': ['type', 'subtype', 'rb', 'timeslice', 'year', 'q']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
-            {'name': 'health_damages', 'file': 'health_damages_caused_r.csv', 'columns': ['rb', 'st', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)']},
+            {'name': 'health_damages', 'file': 'health_damages_caused_r.csv', 'columns': ['rb', 'year', 'e', 'Emissions (thousand metric tons)', 'model', 'cr', 'Marginal damage ($/metric ton)', 'Health damages (billion $)', 'Health damages (lives)']},
         ],  
         'preprocess': [
             {'func': process_social_costs, 'args': {}},
@@ -2258,7 +2260,7 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'year'],
@@ -2274,7 +2276,7 @@ results_meta = collections.OrderedDict((
     ('Sys Cost beyond final year (Bil $)',
         {'sources': [
             {'name': 'sc', 'file': 'systemcost_bulk', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'year'],
@@ -2294,9 +2296,9 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'year'],
@@ -2318,9 +2320,9 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'sc', 'file': 'systemcost_ba', 'columns': ['cost_cat', 'r', 'year', 'Cost (Bil $)']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'index': ['cost_cat', 'r', 'year'],
@@ -2349,9 +2351,9 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'q', 'file': 'reqt_quant', 'columns': ['type', 'subtype', 'rb', 'timeslice', 'year', 'q']}, 
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
@@ -2374,9 +2376,9 @@ results_meta = collections.OrderedDict((
             {'name': 'powerfrac_downstream', 'file': 'powerfrac_downstream', 'columns': ['rr', 'r', 'timeslice', 'year', 'frac']},
             {'name': 'powerfrac_upstream', 'file': 'powerfrac_upstream', 'columns': ['r', 'rr', 'timeslice', 'year', 'frac']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
@@ -2394,9 +2396,9 @@ results_meta = collections.OrderedDict((
             {'name': 'sc', 'file': 'systemcost', 'columns': ['cost_cat', 'year', 'Cost (Bil $)']},
             {'name': 'emit', 'file': 'emit_nat', 'columns': ['year', 'CO2 (MMton)']},
             {'name': 'crf', 'file': '../inputs_case/crf.csv', 'columns': ['year', 'crf']},
-            {'name': 'val_r', 'file': '../inputs_case/val_r.csv', 'header':None},
+            {'name': 'r', 'file': '../inputs_case/val_r.csv', 'header':None},
             {'name': 'df_capex_init', 'file': '../inputs_case/df_capex_init.csv'},
-            {'name': 'sw', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
+            {'name': 'switches', 'file': '../inputs_case/switches.csv', 'header':None, 'columns': ['switch', 'value']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
@@ -2758,19 +2760,6 @@ results_meta = collections.OrderedDict((
             ('Total Losses Over Time',{'x':'year', 'y':'Amount (TWh)', 'series':'scenario', 'chart_type':'Line', 'filter': {'type':{'exclude':['load']} }}),
             ('Losses by Type Over Time',{'x':'year', 'y':'Amount (TWh)', 'series':'scenario', 'explode':'type', 'chart_type':'Line', 'filter': {'type':{'exclude':['load']} }}),
             ('Fractional Losses by Type Over Time',{'x':'year', 'y':'Amount (TWh)', 'series':'scenario', 'explode':'type', 'chart_type':'Line', 'adv_op':'Ratio', 'adv_col':'type', 'adv_col_base':'load'}),
-        )),
-        }
-    ),
-
-    ('Resource adequacy',
-        {'file':'neue.csv',
-        'columns': ['year', 'iteration', 'neue'],
-        'index': ['year', 'iteration'],
-        'preprocess': [
-            {'func': pre_neue, 'args': {}},
-        ],
-        'presets': collections.OrderedDict((
-            ('Normalized expected unserved energy [%]', {'x':'year', 'y':'neue', 'chart_type':'Bar', 'explode':'scenario', 'bar_width':'1.75'}),
         )),
         }
     ),
