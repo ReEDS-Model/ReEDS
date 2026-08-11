@@ -65,5 +65,5 @@ pras_unitsize_source,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,r2x,,
 pras_vre_combine,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,,
 pras_samples,,,,,,10,10,10,,,,,,,,,,,,,,,,10,10,,,,,,,10,10
 GSw_FINITO_Link,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,1
-finito_dir,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,/projects/futuregrid/mmowers/FINITO,/projects/futuregrid/mmowers/FINITO
+finito_dir,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,/path/to/FINITO/directory,/path/to/FINITO/directory
 finito_case,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,BAUfast_reg
