@@ -147,10 +147,10 @@ def main(t, casedir, iteration=0):
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
-    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'), parse_timestamps=True)
+    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
 
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
                                              names=('i','r'))
 
@@ -170,7 +170,7 @@ def main(t, casedir, iteration=0):
         ## e.g. "upv_5" -> "upv", "csp2_3" -> "csp"
         techs_vre_simplify = dict(zip(
             techs_vre,
-            [re.sub('\d?_\d+$', '', i) for i in techs_vre]
+            [re.sub(r'\d?_\d+$', '', i) for i in techs_vre]
         ))
 
     try:
@@ -270,7 +270,7 @@ def main(t, casedir, iteration=0):
         )
     ### Aggregate by model zone
     gen_vre_r = gen_vre_ir.copy()
-    gen_vre_r = gen_vre_r.groupby(axis=1, level='r').sum()
+    gen_vre_r = gen_vre_r.T.groupby(level='r').sum().T
 
     ### Store generation by (i,r) for capacity_credit.py
     gen_vre_resources = gen_vre_ir.reindex(resources[['i','r']], axis=1).fillna(0).clip(lower=0)
@@ -286,7 +286,7 @@ def main(t, casedir, iteration=0):
         pras_vre_gen.columns.get_level_values('i').map(lambda x: techs_vre_simplify.get(x,x)),
         pras_vre_gen.columns.get_level_values('r')
     ])
-    pras_vre_gen = pras_vre_gen.groupby(['i','r'], axis=1).sum()
+    pras_vre_gen = pras_vre_gen.T.groupby(['i','r']).sum().T
 
     pras_vre_gen.columns = ['|'.join(c) for c in pras_vre_gen.columns]
     h5out['pras_vre_gen'] = pras_vre_gen
@@ -510,11 +510,13 @@ def main(t, casedir, iteration=0):
     ).round().astype(int).rename_axis('r').rename('mw')
     ## Turn off for counties by setting to zero (zeros in this file mean the max unit
     ## size is not enforced for that region in ReEDS2PRAS)
-    agglevel_variables = reeds.spatial.get_agglevel_variables(
-        reeds.io.reeds_path, os.path.join(casedir, 'inputs_case')
+    counties = reeds.io.get_county_zones(casedir)
+    unconstrain_counties = sw.GSw_ZoneSet in (
+        reeds.inputs.get_applicable_zonesets(
+            'reeds2pras_unitsize_unconstrain_counties'
+        )
     )
-    counties = agglevel_variables['county_regions']
-    if len(counties):
+    if len(counties) and unconstrain_counties:
         csvout['max_unitsize'].loc[counties] = 0
 
     #%% Strip water tech suffixes from water-dependent technologies
