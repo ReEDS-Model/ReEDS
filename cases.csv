@@ -307,7 +307,7 @@ GSw_StartCost,Technologies with startup costs (0=none; 1=nuclear; 2=nuclear/coal
 GSw_StateCap,Turn on/off state cap and trade constraints,0; 1,1,
 GSw_StateRPS,Turn on/off state RPS requirements,0; 1,1,
 GSw_StateRPS_Carveouts,Turn wind and solar carveouts off/on,0;1,0,
-GSw_StateRPS_Stress,Turn on/off a parallel state RPS/CES requirement applied over stress periods (htype=stress) in addition to the representative-period requirement (htype=rep); reuses the same RecPerc target as the representative-period requirement. 0=off; 1=weight all modeled stress hours equally; 2=weight only each state's own peak-load stress period(s) (the seeded peak day(s) of every GSw_PRM_StressSeedLoadLevel group the state touches; requires GSw_PRM_StressSeedLoadLevel to not be disabled),0; 1; 2,0,
+GSw_StateRPS_Stress,Turn on/off a parallel state RPS/CES requirement applied over stress periods (htype=stress). 0=off; 1=weight all modeled stress hours equally; 2=weight only each state's own peak-load stress period(s),0; 1; 2,0,
 GSw_StateCO2ImportLevel,Hierarchy level within which to calculate CO2 emissions rate [metric ton/MWh] for state CO2 caps,r; nercr; transreg; cendiv; st; interconnect; country; usda_region,interconnect,
 GSw_Storage,0=ban storage; 1=use all standalone storage techs,0; 1,1,
 GSw_StorageBinPenalty,Turn on/off the storage bin penalty for the PRM method (when on results in better firm capacity outputs),0; 1,1,
