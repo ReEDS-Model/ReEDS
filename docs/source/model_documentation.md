@@ -1208,9 +1208,8 @@ Battery cost and performance assumptions are based on lithium-ion battery system
 Low, mid, and high cost projections are available.
 The capital cost of a battery comprises two components: the overnight power unit cost (in \$/kW), which reflects the cost associated with the battery's maximum power output, and the overnight energy unit cost (in \$/kWh), which represents the cost associated with its maximum energy storage capacity---allowing the model to independently size power and energy capacities based on the respective unit costs.
 FOM costs of the battery are divided into two components as well: a 2.5% per year power FOM based on the power-related capital cost and a 2.5% per year energy FOM based on the energy-related capital cost.
-In contrast to other generator technologies in ReEDS,
-which all have lifetimes that meet or exceed typical model evaluation windows for book life, the battery is assumed to last 15 years.
-As a result, its capital cost is uprated by the ratio of a 15-year evaluation window and the evaluation window used by the run.
+The battery's power capacity is assumed to last 30 years.
+The energy capacity is assumed to last 15 years, and is therefore fully refurbished after 15 years using the energy capacity costs in the refurbishment year.
 Batteries are assumed to have a round-trip efficiency of 85% and a representative size of 60 MW.
 
 Existing PSH capacity is represented in the model according to the input plant database.
@@ -1458,7 +1457,7 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 | Concentrating Solar Power | 30 | SunShot Vision {cite}`doeSunShotVisionStudy2012` |
 | Geothermal | 30 | Renewable Electricity Futures Study, Vol. 1 {cite}`maiExplorationHighPenetrationRenewable2012` |
 | Hydropower | 100 | Hydropower: Setting a Course for Our Energy Future {cite}`nrelHydropowerSettingCourse2004` |
-| Battery | 15 | Cole and Karmakar {cite:year}`coleCostProjectionsUtilityScale2023` |
+| Battery | 30 (energy capacity refurbished at 15) | Cole and Karmakar {cite:year}`coleCostProjectionsUtilityScale2023` |
 | Hydrogen Electrolyzer | 20 |  |
 | Hydrogen Steam Methane Reforming and CCS | 25 | |
 | Hydrogen Combined Cycle | 55 |  |

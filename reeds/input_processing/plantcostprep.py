@@ -219,6 +219,41 @@ csp_stack = csp_stack[['t','capcost','fom','vom','i']]
 battery = pd.read_csv(os.path.join(inputs_case,'plantchar_battery.csv'))
 battery = deflate_func(battery, sw.plantchar_battery)
 
+### Battery Mid-Life Refurbishment Cost
+# battery_li operates for 30 years, but its energy capacity (e.g., battery packs)
+# must be replaced after batt_years_until_refurb years. The power capacity lasts
+# the full lifetime and is not refurbished. The energy refurbishment is represented
+# as a discounted adder to the overnight energy capital cost, valued at the cost
+# of new energy capacity in the refurbishment year.
+
+years_until_refurb = int(scalars['batt_years_until_refurb'])
+
+# real discount rate by build year
+financials_sys = pd.read_csv(os.path.join(inputs_case,'financials_sys_full.csv'))
+d_real = financials_sys.set_index('t')['d_real']
+
+# cost of new energy capacity in the refurbishment year, holding the
+# last year of the cost projection constant beyond the end of the input data
+cost_by_year = battery.set_index('t')['capcost_energy']
+future_cost_batt = (
+    cost_by_year
+    .reindex(range(
+        cost_by_year.index.min(),
+        cost_by_year.index.max() + years_until_refurb + 1))
+    .ffill()
+    .loc[cost_by_year.index + years_until_refurb]
+    .set_axis(cost_by_year.index)
+)
+discount = d_real.reindex(cost_by_year.index) ** years_until_refurb
+
+# Add the discounted refurbishment cost to the overnight energy capital cost
+battery = battery.set_index('t')
+battery['capcost_energy'] = (
+    battery['capcost_energy']
+    + scalars['batt_refurb_perc_energy'] * future_cost_batt / discount
+)
+battery = battery.reset_index()
+
 evmc_storage = pd.read_csv(os.path.join(inputs_case,'plantchar_evmc_storage.csv'))
 evmc_storage = deflate_func(evmc_storage, 'evmc_storage_' + sw.evmcscen)
 evmc_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_evmc_shape.csv'), dtype = {'fom':float,'vom':float,'rte':float})
@@ -280,8 +315,7 @@ current_year = datetime.date.today().year
 mask = (consume_char['*i'].isin(['electrolyzer'])) & (consume_char['parameter'].isin(['cost_cap']) & (consume_char['t'].isin([current_year+scalars['h2_elec_stack_replace_year']]))) 
 elec_cost_future = consume_char[mask]['value'].values[0]
 
-# read in financials_sys from inputs_case and take the average of all past years to get an average discount rate
-financials_sys = pd.read_csv(os.path.join(inputs_case,'financials_sys_full.csv')) 
+# take the average of all past years to get an average discount rate
 discount_rate = np.average(financials_sys[(financials_sys['t'] <= current_year)]['d_real'].values)
 
 # the capital cost of electrolyzers needs to be increased by the cost to replace the stack ('h2_elec_stack_replace_perc')
