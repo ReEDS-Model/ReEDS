@@ -298,18 +298,6 @@ hyd_add_pump('hydED_pumped-hydro-flex') = yes ;
 set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
     rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
-alias(r,rr,n,nn) ;
-alias(v,vv) ;
-alias(t,tt,ttt) ;
-alias(st,ast) ;
-alias(allt,alltt) ;
-alias(cendiv,cendiv2) ;
-alias(rscbin,arscbin) ;
-alias(nercr,nercrr) ;
-alias(transgrp,transgrpp) ;
-alias(transreg,transregg) ;
-alias(itlgrp,itlgrpp) ;
-
 parameter yeart(t) "numeric value for year",
           year(allt) "numeric year value for allt" ;
 
