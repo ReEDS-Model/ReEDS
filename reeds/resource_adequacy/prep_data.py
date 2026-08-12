@@ -198,6 +198,11 @@ def main(t, casedir, iteration=0):
         gdxreeds['cap_ivrt'].loc[gdxreeds['cap_ivrt'].t==t].drop('t', axis=1)
         .groupby(['i','v','r'], as_index=False).Value.sum()
     )
+
+    if sw.GSw_StorDrop:
+        print('Dropping storage capacity from PRAS as GSw_StorDrop = 1')
+        cap_ivr_realvint.loc[cap_ivr_realvint.i.isin(gdxreeds['storage_standalone'].i), 'Value'] = 0
+        
     ### Reset the vintages of all storage units to 'new1' to reduce model size
     cap_storage_devint = cap_ivr_realvint.loc[
         cap_ivr_realvint.i.isin(gdxreeds['storage_standalone'].i)].copy()

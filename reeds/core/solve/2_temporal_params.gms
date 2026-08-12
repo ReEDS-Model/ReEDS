@@ -380,6 +380,8 @@ avail(i,r,h)$valcap_ir(i,r) = 1 ;
 
 avail(i,r,h)$[valcap_ir(i,r)] = (1 - outage_forced_h(i,r,h)) * (1 - outage_scheduled_h(i,h)) ;
 
+avail(i,r,h)$[storage(i)$h_stress(h)$Sw_StorDrop] = 0 ;
+
 
 *=============================================
 * -- DR Shed --

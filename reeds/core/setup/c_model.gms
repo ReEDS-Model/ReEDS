@@ -1423,7 +1423,14 @@ eq_interconnection_queues(tg,r,t)
 eq_supply_demand_balance(r,h,t)$tmodel(t)..
 
 * generation from all land-based sources, including storage discharge
-    sum{(i,v)$[valgen(i,v,r,t)$land(r)], GEN(i,v,r,h,t) }
+    sum{(i,v)$[valgen(i,v,r,t)$land(r)$(not storage_standalone(i))], GEN(i,v,r,h,t) }
+
+    + sum{(i,v)$[valgen(i,v,r,t)$land(r)$storage_standalone(i)$(not h_stress(h))], 
+            GEN(i,v,r,h,t)
+        }
+    + sum{(i,v)$[valgen(i,v,r,t)$land(r)$storage_standalone(i)$h_stress(h)$(not Sw_StorDrop)], 
+            GEN(i,v,r,h,t)
+        }
 
 * [plus] net AC and LCC DC transmission with imports reduced by losses
     + sum{(trtype,rr)$[routes(rr,r,trtype,t)$notvsc(trtype)],
