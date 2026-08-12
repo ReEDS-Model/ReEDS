@@ -72,7 +72,7 @@ else:
 year = args.year
 
 # #%% Inputs for testing
-# case = os.path.join(reeds_path,'runs','v20260804_compareM0_Pacific')
+# case = os.path.join(reeds_path,'runs','v20260624_raM1_MultiMetricRA')
 # year = 0
 # interactive = True
 # write = True
@@ -820,7 +820,7 @@ if not int(sw.GSw_PRM_CapCredit):
             print(f'plot_stress_mix failed for {metric}:')
             print(traceback.format_exc())
 
-    level, figheight = 'transreg', 1.2
+    # level, figheight = 'transreg', 1.2
     level, figheight = 'interconnect', 1.8
     for metric in [
         'stress_top10_price',
