@@ -6334,6 +6334,11 @@ $endif.referencesupply
 * reset supply to zero if no supply is allowed for a given material in a shock year
 mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = 0 ;
 
+* turn of rare earth supply if the rare earth shock switch is set to 1
+*$ifthene.supplyshockre %GSw_supplyshock_re% == 1
+*mat_supply(mat,t)$[rare_earth(mat)$years_matshock(t)] = 0 ;
+*$endif.supplyshockre
+
 **** price multiplier ****
 * set price multiplier for materials
 matprice_multiplier(mat,t) = 1;
@@ -6342,9 +6347,13 @@ $ifthene.priceshockone %GSw_priceshock_one% == 1
 matprice_multiplier(mat,t)$[(sameas(mat,'%GSw_matprice_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockone
 
-$ifthene.priceshockall %GSw_priceshock_all% == 1
-matprice_multiplier(mat,t)$[(not sameas(mat,'%GSw_matsupply_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
-$endif.priceshockall
+* idea see below; apply price shock to rare earths
+*set rare_earth(mat) "subset of materials considered rare earths"
+*  /Dysprosium, Neodymium, Praseodymium, Terbium, Yttrium/ ;
+
+*$ifthene.priceshockre %GSw_priceshock_re% == 1
+*matprice_multiplier(mat,t)$[rare_earth(mat)$years_matshock(t)] = %GSw_matprice_multiplier% ;
+*$endif.priceshockre
 
 **** slack price ****
 * set slack price for materials to be 100x the base price to avoid infeasibilities in the model
