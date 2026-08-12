@@ -2273,7 +2273,7 @@ If a stress period has no consecutively adjacent stress periods, it is modeled w
 (the same treatment as representative periods, as long as [interday storage operation](#inter-day-storage-operation) is not enabled).
 - Interregional transmission flows are allowed during stress periods by default, allowing interregional coordination to help meet resource adequacy needs.
 New transmission capacity is derated by 15% during stress periods to approximate contingency considerations.
-- Coincident net imports into NERC regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
+- Coincident net imports into planning regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`energysystemsintegrationgroupInterregionalTransmissionResilience2024` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
 
 
 

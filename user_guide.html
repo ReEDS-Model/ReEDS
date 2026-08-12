@@ -240,7 +240,7 @@ Code within ReEDS should generally point to the links in <code class="docutils l
 <li><p>Switch to <code class="docutils literal notranslate"><span class="pre">GSw_HourlyType=wek</span></code>, which increases the length of the periods from 1 day to 5 days. If all the other switches are left at their defaults, switching to <code class="docutils literal notranslate"><span class="pre">wek</span></code> would increase the coverage from 42 days to 5*42=210 days.</p></li>
 <li><p>Reduce <code class="docutils literal notranslate"><span class="pre">GSw_HourlyClusterRegionLevel</span></code> to something smaller than transreg (like <code class="docutils literal notranslate"><span class="pre">st</span></code>), and then increase <code class="docutils literal notranslate"><span class="pre">GSw_HourlyNumClusters</span></code></p></li>
 <li><p>Switch to <code class="docutils literal notranslate"><span class="pre">GSw_HourlyClusteAlgorithm=hierarchical</span></code> and then increase <code class="docutils literal notranslate"><span class="pre">GSw_HourlyNumClusters</span></code> (although that’s less desirable, because hierarchical clustering doesn’t do as good of a job of reproducing the actual spatial distribution of CF and load)</p></li>
-<li><p>Switch to <code class="docutils literal notranslate"><span class="pre">Gsw_HourlyType=year</span></code>. Although if you’re running for the whole US you’ll need to turn on region aggregation (<code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> in [<code class="docutils literal notranslate"><span class="pre">z54</span></code> or <code class="docutils literal notranslate"><span class="pre">z69</span></code>]) for it to solve.</p></li>
+<li><p>Switch to <code class="docutils literal notranslate"><span class="pre">Gsw_HourlyType=year</span></code>. Although if you’re running for the whole US you’ll need to turn on region aggregation (<code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> in [<code class="docutils literal notranslate"><span class="pre">z54</span></code> or <code class="docutils literal notranslate"><span class="pre">z70</span></code>]) for it to solve.</p></li>
 </ul>
 </li>
 </ul>
@@ -1775,7 +1775,7 @@ These characteristics include:</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 06, 2026.
+      <span class="lastupdated">Last updated on August 12, 2026.
       </span></p>
   </div>
 
