@@ -246,7 +246,7 @@ def plot_prm_diff(
             f"Year {plot_year} is not available in both old and new prm_annual.csv files"
         )
 
-    data = {
+    _data = {
         case: (
             dfprm[case]
             .loc[dfprm[case].t == plot_year, ['nercr', prm_column]]
@@ -257,7 +257,8 @@ def plot_prm_diff(
     }
 
     dfmap = reeds.io.get_dfmap()
-    dfmap['r'] = dfmap['nercr']
+    hierarchy = reeds.io.get_hierarchy()
+    data = {key: pd.Series(hierarchy['nercr'].map(_data[key]), hierarchy.index) for key in _data}
 
     f, ax = plot_diff_maps(
         dfmap=dfmap,
