@@ -107,6 +107,9 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
     for case in cases:
         sw = dfcases[case]
         new_switches[case] = {}
+        # Add startyear switch as the first year in yearset
+        new_switches[case]['startyear'] = str(parse_yearset(sw['yearset'])[0])
+
         ### TEMPORARY 20260402: Turn off itlgrp constraint until it's fixed
         new_switches[case]['GSw_itlgrpConstraint'] = '0'
         ## 'meshed' offshore files are only used when offshore zones are turned on

@@ -12,7 +12,9 @@ import pandas as pd
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 import reeds
-
+from reeds.core.terminus import report_calcs
+sys.path.append(str(Path(reeds.io.reeds_path, 'postprocessing')))
+from retail_rate_module import calculate_historical_capex
 
 #%% Generic functions
 def dfdict_to_csv(dfdict, filepath, symbol_list=None, rename=dict(), decimals=6):
@@ -60,7 +62,7 @@ def dfdict_to_h5(
     overwrite=True,
     symbol_list=None,
     rename=dict(),
-    errors="warn",
+    errors='raise',
     **kwargs,
 ):
     """
@@ -72,7 +74,7 @@ def dfdict_to_h5(
     _symbol_list = dfdict.keys() if symbol_list is None else symbol_list
 
     ### Check for existing file
-    _filepath = filepath if filepath.endswith(".h5") else filepath + ".h5"
+    _filepath = filepath if Path(filepath).suffix == '.h5' else str(filepath) + '.h5'
     if os.path.exists(_filepath):
         if overwrite:
             os.remove(_filepath)
@@ -88,7 +90,6 @@ def dfdict_to_h5(
                 key=rename.get(key, key),
                 filepath=_filepath,
                 overwrite=overwrite,
-                drop_ctypes=True,
             )
         except Exception as err:
             print(key)
@@ -103,7 +104,7 @@ def dfdict_to_excel(
     overwrite=True,
     symbol_list=None,
     rename=dict(),
-    errors="warn",
+    errors='raise',
     **kwargs,
 ):
     """
@@ -143,7 +144,7 @@ def write_dfdict(
     overwrite=True,
     symbol_list=None,
     rename=dict(),
-    errors="warn",
+    errors='raise',
     **kwargs,
 ):
     """
@@ -244,9 +245,9 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     write_xlsx = args.xlsx
 
     # #%% Inputs for debugging
-    # case = os.path.join(reeds_path, 'runs', 'v20250312_scheduledM0_Pacific')
-    # write_csv = False
-    # write_xlsx = False
+    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20260805_reportM2_Pacific')
+    # write_csv = True
+    # write_xlsx = True
 
     #%% Set up logger
     reeds_path = os.path.abspath(os.path.dirname(__file__))
@@ -274,9 +275,10 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     # %%### Write results for each gdx file
     ### outputs gdx
     print("Loading outputs gdx")
-    dict_out = gdxpds.to_dataframes(
-        os.path.join(outputs_path, f"rep_{os.path.basename(case)}.gdx")
-    )
+    dict_out = {
+        **gdxpds.to_dataframes(Path(outputs_path, f"rep_{os.path.basename(case)}.gdx")),
+        **report_calcs.main(case),
+    }
     print("Finished loading outputs gdx")
 
     ### FINITO outputs when running linked model
@@ -300,7 +302,9 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         rename=rename,
     )
 
-    ### powerfrac results
+    ### Additional output reporting
+    calculate_historical_capex.main(case)
+
     if int(sw.GSw_calc_powfrac):
         print("Loading powerfrac gdx")
         dict_powerfrac = gdxpds.to_dataframes(
@@ -322,6 +326,6 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     #%% All done
     print("Completed report_dump.py")
     try:
-        toc(tic=tic, year=0, path=case, process="report_dump.py")
+        reeds.log.toc(tic=tic, year=0, path=case, process="report_dump.py")
     except NameError:
         print("reeds/log.py not found, so not logging output")

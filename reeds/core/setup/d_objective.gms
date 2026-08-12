@@ -356,7 +356,7 @@ eq_Objfn_op(t)$tmodel(t)..
                                    CO2_SPURLINE_INV(r,cs,tt) } }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- CO2 injection break even costs
-              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs,t) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
+              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- Tax credit for CO2 stored ---
 * note conversion to 12-year CRF given length of CO2 captured incentive payments

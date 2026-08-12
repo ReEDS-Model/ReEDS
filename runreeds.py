@@ -223,8 +223,11 @@ def check_cases_format(df_cases):
 
 
 def check_compatibility(sw):
-    if int(sw['startyear']) < 2010:
-        raise ValueError(f"startyear = {sw['startyear']} but must be ≥ 2010")
+    if int(sw['startyear']) != 2010:
+        raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
+
+    if int(sw['GSw_SkipRAyear']) <= int(sw['startyear']):
+            raise ValueError(f"GSw_SkipRAyear = {sw['GSw_SkipRAyear']} but must be > {sw['startyear']}")
 
     if (sw['GSw_HourlyType'] in ['year']) and int(sw['GSw_InterDayLinkage']):
         raise ValueError(
@@ -1361,6 +1364,7 @@ def write_batch_script(
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
+            'process_unitdata',
             'mcs_sampler',
             'climateprep',            
             'hydcf',
@@ -1373,10 +1377,10 @@ def write_batch_script(
             'plantcostprep',
             'hourly_load',
             'recf',
-            'forecast',
             'WriteHintage',
             'transmission',
             'outage_rates',
+            'forecast',
             'hourly_repperiods',
             'h5_to_gdx',
         ]:
@@ -1499,7 +1503,9 @@ def write_batch_script(
                 OPATH.writelines("endlocal\n")
 
         ### save reporting outputs to h5 and/or csv files
-        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n\n")
+        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
+        OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+
         if int(caseSwitches['diagnose']):
              OPATH.writelines(
                 "python"
