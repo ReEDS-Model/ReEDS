@@ -289,13 +289,13 @@ def get_shoulder_periods(sw, criterion, dfenergy_agg, high_stress_periods):
             f"GSw_PRM_StressStorageCutoff={sw.GSw_PRM_StressStorageCutoff} "
             "so not adding shoulder stress periods based on storage level"
         )
-        return {}
+        return pd.DataFrame(columns=['region', 'period', 'value'])
     if dfenergy_agg.empty:
         print(
             "No storage capacity, so no shoulder stress periods will be added "
             "based on storage level"
         )
-        return {}
+        return pd.DataFrame(columns=['region', 'period', 'value'])
 
     ## Parse inputs
     timeindex = reeds.timeseries.get_timeindex(sw['resource_adequacy_years'])
