@@ -235,6 +235,8 @@ d_real = financials_sys.set_index('t')['d_real']
 
 # cost of new energy capacity in the refurbishment year, holding the
 # last year of the cost projection constant beyond the end of the input data
+# (consistent with futurefiles.csv used by forecast.py--it should be adjusted
+# if it is changed there)
 cost_by_year = battery.set_index('t')['capcost_energy']
 future_cost_batt = (
     cost_by_year
