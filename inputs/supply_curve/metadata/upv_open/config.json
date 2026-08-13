@@ -9,9 +9,9 @@
     "class_path": null,
     "compression_opts": 4,
     "copy_to_reeds": true,
-    "copy_to_shared": false,
+    "copy_to_shared": true,
+    "date_updated": "2026-08-07",
     "decimals": 4,
-    "existing_sites": "/kfs3/scratch/bsergi/ReEDS/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv",
     "filetype": "h5",
     "filter_cols": {
         "capacity": [
@@ -43,6 +43,7 @@
     ],
     "min_cap": 5,
     "offshore_meshed": false,
+    "original_rev_folder": "/projects/rev/projects/seto/fy25/standard_scenarios/rev/aggregation/00_open",
     "original_sc_file": "/kfs2/shared-projects/reeds/Supply_Curve_Data/UPV/SC2025_20260803/reV/00_open/00_open_supply-curve.csv",
     "outpath": "/kfs3/scratch/bsergi/ReEDS/hourlize/out/upv_open",
     "process_profiles": true,

@@ -9,10 +9,10 @@
     "class_path": "/kfs3/scratch/bsergi/ReEDS/hourlize/inputs/resource/wind-ofs_resource_classes.csv",
     "compression_opts": 4,
     "copy_to_reeds": true,
-    "copy_to_shared": false,
+    "copy_to_shared": true,
     "cost_out": "combined_off_ons_trans",
+    "date_updated": "2026-08-07",
     "decimals": 4,
-    "existing_sites": "/kfs3/scratch/bsergi/ReEDS/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv",
     "filetype": "h5",
     "filter_cols": {
         "capacity_ac_mw": [
@@ -52,6 +52,7 @@
     ],
     "min_cap": 15,
     "offshore_meshed": false,
+    "original_rev_folder": "/projects/rev/projects/weto/fy25/standard_scenarios/osw/rev/aggregation/limited",
     "original_sc_file": "/kfs2/shared-projects/reeds/Supply_Curve_Data/OFFSHORE/SC2025_20260803/reV/limited/limited_supply-curve_post_proc.csv",
     "outpath": "/kfs3/scratch/bsergi/ReEDS/hourlize/out/wind-ofs_limited",
     "process_profiles": true,
