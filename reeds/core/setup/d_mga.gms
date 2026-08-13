@@ -60,15 +60,15 @@ eq_MGA_Objective$Sw_MGA..
 
 $elseif.mgaobj %GSw_MGA_Objective% == 'rasharing'
 Equation eq_MGA_Objective "--MWh-- Defines RA flows for MGA" ;
-Variable MGA_OBJ "--MWh-- Flows between NERC regions during stress periods" ;
+Variable MGA_OBJ "--MWh-- Flows between FERC regions during stress periods" ;
 eq_MGA_Objective$Sw_MGA..
     MGA_OBJ
     =e=
-    sum{(r,rr,h,trtype,nercr,nercrr,t)
+    sum{(r,rr,h,trtype,transreg,transregg,t)
         $[tmodel(t)
         $routes(r,rr,trtype,t)
         $routes_prm(r,rr)
-        $routes_nercr(nercr,nercrr,r,rr)
+        $routes_transreg(transreg,transregg,r,rr)
         $h_stress(h)],
         FLOW(r,rr,h,t,trtype) * hours(h)
     }
