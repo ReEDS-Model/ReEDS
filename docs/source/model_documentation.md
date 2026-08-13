@@ -2116,9 +2116,9 @@ These region boundaries can be changed using the `GSw_TransHurdleLevel1` and `GS
 
 ReEDS represents electricity trade with Canada exogenously.
 (Electricity trade with Mexico is not represented.)
-In the default configuration, imports and exports are specified by Canadian province based on the Canada Energy Regulator Canadian Electricity Futures 2023 Current Measures {cite}`canadaenergyregulatorCanadasEnergyFuture2023`, with net exports across all regions shown in {numref}`figure-canada-imports-exports`.
+In the default configuration, imports and exports are specified by Canadian province based on the Canada Energy Regulator Canadian Electricity Futures 2026 Current Measures {cite}`canadaenergyregulatorCanadasEnergyFuture2026`, with net exports across all regions shown in {numref}`figure-canada-imports-exports`.
 Each province is required to send electricity to or receive electricity from any of the ReEDS zones that have connecting transmission lines to that province, with the split among zones approximated based on the transmission connecting the zones to the provinces.
-Seasonal and time-slice estimates for imports and exports are based on the historical monthly flows between the countries {cite}`canadaenergyregulatorElectricityTradeSummary2024`.
+Seasonal and time-slice estimates for imports and exports are based on the historical monthly flows between the countries {cite}`canadaenergyregulatorElectricityTradeSummary2026`.
 Canadian imports are assumed to be from hydropower and are counted toward RPS requirements where allowed by state RPS regulations.
 Canadian imports also count toward reserve margin requirements.
 
