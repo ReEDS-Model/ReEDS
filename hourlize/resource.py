@@ -697,21 +697,21 @@ def save_sc_outputs(
     df_sc.to_csv(os.path.join(outpath, 'results', tech + '_supply_curve_raw.csv'), index=False)
     df_sc['capacity'] = df_sc['capacity'].round(decimals)
 
+    cols_out = [profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', 'cf']
     # for EGS identify the resource based on mean temperature
     if tech == 'egs':
         rescol = 'mean_resource_temp'
         # convert mean temperature to int
         df_sc[rescol] = df_sc[rescol].round().astype(int)
-        colrename = {}
-    # for everything else include capacity factor
-    else:
-        rescol = 'capacity_factor_ac' if 'capacity_factor_ac' in df_sc else 'mean_cf'
-        df_sc[rescol] = df_sc[rescol].round(decimals+2)
-        colrename = {rescol: 'cf'} 
+        cols_out += [rescol]
+        
+    # include capacity factor
+    cfcol = 'capacity_factor_ac' if 'capacity_factor_ac' in df_sc else 'mean_cf'
+    df_sc[cfcol] = df_sc[cfcol].round(decimals+2)
+    df_sc = df_sc.rename(columns={cfcol:'cf'})
     df_sc_out = (
-        df_sc[[profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', rescol]]
+        df_sc[cols_out]
         .sort_values(profile_id_col)
-        .rename(columns=colrename)
         .round({'capacity':decimals, 'capital_adder_per_mw':decimals, 'cf':decimals+2})
     )
     df_sc_out.to_csv(
