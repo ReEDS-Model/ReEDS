@@ -12,6 +12,7 @@ import sys
 import h5py
 import numpy as np
 import pandas as pd
+import time
 from pathlib import Path
 from itertools import product
 
@@ -808,3 +809,147 @@ def diff_outputs(
             reeds.io.write_to_h5(df.reset_index(), key, outpath)
         print(f'Difference written to {outpath}')
     return dictout
+
+def summarize_load_data(
+    scenario, 
+    use_run=False, 
+    run_path=None,
+    reg_sub=None,
+    agg_reg_lvl=None, 
+    model_year_sub=None,
+    weather_year_sub=None,
+    agg_by_year=False
+):
+    """helper function to read and summarize load data
+    Parameters
+    ----------
+    scenario
+        Either the name of a ReEDS run (if use_run=True) or the name of a load file in the repo
+    use_run, optional
+        If True looks for load data from a ReEDS run, by default False
+    run_path, optional
+        Folder to look for the runs (if none then uses the run folder in the ReEDS repo)
+        If use use_run=False and run_path is specified, use this as the ReEDS repo.
+    reg_sub, optional
+        List of 'r' regions to subset on
+    agg_reg_lvl, optional
+        Regionality to aggregate to using a column from hierarchy.csv; if 'all' then aggregates all
+        regions, by default None
+    model_year_sub, optional
+        Model years to subset on, specified either as a list of years or 'last' for the final year
+    weather_year_sub
+        Weather years to subset on, specified as a list of years, by default None 
+    Returns
+    -------
+        pd.DataFrame: load data summarized as specified
+    """
+
+    print(f"\nprocessing {scenario}")
+    start_time = time.perf_counter()
+
+    ## load data
+    if use_run:
+        # set path to load file in inputs case folder
+        if run_path is None:
+            run_path = os.path.join(reeds_path, 'runs', scenario)
+        else:
+            run_path = os.path.join(run_path, scenario)
+        load_file_path = os.path.join(run_path, 'inputs_case', 'load.h5')
+    else:
+        # use input load in repo
+        if run_path is None:
+            load_file_path = os.path.join(reeds_path,'inputs','load', scenario + "_load_hourly.h5")
+        else:
+            load_file_path = os.path.join(run_path,'inputs','load', scenario + "_load_hourly.h5")
+
+    # check that file exists; if not, return empty data frame
+    if not os.path.exists(load_file_path):
+        print(f"'{load_file_path}' does not exist.")
+        return pd.DataFrame()
+    print(f"...loading {load_file_path}")
+    dfin = reeds.io.read_file(os.path.join(load_file_path), parse_timestamps=True)
+
+    ## subset to desired regions (defined in terms of r regions)
+    if reg_sub is None:
+        dfout = dfin.copy()
+    else:
+        print(f"...subsettting to {reg_sub}")
+        dfout = dfin.loc[:, reg_sub].copy()
+        # TODO: add error checking for misspecified region list
+
+    ## aggregate to desired regionality
+    if agg_reg_lvl is None:
+    # no aggregation 
+        pass
+    elif agg_reg_lvl == 'all':
+    # sum all regions
+        print(f"...aggregating all regions")
+        dfout = dfout.sum(axis=1)
+        dfout.name = 'load_MWh'
+    else:
+    # sum to new mapping
+        print(f"...aggregating regionality to {agg_reg_lvl}")
+        # load hierarchy
+        if use_run:
+            hierarchy_file_path = os.path.join(run_path, 'inputs_case', 'hierarchy.csv')
+            reg_col = "*r"
+        else:
+            hierarchy_file_path = os.path.join(reeds_path, 'inputs', 'hierarchy.csv')
+            reg_col = "ba"
+        hierarchy = pd.read_csv(hierarchy_file_path)
+        # set up region mapping
+        if agg_reg_lvl not in hierarchy.columns:
+            print(f"ERROR: {agg_reg_lvl} is not a column in hierarchy file. Skipping aggregation.")
+        else:
+            region_map = hierarchy[[reg_col, agg_reg_lvl]].set_index(reg_col).squeeze()
+
+        #TODO: add option to aggregate without region mapping
+        # map load to regionality in relevant hierarchy column
+        dfout.columns = dfout.columns.map(region_map)
+        # aggregate
+        dfout = dfout.groupby(level=0, axis=1).sum()
+
+    # subset to desired model years
+    if model_year_sub is not None:
+        print(f"...subsetting to {model_year_sub} model years")
+        # TODO: implement 'last' option, convert int to list of last value
+        # TODO: warning on missing values?
+        my_vals = dfout.index.get_level_values('year')
+        dfout = dfout[my_vals.isin(model_year_sub)]
+
+    ## subset to desired weather years
+    if weather_year_sub is not None:
+        print(f"...subsetting to {weather_year_sub} weather years")
+        # temporarily reset index to slice
+        idx_names = dfout.index.names
+        dfout = dfout.reset_index()
+        # isolate weather year from datetime
+        dfout['weather_year'] = dfout['datetime'].dt.year
+        if isinstance(weather_year_sub, int):
+            weather_year_sub = [weather_year_sub]
+        elif not isinstance(weather_year_sub, list):
+            print("'weather_year_sub' only accepts int or list.")
+            raise Exception
+        dfout = dfout.loc[dfout.weather_year.isin(weather_year_sub)]
+        # reset index
+        dfout = dfout.drop('weather_year', axis=1).set_index(idx_names)
+
+    ## aggregate data
+    if agg_by_year:
+        print(f"...aggregating hourly data to annual")
+        # temporarily reset index to slice
+        idx_names = dfout.index.names
+        dfout = dfout.reset_index()
+        # isolate weather year from datetime
+        dfout['weather_year'] = dfout['datetime'].dt.year
+        dfout = dfout.drop('datetime', axis=1).groupby(['year','weather_year']).sum()
+
+    # ensure output is pd.DataFrame and not a Series
+    if isinstance(dfout, pd.Series):
+        dfout = dfout.to_frame()
+
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    print(f"\ndone processing {scenario} ({elapsed_time:.0f} seconds)")
+
+    return dfout
