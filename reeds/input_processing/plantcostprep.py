@@ -245,13 +245,13 @@ future_cost_batt = (
     .loc[cost_by_year.index + years_until_refurb]
     .set_axis(cost_by_year.index)
 )
-discount = d_real.reindex(cost_by_year.index) ** years_until_refurb
+discount = 1 / (d_real.reindex(cost_by_year.index) ** years_until_refurb)
 
 # Add the discounted refurbishment cost to the overnight energy capital cost
 battery = battery.set_index('t')
 battery['capcost_energy'] = (
     battery['capcost_energy']
-    + scalars['batt_refurb_perc_energy'] * future_cost_batt / discount
+    + scalars['batt_refurb_perc_energy'] * future_cost_batt * discount
 )
 battery = battery.reset_index()
 
