@@ -220,7 +220,8 @@ battery = pd.read_csv(os.path.join(inputs_case,'plantchar_battery.csv'))
 battery = deflate_func(battery, sw.plantchar_battery)
 
 ### Battery Mid-Life Refurbishment Cost
-# battery_li operates for 30 years, but its energy capacity (e.g., battery packs)
+# Battery plant lifetime is specified in `inputs/plant_characteristics/maxage.csv`,
+# but its energy capacity (e.g., battery packs)
 # must be replaced after batt_years_until_refurb years. The power capacity lasts
 # the full lifetime and is not refurbished. The energy refurbishment is represented
 # as a discounted adder to the overnight energy capital cost, valued at the cost
