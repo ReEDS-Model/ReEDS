@@ -326,10 +326,14 @@ def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwarg
     return dfba
 
 
-def get_dfmap(case=None, levels=None, exclude_water_areas=True):
-    """Get dictionary of maps at different hierarchy levels"""
+def get_dfmap(case=None, levels=None, exclude_water_areas=True, **kwargs):
+    """
+    Get dictionary of maps at all spatial hierarchy levels.
+    Non-default switch settings (GSw_ZoneSet in particular) can be provided as keyword arguments;
+    if not provided, settings are taken from the provided case path.
+    """
     hierarchy = (
-        get_hierarchy(case, original=True)
+        get_hierarchy(case, original=True, **kwargs)
         .drop(
             columns=['aggreg', 'st_interconnect', 'md5', 'node_lat', 'node_lon'],
             errors='ignore'
@@ -347,7 +351,7 @@ def get_dfmap(case=None, levels=None, exclude_water_areas=True):
             dfmap[level] = dfmap[level].set_index(dfmap[level].columns[0]).rename_axis(level)
         return dfmap
 
-    dfba = get_zonemap(case, exclude_water_areas)
+    dfba = get_zonemap(case, exclude_water_areas, **kwargs)
 
     dfmap = {'r': dfba.dropna(subset='country').copy()}
     dfmap['r']['centroid_x'] = dfmap['r'].centroid.x
