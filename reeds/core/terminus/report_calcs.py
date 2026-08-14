@@ -47,6 +47,16 @@ def combine_forward_reverse(df, agg:Literal['net','simult']='net', value='Level'
 
 
 #%% Results calculations
+def get_params(g):
+    """Input parameters that are updated during the run"""
+    dfs = {}
+    ## (allh,t)
+    dfs['h_stress_t'] = g['h_stress_t']
+    ## (allh,t)
+    dfs['hours_t'] = g['hours_t']
+    return dfs
+
+
 def calc_iq(g):
     """Capacity above interconnection queue limit"""
     dfs = {}
@@ -153,6 +163,7 @@ def main(case):
     ## in get_gams_results() to speed up processing
     dictin = get_gams_results(case)
     dictout = {
+        **get_params(dictin),
         **calc_iq(dictin),
         **calc_co2_stor(dictin),
         **calc_transmission(dictin),

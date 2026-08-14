@@ -5283,6 +5283,95 @@ def scale_outputs(df, scale='percent'):
     return out
 
 
+def plot_price_duration(
+    case,
+    year=None,
+    htype:Literal['rep','stress','both']='both',
+    level='transgrp',
+    grid=0.,
+):
+    """
+    Plot price duration curves
+    """
+    from postprocessing.bokehpivot.defaults import DEFAULT_DOLLAR_YEAR
+
+    sw = reeds.io.get_switches(case)
+    year = int(sw.endyear) if not year else year
+
+    inflatable = reeds.io.get_inflatable()
+    inflator = inflatable[int(sw.dollar_year), DEFAULT_DOLLAR_YEAR]
+
+    rename = {'*':'pricetype', '*.1':'subtype', '*.2':'h'}
+    reqt_price = reeds.io.read_output(case, 'reqt_price').rename(columns=rename)
+
+    price_rep = reqt_price.loc[
+        (reqt_price['pricetype'] == 'load')
+        & (reqt_price.t == year)
+    ].set_index(['r','h']).Value
+
+    hours_t = reeds.io.read_output(case, 'hours_t').set_index(['h','t']).Value
+    hours = hours_t.xs(year, 0, 't')
+
+    price_stress = reqt_price.loc[
+        (reqt_price['pricetype'] == 'res_marg')
+        & (reqt_price.t == year)
+    ].set_index(['r','h']).Value.div(hours).dropna()
+
+    if htype == 'rep':
+        dfprice = price_rep
+        yscale = 'linear'
+    elif htype == 'stress':
+        dfprice = price_stress
+        yscale = 'linear'
+    elif htype == 'both':
+        dfprice = pd.concat([price_rep, price_stress])
+        yscale = 'log'
+
+    dfprice = (dfprice * inflator).reset_index()
+    dfprice['hours'] = dfprice.h.map(hours)
+
+    ### Set up plot
+    hierarchy = reeds.io.get_hierarchy(case)
+    dfmap = reeds.io.get_dfmap(case)
+    regions = dfmap[level].bounds.minx.sort_values().index.tolist()
+    region2r = pd.Series(index=hierarchy[level], data=hierarchy.index)
+    ncols, nrows = len(regions), 1
+
+    #%% Plot it
+    plt.close()
+    f,ax = plt.subplots(nrows, ncols, figsize=(1.5*ncols, 3*nrows), sharex=True, sharey=True)
+    for col, region in enumerate(regions):
+        _ax = ax[col] if len(regions) > 1 else ax
+        rs = region2r[region].values
+        colors = reeds.plots.rainbowmapper(rs)
+        for r in rs:
+            ## Data
+            df = dfprice.loc[dfprice.r == r].sort_values('Value', ascending=False)
+            df['hourpct'] = df.hours.cumsum() / df.hours.sum() * 100
+            _ax.step(df.hourpct, df.Value, color=colors[r], label=r)
+        ## Formatting
+        if col == 0:
+            _ax.set_ylabel('Electricity price [$/MWh]')
+            _ax.set_xlabel(f'Percent of hours ({df.hours.sum():.0f}) [%]', x=0, ha='left')
+        _ax.set_title(region.replace('_','\n'), weight='bold')
+        _ax.legend(
+            loc='upper right', bbox_to_anchor=(1.1, 1),
+            edgecolor='none', framealpha=0.5,
+            handletextpad=0.3, handlelength=0.5,
+        )
+        if grid:
+            _ax.grid(which='minor', axis='x', c='k', ls=(0,(2,10)), lw=grid)
+    ## Formatting
+    _ax.set_yscale(yscale)
+    # _ax.set_xlim(0, 100)
+    if yscale == 'linear':
+        _ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+        _ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(5))
+    reeds.plots.despine(ax)
+    return f, ax, dfprice
+
+
 def separate_charge_discharge(df):
     """
     Renames entries in a technology (i) column to {original}|charge

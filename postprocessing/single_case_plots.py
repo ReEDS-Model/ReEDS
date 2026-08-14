@@ -500,6 +500,26 @@ except Exception:
     print(traceback.format_exc())
 
 
+#%% Prices
+level = 'transgrp'
+for htype in ['rep', 'stress', 'both']:
+    savename = f'plot_price_duration-{level}-{htype}-{year}.png'
+    try:
+        plt.close()
+        f, ax, df = reedsplots.plot_price_duration(
+            case, year=year, htype=htype, level=level,
+        )
+        if write:
+            plt.savefig(os.path.join(savepath, savename))
+        if interactive:
+            plt.show()
+        plt.close()
+        print(savename)
+    except Exception:
+        print(f'{savename} failed:')
+        print(traceback.format_exc())
+
+
 #%% H2 pipelines and storage
 try:
     if int(sw.GSw_H2):
