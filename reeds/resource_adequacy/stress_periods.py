@@ -169,33 +169,62 @@ def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute'
     return peak_eue
 
 
-def differentiate_loadtypes(
+def differentiate_euetypes(
     case:str|Path,
     t:int,
-    dfload:pd.DataFrame,
     dfeue:pd.DataFrame,
     loadtype:Literal['base','sited','all']='all',
 ):
     """
-    Differentiate load and EUE profiles between base and sited load.
-    Assumptions:
-    - Energy is always dropped at the sited load first
+    Differentiate EUE profiles between base and sited load.
+    Assume energy is always dropped at the sited load first.
+
+    Args:
+        loadtype:
+            'all' returns input dfeue
+            'base' returns EUE for exogenous demand (remainder after dropping sited load)
+            'sited' returns EUE for sited load (dropped first)
     """
-    ra_cap_loadsite = get_loadsite(case, t)
     if loadtype == 'all':
-        dfload_out, dfeue_out = dfload, dfeue
-    elif loadtype == 'sited':
+        return dfeue
+    ra_cap_loadsite = get_loadsite(case, t)
+    if loadtype == 'sited':
+        dfeue_out = dfeue.clip(upper=ra_cap_loadsite, axis=1)
+    elif loadtype == 'base':
+        dfeue_out = (dfeue - ra_cap_loadsite).clip(lower=0)
+    else:
+        raise ValueError(f"Invalid loadtype: {loadtype}. Must be 'base', 'sited', or 'all'.")
+    return dfeue_out
+
+
+def differentiate_loadtypes(
+    case:str|Path,
+    t:int,
+    dfload:pd.DataFrame,
+    loadtype:Literal['base','sited','all']='all',
+):
+    """
+    Differentiate load profiles between base and sited load.
+
+    Args:
+        loadtype:
+            'all' returns input dfload
+            'base' returns exogenous demand (without sited load)
+            'sited' returns sited load (flat, before flexibility)
+    """
+    if loadtype == 'all':
+        return dfload
+    ra_cap_loadsite = get_loadsite(case, t)
+    if loadtype == 'sited':
         dfload_out = pd.concat(
             {r: pd.Series(val, index=dfload.index) for r,val in ra_cap_loadsite.items()},
             axis=1,
         )
-        dfeue_out = dfeue.clip(upper=ra_cap_loadsite, axis=1)
     elif loadtype == 'base':
         dfload_out = dfload - ra_cap_loadsite
-        dfeue_out = (dfeue - ra_cap_loadsite).clip(lower=0)
     else:
         raise ValueError(f"Invalid loadtype: {loadtype}. Must be 'base', 'sited', or 'all'.")
-    return dfload_out, dfeue_out
+    return dfload_out
 
 
 def calc_ra_metrics(
@@ -230,9 +259,8 @@ def calc_ra_metrics(
 
     ### Differentiate load if necessary
     if float(sw.GSw_LoadSiteCF) and loadtype != 'all':
-        dfload, dfeue = differentiate_loadtypes(
-            case, t, dfload=dfload, dfeue=dfeue, loadtype=loadtype,
-        )
+        dfload = differentiate_loadtypes(case, t, dfload=dfload, loadtype=loadtype)
+        dfeue = differentiate_euetypes(case, t, dfeue=dfeue, loadtype=loadtype)
 
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
@@ -246,10 +274,6 @@ def calc_ra_metrics(
         dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
         dfload_agg = dfload.rename(columns=rmap).T.groupby(level=0).sum().T
         ## Calculate the full-timeseries metrics for each region
-        ra_metrics[level, 'lold_peryear'] = calc_lold(dflole_agg) / numyears
-        ra_metrics[level, 'lole_peryear'] = calc_lole(dflole_agg) / numyears
-        ra_metrics[level, 'lolh_peryear'] = calc_lolh(dflole_agg) / numyears
-        ra_metrics[level, 'max_duration'] = calc_max_duration(dfeue_agg)
         ra_metrics[level, 'neue_ppm'] = calc_neue(dfeue_agg, dfload_agg)
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
@@ -424,18 +448,21 @@ def check_threshold_and_choose_periods(
     dfenergy_agg,
 ):
     ## NEUE Example: criterion = 'transgrp_1'
-    hierarchy_level, metric_threshold = criterion.split('_')
+    hierarchy_level, metric_threshold, loadtype = criterion.split('_')
     metric_threshold = float(metric_threshold)
     GSw_HourlyType = sw.GSw_HourlyType
 
     ### Get stored stress metric
-    ra_metrics = pd.read_csv(
-        os.path.join(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv'),
-        index_col=['level', 'metric', 'region'],
-    ).squeeze(1)
+    loadtypes = {'all':''}
+    if float(sw.GSw_LoadSiteCF) and int(sw.GSw_LoadSiteRA):
+        loadtypes = {**loadtypes, 'base':'_base', 'sited':'_sited'}
+    ra_metrics = {}
+    for key, label in loadtypes.items():
+        fpath = Path(sw.casedir, 'outputs', f'ra_metrics{label}_{t}i{iteration}.csv')
+        ra_metrics[key] = pd.read_csv(fpath, index_col=['level','metric','region']).squeeze(1)
 
     ### Get the threshold(s) and see if any of them failed
-    this_test = ra_metrics[hierarchy_level][SWITCH_METRIC[stress_metric]]
+    this_test = ra_metrics[loadtype][hierarchy_level][SWITCH_METRIC[stress_metric]]
     failed = this_test.loc[this_test > metric_threshold]
     if not len(failed):
         print(f"{RA_SWITCHES[stress_metric]} = {criterion} passed:")
@@ -568,12 +595,24 @@ def get_stress_periods(case, sw, t, iteration):
     stress_metrics = [i.lower() for i in sw.GSw_PRM_StressThresholdMetrics.split('/')]
     for stress_metric in stress_metrics:
         switch = RA_SWITCHES[stress_metric]
-        for criterion in sw[switch].split('/'):
+        criteria = [f'{i}_all' for i in sw[switch].split('/')]
+        if (stress_metric == 'neue') and float(sw.GSw_LoadSiteCF) and int(sw.GSw_LoadSiteRA):
+            ## The NEUE threshold for sited load is given by its flexibility
+            droppable_ppm = (1 - float(sw.GSw_LoadSiteCF)) * 1e6
+            ## Evaluate the original load against the user-provided NEUE threshold
+            criteria = [criterion.replace('_all','_base') for criterion in criteria]
+            ## Sited load is always evaluated against NEUE at zonal resolution
+            criteria += [f'r_{droppable_ppm:.2f}_sited']
+        for criterion in criteria:
             ### Aggregate the shortfall and load to this hierarchy level
             ## Example: criterion = 'transgrp_1'
-            hierarchy_level, metric_threshold = criterion.split('_')
+            hierarchy_level, metric_threshold, loadtype = criterion.split('_')
             rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
-            dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
+            dfeue_agg = (
+                ## differentiate_euetypes() only has an effect when using sited load
+                differentiate_euetypes(case, t, dfeue, loadtype)
+                .rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
+            )
             dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T.drop(covered_hours)
             dfenergy_agg = dfenergy.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
             ## Get the stress periods
