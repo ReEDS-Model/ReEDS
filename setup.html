@@ -225,8 +225,11 @@ macOS / Linux</label><div class="sd-tab-content docutils">
 </section>
 <section id="gams-configuration">
 <h3>GAMS Configuration<a class="headerlink" href="#gams-configuration" title="Link to this heading"></a></h3>
-<p>NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.</p>
-<p>For more information on getting a trial license for GAMS, see the <a class="reference internal" href="faq.html#table-of-contents"><span class="std std-ref">FAQ</span></a></p>
+<p>ReEDS is actively developed for GAMS versions ≥51.3.0 and is backwards-compatible without modification for GAMS versions ≥44.2.0.
+To use GAMS versions back to 34.3.0, revert to an older version of <code class="docutils literal notranslate"><span class="pre">gdxpds</span></code> by running <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdxpds==1.4.0</span></code> within the <code class="docutils literal notranslate"><span class="pre">reeds</span></code> conda environment.
+ReEDS compatibility with GAMS versions older than 34.3.0 is not tested or actively supported.</p>
+<p>A valid GAMS license must be installed.
+For more information on getting a trial license for GAMS, see the <a class="reference internal" href="faq.html#table-of-contents"><span class="std std-ref">FAQ</span></a></p>
 <ol class="arabic">
 <li><p>Install GAMS: <a class="reference external" href="https://www.gams.com/download/">https://www.gams.com/download/</a></p>
 <p><strong>If installing on Mac:</strong> on the “Installation” page, click “customize” and ensure the box to “Add GAMS to PATH” is checked.</p>
