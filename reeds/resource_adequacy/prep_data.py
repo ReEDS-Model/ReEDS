@@ -378,22 +378,16 @@ def main(t, casedir, iteration=0):
     for r in offshore:
         pras_load[r] = 0
         ra_cap_loadsite[r] = 0
+    csvout['ra_cap_loadsite'] = ra_cap_loadsite.rename_axis('r').rename('MW')
 
     ### Subtract dr-shed load
     if int(sw.GSw_DRShed) and not gen_shed_combined.empty:
         print(f'Subtracted shed load from PRAS load since GSw_DRShed = {sw.GSw_DRShed}')
         pras_load = pras_load.subtract(gen_shed_combined, fill_value=0).clip(lower=0)
 
-    ### Add flexibly sited load if its profile is inflexible (GSw_LoadSiteCF = 1)
-    if (
-        np.isclose(float(sw.GSw_LoadSiteCF), 1)
-        and len(ra_cap_loadsite)
-        and int(sw.GSw_LoadSiteRA)
-    ):
-        print(
-            f'Added CAP_LOADSITE to PRAS load since GSw_LoadSiteCF = {sw.GSw_LoadSiteCF} '
-            f'and GSw_LoadSiteRA = {sw.GSw_LoadSiteRA}'
-        )
+    ### Add flexibly sited load as a flat block of demand
+    if len(ra_cap_loadsite) and int(sw.GSw_LoadSiteRA):
+        print(f'Added CAP_LOADSITE to PRAS load since GSw_LoadSiteRA = {sw.GSw_LoadSiteRA}')
         pras_load += ra_cap_loadsite
 
     h5out['pras_load'] = pras_load

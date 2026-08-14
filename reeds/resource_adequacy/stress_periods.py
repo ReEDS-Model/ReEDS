@@ -103,6 +103,12 @@ def get_events(ds:pd.Series, threshold:float=0) -> pd.DataFrame:
     return dfout
 
 
+def get_loadsite(case, t):
+    fpath = Path(case, 'handoff', 'reeds_data', f'ra_cap_loadsite_{t}.csv')
+    ra_cap_loadsite = pd.read_csv(fpath, index_col='r').squeeze(1)
+    return ra_cap_loadsite
+
+
 def calc_lold(dflole_agg, threshold=0):
     """Count a day as an event-day if at least one hour has LOLE > threshold"""
     ## Take the max for each day
@@ -163,11 +169,41 @@ def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute'
     return peak_eue
 
 
+def differentiate_loadtypes(
+    case:str|Path,
+    t:int,
+    dfload:pd.DataFrame,
+    dfeue:pd.DataFrame,
+    loadtype:Literal['base','sited','all']='all',
+):
+    """
+    Differentiate load and EUE profiles between base and sited load.
+    Assumptions:
+    - Energy is always dropped at the sited load first
+    """
+    ra_cap_loadsite = get_loadsite(case, t)
+    if loadtype == 'all':
+        dfload_out, dfeue_out = dfload, dfeue
+    elif loadtype == 'sited':
+        dfload_out = pd.concat(
+            {r: pd.Series(val, index=dfload.index) for r,val in ra_cap_loadsite.items()},
+            axis=1,
+        )
+        dfeue_out = dfeue.clip(upper=ra_cap_loadsite, axis=1)
+    elif loadtype == 'base':
+        dfload_out = dfload - ra_cap_loadsite
+        dfeue_out = (dfeue - ra_cap_loadsite).clip(lower=0)
+    else:
+        raise ValueError(f"Invalid loadtype: {loadtype}. Must be 'base', 'sited', or 'all'.")
+    return dfload_out, dfeue_out
+
+
 def calc_ra_metrics(
     case:str|Path,
     t:int,
     iteration:int=0,
     levels=['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'],
+    loadtype:Literal['base','sited','all']='all',
 ):
     """
     Calculate all resource adequacy metrics for the specified year/iteration
@@ -192,6 +228,12 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
+    ### Differentiate load if necessary
+    if float(sw.GSw_LoadSiteCF) and loadtype != 'all':
+        dfload, dfeue = differentiate_loadtypes(
+            case, t, dfload=dfload, dfeue=dfeue, loadtype=loadtype,
+        )
+
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
     for level in levels:
@@ -212,6 +254,12 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
+        ra_metrics[level, 'max_duration'] = calc_max_duration(dfeue_agg)
+        ## We can't adjust LOLE in postprocessing, so only write LOLE for combined load
+        if loadtype == 'all':
+            ra_metrics[level, 'lold_peryear'] = calc_lold(dflole_agg) / numyears
+            ra_metrics[level, 'lole_peryear'] = calc_lole(dflole_agg) / numyears
+            ra_metrics[level, 'lolh_peryear'] = calc_lolh(dflole_agg) / numyears
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
@@ -812,6 +860,12 @@ def main(sw, t, iteration=0, logging=True):
     ra_metrics.round(3).to_csv(
         os.path.join(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
     )
+    ## If using sited load, write the stres metrics for base and sited load separately
+    if float(sw.GSw_LoadSiteCF) and int(sw.GSw_LoadSiteRA):
+        for loadtype in ['base', 'sited']:
+            df = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration, loadtype=loadtype)
+            fpath = Path(sw.casedir, 'outputs', f'ra_metrics_{loadtype}_{t}i{iteration}.csv')
+            df.round(3).to_csv(fpath)
 
     #%% Write EUE events
     eue_events = get_eue_events(case=sw.casedir, t=t, iteration=iteration)
