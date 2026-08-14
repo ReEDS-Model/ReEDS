@@ -73,11 +73,9 @@ $include inputs_case%ds%scalars.txt
 *==========================
 
 * Written by h5_to_gdx.py
-$include autocode%ds%b_declare_sets.gms
-$include autocode%ds%b_declare_parameters.gms
 $gdxin inputs_case%ds%inputs_0.gdx
-$include autocode%ds%b_load_sets.gms
-$include autocode%ds%b_load_parameters.gms
+$include autocode%ds%b_declare_load_sets.gms
+$include autocode%ds%b_declare_load_parameters.gms
 $gdxin
 
 set land(r) "land-based (not offshore) zones" ;
