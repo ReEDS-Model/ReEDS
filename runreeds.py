@@ -310,6 +310,14 @@ def check_compatibility(sw):
         if metric not in ra_switches:
             raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
 
+        if (metric != 'neue') and float(sw['GSw_LoadSiteCF']):
+            err = (
+                "The only RA metric supported for optimally sited demand is NEUE; you provided "
+                f"GSw_PRM_StressThresholdMetrics = {sw['GSw_PRM_StressThresholdMetrics']} and "
+                f"GSw_LoadSiteCF = {sw['GSw_LoadSiteCF']}"
+            )
+            raise NotImplementedError(err)
+
         for threshold in sw[ra_switches[metric]].split('/'):
             ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
             (hierarchy_level, stress_value) = threshold.split('_')
