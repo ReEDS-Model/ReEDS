@@ -8,8 +8,26 @@ sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 
 
+def validate_proj():
+    import numpy as np
+    import shapely
+    dftest = (
+        gpd.GeoDataFrame(geometry=[shapely.geometry.Point(-100,40)], crs='EPSG:4326')
+        .to_crs('ESRI:102008')
+    )
+    if np.isinf(dftest.iloc[0,0].x) or np.isinf(dftest.iloc[0,0].y):
+        err = (
+            "Your geospatial packages are messed up. Run the following command with the "
+            "reeds conda environment activated, then restart your run:\n"
+            "    conda install -c conda-forge proj-data"
+        )
+        raise ValueError(err)
+
+
 def assign_to_offshore_zones(unitdata):
     """Map offshore wind units to offshore zones based on lat/lon and zone outlines"""
+    ### Make sure the conda environment is set up correctly
+    validate_proj()
     ### Get offshore zones
     dfzones = gpd.read_file(
         os.path.join(reeds.io.reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
@@ -21,7 +39,7 @@ def assign_to_offshore_zones(unitdata):
     dfwind = reeds.plots.df2gdf(dfwind, crs=dfzones.crs)
 
     ## Only keep matches within 100 km since some areas only have radial sites
-    index2offshorezone = dfwind.sjoin_nearest(dfzones, max_distance=1e5)['index_right']
+    index2offshorezone = dfwind.sjoin_nearest(dfzones, max_distance=1e5)['zone']
 
     dfout = unitdata.copy()
     dfout.loc[index2offshorezone.index, 'r'] = index2offshorezone.values

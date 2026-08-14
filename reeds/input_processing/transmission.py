@@ -184,9 +184,13 @@ def get_interface_params(case, **kwargs):
 
 
 def get_trancap_fut(case):
-    """Get certain and possible transmission additions"""
+    """
+    Get certain and possible transmission additions.
+    Additions between model years are moved to the next modeled year.
+    """
     sw = reeds.io.get_switches(case)
     scalars = reeds.io.get_scalars(case)
+    years = pd.Series(reeds.inputs.parse_yearset(sw.yearset))
     ## Always-included lines
     planned_capacity = reeds.inputs.map_hvdc_lines_to_interfaces(
         case=case, filename='hvdc_planned-baseline.csv',
@@ -226,29 +230,36 @@ def get_trancap_fut(case):
             .assign(MW=100000)
         ).set_index(['r','rr','trtype','year_online','certain'])
         planned_capacity = pd.concat([planned_capacity, offshore_links])
+    ## Reshape for ReEDS
     trancap_fut = (
         planned_capacity.reset_index()
-        .rename(columns={'year_online':'t', 'certain':'status'})
+        .rename(columns={'year_online':'t', 'certain':'trancap_fut_cat'})
         .astype({'t':int})
         ## '0' is used as a filler value in the t column for firstyear_trans,
         ## so we replace it whenever we load a transmission_capacity_future file.
         .replace({
             't': {0: int(scalars['firstyear_trans_longterm'])},
-            'status': {0:'possible', 1:'certain'}
+            'trancap_fut_cat': {0:'possible', 1:'certain'}
         })
-        [['r', 'rr', 'status', 'trtype', 't', 'MW']]
+        [['r', 'rr', 'trancap_fut_cat', 'trtype', 't', 'MW']]
         .astype({'t':int}).round(3)
     )
+    ## Move additions between model years to the next modeled year
+    for i, row in trancap_fut.iterrows():
+        if row.t not in years.values:
+            newyear = years.loc[years > row.t].min()
+            trancap_fut.loc[i,'t'] = newyear
+            print(f'trancap_fut: Moved {row.values} to {newyear}')
 
-    return trancap_fut
+    return trancap_fut.rename(columns={'t':'allt'})
 
 
 def get_firm_import_limit(case):
-    """Limits on PRMTRADE across nercr boundaries"""
+    """Limits on PRMTRADE across transreg boundaries"""
     sw = reeds.io.get_switches(case)
     if not int(sw.GSw_PRM_NetImportLimit):
         ## No limit
-        firm_import_limit = pd.DataFrame(columns=['nercr','t','fraction']).set_index(['nercr','t'])
+        firm_import_limit = pd.DataFrame(columns=['transreg','t','fraction']).set_index(['transreg','t'])
     else:
         limits = pd.Series(
             {int(i.split('_')[0]): i.split('_')[1] for i in sw.GSw_PRM_NetImportLimitScen.split('/')}
@@ -264,12 +275,12 @@ def get_firm_import_limit(case):
         ## calculate the historical net_firm_import fraction for each region and drop negative values
         peak_net_imports = pd.read_csv(
             Path(case, 'inputs_case', 'peak_net_imports.csv'),
-            index_col=['nercr']
+            index_col=['transreg']
         )
         net_firm_import_frac = (
             peak_net_imports.MW / peak_net_imports.MW_TotalDemand
         ).clip(lower=0)
-        nercrs = net_firm_import_frac.index
+        transregs = net_firm_import_frac.index
 
         _dfout = {}
         for key, val in limits.items():
@@ -284,17 +295,18 @@ def get_firm_import_limit(case):
                     _dfout[y] = net_firm_import_frac.clip(lower=net_firm_import_frac.max())
             else:
                 ## Input values are percentages so convert to fractions
-                _dfout[key] = pd.Series(index=nercrs, data=float(val) / 100)
+                _dfout[key] = pd.Series(index=transregs, data=float(val) / 100)
 
         firm_import_limit = (
-            pd.concat(_dfout, names=('t',)).unstack('nercr')
+            pd.concat(_dfout, names=('t',)).unstack('transreg')
             ## Linear interpolation between values; flat projections before and after
             .reindex(allyears).interpolate('linear').bfill().ffill()
             .loc[solveyears]
             .unstack('t').rename('fraction')
+            .reset_index().rename(columns={'t':'allt'})
         )
 
-    return firm_import_limit.reset_index()
+    return firm_import_limit
 
 
 def get_trancap_init(case, interface_params, level='r'):
@@ -618,6 +630,31 @@ def calculate_co2_storage_routes(dfzones, max_miles=200):
     return routes_cs
 
 
+def get_co2_site_char(case):
+    """CO2 storage site characteristics"""
+    sw = reeds.io.get_switches(case)
+    fdir = Path(reeds.io.reeds_path, 'inputs', 'ctus')
+    co2_site_char = pd.read_csv(Path(fdir, 'co2_site_char.csv'), index_col='cs')
+    ## Convert from Mton = million tons to tons
+    co2_site_char['max_stor_cap'] *= 1e6
+    ## Deflate break even cost (BEC)
+    dollaryear = pd.read_csv(Path(fdir, 'dollaryear.csv'), index_col='filename').squeeze(1)
+    inflatable = reeds.io.get_inflatable()
+    deflator = inflatable[dollaryear['co2_site_char.csv'], int(sw.dollar_year)]
+    co2_site_char['cost_co2_stor_bec'] = co2_site_char[f'bec_{sw.GSw_CO2_BEC}'] * deflator
+    ## Rename for GAMS and downselect to sites in modeled regions
+    rename = {
+        'max_inj_rate': 'co2_injection_limit',
+        'max_stor_cap': 'co2_storage_limit',
+    }
+    co2_site_char = (
+        co2_site_char
+        .rename(columns=rename)
+        [['co2_injection_limit', 'co2_storage_limit', 'cost_co2_stor_bec']]
+    )
+    return co2_site_char
+
+
 def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac):
     """Make sure every non-AC transmission route has a cost"""
     routecols = ['r', 'rr', 'trtype']
@@ -644,20 +681,25 @@ def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac)
 #%% Main function
 def main(case):
     #%% Calculate parameters
+    sw = reeds.io.get_switches(case)
     outputs = {}
     outputs['firm_import_limit'] = get_firm_import_limit(case)
 
     interface_params = get_interface_params(case)
 
-    outputs['transmission_miles'] = interface_params[['r','rr','trtype','miles']].round(3)
+    outputs['distance'] = interface_params[['r','rr','trtype','miles']].round(3)
     outputs['tranloss'] = interface_params[['r','rr','trtype','loss']].round(5)
     outputs['transmission_line_fom'] = get_transmission_fom(case, interface_params).reset_index()
     outputs['trancap_fut'] = get_trancap_fut(case)
-    outputs['transmission_cost_nonac'] = get_transmission_cost_nonac(case, interface_params)
+    outputs['transmission_cost_nonac'] = (
+        get_transmission_cost_nonac(case, interface_params)
+        .set_index(['r','rr','trtype']).squeeze(1)
+        * float(sw.GSw_TransCostMult)
+    ).reset_index()
     ## A few downstream processes expect a single distance for each zone pair;
     ## keep the longest
     outputs['transmission_distance'] = (
-        outputs['transmission_miles'].drop(columns='trtype')
+        outputs['distance'].drop(columns='trtype')
         .sort_values('miles', ascending=False).drop_duplicates(['r','rr'], keep='first')
         .sort_values(['r','rr'])
     )
@@ -702,9 +744,9 @@ def main(case):
     }
     for col, label in labels.items():
         outputs[f'tsc_{label}'] = (
-            transmission_cost_ac[['r','rr','tscbin',col]]
-            .round(2)
-        )
+            transmission_cost_ac.set_index(['r','rr','tscbin'])[col]
+            * float(sw.GSw_TransCostMult)
+        ).round(2).reset_index()
     outputs['tscbin'] = transmission_cost_ac.tscbin.drop_duplicates().rename()
     ## Write transmission_cost_ac for R2X
     outputs['transmission_cost_ac'] = transmission_cost_ac
@@ -720,18 +762,17 @@ def main(case):
     ### CO2 storage sites
     routes_cs = calculate_co2_storage_routes(case)
     outputs['r_cs'] = routes_cs[['r', 'cs']]
-    outputs['r_cs_distance_mi'] = routes_cs[['r', 'cs', 'miles']]
+    outputs['r_cs_distance'] = routes_cs[['r', 'cs', 'miles']]
 
     # Determine sites that have valid routes to model regions
     val_cs = pd.Series(routes_cs['cs'].unique())
-    outputs['val_cs'] = val_cs
+    outputs['cs'] = val_cs
 
-    # Subset CO2 site characteristics data to valid sites
-    co2_site_char = pd.read_csv(Path(reeds.io.reeds_path, 'inputs', 'ctus', 'co2_site_char.csv'))
-    outputs['co2_site_char'] = co2_site_char.loc[co2_site_char['cs'].isin(val_cs)]
+    co2_site_char = get_co2_site_char(case).reindex(val_cs).dropna().rename_axis('cs')
+    for col in co2_site_char:
+        outputs[col] = co2_site_char[col].reset_index()
 
     #%% Downselect to active regions
-    table = {'co2_site_char': True}
     hierarchy = reeds.io.get_hierarchy(case).reset_index()
     for key, df in outputs.items():
         columns = df.columns if isinstance(df, pd.DataFrame) else []
@@ -741,12 +782,6 @@ def main(case):
                 df = df.loc[df[level].isin(hierarchy[level])]
             if levell in columns:
                 df = df.loc[df[levell].isin(hierarchy[level])]
-        ### Add '*' to the beginning so GAMS reads the header as a comment
-        if not table.get(key, False):
-            if isinstance(df, pd.DataFrame):
-                df = df.rename(columns={df.columns[0]: '*'+str(df.columns[0])})
-            else:
-                df = df.rename('*'+df.name) if df.name else df
         outputs[key] = df
 
     #%% Write the outputs
@@ -754,14 +789,42 @@ def main(case):
         'val_cs': False,
         'tscbin': False,
     }
-    inputs_h5 = {
-        'tscbin': ('set', 'transmission upgrade supply curve bins'),
+    sets = ['tscbin', 'routes_adjacent', 'r_cs', 'cs']
+    ## Write some copies for r2x (would be better to avoid by adding compatibility with inputs.h5)
+    csvs = ['trancap_init_energy']
+    units_comment = {
+        'co2_injection_limit': ('metric tons/hr', 'co2 site injection rate upper bound'),
+        'co2_storage_limit': ('metric tons', 'total cumulative storage capacity per carbon storage site'),
+        'cost_co2_stor_bec': ('$/metric ton', 'breakeven cost for storing carbon - CF determined by GSw_CO2_BEC'),
+        'cost_hurdle_rate1': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp1'),
+        'cost_hurdle_rate2': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp2'),
+        'cs': ('', 'CO2 storage sites'),
+        'distance': ('miles', 'distance between BAs by line type'),
+        'firm_import_limit': ('fraction', 'limit on net firm imports into NERC regions'),
+        'pipeline_cost_mult': ('fraction', 'cost multiplier for H2 pipelines (will be added to 1)'),
+        'r_cs_distance': ('miles', 'Euclidean distance between BA transmission endpoints and storage formations'),
+        'r_cs': ('', 'mapping from BA to carbon storage sites'),
+        'routes_adjacent': ('', 'all pairs of adjacent land-based BAs'),
+        'trancap_fut': ('MW', 'potential future transmission capacity by type (one direction)'),
+        'trancap_init_energy': ('MW', 'initial transmission capacity for energy trading (both directions)'),
+        'trancap_init_prm': ('MW', 'initial transmission capacity for capacity (PRM) trading (both directions)'),
+        'trancap_init_transgroup': ('MW', 'initial upper limit on interface AC flows'),
+        'tranloss': ('fraction', 'transmission loss between r and rr'),
+        'transmission_cost_nonac': ('$/MW', 'expansion cost for DC interfaces (only lines; converters handled separately)'),
+        'transmission_line_fom': ('$/MW-year', 'fixed O&M cost of transmission lines'),
+        'tsc_binwidth': ('$', 'investment bin widths for transmission interfaces'),
+        'tsc_forward': ('$/MW', 'transmission upgrade cost for forward direction'),
+        'tsc_reverse': ('$/MW', 'transmission upgrade cost for reverse direction'),
+        'tscbin': ('', 'transmission upgrade supply curve bins'),
     }
     for key, df in outputs.items():
-        if key in inputs_h5:
-            gamstype, comment = inputs_h5[key]
-            reeds.io.write_to_inputs_h5(df, key, case, gamstype=gamstype, comment=comment)
-        else:
+        if key in units_comment:
+            gamstype = 'set' if key in sets else 'parameter'
+            reeds.io.write_to_inputs_h5(
+                df, key, case, gamstype=gamstype,
+                units=units_comment[key][0], comment=units_comment[key][1],
+            )
+        if (key not in units_comment) or (key in csvs):
             df.to_csv(
                 Path(case, 'inputs_case', f'{key}.csv'),
                 index=False, header=header.get(key, True),
@@ -782,7 +845,7 @@ if __name__ == '__main__':
     case = Path(args.inputs_case).parent
 
     # #%% Settings for testing ###
-    # case = str(Path(reeds.io.reeds_path, 'runs', 'v20260601_transcostM1_USA_faster'))
+    # case = str(Path(reeds.io.reeds_path, 'runs', 'v20260724_inputsM0_MARICTNYNJPAOH_Offshore'))
 
     #%% Set up logger
     log = reeds.log.makelog(scriptname=__file__, logpath=Path(case, 'gamslog.txt'))

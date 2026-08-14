@@ -65,7 +65,7 @@ Here is partial list of remotely hosted files used by ReEDS:
     - Switch to `GSw_HourlyType=wek`, which increases the length of the periods from 1 day to 5 days. If all the other switches are left at their defaults, switching to `wek` would increase the coverage from 42 days to 5*42=210 days.
     - Reduce `GSw_HourlyClusterRegionLevel` to something smaller than transreg (like `st`), and then increase `GSw_HourlyNumClusters`
     - Switch to `GSw_HourlyClusteAlgorithm=hierarchical` and then increase `GSw_HourlyNumClusters` (although that's less desirable, because hierarchical clustering doesn't do as good of a job of reproducing the actual spatial distribution of CF and load)
-    - Switch to `Gsw_HourlyType=year`. Although if you're running for the whole US you'll need to turn on region aggregation (`GSw_ZoneSet` in [`z54` or `z69`]) for it to solve.
+    - Switch to `Gsw_HourlyType=year`. Although if you're running for the whole US you'll need to turn on region aggregation (`GSw_ZoneSet` in [`z54` or `z70`]) for it to solve.
 - `GSw_HourlyClusterAlgorithm`
   - If set to 'hierarchical', then hierarchical clustering is used via
 
@@ -625,8 +625,8 @@ MGA is turned off if set to 0; a reasonable choice for MGA is in the range of 0.
 - `GSw_MGA_Direction` (default `min`): Directionality of the second optimization.
 Options are `min` or `max`.
 - `GSw_MGA_Objective` (default `capacity`): Objective for MGA (uses `GSw_MGA_SubObjective` to specify technology subset if set to `capacity`).
-Options are `capacity`, `transmission`, `rasharing`, and `co2`.
-- `GSw_MGA_SubObjective` (default `fossil`): Technology subset to minimize or maximize the capacity of (only used for `GSw_MGA_Objective = capacity`).
+Options are `capacity`, `generation`, `transmission`, `rasharing`, and `co2`.
+- `GSw_MGA_SubObjective` (default `gentech`): Technology subset to minimize or maximize the capacity of (only used for `GSw_MGA_Objective = (capacity or generation)`).
 Options are the column names in the `inputs/tech-subset-table.csv` file.
 
 Users familiar with GAMS can add alternative objective functions to the `d_mga.gms` file and associated options to the `GSw_MGA_Objective` switch in `cases.csv`.
