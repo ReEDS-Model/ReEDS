@@ -1428,7 +1428,7 @@ eq_supply_demand_balance(r,h,t)$tmodel(t)..
     + sum{(i,v)$[valgen(i,v,r,t)$land(r)$storage_standalone(i)$(not h_stress(h))], 
             GEN(i,v,r,h,t)
         }
-    + sum{(i,v)$[valgen(i,v,r,t)$land(r)$storage_standalone(i)$h_stress(h)$(not Sw_StorDrop)], 
+    + sum{(i,v)$[valgen(i,v,r,t)$land(r)$storage_standalone(i)$h_stress(h)$(not (Sw_StorDrop=1))], 
             GEN(i,v,r,h,t)
         }
 

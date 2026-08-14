@@ -199,10 +199,125 @@ def main(t, casedir, iteration=0):
         .groupby(['i','v','r'], as_index=False).Value.sum()
     )
 
-    if sw.GSw_StorDrop:
-        print('Dropping storage capacity from PRAS as GSw_StorDrop = 1')
+    if int(sw.GSw_StorDrop) == 1:
+        print('Dropping all storage capacity from PRAS as GSw_StorDrop = 1')
         cap_ivr_realvint.loc[cap_ivr_realvint.i.isin(gdxreeds['storage_standalone'].i), 'Value'] = 0
-        
+
+    elif int(sw.GSw_StorDrop) == 2:
+        ref_path = sw.GSw_StorDrop_RefPath
+        if ref_path.lower() in ('none', '', 'nan'):
+            raise ValueError(
+                "GSw_StorDrop=2 requires GSw_StorDrop_RefPath to point to "
+                "the corresponding reference (no-DC) case directory."
+            )
+        print(
+            f'GSw_StorDrop=2: Dropping only DC-incremental storage from PRAS.\n'
+            f'  Reference case: {ref_path}'
+        )
+        ref_gdx_file = os.path.join(
+            ref_path, 'handoff', 'reeds_data', f'reeds_data_{t}.gdx'
+        )
+        if not os.path.exists(ref_gdx_file):
+            raise FileNotFoundError(
+                f"Reference case GDX not found at {ref_gdx_file}.\n"
+                f"Ensure the reference (no-DC) case has completed solve year {t} "
+                "before running DCStorDrop cases."
+            )
+        ref_gdx = gdxpds.to_dataframes(ref_gdx_file)
+        for key in ref_gdx:
+            if 'i' in ref_gdx[key]:
+                ref_gdx[key].i = ref_gdx[key].i.str.lower()
+
+        storage_techs = gdxreeds['storage_standalone'].i.tolist()
+        storage_mask = cap_ivr_realvint.i.isin(storage_techs)
+
+        ### --- DIAGNOSTIC OUTPUT DIR ---
+        diagdir = os.path.join(casedir, 'handoff', 'reeds_data', 'stordrop_diagnostics')
+        os.makedirs(diagdir, exist_ok=True)
+
+        # (1) Current case (fixedDC): raw vintage-level storage capacity before any modification
+        cap_ivr_realvint.loc[storage_mask].to_csv(
+            os.path.join(diagdir, f'stordrop_current_vintage_{t}.csv'), index=False
+        )
+
+        # Current case: total storage capacity by (i, r), summed over vintages
+        current_ir = (
+            cap_ivr_realvint.loc[storage_mask]
+            .groupby(['i', 'r'])['Value'].sum()
+            .rename('current')
+        )
+
+        # (2) Current case: total storage by (i,r) — one row per tech-region pair
+        current_ir.reset_index().to_csv(
+            os.path.join(diagdir, f'stordrop_current_ir_{t}.csv'), index=False
+        )
+
+        # Reference (no-DC) case: total storage capacity by (i, r)
+        ref_cap_ivrt_raw = (
+            ref_gdx['cap_ivrt']
+            .loc[ref_gdx['cap_ivrt'].t == t]
+            .drop('t', axis=1)
+        )
+
+        # (3) Reference case (noDC): raw vintage-level storage capacity
+        ref_cap_ivrt_raw.loc[
+            lambda df: df.i.isin(storage_techs)
+        ].to_csv(
+            os.path.join(diagdir, f'stordrop_ref_vintage_{t}.csv'), index=False
+        )
+
+        ref_ir = (
+            ref_cap_ivrt_raw
+            .loc[lambda df: df.i.isin(storage_techs)]
+            .groupby(['i', 'r'])['Value'].sum()
+            .rename('ref')
+        )
+
+        # (4) Reference case: total storage by (i,r)
+        ref_ir.reset_index().to_csv(
+            os.path.join(diagdir, f'stordrop_ref_ir_{t}.csv'), index=False
+        )
+
+        # Scale factor: keep only up to what existed in the reference case
+        comparison = pd.concat([current_ir, ref_ir], axis=1).fillna(0)
+        comparison['keep'] = comparison[['ref', 'current']].min(axis=1)
+        comparison['scale'] = (comparison['keep'] / comparison['current']).fillna(0)
+        comparison['delta_removed'] = comparison['current'] - comparison['keep']
+
+        delta_mw = comparison['delta_removed'].sum()
+        print(
+            f'  Incremental DC-driven storage being removed from PRAS: '
+            f'{delta_mw:.1f} MW (across all regions and storage types)'
+        )
+
+        # (5) Full comparison table: current, ref, keep, scale, delta_removed per (i,r)
+        # This is the primary file to check — one row per (i,r) combo showing all quantities
+        comparison.reset_index().to_csv(
+            os.path.join(diagdir, f'stordrop_comparison_{t}.csv'), index=False
+        )
+
+        # Apply per-(i,r) scale to all vintages in cap_ivr_realvint
+        cap_ivr_realvint.loc[storage_mask, 'Value'] = (
+            cap_ivr_realvint.loc[storage_mask]
+            .join(comparison['scale'], on=['i', 'r'])
+            .eval('Value * scale')
+            .values
+        )
+
+        # (6) Post-scaling vintage-level storage capacity — what actually flows into PRAS
+        cap_ivr_realvint.loc[storage_mask].to_csv(
+            os.path.join(diagdir, f'stordrop_pras_vintage_{t}.csv'), index=False
+        )
+
+        # (7) Post-scaling total by (i,r) — final PRAS storage, easy cross-check with (5)['keep']
+        (
+            cap_ivr_realvint.loc[storage_mask]
+            .groupby(['i', 'r'])['Value'].sum()
+            .rename('pras_final')
+            .reset_index()
+            .to_csv(os.path.join(diagdir, f'stordrop_pras_ir_{t}.csv'), index=False)
+        )
+
     ### Reset the vintages of all storage units to 'new1' to reduce model size
     cap_storage_devint = cap_ivr_realvint.loc[
         cap_ivr_realvint.i.isin(gdxreeds['storage_standalone'].i)].copy()

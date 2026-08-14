@@ -380,7 +380,9 @@ avail(i,r,h)$valcap_ir(i,r) = 1 ;
 
 avail(i,r,h)$[valcap_ir(i,r)] = (1 - outage_forced_h(i,r,h)) * (1 - outage_scheduled_h(i,h)) ;
 
-avail(i,r,h)$[storage(i)$h_stress(h)$Sw_StorDrop] = 0 ;
+* When GSw_StorDrop=1, zero availability for all storage during stress periods
+* When GSw_StorDrop=2, zero availability for only incremental storage (DC-driven) during stress periods
+avail(i,r,h)$[storage(i)$h_stress(h)$(Sw_StorDrop=1)] = 0 ;
 
 
 *=============================================
