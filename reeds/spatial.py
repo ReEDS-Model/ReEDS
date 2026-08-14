@@ -505,6 +505,9 @@ def calculate_region_aggregion_population_weights(
         left_on='state',
         right_on='st'
     )
+    if aggregion_level not in county2zone:
+        hierarchy = reeds.io.get_hierarchy(inputs_case)
+        county2zone[aggregion_level] = county2zone.r.map(hierarchy[aggregion_level])
     county_region_map = county2zone.set_index('FIPS')[region_level]
 
     # Calculate regional populations

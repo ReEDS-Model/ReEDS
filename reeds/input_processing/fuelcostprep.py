@@ -19,6 +19,7 @@ import argparse
 import datetime
 import numpy as np
 from pathlib import Path
+from typing import Literal
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 # Time the operation of this script
@@ -128,14 +129,16 @@ def calculate_daily_state_degree_days(
     return degree_days_daily
 
 
-def calculate_daily_gasreg_degree_days(
+def calculate_daily_degree_days(
     inputs_case: str,
+    level:Literal['st','cendiv','usda_region','h2ptcreg','gasreg']='gasreg',
 ) -> dict[str, pd.DataFrame]:
     """
-    Calculate daily gasreg-level heating and cooling degree days.
+    Calculate daily heating and cooling degree days at the specified
+    spatial hierarchy level.
     This is done by calculating daily state-level degree days for
     the weather year(s) of the given case and then aggregating
-    them to the gasreg level via population-weighted average.
+    them to the specified level via population-weighted average.
 
     Args:
         inputs_case: Path to the inputs case directory.
@@ -143,12 +146,12 @@ def calculate_daily_gasreg_degree_days(
     Returns:
         dict[str, pd.DataFrame]
     """
-    # Calculate population-based state-gasreg weights
-    state_gasreg_weights = (
+    # Calculate population-based state/hierarchy-level weights
+    state_level_weights = (
         reeds.spatial.calculate_region_aggregion_population_weights(
             inputs_case,
             region_level='state',
-            aggregion_level='gasreg'
+            aggregion_level=level,
         )
     )
 
@@ -158,25 +161,25 @@ def calculate_daily_gasreg_degree_days(
     cdd_daily_st = degree_days_daily_st['cdd']
 
     # Aggregate daily state-level degree days to
-    # the gasreg level via population-weighted average
+    # the specified hierarchy level via population-weighted average
     state_groups = reeds.inputs.get_state_groups()
-    st2gasreg = state_groups.set_index('st')['gasreg']
-    hdd_daily_gasreg = reeds.spatial.aggregate_by_weighted_average(
+    st2level = state_groups.set_index('st')[level]
+    hdd_daily_level = reeds.spatial.aggregate_by_weighted_average(
         hdd_daily_st,
-        state_gasreg_weights,
-        st2gasreg
+        state_level_weights,
+        st2level
     )
-    hdd_daily_gasreg = hdd_daily_gasreg.rename_axis(index='datetime')
-    cdd_daily_gasreg = reeds.spatial.aggregate_by_weighted_average(
+    hdd_daily_level = hdd_daily_level.rename_axis(index='datetime')
+    cdd_daily_level = reeds.spatial.aggregate_by_weighted_average(
         cdd_daily_st,
-        state_gasreg_weights,
-        st2gasreg
+        state_level_weights,
+        st2level
     )
-    cdd_daily_gasreg = cdd_daily_gasreg.rename_axis(index='datetime')
+    cdd_daily_level = cdd_daily_level.rename_axis(index='datetime')
 
     degree_days_daily = {
-        'hdd': hdd_daily_gasreg,
-        'cdd': cdd_daily_gasreg
+        'hdd': hdd_daily_level,
+        'cdd': cdd_daily_level
     }
 
     return degree_days_daily
@@ -220,7 +223,7 @@ def calculate_daily_gasprice_multipliers(
     )
 
     # Calculate daily gasreg-level HDDs and CDDs
-    degree_days_daily_gasreg = calculate_daily_gasreg_degree_days(inputs_case)
+    degree_days_daily_gasreg = calculate_daily_degree_days(inputs_case)
     hdd_daily_gasreg = degree_days_daily_gasreg['hdd']
     cdd_daily_gasreg = degree_days_daily_gasreg['cdd']
 
