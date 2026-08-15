@@ -5,10 +5,12 @@ calls make_figs() so the figures land in the report's output_dir alongside valco
 standalone (editing valcostfac_core_path below) to re-render the figures without rebuilding the report.
 '''
 import os
+import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from scipy.stats import linregress
 
 # User inputs
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
@@ -17,6 +19,7 @@ max_plcoe = 200
 max_cost_value_factor = 5
 inv_value_factor_ylim = (0.8, 3)
 cost_factor_ylim = (0.8, 3)
+fit_techs = ['Onshore Wind','UPV'] #Techs given a dotted OLS fit vs market share on the value/cost-factor figures.
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
@@ -65,6 +68,83 @@ def prep_data(valcostfac_core_path):
     return df, df_lcoe
 
 
+def tech_fit(df, col, tech):
+    """OLS fit of col vs gen_frac for one tech. Returns None if there aren't enough points."""
+    d = df[df['tech'] == tech].dropna(subset=['gen_frac', col])
+    if len(d) < 2:
+        return None
+    return linregress(d['gen_frac'], d[col]), d['gen_frac'].min(), d['gen_frac'].max()
+
+
+def add_tech_fits(ax, df, col, colors, techs):
+    """Overlay dotted OLS fits vs market share and annotate each with its linear equation."""
+    entries = []
+    for tech in techs:
+        fit = tech_fit(df, col, tech)
+        if fit is None:
+            continue
+        lr, x0, x1 = fit
+        xs = np.array([x0, x1])
+        ax.plot(
+            xs,
+            lr.intercept + lr.slope * xs,
+            color=colors[tech],
+            linestyle=':',
+            linewidth=2.0,
+            zorder=6,
+        )
+        entries.append((tech, lr))
+    #Equations sit along the top, which these declining curves leave clear. The translucent backing
+    #keeps them readable if a curve does run underneath.
+    for i, (tech, lr) in enumerate(entries):
+        ax.text(
+            0.03,
+            0.98 - 0.09 * i,
+            f'{tech}: y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={lr.rvalue ** 2:.2f})',
+            transform=ax.transAxes,
+            fontsize=7.5,
+            color=colors[tech],
+            va='top',
+            ha='left',
+            zorder=7,
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.75, 'pad': 1.5},
+        )
+    return entries
+
+
+def summarize_fits(df, techs=None):
+    """Fit slopes vs market share for the plotted metrics, with each metric's steepening relative to
+    the value factor.
+
+    Raw slopes are not comparable across metrics because the curves sit at different levels: the
+    value-cost factor starts well below the value factor, so an equal fractional decline shows up as
+    a smaller raw slope. slope_norm (slope/intercept) is the fractional decline per unit of market
+    share, which is the comparable measure, and slope_norm_ratio_vs_value_factor - 1 is the increase
+    in steepness the cost factor contributes. slope_norm is also invariant to the _adj rescaling,
+    since that multiplies slope and intercept by the same per-tech constant."""
+    techs = fit_techs if techs is None else techs
+    cols = ['value_factor','inv_cost_factor','value_cost_factor','inv_cost_factor_adj','value_cost_factor_adj']
+    rows = []
+    for tech in techs:
+        for col in cols:
+            fit = tech_fit(df, col, tech)
+            if fit is None:
+                continue
+            lr, x0, x1 = fit
+            rows.append({
+                'tech': tech, 'metric': col, 'slope': lr.slope, 'intercept': lr.intercept,
+                'r2': lr.rvalue ** 2, 'gen_frac_min': x0, 'gen_frac_max': x1,
+            })
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return out
+    out['slope_norm'] = out['slope'] / out['intercept']
+    vf = out[out['metric'] == 'value_factor'].set_index('tech')
+    out['slope_ratio_vs_value_factor'] = out['slope'] / out['tech'].map(vf['slope'])
+    out['slope_norm_ratio_vs_value_factor'] = out['slope_norm'] / out['tech'].map(vf['slope_norm'])
+    return out
+
+
 def normalize_tech_name(name):
     return str(name).strip().lower()
 
@@ -100,6 +180,7 @@ def plot_plcoe_pitch(
     use_inverse_value_factor=True,
     use_cost_value_factor=True,
     use_adj=False,
+    show_fits=False,
 ):
     techs = sorted(df['tech'].unique())
     colors = build_color_map(techs)
@@ -216,6 +297,8 @@ def plot_plcoe_pitch(
     ax_inv_vf.set_ylabel(vf_ylabel)
     ax_inv_vf.set_ylim(vf_ylim)
     ax_inv_vf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+    if show_fits:
+        add_tech_fits(ax_inv_vf, df, vf_col, colors, fit_techs)
 
     # Cost factor vs market share (upper middle-right)
     for tech in techs:
@@ -237,6 +320,8 @@ def plot_plcoe_pitch(
     ax_cf.set_ylabel(cf_ylabel)
     ax_cf.set_ylim(cf_ylim)
     ax_cf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+    if show_fits:
+        add_tech_fits(ax_cf, df, cf_col, colors, fit_techs)
 
     # Ratio view vs market share (upper right)
     for tech in techs:
@@ -257,6 +342,8 @@ def plot_plcoe_pitch(
     ax_cvf.set_ylabel(ratio_ylabel)
     ax_cvf.set_ylim(ratio_ylim)
     ax_cvf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+    if show_fits:
+        add_tech_fits(ax_cvf, df, ratio_col, colors, fit_techs)
 
     # PLCOE vs market share for select years (bottom row)
     for ax, year in zip(bottom_axes, years):
@@ -349,6 +436,7 @@ def make_figs(valcostfac_core_path, output_dir=None):
             output_path=os.path.join(output_dir, 'plcoe_pitch_value-cost-factor.png'),
             use_inverse_value_factor=False,
             use_cost_value_factor=False,
+            show_fits=True,
         )
         fig_value_cost_adj = plot_plcoe_pitch(
             df,
@@ -357,11 +445,14 @@ def make_figs(valcostfac_core_path, output_dir=None):
             use_inverse_value_factor=False,
             use_cost_value_factor=False,
             use_adj=True,
+            show_fits=True,
         )
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
+    fits = summarize_fits(df)
+    fits.to_csv(os.path.join(output_dir, 'plcoe_pitch_fits.csv'), index=False)
     return df
 
 
