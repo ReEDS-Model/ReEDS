@@ -184,28 +184,28 @@ for level in dfmap:
         greatlakes.plot(ax=ax, edgecolor='#2CA8E7', facecolor='#D3EFFA', lw=0.2, zorder=-1)
     for r, row in dfregion.iterrows():
         dfregion.loc[[r]].plot(ax=ax, color=colors[r], alpha=alpha_region, lw=0, zorder=1)
-        if label_regions.get(level, True):
-            x, y = (
-                np.array([row.geometry.centroid.x, row.geometry.centroid.y])
-                + np.array(offset.get(level, {}).get(r, (0,0)))
-            )
-            ax.annotate(
-                r.replace('_','\n'),
-                (x, y),
-                ha='center', va='center', weight='bold',
-                size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
-                color='k', zorder=1e11,
-                path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
-            )
-    if label_zones.get(level, True):
-        for r, row in dfmap['r'].iterrows():
-            ax.annotate(
-                r,
-                (row.geometry.centroid.x, row.geometry.centroid.y),
-                ha='center', va='center', size=6, weight='normal',
-                color='C7', zorder=1e10,
-                path_effects=[pe.withStroke(linewidth=0.7, foreground='w', alpha=1)]
-            )
+    #     if label_regions.get(level, True):
+    #         x, y = (
+    #             np.array([row.geometry.centroid.x, row.geometry.centroid.y])
+    #             + np.array(offset.get(level, {}).get(r, (0,0)))
+    #         )
+    #         ax.annotate(
+    #             r.replace('_','\n'),
+    #             (x, y),
+    #             ha='center', va='center', weight='bold',
+    #             size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
+    #             color='k', zorder=1e11,
+    #             path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
+    #         )
+    # if label_zones.get(level, True):
+    #     for r, row in dfmap['r'].iterrows():
+    #         ax.annotate(
+    #             r,
+    #             (row.geometry.centroid.x, row.geometry.centroid.y),
+    #             ha='center', va='center', size=6, weight='normal',
+    #             color='C7', zorder=1e10,
+    #             path_effects=[pe.withStroke(linewidth=0.7, foreground='w', alpha=1)]
+    #         )
 
     ax.axis('off')
     savename = (
@@ -219,7 +219,7 @@ for level in dfmap:
     )
     plt.savefig(
         os.path.join(savepath, savename+'.png'),
-        transparent=True,
+        transparent=False,
         bbox_inches='tight',
     )
     plt.show()

@@ -541,7 +541,8 @@ def reaggregate_to_model_regions(
     state_load_hourly: pd.DataFrame,
     inputs_case: str,
     GSw_LoadAllocationMethod: str,
-    dr_data: bool = False
+    dr_data: bool = False,
+    dr_type: str = None,
 ) -> pd.DataFrame:
     """
     Allocate hourly state load to model regions according to the provided
@@ -562,6 +563,7 @@ def reaggregate_to_model_regions(
         os.path.dirname(inputs_case),
         disagg_variable=GSw_LoadAllocationMethod
     )
+
     # Calculate state-to-region aggregation/disaggregation factors
     state_region_factors = (
         disagg_data.groupby(['state', 'r'], as_index=False)
@@ -588,6 +590,18 @@ def reaggregate_to_model_regions(
     if dr_data:
         state_region_factors = state_region_factors.loc[state_region_factors.index.intersection(state_load_hourly.columns), :]
     
+    # Demand response shape and shift data are fractions which should be distributed uniformly across all regions within a state
+    # Currently only compaitble with z48 as coarest resolution     
+    if dr_data and dr_type == 'fraction':
+        # Determine the number of regions within each state
+        unique_state = disagg_data['state'].unique()
+        state_map = {}
+        for st in unique_state:
+            state_map[st] = disagg_data.loc[disagg_data['state'] == st]['r'].unique().tolist()
+
+    
+        
+
     # Multiply the hourly state load profiles by the state-to-region factors
     regional_load_hourly = (
         state_load_hourly[state_region_factors.index]
@@ -729,7 +743,7 @@ def main(reeds_path, inputs_case):
         # Combined dr shed types
         regional_dr_shed_hourly = pd.concat(regional_dr_shed_hourly.values(), axis=1)
         regional_dr_shed_hourly = regional_dr_shed_hourly.astype(np.float32)
-        regional_dr_shed_hourly = regional_dr_shed_hourly.reset_index().set_index(['datetime'])
+        regional_dr_shed_hourly = regional_dr_shed_hourly.reset_index().set_index(['datetime']) 
 
     #%%%#########################################
     #    -- DR Shape Load Modifications --    #
@@ -738,20 +752,45 @@ def main(reeds_path, inputs_case):
     if int(sw.GSw_DRShape): 
         state_dr_shape_profile_inc = reeds.io.read_file(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'))
         state_dr_shape_profile_dec = reeds.io.read_file(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'))
-        
-        reg_cols = [col for col in state_dr_shape_profile_inc.columns if col not in ['i','year','hour']]
-        disagg_data = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'))
-        state2r = disagg_data.groupby('state')['r'].unique().apply(list).to_dict()  
 
-        # Assign shape increase and decrease fractions uniformly
-        for state_col in reg_cols:
-            if state_col in state2r:
-                for r in state2r[state_col]:
-                    state_dr_shape_profile_inc[r] = state_dr_shape_profile_inc[state_col]
-                    state_dr_shape_profile_dec[r] = state_dr_shape_profile_dec[state_col]
-        # Drop state columns
-        state_dr_shape_profile_inc = state_dr_shape_profile_inc.drop(columns=reg_cols)
-        state_dr_shape_profile_dec = state_dr_shape_profile_dec.drop(columns=reg_cols)      
+        # To use reaggreagte_to_model_regions function, need to reformat inc/dec df so index = ['year','hour'] 
+        state_dr_shape_profile_inc = state_dr_shape_profile_inc.set_index(['year','hour'])
+        state_dr_shape_profile_dec = state_dr_shape_profile_dec.set_index(['year','hour'])
+
+        regional_dr_shape_profile_inc = {}
+        regional_dr_shape_profile_dec = {}
+        for dr_type in state_dr_shape_profile_inc['i'].unique():
+            reg_shape_inc = state_dr_shape_profile_inc[state_dr_shape_profile_inc['i'] == dr_type].copy().drop(columns='i')
+            reg_shape_dec = state_dr_shape_profile_dec[state_dr_shape_profile_dec['i'] == dr_type].copy().drop(columns='i')
+            reg_shape_inc = reaggregate_to_model_regions(
+                reg_shape_inc,
+                inputs_case,
+                'state_lpf',
+                dr_data=True,
+                dr_type='fraction',
+            )
+            reg_shape_dec = reaggregate_to_model_regions(
+                reg_shape_dec,
+                inputs_case,
+                'state_lpf',
+                dr_data=True,
+                dr_type='fraction',
+            )
+            #Add back dr type to column header as first column
+            reg_shape_inc.insert(0, 'i', dr_type)
+            reg_shape_dec.insert(0, 'i', dr_type)
+
+            reg_shape_inc[reg_shape_inc.columns.difference(['i'])] = reg_shape_inc[reg_shape_inc.columns.difference(['i'])].round(3)
+            reg_shape_dec[reg_shape_dec.columns.difference(['i'])] = reg_shape_dec[reg_shape_dec.columns.difference(['i'])].round(3)
+
+            regional_dr_shape_profile_inc[dr_type] = reg_shape_inc.reset_index()
+            regional_dr_shape_profile_dec[dr_type] = reg_shape_dec.reset_index()
+
+        # Combine dr shape types 
+        regional_dr_shape_profile_inc = pd.concat(regional_dr_shape_profile_inc.values(), axis=1)
+        regional_dr_shape_profile_dec = pd.concat(regional_dr_shape_profile_dec.values(), axis=1)
+
+
 
 
 
@@ -773,8 +812,8 @@ def main(reeds_path, inputs_case):
         reeds.io.write_profile_to_h5(regional_dr_shed_hourly, 'dr_shed_hourly.h5', inputs_case)
 
     if int(sw.GSw_DRShape):
-        state_dr_shape_profile_inc.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'), key='data', complevel=4)
-        state_dr_shape_profile_dec.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'), key='data', complevel=4)
+        regional_dr_shape_profile_inc.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'), key='data', complevel=4)
+        regional_dr_shape_profile_dec.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'), key='data', complevel=4)
 
 
 #%% ===========================================================================
