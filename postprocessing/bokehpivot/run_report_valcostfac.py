@@ -350,3 +350,9 @@ for subreg in subregs:
             fig.update_traces(mode='lines+markers', marker=dict(size=10), selector=dict(mode='markers'))
             fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
             fig.write_html(f'{output_dir}/plots/{metric}-vs-gen_frac_{subreg}_{scenario}.html')
+
+print('Make PLCOE pitch figures')
+#Writes plcoe_pitch_cost-value-factor.png, plcoe_pitch_value-cost-factor.png, and plcoe_pitch_df.csv
+#into output_dir. plcoe_pitch.py can also be run standalone against an existing valcostfac_core.csv.
+import plcoe_pitch
+plcoe_pitch.make_figs(f'{output_dir}/valcostfac_core.csv')

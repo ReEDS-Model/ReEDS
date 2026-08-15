@@ -1,14 +1,17 @@
 '''This file creates two figures with subfigures of LCOE_base vs year, cost factor vs market share, and alternative value/cost-factor views (top), plus example PLCOE vs market share curves for select years (bottom), with lines for each tech.
 
-Run this file on the reeds2 conda environment.
+Run this file on the reeds2 conda environment. It is also imported by run_report_valcostfac.py, which
+calls make_figs() so the figures land in the report's output_dir alongside valcostfac_core.csv. Run it
+standalone (editing valcostfac_core_path below) to re-render the figures without rebuilding the report.
 '''
 import os
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 # User inputs
-valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv'
+valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
 years = [2030, 2040, 2050]
 max_plcoe = 200
 max_cost_value_factor = 5
@@ -17,23 +20,39 @@ cost_factor_ylim = (0.8, 3)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
-df_output_path = os.path.join(this_dir, 'plcoe_pitch_df.csv')
+lcoe_base_path = os.path.join(this_dir, 'LCOE_base.csv')
+lcoe_usd_mult = 1.041 #Converts LCOE_base.csv from 2022$ to 2023$, matching run_report_valcostfac.py.
+#run_report_valcostfac.py's import chain calls reeds.plots.plotparams(), which globally sets bold
+#x-large axis labels and larger ticks. Rendering under matplotlib defaults keeps these figures
+#identical whether this file is run standalone or from the report. 'backend' is excluded so the
+#active backend isn't swapped out mid-run.
+default_rc = {k: v for k, v in matplotlib.rcParamsDefault.items() if k != 'backend'}
 
-df = pd.read_csv(valcostfac_core_path)
-df['cost_value_factor'] = 1 / df['value_cost_factor']
-df['inv_value_factor'] = 1 / df['value_factor']
-df['inv_cost_factor'] = 1 / df['cost_factor']
 
-df_lcoe = pd.read_csv(f'{this_dir}/LCOE_base.csv')
-df_lcoe_sel = df_lcoe[df_lcoe['year'].isin(years)].copy()
-df_lcoe_sel = df_lcoe_sel.pivot_table(index='tech', columns='year', values='lcoe_base')
-df_lcoe_sel.columns = ['lcoe_base_' + str(c) for c in df_lcoe_sel.columns]
-df_lcoe_sel.reset_index(inplace=True)
+def prep_data(valcostfac_core_path):
+    """Load the core value/cost factors and LCOE base, and derive the plotted columns."""
+    df = pd.read_csv(valcostfac_core_path)
+    df['cost_value_factor'] = 1 / df['value_cost_factor']
+    df['inv_value_factor'] = 1 / df['value_factor']
+    df['inv_cost_factor'] = 1 / df['cost_factor']
 
-df = df.merge(df_lcoe_sel, how='left', on='tech')
+    #LCOE_base.csv is read raw rather than using valcostfac_core's lcoe_base, which is scaled by
+    #force_mult and net of the PTC and so varies by scenario. Only the currency conversion is
+    #applied here, which reproduces valcostfac_core's lcoe_base_orig.
+    df_lcoe = pd.read_csv(lcoe_base_path)
+    df_lcoe['lcoe_base'] = df_lcoe['lcoe_base'] * lcoe_usd_mult
 
-for year in years:
-    df[f'plcoe_{year}'] = df[f'lcoe_base_{year}'] * df['cost_value_factor']
+    df_lcoe_sel = df_lcoe[df_lcoe['year'].isin(years)].copy()
+    df_lcoe_sel = df_lcoe_sel.pivot_table(index='tech', columns='year', values='lcoe_base')
+    df_lcoe_sel.columns = ['lcoe_base_' + str(c) for c in df_lcoe_sel.columns]
+    df_lcoe_sel.reset_index(inplace=True)
+
+    df = df.merge(df_lcoe_sel, how='left', on='tech')
+
+    for year in years:
+        df[f'plcoe_{year}'] = df[f'lcoe_base_{year}'] * df['cost_value_factor']
+
+    return df, df_lcoe
 
 
 def normalize_tech_name(name):
@@ -67,7 +86,7 @@ def build_color_map(techs):
 def plot_plcoe_pitch(
     df,
     df_lcoe,
-    output_path=None,
+    output_path,
     use_inverse_value_factor=True,
     use_cost_value_factor=True,
 ):
@@ -283,28 +302,37 @@ def plot_plcoe_pitch(
         },
     )
 
-    if output_path is None:
-        output_path = os.path.join(this_dir, 'plcoe_pitch_cost-value-factor.png')
-
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig
 
 
+def make_figs(valcostfac_core_path, output_dir=None):
+    """Write both pitch figures and the underlying dataframe, next to valcostfac_core.csv by default."""
+    if output_dir is None:
+        output_dir = os.path.dirname(os.path.abspath(valcostfac_core_path))
+
+    df, df_lcoe = prep_data(valcostfac_core_path)
+
+    with matplotlib.rc_context(default_rc):
+        fig_cost_value = plot_plcoe_pitch(
+            df,
+            df_lcoe,
+            output_path=os.path.join(output_dir, 'plcoe_pitch_cost-value-factor.png'),
+            use_inverse_value_factor=True,
+            use_cost_value_factor=True,
+        )
+        fig_value_cost = plot_plcoe_pitch(
+            df,
+            df_lcoe,
+            output_path=os.path.join(output_dir, 'plcoe_pitch_value-cost-factor.png'),
+            use_inverse_value_factor=False,
+            use_cost_value_factor=False,
+        )
+        plt.close(fig_cost_value)
+        plt.close(fig_value_cost)
+    df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
+    return df
+
+
 if __name__ == '__main__':
-    fig_cost_value = plot_plcoe_pitch(
-        df,
-        df_lcoe,
-        output_path=os.path.join(this_dir, 'plcoe_pitch_cost-value-factor.png'),
-        use_inverse_value_factor=True,
-        use_cost_value_factor=True,
-    )
-    fig_value_cost = plot_plcoe_pitch(
-        df,
-        df_lcoe,
-        output_path=os.path.join(this_dir, 'plcoe_pitch_value-cost-factor.png'),
-        use_inverse_value_factor=False,
-        use_cost_value_factor=False,
-    )
-    plt.close(fig_cost_value)
-    plt.close(fig_value_cost)
-    df.to_csv(df_output_path, index=False)
+    make_figs(valcostfac_core_path)
