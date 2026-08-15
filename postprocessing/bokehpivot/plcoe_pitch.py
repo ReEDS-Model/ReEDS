@@ -1,4 +1,4 @@
-'''This file creates two figures with subfigures of LCOE_base vs year, cost factor vs market share, and alternative value/cost-factor views (top), plus example PLCOE vs market share curves for select years (bottom), with lines for each tech.
+'''This file creates three figures with subfigures of LCOE_base vs year, cost factor vs market share, and alternative value/cost-factor views (top), plus example PLCOE vs market share curves for select years (bottom), with lines for each tech. The third figure is the value/cost-factor view using the adjusted cost factor and LCOE base; its bottom row is unadjusted because the adjustment cancels in PLCOE.
 
 Run this file on the reeds2 conda environment. It is also imported by run_report_valcostfac.py, which
 calls make_figs() so the figures land in the report's output_dir alongside valcostfac_core.csv. Run it
@@ -35,22 +35,32 @@ def prep_data(valcostfac_core_path):
     df['cost_value_factor'] = 1 / df['value_cost_factor']
     df['inv_value_factor'] = 1 / df['value_factor']
     df['inv_cost_factor'] = 1 / df['cost_factor']
+    df['cost_value_factor_adj'] = 1 / df['value_cost_factor_adj']
+    df['inv_cost_factor_adj'] = 1 / df['cost_factor_adj']
 
     #LCOE_base.csv is read raw rather than using valcostfac_core's lcoe_base, which is scaled by
-    #force_mult and net of the PTC and so varies by scenario. Only the currency conversion is
-    #applied here, which reproduces valcostfac_core's lcoe_base_orig.
-    df_lcoe = pd.read_csv(lcoe_base_path)
-    df_lcoe['lcoe_base'] = df_lcoe['lcoe_base'] * lcoe_usd_mult
+    #force_mult and net of the PTC and so varies by scenario. Applying only the currency conversion
+    #reproduces valcostfac_core's lcoe_base_orig, so these columns carry the "orig" name to match.
+    df_lcoe = pd.read_csv(lcoe_base_path).rename(columns={'lcoe_base': 'lcoe_base_orig'})
+    df_lcoe['lcoe_base_orig'] = df_lcoe['lcoe_base_orig'] * lcoe_usd_mult
+
+    #run_report_valcostfac.py's adjustment divides cost_factor by a per-tech constant and multiplies
+    #LCOE base by that same constant, so the two cancel in PLCOE. Recover the constant per tech and
+    #apply it to get the adjusted LCOE trajectory, reproducing valcostfac_core's lcoe_base_orig_adj
+    #(not lcoe_base_adj, which carries force_mult and the PTC). Techs outside the core set get NaN
+    #and are not plotted.
+    tech_scale = (df['cost_factor'] / df['cost_factor_adj']).groupby(df['tech']).first()
+    df_lcoe['lcoe_base_orig_adj'] = df_lcoe['lcoe_base_orig'] * df_lcoe['tech'].map(tech_scale)
 
     df_lcoe_sel = df_lcoe[df_lcoe['year'].isin(years)].copy()
-    df_lcoe_sel = df_lcoe_sel.pivot_table(index='tech', columns='year', values='lcoe_base')
-    df_lcoe_sel.columns = ['lcoe_base_' + str(c) for c in df_lcoe_sel.columns]
+    df_lcoe_sel = df_lcoe_sel.pivot_table(index='tech', columns='year', values='lcoe_base_orig')
+    df_lcoe_sel.columns = ['lcoe_base_orig_' + str(c) for c in df_lcoe_sel.columns]
     df_lcoe_sel.reset_index(inplace=True)
 
     df = df.merge(df_lcoe_sel, how='left', on='tech')
 
     for year in years:
-        df[f'plcoe_{year}'] = df[f'lcoe_base_{year}'] * df['cost_value_factor']
+        df[f'plcoe_{year}'] = df[f'lcoe_base_orig_{year}'] * df['cost_value_factor']
 
     return df, df_lcoe
 
@@ -89,9 +99,20 @@ def plot_plcoe_pitch(
     output_path,
     use_inverse_value_factor=True,
     use_cost_value_factor=True,
+    use_adj=False,
 ):
     techs = sorted(df['tech'].unique())
     colors = build_color_map(techs)
+
+    #use_adj swaps the cost factor, the ratio, and LCOE base for their adjusted counterparts. The
+    #per-tech constant that the adjustment moves from the cost factor into LCOE base cancels in the
+    #product, so the bottom-row PLCOE curves are identical either way and stay unadjusted.
+    adj = '_adj' if use_adj else ''
+    #Abbreviated so the compound ratio title still fits the 4-across top row.
+    cf_name = 'adj. cost factor' if use_adj else 'cost factor'
+    lcoe_name = 'adj. LCOE base' if use_adj else 'LCOE base'
+    cap = lambda s: s[0].upper() + s[1:]
+    lcoe_col = f'lcoe_base_orig{adj}'
 
     fig = plt.figure(figsize=(22, 9))
     outer = fig.add_gridspec(2, 1, height_ratios=[1, 1.2], hspace=0.7)
@@ -107,20 +128,21 @@ def plot_plcoe_pitch(
     # LCOE vs year (upper left)
     for tech in techs:
         tech_data = df_lcoe[df_lcoe['tech'] == tech].sort_values('year')
+        tech_data = tech_data.dropna(subset=[lcoe_col])
         if tech_data.empty:
             continue
         ax_lcoe.plot(
             tech_data['year'],
-            tech_data['lcoe_base'],
+            tech_data[lcoe_col],
             label=tech,
             color=colors[tech],
             linewidth=1.8,
             marker='o',
             markersize=3,
         )
-    ax_lcoe.set_title('LCOE base vs year')
+    ax_lcoe.set_title(f'{cap(lcoe_name)} vs year')
     ax_lcoe.set_xlabel('Year')
-    ax_lcoe.set_ylabel('LCOE base ($/MWh)')
+    ax_lcoe.set_ylabel(f'{cap(lcoe_name)} ($/MWh)')
     ax_lcoe.set_ylim(bottom=0)
     ax_lcoe.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
     for year in years:
@@ -148,31 +170,31 @@ def plot_plcoe_pitch(
         )
 
     if use_cost_value_factor:
-        cf_col = 'cost_factor'
-        cf_title = 'Cost factor vs market share'
-        cf_ylabel = 'Cost factor'
+        cf_col = f'cost_factor{adj}'
+        cf_title = f'{cap(cf_name)} vs market share'
+        cf_ylabel = cap(cf_name)
         cf_ylim = cost_factor_ylim
-        ratio_col = 'cost_value_factor'
-        ratio_title = '(cost factor)/(value factor) vs market share'
-        ratio_ylabel = '(cost factor)/(value factor)'
+        ratio_col = f'cost_value_factor{adj}'
+        ratio_title = f'({cf_name})/(value factor) vs market share'
+        ratio_ylabel = f'({cf_name})/(value factor)'
         ratio_ylim = (0.8, max_cost_value_factor)
-        formula_text = 'PLCOE = (LCOE base) * (cost factor)/(value factor)'
+        formula_text = f'PLCOE = ({lcoe_name}) * ({cf_name})/(value factor)'
     else:
-        cf_col = 'inv_cost_factor'
-        cf_title = '1/(cost factor) vs market share'
-        cf_ylabel = '1/(cost factor)'
+        cf_col = f'inv_cost_factor{adj}'
+        cf_title = f'1/({cf_name}) vs market share'
+        cf_ylabel = f'1/({cf_name})'
         cf_ylim = (
             0,
             1 / cost_factor_ylim[0],
         )
-        ratio_col = 'value_cost_factor'
-        ratio_title = '(value factor)/(cost factor) vs market share'
-        ratio_ylabel = '(value factor)/(cost factor)'
+        ratio_col = f'value_cost_factor{adj}'
+        ratio_title = f'(value factor)/({cf_name}) vs market share'
+        ratio_ylabel = f'(value factor)/({cf_name})'
         ratio_ylim = (
             0,
             1 / 0.8,
         )
-        formula_text = 'PLCOE = (LCOE base) / ((value factor)/(cost factor))'
+        formula_text = f'PLCOE = ({lcoe_name}) / ((value factor)/({cf_name}))'
 
     # Value factor view vs market share (upper middle-left)
     for tech in techs:
@@ -328,8 +350,17 @@ def make_figs(valcostfac_core_path, output_dir=None):
             use_inverse_value_factor=False,
             use_cost_value_factor=False,
         )
+        fig_value_cost_adj = plot_plcoe_pitch(
+            df,
+            df_lcoe,
+            output_path=os.path.join(output_dir, 'plcoe_pitch_value-cost-factor_adj.png'),
+            use_inverse_value_factor=False,
+            use_cost_value_factor=False,
+            use_adj=True,
+        )
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
+        plt.close(fig_value_cost_adj)
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
     return df
 
