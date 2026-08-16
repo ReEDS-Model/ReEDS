@@ -16,16 +16,15 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-from plcoe_pitch import build_color_map, default_rc, lcoe_base_path, lcoe_usd_mult
+from plcoe_pitch import build_color_map, default_rc, lcoe_base_path
+from report_switches import dollar_year, lcoe_base_dollar_year
 
 # User inputs
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv'
 run_dir = '/data/shared/projects/mmowers/ReEDS/runs/vcf4_ref' #Supplies rev_paths.csv, dollaryear_sc.csv and deflator.csv. The supply curve inputs are identical across the vcf4_* runs, so any of them will do.
 tech_rev_map = {'Onshore Wind': 'wind-ons', 'UPV': 'upv'} #ReEDS tech name -> rev_paths.csv tech name
 lcoe_year = 2035 #Year of LCOE base to re-base ReEDS costs onto. Match the reV supply curve's cost year.
-lcoe_base_dollar_year = 2022 #Dollar year of LCOE_base.csv, per run_report_valcostfac.py.
-target_dollar_year = 2023 #Dollar year everything is converted to for plotting.
+target_dollar_year = dollar_year #Dollar year everything is converted to for plotting. From report_switches, so this figure shares a basis with the report and the pitch figures.
 xlim_headroom = 1.08 #Extend the x axis this far past the largest ReEDS generation.
 
 this_dir = os.path.dirname(os.path.abspath(__file__))

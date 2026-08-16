@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
+from report_switches import dollar_year, lcoe_base_dollar_year
 
 # User inputs
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
@@ -25,7 +26,10 @@ fit_techs = ['Onshore Wind','UPV'] #Techs given a dotted OLS fit vs market share
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
 lcoe_base_path = os.path.join(this_dir, 'LCOE_base.csv')
-lcoe_usd_mult = 1.041 #Converts LCOE_base.csv from 2022$ to 2023$, matching run_report_valcostfac.py.
+deflator_path = os.path.join(this_dir, os.pardir, os.pardir, 'inputs', 'financials', 'deflator.csv')
+deflator = pd.read_csv(deflator_path, index_col='*Dollar.Year')['Deflator']
+lcoe_usd_mult = deflator.loc[lcoe_base_dollar_year] / deflator.loc[dollar_year] #Matches run_report_valcostfac.py's conversion of the same file.
+usd_label = f'{dollar_year}$/MWh'
 #run_report_valcostfac.py's import chain calls reeds.plots.plotparams(), which globally sets bold
 #x-large axis labels and larger ticks. Rendering under matplotlib defaults keeps these figures
 #identical whether this file is run standalone or from the report. 'backend' is excluded so the
@@ -376,7 +380,7 @@ def plot_plcoe_pitch(
         )
     ax_lcoe.set_title(f'{cap(lcoe_name)} vs year')
     ax_lcoe.set_xlabel('Year')
-    ax_lcoe.set_ylabel(f'{cap(lcoe_name)} ($/MWh)')
+    ax_lcoe.set_ylabel(f'{cap(lcoe_name)} ({usd_label})')
     ax_lcoe.set_ylim(bottom=0)
     ax_lcoe.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
     for year in years:
@@ -521,7 +525,7 @@ def plot_plcoe_pitch(
         ax.set_xlabel('Market share (generation fraction)')
         ax.set_ylim(0, max_plcoe)
         if ax is bottom_axes[0]:
-            ax.set_ylabel('PLCOE ($/MWh)')
+            ax.set_ylabel(f'PLCOE ({usd_label})')
         else:
             ax.set_ylabel('')
             ax.set_yticklabels([])

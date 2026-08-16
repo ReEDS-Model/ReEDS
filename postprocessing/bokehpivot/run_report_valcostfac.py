@@ -42,22 +42,38 @@ report = importlib.import_module(report_name)
 #Comment these two lines if the bokehpivot report is already made and you just want to run the custom post-processing below.
 rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.static_presets, report_path, report_format, html_num, output_dir, auto_open)
 shutil.copy2(os.path.realpath(__file__), output_dir)
+shutil.copy2(f'{bokehpivot_dir}/report_switches.py', output_dir) #The switches now live there, so copy them too to keep the report's settings recorded alongside it.
 
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
 #USER SWITCHES
-start_year = 2025 #First year of results to include (first endogenous year, without prescribed builds)
-share_basis = 'gen' #Denominator for gen_frac (used by all plots and adjusted metrics): 'load' = busbar load; 'gen' = total generation excluding storage. Both columns (gen_frac_load, gen_frac_gen) are retained in valcostfac.csv regardless.
-gen_frac_max = 0.65 #Upper limit on gen_frac for the intermediary "lim" plots
-vcf_min = 0 #Minimum value_cost_factor_adj2 to retain in df_plot_core
-stor_report_techs = ['Battery'] #Techs whose gen_twh/generation is overridden with gross discharge
-storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES'] #Techs excluded from the total-generation market-share denominator
-metrics_subreg = ['vf','vcf'] #Metrics to plot vs gen_frac for each subregion (transreg/interconnect)
+#Edit these in report_switches.py, which plcoe_pitch.py and reeds_vs_rev.py import as well so the
+#figures and the data they plot cannot drift apart.
+from report_switches import (
+    dollar_year, lcoe_base_dollar_year, start_year, share_basis, gen_frac_max, vcf_min,
+    stor_report_techs, storage_techs, metrics_subreg,
+)
 
 out_txt = f'{output_dir}/out.txt'
 with open(out_txt, 'w') as f:
     print("Results:", file=f)
+
+print('Set up dollar year conversions')
+#bokehpivot inflates every $ result from ReEDS' native 2004$ into DEFAULT_DOLLAR_YEAR (defaults.py),
+#so that is the dollar year of everything read from report.xlsx. LCOE_base.csv is in 2022$ and the
+#PTC below is quoted in 2004$, so all three arrive on different bases and are converted to
+#dollar_year here. Without this, lcoe_adder and the other differences between a report value and
+#LCOE base would subtract one dollar year from another.
+from defaults import DEFAULT_DOLLAR_YEAR
+df_deflator = pd.read_csv(f'{bokehpivot_dir}/../../inputs/financials/deflator.csv', index_col='*Dollar.Year')['Deflator']
+def usd_mult(from_year, to_year=dollar_year):
+    """Multiplier converting from_year dollars into to_year dollars."""
+    return df_deflator.loc[from_year] / df_deflator.loc[to_year]
+report_usd_mult = usd_mult(DEFAULT_DOLLAR_YEAR) #Applied to each $ column read from report.xlsx.
+lcoe_base_usd_mult = usd_mult(lcoe_base_dollar_year) #LCOE_base.csv is in 2022$ (2024 ATB).
+usd_label = f'{dollar_year}$/MWh' #Axis label suffix for the $/MWh plots.
+print(f'  report.xlsx is in {DEFAULT_DOLLAR_YEAR}$; converting to {dollar_year}$ by {report_usd_mult:.6f}')
 
 print('Read in custom files')
 df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
@@ -89,24 +105,27 @@ df['vf_spatial_simultaneous'] = df['vf_spatial'] * df['vf_interaction']
 print('Merge with benchmark price and calculate LVOE')
 df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='bench_price')
 df_bench = df_bench.rename(columns={'val_tot':'benchmark_price'})
+df_bench['benchmark_price'] = df_bench['benchmark_price'] * report_usd_mult
 df = df.merge(df_bench, on=['scenario','year'], how='left')
 df['lvoe'] = df['value_factor'] * df['benchmark_price']
 
 print('Merge with LVOE components')
 df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_energy').rename(columns={'val_load':'lvoe_energy'})
+df_lvoe_energy['lvoe_energy'] = df_lvoe_energy['lvoe_energy'] * report_usd_mult
 df = df.merge(df_lvoe_energy, on=['scenario','tech','year'], how='left')
 df_lvoe_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_resmarg').rename(columns={'val_resmarg':'lvoe_resmarg'})
+df_lvoe_resmarg['lvoe_resmarg'] = df_lvoe_resmarg['lvoe_resmarg'] * report_usd_mult
 df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 df['vf_comp_energy'] = df['lvoe_energy'] / df['benchmark_price']
 df['vf_comp_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 
 print('Merge with LCOE_base')
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
-df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
+df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * lcoe_base_usd_mult #Converted to dollar_year from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
 df['lcoe_base_orig'] = df['lcoe_base']
 #If "_IRA" is in the scenario name, subtract the PTC from LCOE
-ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc_value_scaled).
+ptc = 11.36 / df_deflator.loc[dollar_year] #11.36 2004$/MWh (taken from ReEDS run ptc_value_scaled), converted to dollar_year.
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
 df.loc[df['scenario'].str.contains('_IRA'), 'lcoe_base'] = df['lcoe_base'] - ptc
 
@@ -219,6 +238,18 @@ plots = [
     {'x':'gen_frac','y':'BCR'},
 ]
 
+#Axis labels carrying units. Everything not listed here is a dimensionless factor or ratio and keeps
+#its bare column name. The $/MWh entries are all differences or sums involving both report values and
+#LCOE base, which is why they are only meaningful now that both are on the dollar_year basis.
+axis_labels = {
+    'gen_twh': 'gen_twh (TWh)',
+    'lcoe_adder': f'lcoe_adder ({usd_label})',
+    'value_cost_adder': f'value_cost_adder ({usd_label})',
+    'integration_cost': f'integration_cost ({usd_label})',
+    'relative_cost': f'relative_cost ({usd_label})',
+    'net_cost': f'net_cost ({usd_label})',
+}
+
 print('Add an upper limit on gen_frac and add intermediary "lim" plots, if desired') #We probably should also have a lower limit for value factors
 df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_max)].copy()
 plots_lim = copy.deepcopy(plots)
@@ -292,7 +323,7 @@ for plot in plots + plots_core:
         continue
     fig = px.scatter(df_plt, x=plot['x'], y=plot['y'], color='tech scenario',
         hover_data=['tech scenario', 'year', 'gen_frac', plot['y']], trendline='ols',
-        template='plotly_white', width=950, height=630)
+        labels=axis_labels, template='plotly_white', width=950, height=630)
     # fig.update_xaxes(range=[0, 1.005])
     # fig.update_yaxes(range=[0, 1.205])
     fig.update_layout(font=dict(size=13))
@@ -304,6 +335,7 @@ print('Read in vf_full for transreg and interconnect calcs') #Eventually I shoul
 df_full = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
 df_full = df_full[df_full['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
 df_full = df_full[df_full['year']>=start_year].copy() #First endogenous year (also without prescribed builds).
+df_full['val_tot'] = df_full['val_tot'] * report_usd_mult #Into dollar_year, so vcf below is comparable to lcoe_base.
 subregs = ['transreg','interconnect']
 dfs_subreg = {}
 for subreg in subregs:
