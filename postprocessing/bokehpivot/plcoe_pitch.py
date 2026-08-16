@@ -68,12 +68,16 @@ def prep_data(valcostfac_core_path):
     return df, df_lcoe
 
 
-def tech_fit(df, col, tech):
-    """OLS fit of col vs gen_frac for one tech. Returns None if there aren't enough points."""
+def tech_fit(df, col, tech, log=False):
+    """OLS fit of col (or its natural log) vs gen_frac for one tech. Returns None if there aren't
+    enough points; non-positive values are dropped before a log fit."""
     d = df[df['tech'] == tech].dropna(subset=['gen_frac', col])
+    if log:
+        d = d[d[col] > 0]
     if len(d) < 2:
         return None
-    return linregress(d['gen_frac'], d[col]), d['gen_frac'].min(), d['gen_frac'].max()
+    y = np.log(d[col]) if log else d[col]
+    return linregress(d['gen_frac'], y), d['gen_frac'].min(), d['gen_frac'].max()
 
 
 def add_tech_fits(ax, df, col, colors, techs):
@@ -118,10 +122,18 @@ def summarize_fits(df, techs=None):
 
     Raw slopes are not comparable across metrics because the curves sit at different levels: the
     value-cost factor starts well below the value factor, so an equal fractional decline shows up as
-    a smaller raw slope. slope_norm (slope/intercept) is the fractional decline per unit of market
-    share, which is the comparable measure, and slope_norm_ratio_vs_value_factor - 1 is the increase
-    in steepness the cost factor contributes. slope_norm is also invariant to the _adj rescaling,
-    since that multiplies slope and intercept by the same per-tech constant."""
+    a smaller raw slope. Two level-free measures are reported instead, both invariant to the _adj
+    rescaling (which multiplies slope and intercept by the same per-tech constant):
+
+    slope_norm (slope/intercept) is the fractional decline per unit of market share, a first-order
+    approximation that degrades when a curve falls by a large factor across the range.
+
+    log_slope (the slope of ln(y) vs gen_frac) is the preferred measure for "x% steeper" claims. It
+    is exact rather than approximate, and because ln(value_cost_factor) = ln(value_factor) +
+    ln(1/cost_factor) holds pointwise, the log slopes are exactly additive. That additivity shows up
+    in log_slope_ratio_vs_value_factor: the ratio for value_cost_factor equals 1 plus the ratio for
+    inv_cost_factor, so the cost factor's contribution to the steepening can be read off directly.
+    Check log_r2 against r2 before leaning on it, since neither model dominates for every tech."""
     techs = fit_techs if techs is None else techs
     cols = ['value_factor','inv_cost_factor','value_cost_factor','inv_cost_factor_adj','value_cost_factor_adj']
     rows = []
@@ -131,9 +143,14 @@ def summarize_fits(df, techs=None):
             if fit is None:
                 continue
             lr, x0, x1 = fit
+            log_fit = tech_fit(df, col, tech, log=True)
+            llr = None if log_fit is None else log_fit[0]
             rows.append({
                 'tech': tech, 'metric': col, 'slope': lr.slope, 'intercept': lr.intercept,
-                'r2': lr.rvalue ** 2, 'gen_frac_min': x0, 'gen_frac_max': x1,
+                'r2': lr.rvalue ** 2,
+                'log_slope': np.nan if llr is None else llr.slope,
+                'log_r2': np.nan if llr is None else llr.rvalue ** 2,
+                'gen_frac_min': x0, 'gen_frac_max': x1,
             })
     out = pd.DataFrame(rows)
     if out.empty:
@@ -142,6 +159,7 @@ def summarize_fits(df, techs=None):
     vf = out[out['metric'] == 'value_factor'].set_index('tech')
     out['slope_ratio_vs_value_factor'] = out['slope'] / out['tech'].map(vf['slope'])
     out['slope_norm_ratio_vs_value_factor'] = out['slope_norm'] / out['tech'].map(vf['slope_norm'])
+    out['log_slope_ratio_vs_value_factor'] = out['log_slope'] / out['tech'].map(vf['log_slope'])
     return out
 
 
