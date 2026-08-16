@@ -81,8 +81,13 @@ def tech_fit(df, col, tech, log=False):
 
 
 def add_tech_fits(ax, df, col, colors, techs):
-    """Overlay dotted OLS fits vs market share and annotate each with its linear equation."""
-    entries = []
+    """Overlay OLS fits vs market share and annotate each with its equation.
+
+    Two fits per tech: a dotted straight line (linear in level) and a dash-dot curve (linear in log,
+    drawn in its equivalent y = A*exp(m*x) form). The log fit is the one whose slope is quoted for
+    steepness comparisons, since it is invariant to rescaling; showing both makes the difference
+    between the models visible, including where the linear fit runs negative."""
+    labels = []
     for tech in techs:
         fit = tech_fit(df, col, tech)
         if fit is None:
@@ -97,23 +102,41 @@ def add_tech_fits(ax, df, col, colors, techs):
             linewidth=2.0,
             zorder=6,
         )
-        entries.append((tech, lr))
+        labels.append((tech, f'{tech} (lin): y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={lr.rvalue ** 2:.2f})'))
+
+        log_fit = tech_fit(df, col, tech, log=True)
+        if log_fit is None:
+            continue
+        llr, lx0, lx1 = log_fit
+        xs_log = np.linspace(lx0, lx1, 50)
+        amp = np.exp(llr.intercept)
+        ax.plot(
+            xs_log,
+            amp * np.exp(llr.slope * xs_log),
+            color=colors[tech],
+            linestyle='-.',
+            linewidth=1.4,
+            alpha=0.9,
+            zorder=6,
+        )
+        labels.append((tech, f'{tech} (exp): y = {amp:.2f}e$^{{{llr.slope:.2f}x}}$  (R$^2$={llr.rvalue ** 2:.2f})'))
+
     #Equations sit along the top, which these declining curves leave clear. The translucent backing
     #keeps them readable if a curve does run underneath.
-    for i, (tech, lr) in enumerate(entries):
+    for i, (tech, label) in enumerate(labels):
         ax.text(
             0.03,
-            0.98 - 0.09 * i,
-            f'{tech}: y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={lr.rvalue ** 2:.2f})',
+            0.98 - 0.07 * i,
+            label,
             transform=ax.transAxes,
-            fontsize=7.5,
+            fontsize=6.5,
             color=colors[tech],
             va='top',
             ha='left',
             zorder=7,
             bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.75, 'pad': 1.5},
         )
-    return entries
+    return labels
 
 
 def summarize_fits(df, techs=None):
@@ -149,6 +172,7 @@ def summarize_fits(df, techs=None):
                 'tech': tech, 'metric': col, 'slope': lr.slope, 'intercept': lr.intercept,
                 'r2': lr.rvalue ** 2,
                 'log_slope': np.nan if llr is None else llr.slope,
+                'log_intercept': np.nan if llr is None else llr.intercept,
                 'log_r2': np.nan if llr is None else llr.rvalue ** 2,
                 'gen_frac_min': x0, 'gen_frac_max': x1,
             })
@@ -161,6 +185,16 @@ def summarize_fits(df, techs=None):
     out['slope_norm_ratio_vs_value_factor'] = out['slope_norm'] / out['tech'].map(vf['slope_norm'])
     out['log_slope_ratio_vs_value_factor'] = out['log_slope'] / out['tech'].map(vf['log_slope'])
     return out
+
+
+def add_fit_headroom(ax, values, frac=0.68):
+    """Raise the top of the axis so the plotted data fills at most `frac` of it, leaving a clear band
+    across the top for the fit equations. Only ever expands the range, never shrinks it."""
+    vmax = pd.Series(values).max()
+    if not np.isfinite(vmax):
+        return
+    lo, hi = ax.get_ylim()
+    ax.set_ylim(lo, max(hi, lo + (vmax - lo) / frac))
 
 
 def normalize_tech_name(name):
@@ -317,6 +351,7 @@ def plot_plcoe_pitch(
     ax_inv_vf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
     if show_fits:
         add_tech_fits(ax_inv_vf, df, vf_col, colors, fit_techs)
+        add_fit_headroom(ax_inv_vf, df[vf_col])
 
     # Cost factor vs market share (upper middle-right)
     for tech in techs:
@@ -340,6 +375,7 @@ def plot_plcoe_pitch(
     ax_cf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
     if show_fits:
         add_tech_fits(ax_cf, df, cf_col, colors, fit_techs)
+        add_fit_headroom(ax_cf, df[cf_col])
 
     # Ratio view vs market share (upper right)
     for tech in techs:
@@ -362,6 +398,7 @@ def plot_plcoe_pitch(
     ax_cvf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
     if show_fits:
         add_tech_fits(ax_cvf, df, ratio_col, colors, fit_techs)
+        add_fit_headroom(ax_cvf, df[ratio_col])
 
     # PLCOE vs market share for select years (bottom row)
     for ax, year in zip(bottom_axes, years):
