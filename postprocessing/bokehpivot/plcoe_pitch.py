@@ -80,8 +80,11 @@ def tech_fit(df, col, tech, form='linear'):
     the remaining non-served share. Both log forms leave their slope unchanged when y is rescaled,
     and both make the slopes exactly additive across a product of metrics.
 
-    Returns (linregress result, gen_frac min, gen_frac max), or None without enough usable points.
-    Non-positive values are dropped before a log fit, as is x >= 1 for the power form."""
+    Returns (linregress result, rows actually fitted), or None without enough usable points.
+    Non-positive values are dropped before a log fit, as is x >= 1 for the power form.
+
+    Note that linregress' own rvalue**2 is the fit quality in the TRANSFORMED space, so it is not
+    comparable across forms. Use fit_r2_y for a like-for-like comparison in the original units."""
     d = df[df['tech'] == tech].dropna(subset=['gen_frac', col])
     if form in ('exp', 'power'):
         d = d[d[col] > 0]
@@ -91,7 +94,30 @@ def tech_fit(df, col, tech, form='linear'):
         return None
     x = np.log(1 - d['gen_frac']) if form == 'power' else d['gen_frac']
     y = np.log(d[col]) if form in ('exp', 'power') else d[col]
-    return linregress(x, y), d['gen_frac'].min(), d['gen_frac'].max()
+    return linregress(x, y), d
+
+
+def fit_predict(lr, x, form):
+    """Predicted y in original units from a fit of the given form."""
+    if form == 'linear':
+        return lr.intercept + lr.slope * x
+    if form == 'exp':
+        return np.exp(lr.intercept) * np.exp(lr.slope * x)
+    if form == 'power':
+        return np.exp(lr.intercept) * (1 - x) ** lr.slope
+    raise ValueError(f'unknown form: {form}')
+
+
+def fit_r2_y(lr, d, col, form):
+    """R^2 of a fit in the ORIGINAL units of y, so the three forms can be compared like for like.
+    A log-space R^2 rewards proportional accuracy and flatters forms fitted in logs, which is
+    misleading next to a curve the reader is judging by eye in y space."""
+    y = d[col].to_numpy()
+    yh = fit_predict(lr, d['gen_frac'].to_numpy(), form)
+    ss_tot = ((y - y.mean()) ** 2).sum()
+    if ss_tot == 0:
+        return np.nan
+    return 1 - ((y - yh) ** 2).sum() / ss_tot
 
 
 def add_tech_fits(ax, df, col, colors, techs):
@@ -100,14 +126,18 @@ def add_tech_fits(ax, df, col, colors, techs):
     Two fits per tech: a dotted straight line (linear in level) and a dash-dot curve of the form
     y = A*(1-x)**k. The power-form exponent k is the one quoted for steepness comparisons, since it
     is invariant to rescaling and exactly additive across metrics; showing both makes the difference
-    between the models visible, including where the linear fit runs negative."""
+    between the models visible, including where the linear fit runs negative.
+
+    Both R^2 values shown are in the original units of y (see fit_r2_y), so they describe the curves
+    as drawn and can be compared with each other. The power fit's own log-space R^2 is higher and
+    would overstate how well that curve tracks the points."""
     labels = []
     for tech in techs:
         fit = tech_fit(df, col, tech)
         if fit is None:
             continue
-        lr, x0, x1 = fit
-        xs = np.array([x0, x1])
+        lr, d = fit
+        xs = np.array([d['gen_frac'].min(), d['gen_frac'].max()])
         ax.plot(
             xs,
             lr.intercept + lr.slope * xs,
@@ -116,13 +146,14 @@ def add_tech_fits(ax, df, col, colors, techs):
             linewidth=2.0,
             zorder=6,
         )
-        labels.append((tech, f'{tech} (lin): y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={lr.rvalue ** 2:.2f})'))
+        r2 = fit_r2_y(lr, d, col, 'linear')
+        labels.append((tech, f'{tech} (lin): y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={r2:.2f})'))
 
         pow_fit = tech_fit(df, col, tech, form='power')
         if pow_fit is None:
             continue
-        plr, px0, px1 = pow_fit
-        xs_pow = np.linspace(px0, px1, 50)
+        plr, pd_ = pow_fit
+        xs_pow = np.linspace(pd_['gen_frac'].min(), pd_['gen_frac'].max(), 50)
         amp = np.exp(plr.intercept)
         ax.plot(
             xs_pow,
@@ -133,7 +164,8 @@ def add_tech_fits(ax, df, col, colors, techs):
             alpha=0.9,
             zorder=6,
         )
-        labels.append((tech, f'{tech} (pow): y = {amp:.2f}(1-x)$^{{{plr.slope:.2f}}}$  (R$^2$={plr.rvalue ** 2:.2f})'))
+        pr2 = fit_r2_y(plr, pd_, col, 'power')
+        labels.append((tech, f'{tech} (pow): y = {amp:.2f}(1-x)$^{{{plr.slope:.2f}}}$  (R$^2$={pr2:.2f})'))
 
     #Equations sit along the top, which these declining curves leave clear. The translucent backing
     #keeps them readable if a curve does run underneath.
@@ -171,7 +203,13 @@ def summarize_fits(df, techs=None):
     exp_slope (from y = A*exp(m*x)) is kept as an independent cross-check. It shares those two
     properties but asymptotes rather than reaching zero at full market share, and generally fits
     worse. Agreement between exp_slope_ratio_vs_value_factor and power_k_ratio_vs_value_factor is
-    evidence the steepness result is a property of the data rather than of the chosen form."""
+    evidence the steepness result is a property of the data rather than of the chosen form.
+
+    Fit quality is reported in two spaces and they must not be mixed. The *_r2_y columns are in the
+    original units of y and are the only ones comparable across forms; on that basis the linear form
+    usually fits these curves best. The *_r2_log columns are the transformed-space R^2 that each log
+    regression maximises, which rewards proportional accuracy and runs higher. The power form is
+    preferred here for its invariance, additivity and boundary behaviour, not because it fits best."""
     techs = fit_techs if techs is None else techs
     cols = ['value_factor','inv_cost_factor','value_cost_factor','inv_cost_factor_adj','value_cost_factor_adj']
     rows = []
@@ -180,21 +218,22 @@ def summarize_fits(df, techs=None):
             fit = tech_fit(df, col, tech)
             if fit is None:
                 continue
-            lr, x0, x1 = fit
+            lr, d = fit
             pw = tech_fit(df, col, tech, form='power')
             ex = tech_fit(df, col, tech, form='exp')
-            plr = None if pw is None else pw[0]
-            elr = None if ex is None else ex[0]
             rows.append({
                 'tech': tech, 'metric': col,
-                'gen_frac_min': x0, 'gen_frac_max': x1,
-                'power_A': np.nan if plr is None else np.exp(plr.intercept),
-                'power_k': np.nan if plr is None else plr.slope,
-                'power_r2': np.nan if plr is None else plr.rvalue ** 2,
-                'slope': lr.slope, 'intercept': lr.intercept, 'r2': lr.rvalue ** 2,
-                'exp_slope': np.nan if elr is None else elr.slope,
-                'exp_A': np.nan if elr is None else np.exp(elr.intercept),
-                'exp_r2': np.nan if elr is None else elr.rvalue ** 2,
+                'gen_frac_min': d['gen_frac'].min(), 'gen_frac_max': d['gen_frac'].max(),
+                'power_A': np.nan if pw is None else np.exp(pw[0].intercept),
+                'power_k': np.nan if pw is None else pw[0].slope,
+                'power_r2_y': np.nan if pw is None else fit_r2_y(pw[0], pw[1], col, 'power'),
+                'power_r2_log': np.nan if pw is None else pw[0].rvalue ** 2,
+                'slope': lr.slope, 'intercept': lr.intercept,
+                'r2_y': fit_r2_y(lr, d, col, 'linear'),
+                'exp_A': np.nan if ex is None else np.exp(ex[0].intercept),
+                'exp_slope': np.nan if ex is None else ex[0].slope,
+                'exp_r2_y': np.nan if ex is None else fit_r2_y(ex[0], ex[1], col, 'exp'),
+                'exp_r2_log': np.nan if ex is None else ex[0].rvalue ** 2,
             })
     out = pd.DataFrame(rows)
     if out.empty:
