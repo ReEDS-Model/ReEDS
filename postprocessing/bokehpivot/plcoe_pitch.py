@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from scipy.optimize import curve_fit
 from scipy.stats import linregress
 
 # User inputs
@@ -108,29 +109,63 @@ def fit_predict(lr, x, form):
     raise ValueError(f'unknown form: {form}')
 
 
-def fit_r2_y(lr, d, col, form):
-    """R^2 of a fit in the ORIGINAL units of y, so the three forms can be compared like for like.
-    A log-space R^2 rewards proportional accuracy and flatters forms fitted in logs, which is
+def r2_y(y, yhat):
+    """R^2 in the ORIGINAL units of y, so different fitting methods compare like for like. A
+    log-space R^2 rewards proportional accuracy and flatters forms fitted in logs, which is
     misleading next to a curve the reader is judging by eye in y space."""
-    y = d[col].to_numpy()
-    yh = fit_predict(lr, d['gen_frac'].to_numpy(), form)
     ss_tot = ((y - y.mean()) ** 2).sum()
     if ss_tot == 0:
         return np.nan
-    return 1 - ((y - yh) ** 2).sum() / ss_tot
+    return 1 - ((y - yhat) ** 2).sum() / ss_tot
+
+
+def fit_r2_y(lr, d, col, form):
+    """r2_y for one of the linregress-based fits."""
+    return r2_y(d[col].to_numpy(), fit_predict(lr, d['gen_frac'].to_numpy(), form))
+
+
+def power_model(x, A, k):
+    """y = A*(1-x)**k, the form fitted by tech_fit_nls."""
+    return A * (1 - x) ** k
+
+
+def tech_fit_nls(df, col, tech):
+    """Nonlinear least-squares fit of y = A*(1-x)**k in the ORIGINAL units of y.
+
+    Unlike the log-space 'power' fit this minimises absolute error, so the curve tracks the points as
+    drawn. The trade-off is that exponents are no longer exactly additive across a product of
+    metrics: k for value_cost_factor is not k(value_factor) + k(inv_cost_factor). Take the cost term
+    as the difference between the value_factor and value_cost_factor exponents rather than fitting
+    inv_cost_factor and adding, so there is only ever one answer (see summarize_fits).
+
+    k remains invariant when y is rescaled, since a constant multiplier is absorbed by A.
+
+    Returns (A, k, rows fitted), or None without enough usable points."""
+    d = df[df['tech'] == tech].dropna(subset=['gen_frac', col])
+    d = d[d['gen_frac'] < 1]
+    if len(d) < 2:
+        return None
+    seed = tech_fit(df, col, tech, form='power')
+    p0 = [1.0, 1.0] if seed is None else [np.exp(seed[0].intercept), seed[0].slope]
+    try:
+        (amp, k), _ = curve_fit(power_model, d['gen_frac'].to_numpy(), d[col].to_numpy(),
+                                p0=p0, maxfev=20000)
+    except (RuntimeError, TypeError, ValueError):
+        return None
+    return amp, k, d
 
 
 def add_tech_fits(ax, df, col, colors, techs):
     """Overlay OLS fits vs market share and annotate each with its equation.
 
     Two fits per tech: a dotted straight line (linear in level) and a dash-dot curve of the form
-    y = A*(1-x)**k. The power-form exponent k is the one quoted for steepness comparisons, since it
-    is invariant to rescaling and exactly additive across metrics; showing both makes the difference
-    between the models visible, including where the linear fit runs negative.
+    y = A*(1-x)**k fitted by nonlinear least squares in y space, so both track the points as drawn
+    and their R^2 values (both in the original units of y) are comparable with each other.
 
-    Both R^2 values shown are in the original units of y (see fit_r2_y), so they describe the curves
-    as drawn and can be compared with each other. The power fit's own log-space R^2 is higher and
-    would overstate how well that curve tracks the points."""
+    Each panel gets its own fit, including the cost-factor panel. Only the value-factor and
+    value-cost-factor exponents are used for the steepness claims; the cost-factor exponent is a
+    description of the cost data on its own terms, and must not be added to the value-factor exponent
+    to reconstruct the value-cost-factor one. See summarize_fits."""
     labels = []
     for tech in techs:
         fit = tech_fit(df, col, tech)
@@ -149,23 +184,22 @@ def add_tech_fits(ax, df, col, colors, techs):
         r2 = fit_r2_y(lr, d, col, 'linear')
         labels.append((tech, f'{tech} (lin): y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={r2:.2f})'))
 
-        pow_fit = tech_fit(df, col, tech, form='power')
-        if pow_fit is None:
+        nls = tech_fit_nls(df, col, tech)
+        if nls is None:
             continue
-        plr, pd_ = pow_fit
-        xs_pow = np.linspace(pd_['gen_frac'].min(), pd_['gen_frac'].max(), 50)
-        amp = np.exp(plr.intercept)
+        amp, k, dn = nls
+        xs_pow = np.linspace(dn['gen_frac'].min(), dn['gen_frac'].max(), 50)
         ax.plot(
             xs_pow,
-            amp * (1 - xs_pow) ** plr.slope,
+            power_model(xs_pow, amp, k),
             color=colors[tech],
             linestyle='-.',
             linewidth=1.4,
             alpha=0.9,
             zorder=6,
         )
-        pr2 = fit_r2_y(plr, pd_, col, 'power')
-        labels.append((tech, f'{tech} (pow): y = {amp:.2f}(1-x)$^{{{plr.slope:.2f}}}$  (R$^2$={pr2:.2f})'))
+        nr2 = r2_y(dn[col].to_numpy(), power_model(dn['gen_frac'].to_numpy(), amp, k))
+        labels.append((tech, f'{tech} (pow): y = {amp:.2f}(1-x)$^{{{k:.2f}}}$  (R$^2$={nr2:.2f})'))
 
     #Equations sit along the top, which these declining curves leave clear. The translucent backing
     #keeps them readable if a curve does run underneath.
@@ -186,30 +220,35 @@ def add_tech_fits(ax, df, col, colors, techs):
 
 
 def summarize_fits(df, techs=None):
-    """Fit slopes vs market share for the plotted metrics, with each metric's steepening relative to
-    the value factor.
+    """Fit each plotted metric vs market share, and derive the steepness claim from the value-factor
+    and value-cost-factor fits alone.
 
-    Raw slopes are not comparable across metrics because the curves sit at different levels: the
-    value-cost factor starts well below the value factor, so an equal fractional decline shows up as
-    a smaller raw slope, and the resulting ratio also moves with the _adj rescaling convention. Treat
-    slope_ratio_vs_value_factor as a caution, not a result.
+    nls_k, the exponent of y = A*(1-x)**k fitted in y space, is the reported measure. It is invariant
+    to rescaling (a constant multiplier is absorbed by A), so it does not depend on the _adj
+    convention, and the curve tracks the plotted points.
 
-    power_k, the exponent of y = A*(1-x)**k, is the measure to quote. It is invariant to rescaling
-    (a constant multiplier moves A, never k) and, because ln(value_cost_factor) = ln(value_factor) +
-    ln(1/cost_factor) holds pointwise, the exponents are exactly additive. That shows up in
-    power_k_ratio_vs_value_factor: the ratio for value_cost_factor equals 1 plus the ratio for
-    inv_cost_factor, so the cost factor's contribution can be read off directly.
+    The decomposition columns are populated ONLY on the value_cost_factor rows, because the split
+    between value decline and cost escalation is a property of the value-factor/value-cost-factor
+    pair, not of any single metric:
 
-    exp_slope (from y = A*exp(m*x)) is kept as an independent cross-check. It shares those two
-    properties but asymptotes rather than reaching zero at full market share, and generally fits
-    worse. Agreement between exp_slope_ratio_vs_value_factor and power_k_ratio_vs_value_factor is
-    evidence the steepness result is a property of the data rather than of the chosen form.
+        k_ratio_vs_value_factor  = k(VCF) / k(VF)      - "VCF declines this much faster than VF"
+        k_cost_derived           = k(VCF) - k(VF)      - the cost term, by difference
+        cost_share_of_decline    = k_cost_derived / k(VCF)
 
-    Fit quality is reported in two spaces and they must not be mixed. The *_r2_y columns are in the
-    original units of y and are the only ones comparable across forms; on that basis the linear form
-    usually fits these curves best. The *_r2_log columns are the transformed-space R^2 that each log
-    regression maximises, which rewards proportional accuracy and runs higher. The power form is
-    preferred here for its invariance, additivity and boundary behaviour, not because it fits best."""
+    inv_cost_factor is still fitted, and its nls_k is the better description of the cost data on its
+    own terms, but it deliberately carries no ratio column. Under nonlinear least squares the
+    exponents are NOT additive - k(VF) + k(inv_cost_factor) does not equal k(VCF) - so adding them is
+    the one arithmetic to avoid. Deriving the cost term by difference keeps a single answer.
+
+    power_k is the same functional form fitted in log space instead. It is retained as a cross-check:
+    that fit is exactly additive, so agreement between power_k_ratio_vs_value_factor and
+    k_ratio_vs_value_factor indicates the result does not hinge on the fitting method. Divergence
+    indicates the power form does not describe that tech across the whole range.
+
+    Fit quality is reported in two spaces which must not be mixed. The *_r2_y columns are in the
+    original units of y and are the only ones comparable across methods. power_r2_log is the
+    transformed-space R^2 that the log regression maximises, which rewards proportional accuracy and
+    runs higher; it is why a log-space fit can look good numerically yet miss the plotted points."""
     techs = fit_techs if techs is None else techs
     cols = ['value_factor','inv_cost_factor','value_cost_factor','inv_cost_factor_adj','value_cost_factor_adj']
     rows = []
@@ -219,29 +258,33 @@ def summarize_fits(df, techs=None):
             if fit is None:
                 continue
             lr, d = fit
+            nls = tech_fit_nls(df, col, tech)
             pw = tech_fit(df, col, tech, form='power')
-            ex = tech_fit(df, col, tech, form='exp')
             rows.append({
                 'tech': tech, 'metric': col,
                 'gen_frac_min': d['gen_frac'].min(), 'gen_frac_max': d['gen_frac'].max(),
+                'nls_A': np.nan if nls is None else nls[0],
+                'nls_k': np.nan if nls is None else nls[1],
+                'nls_r2_y': np.nan if nls is None else r2_y(
+                    nls[2][col].to_numpy(), power_model(nls[2]['gen_frac'].to_numpy(), nls[0], nls[1])),
+                'slope': lr.slope, 'intercept': lr.intercept,
+                'r2_y': fit_r2_y(lr, d, col, 'linear'),
                 'power_A': np.nan if pw is None else np.exp(pw[0].intercept),
                 'power_k': np.nan if pw is None else pw[0].slope,
                 'power_r2_y': np.nan if pw is None else fit_r2_y(pw[0], pw[1], col, 'power'),
                 'power_r2_log': np.nan if pw is None else pw[0].rvalue ** 2,
-                'slope': lr.slope, 'intercept': lr.intercept,
-                'r2_y': fit_r2_y(lr, d, col, 'linear'),
-                'exp_A': np.nan if ex is None else np.exp(ex[0].intercept),
-                'exp_slope': np.nan if ex is None else ex[0].slope,
-                'exp_r2_y': np.nan if ex is None else fit_r2_y(ex[0], ex[1], col, 'exp'),
-                'exp_r2_log': np.nan if ex is None else ex[0].rvalue ** 2,
             })
     out = pd.DataFrame(rows)
     if out.empty:
         return out
     vf = out[out['metric'] == 'value_factor'].set_index('tech')
-    out['power_k_ratio_vs_value_factor'] = out['power_k'] / out['tech'].map(vf['power_k'])
-    out['slope_ratio_vs_value_factor'] = out['slope'] / out['tech'].map(vf['slope'])
-    out['exp_slope_ratio_vs_value_factor'] = out['exp_slope'] / out['tech'].map(vf['exp_slope'])
+    vf_nls_k = out['tech'].map(vf['nls_k'])
+    vf_power_k = out['tech'].map(vf['power_k'])
+    is_vcf = out['metric'].isin(['value_cost_factor', 'value_cost_factor_adj'])
+    out['k_ratio_vs_value_factor'] = np.where(is_vcf, out['nls_k'] / vf_nls_k, np.nan)
+    out['k_cost_derived'] = np.where(is_vcf, out['nls_k'] - vf_nls_k, np.nan)
+    out['cost_share_of_decline'] = np.where(is_vcf, (out['nls_k'] - vf_nls_k) / out['nls_k'], np.nan)
+    out['power_k_ratio_vs_value_factor'] = np.where(is_vcf, out['power_k'] / vf_power_k, np.nan)
     return out
 
 
