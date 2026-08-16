@@ -68,24 +68,38 @@ def prep_data(valcostfac_core_path):
     return df, df_lcoe
 
 
-def tech_fit(df, col, tech, log=False):
-    """OLS fit of col (or its natural log) vs gen_frac for one tech. Returns None if there aren't
-    enough points; non-positive values are dropped before a log fit."""
+def tech_fit(df, col, tech, form='linear'):
+    """OLS fit of col vs gen_frac for one tech, in one of three forms:
+
+      'linear'  y = slope*x + intercept
+      'exp'     y = A*exp(m*x),    fit as ln(y) vs x            (A = exp(intercept), m = slope)
+      'power'   y = A*(1-x)**k,    fit as ln(y) vs ln(1-x)      (A = exp(intercept), k = slope)
+
+    'power' is the preferred form: it reaches zero at 100% market share rather than asymptoting
+    ('exp') or crossing zero at an arbitrary point ('linear'), and k is an elasticity with respect to
+    the remaining non-served share. Both log forms leave their slope unchanged when y is rescaled,
+    and both make the slopes exactly additive across a product of metrics.
+
+    Returns (linregress result, gen_frac min, gen_frac max), or None without enough usable points.
+    Non-positive values are dropped before a log fit, as is x >= 1 for the power form."""
     d = df[df['tech'] == tech].dropna(subset=['gen_frac', col])
-    if log:
+    if form in ('exp', 'power'):
         d = d[d[col] > 0]
+    if form == 'power':
+        d = d[d['gen_frac'] < 1]
     if len(d) < 2:
         return None
-    y = np.log(d[col]) if log else d[col]
-    return linregress(d['gen_frac'], y), d['gen_frac'].min(), d['gen_frac'].max()
+    x = np.log(1 - d['gen_frac']) if form == 'power' else d['gen_frac']
+    y = np.log(d[col]) if form in ('exp', 'power') else d[col]
+    return linregress(x, y), d['gen_frac'].min(), d['gen_frac'].max()
 
 
 def add_tech_fits(ax, df, col, colors, techs):
     """Overlay OLS fits vs market share and annotate each with its equation.
 
-    Two fits per tech: a dotted straight line (linear in level) and a dash-dot curve (linear in log,
-    drawn in its equivalent y = A*exp(m*x) form). The log fit is the one whose slope is quoted for
-    steepness comparisons, since it is invariant to rescaling; showing both makes the difference
+    Two fits per tech: a dotted straight line (linear in level) and a dash-dot curve of the form
+    y = A*(1-x)**k. The power-form exponent k is the one quoted for steepness comparisons, since it
+    is invariant to rescaling and exactly additive across metrics; showing both makes the difference
     between the models visible, including where the linear fit runs negative."""
     labels = []
     for tech in techs:
@@ -104,22 +118,22 @@ def add_tech_fits(ax, df, col, colors, techs):
         )
         labels.append((tech, f'{tech} (lin): y = {lr.slope:.2f}x + {lr.intercept:.2f}  (R$^2$={lr.rvalue ** 2:.2f})'))
 
-        log_fit = tech_fit(df, col, tech, log=True)
-        if log_fit is None:
+        pow_fit = tech_fit(df, col, tech, form='power')
+        if pow_fit is None:
             continue
-        llr, lx0, lx1 = log_fit
-        xs_log = np.linspace(lx0, lx1, 50)
-        amp = np.exp(llr.intercept)
+        plr, px0, px1 = pow_fit
+        xs_pow = np.linspace(px0, px1, 50)
+        amp = np.exp(plr.intercept)
         ax.plot(
-            xs_log,
-            amp * np.exp(llr.slope * xs_log),
+            xs_pow,
+            amp * (1 - xs_pow) ** plr.slope,
             color=colors[tech],
             linestyle='-.',
             linewidth=1.4,
             alpha=0.9,
             zorder=6,
         )
-        labels.append((tech, f'{tech} (exp): y = {amp:.2f}e$^{{{llr.slope:.2f}x}}$  (R$^2$={llr.rvalue ** 2:.2f})'))
+        labels.append((tech, f'{tech} (pow): y = {amp:.2f}(1-x)$^{{{plr.slope:.2f}}}$  (R$^2$={plr.rvalue ** 2:.2f})'))
 
     #Equations sit along the top, which these declining curves leave clear. The translucent backing
     #keeps them readable if a curve does run underneath.
@@ -145,18 +159,19 @@ def summarize_fits(df, techs=None):
 
     Raw slopes are not comparable across metrics because the curves sit at different levels: the
     value-cost factor starts well below the value factor, so an equal fractional decline shows up as
-    a smaller raw slope. Two level-free measures are reported instead, both invariant to the _adj
-    rescaling (which multiplies slope and intercept by the same per-tech constant):
+    a smaller raw slope, and the resulting ratio also moves with the _adj rescaling convention. Treat
+    slope_ratio_vs_value_factor as a caution, not a result.
 
-    slope_norm (slope/intercept) is the fractional decline per unit of market share, a first-order
-    approximation that degrades when a curve falls by a large factor across the range.
+    power_k, the exponent of y = A*(1-x)**k, is the measure to quote. It is invariant to rescaling
+    (a constant multiplier moves A, never k) and, because ln(value_cost_factor) = ln(value_factor) +
+    ln(1/cost_factor) holds pointwise, the exponents are exactly additive. That shows up in
+    power_k_ratio_vs_value_factor: the ratio for value_cost_factor equals 1 plus the ratio for
+    inv_cost_factor, so the cost factor's contribution can be read off directly.
 
-    log_slope (the slope of ln(y) vs gen_frac) is the preferred measure for "x% steeper" claims. It
-    is exact rather than approximate, and because ln(value_cost_factor) = ln(value_factor) +
-    ln(1/cost_factor) holds pointwise, the log slopes are exactly additive. That additivity shows up
-    in log_slope_ratio_vs_value_factor: the ratio for value_cost_factor equals 1 plus the ratio for
-    inv_cost_factor, so the cost factor's contribution to the steepening can be read off directly.
-    Check log_r2 against r2 before leaning on it, since neither model dominates for every tech."""
+    exp_slope (from y = A*exp(m*x)) is kept as an independent cross-check. It shares those two
+    properties but asymptotes rather than reaching zero at full market share, and generally fits
+    worse. Agreement between exp_slope_ratio_vs_value_factor and power_k_ratio_vs_value_factor is
+    evidence the steepness result is a property of the data rather than of the chosen form."""
     techs = fit_techs if techs is None else techs
     cols = ['value_factor','inv_cost_factor','value_cost_factor','inv_cost_factor_adj','value_cost_factor_adj']
     rows = []
@@ -166,24 +181,28 @@ def summarize_fits(df, techs=None):
             if fit is None:
                 continue
             lr, x0, x1 = fit
-            log_fit = tech_fit(df, col, tech, log=True)
-            llr = None if log_fit is None else log_fit[0]
+            pw = tech_fit(df, col, tech, form='power')
+            ex = tech_fit(df, col, tech, form='exp')
+            plr = None if pw is None else pw[0]
+            elr = None if ex is None else ex[0]
             rows.append({
-                'tech': tech, 'metric': col, 'slope': lr.slope, 'intercept': lr.intercept,
-                'r2': lr.rvalue ** 2,
-                'log_slope': np.nan if llr is None else llr.slope,
-                'log_intercept': np.nan if llr is None else llr.intercept,
-                'log_r2': np.nan if llr is None else llr.rvalue ** 2,
+                'tech': tech, 'metric': col,
                 'gen_frac_min': x0, 'gen_frac_max': x1,
+                'power_A': np.nan if plr is None else np.exp(plr.intercept),
+                'power_k': np.nan if plr is None else plr.slope,
+                'power_r2': np.nan if plr is None else plr.rvalue ** 2,
+                'slope': lr.slope, 'intercept': lr.intercept, 'r2': lr.rvalue ** 2,
+                'exp_slope': np.nan if elr is None else elr.slope,
+                'exp_A': np.nan if elr is None else np.exp(elr.intercept),
+                'exp_r2': np.nan if elr is None else elr.rvalue ** 2,
             })
     out = pd.DataFrame(rows)
     if out.empty:
         return out
-    out['slope_norm'] = out['slope'] / out['intercept']
     vf = out[out['metric'] == 'value_factor'].set_index('tech')
+    out['power_k_ratio_vs_value_factor'] = out['power_k'] / out['tech'].map(vf['power_k'])
     out['slope_ratio_vs_value_factor'] = out['slope'] / out['tech'].map(vf['slope'])
-    out['slope_norm_ratio_vs_value_factor'] = out['slope_norm'] / out['tech'].map(vf['slope_norm'])
-    out['log_slope_ratio_vs_value_factor'] = out['log_slope'] / out['tech'].map(vf['log_slope'])
+    out['exp_slope_ratio_vs_value_factor'] = out['exp_slope'] / out['tech'].map(vf['exp_slope'])
     return out
 
 
