@@ -41,8 +41,11 @@ report_name = os.path.basename(report_path)[:-3]
 report = importlib.import_module(report_name)
 #Comment these two lines if the bokehpivot report is already made and you just want to run the custom post-processing below.
 rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.static_presets, report_path, report_format, html_num, output_dir, auto_open)
+#Copy this script and everything downstream of it that carries settings or figure code, so the
+#configuration and plotting behind a given report stay recorded alongside the report itself.
 shutil.copy2(os.path.realpath(__file__), output_dir)
-shutil.copy2(f'{bokehpivot_dir}/report_switches.py', output_dir) #The switches now live there, so copy them too to keep the report's settings recorded alongside it.
+for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py']:
+    shutil.copy2(f'{bokehpivot_dir}/{fname}', output_dir)
 
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
@@ -388,3 +391,14 @@ print('Make PLCOE pitch figures')
 #into output_dir. plcoe_pitch.py can also be run standalone against an existing valcostfac_core.csv.
 import plcoe_pitch
 plcoe_pitch.make_figs(f'{output_dir}/valcostfac_core.csv')
+
+print('Make ReEDS vs reV supply curve figure')
+#Writes reeds_vs_rev.png and reeds_vs_rev.csv into output_dir.
+import reeds_vs_rev
+try:
+    reeds_vs_rev.make_figs(f'{output_dir}/valcostfac_core.csv', scenarios_path=data_source)
+except Exception as e:
+    msg = f'WARNING: reeds_vs_rev figure skipped ({type(e).__name__}: {e}). Everything else is complete.'
+    print(msg)
+    with open(out_txt, 'a') as f:
+        print(msg, file=f)

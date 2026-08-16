@@ -9,7 +9,12 @@ ReEDS side: cost_factor * LCOE base for lcoe_year. cost_factor is lvoe / lcoe_ba
 carries force_mult, so this product equals (lvoe / force_mult) * (base_lcoe_year / base_year) - the
 unsubsidised marginal LCOE re-based to lcoe_year costs, with force_mult cancelling exactly.
 
-Run this file on the reeds2 conda environment.
+Each tech is compared against the supply curve from its own run - the scenario that forces that tech,
+which is the scenario its core results come from - rather than against one run's curves for all
+techs. See tech_run_dirs.
+
+Run this file on the reeds2 conda environment. It is also imported by run_report_valcostfac.py, which
+calls make_figs() so the figure lands in the report's output_dir alongside valcostfac_core.csv.
 '''
 import os
 import numpy as np
@@ -20,8 +25,8 @@ from plcoe_pitch import build_color_map, default_rc, lcoe_base_path
 from report_switches import dollar_year, lcoe_base_dollar_year
 
 # User inputs
-valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv'
-run_dir = '/data/shared/projects/mmowers/ReEDS/runs/vcf4_ref' #Supplies rev_paths.csv, dollaryear_sc.csv and deflator.csv. The supply curve inputs are identical across the vcf4_* runs, so any of them will do.
+valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
+scenarios_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reeds_scenarios_valcostfac.csv') #Maps each scenario name to its run directory, which supplies rev_paths.csv, dollaryear_sc.csv and deflator.csv. Also only used standalone; run_report_valcostfac.py passes its own data_source.
 tech_rev_map = {'Onshore Wind': 'wind-ons', 'UPV': 'upv'} #ReEDS tech name -> rev_paths.csv tech name
 lcoe_year = 2035 #Year of LCOE base to re-base ReEDS costs onto. Match the reV supply curve's cost year.
 target_dollar_year = dollar_year #Dollar year everything is converted to for plotting. From report_switches, so this figure shares a basis with the report and the pitch figures.
@@ -65,35 +70,63 @@ def build_rev_curve(sc_file, usd_factor):
     return sc[['cum_twh', 'lcoe']].reset_index(drop=True)
 
 
-def prep_data(valcostfac_core_path=valcostfac_core_path, run_dir=run_dir):
+def tech_run_dirs(df, scenarios_path):
+    """Map each tech to the run directory of the scenario its core results came from.
+
+    Each tech appears in valcostfac_core.csv under exactly one scenario - the one that forces that
+    tech, per core_tech_scen.csv - so the supply curve is taken from that same run rather than from
+    an arbitrary one. The supply curve inputs happen to be identical across the runs in a given
+    report, but pinning each tech to its own run keeps the comparison self-consistent if a report is
+    ever built from runs on different supply curve vintages."""
+    paths = pd.read_csv(scenarios_path).set_index('name')['path']
+    out = {}
+    for tech, scens in df.groupby('tech')['scenario'].unique().items():
+        if len(scens) > 1:
+            print(f'Skipping {tech}: expected one scenario in the core results, found {sorted(scens)}.')
+            continue
+        if scens[0] not in paths.index:
+            print(f'Skipping {tech}: scenario {scens[0]!r} is not in {os.path.basename(scenarios_path)}.')
+            continue
+        out[tech] = paths.loc[scens[0]]
+    return out
+
+
+def prep_data(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenarios_path):
     """Assemble the ReEDS points and the reV supply curve for each tech, in target_dollar_year $."""
     df = pd.read_csv(valcostfac_core_path)
-    deflator = load_deflator(run_dir)
-    sc_dollar_years = rev_dollar_years(run_dir)
-    rev_paths = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'rev_paths.csv')).set_index('tech')
-
-    #LCOE_base.csv is the unforced, pre-PTC base cost (valcostfac_core's lcoe_base_orig).
-    lcoe_base = pd.read_csv(lcoe_base_path)
-    lcoe_base['lcoe_base'] *= deflate_factor(deflator, lcoe_base_dollar_year, target_dollar_year)
-    base = lcoe_base[lcoe_base['year'] == lcoe_year].set_index('tech')['lcoe_base']
+    run_dirs = tech_run_dirs(df, scenarios_path)
 
     reeds, curves = {}, {}
     for tech, rev_tech in tech_rev_map.items():
-        if tech not in base.index or tech not in set(df['tech']):
-            print(f'Skipping {tech}: no LCOE base or no core results.')
+        if tech not in run_dirs or tech not in set(df['tech']):
+            print(f'Skipping {tech}: no core results or no run directory.')
+            continue
+        run_dir = run_dirs[tech]
+        deflator = load_deflator(run_dir)
+
+        #LCOE_base.csv is the unforced, pre-PTC base cost (valcostfac_core's lcoe_base_orig). Read
+        #per tech because each tech's run supplies its own deflator.
+        lcoe_base = pd.read_csv(lcoe_base_path)
+        lcoe_base['lcoe_base'] *= deflate_factor(deflator, lcoe_base_dollar_year, target_dollar_year)
+        base = lcoe_base[(lcoe_base['year'] == lcoe_year) & (lcoe_base['tech'] == tech)]['lcoe_base']
+        if base.empty:
+            print(f'Skipping {tech}: no {lcoe_year} LCOE base.')
             continue
         r = df[df['tech'] == tech].sort_values('gen_twh').copy()
-        r['lcoe'] = r['cost_factor'] * base[tech]
+        r['lcoe'] = r['cost_factor'] * base.iloc[0]
+        r['run_dir'] = run_dir
 
+        rev_paths = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'rev_paths.csv')).set_index('tech')
         sc_file = rev_paths.loc[rev_tech, 'sc_file']
         if not isinstance(sc_file, str) or not os.path.exists(sc_file):
             print(f'Skipping {tech}: supply curve not found at {sc_file}')
             continue
-        factor = deflate_factor(deflator, sc_dollar_years[rev_tech], target_dollar_year)
+        factor = deflate_factor(deflator, rev_dollar_years(run_dir)[rev_tech], target_dollar_year)
         curve = build_rev_curve(sc_file, factor)
 
         r['rev_lcoe'] = np.interp(r['gen_twh'], curve['cum_twh'], curve['lcoe'])
         r['ratio'] = r['lcoe'] / r['rev_lcoe']
+        r['sc_file'] = sc_file
         reeds[tech], curves[tech] = r, curve
     return reeds, curves
 
@@ -140,11 +173,11 @@ def plot_reeds_vs_rev(reeds, curves, output_path):
     return fig
 
 
-def make_figs(valcostfac_core_path=valcostfac_core_path, run_dir=run_dir, output_dir=None):
+def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenarios_path, output_dir=None):
     """Write the comparison figure and the underlying table next to valcostfac_core.csv."""
     if output_dir is None:
         output_dir = os.path.dirname(os.path.abspath(valcostfac_core_path))
-    reeds, curves = prep_data(valcostfac_core_path, run_dir)
+    reeds, curves = prep_data(valcostfac_core_path, scenarios_path)
     if not reeds:
         print('Nothing to plot.')
         return None
@@ -153,9 +186,11 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, run_dir=run_dir, output
         fig = plot_reeds_vs_rev(reeds, curves, os.path.join(output_dir, 'reeds_vs_rev.png'))
         plt.close(fig)
 
+    #run_dir and sc_file are carried through so the table records which run and which supply curve
+    #file each tech was compared against.
     out = pd.concat(
         [r[['tech', 'scenario', 'year', 'gen_twh', 'gen_frac', 'cost_factor',
-            'lcoe', 'rev_lcoe', 'ratio']] for r in reeds.values()],
+            'lcoe', 'rev_lcoe', 'ratio', 'run_dir', 'sc_file']] for r in reeds.values()],
         ignore_index=True,
     ).rename(columns={'lcoe': 'reeds_lcoe'})
     out.to_csv(os.path.join(output_dir, 'reeds_vs_rev.csv'), index=False)
