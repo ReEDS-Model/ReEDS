@@ -151,8 +151,8 @@ def main(t, tnext, casedir, iteration=0):
         0: False,
         1: True if t == max(solveyears) else False,
         2: True,
-    }[int(sw['pras'])]
-    if pras_this_solve_year or int(sw.GSw_PRM_StressIterateMax):
+    }[int(sw['pras'])] or int(sw.GSw_PRM_StressIterateMax)
+    if pras_this_solve_year:
         result = run_pras(
             casedir, t,
             iteration=iteration,
@@ -165,12 +165,9 @@ def main(t, tnext, casedir, iteration=0):
                 f"run_pras.jl returned code {result.returncode}. Check gamslog.txt for error trace."
             )
 
-    #%% Identify stress periods
+    #%% Write aggregated RA metrics and identify stress periods
     tic = datetime.datetime.now()
-    if (
-        ('user' not in sw['GSw_PRM_StressModel'].lower())
-        or ((int(sw.GSw_PRM_StressIterateMax)) and int(sw['GSw_PRM_CapCredit']))
-    ):
+    if pras_this_solve_year:
         reeds.resource_adequacy.stress_periods.main(sw=sw, t=t, iteration=iteration)
     reeds.log.toc(tic=tic, year=t, process='ra/stress_periods.py')
 

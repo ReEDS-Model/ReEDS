@@ -822,7 +822,12 @@ def main(sw, t, iteration=0, logging=True):
     )
 
     #%% Stop here if not iterating or if before ReEDS can build new capacity
-    if (not int(sw.GSw_PRM_StressIterateMax)) or (t < int(sw['GSw_StartMarkets'])):
+    ### or if using user-defined stress periods
+    if (
+        (not int(sw.GSw_PRM_StressIterateMax))
+        or (t < int(sw['GSw_StartMarkets']))
+        or sw['GSw_PRM_StressModel'].lower().startswith('user')
+    ):
         return
 
     #%% Identify and write new stress periods
