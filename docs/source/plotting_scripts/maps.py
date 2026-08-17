@@ -33,7 +33,9 @@ os.makedirs(savepath, exist_ok=True)
 
 
 #%% Shared data
-dfmap = reeds.io.get_dfmap()
+sw = reeds.io.get_switches()
+GSw_ZoneSet = sw.GSw_ZoneSet
+dfmap = reeds.io.get_dfmap(GSw_ZoneSet=GSw_ZoneSet)
 
 dfcounty = reeds.io.get_countymap()
 dfcounty_full = dfcounty.copy()
@@ -135,11 +137,11 @@ cmap = {
         'New_England':c['b'],
     },
     'nercr': {
-        'WECC_NW':cm2(8),
-        'WECC_BA':cm2(9),
-        'WECC_RM':cm2(10),
-        'WECC_CA':cm2(10),
-        'WECC_SW':cm2(11),
+        'WECC_NW':cm2(1),
+        'WECC_BA':cm2(2),
+        'WECC_RM':cm2(3),
+        'WECC_CA':c['y'],
+        'WECC_SW':c['g'],
         'SPP':c['y'],
         'ERCOT':c['b'],
         'MISO':c['g'],
@@ -150,7 +152,7 @@ cmap = {
         'SERC_C':cm2(2),
         'SERC_E':cm2(1),
         'SERC_SE':cm2(3),
-        'SERC_F':cm2(2),
+        'SERC_F':c['g'],
     },
 }
 
@@ -264,7 +266,7 @@ for level in dfmap:
 
     ax.axis('off')
     savename = (
-        f"{level}"
+        f"{GSw_ZoneSet}-{level}"
         f"-z{int(draw_zones.get(level, True))}"
         f"-s{int(draw_states)}"
         f"-l{int(draw_lakes)}"
