@@ -164,8 +164,11 @@ def main(inputs_case):
     unitdata['r'] = unitdata['r'].fillna(unitdata['r_orig'])
 
     # Update RetireYear column based on nukeretscen
+    # (unit Diablo Canyon with PID=6099 is exempted from this rule since its unit 
+    # are set to retire in 2029 and 2030
     unitdata.loc[(unitdata['tech']=='nuclear') & 
-                 (unitdata['status']== '(OP) Operating'), 
+                 (unitdata['status']== '(OP) Operating') &
+                 ((unitdata['T_PID']!='6099') | (unitdata['T_PID']!=6099)), 
                  'RetireYear'] = unitdata['StartYear'] + int(sw['nukeretscen'])
 
     # Add county and state
