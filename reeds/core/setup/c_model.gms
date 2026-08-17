@@ -394,8 +394,14 @@ eq_loadcon(r,h,t)$tmodel(t)..
 * - OP_LOADSITE is used when 0 < Sw_LoadSiteCF < 1
 * - CAP_LOADSITE is used when Sw_LoadSiteCF = 1 because OP_LOADSITE = CAP_LOADSITE
 *   (the effect is the same but avoiding the h-indexed OP_LOADSITE reduces solve time)
-    + OP_LOADSITE(r,h,t)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)]
-    + CAP_LOADSITE(r,t)$[(Sw_LoadSiteCF=1)$val_loadsite(r)]
+    + (
+        OP_LOADSITE(r,h,t)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)]
+        + CAP_LOADSITE(r,t)$[(Sw_LoadSiteCF=1)$val_loadsite(r)]
+* load_exog is scaled up by the PRM during stress periods in 2_temporal_params.gms,
+* so we only need to scale up the sited load here.
+* This approach may be too conservative for flexible load, but it is safer than
+* assuming sited demand (which may be quite large) has no effect on the PRM.
+    ) * (1 + prm(r,t)$h_stress(h))
 ;
 
 * ---------------------------------------------------------------------------
