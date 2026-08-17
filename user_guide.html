@@ -250,8 +250,8 @@ Code within ReEDS should generally point to the links in <code class="docutils l
 <li><p>If set to ‘hierarchical’, then hierarchical clustering is used via</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sklearn</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">AgglomerativeClustering</span><span class="p">(</span>
-    <span class="n">n_clusters</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">sw</span><span class="p">[</span><span class="s1">&#39;GSw_HourlyNumClusters&#39;</span><span class="p">]),</span>
-    <span class="n">affinity</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">,</span> <span class="n">linkage</span><span class="o">=</span><span class="s1">&#39;ward&#39;</span><span class="p">)</span>
+    <span class="n">n_clusters</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">sw</span><span class="p">[</span><span class="s1">'GSw_HourlyNumClusters'</span><span class="p">]),</span>
+    <span class="n">affinity</span><span class="o">=</span><span class="s1">'euclidean'</span><span class="p">,</span> <span class="n">linkage</span><span class="o">=</span><span class="s1">'ward'</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -976,7 +976,7 @@ for example, if you ran already 200 runs and now want to add 100 more, set the s
 new sampled runs.</p>
 <p>The second approach, Latin Hypercube sampling (LHS), utilizes a quasi-Monte Carlo sampling method that is
 designed to improve efficiency by reducing overlap of the sampled values. An overview of this method
-can be found in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="model_documentation.html#id2304" title="Razi Sheikholeslami and Saman Razavi. Progressive Latin Hypercube Sampling: An efficient approach for robust sampling-based analysis of environmental models. Environmental Modelling &amp; Software, 93:109–126, July 2017. URL: https://www.sciencedirect.com/science/article/pii/S1364815216305096 (visited on 2025-10-13), doi:10.1016/j.envsoft.2017.03.010.">Sheikholeslami and Razavi, 2017</a>]</span>. For this method, an NxD matrix is generated upfront
+can be found in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="model_documentation.html#id2306" title="Razi Sheikholeslami and Saman Razavi. Progressive Latin Hypercube Sampling: An efficient approach for robust sampling-based analysis of environmental models. Environmental Modelling &amp; Software, 93:109–126, July 2017. URL: https://www.sciencedirect.com/science/article/pii/S1364815216305096 (visited on 2025-10-13), doi:10.1016/j.envsoft.2017.03.010.">Sheikholeslami and Razavi, 2017</a>]</span>. For this method, an NxD matrix is generated upfront
 for all model runs based on the number of samples (N) and the independent dimensions being sampled (D).
 The values in this matrix represent sampling of the cumulative probability distribution functions,
 and are later used by the inverse CDF (percent point) functions to derive the actual sample values.
@@ -1263,7 +1263,7 @@ temporally and spatially.</p>
 python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<span class="w">              </span><span class="c1"># run resource.py with default cases</span>
 python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<span class="w"> </span>-c<span class="w"> </span>suffix<span class="w">    </span><span class="c1"># run resource.py with cases from cases_suffix.json</span>
 python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<span class="w"> </span>--local<span class="w">      </span><span class="c1"># if on HPC run all cases sequentially on current node without batch submission to slurm</span>
-python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<span class="w"> </span>--nosubmit<span class="w">   </span><span class="c1"># if on HPC create launch scripts and input folders but don&#39;t submit runs</span>
+python<span class="w"> </span>run_hourlize.py<span class="w"> </span>resource<span class="w"> </span>--nosubmit<span class="w">   </span><span class="c1"># if on HPC create launch scripts and input folders but don't submit runs</span>
 </pre></div>
 </div>
 <p>To see details on all command line arguments run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">run_hourlize.py</span> <span class="pre">-h</span></code>.</p>
@@ -1775,7 +1775,7 @@ These characteristics include:</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 14, 2026.
+      <span class="lastupdated">Last updated on August 17, 2026.
       </span></p>
   </div>
 

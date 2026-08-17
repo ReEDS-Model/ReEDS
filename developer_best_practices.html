@@ -328,7 +328,7 @@ $endif.switch1
 <li><p>Parameters read into b_inputs should be surrounded by <span class="math notranslate nohighlight">\(offlisting and \)</span>onlisting so that they are not written to the .lst files.</p>
 <ul>
 <li><p>Example:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>parameter ev_static_demand(r,allh,allt) &quot;--MW-- static electricity load from EV charging by timeslice&quot;
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>parameter ev_static_demand(r,allh,allt) "--MW-- static electricity load from EV charging by timeslice"
 /
 $offlisting
 $ondelim
@@ -917,19 +917,19 @@ If you have a charge code for your project, share it with the reviewers to cover
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    &quot;version&quot;: &quot;0.2.0&quot;,
-    &quot;configurations&quot;: [
+    "version": "0.2.0",
+    "configurations": [
         {
-            &quot;name&quot;: &quot;Python Debugger: calc_financial_inputs.py with arguments&quot;,
-            &quot;type&quot;: &quot;debugpy&quot;,
-            &quot;request&quot;: &quot;launch&quot;,
-            &quot;program&quot;: &quot;${file}&quot;,
-            &quot;console&quot;: &quot;integratedTerminal&quot;,
-            &quot;args&quot;: [
-                &quot;/Users/kminderm/ReEDS&quot;,
-                &quot;/Users/kminderm/ReEDS/runs/main_Pacific/inputs_case&quot;
+            "name": "Python Debugger: calc_financial_inputs.py with arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "/Users/kminderm/ReEDS",
+                "/Users/kminderm/ReEDS/runs/main_Pacific/inputs_case"
             ],
-            &quot;purpose&quot;: [&quot;debug-in-terminal&quot;]
+            "purpose": ["debug-in-terminal"]
         },
 
     ]
@@ -941,11 +941,11 @@ If you have a charge code for your project, share it with the reviewers to cover
 <section id="debugging-gams-code">
 <h3>Debugging GAMS Code<a class="headerlink" href="#debugging-gams-code" title="Link to this heading"></a></h3>
 <p>When making changes to the GAMS code, something that can be helpful when debugging an issue is to compare the data before and after your change. You can do that by inserting an ‘execute unload’ statement into the gams code. Example of what this looks like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">execute_unload</span> <span class="s1">&#39;before.gdx&#39;</span> <span class="p">;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">execute_unload</span> <span class="s1">'before.gdx'</span> <span class="p">;</span>
 </pre></div>
 </div>
 <p>If you’re interested in only a specific variable, you can specify it like this:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">execute_unload</span> <span class="s1">&#39;before.gdx&#39;</span> <span class="n">valcap</span> <span class="p">;</span> 
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">execute_unload</span> <span class="s1">'before.gdx'</span> <span class="n">valcap</span> <span class="p">;</span> 
 </pre></div>
 </div>
 <p>Additionally, if you want to re-run a given scenario without having to run all of the input processing again, you can open the <code class="docutils literal notranslate"><span class="pre">call_{batch</span> <span class="pre">name}_{case}.bat/.sh</span></code> file, delete all of the lines you don’t want to run again, and then run that file from the command line. <strong>Note: be sure to edit/run the <code class="docutils literal notranslate"><span class="pre">call_{batch</span> <span class="pre">name}_{case}.bat/.sh</span></code> file from within the specific run folder</strong></p>
@@ -1026,7 +1026,7 @@ If you have a charge code for your project, share it with the reviewers to cover
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 14, 2026.
+      <span class="lastupdated">Last updated on August 17, 2026.
       </span></p>
   </div>
 
