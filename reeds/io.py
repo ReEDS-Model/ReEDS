@@ -4,6 +4,7 @@ import sys
 import re
 import datetime
 import h5py
+import ctypes
 import inspect
 import numpy as np
 import pandas as pd
@@ -1882,7 +1883,7 @@ def write_output_to_h5(
             print(f'{key} dataframe is empty, so it was not written to {filepath}')
         return dfwrite
     ## Drop the Value column if it's a set
-    if pd.api.types.is_string_dtype(dfwrite.Value):
+    if pd.api.types.is_string_dtype(dfwrite.Value) or isinstance(dfwrite.Value.values[0], ctypes.c_bool):
         dfwrite.drop("Value", axis=1, inplace=True)
     ## Make column names unique (necessary if '*' is overused)
     make_columns_unique(dfwrite)
