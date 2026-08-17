@@ -217,22 +217,13 @@ def reaggregate_supply_curve_regions(df_sc_in, run_folder):
         ``df_sc_in`` where values of "region" are remapped to aggregated regions.
         If not, returns ``df_sc_in`` unchanged.
     """
-    sw = reeds.io.get_switches(run_folder)
-    if sw["GSw_RegionResolution"] == "county":
-        ### Map original sc regions to county
-        # pylint: disable-next=consider-using-f-string
-        df_sc_in["region"] = "p" + df_sc_in.FIPS.astype(str).map("{:>05}".format)
-
-    elif sw["GSw_RegionResolution"] == "aggreg":
-        ### Load  hierarchy file
-        hierarchy = pd.read_csv(
-            os.path.join(run_folder, "inputs_case", "hierarchy_original.csv"),
-            index_col="ba",
-        )
-        if "aggreg" in hierarchy.columns:
-            r2aggreg = hierarchy.aggreg.copy()
-            ### Map original regions to new aggreg's
-            df_sc_in["region"] = df_sc_in["region"].map(r2aggreg)
+    county2zone = reeds.io.get_county2zone(run_folder)
+    df_sc_in["region"] = (
+        df_sc_in.FIPS
+        .astype(str)
+        .map("{:>05}".format)
+        .map(county2zone)
+    )
 
     return df_sc_in
 

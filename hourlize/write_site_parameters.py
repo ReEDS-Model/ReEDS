@@ -70,71 +70,7 @@ dfcounties = reeds.io.get_countymap().to_crs(crs)[['FIPS','STATE','geometry']]
 inflatable = reeds.io.get_inflatable()
 
 
-#%%### Procedure 1: Create sitemap.h5 from full raster and supply-curve sites ######
-#%% Get the full raster from Gabe Zuckerman 20250819
-dfraster = pd.read_csv(
-    filepaths['esri_102008'],
-    comment='#',
-    index_col='sc_point_gid',
-).drop(columns=['Unnamed: 0'], errors='ignore')
-
-## Geohydro has some weird off-grid sites so leave them out
-techs = ['upv', 'wind-ons', 'egs']
-#%% Get all sc_point_gid's included in all supply curves
-rev_paths = pd.read_csv(
-    os.path.join(reeds.io.reeds_path, 'inputs', 'supply_curve', 'rev_paths.csv')
-)
-rev_paths = rev_paths.loc[rev_paths.tech.isin(techs)].copy()
-dictin_sc = {}
-for i, row in tqdm(rev_paths.iterrows(), total=len(rev_paths)):
-    dictin_sc[row.tech, row.access_case] = pd.read_csv(
-        os.path.join(
-            remotepath,
-            'Supply_Curve_Data',
-            row.sc_path,
-            'reV',
-            row.original_sc_file,
-        ),
-        usecols=['sc_point_gid','latitude','longitude']
-    )
-sites = sorted(pd.concat(dictin_sc).sc_point_gid.unique())
-#%% Keep those points from the raster and match them to the nearest county
-sitemap = (
-    reeds.plots.df2gdf(dfraster.loc[sites], crs=crs)
-    .sjoin_nearest(dfcounties, how='left')
-    .drop(columns=['index_right', 'geometry', 'STATE'], errors='ignore')
-)
-## Make sure it worked
-if len(sitemap) != len(sites):
-    err = f"Mismatched lengths after county match: {len(sites)} before, {len(sitemap)} after"
-    raise IndexError(err)
-#%% Write it
-dfwrite = sitemap.astype({'latitude':np.float32, 'longitude':np.float32}).copy()
-## Make sure no missing values
-assert (dfwrite.isnull().sum() == 0).all()
-## Make sure int32 is ok for the index
-assert dfwrite.index.max() <= 2**31-1
-dfwrite.index = dfwrite.index.astype(np.int32)
-outpath = os.path.join(reeds.io.reeds_path, 'inputs', 'supply_curve', 'sitemap.h5')
-if os.path.exists(outpath):
-    os.remove(outpath)
-reeds.io.write_to_h5(
-    dfwrite.reset_index(),
-    'data',
-    outpath,
-    attrs={'index':'sc_point_gid', 'crs':crs_old},
-)
-#%% Make sure it worked
-assert (dfwrite == reeds.io.read_h5_groups(outpath)).all().all()
-#%% Take a look
-dfplot = reeds.plots.df2gdf(dfwrite, crs=crs_old)
-dfplot.plot(figsize=(14,11), lw=0, marker='s', markersize=1.5)
-m = dfplot.explore(color='red')
-m.save(os.path.expanduser('~/Desktop/sitemap.html'))
-
-
-
-#%%### Procedure 2: Format interconnection costs into .h5 files used in ReEDS ######
+#%%### Procedure: Format interconnection costs into .h5 files used in ReEDS ######
 #%% Get data
 dictin = {
     key: pd.read_csv(filepaths[key], index_col='sc_point_gid')

@@ -56,6 +56,7 @@ Include additional illustrative plots describing input data, methods, testing, a
   - [ ] Units are specified
   - [ ] Preprocessing steps have been documented and committed to [ReEDS_Input_Processing](https://github.com/ReEDS-Model/ReEDS_Input_Processing)
   - [ ] New large data files handled with .h5 instead of .csv
+  - [ ] If new parameters are added to `d_objective.gms`, they are included in `objective_function_params.yaml` for completeness checking
   - [ ] If spatially resolved inputs are modified, the following visualizations for each file are included in the PR description (time-averaged if the inputs are time-resolved):
     - [ ] Map of absolute values before
     - [ ] Map of absolute values after
