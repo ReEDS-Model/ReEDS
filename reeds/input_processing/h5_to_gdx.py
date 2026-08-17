@@ -76,13 +76,13 @@ def sort_primary_first(declarations:list):
     return writelist
 
 
-def write_declaration(
+def write_declare_and_load(
     case:str|Path,
     declarations:list,
     gamstype:Literal['set','parameter'],
 ):
     """
-    Write GAMS code to declare sets/parameters before loading them from a .gdx file
+    Write GAMS code to declare sets/parameters and load them from a .gdx file
     """
     ## Get aliases so we can define them after the parent is defined
     aliases = pd.read_csv(
@@ -94,33 +94,15 @@ def write_declaration(
         writelist = sort_primary_first(declarations)
     else:
         writelist = declarations
-    fpath = Path(case, 'autocode', f'b_declare_{gamstype}s.gms')
-    with open(fpath, 'w') as f:
-        if len(writelist):
-            for line in writelist:
-                f.write(f'{gamstype} {line} ;\n')
-                name = line.split('(')[0]
-                for alias in aliases.get([name], []):
-                    f.write(f'alias({name},{alias}) ;\n')
-    print(f'Wrote {fpath}')
-
-
-def write_gdxread(
-    case:str|Path,
-    declarations:list,
-    gamstype:Literal['set','parameter'],
-):
-    """
-    Write GAMS code to read sets/parameters from .gdx file
-    """
-    ## Need to write primary sets before subsets
-    if gamstype == 'set':
-        writelist = sort_primary_first(declarations)
-    else:
-        writelist = declarations
-    fpath = Path(case, 'autocode', f'b_load_{gamstype}s.gms')
+    fpath = Path(case, 'autocode', f'b_declare_load_{gamstype}s.gms')
     with open(fpath, 'w') as f:
         for line in writelist:
+            ## Declare
+            f.write(f'{gamstype} {line} ;\n')
+            name = line.split('(')[0]
+            for alias in aliases.get([name], []):
+                f.write(f'alias({name},{alias}) ;\n')
+            ## Load
             key = line.split('(')[0]
             f.write(f'$loadDCR {key} = {key}\n')
     print(f'Wrote {fpath}')
@@ -131,7 +113,7 @@ def main(case, overwrite=True, verbose=1):
     gdxpath = Path(reeds.io.standardize_case(case), 'inputs_case', 'inputs_0.gdx')
     ## Some sets need to be defined first to conserve ordering
     keys_in = list(dictin.keys())
-    special_keys = ['r']
+    special_keys = ['r', 'v']
     keys = special_keys + [i for i in keys_in if i not in special_keys]
     ## Load each h5 key and write it to gdx
     declare_sets = []
@@ -165,10 +147,8 @@ def main(case, overwrite=True, verbose=1):
         gdx.write(gdxpath)
         print(f'Wrote inputs.h5 to {gdxpath}')
     ## Write GAMS code to declare and load the sets/parameters
-    write_declaration(case, declare_sets, 'set')
-    write_declaration(case, declare_parameters, 'parameter')
-    write_gdxread(case, declare_sets, 'set')
-    write_gdxread(case, declare_parameters, 'parameter')
+    write_declare_and_load(case, declare_sets, 'set')
+    write_declare_and_load(case, declare_parameters, 'parameter')
 
 
 #%% Procedure
@@ -188,7 +168,7 @@ if __name__ == '__main__':
     case = reeds.io.standardize_case(Path(args.inputs_case))
 
     # #%% Inputs for testing
-    # case = Path(reeds.io.reeds_path, 'runs', 'v20260427_inputsM0_github_Everything')
+    # case = Path(reeds.io.reeds_path, 'runs', 'v20260708_inputsM1_Pacific')
 
     #%% Set up logger
     log = reeds.log.makelog(
