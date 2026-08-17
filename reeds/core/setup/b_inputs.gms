@@ -73,11 +73,9 @@ $include inputs_case%ds%scalars.txt
 *==========================
 
 * Written by h5_to_gdx.py
-$include autocode%ds%b_declare_sets.gms
-$include autocode%ds%b_declare_parameters.gms
 $gdxin inputs_case%ds%inputs_0.gdx
-$include autocode%ds%b_load_sets.gms
-$include autocode%ds%b_load_parameters.gms
+$include autocode%ds%b_declare_load_sets.gms
+$include autocode%ds%b_declare_load_parameters.gms
 $gdxin
 
 set land(r) "land-based (not offshore) zones" ;
@@ -2851,12 +2849,12 @@ routes_transgroup(transgrp,transgrpp,r,rr)$[
     $(not sameas(r,rr))
 ] = yes ;
 
-set routes_nercr(nercr,nercrr,r,rr) "collection of routes between nercrs" ;
-routes_nercr(nercr,nercrr,r,rr)$[
+parameter routes_transreg(transreg,transregg,r,rr) "collection of routes between transregs" ;
+routes_transreg(transreg,transregg,r,rr)$[
     sum{(t,trtype), routes(r,rr,trtype,t) }
-    $r_nercr(r,nercr)
-    $r_nercr(rr,nercrr)
-    $(not sameas(nercr,nercrr))
+    $r_transreg(r,transreg)
+    $r_transreg(rr,transregg)
+    $(not sameas(transreg,transregg))
     $(not sameas(r,rr))
 ] = yes ;
 
