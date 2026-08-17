@@ -99,7 +99,7 @@ upv_stack = pd.concat(
 ###########################
 
 conv_in = []
-conv_techs = ['gas', 'gas_ccs', 'coal', 'coal_ccs', 'biopower', 'nuclear', 'nuclear_smr','fuelcell', 'other']
+conv_techs = ['gas', 'gas_ccs', 'coal', 'coal_ccs', 'biopower', 'nuclear', 'nuclear_smr','fuelcell','h2fuelcell', 'other']
 for ct in conv_techs:
     print(f"Loading plantchar_{ct}")
     df = pd.read_csv(os.path.join(inputs_case,f'plantchar_{ct}.csv'))

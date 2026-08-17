@@ -1243,7 +1243,7 @@ PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020G
 
 ReEDS models the use of hydrogen (H<sub>2</sub>), both as a form of seasonal storage to meet power system requirements and as a clean fuel produced by the power sector for use in other sectors.
 
-In the power sector, hydrogen can be consumed as a fuel in hydrogen combustion turbines (H<sub>2</sub>-CTs) and hydrogen combined cycles (H<sub>2</sub>-CCs). H<sub>2</sub>-CTs and H<sub>2</sub>-CCs are comparable to commercial gas plants but can be fired with hydrogen {cite:p}`mitsubishiIntermountainPowerAgency2020, ruthTechnicalEconomicPotential2020`.
+In the power sector, hydrogen can be consumed as a fuel in hydrogen combustion turbines (H<sub>2</sub>-CTs), hydrogen combined cycles (H<sub>2</sub>-CCs), and hydrogen fuel cells (see the [Hydrogen fuel cells](#hydrogen-fuel-cells) section). H<sub>2</sub>-CTs and H<sub>2</sub>-CCs are comparable to commercial gas plants but can be fired with hydrogen {cite:p}`mitsubishiIntermountainPowerAgency2020, ruthTechnicalEconomicPotential2020`.
 H<sub>2</sub>-CTs and H<sub>2</sub>-CCs are assumed to have the same heat rate and operation and maintenance (O&M) cost as regular gas-fired plants (see the [Fossil and Nuclear Technologies](#fossil-and-nuclear-technologies) section) but with a 10% higher overnight capital cost {cite}`ruthTechnicalEconomicPotential2020` in order to allow the H<sub>2</sub>-CT/H<sub>2</sub>-CC to be clutched and act as a synchronous generator.
 Existing gas combustion turbines can be upgraded to this H<sub>2</sub>-CT technology by paying a 33% difference in capital cost between the two generators.[^h2upgrade]
 Similarly, the combustion turbine component of the Gas-CC can be replaced, upgrading it to a H<sub>2</sub>-CC, paying a 28% difference.
@@ -1362,6 +1362,26 @@ Transport requires the construction of hydrogen pipelines, and the model assumes
 Modeling hydrogen transport in ReEDS is an experimental feature and, because this feature adds significant runtime, the model includes the option to model zonal balancing with transport disabled or a fixed \$/kg hydrogen transport cost.
 
 
+#### Hydrogen fuel cells
+
+In addition to H<sub>2</sub>-CTs and H<sub>2</sub>-CCs, ReEDS can represent a stationary hydrogen fuel cell (`h2-fuel-cell`) as a power-sector consumer of hydrogen.
+The technology is based on a heavy-duty-vehicle proton-exchange-membrane (PEM) fuel cell adapted for stationary power, with cost and performance assumptions drawn from {cite:t}`reznicekCostAnalysisHeavyDuty2026`.
+The fuel cell draws on the same regional hydrogen balance described above as the H<sub>2</sub>-CT/H<sub>2</sub>-CC technologies.
+
+The hydrogen fuel cell is disabled by default.
+Three cost-and-performance trajectories (conservative, moderate, and advanced) are available; they share the same near-term cost and differ in the rate of capital-cost decline after 2025.
+Because the fuel cell does not combust its fuel, it is assumed to produce no direct emissions; emissions associated with upstream hydrogen production and hydrogen leakage are accounted for separately.
+Financing and reserve provision are assumed to be the same as for a gas combustion turbine (Gas-CT).
+Fixed and variable O&M assumptions are taken from Exhibit 5-19 (Case B31A) of the NETL Fossil Energy Baseline, Revision 4a (Schmitt et al., 2022).
+
+```{admonition} Hydrogen fuel cell options
+
+- `GSw_H2FuelCell` (default `0`): Turn the hydrogen fuel cell (`h2-fuel-cell`) on (`1`) or off (`0`). Independent of the natural gas fuel cell switch (`GSw_GasFuelCell`) and the hydrogen combustion switches (`GSw_H2Combustion`).
+- `plantchar_h2fuelcell` (default `h2fuelcell_moderate`): Cost-and-performance trajectory — one of `h2fuelcell_conservative`, `h2fuelcell_moderate`, or `h2fuelcell_advanced`.
+- Cost and performance inputs (capital cost, fixed and variable O&M, and heat rate) are in `inputs/plant_characteristics/h2fuelcell_{conservative,moderate,advanced}.csv`.
+- Other operating assumptions (representative unit size, lifetime, outage rates, minimum load, ramp rate, minimum capacity factor, and start cost) are set in the `h2-fuel-cell` rows of the corresponding files under `inputs/plant_characteristics/`.
+- Emission rates are in `inputs/emission_constraints/emitrate.csv`.
+```
 
 
 ### Direct Air Capture
@@ -1462,6 +1482,7 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 | Hydrogen Steam Methane Reforming and CCS | 25 | |
 | Hydrogen Combined Cycle | 55 |  |
 | Hydrogen Combustion Turbine | 55 |  |
+| Hydrogen Fuel Cell | 40 | Reznicek et al. {cite:year}`reznicekCostAnalysisHeavyDuty2026` |
 | Biopower | 45 | {cite}`abbABBVelocitySuite2018a` |
 | Gas Combustion Turbine | 55 | {cite}`abbABBVelocitySuite2018a` |
 | Gas Combined Cycle and CCS | 55 | {cite}`abbABBVelocitySuite2018a` |
@@ -2272,7 +2293,7 @@ If a stress period has no consecutively adjacent stress periods, it is modeled w
 (the same treatment as representative periods, as long as [interday storage operation](#inter-day-storage-operation) is not enabled).
 - Interregional transmission flows are allowed during stress periods by default, allowing interregional coordination to help meet resource adequacy needs.
 New transmission capacity is derated by 15% during stress periods to approximate contingency considerations.
-- Coincident net imports into NERC regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
+- Coincident net imports into planning regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`energysystemsintegrationgroupInterregionalTransmissionResilience2024` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
 
 
 
