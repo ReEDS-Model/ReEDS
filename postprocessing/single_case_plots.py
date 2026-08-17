@@ -72,7 +72,7 @@ else:
 year = args.year
 
 # #%% Inputs for testing
-# case = os.path.join(reeds_path,'runs','v20260624_raM1_MultiMetricRA')
+# case = os.path.join(reeds_path,'runs','v20260814_loadsiteM2_Pacific_LoadSite95')
 # year = 0
 # interactive = True
 # write = True
@@ -740,15 +740,30 @@ if not int(sw.GSw_PRM_CapCredit):
 
     try:
         for metric in ['neue','depth','duration','lolh','lole','lold']:
-            plt.close()
-            f,ax = reedsplots.plot_stressperiod_evolution(case=case, metric=metric)
-            savename = f'plot_stressperiod_evolution-{metric}.png'
-            if write:
-                plt.savefig(os.path.join(savepath, savename))
-            if interactive:
-                plt.show()
-            plt.close()
-            print(savename)
+            if metric == 'neue':
+                loadtypes = ['all','base','sited'] if float(sw.GSw_LoadSiteCF) else ['all']
+                for loadtype in loadtypes:
+                    plt.close()
+                    f,ax = reedsplots.plot_stressperiod_evolution(
+                        case=case, metric=metric, loadtype=loadtype,
+                    )
+                    savename = f'plot_stressperiod_evolution-{metric}-{loadtype}.png'
+                    if write:
+                        plt.savefig(os.path.join(savepath, savename))
+                    if interactive:
+                        plt.show()
+                    plt.close()
+                    print(savename)
+            else:
+                plt.close()
+                f,ax = reedsplots.plot_stressperiod_evolution(case=case, metric=metric)
+                savename = f'plot_stressperiod_evolution-{metric}.png'
+                if write:
+                    plt.savefig(os.path.join(savepath, savename))
+                if interactive:
+                    plt.show()
+                plt.close()
+                print(savename)
     except Exception:
         print('plot_stressperiod_evolution failed:')
         print(traceback.format_exc())
