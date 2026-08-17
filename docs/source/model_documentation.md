@@ -1366,7 +1366,7 @@ Modeling hydrogen transport in ReEDS is an experimental feature and, because thi
 #### Hydrogen fuel cells
 
 In addition to H<sub>2</sub>-CTs and H<sub>2</sub>-CCs, ReEDS can represent a stationary hydrogen fuel cell (`h2-fuel-cell`) as a power-sector consumer of hydrogen.
-The technology is based on a heavy-duty-vehicle proton-exchange-membrane (PEM) fuel cell adapted for stationary power, with cost and performance assumptions drawn from {cite:t}`reznicekCostAnalysisHeavyDuty2026` 
+The technology is based on a heavy-duty-vehicle proton-exchange-membrane (PEM) fuel cell adapted for stationary power, with cost and performance assumptions drawn from {cite:t}`reznicekCostAnalysisHeavyDuty2026`.
 The fuel cell draws on the same regional hydrogen balance described above as the H<sub>2</sub>-CT/H<sub>2</sub>-CC technologies.
 
 The hydrogen fuel cell is disabled by default.
