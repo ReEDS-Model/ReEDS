@@ -1,6 +1,7 @@
 #%% Imports
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
@@ -477,15 +478,13 @@ for case in tqdm(cases, desc='NEUE'):
     new_infiles = sorted(glob(os.path.join(cases[case],'outputs','ra_metrics_*.csv')))
     if len(old_infiles):
         infiles = old_infiles
-        fstrip = 'neue_.csv'
         metric = 'sum'
     else:
         infiles = new_infiles
-        fstrip = 'ra_metrics_.csv'
         metric = 'neue_ppm'
     df = {}
     for f in infiles:
-        y, i = [int(s) for s in os.path.basename(f).strip(fstrip).split('i')]
+        y, i = [int(s) for s in Path(f).stem.split('_')[-1].split('i')]
         df[y,i] = pd.read_csv(f, index_col=['metric', 'level', 'region']).squeeze(1).loc[metric]
     dictin_neue_all[case] = pd.concat(df, names=('t', 'iteration'))
     indices = ['t', 'level', 'region']

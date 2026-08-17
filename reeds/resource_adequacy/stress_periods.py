@@ -296,9 +296,11 @@ def get_eue_events(
     t:int,
     iteration:int=0,
     levels=['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'],
+    loadtype:Literal['base','sited','all']='all',
 ):
     ### Get values from PRAS
     dfeue = get_pras_shortfall(case, t, iteration)['EUE']
+    differentiate_euetypes(case, t, dfeue=dfeue, loadtype=loadtype)
 
     ### Get the list of events at all hierarchy levels
     events = {}
@@ -453,13 +455,13 @@ def check_threshold_and_choose_periods(
     GSw_HourlyType = sw.GSw_HourlyType
 
     ### Get stored stress metric
-    loadtypes = {'all':''}
+    loadtypes = ['all']
     if float(sw.GSw_LoadSiteCF) and int(sw.GSw_LoadSiteRA):
-        loadtypes = {**loadtypes, 'base':'_base', 'sited':'_sited'}
+        loadtypes += ['base', 'sited']
     ra_metrics = {}
-    for key, label in loadtypes.items():
-        fpath = Path(sw.casedir, 'outputs', f'ra_metrics{label}_{t}i{iteration}.csv')
-        ra_metrics[key] = pd.read_csv(fpath, index_col=['level','metric','region']).squeeze(1)
+    for _lt in loadtypes:
+        fpath = Path(sw.casedir, 'outputs', f'ra_metrics_{_lt}_{t}i{iteration}.csv')
+        ra_metrics[_lt] = pd.read_csv(fpath, index_col=['level','metric','region']).squeeze(1)
 
     ### Get the threshold(s) and see if any of them failed
     this_test = ra_metrics[loadtype][hierarchy_level][SWITCH_METRIC[stress_metric]]
@@ -895,24 +897,21 @@ def main(sw, t, iteration=0, logging=True):
     """
     """
     #%% Write consolidated stress metrics
-    ra_metrics = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration)
-    ra_metrics.round(3).to_csv(
-        os.path.join(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
-    )
+    loadtypes = ['all']
     ## If using sited load, write the stres metrics for base and sited load separately
     if float(sw.GSw_LoadSiteCF) and int(sw.GSw_LoadSiteRA):
-        for loadtype in ['base', 'sited']:
-            df = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration, loadtype=loadtype)
-            fpath = Path(sw.casedir, 'outputs', f'ra_metrics_{loadtype}_{t}i{iteration}.csv')
-            df.round(3).to_csv(fpath)
-
-    #%% Write EUE events
-    eue_events = get_eue_events(case=sw.casedir, t=t, iteration=iteration)
-    ## Store the profile as a |-delimited string
-    eue_events.profile = eue_events.profile.map(lambda x: '|'.join(str(i) for i in x))
-    eue_events.round(3).to_csv(
-        os.path.join(sw.casedir, 'outputs', f'eue_events_{t}i{iteration}.csv')
-    )
+        loadtypes += ['base', 'sited']
+    for loadtype in loadtypes:
+        ### Get and write all-weather-year RA metrics
+        ra_metrics = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration, loadtype=loadtype)
+        fpath = Path(sw.casedir, 'outputs', f'ra_metrics_{loadtype}_{t}i{iteration}.csv')
+        ra_metrics.round(3).to_csv(fpath)
+        ### Get and write EUE events
+        eue_events = get_eue_events(case=sw.casedir, t=t, iteration=iteration, loadtype=loadtype)
+        ## Store the profile as a |-delimited string
+        eue_events.profile = eue_events.profile.map(lambda x: '|'.join(str(i) for i in x))
+        fpath = Path(sw.casedir, 'outputs', f'eue_events_{loadtype}_{t}i{iteration}.csv')
+        eue_events.round(3).to_csv(fpath)
 
     #%% Stop here if not iterating or if before ReEDS can build new capacity
     if (not int(sw.GSw_PRM_StressIterateMax)) or (t < int(sw['GSw_StartMarkets'])):
