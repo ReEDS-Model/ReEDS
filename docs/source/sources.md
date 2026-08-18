@@ -496,24 +496,7 @@
     - **Citation:** See 'notes' column in the file and https://www.energy.gov/oced/advanced-reactor-demonstration-projects-0
     - **Units:** MW
 
-  - [exog_cap_geohydro_allkm_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_allkm_reference.csv)
-  - [exog_cap_geohydro_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_reference.csv)
-  - [exog_cap_upv_limited.csv](/inputs/capacity_exogenous/exog_cap_upv_limited.csv)
-  - [exog_cap_upv_open.csv](/inputs/capacity_exogenous/exog_cap_upv_open.csv)
-  - [exog_cap_upv_reference.csv](/inputs/capacity_exogenous/exog_cap_upv_reference.csv)
-  - [exog_cap_wind-ons_limited.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_limited.csv)
-  - [exog_cap_wind-ons_open.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_open.csv)
-  - [exog_cap_wind-ons_reference.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_reference.csv)
   - [interconnection_queues.csv](/inputs/capacity_exogenous/interconnection_queues.csv)
-  - [prescribed_builds_wind-ofs_meshed_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv)
-  - [prescribed_builds_wind-ofs_meshed_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv)
-  - [prescribed_builds_wind-ofs_meshed_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv)
-  - [prescribed_builds_wind-ofs_radial_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv)
-  - [prescribed_builds_wind-ofs_radial_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv)
-  - [prescribed_builds_wind-ofs_radial_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv)
-  - [prescribed_builds_wind-ons_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv)
-  - [prescribed_builds_wind-ons_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv)
-  - [prescribed_builds_wind-ons_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv)
   - [ReEDS_generator_database_final_EIA-NEMS.csv](/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv)
     - **File Type:** Input
     - **Description:** EIA-NEMS database of existing generators
@@ -1311,6 +1294,10 @@
   - [h2-combustion_ATB_2023.csv](/inputs/plant_characteristics/h2-combustion_ATB_2023.csv)
   - [h2-combustion_ATB_2024.csv](/inputs/plant_characteristics/h2-combustion_ATB_2024.csv)
     - **Description:** Hydrogen CT and CC plant costs generated in preprocessing from moderate case NREL ATB 2024 data
+  - [h2fuelcell_advanced.csv](/inputs/plant_characteristics/h2fuelcell_advanced.csv)
+  - [h2fuelcell_conservative.csv](/inputs/plant_characteristics/h2fuelcell_conservative.csv)
+  - [h2fuelcell_moderate.csv](/inputs/plant_characteristics/h2fuelcell_moderate.csv)
+    - **Description:** Hydrogen fuel cell (h2-fuel-cell) capital cost, fixed O&M, variable O&M, and heat rate by year for the advanced, conservative, and moderate cost cases. Capital cost and heat rate are based on Reznicek et al. (2026), DOI 10.2172/3018256; fixed and variable O&M are from Exhibit 5-19 (Case B31A) of NETL Fossil Energy Baseline, Revision 4a (Schmitt et al., 2022). Selected with the `plantchar_h2fuelcell` switch and enabled with `GSw_H2FuelCell`.
   - [heat_rate_adj.csv](/inputs/plant_characteristics/heat_rate_adj.csv)
     - **Description:** Heat rate adjustment multiplier by technology
   - [heat_rate_penalty_spin.csv](/inputs/plant_characteristics/heat_rate_penalty_spin.csv)
@@ -1633,9 +1620,6 @@
   - [p.csv](/inputs/sets/p.csv)
     - **File Type:** GAMS set
     - **Description:** set of products produced
-  - [pcat.csv](/inputs/sets/pcat.csv)
-    - **File Type:** GAMS set
-    - **Description:** set of prescribed technology categories
   - [plantcat.csv](/inputs/sets/plantcat.csv)
     - **File Type:** GAMS set
     - **Description:** set of categories for plant characteristics
