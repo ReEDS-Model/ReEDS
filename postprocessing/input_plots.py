@@ -975,10 +975,19 @@ def map_supplycurves(
     include_techneutral_adder=True,
     dollaryear=2023,
     figsize=(12,9),
+    f=None,
+    ax=None,
     draw_lakes=True,
     draw_stats=True,
     dpi=None,
     markers=False,
+    cols_out=[],
+    title="",
+    title_fontsize=None,
+    title_fontweight=None,
+    cbar_ticklabel_fontsize=20,
+    cbar_title_fontsize=24,
+    cbar_labelpad=2.1,
 ):
     """
     Returns an iterator over supply-curve columns. Use as follows:
@@ -1097,6 +1106,11 @@ def map_supplycurves(
         'dist-export_km': {'label':'Export cable distance [km]'},
     }
 
+    if isinstance(cols_out, str):
+        cols_out = [cols_out]
+    if cols_out:
+        settings = {k: settings[k] for k in cols_out if k in settings}
+
     for col in settings:
         setting = {**defaults, **settings[col]}
         if col not in dfsc:
@@ -1106,8 +1120,11 @@ def map_supplycurves(
         dfplot = dfsc.copy()
         dfplot[col] = dfplot[col] * setting['scale'] + setting['costadder']
         ### Plot it
-        plt.close()
-        f,ax = plt.subplots(figsize=figsize, dpi=dpi)
+        if ax is None:
+            plt.close()
+            f,ax = plt.subplots(figsize=figsize, dpi=dpi)
+        elif f is None:
+            f = ax.figure
         ## Background
         if setting['background']:
             dfmap['r'].plot(ax=ax, facecolor='C7', edgecolor='none', lw=0.3, zorder=-1e6)
@@ -1136,16 +1153,21 @@ def map_supplycurves(
                 note, (0.06, 0.06), xycoords='axes fraction',
                 ha='left', va='bottom', fontsize=10, fontfamily='monospace',
             )
+        if title:
+            ax.set_title(
+                title, y=0.97, fontsize=title_fontsize, fontweight=title_fontweight,
+            )
         ## Colorbar-histogram
         plots.addcolorbarhist(
             f=f, ax0=ax, data=dfplot[col].values,
             title=setting['label'], cmap=cmap,
             vmin=setting['vmin'], vmax=setting['vmax'],
-            orientation='horizontal', labelpad=2.1, cbarbottom=-0.06,
+            orientation='horizontal', labelpad=cbar_labelpad, cbarbottom=-0.06,
             cbarheight=0.7, log=False,
             nbins=setting['nbins'],
             histratio=2,
-            ticklabel_fontsize=20, title_fontsize=24,
+            ticklabel_fontsize=cbar_ticklabel_fontsize,
+            title_fontsize=cbar_title_fontsize,
             extend='neither',
         )
         ## Formatting

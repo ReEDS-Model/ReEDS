@@ -1030,7 +1030,7 @@ Capacity factors for wind plants coming online from 2010 through 2023 are taken 
 Available land-based wind resources and site-specific cost and performance are based on {cite}`lopezRenewableEnergyTechnical2025`, using outputs of the reV model {cite}`maclaurinRenewableEnergyPotential2021`.
 The Reference Access case includes more than 49,000 potential wind sites, totaling more than 9,400 gigawatts (GW).
 Limited Access and Open Access supply curves are also available.
-Available resource for the three access cases and associated average capacity factors are shown in {numref}`figure-supplycurve-windons`.
+Available resource for the three access cases and associated average capacity factors are shown in {numref}`figure-supplycurve-wind-ons`.
 In ReEDS, each wind site is characterized with a supply curve cost, which comprises transmission spur line and reinforcement upgrade costs as well as site-specific capital cost adjustments based on region, land cost, and site capacity (to account for economies of scale).
 See the [Interzonal Transmission](#interzonal-transmission) section for more discussion of the interconnection supply curves for accessing the wind resource.
 
@@ -1038,8 +1038,8 @@ The individual wind sites are grouped into 10 resource classes based on *k*-mean
 Distinct wind generation profiles are represented in ReEDS for each region and class, based on capacity-weighted averages of all sites of that region and class.
 Sites are also grouped into a flexible number of supply curve cost bins in ReEDS, with 10 bins used by default for each ReEDS region and class.
 
-```{figure} figs/docs/supplycurve-windons.png
-:name: figure-supplycurve-windons
+```{figure} figs/docs/supplycurve-wind-ons.png
+:name: figure-supplycurve-wind-ons
 
 Land-based wind resource availability and capacity factor for the three siting scenarios included in ReEDS.
 ```
@@ -1063,11 +1063,11 @@ The offshore technology selection is made using the Offshore Wind Cost Model, wh
 See also {cite}`lopezRenewableEnergyTechnical2025` for more information on the development of the resource supply curves.
 
 Resource availability varies across different siting access cases: The Reference Access case has 4,064 sites totaling 2.97 terawatts (TW), the Open Access case has 4,524 sites totaling 3.534 TW, and the Limited Access case with 3,166 sites totals 2.212 TW.
-Modeled site-level capacity factor and resource availability are shown in {numref}`figure-supplycurve-windofs`.
+Modeled site-level capacity factor and resource availability are shown in {numref}`figure-supplycurve-wind-ofs`.
 Additional details regarding offshore wind resource modeling can be found in {cite}`lopezRenewableEnergyTechnical2025`.
 
-```{figure} figs/docs/supplycurve-windofs.png
-:name: figure-supplycurve-windofs
+```{figure} figs/docs/supplycurve-wind-ofs.png
+:name: figure-supplycurve-wind-ofs
 
 Offshore wind resource availability by siting access case for the CONUS
 ```
