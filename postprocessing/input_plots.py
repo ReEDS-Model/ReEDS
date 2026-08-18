@@ -988,6 +988,7 @@ def map_supplycurves(
     cbar_ticklabel_fontsize=20,
     cbar_title_fontsize=24,
     cbar_labelpad=2.1,
+    draw_colorbar=True,
 ):
     """
     Returns an iterator over supply-curve columns. Use as follows:
@@ -1158,18 +1159,19 @@ def map_supplycurves(
                 title, y=0.97, fontsize=title_fontsize, fontweight=title_fontweight,
             )
         ## Colorbar-histogram
-        plots.addcolorbarhist(
-            f=f, ax0=ax, data=dfplot[col].values,
-            title=setting['label'], cmap=cmap,
-            vmin=setting['vmin'], vmax=setting['vmax'],
-            orientation='horizontal', labelpad=cbar_labelpad, cbarbottom=-0.06,
-            cbarheight=0.7, log=False,
-            nbins=setting['nbins'],
-            histratio=2,
-            ticklabel_fontsize=cbar_ticklabel_fontsize,
-            title_fontsize=cbar_title_fontsize,
-            extend='neither',
-        )
+        if draw_colorbar:
+            plots.addcolorbarhist(
+                f=f, ax0=ax, data=dfplot[col].values,
+                title=setting['label'], cmap=cmap,
+                vmin=setting['vmin'], vmax=setting['vmax'],
+                orientation='horizontal', labelpad=cbar_labelpad, cbarbottom=-0.06,
+                cbarheight=0.7, log=False,
+                nbins=setting['nbins'],
+                histratio=2,
+                ticklabel_fontsize=cbar_ticklabel_fontsize,
+                title_fontsize=cbar_title_fontsize,
+                extend='neither',
+            )
         ## Formatting
         ax.axis('off')
         yield f, ax, dfplot, col
