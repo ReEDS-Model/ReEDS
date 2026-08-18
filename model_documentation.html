@@ -1702,9 +1702,8 @@ Battery cost and performance assumptions are based on lithium-ion battery system
 Low, mid, and high cost projections are available.
 The capital cost of a battery comprises two components: the overnight power unit cost (in $/kW), which reflects the cost associated with the battery’s maximum power output, and the overnight energy unit cost (in $/kWh), which represents the cost associated with its maximum energy storage capacity—allowing the model to independently size power and energy capacities based on the respective unit costs.
 FOM costs of the battery are divided into two components as well: a 2.5% per year power FOM based on the power-related capital cost and a 2.5% per year energy FOM based on the energy-related capital cost.
-In contrast to other generator technologies in ReEDS,
-which all have lifetimes that meet or exceed typical model evaluation windows for book life, the battery is assumed to last 15 years.
-As a result, its capital cost is uprated by the ratio of a 15-year evaluation window and the evaluation window used by the run.
+The battery’s power capacity is assumed to last 30 years.
+The energy capacity is assumed to last 15 years, and is therefore fully refurbished after 15 years using the energy capacity costs in the refurbishment year.
 Batteries are assumed to have a round-trip efficiency of 85% and a representative size of 60 MW.</p>
 <p>Existing PSH capacity is represented in the model according to the input plant database.
 New PSH potential is derived from a national PSH resource assessment described in <span class="bibtex-citation" id="id96">[<a class="reference internal" href="#id2216" title="Evan Rosenlieb, Donna Heimiller, and Stuart Cohen. Closed-Loop Pumped Storage Hydropower Resource Assessment for the United States. Final Report on HydroWIRES Project D1: Improving Hydropower and PSH Representations in Capacity Expansion Models. Technical Report, NREL, 2022. URL: https://research-hub.nlr.gov/en/publications/closed-loop-pumped-storage-hydropower-resource-assessment-for-the (visited on 2024-10-29).">Rosenlieb <em>et al.</em>, 2022</a>]</span> and at <a class="reference external" href="https://www.nlr.gov/gis/psh-supply-curves.html">https://www.nlr.gov/gis/psh-supply-curves.html</a>.
@@ -2036,7 +2035,7 @@ One exception to this procedure is hydropower, which—because of assumed nonpow
 <td><p>Hydropower: Setting a Course for Our Energy Future <span class="bibtex-citation" id="id125">[<a class="reference internal" href="#id2013" title="NREL. Hydropower: Setting a Course for Our Energy Future. 2004.">NREL, 2004</a>]</span></p></td>
 </tr>
 <tr class="row-even"><td><p>Battery</p></td>
-<td class="text-center"><p>15</p></td>
+<td class="text-center"><p>30 (energy capacity refurbished at 15)</p></td>
 <td><p>Cole and Karmakar <span class="bibtex-citation" id="id126"><a class="reference internal" href="#id709" title="Wesley Cole and Akash Karmakar. Cost Projections for Utility-Scale Battery Storage: 2023 Update. Technical Report NREL/TP-6A40-85332, National Renewable Energy Laboratory, Golden, CO, 2023. URL: https://www.nlr.gov/docs/fy23osti/85332.pdf (visited on 2023-06-04).">2023</a></span></p></td>
 </tr>
 <tr class="row-odd"><td><p>Hydrogen Electrolyzer</p></td>
@@ -6561,7 +6560,7 @@ Prescribed retirements are power plant retirements that are forced into the mode
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 17, 2026.
+      <span class="lastupdated">Last updated on August 18, 2026.
       </span></p>
   </div>
 
