@@ -49,7 +49,6 @@ positive variables
   STORAGE_IN_PLANT(i,v,r,allh,t)         "--MW-- hybrid plant storage charging in hour h that is charging from a coupled technology"
   STORAGE_IN_GRID(i,v,r,allh,t)          "--MW-- hybrid plant storage charging in hour h that is charging from the grid"
   AVAIL_SITE(x,allh,t)                   "--MW-- available generation from all resources at reV site x"
-  CURT(r,allh,t)                         "--MW-- curtailment from vre generators in hour h"
   MINGEN(r,allszn,t)                     "--MW-- minimum generation level in each season"
   STORAGE_IN(i,v,r,allh,t)               "--MW-- storage charging in hour h that is charging from a given source technology; not used for CSP-TES"
   STORAGE_LEVEL(i,v,r,allh,t)            "--MWh-- storage level in hour h"
