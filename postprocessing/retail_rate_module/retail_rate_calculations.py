@@ -12,7 +12,6 @@ import sys
 import urllib
 ### Local imports
 import ferc_distadmin
-import calculate_historical_capex
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import reeds
 from reeds import plots
@@ -268,9 +267,6 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
     """
     """
     print('Starting retail_rate_calculations.py')
-    # Run historical capex calculation
-    calculate_historical_capex.main(run_dir)
-
     # Get module directory for relative paths
     mdir = os.path.dirname(os.path.abspath(__file__))
 

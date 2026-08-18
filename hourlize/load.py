@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import site
 from types import SimpleNamespace
+from reveal2reeds import reveal2reeds
 
 def get_state_name_code_map(reeds_path: str) -> dict:
     """
@@ -269,6 +270,7 @@ def create_hourly_state_load_for_model_year(
         compression='gzip',
         parse_dates=['weather_datetime']
     )
+
     # Downselect to specified weather years
     df_load = df_load.loc[df_load.weather_datetime.dt.year.isin(weather_years)]
 
@@ -280,10 +282,14 @@ def create_hourly_state_load_for_model_year(
         ]
 
     # For each sector specified in 'replace_sectors', remove endogenous
-    # sectoral load from the raw load profiles
+    # sectoral load from the raw load profiles. In general, the removal of
+    # endogenous load happens here and then the exogenous replacement load
+    # is added later once the load profiles are aggregated across sectors.
+    # In the case of the "Data Centers" sector, the replacement of the load
+    # happens here all in one step, as executed by the function
+    # reveal2reeds.apply_custom_data_center_demand_projections().
     replacement_load_list = []
     for sector in replace_sectors:
-        print(f"Removing endogenous load for '{sector}' sector...")
         if sector not in sector_config:
             raise NotImplementedError(
                 f"'{sector}' is not a recognized sector. "
@@ -292,13 +298,24 @@ def create_hourly_state_load_for_model_year(
 
         sector_settings = sector_config[sector]
         if model_year in sector_settings['model_years']:
-            df_load = remove_sectoral_load(
-                df_load,
-                sector_settings['subsectors'],
-                replace_states,
-                replacement_share,
-                model_year
-            )
+            if sector == 'Data Centers':
+                print(f"Replacing endogenous load for '{sector}' sector...")
+                df_load = (
+                    reveal2reeds.apply_custom_data_center_demand_projections(
+                        df_load,
+                        model_year,
+                        sector_settings
+                    )
+                )
+            else:
+                print(f"Removing endogenous load for '{sector}' sector...")
+                df_load = remove_sectoral_load(
+                    df_load,
+                    sector_settings['subsectors'],
+                    replace_states,
+                    replacement_share,
+                    model_year
+                )
         else:
             pass
 
@@ -348,6 +365,8 @@ def create_hourly_state_load_for_model_year(
             model_year
         )
         for sector in replace_sectors
+        # Skip 'data centers' sector, as it was already fully processed above
+        if sector != 'Data Centers'
     ]
 
     # Aggregate the exogenous sectoral load to the state level and
@@ -443,9 +462,8 @@ def main(
             )
 
         output_fpath = os.path.join(
-            reeds_path,
-            "inputs",
-            "load",
+            cf.outpath,
+            'results',
             f"demand_{scenario_outfile_prefix_map[scenario]}.h5"
         )
         for model_year in model_years:
