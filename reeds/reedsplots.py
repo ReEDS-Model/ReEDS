@@ -5815,7 +5815,7 @@ def plot_stress_mix(
 def plot_stress_cf(
     case:str|Path,
     level='transreg',
-    metric='stress_top10_netload',
+    metric='stress_price_weighted',
     include_rep=True,
     figwidth=1.2,
     figheight=1.2,
