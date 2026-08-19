@@ -210,6 +210,21 @@ def get_county_zones(
     return county_zones
 
 
+def get_reinforcement_drop_scope(
+    case: str | Path | None = None,
+    **kwargs
+) -> str:
+    """Get the scope of regions dropping embedded reinforcement cost: all/single_county/none"""
+    sw = get_switches(case, **kwargs)
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        return 'single_county'
+    if int(sw.GSw_RegIntraCurve) and (float(sw.GSw_TransIntraCost) != 0):
+        return 'all'
+    return 'none'
+
+
 def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
     """Get the transmission node for each model zone"""
     sw = get_switches(case, **kwargs)
@@ -1580,23 +1595,15 @@ def assemble_supplycurve(
         else:
             dfout['ba'] = dfout['region'].copy()
 
-    ## Drop embedded reinforcement cost where network reinforcement is represented elsewhere:
-    ##  - always for counties (county-resolution reinforcement is handled at the BA level), and
-    ##  - for all regions when the regional POI reinforcement curve is active
-    ## In both cases cost_total_trans is recomputed as spur + connection (POI) only.
-    if case is not None:
-        counties = get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet)
-        use_poi_bins = (
-            int(sw['GSw_RegIntraCurve'])
-            and (float(sw['GSw_TransIntraCost'] or 0) != 0)
-        )
+    ## Drop embedded reinforcement cost where reinforcement is represented elsewhere
+    scope = get_reinforcement_drop_scope(case, **kwargs)
+    if scope == 'all':
+        drop_reinforcement = pd.Series(True, index=dfout.index)
+    elif scope == 'single_county':
+        drop_reinforcement = dfout.region.isin(
+            get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet))
     else:
-        counties = []
-        use_poi_bins = False
-    drop_reinforcement = (
-        pd.Series(True, index=dfout.index) if use_poi_bins
-        else dfout.region.isin(counties)
-    )
+        drop_reinforcement = pd.Series(False, index=dfout.index)
     if drop_reinforcement.any():
         zerocols = ['cost_reinforcement_usd_per_mw', 'dist_reinforcement_km']
         dfout.loc[drop_reinforcement, zerocols] = 0
