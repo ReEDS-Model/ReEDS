@@ -5531,6 +5531,8 @@ def stress_mix_label(case, metric):
         xlabel = f"Rep {metric.split('_')[1]} gen"
     elif metric == 'stress_mean':
         xlabel = 'Stress mean gen'
+    elif metric == 'stress_price_weighted':
+        xlabel = 'Stress price-weighted gen'
     elif ('top' in metric) or ('bottom' in metric):
         direction = ('top' if 'top' in metric else 'bottom')
         xlabel = "Stress: {} {} {} hours".format(
