@@ -5849,6 +5849,9 @@ def plot_stress_cf(
     techs = dfstress['cap'].index.tolist()
     capcredit = (dfstress[metric] / dfstress['cap']).reindex(techs) * 100
     repfraction = (dfstress['rep_mean'] / dfstress['cap']).reindex(techs) * 100
+    ## Replace and INF values with NaN (can occur due to small-number division)
+    capcredit = capcredit.replace([np.inf, -np.inf], np.nan)
+    repfraction = repfraction.replace([np.inf, -np.inf], np.nan)
     ### Set up plot
     dfmap = reeds.io.get_dfmap(case)
     regions = dfmap[level].bounds.minx.sort_values().index
@@ -5896,7 +5899,13 @@ def plot_stress_cf(
                     )
             _ax.set_xlabel(None)
     ## Formatting
-    _ax.set_ylim(0, 100)
+    finite_vals = np.concatenate([
+        capcredit.values[np.isfinite(capcredit.values)],
+        repfraction.values[np.isfinite(repfraction.values)],
+    ])
+    datamax = finite_vals.max() if finite_vals.size else 0
+    ymax = datamax * 1.02 if datamax > 100 else 100
+    _ax.set_ylim(0, ymax)
     _ax.set_xlim(yearmin, yearmax)
     _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
     _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
