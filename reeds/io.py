@@ -327,10 +327,14 @@ def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwarg
     return dfba
 
 
-def get_dfmap(case=None, levels=None, exclude_water_areas=True):
-    """Get dictionary of maps at different hierarchy levels"""
+def get_dfmap(case=None, levels=None, exclude_water_areas=True, **kwargs):
+    """
+    Get dictionary of maps at all spatial hierarchy levels.
+    Non-default switch settings (GSw_ZoneSet in particular) can be provided as keyword arguments;
+    if not provided, settings are taken from the provided case path.
+    """
     hierarchy = (
-        get_hierarchy(case, original=True)
+        get_hierarchy(case, original=True, **kwargs)
         .drop(
             columns=['aggreg', 'st_interconnect', 'md5', 'node_lat', 'node_lon'],
             errors='ignore'
@@ -348,7 +352,7 @@ def get_dfmap(case=None, levels=None, exclude_water_areas=True):
             dfmap[level] = dfmap[level].set_index(dfmap[level].columns[0]).rename_axis(level)
         return dfmap
 
-    dfba = get_zonemap(case, exclude_water_areas)
+    dfba = get_zonemap(case, exclude_water_areas, **kwargs)
 
     dfmap = {'r': dfba.dropna(subset='country').copy()}
     dfmap['r']['centroid_x'] = dfmap['r'].centroid.x
@@ -496,7 +500,7 @@ def read_output(
     Returns:
         pd.DataFrame
     """
-    if case.endswith('.h5'):
+    if Path(case).suffix == '.h5':
         h5path = case
     else:
         h5path = os.path.join(case, 'outputs', 'outputs.h5')
@@ -1460,7 +1464,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
     return dfout
 
 
-def get_sitemap(case=None, offshore=False, geo=True):
+def get_sitemap(case=None, offshore=False, geo=True, crs=None):
     """
     Get mapping from sc_point_gid to geographic points and counties.
     """
@@ -1479,7 +1483,8 @@ def get_sitemap(case=None, offshore=False, geo=True):
         )
         sitemap = sitemap.dropna(subset='ba')
     if geo:
-        crs = 'EPSG:5070' if offshore else 'ESRI:102008'
+        if crs is None:
+            crs = 'EPSG:5070' if offshore else 'ESRI:102008'
         sitemap = reeds.plots.df2gdf(sitemap, crs=crs)
     return sitemap
 
@@ -1630,54 +1635,6 @@ def map_sc_points_to_regions(dfin, case=None, offshore=False, **kwargs):
     return dfout
 
 
-def assemble_exog_cap(exogpath, case=None):
-    """
-    Join on sc_point_gid column:
-    - Exogenous capacity (indicated by exogpath input)
-    - Model zone
-
-    Returns: pd.DataFrame with [*tech, region, year, sc_point_gid] index and capacity data
-
-    Inputs for testing:
-    exogpath = os.path.join(reeds_path, 'inputs', 'capacity_exogenous', 'exog_cap_upv_reference.csv')
-    """
-    dfin = pd.read_csv(exogpath, index_col='sc_point_gid')
-    offshore = True if 'wind-ofs' in os.path.basename(exogpath) else False
-    dfout = map_sc_points_to_regions(dfin, case, offshore)
-    dfout = (
-        dfout.reset_index()
-        [['*tech','region','year','sc_point_gid','capacity']]
-    )
-    return dfout
-
-
-def assemble_prescribed_builds(filepath, case=None, **kwargs):
-    """
-    Join on sc_point_gid column and aggregate to model regions:
-    - Prescribed builds (indicated by filepath input)
-    - Model zone
-
-    Returns: pd.DataFrame with [region, year] index and capacity data
-
-    Inputs for testing:
-    filepath = os.path.join(
-        reeds_path,
-        'inputs',
-        'capacity_exogenous',
-        'prescribed_builds_wind-ons_reference.csv'
-    )
-    """
-    dfin = pd.read_csv(filepath, index_col='sc_point_gid')
-    offshore = True if 'wind-ofs' in os.path.basename(filepath) else False
-    dfout = map_sc_points_to_regions(dfin, case, offshore, **kwargs)
-    dfout = (
-        dfout.groupby(['region', 'year'], as_index=False)
-        ['capacity']
-        .sum()
-    )
-    return dfout
-
-
 #   ##      ## ########  #### ######## ########
 #   ##  ##  ## ##     ##  ##     ##    ##
 #   ##  ##  ## ##     ##  ##     ##    ##
@@ -1688,6 +1645,15 @@ def assemble_prescribed_builds(filepath, case=None, **kwargs):
 
 
 ### Write files
+def gamsify_header(df):
+    """Add '*' to the beginning so GAMS reads the header as a comment"""
+    if isinstance(df, pd.DataFrame):
+        dfout = df.rename(columns={df.columns[0]: '*' + str(df.columns[0])})
+    else:
+        dfout = df.rename('*' + df.name) if df.name else df
+    return dfout
+
+
 def get_dtype(col, df=None):
     if col.lower() == "value":
         return np.float32
@@ -1827,9 +1793,10 @@ def write_to_inputs_h5(
     ## should contain the data as floats; all the other columns are treated as indices
     if gamstype == 'parameter':
         dfwrite.columns = dfwrite.columns.tolist()[:-1] + ['Value']
+        dfwrite['Value'] = dfwrite['Value'].astype(np.float32)
     ### Write record to h5 file
     calling_file = Path(inspect.stack()[-1][1]).name
-    attrs = {'gamstype': gamstype.lower(), 'written_by': calling_file}
+    attrs = {'gamstype': gamstype.lower(), 'units':units, 'written_by': calling_file}
     if len(units):
         attrs['comment'] = f'[{units}] {comment} (written by {calling_file})'
     else:
@@ -1849,6 +1816,7 @@ def write_csv_to_inputs_h5(
     filepath:str|Path,
     case:str|Path,
     gamstype:Literal['set','parameter'],
+    name:str|None=None,
     comment:str='',
     **kwargs,
 ):
@@ -1857,7 +1825,10 @@ def write_csv_to_inputs_h5(
     and write it to inputs.h5
     """
     df = pd.read_csv(filepath, dtype=str, header=None)
-    key = Path(filepath).stem
+    if isinstance(name, str):
+        if not len(name):
+            name = None
+    key = (Path(filepath).stem if name is None else name)
     if df.shape[1] == 1:
         ## Subsets have a header column beginning with '*';
         ## primary sets do not have a header
@@ -1895,7 +1866,6 @@ def write_output_to_h5(
     df,
     key,
     filepath,
-    drop_ctypes=False,
     verbose=0,
     **kwargs,
 ):
@@ -1912,9 +1882,8 @@ def write_output_to_h5(
         if verbose:
             print(f'{key} dataframe is empty, so it was not written to {filepath}')
         return dfwrite
-    ## Sets have `c_bool(True)` as the value for every entry, so just
-    ## drop the Value column if it's a set
-    if drop_ctypes and ("Value" in dfwrite) and isinstance(dfwrite.Value.values[0], ctypes.c_bool):
+    ## Drop the Value column if it's a set
+    if pd.api.types.is_string_dtype(dfwrite.Value) or isinstance(dfwrite.Value.values[0], ctypes.c_bool):
         dfwrite.drop("Value", axis=1, inplace=True)
     ## Make column names unique (necessary if '*' is overused)
     make_columns_unique(dfwrite)

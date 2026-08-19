@@ -226,7 +226,7 @@ eq_Objfn_op(t)$tmodel(t)..
 * via the capex + opex costs of H2 production and its associated electricity demand.
               + sum{(i,v,r,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
-                             $((not h2_combustion(i)) or h2_combustion(i)$[(Sw_H2=0) or h_stress(h)])],
+                             $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
 
 * --- startup/ramping costs
@@ -343,7 +343,7 @@ eq_Objfn_op(t)$tmodel(t)..
                                    CO2_SPURLINE_INV(r,cs,tt) } }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- CO2 injection break even costs
-              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs,t) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
+              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- Tax credit for CO2 stored ---
 * note conversion to 12-year CRF given length of CO2 captured incentive payments
