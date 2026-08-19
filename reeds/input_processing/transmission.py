@@ -727,7 +727,6 @@ def get_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
     """
     sw = reeds.io.get_switches(case)
     reeds_path = reeds.io.reeds_path
-    inputs_case = os.path.join(case, 'inputs_case')
     valid_regions = {'r': reeds.io.read_input(case, 'r').squeeze(1).tolist()}
 
     if not int(sw.GSw_RegIntraCurve):
@@ -766,13 +765,12 @@ def get_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
                 f'{len(valid_regions["r"])} model regions in {costfile} '
                 f'(GSw_RegIntraCurve=1, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing}')
 
-        poi_cap_init = pd.read_csv(
-            os.path.join(inputs_case, 'poi_cap_init.csv'), index_col=0).squeeze(1)
+        poi_cap_init = reeds.io.read_input(case, 'poi_cap_init').set_index('r')['Value']
         missing_init = sorted(set(valid_regions['r']) - set(poi_cap_init.index))
         if missing_init:
             raise ValueError(
                 f'Missing poi_cap_init for {len(missing_init)} of '
-                f'{len(valid_regions["r"])} model regions in inputs_case/poi_cap_init.csv, which '
+                f'{len(valid_regions["r"])} model regions in inputs_case/inputs.h5, which '
                 f'the regional POI curve needs to net existing capacity out of the raw curve '
                 f'(GSw_RegIntraCurve=1, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing_init}')
 

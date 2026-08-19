@@ -1101,16 +1101,6 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 * -- existing capacity --
 *==========================
 
-*Begin loading of capacity data
-parameter poi_cap_init(r) "--MW-- initial (pre-2010) capacity of all types"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%poi_cap_init.csv
-$offdelim
-$onlisting
-/ ;
-
 * A POI bin is feasible (i.e. can be built into) if it has a defined cost.
 poi_bin_feas(r,icbin)$cost_poi_bin(r,icbin) = yes ;
 
