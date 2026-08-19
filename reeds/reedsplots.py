@@ -5444,6 +5444,23 @@ def get_cap_rep_stress_mix(
                     .divide(gen_h_stress.groupby('t').h.unique().map(len), axis=0)
                 )
 
+            elif key == 'stress_price_weighted':
+                ## Price-weighted average generation across all stress hours:
+                ## sum_h(gen*price) / sum_h(price)
+                price_long = price_stress.stack('r').rename('price').reset_index()
+                price_sum = price_long.groupby(['t','r'], as_index=False).price.sum()
+                gen_price = gen_h_stress.merge(price_long, on=['t','r','h'], how='left')
+                gen_price['price'] = gen_price['price'].fillna(0)
+                gen_price['gen_x_price'] = gen_price.MW * gen_price.price
+                numer = gen_price.groupby(['t','i','r'], as_index=False).gen_x_price.sum()
+                df = numer.merge(price_sum, on=['t','r'], how='left')
+                df['MW'] = df.gen_x_price / df.price
+                df = df.set_index(['t','i','r']).MW.unstack('r')
+                ## Guard against exact-cancellation division by zero (positive/negative hourly
+                ## prices summing to ~0 while gen_x_price is nonzero); NaN (0/0) is also possible
+                ## and both should collapse to 0
+                df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+
             ## Generation during regional max hours
             elif key.startswith('stress'):
                 direction = ('top' if 'top' in key else 'bottom')
