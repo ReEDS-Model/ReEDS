@@ -60,6 +60,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | GW | gigawatt |
 | GWP | global warming potential |
 | H<sub>2</sub> | hydrogen |
+| HHV | higher heating value |
 | HMI | U.S. Bureau of Reclamation Hydropower Modernization Initiative |
 | HVDC | high-voltage direct current |
 | IGCC | integrated gasification combined cycle |
@@ -680,6 +681,7 @@ Fossil and nuclear technologies are characterized by the following parameters:
 - Scheduled and forced outage rates (%).
 
 Cost and performance assumptions for all new fossil and nuclear technologies are taken from the ATB {cite}`nrel2024AnnualTechnology2024` with options to use the Conservative, Moderate, or Advanced trajectories.
+Thermal plant heat rates and fuel costs are specified in higher heating value (HHV) terms, consistent with the EIA and the ATB. 
 Regional variations and adjustments are described below.
 Fixed operation and maintenance costs for coal plants increase over time with the plant's age. Fixed operation and maintenance costs for nuclear plants increase by a fixed amount after 50 years of being online. These escalation factors are taken from the Annual Energy Outlook 2025 {cite}`eiaAnnualEnergyOutlook2025`.
 
@@ -1206,9 +1208,8 @@ Battery cost and performance assumptions are based on lithium-ion battery system
 Low, mid, and high cost projections are available.
 The capital cost of a battery comprises two components: the overnight power unit cost (in \$/kW), which reflects the cost associated with the battery's maximum power output, and the overnight energy unit cost (in \$/kWh), which represents the cost associated with its maximum energy storage capacity---allowing the model to independently size power and energy capacities based on the respective unit costs.
 FOM costs of the battery are divided into two components as well: a 2.5% per year power FOM based on the power-related capital cost and a 2.5% per year energy FOM based on the energy-related capital cost.
-In contrast to other generator technologies in ReEDS,
-which all have lifetimes that meet or exceed typical model evaluation windows for book life, the battery is assumed to last 15 years.
-As a result, its capital cost is uprated by the ratio of a 15-year evaluation window and the evaluation window used by the run.
+The battery's power capacity is assumed to last 30 years.
+The energy capacity is assumed to last 15 years, and is therefore fully refurbished after 15 years using the energy capacity costs in the refurbishment year.
 Batteries are assumed to have a round-trip efficiency of 85% and a representative size of 60 MW.
 
 Existing PSH capacity is represented in the model according to the input plant database.
@@ -1242,7 +1243,7 @@ PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020G
 
 ReEDS models the use of hydrogen (H<sub>2</sub>), both as a form of seasonal storage to meet power system requirements and as a clean fuel produced by the power sector for use in other sectors.
 
-In the power sector, hydrogen can be consumed as a fuel in hydrogen combustion turbines (H<sub>2</sub>-CTs) and hydrogen combined cycles (H<sub>2</sub>-CCs). H<sub>2</sub>-CTs and H<sub>2</sub>-CCs are comparable to commercial gas plants but can be fired with hydrogen {cite:p}`mitsubishiIntermountainPowerAgency2020, ruthTechnicalEconomicPotential2020`.
+In the power sector, hydrogen can be consumed as a fuel in hydrogen combustion turbines (H<sub>2</sub>-CTs), hydrogen combined cycles (H<sub>2</sub>-CCs), and hydrogen fuel cells (see the [Hydrogen fuel cells](#hydrogen-fuel-cells) section). H<sub>2</sub>-CTs and H<sub>2</sub>-CCs are comparable to commercial gas plants but can be fired with hydrogen {cite:p}`mitsubishiIntermountainPowerAgency2020, ruthTechnicalEconomicPotential2020`.
 H<sub>2</sub>-CTs and H<sub>2</sub>-CCs are assumed to have the same heat rate and operation and maintenance (O&M) cost as regular gas-fired plants (see the [Fossil and Nuclear Technologies](#fossil-and-nuclear-technologies) section) but with a 10% higher overnight capital cost {cite}`ruthTechnicalEconomicPotential2020` in order to allow the H<sub>2</sub>-CT/H<sub>2</sub>-CC to be clutched and act as a synchronous generator.
 Existing gas combustion turbines can be upgraded to this H<sub>2</sub>-CT technology by paying a 33% difference in capital cost between the two generators.[^h2upgrade]
 Similarly, the combustion turbine component of the Gas-CC can be replaced, upgrading it to a H<sub>2</sub>-CC, paying a 28% difference.
@@ -1361,6 +1362,26 @@ Transport requires the construction of hydrogen pipelines, and the model assumes
 Modeling hydrogen transport in ReEDS is an experimental feature and, because this feature adds significant runtime, the model includes the option to model zonal balancing with transport disabled or a fixed \$/kg hydrogen transport cost.
 
 
+#### Hydrogen fuel cells
+
+In addition to H<sub>2</sub>-CTs and H<sub>2</sub>-CCs, ReEDS can represent a stationary hydrogen fuel cell (`h2-fuel-cell`) as a power-sector consumer of hydrogen.
+The technology is based on a heavy-duty-vehicle proton-exchange-membrane (PEM) fuel cell adapted for stationary power, with cost and performance assumptions drawn from {cite:t}`reznicekCostAnalysisHeavyDuty2026`.
+The fuel cell draws on the same regional hydrogen balance described above as the H<sub>2</sub>-CT/H<sub>2</sub>-CC technologies.
+
+The hydrogen fuel cell is disabled by default.
+Three cost-and-performance trajectories (conservative, moderate, and advanced) are available; they share the same near-term cost and differ in the rate of capital-cost decline after 2025.
+Because the fuel cell does not combust its fuel, it is assumed to produce no direct emissions; emissions associated with upstream hydrogen production and hydrogen leakage are accounted for separately.
+Financing and reserve provision are assumed to be the same as for a gas combustion turbine (Gas-CT).
+Fixed and variable O&M assumptions are taken from Exhibit 5-19 (Case B31A) of the NETL Fossil Energy Baseline, Revision 4a (Schmitt et al., 2022).
+
+```{admonition} Hydrogen fuel cell options
+
+- `GSw_H2FuelCell` (default `0`): Turn the hydrogen fuel cell (`h2-fuel-cell`) on (`1`) or off (`0`). Independent of the natural gas fuel cell switch (`GSw_GasFuelCell`) and the hydrogen combustion switches (`GSw_H2Combustion`).
+- `plantchar_h2fuelcell` (default `h2fuelcell_moderate`): Cost-and-performance trajectory — one of `h2fuelcell_conservative`, `h2fuelcell_moderate`, or `h2fuelcell_advanced`.
+- Cost and performance inputs (capital cost, fixed and variable O&M, and heat rate) are in `inputs/plant_characteristics/h2fuelcell_{conservative,moderate,advanced}.csv`.
+- Other operating assumptions (representative unit size, lifetime, outage rates, minimum load, ramp rate, minimum capacity factor, and start cost) are set in the `h2-fuel-cell` rows of the corresponding files under `inputs/plant_characteristics/`.
+- Emission rates are in `inputs/emission_constraints/emitrate.csv`.
+```
 
 
 ### Direct Air Capture
@@ -1456,11 +1477,12 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 | Concentrating Solar Power | 30 | SunShot Vision {cite}`doeSunShotVisionStudy2012` |
 | Geothermal | 30 | Renewable Electricity Futures Study, Vol. 1 {cite}`maiExplorationHighPenetrationRenewable2012` |
 | Hydropower | 100 | Hydropower: Setting a Course for Our Energy Future {cite}`nrelHydropowerSettingCourse2004` |
-| Battery | 15 | Cole and Karmakar {cite:year}`coleCostProjectionsUtilityScale2023` |
+| Battery | 30 (energy capacity refurbished at 15) | Cole and Karmakar {cite:year}`coleCostProjectionsUtilityScale2023` |
 | Hydrogen Electrolyzer | 20 |  |
 | Hydrogen Steam Methane Reforming and CCS | 25 | |
 | Hydrogen Combined Cycle | 55 |  |
 | Hydrogen Combustion Turbine | 55 |  |
+| Hydrogen Fuel Cell | 40 | Reznicek et al. {cite:year}`reznicekCostAnalysisHeavyDuty2026` |
 | Biopower | 45 | {cite}`abbABBVelocitySuite2018a` |
 | Gas Combustion Turbine | 55 | {cite}`abbABBVelocitySuite2018a` |
 | Gas Combined Cycle and CCS | 55 | {cite}`abbABBVelocitySuite2018a` |
@@ -1945,7 +1967,7 @@ Existing AC transfer limits in ReEDS.
 ```
 
 ```{admonition} Existing transmission data
-To read the ITL data for a given set of model zones, you can activate the `reeds2` conda environment, then run the following commands in Python from the root of the ReEDS folder:
+To read the ITL data for a given set of model zones, you can activate the `reeds` conda environment, then run the following commands in Python from the root of the ReEDS folder:
 ```python
 import reeds
 # GSw_ZoneSet can be any of the supported values listed in the "Choices" column
@@ -2124,9 +2146,9 @@ These region boundaries can be changed using the `GSw_TransHurdleLevel1` and `GS
 
 ReEDS represents electricity trade with Canada exogenously.
 (Electricity trade with Mexico is not represented.)
-In the default configuration, imports and exports are specified by Canadian province based on the Canada Energy Regulator Canadian Electricity Futures 2023 Current Measures {cite}`canadaenergyregulatorCanadasEnergyFuture2023`, with net exports across all regions shown in {numref}`figure-canada-imports-exports`.
+In the default configuration, imports and exports are specified by Canadian province based on the Canada Energy Regulator Canadian Electricity Futures 2026 Current Measures {cite}`canadaenergyregulatorCanadasEnergyFuture2026`, with net exports across all regions shown in {numref}`figure-canada-imports-exports`.
 Each province is required to send electricity to or receive electricity from any of the ReEDS zones that have connecting transmission lines to that province, with the split among zones approximated based on the transmission connecting the zones to the provinces.
-Seasonal and time-slice estimates for imports and exports are based on the historical monthly flows between the countries {cite}`canadaenergyregulatorElectricityTradeSummary2024`.
+Seasonal and time-slice estimates for imports and exports are based on the historical monthly flows between the countries {cite}`canadaenergyregulatorElectricityTradeSummary2026`.
 Canadian imports are assumed to be from hydropower and are counted toward RPS requirements where allowed by state RPS regulations.
 Canadian imports also count toward reserve margin requirements.
 
@@ -2281,7 +2303,7 @@ If a stress period has no consecutively adjacent stress periods, it is modeled w
 (the same treatment as representative periods, as long as [interday storage operation](#inter-day-storage-operation) is not enabled).
 - Interregional transmission flows are allowed during stress periods by default, allowing interregional coordination to help meet resource adequacy needs.
 New transmission capacity is derated by 15% during stress periods to approximate contingency considerations.
-- Coincident net imports into NERC regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`northamericanelectricreliabilitycorporation2023LongtermReliability2023` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
+- Coincident net imports into planning regions ({numref}`figure-spatial_layers_zones`) during stress periods are by default limited to historical peak net firm capacity transfers from {cite}`energysystemsintegrationgroupInterregionalTransmissionResilience2024` through 2030 to approximate barriers to coordinated interregional resource adequacy planning.
 
 
 
@@ -3014,7 +3036,7 @@ In addition, in recent years there have been numerous changes to RPS legislation
 We periodically update our representation to capture the recent changes to the legislation;
 however, the numerous and frequent changes to state laws make it difficult to precisely represent all RPS legislation.
 
-RPS targets---along with many other data that we use to represent nuanced RPS rules---are based on data compiled by Lawrence Berkeley National Laboratory, which takes into account the in-state REC multiplier incentives and load adjustments (e.g., sales-weighted RPS targets considering different load-serving entities subject to compliance, such as investor-owned utilities, municipal utilities, and cooperatives) {cite}`barboseStateRenewablesPortfolio2024,lbnlRenewablesPortfolioStandards2025`.
+RPS targets---along with many other data that we use to represent nuanced RPS rules---are based on data compiled by Lawrence Berkeley National Laboratory, which takes into account the in-state REC multiplier incentives and load adjustments (e.g., sales-weighted RPS targets considering different load-serving entities subject to compliance, such as investor-owned utilities, municipal utilities, and cooperatives) {cite}`barboseStateRenewablesPortfolio2026,lbnlRenewablesPortfolioStandards2025`.
 Solar includes UPV and ro­oftop PV, wind includes both land-based and offshore technologies, and distributed generation (DG) includes rooftop PV and ground-mounted PV systems located within the distribution network.
 ReEDS also models alternative compliance payments for unmet RPS requirement for both the main RPS targets and solar/wind set-asides, consistent with the available data.
 
@@ -3024,7 +3046,7 @@ RPS targets and technology set-asides for 2010-2050 can be found in `/inputs/sta
 
 Technology eligibility for state RPS requirements is modeled for each state.[^ref55] For instance, California's RPS does not allow in-state rooftop solar technologies to contribute toward its RPS.
 In addition, every state has specific rules regarding hydropower generation's eligibility toward contributing RECs, which are usually based on each unit's vintage and size (e.g., small hydropower with specific capacity cutoffs is eligible in some states).
-ReEDS models these rules as allowable generation fractions, taken from {cite}`barboseStateRenewablesPortfolio2024`, which are imposed on each state's total hydropower generation, limiting the amount of hydropower RECs that each state could produce.
+ReEDS models these rules as allowable generation fractions, taken from {cite}`barboseStateRenewablesPortfolio2026`, which are imposed on each state's total hydropower generation, limiting the amount of hydropower RECs that each state could produce.
 
 [^ref55]: See Database of State Incentives for Renewables & Efficiency (DSIRE) website at [dsireusa.org](http://www.dsireusa.org/).
 If data are unavailable, ReEDS forces RPS targets to be met by using a default alternative compliance payment \$200/MWh (in 2004\$).
@@ -3045,12 +3067,12 @@ Policy-mandated capacity additions may be delayed if there is insufficient capac
 The projects are based on tracking conducted for the NLR Offshore Wind Technologies Market Report, and state totals are shown in {numref}`offshore-wind-capacity`.[^refoffshorenote] The model allows economic deployment of offshore wind capacity beyond these levels.
 All policy-mandated offshore wind capacity is assumed to be rebuilt if retiring the capacity would bring the total below the mandated limit.
 
-[^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2024` shows a nonzero offshore wind carveout beginning in 2024.
+[^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2026` shows a nonzero offshore wind carveout beginning in 2024.
 However, the ReEDS offshore wind mandate for Maryland already captures this requirement, so we zero out the wind carveout.
 
 Finally, voluntary renewable energy credits are also represented in ReEDS.
 Only renewable energy technologies are allowed to supply voluntary RECs, and Canadian imports are not allowed.
-The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1624% in absolute terms).
+The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1208% in absolute terms).
 The voluntary requirement includes an alternative compliance payment of \$10/MWh (in 2004\$).
 
 ```{table} Cumulative Offshore Wind Capacity (MW) Mandated in ReEDS
@@ -3073,8 +3095,8 @@ The voluntary requirement includes an alternative compliance payment of \$10/MWh
 
 ### Clean Energy Standards
 
-As of November 2024, 16 states had clean energy standards (see {numref}`clean-energy-req`).
-CES values are effective values[^ref56] and are taken from {cite}`barboseStateRenewablesPortfolio2024`.
+As of June 2026, 16 states had clean energy standards (see {numref}`clean-energy-req`, which shows the modeled CES values).
+CES values are effective values[^ref56] and are taken from {cite}`barboseStateRenewablesPortfolio2026`.
 These CESs are in effect generalized versions of RPSs; their model representations are very similar, with technology eligibility being the primary difference.
 
 ```{admonition} CES input data
@@ -3102,27 +3124,27 @@ The modeled CES for Massachusetts begins at 16% in 2018 and increases to 80% by 
 This multiplier shortens the cost recovery period of the plant.
 For example, when evaluating whether to build a gas-CC unit 5 years before the scheduled phaseout, the financial multiplier for gas-CC includes a 5-year cost recovery period.
 
-```{table} Clean Energy Requirement as a Percentage of In-State Sales
+```{table} Modeled Clean Energy Requirement as a Percentage of In-State Sales
 :name: clean-energy-req
 
 | **State** | **2020** | **2025** | **2030** | **2035** | **2040** | **2045** | **2050** |
 |----|---:|---:|---:|---:|---:|---:|---:|
-| CA | 0% | 0% | 57% | 86% | 90% | 95% | 95% |
-| CO | 0% | 0% | 47% | 48% | 48% | 48% | 56% |
-| CT | 0% | 0% | 43% | 71% | 99% | 99% | 99% |
-| IL | 0% | 0% | 35% | 48% | 62% | 75% | 89% |
-| MA | 23% | 55% | 64% | 72% | 80% | 88% | 96% |
-| ME | 0% | 0% | 76% | 81% | 86% | 90% | 95% |
-| MI | 0% | 42% | 61% | 72% | 80% | 100% | 100% |
-| MN | 0% | 0% | 74% | 90% | 100% | 100% | 100% |
-| NC | 0% | 0% | 40% | 50% | 60% | 70% | 80% |
-| NE | 0% | 0% | 0% | 0% | 10% | 50% | 100% |
-| NM | 0% | 0% | 0% | 0% | 68% | 83% | 90% |
-| NV | 0% | 0% | 43% | 56% | 68% | 80% | 90% |
-| NY | 0% | 0% | 70% | 70% | 100% | 100% | 100% |
-| OR | 0% | 20% | 55% | 62% | 68% | 68% | 68% |
-| VA | 0% | 36% | 44% | 54% | 66% | 78% | 80% |
-| WA | 13% | 56% | 100% | 100% | 100% | 100% | 100% |
+| CA | 32% | 45% | 61% | 87% | 92% | 97% | 97% |
+| CO | 19% | 32% | 64% | 68% | 73% | 80% | 88% |
+| CT | 25% | 38% | 59% | 79% | 100% | 100% | 100% |
+| IL | 15% | 23% | 34% | 40% | 43% | 65% | 90% |
+| MA | 24% | 56% | 65% | 73% | 80% | 88% | 96% |
+| ME | 44% | 58% | 77% | 87% | 97% | 97% | 97% |
+| MI | 12% | 21% | 39% | 80% | 100% | 100% | 100% |
+| MN | 24% | 35% | 72% | 90% | 100% | 100% | 100% |
+| NC | 6% | 11% | 25% | 39% | 53% | 67% | 81% |
+| NE | 0% | 1% | 4% | 7% | 9% | 54% | 99% |
+| NM | 16% | 36% | 45% | 56% | 67% | 82% | 90% |
+| NV | 17% | 30% | 45% | 57% | 69% | 81% | 93% |
+| NY | 34% | 49% | 70% | 84% | 100% | 100% | 100% |
+| OR | 14% | 24% | 51% | 57% | 63% | 63% | 63% |
+| VA | 0% | 32% | 39% | 47% | 58% | 70% | 72% |
+| WA | 13% | 38% | 100% | 100% | 100% | 100% | 100% |
 ```
 
 ### Storage Mandates

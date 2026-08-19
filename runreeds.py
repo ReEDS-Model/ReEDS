@@ -216,8 +216,11 @@ def check_cases_format(df_cases):
 
 
 def check_compatibility(sw):
-    if int(sw['startyear']) < 2010:
-        raise ValueError(f"startyear = {sw['startyear']} but must be ≥ 2010")
+    if int(sw['startyear']) != 2010:
+        raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
+
+    if int(sw['GSw_SkipRAyear']) <= int(sw['startyear']):
+            raise ValueError(f"GSw_SkipRAyear = {sw['GSw_SkipRAyear']} but must be > {sw['startyear']}")
 
     if (sw['GSw_HourlyType'] in ['year']) and int(sw['GSw_InterDayLinkage']):
         raise ValueError(
@@ -313,34 +316,42 @@ def check_compatibility(sw):
     reeds_path = os.path.dirname(__file__)
     hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
 
-    for threshold in sw['GSw_PRM_StressThreshold'].split('/'):
-        ## Example: threshold = 'transgrp_10_EUE_sum'
-        allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
-        (hierarchy_level, ppm, stress_metric, period_agg_method) = threshold.split('_')
-        if hierarchy_level not in allowed_levels:
-            raise ValueError(
-                f"GSw_PRM_StressThreshold: level={hierarchy_level} but must be in:\n"
-                + '\n'.join(allowed_levels)
-            )
-        if period_agg_method.lower() not in ['sum','max']:
-            raise ValueError("Fix period agg method in GSw_PRM_StressThreshold")
-        if not (float(ppm) >= 0):
-            raise ValueError(
-                "ppm in GSw_PRM_StressThreshold must be a positive number "
-                f"but '{ppm}' was provided"
-            )
-        if stress_metric.upper() not in ['EUE','NEUE']:
-            raise ValueError(
-                "stress metric in GSw_PRM_StressThreshold must be 'EUE' or 'NEUE' "
-                f"but '{stress_metric}' was provided"
-            )
-        if (sw['GSw_PRM_StressModel'].lower() != 'pras') and (stress_metric.upper() != 'EUE'):
-            err = (
-                f"The combination of GSw_PRM_StressModel={sw['GSw_PRM_StressModel']} and "
-                f"stress_metric={stress_metric} is not supported."
-            )
-            raise NotImplementedError(err)
-        
+    ### Check that the stress metrics specified in GSw_PRM_StressThresholdMetrics
+    ### are allowed and have well-formed GSw_PRM_StressThreshold{metric} entries
+    ra_switches = {
+        i.lower(): f'GSw_PRM_StressThreshold{i}'
+        for i in ['Depth', 'Duration', 'LOLD', 'LOLE', 'LOLH', 'NEUE']
+    }
+    used_metrics = [i.lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')]
+    allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
+
+    for metric in used_metrics:
+        if metric not in ra_switches:
+            raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
+
+        for threshold in sw[ra_switches[metric]].split('/'):
+            ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
+            (hierarchy_level, stress_value) = threshold.split('_')
+            if hierarchy_level not in allowed_levels:
+                raise ValueError(
+                    f"{ra_switches[metric]}: level={hierarchy_level} but must be in:\n"
+                    + '\n'.join(allowed_levels)
+                )
+            if not (float(stress_value) >= 0):
+                raise ValueError(
+                    f"stress value in {ra_switches[metric]} must be a positive number "
+                    f"but '{stress_value}' was provided"
+                )
+
+    ### GSw_PRM_UpdateMethod 1-3 (static or PRAS-informed PRM update) is computed from the
+    ### NEUE-based shortfall, so it requires NEUE to be an active stress metric
+    if int(sw['GSw_PRM_UpdateMethod']) in [1, 2, 3] and 'neue' not in used_metrics:
+        raise ValueError(
+            f"GSw_PRM_UpdateMethod={sw['GSw_PRM_UpdateMethod']} requires 'NEUE' to be included "
+            f"in GSw_PRM_StressThresholdMetrics (={sw['GSw_PRM_StressThresholdMetrics']}), "
+            "since PRM updates are computed from the NEUE-based shortfall."
+        )
+
     if sw['GSw_PRM_StressStorageCutoff'].lower() not in ['off','0','false']:
         metric, value = sw['GSw_PRM_StressStorageCutoff'].split('_')
         if metric.lower()[:3] not in ['eue', 'cap', 'abs']:
@@ -846,22 +857,19 @@ def setupEnvironment(
 
     #%% Check whether the ReEDS conda environment is activated
     if (not skip_checks) and (
-        ('reeds2' not in os.environ['CONDA_DEFAULT_ENV'].lower())
-        or (not pd.__version__.startswith('2'))
+        ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
+        or (not pd.__version__.startswith('3'))
     ):
-        print(
+        err = (
             f"Your environment is {os.environ['CONDA_DEFAULT_ENV']} and your pandas "
-            f"version is {pd.__version__}.\nThe default environment is 'reeds2', with\n"
-            "pandas version 2.x, so the python parts of ReEDS are unlikely to work.\n"
+            f"version is {pd.__version__}.\nThe supported environment is 'reeds', with\n"
+            "pandas version 3.x.\n"
             "To build the environment for the first time, run:\n"
             "    `conda env create -f environment.yml`\n"
             "To activate the created environment, run:\n"
-            "    `conda activate reeds2` (or `activate reeds2` on Windows)\n"
-            "Do you want to continue without activating the environment?"
+            "    `conda activate reeds` (or `activate reeds` on Windows)"
         )
-        confirm_env = str(input("Continue? y/[n]: ") or 'n')
-        if confirm_env not in ['y','Y','yes','Yes','YES']:
-            quit()
+        raise ValueError(err)
 
     #%% Load specified case file, infer other settings from cases.csv
     if cases_suffix in ['', 'default']:
@@ -908,7 +916,7 @@ def setupEnvironment(
                     f'Specified single={single} but available cases are:\n'
                     + '\n> '.join([c for c in df_cases.columns])
                 )
-                raise KeyError(err)
+                raise ValueError(err)
         df_cases = df_cases[single.split(',')].copy()
         casenames = single.split(',')
 
@@ -1289,13 +1297,14 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda activate reeds2 \n")
+            OPATH.writelines("conda activate reeds \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
+            'process_unitdata',
             'mcs_sampler',
             'climateprep',            
             'hydcf',
@@ -1308,10 +1317,10 @@ def write_batch_script(
             'plantcostprep',
             'hourly_load',
             'recf',
-            'forecast',
             'WriteHintage',
             'transmission',
             'outage_rates',
+            'forecast',
             'hourly_repperiods',
             'h5_to_gdx',
         ]:
@@ -1403,7 +1412,9 @@ def write_batch_script(
         if not LINUXORMAC:
             OPATH.writelines("endlocal\n")
         OPATH.writelines(f'python {logger}\n')
-        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n\n")
+        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
+        OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+
         if int(caseSwitches['diagnose']):
              OPATH.writelines(
                 "python"

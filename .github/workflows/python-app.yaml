@@ -185,7 +185,7 @@ jobs:
           GAMSLICE_CONTENT: ${{ secrets.GAMSLICE }}
           MAMBA_ENV_PATH: ${{ steps.setup-env.outputs.mamba-env-path }}
         run: |
-          echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.11/site-packages/gamspy_base/gamslice.txt"
+          echo "$GAMSLICE_CONTENT" > "${MAMBA_ENV_PATH}/lib/python3.14/site-packages/gamspy_base/gamslice.txt"
 
       - name: Set run folder
         env:
@@ -274,7 +274,7 @@ jobs:
           path: ${{ format('{0}-{1}', matrix.scenario, matrix.solve-year) }}
 
       - name: Install uv and set Python version
-        uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3 # v8.3.0
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
           python-version: "3.11"
           enable-cache: true

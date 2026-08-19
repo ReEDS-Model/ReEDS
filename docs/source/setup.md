@@ -118,24 +118,28 @@ Screenshot of a test of Python in the terminal window
 
 #### Conda Environment Setup
 
-It is highly recommended to run ReEDS using the conda environment provided in the repository. This environment (named `reeds2`) is specified by the `environment.yml` and can be built with the following command - make sure you navigate to the ReEDS repository from terminal first: 
+It is highly recommended to run ReEDS using the conda environment provided in the repository. This environment (named `reeds`) is specified by the `environment.yml` and can be built with the following command - make sure you navigate to the ReEDS repository from terminal first:
 
-```
+```shell
 conda env create -f environment.yml
 ```
 
-You can verify that the environment was successfully created using the following (you should see `reeds2` in the list):
+You can verify that the environment was successfully created using the following (you should see `reeds` in the list):
 
-```
+```shell
 conda env list
 ```
 
-When creating the reeds2 environment locally, you might run into an SSL error that looks like: `CondaSSLError: Encountered an SSL error. Most likely a certificate verification issue.` To resolve this issue, run the following command before creating the environment again: `conda config --set ssl_verify false`.
+When creating the `reeds` environment locally, you might run into an SSL error that looks like: `CondaSSLError: Encountered an SSL error. Most likely a certificate verification issue.` To resolve this issue, run the following command before creating the environment again: `conda config --set ssl_verify false`.
 
 
 ### GAMS Configuration
-NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.
 
+ReEDS is actively developed for GAMS versions ≥51.3.0 and is backwards-compatible without modification for GAMS versions ≥44.2.0.
+To use GAMS versions back to 34.3.0, revert to an older version of `gdxpds` by running `pip install gdxpds==1.4.0` within the `reeds` conda environment.
+ReEDS compatibility with GAMS versions older than 34.3.0 is not tested or actively supported.
+
+A valid GAMS license must be installed.
 For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
 
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)
@@ -234,7 +238,7 @@ julia --project=. instantiate.jl
 ````{tab-item} Windows
 When setting up Julia on Windows, you may run into some issues when running `julia --project=. instantiate.jl`. The following steps can be followed to help resolve issues and get Julia set up successfully:
 
-1. If you've used another version of Julia (from the reeds2 conda environment or a previous installation), you may get errors about conflicting manifest. To get past this, you can delete the `Manifest.toml` file with `rm Manifest.toml` (on Unix systems) or `del Manifest.toml` (on Windows systems). 
+1. If you've used another version of Julia (from the `reeds` conda environment or a previous installation), you may get errors about conflicting manifest. To get past this, you can delete the `Manifest.toml` file with `rm Manifest.toml` (on Unix systems) or `del Manifest.toml` (on Windows systems). 
 
 2. Manually install [Random123](https://github.com/JuliaRandom/Random123.jl)
 
@@ -295,11 +299,11 @@ If you experience issues, try the following:
 
 **Quick Start:**
 1. Navigate to the ReEDS directory from the command line
-2. Activate environment: `conda activate reeds2`
+2. Activate environment: `conda activate reeds`
 3. Run the model: `python runreeds.py`
 4. Follow the prompts for batch configuration
-5. Check for a successful run: 
-   1. Look for CSV files in `runs/[batchname_scenario]/outputs` (a successful run should have 100+ csv files in the outputs folder)
+5. Check for a successful run:
+   1. Look for the `runs/[batchname_scenario]/outputs/outputs.h5` file
    2. Verify the reporting folders ("reeds-report", "reeds-report-reduced") exist in the outputs folder
 
 ### Understanding cases.csv

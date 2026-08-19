@@ -47,7 +47,7 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
   - The `itl_NARIS.csv` is indexed by the hashes of the two zones that define the interface (`md5_from` and `md5_to`).
     - So even though the `DE` and `MD` zones are used in many of the supported region resolutions, we only store the ITL for the `DE`/`MD` interface once, with `md5_from = a182e260da3f30b54260bf499f0db584` and `md5_to = f8644441280e76e07363ed18c744f98e`.
     - The interfaces to expect values for are listed in the `inputs/zones/{GSw_ZoneSet}/interfaces_{level}.csv` files, where `level` can be `r` or `transgrp`.
-  - The most straightforward way to read all the ITLs for a given region resolution is to run the following commands from the root of the ReEDS repo with the `reeds2` conda environment activated:
+  - The most straightforward way to read all the ITLs for a given region resolution is to run the following commands from the root of the ReEDS repo with the `reeds` conda environment activated:
 
     ```python
     import reeds

@@ -26,7 +26,7 @@ BA combinations, is as follows:
     4. Assign units to their nearest heat rate bin
        - if only one unique unit in a bin, assign its original heat rate
        - if more than one unit in a bin, assign the capacity-weighted average
-    5. For all years from 2010-2100, compute the remaining amount of capacity
+    5. For all years from start year to 2100, compute the remaining amount of capacity
        based on the units specified retirement date and compute the remaining
        units' capacity-weighted-average characteristics (FOM/VOM/HR/...)
 
@@ -297,20 +297,20 @@ def main(reeds_path, inputs_case):
     print('Starting WriteHintage.py')
 
     # #%% Settings for testing
-    # reeds_path = os.path.expanduser('~/github/ReEDS')
+    # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20231027_yamM0_Z45_h_d_365_transreg_z69_core','inputs_case')
+    #     reeds_path,'runs','v20260626_inputsM1_Pacific','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
 
     nBin = int(sw.numhintage)
-    retscen = sw.retscen
     mindev = int(sw.mindev)
     GSw_WaterMain = sw.GSw_WaterMain    
     GSw_RetireYears_Coal = int(sw.GSw_RetireYears_Coal)
     GSw_RetireYears_Thermal = int(sw.GSw_RetireYears_Thermal)
     GSw_Clean_Air_Act = int(sw.GSw_Clean_Air_Act)
+    startyear=int(sw.startyear)
 
     #%%
     # Inflation factor 1987$ to 2004$
@@ -348,7 +348,7 @@ def main(reeds_path, inputs_case):
         indat['tech'] = indat.coolingwatertech
 
     ### NOTE: New addition for columns AO:AR, AW:AX in the plant file
-    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", retscen,
+    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", "RetireYear",
                 "StartYear", "IsExistUnit", "HeatRate", "T_VOM", "T_FOM",
                 "T_CCSROV", "T_CCSF", "T_CCSV", "T_CCSHR", "T_CCSCAPA", "T_CCSLOC"]].copy() 
 
@@ -359,7 +359,6 @@ def main(reeds_path, inputs_case):
         'ctt'    : 'ctt',
         'summer_power_capacity_MW'    : 'Summer.capacity',
         'TC_WIN' : 'Winter.capacity',
-        retscen  : 'RetireYear',
         'StartYear' : 'onlineyear',
         'IsExistUnit' : 'EXIST',
         'HeatRate' : 'HR',
@@ -436,7 +435,7 @@ def main(reeds_path, inputs_case):
     dat = dat[dat.TECH != 'others'].copy()
 
     # Remove some generators based on retire year and online year
-    dat = dat[(dat.RetireYear >= 2010) & (dat['onlineyear'] < 2010)].copy()
+    dat = dat[(dat.RetireYear >= startyear) & (dat['onlineyear'] < startyear)].copy()
 
     # Make unique ID column for generators
     id_delimiter = '<dontputthisinaname>'
@@ -481,7 +480,7 @@ def main(reeds_path, inputs_case):
     combine_cols = level_cols + ['Winter.capacity']
 
 # Adjust the HR, VOM, FOM, solveYearOnline, and winter capacity
-    for i in list(range(2010, tdat.RetireYear.max() + 1)):
+    for i in list(range(startyear, tdat.RetireYear.max() + 1)):
         # Subset on years earlier than i
         ydat = tdat.loc[tdat.RetireYear > i, ['id','bin','Summer.capacity'] + combine_cols]
 
@@ -531,7 +530,7 @@ def main(reeds_path, inputs_case):
     dpv['wFOM'] = 0
     dpv['Winter.capacity'] = dpv['Summer.capacity']
     dpv['bin'] = 1
-    dpv['solveYearOnline'] = 2010
+    dpv['solveYearOnline'] = startyear
     dpv['year'] = dpv['year'].astype(int)
 
     # Concat dpv and the output dataframes
@@ -540,10 +539,11 @@ def main(reeds_path, inputs_case):
     #%%############################################################################
     #    -- Get forced retirement dataframe and merge onto output dataframe --    #
     ###############################################################################
-    forced_retire = pd.read_csv(
-        os.path.join(inputs_case, 'forced_retirements.csv'),
-        header=0, names=['tech','st','retire_year'])
-    
+    forced_retire = (
+        reeds.io.read_input(inputs_case, 'forced_retirements')
+        .astype({'Value':int})
+        .rename(columns={'i':'tech', 'Value':'retire_year'})
+    )
     # Forced retirements are at the state level, so use hierarchy to get the regions
     state2r = (
         pd.read_csv(

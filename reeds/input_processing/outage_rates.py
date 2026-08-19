@@ -27,8 +27,8 @@ during_quarters = ['spring', 'fall']
 max_extrapolated_outage_forced = 0.4
 ## assume temperature-dependent outage rates for ng-fuel-cell to be the same as for combined_cycle plants
 primemover2techgroup = {
-    'combined_cycle': ['GAS_CC', 'FUEL_CELL'],
-    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION'],
+    'combined_cycle': ['GAS_CC', 'NG_FUEL_CELL'],
+    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION','H2_FUEL_CELL'],
     'diesel': ['OGS'],
     'hydro_and_psh': ['HYDRO', 'PSH'],
     'nuclear': ['NUCLEAR'],
@@ -262,7 +262,10 @@ def calc_outage_forced(
 
         ### Get temperature-dependent outage rate by prime mover and state
         forcedoutage_pm = pd.concat(
-            {pm: temperatures.replace(fits_forcedoutage[pm]) for pm in fits_forcedoutage},
+            {
+                pm: temperatures.replace({col: fits_forcedoutage[pm] for col in temperatures})
+                for pm in fits_forcedoutage
+            },
             axis=1, names=('prime_mover',),
         ).astype(np.float32)
 
@@ -482,8 +485,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260113_temperatureM1_Everything', 'inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260611_envM0_Pacific', 'inputs_case')
     # interactive = True
     # debug = 1
 

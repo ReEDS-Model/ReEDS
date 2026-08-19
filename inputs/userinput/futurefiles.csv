@@ -43,6 +43,7 @@ cd_beta0.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 cendivweights.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 ces_fraction.csv,.csv,0,None,*t,st,0,0,linear_5,0,1,done,linear_5
 cf_vre.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
+classification_geothermal.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,
 climate_heuristics_finalyear.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 climate_heuristics_yearfrac.csv,.csv,0,None,*t,None,0,0,constant,None,None,new,
 climate_hydadjann.csv,.csv,0,None,wide,r,1,0,constant,0,None,done,constant
@@ -52,10 +53,10 @@ climate_param.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 climate_UnappWaterMult.csv,.csv,0,None,wide,"wst,r,szn",1,0,constant,0,None,done,constant
 climate_UnappWaterMultAnn.csv,.csv,0,None,wide,"wst,r",1,0,constant,0,None,done,constant
 climate_UnappWaterSeaAnnDistr.csv,.csv,0,None,wide,"wst,r,szn",1,0,constant,0,1,done,constant
-co2_cap.csv,.csv,0,None,*t,None,0,0,constant,0,None,"constant, linear, or saturate?",constant
+co2_cap.csv,.csv,0,None,allt,None,0,0,constant,0,None,"constant, linear, or saturate?",constant
 co2_capture_incentive.csv,.csv,1,None,9999,None,9999,0,constant,None,None,[CHECK] do we need to forecast within calc_financial_inputs? Data only extends to 2049; new,
 co2_site_char.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-co2_tax.csv,.csv,0,None,*t,None,0,0,linear_5,None,None,"constant, linear, or saturate?",linear_5
+co2_tax.csv,.csv,0,None,allt,None,0,0,linear_5,None,None,"constant, linear, or saturate?",linear_5
 coal_fom_adj.csv,.csv,0,None,*t,None,0,0,constant,None,None,"constant, linear, or saturate?",linear_5
 coal_price.csv,.csv,0,None,year,None,1,0,constant,None,None,[CHECK] can we expect linear extrapolation for fuel prices (check other fuel prices); new,
 construction_schedules.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -141,13 +142,16 @@ evmc_storage_profile_decrease.csv,.csv,1,None,9999,None,9999,0,constant,None,Non
 evmc_storage_profile_increase.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
 exog_cap_geohydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_cap_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+exog_cap_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 exog_cap_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 exog_geohydro_allkm_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_upv_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+exog_wind_ofs_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_wind_ons_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 f.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 financials_hydrogen.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; input data extends to 2100,
 financials_sys.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
+financials_sys_full.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 financials_tech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used as input for calc_financials_inputs.py so no need to forecast,
 financials_transmission.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; input data extends to 2100,
 financing_risk_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
@@ -185,15 +189,15 @@ gswitches.txt,.txt,1,None,9999,None,9999,0,constant,None,None,new,
 gwp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h_dt_szn.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 h2_ba_share.csv,.csv,0,None,t,*r,0,0,constant,0,None,done,constant
-h2_compressor_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
+h2_cap_cost_mult_compressor.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
 h2_existing_smr_cap.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_exogenous_demand.csv,.csv,0,None,t,*p,1,0,linear_5,0,None,done,constant
 h2_leakage_rate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-h2_pipeline_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+h2_cap_cost_mult_pipeline.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_ptc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 h2_st.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_stor.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-h2_storage_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
+h2_cap_cost_mult_storage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; seems to be handled in calc_financial_inputs.py,
 h2_storage_rb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 h2_transport_and_storage_costs.csv,.csv,0,None,t,"*h2_stor_trans,parameter",0,0,constant,None,None,new,
 heat_rate_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -254,8 +258,8 @@ maps.gpkg,.gpkg,1,None,9999,None,9999,0,constant,None,None,new,
 maxage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 maxdailycf.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 mcs_distributions.yaml,.yaml,1,None,9999,None,9999,0,constant,None,None,new,
-methane_leakage_rate.csv,.csv,0,None,*t,None,0,0,constant,None,None,done,constant
-mex_growth_rate.csv,.csv,0,None,0,None,0,None,linear_5,0,None,done,linear_5
+methane_leakage_rate.csv,.csv,0,None,allt,None,0,0,constant,None,None,done,constant
+mex_growth_rate.csv,.csv,0,None,allt,None,0,None,linear_5,0,None,done,linear_5
 min_retire_age.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 minCF.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 mingen_fixed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -298,12 +302,11 @@ outage_forced_temperature.csv,.csv,1,None,9999,None,9999,0,constant,None,None,ne
 outage_scheduled_monthly.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 outage_scheduled_static.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 p.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-pcat.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 pcm_defaults.json,.json,1,None,9999,None,9999,0,constant,None,None,new,
 peak_ccseason.csv,.csv,2,None,wide,"r,ccseason",1,0,linear_5,None,None,"ignore if not EFS, else apply projection",linear_10
 peak_h.csv,.csv,2,None,wide,"r,h",1,0,linear_5,None,None,"ignore if not EFS, else apply projection",linear_10
 peak_net_imports.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-peakload_nercr.csv,.csv,0,None,t,*nercr,0,0,linear_5,None,None,new,
+peakload_transreg.csv,.csv,0,None,t,transreg,0,0,linear_5,None,None,new,
 peakload.csv,.csv,0,None,wide,"level,region",1,0,linear_5,None,None,new,
 period_szn_user.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 pipeline_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -323,6 +326,7 @@ plantchar_dr_shed.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; chec
 plantchar_evmc_shape.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_evmc_storage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
+plantchar_h2fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas_ccs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_geo.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
@@ -338,16 +342,12 @@ plantchar_pvb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to c
 plantchar_upgrades.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantcharout.csv,.csv,0,None,t,"*i,variable",0,0,constant,None,None,new,
-plantcharout.txt,.txt,0,None,1,"0,2",0,None,constant,None,None,"done. consider field-specific projections (i.e. linear projection for capcost for PV, but constant projection for heatrate and rte)",constant
 plexos_inputs.gdx,.gdx,1,None,9999,None,9999,0,constant,None,None,done (wouldn't exist yet in normal run),constant
 poi_cap_init.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prepost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-prescribed_builds_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-prescribed_builds_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 prescribed_nonRSC_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prescribed_nonRSC.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 prescribed_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-prescriptivelink0.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prm_initial.csv,.csv,0,None,t,*r,0,0,constant,None,None,done,constant
 psh_sc_duration.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 psh_supply_curves_capacity.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -369,7 +369,6 @@ pvf_onm_int.csv,.csv,1,None,*t,None,0,0,linear_10,0,None,done (but double-check 
 quarter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_cendiv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_county.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-r_cs_distance_mi.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_cs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 r_rr_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ramprate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -389,7 +388,7 @@ resources.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 retail_cap_cost_mult.h5,.h5,1,None,9999,None,9999,0,constant,None,None,done,constant
 retail_depreciation_sch.h5,.h5,1,None,9999,None,9999,0,constant,None,None,done,constant
 retail_eval_period.h5,.h5,1,None,9999,None,9999,0,constant,None,None,done,constant
-retire_penalty.csv,.csv,0,None,0,None,0,None,constant,None,None,new,
+retire_penalty,inputs.h5,0,None,allt,None,0,None,constant,None,None,new,
 retirements_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 retirements.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"discuss, make sure it should just be copied",constant
 rev_paths.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -403,7 +402,7 @@ rsc_combined.txt,.txt,1,None,9999,None,9999,0,constant,None,None,done,constant
 rsc_evmc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"[CHECK] don't know what this input file is supposed to look like, but needs to be forecasted; new",
 rsc_wsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 safe_harbor_max.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
-safe_harbor.csv,.csv,0,None,t,*i,0,0,constant,None,None,new,
+safe_harbor.csv,.csv,0,None,t,i,0,0,constant,None,None,new,
 sc_cat.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 sc_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 sc_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -452,8 +451,8 @@ tg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 threads.txt,.txt,1,None,9999,None,9999,0,constant,None,None,done,constant
 trancap_fut_cat.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 tranloss.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-trans_cap_cost_mult_noITC.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
-trans_cap_cost_mult.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
+trans_cost_cap_fin_mult_noITC.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
+trans_cost_cap_fin_mult.csv,.csv,1,None,*t,None,0,0,constant,None,None,handled in calc_financial_inputs.py,constant
 trans_intra_cost_adder.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 trans_itc_fractions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,constant or expire?,constant
 transmission_distance_cost_500kVac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -467,6 +466,7 @@ UnappWaterMultAnn.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"new; inpu
 UnappWaterSeaAnnDistr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"new; input data extends to 2098, and interpolation between data years occurs in climateprep.py",
 unbundled_limit_ces.csv,.csv,0,None,wide,st,1,0,constant,None,None,new,
 unbundled_limit_rps.csv,.csv,0,None,wide,st,1,0,constant,None,None,new,
+unitdata_orig.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 unitdata.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 unitsize.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 unitspec_upgrades.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -481,7 +481,6 @@ upgrade_mult_mid.csv,.csv,0,None,wide,dummy,1,0,linear_5,0,None,new,
 upgradelink_water.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 uranium_price.csv,.csv,0,None,year,None,0,0,linear_5,0,None,new,
 va_ng_crf_penalty.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
-val_cs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 val_r_all.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 var_map.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 w.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -501,3 +500,63 @@ x_r.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 x.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 yearafter.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 years_until_endogenous.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
+allh,inputs.h5,1,,,,9999,,,,,,
+allszn,inputs.h5,1,,,,9999,,,,,,
+captype,inputs.h5,1,,,,9999,,,,,,
+cendiv,inputs.h5,1,,,,9999,,,,,,
+co2_captured_incentive_in,inputs.h5,1,,,,9999,,,,,,
+co2_injection_limit,inputs.h5,1,,,,9999,,,,,,
+co2_storage_limit,inputs.h5,1,,,,9999,,,,,,
+cost_co2_stor_bec,inputs.h5,1,,,,9999,,,,,,
+cost_hurdle_rate1,inputs.h5,0,None,t,None,9999,0,linear_5,0,,,
+cost_hurdle_rate2,inputs.h5,0,None,t,None,9999,0,linear_5,0,,,
+country,inputs.h5,1,,,,9999,,,,,,
+cs,inputs.h5,1,,,,9999,,,,,,
+ctt_cc_mult,inputs.h5,1,,,,9999,,,,,,
+ctt_cost_vom_mult,inputs.h5,1,,,,9999,,,,,,
+ctt_hr_mult,inputs.h5,1,,,,9999,,,,,,
+distance,inputs.h5,1,,,,9999,,,,,,
+evmc_storage_energy_h17,inputs.h5,1,,,,9999,,,,,has a t index so revisit if using,
+firm_import_limit,inputs.h5,1,,,,9999,,,,,handled in transmission.py,
+gasreg,inputs.h5,1,,,,9999,,,,,,
+h2_ptc_in,inputs.h5,1,,,,9999,,,,,,
+h2ptcreg,inputs.h5,1,,,,9999,,,,,,
+hurdlereg,inputs.h5,1,,,,9999,,,,,,
+initv,inputs.h5,1,,,,9999,,,,,,
+inputs_0.gdx,.gdx,1,,,,9999,,,,,,
+interconnect,inputs.h5,1,,,,9999,,,,,,
+itlgrp,inputs.h5,1,,,,9999,,,,,,
+maxdailycf_input,inputs.h5,1,,,,9999,,,,,,
+minCF_input,inputs.h5,1,,,,9999,,,,,,
+national_gen_frac,inputs.h5,0,None,allt,None,9999,0,linear_5,0,1,,
+nercr,inputs.h5,1,,,,9999,,,,,,
+newv,inputs.h5,1,,,,9999,,,,,,
+nextszn,inputs.h5,1,,,,9999,,,,,,
+offshore,inputs.h5,1,,,,9999,,,,,,
+opres_periods_h17,inputs.h5,1,,,,9999,,,,,,
+outage_forced_hourly.h5,.h5,1,,,,9999,,,,,,
+outage_scheduled_hourly.h5,.h5,1,,,,9999,,,,,,
+pvf_capital,inputs.h5,1,,,,9999,,,,,handled in calc_financial_inputs.py,
+pvf_onm,inputs.h5,1,,,,9999,,,,,handled in calc_financial_inputs.py,
+r,inputs.h5,1,,,,9999,,,,,,
+r_cs_distance,inputs.h5,1,,,,9999,,,,,,
+st,inputs.h5,1,,,,9999,,,,,,
+stressperiods_seed,inputs.h5,1,,,,9999,,,,,,
+t,inputs.h5,1,,,,9999,,,,,,
+tmodel_new,inputs.h5,1,,,,9999,,,,,,
+trancap_fut,inputs.h5,1,,,,9999,,,,,,
+trancap_init_energy,inputs.h5,1,,,,9999,,,,,,
+trancap_init_prm,inputs.h5,1,,,,9999,,,,,,
+trancap_init_transgroup,inputs.h5,1,,,,9999,,,,,,
+transgrp,inputs.h5,1,,,,9999,,,,,,
+transmission_cost_ac,inputs.h5,1,,,,9999,,,,,,
+transmission_cost_nonac,inputs.h5,1,,,,9999,,,,,,
+transmission_line_fom,inputs.h5,1,,,,9999,,,,,,
+transreg,inputs.h5,1,,,,9999,,,,,,
+tsc_binwidth,inputs.h5,1,,,,9999,,,,,,
+tsc_forward,inputs.h5,1,,,,9999,,,,,,
+tsc_reverse,inputs.h5,1,,,,9999,,,,,,
+tscbin,inputs.h5,1,,,,9999,,,,,,
+usda_region,inputs.h5,1,,,,9999,,,,,,
+v,inputs.h5,1,,,,9999,,,,,,
+wst_surface,inputs.h5,1,,,,9999,,,,,,
