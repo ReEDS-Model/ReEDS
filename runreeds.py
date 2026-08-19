@@ -300,18 +300,6 @@ def check_compatibility(sw):
             f"GSw_TransIntraCost={sw['GSw_TransIntraCost']}"
         )
 
-    if sw['GSw_RegionResolution'] in ['county','mixed']:
-        err_switch_configs = []
-        if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
-            err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
-
-        if len(err_switch_configs) > 0:
-            raise NotImplementedError(
-                'The following switch configurations are not implemented for '
-                'county/mixed resolution:\n{}\n'
-                .format('\n'.join(err_switch_configs))
-            )
-
     if int(sw['GSw_RegIntraCurve']) and (sw['GSw_ZoneSet'] != 'z90'):
         raise ValueError(
             'The regional POI reinforcement curve (GSw_RegIntraCurve=1) requires\n'
@@ -319,8 +307,6 @@ def check_compatibility(sw):
             f"GSw_RegIntraCurve={sw['GSw_RegIntraCurve']}, "
             f"GSw_ZoneSet={sw['GSw_ZoneSet']}"
         )
-
-    reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
 
     ### Parsed string switches
     ## Automatic inputs
