@@ -591,16 +591,19 @@ def reaggregate_to_model_regions(
         state_region_factors = state_region_factors.loc[state_region_factors.index.intersection(state_load_hourly.columns), :]
     
     # Demand response shape and shift data are fractions which should be distributed uniformly across all regions within a state
-    # Currently only compaitble with z48 as coarest resolution     
     if dr_data and dr_type == 'fraction':
         # Determine the number of regions within each state
         unique_state = disagg_data['state'].unique()
         state_map = {}
         for st in unique_state:
-            state_map[st] = disagg_data.loc[disagg_data['state'] == st]['r'].unique().tolist()
+            regs_in_state = disagg_data.loc[disagg_data['state'] == st]['r'].unique().tolist()
+            for reg in regs_in_state:
+                state_map[reg] = state_load_hourly[st]
 
-    
-        
+        regional_load_hourly = pd.DataFrame(state_map)
+
+        return regional_load_hourly
+            
 
     # Multiply the hourly state load profiles by the state-to-region factors
     regional_load_hourly = (
@@ -789,8 +792,6 @@ def main(reeds_path, inputs_case):
         # Combine dr shape types 
         regional_dr_shape_profile_inc = pd.concat(regional_dr_shape_profile_inc.values(), axis=1)
         regional_dr_shape_profile_dec = pd.concat(regional_dr_shape_profile_dec.values(), axis=1)
-
-
 
 
 
