@@ -2374,24 +2374,55 @@ def diffmap(
     label:float=0,
 ):
     """
+    Plot a difference map of a given `style` using the provided `dfmap`.
+    `dfmap` should have a `'value'` column, and the plots look best if it
+    represents a difference, with both positive and negative values.
 
-    Args
-    ----
-    dfmap: gpd.GeoDataFrame with a 'value' column
-    ax: matplotlib axis object on which to plot
-    style: (str) one of a variety of plot styles
-        - area: filled area colored by value on a gradient
-        - marker: a single marker per area with size proportional to value
-        - bar: a single + or - bar per area with height proportional to value
-        - arrow: angled up/down arrows with length proportional to value
-        - dots: array of markers, with number of markers proportional to value
-        - text: text of +/- value, with size proportional to value
+    Args:
+        dfmap: gpd.GeoDataFrame with a 'value' column
+        ax: matplotlib axis object on which to plot
+        style: (str) one of a variety of plot styles
+            - area: filled area colored by value on a gradient
+            - marker: a single marker per area with size proportional to value
+            - bar: a single + or - bar per area with height proportional to value
+            - arrow: angled up/down arrows with length proportional to value
+            - dots: array of markers, with number of markers proportional to value
+            - text: text of +/- value, with size proportional to value
+        scale: 
 
-    Inputs for testing:
-        dfmap = reeds.spatial.get_map('state', 'census')
-        dfmap['value'] = np.random.randn(len(dfmap)) * 10
+    Returns:
+        matplotlib axis object
+
+    Examples:
+    ```python
+    ## Create example data
+    dfmap = reeds.spatial.get_map('state', 'census')
+    dfmap['value'] = np.random.randn(len(dfmap)) * 10
+    ## Play with the 'scale' kwarg until your map looks good
+    style_scale = {
+        'area': 1,
+        'marker': 1,
+        'bar': 1,
+        'arrow': 1,
+        'dots': 1,
+        'text': 1,
+    }
+    ## Plot it
+    nrows, ncols, coords = get_coordinates(style_scale, ncols=3)
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(3*ncols, 2*nrows), sharex=True, sharey=True,
+    )
+    for style, scale in style_scale.items():
+        _ax = ax[coords[style]]
+        dfmap.plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2)
+        diffmap(dfmap, _ax, style, scale)
+        _ax.set_title(style)
+        _ax.axis('off')
+    plt.show()
+    ```
     """
-    #%% Check inputs
+    ### Check inputs
     import geopandas as gpd
     if 'value' not in dfmap or not isinstance(dfmap, gpd.GeoDataFrame):
         raise ValueError("dfmap must be a geodataframe with a 'value' column")
@@ -2410,7 +2441,6 @@ def diffmap(
         # 'dots': {'unit':1, 'markerpos':'+', 'markerneg':'_', 'ms':5, 'lw':0.5},
         # 'dots': {'unit':1, 'markerpos':'+', 'markerneg':'x', 'ms':5, 'lw':0.5},
         # 'dots': {'unit':1, 'markerpos':'P', 'markerneg':'X', 'ms':10, 'lw':0},
-        # 'sharedots': {'markerpos':'^', 'markerneg':'v'},
         'text': {'fmt':'+.0f'},
     }
     settings = {**defaults[style], **style_kwds}
@@ -2421,12 +2451,12 @@ def diffmap(
     if ('centroid_x' not in dfmap) or ('centroid_y' not in dfmap):
         dfmap['centroid_x'] = dfmap.centroid.x
         dfmap['centroid_y'] = dfmap.centroid.y
+    ## Scale for 'bar' and 'arrow' is relative to map bounds
+    bounds = dfmap.bounds
+    yscale = bounds.maxy.max() - bounds.miny.min()
+    relscale = scale * yscale * 0.01
 
     ### Plot it
-    plt.close()
-    f,ax = plt.subplots()
-    ## remove
-    dfmap.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
     match style:
         case 'area':
             ## Consider whether we should allow tech colors here (probably not)
@@ -2451,12 +2481,12 @@ def diffmap(
             plot_region_bars(
                 dfmap, dfmap[['pos','neg']],
                 colors=colors, ax=ax,
-                valscale=scale, zeroline=settings['zeroline'],
+                valscale=relscale, zeroline=settings['zeroline'],
             )
         case 'arrow':
             ## Arrows pointing to upper right / lower right for positive/negative
             for r, row in dfmap.iterrows():
-                length = abs(row.value) * scale
+                length = abs(row.value) * relscale
                 angle = np.deg2rad(settings['angle'] * (-1 if row.value < 0 else 1))
                 color = cneg if row.value < 0 else cpos
                 xend = row.centroid_x + length * np.cos(angle)
@@ -2489,5 +2519,4 @@ def diffmap(
                     fontsize=(abs(row.value)*scale),
                 )
 
-    plt.show()
-    #%%
+    return ax
