@@ -5304,7 +5304,7 @@ def separate_charge_discharge(df):
 
 def check_metric(metric):
     allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
+        r'(cap|rep_mean|stress_(mean|price_weighted|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
     )
     if not re.match(allowed, metric):
         raise ValueError(f"metric={metric} must match {allowed}")
