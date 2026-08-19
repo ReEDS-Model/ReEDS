@@ -446,12 +446,7 @@ def subset_to_valid_regions(
     elif filetype_in == 'h5':
         df = reeds.io.read_file(full_path)
     elif filetype_in == 'csv':
-        # do not read in # as comment if reading unitdata_orig.csv to avoid omitting data
-        # (temporary. will remove after updating NEMS and remove # from unit ID columns)
-        if filename == 'unitdata_orig.csv':
-            df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str})
-        else:
-            df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
+        df = pd.read_csv(full_path, dtype={'FIPS':str, 'fips':str, 'cnty_fips':str}, comment='#')
     else:
         raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
 
