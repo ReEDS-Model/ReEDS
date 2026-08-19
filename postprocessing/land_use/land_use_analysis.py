@@ -82,7 +82,7 @@ def calculateCapacityByUse(df, tag):
 
 # helper function to parse any columns with JSON data
 def parseJSON(df, col, var, reeds_path, mapping=None, 
-              keepcols=["sc_point_gid", "latitude", "longitude", "cnty_fips", "area_developable_sq_km"]):
+              keepcols=["sc_point_gid", "latitude", "longitude", "FIPS", "area_developable_sq_km"]):
 
     # select data based on column (can be a regular expression for multiple columns)
     jsondata = df.filter(regex=(col))
@@ -182,7 +182,7 @@ def processLandUseJSON(df_name, tech, df_vals, scen_path, reeds_path, rev_sc, te
 
     # if only running to get area (no capacity buildouts), save results and end here
     if area_only:
-        land_class = land_class.assign(cnty_fips='p'+land_class.cnty_fips.astype(str).map('{:>05}'.format))
+        land_class = land_class.assign(FIPS='p'+land_class.FIPS.astype(str).map('{:>05}'.format))
 
         print(f"Writing outputs to {os.path.join(os.path.dirname(scen_path), f'area_{df_name}.csv.gz')}")
         land_class.to_csv(os.path.join(
@@ -211,11 +211,11 @@ def processLandUseJSON(df_name, tech, df_vals, scen_path, reeds_path, rev_sc, te
                                  'fraction_built': 'sc_fraction_built'}, inplace=True)
         
         # preserve leading zero in fips code
-        land_use = land_use.assign(cnty_fips='p'+land_use.cnty_fips.astype(str).map('{:>05}'.format))
+        land_use = land_use.assign(FIPS='p'+land_use.FIPS.astype(str).map('{:>05}'.format))
 
         # reorder columns
         allcols = land_use.columns
-        sccols = [col for col in allcols if 'sc_' in col] + ['latitude', 'longitude', 'cnty_fips', 'year']
+        sccols = [col for col in allcols if 'sc_' in col] + ['latitude', 'longitude', 'FIPS', 'year']
         landcols = [col for col in allcols if col not in sccols]
         land_use = land_use[sccols + landcols]
     
@@ -271,6 +271,7 @@ def getSpeciesImpact(tech, scen_path, rev_sc, tech_land_use, species_col_list):
     # melt to long
     species_land_use = pd.melt(species_land_use, id_vars=id_cols, 
         value_vars=species_cols, var_name="species_var", value_name="species_var_cells")
+    species_land_use['species_var_cells'] = pd.to_numeric(species_land_use['species_var_cells'], errors='coerce').fillna(0)
 
     # categorize by species and impact type
     # only works for certain formats for reV so needs some modifications before folding into main workflow
@@ -297,14 +298,24 @@ def getSpeciesImpact(tech, scen_path, rev_sc, tech_land_use, species_col_list):
     species_land_use.to_csv(os.path.join(scen_path, "outputs", f"land_use_{tech}_species.csv.gz"), float_format='%.6f', index=False)
 
 # primary process function called by main loop for each tech
-def getLandUse(scen_path, jsonfile, rev_paths, reeds_path, tech, capacity_col="capacity_mw_ac"):
+def getLandUse(scen_path, jsonfile, rev_paths, reeds_path, tech, capacity_col="capacity_ac_mw", sc_base_path=None):
 
     scenario = os.path.basename(scen_path)
     print("Getting %s land-use data for %s" % (tech, scenario))
 
-    # select rev case for tech being processed
-    rev_paths = rev_paths.loc[rev_paths.tech == tech].squeeze()
+    TECH_ALIASES = {
+        "egs_allkm": "egs",
+        "geohydro_allkm": "geohydro",
+    }
+    rev_tech = TECH_ALIASES.get(tech, tech)
+    rev_paths = rev_paths.loc[rev_paths.tech == rev_tech].squeeze()
 
+    # Add this logic before trying to read the sc_file
+    if sc_base_path is not None:
+        # Replace network path with local path
+        if isinstance(rev_paths.sc_file, str) and "Supply_Curve_Data" in rev_paths.sc_file:
+            parts = rev_paths.sc_file.split("Supply_Curve_Data")
+            rev_paths.sc_file = os.path.join(sc_base_path, "Supply_Curve_Data", parts[-1].lstrip(os.sep + '/'))
     # first attempt for supply curve should be the specified rev sc file for the run
     sc_file = rev_paths.sc_file
     try:
@@ -393,7 +404,7 @@ def runLandUse(scen_path, reeds_path, jsonfile, techs):
     print("\nRunning 'land_use_analysis.py' script.\n")
 
     # dictionary of capacity colum to use by tech (depends on reV format)
-    capacity_cols = {'upv': 'capacity_mw_ac', 'wind-ons':'capacity_mw'}
+    capacity_cols = {'upv': 'capacity_ac_mw', 'wind-ons':'capacity_ac_mw', 'egs_allkm': 'capacity_ac_mw', 'geohydro_allkm': 'capacity_ac_mw'}
     
     try:
         # get path to relevant rev files and switch settings 
@@ -406,7 +417,7 @@ def runLandUse(scen_path, reeds_path, jsonfile, techs):
     # run land use analysis for each tech
     for tech in techs:
         try:
-            getLandUse(scen_path, jsonfile, rev_paths, reeds_path, tech, capacity_cols[tech])
+            getLandUse(scen_path, jsonfile, rev_paths, reeds_path, tech, capacity_cols[tech], sc_base_path=args.sc_base_path)
         except Exception as err:
             print(err)
     
@@ -426,7 +437,9 @@ if __name__ == '__main__':
     parser.add_argument('--json', '-j', type=str, default='process_categories',
                         help='Name of json file that sets which land use categories to process')
     parser.add_argument('--tech', '-t', type=str, default='all', 
-                    choices=['upv', 'wind-ons', 'all'], help='techs to process')
+                    choices=['upv', 'wind-ons', 'egs_allkm', 'geohydro_allkm', 'all'], help='techs to process')
+    parser.add_argument('--sc_base_path', type=str, default=None,
+    help='Local base path to Supply_Curve_Data folder to override remote paths')
     
     args = parser.parse_args()
     
@@ -443,7 +456,7 @@ if __name__ == '__main__':
 
     # convert techs to list
     if args.tech == "all":
-        techs = ['upv', 'wind-ons']
+        techs = ['upv', 'wind-ons', 'egs_allkm', 'geohydro_allkm']
     else:
         techs = [args.tech]
 
