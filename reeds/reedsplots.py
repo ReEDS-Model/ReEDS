@@ -1375,6 +1375,7 @@ def map_net_imports(
             legend=False,
             vmin=-vmax[year], vmax=vmax[year],
         )
+        label_region_value(df, ax=ax[coords[year]], column='net_import', fmt = '{:+.0f}', fontsize=6)
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -2768,6 +2769,7 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
+        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fmt = '{:.1f}', fontsize=6)
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -4517,16 +4519,19 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
+        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fmt = '{:.1f}', fontsize=6)
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
+        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fmt = '{:.1f}', fontsize=6)
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
+        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fmt = '{:.1f}', fontsize=6)
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
