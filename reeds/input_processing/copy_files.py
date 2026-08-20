@@ -842,7 +842,6 @@ def write_disagg_data_files(runfiles, inputs_case):
 def write_region_indexed_file(
     df,
     inputs_case,
-    source_deflator_map,
     sw,
     region_file_entry
 ):
@@ -885,7 +884,7 @@ def write_region_indexed_file(
                 deflate = get_deflator_from_dollaryear_file(reeds.io.reeds_path, 'supply_curve', 'bio_supplycurve')
                 df['price'] = df['price'].astype(float) * deflate
 
-            case 'unitdata.csv':
+            case 'unitdata_orig.csv':
                 # Map counties to zones
                 county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
                 county2zone.index = 'p' + county2zone.index
