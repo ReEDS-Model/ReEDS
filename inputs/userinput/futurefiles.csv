@@ -326,6 +326,7 @@ plantchar_dr_shed.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; chec
 plantchar_evmc_shape.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_evmc_storage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
+plantchar_h2fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas_ccs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_geo.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,

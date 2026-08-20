@@ -185,6 +185,7 @@ plantchar_dr_shed_fom.csv,inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}
 plantchar_evmc_shape.csv,inputs/plant_characteristics/evmc_shape_{evmcscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_evmc_storage.csv,inputs/plant_characteristics/evmc_storage_{evmcscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_fuelcell.csv,inputs/plant_characteristics/{plantchar_fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
+plantchar_h2fuelcell.csv,inputs/plant_characteristics/{plantchar_h2fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas_ccs.csv,inputs/plant_characteristics/{plantchar_gas_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas.csv,inputs/plant_characteristics/{plantchar_gas}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_geo.csv,inputs/plant_characteristics/{plantchar_geo}.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
