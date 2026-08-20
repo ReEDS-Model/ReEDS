@@ -1510,8 +1510,9 @@ loop(t$[tmodel_new(t)$(not tfirst(t))],
 ) ;
 
 systemcost_ba("inv_transmission_intrazone_investment",r,t)$[tmodel_new(t)$Sw_TransIntraCost] =
-* cost of intra-zone network reinforcement
-              trans_cost_cap_fin_mult(t) * Sw_TransIntraCost * 1000 * INV_POI.l(r,t)
+* cost of intra-zone network reinforcement (cost_poi_bin in $/MW, increasing across bins)
+              sum{icbin$poi_bin_feas(r,icbin),
+                  trans_cost_cap_fin_mult(t) * cost_poi_bin(r,icbin) * INV_POI.l(r,icbin,t) }
 ;
 
 systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
@@ -1527,8 +1528,9 @@ systemcost_ba("op_transmission_fom",r,t)$tmodel_new(t) =
 
 systemcost_ba("op_transmission_intrazone_fom",r,t)$[tmodel_new(t)$Sw_TransIntraCost] =
 * FOM cost for intra-zone network reinforcement
-              Sw_TransIntraCost * 1000 * trans_fom_frac
-              * sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI.l(r,tt) }
+              trans_fom_frac
+              * sum{(icbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+                    cost_poi_bin(r,icbin) * INV_POI.l(r,icbin,tt) }
 ;
 
 systemcost_ba("inv_converter_costs",r,t)$tmodel_new(t)  =
@@ -1838,9 +1840,20 @@ net_import_ann_stress(r,t)
     sum{allh$h_stress_t(allh,t), net_import_h_stress(r,allh,t) * hours_t(allh,t) }
 ;
 
+* POI reinforcement cost basis: the interconnected generation (plus existing capacity) that the
+* intra-zone reinforcement curve is priced on. This is a cost-accounting quantity reported for
+* cost/plot diagnostics -- it is NOT deliverable transmission capacity and relieves no flow.
 poi_capacity(r,t)$tmodel_new(t) =
   poi_cap_init(r)
-  + sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI.l(r,tt) }
+  + sum{(icbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+        INV_POI.l(r,icbin,tt) }
+;
+
+* POI reinforcement cost basis by cost bin (for the plot). Same caveat as poi_capacity above:
+* a cost-accounting quantity, not deliverable transmission capacity.
+poi_capacity_bin(r,icbin,t)$tmodel_new(t) =
+  sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+        INV_POI.l(r,icbin,tt) }
 ;
 
 *==========================

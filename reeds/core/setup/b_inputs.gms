@@ -298,6 +298,9 @@ hyd_add_pump('hydED_pumped-hydro-flex') = yes ;
 set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
     rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
+* Sets involved with the POI / network-reinforcement cost supply curve.
+set poi_bin_feas(r,icbin) "feasibility set for POI bins that have a defined reinforcement cost" ;
+
 parameter yeart(t) "numeric value for year",
           year(allt) "numeric year value for allt" ;
 
@@ -1097,6 +1100,9 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 *==========================
 * -- existing capacity --
 *==========================
+
+* A POI bin is feasible (i.e. can be built into) if it has a defined cost.
+poi_bin_feas(r,icbin)$cost_poi_bin(r,icbin) = yes ;
 
 *created by reeds/input_processing/writecapdat.py
 $onempty

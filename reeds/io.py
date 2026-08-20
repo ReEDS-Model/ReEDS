@@ -210,6 +210,21 @@ def get_county_zones(
     return county_zones
 
 
+def get_reinforcement_drop_scope(
+    case: str | Path | None = None,
+    **kwargs
+) -> str:
+    """Get the scope of regions dropping embedded reinforcement cost: all/single_county/none"""
+    sw = get_switches(case, **kwargs)
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        return 'single_county'
+    if int(sw.GSw_RegIntraCurve) and (float(sw.GSw_TransIntraCost) != 0):
+        return 'all'
+    return 'none'
+
+
 def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
     """Get the transmission node for each model zone"""
     sw = get_switches(case, **kwargs)
@@ -1580,14 +1595,20 @@ def assemble_supplycurve(
         else:
             dfout['ba'] = dfout['region'].copy()
 
-    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
-        'drop_single_county_reinforcement_cost'
-    ):
-        counties = get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet)
+    ## Drop embedded reinforcement cost where reinforcement is represented elsewhere
+    scope = get_reinforcement_drop_scope(case, **kwargs)
+    if scope == 'all':
+        drop_reinforcement = pd.Series(True, index=dfout.index)
+    elif scope == 'single_county':
+        drop_reinforcement = dfout.region.isin(
+            get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet))
+    else:
+        drop_reinforcement = pd.Series(False, index=dfout.index)
+    if drop_reinforcement.any():
         zerocols = ['cost_reinforcement_usd_per_mw', 'dist_reinforcement_km']
-        dfout.loc[dfout.region.isin(counties), zerocols] = 0
-        dfout.loc[dfout.region.isin(counties), 'cost_total_trans_usd_per_mw'] = dfout.loc[
-            dfout.region.isin(counties),
+        dfout.loc[drop_reinforcement, zerocols] = 0
+        dfout.loc[drop_reinforcement, 'cost_total_trans_usd_per_mw'] = dfout.loc[
+            drop_reinforcement,
             ['cost_spur_usd_per_mw', 'cost_poi_usd_per_mw']
         ].sum(axis=1)
     ## Supply curve cost includes generation capex adder plus interconnection cost

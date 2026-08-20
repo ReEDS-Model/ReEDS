@@ -292,6 +292,25 @@ def check_compatibility(sw):
 
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
 
+    if int(sw['GSw_RegIntraCurve']) and (float(sw['GSw_TransIntraCost']) == 0):
+        raise ValueError(
+            'The regional POI reinforcement curve (GSw_RegIntraCurve=1) is gated on '
+            'GSw_TransIntraCost > 0; with GSw_TransIntraCost=0 the entire curve is disabled '
+            '(no reinforcement cost is charged).\n'
+            'Set GSw_TransIntraCost > 0 to use the curve, or GSw_RegIntraCurve = 0 to '
+            'to use GSw_TransIntraCost for all capacity additions\n'
+            f"GSw_RegIntraCurve={sw['GSw_RegIntraCurve']}, "
+            f"GSw_TransIntraCost={sw['GSw_TransIntraCost']}"
+        )
+
+    if int(sw['GSw_RegIntraCurve']) and (sw['GSw_ZoneSet'] != 'z90'):
+        raise ValueError(
+            'The regional POI reinforcement curve (GSw_RegIntraCurve=1) requires\n'
+            'z90 zoneset; others are not supported.\n'
+            f"GSw_RegIntraCurve={sw['GSw_RegIntraCurve']}, "
+            f"GSw_ZoneSet={sw['GSw_ZoneSet']}"
+        )
+
     ### Parsed string switches
     ## Automatic inputs
     reeds_path = os.path.dirname(__file__)

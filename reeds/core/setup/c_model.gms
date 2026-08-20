@@ -93,7 +93,7 @@ positive variables
   CONVERSION_PRM(r,ccseason,intype,outtype,t)    "--MW-- planning reserve margin capacity sent through VSC AC/DC converters"
   CAP_SPUR(x,t)                                  "--MW-- capacity of spur lines"
   INV_SPUR(x,t)                                  "--MW-- investment in spur line capacity"
-  INV_POI(r,t)                                   "--MW-- investment in new POI capacity (for network reinforcement costs)"
+  INV_POI(r,icbin,t)                             "--MW-- investment in new POI capacity by reinforcement cost bin"
   TRAN_CAPEX_BINS(r,rr,tscbin,t)                 "--$-- transmission capex cost bins. Defined only for interfaces (r < rr)"
 
 * production-, CO2-, and hydrogen-specific variables
@@ -289,6 +289,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_CONVERSION_limit_prm(r,ccseason,t)       "--MW-- AC/DC PRM conversion is limited to converter capacity"
  eq_PRMTRADE_VSC(r,ccseason,t)               "--MW-- PRM capacity can flow through VSC lines but doesn't directly contribute to PRM"
  eq_POI_cap(r,t)                             "--MW-- POI capacity accounting (for network reinforcement costs)"
+ eq_POI_binlim(r,icbin,t)                  "--MW-- cumulative POI investment in each bin cannot exceed the bin's available capacity"
  eq_CAPTRAN_GRP(transgrp,transgrpp,t)        "--MW-- combined flow capacity between transmission groups"
  eq_transgrp_limit_energy(transgrp,transgrpp,allh,t) "--MW-- limit on combined interface energy flows"
  eq_transgrp_limit_prm(transgrp,transgrpp,ccseason,t) "--MW-- limit on combined interface PRM flows"
@@ -2005,30 +2006,50 @@ eq_prescribed_transmission(r,rr,trtype,t)
 
 * ---------------------------------------------------------------------------
 
-* New point-of-interconnection (POI) intra-zone transmission capacity must be
-* added for new generation capacity
+* Point-of-interconnection (POI) / intra-zone network-reinforcement accounting.
 eq_POI_cap(r,t)
     $[tmodel(t)
     $Sw_TransIntraCost
+    $sum{icbin, poi_bin_feas(r,icbin) }
     $(not Sw_PCM)]..
 
 * The sum of POI capacity...
     poi_cap_init(r)
-    + sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI(r,tt) }
+    + sum{(icbin,tt)$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$poi_bin_feas(r,icbin)],
+          INV_POI(r,icbin,tt) }
 
     =g=
 
-* must be greater than the sum of all generation capacity [AC] without explicit spur lines...
+* must be greater than the generation capacity [AC] without explicit spur lines...
     sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
-* and spur-line capacity if explicitly tracked (use total capacity, not just new investments,
-* to make sure we account for the existing spur line capacity already included in poi_cap_init)...
+* and spur-line capacity if explicitly tracked (total capacity, since existing spur-line
+* capacity is already included in poi_cap_init)...
     + sum{x$[xfeas(x)$x_r(x,r)$Sw_SpurScen], CAP_SPUR(x,t) }
 * and AC/DC converter capacity for VSC...
     + CAP_CONVERTER(r,t)$val_converter(r,t)
-* and LCC (INVTRAN(r,rr) == INVTRAN(rr,r) for DC so only need to add one direction)
+* and LCC (INVTRAN(r,rr) == INVTRAN(rr,r) for DC so only need one direction)
     + sum{(rr,tt)$[routes_inv(r,rr,"LCC",t)$(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))],
           INVTRAN(r,rr,"LCC",tt)
     }
+;
+
+* ---------------------------------------------------------------------------
+
+* Cumulative POI investment in each reinforcement cost bin 
+eq_POI_binlim(r,icbin,t)
+    $[tmodel(t)
+    $Sw_TransIntraCost
+    $poi_bin_feas(r,icbin)
+    $cap_poi_bin(r,icbin)
+    $(not Sw_PCM)]..
+
+* consumed reinforcment bin capacity must be greater than or equal to ...
+    cap_poi_bin(r,icbin)
+
+    =g=
+
+* the invested capacity in that bin up to and including the present year
+    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_POI(r,icbin,tt) }
 ;
 
 * ---------------------------------------------------------------------------

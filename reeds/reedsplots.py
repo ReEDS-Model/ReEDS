@@ -1556,6 +1556,99 @@ def plot_max_imports(
     return f, ax, (pd.concat(dictplot, names=('case',)) if len(cases) > 1 else dfplot)
 
 
+def plot_poi_supply_curve(
+        case, year=None, dollar_year=2024,
+        panels_per_figure=24, ncols=4, xlim_headroom=2.5,
+    ):
+    ### Parse inputs
+    sw = reeds.io.get_switches(case)
+    if not int(sw.GSw_RegIntraCurve):
+        raise ValueError(
+            'plot_poi_supply_curve requires the regional POI / network-reinforcement curve '
+            f'(GSw_RegIntraCurve=1), but {case} ran with GSw_RegIntraCurve={sw.GSw_RegIntraCurve}'
+        )
+    deflator = reeds.io.get_inflatable()[int(sw.dollar_year), dollar_year]
+
+    ### Get the curve
+    cost = reeds.io.read_input(case, 'cost_poi_bin').rename(columns={'Value': 'cost'})
+    cap = reeds.io.read_input(case, 'cap_poi_bin').rename(columns={'Value': 'cap_MW'})
+    dfcurve = cost.merge(cap, on=['r', 'icbin'], how='left')
+    dfcurve['cost'] = dfcurve['cost'] / 1000 * deflator
+
+    ## bin_upper is the uncapped backstop at GSw_POIUpperCost; every other bin needs a capacity
+    backstop = dfcurve.loc[dfcurve.icbin == 'bin_upper'].set_index('r')['cost']
+    dfcurve = dfcurve.loc[dfcurve.icbin != 'bin_upper'].copy()
+    uncapped = dfcurve.loc[dfcurve.cap_MW.isnull()]
+    if len(uncapped):
+        raise ValueError(
+            f'{len(uncapped)} priced POI bins have a cost but no cap_poi_bin entry, which would '
+            f'make them unlimited in eq_POI_binlim:\n{uncapped}'
+        )
+    dfcurve['binnum'] = dfcurve.icbin.str.strip('bin').astype(int)
+    dfcurve = dfcurve.sort_values(['r', 'binnum'])
+
+    ### Get the capacity built in each bin
+    dfbuilt = reeds.io.read_output(case, 'poi_capacity_bin', valname='MW')
+    years = sorted(dfbuilt.t.unique())
+    year = max(years) if year is None else year
+    if year not in years:
+        raise ValueError(f'year={year} is not a solve year in {case}; have {years}')
+    built = dfbuilt.loc[dfbuilt.t == year].groupby('r').MW.sum()
+
+    ### Plot it
+    regions = sorted(dfcurve.r.unique())
+    pages = [
+        regions[i:i + panels_per_figure] for i in range(0, len(regions), panels_per_figure)
+    ]
+    flatcost = float(sw.GSw_TransIntraCost) * deflator
+
+    figs, axes = [], []
+    for page in pages:
+        nrows = -(-len(page) // ncols)
+        f, ax = plt.subplots(
+            nrows, ncols, figsize=(4.2 * ncols, 3.0 * nrows), sharey=True, squeeze=False)
+        for col, region in enumerate(page):
+            _ax = ax[col // ncols, col % ncols]
+            dfregion = dfcurve.loc[dfcurve.r == region]
+            edges = np.concatenate([[0.], dfregion.cap_MW.cumsum().values])
+            _ax.stairs(
+                dfregion.cost.values, edges, baseline=0, fill=True,
+                color='C0', alpha=0.2, edgecolor='C0', lw=1.5)
+            _ax.axhline(backstop[region], c='C4', ls='-.', lw=1.25)
+            _ax.axhline(flatcost, c='C3', ls='--', lw=1.25)
+            _ax.axvline(built.get(region, 0.), c='C1', lw=2)
+
+            _ax.set_title(f'{region} ({built.get(region, 0.) / 1000:.1f} GW)', fontsize=11)
+            _ax.set_xlabel('Cumulative POI headroom [MW]', fontsize=10)
+            _ax.tick_params(labelsize=9)
+            _ax.margins(x=0)
+            _ax.set_xlim(
+                0, max(built.get(region, 0.) * xlim_headroom, edges[min(len(dfregion), 6)]))
+        for col in range(len(page), nrows * ncols):
+            ax[col // ncols, col % ncols].axis('off')
+
+        ax[0, 0].set_ylim(0, backstop.max() * 1.12)
+        f.supylabel(f'Reinforcement cost [{dollar_year}$/kW]', fontsize=12)
+        plots.despine(ax)
+
+        handles = [
+            plt.Line2D([], [], c='C0', lw=2, label='Regional reinforcement curve'),
+            plt.Line2D(
+                [], [], c='C4', ls='-.', lw=1.25,
+                label=f'GSw_POIUpperCost backstop, unlimited ({backstop.max():,.0f} $/kW)'),
+            plt.Line2D(
+                [], [], c='C3', ls='--', lw=1.25,
+                label=f'GSw_TransIntraCost ({flatcost:,.0f} $/kW)'),
+            plt.Line2D([], [], c='C1', lw=2, label=f'POI capacity added by {year}'),
+        ]
+        f.legend(handles=handles, loc='lower center', ncol=4, frameon=False, fontsize=10)
+        f.tight_layout(rect=[0, 0.05, 1, 1])
+        figs.append(f)
+        axes.append(ax)
+
+    return figs, axes, dfcurve.merge(built.rename('built_MW'), on='r', how='left')
+
+
 def plot_vresites_transmission(
         case, year=2050, crs='ESRI:102008',
         wscale=1.5, show_overlap=False,

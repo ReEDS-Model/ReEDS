@@ -82,7 +82,7 @@ def agg_supplycurve(
     dfin = reeds.io.assemble_supplycurve(
         scfile=scpath,
         case=os.path.dirname(os.path.normpath(inputs_case)),
-    ).reset_index().drop(columns=['FIPS','cf'], errors='ignore')
+    ).reset_index().drop(columns=['FIPS', 'cf'], errors='ignore')
     ## Convert dollar year and recalculate total cost
     transcost_cols = [c for c in dfin if 'cost' in c]
     dfin.loc[:, transcost_cols] *= deflate['interconnection']
