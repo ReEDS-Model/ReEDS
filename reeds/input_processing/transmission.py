@@ -65,12 +65,159 @@ def _make_line(row):
     return shapely.LineString([[row.start_lon, row.start_lat], [row.end_lon, row.end_lat]])
 
 
+def read_county_overlay(case, suffix=''):
+    sw = reeds.io.get_switches(case)
+    if sw.GSw_TransCountyOverlay == 'none':
+        return None
+
+    applicable_zonesets = reeds.inputs.get_applicable_zonesets('county_overlay')
+    if sw.GSw_ZoneSet not in applicable_zonesets:
+        raise ValueError(
+            f"GSw_TransCountyOverlay='{sw.GSw_TransCountyOverlay}' is only supported for"
+            f" GSw_ZoneSet in {applicable_zonesets}, but GSw_ZoneSet='{sw.GSw_ZoneSet}'"
+        )
+
+    hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+    fpath = Path(
+        reeds.io.reeds_path, 'inputs', 'transmission', 'county_overlay',
+        f'{sw.GSw_TransCountyOverlay}{suffix}.csv',
+    )
+    dfout = pd.read_csv(fpath).rename(columns={
+        f'{hashfunc}_from': 'start',
+        f'{hashfunc}_to': 'end',
+    })
+
+    zonehash = pd.read_csv(
+        Path(reeds.io.reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
+        index_col='r',
+    )
+    hash2zone = pd.Series(index=zonehash[hashfunc].values, data=zonehash.index)
+    for region, side in [('r', 'start'), ('rr', 'end')]:
+        dfout[region] = dfout[side].map(hash2zone)
+
+    unresolved = dfout.loc[dfout[['r', 'rr']].isnull().any(axis=1)]
+    if len(unresolved):
+        print(unresolved)
+        raise KeyError(
+            f'{len(unresolved)} zone hashes in {fpath.name} are missing from'
+            f' inputs/zones/{sw.GSw_ZoneSet}/zonehash.csv'
+        )
+    return dfout
+
+
+def get_county_overlay_cost_distance(case):
+    dfout = read_county_overlay(case, suffix='_cost_distance')
+    if dfout is None:
+        return None
+
+    sw = reeds.io.get_switches(case)
+    hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+    zone2latlon = pd.read_csv(
+        Path(reeds.io.reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
+        index_col=hashfunc,
+    )
+    for side in ['start', 'end']:
+        for datum in ['lat', 'lon']:
+            dfout[f'{side}_{datum}'] = dfout[side].map(zone2latlon[f'node_{datum}'])
+    return sort_regions(dfout)
+
+
+def apply_county_overlay(case, trancap_init_ac, interface_params):
+    overlay = read_county_overlay(case)
+    if overlay is None:
+        return trancap_init_ac
+
+    datacols = ['MW_forward', 'MW_reverse']
+    invalid = overlay.loc[
+        (overlay[datacols] < 0).any(axis=1) | (overlay[datacols] == 0).all(axis=1)
+    ]
+    if len(invalid):
+        print(invalid)
+        raise ValueError(f'{len(invalid)} negative or zero-capacity county_overlay entries')
+
+    unknown_sources = set(overlay.source.unique()) - {'uprate', 'newlink'}
+    if unknown_sources:
+        raise ValueError(
+            f"Unsupported county_overlay 'source' values: {sorted(unknown_sources)}."
+            " Supported values are 'uprate' and 'newlink'."
+        )
+
+    indices = ['r', 'rr']
+    base = trancap_init_ac.set_index(indices)
+    costed = set(interface_params[indices].itertuples(index=False, name=None))
+
+    aligned = []
+    for row in overlay.itertuples(index=False):
+        forward = (row.r, row.rr)
+        reverse = (row.rr, row.r)
+        if forward in base.index:
+            aligned.append((*forward, row.MW_forward, row.MW_reverse, row.source, True))
+        elif reverse in base.index:
+            aligned.append((*reverse, row.MW_reverse, row.MW_forward, row.source, True))
+        else:
+            aligned.append((*forward, row.MW_forward, row.MW_reverse, row.source, False))
+    aligned = pd.DataFrame(
+        aligned, columns=indices + ['MW_forward', 'MW_reverse', 'source', 'in_base'],
+    )
+
+    mislabeled = aligned.loc[aligned.in_base != (aligned.source == 'uprate')]
+    if len(mislabeled):
+        print(mislabeled)
+        raise ValueError(
+            f"{len(mislabeled)} county_overlay entries have a 'source' that disagrees with"
+            " the initial network: 'uprate' requires an existing interface and 'newlink'"
+            " requires a new one"
+        )
+
+    newlinks = aligned.loc[~aligned.in_base]
+    uncosted = [
+        (r, rr) for r, rr in newlinks[indices].itertuples(index=False, name=None)
+        if ((r, rr) not in costed) and ((rr, r) not in costed)
+    ]
+    if uncosted:
+        print(uncosted)
+        raise KeyError(
+            f'{len(uncosted)} county_overlay newlink interfaces have no cost or distance.'
+            ' Add them to the matching _cost_distance.csv overlay file.'
+        )
+
+    hierarchy = reeds.io.get_hierarchy(case)
+    modeled = aligned.loc[
+        aligned.r.isin(hierarchy.index) & aligned.rr.isin(hierarchy.index)
+    ]
+    crossing = modeled.loc[
+        modeled.r.map(hierarchy.transgrp) != modeled.rr.map(hierarchy.transgrp)
+    ]
+    print(
+        f'county_overlay: added {modeled[datacols].sum().sum():.1f} MW across'
+        f' {len(modeled)} interfaces in the modeled region'
+        f' ({(modeled.source == "uprate").sum()} uprate, {(~modeled.in_base).sum()} newlink);'
+        f' {len(aligned) - len(modeled)} interfaces are outside it'
+    )
+    print(
+        f'county_overlay: {len(crossing)} interfaces carrying'
+        f' {crossing[datacols].sum().sum():.1f} MW cross a transgrp boundary and remain'
+        ' subject to the unmodified trancap_init_transgroup limits'
+    )
+
+    dfout = (
+        pd.concat([trancap_init_ac, aligned.assign(trtype='AC')[trancap_init_ac.columns]])
+        .groupby(indices + ['trtype'], as_index=False)[datacols].sum()
+    )
+    return dfout
+
+
 def get_interface_params(case, **kwargs):
     """Get cost and distance for every interface that might be used in this run"""
     sw = reeds.io.get_switches(case, **kwargs)
     scalars = reeds.io.get_scalars(case)
 
     interface_params = reeds.inputs.get_distances(case)
+    overlay_cost_distance = get_county_overlay_cost_distance(case)
+    if overlay_cost_distance is not None:
+        interface_params = pd.concat(
+            [interface_params, overlay_cost_distance], ignore_index=True,
+        )
     ## Apply the minimum-squiggliness factor
     interface_params['geometry'] = interface_params.apply(_make_line, axis=1)
     interface_params = gpd.GeoDataFrame(interface_params, crs='EPSG:4326')
@@ -320,6 +467,10 @@ def get_trancap_init(case, interface_params, level='r'):
         [['r', 'rr', 'MW_forward', 'MW_reverse']]
         .assign(trtype='AC')
     )
+
+    if level == 'r':
+        trancap_init_ac = apply_county_overlay(case, trancap_init_ac, interface_params)
+
     valid_regions = {}
     for i in ['r', 'itlgrp', 'transgrp']:
         valid_regions[i] = reeds.io.read_input(case, i).squeeze(1).tolist()

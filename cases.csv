@@ -337,6 +337,7 @@ GSw_TransInvNearTerm,Indicate whether to allow transmission investment before fi
 GSw_TransInvMaxTypes,Types of transmission to include in annual investment limit: 0=none; 1=interzonal (r); 2=interzonal + reinforcement; 3=interzonal + reinforcement + spur,0; 1; 2; 3,1,
 GSw_TransInvPRMderate,[fraction] amount by which to derate the capacity of new transmission investments for PRM trading (0 = no derate),float,0.15,
 GSw_TransCostMult,Multiplier for bulk BA-BA transmission costs,float,1,
+GSw_TransCountyOverlay,Additional transfer capacity added to the initial transmission network at county resolution (read from inputs/transmission/county_overlay/{value}.csv); only supported for the zone sets listed under county_overlay in inputs/zones/zoneset_config.yaml,none; LP2026_USA_100_50DR,none,
 GSw_TransHurdleLevel1,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,transgrp,
 GSw_TransHurdleLevel2,Apply hurdle rates from inputs/transmission/cost_hurdle_intra.csv between regions at the specified hierarchy level,r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; hurdlereg,hurdlereg,
 GSw_TransHurdleRate,Turn on (1) or off (0) hurdle rates between hierarchy regions as defined by GSw_TransHurdleLevel1/GSw_TransHurdleLevel2 and inputs/transmission/cost_hurdle_intra.csv,0; 1,0,
