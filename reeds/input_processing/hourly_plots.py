@@ -231,7 +231,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     ### Settings
     cmaps = {
         'cf_actual':plt.cm.turbo, 'cf_rep':plt.cm.turbo, 'cf_diff':plt.cm.RdBu_r,
-        'GW_actual':cmocean.cm.rain, 'GW_rep':cmocean.cm.rain,
+        'GW_actual':cmocean.cm.tempo, 'GW_rep':cmocean.cm.tempo,
         'GW_diff':plt.cm.RdBu_r, 'GW_frac':plt.cm.RdBu_r, 'pct_diff':plt.cm.RdBu_r, 
     }
     vm = {
