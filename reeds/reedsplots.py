@@ -6256,7 +6256,8 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     dfsc['i'] = tech + '_' + dfsc['class'].astype(str)
     sitemap = reeds.io.get_sitemap(offshore=(True if tech == 'wind-ofs' else False))
     dfsc['geometry'] = dfsc.index.map(sitemap.geometry)
-    dfsc = gpd.GeoDataFrame(dfsc).to_crs(crs)
+    dfsc = gpd.GeoDataFrame(dfsc, geometry='geometry', crs=sitemap.crs)
+    dfsc = dfsc.to_crs(crs)
     dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
 
     ## Convert to polygons
