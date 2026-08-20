@@ -1040,7 +1040,7 @@ def draw_screen_poly(poly, m,
 
 def plotusascattermap(
     dfplot, colorcolumn=None, sizecolumn=None, filterdict=None, sort=True,
-    basemap=None, cmap=cmocean.cm.rain, mappath=None,
+    basemap=None, cmap=cmocean.cm.tempo, mappath=None,
     facecolor='w', edgecolor='w', latlonlabels=None,
     markersize=None, marker='o', figsize=(10,7.5), dpi=None,
     zrange=None, colors=None, maptype='scatter', contourlevels=100,
@@ -2113,7 +2113,7 @@ def plot_region_bars(
 
 
 def map_years_months(
-        dfzones, dfdata, cmap=cmocean.cm.rain, aggfunc='mean',
+        dfzones, dfdata, cmap=cmocean.cm.tempo, aggfunc='mean',
         colwidth=1.2, rowheight=1.0, simplify=10000, mapbuffer=1.08,
         vmin=0., vmax=None, outline=0.25, labels=True,
         **colorbarkwargs,
