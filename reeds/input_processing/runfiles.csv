@@ -83,7 +83,7 @@ dr_shift_cost.csv,inputs/supply_curve/dr_shift_cost_{dr_shiftscen}.csv,int(sw.GS
 dr_shift_capacity_scalar.csv,inputs/demand_response/dr_shift_cap_scalar_{dr_shiftscen}.csv,int(sw.GSw_DRShift) !=0,ignore,ignore,r,"tech,wide",,1,0,,,,,,done
 dr_shift_profile_decrease.h5,inputs/profiles_dr/dr_shift_decrease_profile_{dr_shiftscen}.h5,int(sw.GSw_DRShift) !=0,ignore,ignore,wide,"i,hour,year",,1,0,,,,,,
 dr_shift_profile_increase.h5,inputs/profiles_dr/dr_shift_increase_profile_{dr_shiftscen}.h5,int(sw.GSw_DRShift) !=0,ignore,ignore,wide,"i,hour,year",,1,0,,,,,,
-dr_shift_profile_energy.h5,inputs/profiles_dr/dr_shift_profile_energy_{dr_shiftscen}.h5,int(sw.GSw_DRShift) !=0,ignore,ignore,wide,"i,hour,year",,1,0,,,,,,
+dr_shift_profile_energy.h5,inputs/profiles_dr/dr_shift_energy_profile_{dr_shiftscen}.h5,int(sw.GSw_DRShift) !=0,ignore,ignore,wide,"i,hour,year",,1,0,,,,,,
 e.csv,inputs/sets/e.csv,1,ignore,ignore,,,,,0,,,set,e,emission categories used in model,
 eall.csv,inputs/sets/eall.csv,1,ignore,ignore,,,,,,,,set,eall,emission categories used in reporting,
 emitrate.csv,inputs/emission_constraints/emitrate.csv,1,ignore,ignore,,,,,0,,,,,,
