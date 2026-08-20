@@ -4390,24 +4390,30 @@ def map_neue(
         ## Labels
         # decimals = (0 if df.NEUE_ppm.max() >= 10 else 1)
         decimals = (0 if level in ['st','r'] else 1)
+        text_artists = []
         for r, row in df.sort_values('NEUE_ppm').iterrows():
             if highlight_over_threshold:
                 over_threshold = row.NEUE_ppm > neue_threshold
             else:
                 over_threshold = False
-            ax[coords[level]].annotate(
-                f"{row.NEUE_ppm:.{decimals}f}",
-                [row.centroid_x, row.centroid_y],
-                ha='center', va='center',
-                c=(over_threshold_textcolor if over_threshold else 'k'),
-                weight=('bold' if over_threshold else 'normal'),
-                fontsize={'r':5}.get(level,7),
-                zorder=1e9,
-                path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
+            text_artists.append(
+                ax[coords[level]].annotate(
+                    f"{row.NEUE_ppm:.{decimals}f}",
+                    [row.centroid_x, row.centroid_y],
+                    ha='center', va='center',
+                    c=(over_threshold_textcolor if over_threshold else 'k'),
+                    weight=('bold' if over_threshold else 'normal'),
+                    fontsize={'r':5}.get(level,7),
+                    zorder=1e9,
+                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
+                )
             )
             if over_threshold and (level == neue_threshold_level):
                 ax[coords[level]].set_title(
                     level, y=0.9, weight='bold', color=over_threshold_textcolor,
+                )
+        adjust_text(text_artists, ax=ax[coords[level]],
+                    avoid_self=False, ensure_inside_axes=True,
                 )
     ### Formatting
     plots.addcolorbarhist(
