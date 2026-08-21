@@ -1,5 +1,5 @@
 """
-ReEDS Surrogate Model: ML Training & Evaluation Pipeline
+ReEDS-Proxy: ML Training & Evaluation Pipeline
 
 Tests multiple ML models on the surrogate X-Y dataset:
   - Ridge / Lasso regression
@@ -578,7 +578,7 @@ def run_pipeline(config: Config):
     models_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 70)
-    print("ReEDS SURROGATE MODEL — ML PIPELINE")
+    print("ReEDS-Proxy — ML PIPELINE")
     print("=" * 70)
 
     # 1. Load data
@@ -809,7 +809,7 @@ def run_pipeline(config: Config):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="ReEDS Surrogate Model: ML Training & Evaluation Pipeline"
+        description="ReEDS-Proxy: ML Training & Evaluation Pipeline"
     )
     # Anchor defaults to this file's location so the script works from any CWD.
     _HERE = Path(__file__).resolve().parent

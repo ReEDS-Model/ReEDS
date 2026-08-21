@@ -1,6 +1,6 @@
 """
 Regional extractor: pulls X (design inputs) and Y (regionally-resolved 2050 outputs)
-out of completed ReEDS surrogate runs and writes them as a single CSV.
+out of completed ReEDS-Proxy runs and writes them as a single CSV.
 
 Y outputs (all for ERCOT, year 2050, resolved by region):
   - Capacity by technology and region (MW)
@@ -222,7 +222,7 @@ def process_runs(runs_dir: Path, batch_prefix: Optional[str] = None) -> pd.DataF
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Regional: Extract regionally-resolved 2050 outputs from ReEDS surrogate runs."
+        description="Regional: Extract regionally-resolved 2050 outputs from ReEDS-Proxy runs."
     )
     _HERE = Path(__file__).resolve().parent
     _STUDY_ROOT = _HERE.parent

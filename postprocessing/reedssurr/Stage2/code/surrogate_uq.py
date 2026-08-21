@@ -1,5 +1,5 @@
 """
-Uncertainty quantification for ReEDS surrogate models.
+Uncertainty quantification for ReEDS-Proxy models.
 
 This module provides two complementary UQ methods that both ride on top of
 the artifacts produced by ``surrogate_ml_models.py``:

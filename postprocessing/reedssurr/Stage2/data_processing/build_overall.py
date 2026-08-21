@@ -1,6 +1,6 @@
 """
 Overall (system-level) extractor: pulls X (design inputs) and Y (ERCOT system-wide
-2050 outputs) out of completed ReEDS surrogate runs and writes them as a single CSV.
+2050 outputs) out of completed ReEDS-Proxy runs and writes them as a single CSV.
 
 Y outputs (all for ERCOT system total, year 2050):
   - Capacity by technology (MW)
@@ -259,7 +259,7 @@ def process_runs(runs_dir: Path, batch_prefix: Optional[str] = None) -> pd.DataF
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Overall: Extract system-level 2050 outputs from ReEDS surrogate runs."
+        description="Overall: Extract system-level 2050 outputs from ReEDS-Proxy runs."
     )
     _HERE = Path(__file__).resolve().parent
     _STUDY_ROOT = _HERE.parent

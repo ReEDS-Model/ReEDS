@@ -1,5 +1,5 @@
 """
-Active-learning experiment for the ReEDS surrogate model.
+Active-learning experiment for ReEDS-Proxy.
 
 Compares **uncertainty-driven sample acquisition** against **random acquisition**
 on the existing 486-case dataset, simulating a 'self-improving' workflow:

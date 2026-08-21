@@ -1,0 +1,9 @@
+# Match the environment that produced the current pickle/joblib artifacts.
+bokeh==3.2.1
+lifelines==0.27.8
+numpy==1.26.4
+pandas==2.0.3
+scikit-learn==1.2.2
+scipy==1.11.4
+tqdm==4.65.0
+xgboost==3.2.0

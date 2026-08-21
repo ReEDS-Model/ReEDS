@@ -1,0 +1,67 @@
+substitutions:
+  _REGION: us-central1
+  _SERVICE: reeds-proxy
+  _ARTIFACT_REPOSITORY: reeds-proxy
+  _MODEL_BUCKET: set-me
+  _RUNTIME_SERVICE_ACCOUNT: set-me
+  _PASSWORD_SECRET: reedssurr-password-hash
+  _ADMIN_PASSWORD_SECRET: reeds-proxy-admin-password-hash
+  _COOKIE_SECRET: reedssurr-cookie-secret
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=postprocessing/reedssurr/Stage2/deploy/gcp/Dockerfile
+      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPOSITORY}/dashboard:${BUILD_ID}
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPOSITORY}/dashboard:${BUILD_ID}
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        IMAGE="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPOSITORY}/dashboard:${BUILD_ID}"
+
+        gcloud run deploy "${_SERVICE}" \
+          --project="${PROJECT_ID}" \
+          --region="${_REGION}" \
+          --image="$${IMAGE}" \
+          --service-account="${_RUNTIME_SERVICE_ACCOUNT}" \
+          --execution-environment=gen2 \
+          --default-url \
+          --cpu=2 \
+          --memory=8Gi \
+          --concurrency=10 \
+          --timeout=3600 \
+          --min=0 \
+          --max=1 \
+          --add-volume=name=models,type=cloud-storage,bucket="${_MODEL_BUCKET}" \
+          --add-volume-mount=volume=models,mount-path=/models \
+          --set-secrets=REEDSSURR_PASSWORD_HASH=${_PASSWORD_SECRET}:latest,REEDSSURR_ADMIN_PASSWORD_HASH=${_ADMIN_PASSWORD_SECRET}:latest,BOKEH_COOKIE_SECRET=${_COOKIE_SECRET}:latest \
+          --set-env-vars=REEDSSURR_MODELS_DIR=/models,BOKEH_ALLOW_WS_ORIGIN='*',BOKEH_RESOURCES=inline
+
+        SERVICE_URL="$$(gcloud run services describe "${_SERVICE}" \
+          --project="${PROJECT_ID}" \
+          --region="${_REGION}" \
+          --format='value(status.url)')"
+        WS_ORIGIN="$${SERVICE_URL#https://}"
+
+        gcloud run services update "${_SERVICE}" \
+          --project="${PROJECT_ID}" \
+          --region="${_REGION}" \
+          --update-env-vars="BOKEH_ALLOW_WS_ORIGIN=$${WS_ORIGIN}"
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPOSITORY}/dashboard:${BUILD_ID}
+
+options:
+  logging: CLOUD_LOGGING_ONLY

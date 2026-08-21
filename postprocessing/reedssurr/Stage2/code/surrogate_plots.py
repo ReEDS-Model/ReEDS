@@ -1,5 +1,5 @@
 """
-Shared visualization helpers for the ReEDS surrogate model pipeline.
+Shared visualization helpers for the ReEDS-Proxy pipeline.
 
 What this module gives you
 --------------------------

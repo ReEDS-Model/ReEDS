@@ -167,7 +167,7 @@ def _build_plain_report(started: datetime, now: datetime) -> str:
     elapsed = str(now - started).split(".")[0]
     out = []
     out.append("=" * 76)
-    out.append(f"  ReEDS Surrogate -- Training Progress")
+    out.append(f"  ReEDS-Proxy -- Training Progress")
     out.append(f"  Refresh every {REFRESH_S}s   "
                f"Started {started:%Y-%m-%d %H:%M:%S}   "
                f"Now {now:%H:%M:%S}   Elapsed {elapsed}")
@@ -202,7 +202,7 @@ def main() -> None:
                 pass
             # Coloured terminal output (unchanged).
             print(CLEAR_SCREEN, end="")
-            print(f"{BOLD}ReEDS Surrogate \u2014 Training Progress{RESET}  "
+            print(f"{BOLD}ReEDS-Proxy \u2014 Training Progress{RESET}  "
                   f"{DIM}(refresh {REFRESH_S}s, started {started:%H:%M:%S}, "
                   f"elapsed {str(elapsed).split('.')[0]}){RESET}\n")
             print(_layer_block("overall"))

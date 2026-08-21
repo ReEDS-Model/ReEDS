@@ -1,5 +1,5 @@
 """
-Stage 2 domain constraints for the ReEDS surrogate.
+Stage 2 domain constraints for ReEDS-Proxy.
 
 Stage 1 treated every Y column as an independent unbounded scalar.
 Stage 2 layers five physics-aware constraints on top of the same

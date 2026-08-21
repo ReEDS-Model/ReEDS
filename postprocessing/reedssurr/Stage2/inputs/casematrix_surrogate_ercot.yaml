@@ -1,4 +1,4 @@
-### Case matrix for the ERCOT 2050 surrogate model study.
+### Case matrix for the ERCOT 2050 ReEDS-Proxy study.
 ### For use with casemaker.py.
 ### Generates a full factorial design: 3×3×3×3×3×2 = 486 cases.
 

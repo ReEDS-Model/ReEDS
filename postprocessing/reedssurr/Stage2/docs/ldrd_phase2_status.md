@@ -1,4 +1,4 @@
-# ReEDS Surrogate ML — Stage1 Status
+# ReEDS-Proxy ML — Stage 1 Status
 
 **Goal**: convert the working surrogate prototype into a defensible LDRD case
 study with quantified uncertainty, an active-learning loop, baselines,
