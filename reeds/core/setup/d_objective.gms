@@ -19,7 +19,16 @@ Variable    Z        "--$-- total cost of operations and investment, scale varie
 
 * objective function is the sum over modeled years of the investment
 * and operations components
-eq_ObjFn.. Z =e= cost_scale * sum{t$tmodel(t), Z_inv(t) + Z_op(t) } ;
+eq_ObjFn.. Z =e= cost_scale * (
+* electricity and H2 costs
+                    sum{t$tmodel(t), Z_inv(t) + Z_op(t) } 
+* economy-wide costs from FINITO: deflate from $2018 to $2004 
+* and remove any FINITO scaling
+$ifthene.linked_objective Sw_FINITO_Link==1
+                    + deflator('2018') / obj_scale * sum{t$[t_finito(t)], Z_finito(t) }
+$endif.linked_objective 
+     )
+;
 
 *=======================================================
 * -- Investment component of the objective function --
@@ -224,7 +233,11 @@ eq_Objfn_op(t)$tmodel(t)..
 * plus cost of H2 fuel when using fixed price (Sw_H2=0) or during stress periods.
 * When using endogenous H2 price (Sw_H2=1 or Sw_H2=2), H2 fuel cost is captured elsewhere
 * via the capex + opex costs of H2 production and its associated electricity demand.
-              + sum{(i,v,r,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
+* Note on FINITO linkage: tfuel(t)=no for linked years, which hands fuel costs to
+* FINITO. Coal/nuclear/gas remain in FINITO's fe_reeds accounting, but H2 combustion is
+* excluded there (linked_finito_input.gms), so keep charging it here via the fixed price
+* (Sw_H2=0) so power-sector H2 fuel is not free in linked runs.
+              + sum{(i,v,r,h)$[[tfuel(t) or h2_combustion(i)]$valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
                              $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
@@ -235,47 +248,47 @@ eq_Objfn_op(t)$tmodel(t)..
 
 * --cofire coal consumption---
 * cofire bio consumption already accounted for in accounting of BIOUSED
-              + sum{(i,v,r,h)$[valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
+              + sum{(i,v,r,h)$[tfuel(t)$valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
                    (1-bio_cofire_perc) * hours(h) * heat_rate(i,v,r,t)
                    * fuel_price("coal-new",r,t) * GEN(i,v,r,h,t) }
 
 * --- cost of natural gas---
 *Sw_GasCurve = 2 (static natural gas prices)
 *first - gas consumed for electricity generation
-              + sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
+              + sum{(i,v,r,h)$[tfuel(t)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - gas consumed by gas-powered DAC
-              + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
-                   hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
+              + sum{(v,r,h)$[tfuel(t)$valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
+                   hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) }$[Sw_DAC_Gas]
 
 *Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{(cendiv,gb), sum{h, hours(h) * GASUSED(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }
+              + sum{(cendiv,gb)$[tfuel(t)], sum{h, hours(h) * GASUSED(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }
                    * gasprice(cendiv,gb,t)
                    }$(Sw_GasCurve = 0)
 
 *Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
-              + sum{(h,cendiv,gb), hours(h) * GASUSED(cendiv,gb,h,t)
+              + sum{(h,cendiv,gb)$[tfuel(t)], hours(h) * GASUSED(cendiv,gb,h,t)
                    * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
                    }$(Sw_GasCurve = 3)
 
 *Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
-              + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)],
+              + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)$tfuel(t)],
                    gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
                    hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - adjustments based on changes from last year's consumption at the regional and national level
-              + sum{(fuelbin,cendiv),
+              + sum{(fuelbin,cendiv)$tfuel(t),
                    gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL(fuelbin,cendiv,t) }
 
-              + sum{(fuelbin),
+              + sum{(fuelbin)$tfuel(t),
                    gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL(fuelbin,t) }
 
               )$[Sw_GasCurve = 1]
 
 * ---cost of biofuel consumption and biomass transport---
-              + sum{(r,bioclass)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }],
+              + sum{(r,bioclass)$[tfuel(t)$sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }],
                    BIOUSED(bioclass,r,t) *
                    (sum{usda_region$r_usda(r,usda_region), biosupply(usda_region, bioclass, "price") } + bio_transport_cost) }
 

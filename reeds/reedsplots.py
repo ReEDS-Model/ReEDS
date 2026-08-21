@@ -5054,6 +5054,7 @@ def plot_seed_stressperiods(
     ### Recalculate peak load days since we dropped duplicates above
     load_allyears = hourly_repperiods.get_load(
         os.path.join(case, 'inputs_case'),
+        sw,
         keep_weatheryears='all').loc[years]
     timestamps = pd.read_csv(os.path.join(case, 'inputs_case', 'rep', 'timestamps.csv'))
     resource_adequacy_years = [int(y) for y in sw.resource_adequacy_years.split('_')]

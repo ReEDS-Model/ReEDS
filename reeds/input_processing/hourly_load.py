@@ -596,6 +596,85 @@ def reaggregate_to_model_regions(
 
     return regional_load_hourly
 
+#TODO: add docstrings
+def get_hourly_finito_load(
+    inputs_case: str, 
+) -> pd.DataFrame:
+    # load reference FINITO load
+    inputs_case_finito = Path(inputs_case).parent / 'finito' / Path(inputs_case).name
+    load_finito = pd.read_csv(inputs_case_finito / "load_finito.csv")
+    
+    # reshape to match load data. with year in index and region in columns
+    load_finito = load_finito.melt(id_vars='r', var_name='year', value_name='load_MWh')
+    load_finito.year = load_finito.year.astype(int)    
+    load_finito = load_finito.pivot(index='year', columns='r', values='load_MWh')
+    load_finito.columns.name = None
+
+    # load_finito.csv is at z134 (p) resolution, so aggregate to this
+    # run's model regions
+    county2p = reeds.io.get_county2zone(GSw_ZoneSet='z134')
+    county2zone = reeds.io.get_county2zone(case=Path(inputs_case).parent)
+    p2zone = (
+        pd.concat({'p': county2p, 'zone': county2zone}, axis=1)
+        .dropna()
+        .drop_duplicates()
+    )
+    zones_per_p = p2zone.groupby('p')['zone'].nunique()
+    if (zones_per_p > 1).any():
+        raise ValueError(
+            'Cannot aggregate load_finito.csv from z134 to model regions because '
+            'these p regions span multiple model regions: '
+            f'{zones_per_p.loc[zones_per_p > 1].index.tolist()}'
+        )
+    p2zone = p2zone.set_index('p')['zone']
+    load_finito = load_finito.rename(columns=p2zone).T.groupby(level=0).sum().T
+
+    # allocate annual load to hours, assuming flat demand
+    # TODO: should this use h_weight_finito?
+    hours_per_year = 8760
+    load_hourly_finito = load_finito / hours_per_year
+    load_hourly_finito = load_hourly_finito.astype(np.float32)
+
+    return load_hourly_finito
+
+def remove_finito_load(
+    load_hourly: pd.DataFrame,
+    inputs_case: str,
+    distloss: float,
+) -> pd.DataFrame:
+
+    # get FINITO reference load
+    load_hourly_finito = get_hourly_finito_load(inputs_case)
+
+    # Convert to busbar
+    load_hourly_finito = load_hourly_finito / (1 - distloss)
+
+    # subtract FINITO reference load from ReEDS load data,
+    # aligning by model year (index) and region (columns)
+    result = load_hourly - load_hourly_finito
+
+    # any missing region or model year in load_finito.csv shows up as NaN
+    if result.isnull().any().any():
+        raise ValueError(
+            'FINITO reference load is missing regions or years present in the '
+            'ReEDS load data; check load_finito.csv'
+        )
+
+    # Validation check: FINITO reference load should not exceed baseline load.
+    # If it does, clip to zero and report
+    negative = result < 0
+    if negative.any().any():
+        clipped = (-result[negative]).groupby('year').sum()
+        clipped = clipped.stack().loc[lambda x: x > 0].rename('clipped_MWh')
+        print(
+            'WARNING: FINITO reference load exceeds baseline load; clipping '
+            f'{clipped.sum():.0f} MWh (summed over weather years) to zero.\n'
+            'Clipped MWh by (year, region):\n'
+            + clipped.to_string()
+        )
+        result = result.clip(lower=0)
+
+    return result
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
@@ -697,6 +776,17 @@ def main(reeds_path, inputs_case):
     peakload = calculate_peak_load(regional_load_hourly, hierarchy)
 
     #%%%#########################################
+    #    -- FINITO Load Adjustment --           #
+    #############################################
+
+    # note that this step occurs after peakload calculation so that the latter
+    # includes a baseline estimate of industrial load captured by FINITO
+    if int(sw.GSw_FINITO_Link):
+        regional_load_hourly = remove_finito_load(
+            regional_load_hourly, inputs_case, scalars['distloss']
+        )
+
+    #############################################
     #    -- DR Shed Load Modifications --    #
     #############################################
 

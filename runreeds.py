@@ -4,6 +4,7 @@
 
 import reeds
 import os
+import sys
 import git
 import queue
 import threading
@@ -99,12 +100,18 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
                 continue
         # Add switch settings to list of options passed to GAMS
         shcom = f' --case={BatchName}_{case}'
-        for i,v in df_cases[case].items():
-            #exclude certain switches that don't need to be passed to GAMS
+        case_out = df_cases[case].copy()
+        # (ReEDS-FINITO) Combine the cases files for the linked model
+        if int(case_out.loc['GSw_FINITO_Link']) == 1 :
+            # add the FINITO switches to the caseSwitches
+            case_out=linked_cases(df_cases,case)
+            
+        #exclude certain switches that don't need to be passed to GAMS
+        for i,v in case_out.items():
             if i not in ['file_replacements','keep_run_terminal']:
                 shcom += f' --{i}={v}'
         caseList.append(shcom)
-        caseSwitches.append(df_cases[case].to_dict())
+        caseSwitches.append(case_out.to_dict())
 
     return caseSwitches, casenames, caseList
 
@@ -761,6 +768,74 @@ def setup_window(
             OPATH.writelines( "python valuestreams.py" + '\n')
 
 
+# (ReEDS-FINITO) update 'df_cases' to include FINITO switches
+def linked_cases(df_cases,case):
+    """
+    Updates the cases dataframe to include FINITO-specific switches.
+    When a switch is duplicated in FINITO and ReEDS, then we default to 
+    the ReEDS value.
+    
+    For the FINITO switches, the combined cases file defaults to the case-specific 
+    'Default Value' in cases_linked.csv first, before using the universal FINITO 
+    'Default Value' in cases.csv for any un-assigned switches.    
+    """
+    # check for valid finito_dir
+    if not os.path.isdir(df_cases[case]['finito_dir']):
+        raise ValueError(
+            f"finito_dir = {df_cases[case]['finito_dir']} is not a valid path. "
+            "Please ensure this path points to a cloned version of the FINITO repository. "
+        )
+
+    # define path to and read the FINITO check_inputs function
+    finito_check_inputs_path = os.path.join(df_cases[case]['finito_dir'], 'input_processing', 'processing')
+    sys.path.append(finito_check_inputs_path)
+    from check_inputs import check_inputs
+        
+    ### load the default values for all FINITO switches from ~\FINITO\cases.csv
+    df_cases_finito = pd.read_csv(os.path.join(df_cases[case]['finito_dir'],'cases.csv'), dtype=object, index_col=0)
+    df_cases_finito = df_cases_finito[['Choices', 'Default Value']]
+
+    ### load the scenario-specific switches from ~\FINITO\cases_linked.csv
+    cases_linked_path = os.path.join(df_cases[case]['finito_dir'],f"cases_{df_cases[case]['finito_cases_file']}.csv")
+    df_cases_suf_finito = pd.read_csv(cases_linked_path, dtype=object, index_col=0)
+    ## check that case names are unique in cases_linked.csv
+    # grab the scenario names **exactly** as they appear in the csv file
+    with open(cases_linked_path, 'r', newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        header = next(reader)
+    # find the duplicate column names and raise an error if any are found
+    duplicate_columns = set([x for x in header if header.count(x) > 1])
+    if duplicate_columns:
+        raise ValueError(f"The FINITO cases_{df_cases[case]['finito_cases_file']}.csv has the following duplicate column names: {duplicate_columns}")
+    ### identify the FINITO case 
+    if df_cases[case]['finito_case'] == 'same':
+        finito_case=case
+    else:
+        finito_case=df_cases[case]['finito_case']
+    # ensures **exact** match of names between the ReEDS cases_{}.csv and the FINITO cases_linked.csv
+    if finito_case not in (df_cases_suf_finito.columns):
+        raise ValueError(f"The 'finito_case' input '{finito_case}' in the ReEDS cases file does not exist in FINITO's cases_{df_cases[case]['finito_cases_file']}.csv.")
+
+    ### first use 'Default Value' from the FINITO cases_linked.csv to fill missing switches
+    if 'Default Value' in df_cases_suf_finito.columns:
+        df_cases_suf_finito[finito_case] = df_cases_suf_finito[finito_case].fillna(df_cases_suf_finito['Default Value'])
+    ### then, use 'Default Value' from the FINITO cases.csv to fill un-assigned switches
+    df_cases_suf_finito.drop(['Choices','Default Value'], axis='columns',inplace=True, errors='ignore')
+    df_cases_finito = df_cases_finito.join(df_cases_suf_finito, how='outer')
+    df_cases_finito[finito_case] = df_cases_finito[finito_case].fillna(df_cases_finito['Default Value'])
+  
+    #### create new dataframe for the combined ReEDS and FINITO switches
+    df_cases_combine = pd.concat([df_cases[case],df_cases_finito[finito_case]])
+    ### drop duplicated switches, defaulting to reeds
+    df_cases_combine = df_cases_combine[~df_cases_combine.index.duplicated(keep='first')]
+
+    #%% Check for incompatibility of FINITO switches
+    model_sectors = df_cases_finito['Default Value']['focus_sectors'].split('.')
+    check_inputs(case = case, df_case = df_cases_combine, model_sectors=model_sectors)
+
+    return df_cases_combine
+
+
 #%% ===========================================================================
 ### --- PROCEDURE ---
 ### ===========================================================================
@@ -1240,6 +1315,10 @@ def write_batch_script(
     os.makedirs(os.path.join(casedir,'handoff','reeds_data'), exist_ok=True)
     os.makedirs(os.path.join(casedir,'handoff','PRAS'), exist_ok=True)
 
+    ## Set up FINITO if running linked model
+    if int(caseSwitches['GSw_FINITO_Link'])==1:
+        reeds.inputs.setup_finito(casedir, caseSwitches, BatchName)
+
     ###### Replace files according to 'file_replacements' in cases. Ignore quotes in input text.
     # << is used to separate the file that is to be replaced from the file that is used
     # || is used to separate multiple replacements.
@@ -1387,12 +1466,43 @@ def write_batch_script(
             + ' gdxcompress=1'
             + toLogGamsString
             + f"--fname={batch_case}"
-            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
+            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']}"
+            + f" --first_year_finito={caseSwitches['first_year_finito']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
-        if not LINUXORMAC:
+        if not LINUXORMAC and int(caseSwitches['GSw_FINITO_Link']) != 1:
             OPATH.writelines("endlocal\n")
         OPATH.writelines(f'python {logger}\n')
+
+        ### (ReEDS-FINITO) calls FINITO reporting
+        if int(caseSwitches['GSw_FINITO_Link'])==1:
+            OPATH.writelines(
+            'gams '
+            + f"{os.path.join(casedir,'finito', 'model', 'finito_report.gms')}"
+            + f" o={os.path.join('lstfiles',f'finito_report_{batch_case}.lst')}"
+            + (' license=gamslice.txt' if hpc else '')
+            + (' r=$r' if LINUXORMAC else ' r=!r!')
+            + ' gdxcompress=1'
+            + toLogGamsString
+            + f"--case={batch_case}"
+            + f" --casedir={casedir}"
+            + f" --GSw_FINITO_Link={caseSwitches['GSw_FINITO_Link']}"
+            + f" --GSw_RetailAdder={caseSwitches['GSw_RetailAdder']}"
+            + f" --finito_inputs_dir={os.path.join('finito','inputs')}"
+            + f" --inputs_case_finito_dir={os.path.join('finito','inputs_case')}"
+            + f" --linked_report_dir={caseSwitches['linked_report_dir']} \n"
+            )
+            # (ReEDS-FINITO) calls FINITO postprocessing
+            OPATH.writelines(
+            f"python {os.path.join(casedir, 'finito', 'visualization', 'postprocessing.py')}"
+            + " -b 0"            
+            + f" -l {caseSwitches['GSw_FINITO_Link']}"
+            + f' -c {batch_case} \n\n'
+            )  
+            if not LINUXORMAC:
+                OPATH.writelines("endlocal\n")
+
+        ### save reporting outputs to h5 and/or csv files
         OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
         OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
 

@@ -36,6 +36,8 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 from reeds.input_processing import hourly_writetimeseries
 from reeds.input_processing import hourly_plots
+from reeds.input_processing import hourly_load
+
 ## Time the operation of this script
 tic = datetime.datetime.now()
 
@@ -50,11 +52,18 @@ interactive = False
 techs_min_vre = ['upv', 'wind-ons']
 
 #%%### Functions
-def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
+def get_load(inputs_case, sw, keep_modelyear=None, keep_weatheryears=[2012]):
     """
     """
     ### Subset to modeled regions
     load = reeds.io.read_file(os.path.join(inputs_case,'load.h5'))
+
+    ### When running the linked model (GSw_FINITO_Link=1) we add reference load estimates
+    ### for FINITO load back in to use when selecting representative periods
+    if int(sw.GSw_FINITO_Link):
+        load_hourly_finito = hourly_load.get_hourly_finito_load(inputs_case)
+        load = load + load_hourly_finito
+
     ### Subset to keep_modelyear if provided
     if keep_modelyear:
         load = load.loc[keep_modelyear].copy()
@@ -327,6 +336,7 @@ def main(
     print("Collecting 8760 load data")
     load = get_load(
         inputs_case=inputs_case,
+        sw=sw,
         keep_modelyear=(int(sw['GSw_HourlyClusterYear'])
                   if int(sw['GSw_HourlyClusterYear']) in modelyears
                   else max(modelyears)),
@@ -485,7 +495,7 @@ def main(
         and (sw['GSw_PRM_StressSeedLoadLevel'].lower() not in ['false','none'])
     ):
         ## Get load for all model and weather years
-        load_allyears = get_load(inputs_case, keep_weatheryears='all').loc[modelyears]
+        load_allyears = get_load(inputs_case, sw, keep_weatheryears='all').loc[modelyears]
         ## Add descriptive index
         load_allyears = load_allyears.merge(
             timestamps[['year', 'yperiod', 'h_of_period']], left_on='datetime', right_index=True)
@@ -680,10 +690,13 @@ if __name__ == '__main__':
         description='Create the necessary 8760 and capacity factor data for hourly resolution')
     parser.add_argument('reeds_path', help='ReEDS directory')
     parser.add_argument('inputs_case', help='ReEDS/runs/{case}/inputs_case directory')
+    parser.add_argument('--nolog', '-n', default=False, action='store_true', help='turn off logging for debugging')
 
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+    logging = not args.nolog
+
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
@@ -693,10 +706,11 @@ if __name__ == '__main__':
     # interactive = True
 
     #%% Set up logger
-    log = reeds.log.makelog(
-        scriptname=__file__,
-        logpath=os.path.join(inputs_case,'..','gamslog.txt'),
-    )
+    if logging:
+        log = reeds.log.makelog(
+            scriptname=__file__,
+            logpath=os.path.join(inputs_case,'..','gamslog.txt'),
+        )
     print('Starting hourly_repperiods.py')
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -711,6 +725,7 @@ if __name__ == '__main__':
         sw=sw, reeds_path=reeds_path, inputs_case=inputs_case,
         periodtype='rep',
         make_plots=1,
+        logging=logging
     )
 
     ############################################

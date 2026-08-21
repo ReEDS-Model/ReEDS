@@ -107,7 +107,7 @@ rev_cat "categories for renvenue streams" /load, res_marg, oper_res, rps, charge
 
 lcoe_cat "categories for LCOE calculation" /capcost, upgradecost, rsccost, fomcost, vomcost, gen /
 
-loadtype "categories for types of load" / end_use, dist_loss, trans_loss, stor_charge, h2_prod, h2_network, dac /
+loadtype "categories for types of load" / end_use, dist_loss, trans_loss, stor_charge, h2_prod, h2_network, dac, finito /
 
 h2_demand_type / "electricity", "cross-sector"/
 
@@ -479,6 +479,8 @@ reqt_price_sys('res_marg_ann','na','ann',t)$reqt_quant_sys('res_marg_ann','na','
 
 load_rt(r,t)$tmodel_new(t) = sum{h, hours(h) * load_exog(r,h,t) } ;
 
+loadvar_rt(r,t)$[tmodel_new(t)] = sum{h, hours(h) * LOAD.l(r,h,t) } ;
+
 load_stress(r,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = LOAD.l(r,allh,t) ;
 
 co2_price(t)$tmodel_new(t) = (1 / cost_scale) * (1 / pvf_onm(t)) * eq_annual_cap.m("CO2",t) ;
@@ -514,21 +516,32 @@ ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t)
 * Case 2: the resource of one or more biomass classes ARE exhausted, i.e., BIOUSED.l(bioclass) = biosupply(bioclass)
 *    Marginal Biomass Price = maximum difference between eq_bioused.m and eq_biousedlimit.m(bioclass) across all biomass classes in a region
 
-repbioprice(r,t)$tmodel_new(t) = max{0, smax{bioclass$BIOUSED.l(bioclass,r,t), eq_bioused.m(r,t) -
+repbioprice(r,t)$[tmodel_new(t)$tfuel(t)] = max{0, smax{bioclass$BIOUSED.l(bioclass,r,t), eq_bioused.m(r,t) -
                                               sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(bioclass,usda_region,t) } } } / pvf_onm(t) ;
 
+* when running linked model use FINITO biomass clearing prices
+$ifthene.finitobioprice Sw_FINITO_Link == 1
+* here we take the weighted average of prices across biomass products used for power
+repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
+    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') *
+    sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
+    / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
+;
+$endif.finitobioprice
+
+
 * quantity of biomass used (convert from mmBTU to dry tons using biomass energy content)
-bioused_out(bioclass,r,t)$tmodel_new(t) = BIOUSED.l(bioclass,r,t) / bio_energy_content ;
-bioused_usda(bioclass,usda_region,t)$tmodel_new(t) = sum{r$r_usda(r,usda_region), bioused_out(bioclass,r,t) } ;
+bioused_out(bioclass,r,t)$[tmodel_new(t)$tfuel(t)] = BIOUSED.l(bioclass,r,t) / bio_energy_content ;
+bioused_usda(bioclass,usda_region,t)$[tmodel_new(t)$tfuel(t)] = sum{r$r_usda(r,usda_region), bioused_out(bioclass,r,t) } ;
 
 * 1e9 converts from MMBtu to Quads
-repgasquant_gb(cendiv,gb,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
+repgasquant_gb(cendiv,gb,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)$tfuel(t)] =
     sum{h, GASUSED.l(cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
 
-repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
+repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)$tfuel(t)] =
     sum{gb, repgasquant_gb(cendiv,gb,t) };
 
-repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tmodel_new(t)] =
+repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2 or Sw_FINITO_Link = 1)$tmodel_new(t)] =
     ( sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)}
     + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$r_cendiv(r,cendiv)],
@@ -550,20 +563,52 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 
 *for reported gasprice (not that used to compute system costs)
 *scale back to $ / mmbtu and apply annual consumption-weighted gas price multipliers
-repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
+repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)$tfuel(t)] =
     smax{gb$[repgasquant_gb(cendiv,gb,t)],
         gasprice(cendiv,gb,t)
         * sum{h, gasprice_adj_cendiv(cendiv,h) * GASUSED.l(cendiv,gb,h,t) * hours(h) / (repgasquant_gb(cendiv,gb,t) * 1e9) }
     } ;
 
-repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
+repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfuel(t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h)
        } / (repgasquant(cendiv,t) * 1e9) ;
 
-repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tmodel_new(t)] = sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ;
 
-repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)] =
+* gas price when linked with FINITO [$2004/MMBtu]
+$ifthene.finitogasprice Sw_FINITO_Link == 1
+* approach with GSw_FixedCostSupply=1 or default supply curves
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedFuels)] =
+    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+    * eq_supplydemand_fsc.m('NG',cendiv,t)
+;
+
+* approach with detailed fuels representation (GSw_DetailedFuels=1)
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedFuels] =
+    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+*   citygate price of natural gas
+    * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
+*   electric-sector markup for natural gas
+* TODO: activate after FINITO pricing PR is merged
+*       + smax{cfp$[gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)], cf_markup(cfp,'NG','Electric_Power',cendiv,t) }
+    ]
+;
+$else.finitogasprice
+    repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] = 0 ;
+$endif.finitogasprice
+
+* when linked, overwrite ReEDS values with gas prices from FINITO 
+* for any years that aren't using the ReEDS supply curves
+repgasprice(cendiv,t)$[tmodel_new(t)$(not tfuel(t))] =
+    sum{h, hours(h) * repgasprice_finito(cendiv,h,t) } / sum{h, hours(h) }
+;
+
+*Anytime Sw_GasCurve = 0 or 2, apply repgasprice(cendiv,t) to repgasprice_r.
+*Do the same for finito-linked years (not tfuel(t)).
+repgasprice_r(r,t)$[((not tfuel(t)) or (Sw_GasCurve = 0 or Sw_GasCurve = 2))$tmodel_new(t)] = 
+  [sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ];
+
+repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$tfuel(t)] =
               ( sum{(h,cendiv),
                    gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
                    hours(h) * gasprice_adj_r(r,h) } / sum{h, hours(h) }
@@ -573,7 +618,8 @@ repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)] =
               + smax(fuelbin$VGASBINQ_NATIONAL.l(fuelbin,t), gasbinp_national(fuelbin,t) )
               ) ;
 
-repgasprice(cendiv,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$repgasquant(cendiv,t)] =
+*Now calculate the remaining repgasprice(cendiv,t) (for Sw_GasCurve = 1)
+repgasprice(cendiv,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$repgasquant(cendiv,t)$tfuel(t)] =
     sum{(i,r)$r_cendiv(r,cendiv), repgasprice_r(r,t) * repgasquant_irt(i,r,t) } / repgasquant(cendiv,t) ;
 
 repgasprice_nat(t)$[tmodel_new(t)$sum{cendiv, repgasquant(cendiv,t) }] =
@@ -585,14 +631,16 @@ repgasprice_nat(t)$[tmodel_new(t)$sum{cendiv, repgasquant(cendiv,t) }] =
 *========================================
 
 gasshare_ba(r,cendiv,t)$[r_cendiv(r,cendiv)$tmodel_new(t)$repgasquant(cendiv,t)] =
-                 sum{i$[valgen_irt(i,r,t)$gas(i)],repgasquant_irt(i,r,t) / repgasquant(cendiv,t) } ;
+  sum{i$[valgen_irt(i,r,t)$gas(i)],repgasquant_irt(i,r,t) / repgasquant(cendiv,t) } ;
 
 gasshare_techba(i,r,cendiv,t)$[r_cendiv(r,cendiv)$tmodel_new(t)$repgasquant(cendiv,t)$gas(i)] =
-                 repgasquant_irt(i,r,t) / repgasquant(cendiv,t) ;
+  repgasquant_irt(i,r,t) / repgasquant(cendiv,t) ;
 
-gasshare_cendiv(cendiv,t)$[sum{cendiv2,repgasquant(cendiv2,t)}] = repgasquant(cendiv,t) / sum{cendiv2,repgasquant(cendiv2,t)} ;
+gasshare_cendiv(cendiv,t)$[sum{cendiv2,repgasquant(cendiv2,t)}] = 
+  repgasquant(cendiv,t) / sum{cendiv2,repgasquant(cendiv2,t)} ;
 
-gascost_cendiv(cendiv,t)$tmodel_new(t) =
+* cost of natural gas - standalone ReEDS
+gascost_cendiv(cendiv,t)$[tmodel_new(t)$tfuel(t)] =
 *cost of natural gas for Sw_GasCurve = 2 (static natural gas prices)
               + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)
                               $[not bio(i)]$[not cofire(i)]$[Sw_GasCurve = 2]],
@@ -620,11 +668,20 @@ gascost_cendiv(cendiv,t)$tmodel_new(t) =
 
               )$[Sw_GasCurve = 1];
 
+* cost of natural gas - linked with FINITO ('not tfuel' indicates years using FINITO supply curves)
+gascost_cendiv(cendiv,t)$[tmodel_new(t)$(not tfuel(t))] =
+* cost = gas price multiplied by gas usage [$ = $/MMBtu * MMBtu/MWh * MW * h]
+    sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$r_cendiv(r, cendiv)], 
+        repgasprice_finito(cendiv,h,t) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t) * hours(h) 
+    }
+;
+
+
 *========================================
 * BIOFUEL COSTS
 *========================================
 
-bioshare_techba(i,r,t)$[(cofire(i) or bio(i))$tmodel_new(t)] =
+bioshare_techba(i,r,t)$[(cofire(i) or bio(i))$tmodel_new(t)$tfuel(t)] =
 *  biofuel-based generation of tech i in the BA (biopower + cofire)
                 ((   sum{(v,h)$[valgen(i,v,r,t)$bio(i)], hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t) }
                    + sum{(v,h)$[cofire(i)$valgen(i,v,r,t)], bio_cofire_perc * hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t) }
@@ -1765,6 +1822,11 @@ error_check('z') = (
         )
 * account for penalty paid to deploy capacity beyond interconnection queue limits        
         + sum{(tg,r), cap_penalty(tg) * CAP_ABOVE_LIM.l(tg,r,t) }  
+* account for costs from FINITO: deflate from $2018 to $2004,
+* remove any FINITO scaling, and then apply ReEDS scaling
+$ifthene.linked_objective Sw_FINITO_Link==1
+        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('2018') / obj_scale )
+$endif.linked_objective 
     }
 ) / z.l ;
 
@@ -1988,6 +2050,10 @@ load_cat("h2_network",r,t)$tmodel_new(t) =
     )}$Sw_H2_CompressorLoad
 ;
 load_cat("dac",r,t)$tmodel_new(t) = sum{i$dac(i), prod_load_ann(i,r,t) } ;
+
+$ifthene.finitoloadcat Sw_FINITO_Link == 1
+load_cat("finito",r,t)$tmodel_new(t) = sum{h, hours(h) * USE_ELE_FINITO.l(r,h,t) } ;
+$endif.finitoloadcat
 
 *========================================
 * H2 NETWORK

@@ -5,6 +5,7 @@ import sys
 import yaml
 import hashlib
 import shapely
+import shutil
 import numpy as np
 import pandas as pd
 import sklearn.cluster
@@ -360,6 +361,7 @@ def solvestring_sequential(
             'GSw_StateCO2ImportLevel',
             'GSw_StartMarkets',
             'GSw_ValStr',
+            'GSw_FINITO_Link',
             'solver',
             'debug',
             'startyear',
@@ -907,3 +909,56 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
+
+def setup_finito(casedir, caseSwitches, BatchName):
+    #%% Copy FINITO code folders and inputs into [casedir]/finito
+    # ... finito directory within the case directory
+    casedir_finito = os.path.join(casedir,'finito')
+    # ... define the inputs case directory for FINITO
+    inputs_case_finito = os.path.join(casedir,'finito','inputs_case')
+
+    # copy directories
+    os.makedirs(casedir_finito, exist_ok=True)
+    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'inputs'),os.path.join(casedir,'finito', 'inputs'))
+    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'input_processing'),os.path.join(casedir,'finito', 'input_processing'))
+    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'model'),os.path.join(casedir,'finito', 'model'))
+    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'visualization'),os.path.join(casedir, 'finito', 'visualization'))
+    
+    # copy over the FINITO cases files
+    shutil.copy2(os.path.join(caseSwitches['finito_dir'], 'cases.csv'), os.path.join(casedir, 'finito'))
+    shutil.copy2(os.path.join(caseSwitches['finito_dir'], f"cases_{caseSwitches['finito_cases_file']}.csv"), os.path.join(casedir, 'finito'))
+
+    #%% (GSw_Trade_PriceResponse > 0) If doing a price-responsive trade run, retrieve the reference exports/imports prices
+    if int(caseSwitches['GSw_Trade_PriceResponse']) > 0:
+        initialize_price_response_path = os.path.join(casedir_finito, 'input_processing', 'processing', 'initialize_price_response.py')
+        # Collect all arguments for initialize_price_response.py
+        initialize_price_response_args = f" -c {casedir} -b {BatchName} -cr {caseSwitches['GSw_Trade_PriceResponse_RefScen']} -l {caseSwitches['GSw_FINITO_Link']}"
+        # Call initialize_price_response.py file before starting the runs
+        os.system('python ' + initialize_price_response_path + initialize_price_response_args)
+
+    #%% Filter and copy all input files for each scenario
+    # Call FINITO copy_files.py file before starting the runs
+    copy_files_run = os.system(
+        'python ' + os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'copy_files.py') + 
+        f" -c {casedir_finito} -d {inputs_case_finito} --link"
+        )
+
+    # Print an error message if copy_files.py encounters any issue 
+    if copy_files_run != 0:
+        print("\nERROR: FINITO copy_files.py encountered an issue and did not complete successfully.")
+        print("Please check the console output above for details.")
+        print("The issue could be due to regionality, focus sector filtering, or file reading errors.") 
+        os._exit(1)   
+    
+    ## Populate sets for each linked run using autopop_set.py
+    os.system(
+        'python ' + os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'autopop_set.py') + 
+        f" -c {casedir_finito} -d {inputs_case_finito} --link"
+    )
+
+    ## Call read_mecs_heat.py to generate heat/nonheat/feedstock ratios for FINITO Rest of Industry (ROI)
+    mecs_sectors = caseSwitches['focus_sectors'].replace('.', ' ') 
+    read_mecs_path = os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'mecs', 'read_mecs_heat.py')
+    # Collect all arguments for read_mecs_heat.py
+    read_mecs_args = f' -s {mecs_sectors} -d {inputs_case_finito}'
+    os.system('python ' + read_mecs_path + read_mecs_args)
