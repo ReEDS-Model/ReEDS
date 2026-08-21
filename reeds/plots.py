@@ -28,6 +28,7 @@ leg = ax.legend(
 import pandas as pd
 import numpy as np
 import os
+from typing import Literal
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
@@ -2306,3 +2307,216 @@ def wraptext(text, width, fontsize=14):
     outlist = [text[i*numchars:(i+1)*numchars] for i in range(numlines)]
     out = '\n'.join(outlist)
     return out
+
+
+def markergrid(dsplot, polygon, ax, colors='k', markers='o', ms=5, lw=0, decrement=0.02):
+    """
+    """
+    import shapely
+    import geopandas as gpd
+    ### Parse inputs
+    if isinstance(colors, str):
+        colors = pd.Series(index=dsplot.index, data=colors)
+    elif isinstance(colors, dict):
+        colors = pd.Series(colors)
+
+    if isinstance(markers, str):
+        markers = pd.Series(index=dsplot.index, data=markers)
+    ### Get the number of units per tech
+    r_units = dsplot.round(0).astype(int).replace(0,np.nan).dropna().astype(int)
+    total_units = r_units.sum()
+    ### Sort them according to the typical order in colors
+    r_units_sorted = r_units.reindex(colors.index).dropna().astype(int)
+    ### Get list of units
+    units = [[unit]*number for (unit, number) in r_units_sorted.items()]
+    ### Flatten
+    units = [item for sublist in units for item in sublist]
+
+    ### Get rectangle containing zone
+    minx, miny, maxx, maxy = polygon.bounds
+
+    ### Get grid of points
+    step_0 = max(maxx-minx, maxy-miny)
+    step = step_0
+    for iteration in range(1000):
+        step = step * (1 - decrement)
+        xs = np.arange(minx, maxx+1, step)
+        ys = np.arange(miny, maxy+1, step)
+        coords = [(x,y) for y in ys for x in xs]
+        points = [shapely.geometry.Point(p) for p in coords]
+        inside_geometry = [p.within(polygon) for p in points]
+        if sum(inside_geometry) >= total_units:
+            break
+
+    dfplot = gpd.GeoDataFrame(
+        geometry=[shapely.geometry.Point(p) for (i,p) in enumerate(coords)
+                    if inside_geometry[i]],
+        crs='ESRI:102008'
+    ).iloc[:len(units)]
+    dfplot['tech'] = units
+
+    ### Plot it
+    for tech in dfplot.tech.unique():
+        dfplot.loc[dfplot.tech==tech].plot(
+            ax=ax, marker=markers[tech],
+            color=colors.get(tech,'k'),
+            lw=lw, markersize=ms)
+
+
+def diffmap(
+    dfmap,
+    ax,
+    style:Literal['area','marker','bar','arrow','dots','text']='area',
+    scale:float=1,
+    cpos='C3',
+    cneg='C0',
+    style_kwds:dict={},
+    label:float=0,
+):
+    """
+    Plot a difference map of a given `style` using the provided `dfmap`.
+    `dfmap` should have a `'value'` column, and the plots look best if it
+    represents a difference, with both positive and negative values.
+
+    Args:
+        dfmap: gpd.GeoDataFrame with a 'value' column
+        ax: matplotlib axis object on which to plot
+        style: (str) one of a variety of plot styles
+            - area: filled area colored by value on a gradient
+            - marker: a single marker per area with size proportional to value
+            - bar: a single + or - bar per area with height proportional to value
+            - arrow: angled up/down arrows with length proportional to value
+            - dots: array of markers, with number of markers proportional to value
+            - text: text of +/- value, with size proportional to value
+        scale: 
+
+    Returns:
+        matplotlib axis object
+
+    Examples:
+    ```python
+    ## Create example data
+    dfmap = reeds.spatial.get_map('state', 'census')
+    dfmap['value'] = np.random.randn(len(dfmap)) * 10
+    ## Play with the 'scale' kwarg until your map looks good
+    style_scale = {
+        'area': 1,
+        'marker': 1,
+        'bar': 1,
+        'arrow': 1,
+        'dots': 1,
+        'text': 1,
+    }
+    ## Plot it
+    nrows, ncols, coords = get_coordinates(style_scale, ncols=3)
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(3*ncols, 2*nrows), sharex=True, sharey=True,
+    )
+    for style, scale in style_scale.items():
+        _ax = ax[coords[style]]
+        dfmap.plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2)
+        diffmap(dfmap, _ax, style, scale)
+        _ax.set_title(style)
+        _ax.axis('off')
+    plt.show()
+    ```
+    """
+    ### Check inputs
+    import geopandas as gpd
+    if 'value' not in dfmap or not isinstance(dfmap, gpd.GeoDataFrame):
+        raise ValueError("dfmap must be a geodataframe with a 'value' column")
+
+    if style not in ['area', 'marker', 'bar', 'arrow', 'dots', 'text']:
+        raise NotImplementedError(f'style = {style}')
+    ### Defaults
+    colors = {'neg':cneg, 'pos':cpos}
+    defaults = {
+        'area': {'cmap': plt.cm.RdBu_r},
+        'marker': {'marker': 'o'},
+        'bar': {'width':5e4, 'zeroline':{'ls':'-', 'lw':0.5, 'c':'k'}},
+        'arrow': {'angle':45, 'mirror':True, 'axis':'horizontal'},
+        # 'dots': {'unit':1, 'markerpos':'^', 'markerneg':'v', 'ms':5, 'lw':0},
+        'dots': {'unit':1, 'markerpos':'$+$', 'markerneg':'$-$', 'ms':5, 'lw':0.3},
+        # 'dots': {'unit':1, 'markerpos':'+', 'markerneg':'_', 'ms':5, 'lw':0.5},
+        # 'dots': {'unit':1, 'markerpos':'+', 'markerneg':'x', 'ms':5, 'lw':0.5},
+        # 'dots': {'unit':1, 'markerpos':'P', 'markerneg':'X', 'ms':10, 'lw':0},
+        'text': {'fmt':'+.0f'},
+    }
+    settings = {**defaults[style], **style_kwds}
+    ### Derived values
+    vmin = dfmap.value.min()
+    vmax = dfmap.value.max()
+    vlim = max(abs(vmin), abs(vmax))
+    if ('centroid_x' not in dfmap) or ('centroid_y' not in dfmap):
+        dfmap['centroid_x'] = dfmap.centroid.x
+        dfmap['centroid_y'] = dfmap.centroid.y
+    ## Scale for 'bar' and 'arrow' is relative to map bounds
+    bounds = dfmap.bounds
+    yscale = bounds.maxy.max() - bounds.miny.min()
+    relscale = scale * yscale * 0.01
+
+    ### Plot it
+    match style:
+        case 'area':
+            ## Consider whether we should allow tech colors here (probably not)
+            dfmap.plot(
+                ax=ax, column='value', cmap=settings['cmap'],
+                vmin=-vlim, vmax=vlim,
+            )
+        case 'marker':
+            for c, df in [
+                (cneg, dfmap.loc[dfmap.value < 0]),
+                (cpos, dfmap.loc[dfmap.value >= 0]),
+            ]:
+                ax.scatter(
+                    df.centroid_x, df.centroid_y,
+                    s=df.value.abs()*scale,
+                    color=c, marker=settings['marker'],
+                )
+        case 'bar':
+            ## Draw horizontal line at each centroid and bar up or down
+            dfmap['pos'] = dfmap.value.clip(lower=0)
+            dfmap['neg'] = dfmap.value.clip(upper=0)
+            plot_region_bars(
+                dfmap, dfmap[['pos','neg']],
+                colors=colors, ax=ax,
+                valscale=relscale, zeroline=settings['zeroline'],
+            )
+        case 'arrow':
+            ## Arrows pointing to upper right / lower right for positive/negative
+            for r, row in dfmap.iterrows():
+                length = abs(row.value) * relscale
+                angle = np.deg2rad(settings['angle'] * (-1 if row.value < 0 else 1))
+                color = cneg if row.value < 0 else cpos
+                xend = row.centroid_x + length * np.cos(angle)
+                yend = row.centroid_y + length * np.sin(angle)
+                ax.annotate(
+                    text='', xy=(row.centroid_x, row.centroid_y),
+                    xytext=(xend, yend),
+                    arrowprops={
+                        'arrowstyle':'<-', 'color':color, 'shrinkA':0, 'shrinkB':0,
+                    },
+                )
+        case 'dots':
+            ## Uniformly dispersed dots in each area
+            ## Default is red triangles up, clue triangles down
+            markers = {'neg': settings['markerneg'], 'pos': settings['markerpos']}
+            for r, row in dfmap.iterrows():
+                dsplot = pd.Series(abs(row.value), index=['neg'] if row.value < 0 else ['pos'])
+                markergrid(
+                    dsplot=dsplot, polygon=row.geometry, ax=ax,
+                    colors=colors, markers=markers,
+                    ms=settings['ms'], lw=settings['lw'],
+                )
+        case 'text':
+            ## Text of value scaled by value
+            for r, row in dfmap.iterrows():
+                ax.annotate(
+                    f"{row.value:{settings['fmt']}}", (row.centroid_x, row.centroid_y),
+                    ha='center', va='center',
+                    color=(cneg if row.value < 0 else cpos),
+                    fontsize=(abs(row.value)*scale),
+                )
+
+    return ax
