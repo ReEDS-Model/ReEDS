@@ -1208,9 +1208,8 @@ Battery cost and performance assumptions are based on lithium-ion battery system
 Low, mid, and high cost projections are available.
 The capital cost of a battery comprises two components: the overnight power unit cost (in \$/kW), which reflects the cost associated with the battery's maximum power output, and the overnight energy unit cost (in \$/kWh), which represents the cost associated with its maximum energy storage capacity---allowing the model to independently size power and energy capacities based on the respective unit costs.
 FOM costs of the battery are divided into two components as well: a 2.5% per year power FOM based on the power-related capital cost and a 2.5% per year energy FOM based on the energy-related capital cost.
-In contrast to other generator technologies in ReEDS,
-which all have lifetimes that meet or exceed typical model evaluation windows for book life, the battery is assumed to last 15 years.
-As a result, its capital cost is uprated by the ratio of a 15-year evaluation window and the evaluation window used by the run.
+The battery's power capacity is assumed to last 30 years.
+The energy capacity is assumed to last 15 years, and is therefore fully refurbished after 15 years using the energy capacity costs in the refurbishment year.
 Batteries are assumed to have a round-trip efficiency of 85% and a representative size of 60 MW.
 
 Existing PSH capacity is represented in the model according to the input plant database.
@@ -1478,7 +1477,7 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 | Concentrating Solar Power | 30 | SunShot Vision {cite}`doeSunShotVisionStudy2012` |
 | Geothermal | 30 | Renewable Electricity Futures Study, Vol. 1 {cite}`maiExplorationHighPenetrationRenewable2012` |
 | Hydropower | 100 | Hydropower: Setting a Course for Our Energy Future {cite}`nrelHydropowerSettingCourse2004` |
-| Battery | 15 | Cole and Karmakar {cite:year}`coleCostProjectionsUtilityScale2023` |
+| Battery | 30 (energy capacity refurbished at 15) | Cole and Karmakar {cite:year}`coleCostProjectionsUtilityScale2023` |
 | Hydrogen Electrolyzer | 20 |  |
 | Hydrogen Steam Methane Reforming and CCS | 25 | |
 | Hydrogen Combined Cycle | 55 |  |
@@ -2137,9 +2136,9 @@ These region boundaries can be changed using the `GSw_TransHurdleLevel1` and `GS
 
 ReEDS represents electricity trade with Canada exogenously.
 (Electricity trade with Mexico is not represented.)
-In the default configuration, imports and exports are specified by Canadian province based on the Canada Energy Regulator Canadian Electricity Futures 2023 Current Measures {cite}`canadaenergyregulatorCanadasEnergyFuture2023`, with net exports across all regions shown in {numref}`figure-canada-imports-exports`.
+In the default configuration, imports and exports are specified by Canadian province based on the Canada Energy Regulator Canadian Electricity Futures 2026 Current Measures {cite}`canadaenergyregulatorCanadasEnergyFuture2026`, with net exports across all regions shown in {numref}`figure-canada-imports-exports`.
 Each province is required to send electricity to or receive electricity from any of the ReEDS zones that have connecting transmission lines to that province, with the split among zones approximated based on the transmission connecting the zones to the provinces.
-Seasonal and time-slice estimates for imports and exports are based on the historical monthly flows between the countries {cite}`canadaenergyregulatorElectricityTradeSummary2024`.
+Seasonal and time-slice estimates for imports and exports are based on the historical monthly flows between the countries {cite}`canadaenergyregulatorElectricityTradeSummary2026`.
 Canadian imports are assumed to be from hydropower and are counted toward RPS requirements where allowed by state RPS regulations.
 Canadian imports also count toward reserve margin requirements.
 
