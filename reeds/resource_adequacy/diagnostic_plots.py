@@ -426,7 +426,7 @@ def map_dropped_load(sw, dfs, level='r'):
             ### Background
             dfba.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
             ### Data
-            dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.rain)
+            dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.tempo)
             for r, row in dfplot.iterrows():
                 if row.val > 0:
                     ax.annotate(
