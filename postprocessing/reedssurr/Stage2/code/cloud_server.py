@@ -10,6 +10,7 @@ from bokeh.server.auth_provider import AuthModule
 from bokeh.server.server import Server
 
 from admin_portal import ADMIN_ROUTES
+from shared_password_auth import SessionStatusHandler
 
 
 _HERE = Path(__file__).resolve().parent
@@ -27,7 +28,7 @@ def main() -> None:
         allow_websocket_origin=[websocket_origin],
         auth_provider=auth_provider,
         cookie_secret=os.environ["BOKEH_COOKIE_SECRET"],
-        extra_patterns=ADMIN_ROUTES,
+        extra_patterns=[*ADMIN_ROUTES, (r"/session/status", SessionStatusHandler)],
         xsrf_cookies=True,
         use_xheaders=True,
         keep_alive_milliseconds=30000,

@@ -113,6 +113,14 @@ charges. The first request after an idle period will be slower while the
 container starts and models are loaded. Set the service minimum instances to
 one temporarily when preparing a live demonstration.
 
+Hosted dashboard sessions automatically sign out after 30 minutes without
+browser activity, and all dashboard and admin sessions expire two hours after
+login. The deployment configures these limits with
+`REEDS_PROXY_ENABLE_SESSION_LIMITS`, `REEDS_PROXY_IDLE_TIMEOUT_SECONDS`, and
+`REEDS_PROXY_MAX_SESSION_SECONDS`. The enable flag is intentionally absent
+from the local launcher, where no hosted authentication routes are available.
+Closing an expired hosted dashboard session also closes its billable WebSocket.
+
 BokehJS is embedded directly in each application page (`BOKEH_RESOURCES=inline`)
 so Cloud Run never exposes container-internal `0.0.0.0:8080` asset URLs to the
 browser and does not require a separate JavaScript CDN.

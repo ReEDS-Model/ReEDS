@@ -99,6 +99,7 @@ from surrogate_eval_captions import (                                      # noq
     bokeh_explainer_div,
     bokeh_intro_div,
 )
+from hosted_session_limits import install_session_limits                    # noqa: E402
 
 # --- Tolerance bands for color-coded metrics (percent) ---
 CAP_TOL_GOOD = 5.0       # |%| <= GOOD  → green
@@ -5294,6 +5295,7 @@ layout = column(header, tabs, sizing_mode="stretch_width")
 
 curdoc().add_root(layout)
 curdoc().title = "ReEDS-Proxy"
+install_session_limits(curdoc())
 
 # Kick off the first render
 _redraw()

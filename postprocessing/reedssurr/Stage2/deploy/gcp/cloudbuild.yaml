@@ -47,7 +47,7 @@ steps:
           --add-volume=name=models,type=cloud-storage,bucket="${_MODEL_BUCKET}" \
           --add-volume-mount=volume=models,mount-path=/models \
           --set-secrets=REEDSSURR_PASSWORD_HASH=${_PASSWORD_SECRET}:latest,REEDSSURR_ADMIN_PASSWORD_HASH=${_ADMIN_PASSWORD_SECRET}:latest,BOKEH_COOKIE_SECRET=${_COOKIE_SECRET}:latest \
-          --set-env-vars=REEDSSURR_MODELS_DIR=/models,BOKEH_ALLOW_WS_ORIGIN='*',BOKEH_RESOURCES=inline
+          --set-env-vars=REEDSSURR_MODELS_DIR=/models,BOKEH_ALLOW_WS_ORIGIN='*',BOKEH_RESOURCES=inline,REEDS_PROXY_ENABLE_SESSION_LIMITS=true,REEDS_PROXY_IDLE_TIMEOUT_SECONDS=1800,REEDS_PROXY_MAX_SESSION_SECONDS=7200
 
         SERVICE_URL="$$(gcloud run services describe "${_SERVICE}" \
           --project="${PROJECT_ID}" \

@@ -15,7 +15,11 @@ from tornado.web import RequestHandler
 COOKIE_NAME = "reedssurr_auth"
 ADMIN_COOKIE_NAME = "reedssurr_admin_auth"
 DEFAULT_DESTINATION = "/reeds_proxy"
-MAX_COOKIE_AGE_DAYS = 1
+DEFAULT_MAX_SESSION_SECONDS = 2 * 60 * 60
+MAX_SESSION_SECONDS = int(
+    os.environ.get("REEDS_PROXY_MAX_SESSION_SECONDS", DEFAULT_MAX_SESSION_SECONDS)
+)
+MAX_COOKIE_AGE_DAYS = MAX_SESSION_SECONDS / (24 * 60 * 60)
 login_url = "/login"
 logout_url = "/logout"
 
@@ -64,31 +68,54 @@ def _safe_destination(value: str | None) -> str:
     return value
 
 
-def get_user(request_handler: RequestHandler) -> str | None:
-    value = request_handler.get_secure_cookie(
-        COOKIE_NAME,
-        max_age_days=MAX_COOKIE_AGE_DAYS,
-    )
+def create_session_value(identity: str) -> str:
+    """Create a cookie value that carries the server-issued login time."""
+    return f"{identity}:{int(time.time())}"
+
+
+def _decode_session_value(value: bytes | None, expected_identity: str) -> int | None:
     if value is None:
         return None
     try:
-        return value.decode("utf-8")
-    except UnicodeDecodeError:
+        identity, issued_at_text = value.decode("utf-8").rsplit(":", 1)
+        issued_at = int(issued_at_text)
+    except (UnicodeDecodeError, ValueError):
         return None
+
+    now = int(time.time())
+    if identity != expected_identity or issued_at > now:
+        return None
+    if now - issued_at >= MAX_SESSION_SECONDS:
+        return None
+    return issued_at
+
+
+def _session_started_at(
+    request_handler: RequestHandler,
+    cookie_name: str,
+    expected_identity: str,
+) -> int | None:
+    value = request_handler.get_secure_cookie(
+        cookie_name,
+        max_age_days=MAX_COOKIE_AGE_DAYS,
+    )
+    return _decode_session_value(value, expected_identity)
+
+
+def get_user(request_handler: RequestHandler) -> str | None:
+    issued_at = _session_started_at(request_handler, COOKIE_NAME, "shared-user")
+    return "shared-user" if issued_at is not None else None
+
+
+def get_user_session_started_at(request_handler: RequestHandler) -> int | None:
+    """Return the authenticated dashboard session's login timestamp."""
+    return _session_started_at(request_handler, COOKIE_NAME, "shared-user")
 
 
 def get_admin_user(request_handler: RequestHandler) -> str | None:
     """Return the admin session identity when its signed cookie is valid."""
-    value = request_handler.get_secure_cookie(
-        ADMIN_COOKIE_NAME,
-        max_age_days=MAX_COOKIE_AGE_DAYS,
-    )
-    if value is None:
-        return None
-    try:
-        return value.decode("utf-8")
-    except UnicodeDecodeError:
-        return None
+    issued_at = _session_started_at(request_handler, ADMIN_COOKIE_NAME, "admin")
+    return "admin" if issued_at is not None else None
 
 
 class _BaseHandler(RequestHandler):
@@ -124,7 +151,7 @@ class LoginHandler(_BaseHandler):
         }
         self.set_secure_cookie(
             COOKIE_NAME,
-            "shared-user",
+            create_session_value("shared-user"),
             expires_days=MAX_COOKIE_AGE_DAYS,
             httponly=True,
             secure=secure_cookie,
@@ -178,3 +205,21 @@ class LogoutHandler(_BaseHandler):
     def get(self) -> None:
         self.clear_cookie(COOKIE_NAME)
         self.redirect(login_url)
+
+
+class SessionStatusHandler(_BaseHandler):
+    """Expose the signed dashboard session deadline to the dashboard page."""
+
+    def get(self) -> None:
+        issued_at = get_user_session_started_at(self)
+        if issued_at is None:
+            self.set_status(401)
+            self.write({"authenticated": False})
+            return
+
+        self.write(
+            {
+                "authenticated": True,
+                "expires_at_milliseconds": (issued_at + MAX_SESSION_SECONDS) * 1000,
+            }
+        )

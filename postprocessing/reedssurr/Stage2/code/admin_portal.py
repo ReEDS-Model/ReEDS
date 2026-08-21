@@ -16,6 +16,7 @@ from tornado.web import Finish, HTTPError, RequestHandler
 from shared_password_auth import (
     ADMIN_COOKIE_NAME,
     MAX_COOKIE_AGE_DAYS,
+    create_session_value,
     get_admin_user,
     verify_admin_password,
 )
@@ -129,7 +130,7 @@ class AdminLoginHandler(_AdminBaseHandler):
         }
         self.set_secure_cookie(
             ADMIN_COOKIE_NAME,
-            "admin",
+            create_session_value("admin"),
             expires_days=MAX_COOKIE_AGE_DAYS,
             httponly=True,
             secure=secure_cookie,
