@@ -837,7 +837,7 @@ def validate_zoneset(GSw_ZoneSet):
         GSw_ZoneSets = [
             'z48',
             'z54',
-            'z69',
+            'z70',
             'z90',
             'z132',
             'z134',
