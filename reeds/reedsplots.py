@@ -6834,7 +6834,7 @@ def map_output_byyear(
     oneaxis='columns',
     yearaxis='rows',
     mapscale=4,
-    cmap=cmocean.cm.rain,
+    cmap=cmocean.cm.tempo,
     vscale=1,
     vmin=None,
     vmax=None,
