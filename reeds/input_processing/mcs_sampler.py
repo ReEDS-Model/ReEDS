@@ -570,7 +570,7 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
 
     # Obtain the data used by copy_files.py to filter regions and create tailored dataframes.
     regions_and_agglevel = copy_files.get_regions_and_agglevel(
-        reeds_path, inputs_case, save_regions_and_agglevel=False, overwrite=True)
+        reeds_path, inputs_case, save_regions_and_agglevel=False)
 
     source_deflator_map = copy_files.get_source_deflator_map(reeds_path)
 
