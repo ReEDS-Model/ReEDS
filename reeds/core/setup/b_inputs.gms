@@ -4951,9 +4951,6 @@ rep_bio_price_unused(r)$[sum{usda_region, 1$r_usda(r,usda_region) }] =
     smin{bioclass$[sum{usda_region$r_usda(r, usda_region), biosupply(usda_region,bioclass,"cap") }],
         sum{usda_region$r_usda(r, usda_region), biosupply(usda_region,bioclass,"price") } } + bio_transport_cost ;
 
-parameter cost_curt(t) "--$/MWh-- price paid for curtailed VRE" ;
-
-cost_curt(t)$[yeart(t)>=model_builds_start_yr] = Sw_CurtMarket ;
 
 *======================
 * Emissions cap and tax
