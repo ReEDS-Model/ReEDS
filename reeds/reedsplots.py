@@ -6182,14 +6182,20 @@ def map_outage_days(
         dfplot.plot(ax=_ax, column='outage_pct', cmap=cmap, vmin=vmin, vmax=vmax)
         ## Data values
         if fontsize:
+            text_artists = []
             for r, row in dfplot.sort_values('outage_pct').iterrows():
-                _ax.annotate(
-                    f"{row.outage_pct:.0f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k',
-                    fontsize=fontsize,
-                    path_effects=[pe.withStroke(linewidth=1.4, foreground='w', alpha=0.7)],
+                text_artists.append(
+                    _ax.annotate(
+                        f"{row.outage_pct:.0f}",
+                        [row.centroid_x, row.centroid_y],
+                        ha='center', va='center', c='k',
+                        fontsize=fontsize,
+                        path_effects=[pe.withStroke(linewidth=1.4, foreground='w', alpha=0.7)],
+                    )
                 )
+            adjust_text(text_artists, ax=_ax,
+                        avoid_self=False, ensure_inside_axes=True,
+                    )
         _ax.axis('off')
         ## Formatting
         if date == dates[0]:
