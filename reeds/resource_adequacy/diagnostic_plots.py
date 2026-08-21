@@ -987,7 +987,7 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
     plottechs = failsum.loc[failsum != 0].index.get_level_values('i').unique()
 
     for tech in plottechs:
-        savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','')}-{sw['t']}"
+        savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
         plt.close()
         f, ax = plots.map_years_months(
             dfzones=dfzones, dfdata=failrate[tech],
@@ -1008,7 +1008,7 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
         )
         repairrate.index = dfs['pras_system']['genrepairrate'].index
         for tech in plottechs:
-            savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','')}-{sw['t']}"
+            savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
             plt.close()
             f, ax = plots.map_years_months(
                 dfzones=dfzones, dfdata=repairrate[tech],
