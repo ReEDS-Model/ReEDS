@@ -1029,7 +1029,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
-        label_region_value(dfplot, ax=ax, column=valcol, fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol, fontsize=5)
 
     ###### Plot the comp
     elif plot == 'comp':
@@ -1041,7 +1041,7 @@ def plot_diff_maps(
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
 
-        label_region_value(dfplot, ax=ax, column=valcol, fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol, fontsize=5)
 
     ###### Plot the pct diff
     elif plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
@@ -1061,7 +1061,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_pctdiff', cmap=cmap, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
-        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fontsize=5)
 
     ###### Plot the absolute diff
     elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
@@ -1081,7 +1081,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_diff', cmap=plt.cm.RdBu_r, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
-        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fontsize=5)
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
@@ -1377,7 +1377,7 @@ def map_net_imports(
             vmin=-vmax[year], vmax=vmax[year],
         )
         label_region_value(df, ax=ax[coords[year]], column='net_import', 
-                            opt_single_decimal=False, fmt = '{:+.0f}', fontsize=6)
+                            opt_single_decimal=False, fmt = '{:.0f}', fontsize=5)
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -4521,19 +4521,19 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
-        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fontsize=6)
+        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fontsize=5)
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
-        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fontsize=6)
+        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fontsize=5)
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
-        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fontsize=6)
+        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fontsize=5)
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
@@ -6285,14 +6285,14 @@ def label_region_value(
     **kwargs
 ):
     """kwargs are passed to patheffects.withStroke()"""
-    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':1}, **kwargs}
+    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':0.7}, **kwargs}
     text_artists = []
     for r, row in df.iterrows():
         value = row.get(column, np.nan)
         if not np.isfinite(value):
             continue
         if opt_single_decimal:
-            decimals = 0 if abs(value) >= 1 else 1
+            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
             fmt = f"{{:.{decimals}f}}"
         text_artists.append(
             ax.annotate(
