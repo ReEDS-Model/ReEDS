@@ -65,7 +65,7 @@ This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` swi
 - Zone sets based on the traditional 134 ReEDS zones:
   - 134 zones: `GSw_ZoneSet = z134`
   - 132 zones: `GSw_ZoneSet = z132`. Identical to z134 except merges p119 into p122 and p30 into p28.
-  - 69 zones: `GSw_ZoneSet = z69`. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
+  - 70 zones: `GSw_ZoneSet = z70`. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
   - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries from z134 to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
   - Counties for Utah, 134 zones for the rest: `GSw_ZoneSet = UTcounty`
   - Counties for PJM and a few adjacent states, 134 zones for the rest: `GSw_ZoneSet = PJMcounty`
@@ -111,7 +111,7 @@ git checkout tags/v2024.0.0
 ### Help, I'm getting lots of log messages about missing fonts
 
 We use the `mscorefonts` package to get nicer-looking fonts in plots.
-If you had `matplotlib` installed before running a script from the `reeds2` environment,
+If you had `matplotlib` installed before running a script from the `reeds` environment,
 you might need to clear your fonts cache (you can back it up first if you like).
 
 - On Mac/Linux, try deleting `~/.cache/matplotlib` or `~/.matplotlib`

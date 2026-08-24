@@ -496,24 +496,7 @@
     - **Citation:** See 'notes' column in the file and https://www.energy.gov/oced/advanced-reactor-demonstration-projects-0
     - **Units:** MW
 
-  - [exog_cap_geohydro_allkm_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_allkm_reference.csv)
-  - [exog_cap_geohydro_reference.csv](/inputs/capacity_exogenous/exog_cap_geohydro_reference.csv)
-  - [exog_cap_upv_limited.csv](/inputs/capacity_exogenous/exog_cap_upv_limited.csv)
-  - [exog_cap_upv_open.csv](/inputs/capacity_exogenous/exog_cap_upv_open.csv)
-  - [exog_cap_upv_reference.csv](/inputs/capacity_exogenous/exog_cap_upv_reference.csv)
-  - [exog_cap_wind-ons_limited.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_limited.csv)
-  - [exog_cap_wind-ons_open.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_open.csv)
-  - [exog_cap_wind-ons_reference.csv](/inputs/capacity_exogenous/exog_cap_wind-ons_reference.csv)
   - [interconnection_queues.csv](/inputs/capacity_exogenous/interconnection_queues.csv)
-  - [prescribed_builds_wind-ofs_meshed_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_limited.csv)
-  - [prescribed_builds_wind-ofs_meshed_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_open.csv)
-  - [prescribed_builds_wind-ofs_meshed_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_meshed_reference.csv)
-  - [prescribed_builds_wind-ofs_radial_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_limited.csv)
-  - [prescribed_builds_wind-ofs_radial_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_open.csv)
-  - [prescribed_builds_wind-ofs_radial_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ofs_radial_reference.csv)
-  - [prescribed_builds_wind-ons_limited.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_limited.csv)
-  - [prescribed_builds_wind-ons_open.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_open.csv)
-  - [prescribed_builds_wind-ons_reference.csv](/inputs/capacity_exogenous/prescribed_builds_wind-ons_reference.csv)
   - [ReEDS_generator_database_final_EIA-NEMS.csv](/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv)
     - **File Type:** Input
     - **Description:** EIA-NEMS database of existing generators
@@ -999,9 +982,6 @@
     - **Description:** reference census division beta levels all sectors
     - **Indices:** cendiv
     - **Dollar year:** 2004
-  - [cendivweights.csv](/inputs/fuelprices/cendivweights.csv)
-    - **Description:** weights to smooth gas prices between census regions to avoid abrupt price changes at the cendiv borders
-    - **Indices:** r,cendiv
   - [coal_AEO_2025_reference.csv](/inputs/fuelprices/coal_AEO_2025_reference.csv)
     - **File Type:** Input
     - **Description:** AEO2025 Reference case census division fuel price of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic
@@ -1220,18 +1200,6 @@
 
   - [cangrowth.csv](/inputs/load/cangrowth.csv)
     - **Description:** Canada load growth multiplier
-  - [demand_AEO_2023_high.csv](/inputs/load/demand_AEO_2023_high.csv)
-    - **Description:** Load growth projection from the AEO2023 High Economic Growth scenario
-    - **Units:** unitless
-
-  - [demand_AEO_2023_low.csv](/inputs/load/demand_AEO_2023_low.csv)
-    - **Description:** Load growth projection from the AEO2023 Low Economic Growth scenario
-    - **Units:** unitless
-
-  - [demand_AEO_2023_reference.csv](/inputs/load/demand_AEO_2023_reference.csv)
-    - **Description:** Load growth projection from the AEO2023 Reference scenario
-    - **Units:** unitless
-
   - [demand_AEO_2025_high.csv](/inputs/load/demand_AEO_2025_high.csv)
     - **Description:** Load growth projection from the AEO2025 High Economic Growth scenario
     - **Units:** unitless
@@ -1244,8 +1212,22 @@
     - **Description:** Load growth projection from the AEO2025 Reference scenario
     - **Units:** unitless
 
+  - [demand_AEO_2026_baseline.csv](/inputs/load/demand_AEO_2026_baseline.csv)
+    - **Description:** Load growth projection from the AEO2026 Counterfactual Baseline scenario
+    - **Units:** unitless
+
+  - [demand_AEO_2026_high.csv](/inputs/load/demand_AEO_2026_high.csv)
+    - **Description:** Load growth projection from the AEO2026 High Economic Growth scenario
+    - **Units:** unitless
+
+  - [demand_AEO_2026_low.csv](/inputs/load/demand_AEO_2026_low.csv)
+    - **Description:** Load growth projection from the AEO2026 Low Economic Growth scenario
+    - **Units:** unitless
+
   - [EIA_loadbystate.csv](/inputs/load/EIA_loadbystate.csv)
+    - **File Type:** /
   - [loadsite_country_test.csv](/inputs/load/loadsite_country_test.csv)
+    - **File Type:** /
   - [mex_growth_rate.csv](/inputs/load/mex_growth_rate.csv)
     - **Description:** Mexico load growth multiplier
 
@@ -1312,6 +1294,10 @@
   - [h2-combustion_ATB_2023.csv](/inputs/plant_characteristics/h2-combustion_ATB_2023.csv)
   - [h2-combustion_ATB_2024.csv](/inputs/plant_characteristics/h2-combustion_ATB_2024.csv)
     - **Description:** Hydrogen CT and CC plant costs generated in preprocessing from moderate case NREL ATB 2024 data
+  - [h2fuelcell_advanced.csv](/inputs/plant_characteristics/h2fuelcell_advanced.csv)
+  - [h2fuelcell_conservative.csv](/inputs/plant_characteristics/h2fuelcell_conservative.csv)
+  - [h2fuelcell_moderate.csv](/inputs/plant_characteristics/h2fuelcell_moderate.csv)
+    - **Description:** Hydrogen fuel cell (h2-fuel-cell) capital cost, fixed O&M, variable O&M, and heat rate by year for the advanced, conservative, and moderate cost cases. Capital cost and heat rate are based on Reznicek et al. (2026), DOI 10.2172/3018256; fixed and variable O&M are from Exhibit 5-19 (Case B31A) of NETL Fossil Energy Baseline, Revision 4a (Schmitt et al., 2022). Selected with the `plantchar_h2fuelcell` switch and enabled with `GSw_H2FuelCell`.
   - [heat_rate_adj.csv](/inputs/plant_characteristics/heat_rate_adj.csv)
     - **Description:** Heat rate adjustment multiplier by technology
   - [heat_rate_penalty_spin.csv](/inputs/plant_characteristics/heat_rate_penalty_spin.csv)
@@ -1634,9 +1620,6 @@
   - [p.csv](/inputs/sets/p.csv)
     - **File Type:** GAMS set
     - **Description:** set of products produced
-  - [pcat.csv](/inputs/sets/pcat.csv)
-    - **File Type:** GAMS set
-    - **Description:** set of prescribed technology categories
   - [plantcat.csv](/inputs/sets/plantcat.csv)
     - **File Type:** GAMS set
     - **Description:** set of categories for plant characteristics
@@ -1887,8 +1870,6 @@
     - **Dollar year:** 2004
     - **Citation:** [https://www.nlr.gov/gis/psh-supply-curves.html](https://www.nlr.gov/gis/psh-supply-curves.html)
   - [rev_paths.csv](/inputs/supply_curve/rev_paths.csv)
-  - [sc_point_gid_old2new.csv](/inputs/supply_curve/sc_point_gid_old2new.csv)
-  - [sitemap.h5](/inputs/supply_curve/sitemap.h5)
   - [supplycurve_egs-reference.csv](/inputs/supply_curve/supplycurve_egs-reference.csv)
   - [supplycurve_upv-limited.csv](/inputs/supply_curve/supplycurve_upv-limited.csv)
     - **Description:** UPV supply curve from reV for the limited siting scenario

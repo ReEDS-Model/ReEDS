@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import traceback
+import itertools
 import cmocean
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
@@ -71,10 +72,10 @@ else:
 year = args.year
 
 # #%% Inputs for testing
-# case = os.path.join(reeds_path,'runs','v20251111_15M0_Pacific')
+# case = os.path.join(reeds_path,'runs','v20260624_raM1_MultiMetricRA')
 # year = 0
 # interactive = True
-# write = False
+# write = True
 # import importlib
 # importlib.reload(reedsplots)
 
@@ -580,8 +581,8 @@ except Exception:
 try:
     plt.close()
     levels = ['country', 'interconnect', 'transreg', 'transgrp']
-    f, ax, _ = reedsplots.plot_neue_bylevel(case=case, levels=levels)
-    savename = f"plot_stressperiod_neue-{','.join(levels)}.png"
+    f, ax, _ = reedsplots.plot_ra_metrics_bylevel(case=case, levels=levels)
+    savename = f"plot_ra_metrics-{','.join(levels)}.png"
     if write:
         plt.savefig(os.path.join(savepath, savename))
     if interactive:
@@ -589,7 +590,28 @@ try:
     plt.close()
     print(savename)
 except Exception:
-    print('plot_stressperiod_neue failed:')
+    print('plot_ra_metrics_bylevel failed:')
+    print(traceback.format_exc())
+
+try:
+    plt.close()
+    level = 'transgrp'
+    xvals = ['timesteps']
+    yvals = ['mean','max']
+    for xval, yval in itertools.product(xvals, yvals):
+        f, ax, _ = reedsplots.plot_eue_events(
+            case=case, year=year, level=level,
+            xval=xval, yval=yval,
+        )
+        savename = f"plot_eue_events-{yval}_{xval}-{level}-{year}.png"
+        if write:
+            plt.savefig(os.path.join(savepath, savename))
+        if interactive:
+            plt.show()
+        plt.close()
+        print(savename)
+except Exception:
+    print('plot_eue_events failed:')
     print(traceback.format_exc())
 
 try:
@@ -717,17 +739,16 @@ if not int(sw.GSw_PRM_CapCredit):
         print(traceback.format_exc())
 
     try:
-        level, threshold, _, metric = sw['GSw_PRM_StressThreshold'].split('/')[0].split('_')
-        plt.close()
-        f,ax = reedsplots.plot_stressperiod_evolution(
-            case=case, level=level, metric=metric)
-        savename = f'plot_stressperiod_evolution-{metric}-{level}.png'
-        if write:
-            plt.savefig(os.path.join(savepath, savename))
-        if interactive:
-            plt.show()
-        plt.close()
-        print(savename)
+        for metric in ['neue','depth','duration','lolh','lole','lold']:
+            plt.close()
+            f,ax = reedsplots.plot_stressperiod_evolution(case=case, metric=metric)
+            savename = f'plot_stressperiod_evolution-{metric}.png'
+            if write:
+                plt.savefig(os.path.join(savepath, savename))
+            if interactive:
+                plt.show()
+            plt.close()
+            print(savename)
     except Exception:
         print('plot_stressperiod_evolution failed:')
         print(traceback.format_exc())
@@ -797,6 +818,30 @@ if not int(sw.GSw_PRM_CapCredit):
             print(savename)
         except Exception:
             print(f'plot_stress_mix failed for {metric}:')
+            print(traceback.format_exc())
+
+    # level, figheight = 'transreg', 1.2
+    level, figheight = 'interconnect', 1.8
+    for metric in [
+        'stress_top10_price',
+        'stress_top10_netload',
+        'stress_top10_load',
+        'stress_bottom10_vregen',
+    ]:
+        savename = f"plot_stress_cf-{level}-{metric}.png"
+        try:
+            plt.close()
+            f, ax, dictout = reedsplots.plot_stress_cf(
+                case=case, level=level, metric=metric, figheight=figheight,
+            )
+            if write:
+                plt.savefig(os.path.join(savepath, savename))
+            if interactive:
+                plt.show()
+            plt.close()
+            print(savename)
+        except Exception:
+            print(f'{savename} failed:')
             print(traceback.format_exc())
 
 
