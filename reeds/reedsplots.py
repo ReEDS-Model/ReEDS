@@ -1085,6 +1085,7 @@ def plot_diff_maps(
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
+    dfba.plot(ax=ax, edgecolor='k', facecolor='none', lw=0.1)
     dfstates.plot(ax=ax, edgecolor='k', facecolor='none', lw=0.25)
     ax.axis('off')
 
