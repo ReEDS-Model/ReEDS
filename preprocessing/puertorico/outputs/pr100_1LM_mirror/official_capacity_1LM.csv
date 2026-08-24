@@ -1,0 +1,145 @@
+pr100_technology,year,capacity_mw,reeds_comparison_category
+10hr Storage,2022,0.0,Battery Storage
+2hr Storage,2022,0.0,Battery Storage
+4hr Storage,2022,0.0,Battery Storage
+6hr Storage,2022,0.0,Battery Storage
+8hr Storage,2022,0.0,Battery Storage
+Biodiesel,2022,0.0,Liquid Fuel / Biodiesel
+Coal,2022,454.0,Coal
+Diesel,2022,1341.0,Liquid Fuel / Biodiesel
+Distributed PV,2022,0.0,Distributed PV
+Fuel Oil No. 6,2022,1235.0,Liquid Fuel / Biodiesel
+Hydropower,2022,10.0,Hydropower
+Land-based Wind,2022,75.0,Land-based Wind
+Landfill Gas,2022,4.8,Landfill Gas
+Natural Gas Combined Cycle,2022,530.0,Natural Gas
+Natural Gas Steam Turbine,2022,700.0,Natural Gas
+Offshore Wind,2022,0.0,Offshore Wind
+Planned Utility PV,2022,143.1,Utility PV
+Utility PV,2022,0.0,Utility PV
+10hr Storage,2025,320.24830670538364,Battery Storage
+2hr Storage,2025,0.0,Battery Storage
+4hr Storage,2025,740.0,Battery Storage
+6hr Storage,2025,0.0,Battery Storage
+8hr Storage,2025,0.0,Battery Storage
+Biodiesel,2025,0.0,Liquid Fuel / Biodiesel
+Coal,2025,454.0,Coal
+Diesel,2025,941.0,Liquid Fuel / Biodiesel
+Distributed PV,2025,771.5340848000001,Distributed PV
+Fuel Oil No. 6,2025,880.0,Liquid Fuel / Biodiesel
+Hydropower,2025,0.0,Hydropower
+Land-based Wind,2025,172.0854804368247,Land-based Wind
+Landfill Gas,2025,4.8,Landfill Gas
+Natural Gas Combined Cycle,2025,930.0,Natural Gas
+Natural Gas Steam Turbine,2025,700.0,Natural Gas
+Offshore Wind,2025,0.0,Offshore Wind
+Planned Utility PV,2025,1004.9,Utility PV
+Utility PV,2025,2274.3786400933523,Utility PV
+10hr Storage,2028,320.24830670538364,Battery Storage
+2hr Storage,2028,0.0,Battery Storage
+4hr Storage,2028,1490.0,Battery Storage
+6hr Storage,2028,0.0,Battery Storage
+8hr Storage,2028,0.0,Battery Storage
+Biodiesel,2028,0.0,Liquid Fuel / Biodiesel
+Coal,2028,0.0,Coal
+Diesel,2028,941.0,Liquid Fuel / Biodiesel
+Distributed PV,2028,954.54173565,Distributed PV
+Fuel Oil No. 6,2028,0.0,Liquid Fuel / Biodiesel
+Hydropower,2028,0.0,Hydropower
+Land-based Wind,2028,172.0854804368247,Land-based Wind
+Landfill Gas,2028,4.8,Landfill Gas
+Natural Gas Combined Cycle,2028,930.0,Natural Gas
+Natural Gas Steam Turbine,2028,700.0,Natural Gas
+Offshore Wind,2028,0.0,Offshore Wind
+Planned Utility PV,2028,1004.9,Utility PV
+Utility PV,2028,2274.3786400933523,Utility PV
+10hr Storage,2030,420.2483067053837,Battery Storage
+2hr Storage,2030,0.0,Battery Storage
+4hr Storage,2030,1490.0,Battery Storage
+6hr Storage,2030,0.0,Battery Storage
+8hr Storage,2030,0.0,Battery Storage
+Biodiesel,2030,0.0,Liquid Fuel / Biodiesel
+Coal,2030,0.0,Coal
+Diesel,2030,621.0,Liquid Fuel / Biodiesel
+Distributed PV,2030,1063.4481649799998,Distributed PV
+Fuel Oil No. 6,2030,0.0,Liquid Fuel / Biodiesel
+Hydropower,2030,0.0,Hydropower
+Land-based Wind,2030,172.0854804368247,Land-based Wind
+Landfill Gas,2030,4.8,Landfill Gas
+Natural Gas Combined Cycle,2030,930.0,Natural Gas
+Natural Gas Steam Turbine,2030,700.0,Natural Gas
+Offshore Wind,2030,0.0,Offshore Wind
+Planned Utility PV,2030,1004.9,Utility PV
+Utility PV,2030,2274.3786400933523,Utility PV
+10hr Storage,2035,420.2483067053837,Battery Storage
+2hr Storage,2035,0.0,Battery Storage
+4hr Storage,2035,1490.0,Battery Storage
+6hr Storage,2035,0.0,Battery Storage
+8hr Storage,2035,0.0,Battery Storage
+Biodiesel,2035,0.0,Liquid Fuel / Biodiesel
+Coal,2035,0.0,Coal
+Diesel,2035,621.0,Liquid Fuel / Biodiesel
+Distributed PV,2035,1246.19975825,Distributed PV
+Fuel Oil No. 6,2035,0.0,Liquid Fuel / Biodiesel
+Hydropower,2035,0.0,Hydropower
+Land-based Wind,2035,218.55553039348163,Land-based Wind
+Landfill Gas,2035,4.8,Landfill Gas
+Natural Gas Combined Cycle,2035,930.0,Natural Gas
+Natural Gas Steam Turbine,2035,700.0,Natural Gas
+Offshore Wind,2035,0.0,Offshore Wind
+Planned Utility PV,2035,1004.9,Utility PV
+Utility PV,2035,2274.3786400933523,Utility PV
+10hr Storage,2040,420.2483067053837,Battery Storage
+2hr Storage,2040,0.0,Battery Storage
+4hr Storage,2040,1490.0,Battery Storage
+6hr Storage,2040,0.0,Battery Storage
+8hr Storage,2040,0.0,Battery Storage
+Biodiesel,2040,0.0,Liquid Fuel / Biodiesel
+Coal,2040,0.0,Coal
+Diesel,2040,621.0,Liquid Fuel / Biodiesel
+Distributed PV,2040,1443.74430689,Distributed PV
+Fuel Oil No. 6,2040,0.0,Liquid Fuel / Biodiesel
+Hydropower,2040,0.0,Hydropower
+Land-based Wind,2040,266.4829848039667,Land-based Wind
+Landfill Gas,2040,4.8,Landfill Gas
+Natural Gas Combined Cycle,2040,930.0,Natural Gas
+Natural Gas Steam Turbine,2040,700.0,Natural Gas
+Offshore Wind,2040,0.0,Offshore Wind
+Planned Utility PV,2040,1004.9,Utility PV
+Utility PV,2040,2274.3786400933523,Utility PV
+10hr Storage,2045,471.9740854493452,Battery Storage
+2hr Storage,2045,0.0,Battery Storage
+4hr Storage,2045,1490.0,Battery Storage
+6hr Storage,2045,0.0,Battery Storage
+8hr Storage,2045,0.0,Battery Storage
+Biodiesel,2045,0.0,Liquid Fuel / Biodiesel
+Coal,2045,0.0,Coal
+Diesel,2045,621.0,Liquid Fuel / Biodiesel
+Distributed PV,2045,1855.67269808,Distributed PV
+Fuel Oil No. 6,2045,0.0,Liquid Fuel / Biodiesel
+Hydropower,2045,0.0,Hydropower
+Land-based Wind,2045,266.4829848039667,Land-based Wind
+Landfill Gas,2045,4.8,Landfill Gas
+Natural Gas Combined Cycle,2045,930.0,Natural Gas
+Natural Gas Steam Turbine,2045,700.0,Natural Gas
+Offshore Wind,2045,0.0,Offshore Wind
+Planned Utility PV,2045,1004.9,Utility PV
+Utility PV,2045,2274.3786400933523,Utility PV
+10hr Storage,2050,1431.8206981138978,Battery Storage
+2hr Storage,2050,0.0,Battery Storage
+4hr Storage,2050,1490.0,Battery Storage
+6hr Storage,2050,0.0,Battery Storage
+8hr Storage,2050,0.0,Battery Storage
+Biodiesel,2050,1318.4938065462215,Liquid Fuel / Biodiesel
+Coal,2050,0.0,Coal
+Diesel,2050,0.0,Liquid Fuel / Biodiesel
+Distributed PV,2050,2473.94648095,Distributed PV
+Fuel Oil No. 6,2050,0.0,Liquid Fuel / Biodiesel
+Hydropower,2050,0.0,Hydropower
+Land-based Wind,2050,379.2567349492054,Land-based Wind
+Landfill Gas,2050,4.8,Landfill Gas
+Natural Gas Combined Cycle,2050,0.0,Natural Gas
+Natural Gas Steam Turbine,2050,0.0,Natural Gas
+Offshore Wind,2050,0.0,Offshore Wind
+Planned Utility PV,2050,1004.9,Utility PV
+Utility PV,2050,5705.109849860031,Utility PV

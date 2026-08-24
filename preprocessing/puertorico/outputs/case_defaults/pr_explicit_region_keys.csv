@@ -1,0 +1,122 @@
+r,synthetic_fips,source_bus_number,source_bus_name,municipality,latitude,longitude,meaning
+pr2,99001,2,COSTA SUR115-2,Guayanilla,18.0015070538032,-66.7532760592112,compatibility key only; not a Census county
+pr3,99002,3,PONCE 115   -3,Ponce,18.0012809272951,-66.6114863915734,compatibility key only; not a Census county
+pr5,99003,5,YABUCOA 115 -5,Humacao,18.1051828222315,-65.8234605404272,compatibility key only; not a Census county
+pr8,99004,8,JOBOS 115   -8,Guayama,17.961056944062,-66.139303974935,compatibility key only; not a Census county
+pr10,99005,10,CAYEY 115   -10,Cayey,18.1204052191257,-66.1710658953323,compatibility key only; not a Census county
+pr14,99006,14,HUMACAO     -14,Humacao,18.13732480866,-65.82683737768,compatibility key only; not a Census county
+pr16,99007,16,R.BLANCO 115-16,Naguabo,18.2429864355861,-65.7850288247602,compatibility key only; not a Census county
+pr18,99008,18,FAJARDO 115 -18,Fajardo,18.3297155598641,-65.6457601435012,compatibility key only; not a Census county
+pr21,99009,21,CAGUAS 115  -21,Caguas,18.2394711140921,-66.0367270254871,compatibility key only; not a Census county
+pr23,99010,23,GUANICA 115 -23,Guánica,17.9659887334244,-66.8976331730957,compatibility key only; not a Census county
+pr29,99011,29,MAYAGUEZ 115-29,Mayagüez,18.2373912818469,-67.147380541546,compatibility key only; not a Census county
+pr32,99012,32,AGUADILLA115-32,Aguadilla,18.40430858,-67.15392125,compatibility key only; not a Census county
+pr35,99013,35,SSEBASTIA115-35,San Sebastián,18.3408521093501,-66.9886325740527,compatibility key only; not a Census county
+pr38,99014,38,DOS BOCA 115-38,Arecibo,18.336,-66.666,compatibility key only; not a Census county
+pr40,99015,40,CAMBALACH115-40,Arecibo,18.45395878,-66.70054232,compatibility key only; not a Census county
+pr41,99016,41,VEGA BAJA115-41,Vega Baja,18.4458787165834,-66.3914685076281,compatibility key only; not a Census county
+pr45,99017,45,BAYAMON 115 -45,Bayamón,18.3988201392758,-66.1410715779413,compatibility key only; not a Census county
+pr50,99018,50,MONACILLO115-50,San Juan,18.3732806365162,-66.0728457784086,compatibility key only; not a Census county
+pr63,99019,63,PALOSECO 115-63,Toa Baja,18.45454337,-66.14887874,compatibility key only; not a Census county
+pr82,99020,82,CANOVANAS115-82,Canóvanas,18.3749310778779,-65.9094991272663,compatibility key only; not a Census county
+pr83,99021,83,COROZAL 115 -83,Corozal,18.3291233336108,-66.3595940765544,compatibility key only; not a Census county
+pr84,99022,84,BERWIND 115 -84,San Juan,18.4101485183135,-66.011397443087,compatibility key only; not a Census county
+pr85,99023,85,S.LLANA 115 -85,Carolina,18.395,-65.981,compatibility key only; not a Census county
+pr86,99024,86,VIADUCTO 115-86,San Juan,18.4462551438155,-66.0779062917654,compatibility key only; not a Census county
+pr87,99025,87,HATO REY 115-87,San Juan,18.4270871873285,-66.0676831279039,compatibility key only; not a Census county
+pr88,99026,88,SJSP 115    -88,San Juan,18.4270894106024,-66.104404337261,compatibility key only; not a Census county
+pr93,99027,93,DORADO 115  -93,Dorado,18.4177430276982,-66.2653662847825,compatibility key only; not a Census county
+pr96,99028,96,COSTA SUR230-96,Guayanilla,18.0030629750221,-66.7549319005293,compatibility key only; not a Census county
+pr99,99029,99,BAYAMON 230 -99,Bayamón,18.399,-66.141,compatibility key only; not a Census county
+pr100,99030,100,MORA 115    -100,Isabela,18.467,-67.036,compatibility key only; not a Census county
+pr101,99031,101,DAGUAO 115  -101,Ceiba,18.232,-65.667,compatibility key only; not a Census county
+pr102,99032,102,BARCLONET115-102,Barceloneta,18.4283908357814,-66.5706576264178,compatibility key only; not a Census county
+pr103,99033,103,CANAS 115   -103,Ponce,18.0127700579151,-66.6390769907291,compatibility key only; not a Census county
+pr106,99034,106,AGUIRRE 230 -106,Salinas,17.9520116156805,-66.2308401882358,compatibility key only; not a Census county
+pr107,99035,107,AGUIRRE 115 -107,Salinas,17.9532741471698,-66.2311584279522,compatibility key only; not a Census county
+pr111,99036,111,H.CREA      -111,Bayamón,18.41145572511,-66.1779709050394,compatibility key only; not a Census county
+pr116,99037,116,ACACIAS 115 -116,Cabo Rojo,18.12868123,-67.1360455,compatibility key only; not a Census county
+pr120,99038,120,S.LLANA 230 -120,Carolina,18.395,-65.981,compatibility key only; not a Census county
+pr127,99039,127,CACHETE13   -127,San Juan,18.3984931434295,-66.0989665285312,compatibility key only; not a Census county
+pr149,99040,149,A.BUENAS 115-149,Aguas Buenas,18.247078688759,-66.1060753786802,compatibility key only; not a Census county
+pr153,99041,153,MANATI 115  -153,Manatí,18.433,-66.456,compatibility key only; not a Census county
+pr167,99042,167,UPJOHN115   -167,Arecibo,18.4249383396828,-66.5905482796362,compatibility key only; not a Census county
+pr169,99043,169,SGERMANTC115-169,San Germán,18.0750990243733,-67.0091432005955,compatibility key only; not a Census county
+pr175,99044,175,CONQUISTADOR-175,Trujillo Alto,18.3435425236042,-66.0125885191723,compatibility key only; not a Census county
+pr177,99045,177,CIALES 115  -177,Ciales,18.3275495781778,-66.4738323567036,compatibility key only; not a Census county
+pr184,99046,184,MAUNABO115  -184,Maunabo,18.0114416005492,-65.904410885355,compatibility key only; not a Census county
+pr185,99047,185,SUN OIL     -185,Yabucoa,18.0483889897792,-65.8516387068331,compatibility key only; not a Census county
+pr190,99048,190,CANA 115    -190,Bayamón,18.3494926249706,-66.185849899094,compatibility key only; not a Census county
+pr196,99049,196,MANATI 230  -196,Manatí,18.433,-66.456,compatibility key only; not a Census county
+pr204,99050,204,MAYAGUEZ-VIC-204,Mayagüez,18.237,-67.147,compatibility key only; not a Census county
+pr211,99051,211,PALMER 115  -211,Río Grande,18.3639503,-65.77090642,compatibility key only; not a Census county
+pr213,99052,213,TORONEGRO115-213,Villalba,18.132,-66.488,compatibility key only; not a Census county
+pr231,99053,231,AÑASCO 115  -231,Añasco,18.2984761586059,-67.152569302061,compatibility key only; not a Census county
+pr232,99054,232,MAYA TC 230 -232,Mayagüez,18.237,-67.147,compatibility key only; not a Census county
+pr233,99055,233,YABUCOA 230 -233,Humacao,18.106,-65.825,compatibility key only; not a Census county
+pr234,99056,234,JUNCOS 115  -234,Juncos,18.2269009978467,-65.9154707181728,compatibility key only; not a Census county
+pr266,99057,266,JAYUYA      -266,Jayuya,18.2178266340192,-66.6040735772664,compatibility key only; not a Census county
+pr271,99058,271,R BAYAMON115-271,Bayamón,18.381696554124,-66.1259055887702,compatibility key only; not a Census county
+pr275,99059,275,COMERIO 115 -275,Comerío,18.1983008074441,-66.2094086233001,compatibility key only; not a Census county
+pr277,99060,277,MAY TC 115  -277,Mayagüez,18.237,-67.147,compatibility key only; not a Census county
+pr280,99061,280,VILLA BETINA-280,San Juan,18.3439345103641,-66.0565131330956,compatibility key only; not a Census county
+pr281,99062,281,QUEB NEGRITO-281,Trujillo Alto,18.3220582564782,-65.9877304348331,compatibility key only; not a Census county
+pr290,99063,290,CAONILLAS 1 -290,Utuado,18.2961853441026,-66.6432524936094,compatibility key only; not a Census county
+pr294,99064,294,HUMACAO TAP -294,Humacao,18.137079891,-65.826856691,compatibility key only; not a Census county
+pr296,99065,296,S.ISABEL 115-296,Santa Isabel,18.02198247,-66.36966581,compatibility key only; not a Census county
+pr310,99066,310,BO PINAS 115-310,Toa Alta,18.3468783690967,-66.2309197231098,compatibility key only; not a Census county
+pr313,99067,313,JDIAZ TC    -313,Ponce,18.0599121162378,-66.5513201474167,compatibility key only; not a Census county
+pr319,99068,319,ECOELECT 230-319,Peñuelas,17.9785078976431,-66.7568194626311,compatibility key only; not a Census county
+pr321,99069,321,AES 230     -321,Guayama,17.9474467239165,-66.149463495378,compatibility key only; not a Census county
+pr334,99070,334,MAUNABO TAP -334,Patillas,18.009142041506433,-65.98522103324383,compatibility key only; not a Census county
+pr335,99071,335,HATILLO 115 -335,Hatillo,18.4352984995114,-66.7866985581113,compatibility key only; not a Census county
+pr343,99072,343,ABBOTT 115  -343,Barceloneta,18.43424277838138,-66.568886543152,compatibility key only; not a Census county
+pr352,99073,352,MORA 230    -352,Isabela,18.4661126296469,-67.0363686248201,compatibility key only; not a Census county
+pr353,99074,353,BARRANQT 115-353,Barranquitas,18.189,-66.319,compatibility key only; not a Census county
+pr363,99075,363,PONCE TC 230-363,Ponce,18.001,-66.612,compatibility key only; not a Census county
+pr378,99076,378,HATO TEJASTC-378,Bayamón,18.4168046806253,-66.1952581711991,compatibility key only; not a Census county
+pr392,99077,392,M PENA GIS  -392,San Juan,18.4341115095258,-66.0602809398757,compatibility key only; not a Census county
+pr400,99078,400,MONTEREY    -400,Corozal,18.3383961252783,-66.3052449457631,compatibility key only; not a Census county
+pr428,99079,428,ALTURAS MAY -428,Mayagüez,18.2327569503965,-67.1513062922523,compatibility key only; not a Census county
+pr440,99080,440,CAMB GP 230 -440,Arecibo,18.4690563228198,-66.6968634056452,compatibility key only; not a Census county
+pr441,99081,441,CAMB GP 115 -441,Arecibo,18.469,-66.697,compatibility key only; not a Census county
+pr442,99082,442,DUPONT      -442,Manatí,18.4569403497865,-66.468957719599,compatibility key only; not a Census county
+pr451,99083,451,AGUBUENAS230-451,Aguas Buenas,18.247,-66.106,compatibility key only; not a Census county
+pr452,99084,452,ROCHE       -452,Manatí,18.4259465841657,-66.4666915134419,compatibility key only; not a Census county
+pr480,99085,480,ENCANTADA   -480,Trujillo Alto,18.3436516739002,-65.9909356210132,compatibility key only; not a Census county
+pr489,99086,489,UNIONCARBIDE-489,Peñuelas,17.9986583457755,-66.7424579382298,compatibility key only; not a Census county
+pr492,99087,492,CANDE ARENAS-492,Toa Baja,18.4133390538859,-66.2261741709764,compatibility key only; not a Census county
+pr545,99088,545,GRANA       -545,Guaynabo,18.3697102278284,-66.1120134707712,compatibility key only; not a Census county
+pr555,99089,555,MOROVIS     -555,Morovis,18.322755837772,-66.4067897909724,compatibility key only; not a Census county
+pr583,99090,583,ESCORIAL    -583,Carolina,18.396697621194,-65.9924687286346,compatibility key only; not a Census county
+pr632,99091,632,ISLA GDE 115-632,San Juan,18.4509507741195,-66.091184784167,compatibility key only; not a Census county
+pr902,99092,902,RADARARECIBO-902,Arecibo,18.3343350948124,-66.7203883384155,compatibility key only; not a Census county
+pr956,99093,956,CACAO 230   -956,Carolina,18.323,-65.939,compatibility key only; not a Census county
+pr1025,99094,1025,J MARTIN SEC-1025,Yabucoa,18.0427565348008,-65.8507550014057,compatibility key only; not a Census county
+pr1027,99095,1027,SUB SAN JOSE-1027,Caguas,18.2496757307187,-66.0730135701285,compatibility key only; not a Census county
+pr1040,99096,1040,BUEN PASTOR -1040,Guaynabo,18.3134012834972,-66.0854506575756,compatibility key only; not a Census county
+pr1077,99097,1077,PON BYPASS  -1077,Ponce,18.001,-66.612,compatibility key only; not a Census county
+pr1078,99098,1078,CERRI JDIAZT-1078,Ponce,18.059844738,-66.551303603,compatibility key only; not a Census county
+pr1079,99099,1079,CERRI TNEGRO-1079,Villalba,18.099408485110843,-66.52099494993725,compatibility key only; not a Census county
+pr1102,99100,1102,REACT HR-MPE-1102,San Juan,18.43426401,-66.06018464,compatibility key only; not a Census county
+pr1103,99101,1103,REACT PS-SJ -1103,San Juan,18.42707984,-66.10472682,compatibility key only; not a Census county
+pr1104,99102,1104,REACT BTC-PS-1104,Bayamón,18.39871644,-66.14055768,compatibility key only; not a Census county
+pr1105,99103,1105,REAC BTC-MTC-1105,San Juan,18.37275885,-66.07301099,compatibility key only; not a Census county
+pr1110,99104,1110,DBOCAS FASE1-1110,Arecibo,18.336,-66.666,compatibility key only; not a Census county
+pr1206,99105,1206,AMGEN_115   -1206,Juncos,18.227648362655366,-65.91415150823626,compatibility key only; not a Census county
+pr1800,99106,1800,PATTERN     -1800,Santa Isabel,17.9852463879162,-66.3977701460828,compatibility key only; not a Census county
+pr1802,99107,1802,WINDMAR     -1802,Ponce,18.0569044867011,-66.5809135960564,compatibility key only; not a Census county
+pr2001,99108,2001,PCC         -2001,Naguabo,18.205363378738333,-65.68592141463986,compatibility key only; not a Census county
+pr2002,99109,2002,SSHV        -2002,Naguabo,18.183381773957397,-65.69444172961099,compatibility key only; not a Census county
+pr2222,99110,2222,TEMP        -2222,Jayuya,18.167836205920874,-66.54354874448703,compatibility key only; not a Census county
+pr3000,99111,3000,INF_HV      -3000,Ceiba,18.232,-65.667,compatibility key only; not a Census county
+pr3001,99112,3001,INF_GEN     -3001,Naguabo,18.216915308240452,-65.68092182321564,compatibility key only; not a Census county
+pr7000,99113,7000,POI         -7000,Santa Isabel,17.992270967071715,-66.38891660083625,compatibility key only; not a Census county
+pr7200,99114,7200,SIT1HV      -7200,Santa Isabel,17.99769258377053,-66.38746824333495,compatibility key only; not a Census county
+pr97014,99115,97014,CIRO        -97014,Salinas,17.961615397833075,-66.23855932079218,compatibility key only; not a Census county
+pr97021,99116,97021,YAROTEK_HV  -97021,Moca,18.4544444438763,-67.0661111111111,compatibility key only; not a Census county
+pr97047,99117,97047,COMETA_HV   -97047,Humacao,18.136654288299766,-65.84480859072228,compatibility key only; not a Census county
+pr97064,99118,97064,VEGASERENA  -97064,Vega Baja,18.446222196096137,-66.40141277730525,compatibility key only; not a Census county
+pr97094,99119,97094,SOLANER     -97094,San Germán,18.075263886328127,-67.00882538520675,compatibility key only; not a Census county
+pr97134,99120,97134,YABUCOA     -97134,Humacao,18.1060857,-65.8243654,compatibility key only; not a Census county
+pr97144,99121,97144,HATILLO     -97144,Hatillo,18.43525792,-66.78669368,compatibility key only; not a Census county

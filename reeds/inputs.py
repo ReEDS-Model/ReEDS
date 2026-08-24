@@ -646,6 +646,26 @@ def get_itls(case=None, level:str='r', errors='raise', **kwargs) -> pd.DataFrame
         kwargs = {}
         errors = 'raise'
     """
+    sw = reeds.io.get_switches(case, **kwargs)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        if level == 'r':
+            if sw.unitdata == 'PR100-1LM':
+                source = pd.read_csv(Path(
+                    reeds.io.reeds_path, 'preprocessing', 'puertorico', 'outputs',
+                    'pr100_1LM_mirror', 'interfaces_itl_pr100.csv'
+                ))
+                return source.assign(
+                    MW_forward=source['MW'], MW_reverse=source['MW']
+                )
+            return pd.read_csv(Path(
+                reeds.io.reeds_path, 'preprocessing', 'puertorico', 'outputs',
+                'case_defaults', 'interfaces_itl.csv'
+            ))
+        if level == 'transgrp':
+            return pd.DataFrame(
+                columns=['r', 'rr', 'MW_forward', 'MW_reverse']
+            )
+        raise ValueError(f'Unsupported PR_explicit ITL level: {level}')
     return get_interface_data(
         case=case,
         datafile='itl_NARIS.csv',
@@ -659,6 +679,34 @@ def get_itls(case=None, level:str='r', errors='raise', **kwargs) -> pd.DataFrame
 def get_distances(case=None, errors='raise', **kwargs) -> pd.DataFrame:
     """
     """
+    sw = reeds.io.get_switches(case, **kwargs)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        interfaces = get_itls(case=case, level='r', **kwargs)[['r', 'rr']]
+        regions = pd.read_csv(Path(
+            reeds.io.reeds_path, 'preprocessing', 'puertorico', 'outputs',
+            'network_115plus', 'regions.csv'
+        )).set_index('r')
+        out = interfaces.copy()
+        for side, endpoint in [('r', 'start'), ('rr', 'end')]:
+            out[f'{endpoint}_lat'] = out[side].map(regions['latitude'])
+            out[f'{endpoint}_lon'] = out[side].map(regions['longitude'])
+        lat1 = np.radians(out['start_lat'].astype(float))
+        lat2 = np.radians(out['end_lat'].astype(float))
+        dlat = lat2 - lat1
+        dlon = np.radians(out['end_lon'] - out['start_lon'])
+        hav = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+        out['length_miles'] = 3958.7613 * 2 * np.arcsin(np.sqrt(hav))
+        out['polarity'] = 'ac'
+        out['voltage'] = np.minimum(
+            out['r'].map(regions['base_kv']), out['rr'].map(regions['base_kv'])
+        ).astype(int)
+        ## Expansion is disabled; zero cost avoids importing unrelated CONUS
+        ## route costs. Existing-line FOM is therefore also zero pending PR data.
+        out['cost_MUSD'] = 0.0
+        return out[[
+            'r', 'rr', 'polarity', 'voltage', 'cost_MUSD', 'length_miles',
+            'start_lat', 'start_lon', 'end_lat', 'end_lon'
+        ]]
     distances = get_interface_data(
         case=case,
         datafile='transmission_cost_distance.csv',
@@ -858,6 +906,35 @@ def validate_zoneset(GSw_ZoneSet):
     if len(missing):
         err = f'Missing these files from {zonepath}: ' + ' '.join(missing)
         raise FileNotFoundError(err)
+    ## Explicit electrical regions are not a partition of Census counties.
+    ## Validate their compatibility keys and topology locally, then bypass the
+    ## CONUS county-universe and national ITL lookup checks below.
+    if GSw_ZoneSet == 'PR_explicit':
+        county2zone = pd.read_csv(Path(zonepath, 'county2zone.csv'), dtype=str)
+        hierarchy = pd.read_csv(Path(zonepath, 'hierarchy.csv'), dtype=str)
+        zonehash = pd.read_csv(Path(zonepath, 'zonehash.csv'), dtype=str)
+        expected = set(hierarchy['r'])
+        if len(expected) != 121:
+            raise ValueError(f'PR_explicit must contain 121 regions, found {len(expected)}')
+        if set(county2zone['r']) != expected or set(zonehash['r']) != expected:
+            raise ValueError('PR_explicit hierarchy, county2zone, and zonehash regions differ')
+        if county2zone['FIPS'].duplicated().any():
+            raise ValueError('PR_explicit compatibility FIPS keys must be unique')
+        hashfunc = get_itl_config()['hashfunc']
+        expected_hash = county2zone.groupby('r').FIPS.agg(
+            lambda values: hash_counties(values.tolist(), hashfunc=hashfunc)
+        )
+        actual_hash = zonehash.set_index('r')[hashfunc]
+        if not actual_hash.sort_index().equals(expected_hash.sort_index()):
+            raise ValueError('PR_explicit zone hashes do not match compatibility keys')
+        interfaces = pd.read_csv(Path(zonepath, 'interfaces_r.csv'), dtype=str)
+        endpoints = interfaces['interface'].str.split('~~', expand=True)
+        if not set(endpoints.stack()).issubset(expected):
+            raise ValueError('PR_explicit interfaces contain an unknown region')
+        required_levels = {'st', 'transreg', 'transgrp', 'nercr', 'interconnect'}
+        if not required_levels.issubset(hierarchy.columns):
+            raise KeyError('PR_explicit hierarchy is missing required levels')
+        return
     ## Are all/only the right counties included?
     fpath_county2zone = Path(zonepath, 'county2zone.csv')
     fpath_countystate = Path(reeds.io.reeds_path, 'inputs', 'zones', 'county_state.csv')

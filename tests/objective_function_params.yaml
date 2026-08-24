@@ -156,9 +156,32 @@ cost_fom:
   excludesets:
   - canada
   - distpv
+  # PR nodal case: hydED/pr169 now gets a real FOM value from hyd_fom.csv (sourced
+  # from the Sienna base_case ext.fom field, see hydcf.py), so it no longer needs
+  # to be skipped. hydEND/hydUD/hydUND/hydNPND have no existing capacity in the
+  # current PR build (no valcap tuples), so this skip is preventive only, in case
+  # future PR builds add existing capacity for these techs without matching
+  # hyd_fom.csv entries -- same structurally-broader-than-cost_fom pattern as PJM.
+  skip:
+    i:
+    - hydEND
+    - hydUD
+    - hydUND
+    - hydNPND
 transmission_line_fom:
   indexsets:
   - routes
+  # PR nodal case: transmission expansion is disabled for PR_explicit, so
+  # get_distances() deliberately zeroes cost_MUSD to avoid importing unrelated
+  # CONUS route costs (reeds/inputs.py get_distances, PR_explicit branch) --
+  # existing-line FOM is a side effect of that same zero. No real PR transmission
+  # cost/FOM data exists yet (checked aiplusinvest PR100 source trees: none found).
+  # Skip is a smoke-test bypass, not a fix -- PR runs carry $0 transmission FOM
+  # for every route until real per-line cost data is available.
+  skip:
+    r:
+    - pr
+  skip_type: start
 m_rsc_dat("cost_trans"):
   indexsets:
   - valcap

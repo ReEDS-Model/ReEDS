@@ -1658,7 +1658,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             import matplotlib.pyplot as plt
             import hourly_plots
             ## Capacity factor and load
-            hourly_plots.plot_maps(sw, inputs_case, reeds_path, figpath)
+            if sw.GSw_ZoneSet != 'PR_explicit':
+                hourly_plots.plot_maps(sw, inputs_case, reeds_path, figpath)
             ## Representative days
             for year in sw.GSw_HourlyWeatherYears:
                 f, ax, _ = reeds.reedsplots.plot_repdays(

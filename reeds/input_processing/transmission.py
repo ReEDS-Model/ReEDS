@@ -72,12 +72,16 @@ def get_interface_params(case, **kwargs):
 
     interface_params = reeds.inputs.get_distances(case)
     ## Apply the minimum-squiggliness factor
-    interface_params['geometry'] = interface_params.apply(_make_line, axis=1)
-    interface_params = gpd.GeoDataFrame(interface_params, crs='EPSG:4326')
-    interface_params['straight_miles'] = (
-        interface_params.geometry.to_crs('EPSG:5070').length
-        / METERS_PER_MILE
-    )
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        ## get_distances() already calculates bus-to-bus great-circle distance.
+        interface_params['straight_miles'] = interface_params['length_miles']
+    else:
+        interface_params['geometry'] = interface_params.apply(_make_line, axis=1)
+        interface_params = gpd.GeoDataFrame(interface_params, crs='EPSG:4326')
+        interface_params['straight_miles'] = (
+            interface_params.geometry.to_crs('EPSG:5070').length
+            / METERS_PER_MILE
+        )
     interface_params['squiggliness'] = interface_params.length_miles / interface_params.straight_miles
     interface_params['multiplier'] = (
         float(sw['GSw_TransSquigglinessMin']) / interface_params['squiggliness']
@@ -90,21 +94,24 @@ def get_interface_params(case, **kwargs):
     ## resulting in duplicate values. So drop duplicates, keeping the longer route.
     interface_params = keep_longer_entry(interface_params)
     ## Include info for individual lines
-    lines = get_individual_lines(case, **kwargs)
-    individual_lines = reeds.inputs.map_hvdc_lines_to_interfaces(
-        case=case, filename='transmission_cost_distance_lines.csv',
-        dtype='cost',
-    )
-    individual_lines = individual_lines.loc[individual_lines.name.isin(lines.index)].copy()
-    individual_lines = keep_longer_entry(sort_regions(individual_lines))
     keepcols = ['r', 'rr', 'polarity', 'voltage', 'cost_MUSD', 'length_miles']
-    ## Only keep the individual-line values that are not already included.
-    ## (We want to use the zone-geometry-specific endpoints wherever possible;
-    ## the individual-line values are just a fallback.)
-    interface_params = (
-        pd.concat([interface_params[keepcols], individual_lines[keepcols]])
-        .drop_duplicates(['r','rr','polarity','voltage'], keep='first')
-    )
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        interface_params = interface_params[keepcols]
+    else:
+        lines = get_individual_lines(case, **kwargs)
+        individual_lines = reeds.inputs.map_hvdc_lines_to_interfaces(
+            case=case, filename='transmission_cost_distance_lines.csv',
+            dtype='cost',
+        )
+        individual_lines = individual_lines.loc[individual_lines.name.isin(lines.index)].copy()
+        individual_lines = keep_longer_entry(sort_regions(individual_lines))
+        ## Only keep the individual-line values that are not already included.
+        ## (We want to use the zone-geometry-specific endpoints wherever possible;
+        ## the individual-line values are just a fallback.)
+        interface_params = (
+            pd.concat([interface_params[keepcols], individual_lines[keepcols]])
+            .drop_duplicates(['r','rr','polarity','voltage'], keep='first')
+        )
     ## Make sure there are no duplicates
     if interface_params[['r','rr','polarity']].duplicated().sum():
         dup = interface_params.loc[
@@ -324,7 +331,7 @@ def get_trancap_init(case, interface_params, level='r'):
         valid_regions[i] = reeds.io.read_input(case, i).squeeze(1).tolist()
 
     ### DC
-    if level == 'r':
+    if (level == 'r') and (sw.GSw_ZoneSet != 'PR_explicit'):
         ## transgrp capacity is only defined for AC
         hvdc = (
             reeds.inputs.map_hvdc_lines_to_interfaces(case, filename='hvdc_existing.csv')
@@ -655,10 +662,25 @@ def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac)
 #%% Main function
 def main(case):
     #%% Calculate parameters
+    sw = reeds.io.get_switches(case)
     outputs = {}
     outputs['firm_import_limit'] = get_firm_import_limit(case)
 
     interface_params = get_interface_params(case)
+
+    if sw.GSw_ZoneSet == 'PR_explicit' and sw.unitdata == 'PR100-1LM':
+        pr_interfaces = pd.read_csv(Path(
+            reeds.io.reeds_path, 'preprocessing', 'puertorico', 'outputs',
+            'pr100_1LM_mirror', 'interfaces_itl_pr100.csv',
+        ))
+        pr_loss = pr_interfaces.set_index(['r', 'rr'])['loss']
+        reverse_loss = pr_loss.rename_axis(index=['rr', 'r']).reorder_levels(['r', 'rr'])
+        loss_lookup = pd.concat([pr_loss, reverse_loss])
+        route_index = pd.MultiIndex.from_frame(interface_params[['r', 'rr']])
+        mapped_loss = loss_lookup.reindex(route_index).to_numpy()
+        interface_params['loss'] = np.where(
+            pd.notna(mapped_loss), mapped_loss, interface_params['loss']
+        )
 
     outputs['transmission_miles'] = interface_params[['r','rr','trtype','miles']].round(3)
     outputs['tranloss'] = interface_params[['r','rr','trtype','loss']].round(5)
@@ -726,20 +748,33 @@ def main(case):
         interface_params,
         outputs['transmission_cost_nonac'],
     )
-    outputs['routes_adjacent'] = calculate_adjacent_routes(case)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        ## Point-node regions have no county polygons. Electrical interfaces are
+        ## the relevant adjacency graph; H2 and CO2 transport are disabled.
+        outputs['routes_adjacent'] = reeds.inputs.get_itls(case)[['r', 'rr']]
+        outputs['r_cs'] = pd.DataFrame(columns=['r', 'cs'])
+        outputs['r_cs_distance_mi'] = pd.DataFrame(columns=['r', 'cs', 'miles'])
+        outputs['val_cs'] = pd.Series(dtype=object, name='cs')
+        outputs['co2_site_char'] = pd.read_csv(
+            Path(reeds.io.reeds_path, 'inputs', 'ctus', 'co2_site_char.csv')
+        ).iloc[0:0]
+    else:
+        outputs['routes_adjacent'] = calculate_adjacent_routes(case)
 
-    ### CO2 storage sites
-    routes_cs = calculate_co2_storage_routes(case)
-    outputs['r_cs'] = routes_cs[['r', 'cs']]
-    outputs['r_cs_distance_mi'] = routes_cs[['r', 'cs', 'miles']]
+        ### CO2 storage sites
+        routes_cs = calculate_co2_storage_routes(case)
+        outputs['r_cs'] = routes_cs[['r', 'cs']]
+        outputs['r_cs_distance_mi'] = routes_cs[['r', 'cs', 'miles']]
 
-    # Determine sites that have valid routes to model regions
-    val_cs = pd.Series(routes_cs['cs'].unique())
-    outputs['val_cs'] = val_cs
+        # Determine sites that have valid routes to model regions
+        val_cs = pd.Series(routes_cs['cs'].unique())
+        outputs['val_cs'] = val_cs
 
-    # Subset CO2 site characteristics data to valid sites
-    co2_site_char = pd.read_csv(Path(reeds.io.reeds_path, 'inputs', 'ctus', 'co2_site_char.csv'))
-    outputs['co2_site_char'] = co2_site_char.loc[co2_site_char['cs'].isin(val_cs)]
+        # Subset CO2 site characteristics data to valid sites
+        co2_site_char = pd.read_csv(
+            Path(reeds.io.reeds_path, 'inputs', 'ctus', 'co2_site_char.csv')
+        )
+        outputs['co2_site_char'] = co2_site_char.loc[co2_site_char['cs'].isin(val_cs)]
 
     #%% Downselect to active regions
     table = {'co2_site_char': True}

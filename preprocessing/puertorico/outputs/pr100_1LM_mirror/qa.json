@@ -1,0 +1,79 @@
+{
+  "scenario": "PR100 1LM",
+  "solve_years": [
+    2022,
+    2025,
+    2028,
+    2030,
+    2035,
+    2040,
+    2045,
+    2050
+  ],
+  "official_capacity_rows": 144,
+  "distpv": {
+    "forced_mw": {
+      "2022": 450.79345600299996,
+      "2025": 771.5340847999998,
+      "2028": 954.54173565,
+      "2030": 1063.44816498,
+      "2035": 1246.1997582500003,
+      "2040": 1443.7443068900004,
+      "2045": 1855.6726980799992,
+      "2050": 2473.9464809500005
+    },
+    "method": "2022 DER archive baseline; 2025-2050 final Engage totals distributed using DER archive spatial shares"
+  },
+  "distpv_profile": {
+    "path": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/inputs/profiles_cf/cf_distpv_pr100_1LM.h5",
+    "regions": 121,
+    "native_profile_regions": 95,
+    "nearest_profile_proxy_regions": 26
+  },
+  "technology_costs": {
+    "basis": "real 2021 USD",
+    "annual_shape": "public PR100 reV cost trajectories",
+    "normalization": "published PR100 first-availability costs",
+    "onshore_after_2035": "held at 2035 because later public PR100 curves were not released",
+    "offshore_after_2035": "held at 2035 because later public PR100 curves were not released",
+    "battery": "ATB annual shape normalized to published PR100 2025 power/energy/FOM values"
+  },
+  "incentives": {
+    "technologies": [
+      "PV",
+      "ONSWIND",
+      "OFSWIND",
+      "BATTERY"
+    ],
+    "itc": "30% through 2033, 15% in 2034, 0% from 2035",
+    "ptc": "none",
+    "safe_harbor_and_tax_equity_penalty": "zero because PR100 PPOA values are proprietary"
+  },
+  "unit_database": {
+    "path": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/inputs/capacity_exogenous/ReEDS_generator_database_final_PR100-1LM.csv",
+    "rows": 164,
+    "capacity_mw": 9995.014504660121,
+    "spatial_method": "source-unit proportional allocation; published aggregate totals",
+    "technology_proxies": {
+      "diesel": "gas-ct with DFO price",
+      "fuel_oil_and_2050_biodiesel": "o-g-s with RFO/B100 price trajectory",
+      "natural_gas_cc_and_steam": "gas-cc aggregate"
+    }
+  },
+  "transmission": {
+    "interfaces": 184,
+    "summed_rating_interfaces": 172,
+    "fallback_interfaces": 12,
+    "loss_method": "rated-current I^2R loss divided by aggregate interface MW",
+    "expansion": "disabled in the case via GSw_TransRestrict=r"
+  },
+  "known_non_exact_inputs": [
+    "PR100 Engage/LUMA unit-level fleet and future PPOA workbooks are not public.",
+    "Fuel prices are digitized from the public PR100 report figure.",
+    "Distributed PV uses a regional PR100 utility-PV profile proxy.",
+    "ReEDS uses one static 2035 resource/profile topology; public PR100 annual costs are applied by year.",
+    "PR100 NG steam and NGCC are aggregated to ReEDS gas-cc.",
+    "The report retains 10 MW hydro through 2050, while the public capacity CSV reports zero after 2022; the model follows the report and the benchmark remains untouched.",
+    "PRAS validation uses ReEDS static outage inputs because PR100 event-level outage draws are not public."
+  ]
+}

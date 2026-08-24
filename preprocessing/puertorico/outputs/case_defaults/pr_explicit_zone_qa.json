@@ -1,0 +1,14 @@
+{
+  "status": "valid",
+  "regions": 121,
+  "zone_set": "PR_explicit",
+  "state": "PR",
+  "interconnect": "PR",
+  "interfaces": 184,
+  "synthetic_fips_range": [
+    "99001",
+    "99121"
+  ],
+  "synthetic_fips_use": "compatibility keys for the current hierarchy reader; never use for county disaggregation or attribution",
+  "output_dir": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/inputs/zones/PR_explicit"
+}

@@ -1,0 +1,7 @@
+tech,weather_year,source_h5,source_exists,source_dataset,selected_site_count,target_timezone,conversion_status
+upv,2018,/projects/aiplusinvest/pr100_rev_profiles/upv_fixed_moderate_limited_35_rep-profiles_2018.h5,True,rep_profiles_0,442,Etc/GMT+4,pending_h5py_reeds_environment
+upv,2019,/projects/aiplusinvest/pr100_rev_profiles/upv_fixed_moderate_limited_35_rep-profiles_2019.h5,True,rep_profiles_0,442,Etc/GMT+4,pending_h5py_reeds_environment
+wind-ons,2018,/projects/aiplusinvest/pr100_rev_profiles/wind_onshore_limited_35_rep-profiles_2018.h5,True,rep_profiles_0,102,Etc/GMT+4,pending_h5py_reeds_environment
+wind-ons,2019,/projects/aiplusinvest/pr100_rev_profiles/wind_onshore_limited_35_rep-profiles_2019.h5,True,rep_profiles_0,102,Etc/GMT+4,pending_h5py_reeds_environment
+wind-ofs,2018,/projects/aiplusinvest/pr100_rev_profiles/wind_offshore_35_rep-profiles_2018.h5,True,rep_profiles_0,123,Etc/GMT+4,pending_h5py_reeds_environment
+wind-ofs,2019,/projects/aiplusinvest/pr100_rev_profiles/wind_offshore_35_rep-profiles_2019.h5,True,rep_profiles_0,123,Etc/GMT+4,pending_h5py_reeds_environment

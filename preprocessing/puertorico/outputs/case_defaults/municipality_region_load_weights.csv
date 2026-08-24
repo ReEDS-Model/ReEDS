@@ -1,0 +1,217 @@
+municipality,municipality_key,region,weight,weight_method,active_load_capacity_mw,mapped_bus_count
+Adjuntas,adjuntas,pr103,0.5,active_standard_load_capacity,3.219226009,1
+Adjuntas,adjuntas,pr169,0.5,active_standard_load_capacity,3.219226009,2
+Aguada,aguada,pr32,1.0,active_standard_load_capacity,19.13150204,8
+Aguadilla,aguadilla,pr100,0.3125,active_standard_load_capacity,16.091428321875,6
+Aguadilla,aguadilla,pr32,0.6875,active_standard_load_capacity,35.401142308125,20
+Aguas Buenas,aguas buenas,pr149,0.5,active_standard_load_capacity,5.264656705,1
+Aguas Buenas,aguas buenas,pr21,0.5,active_standard_load_capacity,5.264656705,1
+Aguas Buenas,aguas buenas,pr378,0.0,active_standard_load_capacity,0.0,1
+Aguas Buenas,aguas buenas,pr451,0.0,active_standard_load_capacity,0.0,5
+Aibonito,aibonito,pr10,1.0,active_standard_load_capacity,17.12907569,6
+Añasco,anasco,pr231,1.0,active_standard_load_capacity,19.90243116,7
+Arecibo,arecibo,pr102,0.09375,active_standard_load_capacity,7.4632952859375,4
+Arecibo,arecibo,pr1110,0.0,active_standard_load_capacity,0.0,1
+Arecibo,arecibo,pr167,0.03125,active_standard_load_capacity,2.4877650953125,1
+Arecibo,arecibo,pr335,0.3125,active_standard_load_capacity,24.877650953125002,15
+Arecibo,arecibo,pr38,0.03125,active_standard_load_capacity,2.4877650953125,3
+Arecibo,arecibo,pr40,0.40625000000000006,active_standard_load_capacity,32.340946239062504,19
+Arecibo,arecibo,pr440,0.09375,active_standard_load_capacity,7.4632952859375,4
+Arecibo,arecibo,pr441,0.0,active_standard_load_capacity,0.0,3
+Arecibo,arecibo,pr902,0.03125,active_standard_load_capacity,2.4877650953125,1
+Arroyo,arroyo,pr8,1.0,active_standard_load_capacity,10.82993915,2
+Barceloneta,barceloneta,pr102,0.9090909090909091,active_standard_load_capacity,28.651447099999995,22
+Barceloneta,barceloneta,pr343,0.09090909090909093,active_standard_load_capacity,2.86514471,3
+Barranquitas,barranquitas,pr353,1.0,active_standard_load_capacity,11.94954463,4
+Bayamón,bayamon,pr1104,0.0,active_standard_load_capacity,0.0,1
+Bayamón,bayamon,pr111,0.022222222222222216,active_standard_load_capacity,3.8089114333333334,1
+Bayamón,bayamon,pr190,0.022222222222222216,active_standard_load_capacity,3.8089114333333334,1
+Bayamón,bayamon,pr271,0.04444444444444443,active_standard_load_capacity,7.617822866666667,1
+Bayamón,bayamon,pr378,0.22222222222222215,active_standard_load_capacity,38.089114333333335,15
+Bayamón,bayamon,pr45,0.6444444444444445,active_standard_load_capacity,110.4584315666667,36
+Bayamón,bayamon,pr63,0.04444444444444443,active_standard_load_capacity,7.617822866666667,2
+Bayamón,bayamon,pr99,0.0,active_standard_load_capacity,0.0,1
+Cabo Rojo,cabo rojo,pr116,0.8,active_standard_load_capacity,23.925624184,12
+Cabo Rojo,cabo rojo,pr169,0.2,active_standard_load_capacity,5.981406046,2
+Caguas,caguas,pr1027,0.0,active_standard_load_capacity,0.0,1
+Caguas,caguas,pr21,1.0,active_standard_load_capacity,115.94969070000008,34
+Caguas,caguas,pr8,0.0,active_standard_load_capacity,0.0,1
+Camuy,camuy,pr100,0.6666666666666666,active_standard_load_capacity,10.727458873333333,2
+Camuy,camuy,pr335,0.3333333333333333,active_standard_load_capacity,5.363729436666667,2
+Canóvanas,canovanas,pr82,1.0,active_standard_load_capacity,28.54582475,21
+Carolina,carolina,pr120,0.0,active_standard_load_capacity,0.0,1
+Carolina,carolina,pr583,0.03225806451612903,active_standard_load_capacity,5.546111667741935,1
+Carolina,carolina,pr8,0.0,active_standard_load_capacity,0.0,1
+Carolina,carolina,pr82,0.16129032258064516,active_standard_load_capacity,27.730558338709677,5
+Carolina,carolina,pr84,0.22580645161290322,active_standard_load_capacity,38.82278167419354,8
+Carolina,carolina,pr85,0.5806451612903226,active_standard_load_capacity,99.83001001935484,29
+Carolina,carolina,pr956,0.0,active_standard_load_capacity,0.0,1
+Cataño,catano,pr45,0.1818181818181818,active_standard_load_capacity,5.365620910909091,2
+Cataño,catano,pr63,0.7272727272727273,active_standard_load_capacity,21.462483643636368,11
+Cataño,catano,pr632,0.0,active_standard_load_capacity,0.0,1
+Cataño,catano,pr87,0.0909090909090909,active_standard_load_capacity,2.6828104554545456,2
+Cayey,cayey,pr10,0.9333333333333332,active_standard_load_capacity,37.543237872,18
+Cayey,cayey,pr378,0.06666666666666667,active_standard_load_capacity,2.6816598480000002,1
+Ceiba,ceiba,pr101,0.8,active_standard_load_capacity,5.7607705048,6
+Ceiba,ceiba,pr18,0.2,active_standard_load_capacity,1.4401926262,1
+Ceiba,ceiba,pr2002,0.0,active_standard_load_capacity,0.0,1
+Ceiba,ceiba,pr3000,0.0,active_standard_load_capacity,0.0,1
+Ciales,ciales,pr177,1.0,active_standard_load_capacity,7.5727502,1
+Cidra,cidra,pr10,1.0,active_standard_load_capacity,26.843957529999994,19
+Coamo,coamo,pr10,0.25,active_standard_load_capacity,4.86615,2
+Coamo,coamo,pr296,0.75,active_standard_load_capacity,14.59845,6
+Comerío,comerio,pr275,1.0,active_standard_load_capacity,7.229513193999999,8
+Corozal,corozal,pr400,0.5,active_standard_load_capacity,7.620873845000001,1
+Corozal,corozal,pr83,0.5,active_standard_load_capacity,7.620873845000001,1
+Culebra,culebra,pr101,1.0,active_standard_load_capacity,2.401565196,2
+Dorado,dorado,pr93,1.0,active_standard_load_capacity,47.32982935999999,16
+Fajardo,fajardo,pr18,1.0,active_standard_load_capacity,41.399333590000005,19
+Florida,florida,pr102,1.0,active_standard_load_capacity,5.502233523,1
+Guánica,guanica,pr2,0.5,active_standard_load_capacity,5.39499724,3
+Guánica,guanica,pr23,0.5,active_standard_load_capacity,5.39499724,1
+Guayama,guayama,pr321,0.045454545454545456,active_standard_load_capacity,1.84132789,3
+Guayama,guayama,pr8,0.9545454545454545,active_standard_load_capacity,38.66788569,40
+Guayanilla,guayanilla,pr2,0.8,active_standard_load_capacity,9.551042728,10
+Guayanilla,guayanilla,pr96,0.2,active_standard_load_capacity,2.387760682,2
+Guaynabo,guaynabo,pr1040,0.034482758620689655,active_standard_load_capacity,4.96737684137931,1
+Guaynabo,guaynabo,pr21,0.0,active_standard_load_capacity,0.0,2
+Guaynabo,guaynabo,pr45,0.10344827586206898,active_standard_load_capacity,14.902130524137931,4
+Guaynabo,guaynabo,pr50,0.20689655172413793,active_standard_load_capacity,29.80426104827586,7
+Guaynabo,guaynabo,pr545,0.06896551724137931,active_standard_load_capacity,9.93475368275862,1
+Guaynabo,guaynabo,pr87,0.5862068965517241,active_standard_load_capacity,84.44540630344827,24
+Guaynabo,guaynabo,pr88,0.0,active_standard_load_capacity,0.0,3
+Gurabo,gurabo,pr21,0.5,active_standard_load_capacity,17.06791432,4
+Gurabo,gurabo,pr234,0.5,active_standard_load_capacity,17.06791432,4
+Hatillo,hatillo,pr335,1.0,active_standard_load_capacity,24.46086381,14
+Hatillo,hatillo,pr97144,0.0,active_standard_load_capacity,0.0,1
+Hormigueros,hormigueros,pr169,1.0,active_standard_load_capacity,9.339761111,1
+Humacao,humacao,pr14,0.8846153846153847,active_standard_load_capacity,61.17492012269227,31
+Humacao,humacao,pr233,0.03846153846153849,active_standard_load_capacity,2.659779135769231,3
+Humacao,humacao,pr294,0.0,active_standard_load_capacity,0.0,1
+Humacao,humacao,pr5,0.03846153846153849,active_standard_load_capacity,2.659779135769231,4
+Humacao,humacao,pr97047,0.03846153846153849,active_standard_load_capacity,2.659779135769231,6
+Humacao,humacao,pr97134,0.0,active_standard_load_capacity,0.0,1
+Isabela,isabela,pr100,0.75,active_standard_load_capacity,17.7636354075,14
+Isabela,isabela,pr35,0.125,active_standard_load_capacity,2.96060590125,1
+Isabela,isabela,pr352,0.125,active_standard_load_capacity,2.96060590125,3
+Jayuya,jayuya,pr2222,0.0,active_standard_load_capacity,0.0,1
+Jayuya,jayuya,pr266,1.0,active_standard_load_capacity,8.875256907,1
+Juana Díaz,juana diaz,pr3,0.0,active_standard_load_capacity,0.0,1
+Juana Díaz,juana diaz,pr313,1.0,active_standard_load_capacity,38.60319549,18
+Juncos,juncos,pr1206,0.14285714285714285,active_standard_load_capacity,5.828623982857143,1
+Juncos,juncos,pr234,0.8571428571428571,active_standard_load_capacity,34.97174389714286,17
+Lajas,lajas,pr169,1.0,active_standard_load_capacity,13.377072969999999,3
+Lares,lares,pr169,0.0,active_standard_load_capacity,0.0,1
+Lares,lares,pr35,0.6666666666666666,active_standard_load_capacity,7.8275976133333325,2
+Lares,lares,pr38,0.3333333333333333,active_standard_load_capacity,3.9137988066666662,1
+Las Marías,las marias,pr35,1.0,active_standard_load_capacity,3.000266765,1
+Las Piedras,las piedras,pr234,1.0,active_standard_load_capacity,33.13759394000001,21
+Loíza,loiza,pr82,1.0,active_standard_load_capacity,9.820566985999998,6
+Luquillo,luquillo,pr211,1.0,active_standard_load_capacity,12.4139437,2
+Manatí,manati,pr102,0.0588235294117647,active_standard_load_capacity,3.2691944917647056,2
+Manatí,manati,pr153,0.8235294117647058,active_standard_load_capacity,45.76872288470588,22
+Manatí,manati,pr196,0.0,active_standard_load_capacity,0.0,1
+Manatí,manati,pr442,0.0588235294117647,active_standard_load_capacity,3.2691944917647056,1
+Manatí,manati,pr452,0.0588235294117647,active_standard_load_capacity,3.2691944917647056,1
+Maricao,maricao,pr169,0.3333333333333333,active_standard_load_capacity,1.4097160649999998,1
+Maricao,maricao,pr29,0.6666666666666666,active_standard_load_capacity,2.8194321299999996,4
+Maunabo,maunabo,pr14,1.0,active_standard_load_capacity,4.685228334,3
+Maunabo,maunabo,pr184,0.0,active_standard_load_capacity,0.0,1
+Mayagüez,mayaguez,pr116,0.21739130434782608,active_standard_load_capacity,16.877627482608695,5
+Mayagüez,mayaguez,pr204,0.0,active_standard_load_capacity,0.0,1
+Mayagüez,mayaguez,pr231,0.13043478260869565,active_standard_load_capacity,10.126576489565217,2
+Mayagüez,mayaguez,pr232,0.0,active_standard_load_capacity,0.0,1
+Mayagüez,mayaguez,pr277,0.0,active_standard_load_capacity,0.0,5
+Mayagüez,mayaguez,pr29,0.608695652173913,active_standard_load_capacity,47.257356951304345,26
+Mayagüez,mayaguez,pr428,0.043478260869565216,active_standard_load_capacity,3.375525496521739,1
+Moca,moca,pr100,0.2,active_standard_load_capacity,3.310628844,7
+Moca,moca,pr32,0.8,active_standard_load_capacity,13.242515376,4
+Moca,moca,pr97021,0.0,active_standard_load_capacity,0.0,5
+Morovis,morovis,pr555,1.0,active_standard_load_capacity,12.18585008,1
+Naguabo,naguabo,pr101,0.0,active_standard_load_capacity,0.0,1
+Naguabo,naguabo,pr16,1.0,active_standard_load_capacity,14.898267029999998,12
+Naguabo,naguabo,pr2001,0.0,active_standard_load_capacity,0.0,1
+Naguabo,naguabo,pr2002,0.0,active_standard_load_capacity,0.0,3
+Naguabo,naguabo,pr3001,0.0,active_standard_load_capacity,0.0,1
+Naranjito,naranjito,pr45,1.0,active_standard_load_capacity,12.72578261,1
+Orocovis,orocovis,pr213,0.5,active_standard_load_capacity,4.4237536025,3
+Orocovis,orocovis,pr353,0.5,active_standard_load_capacity,4.4237536025,3
+Patillas,patillas,pr334,0.0,active_standard_load_capacity,0.0,1
+Patillas,patillas,pr8,1.0,active_standard_load_capacity,8.963394276,4
+Peñuelas,penuelas,pr2,0.5714285714285715,active_standard_load_capacity,6.728228897142857,20
+Peñuelas,penuelas,pr319,0.14285714285714288,active_standard_load_capacity,1.6820572242857144,4
+Peñuelas,penuelas,pr489,0.14285714285714288,active_standard_load_capacity,1.6820572242857144,1
+Peñuelas,penuelas,pr96,0.14285714285714288,active_standard_load_capacity,1.6820572242857144,1
+Ponce,ponce,pr103,0.19607843137254902,active_standard_load_capacity,27.46671241176471,16
+Ponce,ponce,pr1077,0.0,active_standard_load_capacity,0.0,1
+Ponce,ponce,pr1078,0.0,active_standard_load_capacity,0.0,1
+Ponce,ponce,pr1802,0.0,active_standard_load_capacity,0.0,1
+Ponce,ponce,pr2,0.019607843137254895,active_standard_load_capacity,2.7466712411764704,1
+Ponce,ponce,pr3,0.607843137254902,active_standard_load_capacity,85.14680847647061,45
+Ponce,ponce,pr313,0.1764705882352941,active_standard_load_capacity,24.72004117058824,20
+Ponce,ponce,pr363,0.0,active_standard_load_capacity,0.0,1
+Quebradillas,quebradillas,pr100,1.0,active_standard_load_capacity,11.53032519,14
+Rincón,rincon,pr231,0.6666666666666667,active_standard_load_capacity,6.876861893333333,4
+Rincón,rincon,pr32,0.33333333333333337,active_standard_load_capacity,3.4384309466666667,2
+Río Grande,rio grande,pr211,0.5555555555555556,active_standard_load_capacity,19.008371266666664,6
+Río Grande,rio grande,pr82,0.4444444444444444,active_standard_load_capacity,15.206697013333331,5
+Sabana Grande,sabana grande,pr169,0.8,active_standard_load_capacity,9.864669776,4
+Sabana Grande,sabana grande,pr2,0.2,active_standard_load_capacity,2.466167444,2
+Salinas,salinas,pr106,0.6000000000000001,active_standard_load_capacity,10.456165104,14
+Salinas,salinas,pr107,0.0,active_standard_load_capacity,0.0,6
+Salinas,salinas,pr296,0.10000000000000002,active_standard_load_capacity,1.742694184,3
+Salinas,salinas,pr8,0.30000000000000004,active_standard_load_capacity,5.228082552,19
+Salinas,salinas,pr97014,0.0,active_standard_load_capacity,0.0,1
+San Germán,san german,pr116,0.0,active_standard_load_capacity,0.0,1
+San Germán,san german,pr169,0.9333333333333333,active_standard_load_capacity,19.772587986666668,17
+San Germán,san german,pr29,0.06666666666666667,active_standard_load_capacity,1.4123277133333334,1
+San Germán,san german,pr97094,0.0,active_standard_load_capacity,0.0,1
+San Juan,san juan,pr1102,0.0,active_standard_load_capacity,0.0,1
+San Juan,san juan,pr1103,0.0,active_standard_load_capacity,0.0,1
+San Juan,san juan,pr1105,0.0,active_standard_load_capacity,0.0,1
+San Juan,san juan,pr127,0.008064516129032261,active_standard_load_capacity,4.2455050137096775,1
+San Juan,san juan,pr21,0.032258064516129045,active_standard_load_capacity,16.98202005483871,4
+San Juan,san juan,pr280,0.008064516129032261,active_standard_load_capacity,4.2455050137096775,1
+San Juan,san juan,pr392,0.08870967741935486,active_standard_load_capacity,46.700555150806444,19
+San Juan,san juan,pr50,0.11290322580645162,active_standard_load_capacity,59.43707019193547,20
+San Juan,san juan,pr632,0.04032258064516131,active_standard_load_capacity,21.22752506854839,7
+San Juan,san juan,pr84,0.18548387096774194,active_standard_load_capacity,97.64661531532255,30
+San Juan,san juan,pr85,0.024193548387096784,active_standard_load_capacity,12.736515041129032,4
+San Juan,san juan,pr86,0.09677419354838712,active_standard_load_capacity,50.94606016451612,15
+San Juan,san juan,pr87,0.3709677419354838,active_standard_load_capacity,195.29323063064507,58
+San Juan,san juan,pr88,0.032258064516129045,active_standard_load_capacity,16.98202005483871,8
+San Lorenzo,san lorenzo,pr234,1.0,active_standard_load_capacity,20.42637687,9
+San Sebastián,san sebastian,pr35,1.0,active_standard_load_capacity,20.28577057,10
+Santa Isabel,santa isabel,pr1800,0.0,active_standard_load_capacity,0.0,1
+Santa Isabel,santa isabel,pr296,1.0,active_standard_load_capacity,19.4844365,12
+Santa Isabel,santa isabel,pr3,0.0,active_standard_load_capacity,0.0,1
+Santa Isabel,santa isabel,pr313,0.0,active_standard_load_capacity,0.0,1
+Santa Isabel,santa isabel,pr7000,0.0,active_standard_load_capacity,0.0,1
+Santa Isabel,santa isabel,pr7200,0.0,active_standard_load_capacity,0.0,4
+Santa Isabel,santa isabel,pr8,0.0,active_standard_load_capacity,0.0,1
+Toa Alta,toa alta,pr310,0.25,active_standard_load_capacity,10.5362312975,1
+Toa Alta,toa alta,pr93,0.75,active_standard_load_capacity,31.6086938925,4
+Toa Baja,toa baja,pr378,0.29411764705882354,active_standard_load_capacity,15.648658997058824,8
+Toa Baja,toa baja,pr492,0.058823529411764705,active_standard_load_capacity,3.129731799411765,1
+Toa Baja,toa baja,pr63,0.11764705882352941,active_standard_load_capacity,6.25946359882353,10
+Toa Baja,toa baja,pr93,0.5294117647058824,active_standard_load_capacity,28.167586194705883,11
+Trujillo Alto,trujillo alto,pr175,0.125,active_standard_load_capacity,5.96920140125,1
+Trujillo Alto,trujillo alto,pr281,0.125,active_standard_load_capacity,5.96920140125,1
+Trujillo Alto,trujillo alto,pr480,0.125,active_standard_load_capacity,5.96920140125,1
+Trujillo Alto,trujillo alto,pr85,0.625,active_standard_load_capacity,29.84600700625,8
+Utuado,utuado,pr290,0.0,active_standard_load_capacity,0.0,1
+Utuado,utuado,pr38,1.0,active_standard_load_capacity,13.699286489999999,10
+Vega Alta,vega alta,pr41,0.7499999999999999,active_standard_load_capacity,17.5536101025,6
+Vega Alta,vega alta,pr93,0.25,active_standard_load_capacity,5.8512033675,5
+Vega Baja,vega baja,pr153,0.0,active_standard_load_capacity,0.0,3
+Vega Baja,vega baja,pr41,1.0,active_standard_load_capacity,41.777192039999996,15
+Vega Baja,vega baja,pr93,0.0,active_standard_load_capacity,0.0,1
+Vega Baja,vega baja,pr97064,0.0,active_standard_load_capacity,0.0,1
+Vieques,vieques,pr101,1.0,active_standard_load_capacity,5.539579568000001,7
+Villalba,villalba,pr1079,0.0,active_standard_load_capacity,0.0,1
+Villalba,villalba,pr213,1.0,active_standard_load_capacity,13.01411269,8
+Yabucoa,yabucoa,pr1025,0.16666666666666666,active_standard_load_capacity,2.4504860216666664,1
+Yabucoa,yabucoa,pr14,0.6666666666666666,active_standard_load_capacity,9.801944086666666,5
+Yabucoa,yabucoa,pr185,0.16666666666666666,active_standard_load_capacity,2.4504860216666664,1
+Yauco,yauco,pr169,0.0,active_standard_load_capacity,0.0,1
+Yauco,yauco,pr2,1.0,active_standard_load_capacity,23.87157782,10

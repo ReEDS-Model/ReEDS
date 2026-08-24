@@ -504,7 +504,12 @@ def main(reeds_path, inputs_case):
     prescribed_nonRSC['tech'] = prescribed_nonRSC['tech'].str.lower()
     ### assign vintage based on start year of the unit
     prescribed_nonRSC= pd.merge(prescribed_nonRSC, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
-    prescribed_nonRSC['vin'] = prescribed_nonRSC.apply(lambda row: f"new{row[str(row['StartYear'])]}", axis=1)
+    if prescribed_nonRSC.empty:
+        prescribed_nonRSC['vin'] = pd.Series(dtype=object)
+    else:
+        prescribed_nonRSC['vin'] = prescribed_nonRSC.apply(
+            lambda row: f"new{row[str(row['StartYear'])]}", axis=1
+        )
 
     prescribed_nonRSC = prescribed_nonRSC[COLNAMES['prescribed_nonRSC'][0]]
     prescribed_nonRSC.columns = COLNAMES['prescribed_nonRSC'][1]
@@ -533,7 +538,12 @@ def main(reeds_path, inputs_case):
 
     ### assign vintage based on start year of the unit
     prescribed_nonRSC_energy= pd.merge(prescribed_nonRSC_energy, ivt_df, how='left', left_on='tech', right_on='Unnamed: 0')
-    prescribed_nonRSC_energy['vin'] = prescribed_nonRSC_energy.apply(lambda row: f"new{row[str(row['StartYear'])]}", axis=1)
+    if prescribed_nonRSC_energy.empty:
+        prescribed_nonRSC_energy['vin'] = pd.Series(dtype=object)
+    else:
+        prescribed_nonRSC_energy['vin'] = prescribed_nonRSC_energy.apply(
+            lambda row: f"new{row[str(row['StartYear'])]}", axis=1
+        )
                                 
     prescribed_nonRSC_energy = prescribed_nonRSC_energy[COLNAMES['prescribed_nonRSC_energy'][0]]
     prescribed_nonRSC_energy.columns = COLNAMES['prescribed_nonRSC_energy'][1]
@@ -717,6 +727,10 @@ def main(reeds_path, inputs_case):
     h2_ba_share = h2_ba_share.loc[years].copy()
     ## Reshape from wide to long format
     h2_ba_share_out = h2_ba_share.reset_index().melt(id_vars='t', var_name='*r', value_name='fraction')[['*r','t','fraction']]
+    if sw.GSw_ZoneSet == 'PR_explicit' and h2_ba_share_out.empty:
+        h2_ba_share_out = pd.DataFrame({
+            '*r': [regions[0]], 't': [years[0]], 'fraction': [0.0]
+        })
 
     # Calculating the consumption characteristics (has columns i, t, parameter, value)
     consume_char0 = pd.read_csv(
@@ -871,6 +885,17 @@ def main(reeds_path, inputs_case):
     # Average monthly data to get factor values by ccseason
     hydcapadj_ccszn = hydcapadj_ccszn.groupby(['*i','r','ccseason']).mean().reset_index()
     hydcapadj_ccszn['value'] = hydcapadj_ccszn['value'].round(5)
+    if sw.GSw_ZoneSet == 'PR_explicit' and hydcapadj_ccszn.empty:
+        # PR100 supplies monthly hydro energy availability but not a separate
+        # seasonal nameplate derate. Preserve nameplate capacity provisionally
+        # for each existing hydro technology-region pair.
+        pr_hydro = pd.read_csv(os.path.join(inputs_case, 'hydcf.csv'))[['*i', 'r']]
+        pr_hydro = pr_hydro.drop_duplicates()
+        hydcapadj_ccszn = pd.concat(
+            [pr_hydro.assign(ccseason=season, value=1.0)
+             for season in ['cold', 'hot']],
+            ignore_index=True,
+        )[['*i', 'ccseason', 'r', 'value']]
 
 
     #%%----------------------------------------------------------------------------

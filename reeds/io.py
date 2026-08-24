@@ -1545,6 +1545,11 @@ def assemble_supplycurve(
     dfin = floatify(pd.read_csv(scfile, index_col='sc_point_gid'))
     ## If derived columns are already in file, it's already been assembled, so stop here
     if 'supply_curve_cost_per_mw' in dfin:
+        ## Explicit Puerto Rico supply curves are staged with their authoritative
+        ## electrical region and interconnection fields already attached. Rejoining
+        ## them to the CONUS reV sitemap would silently replace those regions.
+        if sw.GSw_ZoneSet == 'PR_explicit':
+            return dfin
         ## Rebuild it if not aggregating
         if skip_if_complete:
             return dfin

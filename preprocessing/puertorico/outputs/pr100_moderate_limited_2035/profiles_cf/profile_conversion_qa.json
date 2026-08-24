@@ -1,0 +1,90 @@
+{
+  "weather_years": [
+    2018,
+    2019
+  ],
+  "timezone": "source and output timestamps remain UTC; ReEDS converts to Etc/GMT+4",
+  "technologies": {
+    "upv": {
+      "selected_sites": 442,
+      "years": {
+        "2018": {
+          "source_h5": "/projects/aiplusinvest/pr100_rev_profiles/upv_fixed_moderate_limited_35_rep-profiles_2018.h5",
+          "source_rows": 17520,
+          "target_rows": 8760,
+          "sites": 442,
+          "time_conversion": "mean_of_two_half_hour_intervals",
+          "minimum_cf": 0.0,
+          "maximum_cf": 0.781000018119812,
+          "mean_cf": 0.1952212005853653
+        },
+        "2019": {
+          "source_h5": "/projects/aiplusinvest/pr100_rev_profiles/upv_fixed_moderate_limited_35_rep-profiles_2019.h5",
+          "source_rows": 17520,
+          "target_rows": 8760,
+          "sites": 442,
+          "time_conversion": "mean_of_two_half_hour_intervals",
+          "minimum_cf": 0.0,
+          "maximum_cf": 0.781000018119812,
+          "mean_cf": 0.1951322853565216
+        }
+      },
+      "output_h5": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/pr100_moderate_limited_2035/profiles_cf/cf_upv_pr100-moderate-limited-35.h5",
+      "output_size_bytes": 13139134
+    },
+    "wind-ons": {
+      "selected_sites": 102,
+      "years": {
+        "2018": {
+          "source_h5": "/projects/aiplusinvest/pr100_rev_profiles/wind_onshore_limited_35_rep-profiles_2018.h5",
+          "source_rows": 8760,
+          "target_rows": 8760,
+          "sites": 102,
+          "time_conversion": "already_hourly",
+          "minimum_cf": 0.0,
+          "maximum_cf": 1.0,
+          "mean_cf": 0.4613705277442932
+        },
+        "2019": {
+          "source_h5": "/projects/aiplusinvest/pr100_rev_profiles/wind_onshore_limited_35_rep-profiles_2019.h5",
+          "source_rows": 8760,
+          "target_rows": 8760,
+          "sites": 102,
+          "time_conversion": "already_hourly",
+          "minimum_cf": 0.0,
+          "maximum_cf": 1.0,
+          "mean_cf": 0.3998861610889435
+        }
+      },
+      "output_h5": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/pr100_moderate_limited_2035/profiles_cf/cf_wind-ons_pr100-limited-35.h5",
+      "output_size_bytes": 6819446
+    },
+    "wind-ofs": {
+      "selected_sites": 123,
+      "years": {
+        "2018": {
+          "source_h5": "/projects/aiplusinvest/pr100_rev_profiles/wind_offshore_35_rep-profiles_2018.h5",
+          "source_rows": 8760,
+          "target_rows": 8760,
+          "sites": 123,
+          "time_conversion": "already_hourly",
+          "minimum_cf": 0.0,
+          "maximum_cf": 0.9191710352897644,
+          "mean_cf": 0.4171436131000519
+        },
+        "2019": {
+          "source_h5": "/projects/aiplusinvest/pr100_rev_profiles/wind_offshore_35_rep-profiles_2019.h5",
+          "source_rows": 8760,
+          "target_rows": 8760,
+          "sites": 123,
+          "time_conversion": "already_hourly",
+          "minimum_cf": 0.0,
+          "maximum_cf": 0.9191710352897644,
+          "mean_cf": 0.3465019464492798
+        }
+      },
+      "output_h5": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/pr100_moderate_limited_2035/profiles_cf/cf_wind-ofs_pr100-35.h5",
+      "output_size_bytes": 7824802
+    }
+  }
+}

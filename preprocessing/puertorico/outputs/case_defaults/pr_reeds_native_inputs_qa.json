@@ -1,0 +1,406 @@
+{
+  "zone_set": "PR_explicit",
+  "voltage_threshold": ">=115 kV",
+  "supply_curve_scenario": "pr100-moderate-limited-35",
+  "cost_basis": "real 2021 USD",
+  "regions": 121,
+  "supply_curves": {
+    "upv": {
+      "rows": 478,
+      "capacity_mw": 14738.855363176628,
+      "regions": 95,
+      "exogenous_profile_clones": [
+        {
+          "new_sc_point_gid": 1640,
+          "donor_sc_point_gid": 160,
+          "region": "pr100",
+          "capacity_mw": 13.073107158375,
+          "class": 3,
+          "cf": 0.19306168
+        },
+        {
+          "new_sc_point_gid": 1641,
+          "donor_sc_point_gid": 1466,
+          "region": "pr103",
+          "capacity_mw": 3.7705532947058815,
+          "class": 4,
+          "cf": 0.19929782
+        },
+        {
+          "new_sc_point_gid": 1642,
+          "donor_sc_point_gid": 1634,
+          "region": "pr107",
+          "capacity_mw": 120.0,
+          "class": 5,
+          "cf": 0.20296995
+        },
+        {
+          "new_sc_point_gid": 1643,
+          "donor_sc_point_gid": 419,
+          "region": "pr111",
+          "capacity_mw": 0.5345333332888887,
+          "class": 1,
+          "cf": 0.18287948
+        },
+        {
+          "new_sc_point_gid": 1644,
+          "donor_sc_point_gid": 499,
+          "region": "pr127",
+          "capacity_mw": 0.676851964104839,
+          "class": 1,
+          "cf": 0.18200722
+        },
+        {
+          "new_sc_point_gid": 1645,
+          "donor_sc_point_gid": 1116,
+          "region": "pr14",
+          "capacity_mw": 82.07088461538463,
+          "class": 3,
+          "cf": 0.19101645
+        },
+        {
+          "new_sc_point_gid": 1646,
+          "donor_sc_point_gid": 804,
+          "region": "pr149",
+          "capacity_mw": 0.450757312,
+          "class": 1,
+          "cf": 0.18215382
+        },
+        {
+          "new_sc_point_gid": 1647,
+          "donor_sc_point_gid": 257,
+          "region": "pr153",
+          "capacity_mw": 11.547612323058823,
+          "class": 2,
+          "cf": 0.18885249
+        },
+        {
+          "new_sc_point_gid": 1648,
+          "donor_sc_point_gid": 419,
+          "region": "pr190",
+          "capacity_mw": 0.5345333332888887,
+          "class": 1,
+          "cf": 0.18287948
+        },
+        {
+          "new_sc_point_gid": 1649,
+          "donor_sc_point_gid": 1387,
+          "region": "pr2",
+          "capacity_mw": 10.858064023870588,
+          "class": 1,
+          "cf": 0.18592988
+        },
+        {
+          "new_sc_point_gid": 1650,
+          "donor_sc_point_gid": 497,
+          "region": "pr271",
+          "capacity_mw": 1.0690666665777775,
+          "class": 1,
+          "cf": 0.1808112
+        },
+        {
+          "new_sc_point_gid": 1651,
+          "donor_sc_point_gid": 764,
+          "region": "pr29",
+          "capacity_mw": 7.082047071486955,
+          "class": 1,
+          "cf": 0.18500876
+        },
+        {
+          "new_sc_point_gid": 1652,
+          "donor_sc_point_gid": 1392,
+          "region": "pr3",
+          "capacity_mw": 11.688715213588235,
+          "class": 1,
+          "cf": 0.18430041
+        },
+        {
+          "new_sc_point_gid": 1653,
+          "donor_sc_point_gid": 419,
+          "region": "pr378",
+          "capacity_mw": 10.26316470632026,
+          "class": 1,
+          "cf": 0.18287948
+        },
+        {
+          "new_sc_point_gid": 1654,
+          "donor_sc_point_gid": 326,
+          "region": "pr38",
+          "capacity_mw": 4.39276045303125,
+          "class": 2,
+          "cf": 0.18834226
+        },
+        {
+          "new_sc_point_gid": 1655,
+          "donor_sc_point_gid": 275,
+          "region": "pr392",
+          "capacity_mw": 7.445371605153228,
+          "class": 3,
+          "cf": 0.19575962
+        },
+        {
+          "new_sc_point_gid": 1656,
+          "donor_sc_point_gid": 250,
+          "region": "pr40",
+          "capacity_mw": 4.63693750040625,
+          "class": 3,
+          "cf": 0.19359472
+        },
+        {
+          "new_sc_point_gid": 1657,
+          "donor_sc_point_gid": 764,
+          "region": "pr428",
+          "capacity_mw": 25.48364775843478,
+          "class": 1,
+          "cf": 0.18500876
+        },
+        {
+          "new_sc_point_gid": 1658,
+          "donor_sc_point_gid": 181,
+          "region": "pr442",
+          "capacity_mw": 0.8248294516470587,
+          "class": 4,
+          "cf": 0.19760661
+        },
+        {
+          "new_sc_point_gid": 1659,
+          "donor_sc_point_gid": 497,
+          "region": "pr45",
+          "capacity_mw": 15.50146666537778,
+          "class": 1,
+          "cf": 0.1808112
+        },
+        {
+          "new_sc_point_gid": 1660,
+          "donor_sc_point_gid": 257,
+          "region": "pr452",
+          "capacity_mw": 0.8248294516470587,
+          "class": 2,
+          "cf": 0.18885249
+        },
+        {
+          "new_sc_point_gid": 1661,
+          "donor_sc_point_gid": 341,
+          "region": "pr492",
+          "capacity_mw": 0.8653529413529412,
+          "class": 2,
+          "cf": 0.19056092
+        },
+        {
+          "new_sc_point_gid": 1662,
+          "donor_sc_point_gid": 1193,
+          "region": "pr5",
+          "capacity_mw": 0.4900384615384619,
+          "class": 3,
+          "cf": 0.19205135
+        },
+        {
+          "new_sc_point_gid": 1663,
+          "donor_sc_point_gid": 500,
+          "region": "pr50",
+          "capacity_mw": 9.475927497467744,
+          "class": 1,
+          "cf": 0.18255089
+        },
+        {
+          "new_sc_point_gid": 1664,
+          "donor_sc_point_gid": 275,
+          "region": "pr583",
+          "capacity_mw": 0.5457467791612903,
+          "class": 3,
+          "cf": 0.19575962
+        },
+        {
+          "new_sc_point_gid": 1665,
+          "donor_sc_point_gid": 419,
+          "region": "pr63",
+          "capacity_mw": 2.79977254928366,
+          "class": 1,
+          "cf": 0.18287948
+        },
+        {
+          "new_sc_point_gid": 1666,
+          "donor_sc_point_gid": 499,
+          "region": "pr632",
+          "capacity_mw": 3.3842598205241954,
+          "class": 1,
+          "cf": 0.18200722
+        },
+        {
+          "new_sc_point_gid": 1667,
+          "donor_sc_point_gid": 1637,
+          "region": "pr8",
+          "capacity_mw": 36.86485044375455,
+          "class": 5,
+          "cf": 0.20298149
+        },
+        {
+          "new_sc_point_gid": 1668,
+          "donor_sc_point_gid": 275,
+          "region": "pr84",
+          "capacity_mw": 19.387822628540324,
+          "class": 3,
+          "cf": 0.19575962
+        },
+        {
+          "new_sc_point_gid": 1669,
+          "donor_sc_point_gid": 275,
+          "region": "pr85",
+          "capacity_mw": 11.853997917217743,
+          "class": 3,
+          "cf": 0.19575962
+        },
+        {
+          "new_sc_point_gid": 1670,
+          "donor_sc_point_gid": 499,
+          "region": "pr86",
+          "capacity_mw": 8.122223569258066,
+          "class": 1,
+          "cf": 0.18200722
+        },
+        {
+          "new_sc_point_gid": 1671,
+          "donor_sc_point_gid": 500,
+          "region": "pr87",
+          "capacity_mw": 31.13519034882258,
+          "class": 1,
+          "cf": 0.18255089
+        },
+        {
+          "new_sc_point_gid": 1672,
+          "donor_sc_point_gid": 499,
+          "region": "pr88",
+          "capacity_mw": 2.707407856419356,
+          "class": 1,
+          "cf": 0.18200722
+        },
+        {
+          "new_sc_point_gid": 1673,
+          "donor_sc_point_gid": 1633,
+          "region": "pr97014",
+          "capacity_mw": 33.0,
+          "class": 5,
+          "cf": 0.2027052
+        },
+        {
+          "new_sc_point_gid": 1674,
+          "donor_sc_point_gid": 1116,
+          "region": "pr97047",
+          "capacity_mw": 0.4900384615384619,
+          "class": 3,
+          "cf": 0.19101645
+        },
+        {
+          "new_sc_point_gid": 1675,
+          "donor_sc_point_gid": 183,
+          "region": "pr97064",
+          "capacity_mw": 25.0,
+          "class": 4,
+          "cf": 0.19702654
+        }
+      ]
+    },
+    "wind-ons": {
+      "rows": 102,
+      "capacity_mw": 1607.5893000000003,
+      "regions": 48,
+      "exogenous_profile_clones": []
+    },
+    "wind-ofs": {
+      "rows": 123,
+      "capacity_mw": 36077.189399999996,
+      "regions": 36,
+      "exogenous_profile_clones": []
+    }
+  },
+  "site_cf_profiles": {
+    "upv": {
+      "source": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/pr100_moderate_limited_2035/profiles_cf/cf_upv_pr100-moderate-limited-35.h5",
+      "destination": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/inputs/profiles_cf/cf_upv_pr100-moderate-limited-35.h5",
+      "weather_years": [
+        2018,
+        2019
+      ],
+      "sites": 478
+    },
+    "wind-ons": {
+      "source": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/pr100_moderate_limited_2035/profiles_cf/cf_wind-ons_pr100-limited-35.h5",
+      "destination": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/inputs/profiles_cf/cf_wind-ons_pr100-moderate-limited-35.h5",
+      "weather_years": [
+        2018,
+        2019
+      ],
+      "sites": 102
+    },
+    "wind-ofs": {
+      "source": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/pr100_moderate_limited_2035/profiles_cf/cf_wind-ofs_pr100-35.h5",
+      "destination": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/inputs/profiles_cf/cf_wind-ofs_pr100-moderate-limited-35.h5",
+      "weather_years": [
+        2018,
+        2019
+      ],
+      "sites": 123
+    }
+  },
+  "existing_hydro_profile": {
+    "rows": 12,
+    "plants": 1,
+    "capacity_mw": 20.0,
+    "mean_capacity_factor": 0.247,
+    "source": "/projects/aiplusinvest/base_case/ebb45e39-4c77-4115-b183-b001079430f1_time_series_storage.h5"
+  },
+  "unit_database": {
+    "rows": 191,
+    "capacity_mw": 4669.427708542966,
+    "by_source_and_tech": [
+      {
+        "source_kind": "committed_tranche1_solar",
+        "tech": "upv",
+        "rows": 18,
+        "capacity_mw": 844.8
+      },
+      {
+        "source_kind": "network_HydroDispatch",
+        "tech": "hydED",
+        "rows": 1,
+        "capacity_mw": 20.0
+      },
+      {
+        "source_kind": "network_ThermalStandard",
+        "tech": "coaloldscr",
+        "rows": 1,
+        "capacity_mw": 260.00000000000006
+      },
+      {
+        "source_kind": "network_ThermalStandard",
+        "tech": "o-g-s",
+        "rows": 27,
+        "capacity_mw": 2842.3
+      },
+      {
+        "source_kind": "pr100_distributed_pv_2022",
+        "tech": "dupv",
+        "rows": 62,
+        "capacity_mw": 450.793456003
+      },
+      {
+        "source_kind": "pr100_distributed_storage_2022",
+        "tech": "battery_li",
+        "rows": 82,
+        "capacity_mw": 251.534252539966
+      }
+    ],
+    "assumptions": [
+      "PR100 2022 DER is represented as pre-2010 existing capacity for ReEDS bookkeeping.",
+      "Thermal/hydro source components require status=true and available=true.",
+      "Source-network renewable/storage components are excluded because they include scenario builds that may overlap PR100 DER and Tranche 1.",
+      "Missing engineering/economic generator fields use same-technology EIA-NEMS templates and require calibration before a production solve.",
+      "All provisional records retire in 2051 unless replaced by a reviewed PR fleet table."
+    ],
+    "excluded_source_network_scenario_assets": {
+      "rows": 901,
+      "capacity_mw": 6032.771251913866
+    }
+  },
+  "production_ready": false
+}

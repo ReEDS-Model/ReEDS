@@ -19,6 +19,7 @@ RECF:
 
 import argparse
 import datetime
+import h5py
 import numpy as np
 import os
 import pandas as pd
@@ -235,6 +236,24 @@ def calculate_class_region_cf_hourly(
 
 
 def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
+    sw = reeds.io.get_switches(inputs_case)
+    if sw.GSw_ZoneSet == 'PR_explicit' and sw.distpvscen == 'pr100_1LM':
+        years = [int(year) for year in str(sw.resource_adequacy_years).split('_')]
+        path = os.path.join(
+            reeds.io.reeds_path, 'inputs', 'profiles_cf',
+            'cf_distpv_pr100_1LM.h5',
+        )
+        with h5py.File(path, 'r') as source:
+            columns = [
+                value.decode() if isinstance(value, bytes) else str(value)
+                for value in source['columns'][:]
+            ]
+            values = np.vstack([source[f'cf_profile_{year}'][:] for year in years])
+        profile = pd.DataFrame(
+            values, index=reeds.timeseries.get_timeindex(years), columns=columns,
+        )
+        profile.index.names = ['datetime']
+        return profile
     # Get county-to-region mapping
     county2zone = reeds.io.get_county2zone(os.path.dirname(inputs_case))
     county2zone.index = 'p' + county2zone.index
@@ -244,7 +263,6 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
     county_distpv_cf = county_distpv_cf[county2zone.index]
     # Read county- and model region-level distpv capacities to use
     # in capacity-weighted averages
-    sw = reeds.io.get_switches(inputs_case)
     county_distpv_cap = reeds.io.get_distpv_capacities(distpvscen=sw.distpvscen)
     regional_distpv_cap = reeds.io.get_distpv_capacities(inputs_case)
     # Increment hourly cluster year if there is no data for the provided year

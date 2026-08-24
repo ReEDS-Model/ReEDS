@@ -351,6 +351,15 @@ def calc_financial_inputs(inputs_case):
         .dropna()
         .groupby(['r','i'], as_index=False).mean()
     ).copy()
+    if sw.GSw_ZoneSet == 'PR_explicit' and reg_cap_cost_diff.empty:
+        # No PR-specific regional ATB multipliers are available. A single zero
+        # keeps the GAMS declaration non-empty; absent combinations retain the
+        # same zero-difference convention.
+        reg_cap_cost_diff = pd.DataFrame({
+            'i': [techs['i'].iloc[0]],
+            'r': [reeds.io.read_input(inputs_case, 'r').squeeze(1).iloc[0]],
+            'reg_cap_cost_diff': [0.0],
+        })
 
 
     #%% Before writing outputs, change "x" to "newx" in [v]

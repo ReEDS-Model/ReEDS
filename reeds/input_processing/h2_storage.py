@@ -20,6 +20,19 @@ import reeds
 def main(reeds_path, inputs_case):
     print('Starting h2_storage.py')
 
+    sw = reeds.io.get_switches(inputs_case)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        # PR has point buses rather than county polygons. Underground-pipe
+        # storage is the generic fallback used where mapped geologic storage
+        # is unavailable. Keep a valid set even when H2 is disabled because
+        # b_inputs.gms always declares it.
+        regions = reeds.io.read_input(inputs_case, 'r').squeeze(1)
+        pd.DataFrame({
+            '*h2_stor': 'h2_storage_undergroundpipe',
+            'rb': regions,
+        }).to_csv(os.path.join(inputs_case, 'h2_storage_rb.csv'), index=False)
+        return
+
     # Get model regions
     dfzones = reeds.io.get_dfmap(
         os.path.dirname(inputs_case),

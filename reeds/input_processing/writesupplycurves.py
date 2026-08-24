@@ -160,8 +160,12 @@ def main(
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve', 'interconnection_land.h5'
     )
-    with h5py.File(fpath_interconnection, 'r') as f:
-        dollaryear['interconnection'] = f['data'].attrs['dollaryear']
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        ## PR interconnection adders are embedded in the staged real-2021 curves.
+        dollaryear['interconnection'] = 2021
+    else:
+        with h5py.File(fpath_interconnection, 'r') as f:
+            dollaryear['interconnection'] = f['data'].attrs['dollaryear']
     deflator = pd.read_csv(
         os.path.join(inputs_case, 'deflator.csv'), index_col='*Dollar.Year',
     ).squeeze(1)
@@ -1052,6 +1056,34 @@ def main(
     spurline_sitemap = spurline_sitemap.loc[
         spurline_sitemap.x.isin(spursites.x.values)
     ].copy()
+    if sw.GSw_ZoneSet == 'PR_explicit' and spursites.empty:
+        # Explicit PR regions have no county-to-zone sitemap. Spur investment
+        # is disabled in the baseline, but GAMS still requires non-empty domain
+        # files. Use one real UPV class/region/bin with a zero-cost dummy site;
+        # it cannot enter the model while spur_techs is empty.
+        seed = upvin.iloc[0]
+        dummy_x = 'pr_dummy_spur'
+        spursites = pd.DataFrame({
+            'x': [dummy_x],
+            'r': [seed['region']],
+            'cost_total_trans_usd_per_mw': [0.0],
+        })
+        spurline_sitemap = pd.DataFrame({
+            '*i': [f"upv_{int(seed['class'])}"],
+            'r': [seed['region']],
+            'rscbin': [f"bin{int(seed['bin'])}"],
+            'x': [dummy_x],
+        })
+        if write:
+            spursites[['x', 'cost_total_trans_usd_per_mw']].rename(
+                columns={'x': '*x'}
+            ).to_csv(os.path.join(inputs_case, 'spurline_cost.csv'), index=False)
+            spursites['x'].to_csv(
+                os.path.join(inputs_case, 'x.csv'), index=False, header=False
+            )
+            spursites[['x', 'r']].rename(columns={'x': '*x'}).to_csv(
+                os.path.join(inputs_case, 'x_r.csv'), index=False
+            )
     if write:
         spurline_sitemap.to_csv(
             os.path.join(inputs_case, "spurline_sitemap.csv"), index=False

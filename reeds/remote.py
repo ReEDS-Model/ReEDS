@@ -120,6 +120,11 @@ def identify_required_remote_files(sw) -> list:
     Returns:
         required_files: List of file names (no directories)
     """
+    # PR_explicit uses locally staged PR100 load and renewable profiles. Pulling
+    # CONUS remote profiles is both unnecessary and can silently mix geographies.
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        return []
+
     fake = int(sw.GSw_FakeData)
     required_files = ['temperature_state.h5']
     if not fake:

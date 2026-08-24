@@ -206,6 +206,25 @@ def calculate_daily_gasprice_multipliers(
     Returns:
         dict[str, pd.DataFrame]
     """
+    sw = reeds.io.get_switches(inputs_case)
+    if int(sw.GSw_GasPriceAdjMethod) == 0:
+        ## The no-adjustment option is represented explicitly as daily unity
+        ## multipliers. This also allows custom regions without CONUS gas-region
+        ## weather regressions to use annual fuel-price trajectories.
+        hierarchy = reeds.io.get_hierarchy(os.path.dirname(inputs_case))
+        weather_years = [
+            int(year) for year in str(sw.resource_adequacy_years).split('_')
+        ]
+        dates = pd.date_range(
+            f'{min(weather_years)}-01-01', f'{max(weather_years)}-12-31', freq='D'
+        ).rename('datetime')
+        return {
+            'r': pd.DataFrame(1.0, index=dates, columns=hierarchy.index),
+            'cendiv': pd.DataFrame(
+                1.0, index=dates, columns=hierarchy['cendiv'].unique()
+            ),
+        }
+
     # Get degree day-price multiplier regression parameters. These
     # parameters represent a regression model where heating and
     # cooling degree days were regressed on the log of the multiplicative
@@ -404,11 +423,22 @@ if __name__ == '__main__':
 
     # Census division weights
     dfmap = reeds.io.get_dfmap(reeds.io.standardize_case(inputs_case))
-    cendivweights = smear(
-        dfzones=dfmap['r'],
-        dfgroups=dfmap['cendiv'],
-        decay_km=float(sw.GSw_GasRegionSmooth),
-    ).round(3)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        # Every PR bus uses the same provisional South Atlantic gas-price
+        # proxy, so the appropriate smoothing matrix is an exact one-hot map.
+        r_cendiv_map = r_cendiv.set_index('r').cendiv
+        cendivweights = pd.DataFrame(
+            0.0, index=val_r, columns=val_cendiv, dtype=float
+        )
+        for region in val_r:
+            cendivweights.loc[region, r_cendiv_map.loc[region]] = 1.0
+        cendivweights.index.name = 'r'
+    else:
+        cendivweights = smear(
+            dfzones=dfmap['r'],
+            dfgroups=dfmap['cendiv'],
+            decay_km=float(sw.GSw_GasRegionSmooth),
+        ).round(3)
     if int(sw.debug):
         try:
             plot_cendivweights(inputs_case, dfmap, cendivweights)
@@ -426,6 +456,20 @@ if __name__ == '__main__':
     fuel = coal.merge(uranium,on=['t','r'],how='left')
     fuel = fuel.merge(ngprice,on=['t','r'],how='left')
     fuel = fuel.merge(h2fuel,on=['t','r'],how='left')
+    if sw.GSw_ZoneSet == 'PR_explicit' and sw.unitdata == 'PR100-1LM':
+        prfuel = pd.read_csv(os.path.join(inputs_case, 'fuel_prices.csv'))
+        prfuel = prfuel.pivot(index='t', columns='fuel', values='cost_2021_per_mmbtu')
+        deflate_2021 = deflator.loc[
+            deflator['Dollar.Year'] == 2021, 'Deflator'
+        ].squeeze()
+        prfuel = (prfuel * deflate_2021).reset_index()
+        prfuel = pd.concat(
+            [prfuel.assign(r=region) for region in val_r], ignore_index=True
+        )
+        fuel = fuel.drop(columns=['coal', 'naturalgas'], errors='ignore').merge(
+            prfuel[['t', 'r', 'coal', 'naturalgas', 'dfo', 'rfo']],
+            on=['t', 'r'], how='left',
+        )
     fuel = fuel.sort_values(['t','r'])
 
 
@@ -433,15 +477,30 @@ if __name__ == '__main__':
     ### Natural Gas Demand Calculations ###
 
     # Natural Gas demand
-    ngdemand = pd.read_csv(os.path.join(inputs_case,'ng_demand_elec.csv'), index_col='year')
-    ngdemand = ngdemand[ngdemand.columns[ngdemand.columns.isin(val_cendiv)]]
-    ngdemand = ngdemand.transpose()
+    ngdemand = pd.read_csv(os.path.join(inputs_case,'ng_demand_elec.csv'))
+    if 'year' in ngdemand.columns:
+        ngdemand = ngdemand.set_index('year')
+        ngdemand = ngdemand[ngdemand.columns[ngdemand.columns.isin(val_cendiv)]]
+        ngdemand = ngdemand.transpose()
+    else:
+        # The same file is the output of this script, so accept the already
+        # processed census-division-by-year format on a case restart.
+        ngdemand = ngdemand.set_index(ngdemand.columns[0])
+        ngdemand = ngdemand.loc[ngdemand.index.isin(val_cendiv)]
+    ngdemand.index.name = None
     ngdemand = ngdemand.round(6)
 
     # Total Natural Gas demand
-    ngtotdemand = pd.read_csv(os.path.join(inputs_case, 'ng_demand_tot.csv'), index_col='year')
-    ngtotdemand = ngtotdemand[ngtotdemand.columns[ngtotdemand.columns.isin(val_cendiv)]]
-    ngtotdemand = ngtotdemand.transpose()
+    ngtotdemand = pd.read_csv(os.path.join(inputs_case, 'ng_demand_tot.csv'))
+    if 'year' in ngtotdemand.columns:
+        ngtotdemand = ngtotdemand.set_index('year')
+        ngtotdemand = ngtotdemand[
+            ngtotdemand.columns[ngtotdemand.columns.isin(val_cendiv)]
+        ].transpose()
+    else:
+        ngtotdemand = ngtotdemand.set_index(ngtotdemand.columns[0])
+        ngtotdemand = ngtotdemand.loc[ngtotdemand.index.isin(val_cendiv)]
+    ngtotdemand.index.name = None
     ngtotdemand = ngtotdemand.round(6)
 
     ### Natural Gas Alphas (already in 2004$)

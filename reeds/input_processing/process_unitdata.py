@@ -109,6 +109,20 @@ def main(inputs_case):
 
     # Read unitdata
     unitdata = pd.read_csv(os.path.join(inputs_case, 'unitdata_orig.csv'))
+
+    ## PR_explicit unit records are created by the Puerto Rico adapter with an
+    ## authoritative electrical region and (for VRE) a staged PR100 site ID and
+    ## capacity factor. Do not remap them through the CONUS county/reV sitemap.
+    sw = reeds.io.get_switches(inputs_case)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        required = {'tech', 'r', 'FIPS', 'T_LONG', 'T_LAT'}
+        missing = sorted(required - set(unitdata.columns))
+        if missing:
+            raise ValueError(f'PR_explicit unitdata is missing required columns: {missing}')
+        if unitdata['r'].isna().any():
+            raise ValueError('PR_explicit unitdata contains units without an electrical region')
+        unitdata.to_csv(os.path.join(inputs_case, 'unitdata.csv'), index=False)
+        return
     
     ## Assign sc_point_gids and pv, wind capacity factors, and geothermal resource temperature to NEMS unit
     # Using 'EPSG:5070' projection for nearest distance calculation

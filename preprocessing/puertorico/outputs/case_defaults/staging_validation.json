@@ -1,0 +1,44 @@
+{
+  "status": "staging_valid",
+  "regions": 121,
+  "mapped_buses": 1390,
+  "active_assets": 1783,
+  "interfaces": 184,
+  "interface_components": [
+    121
+  ],
+  "supply_curve_sites": {
+    "upv": 442,
+    "wind-ons": 102,
+    "wind-ofs": 123
+  },
+  "profile_weather_years": [
+    2018,
+    2019
+  ],
+  "load_shape": [
+    140160,
+    121
+  ],
+  "load_scenario": "PR100 1LM Mid-Case",
+  "solve_years": [
+    2022,
+    2025,
+    2028,
+    2030,
+    2035,
+    2040,
+    2045,
+    2050
+  ],
+  "distributed_resources_2050": {
+    "pv_mw": 2473.9445402146002,
+    "storage_mw": 1146.25013296331,
+    "storage_mwh": 4585.0005118202
+  },
+  "committed_tranche1_solar": {
+    "projects": 18,
+    "capacity_mw": 844.8
+  },
+  "renewable_cost_basis": "real_2021_usd"
+}

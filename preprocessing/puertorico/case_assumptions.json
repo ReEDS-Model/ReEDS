@@ -1,0 +1,85 @@
+{
+  "case_name": "pr_115plus_pr100_moderate_limited",
+  "status": "staging_complete_reeds_adapter_pending",
+  "spatial": {
+    "region_definition": "connected buses with nominal voltage >= 115 kV",
+    "region_count": 121,
+    "excluded_isolated_high_voltage_bus": 97074,
+    "low_voltage_assignment": "multi-source shortest path weighted by series impedance",
+    "state": "PR",
+    "country": "USA",
+    "interconnect": "PR"
+  },
+  "years": {
+    "solve_years": [
+      2022,
+      2025,
+      2028,
+      2030,
+      2035,
+      2040,
+      2045,
+      2050
+    ],
+    "weather_years": [
+      2018,
+      2019
+    ]
+  },
+  "load": {
+    "source": "PR100 OEDI Electric Load Hourly archive",
+    "scenario": "1LM (Economic DER Adoption, Less Land, Mid-Case load)",
+    "source_time_basis": "fiscal year (Jul-Jun)",
+    "output_time_basis": "same fiscal-year values reordered to Jan-Dec",
+    "municipality_allocation": "active StandardLoad capacity share; bus-count fallback",
+    "weather_year_treatment": "each solve-year forecast duplicated for 2018 and 2019 renewable weather blocks",
+    "timezone": "Etc/GMT+4"
+  },
+  "renewables": {
+    "scenario": "PR100 moderate/limited 2035",
+    "upv": "upv_fixed_moderate_limited_35",
+    "wind_ons": "wind_onshore_limited_35",
+    "wind_ofs": "wind_offshore_35 after PR100 exclusion masks, then US-country and 75-km PR-bus screens",
+    "generation_technology_costs": "PR100 site costs retained as adapter-ready 2021-real metadata",
+    "site_transmission_adders": "PR100 source connection/spur values in the same 2021-real cost basis",
+    "cost_use_rule": "adapter must choose PR100 site cost metadata or a named ReEDS ATB trajectory, not combine both"
+  },
+  "existing_fleet": {
+    "source": "base_case Sienna JSON",
+    "retirement_year": 2051,
+    "technology_crosswalk": "candidate mapping in assets.csv; final review pending",
+    "committed_builds": "18 executed-PPOA Tranche 1 solar projects, 844.8 MW, candidate online year 2025",
+    "committed_battery_treatment": "not staged because the PR100 Tranche 1 table does not report battery MW or MWh"
+  },
+  "transmission": {
+    "expansion_allowed": false,
+    "existing_topology": "184 aggregate adjacent interfaces",
+    "capacity": "N-0 pairwise DC TTC using continuous branch ratings and zero base flow",
+    "contingency_derate": 1.0,
+    "unrated_project_interface_screen_mw": 5000,
+    "losses": "pending distance or power-flow-based calibration"
+  },
+  "other_inputs": {
+    "technology_costs": "ReEDS defaults",
+    "fuel_prices": "ReEDS default trajectory pending PR regional mapping",
+    "planning_reserve_margin": "ReEDS default",
+    "policy_constraints": "ReEDS defaults with CONUS state policies disabled for PR",
+    "co2_constraints": "ReEDS default scenario"
+  },
+  "runtime": {
+    "python": "/home/ychen10/.conda-envs/reeds2/bin/python",
+    "gams_module": "gams/53.5.1",
+    "gams_license_validated": true
+  },
+  "distributed_resources": {
+    "source": "PR100 OEDI DERInvestments.zip / der_capacity_municipality_mw_1LM.csv",
+    "scenario": "1LM",
+    "technologies": [
+      "distributed PV MW",
+      "storage MW",
+      "storage MWh"
+    ],
+    "interpolation": "linear from even source years to solve years",
+    "municipality_allocation": "fixed active StandardLoad capacity share; bus-count fallback"
+  }
+}

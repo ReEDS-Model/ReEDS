@@ -506,6 +506,69 @@ def apply_distribution_loss_factor(
     """
     return load_hourly / (1 - distloss)
 
+
+def normalize_pr_load_to_reeds_timezone(
+    load_hourly: pd.DataFrame,
+    weather_years: list[int],
+    tz_out: str = "Etc/GMT+6",
+) -> pd.DataFrame:
+    """Convert PR local-time load profiles to the fixed ReEDS hourly clock.
+
+    ReEDS uses Central Standard Time for all hourly inputs.  PR100 load is
+    labeled in Atlantic Standard Time, while the renewable profiles are read
+    from UTC and converted to the ReEDS clock in ``recf.py``.  Convert the load
+    by matching each ReEDS timestamp to the corresponding PR-local
+    month/day/hour.  The mapping is cyclic at the weather-year boundary because
+    each PR100 block is a representative 8760-hour year.
+    """
+    if load_hourly.index.names != ["year", "datetime"]:
+        raise ValueError(
+            "PR_explicit load must have a ['year', 'datetime'] MultiIndex; "
+            f"received {load_hourly.index.names}"
+        )
+
+    output = {}
+    for model_year in load_hourly.index.get_level_values("year").unique():
+        model_block = load_hourly.xs(model_year, level="year")
+        converted_weather_years = []
+        for weather_year in weather_years:
+            source = model_block.loc[model_block.index.year == weather_year]
+            if len(source) != 8760:
+                raise ValueError(
+                    f"PR load has {len(source)} hours for model year {model_year}, "
+                    f"weather year {weather_year}; expected 8760"
+                )
+            if source.index.tz is None:
+                raise ValueError("PR load timestamps must be timezone-aware")
+
+            source_keys = pd.MultiIndex.from_arrays(
+                [source.index.month, source.index.day, source.index.hour],
+                names=["month", "day", "hour"],
+            )
+            if source_keys.has_duplicates:
+                raise ValueError(
+                    f"PR load calendar keys are duplicated for weather year {weather_year}"
+                )
+            target = pd.DatetimeIndex(
+                reeds.timeseries.get_timeindex([weather_year], tz=tz_out),
+                name="datetime",
+            )
+            target_local = target.tz_convert(source.index.tz)
+            target_keys = pd.MultiIndex.from_arrays(
+                [target_local.month, target_local.day, target_local.hour],
+                names=source_keys.names,
+            )
+            indexer = source_keys.get_indexer(target_keys)
+            if (indexer < 0).any():
+                missing = target_keys[indexer < 0].unique().tolist()[:10]
+                raise ValueError(f"PR load calendar is missing local hours: {missing}")
+            converted = source.iloc[indexer].copy()
+            converted.index = target
+            converted_weather_years.append(converted)
+        output[int(model_year)] = pd.concat(converted_weather_years)
+
+    return pd.concat(output, names=["year", "datetime"])
+
 def calculate_peak_load(
     load_hourly: pd.DataFrame,
     hierarchy: pd.DataFrame
@@ -623,6 +686,25 @@ def main(reeds_path, inputs_case):
     historical_state_load_annual = reeds.io.get_historical_state_load_annual()
 
     match sw.GSw_LoadProfiles:
+        case _ if sw.GSw_ZoneSet == 'PR_explicit':
+            ## PR profiles are already indexed by authoritative electrical region.
+            ## Interpolate the PR100 trajectory forward, and use its earliest
+            ## available year as the required 2010 ReEDS bookkeeping profile.
+            state_load_hourly = interpolate_missing_model_years(
+                state_load_hourly, int(sw.endyear)
+            )
+            earliest_year = state_load_hourly.index.get_level_values('year').min()
+            if int(sw.startyear) < earliest_year:
+                bookkeeping = (
+                    state_load_hourly.loc[earliest_year]
+                    .assign(year=int(sw.startyear))
+                    .set_index('year', append=True)
+                    .reorder_levels(['year', 'datetime'])
+                )
+                state_load_hourly = pd.concat([bookkeeping, state_load_hourly])
+            state_load_hourly = downselect_to_model_years(
+                state_load_hourly, solveyears
+            )
         case _ if (
             sw.GSw_LoadProfiles.startswith('EER')
             or Path(sw.GSw_LoadProfiles).is_file()
@@ -674,11 +756,25 @@ def main(reeds_path, inputs_case):
                     weather_years
                 )
 
-    regional_load_hourly = reaggregate_to_model_regions(
-        state_load_hourly,
-        inputs_case,
-        sw.GSw_LoadAllocationMethod
-    )
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        model_regions = set(hierarchy.index)
+        profile_regions = set(state_load_hourly.columns)
+        if profile_regions != model_regions:
+            raise ValueError(
+                'PR_explicit load regions do not match the case hierarchy: '
+                f'missing={sorted(model_regions - profile_regions)}, '
+                f'extra={sorted(profile_regions - model_regions)}'
+            )
+        regional_load_hourly = state_load_hourly
+        regional_load_hourly = normalize_pr_load_to_reeds_timezone(
+            regional_load_hourly, weather_years
+        )
+    else:
+        regional_load_hourly = reaggregate_to_model_regions(
+            state_load_hourly,
+            inputs_case,
+            sw.GSw_LoadAllocationMethod
+        )
 
     #%%%#########################################
     #    -- Performing Load Modifications --    #

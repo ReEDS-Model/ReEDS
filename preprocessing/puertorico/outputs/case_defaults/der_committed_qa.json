@@ -1,0 +1,93 @@
+{
+  "distributed_resources": {
+    "source_archive": "/projects/aiplusinvest/pr100_all/data/DERInvestments.zip",
+    "source_member": "der_capacity_municipality_mw_1LM.csv",
+    "source_years": [
+      2020,
+      2022,
+      2024,
+      2026,
+      2028,
+      2030,
+      2032,
+      2034,
+      2036,
+      2038,
+      2040,
+      2042,
+      2044,
+      2046,
+      2048,
+      2050
+    ],
+    "interpolation": "linear between PR100 even-year values",
+    "municipalities": 78,
+    "regions": 121,
+    "solve_years": [
+      2022,
+      2025,
+      2028,
+      2030,
+      2035,
+      2040,
+      2045,
+      2050
+    ],
+    "totals": {
+      "2022": {
+        "pv_mw": 450.79345600300013,
+        "storage_mw": 251.53425253996608,
+        "storage_mwh": 1006.1384056311601
+      },
+      "2025": {
+        "pv_mw": 799.6808791775102,
+        "storage_mw": 331.26309768193113,
+        "storage_mwh": 1325.0525769409749
+      },
+      "2028": {
+        "pv_mw": 954.5405653113598,
+        "storage_mw": 362.39231987718006,
+        "storage_mwh": 1449.5691230796097
+      },
+      "2030": {
+        "pv_mw": 1063.4468946473298,
+        "storage_mw": 400.9374497096104,
+        "storage_mwh": 1603.7497759134305
+      },
+      "2035": {
+        "pv_mw": 1262.7299908575092,
+        "storage_mw": 533.0525260888151,
+        "storage_mwh": 2132.2100121249846
+      },
+      "2040": {
+        "pv_mw": 1443.7426648022408,
+        "storage_mw": 733.4894870555604,
+        "storage_mwh": 2933.9579785469996
+      },
+      "2045": {
+        "pv_mw": 2013.7385914196307,
+        "storage_mw": 962.5923980320357,
+        "storage_mwh": 3850.3695940203506
+      },
+      "2050": {
+        "pv_mw": 2473.9445402145993,
+        "storage_mw": 1146.25013296331,
+        "storage_mwh": 4585.0005118202
+      }
+    }
+  },
+  "committed_tranche1": {
+    "source_table": "/projects/aiplusinvest/pr100_all/data/tables/puerto_rico_tranche1_pv_bess.csv",
+    "source_geometry": "/projects/aiplusinvest/pr100_all/data/shapefiles/existing_plants/proyectos_exhibit_2.gpkg",
+    "projects": 18,
+    "solar_capacity_mw": 844.8000000000001,
+    "online_year_candidate": 2025,
+    "geometry_mapped_projects": 14,
+    "municipality_fallback_projects": 4,
+    "battery_treatment": "not staged; source table does not report battery MW or MWh",
+    "warnings": [
+      "The 2025 online year is a staging assumption and must be confirmed against commercial-operation records.",
+      "AQ-1-P has inconsistent table and Exhibit 2 location labels and is marked low confidence."
+    ]
+  }
+}

@@ -463,6 +463,56 @@ def apply_hydro_climate_adjustments(
 def main(reeds_path, inputs_case):
     print('Starting hydcf.py')
 
+    sw = reeds.io.get_switches(inputs_case)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        ## Existing PR hydro availability comes from the Sienna max-active-power
+        ## profile rather than the CONUS EIA plant-generation tables.
+        profile = pd.read_csv(
+            Path(reeds_path, 'preprocessing', 'puertorico', 'outputs',
+                 'case_defaults', 'hydro_monthly_cf.csv')
+        )
+        profile['month'] = profile['month'].str.upper()
+        years = pd.read_csv(Path(inputs_case, 'modeledyears.csv')).columns.astype(int)
+        hydcf = pd.concat(
+            [profile.assign(t=year) for year in years], ignore_index=True
+        ).rename(columns={
+            'tech': '*i', 'region': 'r', 'capacity_factor': 'value'
+        })[['t', '*i', 'month', 'r', 'value']]
+        hydcf.set_index(['t', '*i', 'month', 'r']).to_csv(
+            Path(inputs_case, 'hydcf.csv')
+        )
+        # These CONUS regional tables are otherwise emptied by zone filtering.
+        # A zero minimum-generation value imposes no additional constraint.
+        hydro_pairs = profile[['tech', 'region']].drop_duplicates()
+        # FOM comes from the Sienna source system (2018$/kW-yr, ext.fom), capacity-
+        # weighted across plants sharing a tech/region, converted to $/MW-yr. Using
+        # the real value (rather than a 0.0 placeholder) matters because GAMS treats
+        # an assigned 0 as unset for the $hyd_fom(i,r) guard in b_inputs.gms, which
+        # otherwise leaves cost_fom unassigned for existing PR hydro capacity.
+        plants = profile.drop_duplicates('source_asset_uuid').copy()
+        plants['fom_usd_per_mw_yr'] = plants['fom_2018usd_per_kw_yr'] * 1000
+        hyd_fom_value = (
+            plants.assign(weighted=plants['fom_usd_per_mw_yr'] * plants['capacity_mw'])
+            .groupby(['tech', 'region'])
+            .apply(lambda g: g['weighted'].sum() / g['capacity_mw'].sum())
+            .rename('value')
+            .reset_index()
+        )
+        hyd_fom = hydro_pairs.merge(
+            hyd_fom_value, on=['tech', 'region'], how='left'
+        ).pivot(index='tech', columns='region', values='value')
+        hyd_fom.index.name = 'i'
+        hyd_fom.to_csv(Path(inputs_case, 'hyd_fom.csv'))
+        profile.rename(columns={
+            'tech': '*i', 'region': 'r'
+        })[['*i', 'month', 'r']].assign(value=1.0).to_csv(
+            Path(inputs_case, 'hydcapadj.csv'), index=False
+        )
+        hydro_pairs.rename(columns={'tech': '*i', 'region': 'r'}).assign(
+            quarter='summ', value=0.0
+        ).to_csv(Path(inputs_case, 'hydro_mingen.csv'), index=False)
+        return
+
     monthly_plant_net_generation, monthly_plant_max_generation = (
         get_monthly_plant_generation(inputs_case)
     )

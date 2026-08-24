@@ -1,0 +1,86 @@
+{
+  "settings": {
+    "voltage_threshold_kv": 115.0,
+    "expected_regions": 121,
+    "system_base_mva": 100.0,
+    "assignment_method": "multi_source_shortest_path_weighted_by_abs_series_impedance"
+  },
+  "counts": {
+    "system_buses": 1411,
+    "coordinate_buses": 1393,
+    "retained_regions": 121,
+    "mapped_buses": 1390,
+    "unmapped_buses": 21,
+    "available_branches": 1567,
+    "region_boundary_branches": 248,
+    "interfaces": 184,
+    "assets": 2697,
+    "active_unmapped_assets": 0
+  },
+  "excluded_high_voltage_buses": [
+    97074
+  ],
+  "unmapped_bus_numbers": [
+    288,
+    303,
+    357,
+    358,
+    360,
+    388,
+    434,
+    462,
+    486,
+    939,
+    972,
+    1017,
+    3901,
+    32201,
+    37501,
+    38601,
+    45801,
+    97006,
+    97074,
+    97104,
+    97105
+  ],
+  "active_unmapped_assets": [],
+  "municipality_declared_count_mismatches": [
+    {
+      "municipio": "Hormigueros",
+      "declared": 0,
+      "listed": 1
+    },
+    {
+      "municipio": "San Germán",
+      "declared": 21,
+      "listed": 20
+    }
+  ],
+  "component_counts": {
+    "Arc": 1731,
+    "Area": 9,
+    "Bus": 1411,
+    "FixedAdmittance": 29,
+    "GenericBattery": 13,
+    "HydroDispatch": 10,
+    "Line": 1374,
+    "LoadZone": 42,
+    "MonitoredLine": 160,
+    "PhaseShiftingTransformer": 111,
+    "RenewableDispatch": 50,
+    "RenewableFix": 841,
+    "StandardLoad": 1707,
+    "StaticReserve": 1,
+    "StaticReserveNonSpinning": 1,
+    "TapTransformer": 36,
+    "ThermalStandard": 76,
+    "Transformer2W": 86,
+    "VariableReserve": 2
+  },
+  "warnings": [
+    "interfaces_screening.csv is a topology/rating audit, not a validated simultaneous or directional ITL.",
+    "Branch MW ratings are JSON per-unit ratings multiplied by the 100-MVA system base; placeholder unlimited ratings are flagged.",
+    "reeds_tech_candidate is a draft crosswalk and low/medium-confidence rows require review before a capacity-expansion solve.",
+    "Stock ReEDS county aggregation cannot consume these 121 regions without a standalone-region input adapter."
+  ]
+}

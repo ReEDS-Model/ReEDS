@@ -231,11 +231,6 @@ def calc_outage_forced(
         .copy()
     )
 
-    ### Load temperatures
-    print('Load temperatures and broadcast from states to zones')
-    temperatures = reeds.io.get_temperatures(inputs_case)[hierarchy.st]
-    temperatures.columns = hierarchy.index
-
     ### Input data
     if sw.GSw_OutageScen.lower() == 'static':
         ### Fill static data for all techs and modeled regions
@@ -244,11 +239,16 @@ def calc_outage_forced(
             axis=0,
             names=('r','i'),
         ).reorder_levels(['i','r']).sort_index()
-        forcedoutage_prefill = pd.concat({i: df for i in temperatures.index}, axis=1).T
+        timeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
+        forcedoutage_prefill = pd.concat({i: df for i in timeindex}, axis=1).T
         fits_forcedoutage = pd.DataFrame()
         forcedoutage_pm = pd.DataFrame()
 
     else:
+        ### Load temperatures only for temperature-dependent outage scenarios.
+        print('Load temperatures and broadcast from states to zones')
+        temperatures = reeds.io.get_temperatures(inputs_case)[hierarchy.st]
+        temperatures.columns = hierarchy.index
         fits_forcedoutage_in = pd.read_csv(
             os.path.join(inputs_case, 'outage_forced_temperature.csv'),
             comment='#',

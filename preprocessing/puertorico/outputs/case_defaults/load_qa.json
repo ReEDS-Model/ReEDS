@@ -1,0 +1,77 @@
+{
+  "source": {
+    "archive": "/projects/aiplusinvest/pr100_all/data/LoadDataHourly.zip",
+    "official_url": "https://data.openei.org/files/5749/LoadDataHourly.zip",
+    "pr100_scenario": "1LM",
+    "scenario_directory": "PR100 Sales Data_Mid-Case",
+    "municipality_files": 78,
+    "source_time_basis": "fiscal year (Jul-Jun)",
+    "output_time_basis": "same fiscal-year observations reordered Jan-Dec",
+    "load_column": "Total - Final (MW)"
+  },
+  "settings": {
+    "model_years": [
+      2022,
+      2025,
+      2028,
+      2030,
+      2035,
+      2040,
+      2045,
+      2050
+    ],
+    "weather_years": [
+      2018,
+      2019
+    ],
+    "timezone": "Etc/GMT+4",
+    "municipality_to_region_method": "active StandardLoad capacity share; bus-count fallback",
+    "weather_year_treatment": "PR100 load duplicated for 2018 and 2019 renewable weather blocks"
+  },
+  "annual_system_load": {
+    "2022": {
+      "peak_mw": 2877.518647764,
+      "energy_mwh": 19245482.05994353
+    },
+    "2025": {
+      "peak_mw": 2661.309196918,
+      "energy_mwh": 18023204.65640743
+    },
+    "2028": {
+      "peak_mw": 2549.739072114,
+      "energy_mwh": 17240835.09593696
+    },
+    "2030": {
+      "peak_mw": 2501.687755614,
+      "energy_mwh": 16715580.916213544
+    },
+    "2035": {
+      "peak_mw": 2456.070345445,
+      "energy_mwh": 15939829.89385108
+    },
+    "2040": {
+      "peak_mw": 2391.5024676430003,
+      "energy_mwh": 14805572.7353847
+    },
+    "2045": {
+      "peak_mw": 2320.6112611450003,
+      "energy_mwh": 14888250.137314398
+    },
+    "2050": {
+      "peak_mw": 2379.7354218030005,
+      "energy_mwh": 14876862.034036826
+    }
+  },
+  "output": {
+    "regions": 121,
+    "rows": 140160,
+    "columns": 121,
+    "h5": "/kfs2/projects/aiplusinvest/ychen10/ReEDS/preprocessing/puertorico/outputs/case_defaults/load.h5",
+    "h5_size_bytes": 45858335
+  },
+  "warnings": [
+    "PR100 load is a forecast, not observed 2018/2019 load.",
+    "Within-municipality nodal allocation is fixed over time using base-case load shares.",
+    "Fiscal-year rows are reordered into Jan-Dec month order; weekday continuity breaks at the Jun/Jul join."
+  ]
+}

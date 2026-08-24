@@ -997,9 +997,13 @@ def setupEnvironment(
 
     #%% Sync remote files
     print('Syncing remote files')
+    # PR_explicit cases use local PR100 load and renewable profiles. Do not
+    # download large CONUS profiles that cannot be mapped to these regions.
+    if (df_cases.loc['GSw_ZoneSet'] == 'PR_explicit').all():
+        print('PR_explicit: using local staged profiles; skipping CONUS remote sync')
     # If using Monte Carlo sampling, download everything (since combinations of switches
     ## not listed in cases{}.csv may be used)
-    if df_cases.loc['MCS_runs'].astype(int).sum():
+    elif df_cases.loc['MCS_runs'].astype(int).sum():
         reeds.remote.download_remote_files()
     ## Otherwise, only download the files needed for the present set of runs
     else:

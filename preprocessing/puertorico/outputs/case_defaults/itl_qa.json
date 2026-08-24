@@ -1,0 +1,36 @@
+{
+  "settings": {
+    "interfaces": 184,
+    "continuous_rating_upper_bound_treated_as_unlimited_mw": 5000.0,
+    "contingency_derate": 1.0,
+    "unbounded_interface_screen_mw": 5000.0,
+    "method": "pairwise retained-bus transaction using full JSON AC branch topology",
+    "tap_handling": "tap magnitudes ignored in linear sensitivities",
+    "base_flow": "zero; JSON active branch flows are zero"
+  },
+  "capacity_summary_mw": {
+    "minimum": 67.65594569334844,
+    "median": 275.7918399092023,
+    "maximum": 5000.0
+  },
+  "binding_branch_types": {
+    "Line": 1,
+    "MonitoredLine": 159,
+    "TapTransformer": 6,
+    "Transformer2W": 7,
+    "unrated_placeholder_path": 11
+  },
+  "interfaces_with_unbounded_screen": 12,
+  "exported_ptdf_validation": {
+    "transaction_source_bus": 10,
+    "transaction_sink_bus": 21,
+    "matched_line_rows": 1267,
+    "mean_absolute_factor_difference": 0.0001990758920777749,
+    "maximum_absolute_factor_difference": 0.010281148542309819
+  },
+  "warnings": [
+    "These are N-0 pairwise TTCs, not N-1 or simultaneous ITLs.",
+    "ReEDS uses a transport representation and will not reproduce AC loop flows.",
+    "Forward and reverse capacities are equal because the source model has zero base flows."
+  ]
+}

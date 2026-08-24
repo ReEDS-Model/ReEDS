@@ -1,0 +1,80 @@
+{
+  "settings": {
+    "scenario": "PR100 moderate/limited 2035",
+    "weather_years": [
+      2018,
+      2019
+    ],
+    "offshore_country_filter": "United States",
+    "offshore_max_nearest_retained_bus_distance_km": 75.0,
+    "offshore_pr100_exclusions": "protected/restricted/marine/cable/disposal/ordnance/USVI masks from the PR100 wind_offshore_35 aggregation configuration",
+    "class_method": "equal-capacity CF proxy; rerun k-means in ReEDS environment",
+    "generation_cost_method": "retain PR100 2021-real site CAPEX, fixed O&M, FCR, site LCOE, total LCOE, and connection adder as adapter-ready metadata",
+    "cost_dollar_year": 2021,
+    "cost_basis": "real_2021_usd"
+  },
+  "supply_curves": {
+    "upv": {
+      "sites": 442,
+      "capacity_mw": 14220.00299999999,
+      "regions_with_resource": 59,
+      "classes": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "wind-ons": {
+      "sites": 102,
+      "capacity_mw": 1607.589300000001,
+      "regions_with_resource": 48,
+      "classes": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    "wind-ofs": {
+      "sites": 123,
+      "capacity_mw": 36077.18940000002,
+      "regions_with_resource": 36,
+      "classes": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    }
+  },
+  "offshore_excluded": {
+    "country_not_united_states": {
+      "sites": 23,
+      "capacity_mw": 5575.051799999999
+    },
+    "farther_than_pr_poi_distance_screen": {
+      "sites": 27,
+      "capacity_mw": 5196.919499999999
+    }
+  },
+  "profiles": {
+    "manifest_rows": 6,
+    "all_source_files_exist": true,
+    "conversion_status": "pending_h5py_reeds_environment"
+  },
+  "warnings": [
+    "PR100 offshore exclusions and the added 75-km screen are study-siting assumptions, not a legal Puerto Rico jurisdiction polygon.",
+    "Offshore POIs use the nearest retained bus because the PR100 wind connection table covers onshore sites only.",
+    "Resource classes are deterministic equal-capacity proxies pending the ReEDS k-means environment.",
+    "The ReEDS adapter must decide whether to use these PR100 costs or a named ReEDS ATB trajectory; it must not combine both."
+  ]
+}

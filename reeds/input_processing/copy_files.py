@@ -856,7 +856,8 @@ def write_region_indexed_file(
     region_col = region_file_entry['region_col']
     fix_cols = region_file_entry['fix_cols'].split(',')
 
-    if region_file_entry['disaggfunc'] != 'ignore':
+    explicit_regions = sw.GSw_ZoneSet == 'PR_explicit'
+    if (not explicit_regions) and region_file_entry['disaggfunc'] != 'ignore':
         df = reeds.spatial.downscale_from_legacy_zone_to_county(
             df=df,
             region_col=region_col,
@@ -865,7 +866,7 @@ def write_region_indexed_file(
             disaggfunc=region_file_entry['disaggfunc']
         )
 
-    if region_file_entry['aggfunc'] != 'ignore':
+    if (not explicit_regions) and region_file_entry['aggfunc'] != 'ignore':
         df = reeds.spatial.upscale_from_county_to_zone(
             df=df,
             region_col=region_col,
@@ -1157,16 +1158,39 @@ def write_miscellaneous_files(
         comment='seasons used for capacity credit',
     )
 
+    ## PR100 renewable and interconnection costs are staged in real 2021 USD.
+    ## copy_files renames the selected curves to their generic ReEDS filenames,
+    ## so register the source dollar year in the case-local lookup here.
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        dollaryear_sc_path = os.path.join(inputs_case, 'dollaryear_sc.csv')
+        dollaryear_sc = pd.read_csv(dollaryear_sc_path)
+        dollaryear_sc.loc[
+            dollaryear_sc['Scenario'].isin([
+                'supplycurve_upv', 'supplycurve_wind-ons', 'supplycurve_wind-ofs'
+            ]),
+            'Dollar.Year',
+        ] = 2021
+        dollaryear_sc.to_csv(dollaryear_sc_path, index=False)
+
     prm_profiles = pd.read_csv(
         os.path.join(reeds_path,'inputs','reserves','prm_annual.csv'),
     ).rename(columns={'*nercr':'nercr'}).set_index(['nercr','t'])
+    hierarchy = reeds.io.get_hierarchy(reeds.io.standardize_case(inputs_case))
     if sw['GSw_PRM_scenario'] in prm_profiles:
         prm = prm_profiles[sw['GSw_PRM_scenario']]
     else:
-        prm = pd.Series(index=prm_profiles.index, data=float(sw['GSw_PRM_scenario']))
+        ## A numeric PRM switch applies to every modeled reliability region. Building
+        ## the index from the case hierarchy also supports custom zone systems whose
+        ## nercr labels are not represented in the national PRM input table.
+        prm = pd.Series(
+            index=pd.MultiIndex.from_product(
+                [hierarchy['nercr'].unique(), prm_profiles.index.unique('t')],
+                names=['nercr','t'],
+            ),
+            data=float(sw['GSw_PRM_scenario']),
+        )
 
     ## Broadcast PRM from nercr to r and backfill missing years
-    hierarchy = reeds.io.get_hierarchy(reeds.io.standardize_case(inputs_case))
     prm_initial = (
         prm
         .unstack('nercr')
@@ -1284,8 +1308,21 @@ def main(reeds_path, inputs_case):
     # Copy non-region files
     write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel, source_deflator_map)
     
-    # Write files used for disaggregation
-    write_disagg_data_files(runfiles, inputs_case)
+    # Explicit electrical regions are already regional and must never be
+    # disaggregated through their synthetic county compatibility keys.
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        disagg_columns = [
+            'legacy_ba', 'FIPS', 'fracdata', 'r', 'state', 'r_frac', 'state_frac'
+        ]
+        for filename in [
+            'disagg_geosize.csv', 'disagg_population.csv', 'disagg_state_lpf.csv'
+        ]:
+            pd.DataFrame(columns=disagg_columns).to_csv(
+                os.path.join(inputs_case, filename), index=False
+            )
+    else:
+        # Write files used for county disaggregation
+        write_disagg_data_files(runfiles, inputs_case)
 
     # Copy region files
     write_region_indexed_files(
@@ -1307,9 +1344,72 @@ def main(reeds_path, inputs_case):
         reeds_path
     )
 
-    # Create a maps.gpkg for this run
-    reeds.spatial.validate_proj()
-    generate_maps_gpkg(inputs_case)
+    if sw.GSw_ZoneSet == 'PR_explicit':
+        if sw.unitdata == 'PR100-1LM':
+            mirror = os.path.join(
+                reeds_path, 'preprocessing', 'puertorico', 'outputs',
+                'pr100_1LM_mirror',
+            )
+            for filename in [
+                'rps_fraction.csv', 'acp_disallowed.csv', 'acp_prices.csv',
+                'recstyle.csv', 'rectable.csv', 'hydrofrac_policy.csv',
+                'oosfrac.csv', 'fuel_prices.csv',
+            ]:
+                shutil.copy2(
+                    os.path.join(mirror, filename),
+                    os.path.join(inputs_case, filename),
+                )
+            # Preserve three separate PR100 fuel trajectories without adding
+            # globally visible technologies: gas-ct is the diesel proxy,
+            # o-g-s is fuel oil/biodiesel, and gas-cc is aggregate natural gas.
+            fuel2tech = pd.read_csv(
+                os.path.join(reeds_path, 'inputs', 'sets', 'fuel2tech.csv')
+            )
+            fuel2tech = fuel2tech.loc[
+                ~fuel2tech['i'].str.lower().isin(['gas-ct', 'o-g-s'])
+            ]
+            fuel2tech = pd.concat([
+                fuel2tech,
+                pd.DataFrame([
+                    ['dfo', 'gas-ct'], ['rfo', 'o-g-s'],
+                ], columns=fuel2tech.columns),
+            ], ignore_index=True)
+            fuel2tech.to_csv(os.path.join(inputs_case, 'fuel2tech.csv'), index=False)
+            reeds.io.write_to_inputs_h5(
+                fuel2tech.rename(columns={'*f': 'f'}),
+                'fuel2tech', inputs_case, gamstype='set',
+                comment=(
+                    'PR100 mirror fuel mapping: gas-ct uses DFO, o-g-s uses '
+                    'RFO/B100, and gas-cc retains natural gas'
+                ),
+                overwrite=True,
+            )
+            # PR100 permits the known 2025 natural-gas addition and the
+            # published 2050 biodiesel/RA addition, but does not offer new
+            # fossil generation as an endogenous expansion option.  ReEDS
+            # exempts prescribed builds from this ban, so the calibrated
+            # additions remain feasible while unprescribed gas/liquid-fuel
+            # investments are removed in every PR region.
+            banned_path = os.path.join(inputs_case, 'techs_banned.csv')
+            techs_banned = pd.read_csv(banned_path, index_col=0)
+            for technology in ['Gas-CC', 'Gas-CT', 'o-g-s']:
+                techs_banned.loc[technology, :] = 1
+            techs_banned.index.name = 'i'
+            techs_banned.to_csv(banned_path)
+        else:
+            # State RPS is disabled in the smoke case, but the GAMS table
+            # declaration still requires one valid state-domain row.
+            years = range(int(sw.startyear), int(sw.endyear) + 1)
+            pd.DataFrame(
+                [["PR", *([0.0] * len(years))]],
+                columns=['st', *years],
+            ).to_csv(os.path.join(inputs_case, 'acp_prices.csv'), index=False)
+
+    # PR_explicit has point nodes but no synthetic-county polygons. A dedicated
+    # map can be generated from regions.csv after input processing.
+    if sw.GSw_ZoneSet != 'PR_explicit':
+        reeds.spatial.validate_proj()
+        generate_maps_gpkg(inputs_case)
 
 
 #%% Procedure
