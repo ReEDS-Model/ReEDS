@@ -626,7 +626,7 @@ def get_interface_data(
     missing = dfout.loc[dfout[datacols].isnull().any(axis=1)]
     if len(missing):
         print(missing)
-        err = f'Missing data from {datafile} for {len(missing)} interfaces'
+        err = f'Missing {len(missing)} interfaces from {datafile} at {level} resolution'
         if len(missing) <= 10:
             err += ': ' + (' '.join(missing.interface))
         if errors == 'raise':
@@ -843,7 +843,7 @@ def validate_zoneset(GSw_ZoneSet):
             'z134',
             # 'z153',
             # 'z1259',
-            # 'z2972',
+            'z2972',
             'z3109',
             'UTcounty',
             'PJMcounty',
