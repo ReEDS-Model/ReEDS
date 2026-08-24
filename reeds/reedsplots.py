@@ -1029,7 +1029,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
-        label_region_value(dfplot, ax=ax, column=valcol, fmt = '{:.1f}', fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol, fontsize=6)
 
     ###### Plot the comp
     elif plot == 'comp':
@@ -1041,7 +1041,7 @@ def plot_diff_maps(
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
 
-        label_region_value(dfplot, ax=ax, column=valcol, fmt = '{:.1f}', fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol, fontsize=6)
 
     ###### Plot the pct diff
     elif plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
@@ -1061,7 +1061,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_pctdiff', cmap=cmap, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
-        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fmt = '{:.1f}', fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fontsize=6)
 
     ###### Plot the absolute diff
     elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
@@ -1081,7 +1081,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_diff', cmap=plt.cm.RdBu_r, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
-        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fmt = '{:.1f}', fontsize=6)
+        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fontsize=6)
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
@@ -1375,7 +1375,8 @@ def map_net_imports(
             legend=False,
             vmin=-vmax[year], vmax=vmax[year],
         )
-        label_region_value(df, ax=ax[coords[year]], column='net_import', fmt = '{:+.0f}', fontsize=6)
+        label_region_value(df, ax=ax[coords[year]], column='net_import', 
+                            opt_single_decimal=False, fmt = '{:+.0f}', fontsize=6)
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -2769,7 +2770,7 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
-        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fmt = '{:.1f}', fontsize=6)
+        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fontsize=6)
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -4519,19 +4520,19 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
-        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fmt = '{:.1f}', fontsize=6)
+        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fontsize=6)
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
-        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fmt = '{:.1f}', fontsize=6)
+        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fontsize=6)
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
-        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fmt = '{:.1f}', fontsize=6)
+        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fontsize=6)
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
@@ -6272,7 +6273,16 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     return dfsc
 
 
-def label_region_value(df, ax, column, fmt='{:.2f}', color='k', fontsize=8, **kwargs):
+def label_region_value(
+    df, 
+    ax, 
+    column, 
+    opt_single_decimal=True, 
+    fmt='{:.0f}', 
+    color='k', 
+    fontsize=8, 
+    **kwargs
+):
     """kwargs are passed to patheffects.withStroke()"""
     pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':1}, **kwargs}
     text_artists = []
@@ -6280,6 +6290,9 @@ def label_region_value(df, ax, column, fmt='{:.2f}', color='k', fontsize=8, **kw
         value = row.get(column, np.nan)
         if not np.isfinite(value):
             continue
+        if opt_single_decimal:
+            decimals = 0 if abs(value) >= 1 else 1
+            fmt = f"{{:.{decimals}f}}"
         text_artists.append(
             ax.annotate(
                 fmt.format(value),
@@ -6611,7 +6624,8 @@ def map_stressors(
             ax=ax[1,0], column='load_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
         )
         label_region_value(
-            df=dflevel, ax=ax[1,0], column='load_rank', fmt='{:.0f}%',
+            df=dflevel, ax=ax[1,0], column='load_rank',
+            opt_single_decimal=False, fmt='{:.0f}%',
             linewidth=2.0, alpha=0.8,
         )
         ax[1,0].set_title('Demand', y=0.9)
@@ -6626,7 +6640,8 @@ def map_stressors(
                 ax=ax[1,col], column=f'{tech}_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
             )
             label_region_value(
-                df=dflevel, ax=ax[1,col], column=f'{tech}_rank', fmt='{:.0f}%',
+                df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
+                opt_single_decimal=False, fmt='{:.0f}%',
                 linewidth=2.0, alpha=0.8,
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
@@ -6640,7 +6655,8 @@ def map_stressors(
             ax=ax[1,3], column='temperature_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
         )
         label_region_value(
-            df=dflevel, ax=ax[1,3], column='temperature_rank', fmt='{:.0f}%',
+            df=dflevel, ax=ax[1,3], column='temperature_rank',
+            opt_single_decimal=False, fmt='{:.0f}%',
             linewidth=2.0, alpha=0.8,
         )
         ax[1,3].set_title('Temperature', y=0.9)
@@ -6658,7 +6674,8 @@ def map_stressors(
             )
             dflevel[f'outage_{tech}'] = outage_region.loc[(y,m,d), tech]
             label_region_value(
-                df=dflevel, ax=ax[2,col], column=f'outage_{tech}', fmt='{:.0f}%',
+                df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
+                opt_single_decimal=False, fmt='{:.0f}%',
                 linewidth=2.0, alpha=0.8,
             )
             ax[2,col].set_title(label, y=0.9)
