@@ -2683,7 +2683,7 @@ try:
                     ax=ax[coords[case]], column='GW', cmap=cmap, vmin=vmin, vmax=vmax,
                     legend=False,
                 )
-                reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", fmt = '{:.0f}', fontsize=6)
+                reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", fontsize=6)
                 ## Legend
                 if coords[case] == legendcoords:
                     plots.addcolorbarhist(
@@ -2755,7 +2755,7 @@ try:
                     vmax=(absmax if case == basecase else diffmax),
                     legend=False,
                 )
-                reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", fmt = ('{:.0f}' if case == basecase else '{:+.0f}'), fontsize=6)
+                reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", fontsize=6)
                 ## Difference legend
                 if coords[case] == legendcoords:
                     plots.addcolorbarhist(
