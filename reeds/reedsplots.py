@@ -2771,7 +2771,7 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
-        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fontsize=6)
+        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fontsize=5)
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
