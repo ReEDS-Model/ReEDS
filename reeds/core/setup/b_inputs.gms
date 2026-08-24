@@ -72,26 +72,16 @@ $include inputs_case%ds%scalars.txt
 * --- Set Declarations ---
 *==========================
 
-* written by copy_files.py
-$onempty
-set cs(*) "carbon storage sites"
-/
-$offlisting
-$include inputs_case%ds%val_cs.csv
-$onlisting
-/ ;
-$offempty
-
 * Written by h5_to_gdx.py
-$include autocode%ds%b_declare_sets.gms
-$include autocode%ds%b_declare_parameters.gms
 $gdxin inputs_case%ds%inputs_0.gdx
-$include autocode%ds%b_load_sets.gms
-$include autocode%ds%b_load_parameters.gms
+$include autocode%ds%b_declare_load_sets.gms
+$include autocode%ds%b_declare_load_parameters.gms
 $gdxin
 
 set land(r) "land-based (not offshore) zones" ;
 land(r)$[not offshore(r)] = yes ;
+
+
 
 sets
 *The following two sets:
@@ -213,30 +203,6 @@ set i_numeraire(i) "numeraire techs that need cooling" ;
 *or will have numeraire techs otherwise.
 i_numeraire(ii)$sum{(wst,ctt,i)$i_ii_ctt_wst(i,ii,ctt,wst), 1 } = yes ;
 
-table ctt_hr_mult(i,ctt) "heatrate multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%heat_rate_mult.csv
-$offdelim
-$onlisting
-;
-
-table ctt_cc_mult(i,ctt) "capital cost multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_cap_mult.csv
-$offdelim
-$onlisting
-;
-
-table ctt_cost_vom_mult(i,ctt) "VOM cost multipliers to differentiate cooling technology types"
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_vom_mult.csv
-$offdelim
-$onlisting
-;
-
 set
 *technology-specific subsets
   battery(i)           "battery storage technologies",
@@ -274,7 +240,7 @@ set
   evmc_storage(i)      "ev flexibility as direct load control",
   evmc_shape(i)        "ev flexibility as adoptable change to load from response to pricing",
   fossil(i)            "fossil technologies"
-  fuel_cell(i)         "fuel cell technologies",
+  ng_fuel_cell(i)      "natural gas fuel cell technologies",
   gas_cc_ccs(i)        "techs that are gas combined cycle and have CCS",
   gas_cc(i)            "techs that are gas combined cycle",
   gas_ct(i)            "techs that are gas combustion turbine",
@@ -288,9 +254,11 @@ set
   geo_egs_allkm(i)     "egs (covering deep egs depths of all km) technologies",
   geo_egs_nf(i)        "egs (near-field) technologies",
   h2_combustion(i)     "h2-ct and h2-cc technologies",
-  h2_cc(i)             "h2-cc technologies"
+  h2_cc(i)             "h2-cc technologies",
   h2_ct(i)             "h2-ct technologies",
   h2(i)                "hydrogen-producing technologies",
+  h2_fuel_cell(i)      "H2 fuel cell technologies",
+  h2_gen(i)            "hydrogen-consuming generation technologies (h2-ct, h2-cc, h2 fuel cell)",
   hyd_add_pump(i)      "hydro techs with an added pump",
   hydro_d(i)           "dispatchable hydro technologies",
   hydro_nd(i)          "non-dispatchable hydro technologies",
@@ -517,8 +485,12 @@ if(Sw_H2Combustionupgrade = 0,
   ban(i)$[i_subsets(i,'h2_combustion')$upgrade(i)] = yes ;
 ) ;
 
-if(Sw_FuelCell = 0,
-  ban(i)$i_subsets(i,'fuel_cell') = yes ;
+if(Sw_GasFuelCell = 0,
+  ban('ng-fuel-cell') = yes ;
+) ;
+
+if(Sw_H2FuelCell = 0,
+  ban('h2-fuel-cell') = yes ;
 ) ;
 
 if(Sw_LfillGas = 0,
@@ -640,14 +612,6 @@ $endif.naris
 
 parameter resourceclassnum(resourceclass) "numeric value for resource class" ;
 resourceclassnum(resourceclass) = resourceclass.val ;
-set tech_resourceclass(i,resourceclass) "map from CSP/DUPV techs to resource classes"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tech_resourceclass.csv
-$offdelim
-$onlisting
-/ ;
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
@@ -734,7 +698,7 @@ evmc(i)$(not ban(i))                = yes$i_subsets(i,'evmc') ;
 evmc_storage(i)$(not ban(i))        = yes$i_subsets(i,'evmc_storage') ;
 evmc_shape(i)$(not ban(i))          = yes$i_subsets(i,'evmc_shape') ;
 fossil(i)$(not ban(i))              = yes$i_subsets(i,'fossil') ;
-fuel_cell(i)$(not ban(i))           = yes$i_subsets(i,'fuel_cell') ;
+ng_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'ng_fuel_cell') ;
 gas_cc_ccs(i)$(not ban(i))          = yes$i_subsets(i,'gas_cc_ccs') ;
 gas_cc(i)$(not ban(i))              = yes$i_subsets(i,'gas_cc') ;
 gas_ct(i)$(not ban(i))              = yes$i_subsets(i,'gas_ct') ;
@@ -751,6 +715,8 @@ h2_combustion(i)$(not ban(i))       = yes$i_subsets(i,'h2_combustion') ;
 h2_cc(i)$(not ban(i))               = yes$i_subsets(i,'h2_cc') ;
 h2_ct(i)$(not ban(i))               = yes$i_subsets(i,'h2_ct') ;
 h2(i)$(not ban(i))                  = yes$i_subsets(i,'h2') ;
+h2_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'h2_fuel_cell') ;
+h2_gen(i)$(not ban(i))              = yes$i_subsets(i,'h2_gen') ;
 hydro_d(i)$(not ban(i))             = yes$i_subsets(i,'hydro_d') ;
 hydro_nd(i)$(not ban(i))            = yes$i_subsets(i,'hydro_nd') ;
 hydro(i)$(not ban(i))               = yes$i_subsets(i,'hydro') ;
@@ -796,7 +762,7 @@ tg_i('coal',i)$coal(i) = yes ;
 tg_i('nuclear',i)$nuclear(i) = yes ;
 tg_i('battery',i)$battery(i) = yes ;
 tg_i('hydro',i)$hydro(i) = yes ;
-tg_i('h2',i)$h2_combustion(i) = yes ;
+tg_i('h2',i)$h2_gen(i) = yes ;
 tg_i('geothermal',i)$geo(i) = yes ;
 tg_i('biomass',i)$bio(i) = yes ;
 tg_i('pumped-hydro',i)$psh(i) = yes ;
@@ -806,18 +772,6 @@ tg_i('dr_shed',i)$dr_shed(i) = yes ;
 tg_i("csp",i)$[(csp1(i) or csp2(i) or csp3(i) or csp4(i))$Sw_WaterMain] = yes ;
 
 storage_interday(i)$(Sw_InterDayLinkage = 0) = no ;
-
-$onempty
-parameter water_with_cons_rate(i,ctt,w) "--gal/MWh-- technology specific-cooling tech based water withdrawal and consumption data"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%water_with_cons_rate.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
 
 $onempty
 * Water requirement if all filling takes place in 1 year and minimum reservoir level is 15% of max volume
@@ -874,48 +828,10 @@ sccapcosttech(i)$[hydro(i) or psh(i) or dr_shed(i)] = yes ;
 retiretech(i,v,r,t) = no ;
 inv_cond(i,v,r,t,tt) = no ;
 
-parameter min_retire_age(i) "minimum retirement age by technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%min_retire_age.csv
-$offdelim
-$onlisting
-/ ;
-
 min_retire_age(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), min_retire_age(ii) } ;
 * if GSw_Clean_Air_Act is enabled, there is no minimum retire age for coal plants
 min_retire_age(i)$[coal(i)$Sw_Clean_Air_Act] = no ;
 
-parameter retire_penalty(allt) "--fraction-- penalty for retiring a power plant expressed as a fraction of FOM"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%retire_penalty.csv
-$offdelim
-$onlisting
- / ;
-
-
-*include non-numeraire CSPs and then exclude numeraire CSPs in ii dimension of
-*prescriptivelink0(pcat,ii) set when Sw_WaterMain is ON
-prescriptivelink0("csp-ws",ii)$[(csp1(ii) or csp2(ii) or csp3(ii) or csp4(ii))$Sw_WaterMain] = yes ;
-prescriptivelink0("csp-ws",ii)$[csp(ii)$i_numeraire(ii)$Sw_WaterMain] = no ;
-
-set prescriptivelink(pcat,i) "final set of prescribed categories and their technologies - used in the model" ;
-
-prescriptivelink(pcat,i)$prescriptivelink0(pcat,i) = yes ;
-
-* active prescriptivelink for all techs not included in the table above
-* but restrict out csp techs in this calculation - since they
-* are indexed by a separate pcat (csp-ws) and have special considerations
-prescriptivelink(pcat,i)$[sameas(pcat,i)$(not sum{ppcat, prescriptivelink(ppcat,i) })$(not csp1(i))] = yes ;
-*only geo_hydro techs are considered to meet geothermal prescriptions
-prescriptivelink(pcat,i)$[geo_extra(i)] = no ;
-
-
-*upgrades have no prescriptions
-prescriptivelink(pcat,i)$[upgrade(i)] = no ;
 
 set rsc_agg(i,ii)   "rsc technologies that belong to the same class" ;
 
@@ -1125,81 +1041,12 @@ one_newv(i)$sum{(v,t)$[not sameas(v,"new1")], ivt(i,v,t) } = no ;
 *--- basic parameter declarations ---
 *=====================================
 
-parameter crf(t) "--unitless-- capital recovery factor"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf.csv
-$offdelim
-$onlisting
-/,
-          crf_co2_incentive(t) "--unitless-- capital recovery factor using a 12-year economic lifetime"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf_co2_incentive.csv
-$offdelim
-$onlisting
-/,
-
-          crf_h2_incentive(t) "--unitless-- capital recovery factor using a 10-year economic lifetime"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%crf_h2_incentive.csv
-$offdelim
-$onlisting
-/,
-
-* pvf_capital and pvf_onm here are for intertemporal mode. These parameters
-* are overwritten for sequential mode in e_solveprep.gms.
-          pvf_capital(t) "--unitless-- present value factor for overnight capital costs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pvf_cap.csv
-$offdelim
-$onlisting
-/,
-          pvf_onm(t)"--unitless-- present value factor of operations and maintenance costs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pvf_onm_int.csv
-$offdelim
-$onlisting
-/,
+parameter
           tc_phaseout_mult(i,v,t)                 "--unitless-- multiplier that reduces the value of the PTC and ITC after the phaseout trigger has been hit",
           tc_phaseout_mult_t(i,t)                 "--unitless-- a single year's multiplier of tc_phaseout_mult",
           tc_phaseout_mult_t_load(i,t)            "--unitless-- a single year's multiplier of tc_phaseout_mult",
           co2_captured_incentive(i,v,r,allt)      "--$/tco2 stored-- incentive on CO2 captured dependent on technology"
-          co2_captured_incentive_in(i,v,allt)     "--$/tco2 stored-- incentive on CO2 captured dependent on technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%co2_capture_incentive.csv
-$offdelim
-$onlisting
-/,
-
           h2_ptc(i,v,r,allt)        "--2004$/kg h2 produced -- incentive on hydrogen production by electrolyzers which purchase Energy Attribute Credits"
-          h2_ptc_in(i,v,allt)       "--2004$/kg h2 produced -- incentive on hydrogen production by electrolyzers which purchase Energy Attribute Credits, this parameter is used to build h2_ptc"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_ptc.csv
-$offdelim
-$onlisting
-/,
-
-          ptc_value_scaled(i,v,allt) "--$/MWh-- value of the PTC incorporating adjustments for monetization costs, tax grossup benefits, and the difference between ptc duration and reeds evaluation period"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ptc_value_scaled.csv
-$offdelim
-$onlisting
-/,
           pvf_onm_undisc(t) "--unitless-- undiscounted present value factor of operations and maintenance costs"
 ;
 
@@ -1221,15 +1068,6 @@ pvf_onm_undisc(t)$pvf_capital(t) = pvf_onm(t) / pvf_capital(t) ;
 *==========================================
 
 * Note that some techs have a dummy firstyear of 2500
-parameter firstyear(i) "first year where new investment is allowed"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%firstyear.csv
-$offdelim
-$onlisting
-/ ;
-
 *---Add first year that capacity can be built:
 firstyear(i)$[(firstyear(i) < firstyear_min)$firstyear(i)] = firstyear_min ;
 
@@ -1249,16 +1087,6 @@ firstyear(i)$[not firstyear(i)] = model_builds_start_yr ;
 firstyear(i)$[i_water_cooling(i)$(not Sw_WaterMain)] = NO ;
 firstyear(i)$upgrade(i) = sum{ii$upgrade_to(i,ii), firstyear(ii) } ;
 
-parameter firstyear_pcat(pcat) ;
-firstyear_pcat(pcat)$[sum{i$[sameas(i,pcat)$(not ban(i))], firstyear(i) }] = sum{i$sameas(i,pcat), firstyear(i) } ;
-firstyear_pcat("upv") = firstyear("upv_1") ;
-firstyear_pcat("wind-ons") = firstyear("wind-ons_1") ;
-firstyear_pcat("wind-ofs") = firstyear("wind-ofs_1") ;
-firstyear_pcat("csp-ws") = firstyear("csp2_1") ;
-firstyear_pcat("geohydro_allkm") = firstyear("geohydro_allkm_1") ;
-firstyear_pcat("egs_allkm") = firstyear("egs_allkm_1") ;
-
-
 *==============================
 * Region specification
 *==============================
@@ -1272,136 +1100,100 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 * -- existing capacity --
 *==========================
 
-*Begin loading of capacity data
-parameter poi_cap_init(r) "--MW-- initial (pre-2010) capacity of all types"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%poi_cap_init.csv
-$offdelim
-$onlisting
-/ ;
-
 *created by reeds/input_processing/writecapdat.py
-table capnonrsc(i,r,*) "--MW-- raw power capacity data for non-RSC tech"
+$onempty
+parameter capnonrsc(i,r) "--MW-- existing (pre startyear) power capacity data for non resource supply curve (RSC) technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%capnonrsc.csv
 $offdelim
 $onlisting
-;
+/ ;
+$offempty
 
 *created by reeds/input_processing/writecapdat.py
 $onempty
-table capnonrsc_energy(i,r,*) "--MWh-- raw energy capacity data for battery tech"
+parameter capnonrsc_energy(i,r) "--MWh-- existing (pre startyear) energy capacity data for storage technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%capnonrsc_energy.csv
 $offdelim
 $onlisting
-;
+/ ;
 $offempty
 
 *created by reeds/input_processing/writecapdat.py
 $onempty
-table caprsc(pcat,r,*) "--MW-- raw RSC capacity data"
+parameter caprsc(i,v,r) "--MW-- existing (pre startyear) capacity data for resource supply curve (RSC) technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%caprsc.csv
 $offdelim
 $onlisting
-;
+/ ;
 $offempty
 
 *created by reeds/input_processing/writecapdat.py
 * declared over allt to allow for external data files that extend beyond end_year
 $onempty
-table prescribednonrsc(allt,pcat,r,*) "--MW-- raw prescribed capacity data for non-RSC tech"
+parameter prescribednonrsc(i,v,r,allt) "--MW-- prescribed capacity data for non resource supply curves (RSC) technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%prescribed_nonRSC.csv
 $offdelim
 $onlisting
-;
+/ ;
 $offempty
 
 $onempty
-table prescribednonrsc_energy(allt,pcat,r,*) "--MWh-- raw prescribed energy capacity data for non-RSC tech"
+parameter prescribednonrsc_energy(i,v,r,allt) "--MWh-- prescribed energy data for non resource supply curves (RSC) technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%prescribed_nonRSC_energy.csv
 $offdelim
 $onlisting
-;
+/ ;
 $offempty
 
 *Created using reeds/input_processing/writecapdat.py
 $onempty
-table prescribedrsc(allt,pcat,r,*) "--MW-- raw prescribed capacity data for RSC tech"
+parameter prescribedrsc(i,v,r,allt) "--MW-- prescribed capacity data for resource supply curve (RSC) technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%prescribed_rsc.csv
 $offdelim
 $onlisting
-;
+/ ;
 $offempty
-
-$onempty
-*For onshore and offshore wind, use outputs of hourlize to override what is in prescribedrsc
-table prescribed_wind_ons(r,allt,*) "--MW-- prescribed wind capacity, created by hourlize"
-$offlisting
-$ondelim
-$include inputs_case%ds%prescribed_builds_wind-ons.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-prescribedrsc(allt,"wind-ons",r,"value") = prescribed_wind_ons(r,allt,"capacity") ;
-
-$onempty
-table prescribed_wind_ofs(r,allt,*) "--MW-- prescribed wind capacity, created by hourlize"
-$offlisting
-$ondelim
-$include inputs_case%ds%prescribed_builds_wind-ofs.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-prescribedrsc(allt,"wind-ofs",r,"value") = prescribed_wind_ofs(r,allt,"capacity") ;
 
 *created by reeds/input_processing/writecapdat.py
 *following does not include wind
 *Retirements for techs binned by heatrates are handled in hintage_data.csv
 $onempty
-table prescribedretirements(allt,r,i,*) "--MW-- raw prescribed power capacity retirement data for non-RSC, non-heatrate binned tech"
+parameter prescribedretirements(i,v,r,allt,alltt,captype) "--MW-- prescribed power capacity retirement data for non-RSC, non-heatrate binned technologies"
+/
 $offlisting
 $ondelim
 $include inputs_case%ds%retirements.csv
 $offdelim
 $onlisting
-;
+/ ;
 $offempty
 
 *created by reeds/input_processing/writecapdat.py
 *Retirements for techs binned by heatrates are handled in hintage_data.csv
 $onempty
-table prescribedretirements_energy(allt,r,i,*) "--MWh-- raw prescribed energy capacity retirement data for battery tech"
-$offlisting
-$ondelim
-$include inputs_case%ds%retirements_energy.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-$onempty
-parameter forced_retirements(i,st) "--integer-- year in which to force retirements of certain techs by state"
+parameter prescribedretirements_energy(v,r,i,allt,alltt,captype) "--MWh-- prescribed energy capacity retirement data for storage technologies"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%forced_retirements.csv
+$include inputs_case%ds%retirements_energy.csv
 $offdelim
 $onlisting
 / ;
@@ -1583,7 +1375,7 @@ $onlisting
 $offempty
 
 parameter geo_discovery(i,r,allt) "--fraction-- fraction of undiscovered geothermal that has been 'discovered'" ;
-geo_discovery(i,r,t)$geo_hydro(i) = (1 - geo_discovery_factor(i,r)) * geo_discovery_rate(t) + geo_discovery_factor(i,r) ;
+geo_discovery(i,r,t)$[geo_hydro(i)$tmodel_new(t)] = (1 - geo_discovery_factor(i,r)) * geo_discovery_rate(t) + geo_discovery_factor(i,r) ;
 
 * read data defining increase in hydropower upgrade availability over time. should only exist for hydUD and hydUND
 $onempty
@@ -1663,11 +1455,12 @@ parameter binned_heatrates(i,v,r,allt) "--MMBtu / MWh-- existing capacity binned
 binned_heatrates(i,v,r,allt) = hintage_data(i,v,r,allt,"wHR") ;
 
 
-*Created by hourlize
-*declared over allt to allow for external data files that extend beyond end_year
+* Created by hourlize
+* Declared over allt to allow for external data files that extend beyond end_year
 * Written by writesupplycurves.py
+* Exogeneous onshore wind cap 
 $onempty
-parameter exog_wind_ons_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) wind capacity binned by capacity factor and rscbin"
+parameter exog_wind_ons_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) wind-ons capacity binned by capacity factor and rscbin"
 /
 $offlisting
 $ondelim
@@ -1677,12 +1470,25 @@ $onlisting
 / ;
 $offempty
 
-parameter exog_wind_ons(i,r,allt) "exogenous (pre-tfirst) wind capacity binned by capacity factor" ;
+parameter exog_wind_ons(i,r,allt) "exogenous (pre-tfirst) wind-ons capacity binned by capacity factor" ;
 exog_wind_ons(i,r,t) = sum{rscbin, exog_wind_ons_rsc(i,r,rscbin,t) } ;
 
-*Created by hourlize
-*declared over allt to allow for external data files that extend beyond end_year
-* Written by writesupplycurves.py
+* Exogeneous offshore wind cap 
+$onempty
+parameter exog_wind_ofs_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor and rscbin"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%exog_wind_ofs_rsc.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+parameter exog_wind_ofs(i,r,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor" ;
+exog_wind_ofs(i,r,t) = sum{rscbin, exog_wind_ofs_rsc(i,r,rscbin,t) } ;
+
+* Exogeneous upv cap 
 $onempty
 parameter exog_upv_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor and rscbin"
 /
@@ -1752,37 +1558,44 @@ $endif.geohydrorevexog
 
 capacity_exog(i,"init-1",r,t)$geo_egs(i) = geo_cap_exog(i,r) ;
 
-* existing capacity equals all 2010 capacity less retirements
+* existing capacity equals all capacity before start year less retirements
 * here we use the max of zero or that number to avoid any errors
 * with variables that are gte to zero
 * also have expiration of capital if t - tfirst is greater than the maximum age
 * note the first conditional limits this calculation to units that
 * do NOT have their capacity binned by heat rates (this include distpv for reasons explained below)
-capacity_exog(i,"init-1",r,t)${[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)]} =
-                                 max(0,capnonrsc(i,r,"value")
-                                       - sum{allt$[allt.val <= t.val],  prescribedretirements(allt,r,i,"value") }
+capacity_exog(i,v,r,t)${[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)]$sameas(v,'init-1')} =
+                                 max(0,capnonrsc(i,r)
+                                       - sum{(allt,alltt)$[allt.val <= t.val],
+                                       prescribedretirements(i,v,r,allt,alltt,"existing") }
                                     ) ;
 
-capacity_exog_energy(i,"init-1",r,t)${[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)]} =
-                                 max(0,capnonrsc_energy(i,r,"value")
-                                       - sum{allt$[allt.val <= t.val],  prescribedretirements_energy(allt,r,i,"value") }
+capacity_exog_energy(i,v,r,t)${[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)]$sameas(v,'init-1')} =
+                                 max(0,capnonrsc_energy(i,r)
+                                       - sum{(allt,alltt)$[allt.val <= t.val],
+                                       prescribedretirements_energy(v,r,i,allt,alltt,"existing") }
                                     ) ;
+
 
 *reset any exogenous capacity that is also specified in binned_capacity
 *as these are computed based on bins specified by the numhintage global
 *in the data-writing files
 capacity_exog(i,v,r,t)$[initv(v)$(sum{(vv,rr)$[initv(vv)], binned_capacity(i,vv,rr,t) })] = 0 ;
 
-capacity_exog("hydED","init-1",r,t) = caprsc("hydED",r,"value") ;
-capacity_exog("hydEND","init-1",r,t) = caprsc("hydEND",r,"value") ;
+capacity_exog("hydED",v,r,t) = caprsc("hydED",v,r) ;
+capacity_exog("hydEND",v,r,t) = caprsc("hydEND",v,r) ;
 capacity_exog(i,v,r,t)$[sum{allt, binned_capacity(i,v,r,allt) }] =
                sum{allt$att(allt,t), binned_capacity(i,v,r,allt) } ;
 
 *reset all wind exogenous capacity levels
 capacity_exog(i,v,r,t)$wind(i) = 0 ;
 
+*wind-ons
 capacity_exog(i,"init-1",r,t)$onswind(i) = exog_wind_ons(i,r,t) ;
 capacity_exog_rsc(i,"init-1",r,rscbin,t)$onswind(i) = exog_wind_ons_rsc(i,r,rscbin,t) ;
+*wind-ofs
+capacity_exog(i,"init-1",r,t)$ofswind(i) = exog_wind_ofs(i,r,t) ;
+capacity_exog_rsc(i,"init-1",r,rscbin,t)$ofswind(i) = exog_wind_ofs_rsc(i,r,rscbin,t) ;
 
 *reset all upv exogenous capacity levels
 capacity_exog(i,v,r,t)$upv(i) = 0 ;
@@ -1851,7 +1664,7 @@ scalar h2_demand_start  "--year-- first year that h2 demand should be modeled"
 ;
 
 * Identify the first year that hydrogen generation technologies are allowed
-h2_gen_firstyear = smin{i$[h2_combustion(i)$(not ban(i))], firstyear(i) } ;
+h2_gen_firstyear = smin{i$[h2_gen(i)$(not ban(i))], firstyear(i) } ;
 
 * Set h2_demand_start to the first year that there is data
 * in h2_exogenous_demand
@@ -1926,29 +1739,28 @@ m_rscfeas(r,i,rscbin)$[csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_cspagg(i
 * Hybrid PV+battery
 m_rscfeas(r,i,rscbin)$[pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii, i)], m_rscfeas(r,ii,rscbin) }] = yes ;
 
-parameter m_required_prescriptions(pcat,r,t)        "--MW-- required power prescriptions by year (cumulative)" ;
+parameter m_required_prescriptions(i,v,r,t)        "--MW-- required power prescriptions by year (cumulative)" ;
 
-parameter m_required_prescriptions_energy(pcat,r,t) "--MWh-- required energy prescriptions by year (cumulative)" ;
+parameter m_required_prescriptions_energy(i,v,r,t) "--MWh-- required energy prescriptions by year (cumulative)" ;
 
 *following does not include wind
 *conditional here is due to no prescribed retirements for RSC tech
 *distpv is an rsc tech but is handled different via binned_capacity as explained above
-m_required_prescriptions(pcat,r,t)$tmodel_new(t)
-          = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc(tt,pcat,r,"value") } ;
+m_required_prescriptions(i,v,r,t)$tmodel_new(t)
+          = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc(i,v,r,tt) } ;
 
 
-m_required_prescriptions(pcat,r,t)$[tmodel_new(t)
-                                   $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(tt,pcat,r,"value") }
-                                     or caprsc(pcat,r,"value"))]
-        = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(tt,pcat,r,"value") }
-        + caprsc(pcat,r,"value")
+m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
+                                   $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(i,v,r,tt) }
+                                     or m_capacity_exog(i,v,r,t) )$rsc_i(i)]
+        = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(i,v,r,tt) }
+        + m_capacity_exog(i,v,r,t)
 ;
 
-m_required_prescriptions_energy(pcat,r,t)$tmodel_new(t)
-          = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(tt,pcat,r,"value") } ;
+m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
+          = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(i,v,r,tt) } ;
 
-parameter degrade(i,t,tt) "degradation factor by i"
-          degrade_pcat(pcat,t,tt) "degradation factor by pcat" ;
+parameter degrade(i,t,tt) "degradation factor by i" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
@@ -1972,33 +1784,45 @@ degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(y
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 
-parameter noncumulative_prescriptions(pcat,r,t) "--MW-- prescribed capacity that comes online in a given year" ;
+parameter prescribed_build(i,v,r,t) "--MW-- prescribed capacity that comes online in a given year" ;
 * need to fill in for unmodeled, gap years via tprev but
 * tprev is not defined with tprev(t,tfirst)
-noncumulative_prescriptions(pcat,r,t)$tmodel_new(t)
+prescribed_build(i,v,r,t)$tmodel_new(t)
                                   = sum{tt$[(yeart(tt)<=yeart(t)
 * this condition populates values of tt which exist between the
 * previous modeled year and the current year
                                           $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
                                           ],
-                                        prescribednonrsc(tt,pcat,r,"value") + prescribedrsc(tt,pcat,r,"value")
+                                        prescribednonrsc(i,v,r,tt) + prescribedrsc(i,v,r,tt)
                                       } ;
 
-parameter noncumulative_prescriptions_energy(pcat,r,t) "--MWh-- prescribed energy capacity that comes online in a given year" ;
-noncumulative_prescriptions_energy(pcat,r,t)$tmodel_new(t)
+parameter prescribed_build_energy(i,v,r,t) "--MWh-- prescribed energy capacity that comes online in a given year" ;
+prescribed_build_energy(i,v,r,t)$tmodel_new(t)
                                   = sum{tt$[(yeart(tt)<=yeart(t)
                                           $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
                                           ],
-                                        prescribednonrsc_energy(tt,pcat,r,"value")
+                                        prescribednonrsc_energy(i,v,r,tt)
                                       } ;
 
-prescription_check(i,newv,r,t)$[sum{pcat$prescriptivelink(pcat,i), noncumulative_prescriptions(pcat,r,t) }
+
+parameter prescribed_retirements(i,v,r,t,tt) "--MW-- prescribed retirement capacity that comes online in tt year and retires in t year" ;
+* need to fill in for unmodeled, gap years via tprev but
+* tprev is not defined with tprev(t,tfirst)
+prescribed_retirements(i,v,r,t,tt)$[tmodel_new(tt)$tmodel_new(t)]
+                                  = prescribedretirements(i,v,r,t,tt,"prescribed") ;
+
+parameter prescribed_retirements_energy(i,v,r,t,tt) "--MWh-- prescribed retirement energy capacity that comes online in tt year and retires in t year" ;
+prescribed_retirements_energy(i,v,r,t,tt)$[tmodel_new(tt)$tmodel_new(t)]
+                                  = prescribedretirements_energy(v,r,i,t,tt,"prescribed") ;
+
+
+prescription_check(i,newv,r,t)$[prescribed_build(i,newv,r,t)
                                  $ivt(i,newv,t)$tmodel_new(t)$(not ban(i))] = yes ;
 
 *Extend feasibility for prescribed rsc capacity where there is no supply curve data.
 *Resource will be manualy added to supply curve in bin1 in these cases.
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
-m_rscfeas(r,i,"bin1")$[sum{(pcat,t)$[sameas(pcat,i)$tmodel_new(t)], noncumulative_prescriptions(pcat,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
+m_rscfeas(r,i,"bin1")$[sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
 
 *==========================================================
 *--- Interconnection queues (Capacity deployment limit) ---
@@ -2123,7 +1947,6 @@ valcap(i,v,r,t)$[sum{tt$[tt.val = Sw_UpgradeYear], m_capacity_exog(i,v,r,tt) }
 *and if it is not in ban or bannew
 *the year also needs to be greater than the first year indicated
 *for that specific class (this is the summing over tt portion)
-*or it needs to be specified in prescriptivelink
 valcap(i,newv,r,t)$[(not rsc_i(i))$tmodel_new(t)$(not ban(i))$(not bannew(i))
                     $(sum{tt$(yeart(tt)<=yeart(t)), ivt(i,newv,tt) })$(not upgrade(i))
                     ]  = yes ;
@@ -2140,28 +1963,24 @@ valcap(i,newv,r,t)$[rsc_i(i)$tmodel_new(t)$(not ban(i))$(not bannew(i))
 *enable capacity if there is a required prescription in that region
 *first for non-rsc techs
 valcap(i,newv,r,t)$[(not rsc_i(i))
-                    $(sum{pcat$prescriptivelink(pcat,i), m_required_prescriptions(pcat,r,t) })
-                    $sum{tt$[sum{pcat$prescriptivelink(pcat,i), m_required_prescriptions(pcat,r,tt) }
-                           $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }
-                    $(not ban(i))] = yes ;
-
+                    $m_required_prescriptions(i,newv,r,t)
+                    $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
+                          $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))] = yes ;
 *then for rsc techs
 valcap(i,newv,r,t)$[rsc_i(i)
-                    $(sum{pcat$prescriptivelink(pcat,i), m_required_prescriptions(pcat,r,t) })
-                    $sum{tt$[sum{pcat$prescriptivelink(pcat,i), m_required_prescriptions(pcat,r,tt) }
-                           $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }
-                    $(not ban(i))
+                    $m_required_prescriptions(i,newv,r,t)
+                    $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
+                      $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))
                     $sum{rscbin, m_rscfeas(r,i,rscbin) }] = yes ;
 
 * Techs where new investment are banned: Start by removing from valcap
 valcap(i,newv,r,t)$bannew(i) = no ;
 * Then add back only if they have prescribed capacity in years with the appropriate i/v/t combination
 valcap(i,newv,r,t)
-    $[bannew(i)
-    $(not ban(i))
-    $sum{(tt,pcat)$[ivt(i,newv,tt)$prescriptivelink(pcat,i)],
-         noncumulative_prescriptions(pcat,r,tt) }]
-    = yes ;
+       $[bannew(i)
+       $(not ban(i))
+       $sum{tt$ivt(i,newv,tt), prescribed_build(i,newv,r,tt)}]
+       = yes ;
 
 *NEW capacity only valid in historical years if and only if it has required prescriptions
 *logic here is that we don't want to populate the constraint with CAP <= 0 and instead
@@ -2171,8 +1990,7 @@ valcap(i,newv,r,t)
 *therefore remove the consideration of valcap if...
 valcap(i,newv,r,t)$[
 *if there are no required prescriptions
-                   (not sum{pcat$prescriptivelink(pcat,i),
-                      m_required_prescriptions(pcat,r,t) } )
+                   (not m_required_prescriptions(i,newv,r,t))
 *if the year is before the first year the technology is allowed
                    $(yeart(t)<firstyear(i))
 *if there is not a mandate for that technology in the region
@@ -2182,9 +2000,8 @@ valcap(i,newv,r,t)$[
 *remove vintages that cannot be built because they only occur before firstyear
 valcap(i,newv,r,t)$[
 *if there are no required prescriptions before the last year of that vintage
-                   (not sum{(pcat,tt)$[prescriptivelink(pcat,i)
-                                      $(yeart(tt)<=lastyear_v(i,newv))],
-                      m_required_prescriptions(pcat,r,tt) } )
+                   (not sum{tt$[(yeart(tt)<=lastyear_v(i,newv))],
+                      m_required_prescriptions(i,newv,r,tt) } )
 *if the vintage is not allowed before the firstyear
                    $(lastyear_v(i,newv)<firstyear(i))
 *if there is not a mandate for that technology in the region
@@ -2200,7 +2017,7 @@ valcap(i,newv,r,t)$[(not sameas(i,'gas-ct'))$(yeart(t)<firstyear(i))
 
 *enable prescribed builds of technologies that are earlier listed in bannew when Sw_WaterMain is ON
 valcap(i,newv,r,t)$[Sw_WaterMain$sum{ctt$bannew_ctt(ctt),i_ctt(i,ctt) }$tmodel_new(t)
-                  $sum{(tt,pcat)$[(yeart(tt)<=yeart(t))$sameas(pcat,i)], m_required_prescriptions(pcat,r,tt) }
+                  $sum{tt$[yeart(tt)<=yeart(t)], m_required_prescriptions(i,newv,r,tt) }
                   $sum{tt$(yeart(tt)<=yeart(t)), ivt(i,newv,tt) }] = yes ;
 
 
@@ -2297,17 +2114,17 @@ valinv(i,v,r,t) = no ;
 valinv(i,v,r,t)$[valcap(i,v,r,t)$ivt(i,v,t)] = yes ;
 
 * Do not allow investments in regions where that technology is banned, expect for prescribed builds
-valinv(i,v,r,t)$[tech_banned(i,r)$(not sum{pcat$prescriptivelink(pcat,i), noncumulative_prescriptions(pcat,r,t) })] = no ;
+valinv(i,v,r,t)$[tech_banned(i,r)$(not prescribed_build(i,v,r,t))] = no ;
 
 *remove non-prescribed numeraire technologies that remain in valcap
-valinv(i,newv,r,t)$[i_numeraire(i)$Sw_WaterMain$(not sum{pcat$prescriptivelink(pcat,i), noncumulative_prescriptions(pcat,r,t) })] = no ;
+valinv(i,newv,r,t)$[i_numeraire(i)$Sw_WaterMain$(not prescribed_build(i,newv,r,t))] = no ;
 
 *upgrades are not allowed for the INV variable as they are the sum of UPGRADES
 valinv(i,v,r,t)$upgrade(i) = no ;
 
 valinv(i,v,r,t)$[(yeart(t)<firstyear(i))
 * Allow investments before firstyear(i) in technologies with prescribed capacity
-                 $(not sum{pcat$prescriptivelink(pcat,i), noncumulative_prescriptions(pcat,r,t) })
+                 $(not prescribed_build(i,v,r,t))
 * Allow investments before firstyear(i) in mandated technologies
                  $(not [sum{st$r_st(r,st), batterymandate(st,t) }  and battery(i)])
                  $(not [sum{st$r_st(r,st), offshore_cap_req(st,t)} and ofswind(i)])
@@ -2377,7 +2194,7 @@ inv_cond(i,newv,r,t,tt)$[(not ban(i))
                       ] = yes ;
 
 inv_cond(i,newv,r,t,tt)$[Sw_WaterMain$sum{ctt$bannew_ctt(ctt),i_ctt(i,ctt) }$tmodel_new(t)$tmodel_new(tt)
-                      $sum{(pcat)$[sameas(pcat,i)], noncumulative_prescriptions(pcat,r,tt) }
+                      $prescribed_build(i,newv,r,tt)
                       $(yeart(tt) <= yeart(t))
                       $valinv(i,newv,r,tt)
                       $(ord(t)-ord(tt) < maxage(i))
@@ -2655,18 +2472,6 @@ $offdelim
 $onlisting
 ;
 
-$onempty
-parameter acp_disallowed(st,RPSCat) "--integer-- Indication for whether ACP purchases are disallowed (1) or allowed (0)."
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%acp_disallowed.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
 RecStates(RPSCat,st,t)$[RecPerc(RPSCat,st,t) or sum{ast, rectable(ast,st) }] = yes ;
 
 *If both states have an RPS for the RPSCat and if they're allowed to trade, they can trade
@@ -2918,43 +2723,6 @@ trtypemax(trtype)$[(Sw_TransCapMaxTypes=1)] = yes ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=2)$sameas(trtype,'VSC')] = yes ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=3)$(not sameas(trtype,'AC'))] = yes ;
 
-* --- initial transmission capacity ---
-* transmission capacity input data are defined in both directions for each region-to-region pair
-* Written by transmission.py
-$onempty
-parameter trancap_init_energy(r,rr,trtype) "--MW-- initial transmission capacity for energy trading"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_energy.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter trancap_init_prm(r,rr,trtype) "--MW-- initial transmission capacity for capacity (PRM) trading"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_prm.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-* --- future transmission capacity ---
-* Transmission additions are defined in one direction for each region-to-region pair with the lowest region number listed first
-* Written by transmission.py
-$onempty
-parameter trancap_fut(r,rr,trancap_fut_cat,trtype,allt) "--MW-- potential future transmission capacity by type (one direction)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_fut.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 * --- exogenously specified transmission capacity ---
 * Transmission additions are defined in one direction for each region-to-region pair with the lowest region number listed first
 parameter invtran_exog(r,rr,trtype,t) "--MW-- exogenous transmission capacity investment (one direction)" ;
@@ -3059,18 +2827,6 @@ $endif.oprestradelevel
 Scalar opres_mult "multiplier on opres flow in transmission constraint" ;
 opres_mult = Sw_OpResTradeMult;
 
-* Interfaces are collections of routes with an additional constraint on total flows
-$onempty
-parameter trancap_init_transgroup(transgrp,transgrpp,trtype) "--MW-- initial upper limit on interface AC flows"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trancap_init_transgroup.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 $onempty
 parameter trancap_init_itlgrp(itlgrp,itlgrpp,trtype) "--MW-- initial upper limit on interface flows between itlgrps"
 /
@@ -3092,12 +2848,12 @@ routes_transgroup(transgrp,transgrpp,r,rr)$[
     $(not sameas(r,rr))
 ] = yes ;
 
-set routes_nercr(nercr,nercrr,r,rr) "collection of routes between nercrs" ;
-routes_nercr(nercr,nercrr,r,rr)$[
+parameter routes_transreg(transreg,transregg,r,rr) "collection of routes between transregs" ;
+routes_transreg(transreg,transregg,r,rr)$[
     sum{(t,trtype), routes(r,rr,trtype,t) }
-    $r_nercr(r,nercr)
-    $r_nercr(rr,nercrr)
-    $(not sameas(nercr,nercrr))
+    $r_transreg(r,transreg)
+    $r_transreg(rr,transregg)
+    $(not sameas(transreg,transregg))
     $(not sameas(r,rr))
 ] = yes ;
 
@@ -3110,64 +2866,6 @@ routes_itlgrp(itlgrp,itlgrpp,r,rr)$[
     $(not sameas(r,rr))
     $[not((sameas(itlgrp,r)) AND (sameas(itlgrpp,rr)))]
 ] = yes ;
-* --- transmission cost ---
-
-* Transmission line capex cost (generated from reV tables)
-* Written by transmission.py
-$onempty
-parameter tsc_binwidth(r,rr,tscbin) "--$-- investment bin widths for transmission interfaces"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_binwidth.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tsc_forward(r,rr,tscbin) "--$/MW-- transmission upgrade cost for forward direction"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_forward.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tsc_reverse(r,rr,tscbin) "--$/MW-- transmission upgrade cost for reverse direction"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tsc_reverse.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter transmission_cost_nonac(r,rr,trtype) "--$/MW-- expansion cost for DC interfaces (only lines; converters handled separately)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_cost_nonac.csv
-$offdelim
-$onlisting
-/ ;
-
-* Scale transmission line costs by Sw_TransCostMult (for sensitivity analysis)
-tsc_binwidth(r,rr,tscbin) = tsc_binwidth(r,rr,tscbin) * Sw_TransCostMult ;
-tsc_forward(r,rr,tscbin) = tsc_forward(r,rr,tscbin) * Sw_TransCostMult ;
-tsc_reverse(r,rr,tscbin) = tsc_reverse(r,rr,tscbin) * Sw_TransCostMult ;
-transmission_cost_nonac(r,rr,trtype) = transmission_cost_nonac(r,rr,trtype) * Sw_TransCostMult ;
-
-* Transmission line FOM cost
-* Written by transmission.py
-parameter transmission_line_fom(r,rr,trtype) "--$/MW/year-- fixed O&M cost of transmission lines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_line_fom.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 parameter cost_hurdle(r,rr,allt) "--$ per MWh-- cost for transmission hurdle rate" ;
 parameter cost_hurdle_regiongrp1(r,rr,allt) "--$ per MWh-- cost for transmission hurdle rate between regiongrp1" ;
@@ -3185,28 +2883,6 @@ $onlisting
 $offempty
 
 * Assign hurdle rates to chosen GSw_TransHurdLevel
-$onempty
-parameter cost_hurdle_rate1(allt) "--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp1"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_hurdle_rate1.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-$onempty
-parameter cost_hurdle_rate2(allt) "--$ per MWh-- raw data cost for transmission hurdle rate for regiongrp2"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cost_hurdle_rate2.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 * define hurdle rates across international lines
 * first determine whether the regions are of different countries..
 cost_hurdle_regiongrp1(r,rr,t)$[sum{country$r_country(r,country),ord(country) }
@@ -3256,36 +2932,6 @@ $endif.hurdlelevel_regiongrp2
 
 * The final hurdle cost is the higher cost among regiongrp1 and regiongrp2, and hurdle_rate_floor
 cost_hurdle(r,rr,t)$[sum{trtype, routes(r,rr,trtype,t) }] = max{cost_hurdle_regiongrp1(r,rr,t),cost_hurdle_regiongrp2(r,rr,t), hurdle_rate_floor} ;
-
-* --- transmission distance ---
-
-* The distance for a transmission interface is calculated in reV using the same "least-cost-path"
-* algorithm and cost tables as for wind and solar spur lines.
-* Distances are more representative of new greenfield lines than existing lines.
-* Written by transmission.py
-$onempty
-parameter distance(r,rr,trtype) "--miles-- distance between BAs by line type"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%transmission_miles.csv
-$offdelim
-$onlisting
-/ ;
-
-
-* --- transmission losses ---
-* Written by transmission.py
-parameter tranloss(r,rr,trtype)    "--fraction-- transmission loss between r and rr"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tranloss.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
 
 * --- VSC HVDC macrogrid ---
 set val_converter(r,t) "BAs where VSC converter investment is allowed" ;
@@ -3405,16 +3051,6 @@ ccseason_cap_frac_delta(i,v,r,ccseason,t)$[conv(i)$sameas(ccseason,'hot')] =
 * -- Consume technologies specification --
 *============================================
 
-$onempty
-set routes_adjacent(r,rr) "all pairs of adjacent land-based BAs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%routes_adjacent.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 * Remove offshore zones
 routes_adjacent(r,rr)$(offshore(r) or offshore(rr)) = no ;
 
@@ -3599,45 +3235,6 @@ parameter cost_h2_transport_cap(r,rr,allt)          "--$/(metric ton/hour)-- cap
           cost_h2_storage_fom(h2_stor,allt)         "--$/(metric ton*yr)-- fixed OM cost of H2 storage per metric ton"
           h2_network_load(h2_st,allt)               "--MWh/metric ton-- electricity consumption of H2 network components"
 ;
-
-* read in capital cost multiplier from financial processing script
-parameter h2_cap_cost_mult_pipeline(allt) "capital cost multiplier for h2 pipelines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_pipeline_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter h2_cap_cost_mult_compressor(allt) "capital cost multiplier for h2 compressors"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_compressor_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter h2_cap_cost_mult_storage(allt) "capital cost multiplier for h2 storage"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_storage_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-$onempty
-parameter pipeline_cost_mult(r,rr) "--fraction-- cost multiplier for H2 pipelines (will be added to 1)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pipeline_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 * here computing capital and FOM costs as $/metric ton-hour for all possible routes
 * including capital cost multipliers, which are different for pipelines and compressors
@@ -3979,7 +3576,7 @@ cost_fom(i,v,r,t)$[valcap(i,v,r,t)$pvb(i)] = cost_fom_pvb_p(i,v,r,t) + bcr(i) * 
 parameter plant_age(i,v,r,t) "--years-- plant age of existing units" ;
 *a plants age is the difference between the current year and
 *the year at which the plant came online
-plant_age(i,v,r,t)$[valcap(i,v,r,t)$initv(v)] =
+plant_age(i,v,r,t)$[valcap(i,v,r,t)$initv(v)$hintage_data(i,v,r,"%startyear%","wOnlineYear")] =
   max(0, yeart(t) - hintage_data(i,v,r,"%startyear%","wOnlineYear") ) ;
 
 cost_fom(i,initv,r,t)$[Sw_BinOM$valcap(i,initv,r,t)$coal(i)] =
@@ -4170,7 +3767,7 @@ parameter cf_adj_t(i,v,t)        "--unitless-- capacity factor adjustment over t
 
 cf_adj_t(i,v,t)$[(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
 
-* Existing wind uses 2010 cf adjustment
+* Existing wind uses startyear cf adjustment
 cf_adj_t(i,initv,t)$[wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
 
 cf_adj_t(i,newv,t)$[wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
@@ -4386,15 +3983,6 @@ $include inputs_case%ds%cangrowth.csv
 $offdelim
 $onlisting
 ;
-
-parameter mex_growth_rate(allt) "growth rate for mexican demand - national"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%mex_growth_rate.csv
-$offdelim
-$onlisting
-/ ;
 $offempty
 
 
@@ -4411,114 +3999,11 @@ $offdelim
 $onlisting
 / ;
 
-$onempty
-parameter firm_import_limit(nercr,allt) "--fraction-- limit on net firm imports into NERC regions"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%firm_import_limit.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter peakload_nercr(nercr,allt) "--MW-- Peak exogenous demand across all weather years by NERC region"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%peakload_nercr.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
 
 
 * ===========================================================================
 * Regional and temporal capital cost multipliers
 * ===========================================================================
-* Load scenario-specific capital cost multiplier components
-
-parameter ccmult(i,allt) "construction cost multiplier"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ccmult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter tax_rate(allt) "all-in tax rate"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%tax_rate.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter itc_frac_monetized(i,allt) "fractional value of the ITC, after adjusting for the costs of monetization"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%itc_frac_monetized.csv
-$offdelim
-$onlisting
-/ ;
-
-$onempty
-parameter itc_energy_comm_bonus(i,r) "energy community tax credit bonus factor"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%itc_energy_comm_bonus.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-parameter pv_frac_of_depreciation(i,allt) "present value of depreciation, expressed as a fraction of the capital cost of the investment"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%pv_frac_of_depreciation.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter degradation_adj(i,allt) "adjustment to reflect degradation over the lifetime of an asset"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%degradation_adj.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter financing_risk_mult(i,allt) "multiplier to reflect higher financing costs for riskier assets"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%financing_risk_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter reg_cap_cost_diff(i,r) "regional capital cost difference [fraction] (note that wind-ons and upv have separate multiplers in the supply curve cost)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%reg_cap_cost_diff.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter eval_period_adj_mult(i,allt) "adjustment multiplier for the capital costs of techs with non-standard evaluation periods"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%eval_period_adj_mult.csv
-$offdelim
-$onlisting
-/ ;
 
 eval_period_adj_mult(i,t)$[i_water_cooling(i)$Sw_WaterMain] =
   sum{ii$ctt_i_ii(i,ii), eval_period_adj_mult(ii,t) } ;
@@ -4533,24 +4018,6 @@ cost_cap_fin_mult(i,r,t) "final capital cost multiplier for regions and technolo
 cost_cap_fin_mult_noITC(i,r,t) "final capital cost multiplier excluding ITC - used only in outputs",
 cost_cap_fin_mult_no_credits(i,r,t) "final capital cost multiplier ITC/PTC/Depreciation (i.e. the actual expenditures) - used only in outputs",
 cost_cap_fin_mult_out(i,r,t) "final capital cost multiplier for system cost outputs" ;
-
-parameter trans_cost_cap_fin_mult(allt) "capital cost multiplier for transmission - used in the objective function"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trans_cap_cost_mult.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter trans_cost_cap_fin_mult_noITC(allt) "capital cost multiplier for transmission excluding ITC - used only in outputs"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%trans_cap_cost_mult_noITC.csv
-$offdelim
-$onlisting
-/ ;
 
 
 * --- Hybrid PV+Battery ---
@@ -4650,29 +4117,9 @@ capture_rate_fuel(i,"CO2")$beccs(i) = - emit_rate_fuel(i,"process","CO2")
 
 parameter capture_rate(e,i,v,r,t) "--metric tons per MWh-- emissions capture rate" ;
 
-parameter methane_leakage_rate(allt) "--fraction-- methane leakage as fraction of gross production"
-* best estimate for fixed leakage rate is 0.023 (Alvarez et al. 2018, https://dx.doi.org/10.1126/science.aar7204)
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%methane_leakage_rate.csv
-$offdelim
-$onlisting
-/ ;
-
 scalar methane_tonperMMBtu "--metric tons per MMBtu-- methane content of natural gas" ;
 * [ton CO2 / MMBtu] * [ton CH4 / ton CO2]
 methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","CO2") * molWeightCH4 / molWeightCO2 ;
-
-* H2 leakage rate by technology and etype (broken down to process and upstream)
-parameter h2_leakage_rate(i)  "--fraction-- h2 leakage rate as a fraction of total production by technology and emission type"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%h2_leakage_rate.csv
-$offdelim
-$onlisting
-/ ;
 
 parameter prod_emit_rate(etype,e,i,allt) "--metric tons emitted per metric ton product-- emissions rate per metric ton of product (e.g. tonCO2/tonH2 for SMR & SMR-CCS)" ;
 * Steam methane reformer (SMR)'s process emission here refers to emissions from steam methane reforming process
@@ -5042,18 +4489,18 @@ $onlisting
 
 $ifthen.gassector %GSw_GasSector% == 'energy_sector'
 
-*beginning year value is zero (i.e., no elasticity)
-cd_beta(cendiv,t)$[not tfirst(t)] = cd_beta0_allsector(cendiv) ;
+*beginning year value of 2010 is zero (i.e., no elasticity)
+cd_beta(cendiv,t)$[t.val>2010] = cd_beta0_allsector(cendiv) ;
 
-nat_beta(t)$(not tfirst(t)) = nat_beta_energy ;
+nat_beta(t)$[t.val>2010] = nat_beta_energy ;
 
 $else.gassector
 
-*beginning year value is zero (i.e., no elasticity)
-cd_beta(cendiv,t)$[not tfirst(t)] = cd_beta0(cendiv) ;
+*beginning year value of 2010 is zero (i.e., no elasticity)
+cd_beta(cendiv,t)$[t.val>2010] = cd_beta0(cendiv) ;
 
 *see documentation for how value is calculated
-nat_beta(t)$(not tfirst(t)) =  nat_beta_nonenergy ;
+nat_beta(t)$[t.val>2010] =  nat_beta_nonenergy ;
 
 $endif.gassector
 
@@ -5229,15 +4676,6 @@ resourcescaler(i)$csp(i) = CSP_SM(i) / csp_sm_baseline ;
 * For PSH, tech-specific storage duration sets a default value.
 *   Then when when GSw_HydroPSHDurData = 1,
 *   region- and vintage-specific durations are defined where data exists.
-parameter storage_duration(i)   "--hours-- storage duration by tech"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%storage_duration.csv
-$offdelim
-$onlisting
-/ ;
-
 $onempty
 scalar psh_sc_duration "--hours-- PSH storage duration corresponding to selected supply curve"
 /
@@ -5325,30 +4763,12 @@ cost_vom(i,v,r,t)$[storage(i)$valgen(i,v,r,t)$(not cost_vom(i,v,r,t))] = storage
 parameter minCF(i,t)      "--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)"
           maxdailycf(i,t) "--fraction-- maximum daily capacity factor" ;
 
-* 6% for H2-CT and H2-CC is based on unpublished PLEXOS runs of 100% RE scenarios performed in summer 2019
-parameter minCF_input(i) "--fraction-- minimum annual capacity factor for each tech fleet, applied to (i,r)"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%minCF.csv
-$offdelim
-$onlisting
-/ ;
 minCF(i,t) = minCF_input(i) ;
 minCF(i,t)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), minCF(ii,t) } ;
 minCF(i,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), minCF(ii,t) } ;
 
 * adjust fleet mincf for nuclear when using flexible nuclear
 minCF(i,t)$[nuclear(i)$Sw_NukeFlex] = minCF_nuclear_flex ;
-
-parameter maxdailycf_input(i) "--fraction-- maximum daily capacity factor for a technology"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%maxdailycf.csv
-$offdelim
-$onlisting
-/ ;
 
 maxdailycf(i,t) = maxdailycf_input(i) ;
 maxdailycf(i,t)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), maxdailycf(ii,t) } ;
@@ -5530,9 +4950,6 @@ rep_bio_price_unused(r)$[sum{usda_region, 1$r_usda(r,usda_region) }] =
     smin{bioclass$[sum{usda_region$r_usda(r, usda_region), biosupply(usda_region,bioclass,"cap") }],
         sum{usda_region$r_usda(r, usda_region), biosupply(usda_region,bioclass,"price") } } + bio_transport_cost ;
 
-parameter cost_curt(t) "--$/MWh-- price paid for curtailed VRE" ;
-
-cost_curt(t)$[yeart(t)>=model_builds_start_yr] = Sw_CurtMarket ;
 
 *======================
 * Emissions cap and tax
@@ -5622,7 +5039,7 @@ valret(i,v)$[(Sw_Retire=2)$initv(v)$(not noretire(i))
 *All new and existing nuclear, coal, gas, and hydrogen are retirable if Sw_Retire = 3
 *Existing plants have to meet the min_retire_age before retiring
 valret(i,v)$[((Sw_Retire=3) or (Sw_Retire=5))$(not noretire(i))
-            $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_combustion(i) or h2(i))] = yes ;
+            $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_gen(i) or h2(i))] = yes ;
 
 *new and existings plants of any technology can be retired if Sw_Retire = 4
 valret(i,v)$[(Sw_Retire=4)$(not noretire(i))] = yes ;
@@ -5631,7 +5048,7 @@ retiretech(i,v,r,t)$[valret(i,v)$valcap(i,v,r,t)] = yes ;
 
 * when Sw_Retire = 3 ensure that plants do not retire before their minimum age
 retiretech(i,v,r,t)$[((Sw_Retire=3) or (Sw_Retire=5))$initv(v)$(not noretire(i))$(plant_age(i,v,r,t) <= min_retire_age(i))
-                    $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_combustion(i) or h2(i))] = no ;
+                    $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_gen(i) or h2(i))] = no ;
 
 * for sw_retire=5, don't allow nuclear to retire until 2030
 retiretech(i,v,r,t)$[(Sw_Retire=5)$nuclear(i)$(yeart(t)<=2030)] = no ;
@@ -5639,18 +5056,6 @@ retiretech(i,v,r,t)$[(Sw_Retire=5)$nuclear(i)$(yeart(t)<=2030)] = no ;
 *several states have subsidies for nuclear power, so do not allow nuclear to retire in these states
 *before the year specified (see https://www.eia.gov/todayinenergy/detail.php?id=41534)
 *Note that Ohio has since repealed their nuclear subsidy, so is no longer included
-$onempty
-parameter nuclear_subsidies(st) '--year-- the year a nuclear subsidy ends in a given state'
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%nuclear_subsidies.csv
-$offdelim
-$onlisting
-/
-;
-$offempty
-
 retiretech(i,initv,r,t)$[(yeart(t) < sum{st$r_st(r,st), nuclear_subsidies(st) })$valcap(i,initv,r,t)$nuclear(i)] = no ;
 
 * if Sw_NukeNoRetire is enabled, don't allow nuclear to retire through Sw_NukeNoRetireYear
@@ -5685,15 +5090,15 @@ m_rsc_dat_original(r,i,rscbin,sc_cat) = m_rsc_dat(r,i,rscbin,sc_cat) ;
 * Reduced Resource Switch
 *=========================================
 
-parameter rsc_reduct_frac(pcat,r)   "--unitless-- fraction of renewable resource that is reduced from the supply curve"
-          prescrip_rsc_frac(pcat,r) "--unitless-- fraction of prescribed builds to the resource available"
+parameter rsc_reduct_frac(i,r)   "--unitless-- fraction of renewable resource that is reduced from the supply curve"
+          prescrip_rsc_frac(i,r) "--unitless-- fraction of prescribed builds to the resource available"
           rsc_capacity_scalar(i,r,t)    "--unitless-- resource scalar for any technology that has a change in the supply curve capacity over time"
 ;
 
 set rsc_capacity_scalar_i(i) "technologies that have a capacity resource scalar" ;
 
-rsc_reduct_frac(pcat,r) = 0 ;
-prescrip_rsc_frac(pcat,r) = 0 ;
+rsc_reduct_frac(i,r) = 0 ;
+prescrip_rsc_frac(i,r) = 0 ;
 rsc_capacity_scalar(i,r,t) = 0 ;
 rsc_capacity_scalar_i(i) = no ;
 
@@ -5701,29 +5106,25 @@ rsc_capacity_scalar_i(i) = no ;
 if (Sw_ReducedResource = 1,
 *Calculate the fraction of prescribed builds to the available resource
 * 2021-05-05 the prescriptions are being applied across all years until we decide a better way to do this
-  prescrip_rsc_frac(pcat,r)$[sum{(i,rscbin)$prescriptivelink(pcat,i), m_rsc_dat(r,i,rscbin,"cap") } > 0] =
-      smax(tt,m_required_prescriptions(pcat,r,tt)) / sum{(i,rscbin)$prescriptivelink(pcat,i), m_rsc_dat(r,i,rscbin,"cap") } ;
+  prescrip_rsc_frac(i,r)$[sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } > 0] =
+      smax((tt),sum{newv,m_required_prescriptions(i,newv,r,tt)}) / sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
 *Set the default resource reduction fraction
-  rsc_reduct_frac(pcat,r) = reduced_resource_frac ;
+  rsc_reduct_frac(i,r) = reduced_resource_frac ;
 *If the resource reduction fraction will reduce the resource to the point that prescribed builds will be infeasible,
 *then replace the resource reduction fraction with the maximum that the resource can be reduced to still have a feasible solution
-  rsc_reduct_frac(pcat,r)$[prescrip_rsc_frac(pcat,r) > (1 - rsc_reduct_frac(pcat,r))] = 1 - prescrip_rsc_frac(pcat,r) ;
+  rsc_reduct_frac(i,r)$[prescrip_rsc_frac(i,r) > (1 - rsc_reduct_frac(i,r))] = 1 - prescrip_rsc_frac(i,r) ;
 
 *In order to avoid small number issues, round down at the 3rd decimal place
 *Because the floor function returns an integer, we multiply and divide by 1000 to get proper rounding
-  rsc_reduct_frac(pcat,r) = rsc_reduct_frac(pcat,r) * 1000 ;
-  rsc_reduct_frac(pcat,r) = floor(rsc_reduct_frac(pcat,r)) ;
-  rsc_reduct_frac(pcat,r) = rsc_reduct_frac(pcat,r) / 1000 ;
+  rsc_reduct_frac(i,r) = rsc_reduct_frac(i,r) * 1000 ;
+  rsc_reduct_frac(i,r) = floor(rsc_reduct_frac(i,r)) ;
+  rsc_reduct_frac(i,r) = rsc_reduct_frac(i,r) / 1000 ;
 
 *Now reduce the resource by the updated resource reduction fraction
 *(only do this for hydro, geothermal, PSH, and CSP; PV and wind have limited resource supply curves)
   m_rsc_dat(r,i,rscbin,"cap")$[rsc_i(i)$(csp(i) or hydro(i) or psh(i) or geo(i))] =
-          m_rsc_dat(r,i,rscbin,"cap") * (1 - sum{pcat$prescriptivelink(pcat,i), rsc_reduct_frac(pcat,r) }) ;
+          m_rsc_dat(r,i,rscbin,"cap") * (1 - rsc_reduct_frac(i,r)) ;
 ) ;
-
-*Currently only geothermal and dr_shed have supply curve capacities that change over time
-rsc_capacity_scalar(i,r,t) = geo_discovery(i,r,t) + dr_shed_capacity_scalar(i,r,t) ;
-rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
 
 *convert UPV and PVB interconnection costs from $/MW-AC to $/MW-DC using ILR
 m_rsc_dat(r,i,rscbin,"cost")$[m_rsc_dat(r,i,rscbin,"cap")$(upv(i) or pvb(i))] = m_rsc_dat(r,i,rscbin,"cost") / ilr(i) ; 
@@ -5740,21 +5141,23 @@ m_rsc_dat(r,i,rscbin,"cap")$[rsc_i(i)
   ceil(1000 * sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)], capacity_exog_rsc(ii,v,r,rscbin,tt)
       / (1$[not rsc_capacity_scalar_i(ii)] + rsc_capacity_scalar(ii,r,tt)$rsc_capacity_scalar_i(ii)) } ) / 1000 ;
 
+
 *Ensure sufficient resource availability to cover prescribed builds
 *while considering existing capacity (capacity_exog_rsc) 
-*and prescribed capacity (noncumulative_prescriptions).
+*and prescribed capacity (cap_prescribed).
 
 *Two types of adjustments:
-*1- If at least one element of m_rsc_dat(r,i,rscbin,"cap") is nonzero within a technology group (pcat), 
+*1- If at least one element of m_rsc_dat(r,i,rscbin,"cap") is nonzero within a technology group, 
 *   apply a multiplier to all associated i-classes so that the total available capacity 
 *   meets or exceeds prescribed capacity.
 *2- If m_rsc_dat(r,i,rscbin,"cap") is zero for all i-classes within the technology group, 
 *   but prescribed capacity exists, assign prescribed capacity to the first bin at zero cost.
 
 *Define auxiliary parameters to organize the computation
-parameter cap_existing(i,r)     "--MW-- amount of existing resource supply curve (rsc) capacity in each region"
-          cap_prescribed(i,r)   "--MW-- amount of prescribed (required builds) rsc capacity in each region"
-          available_supply(i,r) "--MW-- amount of available rsc supply in each region"
+parameter cap_existing(i,r)       "--MW-- amount of existing resource supply curve (rsc) capacity in each region"
+          cap_prescribed(i,r,t)   "--MW-- amount of prescribed (required builds) rsc capacity in each region and year"
+          cap_prescribed_ir(i,r)  "--MW-- amount of prescribed (required builds) rsc capacity in each region"
+          available_supply(i,r)   "--MW-- amount of available rsc supply in each region"
 ;
 
 *Initialize the available supply to zero
@@ -5764,33 +5167,23 @@ available_supply(i,r) = 0 ;
 cap_existing(i,r)$exog_rsc(i) = sum{(v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(i,v,r,rscbin,t) } ;
 
 *Get prescribed capacity
-cap_prescribed(i,r)$rsc_i(i) = sum{(pcat,t)$[(sameas(pcat,i) or prescriptivelink(pcat,i))
-                                            $tmodel_new(t)], 
-                                noncumulative_prescriptions(pcat,r,t) } ;
+cap_prescribed(i,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{v, prescribed_build(i,v,r,t) } ;
+cap_prescribed_ir(i,r)$rsc_i(i) = sum{t$tmodel_new(t), cap_prescribed(i,r,t) } ;
 
-*Loop over all regions
-loop(r,
-*Loop over non-geothermal rsc technologies
-  loop(i$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not prescriptivelink("geothermal",i))],
-
-*Get total available supply for all ii associated with pcat of i.
-*For example, if i = {upv_2}, then ii = {upv_2, upv_3, ...} and pcat = {UPV}.
-    available_supply(i,r) = sum{(pcat,ii,rscbin)$[prescriptivelink(pcat,i)
-                                                  $prescriptivelink(pcat,ii)], 
-                              m_rsc_dat(r,ii,rscbin,"cap") } ;
+*Get total available supply for all i .
+available_supply(i,r)$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))] = sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } ;
 
 *Apply multiplier if prescribed capacity exceeds available supply
-    if ([((cap_existing(i,r) + cap_prescribed(i,r)) > available_supply(i,r))$(available_supply(i,r))],
-        m_rsc_dat(r,ii,rscbin,"cap")$[sum{pcat$(prescriptivelink(pcat,i)$prescriptivelink(pcat,ii)), 1 }]
-            = m_rsc_dat(r,ii,rscbin,"cap") * ((cap_existing(i,r) + cap_prescribed(i,r)) / available_supply(i,r)) ;
-    ) ;
+m_rsc_dat(r,i,rscbin,"cap")$[((cap_existing(i,r) + cap_prescribed_ir(i,r)) >  available_supply(i,r))
+                              $(available_supply(i,r))] 
+                  = m_rsc_dat(r,i,rscbin,"cap") * ((cap_existing(i,r) + cap_prescribed_ir(i,r)) / available_supply(i,r)) ;
+
 
 *Assign prescribed capacity to first bin at no cost if no supply is available
-    if ([(cap_prescribed(i,r) > 0)$(not available_supply(i,r))] ,
-      m_rsc_dat(r,i,"bin1","cap") = cap_prescribed(i,r) ;
-    ) ;
-  ) ; 
-) ;
+m_rsc_dat(r,i,"bin1","cap")$[(cap_prescribed_ir(i,r) > 0)$(not available_supply(i,r))
+                             $sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))]
+                      = cap_prescribed_ir(i,r) ;
+
 
 *Compute the difference between m_rsc_dat_original and m_rsc_dat
 parameter rsc_cap_diff(r,i,rscbin) "--MW or $/MW-- total supply added to m_rsc_dat to adjust for prescriptions" ;
@@ -5799,24 +5192,44 @@ rsc_cap_diff(r,i,rscbin) = m_rsc_dat(r,i,rscbin,"cap") - m_rsc_dat_original(r,i,
 *Round up to the nearest 3rd decimal place
 m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rscbin,"cap") * 1000) / 1000 ;
 
-*Geothermal is not a tech with sameas(i,pcat), so handle it separately here
-*Loop over regions that have geothermal prescribed builds
-loop(r$sum{(i,t)$[prescriptivelink("geothermal",i)$tmodel_new(t)], noncumulative_prescriptions("geothermal",r,t) },
-*Then loop over eligible geothermal technologies
-  loop(i$[prescriptivelink("geothermal",i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$geo_discovery(i,r,"%startyear%")],
-*If capacity is insufficient, add enough capacity to make the model feasible
-*Use the 2010 geothermal discovery (geo_discovery) rate for the calculation. That will slightly
-*overestimate geothermal resource for any prescribed builds happening after the discovery rate
-*begins to increase (currently after 2021)
-    m_rsc_dat(r,i,"bin1","cap")$[((sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } * (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))) < sum{t$tmodel_new(t), noncumulative_prescriptions("geothermal",r,t) })
-                                $(1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i))] =
-      (sum{t$tmodel_new(t), noncumulative_prescriptions("geothermal",r,t) }
-       - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") }
-       + m_rsc_dat(r,i,"bin1","cap")
-      ) / (1$[not geo_hydro(i)] + geo_discovery(i,r,"%startyear%")$geo_hydro(i)) ;
-    break ;
-  ) ;
-) ;
+*Currently only geothermal and dr_shed have supply curve capacities that change over time
+* Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
+geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
+
+parameter geo_bin1_add_orig(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery"
+          geo_bin1_add(i,r)      "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with updated geo_discovery" ;
+
+*Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
+*total geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
+geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
+      ( cap_prescribed_ir(i,r)
+          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
+                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
+      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+
+* If there is not sufficient geothermal resource (i.e., geo_bin1_add_orig is positive), then
+* set geo_discovery to 1 for that region for years after the prescribed builds start
+geo_discovery(i,r,t)$[geo_hydro(i)$[geo_bin1_add_orig(i,r) > 0]
+                     $tmodel_new(t)$cap_prescribed_ir(i,r)
+                     $(yeart(t)>=smin{tt$[cap_prescribed(i,r,tt)], yeart(tt) })] = 1 ;
+
+* Now recompute the geo_bin1_add parameter with the updated geo_discovery values
+geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
+      ( cap_prescribed_ir(i,r)
+          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
+                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
+      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+
+* Only use positive values of geo_bin1_add, as negative values would indicate that the
+* existing resource is already sufficient to cover prescriptions
+geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
+
+* Add any additional resource needed to the first bin of the supply curve
+m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
+    m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
+
+rsc_capacity_scalar(i,r,t) =  ceil(1000 *geo_discovery(i,r,t) + dr_shed_capacity_scalar(i,r,t) ) / 1000 ;
+rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
 
 * * Apply spur-line cost multiplier for relevant technologies
 * m_rsc_dat(r,i,rscbin,"cost")$(pv(i) or pvb(i) or wind(i) or csp(i)) =
@@ -5836,10 +5249,10 @@ m_rsc_dat(r,i,rscbin,sc_cat)$[sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,rscbin,sc_cat
   sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,rscbin,sc_cat) } ;
 
 
-set force_pcat(pcat,t) "conditional to indicate whether the force prescription equation should be active for pcat" ;
+set force_prescribe(i,v,r,t) "conditional to indicate whether the force prescription equation should be active for technology i and vintage v in year t" ;
 
-force_pcat(pcat,t)$[yeart(t) < firstyear_pcat(pcat)] = yes ;
-force_pcat(pcat,t)$[sum{r, noncumulative_prescriptions(pcat,r,t) }] = yes ;
+force_prescribe(i,v,r,t)$[(yeart(t) < firstyear(i))$newv(v)] = yes ;
+force_prescribe(i,v,r,t)$[ prescribed_build(i,v,r,t)] = yes ;
 
 *=========================================
 * Decoupled Capacity/Energy Upgrades for hydropower
@@ -5897,37 +5310,14 @@ m_rsc_dat_init(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap") = m_rsc_dat(r,i,rscbin,"c
 *========================================
 * -- CO2 Capture and Storage Network --
 *========================================
-$onempty
 set csfeas(cs)         "carbon storage sites with available capacity"
-    r_cs(r,cs)         "mapping from BA to carbon storage sites"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%r_cs.csv
-$offdelim
-$onlisting
-/ ,
     co2_routes(r,rr)   "set of available inter-ba co2 trade relationships" ;
 
-parameter co2_storage_limit(cs)         "--metric tons-- total cumulative storage capacity per carbon storage site",
-          co2_injection_limit(cs)       "--metric tons/hr-- co2 site injection rate upper bound",
-          cost_co2_pipeline_cap(r,rr,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in co2 pipeline infrastructure",
+parameter cost_co2_pipeline_cap(r,rr,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in co2 pipeline infrastructure",
           cost_co2_pipeline_fom(r,rr,t) "--$2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 pipeline infrastructure",
-          cost_co2_stor_bec(cs,t)       "--$2004/metric ton-- breakeven cost for storing carbon - CF determined by GSw_CO2_BEC",
           cost_co2_spurline_cap(r,cs,t) "--$2004/(metric ton-mi/hr)-- capital costs associated with investing in spur lines to injection sites",
-          cost_co2_spurline_fom(r,cs,t) "--2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 spurline infrastructure",
-          r_cs_distance(r,cs)           "--mi-- euclidean distance between BA transmission endpoints and storage formations"
-/
-$offlisting
-$offdigit
-$ondelim
-$include inputs_case%ds%r_cs_distance_mi.csv
-$offdelim
-$ondigit
-$onlisting
-/
+          cost_co2_spurline_fom(r,cs,t) "--2004/((metric ton-mi/hr)-yr)-- FO&M costs associated with maintaining co2 spurline infrastructure"
 ;
-$offempty
 
 * Assign spurline costs
 cost_co2_spurline_cap(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_cost * r_cs_distance(r,cs) ;
@@ -5938,19 +5328,6 @@ cost_co2_pipeline_fom(r,rr,t)$[routes_adjacent(r,rr)$tmodel_new(t)] = Sw_CO2_pip
 
 co2_routes(r,rr)$[routes_adjacent(r,rr)$pipeline_distance(r,rr)] = yes ;
 
-$onempty
-table co2_char(cs,*) "co2 site characteristics including injection rate limit, total storage limit, and break even cost"
-$ondelim
-$include inputs_case%ds%co2_site_char.csv
-$offdelim
-;
-$offempty
-
-*note that original units Mton == 'million tons'
-co2_storage_limit(cs)   = 1e6 * co2_char(cs,"max_stor_cap") ;
-co2_injection_limit(cs) = co2_char(cs,"max_inj_rate") ;
-cost_co2_stor_bec(cs,t) = co2_char(cs,"bec_%GSw_CO2_BEC%");
-
 * only want to consider storage sites that have both available capacity and injection limits
 csfeas(cs)$[co2_storage_limit(cs)$co2_injection_limit(cs)] = yes ;
 * only want to consider r_cs pairs which have available capacity
@@ -5960,7 +5337,7 @@ cost_co2_spurline_fom(r,cs,t)$[r_cs(r,cs)$tmodel_new(t)] = Sw_CO2_spurline_fom *
 
 cost_co2_pipeline_cap(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_cap(r,rr,t);
 cost_co2_pipeline_fom(r,rr,t) =  %GSw_CO2_CostAdj% * cost_co2_pipeline_fom(r,rr,t);
-cost_co2_stor_bec(cs,t) =        %GSw_CO2_CostAdj% * cost_co2_stor_bec(cs,t) ;
+cost_co2_stor_bec(cs) =          %GSw_CO2_CostAdj% * cost_co2_stor_bec(cs) ;
 cost_co2_spurline_fom(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_fom(r,cs,t) ;
 cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,t) ;
 
@@ -5978,26 +5355,6 @@ z_rep_op(t) = 0 ;
 *====================================
 *     --- Employment Factors ---
 *====================================
-* Employment factors of construction and operation of power plants
-$onempty
-Table employment_factor_plant(i,jtype) "--job-years/MW (construction), job-years/MW-year (fom) or job-years/MWh (vom)-- employment factors of power plants by technology and job type"
-$offlisting
-$ondelim
-$include inputs_case%ds%employment_factor_plant.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-* Employment factors of transmission deployment and flow
-parameter employment_factor_inter_transmission(jtype)  "--job-years/$ (construction) -- construction employment factors of transmission lines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%employment_factor_inter_transmission.csv
-$offdelim
-$onlisting
-/ ;
 
 * If upgrade techs, construction employment factor is adjusted by upgrade ratio
 * calculated as the ratio of the difference in capital costs between the initial 
@@ -6022,6 +5379,31 @@ employment_factor_plant(i,"construction")
     = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
 $endif.upgrade_ef
 
+*====================================
+* --- MGA Random Vector Weights ---
+*====================================
+
+$ifthene.mgaobj ((sameas(%GSw_MGA_Objective%,capacity))or(sameas(%GSw_MGA_Objective%,generation)))
+
+parameter mga_weights(r,i_subtech) "--unitless-- weight to assign to given MGA subobjective by region" ;
+      
+$ifthene.mga_rv (%GSw_MGA_RV_runs%>=1)
+parameter mga_weights_in(r,i_subtech)
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%mga_weights.csv
+$offdelim
+$onlisting
+/ ;
+mga_weights(r,i_subtech) = mga_weights_in(r,i_subtech) ;
+$else.mga_rv
+mga_weights(r,i_subtech) = 1 ;
+$endif.mga_rv
+
+$endif.mgaobj
+
+
 *================================================================================================
 *== h- and szn-dependent sets and parameters (declared here, populated in 2_temporal_params) ===
 *================================================================================================
@@ -6033,7 +5415,7 @@ Set
     h_rep(allh)                            "representative timeslices"
     h_stress(allh)                         "stress timeslices"
     h_t(allh,allt)                         "representative and stress timeslices by model year"
-    h_stress_t(allh,allt)                  "stress timeslices by model year"
+    h_stress_t(allh,t)                     "stress timeslices by model year"
 * "Seasons" (both seasons and representative days/weks)
     szn(allszn)                            "representative and stress periods"
     szn_rep(allszn)                        "representative periods, or seasons if modeling full year"
@@ -6077,7 +5459,7 @@ alias(actualszn,actualsznn,actualsznnn) ;
 Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
-    hours_t(allh,allt)                     "--hours-- number of hours in each time block by model year"
+    hours_t(allh,t)                        "--hours-- number of hours in each time block by model year"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"

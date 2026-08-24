@@ -16,6 +16,6 @@
     "upv_type": null,
     "geo_run_supply_curve_aggregation": true,
     "geo_aggregation_method": "lowest_lcoe",
-    "process_profiles": false,
-    "existing_sites": "{reeds_path}/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv"
+    "process_profiles": false
 }
+
