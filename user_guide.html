@@ -1033,6 +1033,17 @@ Options are <code class="docutils literal notranslate"><span class="pre">capacit
 Options are the column names in the <code class="docutils literal notranslate"><span class="pre">inputs/tech-subset-table.csv</span></code> file.</p></li>
 </ul>
 <p>Users familiar with GAMS can add alternative objective functions to the <code class="docutils literal notranslate"><span class="pre">d_mga.gms</span></code> file and associated options to the <code class="docutils literal notranslate"><span class="pre">GSw_MGA_Objective</span></code> switch in <code class="docutils literal notranslate"><span class="pre">cases.csv</span></code>.</p>
+<p>By default the MGA min/max is applied to the sum of the variable across all regions being modeled.
+The MGA approach also supports an option to randomly sample of a vector of weights to apply to the regional values of the variable being optimized.
+This method can be used to characterize the uncertainty in the regional distribution of the results.
+Weights are sampled as discrete values from {-1,1} to allow for simultaneous minimization and maximization.</p>
+<p>The MGA random vector capability is controlled by the following switches:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_MGA_RV_runs</span></code> (default <code class="docutils literal notranslate"><span class="pre">0</span></code>): Number of random samples of weight vectors to draw; corresponds to the number of runs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_MGA_RV_region</span></code> (default <code class="docutils literal notranslate"><span class="pre">r</span></code>): Regionality level (specified by hierarchy file) over which to sample the random weights.</p></li>
+</ul>
+<p>Note that this capability is currently only supported when <code class="docutils literal notranslate"><span class="pre">GSw_MGA_Objective</span> <span class="pre">=</span> <span class="pre">(capacity</span> <span class="pre">or</span> <span class="pre">generation)</span></code>.
+Weights for each run are stored in the <code class="docutils literal notranslate"><span class="pre">mga_weights</span></code> parameter.</p>
 </section>
 <section id="uncertainty-plots">
 <h2>Uncertainty Plots<a class="headerlink" href="#uncertainty-plots" title="Link to this heading"></a></h2>
@@ -1775,7 +1786,7 @@ These characteristics include:</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 21, 2026.
+      <span class="lastupdated">Last updated on August 24, 2026.
       </span></p>
   </div>
 
