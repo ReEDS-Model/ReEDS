@@ -10,6 +10,7 @@ from matplotlib import patheffects as pe
 from glob import glob
 import traceback
 import cmocean
+from adjustText import adjust_text
 ### Local imports
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -427,17 +428,29 @@ def map_dropped_load(sw, dfs, level='r'):
             dfba.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
             ### Data
             dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.tempo)
+            text_artists = []
             for r, row in dfplot.iterrows():
                 if row.val > 0:
-                    ax.annotate(
-                        f'{row.val:,.0f} {units[metric,agg][0]}',
-                        (row.centroid_x, row.centroid_y),
-                        color='r', ha='center', va='top', fontsize=6, weight='bold')
+                    text_artists.append(
+                        ax.annotate(
+                            f'{row.val:,.0f} {units[metric,agg][0]}',
+                            (row.centroid_x, row.centroid_y),
+                            color='r', ha='center', va='top', fontsize=6, weight='bold')
+                    )
+            adjust_text(text_artists, ax=ax,
+            avoid_self=False, ensure_inside_axes=True,
+            )
             ### Formatting
             if level in ['r','rb','ba']:
+                text_artists = []
                 for r, row in dfba.iterrows():
-                    ax.annotate(r, (row.centroid_x, row.centroid_y),
-                                ha='center', va='bottom', fontsize=6, color='C7')
+                    text_artists.append(
+                        ax.annotate(r, (row.centroid_x, row.centroid_y),
+                                    ha='center', va='bottom', fontsize=6, color='C7')
+                    )
+                adjust_text(text_artists, ax=ax,
+                avoid_self=False, ensure_inside_axes=True,
+                )
             ax.axis('off')
             if savefig:
                 plt.savefig(os.path.join(sw['savepath'],savename))
