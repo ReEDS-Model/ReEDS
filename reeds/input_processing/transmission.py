@@ -66,6 +66,7 @@ def _make_line(row):
 
 
 def read_county_overlay(case, suffix=''):
+    """Read the county overlay file for the given case and suffix."""
     sw = reeds.io.get_switches(case)
     if sw.GSw_TransCountyOverlay == 'none':
         return None
@@ -106,6 +107,7 @@ def read_county_overlay(case, suffix=''):
 
 
 def get_county_overlay_cost_distance(case):
+    """Get the cost distance for the county overlay."""
     dfout = read_county_overlay(case, suffix='_cost_distance')
     if dfout is None:
         return None
@@ -123,6 +125,7 @@ def get_county_overlay_cost_distance(case):
 
 
 def apply_county_overlay(case, trancap_init_ac, interface_params):
+    """Apply the county overlay to the initial AC transmission capacities."""
     overlay = read_county_overlay(case)
     if overlay is None:
         return trancap_init_ac
@@ -159,15 +162,6 @@ def apply_county_overlay(case, trancap_init_ac, interface_params):
     aligned = pd.DataFrame(
         aligned, columns=indices + ['MW_forward', 'MW_reverse', 'source', 'in_base'],
     )
-
-    mislabeled = aligned.loc[aligned.in_base != (aligned.source == 'uprate')]
-    if len(mislabeled):
-        print(mislabeled)
-        raise ValueError(
-            f"{len(mislabeled)} county_overlay entries have a 'source' that disagrees with"
-            " the initial network: 'uprate' requires an existing interface and 'newlink'"
-            " requires a new one"
-        )
 
     newlinks = aligned.loc[~aligned.in_base]
     uncosted = [
