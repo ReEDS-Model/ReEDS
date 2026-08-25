@@ -53,6 +53,7 @@ def plotparams():
     plt.rcParams['ytick.labelsize'] = 'large'
     plt.rcParams['xtick.top'] = True
     plt.rcParams['ytick.right'] = True
+    plt.rcParams['figure.dpi'] = 300
     plt.rcParams['savefig.dpi'] = 300
     plt.rcParams['savefig.bbox'] = 'tight'
     # plt.rcParams['figure.figsize'] = 6.4, 4.8 # 1.33, matplotlib default

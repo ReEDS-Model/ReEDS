@@ -305,7 +305,6 @@ def main(reeds_path, inputs_case):
     sw = reeds.io.get_switches(inputs_case)
 
     nBin = int(sw.numhintage)
-    retscen = sw.retscen
     mindev = int(sw.mindev)
     GSw_WaterMain = sw.GSw_WaterMain    
     GSw_RetireYears_Coal = int(sw.GSw_RetireYears_Coal)
@@ -349,7 +348,7 @@ def main(reeds_path, inputs_case):
         indat['tech'] = indat.coolingwatertech
 
     ### NOTE: New addition for columns AO:AR, AW:AX in the plant file
-    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", retscen,
+    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", "RetireYear",
                 "StartYear", "IsExistUnit", "HeatRate", "T_VOM", "T_FOM",
                 "T_CCSROV", "T_CCSF", "T_CCSV", "T_CCSHR", "T_CCSCAPA", "T_CCSLOC"]].copy() 
 
@@ -360,7 +359,6 @@ def main(reeds_path, inputs_case):
         'ctt'    : 'ctt',
         'summer_power_capacity_MW'    : 'Summer.capacity',
         'TC_WIN' : 'Winter.capacity',
-        retscen  : 'RetireYear',
         'StartYear' : 'onlineyear',
         'IsExistUnit' : 'EXIST',
         'HeatRate' : 'HR',
