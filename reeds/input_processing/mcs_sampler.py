@@ -1807,7 +1807,7 @@ def write_samples(
 #%% ===========================================================================
 ### --- MAIN PROCEDURE ---
 ### ===========================================================================
-def main(
+def main_mcs(
     reeds_path: str,
     inputs_case: str,
     n_samples: int = 1,
@@ -1872,6 +1872,148 @@ def main(
         # Write Samples
         write_samples(sample_group, samples_dict, aux_files)
 
+def get_mga_rv_subsets(reeds_path: str, subobjective: str) -> List[str]:
+    """
+    Derive the relevant subcategory (or subcategories) for a given GSw_MGA_SubObjective.
+    If a subcategory is a superset of other categories, this function breaks them up into
+    their constituents after filtering for categories that are valid options 
+    for GSw_MGA_SubObjective.
+
+    Args:
+        reeds_path (str): path to the ReEDS directory.
+        subobjective (str): value of GSw_MGA_SubObjective.
+
+    Returns:
+        List[str]: list of subcategory to use for MGA randome vector
+    """
+    # Parse valid tech categories for GSw_MGA_SubObjective from default cases file
+    cases = pd.read_csv(
+        os.path.join(reeds_path, 'cases.csv'), header=None, index_col=0
+    )
+    choices_str = cases.loc['GSw_MGA_SubObjective', 2]
+    valid_options = [s.strip('()') for s in choices_str.split('|')]
+
+    # Read tech-subset-table.csv to get tech categories
+    tech_subset = pd.read_csv(
+        os.path.join(reeds_path, 'inputs', 'tech-subset-table.csv'), index_col=0
+    )
+    # Map each valid option to its uppercase column name if it exists in the table
+    col_map = {opt: opt.upper() for opt in valid_options if opt.upper() in tech_subset.columns}
+    
+    # Build a mapping of technologies associated with each tech group
+    tech_sets = {
+        opt: frozenset(tech_subset.index[tech_subset[col].fillna('') == 'YES'])
+        for opt, col in col_map.items()
+    }
+
+    # Identify aggregated options: X is aggregated if any other option Y has tech_sets[Y] ⊂ tech_sets[X]
+    aggregated_options = {
+        x for x in tech_sets
+        for y in tech_sets
+        if x != y and tech_sets[y] < tech_sets[x]
+    }
+
+    # If the subobjective is not an aggregated category, return it
+    if subobjective not in aggregated_options:
+        return [subobjective]
+    
+    # If it is an aggregated category, break into subcategories 
+    subobjective_techs = tech_sets[subobjective]
+    candidates = [
+        opt for opt, techs in tech_sets.items()
+        if opt != subobjective
+        and opt not in aggregated_options
+        and techs & subobjective_techs  # at least one technology in common
+    ]
+    # drop CCS if gas or coal are already included
+    candidates_set = set(candidates)
+    if 'ccs' in candidates_set and ('coal' in candidates_set or 'gas' in candidates_set):
+        subsets = sorted(opt for opt in candidates if opt != 'ccs')
+    else:
+        subsets = sorted(candidates)
+
+    return subsets
+
+def main_mga_rv(
+    reeds_path: str,
+    inputs_case: str,
+    sw: dict,
+    n_samples: int = 1,
+    lhs_sampling: int = 1,
+    seed: int = 0,
+    discrete: bool = True,
+):
+
+    # get dimensions based on number of regions and subojectives
+
+    ## regions
+    # get list of valid regions (val_r generated in copy_files.py)
+    val_r = list(reeds.io.read_input(inputs_case, 'r').squeeze(1))
+
+    # option to draw samples based on aggregated regions (samples will be mapped back to r regions)
+    hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
+    hierarchy_val_r = hierarchy.loc[hierarchy.r.isin(val_r)]
+    sampling_regions = hierarchy_val_r[sw['GSw_MGA_RV_region']].unique()
+
+    ## objective (assumes sw.GSw_MGA_Objective in ['capacity', 'generation'] based on 
+    ## check in runreeds.check_compatibility()
+    ## if the subobjective is an aggregated category, break it up into leaf-level subcategories
+    ## derived from tech-subset-table.csv; otherwise just use the subobjective as the group
+    subsets = get_mga_rv_subsets(reeds_path, sw.GSw_MGA_SubObjective)
+    
+    ## sample weights for each subojective group and sampling region
+    dimensions = len(subsets) * len(sampling_regions)
+
+    # setup output
+    runs_folder_name = Path(reeds.io.standardize_case(inputs_case)).name
+    mga_run_number = int((runs_folder_name.split('_')[-1]).replace('R', ''))
+    region_labels = np.repeat(sampling_regions, len(subsets))
+    subset_labels = np.tile(subsets, len(sampling_regions))
+    
+    # sample using LHS or random approach
+    if lhs_sampling:
+        # lhs requires drawing all samples simultaneously, so rather than using
+        # a run-specific seed we draw for all runs at once using the global seed value 
+        lhs_sampler = scipy.stats.qmc.LatinHypercube(d=dimensions, seed=seed)
+        # lhs_samples are arranged n x d (n = samples, d = dimensions)
+        lhs_samples_cdf = lhs_sampler.random(n=n_samples)
+        if discrete:
+            # bin CDF samples in discrete choices (-1 or 1 with equal probability)
+            lhs_samples = np.where(lhs_samples_cdf < 0.5, -1, 1)
+        else:
+            # translate CDF samples into weights using uniform distribution (-1 to 1 to allow for simultaneous min/max)
+            lhs_samples = scipy.stats.uniform.ppf(lhs_samples_cdf, loc=-1, scale=2)
+
+        # record the lhs sampling matrix in each run folder
+        lhs_samples_out = pd.DataFrame(lhs_samples.round(6)).T
+        lhs_samples_out.columns = [f"R{i:0>4}" for i in range(1, n_samples + 1)]
+        lhs_samples_out.index = [f"{region_labels[i]}_{subset_labels[i]}" for i in range(len(region_labels))]
+        lhs_samples_out.index.name = 'dimension'
+        lhs_samples_out.to_csv(os.path.join(inputs_case, "mga_rv_latin_hypercube_samples.csv"))
+
+        # get the weights for this specific run (-1 to adjust for zero indexing)
+        mga_weights_raw = lhs_samples[mga_run_number - 1]
+    else:
+        # set random seed using the global seed + MGA run number to allow reproducibility
+        np.random.seed(seed + mga_run_number)
+        # get the weights for this specific run (-1 to 1 to allow for simultaneous min/max)
+        if discrete:
+            mga_weights_raw = np.random.choice([-1,1], dimensions)
+        else:
+            mga_weights_raw = np.random.uniform(-1, 1, dimensions)
+
+    # save vector of weights for this run, mapped back to r regions and rounded to 6 decimal places
+    mga_weights = pd.DataFrame({  
+        sw['GSw_MGA_RV_region']: region_labels,  
+        'i_subtech': subset_labels,  
+        'weight': mga_weights_raw.round(6)  
+    })  
+    if sw['GSw_MGA_RV_region'] != 'r':
+        mga_weights = pd.merge(mga_weights, hierarchy_val_r[[sw['GSw_MGA_RV_region'], 'r']], on=sw['GSw_MGA_RV_region'])
+    mga_weights = mga_weights.rename(columns={'r':'*r'})[['*r','i_subtech','weight']]
+    mga_weights = mga_weights.sort_values(by=['*r', 'i_subtech'], ascending=True)
+    mga_weights.to_csv(os.path.join(inputs_case, "mga_weights.csv"), index=False)
+    
 
 if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     parser = argparse.ArgumentParser(description='Copy files needed for this run')
@@ -1902,16 +2044,23 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     sw = reeds.io.get_switches(inputs_case)
     MCS_runs = int(sw.get('MCS_runs', 0))
     MCS_lhs = int(sw.get('MCS_lhs', 0))
+    GSw_MGA_RV_runs = int(sw.get('GSw_MGA_RV_runs', 0))
 
     # get global seed from scalars (used to set the seed for a batch of runs)
     scalars = reeds.io.get_scalars()
     seed = int(scalars['MCS_seed'])
 
     if MCS_runs >= 1:
-        print('Starting mcs_sampler.py')
-        main(reeds_path, inputs_case, n_samples=MCS_runs, lhs_sampling=MCS_lhs, seed=seed)
+        print('Starting Monte Carlo sampling with mcs_sampler.py')
+        main_mcs(reeds_path, inputs_case, n_samples=MCS_runs, lhs_sampling=MCS_lhs, seed=seed)
     else:
         print('MCS_runs switch is set to 0 or not found. No Monte Carlo sampling will be performed')
+
+    if GSw_MGA_RV_runs >= 1:
+        print('Starting random vector sampling for MGA with mcs_sampler.py')
+        main_mga_rv(reeds_path, inputs_case, sw, n_samples=GSw_MGA_RV_runs, lhs_sampling=MCS_lhs, seed=seed)
+    else:
+        print('GSw_MGA_RV_runs switch is set to 0 or not found. No MGA random vector sampling will be performed')
 
     # Final log/timing update.
     reeds.log.toc(
@@ -1920,3 +2069,4 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         process='input_processing/mcs_sampler.py',
         path=os.path.join(os.path.dirname(inputs_case))
     )
+
