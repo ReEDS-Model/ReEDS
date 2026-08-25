@@ -1,4 +1,4 @@
-*i,ctt,w,value
+i,ctt,w,gal/MWh
 Hydro,n,with,1
 Gas-CT,n,with,1
 Gas-CT_aero,n,with,1

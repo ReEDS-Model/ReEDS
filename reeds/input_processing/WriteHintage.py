@@ -297,15 +297,14 @@ def main(reeds_path, inputs_case):
     print('Starting WriteHintage.py')
 
     # #%% Settings for testing
-    # reeds_path = os.path.expanduser('~/github/ReEDS')
+    # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20231027_yamM0_Z45_h_d_365_transreg_z69_core','inputs_case')
+    #     reeds_path,'runs','v20260626_inputsM1_Pacific','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
 
     nBin = int(sw.numhintage)
-    retscen = sw.retscen
     mindev = int(sw.mindev)
     GSw_WaterMain = sw.GSw_WaterMain    
     GSw_RetireYears_Coal = int(sw.GSw_RetireYears_Coal)
@@ -349,7 +348,7 @@ def main(reeds_path, inputs_case):
         indat['tech'] = indat.coolingwatertech
 
     ### NOTE: New addition for columns AO:AR, AW:AX in the plant file
-    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", retscen,
+    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", "RetireYear",
                 "StartYear", "IsExistUnit", "HeatRate", "T_VOM", "T_FOM",
                 "T_CCSROV", "T_CCSF", "T_CCSV", "T_CCSHR", "T_CCSCAPA", "T_CCSLOC"]].copy() 
 
@@ -360,7 +359,6 @@ def main(reeds_path, inputs_case):
         'ctt'    : 'ctt',
         'summer_power_capacity_MW'    : 'Summer.capacity',
         'TC_WIN' : 'Winter.capacity',
-        retscen  : 'RetireYear',
         'StartYear' : 'onlineyear',
         'IsExistUnit' : 'EXIST',
         'HeatRate' : 'HR',
@@ -541,10 +539,11 @@ def main(reeds_path, inputs_case):
     #%%############################################################################
     #    -- Get forced retirement dataframe and merge onto output dataframe --    #
     ###############################################################################
-    forced_retire = pd.read_csv(
-        os.path.join(inputs_case, 'forced_retirements.csv'),
-        header=0, names=['tech','st','retire_year'])
-    
+    forced_retire = (
+        reeds.io.read_input(inputs_case, 'forced_retirements')
+        .astype({'Value':int})
+        .rename(columns={'i':'tech', 'Value':'retire_year'})
+    )
     # Forced retirements are at the state level, so use hierarchy to get the regions
     state2r = (
         pd.read_csv(
