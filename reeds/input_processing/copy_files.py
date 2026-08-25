@@ -969,6 +969,10 @@ def write_miscellaneous_files(
     case = Path(inputs_case).parent
     optfile = reeds.io.get_optfile(case)
     shutil.copy(Path(reeds_path, 'reeds', 'solver', optfile), case)
+    ## If using MGA, copy its solver file too
+    if float(sw.GSw_MGA_CostDelta) > 0:
+        optfile = reeds.io.get_optfile(case, GSw_gopt=sw.GSw_gopt_mga)
+        shutil.copy(Path(reeds_path, 'reeds', 'solver', optfile), case)
 
     ### Parsed switches
     pd.DataFrame(
