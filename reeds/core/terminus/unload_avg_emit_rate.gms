@@ -91,5 +91,5 @@ carbon_intensity_total(t)$[inc_t(t)] =
     sum((st,i,v)$(not storage(i)),gen_st_vintage(st,i,v,t))
 ;
 *------- unload -----*
-execute_unload 'emit_rate_v20251105_2_CES_NationalAnnualNoVint.gdx' emit_st, emit_nat, gen_st_vintage, carbon_intensity_total
+execute_unload 'emit_rate_output.gdx' emit_st, emit_nat, gen_st_vintage, carbon_intensity_total
 ;
