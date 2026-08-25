@@ -352,12 +352,14 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
             dfdiffs[level].plot(
                 ax=ax[coords[level]], column='cf_diff', cmap=cmaps['cf_diff'],
                 vmin=vm[tech]['cf_diff'][0], vmax=vm[tech]['cf_diff'][1], 
-                lw=0, legend=False,
+                lw=0, legend=False, missing_kwds={"color": "lightgrey"},
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
             ## Text differences
             text_artists = []
             for r, row in (dfdiffs[level].assign(val=dfdiffs[level].cf_diff.abs()).sort_values('val')).iterrows():
+                if np.isnan(row.cf_diff):
+                    continue
                 decimals = 0 if abs(row.cf_diff) >= 1 else 1
                 text_artists.append(
                     ax[coords[level]].annotate(
