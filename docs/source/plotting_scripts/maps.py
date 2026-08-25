@@ -207,10 +207,7 @@ label_zones = {
 }
 draw_lakes = True
 draw_counties = False
-label_regions = {
-    'hurdlereg': False
-    'r': False,
-    }
+label_regions = {'hurdlereg': False}
 
 for level in dfmap:
     dfregion = dfmap[level].copy()
@@ -242,21 +239,37 @@ for level in dfmap:
                 np.array([row.geometry.centroid.x, row.geometry.centroid.y])
                 + np.array(offset.get(level, {}).get(r, (0,0)))
             )
-            for i, (c, a) in enumerate([('k',1), (colors[r], 0.6)]):
-                if i == 1 and level != 'r':
-                    continue
+            if level == 'r':
+                # adds region-colored label for r
+                text_artists.append(
+                    ax.annotate(
+                        r,
+                        (x, y),
+                        ha='center', va='center', weight='bold',
+                        size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
+                        color=colors[r], zorder=1e11, alpha=1,
+                        path_effects=(
+                        [pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
+                    ),
+                    )
+                )
+            else:
+                # adds black label for other levels
                 text_artists.append(
                     ax.annotate(
                         (r if level == 'r' else r.replace('_','\n')),
                         (x, y),
                         ha='center', va='center', weight='bold',
                         size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
-                        color=c, zorder=1e11+i, alpha=a,
+                        color='k', zorder=1e11, alpha=1,
                         path_effects=(
-                            [pe.withStroke(linewidth=1.5, foreground='w', alpha=(1 if i == 0 else 0))]
+                            [pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
                         ),
                     )
                 )
+    adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
+
+    text_artists = []
     if label_zones.get(level, True):
         for r, row in dfmap['r'].iterrows():
             x, y = (
@@ -272,7 +285,7 @@ for level in dfmap:
                     path_effects=[pe.withStroke(linewidth=0.7, foreground='w', alpha=1)]
                 )
             )
-    adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
+        adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
 
     ax.axis('off')
     savename = (
