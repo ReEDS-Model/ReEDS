@@ -208,7 +208,7 @@ ramprate.csv,inputs/plant_characteristics/ramprate.csv,int(sw.GSw_OpRes) != 0,ig
 ramptime.csv,inputs/reserves/ramptime.csv,int(sw.GSw_OpRes) != 0,ignore,ignore,,,,,0,,,,,,
 recstyle.csv,inputs/state_policies/recstyle.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,*st,"RPSCat,style",,,0,,,,,,
 rectable.csv,inputs/state_policies/rectable.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st_st,st,,,0,,,,,,
-resourceclass.csv,inputs/sets/resourceclass.csv,1,ignore,ignore,,,,,,,,set,resourceclass,renewable resource classes,
+resourceclass.csv,inputs/sets/resourceclass.csv,1,ignore,ignore,,,,,,,,set,c,renewable resource classes,
 retire_penalty.csv,inputs/financials/retire_penalty.csv,1,ignore,ignore,,,,,0,,,parameter,,--fraction-- penalty for retiring a power plant expressed as a fraction of FOM,
 rev_paths.csv,inputs/supply_curve/rev_paths.csv,1,ignore,ignore,,,,,0,,,,,,
 rggi_states.csv,inputs/emission_constraints/rggi_states.csv,int(sw.GSw_RGGI) != 0,ignore,ignore,*st,,,,0,,,,,,
