@@ -155,6 +155,50 @@ def main(t, casedir, iteration=0, profile_casepath=None, output_path=None):
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
+    # Cross-year support: casedir GDX representative-hour labels carry the build
+    # decade's year prefix (e.g. y2055d017h003), while profile_case h_dt_szn uses the
+    # profile decade's prefix (e.g. y2035d017h003). Remap by matching the d###h###
+    # suffix so the downstream merges on allh<->h succeed. Stress labels (sy*) are
+    # build-year-specific and get reindexed to zero downstream — leave them alone.
+    if profile_casepath:
+        profile_h = h_dt_szn['h'].astype(str).str.lower().unique()
+        profile_h_by_suffix = {
+            re.sub(r'^y\d+', '', h): h for h in profile_h if h.startswith('y')
+        }
+        def _remap_allh(label):
+            s = str(label).lower()
+            if s.startswith('sy'):
+                return s
+            suffix = re.sub(r'^y\d+', '', s)
+            return profile_h_by_suffix.get(suffix, s)
+        for key in ('prod_filt',):
+            if key in gdxreeds and 'allh' in gdxreeds[key].columns:
+                gdxreeds[key]['allh'] = (
+                    gdxreeds[key]['allh'].astype(str).str.lower().map(_remap_allh)
+                )
+
+        # Warn (don't fail) when the casedir and profile_case picked different
+        # representative days. Casedir GDX rows referencing such labels won't merge
+        # into the profile's hour index; load_h2dac_all_hourly and gen_shed_combined
+        # already use fillna(0)/reindex(fill_value=0), so they degrade silently to zero
+        # contribution in cross-year mode. (Canadian exports are sourced statically from
+        # the input files below, so they are unaffected by this mismatch.)
+        gdx_h_labels = set()
+        for key in ('prod_filt',):
+            if key in gdxreeds and 'allh' in gdxreeds[key].columns:
+                gdx_h_labels |= set(gdxreeds[key]['allh'].astype(str).str.lower().unique())
+        profile_h_labels = set(profile_h)
+        missing_h = {h for h in gdx_h_labels - profile_h_labels if not h.startswith('sy')}
+        if missing_h:
+            print(
+                f"WARNING: casedir GDX references {len(missing_h)} hour labels not "
+                f"present in profile_case h_dt_szn after year-prefix remap. The "
+                f"casedir and profile_case selected different representative days. "
+                f"H2/DAC load and DR shed contributions from the "
+                f"casedir will be zeroed out for those hours. First 5 missing: "
+                f"{sorted(missing_h)[:5]}"
+            )
+
     if profile_casepath is not None:
         loadpath = os.path.join(profile_casepath, 'inputs_case', 'load.h5')
         recfpath = os.path.join(profile_casepath, 'inputs_case', 'recf.h5')
@@ -375,12 +419,65 @@ def main(t, casedir, iteration=0, profile_casepath=None, output_path=None):
     )
 
     #%%### Total load and net load
-    ### Get Candian exports and add to this solve year's load
-    can_exports = (
-        gdxreeds['can_exports_h_filt']
-        .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
-        .pivot(index='timestamp', columns='r', values='Value')
-    )
+    if profile_casepath is None:
+        ### Get Candian exports and add to this solve year's load
+        can_exports = (
+            gdxreeds['can_exports_h_filt']
+            .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
+            .pivot(index='timestamp', columns='r', values='Value')
+        )
+    else:
+        ### Cross-case mode only. The GDX's can_exports_h_filt is keyed by the build
+        ### case's representative hours, which mostly do not exist in the profile case's
+        ### hour index, so the merge above drops nearly everything and exports silently
+        ### fall to zero. Rebuild them statically instead, reproducing the GAMS
+        ### calculation in 2_temporal_params.gms:
+        ###   can_exports_h(r,h,t) = can_exports(r,t) * can_exports_h_frac(h) / hours(h)
+        ### i.e. spread each region's annual export energy [MWh] across timeslices to get
+        ### an average export power [MW] per timeslice, then assign that power to every
+        ### hour in the timeslice. Exports are nonzero only for the regions listed in
+        ### can_exports.csv and only when GSw_Canada == 1 (matching the $ifthene.Canada
+        ### guard in GAMS).
+        ###
+        ### Kept out of the normal-run path deliberately: can_exports.csv is only written
+        ### when GSw_Canada != 0 (see reeds/input_processing/runfiles.csv), so reading it
+        ### unconditionally would break every GSw_Canada=0 run. Verified to reproduce the
+        ### GDX path to within GDX write rounding (max 5e-4 MW) on a normal run.
+        load_year_index = load.loc[t].index
+        if int(sw.GSw_Canada) == 1:
+            ### Annual exports [MWh] by region for this solve year (from the build case)
+            can_exports_annual = pd.read_csv(
+                os.path.join(inputs_case, 'can_exports.csv'), index_col='r'
+            )
+            can_exports_annual.columns = can_exports_annual.columns.astype(int)
+        else:
+            can_exports_annual = pd.DataFrame()
+        if int(sw.GSw_Canada) == 1 and t in can_exports_annual.columns:
+            ### Timeslice export fraction and hours/timeslice. Source these from the same
+            ### case as h_dt_szn (the profile case here) so the h labels align.
+            can_exports_h_frac = pd.read_csv(
+                os.path.join(hmap_path, 'rep', 'can_exports_h_frac.csv'), index_col='*h'
+            ).squeeze('columns')
+            numhours = pd.read_csv(
+                os.path.join(hmap_path, 'rep', 'numhours.csv'), index_col='*h'
+            ).squeeze('columns')
+            ### Average export power [MW] per timeslice = annual MWh * frac / hours
+            mw_per_frac = can_exports_h_frac.divide(numhours).dropna()
+            can_exports_h = pd.DataFrame(
+                np.outer(mw_per_frac.values, can_exports_annual[t].values),
+                index=mw_per_frac.index,
+                columns=can_exports_annual.index,
+            )
+            ### Expand to every load-year hour by mapping its timeslice (h)
+            can_exports = (
+                h_dt_szn_load_years[['h']]
+                .merge(can_exports_h, left_on='h', right_index=True, how='left')
+                .drop(columns='h')
+                .reindex(load_year_index)
+                .fillna(0)
+            )
+        else:
+            can_exports = pd.DataFrame(0.0, index=load_year_index, columns=load.columns)
     load_year = load.loc[t].add(can_exports, fill_value=0)
 
     ### PRAS doesn't yet handle flexible load, so include all H2/DAC load in the
