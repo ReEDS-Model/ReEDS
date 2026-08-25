@@ -2437,11 +2437,11 @@ def diffmap(
         'bar': {'width':5e4, 'zeroline':{'ls':'-', 'lw':0.5, 'c':'k'}},
         'arrow': {'angle':45, 'mirror':True, 'axis':'horizontal'},
         # 'dots': {'unit':1, 'markerpos':'^', 'markerneg':'v', 'ms':5, 'lw':0},
-        'dots': {'unit':1, 'markerpos':'$+$', 'markerneg':'$-$', 'ms':5, 'lw':0.3},
+        'dots': {'unit':1, 'markerpos':'$+$', 'markerneg':'$×$', 'ms':5, 'lw':0.3},
         # 'dots': {'unit':1, 'markerpos':'+', 'markerneg':'_', 'ms':5, 'lw':0.5},
         # 'dots': {'unit':1, 'markerpos':'+', 'markerneg':'x', 'ms':5, 'lw':0.5},
         # 'dots': {'unit':1, 'markerpos':'P', 'markerneg':'X', 'ms':10, 'lw':0},
-        'text': {'fmt':'+.0f'},
+        'text': {'fmt':'+.0f', 'minsize':0},
     }
     settings = {**defaults[style], **style_kwds}
     ### Derived values
@@ -2516,7 +2516,7 @@ def diffmap(
                     f"{row.value:{settings['fmt']}}", (row.centroid_x, row.centroid_y),
                     ha='center', va='center',
                     color=(cneg if row.value < 0 else cpos),
-                    fontsize=(abs(row.value)*scale),
+                    fontsize=max((np.sqrt(abs(row.value))*scale), settings['minsize']),
                 )
 
     return ax
