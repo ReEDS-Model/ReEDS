@@ -610,28 +610,36 @@ $ifthen.naris %GSw_Region% == "naris"
   ban(i)$i_subsets(i,'canada') = yes ;
 $endif.naris
 
-parameter resourceclassnum(resourceclass) "numeric value for resource class" ;
-resourceclassnum(resourceclass) = resourceclass.val ;
+parameter resourceclassnum(c) "numeric value for resource class" ;
+resourceclassnum(c) = c.val ;
+
+set i_class(i,c) "map from technology to resource class" ;
+i_class(i,c) = tech_resourceclass(i,c) ;
+* Broadcast class to derived techs (e.g. water-cooled variants)
+i_class(i,c)$[(not sum{cc, tech_resourceclass(i,cc)})$sum{ii$ctt_i_ii(i,ii), tech_resourceclass(ii,c)}] = yes ;
+* Any technology without a class is assigned to class '0'
+i_class(i,'0')$[not sum{cc, i_class(i,cc)}] = yes ;
+
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
 ban(i)$[i_subsets(i,'csp')
-      $sum{resourceclass$tech_resourceclass(i,resourceclass),
-           resourceclassnum(resourceclass)>Sw_NumCSPclasses }] = yes ;
+      $sum{c$tech_resourceclass(i,c),
+           resourceclassnum(c)>Sw_NumCSPclasses }] = yes ;
 ) ;
 * If Sw_CSPRemoveLow is turned on, remove the last (worst) CSP class (which will be
 * equal to Sw_NumCSPclasses)
 if(Sw_CSPRemoveLow = 1,
 ban(i)$[i_subsets(i,'csp')
-      $sum{resourceclass$tech_resourceclass(i,resourceclass),
-           resourceclassnum(resourceclass)=Sw_NumCSPclasses }] = yes ;
+      $sum{c$tech_resourceclass(i,c),
+           resourceclassnum(c)=Sw_NumCSPclasses }] = yes ;
 ) ;
 
 *Ban Geothermal resources that do not remain after aggregation
 if(Sw_NumGeoclasses < 10,
 ban(i)$[i_subsets(i,'geo')
-      $sum{resourceclass$tech_resourceclass(i,resourceclass),
-           resourceclassnum(resourceclass)>Sw_NumGeoclasses }] = yes ;
+      $sum{c$tech_resourceclass(i,c),
+           resourceclassnum(c)>Sw_NumGeoclasses }] = yes ;
 ) ;
 
 *Ingest list of new nuclear restricted BAs ('p' regions), ba list is consistent with NCSL restrictions.
@@ -3766,18 +3774,18 @@ $offdelim
 $onlisting
 / ;
 
-parameter cf_adj_t(i,v,t)        "--unitless-- capacity factor adjustment over time for RSC technologies" ;
+parameter cf_adj_t(i,c,v,t)        "--unitless-- capacity factor adjustment over time for RSC technologies" ;
 
-cf_adj_t(i,v,t)$[(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
+cf_adj_t(i,c,v,t)$[i_class(i,c)$(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
 
 * Existing wind uses startyear cf adjustment
-cf_adj_t(i,initv,t)$[wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
+cf_adj_t(i,c,initv,t)$[i_class(i,c)$wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
 
-cf_adj_t(i,newv,t)$[wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
+cf_adj_t(i,c,newv,t)$[i_class(i,c)$wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), wind_cf_adj_t(tt,i) } / countnc(i,newv) ;
 
 * Apply PV capacity factor improvements
-cf_adj_t(i,newv,t)$[(pv(i) or pvb(i))$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
+cf_adj_t(i,c,newv,t)$[i_class(i,c)$(pv(i) or pvb(i))$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), pv_cf_improve(tt) } / countnc(i,newv) ;
 
 
@@ -5473,10 +5481,10 @@ Parameter
     szn_quarter_weights(allszn,quarter)    "--fraction-- fraction of season associated with each quarter"
     szn_ccseason_weights(allszn,ccseason)  "--fraction-- fraction of season associated with each ccseason"
 * Capacity factor
-    cf_rsc(i,v,r,allh,t)                   "--fraction-- capacity factor for rsc tech - t index included for use in CC/curt calculations"
-    m_cf(i,v,r,allh,t)                     "--fraction-- modeled capacity factor"
+    cf_rsc(i,c,v,r,allh,t)                 "--fraction-- capacity factor for rsc tech - t index included for use in CC/curt calculations"
+    m_cf(i,c,v,r,allh,t)                   "--fraction-- modeled capacity factor"
     m_cf_szn(i,v,r,allszn,t)               "--fraction-- modeled capacity factor, averaged by season"
-    cf_in(i,r,allh)                        "--fraction-- capacity factors for renewable technologies"
+    cf_in(i,c,r,allh)                      "--fraction-- capacity factors for renewable technologies"
 * Hydropower
     cf_hyd(i,allszn,r,allt)                "--fraction-- hydro capacity factors by season and year"
     climate_hydro_seasonal(r,allszn,allt)  "annual/seasonal nondispatchable hydropower availability"
