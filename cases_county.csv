@@ -1,0 +1,7 @@
+,Default Value,UT,UT_Adj
+ignore,0,,
+endyear,,2032,2032
+GSw_Region,,st/UT,st/UT
+GSw_ZoneSet,,z3109,z3109
+GSw_GasCurve,,2,2
+GSw_TransCountyOverlay,,,LP2026_USA_100_50DR
