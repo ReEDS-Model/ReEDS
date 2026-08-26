@@ -98,6 +98,13 @@ def agg_supplycurve(
     dfin['supply_curve_cost_per_mw'] = dfin[
         ['capital_adder_per_mw', 'cost_total_trans_usd_per_mw']
     ].sum(axis=1)
+    
+    if psh:
+        ### Clip costs >$3000/kW or >$3000000/MW
+        dfin = dfin.loc[dfin['supply_curve_cost_per_mw']<=3e6]
+        ### Export unbinned PSH supply curve that include transmission costs
+        dfin.to_csv(os.path.join(inputs_case,'supplycurve_psh_unbinned.csv'))
+    
     ### Define the aggregation settings
     ## Cost and distance are weighted averages, with capacity as the weighting factor
     aggs = {'capacity': 'sum', 'sc_point_gid': list}
