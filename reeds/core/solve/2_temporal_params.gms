@@ -531,7 +531,7 @@ m_capacity_exog(i,v,r,t)$[initv(v)$cf_tech(i)$(not sum{(h,c)$i_class(i,c), m_cf(
 * Average CF by season
 m_cf_szn(i,v,r,allszn,t) = 0 ;
 m_cf_szn(i,v,r,szn,t)$[cf_tech(i)$valcap(i,v,r,t)$(hydro_d(i) or hyd_add_pump(i))] =
-    sum{h$h_szn(h,szn), hours(h) * sum{c$i_class(i,c), m_cf(i,c,v,r,h,t)} }
+    sum{(h,c)$[h_szn(h,szn)$i_class(i,c)], hours(h) * m_cf(i,c,v,r,h,t) }
     / sum{h$h_szn(h,szn), hours(h) } ;
 
 * adding upgrade techs for hydro
@@ -549,7 +549,7 @@ m_cf_szn(i,v,r,szn,t)
 
 * Calculate daytime hours (for PVB) based on hours with nonzero PV CF
 dayhours(allh) = 0 ;
-dayhours(h)$[sum{(i,v,r,t)$[pv(i)$valgen(i,v,r,t)], sum{c$i_class(i,c), m_cf(i,c,v,r,h,t)} }] = yes ;
+dayhours(h)$[sum{(i,c,v,r,t)$[pv(i)$valgen(i,v,r,t)$i_class(i,c)], m_cf(i,c,v,r,h,t)}] = yes ;
 
 
 *=====================================================================================
