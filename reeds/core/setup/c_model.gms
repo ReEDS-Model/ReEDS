@@ -2569,14 +2569,14 @@ eq_caa_rate_standard(st,t)$[tmodel(t)
 *coal emissions in that state if each unit captured at the standard's rate [metric tons CO2]
 *emit_rate plus capture_rate is the uncontrolled rate, which accounts for the capture energy penalty
     (1 - caa_capture_rate_standard)
-    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)],
-         (emit_rate("process","CO2",i,v,r,t) + capture_rate("CO2",i,v,r,t)) * GEN(i,v,r,h,t) }
+    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
+         hours(h) * (emit_rate("process","CO2",i,v,r,t) + capture_rate("CO2",i,v,r,t)) * GEN(i,v,r,h,t) }
 
     =g=
 
 *coal emissions in that state [metric tons CO2]
-    sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         emit_rate("process","CO2",i,v,r,t) * GEN(i,v,r,h,t) }
+    sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
+         hours(h) * emit_rate("process","CO2",i,v,r,t) * GEN(i,v,r,h,t) }
 ;
 
 *==========================
