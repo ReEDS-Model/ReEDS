@@ -65,6 +65,20 @@ def _make_line(row):
     return shapely.LineString([[row.start_lon, row.start_lat], [row.end_lon, row.end_lat]])
 
 
+def get_countyhash2zone(case):
+    sw = reeds.io.get_switches(case)
+    hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+    county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw.GSw_ZoneSet)
+    countyhash2zone = pd.Series(
+        index=[
+            reeds.inputs.hash_counties([fips], hashfunc=hashfunc)
+            for fips in county2zone.index
+        ],
+        data=county2zone.values,
+    )
+    return countyhash2zone
+
+
 def read_county_overlay(case, suffix=''):
     sw = reeds.io.get_switches(case)
     if sw.GSw_TransCountyOverlay == 'none':
@@ -95,13 +109,49 @@ def read_county_overlay(case, suffix=''):
     for region, side in [('r', 'start'), ('rr', 'end')]:
         dfout[region] = dfout[side].map(hash2zone)
 
-    unresolved = dfout.loc[dfout[['r', 'rr']].isnull().any(axis=1)]
+    unresolved = dfout.loc[dfout[['r', 'rr']].isnull().any(axis=1)].copy()
     if len(unresolved):
-        print(unresolved)
-        raise KeyError(
-            f'{len(unresolved)} zone hashes in {fpath.name} are missing from'
-            f' inputs/zones/{sw.GSw_ZoneSet}/zonehash.csv'
+        countyhash2zone = get_countyhash2zone(case)
+        for zone, side in [('start_zone', 'start'), ('end_zone', 'end')]:
+            unresolved[zone] = unresolved[side].map(countyhash2zone)
+
+        unknown = unresolved.loc[unresolved[['start_zone', 'end_zone']].isnull().any(axis=1)]
+        if len(unknown):
+            print(unknown)
+            raise KeyError(
+                f'{len(unknown)} hashes in {fpath.name} match neither a zone in'
+                f' inputs/zones/{sw.GSw_ZoneSet}/zonehash.csv nor a county in'
+                f' inputs/zones/{sw.GSw_ZoneSet}/county2zone.csv'
+            )
+
+        datacols = ['MW_forward', 'MW_reverse']
+        has_capacity = set(datacols).issubset(dfout.columns)
+        dropped = [
+            ('fall within a single multi-county zone',
+             unresolved.loc[unresolved.start_zone == unresolved.end_zone]),
+            ('connect to a multi-county zone',
+             unresolved.loc[unresolved.start_zone != unresolved.end_zone]),
+        ]
+        for reason, entries in dropped:
+            message = (
+                f'county_overlay: dropping {len(entries)} entries from {fpath.name}'
+                f' that {reason}'
+            )
+            if has_capacity:
+                message += f' ({entries[datacols].sum().sum():.1f} MW)'
+            print(message)
+
+        dfout = dfout.drop(index=unresolved.index)
+        print(
+            f'county_overlay: keeping {len(dfout)} entries from {fpath.name}'
+            f' for GSw_ZoneSet={sw.GSw_ZoneSet}'
         )
+        if not len(dfout):
+            raise ValueError(
+                f'No entries in {fpath.name} can be placed on'
+                f' GSw_ZoneSet={sw.GSw_ZoneSet}; every entry falls within or connects to'
+                ' a multi-county zone'
+            )
     return dfout
 
 
