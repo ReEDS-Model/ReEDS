@@ -53,10 +53,10 @@ For existing coal plants, this is the code implementation:
     This is the year in which coal capacity is forced to either retire or upgrade with CCS to meet the emissions requirements under Clean Air Act, Section 111.
     - `caa_first_year` = 2024.
     This is the year in which the emissions requirements under Clean Air Act, Section 111 are first active.
-    - `caa_rate_emis_standard` = 0.1039.
-    This is the emissions rate (metric tons CO<sub>2</sub> per MWh) equivalent to average emissions from a new coal-CCS plant, assuming 90% capture rate.
-    The emissions rate from a new coal-CCS plant in ReEDS is 0.051956 metric tons CO<sub>2</sub> per MWh (see `emit_rate` parameter) which assumes 95% capture.
-    For 90% capture, the emissions rate is double that or 0.1039 metric tons CO<sub>2</sub> per MWh, which we use as the standard.
+    - `caa_capture_rate_standard` = 0.90.
+    This is the CO<sub>2</sub> capture rate that a state's coal fleet must match on average.
+    It is applied to each unit's own uncontrolled emissions rate, taken as the sum of the `emit_rate` and `capture_rate` parameters, so a unit that captures 90% of its CO<sub>2</sub> complies regardless of its heat rate.
+    A unit that captures more than 90%, such as a new coal-CCS plant at 95%, emits less than its own allowance and so creates headroom for other coal in that state.
 2. `reeds/input_processing/WriteHintage.py`
     - Coal plants are binned at the unit level if `GSw_Clean_Air_Act=1` so that each coal unit can independently choose to retire or upgrade.
     - Coal plants maintain their exogenous retirement assumption, except after 2032, when the Clean Air Act regulations begin and coal can retire endogenously.
@@ -69,7 +69,8 @@ For existing coal plants, this is the code implementation:
     For example, if running 5 year solves, then instead of enforcing coal retirement in 2032, it will be enforced in 2035.
 
 4. `c_model.gms`
-    - `eq_caa_rate_standard(st,t)` - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions rate per state under Clean Air Act Section 111.
+    - `eq_caa_rate_standard(st,t)` - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions per state under Clean Air Act Section 111.
+    Generation on both sides is weighted by `hours` over representative periods, so the standard is applied on an MWh-weighted basis.
 
 ## Assumptions
 
