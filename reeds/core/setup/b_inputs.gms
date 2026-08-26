@@ -613,10 +613,10 @@ $endif.naris
 parameter resourceclassnum(c) "numeric value for resource class" ;
 resourceclassnum(c) = c.val ;
 
-set i_class(i,c) "map from technology to resource class" ;
-i_class(i,c) = tech_resourceclass(i,c) ;
+* i_class(i,c) is loaded with only the default techs populated; it is expanded
+* here so every i maps to exactly one c
 * Broadcast class to derived techs (e.g. water-cooled variants)
-i_class(i,c)$[(not sum{cc, tech_resourceclass(i,cc)})$sum{ii$ctt_i_ii(i,ii), tech_resourceclass(ii,c)}] = yes ;
+i_class(i,c)$[(not sum{cc, i_class(i,cc)})$sum{ii$ctt_i_ii(i,ii), i_class(ii,c)}] = yes ;
 * Any technology without a class is assigned to class '0'
 i_class(i,'0')$[not sum{cc, i_class(i,cc)}] = yes ;
 
@@ -624,21 +624,21 @@ i_class(i,'0')$[not sum{cc, i_class(i,cc)}] = yes ;
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
 ban(i)$[i_subsets(i,'csp')
-      $sum{c$tech_resourceclass(i,c),
+      $sum{c$i_class(i,c),
            resourceclassnum(c)>Sw_NumCSPclasses }] = yes ;
 ) ;
 * If Sw_CSPRemoveLow is turned on, remove the last (worst) CSP class (which will be
 * equal to Sw_NumCSPclasses)
 if(Sw_CSPRemoveLow = 1,
 ban(i)$[i_subsets(i,'csp')
-      $sum{c$tech_resourceclass(i,c),
+      $sum{c$i_class(i,c),
            resourceclassnum(c)=Sw_NumCSPclasses }] = yes ;
 ) ;
 
 *Ban Geothermal resources that do not remain after aggregation
 if(Sw_NumGeoclasses < 10,
 ban(i)$[i_subsets(i,'geo')
-      $sum{c$tech_resourceclass(i,c),
+      $sum{c$i_class(i,c),
            resourceclassnum(c)>Sw_NumGeoclasses }] = yes ;
 ) ;
 

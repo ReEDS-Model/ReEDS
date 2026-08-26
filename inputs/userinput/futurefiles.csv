@@ -225,6 +225,7 @@ hydro_mingen.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hydrocapcostmult.csv,.csv,0,None,t,None,1,0,constant,0,None,projection?,linear_5
 hydrofrac_policy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hydrogen_price.csv,.csv,0,None,year,None,0,0,constant,None,None,new,
+i_class.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 i_coolingtech_watersource_link.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 i_coolingtech_watersource_upgrades_link.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 i_coolingtech_watersource_upgrades.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -434,7 +435,6 @@ supplycurve_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 switches.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 tax_rate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 tc_phaseout_schedule.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-tech_resourceclass.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 tech-subset-table.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 techs_banned_ces.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 techs_banned_imports_rps.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
