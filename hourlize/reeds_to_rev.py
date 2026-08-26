@@ -286,11 +286,11 @@ def subset_supply_curve_columns(df_sc_in, tech, priority_cols):
         df_sc_in["capacity"] = df_sc_in["capacity_ac_mw"]
         # existing capacity for upv is also in dc. change to ac using derived ILR
         df_sc_in["existing_capacity"] = df_sc_in["existing_capacity"] / df_sc_in["ilr"]
-    elif tech == "egs_allkm":
-        add_cols = ["online_year", "retire_year"]
+    elif tech in ["egs_allkm", "geohydro_allkm"]:
+        add_cols = ["existing_capacity", "online_year", "retire_year"]
         for add_col in add_cols:
             if add_col not in df_sc_in.columns:
-                df_sc_in[add_col] = np.nan
+                df_sc_in[add_col] = 0 if add_col == "existing_capacity" else np.nan
 
     df_sc_subset = df_sc_in[subset_cols].copy()
     rename = {"capacity": "cap_avail"}
@@ -841,13 +841,21 @@ def prepare_data(run_folder, sc_file, tech, priority_cols, check_results=True):
     input_sc_df = get_reeds_formatted_rev_supply_curve(sc_file, tech, run_folder)
 
     ## Check for any missing priority_cols, if present fetch them from the processed supply curve file in inputs_case
+    required_extra_cols = ["existing_capacity", "online_year", "retire_year"]
     missing_cols = [c for c in priority_cols if c not in input_sc_df.columns]
-    if missing_cols:
+    missing_extra = [c for c in required_extra_cols if c not in input_sc_df.columns]
+    all_missing = missing_cols + missing_extra
+    if all_missing:
         tech_file = tech.replace("_allkm", "")
         sc_processed = os.path.join(run_folder, "inputs_case", f"supplycurve_{tech_file}.csv")
         if os.path.exists(sc_processed):
-            df_sc_cost = pd.read_csv(sc_processed, usecols=["sc_point_gid"] + missing_cols)
-            input_sc_df = input_sc_df.merge(df_sc_cost, on="sc_point_gid", how="left")
+            proc_cols = pd.read_csv(sc_processed, nrows=0).columns.tolist()
+            fetch_cols = [c for c in all_missing if c in proc_cols]
+            if fetch_cols:
+                df_sc_extra = pd.read_csv(
+                    sc_processed, usecols=["sc_point_gid"] + fetch_cols
+                )
+                input_sc_df = input_sc_df.merge(df_sc_extra, on="sc_point_gid", how="left")
 
     input_sc_df = reaggregate_supply_curve_regions(input_sc_df, run_folder)
 
