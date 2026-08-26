@@ -181,6 +181,25 @@ def apply_county_overlay(case, trancap_init_ac, interface_params):
             ' Add them to the matching _cost_distance.csv overlay file.'
         )
 
+    hierarchy = reeds.io.get_hierarchy(case)
+    modeled = aligned.loc[
+        aligned.r.isin(hierarchy.index) & aligned.rr.isin(hierarchy.index)
+    ]
+    crossing = modeled.loc[
+        modeled.r.map(hierarchy.transgrp) != modeled.rr.map(hierarchy.transgrp)
+    ]
+    print(
+        f'county_overlay: added {modeled[datacols].sum().sum():.1f} MW across'
+        f' {len(modeled)} interfaces in the modeled region'
+        f' ({(modeled.source == "uprate").sum()} uprate, {(~modeled.in_base).sum()} newlink);'
+        f' {len(aligned) - len(modeled)} interfaces are outside it'
+    )
+    print(
+        f'county_overlay: {len(crossing)} interfaces carrying'
+        f' {crossing[datacols].sum().sum():.1f} MW cross a transgrp boundary and remain'
+        ' subject to the unmodified trancap_init_transgroup limits'
+    )
+
     dfout = (
         pd.concat([trancap_init_ac, aligned.assign(trtype='AC')[trancap_init_ac.columns]])
         .groupby(indices + ['trtype'], as_index=False)[datacols].sum()
