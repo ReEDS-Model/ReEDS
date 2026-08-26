@@ -615,7 +615,7 @@ resourceclassnum(c) = c.val ;
 
 * i_class(i,c) is loaded with only the default techs populated; it is expanded
 * here so every i maps to exactly one c
-* Broadcast class to derived techs (e.g. water-cooled variants)
+* Broadcast class to  water-cooled variants
 i_class(i,c)$[(not sum{cc, i_class(i,cc)})$sum{ii$ctt_i_ii(i,ii), i_class(ii,c)}] = yes ;
 * Any technology without a class is assigned to class '0'
 i_class(i,'0')$[not sum{cc, i_class(i,cc)}] = yes ;
@@ -3774,7 +3774,7 @@ $offdelim
 $onlisting
 / ;
 
-parameter cf_adj_t(i,c,v,t)        "--unitless-- capacity factor adjustment over time for RSC technologies" ;
+parameter cf_adj_t(i,c,v,t)    "--unitless-- capacity factor adjustment over time for RSC technologies" ;
 
 cf_adj_t(i,c,v,t)$[i_class(i,c)$(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
 
