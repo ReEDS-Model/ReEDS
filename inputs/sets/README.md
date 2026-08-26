@@ -70,7 +70,7 @@
 
 - `eall.csv`: set of emission categories used in reporting
 
-- `etype.csv`:
+- `etype.csv`: set of emission types (process or upstream)
 
 - `f.csv`: set of fuel types
 

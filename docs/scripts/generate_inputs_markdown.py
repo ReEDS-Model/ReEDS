@@ -4,19 +4,6 @@ import argparse
 import os
 from pathlib import Path
 
-
-def _repo_root_from_app(app) -> Path:
-    # app.srcdir points to docs/source, so repo root is two levels up.
-    return Path(app.srcdir).resolve().parents[1]
-
-
-def _repo_root_from_cli(reeds_path: str) -> Path:
-    if reeds_path:
-        return Path(reeds_path).resolve()
-    # docs/scripts/generate_inputs_markdown.py -> repo root is two levels up.
-    return Path(__file__).resolve().parents[2]
-
-
 def _collect_input_readmes(inputs_root: Path) -> list[Path]:
     readmes = []
     for child in sorted(inputs_root.iterdir(), key=lambda p: p.name.casefold()):
@@ -69,9 +56,13 @@ def main(app=None):
             help="Path to ReEDS repository root",
         )
         args = parser.parse_args()
-        repo_root = _repo_root_from_cli(args.reedsPath)
+        if args.reedsPath:
+            repo_root = Path(args.reedsPath).resolve()
+        else:
+            # docs/scripts/generate_inputs_markdown.py -> repo root is two levels up.
+            repo_root = Path(__file__).resolve().parents[2]
     else:
-        repo_root = _repo_root_from_app(app)
+        repo_root = Path(app.srcdir).resolve().parents[1]
 
     inputs_root = repo_root / "inputs"
     docs_source_root = repo_root / "docs" / "source"

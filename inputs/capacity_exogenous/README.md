@@ -39,4 +39,4 @@
   - `prescribed_builds_wind-ons_open.csv`:  
   - `prescribed_builds_wind-ons_reference.csv`: 
 
-- `ReEDS_generator_database_final_EIA-NEMS.csv`: EIA-NEMS database of existing generators
+- `ReEDS_generator_database_final_EIA-NEMS.csv`: ReEDS generator database derived from the EIA NEMS plant file and EIA 860M. See https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/nems_database_processing.
