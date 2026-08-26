@@ -610,8 +610,15 @@ Example national dispatch profiles for gas CCS and nuclear in illustrative low-c
 ```{admonition} Unit startup considerations
 Two switches control unit startup considerations:
 - `GSw_MingenFixed` (default `1`): Turn on (if `1`) or off (if `0`) the minimum generation constraint for the technologies included in `inputs/plant_characteristics/mingen_fixed.csv` (affects only nuclear by default).
-- `GSw_StartCost` (default `4`): Specifies generation technologies for which to apply startup costs.
-The default setting of `4` specifies combined cycle, coal and CCS (leaving out nuclear, which is handled by `GSw_MingenFixed`).
+- `GSw_StartCost` (default `3`): Specifies generation technologies for which to apply startup costs.
+The available options are:
+    - 0: None
+    - 1: Nuclear
+    - 2: Nuclear, coal, and CCS
+    - 3: Coal and CCS (default)
+    - 4: Coal, CCS, and gas combined cycle
+    - 5: All fuel-consuming technologies except nuclear
+    - 6: All fuel-consuming technologies
 Startup costs are found at `inputs/plant_characteristics/startcost.csv`.
 ```
 
