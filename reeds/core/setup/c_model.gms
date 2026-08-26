@@ -2560,20 +2560,19 @@ eq_caa_max_cf(i,v,r,t)$[tmodel(t)$valgen(i,v,r,t)
 
 * ---------------------------------------------------------------------------
 
-*Under the Clean Air Act Section 111, the emissions from existing coal plants per state must be less than or equal to a rate-based emissions standard
+*Under the Clean Air Act Section 111, the emissions from existing coal plants per state must be no greater
+*than they would be if every coal unit captured caa_capture_rate_standard of the CO2 it produces
 
-*The rate is equivalent to average coal CCS emissions assuming 90% capture rate [metric tons CO2 / MWh]
 eq_caa_rate_standard(st,t)$[tmodel(t)
                         $(yeart(t)>=caa_coal_retire_year)
                         $Sw_Clean_Air_Act]..
 
-*rate equivalent to average coal CCS emissions assuming 90% capture rate [metric tons CO2 / MWh]
-    caa_rate_emis_standard 
-
-*coal generation in that state [MWh]
-    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         GEN(i,v,r,h,t)}
-    =g= 
+*coal emissions in that state if each unit captured at the standard's rate [metric tons CO2]
+*emit_rate plus capture_rate is the uncontrolled rate, which accounts for the capture energy penalty
+    (1 - caa_capture_rate_standard)
+    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)],
+         GEN(i,v,r,h,t) * (emit_rate("process","CO2",i,v,r,t) + capture_rate("CO2",i,v,r,t))}
+    =g=
 
 *coal emissions in that state [metric tons CO2]
     sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
