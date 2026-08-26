@@ -290,6 +290,12 @@ def check_compatibility(sw):
             f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
         )
 
+    if (int(sw['MCS_runs']) > 1 and int(sw['GSw_MGA_RV_runs']) > 1):
+        raise ValueError(
+            'Running Monte Carlo analysis (MCS_runs > 1) and random vector \n'
+            'MGA sampling (GSw_MGA_RV_runs > 1) simultaneously is not yet supported.'
+        )
+        
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
 
     ### Parsed string switches
@@ -489,6 +495,11 @@ def check_compatibility(sw):
                 f"{list(allowed_ra_years)} but {resource_adequacy_years} was supplied"
             )
             raise ValueError(err)
+
+    if (sw['GSw_MGA_Objective'] not in ['capacity', 'generation']) and int(sw['GSw_MGA_RV_runs']) > 0:
+        raise NotImplementedError(
+            f"GSw_MGA_Objective='{sw['GSw_MGA_Objective']}' is not yet supported for MGA random vector sampling."
+        )
 
     ### Dependent model availability
     if (
@@ -1393,7 +1404,9 @@ def write_batch_script(
         if not LINUXORMAC:
             OPATH.writelines("endlocal\n")
         OPATH.writelines(f'python {logger}\n')
-        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n\n")
+        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
+        OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+
         if int(caseSwitches['diagnose']):
              OPATH.writelines(
                 "python"

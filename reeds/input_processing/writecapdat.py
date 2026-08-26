@@ -245,8 +245,7 @@ def process_ivt(years, inputs_case):
 
 # Only keep neccessary columns from unitdata to work with
 # And rename column names for easier processing
-def COLNAMES_define(retscen):
-    return {
+COLNAMES = {
         'capexog_rsc': (
             ['tech','r','RetireYear','sc_point_gid','summer_power_capacity_MW'],
             ['tech','region','year','sc_point_gid','MW']
@@ -288,11 +287,11 @@ def COLNAMES_define(retscen):
             ['t','r','i','value']
         ),
         'retirements': (
-            ['tech','v','r',retscen,'StartYear','coolingwatertech','ctt','wst','type','summer_power_capacity_MW'],
+            ['tech','v','r','RetireYear','StartYear','coolingwatertech','ctt','wst','type','summer_power_capacity_MW'],
             ['i','v','r','t','tt','coolingwatertech','ctt','wst','type','value']
         ),
         'retirements_energy': (
-            ['tech','v','r',retscen,'StartYear','type','energy_capacity_MWh'],
+            ['tech','v','r','RetireYear','StartYear','type','energy_capacity_MWh'],
             ['r','i','v','t','tt','type','value']
         ),
         'windret': (
@@ -377,7 +376,6 @@ def main(reeds_path, inputs_case):
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
-    retscen = sw.retscen
     GSw_WaterMain = int(sw.GSw_WaterMain)
     GSw_PVB = int(sw.GSw_PVB)
     startyear = int(sw.startyear)
@@ -394,7 +392,6 @@ def main(reeds_path, inputs_case):
     ####################
     ### DICTIONARIES ###
 
-    COLNAMES = COLNAMES_define(retscen)
 
 
     #%%
@@ -810,7 +807,7 @@ def main(reeds_path, inputs_case):
     rets_data = {}
     for rettype in ['retirements','retirements_energy']:
         rets_df = gdb_use.loc[(gdb_use['tech'].isin(TECH[rettype])) &
-                        (gdb_use[retscen]>startyear) & (gdb_use[retscen]<=endyear) &
+                        (gdb_use['RetireYear']>startyear) & (gdb_use['RetireYear']<=endyear) &
                         (gdb_use['StartYear'] <= endyear)
                         ].copy()
 
@@ -826,7 +823,7 @@ def main(reeds_path, inputs_case):
                             if row['StartYear'] >= startyear
                             else "init-1",axis=1)
         rets_df['StartYear']=rets_df['StartYear'].apply(lambda x: assign_modeledyear(x, years))
-        rets_df[retscen]=rets_df[retscen].apply(lambda x: assign_modeledyear(x, years))
+        rets_df['RetireYear']=rets_df['RetireYear'].apply(lambda x: assign_modeledyear(x, years))
         rets_df = rets_df[COLNAMES[rettype][0]]
         rets_df.columns = COLNAMES[rettype][1]
         rets_df.sort_values(by=COLNAMES[rettype][1],inplace=True)

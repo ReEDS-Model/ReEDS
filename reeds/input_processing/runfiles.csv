@@ -146,7 +146,7 @@ mttr.csv,inputs/plant_characteristics/mttr.csv,1,ignore,ignore,,,tech,,0,,,,,,
 natgas_price_cendiv.csv,inputs/fuelprices/ng_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
 national_rps_frac_allScen.csv,inputs/national_generation/national_rps_frac_allScen.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,,,,1,0,,,,,,
 net_gen_existing_hydro.csv,inputs/hydro/net_gen_existing_hydro.csv,1,ignore,ignore,,"t,month",,0,0,,,,,,
-peak_net_imports.csv,inputs/reserves/peak_net_imports.csv,1,ignore,ignore,nercr,t,,0,0,,,,,,
+peak_net_imports.csv,inputs/reserves/peak_net_imports.csv,1,ignore,ignore,transreg,t,,0,0,,,,,,
 ng_crf_penalty_st.csv,inputs/state_policies/ng_crf_penalty_st.csv,1,ignore,ignore,st,*t,,0,0,,,,,,
 ng_demand_elec.csv,inputs/fuelprices/ng_demand_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
 ng_demand_tot.csv,inputs/fuelprices/ng_tot_demand_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
@@ -184,6 +184,7 @@ plantchar_dr_shed_fom.csv,inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}
 plantchar_evmc_shape.csv,inputs/plant_characteristics/evmc_shape_{evmcscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_evmc_storage.csv,inputs/plant_characteristics/evmc_storage_{evmcscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_fuelcell.csv,inputs/plant_characteristics/{plantchar_fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
+plantchar_h2fuelcell.csv,inputs/plant_characteristics/{plantchar_h2fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas_ccs.csv,inputs/plant_characteristics/{plantchar_gas_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas.csv,inputs/plant_characteristics/{plantchar_gas}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_geo.csv,inputs/plant_characteristics/{plantchar_geo}.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
