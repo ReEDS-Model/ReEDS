@@ -1506,6 +1506,19 @@ $offempty
 parameter exog_upv(i,r,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor" ;
 exog_upv(i,r,t) = sum{rscbin, exog_upv_rsc(i,r,rscbin,t) } ;
 
+* Capacity-weighted build year of the exogenous capacity above, from the NEMS database
+* Written by writesupplycurves.py
+$onempty
+parameter exog_onlineyear(i,r,allt) "--year-- capacity-weighted online year of exogenous (pre-tfirst) RSC capacity"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%exog_onlineyear.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 parameter avail_retire_exog_rsc(i,v,r,t) "--MW-- available retired capacity for refurbishments" ;
 avail_retire_exog_rsc(i,v,r,t) = 0 ;
 
@@ -1784,6 +1797,16 @@ degrade_annual(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), deg
 
 degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
 degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+
+*existing capacity enters through m_capacity_exog as nameplate capacity, so like INV
+*(which degrades from its build year via degrade) it has to be degraded from the year it
+*came online. capacity with no build year in exog_onlineyear - the heat-rate-binned techs
+*and distpv - is left undegraded.
+
+parameter exog_degradation(i,v,r,allt) "--fraction-- existing (initv) capacity lost to degradation since it came online" ;
+
+exog_degradation(i,"init-1",r,t)$[degrade_annual(i)$exog_onlineyear(i,r,t)]
+    = 1 - (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,r,t)) ;
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 

@@ -193,6 +193,7 @@ def expand_exog_cap(row, start_year):
         "tech": [row["tech"]] * len(years),
         "region": [row["region"]] * len(years),
         "year": years,
+        "onlineyear": [row["onlineyear"]] * len(years),
         "sc_point_gid": [row["sc_point_gid"]] * len(years),
         "MW": [row["MW"]] * len(years)})
     return df
@@ -247,8 +248,8 @@ def process_ivt(years, inputs_case):
 # And rename column names for easier processing
 COLNAMES = {
         'capexog_rsc': (
-            ['tech','r','RetireYear','sc_point_gid','summer_power_capacity_MW'],
-            ['tech','region','year','sc_point_gid','MW']
+            ['tech','r','RetireYear','StartYear','sc_point_gid','summer_power_capacity_MW'],
+            ['tech','region','year','onlineyear','sc_point_gid','MW']
         ),
         'capnonrsc': (
             ['tech','coolingwatertech','r','ctt','wst','summer_power_capacity_MW'],
