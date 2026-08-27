@@ -3773,6 +3773,10 @@ cf_adj_t(i,v,t)$[(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
 * Existing wind uses startyear cf adjustment
 cf_adj_t(i,initv,t)$[wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
 
+* Existing PV likewise uses the startyear cf improvement; without this it would
+* keep the default of 1 and be credited with improvements it was never built with
+cf_adj_t(i,initv,t)$[(pv(i) or pvb(i))$sum{r, valcap(i,initv,r,t) }] = pv_cf_improve("%startyear%") ;
+
 cf_adj_t(i,newv,t)$[wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), wind_cf_adj_t(tt,i) } / countnc(i,newv) ;
 
