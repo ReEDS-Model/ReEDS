@@ -52,41 +52,35 @@ def wm(df):
     return _wm
 
 
-def get_exog_cap(inputs_case, tech, dfsc):
-    """Get exogenous capacity by class, region, rscbin, and year"""
+def get_exog_outputs(inputs_case, tech, dfsc):
+    """Get existing capacity and its average build year by resource class."""
     dfexog = (
         pd.read_csv(os.path.join(inputs_case, f'exog_cap_{tech}.csv'))
         .merge(
             dfsc.explode('sc_point_gid').reset_index()[['sc_point_gid','bin']],
             on='sc_point_gid',
         )
-        .rename(columns={'capacity':'MW'})
     )
+
+    ## Capacity by resource bin
     dfexog['rscbin'] = dfexog['bin'].map('bin{}'.format)
-    dfexog = dfexog.groupby(['*tech', 'region', 'rscbin', 'year']).MW.sum()
-    return dfexog
-
-
-def get_exog_onlineyear(inputs_case, tech, dfsc):
-    """Get the capacity-weighted online year of the capacity returned by get_exog_cap(),
-    by class, region, and year. Uses the same read and merge so it covers the same units;
-    keep the two in sync.
-    """
-    dfexog = (
-        pd.read_csv(os.path.join(inputs_case, f'exog_cap_{tech}.csv'))
-        .merge(
-            dfsc.explode('sc_point_gid').reset_index()[['sc_point_gid','bin']],
-            on='sc_point_gid',
-        )
-        .rename(columns={'capacity':'MW'})
+    capacity = (
+        dfexog.groupby(['*tech', 'region', 'rscbin', 'year'])
+        .MW.sum()
     )
+
+    ## Average build year
     dfexog['MW_onlineyear'] = dfexog.MW * dfexog.onlineyear
     dfsums = dfexog.groupby(['*tech', 'region', 'year'])[['MW', 'MW_onlineyear']].sum()
-    return (
+    onlineyear = (
         (dfsums.MW_onlineyear / dfsums.MW)
         .dropna()
         .rename('onlineyear')
+        .reset_index()
     )
+    onlineyear['v'] = 'init-1'
+    onlineyear = onlineyear.set_index(['*tech', 'v', 'region', 'year']).onlineyear
+    return capacity, onlineyear
 
 
 def agg_supplycurve(
@@ -316,13 +310,15 @@ def main(
     alloutcap_list.append(windcap)
 
     if write:
-        ## Exogenous wind capacity
-        exog_wind_ons_rsc = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
-        exog_wind_ons_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
-        exog_wind_ofs_rsc = get_exog_cap(inputs_case, tech='wind-ofs', dfsc=wind['ofs'])
-        exog_wind_ofs_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
-        exog_onlineyear_list.append(get_exog_onlineyear(inputs_case, 'wind-ons', wind['ons']))
-        exog_onlineyear_list.append(get_exog_onlineyear(inputs_case, 'wind-ofs', wind['ofs']))
+        ## Exogenous wind capacity and build year
+        for s in wind_types:
+            exog_wind_rsc, exog_onlineyear = get_exog_outputs(
+                inputs_case, tech=f'wind-{s}', dfsc=wind[s]
+            )
+            exog_wind_rsc.round(3).to_csv(
+                os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv")
+            )
+            exog_onlineyear_list.append(exog_onlineyear)
 
     # %%###############
     #    -- PV --    #
@@ -361,9 +357,11 @@ def main(
 
     if write:    
         ## Exogenous UPV capacity
-        exog_upv_rsc = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
+        exog_upv_rsc, exog_onlineyear = get_exog_outputs(
+            inputs_case, tech='upv', dfsc=upv
+        )
         exog_upv_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
-        exog_onlineyear_list.append(get_exog_onlineyear(inputs_case, 'upv', upv))
+        exog_onlineyear_list.append(exog_onlineyear)
 
     ### Normalize formatting
     upv = upv.reset_index()
@@ -580,20 +578,26 @@ def main(
 
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
-                exog_geohydro_rsc = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
+                exog_geohydro_rsc, exog_onlineyear = get_exog_outputs(
+                    inputs_case, tech='geohydro', dfsc=geo['geohydro']
+                )
                 exog_geohydro_rsc.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
-                exog_onlineyear_list.append(
-                    get_exog_onlineyear(inputs_case, 'geohydro', geo['geohydro']))
+                exog_onlineyear_list.append(exog_onlineyear)
 
     if write:
-        ## Capacity-weighted online year of the exogenous (pre-startyear) capacity
-        (
-            pd.concat(exog_onlineyear_list).round(2)
-            .rename_axis(['*i', 'r', 't'])
-            .to_csv(os.path.join(inputs_case, "exog_onlineyear.csv"))
-        )
+        ## Add resource-class build years and replace less-detailed entries.
+        onlineyear_path = os.path.join(inputs_case, "exog_onlineyear.csv")
+        exog_onlineyear = pd.concat([
+            pd.read_csv(onlineyear_path)
+            .set_index(['*i', 'v', 'r', 't']).onlineyear,
+            *exog_onlineyear_list,
+        ])
+        exog_onlineyear = exog_onlineyear[
+            ~exog_onlineyear.index.duplicated(keep='last')
+        ].sort_index()
+        exog_onlineyear.round(2).to_csv(onlineyear_path)
 
     # %% Get supply-curve data for postprocessing
     spurcols = [

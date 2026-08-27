@@ -691,7 +691,10 @@ See the [Operational Reliability](#operational-reliability) section for more det
 
 The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2025 {cite}`eiaAnnualEnergyOutlook2025`, with data supplemented from the October 2025 EIA 860M.
 In particular, ReEDS uses the net summer capacity, net winter capacity,[^ref23] location, heat rate, variable O&M (VOM), and FOM to characterize the existing fleet.
-The unit database also provides the year each unit came online, which ReEDS uses to degrade existing capacity from the year it was actually built rather than from the model start year, so that existing and newly built capacity of the same technology age at the same rate.
+ReEDS degrades existing capacity from its capacity-weighted average online year.
+The average is calculated separately by technology, historical vintage, region, and year.
+For distributed PV, increases are treated as new builds and decreases retire the oldest capacity first.
+Reported capacity remains nameplate capacity, while degradation reduces the capacity available for generation.
 ReEDS uses a modified "average" heat rate for any builds occurring after 2010: A technology-specific increase on the full-load heat rate is applied to accommodate units not always operating at their design point.
 The modifiers, shown in {numref}`heat-rate-adjustments`, are based on the relationship between the reported heat rate in the ATB and the actual observed heat rate, calculated on a fleetwide basis for each fuel type.
 
