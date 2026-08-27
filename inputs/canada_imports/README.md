@@ -1,6 +1,6 @@
 ## Canadian Input Files
 
-- `can_exports.csv`: Annual exports [MWh] to Canada by BA
+- `can_exports.csv`: Annual exports [MWh] to Canada by county
 
 - `can_exports_szn_frac.csv`: Fraction of annual exports [rate (unitless)] to Canada by season.
 
