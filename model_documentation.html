@@ -1020,9 +1020,19 @@ Ramps between the first and second time chunk of 6/18 are thus counted 5 times; 
 <p>Two switches control unit startup considerations:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_MingenFixed</span></code> (default <code class="docutils literal notranslate"><span class="pre">1</span></code>): Turn on (if <code class="docutils literal notranslate"><span class="pre">1</span></code>) or off (if <code class="docutils literal notranslate"><span class="pre">0</span></code>) the minimum generation constraint for the technologies included in <code class="docutils literal notranslate"><span class="pre">inputs/plant_characteristics/mingen_fixed.csv</span></code> (affects only nuclear by default).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_StartCost</span></code> (default <code class="docutils literal notranslate"><span class="pre">4</span></code>): Specifies generation technologies for which to apply startup costs.
-The default setting of <code class="docutils literal notranslate"><span class="pre">4</span></code> specifies combined cycle, coal and CCS (leaving out nuclear, which is handled by <code class="docutils literal notranslate"><span class="pre">GSw_MingenFixed</span></code>).
-Startup costs are found at <code class="docutils literal notranslate"><span class="pre">inputs/plant_characteristics/startcost.csv</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_StartCost</span></code> (default <code class="docutils literal notranslate"><span class="pre">3</span></code>): Specifies generation technologies for which to apply startup costs.
+Startup costs are found in <code class="docutils literal notranslate"><span class="pre">inputs/plant_characteristics/startcost.csv</span></code>.
+The available options for this switch are:</p>
+<ul>
+<li><p>0: None</p></li>
+<li><p>1: Nuclear</p></li>
+<li><p>2: Nuclear, coal, and CCS</p></li>
+<li><p>3: Coal and CCS (default)</p></li>
+<li><p>4: Coal, CCS, and gas combined cycle</p></li>
+<li><p>5: All fuel-consuming technologies except nuclear</p></li>
+<li><p>6: All fuel-consuming technologies</p></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -6560,7 +6570,7 @@ Prescribed retirements are power plant retirements that are forced into the mode
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 26, 2026.
+      <span class="lastupdated">Last updated on August 27, 2026.
       </span></p>
   </div>
 
