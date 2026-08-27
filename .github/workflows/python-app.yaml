@@ -107,11 +107,11 @@ jobs:
       matrix:
         include:
           - scenario: github_Pacific
-            solve-year: 2029
+            solve-year: 2030
           - scenario: github_Everything
             solve-year: 2060
           - scenario: github_MA_county_CC
-            solve-year: 2026
+            solve-year: 2030
     env:
       batch: test
     steps:
