@@ -79,11 +79,6 @@ function parse_commandline()
             arg_type = Int
             default = 0
             required = false
-        "--cvar_alpha"
-            help = "Alpha for CVaR (e.g., 0.95)"
-            arg_type = Float64
-            default = 0.95
-            required = false
         "--write_availability_samples"
             help = "Write the sample-level generator and storage availability"
             arg_type = Int
@@ -217,38 +212,6 @@ function run_pras(pras_system_path::String, args::Dict)
     @info "$(PRAS.LOLE(results["short"]))"
     @info "$(PRAS.EUE(results["short"]))"
     @info "$(PRAS.NEUE(results["short"]))"
-
-    #%% Print CVAR and NCVAR for the entire modeled region
-    if args["write_shortfall_samples_totals"] == 1 && haskey(results, "short_samples")
-        _, _, _, _, energyunit = PRAS.get_params(sys)
-        alpha = Float64(args["cvar_alpha"])
-
-        cvar_result = PRAS.CVAR(
-            energyunit,
-            results["short_samples"],
-            alpha,
-        )
-
-        cvar_value = PRAS.val(cvar_result.cvar)
-        cvar_stderr = PRAS.stderror(cvar_result.cvar)
-        cvar_var = cvar_result.var
-
-        ### Normalize CVaR by total load over the full PRAS time period.
-        total_load = sum(sys.regions.load)
-
-        ncvar_value = cvar_value / total_load * 1e6
-        ncvar_stderr = cvar_stderr / total_load * 1e6
-        ncvar_var = cvar_var / total_load * 1e6
-
-        @info(
-            "CVAR = $(cvar_value)±$(cvar_stderr) MWh; " *
-            "VaR = $(cvar_var) MWh; alpha = $(alpha)"
-        )
-        @info(
-            "NCVAR = $(ncvar_value)±$(ncvar_stderr) ppm; " *
-            "VaR = $(ncvar_var) ppm; alpha = $(alpha)"
-        )
-    end
 
     ## Filter out DC regions used for VSC HVDC transmission
     regions = [r for r in sys.regions.names if !(occursin("|", r))]
@@ -520,7 +483,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
     #     "pras_existing_unit_size" => 1,
     #     "pras_max_unitsize_prm" => 1,
     #     "pras_seed" => 1,
-    #     "cvar_alpha" => 0.95,
     # )
     # reedscase = args["reedscase"]
     # solve_year = args["solve_year"]

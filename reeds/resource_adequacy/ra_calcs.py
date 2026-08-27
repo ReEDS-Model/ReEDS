@@ -71,7 +71,6 @@ def run_pras(
         f"--write_shortfall_samples={int(write_shortfall_samples)}",
         f"--write_shortfall_samples_totals={int(write_shortfall_samples_totals)}",
         f"--write_availability_samples={int(write_availability_samples)}",
-        f"--cvar_alpha={float(sw['GSw_PRM_CVARalpha'])}",
         f"--iteration={iteration}",
         f"--samples={sw['pras_samples']}",
         f"--overwrite={int(overwrite)}",
@@ -155,7 +154,7 @@ def main(t, tnext, casedir, iteration=0):
         1: True if t == max(solveyears) else False,
         2: True,
     }[int(sw['pras'])]
-    if pras_this_solve_year or int(sw.GSw_PRM_StressIterateMax):        
+    if pras_this_solve_year or int(sw.GSw_PRM_StressIterateMax):
         result = run_pras(
             casedir, t,
             iteration=iteration,

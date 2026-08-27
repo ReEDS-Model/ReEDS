@@ -160,8 +160,14 @@ def _sample_cvar(samples, alpha=0.95):
     x = pd.Series(samples).dropna().astype(float)
     if x.empty:
         return np.nan
-    n_tail = max(1, int(np.ceil(round((1 - alpha) * len(x), 12))),)
-    return x.sort_values(ascending=False).iloc[:n_tail].mean()
+
+    # Round before applying ceil to remove floating-point noise.
+    # For example, a mathematically exact tail size of 50 may be
+    # represented as 50.00000000000004, which would otherwise select 51 samples.
+    tail_size = round((1 - alpha) * len(x), 12)
+    n_tail = max(1, int(np.ceil(tail_size)))
+
+    return x.nlargest(n_tail).mean()
 
 def calc_cvar(shortfall_samples_agg, alpha=0.95):
     """
