@@ -6,4 +6,4 @@
 
 - `can_imports.csv`: Annual imports [MWh] from Canada by county
   
-- `can_imports_quarter_frac.csv`: Fraction of annual imports [rate (unitless)] from Canada by season
+- `can_imports_quarter_frac.csv`: Fraction of annual imports [fraction] from Canada by season
