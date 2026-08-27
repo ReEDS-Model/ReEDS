@@ -71,10 +71,10 @@ positive variables
   OPRES(ortype,i,v,r,allh,t)       "--MW-- operating reserves by type"
 
 * variable fuel amounts
-  GASUSED(cendiv,gb,allh,t)             "--MMBtu/hour-- total gas used by gas bin",
-  VGASBINQ_NATIONAL(fuelbin,t)          "--MMBtu-- National quantity of gas by bin"
-  VGASBINQ_REGIONAL(fuelbin,cendiv,t)   "--MMBtu-- Regional (census divisions) quantity of gas by bin"
-  BIOUSED(bioclass,r,t)                 "--MMBtu-- total biomass used by biomass class"
+  GASUSED(cendiv,gb,allh,t)             "--Quad/hour-- total gas used by gas bin",
+  VGASBINQ_NATIONAL(fuelbin,t)          "--Quad-- National quantity of gas by bin"
+  VGASBINQ_REGIONAL(fuelbin,cendiv,t)   "--Quad-- Regional (census divisions) quantity of gas by bin"
+  BIOUSED(bioclass,r,t)                 "--Quad-- total biomass used by biomass class"
 
 * RECS variables
   RECS(RPSCat,i,st,ast,t)               "--MWh-- renewable energy credits from state st to state ast",
@@ -232,17 +232,17 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_national_gen(t)                       "--MWh-- e.g. a national RPS or CES. require a certain amount of total generation to be from specified sources."
 
 * fuel supply curve equations
- eq_gasused(cendiv,allh,t)                "--MMBtu-- gas used must be from the sum of gas bins"
- eq_gasbinlimit(cendiv,gb,t)              "--MMBtu-- limit on gas from each bin"
- eq_gasbinlimit_nat(gb,t)                 "--MMBtu-- national limit on gas from each bin"
- eq_bioused(r,t)                          "--MMBtu-- bio used must be from the sum of bio bins"
- eq_biousedlimit(bioclass,usda_region,t)  "--MMBtu-- limit on bio from each bin in each USDA region"
+ eq_gasused(cendiv,allh,t)                "--Quad-- gas used must be from the sum of gas bins"
+ eq_gasbinlimit(cendiv,gb,t)              "--Quad-- limit on gas from each bin"
+ eq_gasbinlimit_nat(gb,t)                 "--Quad-- national limit on gas from each bin"
+ eq_bioused(r,t)                          "--Quad-- bio used must be from the sum of bio bins"
+ eq_biousedlimit(bioclass,usda_region,t)  "--Quad-- limit on bio from each bin in each USDA region"
 
 * regional natural gas supply curves
- eq_gasaccounting_regional(cendiv,t)         "--MMBtu-- regional gas consumption cannot exceed the amount used in bins"
- eq_gasaccounting_national(t)                "--MMBtu-- national gas consumption cannot exceed the amount used in bins"
- eq_gasbinlimit_regional(fuelbin,cendiv,t)   "--MMBtu-- regional binned gas usage cannot exceed bin capacity"
- eq_gasbinlimit_national(fuelbin,t)          "--MMBtu-- national binned gas usage cannot exceed bin capacity"
+ eq_gasaccounting_regional(cendiv,t)         "--Quad-- regional gas consumption cannot exceed the amount used in bins"
+ eq_gasaccounting_national(t)                "--Quad-- national gas consumption cannot exceed the amount used in bins"
+ eq_gasbinlimit_regional(fuelbin,cendiv,t)   "--Quad-- regional binned gas usage cannot exceed bin capacity"
+ eq_gasbinlimit_national(fuelbin,t)          "--Quad-- national binned gas usage cannot exceed bin capacity"
 
 * hydrogen supply and demand
  eq_prod_capacity_limit(i,v,r,allh,t)                 "--metric tons-- production cannot exceeds its capacity"
@@ -2895,10 +2895,10 @@ eq_gasused(cendiv,h,t)$[tmodel(t)$((Sw_GasCurve=0) or (Sw_GasCurve=3))]..
     =e=
 
     sum{(i,v,r)$[valgen(i,v,r,t)$gas(i)$r_cendiv(r,cendiv)],
-         heat_rate(i,v,r,t) * (GEN(i,v,r,h,t) + CCSFLEX_POW(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)]) } / gas_scale
+         heat_rate(i,v,r,t) * 1e-9 * (GEN(i,v,r,h,t) + CCSFLEX_POW(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)]) } / gas_scale
 
     + (sum{(v,r)$[valcap("dac_gas",v,r,t)$r_cendiv(r,cendiv)],
-         dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) } / gas_scale)$Sw_DAC_Gas
+         dac_gas_cons_rate("dac_gas",v,t)* 1e-9 * PRODUCE("DAC","dac_gas",v,r,h,t) } / gas_scale)$Sw_DAC_Gas
 
 ;
 
@@ -2907,7 +2907,7 @@ eq_gasused(cendiv,h,t)$[tmodel(t)$((Sw_GasCurve=0) or (Sw_GasCurve=3))]..
 * gas from each bin needs to less than its capacity
 eq_gasbinlimit(cendiv,gb,t)$[tmodel(t)$(Sw_GasCurve=0)]..
 
-    gaslimit(cendiv,gb,t)
+    gaslimit(cendiv,gb,t) * 1e-9
 
     =g=
 
@@ -2918,7 +2918,7 @@ eq_gasbinlimit(cendiv,gb,t)$[tmodel(t)$(Sw_GasCurve=0)]..
 
 eq_gasbinlimit_nat(gb,t)$[tmodel(t)$(Sw_GasCurve=3)]..
 
-   gaslimit_nat(gb,t)
+   gaslimit_nat(gb,t) * 1e-9
 
    =g=
 
@@ -2936,7 +2936,7 @@ eq_gasaccounting_regional(cendiv,t)$[tmodel(t)$(Sw_GasCurve=1)]..
     =e=
 
     sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$r_cendiv(r,cendiv)],
-         hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t)
+         hours(h) * heat_rate(i,v,r,t) * 1e-9 * GEN(i,v,r,h,t)
        }
 ;
 
@@ -2949,7 +2949,7 @@ eq_gasaccounting_national(t)$[tmodel(t)$(Sw_GasCurve=1)]..
     =e=
 
     sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)],
-         hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t)
+         hours(h) * heat_rate(i,v,r,t) * 1e-9 * GEN(i,v,r,h,t)
        }
 ;
 
@@ -2957,7 +2957,7 @@ eq_gasaccounting_national(t)$[tmodel(t)$(Sw_GasCurve=1)]..
 
 eq_gasbinlimit_regional(fuelbin,cendiv,t)$[tmodel(t)$(Sw_GasCurve=1)]..
 
-    Gasbinwidth_regional(fuelbin,cendiv,t)
+    Gasbinwidth_regional(fuelbin,cendiv,t) * 1e-9
 
     =g=
 
@@ -2968,7 +2968,7 @@ eq_gasbinlimit_regional(fuelbin,cendiv,t)$[tmodel(t)$(Sw_GasCurve=1)]..
 
 eq_gasbinlimit_national(fuelbin,t)$[tmodel(t)$(Sw_GasCurve=1)]..
 
-    Gasbinwidth_national(fuelbin,t)
+    Gasbinwidth_national(fuelbin,t) * 1e-9
 
     =g=
 
@@ -2991,12 +2991,12 @@ eq_bioused(r,t)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }$tmodel(t)]..
 
 *biopower generation
     + sum{(i,v,h)$[valgen(i,v,r,t)$bio(i)],
-        hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) }
+        hours(h) * heat_rate(i,v,r,t) * 1e-9 * GEN(i,v,r,h,t) }
 
 
 *portion of cofire generation that is from bio resources
     + sum{(i,v,h)$[cofire(i)$valgen(i,v,r,t)],
-         bio_cofire_perc * hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) }
+         bio_cofire_perc * hours(h) * heat_rate(i,v,r,t) * 1e-9 * GEN(i,v,r,h,t) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -3004,7 +3004,7 @@ eq_bioused(r,t)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }$tmodel(t)]..
 * biomass consumption limit is annual
 eq_biousedlimit(bioclass,usda_region,t)$tmodel(t)..
 
-    biosupply(usda_region,bioclass,"cap")
+    biosupply(usda_region,bioclass,"cap") * 1e-9
 
     =g=
 

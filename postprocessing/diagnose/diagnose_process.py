@@ -16,10 +16,43 @@ import pathlib
 import os
 import re
 import pandas as pd
+import numpy as np
+import h5py
 import gams.transfer as gt
 from gams.core import gdx
 import argparse
 import matplotlib.pyplot as plt
+
+###########
+#%% Helper functions
+def df_to_h5(df, path, groupname="data", tablename="table"):
+    """Write a DataFrame to an HDF5 file as a single structured table dataset,
+    so each row keeps its columns (e.g. 'i' and 'value') together as one
+    record. This lets the file be filtered directly, e.g.:
+
+        import h5py, pandas as pd
+        t = h5py.File(path, "r")[groupname][tablename][:]
+        t[t["value"] < 0]              # boolean filter, all columns stay aligned
+        pd.DataFrame(t)                 # or load as a DataFrame (decode bytes columns after)
+    """
+    dtype_fields = []
+    arrays = {}
+    for col in df.columns:
+        values = df[col].to_numpy()
+        if values.dtype == object or values.dtype.kind in ("U", "S"):
+            arrays[col] = np.array([str(v) for v in values], dtype=object)
+            dtype_fields.append((str(col), h5py.string_dtype(encoding="utf-8")))
+        else:
+            arrays[col] = values
+            dtype_fields.append((str(col), values.dtype))
+
+    structured = np.zeros(len(df), dtype=dtype_fields)
+    for col in df.columns:
+        structured[str(col)] = arrays[col]
+
+    with h5py.File(path, "w") as f:
+        grp = f.create_group(groupname)
+        grp.create_dataset(tablename, data=structured)
 
 ###########
 #%% Main functionality
@@ -309,7 +342,7 @@ if __name__ == "__main__":
         
     # Generate diagnosis reports for the year found in the directory list.
     for gdxfile, scalarmodel in zip(gdxfiles, scalarmodels):
-
+        print(f"Processing {gdxfile.name} and {scalarmodel.name}...")
         # create Analyzer object
         m = Analyzer(gdxfile)
 
@@ -325,30 +358,30 @@ if __name__ == "__main__":
         if Sw_var_count_by_block==1:
             var_count_by_block=m.countVariables(by="block")
             var_count_by_block["year"] = tag
-            all_var_count_by_block.append(var_count_by_block)
-        
-        # Export matrix
-        if Sw_matrix==1:    
-            matrix=m.matrix
-            matrix["year"] = tag
-            all_matrix.append(matrix)
+            df_to_h5(var_count_by_block, pathlib.Path(file_dir, f'var_count_by_block_{tag}.h5'))
         
         # Generate matrix statistics report
         describe_matrix=m.describeMatrix()
         describe_matrix.append(tag)
         all_describe_matrix.append(describe_matrix)
         
-        # Export RHS values
-        if Sw_rhs == 1: 
-            rhs=m.rhs
-            rhs["year"] = tag
-            all_rhs.append(rhs) 
-                   
+        # Export matrix
+        if Sw_matrix==1:    
+            matrix=m.matrix
+            matrix["year"] = tag
+            df_to_h5(matrix, pathlib.Path(file_dir, f'matrix{tag}.h5'), groupname='matrix')
+
         # Generate RHS statistics report
+
         describe_rhs  = m.describeRHS()
         describe_rhs.append(tag)  
         all_describe_rhs.append(describe_rhs)
         
+        # Export RHS values
+        if Sw_rhs == 1: 
+            rhs=m.rhs
+            rhs["year"] = tag
+            df_to_h5(rhs, pathlib.Path(file_dir, f'rhs_{tag}.h5'), groupname='rhs')
     
     # Convert the `all_describe_rhs` and `all_describe_matrix` lists to data frames 
     # with their corresponding column names.
@@ -363,17 +396,10 @@ if __name__ == "__main__":
     
     # Define dataframes and their corresponding output filenames
     output_data = {
-        "describe_matrix.csv": all_describe_matrix,
-        "describe_rhs.csv": all_describe_rhs,
-        "var_count.csv": all_var_count}
+        "describe_matrix.h5": all_describe_matrix,
+        "describe_rhs.h5": all_describe_rhs,
+        "var_count.h5": all_var_count}
 
-    if Sw_matrix==1:
-        output_data["matrix.csv"] = all_matrix
-    if Sw_rhs==1:
-        output_data["rhs.csv"] = all_rhs
-    if Sw_var_count_by_block==1:
-        output_data["var_count_by_block.csv"] = all_var_count_by_block
-        
     # Concatenate and export each dataframe
     for filename, data in output_data.items():
         print(filename)
@@ -381,7 +407,7 @@ if __name__ == "__main__":
             combined_data = pd.concat(data, ignore_index=True)
         else:
             combined_data=pd.DataFrame(data)
-        combined_data.to_csv(pathlib.Path(file_dir, filename), index=False) 
+        df_to_h5(combined_data, pathlib.Path(file_dir, filename))
         
     # Plot a histogram of variable counts.
     all_var_count=pd.concat(all_var_count, ignore_index=True)
