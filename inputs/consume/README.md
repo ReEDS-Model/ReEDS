@@ -18,7 +18,7 @@
   - Citation: J. Valentine and A. Zoelle, "Direct Air Capture Case Studies: Sorbent System," National Energy Technology Laboratory, Pittsburgh, PA, July 8, 2022. [https://doi.org/10.2172/1879535](https://doi.org/10.2172/1879535)
 
 
-- `dollaryear.csv`: Dollar year for various Beyond VRE scenarios
+- `dollaryear.csv`: Dollar year for DAC costs
 
 - `h2_demand_county_share.csv`: The fraction of national hydrogen demand in that year that corresponds to each county
   - Demand estimates come from [https://data.openei.org/submissions/5655](https://data.openei.org/submissions/5655)
