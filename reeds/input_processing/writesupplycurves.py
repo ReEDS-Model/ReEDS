@@ -594,6 +594,9 @@ def main(
             .set_index(['*i', 'v', 'r', 't']).onlineyear,
             *exog_onlineyear_list,
         ])
+        exog_onlineyear.index = exog_onlineyear.index.set_names(
+            ['*i', 'v', 'r', 't']
+        )
         exog_onlineyear = exog_onlineyear[
             ~exog_onlineyear.index.duplicated(keep='last')
         ].sort_index()
