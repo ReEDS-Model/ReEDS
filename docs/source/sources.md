@@ -1294,6 +1294,10 @@
   - [h2-combustion_ATB_2023.csv](/inputs/plant_characteristics/h2-combustion_ATB_2023.csv)
   - [h2-combustion_ATB_2024.csv](/inputs/plant_characteristics/h2-combustion_ATB_2024.csv)
     - **Description:** Hydrogen CT and CC plant costs generated in preprocessing from moderate case NREL ATB 2024 data
+  - [h2fuelcell_advanced.csv](/inputs/plant_characteristics/h2fuelcell_advanced.csv)
+  - [h2fuelcell_conservative.csv](/inputs/plant_characteristics/h2fuelcell_conservative.csv)
+  - [h2fuelcell_moderate.csv](/inputs/plant_characteristics/h2fuelcell_moderate.csv)
+    - **Description:** Hydrogen fuel cell (h2-fuel-cell) capital cost, fixed O&M, variable O&M, and heat rate by year for the advanced, conservative, and moderate cost cases. Capital cost and heat rate are based on Reznicek et al. (2026), DOI 10.2172/3018256; fixed and variable O&M are from Exhibit 5-19 (Case B31A) of NETL Fossil Energy Baseline, Revision 4a (Schmitt et al., 2022). Selected with the `plantchar_h2fuelcell` switch and enabled with `GSw_H2FuelCell`.
   - [heat_rate_adj.csv](/inputs/plant_characteristics/heat_rate_adj.csv)
     - **Description:** Heat rate adjustment multiplier by technology
   - [heat_rate_penalty_spin.csv](/inputs/plant_characteristics/heat_rate_penalty_spin.csv)
