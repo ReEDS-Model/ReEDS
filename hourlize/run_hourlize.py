@@ -676,9 +676,6 @@ if __name__== '__main__':
     parser.add_argument('mode', type=str,
                         choices=['load', 'resource', 'status'],
                         help='Setup runs for load.py or resource.py, or check status of existing runs.')
-    parser.add_argument('--out_dir', '-o', default=None,
-                    help='Path to hourlize output directory to scan (status mode only; '
-                         'defaults to hourlize/out/ relative to this script)')
     parser.add_argument('--tech', '-t', nargs='+',
                     help='Optional tech filter(s) for resource/status mode, e.g. --tech upv wind-ons')
     parser.add_argument('--exclude_tech', '-e', nargs='+',
@@ -719,7 +716,7 @@ if __name__== '__main__':
 
     #%% run setup
     if args.mode == 'status':
-        out_dir = args.out_dir if args.out_dir else os.path.join(hourlize_path, 'out')
+        out_dir = os.path.join(hourlize_path, 'out')
 
         # build optional case-name filter from --tech / --exclude_tech / --access_case
         cases = None

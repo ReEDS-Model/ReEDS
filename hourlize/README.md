@@ -6,26 +6,23 @@ orphan: true
 
 ## Overview
 
-Hourlize processes hourly resource and load data into ReEDS inputs. The vision is for this module to allow maximum flexibility
-temporally and spatially.
+Hourlize processes hourly resource and load data into ReEDS inputs. 
+The vision is for this module to allow maximum flexibility temporally and spatially.
 
 Hourlize is run by a call to `run_hourlize.py`, which assembles information on the cases to run and then executes a call to either
  `resource.py` and `load.py`. The `run_hourlize.py` script can be used to set up jobs to submit to the HPC to run in parallel or to run hourlize jobs directly in sequence.
 
-### Quickstart: Resource
+## Quickstart: Resource
 
-1. Copy any new reV supply curves to the supply curve folder and update the rev_paths file ([details](#setup-for-rev-supply-curves)).
-    1. Make sure to include the `sam.json` file, which specifies the capacity factor modeling assumptions used in SAM.
-    (An example file on kestrel is: `/projects/rev/projects/seto/fy25/standard_scenarios/rev/generation/moderate_2035/sam.json`)
-1. Update settings in `config_base.json` as needed ([details](#config-jsons)).
-1. Update settings in the relevant `config_[tech].json` files as needed ([details](#config-jsons)).
-1. Specify cases to run in `cases.json` or create your own cases file ([details](#cases-json)).
-1. If running on the HPC, specify run allocation or other submission settings in `hourlize/inputs/configs/srun_template.sh` ([details](#config-jsons)).
-1. Run using `run_hourlize.py resource` ([details](#running-hourlize)).
-1. Update `inputs/supply_curve/dollaryear.csv` if needed. The dollar year typically aligns with the ATB year of the reV run, although it's best to confirm with the reV team to make sure all their costs have been converted to that dollar year.
+1. Update the `rev_paths` folder in ReEDS.
+1. Update settings in `config_base.json` and the relevant tech configs (`config_[tech].json`) as needed ([details](#config-jsons)).
+1. If submitting slurm jobs on the HPC, specify run allocation and other submission settings in `hourlize/inputs/configs/srun_template.sh` ([details](#config-jsons)).
+1. Run `run_hourlize.py resource` ([details](#running-hourlize)).
+1. Update `inputs/supply_curve/dollaryear.csv` if needed. 
 1. If the results are intended to be used on the main branch, then after testing and quality control, upload the new profiles to the remote host as described in `preprocessing/README.md`
+1. Sync up the new folders in `Supply_Curve_Data` to (e.g., if you ran on the HPC, copy to nrelnas01 and Yampa).
 
-### Quickstart: Load
+## Quickstart: Load
 
 1. Update settings in `config_base.json` as needed ([details](#config-jsons)), including `load_source`.
 1. If running on the HPC, specify run allocation or other submission settings in `inputs/configs/srun_template.sh` ([details](#config-jsons)).
@@ -34,55 +31,32 @@ Hourlize is run by a call to `run_hourlize.py`, which assembles information on t
     1. If the results are intended to be used on the main branch, then after testing and quality control, upload the new profiles to the remote host as described in `preprocessing/README.md`.
     1. If the results are not intended for general use, they can still be used locally in ReEDS by setting the `GSw_LoadProfiles` switch to the absolute filepath of the resulting hourly demand file.
 
-For more details and run options see further below.
+## Details on setup
 
-## Setup for reV supply curves
+### Config jsons
 
-If you don't have new reV supply curves you can probably skip this section and go down to [running hourlize](#running-hourlize). However, if you are planning on pushing your supply curve outputs to the repo don't forget to [sync the shared directories](#4-synchronize-shared-directories).
+Resource mode in hourlize uses a set of json config files to provide information on how to process the supply curves. These files are located in `hourlize/inputs/configs`:
 
-### 1. Copy reV runs to reeds shared directory
+* **Tech config** (`config_[tech].json`): tech specific settings for the `resource.py` script for upv, wind-ons, and wind-ofs
+* **Base config** (`config_base.json`): general hourlize settings (shared) as well as specific settings for the resource and load processes
 
-Before running resource hourlize the reV runs should be copied from their original location to the shared folder. Currently reV data used in ReEDS (along with hourlize inputs and outputs) are stored in three places:
+The `run_hourlize.py` process will generate a final config (`config.json`) from the relevant base and tech configs for each run. In the case of duplicated entries across configs hourlize the tech config value takes precendence.
 
-* on the nrelnas01 device at `\\nrelnas01\ReEDS\Supply_Curve_Data`
-* on Eagle at `/shared-projects/reeds/Supply_Curve_Data`
-* on Kestrel at `/kfs2/shared-projects/reeds/Supply_Curve_Data`
+The `srun_template.sh` file is used to govern HPC submission settings. Update with your allocation, email, and any other slurm specifications before submitting jobs. There is also a command line argument to via `run_hourlize.py` for running jobs using the debug partition.
 
-Under the appropriate tech folder (UPV, ONSHORE, OFFSHORE, etc.) create a directory with a descrptive name for the supply curves (e.g., 2023_06_06_Update). Then copy the reV supply curves and profiles into a folder called `reV`. A good approach is to use rsync; below is an example copying original reV files from Eagle to Kestrel:
+For more details on the meaning of the different config settings see the tables in the [Details on config file settings](#details-on-config-file-settings) section. 
 
-```bash
-rsync -aPu [username]@kestrel.nlr.gov://shared-projects/rev/projects/seto/fy23/rev/standard_scenarios/aggregation/  /kfs2/shared-projects/reeds/Supply_Curve_Data/UPV/2023_06_06_Update/reV
-```
+### Updating the `rev_paths` file (resource mode)
 
-### 2. Update the rev_paths files
+If you don't have new reV supply curves you can probably skip this section and go down to [running hourlize](#running-hourlize).
 
-Update the reV paths file at `ReEDS/inputs/supply_curve/rev_paths.csv`. Typically this means updating the information for whichever techs (e.g., upv, wind-ons, wind-ofs) and access cases (e.g., reference, open, limited) you want to run.
+Update the fields in `ReEDS/inputs/supply_curve/rev_paths.csv` for the relevant techs. Some details on the columns to update:
 
-Some details on the additional columns to update:
-
-* `sc_path`: path to the supply curve folder on the shared drive; should be of the format tech/update_name (e.g. UPV/2023_06_06_Update, ONSHORE/2023_07_28_Update).
+* `original_rev_folder`: full path of the original location of the supply curves passed by the reV team.
+* `original_sc_file`: path to the original reV supply curve csv files (i.e., before hourlize pre-processing). Specified relative to the "reV" folder within the corresponding sc_path.
+* `sc_path`: name of the folder to add in `Supply_Curve_Data` to store the reV files and hourlize results; should be of the format tech/update_name (e.g. UPV/2023_06_06_Update, ONSHORE/2023_07_28_Update).
 * `rev_case`: name of the reV case to be used for this scenario; this should reference a directory in the "reV" folder with the sc_path (e.g., if 02_limited is one of the rev_case values for upv, then there should be a folder called UPV/2023_06_06_Update/reV/02_limited).
-* `original_sc_file`: path to the original reV supply curve csv file (i.e., before hourlize pre-processing). Specified relative to the "reV" folder within the corresponding sc_path.
-* `original_rev_folder`: full path of the original location of the supply curves passed by the reV team. Not actively used but useful for debugging issues with the reV runs.
-* `cf_path`: full path to the generation file used for the reV runs. This can typically be found in the `config_aggregation.json` file from the reV run as `gen_fpath`. An exception is for bespoke wind runs, in which case this should point to the reV profiles. Needed for R2P.
-
-### 3. Run hourlize
-
-Follow setup details in the [Running hourlize](#running-hourlize) section.
-
-Hourlize relies on a set of columns being in the reV supply curve. In some cases hourlize can fill in missing columns hourlize in a pre-processing step, but in others these missing columns can cause hourlize to fall. A list of required columns can be found in `hourlize/inputs/resource/rev_sc_columns.csv`
-
-
-### 4. Synchronize shared directories
-
-By default hourlize will copy the required files in your ReEDS repository (`copy_to_reeds=True`). You can also copy the hourlize outputs back to the shared repository by setting `copy_to_shared=True`.
-
-Note that hourlize copies to only one of the shared locations (either the HPC or nrelnas01, depending on where you are running it), so even with `copy_to_shared=True` you'll want to sync up the two shared folders. When starting from the HPC, be sure to open up permissions to the supply curve outputs you've just created (e.g., `chmod -R 777 UPV/2023_06_06_Update`). Then, from your local computer, use WinSCP or rsync to copy the files from Kestrel to nrelnas01:
-
-
-```bash
-rsync -aPu [username]@kestrel.nlr.gov://projects/shared-projects-reeds/reeds/Supply_Curve_Data/UPV/2023_11_02_LandCover /Volumes/ReEDS/Supply_Curve_Data/UPV
-```
+* `cf_path`: full path to the generation file used for the reV runs. This can typically be found in the `config_aggregation.json` file from the reV run as `gen_fpath`. An exception is for bespoke wind runs, in which case this should point to the reV profiles. Not used by ReEdS but needed for R2X.
 
 ## Running hourlize
 
@@ -104,11 +78,12 @@ Example calls:
 ```bash
 python run_hourlize.py load                  # run load.py
 python run_hourlize.py resource              # run resource.py with default cases
-python run_hourlize.py resource -c suffix    # run resource.py with cases from cases_suffix.json
 python run_hourlize.py resource --local      # if on HPC run all cases sequentially on current node without batch submission to slurm
 python run_hourlize.py resource --nosubmit   # if on HPC create launch scripts and input folders but don't submit runs
+python run_hourlize.py status                # check status on a set of resource runs
 ```
 
+Command-line arguments can be used to run a subset of technologies or access cases.
 To see details on all command line arguments run `python run_hourlize.py -h`.
 
 After setting up the run, if specified `run_hourlize.py` will launch the .sh or .bat file which performs the following call to `resource.py`:
@@ -117,68 +92,37 @@ After setting up the run, if specified `run_hourlize.py` will launch the .sh or 
 python resource.py --config /path/to/hourlize/[casename]/inputs/config.json
 ```
 
-### Config jsons
+### Tips for processing reV supply curves (resource mode)
 
-Hourlize uses a set of json config files to provide information on how to process the supply curves. These files are located in `hourlize/inputs/configs`:
-
-* **Cases file** (`cases.json`): list of resource cases to run (currently not applicable to load.py)
-* **Tech config** (`config_[tech].json`): tech specific settings for the `resource.py` script for upv, wind-ons, and wind-ofs
-* **Base config** (`config_base.json`): general hourlize settings (shared) as well as specific settings for the resource and load processes
-
-The `run_hourlize.py` process will generate a final config (`config.json`) from the relevant base and tech configs for each run, as depicted in the figure below. In general the settings in the `cases.json` file unique to each run while the settings in the tech and base configs aren't frequently changed. In the case of duplicated entries across configs hourlize uses the following order of precedence: cases > tech > base.
-
-![hourlize_configs](../docs/source/figs/docs/hourlize_config.png)
-
-The `srun_template.sh` file is used to govern HPC submission settings. Update with your allocation, email, and any other slurm specifications before submitting jobs. There is also a command line argument to via `run_hourlize.py` for running jobs using the debug partition.
-
-For more details on the meaning of the different config settings see the tables in the [Details on config file settings](#details-on-config-file-settings) section.
-
-### Cases json
-
-The cases json provides a list of resource supply curve cases to process. The default cases file (`cases.json`) includes all supply curves typically needed for ReEDS. Users can also build their own cases file of the format `cases_[case_suffix].json`.
-
-Each entry should be given a `casename` for the supply curve run in the format [`tech`]\_[`access_case`].
-
-* Supported values for `tech`: upv, wind-ofs, wind-ons.
-* Typical values for `access_case`: reference, open, or limited.
-  * Other values allowed but must match values in `access_case` column of the rev_paths file (typically at `ReEDS/inputs/supply_curve/rev_paths.csv` but can be specified in `config_base.json`).
-
-To link a case to a custom set of config files users can add entries for `config_base` and `config_tech` in the case definition. For example, adding `config_base:test` would link that case to the settings in `config_base_test.json` instead of the typical `config_base.json` file.
-
-Other key/value pairs in the `cases.json` file can also be used as subsetting variables for downselecting relevant rows from the corresponding rev_paths file. This can helpful when running hourlize for cases that don't just differ by access and tech. To use this add the key/value pair from the rev_paths_file to the relevant cases and to the list of `subsetvars` in the base config.
-
-The current `cases.json` file in the repository contains all the settings to run the supply curves currently maintained by ReEDS.
-
-### Tips
-
-* If you want the hourlize runs to be copied back the shared supply curve folder, set `copy_to_shared = true`.
-  * Note: this script currently only copies to one of the shared folders (the HPC or nrelnas01), so you'll need to sync up the two after copying.
+* Hourlize is currently best configured to run on the NLR HPC, with submission of parallel slurm jobs for resource processing.
 * By default hourlize is set up to copy outputs into the ReEDS repo (`copy_to_reeds = true`).
+* If you want the hourlize runs to be copied back the shared supply curve folder, set `copy_to_shared = true`. Note that if running on the HPC you'll still need to sync up the folders on nrelnas01 and Yampa.
+* After running hourlize, check to make sure the supply curve folders have open permissions; if they don't, you can set open permissions with `chmod -R 777 [folder_name]`. 
+* Hourlize relies on a set of columns being in the reV supply curve. In some cases hourlize can fill in missing columns hourlize in a pre-processing step, but in others these missing columns can cause hourlize to fall. A list of required columns can be found in `hourlize/inputs/resource/rev_sc_columns.csv`
+* The dollar year typically aligns with the ATB year of the reV run, although it's best to confirm with the reV team to make sure all their costs have been converted to that dollar year.
+
 
 ## Resource Logic (resource.py)
 
 ### Inputs
+- reV supply curve file (.csv), specified by `sc_path` in the the `rev_paths.csv` file
+- corresponding hourly generation profile(s) (.h5), specified by `rev_path` in the the `rev_paths.csv` file
+- class mapping files specified in config files, located at `/inputs/resource` (tech-dependent)
 
-The main inputs to hourlize are reV outputs for a given reV scenario:
+### Outputs 
+- `supplycurve_{tech}.csv`: A supply curve with rows for each site and columns for region, class, available capacity, and costs (e.g., `inputs/supply_curve/wind-ons_supply_curve-reference.csv`). 
+- `{tech}_.h5`: Hourly capacity factor profiles for each region/class;
+these files include datasets with column names (class|region) and an index with datetime and timezone information (e.g., `inputs/profiles_cf/cf_wind-ons_reference.h5`)
 
-* `sc_path` (in rev_paths.csv): a supply curve csv file for a given technology, with rows for each resource site and columns of metadata.
-* `rev_path` (in rev_paths.csv): A directory that contains h5 file(s) with hourly generation profiles for each site of the supply curve file for weather years 2007-2013.
+Outputs are stored in `hourlize/out/[casename]`, with config options to automatically copy to ReEDS (`copy_to_reeds`, on by default) and the Supply_Curve_Data folder (`copy_to_shared`, off by default).
 
-### Outputs
-
-By default, the outputs will be dumped to a subdirectory named `results` within `hourlize/out/[casename]`. In addition, with `copy_to_reeds` set to true (as is default), we'll copy the results to the ReEDS repo containing this hourlize directory, and with`copy_to_shared` set to true (not default), we'll copy to the shared drive (see Shared Drive Locations below).
-
-* `supplycurve_{tech}.csv`: A supply curve with rows for each site and columns for region, class, available capacity, and costs. E.g. see `inputs/supply_curve/wind-ons_supply_curve-reference_ba.csv` (within ReEDS repo)
-* `{tech}_.h5`: Hourly capacity factor profiles for each region/class. See `inputs/profiles_cf/cf_wind-ons_reference_ba.h5` within the ReEDS repository as an example. These files include datasets with column names (class|region) and an index with datetime and timezone information.
-
-### Shared Drive Locations
-
-Hourlize resource inputs and outputs in the same places as the copies of the reV supply curves (see details in the [Copy reV runs to ReEDS shared directory](#1-copy-rev-runs-to-reeds-shared-directory) section). Whereas the reV supply curves are stored within a folder called `reV`, the hourlize runs can be found directly in the corresponding tech folder (e.g., UPV, OFFSHORE, ONSHORE).
 
 ### Logic
 
 The `resource.py` script follows the following logic (in order of execution):
 
+1. `copy_rev_folders()`
+    * Copies the original reV data specified in the `rev_paths.csv` to the specified `Supply_Curve_Data` folder
 1. `get_supply_curve_and_preprocess()`
     * The supply curve is filtered if necessary, based on `filter_cols`.
     * If we have minimum capacity thresholds for the supply curve points, these are applied to further filter the supply curve.
