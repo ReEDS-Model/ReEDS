@@ -290,7 +290,7 @@ jobs:
           R2X_WEATHER_YEAR: "2012"
           R2X_SYSTEM_JSON: ${{ format('{0}_system.json', matrix.scenario) }}
         run: |
-          uvx --from "r2x-reeds>=0.3.5" python postprocessing/run_r2x.py \
+          uvx --from "r2x-reeds>=0.8.0,<1.0.0" python postprocessing/run_r2x.py \
             --reeds-run-path "$R2X_REEDS_RUN_PATH" \
             --scenario "$R2X_SCENARIO" \
             --solve-year "$R2X_SOLVE_YEAR" \
