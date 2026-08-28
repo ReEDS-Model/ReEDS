@@ -3777,6 +3777,31 @@ cf_adj_t(i,initv,t)$[wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%sta
 * keep the default of 1 and be credited with improvements it was never built with
 cf_adj_t(i,initv,t)$[(pv(i) or pvb(i))$sum{r, valcap(i,initv,r,t) }] = pv_cf_improve("%startyear%") ;
 
+* Existing distpv is not all pre-startyear vintage: its exogenous capacity keeps
+* growing, so the startyear factor above understates it in later years. WriteHintage.py
+* gives distpv a capacity-weighted build year by region and year (capacity increases are
+* new builds; decreases retire the oldest capacity first). Resolve the improvement factor
+* at each region's build year, then weight those factors by capacity into the single
+* value per year that cf_adj_t holds.
+scalar pv_cf_improve_firstyear "--year-- first year covered by pv_cf_improve" ;
+scalar pv_cf_improve_lastyear  "--year-- last year covered by pv_cf_improve" ;
+pv_cf_improve_firstyear = smin{allt$pv_cf_improve(allt), year(allt) } ;
+pv_cf_improve_lastyear  = smax{allt$pv_cf_improve(allt), year(allt) } ;
+
+parameter distpv_cf_improve(i,v,r,t) "--unitless-- pv cf improvement at distpv's build year" ;
+
+* wOnlineYear is rounded to a whole year upstream; round() here keeps the lookup safe
+* if that ever changes, and the build year is clamped to the years pv_cf_improve covers.
+distpv_cf_improve(i,initv,r,t)$[distpv(i)$hintage_data(i,initv,r,t,"wOnlineYear")] =
+          sum{allt$[year(allt) = min(pv_cf_improve_lastyear,
+                                     max(pv_cf_improve_firstyear,
+                                         round(hintage_data(i,initv,r,t,"wOnlineYear"))))],
+              pv_cf_improve(allt) } ;
+
+cf_adj_t(i,initv,t)$[distpv(i)$sum{r$distpv_cf_improve(i,initv,r,t), m_capacity_exog(i,initv,r,t) }] =
+          sum{r, m_capacity_exog(i,initv,r,t) * distpv_cf_improve(i,initv,r,t) }
+          / sum{r$distpv_cf_improve(i,initv,r,t), m_capacity_exog(i,initv,r,t) } ;
+
 cf_adj_t(i,newv,t)$[wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), wind_cf_adj_t(tt,i) } / countnc(i,newv) ;
 
