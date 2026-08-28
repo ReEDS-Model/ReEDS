@@ -81,6 +81,8 @@ $gdxin
 set land(r) "land-based (not offshore) zones" ;
 land(r)$[not offshore(r)] = yes ;
 
+
+
 sets
 *The following two sets:
 *ban - will remove the technology from being considered, anywhere
@@ -5356,26 +5358,6 @@ z_rep_op(t) = 0 ;
 *====================================
 *     --- Employment Factors ---
 *====================================
-* Employment factors of construction and operation of power plants
-$onempty
-Table employment_factor_plant(i,jtype) "--job-years/MW (construction), job-years/MW-year (fom) or job-years/MWh (vom)-- employment factors of power plants by technology and job type"
-$offlisting
-$ondelim
-$include inputs_case%ds%employment_factor_plant.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-* Employment factors of transmission deployment and flow
-parameter employment_factor_inter_transmission(jtype)  "--job-years/$ (construction) -- construction employment factors of transmission lines"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%employment_factor_inter_transmission.csv
-$offdelim
-$onlisting
-/ ;
 
 * If upgrade techs, construction employment factor is adjusted by upgrade ratio
 * calculated as the ratio of the difference in capital costs between the initial 
@@ -5399,6 +5381,31 @@ employment_factor_plant(i,"construction")
     $upgrade(i)
     = employment_factor_plant(i,"construction") * upgrade_ratio(i) ;
 $endif.upgrade_ef
+
+*====================================
+* --- MGA Random Vector Weights ---
+*====================================
+
+$ifthene.mgaobj ((sameas(%GSw_MGA_Objective%,capacity))or(sameas(%GSw_MGA_Objective%,generation)))
+
+parameter mga_weights(r,i_subtech) "--unitless-- weight to assign to given MGA subobjective by region" ;
+      
+$ifthene.mga_rv (%GSw_MGA_RV_runs%>=1)
+parameter mga_weights_in(r,i_subtech)
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%mga_weights.csv
+$offdelim
+$onlisting
+/ ;
+mga_weights(r,i_subtech) = mga_weights_in(r,i_subtech) ;
+$else.mga_rv
+mga_weights(r,i_subtech) = 1 ;
+$endif.mga_rv
+
+$endif.mgaobj
+
 
 *================================================================================================
 *== h- and szn-dependent sets and parameters (declared here, populated in 2_temporal_params) ===
