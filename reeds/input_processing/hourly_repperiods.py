@@ -36,7 +36,6 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 from reeds.input_processing import hourly_writetimeseries
 from reeds.input_processing import hourly_plots
-from reeds.input_processing import hourly_load
 
 ## Time the operation of this script
 tic = datetime.datetime.now()
@@ -61,7 +60,7 @@ def get_load(inputs_case, sw, keep_modelyear=None, keep_weatheryears=[2012]):
     ### When running the linked model (GSw_FINITO_Link=1) we add reference load estimates
     ### for FINITO load back in to use when selecting representative periods
     if int(sw.GSw_FINITO_Link):
-        load_hourly_finito = hourly_load.get_hourly_finito_load(inputs_case)
+        load_hourly_finito = reeds.finito.get_hourly_finito_load(inputs_case)
         load = load + load_hourly_finito
 
     ### Subset to keep_modelyear if provided

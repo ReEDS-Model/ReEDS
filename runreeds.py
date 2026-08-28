@@ -104,7 +104,7 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
         # (ReEDS-FINITO) Combine the cases files for the linked model
         if int(case_out.loc['GSw_FINITO_Link']) == 1 :
             # add the FINITO switches to the caseSwitches
-            case_out=linked_cases(df_cases,case)
+            case_out=reeds.finito.linked_cases(df_cases,case)
             
         #exclude certain switches that don't need to be passed to GAMS
         for i,v in case_out.items():
@@ -779,74 +779,6 @@ def setup_window(
             OPATH.writelines( "python valuestreams.py" + '\n')
 
 
-# (ReEDS-FINITO) update 'df_cases' to include FINITO switches
-def linked_cases(df_cases,case):
-    """
-    Updates the cases dataframe to include FINITO-specific switches.
-    When a switch is duplicated in FINITO and ReEDS, then we default to 
-    the ReEDS value.
-    
-    For the FINITO switches, the combined cases file defaults to the case-specific 
-    'Default Value' in cases_linked.csv first, before using the universal FINITO 
-    'Default Value' in cases.csv for any un-assigned switches.    
-    """
-    # check for valid finito_dir
-    if not os.path.isdir(df_cases[case]['finito_dir']):
-        raise ValueError(
-            f"finito_dir = {df_cases[case]['finito_dir']} is not a valid path. "
-            "Please ensure this path points to a cloned version of the FINITO repository. "
-        )
-
-    # define path to and read the FINITO check_inputs function
-    finito_check_inputs_path = os.path.join(df_cases[case]['finito_dir'], 'input_processing', 'processing')
-    sys.path.append(finito_check_inputs_path)
-    from check_inputs import check_inputs
-        
-    ### load the default values for all FINITO switches from ~\FINITO\cases.csv
-    df_cases_finito = pd.read_csv(os.path.join(df_cases[case]['finito_dir'],'cases.csv'), dtype=object, index_col=0)
-    df_cases_finito = df_cases_finito[['Choices', 'Default Value']]
-
-    ### load the scenario-specific switches from ~\FINITO\cases_linked.csv
-    cases_linked_path = os.path.join(df_cases[case]['finito_dir'],f"cases_{df_cases[case]['finito_cases_file']}.csv")
-    df_cases_suf_finito = pd.read_csv(cases_linked_path, dtype=object, index_col=0)
-    ## check that case names are unique in cases_linked.csv
-    # grab the scenario names **exactly** as they appear in the csv file
-    with open(cases_linked_path, 'r', newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        header = next(reader)
-    # find the duplicate column names and raise an error if any are found
-    duplicate_columns = set([x for x in header if header.count(x) > 1])
-    if duplicate_columns:
-        raise ValueError(f"The FINITO cases_{df_cases[case]['finito_cases_file']}.csv has the following duplicate column names: {duplicate_columns}")
-    ### identify the FINITO case 
-    if df_cases[case]['finito_case'] == 'same':
-        finito_case=case
-    else:
-        finito_case=df_cases[case]['finito_case']
-    # ensures **exact** match of names between the ReEDS cases_{}.csv and the FINITO cases_linked.csv
-    if finito_case not in (df_cases_suf_finito.columns):
-        raise ValueError(f"The 'finito_case' input '{finito_case}' in the ReEDS cases file does not exist in FINITO's cases_{df_cases[case]['finito_cases_file']}.csv.")
-
-    ### first use 'Default Value' from the FINITO cases_linked.csv to fill missing switches
-    if 'Default Value' in df_cases_suf_finito.columns:
-        df_cases_suf_finito[finito_case] = df_cases_suf_finito[finito_case].fillna(df_cases_suf_finito['Default Value'])
-    ### then, use 'Default Value' from the FINITO cases.csv to fill un-assigned switches
-    df_cases_suf_finito.drop(['Choices','Default Value'], axis='columns',inplace=True, errors='ignore')
-    df_cases_finito = df_cases_finito.join(df_cases_suf_finito, how='outer')
-    df_cases_finito[finito_case] = df_cases_finito[finito_case].fillna(df_cases_finito['Default Value'])
-  
-    #### create new dataframe for the combined ReEDS and FINITO switches
-    df_cases_combine = pd.concat([df_cases[case],df_cases_finito[finito_case]])
-    ### drop duplicated switches, defaulting to reeds
-    df_cases_combine = df_cases_combine[~df_cases_combine.index.duplicated(keep='first')]
-
-    #%% Check for incompatibility of FINITO switches
-    model_sectors = df_cases_finito['Default Value']['focus_sectors'].split('.')
-    check_inputs(case = case, df_case = df_cases_combine, model_sectors=model_sectors)
-
-    return df_cases_combine
-
-
 #%% ===========================================================================
 ### --- PROCEDURE ---
 ### ===========================================================================
@@ -1328,7 +1260,7 @@ def write_batch_script(
 
     ## Set up FINITO if running linked model
     if int(caseSwitches['GSw_FINITO_Link'])==1:
-        reeds.inputs.setup_finito(casedir, caseSwitches, BatchName)
+        reeds.finito.setup_finito(casedir, caseSwitches, BatchName)
 
     ###### Replace files according to 'file_replacements' in cases. Ignore quotes in input text.
     # << is used to separate the file that is to be replaced from the file that is used
