@@ -1,11 +1,17 @@
+"""
+Functions relevant to setting up a linked ReEDS-FINITO run
+"""
+
 ### Imports
 import os
-import sys
-import csv
 import shutil
+import subprocess
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
+
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 
@@ -33,113 +39,153 @@ def linked_cases(df_cases, case):
         )
 
     # define path to and read the FINITO check_inputs function
-    finito_check_inputs_path = os.path.join(df_cases[case]['finito_dir'], 'input_processing', 'processing')
+    finito_check_inputs_path = os.path.join(
+        df_cases[case]['finito_dir'], 'input_processing', 'processing')
     sys.path.append(finito_check_inputs_path)
     from check_inputs import check_inputs
 
     ### load the default values for all FINITO switches from ~\FINITO\cases.csv
-    df_cases_finito = pd.read_csv(os.path.join(df_cases[case]['finito_dir'],'cases.csv'), dtype=object, index_col=0)
+    df_cases_finito = pd.read_csv(
+        os.path.join(df_cases[case]['finito_dir'], 'cases.csv'), dtype=object, index_col=0)
     df_cases_finito = df_cases_finito[['Choices', 'Default Value']]
 
     ### load the scenario-specific switches from ~\FINITO\cases_linked.csv
-    cases_linked_path = os.path.join(df_cases[case]['finito_dir'],f"cases_{df_cases[case]['finito_cases_file']}.csv")
+    cases_linked_path = os.path.join(
+        df_cases[case]['finito_dir'], f"cases_{df_cases[case]['finito_cases_file']}.csv")
     df_cases_suf_finito = pd.read_csv(cases_linked_path, dtype=object, index_col=0)
     ## check that case names are unique in cases_linked.csv
     # grab the scenario names **exactly** as they appear in the csv file
-    with open(cases_linked_path, 'r', newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        header = next(reader)
+    header = pd.read_csv(cases_linked_path, header=None).iloc[0].values
     # find the duplicate column names and raise an error if any are found
-    duplicate_columns = set([x for x in header if header.count(x) > 1])
+    duplicate_columns = {x for x in header if list(header).count(x) > 1}
     if duplicate_columns:
-        raise ValueError(f"The FINITO cases_{df_cases[case]['finito_cases_file']}.csv has the following duplicate column names: {duplicate_columns}")
+        raise ValueError(
+            f"The FINITO cases_{df_cases[case]['finito_cases_file']}.csv has the "
+            f"following duplicate column names: {duplicate_columns}"
+        )
     ### identify the FINITO case
     if df_cases[case]['finito_case'] == 'same':
-        finito_case=case
+        finito_case = case
     else:
-        finito_case=df_cases[case]['finito_case']
+        finito_case = df_cases[case]['finito_case']
     # ensures **exact** match of names between the ReEDS cases_{}.csv and the FINITO cases_linked.csv
     if finito_case not in (df_cases_suf_finito.columns):
-        raise ValueError(f"The 'finito_case' input '{finito_case}' in the ReEDS cases file does not exist in FINITO's cases_{df_cases[case]['finito_cases_file']}.csv.")
+        raise ValueError(
+            f"The 'finito_case' input '{finito_case}' in the ReEDS cases file does not "
+            f"exist in FINITO's cases_{df_cases[case]['finito_cases_file']}.csv."
+        )
 
     ### first use 'Default Value' from the FINITO cases_linked.csv to fill missing switches
     if 'Default Value' in df_cases_suf_finito.columns:
-        df_cases_suf_finito[finito_case] = df_cases_suf_finito[finito_case].fillna(df_cases_suf_finito['Default Value'])
+        df_cases_suf_finito[finito_case] = (
+            df_cases_suf_finito[finito_case].fillna(df_cases_suf_finito['Default Value'])
+        )
     ### then, use 'Default Value' from the FINITO cases.csv to fill un-assigned switches
-    df_cases_suf_finito.drop(['Choices','Default Value'], axis='columns',inplace=True, errors='ignore')
+    df_cases_suf_finito.drop(
+        ['Choices', 'Default Value'], axis='columns', inplace=True, errors='ignore')
     df_cases_finito = df_cases_finito.join(df_cases_suf_finito, how='outer')
-    df_cases_finito[finito_case] = df_cases_finito[finito_case].fillna(df_cases_finito['Default Value'])
+    df_cases_finito[finito_case] = (
+        df_cases_finito[finito_case].fillna(df_cases_finito['Default Value'])
+    )
 
     #### create new dataframe for the combined ReEDS and FINITO switches
-    df_cases_combine = pd.concat([df_cases[case],df_cases_finito[finito_case]])
+    df_cases_combine = pd.concat([df_cases[case], df_cases_finito[finito_case]])
     ### drop duplicated switches, defaulting to reeds
     df_cases_combine = df_cases_combine[~df_cases_combine.index.duplicated(keep='first')]
 
     #%% Check for incompatibility of FINITO switches
     model_sectors = df_cases_finito['Default Value']['focus_sectors'].split('.')
-    check_inputs(case = case, df_case = df_cases_combine, model_sectors=model_sectors)
+    check_inputs(case=case, df_case=df_cases_combine, model_sectors=model_sectors)
 
     return df_cases_combine
 
 
 def setup_finito(casedir, caseSwitches, BatchName):
     #%% Copy FINITO code folders and inputs into [casedir]/finito
+    finito_dir = Path(caseSwitches['finito_dir'])
     # ... finito directory within the case directory
-    casedir_finito = os.path.join(casedir,'finito')
+    casedir_finito = Path(casedir, 'finito')
     # ... define the inputs case directory for FINITO
-    inputs_case_finito = os.path.join(casedir,'finito','inputs_case')
+    inputs_case_finito = Path(casedir, 'finito', 'inputs_case')
 
     # copy directories
-    os.makedirs(casedir_finito, exist_ok=True)
-    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'inputs'),os.path.join(casedir,'finito', 'inputs'))
-    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'input_processing'),os.path.join(casedir,'finito', 'input_processing'))
-    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'model'),os.path.join(casedir,'finito', 'model'))
-    shutil.copytree(os.path.join(caseSwitches['finito_dir'], 'visualization'),os.path.join(casedir, 'finito', 'visualization'))
+    casedir_finito.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(finito_dir / 'inputs', casedir_finito / 'inputs')
+    shutil.copytree(finito_dir / 'input_processing', casedir_finito / 'input_processing')
+    shutil.copytree(finito_dir / 'model', casedir_finito / 'model')
+    shutil.copytree(finito_dir / 'visualization', casedir_finito / 'visualization')
 
     # copy over the FINITO cases files
-    shutil.copy2(os.path.join(caseSwitches['finito_dir'], 'cases.csv'), os.path.join(casedir, 'finito'))
-    shutil.copy2(os.path.join(caseSwitches['finito_dir'], f"cases_{caseSwitches['finito_cases_file']}.csv"), os.path.join(casedir, 'finito'))
+    shutil.copy2(finito_dir / 'cases.csv', casedir_finito)
+    shutil.copy2(finito_dir / f"cases_{caseSwitches['finito_cases_file']}.csv", casedir_finito)
 
     #%% (GSw_Trade_PriceResponse > 0) If doing a price-responsive trade run, retrieve the reference exports/imports prices
     if int(caseSwitches['GSw_Trade_PriceResponse']) > 0:
-        initialize_price_response_path = os.path.join(casedir_finito, 'input_processing', 'processing', 'initialize_price_response.py')
-        # Collect all arguments for initialize_price_response.py
-        initialize_price_response_args = f" -c {casedir} -b {BatchName} -cr {caseSwitches['GSw_Trade_PriceResponse_RefScen']} -l {caseSwitches['GSw_FINITO_Link']}"
-        # Call initialize_price_response.py file before starting the runs
-        os.system('python ' + initialize_price_response_path + initialize_price_response_args)
+        initialize_price_response_path = (
+            casedir_finito / 'input_processing' / 'processing' / 'initialize_price_response.py'
+        )
+        subprocess.run(
+            [
+                'python', str(initialize_price_response_path),
+                '-c', str(casedir),
+                '-b', str(BatchName),
+                '-cr', str(caseSwitches['GSw_Trade_PriceResponse_RefScen']),
+                '-l', str(caseSwitches['GSw_FINITO_Link']),
+            ],
+            check=True,
+        )
 
     #%% Filter and copy all input files for each scenario
     # Call FINITO copy_files.py file before starting the runs
-    copy_files_run = os.system(
-        'python ' + os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'copy_files.py') +
-        f" -c {casedir_finito} -d {inputs_case_finito} --link"
+    copy_files_run = subprocess.run(
+        [
+            'python', str(finito_dir / 'input_processing' / 'processing' / 'copy_files.py'),
+            '-c', str(casedir_finito),
+            '-d', str(inputs_case_finito),
+            '--link',
+        ],
+        check=False,
+    )
+
+    # Raise an error if copy_files.py encounters any issue
+    if copy_files_run.returncode != 0:
+        raise RuntimeError(
+            "FINITO copy_files.py encountered an issue and did not complete successfully. "
+            "Please check the console output above for details. "
+            "The issue could be due to regionality, focus sector filtering, or file reading errors."
         )
 
-    # Print an error message if copy_files.py encounters any issue
-    if copy_files_run != 0:
-        print("\nERROR: FINITO copy_files.py encountered an issue and did not complete successfully.")
-        print("Please check the console output above for details.")
-        print("The issue could be due to regionality, focus sector filtering, or file reading errors.")
-        os._exit(1)
-
     ## Populate sets for each linked run using autopop_set.py
-    os.system(
-        'python ' + os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'autopop_set.py') +
-        f" -c {casedir_finito} -d {inputs_case_finito} --link"
+    subprocess.run(
+        [
+            'python', str(finito_dir / 'input_processing' / 'processing' / 'autopop_set.py'),
+            '-c', str(casedir_finito),
+            '-d', str(inputs_case_finito),
+            '--link',
+        ],
+        check=True,
     )
 
     ## Call read_mecs_heat.py to generate heat/nonheat/feedstock ratios for FINITO Rest of Industry (ROI)
     mecs_sectors = caseSwitches['focus_sectors'].replace('.', ' ')
-    read_mecs_path = os.path.join(caseSwitches['finito_dir'], 'input_processing', 'processing', 'mecs', 'read_mecs_heat.py')
-    # Collect all arguments for read_mecs_heat.py
-    read_mecs_args = f' -s {mecs_sectors} -d {inputs_case_finito}'
-    os.system('python ' + read_mecs_path + read_mecs_args)
+    read_mecs_path = (
+        finito_dir / 'input_processing' / 'processing' / 'mecs' / 'read_mecs_heat.py'
+    )
+    subprocess.run(
+        ['python', str(read_mecs_path), '-s', mecs_sectors, '-d', str(inputs_case_finito)],
+        check=True,
+    )
 
 
-#TODO: add docstrings
 def get_hourly_finito_load(
     inputs_case: str,
 ) -> pd.DataFrame:
+    """
+    Load FINITO's reference annual industrial demand (load_finito.csv), aggregate it
+    to this run's model regions, and spread it evenly across all hours.
+
+    Returns an hourly load dataframe (year index, model-region columns, MW).
+    """
     # load reference FINITO load
     inputs_case_finito = Path(inputs_case).parent / 'finito' / Path(inputs_case).name
     load_finito = pd.read_csv(inputs_case_finito / "load_finito.csv")
