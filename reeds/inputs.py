@@ -250,19 +250,20 @@ def parse_cases(
             print("Please change the delimeter in the GSw_Region switch from ',' to '.'")
             quit()
 
-    # If doing a Monte Carlo run, modify dfcases by adding new columns
-    # for each scenario run. Also validate the distribution file.
+    # If doing a Monte Carlo or MGA Random Vector run, modify dfcases by adding new columns
+    # for each scenario run. For Monte Carlo we also validate the distribution file.
     warned_about_cluster_alg = False
-    if 'MCS_runs' in dfcases.index:
+    if 'MCS_runs' in dfcases.index or 'GSw_MGA_RV_runs' in dfcases.index:
         for c in dfcases.columns:
             if (
                 c not in ['Description','Default Value','Choices']
-                and (int(dfcases.loc['MCS_runs',c]) > 0)
+                and ((int(dfcases.loc['MCS_runs',c]) > 0) or (int(dfcases.loc['GSw_MGA_RV_runs',c]) > 0))
                 and (not int(dfcases.loc['ignore',c]))
             ):
                 # Warn user if the hourly clustering algorithm is not fixed for Monte Carlo runs
                 if (
-                    not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
+                    int(dfcases.loc['MCS_runs',c]) > 0
+                    and not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
                     and not warned_about_cluster_alg
                 ):
                     print(f"\n[Warning] Case Column: '{c}'")
@@ -287,23 +288,29 @@ def parse_cases(
                     reeds.io.reeds_path, 'inputs', 'userinput',
                     'mcs_distributions_{}.yaml'.format(sw.MCS_dist)
                 )
-                mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
+                if int(dfcases[c].MCS_runs) > 0:
+                    mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
+                    numruns = int(dfcases[c].MCS_runs)
+                    run_type = 'MC'
+                else:                    
+                    numruns = int(dfcases[c].GSw_MGA_RV_runs)
+                    run_type = 'R'
 
-                # c (column) is a case with monte carlo runs.
-                # replicate this column N (NumMonteCarloRuns) times
-                NumMonteCarloRuns = int(dfcases.loc['MCS_runs',c])
+                # c (column) is a case with monte carlo or MGA random vector runs.
+                # replicate this column N times
                 NewColumnNames = [
-                    f"{c}_MC{i:0>4}"
-                    for i in range(1, NumMonteCarloRuns + 1)
+                    f"{c}_{run_type}{i:0>4}"
+                    for i in range(1, numruns + 1)
                 ]
 
-                # Each new column is a copy of the original column with name c_{MC1,MC2,...}
-                dfcases_MC = pd.DataFrame(
-                    data=np.array([dfcases[c].values]*NumMonteCarloRuns).T,
+                # Each new column is a copy of the original column with name 
+                # c_{MCS1,MCS2,...} or c_{R1,R2,...}
+                dfcases_all = pd.DataFrame(
+                    data=np.array([dfcases[c].values]*numruns).T,
                     index=dfcases.index,
                     columns=NewColumnNames,
                 )
-                dfcases = pd.concat([dfcases, dfcases_MC], axis=1)
+                dfcases = pd.concat([dfcases, dfcases_all], axis=1)
                 # drop the original column
                 dfcases.drop(c, axis=1, inplace=True)
 
@@ -356,6 +363,7 @@ def solvestring_sequential(
             'GSw_HourlyWrapLevel',
             'GSw_MGA_CostDelta',
             'GSw_MGA_Direction',
+            'GSw_MGA_RV_runs',
             'GSw_PVB_Dur',
             'GSw_SkipRAyear',
             'GSw_StateCO2ImportLevel',

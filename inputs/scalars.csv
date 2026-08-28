@@ -1,3 +1,5 @@
+batt_refurb_perc_energy,1.0,"--fraction-- fraction of the energy-component capital cost of a new battery that will be refurbished after batt_years_until_refurb; the power component is assumed to need no refurbishment"
+batt_years_until_refurb,15,"--years-- number of years until battery_li requires a refurbishment of its energy capacity"
 bio_cofire_perc,0.15,'--fraction-- fraction of total fuel that is biomass used in cofire plants
 caa_coal_retire_year,2032,"--year-- year in which coal capacity is forced to either retire or upgrade with CCS to meet the emissions requirements under Clean Air Act, Section 111"
 caa_first_year,2024,"--year-- first year in which the emissions requirements under Clean Air Act, Section 111 are active"
