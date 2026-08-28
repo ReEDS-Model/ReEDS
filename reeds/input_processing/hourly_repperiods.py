@@ -58,9 +58,6 @@ def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
     ### Subset to keep_modelyear if provided
     if keep_modelyear:
         load = load.loc[keep_modelyear].copy()
-    ### load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
-    scalars = reeds.io.get_scalars(inputs_case)
-    load *= (1 - scalars['distloss'])
 
     ### Downselect to weather years if provided
     if isinstance(keep_weatheryears, list):
