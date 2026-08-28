@@ -1,0 +1,1661 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inputs Documentation &mdash; ReEDS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="_static/customtheme.css?v=299ffeb9" />
+
+  
+    <link rel="shortcut icon" href="_static/reeds-icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Analysis tools and helper scripts" href="postprocessing_tools.html" />
+    <link rel="prev" title="User guide" href="user_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/reeds-logo-white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_best_practices.html">Developer Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_documentation.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Inputs Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#canadian-input-files">Canadian Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#capacity-exogenous-input-files">Capacity Exogenous Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#climate-input-files">Climate Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#consume-input-files">Consume Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ctus-input-files">Ctus Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#degradation-input-files">Degradation Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#demand-response-input-files">Demand Response Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dgen-input-files">dGen Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#disaggregation-input-files">Disaggregation Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#emission-constraints-input-files">Emission Constraints Input Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#co2-and-co2e-caps">CO<sub>2</sub> and CO<sub>2</sub>e Caps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#emission-rates">Emission Rates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#global-warming-potentials">Global Warming Potentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natural-gas-capital-recovery-factor-crf-penalties">Natural Gas Capital Recovery Factor (CRF) Penalties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-regional-greenhouse-gas-initiative-rggi">The Regional Greenhouse Gas Initiative (RGGI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-files">Other files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#power-sector-employment-data">Power Sector Employment Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-input-options">Data input options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#employment-factor-units">Employment factor units</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#financials-input-files">Financials Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fuel-prices-input-files">Fuel Prices Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#geothermal-input-files">Geothermal Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#growth-constraints-input-files">Growth Constraints Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hydro-input-files">Hydro Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#load-input-files">Load Input Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#load-growth-projections">Load Growth Projections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#load-growth-multipliers">Load Growth Multipliers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other">Other</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#national-generation-input-files">National Generation Input Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clean-air-act-section-111">Clean Air Act, Section 111</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#plant-characteristics-input-files">Plant Characteristics Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reserves-input-files">Reserves Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sets">Sets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#formatting-guidelines">Formatting guidelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#set-defining-files">Set-defining files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#special-case-files">Special-case files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-files">Additional files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#shapefiles-input-files">Shapefiles Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#state-policies-input-files">State Policies Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#storage-input-files">Storage Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#renewable-energy-supply-curve-input-files">Renewable Energy Supply Curve Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#techs">Techs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#temporal-input-files">Temporal Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transmission-input-files">Transmission Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#upgrades-input-files">Upgrades Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#user-input-files">User Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#valuestreams-input-files">Valuestreams Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#waterclimate-input-files">Waterclimate Input Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-zone-definitions">Model Zone Definitions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#notes-on-zone-options">Notes on zone options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-new-set-of-model-zones">Creating a new set of model zones</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-input-files">Additional input files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="postprocessing_tools.html">Analysis tools and helper scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">ReEDS publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ReEDS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Inputs Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/inputs.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="inputs-documentation">
+<h1>Inputs Documentation<a class="headerlink" href="#inputs-documentation" title="Link to this heading"></a></h1>
+<p>This page aggregates documentation from each folder README under the inputs directory.</p>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#inputscanada_imports"><span class="xref myst">inputs/canada_imports</span></a></p></li>
+<li><p><a class="reference internal" href="#inputscapacity_exogenous"><span class="xref myst">inputs/capacity_exogenous</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsclimate"><span class="xref myst">inputs/climate</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsconsume"><span class="xref myst">inputs/consume</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsctus"><span class="xref myst">inputs/ctus</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsdegradation"><span class="xref myst">inputs/degradation</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsdemand_response"><span class="xref myst">inputs/demand_response</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsdgen_model_inputs"><span class="xref myst">inputs/dgen_model_inputs</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsdisaggregation"><span class="xref myst">inputs/disaggregation</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsemission_constraints"><span class="xref myst">inputs/emission_constraints</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsemployment"><span class="xref myst">inputs/employment</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsfinancials"><span class="xref myst">inputs/financials</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsfuelprices"><span class="xref myst">inputs/fuelprices</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsgeothermal"><span class="xref myst">inputs/geothermal</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsgrowth_constraints"><span class="xref myst">inputs/growth_constraints</span></a></p></li>
+<li><p><a class="reference internal" href="#inputshydro"><span class="xref myst">inputs/hydro</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsload"><span class="xref myst">inputs/load</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsnational_generation"><span class="xref myst">inputs/national_generation</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsplant_characteristics"><span class="xref myst">inputs/plant_characteristics</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsreserves"><span class="xref myst">inputs/reserves</span></a></p></li>
+<li><p><a class="reference internal" href="#inputssets"><span class="xref myst">inputs/sets</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsshapefiles"><span class="xref myst">inputs/shapefiles</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsstate_policies"><span class="xref myst">inputs/state_policies</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsstorage"><span class="xref myst">inputs/storage</span></a></p></li>
+<li><p><a class="reference internal" href="#inputssupply_curve"><span class="xref myst">inputs/supply_curve</span></a></p></li>
+<li><p><a class="reference internal" href="#inputstechs"><span class="xref myst">inputs/techs</span></a></p></li>
+<li><p><a class="reference internal" href="#inputstemporal"><span class="xref myst">inputs/temporal</span></a></p></li>
+<li><p><a class="reference internal" href="#inputstransmission"><span class="xref myst">inputs/transmission</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsupgrades"><span class="xref myst">inputs/upgrades</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsuserinput"><span class="xref myst">inputs/userinput</span></a></p></li>
+<li><p><a class="reference internal" href="#inputsvaluestreams"><span class="xref myst">inputs/valuestreams</span></a></p></li>
+<li><p><a class="reference internal" href="#inputswaterclimate"><span class="xref myst">inputs/waterclimate</span></a></p></li>
+<li><p><a class="reference internal" href="#inputszones"><span class="xref myst">inputs/zones</span></a></p></li>
+</ul>
+<p><a id='inputscanada_imports'></a></p>
+</section>
+<section id="canadian-input-files">
+<h2>Canadian Input Files<a class="headerlink" href="#canadian-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">can_exports.csv</span></code>: Annual exports [MWh] to Canada by county</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">can_exports_szn_frac.csv</span></code>: Fraction of annual exports [fraction] to Canada by season.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">can_imports.csv</span></code>: Annual imports [MWh] from Canada by county</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">can_imports_quarter_frac.csv</span></code>: Fraction of annual imports [fraction] from Canada by season</p></li>
+</ul>
+<p><a id='inputscapacity_exogenous'></a></p>
+</section>
+<section id="capacity-exogenous-input-files">
+<h2>Capacity Exogenous Input Files<a class="headerlink" href="#capacity-exogenous-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cappayments.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cappayments_ba.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demonstration_plants.csv</span></code>: Nuclear-smr demonstration plants [MW]</p>
+<ul>
+<li><p>Active when <code class="docutils literal notranslate"><span class="pre">GSw_NuclearDemo</span> <span class="pre">=</span> <span class="pre">1</span></code></p></li>
+<li><p>For more information, refer to the <strong>notes</strong> section of <a class="reference external" href="https://www.energy.gov/oced/advanced-reactor-demonstration-projects-0">https://www.energy.gov/oced/advanced-reactor-demonstration-projects-0</a></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_geohydro_allkm_reference.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_geohydro_reference.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_upv_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_upv_limited.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_upv_open.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_upv_reference.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_wind-ons_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_wind-ons_limited.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_wind-ons_open.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exog_cap_wind-ons_reference.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interconnection_queues.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_meshed_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_meshed_limited.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_meshed_open.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_meshed_reference.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_radial_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_radial_limited.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_radial_open.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ofs_radial_reference.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ons_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ons_limited.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ons_open.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescribed_builds_wind-ons_reference.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ReEDS_generator_database_final_EIA-NEMS.csv</span></code>: ReEDS generator database derived from the EIA NEMS plant file and EIA 860M. See https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/nems_database_processing.</p></li>
+</ul>
+<p><a id='inputsclimate'></a></p>
+</section>
+<section id="climate-input-files">
+<h2>Climate Input Files<a class="headerlink" href="#climate-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">climate_heuristics_finalyear.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">climate_heuristics_yearfrac.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsconsume'></a></p>
+</section>
+<section id="consume-input-files">
+<h2>Consume Input Files<a class="headerlink" href="#consume-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">consume_char_*.csv</span></code>: Cost (capex, FOM, VOM) and efficiency (gas and electrical) as well as storage and transmission adder (<code class="docutils literal notranslate"><span class="pre">stortran_adder</span></code>) inputs for various H2 producing technologies. Units vary by parameter; refer to <a class="reference external" href="https://github.com/ReEDS-Model/ReEDS/blob/main/reeds/core/setup/b_inputs.gms">b_inputs.gms</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">consume_char_low.csv</span></code>: Conservative assumptions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">consume_char_ref.csv</span></code>: Reference assumptions</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_elec_BVRE_2021_*.csv</span></code>: DAC costs (capex [<span class="math notranslate nohighlight">\(/(metric ton CO2/hr)], FOM [\)</span>/(metric ton CO2/hr)/yr], VOM [$/metric ton CO2]) and conversion rate, over time.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_elec_BVRE_2021_high.csv</span></code>: High assumptions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_elec_BVRE_2021_low.csv</span></code>: Low assumptions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_elec_BVRE_2021_mid.csv</span></code>: Mid assumptions</p></li>
+<li><p>Citation: J. Valentine and A. Zoelle, “Direct Air Capture Case Studies: Sorbent System,” National Energy Technology Laboratory, Pittsburgh, PA, July 8, 2022. <a class="reference external" href="https://doi.org/10.2172/1879535">https://doi.org/10.2172/1879535</a></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_gas_BVRE_2021_*.csv</span></code>: DAC costs (capex [<span class="math notranslate nohighlight">\(/(metric ton CO2/hr)], FOM [\)</span>/(metric ton CO2/hr)/yr], VOM [$/metric ton CO2]) and conversion rate, over time.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_gas_BVRE_2021_high.csv</span></code>: High assumptions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_gas_BVRE_2021_low.csv</span></code>: Low assumptions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dac_gas_BVRE_2021_mid.csv</span></code>: Mid assumptions</p></li>
+<li><p>Citation: J. Valentine and A. Zoelle, “Direct Air Capture Case Studies: Sorbent System,” National Energy Technology Laboratory, Pittsburgh, PA, July 8, 2022. <a class="reference external" href="https://doi.org/10.2172/1879535">https://doi.org/10.2172/1879535</a></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dollaryear.csv</span></code>: Dollar year for DAC costs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2_demand_county_share.csv</span></code>: The fraction of national hydrogen demand in that year that corresponds to each county</p>
+<ul>
+<li><p>Demand estimates come from <a class="reference external" href="https://data.openei.org/submissions/5655">https://data.openei.org/submissions/5655</a></p></li>
+<li><p>2021 demand shares correspond to the “Reference” scenario with light-duty vehicles / biofuels / methanol demand removed and 2050 shares correspond to the “Low Cost Electrolysis” scenario</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2_exogenous_demand.csv</span></code>: Exogenous hydrogen demand by industries other than the power sector per year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2_transport_and_storage_costs.csv</span></code>: Transport and storage costs of hydrogen per year (in $2004)</p></li>
+</ul>
+<p><a id='inputsctus'></a></p>
+</section>
+<section id="ctus-input-files">
+<h2>Ctus Input Files<a class="headerlink" href="#ctus-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">co2_site_char.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cs.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dollaryear.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsdegradation'></a></p>
+</section>
+<section id="degradation-input-files">
+<h2>Degradation Input Files<a class="headerlink" href="#degradation-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">degradation_annual_default.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsdemand_response'></a></p>
+</section>
+<section id="demand-response-input-files">
+<h2>Demand Response Input Files<a class="headerlink" href="#demand-response-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_avail_scalar.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_capacity_scalar_demo_data_January_2025.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsdgen_model_inputs'></a></p>
+</section>
+<section id="dgen-input-files">
+<h2>dGen Input Files<a class="headerlink" href="#dgen-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_electrification/distpvcap_stscen2023_electrification.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_highng/distpvcap_stscen2023_highng.csv</span></code>: Setting for distpv scenario capacity - from standard scenarios 2023 with high NG (including distpv) costs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_highre/distpvcap_stscen2023_highre.csv</span></code>: Setting for distpv scenario capacity - from standard scenarios 2023 with high RE (including distpv) costs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_lowng/distpvcap_stscen2023_lowng.csv</span></code>: Setting for distpv scenario capacity - from standard scenarios 2023 with low NG (including distpv) costs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_lowre/distpvcap_stscen2023_lowre.csv</span></code>: Setting for distpv scenario capacity - from standard scenarios 2023 with low RE (including distpv) costs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_mid_case/distpvcap_stscen2023_mid_case.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_mid_case_95_by_2035/distpvcap_stscen2023_mid_case_95_by_2035.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_mid_case_95_by_2050/distpvcap_stscen2023_mid_case_95_by_2050.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stscen2023_taxcredit_extended2050/distpvcap_stscen2023_taxcredit_extended2050.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsdisaggregation'></a></p>
+</section>
+<section id="disaggregation-input-files">
+<h2>Disaggregation Input Files<a class="headerlink" href="#disaggregation-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">county_population.csv</span></code>: The population of each county, relative values are used as multipliers for downselecting data</p>
+<ul>
+<li><p>Data come from the U.S. Census Bureau 2021 county population estimates (<a class="reference external" href="https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html">https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html</a>)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">county_state_lpf.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">disagg_hydroexist.csv</span></code>: The hydropower capacity fraction of each county within a given ReEDS BA, used as multipliers for downselecting data</p></li>
+</ul>
+<p><a id='inputsemission_constraints'></a></p>
+</section>
+<section id="emission-constraints-input-files">
+<h2>Emission Constraints Input Files<a class="headerlink" href="#emission-constraints-input-files" title="Link to this heading"></a></h2>
+<section id="co2-and-co2e-caps">
+<h3>CO<sub>2</sub> and CO<sub>2</sub>e Caps<a class="headerlink" href="#co2-and-co2e-caps" title="Link to this heading"></a></h3>
+<p>CO<sub>2</sub> and CO<sub>2</sub>e emissions caps are defined in <code class="docutils literal notranslate"><span class="pre">co2_cap.csv</span></code>, which includes a range of different emission cap trajectories until 2050. CO<sub>2</sub> tax for varying scenarios are defined in <code class="docutils literal notranslate"><span class="pre">co2_tax.csv</span></code>.</p>
+</section>
+<section id="emission-rates">
+<h3>Emission Rates<a class="headerlink" href="#emission-rates" title="Link to this heading"></a></h3>
+<p>Upstream and process emission rates by technology and pollutant used in ReEDS are defined in <code class="docutils literal notranslate"><span class="pre">emitrate.csv</span></code>. These emission rates are taken from Table A-9 in Appendix A.5 of NLR’s Standard Scenarios 2024 (<a class="reference external" href="https://www.nlr.gov/docs/fy25osti/92256.pdf">https://www.nlr.gov/docs/fy25osti/92256.pdf</a>), which details the multiple sources that these emission rates are obtained from such as U.S. Life Cycle Inventory Database, EPA’s Emissions &amp; Generation Resource Integrated Database, California Air Resources Board, etc.</p>
+<p>Note that CH<sub>4</sub> upstream emission rate for natural gas is zero in <code class="docutils literal notranslate"><span class="pre">emitrate.csv</span></code> as we use CH<sub>4</sub> methane leakage defined using the <code class="docutils literal notranslate"><span class="pre">GSw_MethaneLeakageScen</span></code> switch to calculate it.</p>
+</section>
+<section id="global-warming-potentials">
+<h3>Global Warming Potentials<a class="headerlink" href="#global-warming-potentials" title="Link to this heading"></a></h3>
+<p>A range of values for global warming potentials (GWP) of CH<sub>4</sub> and N<sub>2</sub>O are taken from the most recent IPCC assessment reports (AR4 to AR6). Summary of the ranges of GWPs for these pollutants can be found in Table 7.15, page 1017 of the IPCC AR6 report (<a class="reference external" href="https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_FullReport.pdf">https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_FullReport.pdf</a>).</p>
+</section>
+<section id="natural-gas-capital-recovery-factor-crf-penalties">
+<h3>Natural Gas Capital Recovery Factor (CRF) Penalties<a class="headerlink" href="#natural-gas-capital-recovery-factor-crf-penalties" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ng_crf_penalty.csv</span></code> contains a cost adjustment for NG techs in scenarios with national decarbonization targets. For more information on how these were calculated, refer to <a class="reference external" href="https://github.nrel.gov/ReEDS/ReEDS-2.0/pull/1220">PR #1220</a>.</p>
+</section>
+<section id="the-regional-greenhouse-gas-initiative-rggi">
+<h3>The Regional Greenhouse Gas Initiative (RGGI)<a class="headerlink" href="#the-regional-greenhouse-gas-initiative-rggi" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">rggi_states.csv</span></code>: List of participating RGGI states</p>
+<ul>
+<li><p>Citation: <a class="reference external" href="https://www.rggi.org/program-overview-and-design/elements">https://www.rggi.org/program-overview-and-design/elements</a></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rggicon.csv</span></code>: CO<sub>2</sub> caps for RGGI states in metric tons</p>
+<ul>
+<li><p>Citation: <a class="reference external" href="https://www.rggi.org/allowance-tracking/allowance-distribution">https://www.rggi.org/allowance-tracking/allowance-distribution</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="other-files">
+<h3>Other files<a class="headerlink" href="#other-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">co2_tax.csv</span></code>: Annual CO2 tax</p></li>
+</ul>
+<p><a id='inputsemployment'></a></p>
+</section>
+</section>
+<section id="power-sector-employment-data">
+<h2>Power Sector Employment Data<a class="headerlink" href="#power-sector-employment-data" title="Link to this heading"></a></h2>
+<section id="data-input-options">
+<h3>Data input options<a class="headerlink" href="#data-input-options" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">employment_factor_plant_jedi.csv</span></code>: Employment factor data for power plants of different technologies, taken from the JEDI/WIRED model.
+Sources for employment data of individual technologies in JEDI/WIRED are shown in the table below.</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Technology</p></th>
+<th class="head"><p>Source</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Biopower</p></td>
+<td><p><a class="reference external" href="https://www.nlr.gov/analysis/jedi/biofuels">JEDI Biofuels Model (B12.23.16)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Battery</p></td>
+<td><p>WIRED Battery Storage Model (BESS.2025.09.30) based on <a class="reference external" href="https://docs.nlr.gov/docs/fy22osti/83586.pdf">Ramasamy et al. (2022)</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p>Coal-IGCC</p></td>
+<td><p>WIRED Coal Model (COAL.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/servlets/purl/1968040/">Turner et al. (2023)</a>, and <a class="reference external" href="https://www.osti.gov/biblio/1968037">Buchheit et al. (2023)</a>  .</p></td>
+</tr>
+<tr class="row-odd"><td><p>Coal-PC</p></td>
+<td><p>WIRED Coal Model (COAL.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/servlets/purl/1968040/">Turner et al. (2023)</a>, and <a class="reference external" href="https://www.osti.gov/biblio/1968037">Buchheit et al. (2023)</a>  .</p></td>
+</tr>
+<tr class="row-even"><td><p>Coal-CCS RT</p></td>
+<td><p>WIRED Coal Model (COAL.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/servlets/purl/1968040/">Turner et al. (2023)</a>, and <a class="reference external" href="https://www.osti.gov/biblio/1968037">Buchheit et al. (2023)</a>  .</p></td>
+</tr>
+<tr class="row-odd"><td><p>Coal-CCS GF</p></td>
+<td><p>WIRED Coal Model (COAL.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/servlets/purl/1968040/">Turner et al. (2023)</a>, and <a class="reference external" href="https://www.osti.gov/biblio/1968037">Buchheit et al. (2023)</a>  .</p></td>
+</tr>
+<tr class="row-even"><td><p>DPV</p></td>
+<td><p><a class="reference external" href="https://www.nlr.gov/analysis/jedi/pv">JEDI Photovoltaics Model (PV05.20.21)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Geothermal-Hydrothermal</p></td>
+<td><p>WIRED Geothermal Model (CPG.2025.09.30) based on <a class="reference external" href="https://sam.nlr.gov/geothermal.html">NLR’s SAM-GETEM</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Geothermal-EGS</p></td>
+<td><p>WIRED Geothermal Model (CPG.2025.09.30) based on <a class="reference external" href="https://sam.nlr.gov/geothermal.html">NLR’s SAM-GETEM</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Hydropower</p></td>
+<td><p><a class="reference external" href="https://www.nlr.gov/analysis/jedi/conventional-hydro">JEDI Conventional Hydro Model (CH12.23.16)</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Land-based Wind</p></td>
+<td><p><a class="reference external" href="https://www.nlr.gov/analysis/jedi/wind">JEDI Onshore Wind Model (W2000)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>NG-CC</p></td>
+<td><p>WIRED Natural Gas Model (NG.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/biblio/1973266">Oakes et al. (2023)</a>, and <a class="reference external" href="https://www.netl.doe.gov/projects/files/CostandPerformanceofRetrofittingNGCCUnitsforCarbonCaptureRevision3_031723.pdf">Schmitt and Homsy (2023)</a></p></td>
+</tr>
+<tr class="row-even"><td><p>NG-CC-CCS RT</p></td>
+<td><p>WIRED Natural Gas Model (NG.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/biblio/1973266">Oakes et al. (2023)</a>, and <a class="reference external" href="https://www.netl.doe.gov/projects/files/CostandPerformanceofRetrofittingNGCCUnitsforCarbonCaptureRevision3_031723.pdf">Schmitt and Homsy (2023)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>NG-CC-CCS GF</p></td>
+<td><p>WIRED Natural Gas Model (NG.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/biblio/1973266">Oakes et al. (2023)</a>, and <a class="reference external" href="https://www.netl.doe.gov/projects/files/CostandPerformanceofRetrofittingNGCCUnitsforCarbonCaptureRevision3_031723.pdf">Schmitt and Homsy (2023)</a></p></td>
+</tr>
+<tr class="row-even"><td><p>NG-CT</p></td>
+<td><p>WIRED Natural Gas Model (NG.2025.09.30) based on NETL’s studies - <a class="reference external" href="https://www.osti.gov/servlets/purl/1893822/">Schmitt et al. (2022)</a>, <a class="reference external" href="https://www.osti.gov/biblio/1973266">Oakes et al. (2023)</a>, and <a class="reference external" href="https://www.netl.doe.gov/projects/files/CostandPerformanceofRetrofittingNGCCUnitsforCarbonCaptureRevision3_031723.pdf">Schmitt and Homsy (2023)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Nuclear Conventional</p></td>
+<td><p><a class="reference external" href="https://gain.inl.gov/content/uploads/4/2024/11/INL-RPT-23-72972-Literature-Review-of-Adv-Reactor-Cost-Estimates.pdf">Abou-Jaoude et al. (2023)</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Nuclear SMR</p></td>
+<td><p><a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0306261923000338">Asuega et al. (2023)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Offshore Wind</p></td>
+<td><p><a class="reference external" href="https://www.osti.gov/servlets/purl/1894867/">Hammond and Cooperman (2022)</a> and <a class="reference external" href="https://www.osti.gov/servlets/purl/1660132/">Nunemaker et al. (2020)</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Transmission-500kW AC</p></td>
+<td><p>WIRED Transmission Line Model (TL.12.23.16) based on <a class="reference external" href="https://www.nlr.gov/analysis/jedi/transmission-line">JEDI Transmission Line Model</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Transmission-230kW AC</p></td>
+<td><p>WIRED Transmission Line Model (TL.12.23.16) based on <a class="reference external" href="https://www.nlr.gov/analysis/jedi/transmission-line">JEDI Transmission Line Model</a></p></td>
+</tr>
+<tr class="row-even"><td><p>UPV</p></td>
+<td><p><a class="reference external" href="https://www.nlr.gov/analysis/jedi/pv">JEDI Photovoltaics Model (PV05.20.21)</a></p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">employment_factor_plant_mayfield.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">employment_factor_plant_rutovitz.csv</span></code>, and <code class="docutils literal notranslate"><span class="pre">employment_factor_plant_ram.csv</span></code>: Employment factor data for power plants of different technologies, taken from literature – <a class="reference external" href="https://doi.org/10.1016/j.enpol.2023.113516">Mayfield et al. (2023)</a>, <a class="reference external" href="https://doi.org/10.1016/j.rser.2025.115339">Rutovitz et al. (2024)</a>, and <a class="reference external" href="https://doi.org/10.1016/j.techfore.2019.06.008">Ram et al. (2020)</a>, respectively.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">employment_factor_inter_transmission.csv</span></code>: Employment factor data for transmission line construction, taken from the four data source mentioned above - <a class="reference external" href="https://www.nlr.gov/analysis/jedi/transmission-line">JEDI/WIRED models</a>, <a class="reference external" href="https://doi.org/10.1016/j.enpol.2023.113516">Mayfield et al. (2023)</a>, <a class="reference external" href="https://doi.org/10.1016/j.rser.2025.115339">Rutovitz et al. (2024)</a> and <a class="reference external" href="https://doi.org/10.1016/j.techfore.2019.06.008">Ram et al. (2020)</a>.</p></li>
+</ul>
+</section>
+<section id="employment-factor-units">
+<h3>Employment factor units<a class="headerlink" href="#employment-factor-units" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Power plants:</p>
+<ul>
+<li><p>Construction: [job-years/MW]</p></li>
+<li><p>FOM: [job-years/MW-year]</p></li>
+<li><p>VOM: [job-years/MWh]</p></li>
+</ul>
+</li>
+<li><p>Transmission lines:</p>
+<ul>
+<li><p>Construction: [job-years/(2004$)]</p></li>
+</ul>
+</li>
+</ul>
+<p><a id='inputsfinancials'></a></p>
+</section>
+</section>
+<section id="financials-input-files">
+<h2>Financials Input Files<a class="headerlink" href="#financials-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cap_penalty.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">construction_schedules_default.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">construction_times_default.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">currency_incentives.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deflator.csv</span></code>: Dollar year deflator to convert values to 2004$</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">depreciation_schedules_default.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">energy_communities.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_hydrogen.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_sys_ATB2023.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_sys_ATB2024.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_tech_ATB2023_CRP20.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_tech_ATB2023.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_tech_ATB2024.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_transmission_30ITC_0pen_2022_2031.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">financials_transmission_default.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_annual.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_biennial.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_ira_45q_45v_extension.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_ira.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_noira.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_none.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_obbba_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">incentives_obbba.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inflation_default.csv</span></code>: Annual inflation factors from 1914 through 2200</p>
+<ul>
+<li><p>historical values use the avg-avg values from <a class="reference external" href="https://www.usinflationcalculator.com/inflation/consumer-price-index-and-annual-percent-changes-from-1913-to-2008/">https://www.usinflationcalculator.com/inflation/consumer-price-index-and-annual-percent-changes-from-1913-to-2008/</a></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear_energy_communities.csv</span></code>: Counties belonging to metropolitan statistical areas (MSAs) for which at least 0.17% of direct employment has been related to nuclear power at any point since 2010</p>
+<ul>
+<li><p>These are determined partly by following the process described in Section 2.6 of <a class="reference external" href="https://home.treasury.gov/system/files/8861/EnergyCommunities_Data_Documentation.pdf">https://home.treasury.gov/system/files/8861/EnergyCommunities_Data_Documentation.pdf</a> and substituting in the NAICS code for nuclear electric power generation (221113) and partly by determining counties that belong to MSAs where the number of people employed by national labs engaged in nuclear research and development (PNNL, INL, ORNL, SNL, LLNL, Argonne, and LANL) has been at least 0.17 percent of the MSA’s total employment at any point since 2010</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reg_cap_cost_diff_default.csv</span></code>: Region-specific differences for capital cost of all resources</p>
+<ul>
+<li><p>Add 1 to produce a multiplier</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">retire_penalty.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supply_chain_adjust.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tc_phaseout_schedule_ira2022.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsfuelprices'></a></p>
+</section>
+<section id="fuel-prices-input-files">
+<h2>Fuel Prices Input Files<a class="headerlink" href="#fuel-prices-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha_AEO_{YYYY}_*.csv</span></code>: census division alpha values, used in the calculation of natural gas demand curves ($2004 dollar year)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha_AEO_{YYYY}_HOG.csv</span></code>: High Oil and Gas Resource and Technology scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha_AEO_{YYYY}_LOG.csv</span></code>: Low Oil and Gas Resource and Technology scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha_AEO_{YYYY}_reference.csv</span></code>: Reference scenario</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cd_beta0.csv</span></code>: Reference census division beta levels electric sector ($2004 dollar year)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cd_beta0_allsector.csv</span></code>: Reference census division beta levels all sectors ($2004 dollar year)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal_AEO_2025_reference.csv</span></code>: <a class="reference external" href="https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf">AEO2025</a> Reference case census division fuel price [$/MMBtu] of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal_AEO_2026_altelec.csv</span></code>: <a class="reference external" href="https://www.eia.gov/outlooks/aeo/">AEO2026</a> Alternative Electricity case census division fuel price [$/MMBtu] of coal with missing New England values set to Mid Atlantic</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal_AEO_2026_baseline.csv</span></code>: <a class="reference external" href="https://www.eia.gov/outlooks/aeo/">AEO2026</a> Counterfactual Baseline case census division fuel price [$/MMBtu] of coal with missing values forward-filled from earlier years and missing New England values set to Mid Atlantic</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dollaryear.csv</span></code>: Dollar year mapping for each fuel price scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_*.csv</span></code>: price of hydrogen for combustion technologies (h2-ct and cc) at $X/MMBtu for all years</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_10.csv</span></code>: $10/MMBtu</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_30.csv</span></code>: $30/MMBtu</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_reference.csv</span></code>: $20/MMBtu</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_AEO_{YYYY}_*.csv</span></code>: census division fuel price [<span class="math notranslate nohighlight">\(/MMBtu] of natural gas (\)</span>2004 dollar year)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_AEO_{YYYY}_HOG.csv</span></code>: High Oil and Gas Resource and Technology scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_AEO_{YYYY}_LOG.csv</span></code>: Low Oil and Gas Resource and Technology scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_AEO_{YYYY}_reference.csv</span></code>: Reference scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_AEO_{YYYY}_baseline.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_demand_AEO_{YYYY}_*.csv</span></code>: census division natural gas demand [Quads] for the <strong>electric sector</strong>, used in the calculation of natural gas demand curves ($2004 dollar year)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_demand_AEO_{YYYY}_HOG.csv</span></code>: High Oil and Gas Resource and Technology census division natural gas demand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_demand_AEO_{YYYY}_LOG.csv</span></code>: Low Oil and Gas Resource and Technology census division natural gas demand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_demand_AEO_{YYYY}_reference.csv</span></code>: Reference census division natural gas demand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_demand_AEO_{YYYY}_baseline.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_tot_demand_AEO_{YYYY}_*.csv</span></code>: census division natural gas demand [Quads] across <strong>all sectors</strong>, used in the calculation of natural gas demand curves ($2004 dollar year)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_tot_demand_AEO_{YYYY}_HOG.csv</span></code>: High Oil and Gas Resource and Technology census division natural gas demand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_tot_demand_AEO_{YYYY}_LOG.csv</span></code>: Low Oil and Gas Resource and Technology census division natural gas demand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_tot_demand_AEO_{YYYY}_reference.csv</span></code>: Reference census division natural gas demand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_tot_demand_AEO_{YYYY}_baseline.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uranium_AEO_2025_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">uranium_AEO_2025_reference.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uranium_AEO_2026_baseline.csv</span></code>:</p></li>
+</ul>
+</li>
+</ul>
+<p><a id='inputsgeothermal'></a></p>
+</section>
+<section id="geothermal-input-files">
+<h2>Geothermal Input Files<a class="headerlink" href="#geothermal-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_discovery_BAU.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_discovery_factor_ATB_2023.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_discovery_factor_reV.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_discovery_TI.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_rsc_ATB_2023.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsgrowth_constraints'></a></p>
+</section>
+<section id="growth-constraints-input-files">
+<h2>Growth Constraints Input Files<a class="headerlink" href="#growth-constraints-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">gbin_min.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">growth_bin_size_mult.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">growth_limit_absolute.csv</span></code>: Maximum expected annual builds [MW/year] for wind, batteries, and UPV from 2024-2026 using observed record builds</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">growth_penalty.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputshydro'></a></p>
+</section>
+<section id="hydro-input-files">
+<h2>Hydro Input Files<a class="headerlink" href="#hydro-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cap_existing_hydro.csv</span></code>: Annual capacities [MW] for hydro plants spanning 2007-2022, which come from ORNL’s Existing Hydropower Assets dataset</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hyd_fom.csv</span></code>: Regional FOM costs for hydro</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydcf_fixed.csv</span></code>: Fixed monthly zonal hydro capacity factor data partially created by ORNL and partially derived from ORNL’s Existing Hydropower Assets dataset</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydro_mingen.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">net_gen_existing_hydro.csv</span></code>: Monthly net generation values [MWh] for hydro plants spanning 2007-2022, which come from ORNL’s Existing Hydropower Assets dataset</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SeaCapAdj_hy.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsload'></a></p>
+</section>
+<section id="load-input-files">
+<h2>Load Input Files<a class="headerlink" href="#load-input-files" title="Link to this heading"></a></h2>
+<section id="load-growth-projections">
+<h3>Load Growth Projections<a class="headerlink" href="#load-growth-projections" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">demand_AEO_2025_high.csv</span></code>: Load growth projection from the AEO2025 High Economic Growth scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demand_AEO_2025_low.csv</span></code>: Load growth projection from the AEO2025 Low Economic Growth scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demand_AEO_2025_reference.csv</span></code>: Load growth projection from the AEO2025 Reference scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demand_AEO_2026_baseline.csv</span></code>: Load growth projection from the AEO2026 Counterfactual Baseline scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demand_AEO_2026_high.csv</span></code>: Load growth projection from the AEO2026 High Economic Growth scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demand_AEO_2026_low.csv</span></code>: Load growth projection from the AEO2026 Low Economic Growth scenario</p></li>
+</ul>
+</section>
+<section id="load-growth-multipliers">
+<h3>Load Growth Multipliers<a class="headerlink" href="#load-growth-multipliers" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cangrowth.csv</span></code>: Canada load growth multiplier</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mex_growth_rate.csv</span></code>: Mexico load growth multiplier</p></li>
+</ul>
+</section>
+<section id="other">
+<h3>Other<a class="headerlink" href="#other" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EIA_loadbystate.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">loadsite_country_test.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsnational_generation'></a></p>
+</section>
+</section>
+<section id="national-generation-input-files">
+<h2>National Generation Input Files<a class="headerlink" href="#national-generation-input-files" title="Link to this heading"></a></h2>
+<section id="clean-air-act-section-111">
+<h3>Clean Air Act, Section 111<a class="headerlink" href="#clean-air-act-section-111" title="Link to this heading"></a></h3>
+<section id="the-regulation-itself">
+<h4>The regulation itself<a class="headerlink" href="#the-regulation-itself" title="Link to this heading"></a></h4>
+<p>The Clean Air Act, Section 111 is a federal regulation from the Environmental Protection Agency (EPA), which features carbon pollution standards to reduce greenhouse gas emissions from power plants.
+These regulations are called Section 111 for the section of the tax code which it is implemented in.
+The regulations stipulate a couple of compliance mechanisms for plants to comply with these regulations.</p>
+<p>The first compliance mechanism, and the strictest, is a best system of emissions reduction (BSER) for every technology and vintage (existing vs new plants).
+This is enforced at the plant level i.e. each plant must meet its BSER.
+The BSERs are listed below:</p>
+<ul class="simple">
+<li><p>Existing coal plants:</p>
+<ul>
+<li><p>If the plant will permanently cease operations before Jan. 1, 2032: they are not subject to these standards</p></li>
+<li><p>If the plant is operating on or after Jan. 1, 2032, and demonstrate that they plan to permanently cease operation before Jan. 1, 2039: they must cofire with 40% natural gas from 2030 through 2039</p></li>
+<li><p>If the plant plant to operate on or after Jan. 1, 2039: they must upgrade with CCS with 90% capture by Jan. 1, 2032</p></li>
+</ul>
+</li>
+<li><p>New coal plants:</p>
+<ul>
+<li><p>No regulations since no new coal plants are being built these days</p></li>
+</ul>
+</li>
+<li><p>Existing gas-CCs and gas-CTs:</p>
+<ul>
+<li><p>No regulations</p></li>
+</ul>
+</li>
+<li><p>New gas-CCs and gas-CTs:</p>
+<ul>
+<li><p>If the plant is operating at &lt;= 40% capacity factor: they are unregulated</p></li>
+<li><p>If a plant is operating above 40% CF: they must upgrade with CCS by 2032.</p></li>
+</ul>
+</li>
+</ul>
+<p>The second compliance mechanism, which is slightly more lenient, is a emissions rate-based mechanism.
+This is enforced at the state level.
+If a state opts into this compliance mechanism, the emissions rate (tons CO<sub>2</sub>/MWh) of their coal fleet must be less than or equal to the emissions rate of a 90% coal-CCS plant.
+This in theory enables some unabated coal plants to remain online after 2032, even though they won’t be able to generate much.
+This is only possible if that state also has coal-CCS plants with high capture rates that stay online and generate, to average out the emissions rate to below the threshold.</p>
+<section id="other-resources">
+<h5>Other resources<a class="headerlink" href="#other-resources" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.epa.gov/system/files/documents/2024-04/cps-presentation-final-rule-4-24-2024.pdf">Simplified presentation on the final regulations</a></p></li>
+<li><p><a class="reference external" href="https://www.federalregister.gov/documents/2024/05/09/2024-09233/new-source-performance-standards-for-greenhouse-gas-emissions-from-new-modified-and-reconstructed">Final regulations</a></p></li>
+<li><p><a class="reference external" href="https://www.epa.gov/clean-air-act-overview/evolution-clean-air-act">History of the Clean Air Act</a></p></li>
+</ul>
+</section>
+</section>
+<section id="implementation-in-reeds">
+<h4>Implementation in ReEDS<a class="headerlink" href="#implementation-in-reeds" title="Link to this heading"></a></h4>
+<p>In ReEDS, new gas plants must adhere to their BSER and existing coal plants adhere to an emissions rate-based standard.</p>
+<p>For new gas plants, this is the code implementation:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">inputs/scalars.csv</span></code></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">caa_gas_max_cf</span></code> = 0.40.
+This is the maximum capacity factor that new gas plants (CCs or CTs) can operate at without being regulated under Clean Air Act, Section 111, expressed as a fraction.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c_model.gms</span></code> - <code class="docutils literal notranslate"><span class="pre">eq_caa_max_cf</span></code> enforces the maximum capacity factor for new gas plants.</p></li>
+</ol>
+<p>For existing coal plants, this is the code implementation:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">inputs/scalars.csv</span></code></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">caa_coal_retire_year</span></code> = 2032.
+This is the year in which coal capacity is forced to either retire or upgrade with CCS to meet the emissions requirements under Clean Air Act, Section 111.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">caa_first_year</span></code> = 2024.
+This is the year in which the emissions requirements under Clean Air Act, Section 111 are first active.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">caa_rate_emis_standard</span></code> = 0.1039.
+This is the emissions rate (metric tons CO<sub>2</sub> per MWh) equivalent to average emissions from a new coal-CCS plant, assuming 90% capture rate.
+The emissions rate from a new coal-CCS plant in ReEDS is 0.051956 metric tons CO<sub>2</sub> per MWh (see <code class="docutils literal notranslate"><span class="pre">emit_rate</span></code> parameter) which assumes 95% capture.
+For 90% capture, the emissions rate is double that or 0.1039 metric tons CO<sub>2</sub> per MWh, which we use as the standard.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reeds/input_processing/WriteHintage.py</span></code></p>
+<ul class="simple">
+<li><p>Coal plants are binned at the unit level if <code class="docutils literal notranslate"><span class="pre">GSw_Clean_Air_Act=1</span></code> so that each coal unit can independently choose to retire or upgrade.</p></li>
+<li><p>Coal plants maintain their exogenous retirement assumption, except after 2032, when the Clean Air Act regulations begin and coal can retire endogenously.
+For example, if the NEMS data states that a plant will retire in 2029, we maintain that assumption and that plant will retire in 2029.
+However, if the NEMS data previously stated that a plant will retire in 2040, they are now subject to the Clean Air Act regulations and may retire sooner than their previously stated retirement date.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">b_inputs.gms</span></code></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">numhintage</span></code> is set to 300, so that we can accommodate a large number of coal bins since they are binned at the unit level.</p></li>
+<li><p>Revise <code class="docutils literal notranslate"><span class="pre">m_capacity_exog</span></code> so that it matches with which coal capacity is allowed.</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">caa_coal_retire_year</span></code> is not in the set of years being modeled for this run, then set it to the first year that is modeled after <code class="docutils literal notranslate"><span class="pre">caa_coal_retire_year</span></code>.
+For example, if running 5 year solves, then instead of enforcing coal retirement in 2032, it will be enforced in 2035.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c_model.gms</span></code></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">eq_caa_rate_standard(st,t)</span></code> - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions rate per state under Clean Air Act Section 111.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="assumptions">
+<h4>Assumptions<a class="headerlink" href="#assumptions" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>We do not include the compliance mechanism for coal plants to cofire with natural gas in the model.
+We have modeled this in ReEDS previously in our analysis of these regulations and found that coal plants almost never choose this compliance mechanism.
+They would prefer to upgrade with CCS or retire.</p></li>
+</ul>
+<p><a id='inputsplant_characteristics'></a></p>
+</section>
+</section>
+</section>
+<section id="plant-characteristics-input-files">
+<h2>Plant Characteristics Input Files<a class="headerlink" href="#plant-characteristics-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">battery_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">battery_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">battery_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">battery_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beccs_BVRE_2021_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">beccs_BVRE_2021_high.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beccs_BVRE_2021_low.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beccs_BVRE_2021_mid.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beccs_lowcost.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beccs_reference.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">biopower_ATB_2024_moderate.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ccsflex_ATB_2020_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ccsflex_ATB_2020_cost.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ccsflex_ATB_2020_perf.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal-ccs_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal-ccs_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal-ccs_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal-ccs_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coal_ATB_2024_moderate.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_opres_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_opres_default.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_opres_market.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2023_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2023_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2023_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2023_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csp_SunShot2030.csv</span></code>: CSP costs from the SunShot2030 cost scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dollaryear.csv</span></code>: Dollar year mapping for each plant cost scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_*_demo_data_January_2025.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_capcost_scalars_demo_data_January_2025.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_fom_demo_data_January_2025.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_vom_demo_data_January_2025.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evmc_*_Baseline.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">evmc_shape_Baseline.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evmc_storage_Baseline.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuelcell_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuelcell_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuelcell_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gas-ccs_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">gas-ccs_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gas-ccs_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gas-ccs_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gas_ATB_2024_moderate.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2023_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2023_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2023_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2023_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geo_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_ATB_202*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_ATB_2023.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2-combustion_ATB_2024.csv</span></code>: Hydrogen CT and CC plant costs generated in preprocessing from moderate case NREL ATB 2024 data</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">heat_rate_adj.csv</span></code>: Heat rate adjustment multiplier by technology</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">heat_rate_penalty_spin.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydro_ATB_2019_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydro_ATB_2019_constant.csv</span></code>: Hydro costs from the 2019 ATB constant cost scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydro_ATB_2019_low.csv</span></code>: Hydro costs from the 2019 ATB low cost scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydro_ATB_2019_mid.csv</span></code>: Hydro costs from the 2019 ATB mid cost scenario</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maxage.csv</span></code>: Maximum age allowed for each technology</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maxdailycf.csv</span></code>: Maximum daily capacity factor - dr_shed input supply curves are based on one 4-hour event per day</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">minCF.csv</span></code>: Minimum annual capacity factor for each tech fleet - applied to i-rto</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min_retire_age.csv</span></code>: Minimum retirement age for given technology</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mingen_fixed.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">minloadfrac0.csv</span></code>: Characteristics/minloadfrac0 database of minloadbed generator cs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mttr.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear-smr_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear-smr_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear-smr_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear-smr_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2023_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2023_advanced.csv</span></code>: 2023 advanced ofs-wind capital, fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2023_conservative.csv</span></code>: 2023 conservative ofs-wind capital, fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2023_moderate.csv</span></code>: 2023 moderate ofs-wind capital, fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2023_moderate_noFloating.csv</span></code>: 2023 moderate_noFloating ofs-wind capital (5x floating capital cost), fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2024_conservative.csv</span></code>: 2024 conservative ofs-wind capital, fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2024_moderate.csv</span></code>: 2024 moderate ofs-wind capital, fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofs-wind_ATB_2024_moderate_noFloating.csv</span></code>: 2024 moderate_noFloating ofs-wind capital (5x floating capital cost), fixed O&amp;M, var O&amp;M costs and rsc_mult (SC cost reduction mult) by class and year</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2023_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2023_advanced.csv</span></code>: Advanced cost and performance inputs from the 2023 Annual Technology Baseline for land-based wind</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2023_conservative.csv</span></code>: Conservative cost and performance inputs from the 2023 Annual Technology Baseline for land-based wind</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2023_moderate.csv</span></code>: Moderate cost and performance inputs from the 2023 Annual Technology Baseline for land-based wind</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2024_advanced.csv</span></code>: Advanced cost and performance inputs from the 2024 Annual Technology Baseline for land-based wind</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2024_conservative.csv</span></code>: Conservative cost and performance inputs from the 2024 Annual Technology Baseline for land-based wind</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ons-wind_ATB_2024_moderate.csv</span></code>: Moderate cost and performance inputs from the 2024 Annual Technology Baseline for land-based wind</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">other_plantchar.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">outage_forced_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">outage_forced_static.csv</span></code>: Forced outage rates by technology</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">outage_forced_temperature_murphy2019.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">outage_scheduled_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">outage_scheduled_monthly.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">outage_scheduled_static.csv</span></code>: Scheduled outage rate by technology</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pcm_defaults.json</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pvb_benchmark2020.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ramprate.csv</span></code>: Generator ramp rates by technology</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">startcost.csv</span></code>:</p>
+<ul>
+<li><p>Most startup costs are taken from Lew et al 2013 - Western Wind and Solar Integration Study Phase 2 <a class="reference external" href="https://www.nlr.gov/docs/fy13osti/55588.pdf">(NREL/TP-5500-55588)</a></p></li>
+<li><p>The original data, reported in $2011/MW in Table 7 are:</p>
+<ul>
+<li><p>Coal: 124</p></li>
+<li><p>Gas-CC: 81</p></li>
+<li><p>Gas-CT: 67</p></li>
+<li><p>Steam: 86</p></li>
+<li><p>Nuclear: 155</p></li>
+</ul>
+</li>
+<li><p>RPM uses 466 $2011/MW for nuclear, but we don’t have a citable source for that number</p></li>
+<li><p>CCS startup costs are assumed to be the startup cost for the non-CCS version multiplied by the ratio of 2035 VOM costs between gas-cc-ccs and gas-cc in ATB 2023</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unitsize_atb.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2023_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2023_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2023_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2023_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2024_*.csv</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2024_advanced.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2024_conservative.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upv_ATB_2024_moderate.csv</span></code>:</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">years_until_endogenous.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputsreserves'></a></p>
+</section>
+<section id="reserves-input-files">
+<h2>Reserves Input Files<a class="headerlink" href="#reserves-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ccseason_dates.csv</span></code>: Defines the time resolution (<code class="docutils literal notranslate"><span class="pre">ccseason</span></code>) on which the capacity market is cleared when using the capacity credit resource adequacy method.
+New <code class="docutils literal notranslate"><span class="pre">ccseason</span></code> definitions may be added as new columns
+(and added to the choices for the <code class="docutils literal notranslate"><span class="pre">GSw_PRM_CapCreditSeasons</span></code> switch in <code class="docutils literal notranslate"><span class="pre">cases.csv</span></code>),
+but each column should include a <code class="docutils literal notranslate"><span class="pre">hot</span></code> and <code class="docutils literal notranslate"><span class="pre">cold</span></code> season, since the nameplate capacity is adjusted in those seasons based on summer/winter capacities from EIA and projected climate impacts (if activated via the <code class="docutils literal notranslate"><span class="pre">GSw_ClimateHeuristics</span></code> switch).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">peak_net_imports.csv</span></code>: 99.9th percentile coincident transfers (BA-level, aggregated to NERC region-level) between 2019-2023 from EIA Hourly Grid Monitor used as an estimate of current interregional transfer capabilities, as tabulated in <a class="reference external" href="https://www.esig.energy/wp-content/uploads/2024/06/ESIG-Interregional-Transmission-Resilience-methodology-report-2024.pdf">ESIG 2024</a>.
+Values for SERC-E/SE/C calculated using ESIG 2024 methodology.
+The same 0.1% definition has been used elsewhere, e.g. <a class="reference external" href="https://www.congress.gov/bill/118th-congress/senate-bill/2827/text#id6543a3657b784ecbb9362b629a5290ea">https://www.congress.gov/bill/118th-congress/senate-bill/2827/text#id6543a3657b784ecbb9362b629a5290ea</a>.
+Values for MW_TotalDemand are for 2024 from <a class="reference external" href="https://www.nerc.com/pa/RAPA/ra/Reliability%20Assessments%20DL/NERC_LTRA_2023.pdf">LTRA 2023</a> and represent on-peak projections (same as used in  NERC planning reserve margin calculations).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prm_annual.csv</span></code>: Annual planning reserve margin by NERC region</p>
+<ul>
+<li><p>Taken from the 2023 NERC LTRA (specifically the “Reference Margin Level (%)” reported for each reliability region)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">opres_periods.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">orperc.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ramptime.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputssets'></a></p>
+</section>
+<section id="sets">
+<h2>Sets<a class="headerlink" href="#sets" title="Link to this heading"></a></h2>
+<section id="formatting-guidelines">
+<h3>Formatting guidelines<a class="headerlink" href="#formatting-guidelines" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Primary sets (those that define elements that are not subsets of other sets):</p>
+<ul>
+<li><p>No header column</p></li>
+<li><p>One element per line</p></li>
+<li><p>No element-wise comments; each line should contain only the element</p></li>
+</ul>
+</li>
+<li><p>Subsets (groups of elements from other sets, either 1-dimensional or multidimensional):</p>
+<ul>
+<li><p>Include a header column specifying the relevant primary sets</p></li>
+<li><p>The header column should start with a <code class="docutils literal notranslate"><span class="pre">*</span></code></p>
+<ul>
+<li><p>Even 1-dimensional subsets should have a header column.
+So if the set <code class="docutils literal notranslate"><span class="pre">food</span></code> has elements <code class="docutils literal notranslate"><span class="pre">[apple,</span> <span class="pre">banana,</span> <span class="pre">cauliflower]</span></code>, the subset <code class="docutils literal notranslate"><span class="pre">fruit(food)</span></code> (specified by <code class="docutils literal notranslate"><span class="pre">fruit.csv</span></code>) has the following lines:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">*food</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">apple</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">banana</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Don’t use * or # for element expansion in GAMS</p></li>
+<li><p>Don’t use * for full-line comments; only use it for the first (header) row in subset definitions</p></li>
+</ul>
+</section>
+<section id="set-defining-files">
+<h3>Set-defining files<a class="headerlink" href="#set-defining-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ctt.csv</span></code>: cooling technology types</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">o</span></code>: once through</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code>: recirculating</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">d</span></code>: dry cooled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p</span></code>: pond cooled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n</span></code>: no cooling (or generic placeholder)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sc_cat.csv</span></code>: resource supply curve data categories</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">cap</span></code>: power capacity available [MW]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost</span></code>: total supply curve cost [$/MW]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_trans</span></code>: transmission (spur, point-of-interconnection, and reinforcement) component of supply curve cost [$/MW]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_cap</span></code>: economies of scale, land cost, and other modifier components of supply curve cost [$/MW]</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wst.csv</span></code>: water source type</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">fsu</span></code>: fresh surface water that is unappropriated</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fsa</span></code>: fresh surface water that is appropriated</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fsl</span></code>: fresh surface lake</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fg</span></code>: fresh groundwater</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg</span></code>: brackish or saline groundwater</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ss</span></code>: saline surface water</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ww</span></code>: wastewater effluent</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="special-case-files">
+<h3>Special-case files<a class="headerlink" href="#special-case-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">_aliases.csv</span></code>: aliases (extra names for the same set) used in GAMS</p>
+<ul>
+<li><p>Aliases of primary sets should be added here</p></li>
+<li><p>Aliases of sets defined in <code class="docutils literal notranslate"><span class="pre">b_inputs.gms</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">h</span></code>→<code class="docutils literal notranslate"><span class="pre">hh</span></code>) should instead be defined in GAMS after the set definition</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="additional-files">
+<h3>Additional files<a class="headerlink" href="#additional-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">RPSCat.csv</span></code>: set of RPS constraint categories, including clean energy standards</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aclike.csv</span></code>: set of AC transmission capacity types</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">allt.csv</span></code>: set of all potential years</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bioclass.csv</span></code>: set of bio tech classes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ccsflex_cat.csv</span></code>:set of flexible ccs performance parameter categories</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">climate_param.csv</span></code>: set of parameters defined in climate_heuristics_finalyear</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">consumecat.csv</span></code>: set of categories for consuming facility characteristics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csapr_cat.csv</span></code>: set of CSAPR regulation categories</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csapr_group.csv</span></code>: set of CSAPR trading groups</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">e.csv</span></code>: set of emission categories used in model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eall.csv</span></code>: set of emission categories used in reporting</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">etype.csv</span></code>: set of emission types (process or upstream)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">f.csv</span></code>: set of fuel types</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flex_type.csv</span></code>: set of demand flexibility types</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuel2tech.csv</span></code>: mapping between fuel types and generations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuelbin.csv</span></code>: set of gas usage brackets</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gb.csv</span></code>: set of gas price bins</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gbin.csv</span></code>: set of growth bins</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geotech.csv</span></code>: set of geothermal technology categories</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2_st.csv</span></code>: defines investments needed to store and transport H2</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2_stor.csv</span></code>: set of H2 storage options</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hintage_char.csv</span></code>: set of characteristics available in hintage_data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i.csv</span></code>: set of technologies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_geotech.csv</span></code>: crosswalk between an individual geothermal technology and its category</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_h2_ptc_gen.csv</span></code>: set of technologies which can produce energy for electrolyzers claiming the hydrogen production tax credit due to their low lifecycle carbon emissions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_p.csv</span></code>: mapping from technologies to the products they produce</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_subtech.csv</span></code>: set of categories for subtechs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_water_nocooling.csv</span></code>: set of technologies that use water, but are not differentiated by cooling tech and water source</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lcclike.csv</span></code>: set of transmission capacity types where lines are bundled with AC/DC converters</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">month.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">noretire.csv</span></code>: set of technologies that will never be retired</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notvsc.csv</span></code>: set of transmission capacity types that are not VSC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofstype.csv</span></code>: set of offshore types used in offshore requirement constraint (eq_RPS_OFSWind)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ofstype_i.csv</span></code>: crosswalk between ofstype and i</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">orcat.csv</span></code>: set of operating reserve categories</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ortype.csv</span></code>: set of types of operating reserve constraints</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p.csv</span></code>: set of products produced</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plantcat.csv</span></code>: set of categories for plant characteristics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prepost.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescriptivelink0.csv</span></code>: initial set of prescribed categories and their technologies - used in assigning prescribed builds</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pvb_agg.csv</span></code>: crosswalk between hybrid pv+battery configurations and technology options</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pvb_config.csv</span></code>: set of hybrid pv+battery configurations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quarter.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">resourceclass.csv</span></code>: set of renewable resource classes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sdbin.csv</span></code>: set of storage durage bins</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tg.csv</span></code>: set of technology groups</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tg_rsc_cspagg.csv</span></code>: set of csp technologies that belong to the same class</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tg_rsc_upvagg.csv</span></code>: set of pv and pvb technologies that belong to the same class</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trancap_fut_cat.csv</span></code>: set of categories of near-term transmission projects that describe the likelihood of being completed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trtype.csv</span></code>: set of transmission capacity types</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unitspec_upgrades.csv</span></code>: set of upgraded technologies that get unit-specific characteristics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_hintage_char.csv</span></code>: set to operate over in extension of hintage_data characteristics when sw_upgrades = 1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">w.csv</span></code>: set of water withdrawal or consumption options for water techs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wst_climate.csv</span></code>: set of water sources affected by climate change</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wst_surface.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">yearafter.csv</span></code>: set to loop over for the final year calculation</p></li>
+</ul>
+<p><a id='inputsshapefiles'></a></p>
+</section>
+</section>
+<section id="shapefiles-input-files">
+<h2>Shapefiles Input Files<a class="headerlink" href="#shapefiles-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ctus_cs_polygons.gpkg</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">greatlakes.gpkg</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2_storage_sites.gpkg</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">offshore_zones.gpkg</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">state_fips_codes.csv</span></code>: Mapping of states to FIPS codes and postal code abbreviations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timezones.gpkg</span></code>:</p></li>
+</ul>
+<p><a id='inputsstate_policies'></a></p>
+</section>
+<section id="state-policies-input-files">
+<h2>State Policies Input Files<a class="headerlink" href="#state-policies-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">acp_disallowed.csv</span></code>: List of states which do not allow alternative compliance payments in place of meeting RPS or CES requirements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">acp_prices.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ces_fraction.csv</span></code>: Annual compliance for states with a CES policy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">forced_retirements.csv</span></code>: List of regions with mandatory retirement policies for certain technologies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydrofrac_policy.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ng_crf_penalty_st.csv</span></code>: Cost adjustment for NG techs in states where all NG techs must be retired by a certain year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuclear_subsidies.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">offshore_req_default.csv</span></code>: Default state mandates of offshore wind capacity [MW], updated in November 2025</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">oosfrac.csv</span></code>: Defines the fraction of renewable and clean energy credits can be purchased from out of state (oos). Applied for RPS and CES.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">recstyle.csv</span></code>: Indication for how to apply state requirement (0 = end-use sales, 1 = bus-bar sales, 2 = generation). Default is 0.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rectable.csv</span></code>: Table defining which states are allowed to trade RECs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rps_fraction.csv</span></code>: Indicates what fraction of sales or generation (based on recstyle.csv) must be from renewable energy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage_mandates.csv</span></code>: Energy storage mandates by region</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">techs_banned_ces.csv</span></code>: Indicates which technologies are not eligible to contribute to CES</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">techs_banned_imports_rps.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">techs_banned_rps.csv</span></code>: Indicates which technologies are not eligible to contribute to RPS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">techs_banned.yaml</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unbundled_limit_ces.csv</span></code>: Limit on fraction of credits towards CES which can be purchased unbundled from other states</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unbundled_limit_rps.csv</span></code>: Limit on fraction of credits towards RPS which can be purchased unbundled from other states</p></li>
+</ul>
+<p><a id='inputsstorage'></a></p>
+</section>
+<section id="storage-input-files">
+<h2>Storage Input Files<a class="headerlink" href="#storage-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cap_existing_psh.csv</span></code>: County-wide PSH operational capacity [MW/MWh], pump capacity, and max energy, based on plant-level data from <a class="reference external" href="https://www.hydropower.org/hydropower-pumped-storage-tool">https://www.hydropower.org/hydropower-pumped-storage-tool</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_durations.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage_duration.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputssupply_curve'></a></p>
+</section>
+<section id="renewable-energy-supply-curve-input-files">
+<h2>Renewable Energy Supply Curve Input Files<a class="headerlink" href="#renewable-energy-supply-curve-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>CSP (concentrated solar thermal power):</p>
+<ul>
+<li><p>The CSP resource classes are defined as follows:</p>
+<ul>
+<li><p>1: CF &lt; 0.23</p></li>
+<li><p>2: 0.23 ≤ CF &lt;0.26</p></li>
+<li><p>3: 0.26 ≤ CF</p></li>
+</ul>
+</li>
+<li><p>Site-level CSP supply curve costs are copied from the site-level supply curve costs for utility-scale photovoltaics (UPV). The mapping code is available on the <a class="reference external" href="https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/csp">ReEDS input-processing repo</a>.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bio_supplycurve.csv</span></code>: Regional biomass supply and costs by resource class</p>
+<ul>
+<li><p>Dollar year: 2015</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dollaryear.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_cap_demo_data_January_2025.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_shed_cost_demo_data_January_2025.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hyd_add_upg_cap.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydcap.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hydcost.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interconnection_land.h5</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interconnection_offshore.h5</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_*.csv</span></code>: Pumped storage hydropower supply curve capacity as used in 2025 Annual Technology Baseline. Citation: <a class="reference external" href="https://www.nlr.gov/gis/psh-supply-curves">https://www.nlr.gov/gis/psh-supply-curves</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_ref_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and reference exclusions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_wEph_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and allowing sites on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_wExist_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_wExist_wEph_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_ref_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and reference exclusions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_wEph_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and allowing sites on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_wExist_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and allowing sites using existing reservoirs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_wExist_wEph_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_ref_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and reference exclusions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_wEph_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and allowing sites on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_wExist_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_wExist_wEph_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_*.csv</span></code>: Pumped storage hydropower supply curve cost as used in 2025 Annual Technology Baseline. Citation: <a class="reference external" href="https://www.nlr.gov/gis/psh-supply-curves">https://www.nlr.gov/gis/psh-supply-curves</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_ref_apr2025.csv</span></code>: assuming 10 hour duration and reference exclusions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_wEph_apr2025.csv</span></code>: assuming 10 hour duration and allowing sites on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_wExist_apr2025.csv</span></code>: assuming 10 hour duration and allowing sites using existing reservoirs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_wExist_wEph_apr2025.csv</span></code>: assuming 10 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_ref_apr2025.csv</span></code>: assuming 12 hour duration and reference exclusions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_wEph_apr2025.csv</span></code>: assuming 12 hour duration and allowing sites on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_wExist_apr2025.csv</span></code>: assuming 12 hour duration and allowing sites using existing reservoirs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_wExist_wEph_apr2025.csv</span></code>: assuming 12 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_ref_apr2025.csv</span></code>: assuming 8 hour duration and reference exclusions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_wEph_apr2025.csv</span></code>: assuming 8 hour duration and allowing sites on ephemeral streams</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_wExist_apr2025.csv</span></code>: assuming 8 hour duration and allowing sites using existing reservoirs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_wExist_wEph_apr2025.csv</span></code>: assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rev_paths.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sc_point_gid_old2new.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sitemap.h5</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_egs-reference.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_upv-*.csv:</span></code>: UPV supply curve from reV. Capacity numbers are in MW_DC and cost numbers are in $/MW_AC. Citation: <a class="reference external" href="https://docs.nlr.gov/docs/fy25osti/91900.pdf">https://docs.nlr.gov/docs/fy25osti/91900.pdf</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_upv-limited.csv</span></code>: limited siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_upv-open.csv</span></code>: open siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_upv-reference.csv</span></code>: reference siting scenario</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ofs-*.csv</span></code>: Offshore wind supply curve from reV. Citation: <a class="reference external" href="https://docs.nlr.gov/docs/fy25osti/91900.pdf">https://docs.nlr.gov/docs/fy25osti/91900.pdf</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ofs-limited.csv</span></code>: limited siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ofs-open.csv</span></code>: open siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ofs-reference.csv</span></code>: reference siting scenario</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ons-*.csv</span></code>: Land-based wind supply curve. Citation: <a class="reference external" href="https://docs.nlr.gov/docs/fy25osti/91900.pdf">https://docs.nlr.gov/docs/fy25osti/91900.pdf</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ons-limited.csv</span></code>: limited siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ons-open.csv</span></code>: open siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_wind-ons-reference.csv</span></code>: reference siting scenario</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trans_intra_cost_adder.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputstechs'></a></p>
+</section>
+<section id="techs">
+<h2>Techs<a class="headerlink" href="#techs" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tech_resourceclass.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">techs_default.csv</span></code>: List of technologies to be used in the model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">techs_subsetForTesting.csv</span></code>: Short list of technologies for testing</p></li>
+</ul>
+<p><a id='inputstemporal'></a></p>
+</section>
+<section id="temporal-input-files">
+<h2>Temporal Input Files<a class="headerlink" href="#temporal-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">month2quarter.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">period_szn_user.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stressperiods_user.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputstransmission'></a></p>
+</section>
+<section id="transmission-input-files">
+<h2>Transmission Input Files<a class="headerlink" href="#transmission-input-files" title="Link to this heading"></a></h2>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">b2b_converters.csv</span></code>: Power capacity and location of back-to-back (B2B) AC/DC/AC converters in the USA.</p>
+<ul class="simple">
+<li><p>Power capacities are from <a class="reference external" href="https://docs.nlr.gov/docs/fy21osti/78161.pdf">Brinkman et al. 2020</a> for converters at the eastern/western interface and <a class="reference external" href="https://www.ercot.com/files/docs/2020/07/30/ERCOT_DC_Tie_Operations_Document.docx">ERCOT 2020</a> for converters at the eastern/texas interface.</p></li>
+<li><p>Locations are from the <a class="reference external" href="https://openinframap.org/#4.1/40.65/-97.11">Open Infrastructure Map</a>.
+The <code class="docutils literal notranslate"><span class="pre">osm_id</span></code> column gives the OpenStreetMap ID of the converter; for example, the “Miles City, MT” converter (with <code class="docutils literal notranslate"><span class="pre">osm_id</span> <span class="pre">=</span> <span class="pre">137835349</span></code>) can be found at <a class="reference external" href="https://www.openstreetmap.org/way/137835349">https://www.openstreetmap.org/way/137835349</a>.
+This file is used to validate the interface-level B2B capacity for different spatial resolutions stored at <code class="docutils literal notranslate"><span class="pre">inputs/zones/{GSw_ZoneSet}/b2b.csv</span></code>.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conductor_(ac|dc)*.csv</span></code>: Conductor and power rating assumptions for AC/DC transmission lines as a function of voltage from the MISO 2025 Transmission Cost Estimation Guide (<a class="reference external" href="https://www.misoenergy.org/planning/transmission-planning/mtep">parent page</a>, <a class="reference external" href="https://cdn.misoenergy.org/MISO%20Transmission%20Cost%20Estimation%20Guide%20for%20MTEP25337433.pdf">description</a>, <a class="reference external" href="https://cdn.misoenergy.org/MISO%20Transmission%20Cost%20Estimate%20Workbook%20for%20MTEP25547535.xlsx">data workbook</a>)</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">conductor_ac_acss.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">conductor_dc.csv</span></code> use the conductors specified by the MISO guide.
+AC lines use either ACSR or ACSS conductors depending on the voltage.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conductor_ac_acsr.csv</span></code> instead uses ACSR for all AC voltages.
+Ampacities for 477 kcmil (Flicker) and 795 kcmil (Drake) ACSR conductors are taken from <a class="reference external" href="https://www.southwire.com/wire-cable/bare-aluminum-overhead-transmission-distribution/acsr/p/ALBARE6">Southwire</a>.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_hurdle_country.csv</span></code>: Hurdle rate for transmission flows [$/MWh] between USA/Canada and USA/Mexico.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_hurdle_intra.csv</span></code>: Hurdle rate for transmission flows [$/MWh] between ReEDS spatial hierarchy levels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dollaryear.scv</span></code>: U.S. dollar year for cost-related input files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hvdc_existing.csv</span></code>: Power capacity and start/end locations of <a class="reference external" href="https://en.wikipedia.org/wiki/List_of_HVDC_projects#North_America">high-voltage direct current (HVDC) lines</a> in the USA.
+These lines are mapped to ReEDS zone interfaces during input processing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hvdc_planned-*.csv</span></code>: Individual planned transmission projects</p>
+<ul class="simple">
+<li><p>Files:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">hvdc_planned-baseline</span></code>: Included in all runs</p>
+<ul>
+<li><p>TransWest Express: Planned online date and capacity from <a class="reference external" href="https://www.caiso.com/documents/ceo-report-mar-2026.pdf">CAISO 2026</a>; route from <a class="reference external" href="https://www.transwestexpress.net/about/maps.shtml">TransWest Express</a></p></li>
+<li><p>SunZia: Planned online date from <a class="reference external" href="https://www.caiso.com/documents/apr-13-2026-informational-filing-of-effective-date-transmission-control-agreement-regarding-subscriber-participating-transmission-owners-sunzia-er25-169.pdf">CAISO 2026</a>; capacity and converter type from <a class="reference external" href="https://www.hitachienergy.com/news-and-events/customer-stories/sunzia-transmission-enabling-3-gw-of-renewable-power-across-the-u-s-southwest">Hitachi</a>; endpoints from <a class="reference external" href="https://openstreetmap.org/way/1420870282">OpenInfraMap</a></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hvdc_planned-NTP_MT</span></code>: Lines used in the “MT” scenario of the <a class="reference external" href="https://www.energy.gov/oe/national-transmission-planning-study-0">NTP Study</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hvdc_planned-NTP_P2P</span></code>: Lines used in the “P2P” scenario of the <a class="reference external" href="https://www.energy.gov/oe/national-transmission-planning-study-0">NTP Study</a></p></li>
+</ul>
+</li>
+<li><p>Columns:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">year_online</span></code>: If set to 0, determined from <code class="docutils literal notranslate"><span class="pre">this_year</span></code> and <code class="docutils literal notranslate"><span class="pre">years_until_trans_longterm</span></code> in <code class="docutils literal notranslate"><span class="pre">inputs/scalars.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trtype</span></code>: LCC or VSC (also accepts AC, but it is better to handle AC additions via the ITL calculation than to add their rated capacity directly)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">certain</span></code>: If 1, the line MUST be built at the provided <code class="docutils literal notranslate"><span class="pre">MW</span></code> capacity in <code class="docutils literal notranslate"><span class="pre">year_online</span></code>; if 0, the line MAY be built at up to the provided <code class="docutils literal notranslate"><span class="pre">MW</span></code> capacity starting in <code class="docutils literal notranslate"><span class="pre">year_online</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">itl_config.yaml</span></code>: Configuration file for interface transfer limit (ITL) calculations using the <a class="reference external" href="https://github.nrel.gov/ReEDS/TSC">TSC</a> model.
+Metadata only; not used directly in ReEDS.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">itl_NARIS.csv</span></code>: Database of initial forward/reverse AC ITLs [MW] between pairs of connected ReEDS model zones for all supported zone resolutions.
+Calculated using the <a class="reference external" href="https://github.nrel.gov/pbrown/TSC">TSC</a> model as described by <a class="reference external" href="https://arxiv.org/abs/2308.03612">Brown et al.</a> using nodal network data from <a class="reference external" href="https://www.nlr.gov/docs/fy21osti/79224.pdf">NARIS</a>.</p>
+<ul>
+<li><p>The zone identifier is the md5 hash of the ‘,’-delimited sorted list of 5-digit FIPS codes for the counties that define the zone.</p>
+<ul class="simple">
+<li><p>For example, Delaware is 3 counties, with FIPS codes 10001, 10003, and 10005.
+Its delimited string is <code class="docutils literal notranslate"><span class="pre">10001,10003,10005</span></code>, and the md5 hash of that string is <code class="docutils literal notranslate"><span class="pre">a182e260da3f30b54260bf499f0db584</span></code>.
+(If on mac you can check it on the terminal with <code class="docutils literal notranslate"><span class="pre">$</span> <span class="pre">echo</span> <span class="pre">-n</span> <span class="pre">10001,10003,10005</span> <span class="pre">|</span> <span class="pre">md5sum</span></code>.)</p></li>
+<li><p>That hash is the same whether we call the zone <code class="docutils literal notranslate"><span class="pre">DE</span></code>, <code class="docutils literal notranslate"><span class="pre">Delaware</span></code>, <code class="docutils literal notranslate"><span class="pre">p125</span></code>, or something else.</p></li>
+<li><p>The hash can be determined on the fly, but to make it easier to inspect, we record it for each supported spatial resolution in the <code class="docutils literal notranslate"><span class="pre">inputs/zones/{GSw_ZoneSet}/zonehash.csv</span></code> files.</p></li>
+</ul>
+</li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">itl_NARIS.csv</span></code> is indexed by the hashes of the two zones that define the interface (<code class="docutils literal notranslate"><span class="pre">md5_from</span></code> and <code class="docutils literal notranslate"><span class="pre">md5_to</span></code>).</p>
+<ul class="simple">
+<li><p>So even though the <code class="docutils literal notranslate"><span class="pre">DE</span></code> and <code class="docutils literal notranslate"><span class="pre">MD</span></code> zones are used in many of the supported region resolutions, we only store the ITL for the <code class="docutils literal notranslate"><span class="pre">DE</span></code>/<code class="docutils literal notranslate"><span class="pre">MD</span></code> interface once, with <code class="docutils literal notranslate"><span class="pre">md5_from</span> <span class="pre">=</span> <span class="pre">a182e260da3f30b54260bf499f0db584</span></code> and <code class="docutils literal notranslate"><span class="pre">md5_to</span> <span class="pre">=</span> <span class="pre">f8644441280e76e07363ed18c744f98e</span></code>.</p></li>
+<li><p>The interfaces to expect values for are listed in the <code class="docutils literal notranslate"><span class="pre">inputs/zones/{GSw_ZoneSet}/interfaces_{level}.csv</span></code> files, where <code class="docutils literal notranslate"><span class="pre">level</span></code> can be <code class="docutils literal notranslate"><span class="pre">r</span></code> or <code class="docutils literal notranslate"><span class="pre">transgrp</span></code>.</p></li>
+</ul>
+</li>
+<li><p>The most straightforward way to read all the ITLs for a given region resolution is to run the following commands from the root of the ReEDS repo with the <code class="docutils literal notranslate"><span class="pre">reeds</span></code> conda environment activated:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">reeds</span>
+<span class="c1">## GSw_ZoneSet can be any of the supported zone resolutions listed in the `GSw_ZoneSet` row of `cases.csv`</span>
+<span class="n">GSw_ZoneSet</span> <span class="o">=</span> <span class="s1">'z90'</span>
+<span class="n">reeds</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">get_itls</span><span class="p">(</span><span class="n">GSw_ZoneSet</span><span class="o">=</span><span class="n">GSw_ZoneSet</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">newlinks_offshore_backbone.csv</span></code>: Candidate connections between offshore zones</p>
+<ul class="simple">
+<li><p>Similarly formatted files for candidate connections between offshore and coastal land-based zones are found at <code class="docutils literal notranslate"><span class="pre">inputs/zones/{GSw_ZoneSet}/newlinks_offshore_radial.csv</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transmission_cost_ac_500kv_z134.h5</span></code>: Example file illustrating the required format when using the transmission upgrade supply curve (<a class="reference external" href="https://github.nrel.gov/ReEDS/TSC">TSC</a>) method for <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span> <span class="pre">=</span> <span class="pre">z134</span></code></p>
+<ul class="simple">
+<li><p>The full method is not yet supported; when implemented, it will only be supported for a limited number of <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> definitions</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transmission_cost_distance.csv</span></code>: Cost [USD2024] and distance [miles] for greenfield interzonal single-circuit transmission lines of the specified polarity (AC or DC) and voltage [kV] between nodes of the specified zone hashes</p>
+<ul class="simple">
+<li><p>Node locations are described in <code class="docutils literal notranslate"><span class="pre">inputs/zones/README.md</span></code> and found in the <code class="docutils literal notranslate"><span class="pre">inputs/zones/{GSw_ZoneSet}/zonehash.csv</span></code> files</p></li>
+<li><p>Least-cost paths between nodes (and integrated land/terrain-dependent costs along those paths) are determined using the <a class="reference external" href="https://github.com/NatLabRockies/reVRt">reV Routing (reVRt) model</a></p></li>
+<li><p>Technical assumptions:</p>
+<ul>
+<li><p>The underlying cost model is built using the MISO 2025 Transmission Cost Estimation Guide (<a class="reference external" href="https://www.misoenergy.org/planning/transmission-planning/mtep">parent page</a>, <a class="reference external" href="https://cdn.misoenergy.org/MISO%20Transmission%20Cost%20Estimation%20Guide%20for%20MTEP25337433.pdf">description</a>, <a class="reference external" href="https://cdn.misoenergy.org/MISO%20Transmission%20Cost%20Estimate%20Workbook%20for%20MTEP25547535.xlsx">data workbook</a>)</p></li>
+<li><p>Costs for DC connections assume a 500 kV bipole architecture</p></li>
+<li><p>Costs for AC connections use interface-dependent voltage assumptions.
+The voltage is given by the maximum voltage of an existing transmission line between the pair of zones defining the interface (using the same <a class="reference external" href="https://www.nrel.gov/docs/fy21osti/79224.pdf">NARIS</a> dataset described above), with a floor of 138 kV.</p></li>
+</ul>
+</li>
+<li><p>The MISO Transmission Cost Estimation Guide applies a 30% length adder to the straight-line distance between the endpoints of a candidate line to account for the “squiggliness” of line routes in practice.
+Many of the least-cost routes from the reV model have a smaller squiggliness factor.
+In <code class="docutils literal notranslate"><span class="pre">reeds/input_processing/transmission.py</span></code> (which is run at the beginning of each ReEDS run),
+if the representative route between two zones has a squiggliness factor less than the user-provided <code class="docutils literal notranslate"><span class="pre">GSw_TransSquigglinessMin</span></code> switch (with a default of 1.3, matching the MISO guide),
+the cost and distance of that route are scaled up by the ratio of (<code class="docutils literal notranslate"><span class="pre">GSw_TransSquigglinessMin</span></code> / (squiggliness of the least-cost route)),
+such that every interzonal interface is represented by a line at least as squiggly as <code class="docutils literal notranslate"><span class="pre">GSw_TransSquigglinessMin</span></code>.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transmission_cost_distance_lines.csv</span></code>: Similar to <code class="docutils literal notranslate"><span class="pre">transmission_cost_distance.csv</span></code>, but for individual existing and planned/possible HVDC lines, with latitude/longitude for start/end points instead of zone hashes</p>
+<ul class="simple">
+<li><p>Voltages are in kilovolts [kV]</p></li>
+<li><p>Costs and lengths (and underlying routes, not included in the file) are from the <a class="reference external" href="https://github.com/NatLabRockies/reVRt">reV Routing (reVRt) model</a> and are not expected to exactly match the actual costs, lengths, or routes of existing lines</p></li>
+</ul>
+</li>
+</ul>
+<p><a id='inputsupgrades'></a></p>
+</section>
+<section id="upgrades-input-files">
+<h2>Upgrades Input Files<a class="headerlink" href="#upgrades-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">i_coolingtech_watersource_upgrades.csv</span></code>: List of cooling technologies for water sources that can be upgraded.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_coolingtech_watersource_upgrades_link.csv</span></code>: List of cooling technologies for water sources that can be upgraded + their to, from, ctt (cooling technology type) and wst (water source type)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_costs_ccs_coal.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_costs_ccs_gas.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_link.csv</span></code>: Techs that can be upgraded including the original technology, the technology it is upgrading to, and the delta.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_mult_atb23_ccs_*.csv</span></code>: Cost adjustment over various years for upgrade technologies</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_mult_atb23_ccs_adv.csv</span></code>: advanced</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_mult_atb23_ccs_con.csv</span></code>: conservative</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgrade_mult_atb23_ccs_mid.csv</span></code>: Mid</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upgradelink_water.csv</span></code>: Water techs that can be upgraded including the original technology, the technology it is upgrading to, and the delta</p></li>
+</ul>
+<p><a id='inputsuserinput'></a></p>
+</section>
+<section id="user-input-files">
+<h2>User Input Files<a class="headerlink" href="#user-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">futurefiles.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ivt_default.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ivt_small.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ivt_step.csv</span></code>: ivt steps for endyears beyond 2050</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mcs_distribution_rules.yaml</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mcs_distributions_default.yaml</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">modeled_regions.csv</span></code>: Sets of BA regions that a user can model in a run</p>
+<ul>
+<li><p>Each column is a different region option and can be specified in cases using <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">windows_2100.csv</span></code>: Window size for using window solve method to 2100</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">windows_default.csv</span></code>: Window size for using window solve method</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">windows_step10.csv</span></code>: Window size for beyond2050step10</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">windows_step5.csv</span></code>: Window size for beyond2050step5</p></li>
+</ul>
+<p><a id='inputsvaluestreams'></a></p>
+</section>
+<section id="valuestreams-input-files">
+<h2>Valuestreams Input Files<a class="headerlink" href="#valuestreams-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">var_map.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputswaterclimate'></a></p>
+</section>
+<section id="waterclimate-input-files">
+<h2>Waterclimate Input Files<a class="headerlink" href="#waterclimate-input-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_cap_mult.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cost_vom_mult.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">heat_rate_mult.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_coolingtech_watersource.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_coolingtech_watersource_link.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tg_rsc_cspagg_tmp.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unapp_water_sea_distr.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wat_access_cap_cost.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">water_req_psh_10h_1_51.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">water_with_cons_rate.csv</span></code>:</p></li>
+</ul>
+<p><a id='inputszones'></a></p>
+</section>
+<section id="model-zone-definitions">
+<h2>Model Zone Definitions<a class="headerlink" href="#model-zone-definitions" title="Link to this heading"></a></h2>
+<p>Model zones are defined by the following user-generated files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">county2zone.csv</span></code>: Maps from counties (<code class="docutils literal notranslate"><span class="pre">FIPS</span></code> column) to ReEDS zones (<code class="docutils literal notranslate"><span class="pre">ba</span></code> column)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hierarchy.csv</span></code>: Maps from ReEDS zones (<code class="docutils literal notranslate"><span class="pre">r</span></code> column) to the larger region hierarchy levels</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">b2b.csv</span></code>: Back-to-back converter (B2B) capacity [MW] between model zones</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">newlinks_offshore_radial.csv</span></code>: Candiate connections between offshore and coastal land-based zones</p></li>
+</ul>
+<p>And the following automatically generated files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">interfaces_r.csv</span></code>: Lists the pairs of zones that are connected by alternating current (AC) transmission lines</p>
+<ul>
+<li><p>Specific to a nodal dataset (e.g., NARIS); changing the nodal dataset
+(which may entail adding lines or shifting the estimated substation locations)
+can change the set of connected interfaces, particularly for small or sparsely connected zones</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interfaces_transgrp.csv</span></code>: The same as <code class="docutils literal notranslate"><span class="pre">interfaces_r.csv</span></code> but for the larger <code class="docutils literal notranslate"><span class="pre">transgrp</span></code> regions defined in <code class="docutils literal notranslate"><span class="pre">hierarchy.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">zonehash.csv</span></code>: The string identifier and node lat/lon for each model zone.
+The lat/lon is used for plotting, representative least-cost paths and greenfield costs, and interzonal distances for losses and TW-mile calculations.</p>
+<ul>
+<li><p>If the centroid is within the polygon defining a zone, the centroid is used as the node location.</p></li>
+<li><p>If the centroid is NOT within the zone polygon, the node location is the “most interior” point in the polygon
+(determined by iteratively inward-buffering the polygon until it disappears, then keeping the centroid of the penultimate iteration).</p></li>
+</ul>
+</li>
+</ul>
+<section id="notes-on-zone-options">
+<h3>Notes on zone options<a class="headerlink" href="#notes-on-zone-options" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">z3109</span></code>: 1:1 mapping from counties to zones</p>
+<ul>
+<li><p>Not all counties have high-voltage load buses, so if <code class="docutils literal notranslate"><span class="pre">GSw_LoadAllocationMethod</span> <span class="pre">=</span> <span class="pre">state_lpf</span></code>, some counties may have zero load.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="creating-a-new-set-of-model-zones">
+<h3>Creating a new set of model zones<a class="headerlink" href="#creating-a-new-set-of-model-zones" title="Link to this heading"></a></h3>
+<p>Start by copying the <code class="docutils literal notranslate"><span class="pre">county2zone.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">hierarchy.csv</span></code> file for an existing set of zones to a new folder (named with a memorable name for your new set of zones) in the <a class="reference external" href="https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones">ReEDS_Input_Processing/zones</a> directory.</p>
+<section id="deciding-on-the-zones">
+<h4>Deciding on the zones<a class="headerlink" href="#deciding-on-the-zones" title="Link to this heading"></a></h4>
+<p>The <a class="reference external" href="https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones/make_maps.py">ReEDS_Input_Processing/zones/make_maps.py</a> script creates a collection of static and interactive maps based on the user-supplied <code class="docutils literal notranslate"><span class="pre">county2zone.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">hierarchy.csv</span></code> files, intended to help decide on the new zone boundaries.
+These maps show the new zones alongside existing grid features (transmission lines and planning area boundaries from various sources) and geographic features (mountain ranges).
+Maps are also created to show the average load and sum of existing generation capacity by zone.
+The resulting static maps are saved to a <code class="docutils literal notranslate"><span class="pre">.pptx</span></code> file, and an interactive/zoomable map is saved to a <code class="docutils literal notranslate"><span class="pre">.html</span></code> file.</p>
+</section>
+<section id="generating-the-rest-of-the-inputs">
+<h4>Generating the rest of the inputs<a class="headerlink" href="#generating-the-rest-of-the-inputs" title="Link to this heading"></a></h4>
+<p>Once you’re happy with your zone and hierarchy level definitions, run the following processing steps:</p>
+<ol class="arabic simple">
+<li><p>Run the <a class="reference external" href="https://github.nrel.gov/ReEDS/TSC/blob/pb/itldb/analysis/make_zone_shapefiles.py">TSC/analysis/make_zone_shapefiles.py</a> script.</p>
+<ul class="simple">
+<li><p>This script creates:</p>
+<ul>
+<li><p>Zone shapefiles at the <code class="docutils literal notranslate"><span class="pre">r</span></code> and <code class="docutils literal notranslate"><span class="pre">transgrp</span></code> resolutions</p></li>
+<li><p>Lists of interfaces at the <code class="docutils literal notranslate"><span class="pre">r</span></code> and <code class="docutils literal notranslate"><span class="pre">transgrp</span></code> resolutions that are connected by AC transmission lines</p></li>
+<li><p>Maps of existing back-to-back (B2B) converters, to help decide which zonal interfaces to assign their capacity to.
+(Because some zone definitions put the interconnection seams quite far from their actual locations, this step is not automated and relies on user judgment.)</p></li>
+</ul>
+</li>
+<li><p>It also checks to make sure the user-specified <code class="docutils literal notranslate"><span class="pre">interconnect</span></code> for each zone matches the interconnection for the majority of network buses located within that zone.</p></li>
+</ul>
+</li>
+<li><p>Calculate the AC interface transfer limits (ITLs) by running <a class="reference external" href="https://github.nrel.gov/ReEDS/TSC/blob/pb/itldb/interfacemax.py">TSC/interfacemax.py</a></p>
+<ul class="simple">
+<li><p>Include the <code class="docutils literal notranslate"><span class="pre">--dbpath={path/to/ITL</span> <span class="pre">folder}</span></code> argument and point it to the existing directory of ITLs to avoid recalculating ITLs for interfaces that already have data</p></li>
+</ul>
+</li>
+<li><p>Calculate the length and cost of new greenfield transmission lines between zones</p>
+<ul class="simple">
+<li><p>Write the new interzonal endpoint pairs using <a class="reference external" href="https://github.nrel.gov/ReEDS/TSC/blob/main/analysis/zone_links.py">TSC/analysis/zone_links.py</a></p>
+<ul>
+<li><p>Write pairs that require offshore routes (the links between land-based and offshore zones, new backbone links between offshore zones, and/or new exogenous offshore HVDC lines) into their own file, separate from routes that should be land-only</p></li>
+</ul>
+</li>
+<li><p>Send these files (with a note on which should allow offshore paths and which should not) to a member of the reV team who can calculate the interzonal least-cost paths using the <a class="reference external" href="https://github.com/NatLabRockies/reVRt">reVRt</a> tool</p></li>
+</ul>
+</li>
+<li><p>Write the resulting files to the ReEDS repo by running <a class="reference external" href="https://github.nrel.gov/ReEDS/TSC/blob/pb/itldb/analysis/write_for_reeds.py">TSC/analysis/write_for_reeds.py</a>. This script:</p>
+<ul class="simple">
+<li><p>Copies the <code class="docutils literal notranslate"><span class="pre">interface_r.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">interface_transgrp.csv</span></code> files</p></li>
+<li><p>Creates the <code class="docutils literal notranslate"><span class="pre">zonehash.csv</span></code> file</p></li>
+<li><p>Rewrites the <code class="docutils literal notranslate"><span class="pre">itl_NARIS.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">transmission_cost_distance.csv</span></code>, and <code class="docutils literal notranslate"><span class="pre">transmission_cost_distance_lines.csv</span></code> files
+(existing data in the file are preserved, so you should only see new rows added, typically at the bottom of the file)</p></li>
+</ul>
+</li>
+<li><p>If the new zone set requires special processing in ReEDS, add it to the appropriate sections of <code class="docutils literal notranslate"><span class="pre">inputs/zones/zoneset_config.yaml</span></code> (see below)</p></li>
+<li><p>Add the new zone definition to the choices for the <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> switch in <code class="docutils literal notranslate"><span class="pre">cases.csv</span></code></p></li>
+<li><p>To make sure it worked (or just to read the ITLs in general), you can run <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">reeds</span></code> and then <code class="docutils literal notranslate"><span class="pre">reeds.inputs.get_itls(GSw_ZoneSet='your</span> <span class="pre">new</span> <span class="pre">zoneset</span> <span class="pre">name')</span></code> in Python with the <code class="docutils literal notranslate"><span class="pre">reeds</span></code> conda environment activated.</p></li>
+<li><p>Try a ReEDS run.</p>
+<ul class="simple">
+<li><p>The following checks will be performed; if any of them fail, the run will stop.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">b2b.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">county2zone.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">hierarchy.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">zonehash.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">interfaces_r.csv</span></code>, and <code class="docutils literal notranslate"><span class="pre">interfaces_transgrp.csv</span></code> should all be preset in the <code class="docutils literal notranslate"><span class="pre">inputs/zones/{GSw_ZoneSet}</span></code> folder</p></li>
+<li><p>All the interfaces specified by <code class="docutils literal notranslate"><span class="pre">interfaces_r.csv</span></code>, and <code class="docutils literal notranslate"><span class="pre">interfaces_transgrp.csv</span></code> should have data in <code class="docutils literal notranslate"><span class="pre">itl_NARIS.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hierarchy.csv</span></code> should have all the required columns (<code class="docutils literal notranslate"><span class="pre">st</span></code>, <code class="docutils literal notranslate"><span class="pre">interconnect</span></code>, <code class="docutils literal notranslate"><span class="pre">transreg</span></code>, <code class="docutils literal notranslate"><span class="pre">transgrp</span></code>, and <code class="docutils literal notranslate"><span class="pre">nercr</span></code>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="additional-input-files">
+<h3>Additional input files<a class="headerlink" href="#additional-input-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">county_state.csv</span></code>: Mapping from 5-digit county FIPS codes to county names and 2-letter state abbreviations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hierarchy_offshore.csv</span></code>: Spatial hierarchy levels for offshore zones.
+Only used when <code class="docutils literal notranslate"><span class="pre">GSw_OffshoreZones</span> <span class="pre">=</span> <span class="pre">1</span></code>.
+The offshore zones are not user-adjustable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">state_groups.csv</span></code>: Spatial hierarchy levels defined by groups of states.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">country</span></code>: Nation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cendiv</span></code>: <a class="reference external" href="https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf">Census divisions</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">usda_region</span></code>: <a class="reference external" href="https://www.ers.usda.gov/data-products/arms-farm-financial-and-crop-production-practices/documentation">USDA Farm Production Regions</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">h2ptcreg</span></code>: Hydrogen tax credit regions (<a class="reference external" href="https://www.energy.gov/sites/default/files/2023-12/greet-manual_2023-12-20.pdf">DOE 2023, Figure 2</a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gasreg</span></code>: Gas price regions. These are specific to the ReEDS model and are based on a mix of <a class="reference external" href="https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf">census divisions</a>, EIA-NEMS natural gas regions used to report regional flows and capacity (<a class="reference external" href="https://www.eia.gov/outlooks/aeo/nems/documentation/ngmm/pdf/NGMM_AEO2025.pdf">EIA Natural Gas Market Module of the National Energy Modeling System: Model Documentation 2025, Figure 2.5</a>), and EIA-NEMS Natural Gas-Electricity Market Module regions (<a class="reference external" href="https://www.eia.gov/outlooks/aeo/nems/documentation/ngmm/pdf/NGMM_AEO2025.pdf">EIA Natural Gas Market Module of the National Energy Modeling System: Model Documentation 2025, Figure 2.7</a>)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">zoneset_config.yaml</span></code>: Settings for zoneset-specific processing.
+If <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code> is listed beneath one of the following switch names, the described behavior is applied during input processing at the beginning of each ReEDS run using that <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code>.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">drop_single_county_reinforcement_cost</span></code>: Drop the network reinforcement cost (a component of the interconnection cost) for new wind/solar capacity in single-county zones</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">drop_interfaces_missing_cost</span></code>: If an AC transmission interface has existing capacity but no expansion cost or representative distance, remove its existing capacity and do not allow it to be expanded.
+(Turned off for most zone sets because we’d rather stop the run and add the missing data.
+Turned on for some zone sets with single-county zones that have no high-voltage transmission lines crossing the single-county zone boundaries.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reeds2pras_unitsize_unconstrain_counties</span></code>: Do not specify max unit sizes using the planning reserve margin (PRM) for single-county zones during ReEDS2PRAS unit disaggregation</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="user_guide.html" class="btn btn-neutral float-left" title="User guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="postprocessing_tools.html" class="btn btn-neutral float-right" title="Analysis tools and helper scripts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, NREL.
+      <span class="lastupdated">Last updated on August 28, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
