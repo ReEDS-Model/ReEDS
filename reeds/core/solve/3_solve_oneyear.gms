@@ -293,7 +293,7 @@ $include reeds%ds%core%ds%solve%ds%5_varfix.gms
 *** Fix FINITO decision variables to their optimized levels for this solve year
 $ifthene.linked_finito_varfix %GSw_FINITO_Link% == 1
 * Industrial variable fix
-$include finito/model/finito_varfix.gms
+$include finito%ds%model%ds%finito_varfix.gms
 $endif.linked_finito_varfix
 
 *** Dump data used in calculations between solve years

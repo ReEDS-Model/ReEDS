@@ -903,7 +903,7 @@ gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 * ----- ReEDS-FINITO temporal parameters -----
 *=============================================
 $ifthene.linked_finito_temporal_params %GSw_FINITO_Link% ==1
-$include finito/model/linked_finito_temporal_params.gms
+$include finito%ds%model%ds%linked_finito_temporal_params.gms
 $endif.linked_finito_temporal_params
 
 
