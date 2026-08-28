@@ -5490,7 +5490,7 @@ Parameter
 * Demand
     load_exog(r,allh,t)                               "--MW-- busbar load"
     load_exog0(r,allh,t)                              "--MW-- original load by region hour and year - unchanged by demand side"
-    load_allyear(r,allh,allt)                         "--MW-- end-use load by region, timeslice, and year"
+    load_allyear(r,allh,allt)                         "--MW-- busbar load by region, timeslice, and year"
     h2_exogenous_demand_regional(r,p,allh,allt)       "--metric tons per hour-- exogenous demand for hydrogen at the BA level"
 * Peak demand
     peak_static_frac(r,ccseason,t)         "--fraction-- fraction of peak demand that is static"
