@@ -221,7 +221,6 @@ state_cap.csv,inputs/emission_constraints/state_cap.csv,int(sw.GSw_StateCap) != 
 storage_duration.csv,inputs/storage/storage_duration.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,,parameter,,--hours-- storage duration by tech,
 storage_mandates.csv,inputs/state_policies/storage_mandates.csv,int(sw.GSw_BatteryMandate) != 0,ignore,ignore,*st,t,,0,0,,,,,,
 stressperiods_user.csv,inputs/temporal/stressperiods_{GSw_PRM_StressModel}.csv,sw.GSw_PRM_StressModel == 'user*',ignore,ignore,,,,,,,,,,,
-supply_chain_adjust.csv,inputs/financials/supply_chain_adjust.csv,1,ignore,ignore,,,,,0,,,,,,
 supplycurve_egs.csv,inputs/supply_curve/supplycurve_egs-reference.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
 supplycurve_upv.csv,inputs/supply_curve/supplycurve_upv-{GSw_SitingUPV}.csv,1,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
 supplycurve_wind-ofs.csv,inputs/supply_curve/supplycurve_wind-ofs-{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
