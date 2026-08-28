@@ -226,7 +226,7 @@ hydro_mingen.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hydrocapcostmult.csv,.csv,0,None,t,None,1,0,constant,0,None,projection?,linear_5
 hydrofrac_policy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hydrogen_price.csv,.csv,0,None,year,None,0,0,constant,None,None,new,
-i_class.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+i_c.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 i_coolingtech_watersource_link.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 i_coolingtech_watersource_upgrades_link.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 i_coolingtech_watersource_upgrades.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant

@@ -94,7 +94,7 @@
 
 - `i.csv`: set of technologies
 
-- `i_class.csv`: map from technologies to their resource class (`c.csv`)
+- `i_c.csv`: map from technologies to their resource class (`c.csv`)
 
 - `i_geotech.csv`: crosswalk between an individual geothermal technology and its category
 

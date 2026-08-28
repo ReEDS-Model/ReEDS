@@ -121,7 +121,7 @@ hydcost.csv,inputs/supply_curve/hydcost.csv,1,mean,uniform,wide,"tech,class",,1,
 hydro_mingen.csv,inputs/hydro/hydro_mingen.csv,1,mean,uniform,r,"*i,quarter",,0,0,,,,,,might be better to do something capacity-weighted
 hydrofrac_policy.csv,inputs/state_policies/hydrofrac_policy.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,"RPS_All,CES",,,0,,,,,,
 hydrogen_price.csv,inputs/fuelprices/h2-combustion_{h2combustionfuelscen}.csv,int(sw.GSw_H2Combustion) != 0,ignore,ignore,,,,0,0,,,,,,
-i_class.csv,inputs/sets/i_class.csv,1,ignore,ignore,,,,,0,,,set,i_class,map from technologies to resource classes,
+i_c.csv,inputs/sets/i_c.csv,1,ignore,ignore,,,,,0,,,set,i_c,map from technologies to resource classes,
 i_coolingtech_watersource.csv,inputs/waterclimate/i_coolingtech_watersource.csv,int(sw.GSw_WaterMain) != 0,ignore,ignore,,,,,0,,,,,,
 i_coolingtech_watersource_link.csv,inputs/waterclimate/i_coolingtech_watersource_link.csv,int(sw.GSw_WaterMain) != 0,ignore,ignore,,,,,0,,,,,,
 i_coolingtech_watersource_upgrades.csv,inputs/upgrades/i_coolingtech_watersource_upgrades.csv,1,ignore,ignore,,,,,0,,,,,,

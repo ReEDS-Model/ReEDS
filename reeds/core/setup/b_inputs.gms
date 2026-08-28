@@ -613,32 +613,32 @@ $endif.naris
 parameter resourceclassnum(c) "numeric value for resource class" ;
 resourceclassnum(c) = c.val ;
 
-* i_class(i,c) is loaded with only the default techs populated; it is expanded
+* i_c(i,c) is loaded with only the default techs populated; it is expanded
 * here so every i maps to exactly one c
 * Broadcast class to  water-cooled variants
-i_class(i,c)$[(not sum{cc, i_class(i,cc)})$sum{ii$ctt_i_ii(i,ii), i_class(ii,c)}] = yes ;
+i_c(i,c)$[(not sum{cc, i_c(i,cc)})$sum{ii$ctt_i_ii(i,ii), i_c(ii,c)}] = yes ;
 * Any technology without a class is assigned to class '0'
-i_class(i,'0')$[not sum{cc, i_class(i,cc)}] = yes ;
+i_c(i,'0')$[not sum{cc, i_c(i,cc)}] = yes ;
 
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
 ban(i)$[i_subsets(i,'csp')
-      $sum{c$i_class(i,c),
+      $sum{c$i_c(i,c),
            resourceclassnum(c)>Sw_NumCSPclasses }] = yes ;
 ) ;
 * If Sw_CSPRemoveLow is turned on, remove the last (worst) CSP class (which will be
 * equal to Sw_NumCSPclasses)
 if(Sw_CSPRemoveLow = 1,
 ban(i)$[i_subsets(i,'csp')
-      $sum{c$i_class(i,c),
+      $sum{c$i_c(i,c),
            resourceclassnum(c)=Sw_NumCSPclasses }] = yes ;
 ) ;
 
 *Ban Geothermal resources that do not remain after aggregation
 if(Sw_NumGeoclasses < 10,
 ban(i)$[i_subsets(i,'geo')
-      $sum{c$i_class(i,c),
+      $sum{c$i_c(i,c),
            resourceclassnum(c)>Sw_NumGeoclasses }] = yes ;
 ) ;
 
@@ -3776,16 +3776,16 @@ $onlisting
 
 parameter cf_adj_t(i,c,v,t)    "--unitless-- capacity factor adjustment over time for RSC technologies" ;
 
-cf_adj_t(i,c,v,t)$[i_class(i,c)$(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
+cf_adj_t(i,c,v,t)$[i_c(i,c)$(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
 
 * Existing wind uses startyear cf adjustment
-cf_adj_t(i,c,initv,t)$[i_class(i,c)$wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
+cf_adj_t(i,c,initv,t)$[i_c(i,c)$wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
 
-cf_adj_t(i,c,newv,t)$[i_class(i,c)$wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
+cf_adj_t(i,c,newv,t)$[i_c(i,c)$wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), wind_cf_adj_t(tt,i) } / countnc(i,newv) ;
 
 * Apply PV capacity factor improvements
-cf_adj_t(i,c,newv,t)$[i_class(i,c)$(pv(i) or pvb(i))$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
+cf_adj_t(i,c,newv,t)$[i_c(i,c)$(pv(i) or pvb(i))$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), pv_cf_improve(tt) } / countnc(i,newv) ;
 
 
