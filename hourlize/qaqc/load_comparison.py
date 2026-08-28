@@ -1,15 +1,7 @@
 ### QA/QC tool to plot hourly, state- and subsector-level electricity demand,
 ### tracing the demand that hourlize/load.py produces back to the raw
 ### EER-style source data it was built from.
-###
-### For "all sectors", state-level demand is produced by calling
-### load.create_hourly_state_load_for_model_year() directly, so the plotted
-### profiles match what an actual hourlize/load.py run would produce
-### (including any exogenous sectoral load replacement). Subsector-level
-### detail is aggregated away by that function, so requesting specific
-### subsectors instead reads the raw EER source files directly and mirrors
-### the earlier steps of create_hourly_state_load_for_model_year (timezone
-### shift, state-code mapping, 8760-hour trim) without exogenous replacement.
+
 import argparse
 import datetime
 import json
