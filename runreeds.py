@@ -103,8 +103,7 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
         case_out = df_cases[case].copy()
         # (ReEDS-FINITO) Combine the cases files for the linked model
         if int(case_out.loc['GSw_FINITO_Link']) == 1 :
-            # add the FINITO switches to the caseSwitches
-            case_out=reeds.finito.linked_cases(df_cases,case)
+            case_out=reeds.finito.setup_linked_cases(df_cases,case)
             
         #exclude certain switches that don't need to be passed to GAMS
         for i,v in case_out.items():
@@ -1410,14 +1409,14 @@ def write_batch_script(
             + toLogGamsString
             + f"--fname={batch_case}"
             + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']}"
-            + f" --first_year_finito={caseSwitches['first_year_finito']} \n"
+            + f" --FINITO_first_year={caseSwitches['FINITO_first_year']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
         if not LINUXORMAC and int(caseSwitches['GSw_FINITO_Link']) != 1:
             OPATH.writelines("endlocal\n")
         OPATH.writelines(f'python {logger}\n')
 
-        ### (ReEDS-FINITO) calls FINITO reporting
+        ### (ReEDS-FINITO) call FINITO reporting
         if int(caseSwitches['GSw_FINITO_Link'])==1:
             OPATH.writelines(
             'gams '

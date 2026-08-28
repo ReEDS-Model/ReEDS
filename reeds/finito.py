@@ -19,9 +19,22 @@ import reeds
 #%% ===========================================================================
 ### --- FUNCTIONS ---
 ### ===========================================================================
+def update_FINITO_switches(case, sw, new_switches):
+    """
+    Creates any intermediate switches needed for FINITO
+    """
+    new_switches[case]['GSw_FINITO_Link'] = str(int(sw['FINITO']))
+    ## If the FINITO path is set relative to ReEDS, fill it out here
+    if '{reeds_path}' in sw['FINITO_dir']:
+        new_switches[case]['FINITO_dir'] = str(
+            Path(sw['FINITO_dir'].format(reeds_path=reeds.io.reeds_path)).resolve()
+        )
+    else:
+        new_switches[case]['FINITO_dir'] = sw['FINITO_dir']
+    
+    return new_switches
 
-# (ReEDS-FINITO) update 'df_cases' to include FINITO switches
-def linked_cases(df_cases, case):
+def setup_linked_cases(df_cases, case):
     """
     Updates the cases dataframe to include FINITO-specific switches.
     When a switch is duplicated in FINITO and ReEDS, then we default to
@@ -31,27 +44,28 @@ def linked_cases(df_cases, case):
     'Default Value' in cases_linked.csv first, before using the universal FINITO
     'Default Value' in cases.csv for any un-assigned switches.
     """
-    # check for valid finito_dir
-    if not os.path.isdir(df_cases[case]['finito_dir']):
+    # check for valid FINITO directory
+    finito_model = Path(df_cases[case]['FINITO_dir']) / 'model' / 'finito_model.gms'
+    if not (os.path.isdir(df_cases[case]['FINITO_dir']) and finito_model.exists()):
         raise ValueError(
-            f"finito_dir = {df_cases[case]['finito_dir']} is not a valid path. "
+            f"FINITO_dir = {df_cases[case]['FINITO_dir']} is not a valid path. "
             "Please ensure this path points to a cloned version of the FINITO repository. "
-        )
+        )    
 
     # define path to and read the FINITO check_inputs function
     finito_check_inputs_path = os.path.join(
-        df_cases[case]['finito_dir'], 'input_processing', 'processing')
+        df_cases[case]['FINITO_dir'], 'input_processing', 'processing')
     sys.path.append(finito_check_inputs_path)
     from check_inputs import check_inputs
 
     ### load the default values for all FINITO switches from ~\FINITO\cases.csv
     df_cases_finito = pd.read_csv(
-        os.path.join(df_cases[case]['finito_dir'], 'cases.csv'), dtype=object, index_col=0)
+        os.path.join(df_cases[case]['FINITO_dir'], 'cases.csv'), dtype=object, index_col=0)
     df_cases_finito = df_cases_finito[['Choices', 'Default Value']]
 
     ### load the scenario-specific switches from ~\FINITO\cases_linked.csv
     cases_linked_path = os.path.join(
-        df_cases[case]['finito_dir'], f"cases_{df_cases[case]['finito_cases_file']}.csv")
+        df_cases[case]['FINITO_dir'], f"cases_{df_cases[case]['FINITO_cases_file']}.csv")
     df_cases_suf_finito = pd.read_csv(cases_linked_path, dtype=object, index_col=0)
     ## check that case names are unique in cases_linked.csv
     # grab the scenario names **exactly** as they appear in the csv file
@@ -60,19 +74,19 @@ def linked_cases(df_cases, case):
     duplicate_columns = {x for x in header if list(header).count(x) > 1}
     if duplicate_columns:
         raise ValueError(
-            f"The FINITO cases_{df_cases[case]['finito_cases_file']}.csv has the "
+            f"The FINITO cases_{df_cases[case]['FINITO_cases_file']}.csv has the "
             f"following duplicate column names: {duplicate_columns}"
         )
     ### identify the FINITO case
-    if df_cases[case]['finito_case'] == 'same':
+    if df_cases[case]['FINITO_case'] == 'same':
         finito_case = case
     else:
-        finito_case = df_cases[case]['finito_case']
+        finito_case = df_cases[case]['FINITO_case']
     # ensures **exact** match of names between the ReEDS cases_{}.csv and the FINITO cases_linked.csv
     if finito_case not in (df_cases_suf_finito.columns):
         raise ValueError(
-            f"The 'finito_case' input '{finito_case}' in the ReEDS cases file does not "
-            f"exist in FINITO's cases_{df_cases[case]['finito_cases_file']}.csv."
+            f"The 'FINITO_case' input '{finito_case}' in the ReEDS cases file does not "
+            f"exist in FINITO's cases_{df_cases[case]['FINITO_cases_file']}.csv."
         )
 
     ### first use 'Default Value' from the FINITO cases_linked.csv to fill missing switches
@@ -102,7 +116,7 @@ def linked_cases(df_cases, case):
 
 def setup_finito(casedir, caseSwitches, BatchName):
     #%% Copy FINITO code folders and inputs into [casedir]/finito
-    finito_dir = Path(caseSwitches['finito_dir'])
+    finito_dir = Path(caseSwitches['FINITO_dir'])
     # ... finito directory within the case directory
     casedir_finito = Path(casedir, 'finito')
     # ... define the inputs case directory for FINITO
@@ -117,7 +131,7 @@ def setup_finito(casedir, caseSwitches, BatchName):
 
     # copy over the FINITO cases files
     shutil.copy2(finito_dir / 'cases.csv', casedir_finito)
-    shutil.copy2(finito_dir / f"cases_{caseSwitches['finito_cases_file']}.csv", casedir_finito)
+    shutil.copy2(finito_dir / f"cases_{caseSwitches['FINITO_cases_file']}.csv", casedir_finito)
 
     #%% (GSw_Trade_PriceResponse > 0) If doing a price-responsive trade run, retrieve the reference exports/imports prices
     if int(caseSwitches['GSw_Trade_PriceResponse']) > 0:

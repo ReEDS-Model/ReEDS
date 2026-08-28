@@ -967,11 +967,11 @@ tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(tt.val<t.val)] = yes ;
 mindiff(t)$tmodel_new(t) = smin{tt$tprev(t,tt), t.val-tt.val} ;
 tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(t.val-tt.val<>mindiff(t))] = no ;
 
-* If FINITO linkage is on, remove all modeled years from tfuel after first_year_finito
+* If FINITO linkage is on, remove all modeled years from tfuel after FINITO_first_year
 * as the FINITO supply curves will be used instead of those in ReEDS;
 * otherwise, all modeled years use ReEDS supply curves and are eligible for tfuel 
 tfuel(t)$[tmodel_new(t)]=yes;
-tfuel(t)$[tmodel_new(t)$Sw_FINITO_Link$(t.val>=%first_year_finito%)] = no ;
+tfuel(t)$[tmodel_new(t)$Sw_FINITO_Link$(t.val>=%FINITO_first_year%)] = no ;
 
 * In order to fill all necessary dimensions of upgrade techs parameters, we require
 * Sw_UpgradeYear in ban(i) to be a modeled year and thus we compute as either

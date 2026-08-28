@@ -124,7 +124,15 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
             int(sw['numbins_upv']),
             15,
         ))
+        ## ReEDS-FINITO switches
+        new_switches = reeds.finito.update_FINITO_switches(case, sw, new_switches)
+
     dfcases_out = pd.concat([dfcases, pd.DataFrame(new_switches)])
+    # if there are duplicates, defer to the new switch
+    dfcases_out = dfcases_out[~dfcases_out.index.duplicated(keep='last')]
+    # sort by switch name
+    dfcases_out = dfcases_out.sort_index()
+
     return dfcases_out
 
 

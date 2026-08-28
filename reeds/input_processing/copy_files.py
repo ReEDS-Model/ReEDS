@@ -1311,11 +1311,6 @@ def main(reeds_path, inputs_case):
     scalar_csv_to_txt(os.path.join(inputs_case,'gswitches.csv'))
     
     source_deflator_map = get_source_deflator_map(reeds_path)
-
-    ### Rewrite the  finito scalar as GAMS-readable definitions
-    if int(sw['GSw_FINITO_Link']) == 1:
-        pd.read_csv(os.path.join(os.path.dirname(inputs_case),'finito','inputs','scalars.csv')).iloc[:, :-1].to_csv(os.path.join(os.path.dirname(inputs_case),'finito','inputs','scalars.csv'),index=False)
-        scalar_csv_to_txt(os.path.join(os.path.dirname(inputs_case),'finito','inputs','scalars.csv'))
     
     # Copy non-region files
     write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel, source_deflator_map)
