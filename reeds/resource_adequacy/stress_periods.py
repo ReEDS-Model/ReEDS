@@ -564,13 +564,13 @@ def get_stress_periods(case, sw, t, iteration):
         stressperiods_this_iteration['start']
         + (
             (pd.Timedelta('5D') if sw.GSw_HourlyType == 'wek' else pd.Timedelta('1D'))
-             - pd.Timedelta('1H')
+             - pd.Timedelta('1h')
         )
     )
     ## Get already-modeled stress hours so we can exclude them from the hourly
     ## EUE and LOLE profiles used to determine new stress periods
     covered_hours = [
-        pd.date_range(row.start, row.end, freq='1H')
+        pd.date_range(row.start, row.end, freq='1h')
         for i,row in stressperiods_this_iteration.iterrows()
     ]
     covered_hours = [i for sublist in covered_hours for i in sublist]
