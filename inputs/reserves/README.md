@@ -13,8 +13,9 @@ Values for MW_TotalDemand are for 2024 from [LTRA 2023](https://www.nerc.com/pa/
 - `prm_annual.csv`: Annual planning reserve margin by NERC region
   - Taken from the 2023 NERC LTRA (specifically the "Reference Margin Level (%)" reported for each reliability region)
 
-- `opres_periods.csv`:
+- `opres_periods.csv`: Seasons within which the operating reserve constraint applies
 
-- `orperc.csv`: 
+- `orperc.csv`: Operating reserve requirement [fraction] by reserve type (spinning, regulation, flexibility) and category
+  - `or_load` is a fraction of load; `or_wind` and `or_pv` are fractions of wind and PV generation
 
-- `ramptime.csv`: 
+- `ramptime.csv`: Ramping time [minutes] used in the operating reserve ramping limit constraint, by reserve type
