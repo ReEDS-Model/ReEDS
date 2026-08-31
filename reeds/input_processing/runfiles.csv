@@ -230,7 +230,7 @@ supplycurve_wind-ons.csv,inputs/supply_curve/supplycurve_wind-ons-{GSw_SitingWin
 wst_surface.csv,inputs/sets/wst_surface.csv,1,ignore,ignore,,,,,0,,,set,wst_surface,surface water types where access is based on consumption not withdrawal,
 tc_phaseout_schedule.csv,inputs/financials/tc_phaseout_schedule_{GSw_TCPhaseout_schedule}.csv,int(sw.GSw_TCPhaseout) != 0,ignore,ignore,,,,,0,,,,,,
 tech-subset-table.csv,inputs/tech-subset-table.csv,1,ignore,ignore,,,,,0,,,,,,
-tech_resourceclass.csv,inputs/techs/tech_resourceclass.csv,1,ignore,ignore,,,,,0,,,set,,map from CSP/DUPV techs to resource classes,
+tech_resourceclass.csv,inputs/techs/tech_resourceclass.csv,1,ignore,ignore,,,,,0,,,set,,map from technologies to resource classes,
 techs.csv,inputs/techs/techs_{techs_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
 techs_banned.csv,inputs/state_policies/techs_banned.yaml,1,ignore,ignore,wide,i,,,0,,,,,,
 techs_banned_ces.csv,inputs/state_policies/techs_banned_ces.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,wide_st,i,,,0,,,,,,
