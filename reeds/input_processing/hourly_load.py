@@ -41,6 +41,47 @@ import reeds
 ### --- FUNCTIONS ---
 ### ===========================================================================
 
+
+def combine_load_data(df1: pd.DataFrame,df2: pd.DataFrame) -> pd.DataFrame:
+    """
+    Helper function to add hourly profiles together.
+
+    First checks if shape and index/column names match, raising an exception
+    if they do not. Will attempt to add using numpy with fallback to pandas method.
+    """
+    if df1.shape != df2.shape:
+        raise ValueError(
+            "Load files have different dimensions: "
+            f"{df1.shape} != {df2.shape}"
+        )
+
+    if df1.index.equals(df2.index):
+        pass
+    elif df1.index.difference(df2.index).empty and df2.index.difference(df1.index).empty:
+        raise ValueError("Load file indices contain the same values but in a different order.")
+    else:
+        only_in_df1 = df1.index.difference(df2.index)
+        only_in_df2 = df2.index.difference(df1.index)
+        raise ValueError(
+            "Load file indices do not match. "
+            f"Only in first dataframe: {only_in_df1.tolist()[:10]}; "
+            f"only in second dataframe: {only_in_df2.tolist()[:10]}"
+        )
+
+    if not df1.columns.equals(df2.columns):
+        raise ValueError("Load file columns do not match.")
+    try:
+        np.add(
+            df1.to_numpy(copy=False),
+            df2.to_numpy(copy=False),
+            out=df1.to_numpy(copy=False),
+        )
+    except (TypeError, ValueError):
+        df1 = df1 + df2
+
+    return df1
+
+
 def get_historical_state_load_for_model_year(
     historical_state_load_annual: pd.DataFrame,
     model_year: int
