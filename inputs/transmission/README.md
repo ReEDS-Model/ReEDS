@@ -16,7 +16,7 @@
 
 - `cost_hurdle_intra.csv`: Hurdle rate for transmission flows [\$/MWh] between ReEDS spatial hierarchy levels.
 
-- `dollaryear.scv`: U.S. dollar year for cost-related input files
+- `dollaryear.csv`: U.S. dollar year for cost-related input files
 
 - `hvdc_existing.csv`: Power capacity and start/end locations of [high-voltage direct current (HVDC) lines](https://en.wikipedia.org/wiki/List_of_HVDC_projects#North_America) in the USA.
 These lines are mapped to ReEDS zone interfaces during input processing.
