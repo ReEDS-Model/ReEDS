@@ -2,7 +2,7 @@
 
 - `acp_disallowed.csv`: Flag [1 = disallowed, 0 = allowed] for alternative compliance payments, by state and RPS/CES category
 
-- `acp_prices.csv`: Alternative compliance payment price [$/REC] for the RPS constraint, by state and year
+- `acp_prices.csv`: Alternative compliance payment price [2004$/REC] for the RPS constraint, by state and year
   - Sets the effective ceiling on the RPS penalty; used only when `GSw_StateRPS` is on
 
 - `ces_fraction.csv`: Annual compliance fraction [fraction] for states with a CES policy

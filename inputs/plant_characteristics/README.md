@@ -114,7 +114,8 @@ refer to the Annual Technology Baseline (ATB) cost scenarios of the same names.
   - `h2fuelcell_conservative.csv`: Conservative scenario
   - `h2fuelcell_moderate.csv`: Moderate scenario
 
-- `heat_rate_adj.csv`: Heat rate adjustment multiplier [unitless] by technology
+- `heat_rate_adj.csv`: Partial-load heat rate adjustment multiplier [unitless] by technology, given separately for pre-2010 and post-2010 units
+  - Derived from historical EIA generation and fuel use data
 
 - `heat_rate_penalty_spin.csv`: Heat rate penalty [fraction] incurred for providing spinning reserves, by technology
 
@@ -180,11 +181,11 @@ refer to the Annual Technology Baseline (ATB) cost scenarios of the same names.
 
 - `other_plantchar.csv`: Cost and performance for the landfill gas (`lfill-gas`) and oil-gas-steam (`o-g-s`) technologies; selected by `plantchar_other`
 
-- `outage_forced_*.csv`: Forced outage rates by technology
+- `outage_forced_*.csv`: Forced outage rate [fraction] by technology
   - `outage_forced_static.csv`: Forced outage rates by technology
   - `outage_forced_temperature_murphy2019.csv`: Temperature-dependent forced outage rate [fraction] by prime mover and temperature [deg C], from [Murphy et al. 2019](https://doi.org/10.1016/j.apenergy.2019.113513); selected by `GSw_OutageScen`
 
-- `outage_scheduled_*.csv`: Scheduled (planned maintenance) outage rates by technology
+- `outage_scheduled_*.csv`: Scheduled (planned maintenance) outage rate [fraction] by technology
   - `outage_scheduled_monthly.csv`: Scheduled outage rate [fraction] by prime mover and month
   - `outage_scheduled_static.csv`: Scheduled outage rate by technology
 
@@ -192,7 +193,7 @@ refer to the Annual Technology Baseline (ATB) cost scenarios of the same names.
 
 - `pvb_benchmark2020.csv`: Benchmark PV+battery system cost components used to derive hybrid PV+battery costs, with the units, dollar year, and source given per row
 
-- `ramprate.csv`: Generator ramp rate [fraction/min] by technology
+- `ramprate.csv`: Ramp rate [fraction/min] of dispatchable generators, by technology
 
 - `startcost.csv`: Linearized generator startup cost [2004$/MW] by technology
   - Most startup costs are taken from Lew et al 2013 - Western Wind and Solar Integration Study Phase 2 [(NREL/TP-5500-55588)](https://www.nlr.gov/docs/fy13osti/55588.pdf)

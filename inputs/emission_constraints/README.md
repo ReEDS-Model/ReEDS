@@ -39,7 +39,8 @@ A range of values for global warming potentials (GWP) of CH<sub>4</sub> and N<su
 
 - `csapr_group2_ex.csv`: CSAPR states that cannot trade allowances with those in group 1
 
-- `csapr_ozone_season.csv`: CSAPR ozone-season NO<sub>x</sub> budget and assurance levels by state and year
+- `csapr_ozone_season.csv`: CSAPR ozone-season NO<sub>x</sub> budget and assurance levels [metric tons] by state and year
+  - Caps NO<sub>x</sub> emissions during the May-September ozone season
   - Active when `GSw_CSAPR` is on
 
 - `gwp.csv`: Global warming potentials by pollutant for each IPCC report and time horizon (`AR4-100`, `AR6-20`, etc.)

@@ -4,7 +4,7 @@
 
 - `hyd_fom.csv`: Regional fixed O&M cost [$/MW-year] for hydro technologies
 
-- `hydcf_fixed.csv`: Fixed monthly zonal hydro capacity factor data partially created by ORNL and partially derived from ORNL's Existing Hydropower Assets dataset
+- `hydcf_fixed.csv`: Fixed monthly zonal hydro capacity factor [fraction] partially created by ORNL and partially derived from ORNL's Existing Hydropower Assets dataset
 
 - `hydro_mingen.csv`: Minimum hydropower loading factor [fraction of capacity] by technology, region, and quarter
 

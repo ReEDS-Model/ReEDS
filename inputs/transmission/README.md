@@ -1,6 +1,6 @@
 ## Transmission Input Files
 
-- `b2b_converters.csv`: Power capacity and location of back-to-back (B2B) AC/DC/AC converters in the USA.
+- `b2b_converters.csv`: Power capacity [MW] and location of back-to-back (B2B) AC/DC/AC converters in the USA.
   - Power capacities are from [Brinkman et al. 2020](https://docs.nlr.gov/docs/fy21osti/78161.pdf) for converters at the eastern/western interface and [ERCOT 2020](https://www.ercot.com/files/docs/2020/07/30/ERCOT_DC_Tie_Operations_Document.docx) for converters at the eastern/texas interface.
   - Locations are from the [Open Infrastructure Map](https://openinframap.org/#4.1/40.65/-97.11).
   The `osm_id` column gives the OpenStreetMap ID of the converter; for example, the "Miles City, MT" converter (with `osm_id = 137835349`) can be found at <https://www.openstreetmap.org/way/137835349>.
