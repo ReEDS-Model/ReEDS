@@ -49,7 +49,6 @@ positive variables
   STORAGE_IN_PLANT(i,v,r,allh,t)         "--MW-- hybrid plant storage charging in hour h that is charging from a coupled technology"
   STORAGE_IN_GRID(i,v,r,allh,t)          "--MW-- hybrid plant storage charging in hour h that is charging from the grid"
   AVAIL_SITE(x,allh,t)                   "--MW-- available generation from all resources at reV site x"
-  CURT(r,allh,t)                         "--MW-- curtailment from vre generators in hour h"
   MINGEN(r,allszn,t)                     "--MW-- minimum generation level in each season"
   STORAGE_IN(i,v,r,allh,t)               "--MW-- storage charging in hour h that is charging from a given source technology; not used for CSP-TES"
   STORAGE_LEVEL(i,v,r,allh,t)            "--MWh-- storage level in hour h"
@@ -188,7 +187,6 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_capacity_limit(i,v,r,allh,t)               "--MW-- generation limited to available capacity"
  eq_capacity_limit_hybrid(r,allh,t)            "--MW-- generation from hybrid resources limited to available capacity"
  eq_capacity_limit_nd(i,v,r,allh,t)            "--MW-- generation limited to available capacity for non-dispatchable resources"
- eq_curt_gen_balance(r,allh,t)                 "--MW-- net generation and curtailment must equal gross generation"
  eq_dhyd_dispatch(i,v,r,allszn,t)              "--MWh-- dispatchable hydro seasonal energy constraint (when not allowing seasonal enregy shifting)"
  eq_min_cf(i,r,t)                              "--MWh-- minimum capacity factor constraint for each generator fleet, applied to (i,r)"
  eq_max_daily_cf(i,r,allszn,t)                 "--MWh-- maximum daily capacity factor constraint for any technology with maxdailycf(i,t) specified"
@@ -1266,30 +1264,6 @@ eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 *[plus] sum of operating reserves by type
     + sum{ortype$[Sw_OpRes$opres_model(ortype)$reserve_frac(i,ortype)$opres_h(h)],
-          OPRES(ortype,i,v,r,h,t) }
-;
-
-* ---------------------------------------------------------------------------
-
-eq_curt_gen_balance(r,h,t)$tmodel(t)..
-
-*total potential generation
-    sum{(i,v)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))$(not nondispatch(i))],
-         m_cf(i,v,r,h,t) * CAP(i,v,r,t) }
-
-*[minus] curtailed generation
-    - CURT(r,h,t)$Sw_CurtMarket
-
-    =g=
-
-*must exceed realized generation; exclude hybrid plants
-    sum{(i,v)$[valgen(i,v,r,t)$vre(i)$(not nondispatch(i))], GEN(i,v,r,h,t) }
-
-*[plus] realized generation from hybrid plant
-  + sum{(i,v)$[valgen(i,v,r,t)$storage_hybrid(i)$(not csp(i))$(not nondispatch(i))], GEN_PLANT(i,v,r,h,t) }$Sw_HybridPlant
-
-*[plus] sum of operating reserves by type
-    + sum{(ortype,i,v)$[Sw_OpRes$reserve_frac(i,ortype)$opres_h(h)$valgen(i,v,r,t)$vre(i)$(not nondispatch(i))$opres_model(ortype)],
           OPRES(ortype,i,v,r,h,t) }
 ;
 
@@ -3569,7 +3543,7 @@ eq_h2_demand(p,t)$[(sameas(p,"H2"))$tmodel(t)$(yeart(t)>=h2_demand_start)$(Sw_H2
 
 * assuming here that h2 production and use in H2_COMBUSTION can be temporally asynchronous
 * that is, the hydrogen does not need to produced in the same hour it is consumed by h2-ct/cc's
-    + sum{(i,v,r,h)$[valgen(i,v,r,t)$h2_combustion(i)$h_rep(h)],
+    + sum{(i,v,r,h)$[valgen(i,v,r,t)$h2_gen(i)$h_rep(h)],
             GEN(i,v,r,h,t) * hours(h) * h2_combustion_intensity * heat_rate(i,v,r,t)
     }
 ;
@@ -3600,7 +3574,7 @@ eq_h2_demand_regional(r,h,t)
 
 * region-specific H2 consumption from H2-CT/CCs
 * [MW] * [metric ton/MMBtu] * [MMBtu/MWh] = [metric tons/hour]
-    + sum{(i,v)$[valgen(i,v,r,t)$h2_combustion(i)],
+    + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
             GEN(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)
        }
 ;
@@ -3691,7 +3665,7 @@ eq_h2_min_storage_cap(r,t)$[tmodel(t)$(Sw_H2=2)$Sw_H2_MinStorHours$(not Sw_PCM)]
     =g=
 
 * [MW] * [MMBtu/MWh] * [metric tons/MMBtu] * [hours] = [metric tons]
-    sum{(i,v)$[h2_combustion(i)$valcap(i,v,r,t)],
+    sum{(i,v)$[h2_gen(i)$valcap(i,v,r,t)],
         CAP(i,v,r,t) * heat_rate(i,v,r,t) * h2_combustion_intensity * Sw_H2_MinStorHours
     }
 ;
