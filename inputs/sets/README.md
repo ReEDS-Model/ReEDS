@@ -132,7 +132,7 @@
 
 - `pvb_config.csv`: set of hybrid pv+battery configurations
 
-- `quarter.csv`: Original h17 seasons (four per year)
+- `quarter.csv`: four quarters (listed as seasons) of the year
 
 - `resourceclass.csv`: set of renewable resource classes
 
