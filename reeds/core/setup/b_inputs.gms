@@ -4054,7 +4054,7 @@ parameter rsc_fin_mult(i,r,t)       "--fraction-- financial cost multiplier for 
 * Emission rate by technology and etype (broken down to process and upstream)
 * Note that CH4 upstream emission rate of natural gas is 0 here 
 * as we will use CH4 methane leakage from GSw_MethaneLeakageScen for it later)
-table emit_rate_fuel(i,etype,e)  "--metric tons per MMBtu-- emissions rate of fuel by technology and emission type"
+table emit_rate_fuel(i,etype,vg,e)  "--metric tons per MMBtu-- emissions rate of fuel by technology and emission type"
 $offlisting
 $ondelim
 $include inputs_case%ds%emitrate.csv
@@ -4102,43 +4102,43 @@ capture_rate_input(i,"CO2")$[upgrade(i)$(coal_ccs(i) or gas_cc_ccs(i))$ccs_mod(i
 capture_rate_input(i,"CO2")$[upgrade(i)$(coal_ccs(i) or gas_cc_ccs(i))$ccs_max(i)]=Sw_CCS_Rate_Upgrade_max;
 
 * emit_rate_fuel water expansion
-emit_rate_fuel(i,etype,e)$[i_water_cooling(i)$Sw_WaterMain] =
-  sum{ii$ctt_i_ii(i,ii), emit_rate_fuel(ii,etype,e) } ;
+emit_rate_fuel(i,etype,vg,e)$[i_water_cooling(i)$Sw_WaterMain] =
+  sum{ii$ctt_i_ii(i,ii), emit_rate_fuel(ii,etype,vg,e) } ;
   
 * Assign the appropriate % of generation for each technology to count toward CES requirements.
 * Exclude capture rates of BECCS, which receive full credit in a CES and were already set to 1 above in the "RPS" section.
 RPSTechMult(RPSCat,i,st)$[ccs(i)$(sameas(RPSCat,"CES") or sameas(RPSCat,"CES_Bundled"))$(not beccs(i))] = capture_rate_input(i,"CO2") ;
 
 * calculate process emit rate for CCS techs (except beccs techs, which are defined directly in emitrate.csv)
-emit_rate_fuel(i,"process",e)$[ccs(i)$(not beccs(i))] =
-  (1 - capture_rate_input(i,e)) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",e) } ; 
+emit_rate_fuel(i,"process",vg,e)$[ccs(i)$(not beccs(i))] =
+  (1 - capture_rate_input(i,e)) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",vg,e) } ; 
 
 * calculate upstream emit rate for CCS techs (except beccs techs, which are defined directly in emitrate.csv)
-emit_rate_fuel(i,"upstream",e)$[ccs(i)$(not beccs(i))] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"upstream",e) } ;
+emit_rate_fuel(i,"upstream",vg,e)$[ccs(i)$(not beccs(i))] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"upstream",vg,e) } ;
 
 * assign flexible ccs the same process emission rate as the uncontrolled technology to allow variable CO2 removal (e.g., for gas-cc-ccs-f1, use gas-cc)
-emit_rate_fuel(i,"process",e)$[ccsflex(i)] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",e) } ;
+emit_rate_fuel(i,"process",vg,e)$[ccsflex(i)] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",vg,e) } ;
 
 * set upgrade tech process emissions for non-CCS upgrades (e.g. gas-ct -> h2-ct); CCS upgrade emissions are handled above
-emit_rate_fuel(i,"process",e)$[upgrade(i)$(not ccs(i))] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"process",e) } ;
+emit_rate_fuel(i,"process",vg,e)$[upgrade(i)$(not ccs(i))] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"process",vg,e) } ;
 
 * set upgrade tech upstream emissions for upgrades
-emit_rate_fuel(i,"upstream",e)$[upgrade(i)] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"upstream",e) } ;
+emit_rate_fuel(i,"upstream",vg,e)$[upgrade(i)] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"upstream",vg,e) } ;
 
 * parameters for calculating captured emissions
 parameter capture_rate_fuel(i,e) "--metric tons per MMBtu-- emissions capture rate of fuel by technology type";
-capture_rate_fuel(i,e) = capture_rate_input(i,e) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",e) } ;
+capture_rate_fuel(i,e) = capture_rate_input(i,e) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process","init",e) } ;
 
 * capture_rate_fuel is used to calculate how much CO2 is captured and stored;
 * for beccs, the captured CO2 is the entire negative emissions rate
 * since any uncontrolled emissions are assumed to be lifecycle net zero
-capture_rate_fuel(i,"CO2")$beccs(i) = - emit_rate_fuel(i,"process","CO2")
+capture_rate_fuel(i,"CO2")$beccs(i) = - emit_rate_fuel(i,"process","init","CO2")
 
 parameter capture_rate(e,i,v,r,t) "--metric tons per MWh-- emissions capture rate" ;
 
 scalar methane_tonperMMBtu "--metric tons per MMBtu-- methane content of natural gas" ;
 * [ton CO2 / MMBtu] * [ton CH4 / ton CO2]
-methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","CO2") * molWeightCH4 / molWeightCO2 ;
+methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","init","CO2") * molWeightCH4 / molWeightCO2 ;
 
 parameter prod_emit_rate(etype,e,i,allt) "--metric tons emitted per metric ton product-- emissions rate per metric ton of product (e.g. tonCO2/tonH2 for SMR & SMR-CCS)" ;
 * Steam methane reformer (SMR)'s process emission here refers to emissions from steam methane reforming process
@@ -4177,12 +4177,12 @@ parameter
     emit_nat_tc(t)  "--metric tons-- CO2 emissions, national"
 ;
 
-emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,e)$valcap(i,v,r,t)]
-  = round(heat_rate(i,v,r,t) * emit_rate_fuel(i,etype,e),10) ;
+emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,"init",e)$valcap(i,v,r,t)]
+  = round(heat_rate(i,v,r,t) * emit_rate_fuel(i,etype,"init",e),10) ;
 
 *only emissions from the coal portion of cofire plants are considered
-emit_rate(etype,e,i,v,r,t)$[sameas(i,"cofire")$emit_rate_fuel("coal-new",etype,e)$valcap(i,v,r,t)]
-  = round((1-bio_cofire_perc) * heat_rate(i,v,r,t) * emit_rate_fuel("coal-new",etype,e),10) ;
+emit_rate(etype,e,i,v,r,t)$[sameas(i,"cofire")$emit_rate_fuel("coal-new",etype,"init",e)$valcap(i,v,r,t)]
+  = round((1-bio_cofire_perc) * heat_rate(i,v,r,t) * emit_rate_fuel("coal-new",etype,"init",e),10) ;
 
 * Fill in CH4 upstream emission rate
 *** [MMBtu/MWh] * [ton methane used / MMBtu] * [ton methane leaked / ton methane produced]
