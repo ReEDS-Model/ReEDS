@@ -575,6 +575,140 @@ def plot_plcoe_pitch(
     return fig
 
 
+def vcf_matched_scale(df, tech, form='linear'):
+    """Scalar for LCOE base that lines the value-cost-factor intercept up with the value-factor one.
+
+    value_cost_factor is lcoe_base/benchmark_price, so scaling LCOE base by s scales VCF by s and
+    nothing else. Both fits are exactly scale-equivariant - OLS slope and intercept both scale by s,
+    and the NLS amplitude A absorbs s while k is unchanged - so setting s = intercept(VF)/intercept(VCF)
+    matches the intercepts exactly rather than iteratively.
+
+    Nothing that carries a claim moves: k, the exponent ratio and the cost share of decline are all
+    invariant, and PLCOE is unchanged because cost_value_factor picks up the reciprocal scaling (the
+    same cancellation the _adj figures rely on). The shared intercept is imposed, not observed - it
+    is what makes the remaining gap readable as cost escalation, and is not itself evidence.
+
+    Returns (s, vf_params, vcf_params), params being (intercept, slope) for 'linear' or (A, k) for
+    'power', with vcf_params already scaled. None if either fit is unavailable."""
+    if form == 'linear':
+        vf, vcf = tech_fit(df, 'value_factor', tech), tech_fit(df, 'value_cost_factor', tech)
+        if vf is None or vcf is None or vcf[0].intercept == 0:
+            return None
+        s = vf[0].intercept / vcf[0].intercept
+        return s, (vf[0].intercept, vf[0].slope), (vcf[0].intercept * s, vcf[0].slope * s)
+    vf, vcf = tech_fit_nls(df, 'value_factor', tech), tech_fit_nls(df, 'value_cost_factor', tech)
+    if vf is None or vcf is None or vcf[0] == 0:
+        return None
+    s = vf[0] / vcf[0]
+    return s, (vf[0], vf[1]), (vcf[0] * s, vcf[1])
+
+
+def _fit_form(form):
+    """(predictor, equation formatter) for one of the two fit forms."""
+    if form == 'linear':
+        return (lambda p, x: p[0] + p[1] * x,
+                lambda p: f'y = {p[1]:.2f}x + {p[0]:.2f}')
+    return (lambda p, x: p[0] * (1 - x) ** p[1],
+            lambda p: f'y = {p[0]:.2f}(1-x)$^{{{p[1]:.2f}}}$')
+
+
+def plot_vre_vcf(df, output_path, form='linear', techs=None):
+    """One panel per tech, showing value factor against value-cost factor after LCOE base has been
+    scaled so the two share a fit intercept.
+
+    With the intercepts matched the curves start together, so the shaded gap between them is the
+    cost escalation alone - the part of the competitiveness decline that is not value factor. The
+    linear and power versions of this figure are the same construction under two fit forms; agreement
+    between them is the check that the result does not depend on the form."""
+    techs = fit_techs if techs is None else techs
+    colors = build_color_map(techs)
+    predict, equation = _fit_form(form)
+    label = 'linear' if form == 'linear' else 'power (NLS)'
+
+    fig, axes = plt.subplots(1, len(techs), figsize=(6.8 * len(techs), 5.2), squeeze=False)
+    axes = axes[0]
+    scales = []
+    for ax, tech in zip(axes, techs):
+        d = df[df['tech'] == tech].dropna(
+            subset=['gen_frac', 'value_factor', 'value_cost_factor']).sort_values('gen_frac')
+        matched = vcf_matched_scale(df, tech, form)
+        if d.empty or matched is None:
+            ax.set_visible(False)
+            continue
+        s, vf_p, vcf_p = matched
+        x = d['gen_frac'].to_numpy()
+        y_vf = d['value_factor'].to_numpy()
+        y_vcf = d['value_cost_factor'].to_numpy() * s
+        color = colors[tech]
+
+        #The band is drawn between the FITS, not between the points. The intercept match is a
+        #property of the fits and the claim is about their exponents, so the fitted band is the
+        #quantity actually being asserted. The band between raw points is also unusable here: at the
+        #lowest market share the scaled VCF sits above VF in every tech and fit form, by up to 0.048,
+        #so shading the points would fill a region meaning the opposite of its label. The fitted band
+        #is strictly positive across the range.
+        #Fits span the whole axis, from zero market share out past the last point, so the matched
+        #intercept is visible. That convergence at x=0 is the construction the band rests on and it
+        #sits outside the data, which starts at x=0.08 for wind and 0.06 for UPV. The stretch beyond
+        #the observed points is drawn faint so the extrapolation stays obvious.
+        x_hi = x.max() * 1.04
+        xs = np.linspace(0, x_hi, 400)
+        fit_vf, fit_vcf = predict(vf_p, xs), predict(vcf_p, xs)
+        #A straight-line fit can reach zero inside the range (it does for UPV), so the band stops
+        #there rather than being drawn through the sign change.
+        band = (fit_vf > 0) & (fit_vcf > 0)
+        ax.fill_between(xs[band], fit_vcf[band], fit_vf[band], color=color, alpha=0.15, zorder=2,
+                        label='cost escalation (fitted)')
+        observed = (xs >= x.min()) & (xs <= x.max())
+        for params in (vf_p, vcf_p):
+            fit = predict(params, xs)
+            ax.plot(xs, fit, color=color, linestyle=':', linewidth=1.2, alpha=0.35, zorder=5)
+            ax.plot(xs[observed], fit[observed], color=color, linestyle=':', linewidth=1.4,
+                    alpha=0.9, zorder=5)
+
+        ax.plot(x, y_vf, color=color, linestyle='-', marker='o', markersize=5, linewidth=1.8,
+                label='value factor', zorder=4)
+        ax.plot(x, y_vcf, color=color, linestyle='--', marker='s', markersize=5, linewidth=1.8,
+                alpha=0.85, label='value-cost factor (scaled)', zorder=4)
+
+        #Implied cost factor from the fits. It is 1.00 at zero market share by construction, so the
+        #value at the top of the range is the cost escalation the scaling makes visible. A straight
+        #line can fall through zero inside the plotted range - the linear value-factor fit for UPV
+        #does, at x=0.43 against data reaching 0.45 - and the ratio of two fits is meaningless once
+        #either has, so it is only reported while both are still positive.
+        pred_vf, pred_vcf = predict(vf_p, x.max()), predict(vcf_p, x.max())
+        valid = pred_vf > 0 and pred_vcf > 0
+        cf_hi = pred_vf / pred_vcf if valid else np.nan
+        text = '\n'.join([
+            f'LCOE base x {s:.4f}',
+            f'VF   {equation(vf_p)}  (R$^2$={r2_y(y_vf, predict(vf_p, x)):.2f})',
+            f'VCF  {equation(vcf_p)}  (R$^2$={r2_y(y_vcf, predict(vcf_p, x)):.2f})',
+            f'implied cost factor: 1.00 at x=0, {cf_hi:.2f} at x={x.max():.2f}' if valid
+            else f'implied cost factor undefined: fit reaches zero before x={x.max():.2f}',
+        ])
+        ax.text(0.97, 0.97, text, transform=ax.transAxes, fontsize=8, va='top', ha='right',
+                multialignment='left', zorder=7,
+                bbox={'facecolor': 'white', 'edgecolor': '0.7', 'boxstyle': 'round,pad=0.4',
+                      'alpha': 0.92})
+
+        ax.set_title(tech)
+        ax.set_xlabel('Market share (generation fraction)')
+        ax.set_xlim(0, x_hi)
+        #Headroom accounts for the fits at x=0, which rise above the data (UPV's reaches 1.17).
+        ax.set_ylim(0, max(y_vf.max(), y_vcf.max(), fit_vf.max(), fit_vcf.max()) / 0.80)
+        ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+        ax.legend(loc='lower left', fontsize=8)
+        scales.append({'tech': tech, 'form': form, 'lcoe_base_scale': s,
+                       'implied_cost_factor_at_gen_frac_max': cf_hi, 'gen_frac_max': x.max()})
+    axes[0].set_ylabel('Value factor / value-cost factor')
+    fig.suptitle(
+        f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)',
+        fontsize=12)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    return fig, pd.DataFrame(scales)
+
+
 def make_figs(valcostfac_core_path, output_dir=None):
     """Write both pitch figures and the underlying dataframe, next to valcostfac_core.csv by default."""
     if output_dir is None:
@@ -607,12 +741,22 @@ def make_figs(valcostfac_core_path, output_dir=None):
             use_adj=True,
             show_fits=True,
         )
+        #The VRE_VCF pair: value factor against value-cost factor with LCOE base scaled so the two
+        #share a fit intercept, under each fit form. The _adj figures above are left as they were.
+        fig_vcf_lin, scales_lin = plot_vre_vcf(
+            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_linear.png'), form='linear')
+        fig_vcf_pow, scales_pow = plot_vre_vcf(
+            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_power.png'), form='power')
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)
+        plt.close(fig_vcf_lin)
+        plt.close(fig_vcf_pow)
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
     fits = summarize_fits(df)
     fits.to_csv(os.path.join(output_dir, 'plcoe_pitch_fits.csv'), index=False)
+    pd.concat([scales_lin, scales_pow], ignore_index=True).to_csv(
+        os.path.join(output_dir, 'plcoe_pitch_vcf_scales.csv'), index=False)
     return df
 
 
