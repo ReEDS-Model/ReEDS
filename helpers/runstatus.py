@@ -17,7 +17,7 @@ def parse_multiple_runs_per_node(runs_running):
     expanded_runs = []
     for i in runs_running:
         ## Matches the form used for multiple runs per node: foo_(bar,baz[,etc])
-        if re.match('^\w+_\(\w+,\w+(,\w+)*\)$', i):
+        if re.match(r'^\w+_\(\w+,\w+(,\w+)*\)$', i):
             batch_ = i.split('(')[0]
             constituents = i.split('(')[1].strip(')').split(',')
             expanded_runs.extend([batch_+c for c in constituents])
