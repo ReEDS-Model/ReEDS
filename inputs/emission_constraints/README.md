@@ -17,8 +17,37 @@ A range of values for global warming potentials (GWP) of CH<sub>4</sub> and N<su
 - `rggi_states.csv`: List of participating RGGI states
   - Citation: [https://www.rggi.org/program-overview-and-design/elements](https://www.rggi.org/program-overview-and-design/elements)
 
-- `rggicon.csv`: CO<sub>2</sub> caps for RGGI states in metric tons
+- `rggicon.csv`: CO<sub>2</sub> cap [metric tons] for RGGI states
   - Citation: [https://www.rggi.org/allowance-tracking/allowance-distribution](https://www.rggi.org/allowance-tracking/allowance-distribution)
 
 ### Other files
-- `co2_tax.csv`: Annual CO2 tax
+- `ccs_link.csv`: Link from each CCS technology to its uncontrolled (non-CCS) counterpart
+
+- `ccs_link_water.csv`: Same as `ccs_link.csv` for the expanded cooling/water technologies
+
+- `co2_tax.csv`: CO<sub>2</sub> tax [2004$/metric ton] by year, with one column per tax scenario
+  - Applied to CO<sub>2</sub> emissions in all regions when `GSw_CarbTax` is on; the scenario column is selected by `GSw_CarbTaxOption`
+  - Scenario columns are named `t{level}_{year}`, ramping to $`{level}`/metric ton by `{year}` and holding flat thereafter; the `default` column escalates over the full horizon instead
+  - Enters the objective function as a cost on process (and, with `Sw_Upstream`, upstream) emissions
+
+- `county_co2_share_egrid_2022.csv`: Share [fraction] of national 2022 CO<sub>2</sub> emissions attributable to each county, calculated from 2022 eGRID data
+  - Summed over the counties in `GSw_Region` to scale national emission caps down to the modeled region
+
+- `csapr_group1_ex.csv`: CSAPR states that cannot trade allowances with those in group 2
+
+- `csapr_group2_ex.csv`: CSAPR states that cannot trade allowances with those in group 1
+
+- `csapr_ozone_season.csv`: CSAPR ozone-season NO<sub>x</sub> budget and assurance levels by state and year
+  - Active when `GSw_CSAPR` is on
+
+- `gwp.csv`: Global warming potentials by pollutant for each IPCC report and time horizon (`AR4-100`, `AR6-20`, etc.)
+  - The column used is selected by the `GSw_GWP` switch; see the Global Warming Potentials section above
+
+- `h2_leakage_rate.csv`: Hydrogen leakage rate [fraction] from upstream and process emissions by hydrogen production technology
+  - Columns are named `{study}/{Low,Med,High}`; the column used is selected by the `GSw_H2LeakageScen` switch
+
+- `methane_leakage_rate.csv`: Fractional leakage of methane from upstream natural gas production by year, for a range of named scenarios
+  - The column used is selected by the `GSw_MethaneLeakageScen` switch, which also accepts a fixed float rate
+
+- `state_cap.csv`: State-level CO<sub>2</sub> cap [metric tons CO<sub>2</sub>] by state and year
+  - Active when `GSw_StateCap` is on
