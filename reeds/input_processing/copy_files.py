@@ -757,6 +757,42 @@ def calculate_county_fractions(df, county2zone_with_legacy_bas):
 
     return df
 
+def write_emit_rate_ref(sw, inputs_case, reeds_path):
+    """
+    Read the sparse CO2 intensity-standard trajectory from
+    inputs/emission_constraints/emit_rate_ref.csv (indexed by year),
+    linearly interpolate onto every year in [startyear, endyear], and
+    write the file to inputs_case/emit_rate_ref.csv in the
+    GAMS-friendly '*Dim1,Val' format expected by b_inputs.gms.
+    """
+    src = os.path.join(
+        reeds_path, 'inputs', 'emission_constraints', 'emit_rate_ref.csv'
+    )
+    if not os.path.exists(src):
+        return
+
+    raw = pd.read_csv(src)
+    raw.columns = ['year', 'val']
+    raw['year'] = raw['year'].astype(int)
+    raw = raw.set_index('year').sort_index()
+
+    startyear = int(sw['startyear'])
+    endyear = int(sw['endyear'])
+    full_index = pd.RangeIndex(startyear, endyear + 1, name='year')
+
+    # Reindex to every year, then linear-interpolate between points
+    dense = (
+        raw['val']
+        .reindex(full_index.union(raw.index))
+        .interpolate(method='index')
+        .reindex(full_index)
+    )
+    dense = dense.ffill()
+    dense = dense.dropna().round(6)
+
+    out = dense.rename_axis('*Dim1').rename('Val').reset_index()
+    out.to_csv(os.path.join(inputs_case, 'emit_rate_ref.csv'), index=False)
+
 def write_disagg_data_files(runfiles, inputs_case):
     """
     Write files that will be used for disaggregation.
@@ -1093,6 +1129,21 @@ def write_miscellaneous_files(
     reeds.io.write_to_inputs_h5(
         co2_tax, 'co2_tax', inputs_case, gamstype='parameter',
         comment='--$/metric ton-- CO2 tax used when Sw_CarbTax is on',
+    )
+
+    # CO2 intensity-standard trajectory
+    write_emit_rate_ref(sw, inputs_case, reeds_path)
+
+    solveyears = reeds.inputs.parse_yearset(sw['yearset'])
+    if int(sw['startyear']) not in solveyears:
+        solveyears.append(int(sw['startyear']))
+        solveyears = sorted(solveyears)
+    solveyears = [y for y in solveyears if (y >= int(sw['startyear'])) and (y <= int(sw['endyear']))]
+    pd.DataFrame(columns=solveyears).to_csv(
+        os.path.join(inputs_case,'modeledyears.csv'), index=False)
+    reeds.io.write_to_inputs_h5(
+        pd.Series(solveyears, name='allt'), 'tmodel_new', inputs_case, gamstype='set',
+        comment='years to run the model',
     )
 
     solveyears = reeds.inputs.parse_yearset(sw['yearset'])

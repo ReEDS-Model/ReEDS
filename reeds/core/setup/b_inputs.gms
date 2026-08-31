@@ -4221,6 +4221,28 @@ emit_rate_con(e,r,t) = no ;
 parameter emit_rate_limit(e,r,t)   "--metric tons per MWh-- emission rate limit" ;
 emit_rate_limit(e,r,t) = 0 ;
 
+* Reference CO2 intensity-standard trajectory (indexed by year).
+* declared over allt to allow data files that extend beyond end_year
+$onempty
+parameter emit_rate_ref(allt) "--metric tons per MWh-- reference CO2 emission-rate-limit trajectory"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%emit_rate_ref.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$ifthene.emitratelimit %GSw_EmitRateLimit% == 1
+* Enable the constraint for CO2 in the chosen regions and years.
+emit_rate_con("CO2",r,t)$[sum{allt$att(allt,t), emit_rate_ref(allt) }] = yes ;
+
+* Assign the limit values, mapping allt -> t via all(t).
+emit_rate_limit("CO2",r,t)$emit_rate_con("CO2",r,t)
+    = sum{allt$att(allt,t), emit_rate_ref(allt) } ;
+$endif.emitratelimit
+
 *============================
 * Growth limits and penalties
 *============================

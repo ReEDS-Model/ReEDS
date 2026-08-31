@@ -131,6 +131,7 @@ GSw_DAC_Gas,"Turn on or off the representation of gas fueled direct air capture 
 GSw_DAC_Gas_Case,DAC gas parameterization case (See inputs/consume/dac_gas_[GSw_DAC_Gas_Case].csv),BVRE_2021_(high|mid|low),BVRE_2021_mid,
 GSw_distpv,Turn on/off distpv,0;1,1,
 GSw_DRShed, switch to turn on/off demand response shed resource,0;1,0,
+GSw_EmitRateLimit,Turn on/off emission rate limits,0; 1,0,
 GSw_EFS_Flex,Switch for turning EFS load flexibility on or off,0,0,
 GSw_EFS2_FlexCase,"Case used for electrification flex_type - format is {1}_{2}, where 1 in [EFS_REFERENCE, EFS_MEDIUM, EFS_HIGH, EFS_Clean2035] and 2 in [Baseflex, Currentflex, Enhancedflex, Uberflex1, Uberflex2]",N/A,EFS_MEDIUM_EnhancedflexStretch2046,
 GSw_EmploymentFactor,Source for employment factor data - see inputs/employment/README.md for descriptions,^(jedi|mayfield|rutovitz|ram)$,jedi,
