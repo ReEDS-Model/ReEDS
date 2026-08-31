@@ -1317,9 +1317,9 @@ ReEDS assumes electrolyzer units have a 20-year lifespan and a 10-year electroly
 
 | Technology | Year | Capital Cost (\$/kW) | Variable O&M (\$/kWh) | Fixed O&M (\$/kW-yr) | Electricity Use (kWh/kg) | Natural Gas Use (MMBtu/kg) |
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Electrolyzer | 2020 | 1750 | 0 | 101.9 | 56.1 | -- |
-| Electrolyzer | 2035 | 550 | 0 | 32.0 | 53.8 | -- |
-| Electrolyzer | 2050 | 550 | 0 | 25.0 | 51.5 | -- |
+| Electrolyzer | 2020 | 1750 | 0 | 87.5 | 56.1 | -- |
+| Electrolyzer | 2035 | 550 | 0 | 27.5 | 53.8 | -- |
+| Electrolyzer | 2050 | 550 | 0 | 27.5 | 51.5 | -- |
 | Steam methane reforming | 2020 | 649 | 0.087 | 20.9 | 0.88 | 0.192 |
 | Steam methane reforming | 2035 | 634 | 0.087 | 20.4 | 0.88 | 0.192 |
 | Steam methane reforming | 2050 | 622 | 0.087 | 20.0 | 0.88 | 0.192 |
@@ -1394,8 +1394,8 @@ Fixed and variable O&M assumptions are taken from Exhibit 5-19 (Case B31A) of th
 ### Direct Air Capture
 
 The model can also procure negative emissions by removing and storing CO<sub>2</sub> from the atmosphere using direct air capture.
-DAC is represented as a sorbent design that uses only electricity as an input, with an energy consumption of 3.72 MWh per tonne of CO<sub>2</sub> removed.
-Overnight capital costs are assumed to be \$1,932 per tonne-year capture capacity, with annual FOM costs of 4.6% of the capital costs and nonfuel VOM costs of \$21 per tonne.
+DAC is represented as a sorbent design that uses only electricity as an input, with an energy consumption of 4.40 MWh per tonne of CO<sub>2</sub> removed.
+In 2019 dollars, overnight capital costs are assumed to be \$931 per tonne-year of capture capacity, with annual FOM costs of 3.74% of the capital costs and nonfuel VOM costs of \$46.69 per tonne.
 
 
 ### CO<sub>2</sub> Transport and Storage
@@ -2918,9 +2918,8 @@ For imported electricity, the model calculates the regional emissions rate (metr
 In scenarios that also have a national carbon cap that reaches zero emissions, the emission intensity of California imports is also set to zero for years when the national carbon cap is zero.
 
 Because California's greenhouse gas reduction targets are legislated for all economic sectors whereas ReEDS models only the electricity sector, we rely on published economywide modeling results to estimate electric-sector-specific caps that are used in ReEDS.
-In particular, we apply power sector caps based on the annual California electric sector emissions (from in-state and imported electricity) from the California Public Utilities Commission {cite}`cpucDecisionSettingRequirements2018`, which provides guidance for a 42 million tCO<sub>2</sub> cap by 2030.
-We enforce that cap from 2030 to 2050.
-The pre-2030 cap ramps linearly from 60 million tCO<sub>2</sub> in 2020 to the 42 million tCO<sub>2</sub> in 2030.
+In particular, we apply power sector caps based on annual California electric sector emissions (from in-state and imported electricity) and guidance from the California Public Utilities Commission {cite}`cpucDecisionSettingRequirements2018,cpuc_2022`.
+The modeled trajectory declines from approximately 59 million tCO<sub>2</sub> in 2020 to 38 million tCO<sub>2</sub> in 2030 and 15 million tCO<sub>2</sub> in 2045, then remains at 15 million tCO<sub>2</sub> through 2050.
 California's RPS policy is also included in ReEDS.
 
 #### Delaware carbon cap
@@ -3176,7 +3175,8 @@ For these states, the nuclear power plants are not allowed to retire until after
 The policy end dates are taken from EIA {cite:year}`eiaElectricPowerMonthly2019a`.
 
 In addition, there are [several states that do not allow new nuclear power](https://www.ncsl.org/environment-and-natural-resources/states-restrictions-on-new-nuclear-power-facility-construction).
-These states include California, Illinois, Maine, Massachusetts, Minnesota, New York (Long Island only), Oregon, Rhode Island, and Vermont. Nuclear ban is not imposed for Connecticut since Act25-127 allows construction of advanced nuclear facilities in municipalities with referendums.
+These states include California, Maine, Massachusetts, Minnesota, New York (Long Island only), Oregon, Rhode Island, and Vermont.
+A nuclear ban is not imposed for Connecticut since Act25-127 allows construction of advanced nuclear facilities in municipalities with referendums.
 
 
 ### Other Policy Capabilities

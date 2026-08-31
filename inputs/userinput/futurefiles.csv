@@ -425,7 +425,6 @@ storage_mandates.csv,.csv,0,None,t,*st,0,0,constant,None,None,done,constant
 storinmaxfrac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 stressperiods_user.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; check if we need to expand the input file,
 superpeak_hour_mapper.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-supply_chain_adjust.csv,.csv,0,None,0,None,0,None,constant,None,None,new,
 supplycurve_egs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_geohydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
