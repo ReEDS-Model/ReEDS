@@ -637,6 +637,38 @@ def reaggregate_to_model_regions(
 
     return regional_load_hourly
 
+def splice_with_historical_demand(state_load_hourly, sw, weather_years, solveyears):
+    # load splice data with function used to get original load
+    print(f'splicing load data from demand_{sw.GSw_LoadSplice}')
+    splice_load = reeds.io.get_load_hourly(GSw_LoadProfiles=sw.GSw_LoadSplice)
+    # interpolate
+    endyear = int(sw.endyear)
+    splice_load = interpolate_missing_model_years(
+        splice_load,
+        endyear
+    )
+    # downselect to weather years
+    splice_load = downselect_to_weather_years(
+        splice_load,
+        weather_years
+    )
+    # downselect to model years
+    splice_load = downselect_to_model_years(
+        splice_load,
+        solveyears
+    )
+
+    # align indices, filling any missing years 
+    # (tyically historical) with zeroes
+    splice_load = splice_load.reindex(
+       state_load_hourly.index,
+        fill_value=0.0,
+    )
+
+    # add spliced load to total
+    state_load_hourly = combine_load_data(state_load_hourly, splice_load)
+    
+    return state_load_hourly
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
@@ -704,6 +736,18 @@ def main(reeds_path, inputs_case):
                     solveyears
                 )
             )
+            
+            # option to add additional load
+            if sw.GSw_LoadSplice != 'none':
+                state_load_hourly = (
+                    splice_with_historical_demand(
+                        state_load_hourly, 
+                        sw,
+                        weather_years,
+                        solveyears
+                    )
+                )
+
         case _:
             state_load_hourly = downselect_to_model_years(
                 state_load_hourly,

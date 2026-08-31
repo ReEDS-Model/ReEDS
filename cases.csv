@@ -217,6 +217,7 @@ GSw_Loadpoint,Switch to use or disable a loadpoint for the intertemporal solve a
 GSw_LoadSiteCF,Annual capacity factor of optimally sited load (if 0 then optimally sited load is turned off; if between 0 and 1 then load is flexible (obeying stress period weight); if 1 then load is inflexible),float,0,
 GSw_LoadSiteRA,Include optimally sited load in PRAS resource adequacy metrics if set to 1 and GSw_LoadSiteCF=1,0; 1,1,
 GSw_LoadSiteTrajectory,inputs/load/loadsite_{GSw_LoadSiteTrajectory={hierarchy level}_{identifier}}.csv file indicating load to be optimally sited (only used if GSw_LoadSiteCF>0),^(nercr|transreg|transgrp|cendiv|st|interconnect|country|usda_region)_.*$,country_test,
+GSw_LoadSplice,name of load profiles to add to baseline load; must be EER-style h5 file with hourly load by state for all weather years stored in profiles_demand,N/A,none,
 GSw_MaxCaptureCCSTechs,Switch to enable max capture (_max) CCS techs in addition to _mod. Note that you’ll need to add your own cost and performance for Gas-CC-CCS_max and coal-CCS_max,0; 1,0,
 GSw_MaxDailyCF,Turn on/off daily maximum capacity factor constraint,0; 1,1,
 GSw_MethaneLeakageScen,Fractional leakage of methane from upstream natural gas production: either float (fixed rate) or scenario name from emission_constraints/methane_leakage_rate.csv,N/A,Alvarez2018_30by2030,
