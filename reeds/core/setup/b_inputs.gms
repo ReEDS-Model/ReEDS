@@ -1730,6 +1730,7 @@ set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for
     valcap_iv(i,v)             "i and v combinations that are allowed for capacity",
     valcap_ir(i,r)             "i and r combinations that are allowed for capacity",
     valcap_ivr(i,v,r)          "i, v, and r combinations that are allowed for capacity",
+    valcap_class(i,c,v,r,t)    "i, c, v, r, and t combinations that are allowed for capacity",
     valcap_h2ptc(i,v,r,t)      "i, v, r and t combinations that are allowed for capacity that can receive the hydrogen PTC",
     valgen_irt(i,r,t)          "i, r, and t combinations that are allowed for generation",
     valinv(i,v,r,t)            "i, v, r, and t combinations that are allowed for investments",
@@ -2119,6 +2120,9 @@ valcap_iv(i,v)$sum{(r,t)$tmodel_new(t), valcap(i,v,r,t) } = yes ;
 valcap_ir(i,r)$sum{(v,t)$tmodel_new(t), valcap(i,v,r,t) } = yes ;
 valcap_i(i)$sum{v, valcap_iv(i,v) } = yes ;
 valcap_ivr(i,v,r)$sum{t, valcap(i,v,r,t) } = yes ;
+
+* Valid capacity by resource class is only for the technologies that have a capacity factor
+valcap_class(i,c,v,r,t)$[valcap(i,v,r,t)$i_c(i,c)$cf_tech(i)] = yes ;
 
 * -- valinv specification --
 valinv(i,v,r,t) = no ;
