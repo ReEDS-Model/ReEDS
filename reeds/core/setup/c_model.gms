@@ -28,7 +28,7 @@ positive variables
   CAP(i,v,r,t)                             "--MW-- total generation capacity in MWac (MWdc for PV); PV capacity of hybrid PV+battery; max native, flexible EV load for EVMC"
   CAP_ENERGY(i,v,r,t)                      "--MWh-- battery capacity in terms of energy"
   CAP_ABOVE_LIM(tg,r,t)                    "--MW-- amount of capacity that is deployed above the interconnection queue limits"
-  CAP_RSC(i,v,r,rscbin,t)                  "--MW-- total generation capacity in MWac (MWdc for PV) for wind-ons and upv"
+  CAP_RSC(i,c,v,r,rscbin,t)                "--MW-- total generation capacity in MWac (MWdc for PV) for wind-ons and upv"
   CAP_CLASS(i,c,v,r,t)                     "--MW-- total generation capacity by resource class for technologies with an input capacity factor"
   GROWTH_BIN(gbin,i,st,t)                  "--MW-- total new (from INV) generation capacity in each growth bin by state and technology group"
   INV(i,v,r,t)                             "--MW-- generation capacity additions in year t"
@@ -38,7 +38,7 @@ positive variables
   INV_CAP_UP(i,v,r,rscbin,t)               "--MW-- upsized generation capacity addition in year t"
   INV_ENER_UP(i,v,r,rscbin,t)              "--MW-- upsized energy addition in year t using capacity factor to convert to capacity units"
   INV_REFURB(i,v,r,t)                      "--MW-- investment in refurbishments of technologies that use a resource supply curve"
-  INV_RSC(i,v,r,rscbin,t)                  "--MW-- investment in technologies that use a resource supply curve"
+  INV_RSC(i,c,v,r,rscbin,t)                "--MW-- investment in technologies that use a resource supply curve"
   UPGRADES(i,v,r,t)                        "--MW-- investments in upgraded capacity from ii to i"
   UPGRADES_RETIRE(i,v,r,t)                 "--MW-- upgrades that have been retired - used as a free slack variable in eq_cap_upgrade"
 
@@ -156,7 +156,7 @@ EQUATION
  eq_cap_energy_new_noret(i,v,r,t)         "--MWh-- New energy capacity that cannot be retired is equal to sum of all previous years investment"
  eq_cap_new_retmo(i,v,r,t)                "--MW-- New capacity that can be retired must be monotonically decreasing unless increased by investment"
  eq_cap_new_retub(i,v,r,t)                "--MW-- New capacity that can be retired is less than or equal to all previous years investment"
- eq_cap_rsc(i,v,r,rscbin,t)               "--MW-- Capacity accounting for techs with exogenous capacity tracked by rscbin"
+ eq_cap_rsc(i,c,v,r,rscbin,t)             "--MW-- Capacity accounting for techs with exogenous capacity tracked by rscbin"
  eq_cap_class_total(i,v,r,t)              "--MW-- Capacity of each resource class sums to total capacity"
  eq_cap_up(i,v,r,rscbin,t)                "--MW-- limit on capacity upsizing"
  eq_cap_upgrade(i,v,r,t)                  "--MW-- All purchased upgrades are greater than or equal to the sum of upgraded capacity"
@@ -828,10 +828,10 @@ eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
 * ---------------------------------------------------------------------------
 * Capacity accounting for rsc techs
-eq_cap_rsc(i,v,r,rscbin,t)
+eq_cap_rsc(i,c,v,r,rscbin,t)
     $[tmodel(t)
     $rsc_i(i)$(not sccapcosttech(i))
-    $valcap(i,v,r,t)
+    $valcap(i,v,r,t)$i_c(i,c)
     $(not Sw_PCM)]..
 
     sum{tt$[tfirst(tt)$exog_rsc(i)],
@@ -840,12 +840,12 @@ eq_cap_rsc(i,v,r,rscbin,t)
     + sum{tt$[(yeart(tt) <= yeart(t))$(tmodel(tt) or tfix(tt))
           $m_rscfeas(r,i,rscbin)
           $valinv(i,v,r,tt)],
-          INV_RSC(i,v,r,rscbin,tt)
+          INV_RSC(i,c,v,r,rscbin,tt)
     }
 
     =e=
 
-    CAP_RSC(i,v,r,rscbin,t)
+    CAP_RSC(i,c,v,r,rscbin,t)
 ;
 
 * ---------------------------------------------------------------------------
@@ -1021,7 +1021,7 @@ eq_refurblim(i,r,t)$[tmodel(t)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)]..
 
 eq_rsc_inv_account(i,v,r,t)$[tmodel(t)$valinv(i,v,r,t)$rsc_i(i)$(not Sw_PCM)]..
 
-  sum{rscbin$m_rscfeas(r,i,rscbin), INV_RSC(i,v,r,rscbin,t) }
+  sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,rscbin)], INV_RSC(i,c,v,r,rscbin,t) }
 
   =e=
 
@@ -1054,8 +1054,8 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
     =g=
 
 *must exceed the cumulative invested capacity in that region/class/bin...
-    sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)],
-         INV_RSC(ii,v,r,rscbin,tt) * resourcescaler(ii) }
+    sum{(ii,c,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)$i_c(ii,c)],
+         INV_RSC(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 
 *plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
     + sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
@@ -1136,11 +1136,12 @@ eq_site_cf(x,h,t)
 * Capacity factor of techs with endogenously-modeled spur lines
         sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
 * multiplied by total capacity of those techs
-        * sum{rscbin
+        * sum{(c,rscbin)
               $[valcap(i,v,r,t)
+              $i_c(i,c)
               $m_rscfeas(r,i,rscbin)
               $spurline_sitemap(i,r,rscbin,x)],
-              CAP_RSC(i,v,r,rscbin,t)
+              CAP_RSC(i,c,v,r,rscbin,t)
         }
     }
 
@@ -1183,10 +1184,10 @@ eq_spur_noclip(x,t)
 * must be >= to the wind/solar capacity installed at x
 * (Since PV capacity is in DC, we divide CAP_RSC [DC] by ILR [DC/AC] to get AC spur line capacity.
 *  ILR is 1 for all non-PV techs.)
-    sum{(i,v,r,rscbin)
+    sum{(i,c,v,r,rscbin)
         $[spurline_sitemap(i,r,rscbin,x)
-        $valcap(i,v,r,t)],
-        CAP_RSC(i,v,r,rscbin,t) / ilr(i)
+        $valcap(i,v,r,t)$i_c(i,c)],
+        CAP_RSC(i,c,v,r,rscbin,t) / ilr(i)
     }
 ;
 
