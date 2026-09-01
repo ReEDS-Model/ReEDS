@@ -554,7 +554,11 @@ def main(reeds_path, inputs_case):
         & (gdb_use['StartYear'] < startyear)
         & (gdb_use['RetireYear'] > startyear)
     ].copy()
-    capnonrsc_units['i'] = capnonrsc_units.tech
+    capnonrsc_units['i'] = (
+        capnonrsc_units.coolingwatertech
+        if GSw_WaterMain == 1
+        else capnonrsc_units.tech
+    )
     onlineyear_units.append(capnonrsc_units[ONLINEYEAR_COLUMNS])
 
     capnonrsc = capnonrsc_units
@@ -663,6 +667,8 @@ def main(reeds_path, inputs_case):
                     ].copy()
     csp['v']='init-1'
     csp['i'] = csp.tech
+    if GSw_WaterMain == 1:
+        csp['i'] = csp['i'] + '_' + csp['ctt'] + '_' + csp['wst']
     onlineyear_units.append(csp[ONLINEYEAR_COLUMNS])
     csp = csp[COLNAMES['rsc'][0]]
     csp.columns = COLNAMES['rsc'][1]
