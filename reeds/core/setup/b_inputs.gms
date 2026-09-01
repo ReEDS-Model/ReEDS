@@ -5190,24 +5190,26 @@ rsc_cap_diff(r,i,rscbin) = m_rsc_dat(r,i,rscbin,"cap") - m_rsc_dat_original(r,i,
 *Round up to the nearest 3rd decimal place
 m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rscbin,"cap") * 1000) / 1000 ;
 
-*Use full discovery after prescriptions begin if the discovery factor is missing
-geo_discovery(i,r,t)$[geo_hydro(i)$(not geo_discovery(i,r,t))$tmodel_new(t)
-                     $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }] = 1 ;
+*Currently only geothermal and dr_shed have supply curve capacities that change over time
+* Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
+geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
 
-parameter geo_bin1_add_orig(i,r) "--MW-- geothermal resource shortfall for prescribed builds"
-          geo_bin1_add(i,r)      "--MW-- geothermal resource added to bin1" ;
+parameter geo_bin1_add(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
 
-*Resource needed for cumulative prescriptions after removing existing capacity
-geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
+*Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
+*remaining geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
+geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
       smax{t$[geo_discovery(i,r,t)$tmodel_new(t)
              $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }],
            sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }
                / geo_discovery(i,r,t) }
       - ( sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } - cap_existing(i,r) ) ;
 
-geo_bin1_add(i,r)$geo_hydro(i) = max(0, geo_bin1_add_orig(i,r)) ;
+* Only use positive values of geo_bin1_add, as negative values would indicate that the
+* existing resource is already sufficient to cover prescriptions
+geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
 
-*Add the shortfall to bin1
+* Add any additional resource needed to the first bin of the supply curve
 m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
     m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
 
