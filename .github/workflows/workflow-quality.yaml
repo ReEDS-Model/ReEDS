@@ -27,13 +27,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
-        with:
-          version: "0.9.4"
-
       - name: Run zizmor
-        run: uvx zizmor --pedantic .github
+        uses: zizmorcore/zizmor-action@e7a1f8c4d9b2a6e5f0c3b7d8a9e1f4c6b2d5a8f0 # v0.2.0
+        with:
+          version: "1.30.0"
+          persona: pedantic
+          inputs: .github
 
   actionlint:
     name: actionlint
@@ -44,10 +43,6 @@ jobs:
         with:
           persist-credentials: false
 
+      # Temporarily use kjanat/actionlint until rhysd/actionlint supports $/ self-repository references.
       - name: Run actionlint
-        run: |
-          ACTIONLINT_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/rhysd/actionlint/e7d448ef7507c20fc4c88a95d0c448b848cd6127/scripts/download-actionlint.bash"
-          curl -fsSL "$ACTIONLINT_INSTALL_SCRIPT_URL" -o download-actionlint.bash
-          echo "28a0e78b3230372051c5a77840125aa2c8dc7804fce3696ef29dd52001ec3a8f  download-actionlint.bash" | sha256sum -c -
-          bash download-actionlint.bash
-          ./actionlint
+        uses: kjanat/actionlint@d4c8a1f6e9b3c7a2d5f0e4b8c1a6d9f3e7b2c5a8 # v1.13.0
