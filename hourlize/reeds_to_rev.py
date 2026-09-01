@@ -650,7 +650,7 @@ def get_retirements_of_preexisting(df_cap_exog, years):
         )
         df_ret_exist = df_cap_exog.copy()
         df_ret_exist["MW"] = df_ret_exist.groupby(["tech", "region"])["MW"].diff()
-        df_ret_exist["MW"].fillna(0, inplace=True)
+        df_ret_exist["MW"] = df_ret_exist["MW"].fillna(0)
         df_ret_exist["MW"] = df_ret_exist["MW"] * -1
     else:
         df_ret_exist = pd.DataFrame()
