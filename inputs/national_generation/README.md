@@ -1,6 +1,8 @@
-# Clean Air Act, Section 111
+## National Generation Input Files
 
-## The regulation itself
+### Clean Air Act, Section 111
+
+#### The regulation itself
 
 The Clean Air Act, Section 111 is a federal regulation from the Environmental Protection Agency (EPA), which features carbon pollution standards to reduce greenhouse gas emissions from power plants.
 These regulations are called Section 111 for the section of the tax code which it is implemented in.
@@ -24,18 +26,16 @@ The BSERs are listed below:
 
 The second compliance mechanism, which is slightly more lenient, is a emissions rate-based mechanism.
 This is enforced at the state level.
-If a state opts into this compliance mechanism, the emisisons rate (tons CO<sub>2</sub>/MWh) of their coal fleet must be less than or equal to the emissions rate of a 90% coal-CCS plant.
+If a state opts into this compliance mechanism, the emissions rate (tons CO<sub>2</sub>/MWh) of their coal fleet must be less than or equal to the emissions rate of a 90% coal-CCS plant.
 This in theory enables some unabated coal plants to remain online after 2032, even though they won't be able to generate much.
 This is only possible if that state also has coal-CCS plants with high capture rates that stay online and generate, to average out the emissions rate to below the threshold.
 
-### Other resources
-
+##### Other resources
 - [Simplified presentation on the final regulations](https://www.epa.gov/system/files/documents/2024-04/cps-presentation-final-rule-4-24-2024.pdf)
 - [Final regulations](https://www.federalregister.gov/documents/2024/05/09/2024-09233/new-source-performance-standards-for-greenhouse-gas-emissions-from-new-modified-and-reconstructed)
 - [History of the Clean Air Act](https://www.epa.gov/clean-air-act-overview/evolution-clean-air-act)
 
-## Implementation in ReEDS
-
+#### Implementation in ReEDS
 In ReEDS, new gas plants must adhere to their BSER and existing coal plants adhere to an emissions rate-based standard.
 
 For new gas plants, this is the code implementation:
@@ -71,8 +71,7 @@ For existing coal plants, this is the code implementation:
 4. `c_model.gms`
     - `eq_caa_rate_standard(st,t)` - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions rate per state under Clean Air Act Section 111.
 
-## Assumptions
-
+#### Assumptions
 - We do not include the compliance mechanism for coal plants to cofire with natural gas in the model.
 We have modeled this in ReEDS previously in our analysis of these regulations and found that coal plants almost never choose this compliance mechanism.
 They would prefer to upgrade with CCS or retire.

@@ -108,35 +108,23 @@ def read_runfiles(reeds_path, sw):
 
     return runfiles, non_region_files, region_files
 
+def get_deflator_from_dollaryear_file(reeds_path, input_folder, filename):
+    """
+        given an input_folder and filename, get the deflator from the dollaryear.csv file
 
-def get_source_deflator_map(reeds_path):
     """
-    Get the deflator for each input file
-    """
-    # Inflation-adjusted inputs
-    sources_dollaryear = pd.read_csv(
-        os.path.join(reeds_path,'docs','sources.csv'),
-        usecols=["RelativeFilePath", "DollarYear"]
-    )
+
     deflator = pd.read_csv(
-        os.path.join(reeds_path,'inputs','financials','deflator.csv'),
-        header=0, names=['Dollar.Year','Deflator'], index_col='Dollar.Year').squeeze(1)
-    # Create a mapping between inputs' relative filepaths and their deflation
-    # multipliers based on the dollar years their monetary values are in
-    sources_dollaryear = (
-        # Filter out rows that don't contain a valid dollar year
-        sources_dollaryear[pd.to_numeric(sources_dollaryear['DollarYear'], errors='coerce').notnull()]
-        # Note: We must remove the backslash that prepends each relative filepath
-        # for compatibility with the 'os' package (otherwise it is treated as an absolute path)
-        .assign(RelativeFilePath=sources_dollaryear["RelativeFilePath"].str[1:])
-        .astype({"DollarYear": "int64"})
-        .rename(columns={"DollarYear": "Dollar.Year"})
-        .merge(deflator,on="Dollar.Year",how="left")
-    )
+        os.path.join(reeds_path, 'inputs', 'financials', 'deflator.csv'),
+        header=0, names=['Dollar.Year', 'Deflator'], index_col='Dollar.Year').squeeze(1)
 
-    source_deflator_map = dict(zip(sources_dollaryear["RelativeFilePath"], sources_dollaryear["Deflator"]))
+    dy = pd.read_csv(os.path.join(reeds_path, 'inputs', input_folder, 'dollaryear.csv'))
+    match = dy.loc[dy['Scenario'].astype(str).str.strip() == filename, 'Dollar.Year']
+    if match.empty:
+        raise KeyError(f"Scenario '{filename}' not found in {os.path.join(reeds_path, input_folder, 'dollaryear.csv')}")
+    dollar_year = int(float(match.iloc[0]))
 
-    return source_deflator_map
+    return float(deflator.loc[dollar_year])
 
 def get_regions_and_agglevel(
     reeds_path,
@@ -639,7 +627,6 @@ def write_non_region_file(
     dir_dst,
     sw,
     regions_and_agglevel,
-    source_deflator_map,
 ):
     """
     Copy a non-region specific file (filename) from src_file to dir_dst
@@ -703,7 +690,7 @@ def write_non_region_file(
                 write_scalars(scalars, dir_dst)
 
 
-def write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel, source_deflator_map):
+def write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel):
     """
     Copy non-region specific files to the input case directory.
     """
@@ -728,7 +715,6 @@ def write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglev
                 dir_dst,
                 sw,
                 regions_and_agglevel,
-                source_deflator_map,
             )
 
     
@@ -825,7 +811,6 @@ def write_disagg_data_files(runfiles, inputs_case):
 def write_region_indexed_file(
     df,
     inputs_case,
-    source_deflator_map,
     sw,
     region_file_entry
 ):
@@ -862,11 +847,12 @@ def write_region_indexed_file(
         reeds.io.write_profile_to_h5(df, filename, inputs_case)
     else:
         # Special cases: These files' values need to be adjusted to copy
-        filepath = region_file_entry['filepath']
         match filename:
             case 'bio_supplycurve.csv':
                 # Adjust for inflation
-                df['price'] = df['price'].astype(float) * source_deflator_map[filepath]
+                deflate = get_deflator_from_dollaryear_file(reeds.io.reeds_path, 'supply_curve', 'bio_supplycurve')
+                df['price'] = df['price'].astype(float) * deflate
+
             case 'unitdata_orig.csv':
                 # Map counties to zones
                 county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
@@ -907,7 +893,6 @@ def write_region_indexed_files(
     sw,
     region_files,
     regions_and_agglevel,
-    source_deflator_map
 ):
     """
     Filter and copy data for files with regions
@@ -934,7 +919,6 @@ def write_region_indexed_files(
             write_region_indexed_file(
                 df,
                 inputs_case,
-                source_deflator_map,
                 sw,
                 region_file_entry
             )
@@ -1310,10 +1294,8 @@ def main(reeds_path, inputs_case):
     # (gswitches.csv is first written at runreeds.py)
     scalar_csv_to_txt(os.path.join(inputs_case,'gswitches.csv'))
     
-    source_deflator_map = get_source_deflator_map(reeds_path)
-
     # Copy non-region files
-    write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel, source_deflator_map)
+    write_non_region_files(non_region_files, sw, inputs_case, regions_and_agglevel)
     
     # Write files used for disaggregation
     write_disagg_data_files(runfiles, inputs_case)
@@ -1324,7 +1306,6 @@ def main(reeds_path, inputs_case):
         sw,
         region_files,
         regions_and_agglevel,
-        source_deflator_map
     )
 
     #%% ===========================================================================

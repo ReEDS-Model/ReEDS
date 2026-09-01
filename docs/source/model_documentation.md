@@ -610,9 +610,16 @@ Example national dispatch profiles for gas CCS and nuclear in illustrative low-c
 ```{admonition} Unit startup considerations
 Two switches control unit startup considerations:
 - `GSw_MingenFixed` (default `1`): Turn on (if `1`) or off (if `0`) the minimum generation constraint for the technologies included in `inputs/plant_characteristics/mingen_fixed.csv` (affects only nuclear by default).
-- `GSw_StartCost` (default `4`): Specifies generation technologies for which to apply startup costs.
-The default setting of `4` specifies combined cycle, coal and CCS (leaving out nuclear, which is handled by `GSw_MingenFixed`).
-Startup costs are found at `inputs/plant_characteristics/startcost.csv`.
+- `GSw_StartCost` (default `3`): Specifies generation technologies for which to apply startup costs.
+Startup costs are found in `inputs/plant_characteristics/startcost.csv`.
+The available options for this switch are:
+  - 0: None
+  - 1: Nuclear
+  - 2: Nuclear, coal, and CCS
+  - 3: Coal and CCS (default)
+  - 4: Coal, CCS, and gas combined cycle
+  - 5: All fuel-consuming technologies except nuclear
+  - 6: All fuel-consuming technologies
 ```
 
 
@@ -1688,14 +1695,14 @@ If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {n
 ```
 
 The natural gas fuel prices also include time-based price adjustors.
-The default option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
-For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
-The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+The default option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
 For details, see the [Daily Natural Gas Price Adjustments section](#daily-natural-gas-price-adjustments) of the appendix.
+The other option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
+For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
 
 ```{admonition} Natural gas price adjustments
 The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
-0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 1)
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 2)
 ```
 
 
