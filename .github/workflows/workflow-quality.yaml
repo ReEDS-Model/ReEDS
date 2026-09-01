@@ -33,7 +33,7 @@ jobs:
           version: "0.9.4"
 
       - name: Run zizmor
-        run: uvx zizmor --pedantic .github
+        run: uvx zizmor==1.30.0 --pedantic .github
 
   actionlint:
     name: actionlint
@@ -46,8 +46,8 @@ jobs:
 
       - name: Run actionlint
         run: |
-          ACTIONLINT_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/rhysd/actionlint/e7d448ef7507c20fc4c88a95d0c448b848cd6127/scripts/download-actionlint.bash"
+          ACTIONLINT_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/kjanat/actionlint/c9565647ad2ff016b50b148a595dfcce50975816/scripts/download-actionlint.bash"
           curl -fsSL "$ACTIONLINT_INSTALL_SCRIPT_URL" -o download-actionlint.bash
-          echo "28a0e78b3230372051c5a77840125aa2c8dc7804fce3696ef29dd52001ec3a8f  download-actionlint.bash" | sha256sum -c -
-          bash download-actionlint.bash
+          echo "52bfe655301e668eeabc21ea4548358bec466b3e550aa29fcf7872df22088fe8  download-actionlint.bash" | sha256sum -c -
+          bash download-actionlint.bash 1.13.0
           ./actionlint
