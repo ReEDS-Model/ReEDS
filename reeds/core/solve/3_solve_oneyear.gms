@@ -42,10 +42,8 @@ $ifthene.post_startyear %cur_year%>%startyear%
 * infeasible or result in very tiny number (order 1e-16) in the matrix
 rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)] = 
 
-*capacity indicated by the resource supply curve minus exogenous (pre-start-year)
-*capacity, using its level in the first year (tfirst), scaled by rsc_capacity_scalar
-*(which equals geo_discovery for geo_hydro and adjusts undiscovered geo to the
-*"discovered" amount), plus hydro upgrade availability adjusted over time
+*capacity indicated by the resource supply curve net of first-year exogenous capacity
+*(with resource availability and hydro upgrade availability adjusted over time)
     ( m_rsc_dat(r,i,rscbin,"cap")
       - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
              capacity_exog_rsc(ii,v,r,rscbin,tt) } )
