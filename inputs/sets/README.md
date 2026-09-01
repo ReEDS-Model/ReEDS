@@ -54,6 +54,8 @@
 
 - `bioclass.csv`: set of bio tech classes
 
+- `c.csv`: set of renewable resource classes
+
 - `ccsflex_cat.csv`:set of flexible ccs performance parameter categories
 
 - `climate_param.csv`: set of parameters defined in climate_heuristics_finalyear
@@ -91,6 +93,8 @@
 - `hintage_char.csv`: set of characteristics available in hintage_data
 
 - `i.csv`: set of technologies
+
+- `i_c.csv`: map from technologies to their resource class (`c.csv`)
 
 - `i_geotech.csv`: crosswalk between an individual geothermal technology and its category
 
@@ -131,8 +135,6 @@
 - `pvb_config.csv`: set of hybrid pv+battery configurations
 
 - `quarter.csv`:
-
-- `resourceclass.csv`: set of renewable resource classes
 
 - `sdbin.csv`: set of storage durage bins
 

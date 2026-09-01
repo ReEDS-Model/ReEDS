@@ -1118,7 +1118,7 @@ eq_site_cf(x,h,t)
         $x_r(x,r)
         $valgen(i,v,r,t)],
 * Capacity factor of techs with endogenously-modeled spur lines
-        m_cf(i,v,r,h,t)
+        sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
 * multiplied by total capacity of those techs
         * sum{rscbin
               $[valcap(i,v,r,t)
@@ -1203,7 +1203,7 @@ eq_capacity_limit(i,v,r,h,t)
 *only vre technologies are curtailable.
 * This term accounts for energy-only and capacity-only upsizing,
 * which is initially implemented only for hydro.
-    + (m_cf(i,v,r,h,t)
+    + (sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
         * (CAP(i,v,r,t)
 *add energy embedded in energy-only upsizing
             + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
@@ -1255,7 +1255,7 @@ eq_capacity_limit_hybrid(r,h,t)
 eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 *sum of non-dispatchable capacity multiplied by its rated capacity factor,
-    + m_cf(i,v,r,h,t) * CAP(i,v,r,t)
+    + sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
 
     =e=
 
@@ -3058,7 +3058,7 @@ eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
           STORAGE_IN(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
 
 *energy into storage from CSP field
-        + (CAP(i,v,r,t) * csp_sm(i) * m_cf(i,v,r,h,t)
+        + (CAP(i,v,r,t) * csp_sm(i) * sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
           )$[CSP_Storage(i)$valcap(i,v,r,t)]
       )
 *[plus] water inflow energy available for hydropower that adds pumping
@@ -3358,7 +3358,7 @@ eq_plant_total_gen(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i
 eq_hybrid_plant_energy_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
 * [plus] plant output
-    m_cf(i,v,r,h,t) * CAP(i,v,r,t)
+    sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
 
     =g=
 
