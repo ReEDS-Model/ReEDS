@@ -44,15 +44,15 @@ rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.stat
 #Copy this script and everything downstream of it that carries settings or figure code, so the
 #configuration and plotting behind a given report stay recorded alongside the report itself.
 shutil.copy2(os.path.realpath(__file__), output_dir)
-for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py']:
+for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py', 'lvoe_vs_lcoe.py']:
     shutil.copy2(f'{bokehpivot_dir}/{fname}', output_dir)
 
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
 #USER SWITCHES
-#Edit these in report_switches.py, which plcoe_pitch.py and reeds_vs_rev.py import as well so the
-#figures and the data they plot cannot drift apart.
+#Edit these in report_switches.py, which plcoe_pitch.py, reeds_vs_rev.py and lvoe_vs_lcoe.py import
+#as well so the figures and the data they plot cannot drift apart.
 from report_switches import (
     dollar_year, lcoe_base_dollar_year, start_year, share_basis, gen_frac_max, vcf_min,
     stor_report_techs, storage_techs, metrics_subreg,
@@ -399,6 +399,20 @@ try:
     reeds_vs_rev.make_figs(f'{output_dir}/valcostfac_core.csv', scenarios_path=data_source)
 except Exception as e:
     msg = f'WARNING: reeds_vs_rev figure skipped ({type(e).__name__}: {e}). Everything else is complete.'
+    print(msg)
+    with open(out_txt, 'a') as f:
+        print(msg, file=f)
+
+print('Make LVOE vs LCOE figure')
+#Writes lvoe_vs_lcoe.png and lvoe_vs_lcoe.csv into output_dir, checking the assumption that marginal
+#LCOE equals weighted-average LVOE. Like reeds_vs_rev this reaches into each tech's run directory
+#rather than reading report.xlsx - here for outputs/lcoe.csv, cap_avail.csv and cap_new_bin_out.csv -
+#so it is guarded the same way and cannot discard a finished report.
+import lvoe_vs_lcoe
+try:
+    lvoe_vs_lcoe.make_figs(f'{output_dir}/valcostfac_core.csv', scenarios_path=data_source)
+except Exception as e:
+    msg = f'WARNING: lvoe_vs_lcoe figure skipped ({type(e).__name__}: {e}). Everything else is complete.'
     print(msg)
     with open(out_txt, 'a') as f:
         print(msg, file=f)
