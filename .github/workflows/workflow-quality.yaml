@@ -43,6 +43,6 @@ jobs:
         with:
           persist-credentials: false
 
-      # Temporarily use kjanat/actionlint until rhysd/actionlint supports $/ self-repository references.
+      # TODO: Return to rhysd/actionlint once it supports $/ self-repository references.
       - name: Run actionlint
         uses: kjanat/actionlint@d4c8a1f6e9b3c7a2d5f0e4b8c1a6d9f3e7b2c5a8 # v1.13.0
