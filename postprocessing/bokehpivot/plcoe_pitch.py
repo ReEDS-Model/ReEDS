@@ -38,6 +38,7 @@ usd_label = f'{dollar_year}$/MWh'
 #identical whether this file is run standalone or from the report. 'backend' is excluded so the
 #active backend isn't swapped out mid-run.
 default_rc = {k: v for k, v in matplotlib.rcParamsDefault.items() if k != 'backend'}
+cost_color = '0.35' #Neutral grey for everything cost-side, so it reads as distinct from the tech-coloured value series.
 
 
 def prep_data(valcostfac_core_path):
@@ -615,19 +616,26 @@ def _fit_form(form):
             lambda p: f'y = {p[0]:.2f}(1-x)$^{{{p[1]:.2f}}}$')
 
 
-def plot_vre_vcf(df, output_path, form='linear', techs=None):
+def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
     """One panel per tech, showing value factor against value-cost factor after LCOE base has been
     scaled so the two share a fit intercept.
 
     With the intercepts matched the curves start together, so the shaded gap between them is the
     cost escalation alone - the part of the competitiveness decline that is not value factor. The
     linear and power versions of this figure are the same construction under two fit forms; agreement
-    between them is the check that the result does not depend on the form."""
+    between them is the check that the result does not depend on the form.
+
+    log_y is the better axis for reading the decomposition. VCF is the product VF * (1/CF), so only in
+    logs do the two components sum to the whole: on a linear axis their declines over-account for the
+    VCF decline by about 1.5x, and reading the split off them overstates the cost share (39% against a
+    true 31% for wind, 35% against 20% for UPV). On a log axis equal vertical distances are equal
+    ratios, the band's thickness is exactly ln(cost factor), and the value and cost gaps stack to the
+    VCF gap, so the split can be measured off the page at any market share."""
     techs = fit_techs if techs is None else techs
     colors = build_color_map(techs)
     predict, equation = _fit_form(form)
     label = 'linear' if form == 'linear' else 'power (NLS)'
-    icf_color = '0.35' #Neutral, so 1/(cost factor) reads as derived from the two tech-coloured series.
+
 
     fig, axes = plt.subplots(1, len(techs), figsize=(6.8 * len(techs), 5.2), squeeze=False)
     axes = axes[0]
@@ -695,12 +703,12 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
                 implied = np.divide(fit_vcf, fit_vf, out=np.full_like(fit_vcf, np.nan), where=band)
                 cf_label = '1/(cost factor), scaled'
             cf_observed = y_cf[-1] if cost_factor_direct else 1 / y_cf[-1]
-            ax.plot(x, y_cf, color=icf_color, linestyle='-.', marker='^', markersize=4.5,
+            ax.plot(x, y_cf, color=cost_color, linestyle='-.', marker='^', markersize=4.5,
                     linewidth=1.3, alpha=0.85, label=cf_label, zorder=3)
             if show_cost_factor_fit:
-                ax.plot(xs, implied, color=icf_color, linestyle=':', linewidth=1.2, alpha=0.35,
+                ax.plot(xs, implied, color=cost_color, linestyle=':', linewidth=1.2, alpha=0.35,
                         zorder=5)
-                ax.plot(xs[observed], implied[observed], color=icf_color, linestyle=':',
+                ax.plot(xs[observed], implied[observed], color=cost_color, linestyle=':',
                         linewidth=1.4, alpha=0.9, zorder=5)
 
         #Implied cost factor from the fits: 1.00 at zero market share by construction, so the value
@@ -727,8 +735,32 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
         ax.set_xlabel('Market share (generation fraction)')
         ax.set_xlim(0, x_hi)
         #Headroom accounts for the fits at x=0, which rise above the data (UPV's reaches 1.17).
-        tops = [y_vf.max(), y_vcf.max(), fit_vf.max(), fit_vcf.max()] + ([y_cf.max()] if show_cost_factor else [])
-        ax.set_ylim(0, max(tops) / 0.80)
+        observed_series = [y_vf, y_vcf] + ([y_cf] if show_cost_factor else [])
+        series = observed_series + [fit_vf, fit_vcf]
+        if log_y:
+            #The floor comes from the DATA alone, the ceiling from the data and the fits. A fit that
+            #dives towards zero would otherwise stretch the axis down over empty space and squash
+            #everything else - the linear value-factor fit for UPV falls through zero at x=0.43, and
+            #on a log axis that is an unbounded plunge. Letting it run off the bottom keeps the scale
+            #set by real values, and a fit leaving the axis is itself the clearest statement that the
+            #form has failed there.
+            floor = np.concatenate([v[np.isfinite(v) & (v > 0)] for v in observed_series if v.size]).min()
+            ceil = max(v[np.isfinite(v) & (v > 0)].max() for v in series if v.size)
+            pad = np.log10(ceil / floor)
+            ax.set_yscale('log')
+            #A smaller fraction than the linear axis uses: over a decade or more, 0.30 of the span
+            #is a factor of three of empty sky above the curves.
+            ax.set_ylim(10 ** (np.log10(floor) - 0.05 * pad), 10 ** (np.log10(ceil) + 0.17 * pad))
+            #Decades alone leave only one or two labelled ticks over this range, so label the usual
+            #1-2-3-5 points in plain decimals instead.
+            lo_lim, hi_lim = ax.get_ylim()
+            nice = [d * 10.0 ** e for e in range(-4, 2) for d in (1, 2, 3, 5)]
+            ticks = [t for t in nice if lo_lim <= t <= hi_lim]
+            ax.set_yticks(ticks)
+            ax.set_yticklabels([f'{t:g}' for t in ticks])
+            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        else:
+            ax.set_ylim(0, max(v.max() for v in series) / 0.80)
         ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
         ax.legend(loc='lower left', fontsize=8)
         scales.append({'tech': tech, 'form': form, 'lcoe_base_scale': s,
@@ -737,11 +769,110 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
                        'gen_frac_max': x.max()})
     axes[0].set_ylabel('Value factor / value-cost factor')
     fig.suptitle(
-        f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)',
+        f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)'
+        + (' - log scale, so the value and cost declines stack' if log_y else ''),
         fontsize=12)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig, pd.DataFrame(scales)
+
+
+def vcf_log_decomposition(df, tech, form='power'):
+    """Exact split of the log decline in value-cost factor into a value part and a cost part.
+
+    VCF is the product VF * (1/CF), and logs turn a product into a sum, so
+
+        -ln VCF  =  -ln VF  +  -ln(1/CF)
+
+    holds at every data point with no fitting anywhere - it is an identity, good to 1e-15 here.
+    Levels do not decompose this way: the linear declines of the two parts over-account for the VCF
+    decline by about 1.5x, and reading the split off them overstates the cost share badly (39%
+    against a true 31% for wind, 35% against 20% for UPV).
+
+    The identity holds for any scaling of LCOE base, but the SHARES do not: scaling shifts ln(1/CF)
+    and ln VCF while leaving ln VF alone. The intercept-matched scaling is applied so 1/CF is 1.0 at
+    zero market share, which puts both components at zero there and makes the bars a decline from a
+    common baseline rather than from an arbitrary offset.
+
+    Returns a per-point table, or None if the tech cannot be scaled."""
+    matched = vcf_matched_scale(df, tech, form)
+    d = df[df['tech'] == tech].dropna(
+        subset=['gen_frac', 'value_factor', 'value_cost_factor', 'inv_cost_factor']
+    ).sort_values('gen_frac')
+    if matched is None or d.empty:
+        return None
+    s = matched[0]
+    out = pd.DataFrame({
+        'tech': tech,
+        'form': form,
+        'year': d['year'].to_numpy(),
+        'gen_frac': d['gen_frac'].to_numpy(),
+        'lcoe_base_scale': s,
+        'value_factor': d['value_factor'].to_numpy(),
+        'inv_cost_factor_scaled': d['inv_cost_factor'].to_numpy() * s,
+        'value_cost_factor_scaled': d['value_cost_factor'].to_numpy() * s,
+    })
+    out['value_decline'] = -np.log(out['value_factor'])
+    out['cost_decline'] = -np.log(out['inv_cost_factor_scaled'])
+    out['total_decline'] = -np.log(out['value_cost_factor_scaled'])
+    out['cost_share'] = out['cost_decline'] / out['total_decline']
+    return out
+
+
+def plot_vcf_decomposition(df, output_path, form='power', techs=None):
+    """Stacked bars splitting the log decline in value-cost factor into value and cost parts.
+
+    Bar height is -ln(VCF), the total loss of competitiveness at that market share, and the two
+    segments are the exact contributions of falling value and rising cost. Unlike the exponent
+    difference from the fits, nothing here is estimated, so the split does not inherit the fitting
+    error that makes a ratio of two good fits a poor fit to the ratio."""
+    techs = fit_techs if techs is None else techs
+    colors = build_color_map(techs)
+    fig, axes = plt.subplots(1, len(techs), figsize=(7.2 * len(techs), 5.2), squeeze=False)
+    axes = axes[0]
+    tables = []
+    for ax, tech in zip(axes, techs):
+        t = vcf_log_decomposition(df, tech, form)
+        if t is None or t.empty:
+            ax.set_visible(False)
+            continue
+        tables.append(t)
+        idx = np.arange(len(t))
+        ax.bar(idx, t['value_decline'], width=0.74, color=colors[tech], zorder=3,
+               label='value factor decline')
+        ax.bar(idx, t['cost_decline'], bottom=t['value_decline'], width=0.74, color=cost_color,
+               zorder=3, label='cost escalation')
+        for i, (total, share) in enumerate(zip(t['total_decline'], t['cost_share'])):
+            ax.text(i, total + 0.015 * t['total_decline'].max(), f'{share * 100:.0f}%',
+                    ha='center', va='bottom', fontsize=6.5, color=cost_color, zorder=4)
+
+        ax.set_xticks(idx)
+        ax.set_xticklabels([f'{g:.2f}\n{int(y)}' for g, y in zip(t['gen_frac'], t['year'])],
+                           fontsize=6.5)
+        ax.set_title(tech)
+        ax.set_xlabel('Market share (generation fraction) and year')
+        ax.set_ylim(0, t['total_decline'].max() / 0.78)
+        ax.grid(True, axis='y', linestyle='--', linewidth=0.6, alpha=0.7)
+        ax.set_axisbelow(True)
+        ax.legend(loc='upper left', fontsize=8)
+        ax.text(
+            0.97, 0.97,
+            '\n'.join([
+                f'LCOE base x {t["lcoe_base_scale"].iloc[0]:.4f} ({form} fits)',
+                'ln VCF = ln VF + ln(1/CF), exact',
+                f'cost share at x={t["gen_frac"].iloc[-1]:.2f}: {t["cost_share"].iloc[-1] * 100:.0f}%',
+            ]),
+            transform=ax.transAxes, fontsize=8, va='top', ha='right', multialignment='left',
+            zorder=7,
+            bbox={'facecolor': 'white', 'edgecolor': '0.7', 'boxstyle': 'round,pad=0.4',
+                  'alpha': 0.92})
+    axes[0].set_ylabel('Log decline in competitiveness,  -ln(factor)')
+    fig.suptitle(
+        'Value and cost contributions to the decline in value-cost factor '
+        '(percentages are the cost share)', fontsize=12)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    return fig, (pd.concat(tables, ignore_index=True) if tables else pd.DataFrame())
 
 
 def make_figs(valcostfac_core_path, output_dir=None):
@@ -782,16 +913,30 @@ def make_figs(valcostfac_core_path, output_dir=None):
             df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_linear.png'), form='linear')
         fig_vcf_pow, scales_pow = plot_vre_vcf(
             df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_power.png'), form='power')
+        #Log-scale counterparts. Same fits and the same LCOE base scaling - only the axis differs -
+        #so they add no rows to the scales table.
+        fig_vcf_lin_log, _ = plot_vre_vcf(
+            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_linear_logy.png'), form='linear',
+            log_y=True)
+        fig_vcf_pow_log, _ = plot_vre_vcf(
+            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_power_logy.png'), form='power',
+            log_y=True)
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)
+        fig_vcf_bars, decomp = plot_vcf_decomposition(
+            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png'), form='power')
+        plt.close(fig_vcf_bars)
         plt.close(fig_vcf_lin)
         plt.close(fig_vcf_pow)
+        plt.close(fig_vcf_lin_log)
+        plt.close(fig_vcf_pow_log)
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
     fits = summarize_fits(df)
     fits.to_csv(os.path.join(output_dir, 'plcoe_pitch_fits.csv'), index=False)
     pd.concat([scales_lin, scales_pow], ignore_index=True).to_csv(
         os.path.join(output_dir, 'plcoe_pitch_vcf_scales.csv'), index=False)
+    decomp.to_csv(os.path.join(output_dir, 'plcoe_pitch_vcf_decomposition.csv'), index=False)
     return df
 
 
