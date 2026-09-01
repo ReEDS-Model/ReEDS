@@ -22,6 +22,7 @@ max_cost_value_factor = 5
 inv_value_factor_ylim = (0.8, 3)
 cost_factor_ylim = (0.8, 3)
 fit_techs = ['Onshore Wind','UPV'] #Techs given a dotted OLS fit vs market share on the value/cost-factor figures.
+show_cost_factor = True #On the VRE_VCF figures, also plot 1/(cost factor) - the scaled data, with the curve implied by the VF and VCF fits rather than an independent fit of its own.
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
@@ -624,6 +625,7 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
     colors = build_color_map(techs)
     predict, equation = _fit_form(form)
     label = 'linear' if form == 'linear' else 'power (NLS)'
+    icf_color = '0.35' #Neutral, so 1/(cost factor) reads as derived from the two tech-coloured series.
 
     fig, axes = plt.subplots(1, len(techs), figsize=(6.8 * len(techs), 5.2), squeeze=False)
     axes = axes[0]
@@ -671,6 +673,22 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
         ax.plot(x, y_vcf, color=color, linestyle='--', marker='s', markersize=5, linewidth=1.8,
                 alpha=0.85, label='value-cost factor (scaled)', zorder=4)
 
+        #1/(cost factor) is VCF/VF, so it is the vertical ratio of the two series above rather than a
+        #new measurement, and after the scaling it passes through 1.0 at zero market share. It is
+        #drawn against the curve IMPLIED by the VF and VCF fits, not against a fit of its own: an
+        #independent fit would be a second, slightly different answer to the same question, whereas
+        #the implied curve is the one the shaded band actually asserts. Where the points depart from
+        #it - and for UPV they depart a long way at the top of the range - that gap is a real
+        #limitation of describing a ratio by the ratio of two fits, and is better shown than hidden.
+        y_icf = d['inv_cost_factor'].to_numpy() * s if show_cost_factor else np.array([])
+        if show_cost_factor:
+            ax.plot(x, y_icf, color=icf_color, linestyle='-.', marker='^', markersize=4.5,
+                    linewidth=1.3, alpha=0.85, label='1/(cost factor), scaled', zorder=3)
+            implied = np.divide(fit_vcf, fit_vf, out=np.full_like(fit_vcf, np.nan), where=band)
+            ax.plot(xs, implied, color=icf_color, linestyle=':', linewidth=1.2, alpha=0.35, zorder=5)
+            ax.plot(xs[observed], implied[observed], color=icf_color, linestyle=':', linewidth=1.4,
+                    alpha=0.9, zorder=5)
+
         #Implied cost factor from the fits. It is 1.00 at zero market share by construction, so the
         #value at the top of the range is the cost escalation the scaling makes visible. A straight
         #line can fall through zero inside the plotted range - the linear value-factor fit for UPV
@@ -683,7 +701,8 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
             f'LCOE base x {s:.4f}',
             f'VF   {equation(vf_p)}  (R$^2$={r2_y(y_vf, predict(vf_p, x)):.2f})',
             f'VCF  {equation(vcf_p)}  (R$^2$={r2_y(y_vcf, predict(vcf_p, x)):.2f})',
-            f'implied cost factor: 1.00 at x=0, {cf_hi:.2f} at x={x.max():.2f}' if valid
+            (f'cost factor: 1.00 at x=0, {cf_hi:.2f} implied at x={x.max():.2f}'
+             + (f' (data {1 / y_icf[-1]:.2f})' if show_cost_factor and y_icf[-1] > 0 else '')) if valid
             else f'implied cost factor undefined: fit reaches zero before x={x.max():.2f}',
         ])
         ax.text(0.97, 0.97, text, transform=ax.transAxes, fontsize=8, va='top', ha='right',
@@ -695,11 +714,14 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
         ax.set_xlabel('Market share (generation fraction)')
         ax.set_xlim(0, x_hi)
         #Headroom accounts for the fits at x=0, which rise above the data (UPV's reaches 1.17).
-        ax.set_ylim(0, max(y_vf.max(), y_vcf.max(), fit_vf.max(), fit_vcf.max()) / 0.80)
+        tops = [y_vf.max(), y_vcf.max(), fit_vf.max(), fit_vcf.max()] + ([y_icf.max()] if show_cost_factor else [])
+        ax.set_ylim(0, max(tops) / 0.80)
         ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
         ax.legend(loc='lower left', fontsize=8)
         scales.append({'tech': tech, 'form': form, 'lcoe_base_scale': s,
-                       'implied_cost_factor_at_gen_frac_max': cf_hi, 'gen_frac_max': x.max()})
+                       'implied_cost_factor_at_gen_frac_max': cf_hi,
+                       'observed_cost_factor_at_gen_frac_max': 1 / y_icf[-1] if show_cost_factor and y_icf[-1] > 0 else np.nan,
+                       'gen_frac_max': x.max()})
     axes[0].set_ylabel('Value factor / value-cost factor')
     fig.suptitle(
         f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)',
