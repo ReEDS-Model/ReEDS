@@ -1776,7 +1776,7 @@ m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(i,v,r,tt) } ;
 
-parameter degrade(i,t,tt) "degradation factor by i" ;
+parameter degrade_new(i,t,tt) "--fraction-- new built capacity from year t remaining after degradation in year tt" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
@@ -1795,18 +1795,19 @@ degrade_annual(i)$pvb(i) = sum{ii$[upv(ii)$rsc_agg(ii,i)], degrade_annual(ii) } 
 
 degrade_annual(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), degrade_annual(ii) } ;
 
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+* Degrade new built capacity from its build year (t) to the evaluation year (tt).
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
 
 * Degrade existing nameplate capacity from its average build year.
 * Use hintage_data for binned technologies and distpv.
 
-parameter exog_degradation(i,v,r,allt) "--fraction-- existing (initv) capacity lost to degradation since it came online" ;
+parameter degrade_init(i,v,r,allt) "--fraction-- existing (initv) capacity lost to degradation since it came online" ;
 
 exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
     = hintage_data(i,v,r,t,"wOnlineYear") ;
 
-exog_degradation(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
+degrade_init(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
     = 1 - (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
