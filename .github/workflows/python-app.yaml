@@ -38,7 +38,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup ReEDS environments
-        uses: $/.github/actions/setup-reeds-env
+        uses: ./.github/actions/setup-reeds-env
         with:
           julia-version: ${{ env.JULIA_VERSION }}
 
@@ -82,7 +82,7 @@ jobs:
             zenodo-files-
       
       - name: Setup Python environment
-        uses: $/.github/actions/setup-reeds-env
+        uses: ./.github/actions/setup-reeds-env
         with:
           setup-julia: false
 
@@ -164,7 +164,7 @@ jobs:
 
       - name: Setup Python and Julia environments
         id: setup-env
-        uses: $/.github/actions/setup-reeds-env
+        uses: ./.github/actions/setup-reeds-env
         with:
           julia-version: ${{ env.JULIA_VERSION }}
 
