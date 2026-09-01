@@ -1691,14 +1691,14 @@ If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {n
 ```
 
 The natural gas fuel prices also include time-based price adjustors.
-The default option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
-For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
-The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+The default option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
 For details, see the [Daily Natural Gas Price Adjustments section](#daily-natural-gas-price-adjustments) of the appendix.
+The other option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
+For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
 
 ```{admonition} Natural gas price adjustments
 The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
-0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 1)
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 2)
 ```
 
 
