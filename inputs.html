@@ -1101,6 +1101,7 @@ So if the set <code class="docutils literal notranslate"><span class="pre">food<
 <li><p><code class="docutils literal notranslate"><span class="pre">aclike.csv</span></code>: set of AC transmission capacity types</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">allt.csv</span></code>: set of all potential years</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bioclass.csv</span></code>: set of bio tech classes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c.csv</span></code>: set of renewable resource classes</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ccsflex_cat.csv</span></code>:set of flexible ccs performance parameter categories</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">climate_param.csv</span></code>: set of parameters defined in climate_heuristics_finalyear</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">consumecat.csv</span></code>: set of categories for consuming facility characteristics</p></li>
@@ -1120,6 +1121,7 @@ So if the set <code class="docutils literal notranslate"><span class="pre">food<
 <li><p><code class="docutils literal notranslate"><span class="pre">h2_stor.csv</span></code>: set of H2 storage options</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">hintage_char.csv</span></code>: set of characteristics available in hintage_data</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">i.csv</span></code>: set of technologies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_c.csv</span></code>: map from technologies to their resource class (<code class="docutils literal notranslate"><span class="pre">c.csv</span></code>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">i_geotech.csv</span></code>: crosswalk between an individual geothermal technology and its category</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">i_h2_ptc_gen.csv</span></code>: set of technologies which can produce energy for electrolyzers claiming the hydrogen production tax credit due to their low lifecycle carbon emissions</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">i_p.csv</span></code>: mapping from technologies to the products they produce</p></li>
@@ -1140,7 +1142,6 @@ So if the set <code class="docutils literal notranslate"><span class="pre">food<
 <li><p><code class="docutils literal notranslate"><span class="pre">pvb_agg.csv</span></code>: crosswalk between hybrid pv+battery configurations and technology options</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pvb_config.csv</span></code>: set of hybrid pv+battery configurations</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">quarter.csv</span></code>:</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">resourceclass.csv</span></code>: set of renewable resource classes</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sdbin.csv</span></code>: set of storage durage bins</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tg.csv</span></code>: set of technology groups</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tg_rsc_cspagg.csv</span></code>: set of csp technologies that belong to the same class</p></li>
@@ -1637,7 +1638,7 @@ Turned on for some zone sets with single-county zones that have no high-voltage 
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on August 28, 2026.
+      <span class="lastupdated">Last updated on September 01, 2026.
       </span></p>
   </div>
 
