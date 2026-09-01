@@ -2163,7 +2163,7 @@ def run(
             save_outputs(df_sc_out, out_dir_path, tech, reduced_only)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"***Error for {rev_row.tech}...\n{traceback.format_exc()}")
+            print(f"***Error for {rev_row.tech}...")
             raise e
 
     print("Completed reeds_to_rev!")
