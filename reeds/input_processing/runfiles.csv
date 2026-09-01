@@ -256,7 +256,6 @@ upgrade_mult_conservative.csv,inputs/upgrades/upgrade_mult_atb23_ccs_con.csv,int
 upgrade_mult_mid.csv,inputs/upgrades/upgrade_mult_atb23_ccs_mid.csv,"int(sw.GSw_UpgradeCost_Mult) in [0, 4]",ignore,ignore,,,,,0,,,,,,
 upgradelink_water.csv,inputs/upgrades/upgradelink_water.csv,1,ignore,ignore,,,,,0,,,,,,
 uranium_price.csv,inputs/fuelprices/uranium_{uraniumscen}.csv,1,ignore,ignore,,,,0,0,,,,,,
-vg.csv,inputs/sets/vg.csv,1,ignore,ignore,,,,,,,1,set,vg,vintage group for emission rates application,
 var_map.csv,inputs/valuestreams/var_map.csv,1,ignore,ignore,,,,,0,,,,,,
 wat_access_cap_cost.csv,inputs/waterclimate/wat_access_cap_cost.csv,int(sw.GSw_WaterMain) != 0,sc_cat,geosize,r,*wst,,0,0,value,,,,,
 water_req_psh_10h_1_51.csv,inputs/waterclimate/water_req_psh_10h_1_51.csv,(int(sw.GSw_PSHwatercon) != 0) and (int(sw.GSw_WaterMain) != 0),sum,geosize,r,wide,,1,0,,,,,,not yet ready for county-level disaggregation
