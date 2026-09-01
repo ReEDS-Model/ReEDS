@@ -703,11 +703,13 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
                 ax.plot(xs[observed], implied[observed], color=icf_color, linestyle=':',
                         linewidth=1.4, alpha=0.9, zorder=5)
 
-        #Implied cost factor from the fits. It is 1.00 at zero market share by construction, so the
-        #value at the top of the range is the cost escalation the scaling makes visible. A straight
-        #line can fall through zero inside the plotted range - the linear value-factor fit for UPV
-        #does, at x=0.43 against data reaching 0.45 - and the ratio of two fits is meaningless once
-        #either has, so it is only reported while both are still positive.
+        #Implied cost factor from the fits: 1.00 at zero market share by construction, so the value
+        #at the top of the range is the cost escalation the scaling makes visible. It is recorded in
+        #plcoe_pitch_vcf_scales.csv rather than printed on the panel, which keeps the box to the
+        #scaling and the two fits it applies to. A straight line can fall through zero inside the
+        #plotted range - the linear value-factor fit for UPV does, at x=0.43 against data reaching
+        #0.45 - and the ratio of two fits is meaningless once either has, so it is left undefined
+        #there rather than reported.
         pred_vf, pred_vcf = predict(vf_p, x.max()), predict(vcf_p, x.max())
         valid = pred_vf > 0 and pred_vcf > 0
         cf_hi = pred_vf / pred_vcf if valid else np.nan
@@ -715,9 +717,6 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None):
             f'LCOE base x {s:.4f}',
             f'VF   {equation(vf_p)}  (R$^2$={r2_y(y_vf, predict(vf_p, x)):.2f})',
             f'VCF  {equation(vcf_p)}  (R$^2$={r2_y(y_vcf, predict(vcf_p, x)):.2f})',
-            (f'cost factor: 1.00 at x=0, {cf_hi:.2f} implied at x={x.max():.2f}'
-             + (f' (data {cf_observed:.2f})' if np.isfinite(cf_observed) else '')) if valid
-            else f'implied cost factor undefined: fit reaches zero before x={x.max():.2f}',
         ])
         ax.text(0.97, 0.97, text, transform=ax.transAxes, fontsize=8, va='top', ha='right',
                 multialignment='left', zorder=7,
