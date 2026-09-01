@@ -3151,6 +3151,16 @@ results_meta = collections.OrderedDict((
         }
     ),
 
+    ('Material Inputs (metric tons)',
+    {'file': 'mat_inputs',
+     'columns': ['material', 'year', 'Material Inputs (metric tons)'],
+     'index': ['material', 'year'],
+     'presets': collections.OrderedDict((
+        ('Lines',{'x':'year', 'y':'Material Inputs (metric tons)',  'series':'material', 'chart_type':'Line'}),
+        )),
+        }
+    ),
+
     ('Runtime',
         {'sources': [
             {'name':'runtime', 'file':'../meta.csv', 'columns':['computer', 'repo', 'branch', 'commit', 'Unnamed: 4']},

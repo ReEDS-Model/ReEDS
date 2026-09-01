@@ -116,6 +116,9 @@ positive variables
   WATCAP(i,v,r,t)                        "--million gallons/year; Mgal/yr-- total water access capacity available in terms of withdraw/consumption per year"
   WAT(i,v,w,r,allh,t)                    "--Mgal-- quantity of water withdrawn or consumed in hour h"
   WATER_CAPACITY_LIMIT_SLACK(wst,r,t)    "--Mgal/yr-- insufficient water supply in region r, of water type wst, in year t "
+
+* critical material variables
+  MAT_INPUTS(mat,t)                      "--metric tons-- critical materials used for investment in generation and transmission capacity"
 ;
 
 Variables
@@ -173,6 +176,9 @@ EQUATION
  eq_growthlimit_absolute(tg,t)            "--MW-- absolute growth limit on technologies"
 
 eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit based on interconnection queues"  
+
+* critical material inputs
+eq_mat_inputs(mat,t)                      "--metric tons-- tracking of critical materials used for investment in generation and transmission capacity"
 
 * storage capacity credit supply curves
  eq_cap_sdbin_balance(i,v,r,ccseason,t)             "--MW-- total binned storage power capacity must be greater than total storage capacity"
@@ -1380,6 +1386,34 @@ eq_interconnection_queues(tg,r,t)
                                     $(yeart(tt)>=interconnection_start)
                                     $(tmodel(tt) or tfix(tt))],
         INV(i,newv,r,tt) + INV_REFURB(i,newv,r,tt)$[refurbtech(i)$Sw_Refurb] }
+;
+
+*==================================
+* --- CRITICAL MATERIAL INPUTS ---
+*==================================
+
+* Material tracking equation (metric tons of material)
+eq_mat_inputs(mat,t)$tmodel(t)..
+
+    MAT_INPUTS(mat,t) 
+
+    =e=
+
+* critical material inputs for investment in new generation capacity 
+* material (metric ton / MW) * generation capacity investment (MW)
+
+    sum{(i,v,r)$[valinv(i,v,r,t)$mat_gen(i,mat)],
+        mat_gen(i,mat) * INV(i,v,r,t) }
+
+* critical material inputs for upgrades of existing generation capacity
+* materials (metric ton / MW) * capacity upgraded (MW)
+    + sum{(i,v,r)$[valcap(i,v,r,t)$upgrade(i)$Sw_Upgrades$mat_gen(i,mat)],
+        mat_gen(i,mat) * UPGRADES(i,v,r,t) }
+
+* critical material inputs for investment in transmission capacity 
+* transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
+    + sum((r,rr,trtype)$[routes_inv(r,rr,trtype,t)$mat_trans(trtype,mat)],
+         mat_trans(trtype,mat) * (INVTRAN(r,rr,trtype,t) / 2) * distance(r,rr,trtype)) 
 ;
 
 *===============================

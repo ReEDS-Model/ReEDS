@@ -2087,6 +2087,30 @@ employment_tot(r,t) =
     + sum{jtype, employment_transmission(jtype,r,t) }
 ;
 
+*=========================
+* MATERIAL INPUTS
+*=========================
+
+* material inputs for new generation capacity and upgrades of existing generation capacity
+mat_inputs_gen(mat,i,v,r,t)$[mat_gen(i,mat)] =
+
+* critical material inputs for investment in new generation capacity 
+* material (metric ton / MW) * generation capacity investment (MW)
+    (mat_gen(i,mat) * INV(i,v,r,t))$[valinv(i,v,r,t)]
+
+* critical material inputs for upgrades of existing generation capacity
+* materials (metric ton / MW) * capacity upgraded (MW)
+    + (mat_gen(i,mat) * UPGRADES(i,v,r,t))$[valcap(i,v,r,t)$upgrade(i)$Sw_Upgrades]
+;
+
+mat_inputs_trans(mat,r,rr,trtype,t)$[routes_inv(r,rr,trtype,t)$mat_trans(trtype,mat)] =
+* critical material inputs for investment in transmission capacity
+* transmission line material intensity [metric tons / MW-mile] * capacity investment between (MW) * distance (miles between regions)
+    mat_trans(trtype,mat) * (INVTRAN(r,rr,trtype,t) / 2) * distance(r,rr,trtype)
+;
+
+mat_inputs(mat,t) = sum{(i,v,r), mat_inputs_gen(mat,i,v,r,t) } + sum{(r,rr,trtype), mat_inputs_trans(mat,r,rr,trtype,t)};
+
 *========================================
 * Calculate powfrac
 *========================================

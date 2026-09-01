@@ -1,0 +1,17 @@
+*trtype,material,value
+AC,Aluminum,0.0214
+LCC,Aluminum,0.00526
+VSC,Aluminum,0.00526
+B2B,Aluminum,0.00526
+AC,Steel,0.0144
+LCC,Steel,0.00286
+VSC,Steel,0.00286
+B2B,Steel,0.00286
+AC,Copper,0.00534
+LCC,Copper,0.000956
+VSC,Copper,0.000956
+B2B,Copper,0.000956
+AC,Silicon,0.000258
+LCC,Silicon,4.61e-05
+VSC,Silicon,4.61e-05
+B2B,Silicon,4.61e-05

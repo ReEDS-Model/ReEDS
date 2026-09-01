@@ -5383,6 +5383,23 @@ employment_factor_plant(i,"construction")
 $endif.upgrade_ef
 
 *====================================
+* --- Critical Material Inputs ---
+*====================================
+* questions
+* upstream pre-processing ok? or modify to be within this file
+* drawback to doing processing here is sets need to be created here
+* drawback to upstream is if there are changes to techs, will need to 
+* modify upstream
+
+* do we want to add tracking constraint? not strictly necessary at this stage. but could be nice to build upon as we add more features over time.
+
+* no inputs for h2 technologies.
+i_int(i,mat)$i_subsets(i,'h2_combustion') = no ;
+
+* update the intensities to be incremental for upgrade technologies
+i_int(i,mat)$[upgrade(i)] = i_int(i,mat) - sum{ii$upgrade_from(i,ii), i_int(ii,mat)};
+
+*====================================
 * --- MGA Random Vector Weights ---
 *====================================
 
