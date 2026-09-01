@@ -2303,10 +2303,10 @@ eq_transmission_investment_max(t)
           (INVTRAN(r,rr,trtype,t) + INVTRAN(rr,r,trtype,t)) / 2
           * distance(r,rr,trtype) }
 * Spur lines + network reinforcement
-    + sum{(i,v,r,rscbin)
+    + sum{(i,c,v,r,rscbin)
           $[((Sw_TransInvMaxTypes=2) or (Sw_TransInvMaxTypes=3))
-          $valinv(i,v,r,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)],
-          INV_RSC(i,v,r,rscbin,t) * (
+          $valinv(i,v,r,t)$rsc_i(i)$i_c(i,c)$m_rscfeas(r,i,rscbin)],
+          INV_RSC(i,c,v,r,rscbin,t) * (
               distance_reinforcement(i,r,rscbin)
               + distance_spur(i,r,rscbin)$(Sw_TransInvMaxTypes=3)
           )
@@ -3491,7 +3491,7 @@ eq_water_capacity_total(i,v,r,t)$[tmodel(t)$valcap(i,v,r,t)
 *require enough water capacity to fill PSH reservoir.
 *uses investment so that term is only applied in the single investment year
 *   as a proxy for water needs during construction phase.
-    + sum{rscbin$[m_rscfeas(r,i,rscbin)$psh(i)], INV_RSC(i,v,r,rscbin,t) * water_req_psh(r,rscbin) }$Sw_PSHwatercon
+    + sum{(c,rscbin)$[m_rscfeas(r,i,rscbin)$psh(i)$i_c(i,c)], INV_RSC(i,c,v,r,rscbin,t) * water_req_psh(r,rscbin) }$Sw_PSHwatercon
 ;
 
 * ---------------------------------------------------------------------------
