@@ -2371,7 +2371,7 @@ eq_emit_accounting(etype,e,r,t)$[emit_modeled(e,r,t)$tmodel(t)]..
 
     sum{(i,v,h)$[valgen(i,v,r,t)$h_rep(h)],
         hours(h) * emit_rate(etype,e,i,v,r,t) 
-        * emit_rate_coal_mult(i,r,etype,e)$coal(i)
+        * emit_rate_coal_mult(i,r,etype,e)$coal(i)$initv(v)
         * (GEN(i,v,r,h,t)
         + CCSFLEX_POW(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
        }
@@ -2450,7 +2450,7 @@ eq_CSAPR_Budget(csapr_group,t)$[Sw_CSAPR$tmodel(t)$(yeart(t)>=csapr_startyr)]..
       sum{(i,v,h,r)$[r_st(r,st)$valgen(i,v,r,t)$h_rep(h)],
            h_weight_csapr(h) * hours(h) 
            * emit_rate("process","NOX",i,v,r,t) 
-           * emit_rate_coal_mult(i,r,"process","NOX")$coal(i)
+           * emit_rate_coal_mult(i,r,"process","NOX")$coal(i)$initv(v)
            * GEN(i,v,r,h,t)
        }
       }
@@ -2472,7 +2472,7 @@ eq_CSAPR_Assurance(st,t)$[stfeas(st)$(yeart(t)>=csapr_startyr)
     sum{(i,v,h,r)$[r_st(r,st)$valgen(i,v,r,t)$h_rep(h)],
         h_weight_csapr(h) * hours(h) 
         * emit_rate("process","NOX",i,v,r,t) 
-        * emit_rate_coal_mult(i,r,"process","NOX")$coal(i)
+        * emit_rate_coal_mult(i,r,"process","NOX")$coal(i)$initv(v)
         * GEN(i,v,r,h,t)
     }
 ;
@@ -2531,13 +2531,13 @@ eq_cdr_cap(t)
     + sum{(i,v,r,h)$[valgen(i,v,r,t)$ccs(i)$(not beccs(i))$h_rep(h)$(Sw_AnnualCap<2)],
             hours(h) * GEN(i,v,r,h,t) 
             * (emit_rate("process","CO2",i,v,r,t) 
-            * emit_rate_coal_mult(i,r,"process","CO2")$coal(i)
+            * emit_rate_coal_mult(i,r,"process","CO2")$coal(i)$initv(v)
             + emit_rate("upstream","CO2",i,v,r,t)$Sw_Upstream) }
 * GHG emissions * global warming potential
     + sum{(i,v,r,h)$[valgen(i,v,r,t)$ccs(i)$(not beccs(i))$h_rep(h)$(Sw_AnnualCap>=2)],
         hours(h) * GEN(i,v,r,h,t) 
         * sum{e, (emit_rate("process",e,i,v,r,t) 
-        * emit_rate_coal_mult(i,r,"process",e)$coal(i)
+        * emit_rate_coal_mult(i,r,"process",e)$coal(i)$initv(v)
         + emit_rate("upstream",e,i,v,r,t)$Sw_Upstream) * gwp(e) } }      
     =g=
 
@@ -2590,7 +2590,7 @@ eq_caa_rate_standard(st,t)$[tmodel(t)
 
 *coal emissions in that state [metric tons CO2]
     sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         GEN(i,v,r,h,t) * emit_rate("process","CO2",i,v,r,t) * emit_rate_coal_mult(i,r,"process","CO2")}
+         GEN(i,v,r,h,t) * emit_rate("process","CO2",i,v,r,t) * emit_rate_coal_mult(i,r,"process","CO2")$initv(v)}
 ;
 
 *==========================
