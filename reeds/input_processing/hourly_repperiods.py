@@ -670,6 +670,12 @@ def main(
             })
             os.makedirs(os.path.join(inputs_case, f'stress{t}i0'), exist_ok=True)
             dfwrite.to_csv(os.path.join(inputs_case, f'stress{t}i0', 'period_szn.csv'), index=False)
+            ## User-defined stress periods carry no region/reason tagging, so there's no
+            ## way to identify a state's peak day here; write an empty file so the GAMS
+            ## $include always finds something to read.
+            pd.DataFrame(columns=['st','szn']).to_csv(
+                os.path.join(inputs_case, f'stress{t}i0', 'ces_peakday_st.csv'),
+                index=False, header=False)
     else:
         stressperiods_seed.to_csv(os.path.join(inputs_case, 'stressperiods_seed.csv'), index=False)
         for t in modelyears:
