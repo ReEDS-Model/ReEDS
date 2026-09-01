@@ -646,7 +646,7 @@ def main(reeds_path, inputs_case):
     caprsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['rsc_upv'])) &
                         (gdb_use['StartYear'] < startyear)  &
                         (gdb_use['RetireYear'] > startyear)
-                        ].copy()
+                        ]
 
     caprsc['v']='init-1'
     # Assign existing upv as upv_5 based on their average cf
@@ -664,7 +664,7 @@ def main(reeds_path, inputs_case):
     csp = gdb_use.loc[(gdb_use['tech'].isin(TECH['rsc_csp']))    &
                     (gdb_use['StartYear'] < startyear) &
                     (gdb_use['RetireYear'] > startyear)
-                    ].copy()
+                    ]
     csp['v']='init-1'
     csp['i'] = csp.tech
     if GSw_WaterMain == 1:
