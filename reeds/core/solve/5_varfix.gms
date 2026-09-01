@@ -2,6 +2,7 @@
 * Non-rounded parameters can sometimes cause numerical issues when summing over tfix in model equations  
 if(Sw_RemoveSmallNumbers = 1,
     CAP.l(i,v,r,tfix)$[abs(CAP.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
+    CAP_CLASS.l(i,c,v,r,tfix)$[abs(CAP_CLASS.l(i,c,v,r,tfix)) < rhs_tolerance] = 0 ;
     CAP_ENERGY.l(i,v,r,tfix)$[abs(CAP_ENERGY.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     UPGRADES.l(i,v,r,tfix)$[abs(UPGRADES.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     CAP_ABOVE_LIM.l(tg,r,tfix)$[abs(CAP_ABOVE_LIM.l(tg,r,tfix)) < rhs_tolerance] = 0 ;
@@ -25,6 +26,7 @@ OP_LOADSITE.fx(r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_
 
 * capacity and investment variables
 CAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)] = CAP.l(i,v,r,tfix) ;
+CAP_CLASS.fx(i,c,v,r,tfix)$[valcap_class(i,c,v,r,tfix)] = CAP_CLASS.l(i,c,v,r,tfix) ;
 CAP_ENERGY.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$battery(i)] = CAP_ENERGY.l(i,v,r,tfix) ;
 CAP_ABOVE_LIM.fx(tg,r,tfix)$[(yeart(tfix)>=model_builds_start_yr)
                                 $(sum{(tgg,rr), cap_limit(tgg,rr,tfix)})

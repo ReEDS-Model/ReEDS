@@ -29,6 +29,7 @@ positive variables
   CAP_ENERGY(i,v,r,t)                      "--MWh-- battery capacity in terms of energy"
   CAP_ABOVE_LIM(tg,r,t)                    "--MW-- amount of capacity that is deployed above the interconnection queue limits"
   CAP_RSC(i,v,r,rscbin,t)                  "--MW-- total generation capacity in MWac (MWdc for PV) for wind-ons and upv"
+  CAP_CLASS(i,c,v,r,t)                     "--MW-- total generation capacity by resource class for technologies with an input capacity factor"
   GROWTH_BIN(gbin,i,st,t)                  "--MW-- total new (from INV) generation capacity in each growth bin by state and technology group"
   INV(i,v,r,t)                             "--MW-- generation capacity additions in year t"
   INV_ENERGY(i,v,r,t)                      "--MWh-- generation energy capacity additions in year t"
@@ -156,6 +157,7 @@ EQUATION
  eq_cap_new_retmo(i,v,r,t)                "--MW-- New capacity that can be retired must be monotonically decreasing unless increased by investment"
  eq_cap_new_retub(i,v,r,t)                "--MW-- New capacity that can be retired is less than or equal to all previous years investment"
  eq_cap_rsc(i,v,r,rscbin,t)               "--MW-- Capacity accounting for techs with exogenous capacity tracked by rscbin"
+ eq_cap_class_total(i,v,r,t)              "--MW-- Capacity of each resource class sums to total capacity"
  eq_cap_up(i,v,r,rscbin,t)                "--MW-- limit on capacity upsizing"
  eq_cap_upgrade(i,v,r,t)                  "--MW-- All purchased upgrades are greater than or equal to the sum of upgraded capacity"
  eq_ener_up(i,v,r,rscbin,t)               "--MW-- limit on energy upsizing"
@@ -848,6 +850,20 @@ eq_cap_rsc(i,v,r,rscbin,t)
 
 * ---------------------------------------------------------------------------
 
+* Capacity of technologies with an input capacity factor is tracked by resource
+* class so that generation is limited by the capacity factor of each class
+eq_cap_class_total(i,v,r,t)$[tmodel(t)$valcap(i,v,r,t)$cf_tech(i)]..
+
+    sum{c$valcap_class(i,c,v,r,t),
+         CAP_CLASS(i,c,v,r,t) }
+
+    =e=
+
+    CAP(i,v,r,t)
+;
+
+* ---------------------------------------------------------------------------
+
 eq_cap_upgrade(i,v,r,t)$[valcap(i,v,r,t)$upgrade(i)$Sw_Upgrades$tmodel(t)$(not Sw_PCM)]..
 
 * without peristent upgrades, all upgrades correspond to their original bintage
@@ -1203,13 +1219,14 @@ eq_capacity_limit(i,v,r,h,t)
 *only vre technologies are curtailable.
 * This term accounts for energy-only and capacity-only upsizing,
 * which is initially implemented only for hydro.
-    + (sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
-        * (CAP(i,v,r,t)
+    + (sum{c$valcap_class(i,c,v,r,t),
+            m_cf(i,c,v,r,h,t) * CAP_CLASS(i,c,v,r,t) }
 *add energy embedded in energy-only upsizing
-            + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
+       + sum{c$valcap_class(i,c,v,r,t), m_cf(i,c,v,r,h,t) }
+         * sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
                 INV_ENER_UP(i,v,r,rscbin,tt)$allow_ener_up(i,v,r,rscbin,tt)
 *subtract energy that would be embedded in a capacity-only upsizing
-                - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
+                - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) }
       )$[not dispatchtech(i)]
 *add EVMC shape generation
     + (evmc_shape_gen(i,r,h) * CAP(i,v,r,t))
@@ -1255,7 +1272,8 @@ eq_capacity_limit_hybrid(r,h,t)
 eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 *sum of non-dispatchable capacity multiplied by its rated capacity factor,
-    + sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
+    + sum{c$valcap_class(i,c,v,r,t),
+           m_cf(i,c,v,r,h,t) * CAP_CLASS(i,c,v,r,t) }
 
     =e=
 
@@ -3058,7 +3076,8 @@ eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
           STORAGE_IN(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
 
 *energy into storage from CSP field
-        + (CAP(i,v,r,t) * csp_sm(i) * sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
+        + (csp_sm(i)
+           * sum{c$valcap_class(i,c,v,r,t), m_cf(i,c,v,r,h,t) * CAP_CLASS(i,c,v,r,t) }
           )$[CSP_Storage(i)$valcap(i,v,r,t)]
       )
 *[plus] water inflow energy available for hydropower that adds pumping
@@ -3358,7 +3377,8 @@ eq_plant_total_gen(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i
 eq_hybrid_plant_energy_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
 * [plus] plant output
-    sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
+    sum{c$valcap_class(i,c,v,r,t),
+         m_cf(i,c,v,r,h,t) * CAP_CLASS(i,c,v,r,t) }
 
     =g=
 
