@@ -2,7 +2,7 @@ $ontext
 No globals needed for this file
 $offtext
 
-scalar  cost_scale "scaling parameter for the objective function" /1/ ;
+scalar  cost_scale "scaling parameter for the objective function" /1e-6/ ;
 
 Equation
 * objective function calculation
@@ -19,7 +19,7 @@ Variable    Z        "--$-- total cost of operations and investment, scale varie
 
 * objective function is the sum over modeled years of the investment
 * and operations components
-eq_ObjFn.. Z =e= cost_scale * sum{t$tmodel(t), Z_inv(t) + Z_op(t) } ;
+eq_ObjFn.. Z =e=  sum{t$tmodel(t), Z_inv(t) + Z_op(t) } ;
 
 *=======================================================
 * -- Investment component of the objective function --
@@ -31,7 +31,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
 
          =e=
 
-         pvf_capital(t) *
+         cost_scale * pvf_capital(t) *
 
               (
 * --- investment costs ---
@@ -93,7 +93,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
 
 * --- cost of interzonal AC transmission---
                   + sum{(r,rr,tscbin)$[routes_inv(r,rr,"AC",t)$tsc_binwidth(r,rr,tscbin)],
-                        trans_cost_cap_fin_mult(t) * TRAN_CAPEX_BINS(r,rr,tscbin,t) }
+                        trans_cost_cap_fin_mult(t)  * 1E6  * TRAN_CAPEX_BINS(r,rr,tscbin,t) }
 
 * --- cost of interzonal HVDC transmission---
 * transmission lines: 1 MW adds 1 MW to both INVTRAN(r,rr) and INVTRAN(rr,r) so divide by 2
@@ -152,7 +152,7 @@ eq_Objfn_op(t)$tmodel(t)..
 
          =e=
 
-         pvf_onm(t) * (
+         cost_scale * pvf_onm(t) * (
 
 * --- variable O&M costs---
 * all technologies except hybrid plant and DAC
@@ -250,12 +250,12 @@ eq_Objfn_op(t)$tmodel(t)..
                    hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
 
 *Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{(cendiv,gb), sum{h, hours(h) * GASUSED(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }
+              + sum{(cendiv,gb), sum{h, hours(h) * GASUSED(cendiv,gb,h,t) * 1e9 *  gasprice_adj_cendiv(cendiv,h) }
                    * gasprice(cendiv,gb,t)
                    }$(Sw_GasCurve = 0)
 
 *Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
-              + sum{(h,cendiv,gb), hours(h) * GASUSED(cendiv,gb,h,t)
+              + sum{(h,cendiv,gb), hours(h) * GASUSED(cendiv,gb,h,t) * 1e9* 
                    * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
                    }$(Sw_GasCurve = 3)
 
@@ -267,16 +267,16 @@ eq_Objfn_op(t)$tmodel(t)..
 
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin,cendiv),
-                   gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL(fuelbin,cendiv,t) }
+                   gasbinp_regional(fuelbin,cendiv,t) * 1e9* VGASBINQ_REGIONAL(fuelbin,cendiv,t) }
 
               + sum{(fuelbin),
-                   gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL(fuelbin,t) }
+                   gasbinp_national(fuelbin,t) * 1e9 * VGASBINQ_NATIONAL(fuelbin,t) }
 
               )$[Sw_GasCurve = 1]
 
 * ---cost of biofuel consumption and biomass transport---
               + sum{(r,bioclass)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }],
-                   BIOUSED(bioclass,r,t) *
+                    BIOUSED(bioclass,r,t) *  1e9 *
                    (sum{usda_region$r_usda(r,usda_region), biosupply(usda_region, bioclass, "price") } + bio_transport_cost) }
 
 * --- hurdle costs for transmission flow ---
