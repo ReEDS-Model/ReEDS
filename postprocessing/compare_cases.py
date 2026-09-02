@@ -333,6 +333,11 @@ scghg_central = (
     * inflatable[2020, output_dollaryear]
 )
 
+dfmap = reeds.io.get_dfmap(cases[basecase])
+## Simplify the maps for plotting
+for key, df in dfmap.items():
+    dfmap[key].geometry = df.simplify_coverage(10000)
+
 #%% Colors and mapping
 output_formatting = reeds.io.get_plot_formatting()
 aggregation_mapping = pd.read_csv(
@@ -1581,7 +1586,6 @@ try:
     ## Backwards compatibility
     GSw_PRM_StressThresholdNEUE = sw.get('GSw_PRM_StressThresholdNEUE', 'transgrp_1')
     neue_threshold = float(GSw_PRM_StressThresholdNEUE.split('/')[0].split('_')[1])
-    dfmap = reeds.io.get_dfmap(cases[basecase])
     level = GSw_PRM_StressThresholdNEUE.split('/')[0].split('_')[0]
     regions = dfmap[level].loc[hierarchy[basecase][level].unique()].bounds.minx.sort_values().index
     _nrows, _ncols, _coords = reeds.plots.get_coordinates(regions, ncols=6)
@@ -2362,7 +2366,6 @@ if detailed:
         ralevel = 'transreg'
         scale = 10
         wscale = 7e3
-        dfmap = reeds.io.get_dfmap(cases[basecase])
         regions = dfmap[ralevel].bounds.minx.sort_values().index
 
         ### Calculate aggregated load
@@ -2573,11 +2576,13 @@ for figname, width, height in [
 
 #%%### Generation capacity maps
 
+
+
+
 ### Shared data
 try:
     base = cases[list(cases.keys())[0]]
     val_r = dictin_cap_r[basecase].r.unique()
-    dfmap = reeds.io.get_dfmap(base)
     dfba = dfmap['r']
     dfstates = dfmap['st']
     resolutions = list(set([sw.GSw_ZoneSet for sw in dictin_sw.values()]))

@@ -909,6 +909,41 @@ def plot_trans_onecase(
     return f, ax, dfplot
 
 
+
+def plot_diff_maps(
+    dictin:dict,
+    layout:Literal['abs','pair','diff_first'],
+    style:Literal['area','marker','bar','arrow','dots','text'],
+    cmap_abs=cmocean.cm.rain,
+    cmap_diff=plt.cm.RdBu_r,
+    scale=3,
+):
+    """
+    Args:
+        dictin (dict): Dictionary of geodataframes
+            - Keys are subplot titles
+            - One row per zone
+            - 'value' column contains the data
+        layout (str): Plot design
+            - 'abs': Only show absolute values
+            - 'pair': 3 plots: Absolute value of first, absolute value of second, diff.
+                      Only accepted if dictin has only 2 cases.
+            - 'diff_first': Absolute value of first; other plots are diffs from that.
+        style (str): Plot style passed to plots.diffmap()
+    """
+    ### Check inputs
+    assert layout in ['abs', 'pair', 'diff_first']
+    assert style in ['area', 'marker', 'bar', 'arrow', 'dots', 'text']
+    if layout == 'pair':
+        assert len(dictin) == 2
+    lengths = {k: len(df) for k,df in dictin.items()}
+    if len(set(lengths.values())) > 1:
+        print(lengths)
+        raise ValueError('Dataframes must all have the same resolution')
+
+
+
+
 def plot_diff_maps(
     val, i_plot, titles, year, casebase, casecomp,
     level:Literal['r','st']='r',
