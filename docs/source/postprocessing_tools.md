@@ -136,17 +136,14 @@ More more information on reValue, see the [reValue documentation](revalue.md).
 
 ### Compare technology value and cost: `postprocessing/compare_tech_value.py`
 
-This script compares the value, cost, and firmness of new-build capacity for two (or more) technologies in a finished case, using only `outputs.h5` (no re-solve required). By default it compares `battery_li` against `Gas-CT`, the standard storage-vs-peaker comparison, but any technology names can be passed via `--techs`. Run `python compare_tech_value.py --help` for the full, grouped list of options; the module docstring covers the framing and accounting choices in more depth than this summary.
+This script compares the value, cost, and firmness of new-build capacity for two (or more) technologies in a finished case, using only `outputs.h5` (no re-solve required). By default it compares `battery_li` against `Gas-CT`, the standard storage-vs-peaker comparison, but any technology names can be passed via `--techs`. The module docstring covers the accounting choices in more depth than this summary.
 
-**Value and cost.** Value is built from `valnew`, ReEDS' native "value of new investment" output, split into an energy stream and a firm-capacity stream; cost is reconstructed from `lcoe_built` and `lcoe_pieces` without reimplementing the capital recovery factor. Storage's charging cost is treated as an explicit cost line (the storage analogue of a thermal tech's fuel cost) rather than a value deduction, so storage and thermal technologies are shown on a consistent basis.
+Value comes from `valnew`, ReEDS' native "value of new investment" output, split into an energy stream and a firm-capacity stream; cost is reconstructed from `lcoe_built` and `lcoe_pieces`. Storage's charging cost is treated as an explicit cost line rather than a value deduction, so storage and thermal technologies are shown on a consistent basis. Each technology's price-weighted firm capacity contribution and capacity-weighted average storage duration are each shown both as a national/fleet-wide line and as a box plot of the distribution across regions.
 
-**Firm capacity and storage duration.** Each technology's price-weighted firm capacity contribution (stress-period generation divided by total capacity, weighted by each stress period's reserve-margin price, reusing `revenue`'s 'res_marg' category since GAMS already computes it this way when `GSw_PRM_CapCredit=0`) and fleet-wide average storage duration (from `storage_duration_out`, capacity-weighted) are each shown two ways: a national/fleet-wide line, and a box-and-whisker plot of the distribution across regions per year, since a single national number can hide a lot of regional variation. `--include-wind` adds a third figure with land-based and offshore wind as two extra lines, each summed across every `wind-ons_*`/`wind-ofs_*` resource class present in the case.
-
-**Region filter.** `--region` (with `--region-level`, e.g. `--region WI --region-level st`) restricts the value/cost, firm-capacity-contribution, and storage-duration figures and CSVs to a single BA or every BA mapped to a hierarchy.csv value (state, interconnect, transreg, ...), instead of the national aggregate; output goes to `{case}/outputs/plots/tech_value_{region}/`. For firm-capacity-contribution and storage-duration specifically (both built by summing an additive numerator before dividing), any `--techs` entry with no exact match in outputs.h5 is summed across every matching `{entry}_*` resource class present in the case (e.g. `upv` -> `upv_1`, `upv_2`, ...), the same principle `--include-wind` already uses for wind; the value/cost-stack, value-factor, and reduced-cost figures need exact tech names and skip (with a warning) any entry with no exact match, since their $/MWh figures can't be summed across classes without re-deriving weights.
-
-**Stress-period prices.** In a `stress_period_prices/` subfolder: one figure per region (plus a national quantity-weighted average from `reqt_price_sys`), each a small-multiples timeseries of the reserve-margin stress price ($/kW) -- one panel per stress day, hour-of-day on the x-axis, each panel labeled with that day's % share of the year's total stress price. This is what determines whether a given storage duration can cover a stress day's whole high-price window, or whether that window is split into separated peaks -- and how much that shape (and which days matter) varies by region. `--price-year`/`--price-region` control which year/region to show.
-
-**Stress-period dispatch.** For digging into *why* a particular region/day's price looks the way it does, `--dispatch-region` (with required `--dispatch-day`, e.g. `y2009d342` -- see the stress-period-price panel titles for valid labels) writes a single stress-day dispatch stack to a `dispatch/` subfolder: `gen_h_stress` by tech, plus a `net_import_h_stress` 'Net imports' pseudo-tech (in-region generation is often well below load, with the rest covered by transmission, so without this the stack would understate supply and look like an unexplained deficit), with a `load_stress` line overlay. A sustained (not narrowly spiking) elevated price on some day usually shows up as heavy import reliance across most hours of that day, rather than a single tight hour. `--dispatch-region` can also name a value in `hierarchy.csv` (via `--dispatch-level`, e.g. `--dispatch-region western --dispatch-level interconnect`) to aggregate every region mapped to it -- net imports still work correctly when aggregated, since flows between two regions both in the aggregate cancel out, leaving only the aggregate's net flow across its true boundary.
+- `--techs`: comma-separated technology names, exactly as they appear in `outputs.h5` (case-sensitive). A name with no exact match (e.g. `upv`) is summed across every matching `upv_*` resource class for the firm-capacity and storage-duration figures; the $/MWh figures need exact names and skip it with a warning.
+- `--region` and `--region-level`: restrict to a single BA (e.g. `CA_LA`) or to every BA mapped to a `hierarchy.csv` value (e.g. `--region WI --region-level st`). Output then goes to `{case}/outputs/plots/tech_value_{region}/`.
+- `--include-wind`: add land-based and offshore wind to a separate copy of the firm-capacity figure.
+- `--dollar-year`, `--first-year`, `--plot-first-year`: dollar year to inflate to, first solve year to include, and first year to show in the figures.
 
 Run as:
 
@@ -155,11 +152,36 @@ python compare_tech_value.py <path-to-case> [--techs battery_li,Gas-CT]
 python compare_tech_value.py <path-to-case> --techs upv,wind-ons,Gas-CC --region WI --region-level st
 ```
 
-Outputs are written to `{case}/outputs/plots/tech_value/` by default (or `tech_value_{region}/` when `--region` is given): tidy CSVs (`tech_value_comparison.csv`, `tech_value_by_region.csv`); figures decomposing value, cost, net value, value factor, firm capacity contribution (line + boxplot + optional wind), storage duration (line + boxplot), and reduced cost; and the `stress_period_prices/` and `dispatch/` subfolders described above.
+Outputs are written to `{case}/outputs/plots/tech_value/` by default: tidy CSVs (`tech_value_comparison.csv`, `tech_value_by_region.csv`) and figures decomposing value, cost, net value, value factor, firm capacity contribution (line + boxplot + optional wind), storage duration (line + boxplot), and reduced cost. Use `stress_period_plots.py` to see the stress-period prices and dispatch behind the firm-capacity numbers.
+
+### Plot stress-period prices and dispatch: `postprocessing/stress_period_plots.py`
+
+This script plots the reserve-margin stress-period prices and dispatch of a finished case, which is what determines how much of a stress day's value a given technology can capture.
+
+The price figures are small-multiples timeseries of the stress price ($/kW per stress timeslice) -- one panel per stress day, hour of day on the x-axis, each panel labeled with that day's share of the year's total stress price. This shows whether a stress day's high-price window is narrow enough for a short-duration resource to cover, or split into separated peaks. One figure is written per region, plus a national quantity-weighted average.
+
+The dispatch figure is a single stress day's generation stack for one region, including net imports as a pseudo-technology (in-region generation is often well below load, with the rest covered by transmission) and a load line overlay.
+
+- `--year` and `--region`: solve year and single BA to plot prices for; the default is the last solve year and one figure per region.
+- `--dispatch-region`, `--dispatch-level`, `--dispatch-year`, `--dispatch-day`: region (or `hierarchy.csv` aggregate) and stress day for the dispatch figure. `--dispatch-day` is required whenever `--dispatch-region` is given; valid day labels appear as the price panel titles.
+
+Run as:
+
+```bash
+python stress_period_plots.py <path-to-case> --region TX_W
+python stress_period_plots.py <path-to-case> \
+    --dispatch-region western --dispatch-level interconnect --dispatch-day y2009d342
+```
+
+Outputs are written to `{case}/outputs/plots/stress_periods/` by default, in `prices/` and `dispatch/` subfolders.
 
 ### Explore LCOE sensitivity to capital cost and capacity factor: `postprocessing/lcoe_sensitivity.py`
 
-This script recomputes a technology's LCOE under a modified capital-cost or capacity-factor assumption, for a chosen region of a finished case. ReEDS's own `lcoe(i,v,r,t,rscbin)` (see `report.gms`, "LCOE" section) is fixed at the run's own assumptions; this script backs out the run's own fixed-O&M-plus-site-cost term as a residual that reproduces the reported `lcoe` exactly at baseline, then holds that residual fixed while scaling capital cost and/or capacity factor by `--capex-mult`/`--cf-mult` to see how LCOE would respond. See the module docstring for the full derivation and its simplifying assumptions.
+This script recomputes a technology's LCOE under a modified capital-cost or capacity-factor assumption, for a chosen region of a finished case. ReEDS's own `lcoe(i,v,r,t,rscbin)` is fixed at the run's own assumptions; this script backs out the run's own fixed-O&M-plus-site-cost term as a residual that reproduces the reported `lcoe` exactly at baseline, then holds that residual fixed while scaling capital cost and/or capacity factor by `--capex-mult`/`--cf-mult` to see how LCOE would respond. See `postprocessing/tech_eval_utils.py` for the full derivation and its simplifying assumptions.
+
+- `--techs`: comma-separated technology names. A name with no exact match (e.g. `upv`) is expanded to every `upv_*` resource class available to build in the region.
+- `--capex-mult` and `--cf-mult`: comma-separated `TECH=MULT` overrides, accepting either an exact resource class (`upv_1=0.8`) or a family name (`upv=0.8`) to scale every class in it.
+- `--region` and `--region-level`: as in `compare_tech_value.py`.
 
 Run as:
 
@@ -170,6 +192,39 @@ python lcoe_sensitivity.py <path-to-case> --region WI --region-level st \
 ```
 
 Outputs are written to `{case}/outputs/plots/lcoe_sensitivity/` by default: a tidy `lcoe_sensitivity.csv` (baseline and scenario LCOE by tech/region/year) and `lcoe_sensitivity.png`.
+
+### Compare LCOE ranges across cost scenarios: `postprocessing/lcoe_range.py`
+
+This script plots LCOE ranges for a chosen region under alternative cost assumptions, using the same baseline calibration as `lcoe_sensitivity.py`. It writes one panel per technology family:
+
+- The `--gas-tech` panel (default `Gas-CC`) shows two scenario lines -- the run's own capital cost, and that plus a flat `--capex-add` $/kW increase -- each with a +/-`--fuel-price-pct` fuel-price band.
+- The UPV and land-based wind panels each show two bands spanning the minimum-to-maximum LCOE across every resource class present in the region: one under the run's own ATB cost assumption, and one under a higher-cost ATB file given by `--upv-conservative`/`--wind-conservative`.
+
+Because the raw ATB cost files are on a different normalization than the processed `plantcharout.csv`, the conservative scenario is applied as a year-by-year *ratio* of conservative to moderate capital cost rather than as an absolute value. The moderate file is read from the case's own `plantchar_upv`/`plantchar_onswind` switches, so the comparison always uses whichever scenario the run actually used. The `--upv-conservative`/`--wind-conservative` defaults track a specific ATB vintage and will need updating when the input files are revised.
+
+Run as:
+
+```bash
+python lcoe_range.py <path-to-case> --region WI --region-level st
+```
+
+Outputs are written to `{case}/outputs/plots/lcoe_range/` by default: `lcoe_range.csv` (the tidy scenario/class-level LCOE behind every band) and `lcoe_range.png`.
+
+### Plot capacity and generation for one region: `postprocessing/region_stack.py`
+
+This script writes capacity (GW) and generation (TWh) stacked-bar plots by technology over time for a single region, using the same conventions as `compare_cases.py`'s national stacks. The generation panel overlays an annual load line: where load sits above the stack the region is a net importer that year, and below it a net exporter.
+
+- `--region` and `--region-level`: required; a literal BA or a `hierarchy.csv` value to aggregate.
+- `--simple-techs`: the `tech_aggregation.csv` column used to group raw technology names.
+- `--first-year` and `--last-year`: year range to show.
+
+Run as:
+
+```bash
+python region_stack.py <path-to-case> --region WI --region-level st
+```
+
+Outputs are written to `{case}/outputs/plots/region_stack/` by default: `region_stack.png` plus the tidy `region_cap.csv`, `region_gen.csv`, and `region_load.csv` behind it.
 
 ### Estimate retail rates: `postprocessing/retail_rate_module`
 
