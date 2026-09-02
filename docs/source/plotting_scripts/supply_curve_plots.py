@@ -42,7 +42,7 @@ def add_capacity_total(ax, df, fontsize=14):
 
 
 def plot_docs():
-    for tech in ['upv', 'wind-ons', 'wind-ofs']:
+    for tech in ['egs']:
         print(f"plotting supply curve for {tech}")
 
         if tech == 'egs':
