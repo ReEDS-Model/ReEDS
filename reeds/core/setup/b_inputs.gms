@@ -298,7 +298,7 @@ hyd_add_pump('hydED_pumped-hydro-flex') = yes ;
 
 * Sets involved with resource supply curve definitions
 set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
-    rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
+    rscfeas(i,c,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
 parameter yeart(t) "numeric value for year",
           year(allt) "numeric year value for allt" ;
@@ -1348,7 +1348,7 @@ $endif.Canada
 *=============================
 
 * Written by writesupplycurves.py
-parameter rsc_dat(i,r,sc_cat,rscbin) "--units vary-- resource supply curve data for renewables with capacity in MW and costs in $/MW (MW-DC and $/MW-AC for UPV)"
+parameter rsc_dat(i,c,r,sc_cat,rscbin) "--units vary-- resource supply curve data for renewables with capacity in MW and costs in $/MW (MW-DC and $/MW-AC for UPV)"
 /
 $offlisting
 $ondelim
@@ -1396,7 +1396,7 @@ $onlisting
 ;
 $offempty
 
-parameter distance_spur(i,r,rscbin) "--miles-- Spur line distance"
+parameter distance_spur(i,c,r,rscbin) "--miles-- Spur line distance"
 /
 $offlisting
 $ondelim
@@ -1405,7 +1405,7 @@ $offdelim
 $onlisting
 / ;
 
-parameter distance_reinforcement(i,r,rscbin) "--miles-- Network reinforcement distance"
+parameter distance_reinforcement(i,c,r,rscbin) "--miles-- Network reinforcement distance"
 /
 $offlisting
 $ondelim
@@ -1417,50 +1417,50 @@ $onlisting
 **rsc_dat adjustments (see additional adjustments to m_rsc_dat further below)
 
 *need to adjust units for pumped hydro costs from $ / KW to $ / MW
-rsc_dat("pumped-hydro",r,"cost",rscbin) = rsc_dat("pumped-hydro",r,"cost",rscbin) * 1000 ;
+rsc_dat("pumped-hydro",c,r,"cost",rscbin) = rsc_dat("pumped-hydro",c,r,"cost",rscbin) * 1000 ;
 
 *need to adjust units for hydro costs from $ / KW to $ / MW
-rsc_dat(i,r,"cost",rscbin)$hydro(i) = rsc_dat(i,r,"cost",rscbin) * 1000 ;
+rsc_dat(i,c,r,"cost",rscbin)$hydro(i) = rsc_dat(i,c,r,"cost",rscbin) * 1000 ;
 
 *To allow pumped-hydro-flex via rscfeas and m_rscfeas, we set its supply curve capacity equal to pumped-hydro fixed.
 *Note however that they will share the same supply curve capacity (see rsc_agg).
-rsc_dat("pumped-hydro-flex",r,"cap",rscbin) = rsc_dat("pumped-hydro",r,"cap",rscbin) ;
+rsc_dat("pumped-hydro-flex",c,r,"cap",rscbin) = rsc_dat("pumped-hydro",c,r,"cap",rscbin) ;
 
 *Make pumped-hydro-flex more expensive than fixed pumped-hydro by a fixed percent
-rsc_dat("pumped-hydro-flex",r,"cost",rscbin) = rsc_dat("pumped-hydro",r,"cost",rscbin) * %GSw_HydroVarPumpCostRatio% ;
+rsc_dat("pumped-hydro-flex",c,r,"cost",rscbin) = rsc_dat("pumped-hydro",c,r,"cost",rscbin) * %GSw_HydroVarPumpCostRatio% ;
 
 $ontext
 Replicate the UPV supply curve data for hybrid PV+battery
 "rsc_data" for hybrid PV+battery is never used in the resource constraint (see note above about rsc_dat and tg_rsc_upvagg).
 This copy is necessary to ensure the conditionals for the supply curve investment variables get created for pvb.
-Example: "m_rscfeas(r,i,rscbin)" is created for "eq_rsc_inv_account"
+Example: "m_rscfeas(r,i,c,rscbin)" is created for "eq_rsc_inv_account"
 $offtext
 
-rsc_dat(i,r,sc_cat,rscbin)$pvb(i) = sum{ii$[upv(ii)$rsc_agg(ii,i)], rsc_dat(ii,r,sc_cat,rscbin) } ;
+rsc_dat(i,c,r,sc_cat,rscbin)$[i_c(i,c)$pvb(i)] = sum{ii$[upv(ii)$rsc_agg(ii,i)], rsc_dat(ii,c,r,sc_cat,rscbin) } ;
 
 *following set indicates which combinations of r and i are possible
 *this is based on whether or not the bin has capacity available
-rscfeas(i,r,rscbin)$rsc_dat(i,r,"cap",rscbin) = yes ;
+rscfeas(i,c,r,rscbin)$rsc_dat(i,c,r,"cap",rscbin) = yes ;
 
-rscfeas(i,r,rscbin)$[csp2(i)$sum{ii$[csp1(ii)$csp2(i)$tg_rsc_cspagg(ii,i)], rscfeas(ii,r,rscbin) }] = yes ;
-rscfeas(i,r,rscbin)$[csp3(i)$sum{ii$[csp1(ii)$csp3(i)$tg_rsc_cspagg(ii,i)], rscfeas(ii,r,rscbin) }] = yes ;
-rscfeas(i,r,rscbin)$[csp4(i)$sum{ii$[csp1(ii)$csp4(i)$tg_rsc_cspagg(ii,i)], rscfeas(ii,r,rscbin) }] = yes ;
+rscfeas(i,c,r,rscbin)$[i_c(i,c)$csp2(i)$sum{ii$[csp1(ii)$csp2(i)$tg_rsc_cspagg(ii,i)], rscfeas(ii,c,r,rscbin) }] = yes ;
+rscfeas(i,c,r,rscbin)$[i_c(i,c)$csp3(i)$sum{ii$[csp1(ii)$csp3(i)$tg_rsc_cspagg(ii,i)], rscfeas(ii,c,r,rscbin) }] = yes ;
+rscfeas(i,c,r,rscbin)$[i_c(i,c)$csp4(i)$sum{ii$[csp1(ii)$csp4(i)$tg_rsc_cspagg(ii,i)], rscfeas(ii,c,r,rscbin) }] = yes ;
 
 *expand feasibility and supply curve data for water-enumerated PSH techs
 *m_rsc_con will still require all PSH types to use the same resource base
-rscfeas(i,r,rscbin)$[psh(i)$Sw_WaterMain$sum{ii$ctt_i_ii(i,ii), rsc_dat(ii,r,"cap",rscbin) }] = yes ;
+rscfeas(i,c,r,rscbin)$[i_c(i,c)$psh(i)$Sw_WaterMain$sum{ii$ctt_i_ii(i,ii), rsc_dat(ii,c,r,"cap",rscbin) }] = yes ;
 
-rscfeas(i,r,rscbin)$ban(i) = no ;
+rscfeas(i,c,r,rscbin)$ban(i) = no ;
 
 
 * This flag will deactivate eq_rsc_INVLIM when the RHS is < 1e-6 and set INV_RSC
 * to zero for the r,i,rscbin combination. Because INV_RSC is a positive variable
 * and RHS < 1e-6, INV_RSC would have to be < 1e-6 (which is basically zero).
-set flag_eq_rsc_INVlim(r,i,rscbin,t) "flag for when there are small numbers in the RHS of eq_rsc_INVlim" ;
-parameter rhs_eq_rsc_INVlim(r,i,rscbin,t) "RHS value of eq_rsc_INVlim" ;
+set flag_eq_rsc_INVlim(r,i,c,rscbin,t) "flag for when there are small numbers in the RHS of eq_rsc_INVlim" ;
+parameter rhs_eq_rsc_INVlim(r,i,c,rscbin,t) "RHS value of eq_rsc_INVlim" ;
 
 *Initialize values to 'no'
-flag_eq_rsc_INVlim(r,i,rscbin,t) = no ;
+flag_eq_rsc_INVlim(r,i,c,rscbin,t) = no ;
 
 parameter binned_heatrates(i,v,r,allt) "--MMBtu / MWh-- existing capacity binned by heat rates" ;
 binned_heatrates(i,v,r,allt) = hintage_data(i,v,r,allt,"wHR") ;
@@ -1471,7 +1471,7 @@ binned_heatrates(i,v,r,allt) = hintage_data(i,v,r,allt,"wHR") ;
 * Written by writesupplycurves.py
 * Exogeneous onshore wind cap 
 $onempty
-parameter exog_wind_ons_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) wind-ons capacity binned by capacity factor and rscbin"
+parameter exog_wind_ons_rsc(i,c,r,rscbin,allt) "exogenous (pre-tfirst) wind-ons capacity binned by capacity factor and rscbin"
 /
 $offlisting
 $ondelim
@@ -1482,11 +1482,11 @@ $onlisting
 $offempty
 
 parameter exog_wind_ons(i,r,allt) "exogenous (pre-tfirst) wind-ons capacity binned by capacity factor" ;
-exog_wind_ons(i,r,t) = sum{rscbin, exog_wind_ons_rsc(i,r,rscbin,t) } ;
+exog_wind_ons(i,r,t) = sum{(c,rscbin), exog_wind_ons_rsc(i,c,r,rscbin,t) } ;
 
 * Exogeneous offshore wind cap 
 $onempty
-parameter exog_wind_ofs_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor and rscbin"
+parameter exog_wind_ofs_rsc(i,c,r,rscbin,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor and rscbin"
 /
 $offlisting
 $ondelim
@@ -1497,11 +1497,11 @@ $onlisting
 $offempty
 
 parameter exog_wind_ofs(i,r,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor" ;
-exog_wind_ofs(i,r,t) = sum{rscbin, exog_wind_ofs_rsc(i,r,rscbin,t) } ;
+exog_wind_ofs(i,r,t) = sum{(c,rscbin), exog_wind_ofs_rsc(i,c,r,rscbin,t) } ;
 
 * Exogeneous upv cap 
 $onempty
-parameter exog_upv_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor and rscbin"
+parameter exog_upv_rsc(i,c,r,rscbin,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor and rscbin"
 /
 $offlisting
 $ondelim
@@ -1512,7 +1512,7 @@ $onlisting
 $offempty
 
 parameter exog_upv(i,r,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor" ;
-exog_upv(i,r,t) = sum{rscbin, exog_upv_rsc(i,r,rscbin,t) } ;
+exog_upv(i,r,t) = sum{(c,rscbin), exog_upv_rsc(i,c,r,rscbin,t) } ;
 
 parameter avail_retire_exog_rsc(i,v,r,t) "--MW-- available retired capacity for refurbishments" ;
 avail_retire_exog_rsc(i,v,r,t) = 0 ;
@@ -1521,7 +1521,7 @@ avail_retire_exog_rsc(i,v,r,t) = 0 ;
 $onempty
 parameter capacity_exog(i,v,r,allt)             "--MW-- exogenously specified capacity",
           capacity_exog_energy(i,v,r,allt)      "--MWh-- exogenously specified energy capacity",
-          capacity_exog_rsc(i,v,r,rscbin,allt)  "--MW-- exogenous (pre-tfirst) capacity for wind-ons and upv",
+          capacity_exog_rsc(i,c,v,r,rscbin,allt)  "--MW-- exogenous (pre-tfirst) capacity for wind-ons and upv",
           m_capacity_exog(i,v,r,allt)           "--MW-- exogenous power capacity used in the model",
           m_capacity_exog_energy(i,v,r,allt)    "--MWh-- exogenous energy capacity used in the model",
           geo_cap_exog(i,r)                     "--MW-- existing geothermal capacity"
@@ -1542,7 +1542,7 @@ exog_rsc(i)$(upv(i)) = yes ;
 *declared over allt to allow for external data files that extend beyond end_year
 * Written by writesupplycurves.py
 $onempty
-parameter exog_geohydro_allkm_rsc(i,r,rscbin,allt) "exogenous (pre-tfirst) geohydro_allkm capacity binned by temperature and rscbin"
+parameter exog_geohydro_allkm_rsc(i,c,r,rscbin,allt) "exogenous (pre-tfirst) geohydro_allkm capacity binned by temperature and rscbin"
 /
 $offlisting
 $ondelim
@@ -1559,10 +1559,10 @@ capacity_exog(i,v,r,t)$geo(i) = 0 ;
 
 $ifthen.geohydrorevexog %geohydrosupplycurve% == 'reV'
 parameter exog_geohydro_allkm(i,r,allt) "exogenous (pre-tfirst) geohydro_allkm capacity binned by temperature" ;
-exog_geohydro_allkm(i,r,t) = sum{rscbin, exog_geohydro_allkm_rsc(i,r,rscbin,t) } ;
+exog_geohydro_allkm(i,r,t) = sum{(c,rscbin), exog_geohydro_allkm_rsc(i,c,r,rscbin,t) } ;
 exog_rsc(i)$(geo_hydro(i)) = yes ;
 capacity_exog(i,"init-1",r,t)$geo_hydro(i) = exog_geohydro_allkm(i,r,t) ;
-capacity_exog_rsc(i,"init-1",r,rscbin,t)$geo_hydro(i) = exog_geohydro_allkm_rsc(i,r,rscbin,t) ;
+capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$geo_hydro(i) = exog_geohydro_allkm_rsc(i,c,r,rscbin,t) ;
 $else.geohydrorevexog
 capacity_exog(i,"init-1",r,t)$geo_hydro(i) = geo_cap_exog(i,r) ;
 $endif.geohydrorevexog
@@ -1603,16 +1603,16 @@ capacity_exog(i,v,r,t)$wind(i) = 0 ;
 
 *wind-ons
 capacity_exog(i,"init-1",r,t)$onswind(i) = exog_wind_ons(i,r,t) ;
-capacity_exog_rsc(i,"init-1",r,rscbin,t)$onswind(i) = exog_wind_ons_rsc(i,r,rscbin,t) ;
+capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$onswind(i) = exog_wind_ons_rsc(i,c,r,rscbin,t) ;
 *wind-ofs
 capacity_exog(i,"init-1",r,t)$ofswind(i) = exog_wind_ofs(i,r,t) ;
-capacity_exog_rsc(i,"init-1",r,rscbin,t)$ofswind(i) = exog_wind_ofs_rsc(i,r,rscbin,t) ;
+capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$ofswind(i) = exog_wind_ofs_rsc(i,c,r,rscbin,t) ;
 
 *reset all upv exogenous capacity levels
 capacity_exog(i,v,r,t)$upv(i) = 0 ;
 
 capacity_exog(i,"init-1",r,t)$upv(i) = exog_upv(i,r,t) ;
-capacity_exog_rsc(i,"init-1",r,rscbin,t)$upv(i) = exog_upv_rsc(i,r,rscbin,t) ;
+capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$upv(i) = exog_upv_rsc(i,c,r,rscbin,t) ;
 
 *capacity for geothermal is determined through forcing of prescribed builds
 *geothermal is also not a valid technology and rather a placeholder
@@ -1740,16 +1740,16 @@ set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for
     valgen(i,v,r,t)            "i, v, r, and t combinations that are allowed for generation",
     valgen_h2ptc(i,v,r,t)        "i, v, r and t combinations that are allowed for generation that can receive the hydrogen PTC",
     m_refurb_cond(i,v,r,t,tt)  "i v r combinations that are built in tt that can be refurbished in t",
-    m_rscfeas(r,i,rscbin)      "--qualifier-- feasibility conditional for investing in RSC techs"
+    m_rscfeas(r,i,c,rscbin)      "--qualifier-- feasibility conditional for investing in RSC techs"
 ;
 
 
 * define qualifier for renewable supply curve investment variables
-m_rscfeas(r,i,rscbin) = rscfeas(i,r,rscbin) ;
+m_rscfeas(r,i,c,rscbin) = rscfeas(i,c,r,rscbin) ;
 * CSP
-m_rscfeas(r,i,rscbin)$[csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_cspagg(ii, i)], m_rscfeas(r,ii,rscbin) }] = yes ;
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_cspagg(ii, i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
 * Hybrid PV+battery
-m_rscfeas(r,i,rscbin)$[pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii, i)], m_rscfeas(r,ii,rscbin) }] = yes ;
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii, i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
 
 parameter m_required_prescriptions(i,v,r,t)        "--MW-- required power prescriptions by year (cumulative)" ;
 
@@ -1834,7 +1834,7 @@ prescription_check(i,newv,r,t)$[prescribed_build(i,newv,r,t)
 *Extend feasibility for prescribed rsc capacity where there is no supply curve data.
 *Resource will be manualy added to supply curve in bin1 in these cases.
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
-m_rscfeas(r,i,"bin1")$[sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
+m_rscfeas(r,i,c,"bin1")$[i_c(i,c)$sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,c,r,"cap",rscbin) }=0)] = yes ;
 
 *==========================================================
 *--- Interconnection queues (Capacity deployment limit) ---
@@ -1887,7 +1887,7 @@ $onlisting
 / ;
 
 * Written by writesupplycurves.py
-set spurline_sitemap(i,r,rscbin,x) "Mapping set from generators to reV sites"
+set spurline_sitemap(i,c,r,rscbin,x) "Mapping set from generators to reV sites"
 /
 $offlisting
 $ondelim
@@ -1967,7 +1967,7 @@ valcap(i,newv,r,t)$[(not rsc_i(i))$tmodel_new(t)$(not ban(i))$(not bannew(i))
 *similarly to non-rsc technologies and there is the additional
 *condition that m_rscfeas must contain values in at least one rscbin
 valcap(i,newv,r,t)$[rsc_i(i)$tmodel_new(t)$(not ban(i))$(not bannew(i))
-                    $sum{rscbin, m_rscfeas(r,i,rscbin) }$(not upgrade(i))
+                    $sum{(c,rscbin), m_rscfeas(r,i,c,rscbin) }$(not upgrade(i))
                     $sum{tt$(yeart(tt)<=yeart(t)), ivt(i,newv,tt) }
                     ]  = yes ;
 
@@ -1983,7 +1983,7 @@ valcap(i,newv,r,t)$[rsc_i(i)
                     $m_required_prescriptions(i,newv,r,t)
                     $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
                       $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))
-                    $sum{rscbin, m_rscfeas(r,i,rscbin) }] = yes ;
+                    $sum{(c,rscbin), m_rscfeas(r,i,c,rscbin) }] = yes ;
 
 * Techs where new investment are banned: Start by removing from valcap
 valcap(i,newv,r,t)$bannew(i) = no ;
@@ -5090,16 +5090,16 @@ retiretech(i,v,r,t)$[(yeart(t)>=Sw_Upgradeyear)$(yeart(t)>=Sw_Retireyear)$(Sw_Up
 * BEGIN MODEL SPECIFIC PARAMETER CREATION
 *=========================================
 
-parameter m_rsc_dat(r,i,rscbin,sc_cat)     "--MW or $/MW-- resource supply curve attributes" ;
+parameter m_rsc_dat(r,i,c,rscbin,sc_cat)     "--MW or $/MW-- resource supply curve attributes" ;
 
-m_rsc_dat(r,i,rscbin,sc_cat)
+m_rsc_dat(r,i,c,rscbin,sc_cat)
     $[sum{(ii,t)$[rsc_agg(i,ii)$tmodel_new(t)], valcap_irt(ii,r,t) }]
-    = rsc_dat(i,r,sc_cat,rscbin) ;
+    = rsc_dat(i,c,r,sc_cat,rscbin) ;
 
-parameter m_rsc_dat_original(r,i,rscbin,sc_cat) "--MW or $/MW-- resource supply curve attributes before any adjustments" ;
+parameter m_rsc_dat_original(r,i,c,rscbin,sc_cat) "--MW or $/MW-- resource supply curve attributes before any adjustments" ;
 *m_rsc_dat_original is used to compare the magnitude of possible adjustments in supply curves. 
 *It is only used for model validation and debugging purposes. 
-m_rsc_dat_original(r,i,rscbin,sc_cat) = m_rsc_dat(r,i,rscbin,sc_cat) ;
+m_rsc_dat_original(r,i,c,rscbin,sc_cat) = m_rsc_dat(r,i,c,rscbin,sc_cat) ;
 
 *=========================================
 * Reduced Resource Switch
@@ -5121,8 +5121,8 @@ rsc_capacity_scalar_i(i) = no ;
 if (Sw_ReducedResource = 1,
 *Calculate the fraction of prescribed builds to the available resource
 * 2021-05-05 the prescriptions are being applied across all years until we decide a better way to do this
-  prescrip_rsc_frac(i,r)$[sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } > 0] =
-      smax((tt),sum{newv,m_required_prescriptions(i,newv,r,tt)}) / sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+  prescrip_rsc_frac(i,r)$[sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } > 0] =
+      smax((tt),sum{newv,m_required_prescriptions(i,newv,r,tt)}) / sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
 *Set the default resource reduction fraction
   rsc_reduct_frac(i,r) = reduced_resource_frac ;
 *If the resource reduction fraction will reduce the resource to the point that prescribed builds will be infeasible,
@@ -5137,23 +5137,23 @@ if (Sw_ReducedResource = 1,
 
 *Now reduce the resource by the updated resource reduction fraction
 *(only do this for hydro, geothermal, PSH, and CSP; PV and wind have limited resource supply curves)
-  m_rsc_dat(r,i,rscbin,"cap")$[rsc_i(i)$(csp(i) or hydro(i) or psh(i) or geo(i))] =
-          m_rsc_dat(r,i,rscbin,"cap") * (1 - rsc_reduct_frac(i,r)) ;
+  m_rsc_dat(r,i,c,rscbin,"cap")$[rsc_i(i)$(csp(i) or hydro(i) or psh(i) or geo(i))] =
+          m_rsc_dat(r,i,c,rscbin,"cap") * (1 - rsc_reduct_frac(i,r)) ;
 ) ;
 
 *convert UPV and PVB interconnection costs from $/MW-AC to $/MW-DC using ILR
-m_rsc_dat(r,i,rscbin,"cost")$[m_rsc_dat(r,i,rscbin,"cap")$(upv(i) or pvb(i))] = m_rsc_dat(r,i,rscbin,"cost") / ilr(i) ; 
+m_rsc_dat(r,i,c,rscbin,"cost")$[m_rsc_dat(r,i,c,rscbin,"cap")$(upv(i) or pvb(i))] = m_rsc_dat(r,i,c,rscbin,"cost") / ilr(i) ; 
 
 *Fill in cost_trans for outputs.
-m_rsc_dat(r,i,rscbin,"cost_trans")$[m_rsc_dat(r,i,rscbin,"cost")$[not sccapcosttech(i)]] =
-    m_rsc_dat(r,i,rscbin,"cost") - m_rsc_dat(r,i,rscbin,"cost_cap") ;
+m_rsc_dat(r,i,c,rscbin,"cost_trans")$[m_rsc_dat(r,i,c,rscbin,"cost")$[not sccapcosttech(i)]] =
+    m_rsc_dat(r,i,c,rscbin,"cost") - m_rsc_dat(r,i,c,rscbin,"cost_cap") ;
 
 *Ensure sufficient resource is available to cover existing capacity rsc_i capacity
-m_rsc_dat(r,i,rscbin,"cap")$[rsc_i(i)
-                            $(m_rsc_dat(r,i,rscbin,"cap") * (1$[not rsc_capacity_scalar_i(i)] + sum{t$tfirst(t), rsc_capacity_scalar(i,r,t) }$rsc_capacity_scalar_i(i))
-                              < sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)], capacity_exog_rsc(ii,v,r,rscbin,tt) })] =
+m_rsc_dat(r,i,c,rscbin,"cap")$[rsc_i(i)
+                            $(m_rsc_dat(r,i,c,rscbin,"cap") * (1$[not rsc_capacity_scalar_i(i)] + sum{t$tfirst(t), rsc_capacity_scalar(i,r,t) }$rsc_capacity_scalar_i(i))
+                              < sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)], capacity_exog_rsc(ii,c,v,r,rscbin,tt) })] =
 *Use ceiling function to three decimal places so that we don't run into infeasibilities due to rounding later on
-  ceil(1000 * sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)], capacity_exog_rsc(ii,v,r,rscbin,tt)
+  ceil(1000 * sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)], capacity_exog_rsc(ii,c,v,r,rscbin,tt)
       / (1$[not rsc_capacity_scalar_i(ii)] + rsc_capacity_scalar(ii,r,tt)$rsc_capacity_scalar_i(ii)) } ) / 1000 ;
 
 
@@ -5162,10 +5162,10 @@ m_rsc_dat(r,i,rscbin,"cap")$[rsc_i(i)
 *and prescribed capacity (cap_prescribed).
 
 *Two types of adjustments:
-*1- If at least one element of m_rsc_dat(r,i,rscbin,"cap") is nonzero within a technology group, 
+*1- If at least one element of m_rsc_dat(r,i,c,rscbin,"cap") is nonzero within a technology group, 
 *   apply a multiplier to all associated i-classes so that the total available capacity 
 *   meets or exceeds prescribed capacity.
-*2- If m_rsc_dat(r,i,rscbin,"cap") is zero for all i-classes within the technology group, 
+*2- If m_rsc_dat(r,i,c,rscbin,"cap") is zero for all i-classes within the technology group, 
 *   but prescribed capacity exists, assign prescribed capacity to the first bin at zero cost.
 
 *Define auxiliary parameters to organize the computation
@@ -5179,33 +5179,33 @@ parameter cap_existing(i,r)       "--MW-- amount of existing resource supply cur
 available_supply(i,r) = 0 ;
 
 *Get existing capacity
-cap_existing(i,r)$exog_rsc(i) = sum{(v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(i,v,r,rscbin,t) } ;
+cap_existing(i,r)$exog_rsc(i) = sum{(c,v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
 
 *Get prescribed capacity
 cap_prescribed(i,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{v, prescribed_build(i,v,r,t) } ;
 cap_prescribed_ir(i,r)$rsc_i(i) = sum{t$tmodel_new(t), cap_prescribed(i,r,t) } ;
 
 *Get total available supply for all i .
-available_supply(i,r)$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))] = sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } ;
+available_supply(i,r)$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))] = sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
 
 *Apply multiplier if prescribed capacity exceeds available supply
-m_rsc_dat(r,i,rscbin,"cap")$[((cap_existing(i,r) + cap_prescribed_ir(i,r)) >  available_supply(i,r))
+m_rsc_dat(r,i,c,rscbin,"cap")$[((cap_existing(i,r) + cap_prescribed_ir(i,r)) >  available_supply(i,r))
                               $(available_supply(i,r))] 
-                  = m_rsc_dat(r,i,rscbin,"cap") * ((cap_existing(i,r) + cap_prescribed_ir(i,r)) / available_supply(i,r)) ;
+                  = m_rsc_dat(r,i,c,rscbin,"cap") * ((cap_existing(i,r) + cap_prescribed_ir(i,r)) / available_supply(i,r)) ;
 
 
 *Assign prescribed capacity to first bin at no cost if no supply is available
-m_rsc_dat(r,i,"bin1","cap")$[(cap_prescribed_ir(i,r) > 0)$(not available_supply(i,r))
+m_rsc_dat(r,i,c,"bin1","cap")$[i_c(i,c)$(cap_prescribed_ir(i,r) > 0)$(not available_supply(i,r))
                              $sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))]
                       = cap_prescribed_ir(i,r) ;
 
 
 *Compute the difference between m_rsc_dat_original and m_rsc_dat
-parameter rsc_cap_diff(r,i,rscbin) "--MW or $/MW-- total supply added to m_rsc_dat to adjust for prescriptions" ;
-rsc_cap_diff(r,i,rscbin) = m_rsc_dat(r,i,rscbin,"cap") - m_rsc_dat_original(r,i,rscbin,"cap") ;
+parameter rsc_cap_diff(r,i,c,rscbin) "--MW or $/MW-- total supply added to m_rsc_dat to adjust for prescriptions" ;
+rsc_cap_diff(r,i,c,rscbin) = m_rsc_dat(r,i,c,rscbin,"cap") - m_rsc_dat_original(r,i,c,rscbin,"cap") ;
 
 *Round up to the nearest 3rd decimal place
-m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rscbin,"cap") * 1000) / 1000 ;
+m_rsc_dat(r,i,c,rscbin,"cap")$m_rsc_dat(r,i,c,rscbin,"cap") = ceil(m_rsc_dat(r,i,c,rscbin,"cap") * 1000) / 1000 ;
 
 *Currently only geothermal and dr_shed have supply curve capacities that change over time
 * Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
@@ -5220,7 +5220,7 @@ geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
       ( cap_prescribed_ir(i,r)
           / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
                    $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+      - sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
 
 * If there is not sufficient geothermal resource (i.e., geo_bin1_add_orig is positive), then
 * set geo_discovery to 1 for that region for years after the prescribed builds start
@@ -5233,35 +5233,35 @@ geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
       ( cap_prescribed_ir(i,r)
           / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
                    $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+      - sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
 
 * Only use positive values of geo_bin1_add, as negative values would indicate that the
 * existing resource is already sufficient to cover prescriptions
 geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
 
 * Add any additional resource needed to the first bin of the supply curve
-m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
-    m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
+m_rsc_dat(r,i,c,"bin1","cap")$[i_c(i,c)$geo_hydro(i)$geo_bin1_add(i,r)] =
+    m_rsc_dat(r,i,c,"bin1","cap") + geo_bin1_add(i,r) ;
 
 rsc_capacity_scalar(i,r,t) =  ceil(1000 *geo_discovery(i,r,t) + dr_shed_capacity_scalar(i,r,t) ) / 1000 ;
 rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
 
 * * Apply spur-line cost multiplier for relevant technologies
-* m_rsc_dat(r,i,rscbin,"cost")$(pv(i) or pvb(i) or wind(i) or csp(i)) =
-*     m_rsc_dat(r,i,rscbin,"cost") * Sw_SpurCostMult ;
-set m_rsc_con(r,i) "set to detect numeraire rsc techs that have capacity value" ;
-m_rsc_con(r,i)$sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } = yes ;
+* m_rsc_dat(r,i,c,rscbin,"cost")$(pv(i) or pvb(i) or wind(i) or csp(i)) =
+*     m_rsc_dat(r,i,c,rscbin,"cost") * Sw_SpurCostMult ;
+set m_rsc_con(r,i,c) "set to detect numeraire rsc techs that have capacity value" ;
+m_rsc_con(r,i,c)$sum{rscbin, m_rsc_dat(r,i,c,rscbin,"cap") } = yes ;
 
-m_rscfeas(r,i,rscbin) = no ;
-m_rscfeas(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap") = yes ;
-m_rscfeas(r,i,rscbin)$[sum{ii$tg_rsc_cspagg(ii, i),m_rscfeas(r,ii,rscbin) }
+m_rscfeas(r,i,c,rscbin) = no ;
+m_rscfeas(r,i,c,rscbin)$m_rsc_dat(r,i,c,rscbin,"cap") = yes ;
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$tg_rsc_cspagg(ii, i),m_rscfeas(r,ii,c,rscbin) }
                       $sum{t$tmodel_new(t), valcap_irt(i,r,t) }] = yes ;
-m_rscfeas(r,i,rscbin)$[sum{ii$rsc_agg(ii,i),m_rscfeas(r,ii,rscbin) }$sum{t$tmodel_new(t),valcap_irt(i,r,t) }$psh(i)$Sw_WaterMain] = yes ;
-m_rsc_dat(r,i,rscbin,sc_cat)$[sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,rscbin,sc_cat) }
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$rsc_agg(ii,i),m_rscfeas(r,ii,c,rscbin) }$sum{t$tmodel_new(t),valcap_irt(i,r,t) }$psh(i)$Sw_WaterMain] = yes ;
+m_rsc_dat(r,i,c,rscbin,sc_cat)$[i_c(i,c)$sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,c,rscbin,sc_cat) }
                              $sum{t$tmodel_new(t), valcap_irt(i,r,t) }
                              $(psh(i) or csp(i))
                              $Sw_WaterMain] =
-  sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,rscbin,sc_cat) } ;
+  sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,c,rscbin,sc_cat) } ;
 
 
 set force_prescribe(i,v,r,t) "conditional to indicate whether the force prescription equation should be active for technology i and vintage v in year t" ;
@@ -5282,16 +5282,16 @@ allow_ener_up(i,v,r,rscbin,t)   "i, v, r, and t combinations that are allowed fo
 ;
 
 * Adjust available capacity and costs for hydropower upgrades using switch input.
-m_rsc_dat(r,'hydUD',rscbin,"cap") = m_rsc_dat(r,'hydUD',rscbin,"cap") * %GSw_HydroUpgradeCapMult% ;
-m_rsc_dat(r,'hydUND',rscbin,"cap") = m_rsc_dat(r,'hydUND',rscbin,"cap") * %GSw_HydroUpgradeCapMult% ;
-m_rsc_dat(r,'hydUD',rscbin,"cost") = m_rsc_dat(r,'hydUD',rscbin,"cost") * %GSw_HydroUpgradeCostMult% ;
-m_rsc_dat(r,'hydUND',rscbin,"cost") = m_rsc_dat(r,'hydUND',rscbin,"cost") * %GSw_HydroUpgradeCostMult% ;
+m_rsc_dat(r,'hydUD',c,rscbin,"cap") = m_rsc_dat(r,'hydUD',c,rscbin,"cap") * %GSw_HydroUpgradeCapMult% ;
+m_rsc_dat(r,'hydUND',c,rscbin,"cap") = m_rsc_dat(r,'hydUND',c,rscbin,"cap") * %GSw_HydroUpgradeCapMult% ;
+m_rsc_dat(r,'hydUD',c,rscbin,"cost") = m_rsc_dat(r,'hydUD',c,rscbin,"cost") * %GSw_HydroUpgradeCostMult% ;
+m_rsc_dat(r,'hydUND',c,rscbin,"cost") = m_rsc_dat(r,'hydUND',c,rscbin,"cost") * %GSw_HydroUpgradeCostMult% ;
 
 * Use hydropower upgrade supply curves and multiplier from switch input to define decoupled capacity/energy upgrade costs.
-cost_cap_up('hydED','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUD',rscbin,"cost") * %GSw_HydroCostFracCapUp% ;
-cost_cap_up('hydEND','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUND',rscbin,"cost") * %GSw_HydroCostFracCapUp% ;
-cost_ener_up('hydED','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUD',rscbin,"cost") * %GSw_HydroCostFracEnerUp% ;
-cost_ener_up('hydEND','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUND',rscbin,"cost") * %GSw_HydroCostFracEnerUp% ;
+cost_cap_up('hydED','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUD',c,rscbin,"cost") } * %GSw_HydroCostFracCapUp% ;
+cost_cap_up('hydEND','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUND',c,rscbin,"cost") } * %GSw_HydroCostFracCapUp% ;
+cost_ener_up('hydED','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUD',c,rscbin,"cost") } * %GSw_HydroCostFracEnerUp% ;
+cost_ener_up('hydEND','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUND',c,rscbin,"cost") } * %GSw_HydroCostFracEnerUp% ;
 
 * Initialize available capacity/energy upgrades to zero to avoid double counting if using coupled capacity/energy upgrades.
 cap_cap_up(i,v,r,rscbin,t) = 0 ;
@@ -5304,10 +5304,10 @@ $ifthene.hydup2 %GSw_HydroCapEnerUpgradeType% == 2
 cost_cap_up(i,v,r,rscbin,t)$cost_cap_up(i,v,r,rscbin,t) = cost_cap_up(i,v,r,rscbin,t) * 1000 ;
 cost_ener_up(i,v,r,rscbin,t)$cost_ener_up(i,v,r,rscbin,t) = cost_ener_up(i,v,r,rscbin,t) * 1000 ;
 
-cap_cap_up('hydED','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUD',rscbin,"cap") + hyd_add_upg_cap(r,'hydUD',rscbin,t) ;
-cap_cap_up('hydEND','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUND',rscbin,"cap") + hyd_add_upg_cap(r,'hydUND',rscbin,t) ;
-cap_ener_up('hydED','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUD',rscbin,"cap")  + hyd_add_upg_cap(r,'hydUD',rscbin,t) ;
-cap_ener_up('hydEND','init-1',r,rscbin,t) = m_rsc_dat(r,'hydUND',rscbin,"cap") + hyd_add_upg_cap(r,'hydUND',rscbin,t) ;
+cap_cap_up('hydED','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUD',c,rscbin,"cap") } + hyd_add_upg_cap(r,'hydUD',rscbin,t) ;
+cap_cap_up('hydEND','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUND',c,rscbin,"cap") } + hyd_add_upg_cap(r,'hydUND',rscbin,t) ;
+cap_ener_up('hydED','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUD',c,rscbin,"cap") }  + hyd_add_upg_cap(r,'hydUD',rscbin,t) ;
+cap_ener_up('hydEND','init-1',r,rscbin,t) = sum{c, m_rsc_dat(r,'hydUND',c,rscbin,"cap") } + hyd_add_upg_cap(r,'hydUND',rscbin,t) ;
 $endif.hydup2
 
 * Use available decoupled upgrade resource to define sets for allowable decoupled capacity/energy upgrades.
@@ -5318,8 +5318,8 @@ allow_ener_up(i,v,r,rscbin,t)$[valcap(i,v,r,t)$cap_ener_up(i,v,r,rscbin,t)$(t.va
 * Track the initial amount of m_rsc_dat capacity to compare in report.gms
 * We adjust upwards by small amounts given potential for infeasibilities
 * in very tiny amounts and thus track the extent of the adjustments
-parameter m_rsc_dat_init(r,i,rscbin) "--MW-- Initial amount of resource supply curve capacity to compare with final amounts after adjustments" ;
-m_rsc_dat_init(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap") = m_rsc_dat(r,i,rscbin,"cap") ;
+parameter m_rsc_dat_init(r,i,c,rscbin) "--MW-- Initial amount of resource supply curve capacity to compare with final amounts after adjustments" ;
+m_rsc_dat_init(r,i,c,rscbin)$m_rsc_dat(r,i,c,rscbin,"cap") = m_rsc_dat(r,i,c,rscbin,"cap") ;
 
 
 *========================================
