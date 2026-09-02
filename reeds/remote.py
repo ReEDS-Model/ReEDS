@@ -1,6 +1,8 @@
 #%% Imports
 import io
+import os
 import sys
+import json
 import hashlib
 import zipfile
 import argparse
@@ -8,9 +10,19 @@ import requests
 import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
+from typing import TypedDict
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 reeds_path = reeds.io.reeds_path
+
+CACHE_PATH = Path(reeds_path, 'inputs', 'remote', '.remote_files_cache.json')
+
+
+class CacheEntry(TypedDict):
+    size: int
+    mtime_ns: int
+    ino: int
+    md5: str
 
 
 #%% Functions
@@ -67,6 +79,28 @@ def get_md5sum(filepath):
     return md5
 
 
+def _cached_md5sum(filepath, cache: dict[str, CacheEntry]) -> str:
+    """
+    Like get_md5sum(), but skips re-hashing files whose size, mtime (modification
+    time), and inode match the last time they were hashed (recorded in `cache`).
+    """
+    key = str(filepath)
+    stat = filepath.stat()
+    entry = cache.get(key)
+    if (
+        entry is not None
+        and entry.get('size') == stat.st_size
+        and entry.get('mtime_ns') == stat.st_mtime_ns
+        and entry.get('ino') == stat.st_ino
+    ):
+        return entry['md5']
+    md5 = get_md5sum(filepath)
+    cache[key] = {
+        'size': stat.st_size, 'mtime_ns': stat.st_mtime_ns, 'ino': stat.st_ino, 'md5': md5,
+    }
+    return md5
+
+
 def download_remote_files(only=None, force=False, access_token=None):
     """
     Downloads remote files. Only downloads the files specified by `only` if `only`
@@ -82,15 +116,27 @@ def download_remote_files(only=None, force=False, access_token=None):
         Path(reeds.io.reeds_path, 'inputs', dirname).mkdir(exist_ok=True)
     if only:
         filemap = filemap.loc[only]
+    ## Load cached checksums, keyed by file size and mtime (modification time),
+    ## so we skip re-hashing multi-GB files that haven't changed since the last run
+    if CACHE_PATH.is_file():
+        try:
+            with open(CACHE_PATH, 'r') as f:
+                cache = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f'Could not read {CACHE_PATH} ({e}); rebuilding checksum cache.')
+            cache = {}
+    else:
+        cache = {}
     for filename, row in filemap.iterrows():
         url = row.url
         rawpath = Path(row.rawpath)
         ## Download it if necessary
-        md5 = get_md5sum(rawpath) if rawpath.is_file() else ''
+        md5 = _cached_md5sum(rawpath, cache) if rawpath.is_file() else ''
         if (not rawpath.is_file()) or (md5 != row.md5) or force:
             download(url, rawpath, access_token=access_token)
             ## Make sure the downloaded file matches the expected checksum
-            md5 = get_md5sum(rawpath)
+            cache.pop(str(rawpath), None)
+            md5 = _cached_md5sum(rawpath, cache)
             if md5 != row.md5:
                 err = (
                     f"{rawpath} has checksum {md5}, which does not match the expected "
@@ -111,6 +157,15 @@ def download_remote_files(only=None, force=False, access_token=None):
             ## Symlinks are otherwise used by default since they cause less confusion
             ## when estimating file/folder sizes.
             linkpath.hardlink_to(rawpath)
+    ## Save the updated checksum cache for the next run. Write to a temp file and
+    ## fsync/replace atomically so an interrupted process can't leave a truncated,
+    ## unparseable cache file behind.
+    tmp_path = CACHE_PATH.with_suffix('.json.tmp')
+    with open(tmp_path, 'w') as f:
+        json.dump(cache, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, CACHE_PATH)
 
 
 def identify_required_remote_files(sw) -> list:

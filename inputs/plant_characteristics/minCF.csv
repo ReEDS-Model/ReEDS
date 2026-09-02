@@ -2,6 +2,7 @@ i,fraction
 beccs_mod,0.06
 beccs_max,0.06
 biopower,0.06
+h2-fuel-cell,0.06
 Gas-CT,0.06
 Gas-CT_aero,0.06
 H2-CT,0.06
