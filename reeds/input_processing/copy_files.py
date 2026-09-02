@@ -1342,10 +1342,10 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # ---- Set up logger ----
     tic = datetime.datetime.now()
-    # log = reeds.log.makelog(
-    #     scriptname=__file__,
-    #     logpath=os.path.join(inputs_case,'..','gamslog.txt'),
-    # )
+    log = reeds.log.makelog(
+        scriptname=__file__,
+        logpath=os.path.join(inputs_case,'..','gamslog.txt'),
+    )
 
     print('Starting copy_files.py')
     main(reeds_path, inputs_case)
