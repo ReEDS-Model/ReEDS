@@ -37,8 +37,8 @@ GROWTH_BIN.fx(gbin,i,st,tfix)$[sum{r$[r_st(r,st)], valinv_irt(i,r,tfix) }$stfeas
 INV.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)] = INV.l(i,v,r,tfix) ;
 INV_ENERGY.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$battery(i)] = INV_ENERGY.l(i,v,r,tfix) ;
 INV_REFURB.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$refurbtech(i)] = INV_REFURB.l(i,v,r,tfix) ;
-INV_RSC.fx(i,c,v,r,rscbin,tfix)$[valinv(i,v,r,tfix)$rsc_i(i)$i_c(i,c)$m_rscfeas(r,i,rscbin)] = INV_RSC.l(i,c,v,r,rscbin,tfix) ;
-CAP_RSC.fx(i,c,v,r,rscbin,tfix)$[valcap(i,v,r,tfix)$rsc_i(i)$i_c(i,c)$m_rscfeas(r,i,rscbin)] = CAP_RSC.l(i,c,v,r,rscbin,tfix) ;
+INV_RSC.fx(i,c,v,r,rscbin,tfix)$[i_c(i,c)$valinv(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,rscbin)] = INV_RSC.l(i,c,v,r,rscbin,tfix) ;
+CAP_RSC.fx(i,c,v,r,rscbin,tfix)$[i_c(i,c)$valcap(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,rscbin)] = CAP_RSC.l(i,c,v,r,rscbin,tfix) ;
 INV_CAP_UP.fx(i,v,r,rscbin,tfix)$[allow_cap_up(i,v,r,rscbin,tfix)] = INV_CAP_UP.l(i,v,r,rscbin,tfix) ;
 INV_ENER_UP.fx(i,v,r,rscbin,tfix)$[allow_ener_up(i,v,r,rscbin,tfix)] = INV_ENER_UP.l(i,v,r,rscbin,tfix) ;
 UPGRADES.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$upgrade(i)] = UPGRADES.l(i,v,r,tfix) ;

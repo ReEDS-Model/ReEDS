@@ -2122,7 +2122,7 @@ valcap_i(i)$sum{v, valcap_iv(i,v) } = yes ;
 valcap_ivr(i,v,r)$sum{t, valcap(i,v,r,t) } = yes ;
 
 * Valid capacity by resource class is only for the technologies that have a capacity factor
-valcap_class(i,c,v,r,t)$[valcap(i,v,r,t)$i_c(i,c)$cf_tech(i)] = yes ;
+valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$cf_tech(i)] = yes ;
 
 * -- valinv specification --
 valinv(i,v,r,t) = no ;

@@ -51,7 +51,7 @@ rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_
 *Note that yeart(tt) is stricly < here, while it is <= in eq_rsc_INVlim. That is because
 *values where yeart(tt)==yeart(t) are variables rather than parameters because they are not
 *values from prior solve years.
-    - sum{(ii,c,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))$rsc_agg(i,ii)$i_c(ii,c)],
+    - sum{(ii,c,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))],
          INV_RSC.l(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 *minus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
     - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
@@ -69,7 +69,7 @@ flag_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc
 * When RHS is 0 (or close enough), the eq_rsc_INVlim equation says that all relevant INV_RSC are 0.
 * Therefore we can set the INV_RSC variable to zero anywhere the flag_eq_rsc_INVlim is true
 loop(i$rsc_i(i),
-    INV_RSC.fx(ii,c,v,r,rscbin,t)$[tmodel(t)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)$i_c(ii,c)
+    INV_RSC.fx(ii,c,v,r,rscbin,t)$[tmodel(t)$i_c(ii,c)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)
                                 $(flag_eq_rsc_INVlim(r,i,rscbin,t))$(valinv(ii,v,r,t)$rsc_agg(i,ii))] = 0 ;
 ) ;
 

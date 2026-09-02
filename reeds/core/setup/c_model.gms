@@ -829,9 +829,9 @@ eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 * ---------------------------------------------------------------------------
 * Capacity accounting for rsc techs
 eq_cap_rsc(i,c,v,r,rscbin,t)
-    $[tmodel(t)
+    $[tmodel(t)$i_c(i,c)
     $rsc_i(i)$(not sccapcosttech(i))
-    $valcap(i,v,r,t)$i_c(i,c)
+    $valcap(i,v,r,t)
     $(not Sw_PCM)]..
 
     sum{tt$[tfirst(tt)$exog_rsc(i)],
@@ -1054,7 +1054,7 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
     =g=
 
 *must exceed the cumulative invested capacity in that region/class/bin...
-    sum{(ii,c,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)$i_c(ii,c)],
+    sum{(ii,c,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))],
          INV_RSC(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 
 *plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
@@ -1137,8 +1137,8 @@ eq_site_cf(x,h,t)
         sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
 * multiplied by total capacity of those techs
         * sum{(c,rscbin)
-              $[valcap(i,v,r,t)
-              $i_c(i,c)
+              $[i_c(i,c)
+              $valcap(i,v,r,t)
               $m_rscfeas(r,i,rscbin)
               $spurline_sitemap(i,r,rscbin,x)],
               CAP_RSC(i,c,v,r,rscbin,t)
@@ -1185,8 +1185,9 @@ eq_spur_noclip(x,t)
 * (Since PV capacity is in DC, we divide CAP_RSC [DC] by ILR [DC/AC] to get AC spur line capacity.
 *  ILR is 1 for all non-PV techs.)
     sum{(i,c,v,r,rscbin)
-        $[spurline_sitemap(i,r,rscbin,x)
-        $valcap(i,v,r,t)$i_c(i,c)],
+        $[i_c(i,c)
+        $spurline_sitemap(i,r,rscbin,x)
+        $valcap(i,v,r,t)],
         CAP_RSC(i,c,v,r,rscbin,t) / ilr(i)
     }
 ;
@@ -2305,7 +2306,7 @@ eq_transmission_investment_max(t)
 * Spur lines + network reinforcement
     + sum{(i,c,v,r,rscbin)
           $[((Sw_TransInvMaxTypes=2) or (Sw_TransInvMaxTypes=3))
-          $valinv(i,v,r,t)$rsc_i(i)$i_c(i,c)$m_rscfeas(r,i,rscbin)],
+          $i_c(i,c)$valinv(i,v,r,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)],
           INV_RSC(i,c,v,r,rscbin,t) * (
               distance_reinforcement(i,r,rscbin)
               + distance_spur(i,r,rscbin)$(Sw_TransInvMaxTypes=3)
@@ -3491,7 +3492,7 @@ eq_water_capacity_total(i,v,r,t)$[tmodel(t)$valcap(i,v,r,t)
 *require enough water capacity to fill PSH reservoir.
 *uses investment so that term is only applied in the single investment year
 *   as a proxy for water needs during construction phase.
-    + sum{(c,rscbin)$[m_rscfeas(r,i,rscbin)$psh(i)$i_c(i,c)], INV_RSC(i,c,v,r,rscbin,t) * water_req_psh(r,rscbin) }$Sw_PSHwatercon
+    + sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,rscbin)$psh(i)], INV_RSC(i,c,v,r,rscbin,t) * water_req_psh(r,rscbin) }$Sw_PSHwatercon
 ;
 
 * ---------------------------------------------------------------------------
