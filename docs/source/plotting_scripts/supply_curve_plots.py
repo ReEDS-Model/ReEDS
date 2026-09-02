@@ -41,8 +41,8 @@ def add_capacity_total(ax, df, fontsize=14):
     )
 
 
-def plot_docs():
-    for tech in ['egs']:
+def plot_docs(techs):
+    for tech in techs:
         print(f"plotting supply curve for {tech}")
 
         if tech == 'egs':
@@ -165,11 +165,16 @@ def main():
         '--mode', choices=['docs', 'presentation'], default='docs',
         help='Plot layout to generate.',
     )
+    parser.add_argument(
+        '--techs', '-t', nargs='+',
+        choices=['upv', 'wind-ons', 'wind-ofs', 'egs'],
+        default=['upv', 'wind-ons', 'wind-ofs', 'egs'],
+        help='Optional tech filter(s) for docs plots, e.g. --techs upv wind-ons')
     args = parser.parse_args()
 
     try:
         if args.mode == 'docs':
-            plot_docs()
+            plot_docs(args.techs)
         else:
             plot_presentation()
     except Exception:
