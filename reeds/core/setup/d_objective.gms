@@ -61,7 +61,8 @@ eq_ObjFn_inv(t)$tmodel(t)..
 * Note: for OSW, export cable, inter-array and POI/substations are eligible for ITC. The rest are not. 
 * However we apply the ITC to all transmission costs to be consistent with LBW format
                   + sum{(i,v,r,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)$(not spur_techs(i))],
-                      m_rsc_dat(r,i,rscbin,"cost") * rsc_fin_mult(i,r,t) * sum{ii$rsc_agg(i,ii), INV_RSC(ii,v,r,rscbin,t) } }
+                      m_rsc_dat(r,i,rscbin,"cost") * rsc_fin_mult(i,r,t)
+                      * sum{(ii,c)$[rsc_agg(i,ii)$i_c(ii,c)], INV_RSC(ii,c,v,r,rscbin,t) } }
 
 * ---cost of spur lines modeled explicitly---
 * NOTE: no rsc_fin_mult(i,r,t) here, but it's 1 for upv and wind-ons anyway
@@ -79,7 +80,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
                                         ( INV(i,v,r,t) + INV_REFURB(i,v,r,t)$[refurbtech(i)$Sw_Refurb] ) }
                       + sum{(rscbin,i,v,r)$[m_rscfeas(r,i,rscbin)$psh(i)],
                               sum{wst$i_wst(i,wst), m_watsc_dat(wst,"cost",r,t) } *
-                              ( INV_RSC(i,v,r,rscbin,t) * water_req_psh(r,rscbin) ) }$Sw_PSHwatercon
+                              sum{c$i_c(i,c), INV_RSC(i,c,v,r,rscbin,t) } * water_req_psh(r,rscbin) }$Sw_PSHwatercon
                     ]$Sw_WaterMain
 
 *slack variable to update water source type (wst) in the unit database
@@ -194,7 +195,8 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(i,v,r,rscbin)
                     $[m_rscfeas(r,i,rscbin)$valcap(i,v,r,t)
                     $rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-                    m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * CAP_RSC(i,v,r,rscbin,t) }
+                    m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac
+                    * sum{c$i_c(i,c), CAP_RSC(i,c,v,r,rscbin,t) } }
 
 * spur lines modeled explicitly
               + sum{x$[Sw_SpurScen$xfeas(x)],
