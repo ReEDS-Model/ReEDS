@@ -201,7 +201,7 @@ lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i
 ;
 
 gen_rsc(i,v,r,t)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)] =
-    sum{h, m_cf(i,v,r,h,t) * hours(h) } ;
+    sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * hours(h) } ;
 
 lcoe(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
 * cost of capacity divided by generation
@@ -654,7 +654,7 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR.
 gen_h("csp-ns",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
-    = cap_cspns(r,t) * m_cf("upv_5","new1",r,h,t) ;
+    = cap_cspns(r,t) * sum{c$i_c("upv_5",c), m_cf("upv_5",c,"new1",r,h,t) } ;
 * We have to take csp-ns generation from somewhere, so take it from upv_5 (which all the
 * csp-ns-containing regions have)
 gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
@@ -680,7 +680,7 @@ gen_ann_nat(i,t)$tmodel_new(t) = sum{r, gen_ann(i,r,t) } ;
 * Report generation without the charging and production included as above
 gen_ivrt(i,v,r,t)$valgen(i,v,r,t) = sum{h, GEN.l(i,v,r,h,t) * hours(h) } ;
 gen_ivrt_uncurt(i,v,r,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valgen(i,v,r,t)] =
-  sum{h, m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+  sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 * Report generation that will be used as a denominator in outputs, where VRE uses uncurtailed gen and storage uses GEN
 gen_uncurtailed(i,r,t)$[valgen_irt(i,r,t)$(not vre(i))] = sum{v, gen_ivrt(i,v,r,t) } ;
@@ -758,14 +758,13 @@ opres_trade(ortype,r,rr,t)$[opres_routes(r,rr,t)$tmodel_new(t)] =
 *=========================
 
 gen_new_uncurt(i,r,h,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] =
-      sum{v$valinv(i,v,r,t), (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)) * m_cf(i,v,r,h,t) * hours(h) }
+      sum{(v,c)$[valinv(i,v,r,t)$i_c(i,c)], (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
 ;
 
-* Formulation follows eq_curt_gen_balance(r,h,t); since it uses =g= there may be extra curtailment
-* beyond CURT.l(r,h,t) so we recalculate as (availability - generation - operating reserves)
+* curtailment = (availability - generation - operating reserves)
 curt_h(r,h,t)$tmodel_new(t) =
-      sum{(i,v)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))],
-          m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) }
+      sum{(i,v,c)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))$i_c(i,c)],
+          m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     - sum{(i,v)$[valgen(i,v,r,t)$vre(i)], GEN.l(i,v,r,h,t) }
     - sum{(i,v)$[valgen(i,v,r,t)$storage_hybrid(i)$(not csp(i))], GEN_PLANT.l(i,v,r,h,t) }$Sw_HybridPlant
     - sum{(ortype,i,v)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)$vre(i)],
@@ -775,8 +774,8 @@ curt_h(r,h,t)$tmodel_new(t) =
 curt_ann(r,t)$tmodel_new(t) = sum{h, curt_h(r,h,t) * hours(h) } ;
 
 curt_tech(i,r,t)$[tmodel_new(t)$vre(i)] =
-      sum{(v,h)$valcap(i,v,r,t),
-          m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) }
+      sum{(v,h,c)$[valcap(i,v,r,t)$i_c(i,c)],
+          m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) }
     - sum{(v,h)$valgen(i,v,r,t),
           GEN.l(i,v,r,h,t) * hours(h) }
     - sum{(ortype,v,h)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)],
@@ -1013,10 +1012,10 @@ revenue_en(rev_cat,i,r,t)
 
 revenue_en(rev_cat,i,r,t)
     $[tmodel_new(t)
-    $sum{(v,h)$[valcap(i,v,r,t)], m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) }
+    $sum{(v,h,c)$[valcap(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     $vre(i)] =
-    revenue(rev_cat,i,r,t) / sum{(v,h)$valcap(i,v,r,t),
-      m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+    revenue(rev_cat,i,r,t) / sum{(v,h,c)$[valcap(i,v,r,t)$i_c(i,c)],
+      m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 revenue_en_nat(rev_cat,i,t)
     $[tmodel_new(t)
@@ -1026,10 +1025,10 @@ revenue_en_nat(rev_cat,i,t)
 
 revenue_en_nat(rev_cat,i,t)
     $[tmodel_new(t)
-    $sum{(v,r,h)$[valcap(i,v,r,t)], m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) }
+    $sum{(v,r,h,c)$[valcap(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     $vre(i)] =
-    revenue_nat(rev_cat,i,t) / sum{(v,r,h)$valcap(i,v,r,t),
-      m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+    revenue_nat(rev_cat,i,t) / sum{(v,r,h,c)$[valcap(i,v,r,t)$i_c(i,c)],
+      m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 revenue_cap(rev_cat,i,r,t)$[tmodel_new(t)$cap_out(i,r,t)] =
   revenue(rev_cat,i,r,t) / cap_out(i,r,t) ;
@@ -1708,8 +1707,6 @@ error_check('z') = (
         - pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$retiretech(i,v,r,t)$Sw_RetirePenalty],
             cost_fom(i,v,r,t) * retire_penalty(t)
             * (CAP.l(i,v,r,t) - INV.l(i,v,r,t) - INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb] - UPGRADES.l(i,v,r,t)$[upgrade(i)$Sw_Upgrades]) }
-* Revenue from purchases of curtailed VRE
-        - pvf_onm(t) * sum{(r,h), CURT.l(r,h,t) * hours(h) * cost_curt(t) }$Sw_CurtMarket
 * Hurdle costs
         + pvf_onm(t) * sum{(r,rr,trtype)$cost_hurdle(r,rr,t), tran_hurdle_cost_ann(r,rr,trtype,t) }
 * Penalty cost for dropped/excess load before Sw_StartMarkets

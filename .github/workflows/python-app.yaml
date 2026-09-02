@@ -38,7 +38,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup ReEDS environments
-        uses: ./.github/actions/setup-reeds-env
+        uses: $/.github/actions/setup-reeds-env
         with:
           julia-version: ${{ env.JULIA_VERSION }}
 
@@ -82,7 +82,7 @@ jobs:
             zenodo-files-
       
       - name: Setup Python environment
-        uses: ./.github/actions/setup-reeds-env
+        uses: $/.github/actions/setup-reeds-env
         with:
           setup-julia: false
 
@@ -107,11 +107,11 @@ jobs:
       matrix:
         include:
           - scenario: github_Pacific
-            solve-year: 2029
+            solve-year: 2030
           - scenario: github_Everything
             solve-year: 2060
           - scenario: github_MA_county_CC
-            solve-year: 2026
+            solve-year: 2030
     env:
       batch: test
     steps:
@@ -164,7 +164,7 @@ jobs:
 
       - name: Setup Python and Julia environments
         id: setup-env
-        uses: ./.github/actions/setup-reeds-env
+        uses: $/.github/actions/setup-reeds-env
         with:
           julia-version: ${{ env.JULIA_VERSION }}
 
@@ -257,11 +257,11 @@ jobs:
       matrix:
         include:
           - scenario: github_Pacific
-            solve-year: 2029
+            solve-year: 2030
           - scenario: github_Everything
             solve-year: 2060
           - scenario: github_MA_county_CC
-            solve-year: 2026
+            solve-year: 2030
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -290,7 +290,7 @@ jobs:
           R2X_WEATHER_YEAR: "2012"
           R2X_SYSTEM_JSON: ${{ format('{0}_system.json', matrix.scenario) }}
         run: |
-          uvx --from "r2x-reeds>=0.3.5" python postprocessing/run_r2x.py \
+          uvx --from "r2x-reeds>=0.8.0,<1.0.0" python postprocessing/run_r2x.py \
             --reeds-run-path "$R2X_REEDS_RUN_PATH" \
             --scenario "$R2X_SCENARIO" \
             --solve-year "$R2X_SOLVE_YEAR" \

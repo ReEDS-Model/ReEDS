@@ -343,26 +343,8 @@ def main(reeds_path, inputs_case):
     for tech in techs.keys():
         techs[tech] = tech_table[tech_table[tech]].index.values.tolist()
         techs[tech] = [x.lower() for x in techs[tech]]
-        temp_save = []
-        temp_remove = []
         # Interpreting GAMS syntax in tech-subset-table.csv
-        for subset in techs[tech]:
-            if '*' in subset:
-                temp_remove.append(subset)
-                temp = subset.split('*')
-                temp2 = temp[0].split('_')
-                temp_low = pd.to_numeric(temp[0].split('_')[-1])
-                temp_high = pd.to_numeric(temp[1].split('_')[-1])
-                temp_tech = ''
-                for n in range(0,len(temp2)-1):
-                    temp_tech += temp2[n]
-                    if not n == len(temp2)-2:
-                        temp_tech += '_'
-                for c in range(temp_low,temp_high+1):
-                    temp_save.append('{}_{}'.format(temp_tech,str(c)))
-        for subset in temp_remove:
-            techs[tech].remove(subset)
-        techs[tech].extend(temp_save)
+        techs[tech] = reeds.techs.expand_star(techs[tech])
     vre_dist = techs['VRE_DISTRIBUTED']
 
     #%% Read capacity factor profiles
