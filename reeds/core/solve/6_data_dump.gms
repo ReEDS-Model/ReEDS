@@ -62,7 +62,7 @@ h2_usage_regional(r,allh,t)        "--metric tons-- H2 usage by region"
 inv_cond_filt(i,v,t)               "--set-- vintage-year mapping for investments by technology"
 inv_ivrt(i,v,r,t)                  "--MW-- investments in power generation capacity"
 inv_energy_ivrt(i,v,r,t)           "--MWh-- investments in energy generation capacity"
-m_cf_filt(i,v,r,allh)              "--fraction-- capacity factor used in the model"
+m_cf_filt(i,c,v,r,allh)            "--fraction-- capacity factor used in the model"
 m_cf_szn_filt(i,v,r,allszn)        "--fraction-- modelled capacity factors filtered for hydro resources to set seasonal energy constraints"
 minloadfrac_filt(r,i,allszn)       "--fraction-- modelled mingen fraction filtered for hydro resources to set mingen constraints"
 prod_filt(i,v,r,allh)              "--MW-- power consumed for PRODUCE.l"
@@ -123,10 +123,10 @@ cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i
 cap_ivrt(i,v,r,t)$([upv(i) or wind(i)]$valcap(i,v,r,t)) =
     m_capacity_exog(i,v,r,t)$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
-          INV.l(i,v,r,tt) + INV_REFURB.l(i,v,r,tt)$[refurbtech(i)$Sw_Refurb]} ;
+          INV.l(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb]} ;
 cap_init(i,v,r)$([not distpv(i)]$valcap_ivr(i,v,r)) = sum{t$tcur(t), cap_ivrt(i,v,r,t)$initv(v) } ;
 cap_init(i,v,r)$(distpv(i)$valcap_ivr(i,v,r)) = sum{t$tfirst(t), cap_ivrt(i,v,r,t) } ;
-inv_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)] = [INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)]$valinv(i,v,r,t) + UPGRADES.l(i,v,r,t)$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] ;
+inv_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)] = [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t) + UPGRADES.l(i,v,r,t)$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] ;
 inv_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = INV_ENERGY.l(i,v,r,t);
 inv_ivrt("distpv",v,r,t)$([trange(t)$(not tfirst(t))]$valcap("distpv",v,r,t)) = cap_ivrt("distpv",v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",v,r,tt) } ;
 inv_ivrt("distpv","init-1",r,"%next_year%") = inv_distpv(r,"%next_year%") ;
@@ -228,7 +228,7 @@ heat_rate_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), heat_rate(i,v,r,t) } ;
 
 inv_cond_filt(i,v,t)$[(vre(i) or pvb(i))$tnext(t)] = sum{(tt,r), inv_cond(i,v,r,tt,t) } ;
 
-m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{(t,c)$[tnext(t)$i_c(i,c)], m_cf(i,c,v,r,h,t) } ;
+m_cf_filt(i,c,v,r,h)$[i_c(i,c)$(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{t$tnext(t), m_cf(i,c,v,r,h,t) } ;
 
 m_cf_szn_filt(i,v,r,szn)$[hydro(i)$cap_exist(i,v,r)] = sum{t$tcur(t), m_cf_szn(i,v,r,szn,t) } ;
 

@@ -37,7 +37,7 @@ positive variables
   EXTRA_PRESCRIP_ENERGY(i,v,r,t)           "--MWh-- builds beyond those prescribed battery energy capacity once allowed in firstyear(i)"
   INV_CAP_UP(i,v,r,rscbin,t)               "--MW-- upsized generation capacity addition in year t"
   INV_ENER_UP(i,v,r,rscbin,t)              "--MW-- upsized energy addition in year t using capacity factor to convert to capacity units"
-  INV_REFURB(i,v,r,t)                      "--MW-- investment in refurbishments of technologies that use a resource supply curve"
+  INV_REFURB(i,c,v,r,t)                    "--MW-- investment in refurbishments of technologies that use a resource supply curve"
   INV_RSC(i,c,v,r,rscbin,t)                "--MW-- investment in technologies that use a resource supply curve"
   UPGRADES(i,v,r,t)                        "--MW-- investments in upgraded capacity from ii to i"
   UPGRADES_RETIRE(i,v,r,t)                 "--MW-- upgrades that have been retired - used as a free slack variable in eq_cap_upgrade"
@@ -694,7 +694,7 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+              degrade(i,tt,t) * (INV(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb])
         }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
@@ -751,7 +751,7 @@ eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+              degrade(i,tt,t) * (INV(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb])
       }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
@@ -802,7 +802,7 @@ eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
     + INV(i,v,r,t)$valinv(i,v,r,t)
 
-    + INV_REFURB(i,v,r,t)$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
+    + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,t) }$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
 
 * Account for capacity upsizing within new vintages
     + sum{rscbin$allow_cap_up(i,v,r,rscbin,t), INV_CAP_UP(i,v,r,rscbin,t) }
@@ -948,7 +948,7 @@ eq_forceprescription_power(i,newv,r,t)
 
 *capacity built in the current period or prior
 
-        INV(i,newv,r,t) + INV_REFURB(i,newv,r,t)$[refurbtech(i)$Sw_Refurb]
+        INV(i,newv,r,t) + sum{c$i_c(i,c), INV_REFURB(i,c,newv,r,t) }$[refurbtech(i)$Sw_Refurb]
 
     =e=
 
@@ -1012,8 +1012,8 @@ eq_refurblim(i,r,t)$[tmodel(t)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)]..
 *must exceed the total sum of investments in refurbishments
 *that have yet to expire - implying an investment can be refurbished more than once
 *if the first refurbishment has exceed its age limit
-    sum{(vv,tt)$[inv_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)],
-         INV_REFURB(i,vv,r,tt)
+    sum{(c,vv,tt)$[i_c(i,c)$inv_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)],
+         INV_REFURB(i,c,vv,r,tt)
        }
 ;
 
@@ -1400,7 +1400,7 @@ eq_interconnection_queues(tg,r,t)
     sum{(i,newv,tt)$[valinv(i,newv,r,tt)$tg_i(tg,i)
                                     $(yeart(tt)>=interconnection_start)
                                     $(tmodel(tt) or tfix(tt))],
-        INV(i,newv,r,tt) + INV_REFURB(i,newv,r,tt)$[refurbtech(i)$Sw_Refurb] }
+        INV(i,newv,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,newv,r,tt) }$[refurbtech(i)$Sw_Refurb] }
 ;
 
 *===============================
@@ -1732,7 +1732,7 @@ eq_reserve_margin(r,ccseason,t)
 *only used in sequential solve case (otherwise m_cc_mar = 0)
 *Note: new distpv is included with cc_old
     + sum{(i,v)$[(vre(i) or csp(i) or pvb(i))$valinv(i,v,r,t)$(not forced_retire(i,r,t))],
-          m_cc_mar(i,r,ccseason,t) * (INV(i,v,r,t) + INV_REFURB(i,v,r,t)$[refurbtech(i)$Sw_Refurb])
+          m_cc_mar(i,r,ccseason,t) * (INV(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,t) }$[refurbtech(i)$Sw_Refurb])
          }
 
 *[plus] firm capacity contribution from all binned storage capacity
@@ -2819,7 +2819,7 @@ eq_RPS_OFSWind(st,t)$[tmodel(t)$stfeas(st)$offshore_cap_req(st,t)$Sw_StateRPS
 
 * investments over time
     + sum{(i,v,r,tt)$[r_st(r,st)$ofswind(i)$inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))],
-          INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb] }
+          INV(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb] }
 
     =g=
 

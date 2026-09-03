@@ -709,7 +709,7 @@ watcap_new_out(i,r,t)$[valcap_irt(i,r,t)$i_water_cooling(i)] =
     hours(h)
     * sum{w$[i_w(i,w)], 
       water_rate(i,w) } 
-      * ( sum{v$valinv(i,v,r,t), INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)} 
+      * ( sum{v$valinv(i,v,r,t), INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }} 
         + sum{v$valcap(i,v,r,t), 
           (1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))}$[upgrade(i)$Sw_Upgrades] ) 
     * (1 + sum{(v,szn), h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
@@ -721,7 +721,7 @@ watcap_new_ivrt(i,v,r,t)$[valcap(i,v,r,t)$i_water_cooling(i)] =
     hours(h)
     * sum{w$[i_w(i,w)], 
       water_rate(i,w) }
-      * ( [INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)]$valinv(i,v,r,t) 
+      * ( [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t) 
         + [(1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))]$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] )
     * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
   } / 1E6
@@ -758,7 +758,7 @@ opres_trade(ortype,r,rr,t)$[opres_routes(r,rr,t)$tmodel_new(t)] =
 *=========================
 
 gen_new_uncurt(i,r,h,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] =
-      sum{(v,c)$[valinv(i,v,r,t)$i_c(i,c)], (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
+      sum{(v,c)$[i_c(i,c)$valinv(i,v,r,t)], (INV.l(i,v,r,t) + INV_REFURB.l(i,c,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
 ;
 
 * curtailment = (availability - generation - operating reserves)
@@ -820,7 +820,7 @@ cap_ivrt(i,v,r,t)$[(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,v
 cap_ivrt(i,v,r,t)$[(upv(i) or wind(i))$valcap(i,v,r,t)] = (
   m_capacity_exog(i,v,r,t)$tmodel_new(t)
   + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
-        INV.l(i,v,r,tt) + INV_REFURB.l(i,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
+        INV.l(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
 
 cap_out(i,r,t)$[valcap_irt(i,r,t)$tmodel_new(t)] = sum{v$valcap(i,v,r,t), cap_ivrt(i,v,r,t) } ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
@@ -843,7 +843,7 @@ cap_exog(i,v,r,t)$tmodel_new(t) = m_capacity_exog(i,v,r,t) ;
 
 cap_new_out(i,r,t)$[valcap_irt(i,r,t)] = [
   sum{v$valinv(i,v,r,t), 
-    INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t) }
+    INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } }
   + sum{v$valcap(i,v,r,t), 
     (1 - upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))}$[upgrade(i)$Sw_Upgrades]
   ] / ilr(i) ;
@@ -857,12 +857,12 @@ cap_new_bin_out(i,v,r,t,rscbin)$[rsc_i(i)$valinv(i,v,r,t)] =
     sum{c$i_c(i,c), INV_RSC.l(i,c,v,r,rscbin,t) } / ilr(i) ;
 cap_new_bin_out(i,v,r,t,"bin1")$[(not rsc_i(i))$valinv(i,v,r,t)] = INV.l(i,v,r,t) / ilr(i) ;
 cap_new_ivrt(i,v,r,t)$[valcap(i,v,r,t)] = [
-  [INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)]$valinv(i,v,r,t)
+  [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t)
   + [(1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))]$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] 
  ] / ilr(i) ;
 cap_new_ivrt("distpv",v,r,t)$[tfirst(t)$valcap("distpv",v,r,t)] = cap_ivrt("distpv",v,r,t) ;
 cap_new_ivrt("distpv",v,r,t)$[(not tfirst(t))$valcap("distpv",v,r,t)] = cap_ivrt("distpv",v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",v,r,tt) } ;
-cap_new_ivrt_refurb(i,v,r,t)$valinv(i,v,r,t) = INV_REFURB.l(i,v,r,t) / ilr(i) ;
+cap_new_ivrt_refurb(i,v,r,t)$valinv(i,v,r,t) = sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } / ilr(i) ;
 
 * Capacity by reV site
 site_spurinv(x,t)$[tmodel_new(t)$xfeas(x)] = INV_SPUR.l(x,t) ;
@@ -965,7 +965,7 @@ cap_firm(i,r,ccseason,t)$[valcap_irt(i,r,t)$[not consume(i)]$tmodel_new(t)$Sw_PR
           }
     + cc_old(i,r,ccseason,t)
     + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valinv(i,v,r,t)],
-         m_cc_mar(i,r,ccseason,t) * (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb]) }
+         m_cc_mar(i,r,ccseason,t) * (INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }$[refurbtech(i)$Sw_Refurb]) }
     + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
             cc_int(i,v,r,ccseason,t) * CAP.l(i,v,r,t) }
     + cc_excess(i,r,ccseason,t)$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))]
@@ -1042,9 +1042,9 @@ revenue_cap_nat(rev_cat,i,t)$[tmodel_new(t)$sum{r$valcap_irt(i,r,t), cap_out(i,r
 *========================================
 
 valnew('MW',i,r,t)$[(not tfirst(t))$valcap_irt(i,r,t)] =
-  sum{v$valinv(i,v,r,t), INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t) } / ilr(i) ;
+  sum{v$valinv(i,v,r,t), INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } } / ilr(i) ;
 valnew('inv_cap_ratio',i,r,t)$[valnew('MW',i,r,t)] =
-    sum{v$[valinv(i,v,r,t)$CAP.l(i,v,r,t)], (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t))
+    sum{v$[valinv(i,v,r,t)$CAP.l(i,v,r,t)], (INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) })
     / CAP.l(i,v,r,t) } ;
 valnew('MWh',i,r,t)$[valnew('MW',i,r,t)] =
     sum{v$valinv(i,v,r,t), gen_ivrt(i,v,r,t)} * valnew('inv_cap_ratio',i,r,t) ;
@@ -1223,7 +1223,7 @@ capex_ivrt(i,v,r,t)$valcap(i,v,r,t) =
                       INV.l(i,v,r,t) * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t) )
                       + INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap_energy(i,t) )
                       + sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,c,rscbin)],INV_RSC.l(i,c,v,r,rscbin,t) * m_rsc_dat(r,i,c,rscbin,"cost") * cost_cap_fin_mult_no_credits(i,r,t) }
-                      + (INV_REFURB.l(i,v,r,t) * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t)))$[refurbtech(i)$Sw_Refurb]
+                      + (sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t)))$[refurbtech(i)$Sw_Refurb]
                       + UPGRADES.l(i,v,r,t) * (cost_upgrade(i,v,r,t) * cost_cap_fin_mult_no_credits(i,r,t))$[upgrade(i)$Sw_Upgrades] ;
 
 *=========================
@@ -1315,13 +1315,13 @@ systemcost_techba("inv_investment_capacity_costs",i,r,t)$[tmodel_new(t)$consume(
 systemcost_techba("inv_investment_refurbishment_capacity",i,r,t)$tmodel_new(t) =
 *costs of refurbishments of RSC tech (without the subtraction of any ITC/PTC value)
               + sum{v$[Sw_Refurb$valinv(i,v,r,t)$refurbtech(i)],
-                        (cost_cap_fin_mult_noITC(i,r,t) * cost_cap(i,t)) * INV_REFURB.l(i,v,r,t) }
+                        (cost_cap_fin_mult_noITC(i,r,t) * cost_cap(i,t)) * sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } }
 ;
 
 systemcost_techba("inv_itc_payments_negative_refurbishments",i,r,t)$tmodel_new(t) =
 *costs of refurbishments of RSC tech (including reduction from ITC)
               + sum{v$[Sw_Refurb$valinv(i,v,r,t)$refurbtech(i)],
-                   (cost_cap_fin_mult_out(i,r,t) * cost_cap(i,t)) * INV_REFURB.l(i,v,r,t) }
+                   (cost_cap_fin_mult_out(i,r,t) * cost_cap(i,t)) * sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } }
 *minus capacity costs without ITC
               - systemcost_techba("inv_investment_refurbishment_capacity",i,r,t)
 ;
@@ -1329,7 +1329,7 @@ systemcost_techba("inv_itc_payments_negative_refurbishments",i,r,t)$tmodel_new(t
 systemcost_techba("inv_investment_water_access",i,r,t)$tmodel_new(t) =
 *cost of water access
               + (8760/1E6) * sum{ (v,w)$[i_w(i,w)$valinv(i,v,r,t)], sum{wst$i_wst(i,wst), m_watsc_dat(wst,"cost",r,t)} * water_rate(i,w) *
-                        ( INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb] ) }
+                        ( INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }$[refurbtech(i)$Sw_Refurb] ) }
               + sum{(rscbin,c,v)$[i_c(i,c)$m_rscfeas(r,i,c,rscbin)$psh(i)], sum{wst$i_wst(i,wst), m_watsc_dat(wst,"cost",r,t) } *
                         ( INV_RSC.l(i,c,v,r,rscbin,t) * water_req_psh(r,rscbin) ) }
 ;
@@ -1708,7 +1708,7 @@ error_check('z') = (
 * Retirement penalty
         - pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$retiretech(i,v,r,t)$Sw_RetirePenalty],
             cost_fom(i,v,r,t) * retire_penalty(t)
-            * (CAP.l(i,v,r,t) - INV.l(i,v,r,t) - INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb] - UPGRADES.l(i,v,r,t)$[upgrade(i)$Sw_Upgrades]) }
+            * (CAP.l(i,v,r,t) - INV.l(i,v,r,t) - sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }$[refurbtech(i)$Sw_Refurb] - UPGRADES.l(i,v,r,t)$[upgrade(i)$Sw_Upgrades]) }
 * Hurdle costs
         + pvf_onm(t) * sum{(r,rr,trtype)$cost_hurdle(r,rr,t), tran_hurdle_cost_ann(r,rr,trtype,t) }
 * Penalty cost for dropped/excess load before Sw_StartMarkets
@@ -1762,7 +1762,7 @@ error_check('z') = (
                   * (cost_cap_fin_mult(i,r,t) - cost_cap_fin_mult_out(i,r,t)) }
 
             + sum{(i,v,r)$[Sw_Refurb$valinv(i,v,r,t)$refurbtech(i)],
-                  cost_cap(i,t) * INV_REFURB.l(i,v,r,t)
+                  cost_cap(i,t) * sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }
                   * (cost_cap_fin_mult(i,r,t) - cost_cap_fin_mult_out(i,r,t)) }
         )
 * account for penalty paid to deploy capacity beyond interconnection queue limits        
