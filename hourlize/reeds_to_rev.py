@@ -279,7 +279,7 @@ def get_preexisting_capacity(df_sc_in, tech, first_model_year=2009):
     # Find existing capacity by bin with raw supply curve.
     # Consider existing capacity as investment in 2009 to use the
     # same logic as inv_rsc when assigning to gid.
-    exist_columns = ["tech", "region", "year", "bin", "MW"]
+    exist_columns = ["tech", "class", "region", "year", "bin", "MW"]
     if "existing_capacity" in df_sc_in:
         if "online_year" not in df_sc_in:
             raise KeyError(
@@ -401,8 +401,6 @@ def combine_preexisting_and_new_investments(df_bin_exist, df_inv_rsc):
     """
     # Concatenate existing and inv_rsc
     df_inv = pd.concat([df_bin_exist, df_inv_rsc], sort=False, ignore_index=True)
-    # Split tech from class
-    df_inv[["tech_cat", "class"]] = df_inv["tech"].str.rsplit("_", n=1, expand=True)
     df_inv = df_inv[["year", "region", "class", "bin", "MW"]]
     df_inv["class"] = df_inv["class"].astype("int")
     df_inv["bin"] = df_inv["bin"].str.replace("bin", "", regex=False).astype("int")
@@ -435,9 +433,9 @@ def get_input_refurbishments(run_folder, tech):
     df_inv_refurb_in = pd.read_csv(
         inv_refurb,
         low_memory=False,
-        names=["tech", "vintage", "region", "year", "MW"],
+        names=["tech", "class", "vintage", "region", "year", "MW"],
         header=0,
-        usecols=["tech", "region", "year", "MW"],
+        usecols=["tech", "class", "region", "year", "MW"],
     )
     df_inv_refurb_in = df_inv_refurb_in[
         df_inv_refurb_in["tech"].str.startswith(tech)
@@ -462,14 +460,7 @@ def amend_refurbishments(df_inv_refurb_in):
         Returns refurbishments for the given technology, by year, region, and class.
         Output columns include: ["year", "region", "class", "MW"]
     """
-    # Split tech from class
     df_inv_refurb = df_inv_refurb_in.copy()
-    if df_inv_refurb.empty:
-        df_inv_refurb[["tech_cat", "class"]] = ""
-    else:
-        df_inv_refurb[["tech_cat", "class"]] = df_inv_refurb["tech"].str.split(
-            "_", n=1, expand=True
-        )
     df_inv_refurb = df_inv_refurb[["year", "region", "class", "MW"]]
     df_inv_refurb["class"] = df_inv_refurb["class"].astype("int")
     df_inv_refurb = df_inv_refurb.sort_values(by=["year", "region", "class"])
