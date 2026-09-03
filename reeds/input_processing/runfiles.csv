@@ -20,6 +20,7 @@ allt.csv,inputs/sets/allt.csv,1,ignore,ignore,,,,,,,,set,allt,all potential year
 alpha.csv,inputs/fuelprices/alpha_{ngscen}.csv,1,ignore,ignore,wide_cendiv,t,,1,0,,,,,,
 bio_supplycurve.csv,inputs/supply_curve/bio_supplycurve.csv,1,ignore,ignore,usda_region,,,,0,,,,,,
 bioclass.csv,inputs/sets/bioclass.csv,1,ignore,ignore,,,,,,,,set,bioclass,,
+c.csv,inputs/sets/c.csv,1,ignore,ignore,,,,,,,,set,c,renewable resource classes,
 can_exports.csv,inputs/canada_imports/can_exports.csv,int(sw.GSw_Canada) != 0,sum,ignore,r,wide,,1,0,,,,,,
 can_exports_szn_frac.csv,inputs/canada_imports/can_exports_szn_frac.csv,int(sw.GSw_Canada) != 0,ignore,ignore,,,,,0,,,,,,
 can_imports.csv,inputs/canada_imports/can_imports.csv,int(sw.GSw_Canada) != 0,sum,ignore,r,wide,,1,0,,,,,,
@@ -121,6 +122,7 @@ hydcost.csv,inputs/supply_curve/hydcost.csv,1,mean,uniform,wide,"tech,class",,1,
 hydro_mingen.csv,inputs/hydro/hydro_mingen.csv,1,mean,uniform,r,"*i,quarter",,0,0,,,,,,might be better to do something capacity-weighted
 hydrofrac_policy.csv,inputs/state_policies/hydrofrac_policy.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,"RPS_All,CES",,,0,,,,,,
 hydrogen_price.csv,inputs/fuelprices/h2-combustion_{h2combustionfuelscen}.csv,int(sw.GSw_H2Combustion) != 0,ignore,ignore,,,,0,0,,,,,,
+i_c.csv,inputs/sets/i_c.csv,1,ignore,ignore,,,,,0,,,set,i_c,map from technologies to resource classes,
 i_coolingtech_watersource.csv,inputs/waterclimate/i_coolingtech_watersource.csv,int(sw.GSw_WaterMain) != 0,ignore,ignore,,,,,0,,,,,,
 i_coolingtech_watersource_link.csv,inputs/waterclimate/i_coolingtech_watersource_link.csv,int(sw.GSw_WaterMain) != 0,ignore,ignore,,,,,0,,,,,,
 i_coolingtech_watersource_upgrades.csv,inputs/upgrades/i_coolingtech_watersource_upgrades.csv,1,ignore,ignore,,,,,0,,,,,,
@@ -147,7 +149,7 @@ mttr.csv,inputs/plant_characteristics/mttr.csv,1,ignore,ignore,,,tech,,0,,,,,,
 natgas_price_cendiv.csv,inputs/fuelprices/ng_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
 national_rps_frac_allScen.csv,inputs/national_generation/national_rps_frac_allScen.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,,,,1,0,,,,,,
 net_gen_existing_hydro.csv,inputs/hydro/net_gen_existing_hydro.csv,1,ignore,ignore,,"t,month",,0,0,,,,,,
-peak_net_imports.csv,inputs/reserves/peak_net_imports.csv,1,ignore,ignore,nercr,t,,0,0,,,,,,
+peak_net_imports.csv,inputs/reserves/peak_net_imports.csv,1,ignore,ignore,transreg,t,,0,0,,,,,,
 ng_crf_penalty_st.csv,inputs/state_policies/ng_crf_penalty_st.csv,1,ignore,ignore,st,*t,,0,0,,,,,,
 ng_demand_elec.csv,inputs/fuelprices/ng_demand_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
 ng_demand_tot.csv,inputs/fuelprices/ng_tot_demand_{ngscen}.csv,1,ignore,ignore,wide_cendiv,year,,1,0,,,,,,
@@ -185,6 +187,7 @@ plantchar_dr_shed_fom.csv,inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}
 plantchar_evmc_shape.csv,inputs/plant_characteristics/evmc_shape_{evmcscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_evmc_storage.csv,inputs/plant_characteristics/evmc_storage_{evmcscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_fuelcell.csv,inputs/plant_characteristics/{plantchar_fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
+plantchar_h2fuelcell.csv,inputs/plant_characteristics/{plantchar_h2fuelcell}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas_ccs.csv,inputs/plant_characteristics/{plantchar_gas_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas.csv,inputs/plant_characteristics/{plantchar_gas}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_geo.csv,inputs/plant_characteristics/{plantchar_geo}.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
@@ -208,7 +211,6 @@ ramprate.csv,inputs/plant_characteristics/ramprate.csv,int(sw.GSw_OpRes) != 0,ig
 ramptime.csv,inputs/reserves/ramptime.csv,int(sw.GSw_OpRes) != 0,ignore,ignore,,,,,0,,,,,,
 recstyle.csv,inputs/state_policies/recstyle.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,*st,"RPSCat,style",,,0,,,,,,
 rectable.csv,inputs/state_policies/rectable.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st_st,st,,,0,,,,,,
-resourceclass.csv,inputs/sets/resourceclass.csv,1,ignore,ignore,,,,,,,,set,resourceclass,renewable resource classes,
 retire_penalty.csv,inputs/financials/retire_penalty.csv,1,ignore,ignore,,,,,0,,,parameter,,--fraction-- penalty for retiring a power plant expressed as a fraction of FOM,
 rev_paths.csv,inputs/supply_curve/rev_paths.csv,1,ignore,ignore,,,,,0,,,,,,
 rggi_states.csv,inputs/emission_constraints/rggi_states.csv,int(sw.GSw_RGGI) != 0,ignore,ignore,*st,,,,0,,,,,,
@@ -229,7 +231,6 @@ supplycurve_wind-ons.csv,inputs/supply_curve/supplycurve_wind-ons-{GSw_SitingWin
 wst_surface.csv,inputs/sets/wst_surface.csv,1,ignore,ignore,,,,,0,,,set,wst_surface,surface water types where access is based on consumption not withdrawal,
 tc_phaseout_schedule.csv,inputs/financials/tc_phaseout_schedule_{GSw_TCPhaseout_schedule}.csv,int(sw.GSw_TCPhaseout) != 0,ignore,ignore,,,,,0,,,,,,
 tech-subset-table.csv,inputs/tech-subset-table.csv,1,ignore,ignore,,,,,0,,,,,,
-tech_resourceclass.csv,inputs/techs/tech_resourceclass.csv,1,ignore,ignore,,,,,0,,,set,,map from CSP/DUPV techs to resource classes,
 techs.csv,inputs/techs/techs_{techs_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
 techs_banned.csv,inputs/state_policies/techs_banned.yaml,1,ignore,ignore,wide,i,,,0,,,,,,
 techs_banned_ces.csv,inputs/state_policies/techs_banned_ces.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,wide_st,i,,,0,,,,,,

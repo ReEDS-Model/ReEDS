@@ -472,7 +472,7 @@ h2_exogenous_demand_regional(r,p,h,t)$[tmodel_new(t)$h2_share(r,t)]
 *=============================================
 
 * Written by cfgather.py, overwritten by hourly_writetimeseries.py
-parameter cf_in(i,r,allh) "--fraction-- capacity factors for renewable technologies"
+parameter cf_in(i,c,r,allh) "--fraction-- capacity factors for renewable technologies"
 /
 $offlisting
 $ondelim
@@ -482,12 +482,12 @@ $offdelim
 $onlisting
 / ;
 
-cf_in(i,r,h)$[i_water_cooling(i)$Sw_WaterMain] =
-  sum{ii$ctt_i_ii(i,ii), cf_in(ii,r,h) } ;
+cf_in(i,c,r,h)$[i_water_cooling(i)$Sw_WaterMain] =
+  sum{ii$ctt_i_ii(i,ii), cf_in(ii,c,r,h) } ;
 
 *initial assignment of capacity factors
-cf_rsc(i,v,r,allh,t) = 0 ;
-cf_rsc(i,v,r,h,t)$[cf_in(i,r,h)$cf_tech(i)$valcap(i,v,r,t)] = cf_in(i,r,h) ;
+cf_rsc(i,c,v,r,allh,t)$i_c(i,c) = 0 ;
+cf_rsc(i,c,v,r,h,t)$[cf_in(i,c,r,h)$cf_tech(i)$valcap(i,v,r,t)] = cf_in(i,c,r,h) ;
 
 * Written by reeds/input_processing/hourly_writetimeseries.py
 $onempty
@@ -519,10 +519,10 @@ cf_hyd(i,szn,r,t)$[upgrade(i)$(hydro(i) or psh(i))] =
     sum{ii$upgrade_from(i,ii), cf_hyd(ii,szn,r,t) } ;
 
 * dispatchable hydro has a separate constraint for seasonal generation which uses m_cf_szn
-cf_rsc(i,v,r,h,t)$[hydro(i)$valcap(i,v,r,t)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
+cf_rsc(i,c,v,r,h,t)$[hydro(i)$valcap(i,v,r,t)$i_c(i,c)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
 
-cf_rsc(i,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,v,r,tt) })] =
-        cf_rsc(i,"init-1",r,h,t) ;
+cf_rsc(i,c,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,v,r,tt) })] =
+        cf_rsc(i,c,"init-1",r,h,t) ;
 
 * For cap_hyd_szn_adj, which only applies to dispatchable hydro or upgraded disp hydro with added pumping, we first try using the from-tech, but if that is
 * not available we use to to-tech, and if not that either we just use 1.
@@ -534,31 +534,31 @@ cap_hyd_szn_adj(i,szn,r)$[upgrade(i)$hydro_d(i)$(not cap_hyd_szn_adj(i,szn,r))] 
 
 
 * do not apply "avail" for hybrid PV+battery because "avail" represents the battery availability
-m_cf(i,v,r,allh,t) = 0 ;
-m_cf(i,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$cf_rsc(i,v,r,h,t)$cf_adj_t(i,v,t)] =
-    cf_rsc(i,v,r,h,t)
-    * cf_adj_t(i,v,t)
+m_cf(i,c,v,r,allh,t)$i_c(i,c) = 0 ;
+m_cf(i,c,v,r,h,t)$[i_c(i,c)$cf_tech(i)$valcap(i,v,r,t)$cf_rsc(i,c,v,r,h,t)$cf_adj_t(i,c,v,t)] =
+    cf_rsc(i,c,v,r,h,t)
+    * cf_adj_t(i,c,v,t)
     * (avail(i,r,h)$[not pvb(i) and not hydro(i)] + 1$(pvb(i) or hydro(i)) );
 
 * can remove capacity factors for new vintages that have not been introduced yet
-m_cf(i,newv,r,h,t)$[not sum{tt$(yeart(tt) <= yeart(t)), ivt(i,newv,tt ) }$valcap(i,newv,r,t)$m_cf(i,newv,r,h,t)] = 0 ;
+m_cf(i,c,newv,r,h,t)$[not sum{tt$(yeart(tt) <= yeart(t)), ivt(i,newv,tt ) }$valcap(i,newv,r,t)$m_cf(i,c,newv,r,h,t)] = 0 ;
 
 * distpv capacity factor is divided by (1.0 - distloss) to provide a busbar equivalent capacity factor
-m_cf(i,v,r,h,t)$[distpv(i)$valcap(i,v,r,t)] = m_cf(i,v,r,h,t) / (1.0 - distloss) ;
+m_cf(i,c,v,r,h,t)$[distpv(i)$valcap(i,v,r,t)] = m_cf(i,c,v,r,h,t) / (1.0 - distloss) ;
 
-* doing this before calculating m_cf_szn to make sure 
+* doing this before calculating m_cf_szn to make sure
 * m_cf_szn does not get populated with very small values
-m_cf(i,v,r,h,t)$[not valcap(i,v,r,t)] = 0 ;
-m_cf(i,v,r,h,t)$[(m_cf(i,v,r,h,t)<0.01)$valcap(i,v,r,t)] = 0 ;
-m_cf(i,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$m_cf(i,v,r,h,t)] = round(m_cf(i,v,r,h,t),3) ;
+m_cf(i,c,v,r,h,t)$[i_c(i,c)$(not valcap(i,v,r,t))] = 0 ;
+m_cf(i,c,v,r,h,t)$[(m_cf(i,c,v,r,h,t)<0.01)$valcap(i,v,r,t)] = 0 ;
+m_cf(i,c,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$m_cf(i,c,v,r,h,t)] = round(m_cf(i,c,v,r,h,t),3) ;
 
 * Remove capacity when there is no corresponding capacity factor
-m_capacity_exog(i,v,r,t)$[initv(v)$cf_tech(i)$(not sum{h, m_cf(i,v,r,h,t) })] = 0 ;
+m_capacity_exog(i,v,r,t)$[initv(v)$cf_tech(i)$(not sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) })] = 0 ;
 
 * Average CF by season
 m_cf_szn(i,v,r,allszn,t) = 0 ;
 m_cf_szn(i,v,r,szn,t)$[cf_tech(i)$valcap(i,v,r,t)$(hydro_d(i) or hyd_add_pump(i))] =
-    sum{h$h_szn(h,szn), hours(h) * m_cf(i,v,r,h,t) }
+    sum{(h,c)$[h_szn(h,szn)$i_c(i,c)], hours(h) * m_cf(i,c,v,r,h,t) }
     / sum{h$h_szn(h,szn), hours(h) } ;
 
 * adding upgrade techs for hydro
@@ -576,7 +576,7 @@ m_cf_szn(i,v,r,szn,t)
 
 * Calculate daytime hours (for PVB) based on hours with nonzero PV CF
 dayhours(allh) = 0 ;
-dayhours(h)$[sum{(i,v,r,t)$[pv(i)$valgen(i,v,r,t)], m_cf(i,v,r,h,t) }] = yes ;
+dayhours(h)$[sum{(i,c,v,r,t)$[pv(i)$valgen(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t)}] = yes ;
 
 
 *=====================================================================================

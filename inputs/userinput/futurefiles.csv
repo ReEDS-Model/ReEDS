@@ -8,6 +8,7 @@ alpha.csv,.csv,0,None,t,None,1,0,constant,None,None,done,linear_10
 bio_priceramp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 bio_supplycurve.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 bioclass.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+c.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 can_exports_h_frac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 can_exports_szn_frac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 can_exports.csv,.csv,0,None,wide,r,1,0,constant,None,None,done,constant
@@ -226,6 +227,7 @@ hydro_mingen.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hydrocapcostmult.csv,.csv,0,None,t,None,1,0,constant,0,None,projection?,linear_5
 hydrofrac_policy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hydrogen_price.csv,.csv,0,None,year,None,0,0,constant,None,None,new,
+i_c.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 i_coolingtech_watersource_link.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 i_coolingtech_watersource_upgrades_link.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 i_coolingtech_watersource_upgrades.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -307,7 +309,7 @@ pcm_defaults.json,.json,1,None,9999,None,9999,0,constant,None,None,new,
 peak_ccseason.csv,.csv,2,None,wide,"r,ccseason",1,0,linear_5,None,None,"ignore if not EFS, else apply projection",linear_10
 peak_h.csv,.csv,2,None,wide,"r,h",1,0,linear_5,None,None,"ignore if not EFS, else apply projection",linear_10
 peak_net_imports.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-peakload_nercr.csv,.csv,0,None,t,nercr,0,0,linear_5,None,None,new,
+peakload_transreg.csv,.csv,0,None,t,transreg,0,0,linear_5,None,None,new,
 peakload.csv,.csv,0,None,wide,"level,region",1,0,linear_5,None,None,new,
 period_szn_user.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 pipeline_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -327,6 +329,7 @@ plantchar_dr_shed.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; chec
 plantchar_evmc_shape.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_evmc_storage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
+plantchar_h2fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas_ccs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_geo.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
@@ -383,7 +386,6 @@ region_map.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 regional_cap_cost_diff.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 regional_cap_cost_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 regions.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-resourceclass.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 resources.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 retail_cap_cost_mult.h5,.h5,1,None,9999,None,9999,0,constant,None,None,done,constant
 retail_depreciation_sch.h5,.h5,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -434,7 +436,6 @@ supplycurve_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 switches.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 tax_rate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 tc_phaseout_schedule.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-tech_resourceclass.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 tech-subset-table.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 techs_banned_ces.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 techs_banned_imports_rps.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
