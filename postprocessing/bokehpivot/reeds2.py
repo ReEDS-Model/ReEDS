@@ -1407,7 +1407,7 @@ results_meta = collections.OrderedDict((
 
     ('Capacity ivrt (GW)',
         {'file':'cap_ivrt',
-        'columns': ['tech', 'vintage', 'rb', 'year','Capacity (GW)'],
+        'columns': ['tech', 'class', 'vintage', 'rb', 'year','Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1540,7 +1540,7 @@ results_meta = collections.OrderedDict((
 
     ('Exogenous capacity (GW)',
         {'file':'cap_exog',
-        'columns': ['tech', 'vintage', 'region', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'vintage', 'region', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1893,7 +1893,7 @@ results_meta = collections.OrderedDict((
     ('Capacity Factor ivrt',
         {'sources': [
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year','MWh']},
-            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year','MW']},
+            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year','MW']},
         ],
         'preprocess': [
             {'func': pre_cf, 'args': {}},
@@ -2680,7 +2680,7 @@ results_meta = collections.OrderedDict((
     ('LCOE ($/MWh)',
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
             {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
@@ -2698,7 +2698,7 @@ results_meta = collections.OrderedDict((
     ('LCOE cf_act ($/MWh)',
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe_cf_act', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
             {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
@@ -2716,7 +2716,7 @@ results_meta = collections.OrderedDict((
     ('LCOE nopol ($/MWh)',
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe_nopol', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
             {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
@@ -2734,7 +2734,7 @@ results_meta = collections.OrderedDict((
     ('LCOE fullpol ($/MWh)',
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe_fullpol', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
             {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
@@ -2837,7 +2837,7 @@ results_meta = collections.OrderedDict((
             {'name':'tran_mi_out', 'file':'tran_mi_out', 'columns':['trtype', 'year', 'Amount (GW-mi)']},
             {'name':'tran_prm_mi_out', 'file':'tran_prm_mi_out', 'columns':['trtype', 'year', 'Trans cap, PRM (GW-mi)']},
             {'name':'spur_parameters', 'file':'../inputs_case/spur_parameters.csv'},
-            {'name':'cap_new_bin_out', 'file':'cap_new_bin_out', 'columns':['i','v','r','year','rscbin','MW']},
+            {'name':'cap_new_bin_out', 'file':'cap_new_bin_out', 'columns':['i','c','v','r','year','rscbin','MW']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
