@@ -1,9 +1,9 @@
 batt_refurb_perc_energy,1.0,"--fraction-- fraction of the energy-component capital cost of a new battery that will be refurbished after batt_years_until_refurb; the power component is assumed to need no refurbishment"
 batt_years_until_refurb,15,"--years-- number of years until battery_li requires a refurbishment of its energy capacity"
 bio_cofire_perc,0.15,'--fraction-- fraction of total fuel that is biomass used in cofire plants
+caa_capture_rate_standard,0.90,"--fraction-- CO2 capture rate that a state's coal fleet must match on average to meet the emissions requirements under Clean Air Act, Section 111"
 caa_coal_retire_year,2032,"--year-- year in which coal capacity is forced to either retire or upgrade with CCS to meet the emissions requirements under Clean Air Act, Section 111"
 caa_first_year,2024,"--year-- first year in which the emissions requirements under Clean Air Act, Section 111 are active"
-caa_rate_emis_standard,0.1039,"--metric tons CO2 per MWh-- rate equivalent to average emissions from a new coal-CCS plant, assuming 90% capture rate. Emissions rate from new coal-CCS plant is 0.051956 metric tons CO2 per MWh (see emit_rate) which assumes 95% capture. For 90% capture, the emissions rate is double that or 0.1039 metric tons CO2 per MWh."
 caa_gas_max_cf,0.40,"--fraction-- maximum cf that new gas plants (CCs or CTs) can operate at without being regulated under Clean Air Act, Section 111"
 co2_capture_incentive_length,12,'--years-- length for the co2 captured incentive to be extended in 4_post_solve_adjustments.gms if an upgrade occurs
 co2_capture_incentive_last_year_,2038,'--year-- last year the co2 captured incentive is available
