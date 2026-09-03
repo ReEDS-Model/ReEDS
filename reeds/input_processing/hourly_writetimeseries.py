@@ -522,7 +522,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'h_ccseason_prm': ['*h','ccseason'],
             'load_allyear': ['*r','h','t','MW'],
             'peak_ccseason': ['*r','ccseason','t','MW'],
-            'cf_vre': ['*i','r','h','cf'],
+            'cf_vre': ['*i','c','r','h','cf'],
             'cf_hyd': ['*i','szn','r','t','cf'],
             'cap_hyd_szn_adj': ['*i','szn','r','value'],
             'can_exports_h_frac': ['*h','frac_weighted'],
@@ -611,6 +611,11 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .rename("cf")
         .reset_index()
     )
+    ### Pull the resource class out of the tech name (e.g. 'upv_5' -> 5); techs with
+    ### no class suffix (e.g. 'distpv') are assigned class '0'
+    cf_out['c'] = [
+        str(reeds.techs.split_class(_i)[1] or 0) for _i in cf_out['i']
+    ]
 
     # %%### Create the temporal sets used by ReEDS
     ### Calculate number of hours represented by each timeslice
@@ -1335,9 +1340,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     cf_vre = (
         cf_out
-        .sort_values(['i','r','h'])
+        .sort_values(['i','c','r','h'])
         .assign(h=cf_out.h.map(chunkmap))
-        .groupby(['i','r','h'], as_index=False)
+        .groupby(['i','c','r','h'], as_index=False)
         .agg(aggmethod, *args)
     )
 
@@ -1486,7 +1491,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         'load_allyear': [load_allyear.round(decimals), False, False],
         ## Seasonal peak demand
         "peak_ccseason": [peak_all.round(decimals), False, False],
-        ## Capacity factors (i,r,h)
+        ## Capacity factors (i,c,r,h)
         'cf_vre': [cf_vre.round(5), False, False],
         ## Exports to Canada [fraction] (h)
         "can_exports_h_frac": [
