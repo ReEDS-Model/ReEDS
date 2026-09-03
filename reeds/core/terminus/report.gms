@@ -866,7 +866,7 @@ cap_new_ivrt(i,v,r,t)$[valcap(i,v,r,t)] = [
  ] / ilr(i) ;
 cap_new_ivrt("distpv",v,r,t)$[tfirst(t)$valcap("distpv",v,r,t)] = sum{c$i_c("distpv",c), cap_ivrt("distpv",c,v,r,t) } ;
 cap_new_ivrt("distpv",v,r,t)$[(not tfirst(t))$valcap("distpv",v,r,t)] = sum{c$i_c("distpv",c), cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } } ;
-cap_new_ivrt_refurb(i,v,r,t)$valinv(i,v,r,t) = sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } / ilr(i) ;
+cap_new_ivrt_refurb(i,c,v,r,t)$[i_c(i,c)$valinv(i,v,r,t)] = INV_REFURB.l(i,c,v,r,t) / ilr(i) ;
 
 * Capacity by reV site
 site_spurinv(x,t)$[tmodel_new(t)$xfeas(x)] = INV_SPUR.l(x,t) ;

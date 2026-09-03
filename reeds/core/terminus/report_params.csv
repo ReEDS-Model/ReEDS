@@ -24,7 +24,7 @@ param,units,comment,reeds2x,output_rename,input
 "cap_new_ann_nat(i,t)",MW/yr,new annual capacity national,,,
 "cap_new_bin_out(i,c,v,r,t,rscbin)",MW,capacity of built techs,,,
 "cap_new_ivrt(i,v,r,t)",MW,new capacity,1,,
-"cap_new_ivrt_refurb(i,v,r,t)",MW,new refurbished capacity,,,
+"cap_new_ivrt_refurb(i,c,v,r,t)",MW,new refurbished capacity,,,
 "cap_new_out(i,r,t)",MW,"new capacity by region, which are investments and upgrades from one solve year to the next",,,
 "cap_energy_new_out(i,v,r,t)",MWh,"new energy capacity by region, which are investments from one solve year to the next",,,
 "cap_out(i,c,r,t)",MW,capacity by region,1,cap,
