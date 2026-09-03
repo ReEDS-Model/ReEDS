@@ -39,12 +39,12 @@ cap_exist(i,v,r)                   "--MW-- capacity that exists in the current s
 cap_exog_filt(i,v,r)               "--MW-- exogenous capacity"
 cap_hyd_szn_adj_filt(i,allszn,r)   "--fraction-- seasonal hydro capacity adjustment filtered for the previous solve year"
 cap_init(i,v,r)                    "--MW-- initial capacity"
-cap_ivrt(i,v,r,t)                  "--MW-- generation power capacity"
+cap_ivrt(i,c,v,r,t)                "--MW-- generation power capacity"
 cap_energy_ivrt(i,v,r,t)           "--MWh-- generation energy capacity"
 cap_pvb(i,v,r)                     "--MW-- Hybrid PV+battery capacity (PV)"
 cap_trans_energy(r,rr,trtype)      "--MW-- transmission capacity for energy trading"
 cap_trans_prm(r,rr,trtype)         "--MW-- transmission capacity for PRM trading"
-cf_adj_t_filt(i,v,t)               "--fraction-- capacity factor adjustment for wind"
+cf_adj_t_filt(i,c,v,t)             "--fraction-- capacity factor adjustment for wind"
 cost_cap_filt(i,t)                 "--2004$/MW-- technology capital costs"
 cost_cap_fin_mult_filt(i,r,t)      "--unitless-- capital cost financial multipliers"
 cost_vom_filt(i,v,r)               "--$/MWh-- VO&M costs filtered for the previous solve year and existing capacity"
@@ -60,7 +60,7 @@ gen_h_stress_filt(i,r,allh,t)      "--MW-- generation by stress timeslice with c
 heat_rate_filt(i,v,r)              "--MMBtu/MWh-- heat rate"
 h2_usage_regional(r,allh,t)        "--metric tons-- H2 usage by region"
 inv_cond_filt(i,v,t)               "--set-- vintage-year mapping for investments by technology"
-inv_ivrt(i,v,r,t)                  "--MW-- investments in power generation capacity"
+inv_ivrt(i,c,v,r,t)                "--MW-- investments in power generation capacity"
 inv_energy_ivrt(i,v,r,t)           "--MWh-- investments in energy generation capacity"
 m_cf_filt(i,c,v,r,allh)            "--fraction-- capacity factor used in the model"
 m_cf_szn_filt(i,v,r,allszn)        "--fraction-- modelled capacity factors filtered for hydro resources to set seasonal energy constraints"
@@ -118,20 +118,26 @@ cap_exist_ir(i,r)$valcap_ir_filt(i,r) = sum{v, cap_exist(i,v,r) } ;
 cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
-cap_ivrt(i,v,r,t)$([not (upv(i) or wind(i))]$valcap(i,v,r,t)$trange(t)) = CAP.l(i,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)$trange(t)] = CAP.l(i,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(not (upv(i) or wind(i)))$trange(t)] = CAP_CLASS.l(i,c,v,r,t) ;
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
-cap_ivrt(i,v,r,t)$([upv(i) or wind(i)]$valcap(i,v,r,t)) =
-    m_capacity_exog(i,v,r,t)$trange(t)
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] =
+    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
-          INV.l(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb]} ;
-cap_init(i,v,r)$([not distpv(i)]$valcap_ivr(i,v,r)) = sum{t$tcur(t), cap_ivrt(i,v,r,t)$initv(v) } ;
-cap_init(i,v,r)$(distpv(i)$valcap_ivr(i,v,r)) = sum{t$tfirst(t), cap_ivrt(i,v,r,t) } ;
-inv_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)] = [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t) + UPGRADES.l(i,v,r,t)$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] ;
+          sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
+          + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]} ;
+cap_init(i,v,r)$([not distpv(i)]$valcap_ivr(i,v,r)) = sum{(c,t)$[i_c(i,c)$tcur(t)], cap_ivrt(i,c,v,r,t)$initv(v) } ;
+cap_init(i,v,r)$(distpv(i)$valcap_ivr(i,v,r)) = sum{(c,t)$[i_c(i,c)$tfirst(t)], cap_ivrt(i,c,v,r,t) } ;
+inv_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$trange(t)] =
+    [INV.l(i,v,r,t)$(not rsc_i(i))
+     + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+     + INV_REFURB.l(i,c,v,r,t)]$valinv(i,v,r,t)
+    + UPGRADES.l(i,v,r,t)$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] ;
 inv_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = INV_ENERGY.l(i,v,r,t);
-inv_ivrt("distpv",v,r,t)$([trange(t)$(not tfirst(t))]$valcap("distpv",v,r,t)) = cap_ivrt("distpv",v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",v,r,tt) } ;
-inv_ivrt("distpv","init-1",r,"%next_year%") = inv_distpv(r,"%next_year%") ;
+inv_ivrt("distpv",c,v,r,t)$[i_c("distpv",c)$trange(t)$(not tfirst(t))$valcap("distpv",v,r,t)] = cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } ;
+inv_ivrt("distpv",c,"init-1",r,"%next_year%")$i_c("distpv",c) = inv_distpv(r,"%next_year%") ;
 
-ret_ivrt(i,v,r,t)$([trange(t)$(not tfirst(t))$newv(v)]$valcap(i,v,r,t)) = sum{tt$tprev(t,tt), cap_ivrt(i,v,r,tt)} - cap_ivrt(i,v,r,t) + inv_ivrt(i,v,r,t) ;
+ret_ivrt(i,v,r,t)$([trange(t)$(not tfirst(t))$newv(v)]$valcap(i,v,r,t)) = sum{(c,tt)$[i_c(i,c)$tprev(t,tt)], cap_ivrt(i,c,v,r,tt)} - sum{c$i_c(i,c), cap_ivrt(i,c,v,r,t)} + sum{c$i_c(i,c), inv_ivrt(i,c,v,r,t)} ;
 ret_ivrt(i,v,r,t)$([abs(ret_ivrt(i,v,r,t) < 1e-6)]$valcap(i,v,r,t)) = 0 ;
 
 ret(i,v,r)$valcap_ivr(i,v,r) = sum{t, ret_ivrt(i,v,r,t) } ;
@@ -215,8 +221,8 @@ cost_cap_fin_mult_filt(i,r,t)$([storage_standalone(i)]) = cost_cap_fin_mult(i,r,
 
 cost_vom_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), cost_vom(i,v,r,t) } ;
 
-cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = sum{c$i_c(i,c), cf_adj_t(i,c,v,t) } ;
-cf_adj_t_filt(i,v,"%next_year%") = sum{c$i_c(i,c), cf_adj_t(i,c,v,"%next_year%") }$(vre(i) or pvb(i)) ;
+cf_adj_t_filt(i,c,v,t)$[i_c(i,c)$cap_exist_iv(i,v)$trange(t)] = cf_adj_t(i,c,v,t) ;
+cf_adj_t_filt(i,c,v,"%next_year%")$i_c(i,c) = cf_adj_t(i,c,v,"%next_year%")$(vre(i) or pvb(i)) ;
 
 ctt_i_ii_filt(i,ii) = ctt_i_ii(i,ii)$cap_exist_i(i) ;
 
