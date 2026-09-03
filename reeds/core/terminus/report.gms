@@ -189,7 +189,7 @@ avg_cf(i,v,r,t)$[CAP.l(i,v,r,t)$(not rsc_i(i))] =
 *LCOE calculation is appropriate for sequential solve mode only where annual energy production is the same in every year.
 *In inter-temporal modes this isn't the case and energy production should be discounted appropriately.
 
-lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i,v,r)] =
+lcoe(i,c,v,r,t,"bin1")$[i_c(i,c)$(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i,v,r)] =
 * cost of capacity divided by generation
    ((crf(t) * cost_cap_fin_mult(i,r,t) * cost_cap(i,t)$newv(v)
      + cost_fom(i,v,r,t)
@@ -200,26 +200,26 @@ lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i
    + heat_rate(i,v,r,t) * fuel_price(i,r,t)
 ;
 
-gen_rsc(i,v,r,t)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)] =
-    sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * hours(h) } ;
+gen_rsc(i,c,v,r,t)$[i_c(i,c)$valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)] =
+    sum{h, m_cf(i,c,v,r,h,t) * hours(h) } ;
 
-lcoe(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$sum{c, m_rscfeas(r,i,c,rscbin) }$gen_rsc(i,v,r,t)] =
+lcoe(i,c,v,r,t,rscbin)$[i_c(i,c)$valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)$gen_rsc(i,c,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
      * (cost_cap_fin_mult(i,r,t) * cost_cap(i,t)
 * Spur-line costs embedded in supply curve for techs without explicitly-modeled spurlines
-        + sum{c, m_rsc_dat(r,i,c,rscbin,"cost") }$[newv(v)$(not spur_techs(i))]
+        + m_rsc_dat(r,i,c,rscbin,"cost")$[newv(v)$(not spur_techs(i))]
 * Spur-line costs assuming 1:1 ratio between gen cap and spur cap (i.e. no overbuilding)
         + sum{x$[xfeas(x)$x_r(x,r)$spur_techs(i)], spurline_cost(x) * Sw_SpurCostMult}
      )
      + cost_fom(i,v,r,t)
-    ) / gen_rsc(i,v,r,t)
+    ) / gen_rsc(i,c,v,r,t)
 *plus VOM costs
     + cost_vom(i,v,r,t)
 ;
 
-lcoe_cf_act(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$rsc_i(i)] = lcoe(i,v,r,t,rscbin) ;
-lcoe_cf_act(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_cf(i,v,r,t)] =
+lcoe_cf_act(i,c,v,r,t,rscbin)$[i_c(i,c)$valcap_init(i,v,r,t)$rsc_i(i)] = lcoe(i,c,v,r,t,rscbin) ;
+lcoe_cf_act(i,c,v,r,t,"bin1")$[i_c(i,c)$(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_cf(i,v,r,t)] =
 * cost of capacity divided by generation
    ((crf(t) * cost_cap_fin_mult(i,r,t) * cost_cap(i,t)$newv(v)
      + cost_fom(i,v,r,t)
@@ -231,32 +231,32 @@ lcoe_cf_act(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_
    + heat_rate(i,v,r,t) * fuel_price(i,r,t)
 ;
 
-lcoe_nopol(i,v,r,t,rscbin)$valcap_init(i,v,r,t) = lcoe(i,v,r,t,rscbin) ;
-lcoe_nopol(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$sum{c, m_rscfeas(r,i,c,rscbin) }$gen_rsc(i,v,r,t)] =
+lcoe_nopol(i,c,v,r,t,rscbin)$[i_c(i,c)$valcap_init(i,v,r,t)] = lcoe(i,c,v,r,t,rscbin) ;
+lcoe_nopol(i,c,v,r,t,rscbin)$[i_c(i,c)$valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)$gen_rsc(i,c,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
      * (cost_cap_fin_mult_noITC(i,r,t) * cost_cap(i,t)
 * Spur-line costs embedded in supply curve for techs without explicitly-modeled spurlines
-        + sum{c, m_rsc_dat(r,i,c,rscbin,"cost") }$newv(v)$(not spur_techs(i)))
+        + m_rsc_dat(r,i,c,rscbin,"cost")$newv(v)$(not spur_techs(i)))
 * Spur-line costs assuming 1:1 ratio between gen cap and spur cap (i.e. no overbuilding)
         + sum{x$[xfeas(x)$x_r(x,r)$spur_techs(i)], spurline_cost(x) * Sw_SpurCostMult}
      + cost_fom(i,v,r,t)
-    ) / gen_rsc(i,v,r,t)
+    ) / gen_rsc(i,c,v,r,t)
 *plus VOM costs
     + cost_vom(i,v,r,t)
 ;
 
-lcoe_fullpol(i,v,r,t,rscbin)$valcap_init(i,v,r,t) = lcoe(i,v,r,t,rscbin) ;
-lcoe_fullpol(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$sum{c, m_rscfeas(r,i,c,rscbin) }$gen_rsc(i,v,r,t)] =
+lcoe_fullpol(i,c,v,r,t,rscbin)$[i_c(i,c)$valcap_init(i,v,r,t)] = lcoe(i,c,v,r,t,rscbin) ;
+lcoe_fullpol(i,c,v,r,t,rscbin)$[i_c(i,c)$valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)$gen_rsc(i,c,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
      * (cost_cap_fin_mult(i,r,t) * cost_cap(i,t)
 * Spur-line costs embedded in supply curve for techs without explicitly-modeled spurlines
-        + sum{c, m_rsc_dat(r,i,c,rscbin,"cost") }$newv(v)$(not spur_techs(i)))
+        + m_rsc_dat(r,i,c,rscbin,"cost")$newv(v)$(not spur_techs(i)))
 * Spur-line costs assuming 1:1 ratio between gen cap and spur cap (i.e. no overbuilding)
         + sum{x$[xfeas(x)$x_r(x,r)$spur_techs(i)], spurline_cost(x) * Sw_SpurCostMult}
      + cost_fom(i,v,r,t))
-    / gen_rsc(i,v,r,t)
+    / gen_rsc(i,c,v,r,t)
 *plus VOM costs
     + cost_vom(i,v,r,t)
 ;
