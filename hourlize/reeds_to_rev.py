@@ -370,8 +370,8 @@ def get_new_investments(run_folder, tech):
     df_inv_rsc = pd.read_csv(
         inv_rsc,
         low_memory=False,
-        names=["tech", "vintage", "region", "year", "bin", "MW"],
-        usecols=["tech", "region", "year", "bin", "MW"],
+        names=["tech", "class", "vintage", "region", "year", "bin", "MW"],
+        usecols=["tech", "class", "region", "year", "bin", "MW"],
         header=0,
     )
     df_inv_rsc = df_inv_rsc[df_inv_rsc["tech"].str.startswith(tech)].copy()
@@ -593,9 +593,9 @@ def get_exogenous_capacity(run_folder, tech):
     df_cap_exog = pd.read_csv(
         cap_exog,
         low_memory=False,
-        names=["tech", "vintage", "region", "year", "MW"],
+        names=["tech", "class", "vintage", "region", "year", "MW"],
         header=0,
-        usecols=["tech", "region", "year", "MW"],
+        usecols=["tech", "class", "region", "year", "MW"],
     )
     df_cap_exog = df_cap_exog[df_cap_exog["tech"].str.startswith(tech)].copy()
 
