@@ -47,6 +47,9 @@ fuelcell_ATB_2024_advanced,2022
 fuelcell_ATB_2024_moderate,2022
 gas_ATB_2024_advanced,2022
 gas_ATB_2024_conservative,2022
+h2fuelcell_advanced,2022
+h2fuelcell_moderate,2022
+h2fuelcell_conservative,2022
 gas_ATB_2024_moderate,2022
 gas_ATB_2024_moderate,2022
 gas_ATB_2025_advanced,2023
