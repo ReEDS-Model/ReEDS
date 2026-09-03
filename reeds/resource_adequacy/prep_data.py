@@ -196,14 +196,14 @@ def main(t, casedir, iteration=0):
     #%%### Nameplate capacity
     cap_ivr_realvint = (
         gdxreeds['cap_ivrt'].loc[gdxreeds['cap_ivrt'].t==t].drop('t', axis=1)
-        .groupby(['i','v','r'], as_index=False).Value.sum()
+        .groupby(['i','c','v','r'], as_index=False).Value.sum()
     )
     ### Reset the vintages of all storage units to 'new1' to reduce model size
     cap_storage_devint = cap_ivr_realvint.loc[
         cap_ivr_realvint.i.isin(gdxreeds['storage_standalone'].i)].copy()
     cap_storage_devint['v'] = 'new1'
     cap_storage_devint = (
-        cap_storage_devint.groupby(['i','v','r'], as_index=False).Value.sum())
+        cap_storage_devint.groupby(['i','c','v','r'], as_index=False).Value.sum())
 
     def _devint_storage(dfin):
         dfout = pd.concat([
@@ -237,7 +237,7 @@ def main(t, casedir, iteration=0):
     vretechs_i = resources.i.str.lower().unique()
     cap_vre = (
         cap_ivr.loc[cap_ivr.i.str.lower().isin(vretechs_i)]
-        .set_index(['i','v','r']).Value.copy()
+        .set_index(['i','c','v','r']).Value.copy()
     )
 
     #%%### VRE generation, accounting for generation
@@ -247,7 +247,7 @@ def main(t, casedir, iteration=0):
     ### so fill missing values with 1, then drop rows with missing region (indicating no capacity)
     cf_adj_iv = (
         gdxreeds['cf_adj_t_filt'].loc[gdxreeds['cf_adj_t_filt'].t==t].drop('t', axis=1)
-        .set_index(['i','v']).Value
+        .set_index(['i','c','v']).Value
     )
     cap_vre_derated = cap_vre.multiply(cf_adj_iv, fill_value=1).reset_index().dropna()
     if len(cap_vre) != len(cap_vre_derated):
@@ -440,7 +440,7 @@ def main(t, casedir, iteration=0):
     ])
 
     ### Nameplate capacity
-    max_cap = cap_nonloadtechs.set_index(['i','v','r']).Value.rename('MW')
+    max_cap = cap_nonloadtechs.drop(columns='c').set_index(['i','v','r']).Value.rename('MW')
     ## Drop VRE since it is handled through pras_vre_gen
     max_cap = max_cap.loc[
         ~max_cap.index.get_level_values('i').str.startswith(
