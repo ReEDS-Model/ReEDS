@@ -824,17 +824,17 @@ cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
         sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
         + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
 
-cap_out(i,r,t)$[valcap_irt(i,r,t)$tmodel_new(t)] = sum{(c,v)$[i_c(i,c)$valcap(i,v,r,t)], cap_ivrt(i,c,v,r,t) } ;
+cap_out(i,c,r,t)$[i_c(i,c)$valcap_irt(i,r,t)$tmodel_new(t)] = sum{v$valcap(i,v,r,t), cap_ivrt(i,c,v,r,t) } ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR
-cap_out("csp-ns",r,t)$[cap_cspns(r,t)$tmodel_new(t)] = cap_cspns(r,t) ;
-* We have to take csp-ns capacity from somewhere, so take it from upv_6 (which all the
-* csp-ns-containing regions have)
-cap_out("upv_5",r,t)$[cap_cspns(r,t)$tmodel_new(t)] = cap_out("upv_5",r,t) - cap_cspns(r,t) ;
+cap_out("csp-ns",c,r,t)$[i_c("csp-ns",c)$cap_cspns(r,t)$tmodel_new(t)] = cap_cspns(r,t) ;
+* We have to take csp-ns capacity from somewhere, so take it from the upv class that all the
+* csp-ns-containing regions have
+cap_out("upv_5",c,r,t)$[i_c("upv_5",c)$cap_cspns(r,t)$tmodel_new(t)] = cap_out("upv_5",c,r,t) - cap_cspns(r,t) ;
 * Make sure it doesn't go negative, just in case
-cap_out("upv_5",r,t)$[cap_cspns(r,t)$tmodel_new(t)$(cap_out("upv_5",r,t) < 0)] = 0 ;
-cap_nat(i,t)$tmodel_new(t) = sum{r, cap_out(i,r,t) } ;
+cap_out("upv_5",c,r,t)$[i_c("upv_5",c)$cap_cspns(r,t)$tmodel_new(t)$(cap_out("upv_5",c,r,t) < 0)] = 0 ;
+cap_nat(i,t)$tmodel_new(t) = sum{(c,r)$i_c(i,c), cap_out(i,c,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)
 cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)] = m_capacity_exog(i,v,r,t) ;
@@ -853,8 +853,8 @@ cap_new_out(i,r,t)$[valcap_irt(i,r,t)] = [
   ] / ilr(i) ;
 * Capacity of distpv is not tracked in INV because it is an exogenous input, so use the change in cap_out to calculate new capacity
 * (except for the first year, in which all distpv capacity is counted as new)
-cap_new_out("distpv",r,t)$[tfirst(t)$valcap_irt("distpv",r,t)] = cap_out("distpv",r,t) ;
-cap_new_out("distpv",r,t)$[(not tfirst(t))$valcap_irt("distpv",r,t)] = cap_out("distpv",r,t) - sum{tt$tprev(t,tt), cap_out("distpv",r,tt) } ;
+cap_new_out("distpv",r,t)$[tfirst(t)$valcap_irt("distpv",r,t)] = sum{c$i_c("distpv",c), cap_out("distpv",c,r,t) } ;
+cap_new_out("distpv",r,t)$[(not tfirst(t))$valcap_irt("distpv",r,t)] = sum{c$i_c("distpv",c), cap_out("distpv",c,r,t) - sum{tt$tprev(t,tt), cap_out("distpv",c,r,tt) } } ;
 cap_new_ann(i,r,t)$cap_new_out(i,r,t) = cap_new_out(i,r,t) / (yeart(t) - sum{tt$tprev(t,tt), yeart(tt) }) ;
 cap_new_ann_nat(i,t)$tmodel_new(t) = sum{r, cap_new_ann(i,r,t) } ;
 cap_new_bin_out(i,c,v,r,t,rscbin)$[i_c(i,c)$rsc_i(i)$valinv(i,v,r,t)] =
@@ -905,7 +905,7 @@ cap_avail(i,r,t,rscbin)$[tmodel_new(t)$rsc_i(i)$sum{c, m_rscfeas(r,i,c,rscbin) }
 
 capacity_offline(i,r,allh,t)
     $[valcap_irt(i,r,t)$tmodel_new(t)$(h_stress_t(allh,t) or h_rep(allh))] =
-    cap_out(i,r,t) * (1 - avail(i,r,allh)) ;
+    sum{c$i_c(i,c), cap_out(i,c,r,t) } * (1 - avail(i,r,allh)) ;
 
 forced_outage(i) = sum{(r,h), outage_forced_h(i,r,h) * hours(h) } / sum{(r,h), hours(h) } ;
 planned_outage(i) = sum{h, outage_scheduled_h(i,h) * hours(h) } / sum{h, hours(h) } ;
@@ -1035,10 +1035,10 @@ revenue_en_nat(rev_cat,i,t)
     revenue_nat(rev_cat,i,t) / sum{(v,r,h,c)$valcap_class(i,c,v,r,t),
       m_cf(i,c,v,r,h,t) * CAP_CLASS.l(i,c,v,r,t) * hours(h) } ;
 
-revenue_cap(rev_cat,i,r,t)$[tmodel_new(t)$cap_out(i,r,t)] =
-  revenue(rev_cat,i,r,t) / cap_out(i,r,t) ;
+revenue_cap(rev_cat,i,r,t)$[tmodel_new(t)$sum{c$i_c(i,c), cap_out(i,c,r,t) }] =
+  revenue(rev_cat,i,r,t) / sum{c$i_c(i,c), cap_out(i,c,r,t) } ;
 
-revenue_cap_nat(rev_cat,i,t)$[tmodel_new(t)$sum{r$valcap_irt(i,r,t), cap_out(i,r,t) }] =
+revenue_cap_nat(rev_cat,i,t)$[tmodel_new(t)$sum{(c,r)$[i_c(i,c)$valcap_irt(i,r,t)], cap_out(i,c,r,t) }] =
   revenue_nat(rev_cat,i,t) / cap_nat(i,t) ;
 
 *========================================

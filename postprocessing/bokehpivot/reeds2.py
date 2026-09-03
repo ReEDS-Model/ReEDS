@@ -1375,7 +1375,7 @@ results_meta = collections.OrderedDict((
     
     ('Capacity BA (GW)',
         {'file':'cap',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1395,7 +1395,7 @@ results_meta = collections.OrderedDict((
 
     ('Capacity BA by class (GW)',
         {'file':'cap',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': add_class, 'args': {}},
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
@@ -1456,7 +1456,7 @@ results_meta = collections.OrderedDict((
     ('Storage Capacity (GW or GWh)',
 
         {'sources': [
-            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)']},
             {'name': 'energy', 'file': 'stor_energy_cap', 'columns': ['tech', 'vintage', 'rb', 'year', 'Energy (GWh)']},
             {'name': 'bcr', 'file': '../inputs_case/bcr.csv', 'columns': ['tech', 'bcr']},
         ],
@@ -1488,7 +1488,7 @@ results_meta = collections.OrderedDict((
 
     ('New Annual Capacity BA (GW)',
         {'file':'cap_new_ann',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1522,7 +1522,7 @@ results_meta = collections.OrderedDict((
 
     ('Annual Retirements BA (GW)',
         {'file':'ret_ann',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1979,7 +1979,7 @@ results_meta = collections.OrderedDict((
     ('Firm Capacity National (GW)',
         {'sources': [
             {'name': 'firmcap', 'file': 'cap_firm', 'columns': ['tech', 'rb', 'season', 'year', 'Firm Capacity (GW)']},
-            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)']},
         ],
         'index': ['tech', 'season', 'year'],
         'preprocess': [
@@ -1997,7 +1997,7 @@ results_meta = collections.OrderedDict((
     ('Firm Capacity BA (GW)',
         {'sources': [
             {'name': 'firmcap', 'file': 'cap_firm', 'columns': ['tech', 'rb', 'season', 'year', 'Firm Capacity (GW)']},
-            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)']},
         ],
         'index': ['tech', 'rb', 'season', 'year'],
         'preprocess': [
@@ -3065,7 +3065,7 @@ results_meta = collections.OrderedDict((
     ),
     ('Upgraded Capacity (GW)',
         {'file':'cap_upgrade',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
 #            {'func': sum_over_cols, 'args': {'drop_cols': ['rb'], 'group_cols': ['tech', 'year']}},
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},

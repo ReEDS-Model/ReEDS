@@ -333,7 +333,7 @@ def get_capacity_check_data(run_folder, tech):
     # Get check for capacity
     cap_chk = os.path.join(run_folder, "outputs", "cap.csv")
     df_cap_chk = pd.read_csv(
-        cap_chk, low_memory=False, names=["tech", "region", "year", "MW"], header=0
+        cap_chk, low_memory=False, names=["tech", "class", "region", "year", "MW"], header=0
     )
     df_cap_chk[["tech_cat", "class"]] = df_cap_chk["tech"].str.rsplit(
         "_", n=1, expand=True
@@ -2016,7 +2016,7 @@ def check_tech(run_folder, tech):
     """
     cap_chk = os.path.join(run_folder, "outputs", "cap.csv")
     df_cap = pd.read_csv(
-        cap_chk, low_memory=False, names=["tech", "region", "year", "MW"], header=0
+        cap_chk, low_memory=False, names=["tech", "class", "region", "year", "MW"], header=0
     )
     tech_included = df_cap["tech"].str.startswith(tech).any()
 

@@ -48,7 +48,7 @@ def calc_cap(case):
                 Value (float): Capacity (GW)
     """
     # Get data
-    df = reeds.io.read_output(case, 'cap')
+    df = reeds.io.read_output(case, 'cap').drop(columns='c', errors='ignore')
 
     # simplify technology names based on bokehpivot mapping
     df['i'] = reeds.reedsplots.simplify_techs(df['i'])
