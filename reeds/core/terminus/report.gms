@@ -835,7 +835,9 @@ cap_out("upv_5",r,t)$[cap_cspns(r,t)$tmodel_new(t)$(cap_out("upv_5",r,t) < 0)] =
 cap_nat(i,t)$tmodel_new(t) = sum{r, cap_out(i,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)
-cap_exog(i,v,r,t)$tmodel_new(t) = m_capacity_exog(i,v,r,t) ;
+cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)] = m_capacity_exog(i,v,r,t) ;
+cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)$exog_rsc(i)] =
+    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
 
 *=========================
 * NEW CAPACITY
@@ -853,9 +855,9 @@ cap_new_out("distpv",r,t)$[tfirst(t)$valcap_irt("distpv",r,t)] = cap_out("distpv
 cap_new_out("distpv",r,t)$[(not tfirst(t))$valcap_irt("distpv",r,t)] = cap_out("distpv",r,t) - sum{tt$tprev(t,tt), cap_out("distpv",r,tt) } ;
 cap_new_ann(i,r,t)$cap_new_out(i,r,t) = cap_new_out(i,r,t) / (yeart(t) - sum{tt$tprev(t,tt), yeart(tt) }) ;
 cap_new_ann_nat(i,t)$tmodel_new(t) = sum{r, cap_new_ann(i,r,t) } ;
-cap_new_bin_out(i,v,r,t,rscbin)$[rsc_i(i)$valinv(i,v,r,t)] =
-    sum{c$i_c(i,c), INV_RSC.l(i,c,v,r,rscbin,t) } / ilr(i) ;
-cap_new_bin_out(i,v,r,t,"bin1")$[(not rsc_i(i))$valinv(i,v,r,t)] = INV.l(i,v,r,t) / ilr(i) ;
+cap_new_bin_out(i,c,v,r,t,rscbin)$[i_c(i,c)$rsc_i(i)$valinv(i,v,r,t)] =
+    INV_RSC.l(i,c,v,r,rscbin,t) / ilr(i) ;
+cap_new_bin_out(i,c,v,r,t,"bin1")$[i_c(i,c)$(not rsc_i(i))$valinv(i,v,r,t)] = INV.l(i,v,r,t) / ilr(i) ;
 cap_new_ivrt(i,v,r,t)$[valcap(i,v,r,t)] = [
   [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t)
   + [(1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))]$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] 
@@ -871,10 +873,10 @@ site_spurcap(x,t)$[tmodel_new(t)$xfeas(x)] = CAP_SPUR.l(x,t) ;
 site_cap(i,x,t)$[tmodel_new(t)$sum{(c,r,rscbin), spurline_sitemap(i,c,r,rscbin,x)}] =
   sum{(c,v,r,rscbin,tt)
       $[spurline_sitemap(i,c,r,rscbin,x)
-      $cap_new_bin_out(i,v,r,tt,rscbin)
+      $cap_new_bin_out(i,c,v,r,tt,rscbin)
       $(yeart(tt) <= yeart(t))],
 * Multiply by ILR to get DC capacity for PV
-      cap_new_bin_out(i,v,r,tt,rscbin) * ilr(i)
+      cap_new_bin_out(i,c,v,r,tt,rscbin) * ilr(i)
   } ;
 
 site_gir(i,x,t)$[site_cap(i,x,t)$site_spurcap(x,t)] = site_cap(i,x,t) / site_spurcap(x,t) ;
