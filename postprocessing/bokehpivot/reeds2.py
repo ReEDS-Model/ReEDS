@@ -476,9 +476,10 @@ def pre_abatement_cost(dfs, **kw):
     return df
 
 def add_class(df, **kw):
-    cond = df['tech'].str.contains('_', regex=False)
-    #Assume class is at the end, after the final underscore:
-    df.loc[cond, 'class']='class_' + df.loc[cond, 'tech'].str.split('_').str[-1]
+    #Class is read from the class column; '0' marks techs with no resource class
+    cond = df['class'].astype(str) != '0'
+    df.loc[cond, 'class'] = 'class_' + df.loc[cond, 'class'].astype(str)
+    df.loc[~cond, 'class'] = None
     return df
 
 def sort_timeslices(df, **kw):
