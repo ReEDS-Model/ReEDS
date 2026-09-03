@@ -815,14 +815,16 @@ losses_tran_h(rr,r,h,trtype,t)$[routes(r,rr,trtype,t)$tmodel_new(t)]
 
 cap_deg_ivrt(i,v,r,t)$valcap(i,v,r,t) = CAP.l(i,v,r,t) / ilr(i) ;
 
-cap_ivrt(i,v,r,t)$[(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(not (upv(i) or wind(i)))] = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
 *upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
-cap_ivrt(i,v,r,t)$[(upv(i) or wind(i))$valcap(i,v,r,t)] = (
-  m_capacity_exog(i,v,r,t)$tmodel_new(t)
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
+  sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$tmodel_new(t)
   + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
-        INV.l(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
+        sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
+        + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
 
-cap_out(i,r,t)$[valcap_irt(i,r,t)$tmodel_new(t)] = sum{v$valcap(i,v,r,t), cap_ivrt(i,v,r,t) } ;
+cap_out(i,r,t)$[valcap_irt(i,r,t)$tmodel_new(t)] = sum{(c,v)$[i_c(i,c)$valcap(i,v,r,t)], cap_ivrt(i,c,v,r,t) } ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR
@@ -862,8 +864,8 @@ cap_new_ivrt(i,v,r,t)$[valcap(i,v,r,t)] = [
   [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t)
   + [(1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))]$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] 
  ] / ilr(i) ;
-cap_new_ivrt("distpv",v,r,t)$[tfirst(t)$valcap("distpv",v,r,t)] = cap_ivrt("distpv",v,r,t) ;
-cap_new_ivrt("distpv",v,r,t)$[(not tfirst(t))$valcap("distpv",v,r,t)] = cap_ivrt("distpv",v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",v,r,tt) } ;
+cap_new_ivrt("distpv",v,r,t)$[tfirst(t)$valcap("distpv",v,r,t)] = sum{c$i_c("distpv",c), cap_ivrt("distpv",c,v,r,t) } ;
+cap_new_ivrt("distpv",v,r,t)$[(not tfirst(t))$valcap("distpv",v,r,t)] = sum{c$i_c("distpv",c), cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } } ;
 cap_new_ivrt_refurb(i,v,r,t)$valinv(i,v,r,t) = sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } / ilr(i) ;
 
 * Capacity by reV site
@@ -920,7 +922,7 @@ cap_upgrade_ivrt(i,v,r,t)$[valcap(i,v,r,t)$upgrade(i)$Sw_Upgrades] = (1-upgrade_
 *=========================
 
 ret_ivrt(i,v,r,t)$[(not tfirst(t))] = 
-    sum{tt$tprev(t,tt), cap_ivrt(i,v,r,tt) } - cap_ivrt(i,v,r,t) + cap_new_ivrt(i,v,r,t) 
+    sum{(c,tt)$[i_c(i,c)$tprev(t,tt)], cap_ivrt(i,c,v,r,tt) } - sum{c$i_c(i,c), cap_ivrt(i,c,v,r,t) } + cap_new_ivrt(i,v,r,t)
     - sum{ii$upgrade_from(ii,i), UPGRADES.l(ii,v,r,t) } ;
 ret_ivrt(i,v,r,t)$[abs(ret_ivrt(i,v,r,t)) < 1e-6] = 0 ;
 
@@ -1358,7 +1360,7 @@ systemcost_techba("op_vom_costs",i,r,t)$[tmodel_new(t)$consume(i)] = 0 ;
 systemcost_techba("op_fom_costs",i,r,t)$tmodel_new(t)  =
 *fixed O&M costs for generation capacity
               + sum{v$[valcap(i,v,r,t)$((not one_newv(i)) or retiretech(i,v,r,t))],
-                   cost_fom(i,v,r,t) * cap_ivrt(i,v,r,t) * ilr(i) }
+                   cost_fom(i,v,r,t) * sum{c$i_c(i,c), cap_ivrt(i,c,v,r,t) } * ilr(i) }
 *for technologies with only one newv that are not allowed to retire,
 *use the investments rather than the capacity to calculate FOM costs
               + sum{(v,tt)$[inv_cond(i,v,r,t,tt)$one_newv(i)$(not retiretech(i,v,r,tt))],
@@ -1719,9 +1721,9 @@ error_check('z') = (
         + pvf_onm(t) * sum{(p,i,v,r,h)$[valcap(i,v,r,t)$i_p(i,p)$h_rep(h)$Sw_RetailAdder$Sw_Prod],
               hours(h) * Sw_RetailAdder * PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
 * Account for difference in fixed O&M between model (CAP.l(i,v,r,t))
-* and outputs (cap_ivrt(i,v,r,t) * ilr(i)) for techs with more than one newv
+* and outputs (cap_ivrt summed over class * ilr(i)) for techs with more than one newv
         + pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$((not one_newv(i)) or retiretech(i,v,r,t))],
-            cost_fom(i,v,r,t) * (CAP.l(i,v,r,t) - cap_ivrt(i,v,r,t) * ilr(i)) }
+            cost_fom(i,v,r,t) * (CAP.l(i,v,r,t) - sum{c$i_c(i,c), cap_ivrt(i,c,v,r,t) } * ilr(i)) }
 * Account for difference in fixed O&M between model (CAP.l(i,v,r,t))
 * and outputs (based on INV.l) for techs with more only one newv that cannot retire
         + pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$(one_newv(i))$(not retiretech(i,v,r,t))],

@@ -16,7 +16,7 @@ param,units,comment,reeds2x,output_rename,input
 "cap_new_cc(i,r,ccseason,t)",MW,"new capacity that is VRE, for new capacity credit calculation",,,
 "cc_new(i,r,ccseason,t)",frac,capacity credit for new VRE techs,,,
 "cap_converter_out(r,t)",MW,AC/DC converter capacity,1,,
-"cap_ivrt(i,v,r,t)",MW,"undegraded power capacity by tech, year, region, and class",1,,
+"cap_ivrt(i,c,v,r,t)",MW,"undegraded power capacity by tech, year, region, and class",1,,
 "cap_energy_ivrt(i,v,r,t)",MWh,"undegraded energy capacity by tech, year, region, and class",1,,
 "cap_sdbin_out(i,r,ccseason,sdbin,t)",MW,binned storage capacity by year,,,
 "cap_deg_ivrt(i,v,r,t)",MW,"Degraded capacity, equal to CAP.l",,,
