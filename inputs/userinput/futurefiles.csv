@@ -435,6 +435,7 @@ supplycurve_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 switches.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 tax_rate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 tc_phaseout_schedule.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+tech_cost_adjustments.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 tech-subset-table.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 techs_banned_ces.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 techs_banned_imports_rps.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
