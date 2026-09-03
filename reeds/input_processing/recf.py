@@ -454,7 +454,9 @@ def main(reeds_path, inputs_case):
     # Set the column names for resources to match ReEDS
     resources['ccreg'] = resources.area.map(r2ccreg)
     resources.rename(columns={'area':'r','tech':'i'}, inplace=True)
-    resources = resources[['r','i','ccreg','resource']]
+    i2c = reeds.techs.get_class_map(inputs_case)
+    resources['c'] = resources['i'].map(i2c)
+    resources = resources[['r','i','c','ccreg','resource']]
 
 
     #%%### Concentrated solar thermal power (CSP)
@@ -475,8 +477,9 @@ def main(reeds_path, inputs_case):
         .assign(i=csp_resources['tech'] + '_' + csp_resources['class'].astype(str))
         .assign(resource=csp_resources['tech'] + '_' + csp_resources['resource'])
         .assign(ccreg=csp_resources.r.map(r2ccreg))
-        [['i','r','resource','ccreg']]
-    )    
+    )
+    csp_resources['c'] = csp_resources['i'].map(i2c)
+    csp_resources = csp_resources[['i','r','c','resource','ccreg']]
     ###### Simulate CSP dispatch for each design
     ### Get solar multiples
     sms = {tech: scalars[f'csp_sm_{tech.strip("csp")}'] for tech in csptechs}
