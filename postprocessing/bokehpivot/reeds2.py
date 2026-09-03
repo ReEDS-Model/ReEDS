@@ -2681,7 +2681,7 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
             {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2699,7 +2699,7 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe_cf_act', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
             {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2717,7 +2717,7 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe_nopol', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
             {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2735,7 +2735,7 @@ results_meta = collections.OrderedDict((
         {'sources': [
             {'name': 'lcoe', 'file': 'lcoe_fullpol', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
             {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},

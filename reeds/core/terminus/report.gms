@@ -893,15 +893,15 @@ site_hybridization(x,t)$site_pv_fraction(x,t) = abs(1 - 2 * abs(site_pv_fraction
 *=========================
 * AVAILABLE CAPACITY
 *=========================
-cap_avail(i,r,t,rscbin)$[tmodel_new(t)$rsc_i(i)$sum{c, m_rscfeas(r,i,c,rscbin) }$sum{c, m_rsc_con(r,i,c) }] =
-    sum{c, m_rsc_dat(r,i,c,rscbin,"cap") }
+cap_avail(i,c,r,t,rscbin)$[i_c(i,c)$tmodel_new(t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)$m_rsc_con(r,i,c)] =
+    m_rsc_dat(r,i,c,rscbin,"cap")
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 
 - (
-    sum{(ii,c,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))],
+    sum{(ii,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))],
          INV_RSC.l(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 
-    + sum{(ii,c,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$tfirst(tt)$exog_rsc(i)],
+    + sum{(ii,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$tfirst(tt)$exog_rsc(i)],
          capacity_exog_rsc(ii,c,v,r,rscbin,tt) }
 );
 
@@ -1225,11 +1225,13 @@ RE_gen_price_nat(t)$tmodel_new(t) = (1/cost_scale) * crf(t) * eq_national_gen.m(
 * [i,v,r,t]-level capital expenditures (for retail rate calculations)
 *=========================
 
-capex_ivrt(i,v,r,t)$valcap(i,v,r,t) =
-                      INV.l(i,v,r,t) * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t) )
+capex_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] =
+                      [INV.l(i,v,r,t)$(not rsc_i(i))
+                       + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)]
+                        * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t) )
                       + INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap_energy(i,t) )
-                      + sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,c,rscbin)],INV_RSC.l(i,c,v,r,rscbin,t) * m_rsc_dat(r,i,c,rscbin,"cost") * cost_cap_fin_mult_no_credits(i,r,t) }
-                      + (sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) } * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t)))$[refurbtech(i)$Sw_Refurb]
+                      + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) * m_rsc_dat(r,i,c,rscbin,"cost") * cost_cap_fin_mult_no_credits(i,r,t) }
+                      + (INV_REFURB.l(i,c,v,r,t) * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t)))$[refurbtech(i)$Sw_Refurb]
                       + UPGRADES.l(i,v,r,t) * (cost_upgrade(i,v,r,t) * cost_cap_fin_mult_no_credits(i,r,t))$[upgrade(i)$Sw_Upgrades] ;
 
 *=========================

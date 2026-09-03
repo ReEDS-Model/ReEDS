@@ -972,8 +972,8 @@ def plot_diff_maps(
     dfbase.i = simplify_techs(dfbase.i)
     dfcomp.i = simplify_techs(dfcomp.i)
 
-    dfbase = dfbase.groupby(['i','r','t']).sum().reset_index().copy()
-    dfcomp = dfcomp.groupby(['i','r','t']).sum().reset_index().copy()
+    dfbase = dfbase.groupby(['i','r','t'])[valcol].sum().reset_index().copy()
+    dfcomp = dfcomp.groupby(['i','r','t'])[valcol].sum().reset_index().copy()
     # print(dfbase.i.unique())
     # print(dfcomp.i.unique())
 
