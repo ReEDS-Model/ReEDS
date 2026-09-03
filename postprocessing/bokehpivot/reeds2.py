@@ -2464,7 +2464,7 @@ results_meta = collections.OrderedDict((
     ('Value Streams Sequential New Techs',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -2494,7 +2494,7 @@ results_meta = collections.OrderedDict((
     ('Competitiveness Sequential New Techs',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -2530,7 +2530,7 @@ results_meta = collections.OrderedDict((
     ('LCOE ($/MWh) Sequential New Techs (uncurt MWh)',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'gen_uncurt', 'file': 'gen_ivrt_uncurt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
@@ -2573,7 +2573,7 @@ results_meta = collections.OrderedDict((
     ('Value Streams Intertemporal',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},

@@ -813,10 +813,10 @@ losses_tran_h(rr,r,h,trtype,t)$[routes(r,rr,trtype,t)$tmodel_new(t)]
 * CAPACITY
 *=========================
 
-cap_deg_ivrt(i,v,r,t)$valcap(i,v,r,t) = CAP.l(i,v,r,t) / ilr(i) ;
+cap_deg_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
+cap_deg_ivrt(i,c,v,r,t)$valcap_class(i,c,v,r,t) = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
 
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,v,r,t) ;
-cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(not (upv(i) or wind(i)))] = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
 *upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
 cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
   sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$tmodel_new(t)
@@ -860,12 +860,14 @@ cap_new_ann_nat(i,t)$tmodel_new(t) = sum{r, cap_new_ann(i,r,t) } ;
 cap_new_bin_out(i,c,v,r,t,rscbin)$[i_c(i,c)$rsc_i(i)$valinv(i,v,r,t)] =
     INV_RSC.l(i,c,v,r,rscbin,t) / ilr(i) ;
 cap_new_bin_out(i,c,v,r,t,"bin1")$[i_c(i,c)$(not rsc_i(i))$valinv(i,v,r,t)] = INV.l(i,v,r,t) / ilr(i) ;
-cap_new_ivrt(i,v,r,t)$[valcap(i,v,r,t)] = [
-  [INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }]$valinv(i,v,r,t)
-  + [(1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))]$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] 
+cap_new_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = [
+  [INV.l(i,v,r,t)$(not rsc_i(i))
+   + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+   + INV_REFURB.l(i,c,v,r,t)]$valinv(i,v,r,t)
+  + [(1-upgrade_derate(i,v,r,t)) * (UPGRADES.l(i,v,r,t) - UPGRADES_RETIRE.l(i,v,r,t))]$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades]
  ] / ilr(i) ;
-cap_new_ivrt("distpv",v,r,t)$[tfirst(t)$valcap("distpv",v,r,t)] = sum{c$i_c("distpv",c), cap_ivrt("distpv",c,v,r,t) } ;
-cap_new_ivrt("distpv",v,r,t)$[(not tfirst(t))$valcap("distpv",v,r,t)] = sum{c$i_c("distpv",c), cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } } ;
+cap_new_ivrt("distpv",c,v,r,t)$[i_c("distpv",c)$tfirst(t)$valcap("distpv",v,r,t)] = cap_ivrt("distpv",c,v,r,t) ;
+cap_new_ivrt("distpv",c,v,r,t)$[i_c("distpv",c)$(not tfirst(t))$valcap("distpv",v,r,t)] = cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } ;
 cap_new_ivrt_refurb(i,c,v,r,t)$[i_c(i,c)$valinv(i,v,r,t)] = INV_REFURB.l(i,c,v,r,t) / ilr(i) ;
 
 * Capacity by reV site
@@ -921,12 +923,12 @@ cap_upgrade_ivrt(i,v,r,t)$[valcap(i,v,r,t)$upgrade(i)$Sw_Upgrades] = (1-upgrade_
 * RETIRED CAPACITY
 *=========================
 
-ret_ivrt(i,v,r,t)$[(not tfirst(t))] = 
-    sum{(c,tt)$[i_c(i,c)$tprev(t,tt)], cap_ivrt(i,c,v,r,tt) } - sum{c$i_c(i,c), cap_ivrt(i,c,v,r,t) } + cap_new_ivrt(i,v,r,t)
+ret_ivrt(i,c,v,r,t)$[i_c(i,c)$(not tfirst(t))] =
+    sum{tt$tprev(t,tt), cap_ivrt(i,c,v,r,tt) } - cap_ivrt(i,c,v,r,t) + cap_new_ivrt(i,c,v,r,t)
     - sum{ii$upgrade_from(ii,i), UPGRADES.l(ii,v,r,t) } ;
-ret_ivrt(i,v,r,t)$[abs(ret_ivrt(i,v,r,t)) < 1e-6] = 0 ;
+ret_ivrt(i,c,v,r,t)$[abs(ret_ivrt(i,c,v,r,t)) < 1e-6] = 0 ;
 
-ret_out(i,r,t)$[(not tfirst(t))] = sum{v, ret_ivrt(i,v,r,t) } ;
+ret_out(i,r,t)$[(not tfirst(t))] = sum{(c,v)$i_c(i,c), ret_ivrt(i,c,v,r,t) } ;
 ret_out(i,r,t)$[abs(ret_out(i,r,t)) < 1e-6] = 0 ;
 ret_ann(i,r,t)$ret_out(i,r,t) = ret_out(i,r,t) / (yeart(t) - sum{tt$tprev(t,tt), yeart(tt) }) ;
 ret_ann_nat(i,t)$tmodel_new(t) = sum{r, ret_ann(i,r,t) } ;
@@ -957,7 +959,7 @@ cc_all_out(i,v,r,ccseason,t)$tmodel_new(t) =
     m_cc_mar(i,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valinv_init(i,v,r,t)]
 ;
 
-cap_new_cc(i,r,ccseason,t)$[(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{v$ivt(i,v,t),cap_new_ivrt(i,v,r,t) } ;
+cap_new_cc(i,r,ccseason,t)$[(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{(c,v)$[i_c(i,c)$ivt(i,v,t)], cap_new_ivrt(i,c,v,r,t) } ;
 
 cc_new(i,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,r,ccseason,t)] = sum{v$ivt(i,v,t), cc_all_out(i,v,r,ccseason,t) } ;
 

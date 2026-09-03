@@ -69,7 +69,7 @@ prod_filt(i,v,r,allh)              "--MW-- power consumed for PRODUCE.l"
 ra_cap_loadsite(r,t)               "--MW-- capacity of flexibly sited load"
 repbioprice_filt(r)                "--2004$/MWh-- marginal price for biofuel in region where biofuel was used"
 repgasquant(cendiv,t)              "--mmBTU-- NG fuel usage in ReEDS - used to determine NG price"
-ret_ivrt(i,v,r,t)                  "--MW-- retirements of generation capacity"
+ret_ivrt(i,c,v,r,t)                "--MW-- retirements of generation capacity"
 ret(i,v,r)                         "--MW-- retirements of generation capacity"
 rsc_dat_filt(i,r,sc_cat,rscbin)    "--$/MW-- capital costs filtered for pumped-hydro so arbitrage value doesn't exceed capital costs"
 storage_eff_filt(i)                "--fraction-- storage efficiency filtered for the next solve year"
@@ -137,10 +137,10 @@ inv_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = INV_ENERGY.l(i
 inv_ivrt("distpv",c,v,r,t)$[i_c("distpv",c)$trange(t)$(not tfirst(t))$valcap("distpv",v,r,t)] = cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } ;
 inv_ivrt("distpv",c,"init-1",r,"%next_year%")$i_c("distpv",c) = inv_distpv(r,"%next_year%") ;
 
-ret_ivrt(i,v,r,t)$([trange(t)$(not tfirst(t))$newv(v)]$valcap(i,v,r,t)) = sum{(c,tt)$[i_c(i,c)$tprev(t,tt)], cap_ivrt(i,c,v,r,tt)} - sum{c$i_c(i,c), cap_ivrt(i,c,v,r,t)} + sum{c$i_c(i,c), inv_ivrt(i,c,v,r,t)} ;
-ret_ivrt(i,v,r,t)$([abs(ret_ivrt(i,v,r,t) < 1e-6)]$valcap(i,v,r,t)) = 0 ;
+ret_ivrt(i,c,v,r,t)$[i_c(i,c)$trange(t)$(not tfirst(t))$newv(v)$valcap(i,v,r,t)] = sum{tt$tprev(t,tt), cap_ivrt(i,c,v,r,tt)} - cap_ivrt(i,c,v,r,t) + inv_ivrt(i,c,v,r,t) ;
+ret_ivrt(i,c,v,r,t)$([abs(ret_ivrt(i,c,v,r,t) < 1e-6)]$valcap(i,v,r,t)) = 0 ;
 
-ret(i,v,r)$valcap_ivr(i,v,r) = sum{t, ret_ivrt(i,v,r,t) } ;
+ret(i,v,r)$valcap_ivr(i,v,r) = sum{(c,t)$i_c(i,c), ret_ivrt(i,c,v,r,t) } ;
 
 cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{t$tnext(t), m_capacity_exog(i,v,r,t) } ;
 
