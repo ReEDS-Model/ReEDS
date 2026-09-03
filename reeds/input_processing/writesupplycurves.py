@@ -74,6 +74,7 @@ def agg_supplycurve(
     bin_method='equal_cap_cut',
     bin_col='supply_curve_cost_per_mw',
     spur_cutoff=1e7,
+    psh_cutoff=4e6,
     deflate=None,
 ):
     """
@@ -100,8 +101,8 @@ def agg_supplycurve(
     ].sum(axis=1)
     
     if psh:
-        ### Clip costs >$3000/kW or >$3000000/MW
-        dfin = dfin.loc[dfin['supply_curve_cost_per_mw']<=3e6]
+        ### Remove costs above psh_cutoff [in 2004$]
+        dfin = dfin.loc[dfin['supply_curve_cost_per_mw']<=psh_cutoff].copy()
         ### Export unbinned PSH supply curve that include transmission costs
         dfin.to_csv(os.path.join(inputs_case,'supplycurve_psh_unbinned.csv'))
     
