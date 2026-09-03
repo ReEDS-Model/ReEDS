@@ -741,10 +741,10 @@ This is the maximum capacity factor that new gas plants (CCs or CTs) can operate
 This is the year in which coal capacity is forced to either retire or upgrade with CCS to meet the emissions requirements under Clean Air Act, Section 111.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">caa_first_year</span></code> = 2024.
 This is the year in which the emissions requirements under Clean Air Act, Section 111 are first active.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">caa_rate_emis_standard</span></code> = 0.1039.
-This is the emissions rate (metric tons CO<sub>2</sub> per MWh) equivalent to average emissions from a new coal-CCS plant, assuming 90% capture rate.
-The emissions rate from a new coal-CCS plant in ReEDS is 0.051956 metric tons CO<sub>2</sub> per MWh (see <code class="docutils literal notranslate"><span class="pre">emit_rate</span></code> parameter) which assumes 95% capture.
-For 90% capture, the emissions rate is double that or 0.1039 metric tons CO<sub>2</sub> per MWh, which we use as the standard.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">caa_capture_rate_standard</span></code> = 0.90.
+This is the CO<sub>2</sub> capture rate that a state’s coal fleet must match on average.
+It is applied to each unit’s own uncontrolled emissions rate, taken as the sum of the <code class="docutils literal notranslate"><span class="pre">emit_rate</span></code> and <code class="docutils literal notranslate"><span class="pre">capture_rate</span></code> parameters, so a unit that captures 90% of its CO<sub>2</sub> complies regardless of its heat rate.
+A unit that captures more than 90%, such as a new coal-CCS plant at 95%, emits less than its own allowance and so creates headroom for other coal in that state.</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">reeds/input_processing/WriteHintage.py</span></code></p>
@@ -765,7 +765,8 @@ For example, if running 5 year solves, then instead of enforcing coal retirement
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">c_model.gms</span></code></p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">eq_caa_rate_standard(st,t)</span></code> - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions rate per state under Clean Air Act Section 111.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eq_caa_rate_standard(st,t)</span></code> - this constraint enforces the rate-based emissions standard by setting the maximum coal emissions per state under Clean Air Act Section 111.
+Generation on both sides is weighted by <code class="docutils literal notranslate"><span class="pre">hours</span></code> over representative periods, so the standard is applied on an MWh-weighted basis.</p></li>
 </ul>
 </li>
 </ol>
@@ -1638,7 +1639,7 @@ Turned on for some zone sets with single-county zones that have no high-voltage 
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on September 02, 2026.
+      <span class="lastupdated">Last updated on September 03, 2026.
       </span></p>
   </div>
 
