@@ -235,7 +235,7 @@ m_cf_szn_filt(i,v,r,szn)$[hydro(i)$cap_exist(i,v,r)] = sum{t$tcur(t), m_cf_szn(i
 minloadfrac_filt(r,i,szn)$[hydro(i)$cap_exist_ir(i,r)$szn_rep(szn)] =
     sum{h$h_szn(h,szn), minloadfrac(r,i,h) * hours(h) } / sum{h$h_szn(h,szn), hours(h) } ;
 
-rsc_dat_filt(i,r,"cost",rscbin)$[storage_standalone(i)$cap_exist_ir(i,r)] = rsc_dat(i,r,"cost",rscbin) ;
+rsc_dat_filt(i,r,"cost",rscbin)$[storage_standalone(i)$cap_exist_ir(i,r)] = sum{c, rsc_dat(i,c,r,"cost",rscbin) } ;
 
 
 storage_eff_filt(i)$storage(i) = sum{t$tnext(t), storage_eff(i,t) } ;

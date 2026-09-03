@@ -43,6 +43,32 @@ def split_class(i):
     return match.group(1), int(match.group(2))
 
 
+def get_class_map(case):
+    '''
+    Map each technology to its resource class, matching the i_c that b_inputs.gms
+    completes: water-cooled techs take the class of the technology they derive from,
+    and technologies with no class of their own are assigned class '0'.
+    '''
+    i_c = reeds.io.read_input(case, 'i_c').set_index('i').c.astype(str)
+    ### Broadcast class to water-cooled variants
+    if int(reeds.io.get_switches(case).GSw_WaterMain) == 1:
+        ctt_i_ii = (
+            pd.concat([
+                reeds.io.read_input(case, name).rename(columns={'*i': 'i'})[['i', 'ii']]
+                for name in [
+                    'i_coolingtech_watersource_link',
+                    'i_coolingtech_watersource_upgrades_link',
+                ]
+            ])
+            .drop_duplicates('i')
+            .set_index('i').ii
+        )
+        derived = ctt_i_ii.map(i_c).dropna()
+        i_c = pd.concat([i_c, derived.loc[~derived.index.isin(i_c.index)]])
+
+    return i_c.reindex(reeds.io.read_input(case, 'i').squeeze(1), fill_value='0')
+
+
 def expand_GAMS_tech_groups(df, col='i'):
     '''
     GAMS has a convention for expanding rows (e.g. upv_1*upv_10 is expanded to upv_1, upv_2,..., upv_10)
