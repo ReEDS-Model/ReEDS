@@ -1501,10 +1501,8 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 ```
 
 Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2026 NEMS plant database and EIA 860M.
-Retirement dates of coal plants are further checked and updated in case the EIA 860M does not capture the latest retirement dates.
-Retirement dates for several nuclear plants which are not current in NEMS and EIA 860M
-(e.g., the Diablo Canyon nuclear power plant in California)
-are manually updated.
+Retirement dates of several nuclear and coal plants are further checked and manually updated in case the EIA 860M does not capture the latest retirement dates.
+(e.g., the Diablo Canyon nuclear power plant in California and Monroe coal power plant in Michigan).
 Both existing and economically built generators have the lifetimes shown in {numref}`technology-lifetimes`.
 These lifetimes are used as necessary when the solution period extends beyond 2050.
 
