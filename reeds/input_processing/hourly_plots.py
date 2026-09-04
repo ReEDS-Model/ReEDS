@@ -426,9 +426,6 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     load_mean = load_raw.loc[
         load_raw.index.map(lambda x: x.year in GSw_HourlyWeatherYears)
     ].mean() / 1000
-    ## load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
-    scalars = reeds.io.get_scalars(inputs_case)
-    load_mean *= (1 - scalars['distloss'])
     ### Get the representative data, take the mean for the cluster year
     load_allyear = (
         pd.read_csv(os.path.join(inputs_case, periodtype, 'load_allyear.csv')).rename(columns={'*r':'r'})
