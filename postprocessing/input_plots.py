@@ -989,6 +989,7 @@ def map_supplycurves(
     cbar_title_fontsize=24,
     cbar_labelpad=2.1,
     draw_colorbar=True,
+    vmax_default=1000.,
 ):
     """
     Returns an iterator over supply-curve columns. Use as follows:
@@ -1078,8 +1079,8 @@ def map_supplycurves(
             'label':'Capacity [MW]',
             'vmax':{
                 'upv':5700., 'wind-ons':342., 'wind-ofs':530.,
-                'geohydro':700., 'egs':4000., 'csp':4900.,
-            }.get(tech, 1000.),
+                'geohydro':700., 'egs':2000., 'csp':4900.,
+            }.get(tech, vmax_default),
             'background':False,
             ## For onshore wind, align nbins with number of 6 MW turbines
             'nbins': {'wind-ons':342 // 6 + 1}.get(tech, 101),
