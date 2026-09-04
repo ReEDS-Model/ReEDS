@@ -437,28 +437,33 @@ def main(reeds_path, inputs_case):
 
     # We model csp-ns (CSP No Storage) as upv throughout ReEDS, but switch it back for reporting.
     # So save the csp-ns capacity separately, then rename it.
-    csp_units = (
-        gdb_use.loc[(gdb_use['tech']=='csp-ns') & (gdb_use['RetireYear'] > startyear)]
-        .groupby(['r','StartYear','RetireYear']).summer_power_capacity_MW.sum()
-        .reset_index()
-    )
+    csp_units = gdb_use.loc[
+        (gdb_use['tech']=='csp-ns') & (gdb_use['RetireYear'] > startyear)
+    ].copy()
     if len(csp_units):
-        cap_cspns = (
-            pd.concat(
-                {i: pd.Series(
-                    [row.summer_power_capacity_MW]*(row.RetireYear - row.StartYear + 2),
-                    index=range(row.StartYear, row.RetireYear + 2)
-                ) for (i,row) in csp_units.iterrows()},
-                axis=1)
-            .rename(columns=csp_units['r']).fillna(0)
-            .T.groupby(level=0).sum().T
-            .stack().replace(0,np.nan).dropna()
-            .rename_axis(['t','r']).reorder_levels(['r','t']).rename('MWac')
-        )
+        # csp-ns is modeled as upv, so bin it into the same resource classes that the
+        # upv capacity it becomes will be binned into. Reporting takes it back out of
+        # those classes.
+        upv_class = get_class_cf_bounds(
+            reeds_path, tech='upv', access_case=sw.GSw_SitingUPV, subtech='')
+        csp_units['c'] = csp_units['reV_capacity_factor_ac'].apply(
+            lambda x: assign_class(x, 'upv', upv_class))
+        cap_cspns = pd.concat(
+            [
+                pd.DataFrame({
+                    'r': row.r,
+                    'c': row.c,
+                    't': list(range(row.StartYear, row.RetireYear + 2)),
+                    'MWac': row.summer_power_capacity_MW,
+                })
+                for (_, row) in csp_units.iterrows()
+            ],
+            ignore_index=True,
+        ).groupby(['r','c','t']).MWac.sum()
         cap_cspns = (
             cap_cspns.loc[cap_cspns.index.get_level_values('t') >= startyear].copy())
     else:
-        cap_cspns = pd.DataFrame(columns=['r','t','MWac']).set_index(['r','t'])
+        cap_cspns = pd.DataFrame(columns=['r','c','t','MWac']).set_index(['r','c','t'])
     # Rename csp-ns to upv
     gdb_use.loc[gdb_use['tech']=='csp-ns','coolingwatertech'] = (
         gdb_use.loc[gdb_use['tech']=='csp-ns','coolingwatertech']

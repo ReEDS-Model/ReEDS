@@ -1644,7 +1644,7 @@ m_capacity_exog(i,"init-1",r,t)$geo(i) = geo_cap_exog(i,r) ;
 * We assign the ~1.3 GW of exising csp-ns to upv throughout the model, but then
 * convert 1.3 GW of upv back to csp-ns in the output processing.
 $onempty
-parameter cap_cspns(r,allt) "--MW-- csp-ns capacity"
+parameter cap_cspns(r,c,allt) "--MW-- csp-ns capacity by the upv resource class it is modeled as"
 /
 $offlisting
 $ondelim

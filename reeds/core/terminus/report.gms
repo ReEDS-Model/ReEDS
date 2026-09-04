@@ -651,16 +651,27 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
-* UPV capacity is already in MWac at this point (matching csp-ns),
-* so don't need to account for ILR.
-gen_h("csp-ns",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
-    = cap_cspns(r,t) * sum{c$i_c("upv_5",c), m_cf("upv_5",c,"new1",r,h,t) } ;
-* We have to take csp-ns generation from somewhere, so take it from upv_5 (which all the
-* csp-ns-containing regions have)
-gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
-    = gen_h("upv_5",r,h,t) - gen_h("csp-ns",r,h,t) ;
-* Make sure it doesn't go negative, just in case
-gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)$(gen_h("upv_5",r,h,t) < 0)] = 0 ;
+* writecapdat.py bins csp-ns into the upv resource classes it is modeled as, so take it
+* back out of those same classes.
+parameter cap_upv_class(c,r,t)   "--MWac-- upv capacity by resource class" ;
+parameter cap_cspns_short(c,r,t) "--MWac-- csp-ns capacity with no upv capacity to come out of" ;
+
+cap_upv_class(c,r,t)$tmodel_new(t) =
+    sum{(i,v)$[upv(i)$valcap_class(i,c,v,r,t)], CAP_CLASS.l(i,c,v,r,t) / ilr(i) } ;
+
+cap_cspns_short(c,r,t)$[cap_cspns(r,c,t)$tmodel_new(t)] =
+    max(0, cap_cspns(r,c,t) - cap_upv_class(c,r,t)) ;
+
+* Move the generation that goes with the reassigned capacity, class by class
+gen_h("csp-ns",r,h,t)$[sum{c, cap_cspns(r,c,t) }$tmodel_new(t)] =
+    sum{(i,c)$[upv(i)$i_c(i,c)$cap_upv_class(c,r,t)],
+        gen_h(i,r,h,t) * min(cap_cspns(r,c,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) } ;
+
+gen_h(i,r,h,t)$[upv(i)$tmodel_new(t)$sum{c$i_c(i,c), cap_cspns(r,c,t) }
+               $sum{c$i_c(i,c), cap_upv_class(c,r,t) }] =
+    gen_h(i,r,h,t)
+    * (1 - sum{c$i_c(i,c),
+               min(cap_cspns(r,c,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) }) ;
 gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 
 * Do it again for stress periods
@@ -828,12 +839,10 @@ cap_out(i,c,r,t)$[i_c(i,c)$valcap_irt(i,r,t)$tmodel_new(t)] = sum{v$valcap(i,v,r
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR
-cap_out("csp-ns",c,r,t)$[i_c("csp-ns",c)$cap_cspns(r,t)$tmodel_new(t)] = cap_cspns(r,t) ;
-* We have to take csp-ns capacity from somewhere, so take it from the upv class that all the
-* csp-ns-containing regions have
-cap_out("upv_5",c,r,t)$[i_c("upv_5",c)$cap_cspns(r,t)$tmodel_new(t)] = cap_out("upv_5",c,r,t) - cap_cspns(r,t) ;
-* Make sure it doesn't go negative, just in case
-cap_out("upv_5",c,r,t)$[i_c("upv_5",c)$cap_cspns(r,t)$tmodel_new(t)$(cap_out("upv_5",c,r,t) < 0)] = 0 ;
+cap_out("csp-ns",c,r,t)$[i_c("csp-ns",c)$tmodel_new(t)] = sum{cc, cap_cspns(r,cc,t) } ;
+* Take it back out of the same upv classes it was binned into
+cap_out(i,c,r,t)$[upv(i)$i_c(i,c)$cap_cspns(r,c,t)$tmodel_new(t)] =
+    max(0, cap_out(i,c,r,t) - cap_cspns(r,c,t)) ;
 cap_nat(i,t)$tmodel_new(t) = sum{(c,r)$i_c(i,c), cap_out(i,c,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)
@@ -1788,6 +1797,8 @@ error_check("cap") = sum{(i,v,r,t)$[not valcap(i,v,r,t)], CAP.l(i,v,r,t) } ;
 error_check("RPS") = sum{(RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(RPSCat,i,st,ast,t) } ;
 error_check("OpRes") = sum{(ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(ortype,i,v,r,h,t) } ;
 error_check("m_rsc_dat") = sum{(r,i,c,rscbin)$m_rsc_dat(r,i,c,rscbin,"cap"), m_rsc_dat_init(r,i,c,rscbin) - m_rsc_dat(r,i,c,rscbin,"cap") } ;
+* csp-ns capacity is reported by moving it out of upv; flag any that had no upv to come out of
+error_check("cspns") = sum{(c,r,t), cap_cspns_short(c,r,t) } ;
 
 * Check to make sure there's no dropped/excess load in or after Sw_StartMarkets
 error_check("dropped") = sum{(r,h,t)$[yeart(t)>=Sw_StartMarkets], DROPPED.l(r,h,t) } ;
