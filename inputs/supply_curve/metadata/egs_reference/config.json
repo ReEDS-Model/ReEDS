@@ -1,37 +1,24 @@
 {
     "access_case": "reference",
-    "geo_aggregation_method": "lowest_lcoe",
-    "bin_group_cols": [
-        "region",
-        "class"
-    ],
-    "bin_method": "equal_cap_cut",
-    "capacity_col": "capacity",
-    "casename": "egs_reference_ba",
+    "atb_scenario": "moderate",
+    "capacity_col": "capacity_ac_mw",
+    "casename": "egs_reference",
     "class_bin": false,
-    "class_bin_col": "mean_cf",
+    "class_bin_col": "capacity_factor_ac",
     "class_bin_method": "kmeans",
     "class_bin_num": 10,
-    "class_path": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third/hourlize/inputs/resource/egs_resource_classes.csv",
+    "class_path": "/kfs3/scratch/bsergi/ReEDS/hourlize/inputs/resource/egs_resource_classes.csv",
     "compression_opts": 4,
     "copy_to_reeds": true,
-    "copy_to_shared": false,
-    "cost_adder_components": [
-        "trans_cap_cost_per_mw",
-        "reinforcement_cost_per_mw"
-    ],
+    "copy_to_shared": true,
     "cost_out": "combined_trans",
-    "distance_cols": [
-        "dist_km",
-        "reinforcement_dist_km"
-    ],
-    "driver": "H5FD_CORE",
-    "dtype": "np.float16",
-    "existing_sites": null,
+    "date_updated": "2026-08-07",
+    "decimals": 4,
     "filetype": "h5",
     "filter_cols": {},
-    "gather_method": "smart",
-    "hourlizepath": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third/hourlize",
+    "geo_aggregation_method": "lowest_lcoe",
+    "geo_run_supply_curve_aggregation": true,
+    "hourlize_path": "/kfs3/scratch/bsergi/ReEDS/hourlize",
     "hourly_out_years": [
         2007,
         2008,
@@ -39,59 +26,48 @@
         2010,
         2011,
         2012,
-        2013
+        2013,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
     ],
     "inputfiles": [
         "reg_map_file",
         "class_path"
     ],
     "min_cap": 0,
-    "outpath": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third/hourlize/out/egs_reference_ba",
-    "output_timezone": "local",
+    "offshore_meshed": false,
+    "original_rev_folder": "/projects/rev/projects/gto/fy26/std_scenarios_fy25/deep_egs_fy25_deliverables",
+    "original_sc_file": "/kfs2/shared-projects/reeds/Supply_Curve_Data/EGS/SC2025_20260803/reV/results/egs-reference_supply-curve.csv",
+    "outpath": "/kfs3/scratch/bsergi/ReEDS/hourlize/out/egs_reference",
+    "process_profiles": false,
     "profile_dir": "",
     "profile_dset": "",
     "profile_file_format": "",
     "profile_id_col": "sc_point_gid",
     "profile_weight_col": "capacity",
-    "reedspath": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third",
-    "reg_col": "cnty_fips",
-    "reg_map_file": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third/hourlize/inputs/resource/county_map.csv",
-    "reg_out_col": "reeds_ba",
-    "resource_source_timezone": 0,
-    "rev_id_cols": [
-        "sc_point_gid"
-    ],
-    "rev_jsons": [
-        "config_aggregation.json",
-        "config_batch.json",
-        "config_collect.json",
-        "config_gen.json",
-        "config_pipeline.json",
-        "config_supply-curve.json"
-    ],
-    "rev_path": "/Volumes/ReEDS/Supply_Curve_Data/EGS/2023_Update/reV",
-    "rev_paths_file": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third/inputs/supply_curve/rev_paths.csv",
-    "rev_prefix": "reV",
-    "geo_run_supply_curve_aggregation": true,
-    "sc_file": "/Volumes/ReEDS/Supply_Curve_Data/EGS/2023_Update/reV/results/combined_supply-curve.csv",
-    "sc_path": "/Volumes/ReEDS/Supply_Curve_Data/EGS/2023_Update",
+    "reeds_path": "/kfs3/scratch/bsergi/ReEDS",
+    "reg_map_file": "/kfs3/scratch/bsergi/ReEDS/inputs/zones/z90/county2zone.csv",
+    "rev_case": "results",
+    "rev_path": "/kfs2/shared-projects/reeds/Supply_Curve_Data/EGS/SC2025_20260803/reV/results",
+    "rev_paths_file": "/kfs3/scratch/bsergi/ReEDS/inputs/supply_curve/rev_paths.csv",
+    "sc_file": "/kfs3/scratch/bsergi/ReEDS/hourlize/out/egs_reference/results/egs_supply_curve_raw.csv",
+    "sc_path": "/kfs2/shared-projects/reeds/Supply_Curve_Data/EGS/SC2025_20260803",
+    "scale_factor": 10000.0,
     "select_year": 2012,
     "single_profile": null,
-    "start_1am": true,
     "start_year": 2010,
-    "state_abbrev": "/Users/jho/Documents/GitHub/ReEDS-2.0_Third/hourlize/inputs/resource/state_abbrev.csv",
+    "state_abbrev": "/kfs3/scratch/bsergi/ReEDS/hourlize/inputs/resource/state_abbrev.csv",
     "subsetvars": [
         "tech",
         "access_case"
     ],
     "subtract_exog": false,
     "tech": "egs",
-    "test_filters": {
-        "region": [
-            "p97",
-            "p98"
-        ]
-    },
-    "test_mode": false,
     "upv_type": null
 }

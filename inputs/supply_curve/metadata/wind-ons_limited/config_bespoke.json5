@@ -1,6 +1,6 @@
 {
     execution_control: {
-        allocation: "rev",
+        allocation: "wetosa",
         option: "kestrel",
         walltime: 20,
         nodes: 300,

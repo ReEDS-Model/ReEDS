@@ -884,46 +884,45 @@ The hydrothermal potential included in the base supply curve comprises only iden
 - EGS sites are geothermal resources that have sufficient temperature but lack the natural permeability, in situ fluids, or both, to be hydrothermal systems.
 Developing these sites with water injection wells could create engineered geothermal reservoirs appropriate for harvesting heat.
 
-EGS is further separated into near-field EGS and deep EGS based on proximity to known hydrothermal features.
-Near-field EGS represents additional geothermal resource available near hydrothermal fields that have been identified.
+EGS is further separated into near-field EGS and deep EGS.
+Near-field EGS represents geothermal resource available near hydrothermal fields that have been identified.
 Deep EGS represents available geothermal resource not tied to existing hydrothermal sites and at depths below 3.5 km.
 
-Geothermal in ReEDS represents geothermal power production with a representative plant size up to 100 megawatts electric (MW<sub>e</sub>).
+Geothermal in ReEDS represents geothermal power production with a representative plant size up to 50 megawatts electric (MW<sub>e</sub>).
 Geothermal resource classes are defined by reservoir temperature ranges, which are closely linked to the cost of a plant normalized by generation capacity.
 Energy conversion processes, including binary and flash cycles, are linked to reservoir temperature and are specified by resource class.
 Plants with reservoir temperatures \<200°C (Class 7--10) use a binary cycle, which uses a heat exchanger and secondary working fluid with a lower boiling point to drive a turbine.
 All other reservoir temperatures assume a turbine is driven directly by working fluid from the geothermal wells.
-These assumptions are aligned with those in the 2024 ATB.
 
-{numref}`technical-resource-potential` lists the technical resource potential for the different geothermal categories.
+{numref}`geothermal-technical-resource-potential` lists the technical resource potential for the different geothermal categories.
 
 ```{table} Technical Resource Potential (GW)
-:name: technical-resource-potential
+:name: geothermal-technical-resource-potential
 | **Resource Class** | Reservoir Temperature **(°C)** | **Hydrothermal** | **Near-Field EGS** | **Deep EGS** |
 |:------------------:|:------------------------------:|:----------------:|:------------------:|:------------:|
-|           Class 1  |                         \> 325 |               \- |                0.2 |          7.3 |
-|           Class 2  |                      300–325 |              2.2 |                0.2 |           35 |
-|           Class 3  |                      275–300 |              1.2 |                0.1 |          177 |
-|           Class 4  |                      250–275 |              0.7 |                0.1 |         1696 |
-|           Class 5  |                      225–250 |              0.2 |                0.1 |         4633 |
-|           Class 6  |                      200–225 |              0.9 |                0.2 |         6467 |
-|           Class 7  |                      175–200 |               12 |                0.3 |         3234 |
-|           Class 8  |                      150–175 |              342 |                0.3 |           \- |
-|           Class 9  |                      125–150 |             2823 |               0.03 |           \- |
-|           Class 10 |                         \<125 |              699 |                 \- |           \- |
-|              Total |                                |             3881 |                1.4 |        16249 |
+|           Class 1  |                         \> 325 |               \- |                0.2 |          544 |
+|           Class 2  |                        300–325 |              1.8 |                0.2 |           18 |
+|           Class 3  |                        275–300 |              9.3 |                1.3 |           \- |
+|           Class 4  |                        250–275 |              0.7 |                8.3 |           \- |
+|           Class 5  |                        225–250 |              1.1 |                 74 |            1 |
+|           Class 6  |                        200–225 |              2.4 |                320 |          169 |
+|           Class 7  |                        175–200 |              0.2 |                709 |         3509 |
+|           Class 8  |                        150–175 |              2.6 |                996 |         8012 |
+|           Class 9  |                        125–150 |              1.1 |               1268 |          686 |
+|           Class 10 |                          \<125 |              4.7 |                 \- |            8 |
+|              Total |                                |             23.9 |               3377 |        12947 |
 ```
 
-```{figure} figs/docs/geothermal-resource-availability.png
-:name: figure-geothermal-resource-availability
+```{figure} figs/docs/supplycurve-egs.png
+:name: figure-supplycurve-egs
 
-Resource availability for hydrothermal (left) and deep EGS (right) for the CONUS.
+Resource availability for deep EGS.
 ```
 
 The default geothermal resource assumptions allow for hydrothermal sites.
 Identified hydrothermal resources are based on the U.S. Geological Survey's 2008 geothermal resource assessment.
 The undiscovered portion of the hydrothermal resource is limited by a discovery rate defined as part of the GeoVision Study {cite}`doeGeoVisionHarnessingHeat2019`.
-The geothermal supply curves are based on the analysis described by {cite}`augustineGeoVisionAnalysisSupporting2019` and are shown in {numref}`figure-geothermal-resource-availability`.
+The geothermal supply curves are based on the analysis described by {cite}`augustineGeoVisionAnalysisSupporting2019`.
 The hydrothermal and near-field EGS resource potential is derived from the U.S. Geological Survey's 2008 geothermal resource assessment {cite}`williamsReviewMethodsApplied2008a`, whereas the deep EGS resource potential is based on an update of the EGS potential from the Massachusetts Institute of Technology {cite}`testerFutureGeothermalEnergy2006`.
 As with other technologies, geothermal cost and performance projections are from the ATB {cite}`nrel2024AnnualTechnology2024`.
 Default geothermal capacity representation in ReEDS is categorized by depth and is based on reV analysis {cite}`pinchukpaulDevelopmentGeothermalModule2023`, which estimates potential and site-based levelized cost of energy (LCOE) based on resource assessment at various depths, development constraints, land use characteristics, and grid infrastructure (spur line transmission) costs.
@@ -1037,7 +1036,7 @@ Capacity factors for wind plants coming online from 2010 through 2023 are taken 
 Available land-based wind resources and site-specific cost and performance are based on {cite}`lopezRenewableEnergyTechnical2025`, using outputs of the reV model {cite}`maclaurinRenewableEnergyPotential2021`.
 The Reference Access case includes more than 49,000 potential wind sites, totaling more than 9,400 gigawatts (GW).
 Limited Access and Open Access supply curves are also available.
-Available resource for the three access cases and associated average capacity factors are shown in {numref}`figure-supplycurve-windons`.
+Available resource for the three access cases and associated average capacity factors are shown in {numref}`figure-supplycurve-wind-ons`.
 In ReEDS, each wind site is characterized with a supply curve cost, which comprises transmission spur line and reinforcement upgrade costs as well as site-specific capital cost adjustments based on region, land cost, and site capacity (to account for economies of scale).
 See the [Interzonal Transmission](#interzonal-transmission) section for more discussion of the interconnection supply curves for accessing the wind resource.
 
@@ -1045,8 +1044,8 @@ The individual wind sites are grouped into 10 resource classes based on *k*-mean
 Distinct wind generation profiles are represented in ReEDS for each region and class, based on capacity-weighted averages of all sites of that region and class.
 Sites are also grouped into a flexible number of supply curve cost bins in ReEDS, with 10 bins used by default for each ReEDS region and class.
 
-```{figure} figs/docs/supplycurve-windons.png
-:name: figure-supplycurve-windons
+```{figure} figs/docs/supplycurve-wind-ons.png
+:name: figure-supplycurve-wind-ons
 
 Land-based wind resource availability and capacity factor for the three siting scenarios included in ReEDS.
 ```
@@ -1070,11 +1069,11 @@ The offshore technology selection is made using the Offshore Wind Cost Model, wh
 See also {cite}`lopezRenewableEnergyTechnical2025` for more information on the development of the resource supply curves.
 
 Resource availability varies across different siting access cases: The Reference Access case has 4,064 sites totaling 2.97 terawatts (TW), the Open Access case has 4,524 sites totaling 3.534 TW, and the Limited Access case with 3,166 sites totals 2.212 TW.
-Modeled site-level capacity factor and resource availability are shown in {numref}`figure-supplycurve-windofs`.
+Modeled site-level capacity factor and resource availability are shown in {numref}`figure-supplycurve-wind-ofs`.
 Additional details regarding offshore wind resource modeling can be found in {cite}`lopezRenewableEnergyTechnical2025`.
 
-```{figure} figs/docs/supplycurve-windofs.png
-:name: figure-supplycurve-windofs
+```{figure} figs/docs/supplycurve-wind-ofs.png
+:name: figure-supplycurve-wind-ofs
 
 Offshore wind resource availability by siting access case for the CONUS
 ```
