@@ -15,6 +15,7 @@ from warnings import warn
 import geopandas as gpd
 import shapely
 import cmocean
+from adjustText import adjust_text
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 from reeds import plots
@@ -981,6 +982,31 @@ def plot_diff_maps(
     dfbase[valcol] *= unitscaler
     dfcomp[valcol] *= unitscaler
 
+    ### Aggregate selected technologies to one value per region for the target year
+    dfbase_selected = (
+        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year), ['r', valcol]]
+        .groupby('r', as_index=False)[valcol].sum()
+        .rename(columns={valcol: f'{valcol}_base'})
+    )
+    dfcomp_selected = (
+        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year), ['r', valcol]]
+        .groupby('r', as_index=False)[valcol].sum()
+        .rename(columns={valcol: f'{valcol}_comp'})
+    )
+    dfdiff_selected = (
+        dfbase_selected
+        .merge(dfcomp_selected, on='r', how='outer')
+        .fillna(0)
+    )
+    dfdiff_selected[f'{valcol}_diff'] = (
+        dfdiff_selected[f'{valcol}_comp'] - dfdiff_selected[f'{valcol}_base']
+    )
+    dfdiff_selected[f'{valcol}_pctdiff'] = np.where(
+        dfdiff_selected[f'{valcol}_base'] != 0,
+        dfdiff_selected[f'{valcol}_diff'] / dfdiff_selected[f'{valcol}_base'] * 100,
+        np.nan,
+    )
+
     ### Start the plot
     # plt.close()
     if (f is None) and (ax is None):
@@ -988,52 +1014,41 @@ def plot_diff_maps(
     else:
         pass
 
-    ###### Calculate the diff
-    dfdiff = dfbase.merge(
-        dfcomp, on=['i','r','t'], how='outer', suffixes=('_base','_comp')).fillna(0)
-    if plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
-        ### Percent difference
-        dfdiff['{}_diff'.format(valcol)] = (
-            (dfdiff['{}_comp'.format(valcol)] - dfdiff['{}_base'.format(valcol)])
-            / dfdiff['{}_base'.format(valcol)] * 100
-        ).replace(np.inf,np.nan)
-    elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
-        ### Difference
-        dfdiff['{}_diff'.format(valcol)] = (
-            dfdiff['{}_comp'.format(valcol)] - dfdiff['{}_base'.format(valcol)])
-
     if zmax is None:
         zmax = max(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),valcol+'_base'].max(),
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),valcol+'_comp'].max(),
+            dfdiff_selected[f'{valcol}_base'].max(),
+            dfdiff_selected[f'{valcol}_comp'].max(),
         )
 
     ###### Plot the base
     if plot == 'base':
         dfplot = dfba.merge(
-            dfbase.loc[(dfbase.i.isin(titles))&(dfbase.t==year),['r',valcol]],
+            dfdiff_selected[['r', f'{valcol}_base']],
             left_index=True, right_on='r', how='left'
-        ).fillna(0).reset_index(drop=True)
+        ).fillna(0).reset_index(drop=True).rename(columns={f'{valcol}_base': valcol})
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
+        label_region_value(dfplot, ax=ax, column=valcol, fontsize=5)
 
     ###### Plot the comp
     elif plot == 'comp':
         dfplot = dfba.merge(
-            dfcomp.loc[(dfcomp.i.isin(titles))&(dfcomp.t==year),['r',valcol]],
+            dfdiff_selected[['r', f'{valcol}_comp']],
             left_index=True, right_on='r', how='left'
-        ).fillna(0).reset_index(drop=True)
+        ).fillna(0).reset_index(drop=True).rename(columns={f'{valcol}_comp': valcol})
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
+
+        label_region_value(dfplot, ax=ax, column=valcol, fontsize=5)
 
     ###### Plot the pct diff
     elif plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
         legend_kwds['label'] = '{} {} {}\n[% diff]'.format(valcol,i_plot,year)
 
         dfplot = dfba.merge(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),['r',valcol+'_diff']],
+            dfdiff_selected[['r', f'{valcol}_pctdiff']],
             left_index=True, right_on='r', how='left'
         ).reset_index(drop=True)
 
@@ -1046,13 +1061,14 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_pctdiff', cmap=cmap, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
+        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fontsize=5)
 
     ###### Plot the absolute diff
     elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
         legend_kwds['label'] = '{} diff {} [{}]'.format(valcol,i_plot,units)
 
         dfplot = dfba.merge(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),['r',valcol+'_diff']],
+            dfdiff_selected[['r', f'{valcol}_diff']],
             left_index=True, right_on='r', how='left'
         ).reset_index(drop=True)
 
@@ -1065,9 +1081,11 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_diff', cmap=plt.cm.RdBu_r, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
+        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fontsize=5)
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
+    dfba.plot(ax=ax, edgecolor='k', facecolor='none', lw=0.1)
     dfstates.plot(ax=ax, edgecolor='k', facecolor='none', lw=0.25)
     ax.axis('off')
 
@@ -1076,7 +1094,7 @@ def plot_diff_maps(
 
 def plot_trans_vsc(
         case, year=2050, wscale=0.4, alpha=1.0, miles=300,
-        cmap=cmocean.cm.rain, scale=True, title=True,
+        cmap=cmocean.cm.tempo, scale=True, title=True,
         convertermax=None,
         f=None, ax=None,
     ):
@@ -1171,7 +1189,7 @@ def plot_trans_vsc(
 
 def plot_transmission_utilization(
         case, year=2050, plottype='mean', network='trans',
-        wscale=0.0004, alpha=1.0, cmap=cmocean.cm.rain,
+        wscale=0.0004, alpha=1.0, cmap=cmocean.cm.tempo,
         extent='modeled',
         f=None, ax=None,
         thicklevel='transreg',
@@ -1358,6 +1376,8 @@ def map_net_imports(
             legend=False,
             vmin=-vmax[year], vmax=vmax[year],
         )
+        label_region_value(df, ax=ax[coords[year]], column='net_import', 
+                            opt_single_decimal=False, fmt = '{:.0f}', fontsize=5)
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -2697,7 +2717,7 @@ def map_capacity_techs(
         techs='aggregation',
         ncols=4,
         vmax='shared',
-        cmap=cmocean.cm.rain,
+        cmap=cmocean.cm.tempo,
     ):
     """
     techs: list of technologies to plot, or 'aggregation' to plot all aggregated technologies
@@ -2751,6 +2771,7 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
+        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fontsize=5)
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -3437,7 +3458,7 @@ def map_hybrid_pv_wind(
         case, val='site_cap', year=2050,
         tech=None, vmax=None,
         markersize=10.75, #stretch=1.2,
-        cmap=cmocean.cm.rain,
+        cmap=cmocean.cm.tempo,
         f=None, ax=None, figsize=(6,6), dpi=None,
     ):
     """
@@ -3445,7 +3466,7 @@ def map_hybrid_pv_wind(
     cmap: Suggestions:
         val=site_cap, tech=wind-ons: plt.cm.Blues
         val=site_cap, tech=upv: plt.cm.Oranges
-        val=(site_hybridization,site_spurcap), tech=None: cmocean.cm.rain
+        val=(site_hybridization,site_spurcap), tech=None: cmocean.cm.tempo
         val=(site_pv_fraction,site_gir), tech=either: plt.cm.turbo
             or mpl.colors.LinearSegmentedColormap.from_list
                 'turboclip', [plt.cm.turbo(c) for c in np.linspace(0.1,0.91,101)])
@@ -4324,7 +4345,7 @@ def plot_ra_metrics_bylevel(
 
 def map_neue(
         case, year=2050, iteration='last', samples=None,
-        vmax=10., cmap=cmocean.cm.rain, label=True,
+        vmax=10., cmap=cmocean.cm.tempo, label=True,
         over_vmax_mapcolor=None,
         over_threshold_textcolor='C3',
         highlight_over_threshold=True,
@@ -4373,24 +4394,30 @@ def map_neue(
         ## Labels
         # decimals = (0 if df.NEUE_ppm.max() >= 10 else 1)
         decimals = (0 if level in ['st','r'] else 1)
+        text_artists = []
         for r, row in df.sort_values('NEUE_ppm').iterrows():
             if highlight_over_threshold:
                 over_threshold = row.NEUE_ppm > neue_threshold
             else:
                 over_threshold = False
-            ax[coords[level]].annotate(
-                f"{row.NEUE_ppm:.{decimals}f}",
-                [row.centroid_x, row.centroid_y],
-                ha='center', va='center',
-                c=(over_threshold_textcolor if over_threshold else 'k'),
-                weight=('bold' if over_threshold else 'normal'),
-                fontsize={'r':5}.get(level,7),
-                zorder=1e9,
-                path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
+            text_artists.append(
+                ax[coords[level]].annotate(
+                    f"{row.NEUE_ppm:.{decimals}f}",
+                    [row.centroid_x, row.centroid_y],
+                    ha='center', va='center',
+                    c=(over_threshold_textcolor if over_threshold else 'k'),
+                    weight=('bold' if over_threshold else 'normal'),
+                    fontsize={'r':5}.get(level,7),
+                    zorder=1e9,
+                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
+                )
             )
             if over_threshold and (level == neue_threshold_level):
                 ax[coords[level]].set_title(
                     level, y=0.9, weight='bold', color=over_threshold_textcolor,
+                )
+        adjust_text(text_artists, ax=ax[coords[level]],
+                    avoid_self=False, ensure_inside_axes=True,
                 )
     ### Formatting
     plots.addcolorbarhist(
@@ -4408,7 +4435,7 @@ def map_neue(
 def map_h2_capacity(
         case, year=2050, wscale_h2=10, figheight=6, pipescale=0.1,
         legend_kwds={'shrink':0.6, 'pad':0, 'orientation':'horizontal', 'aspect':12},
-        cmap=cmocean.cm.rain,
+        cmap=cmocean.cm.tempo,
     ):
     """
     H2 turbines, production (Electrolyzer/SMR), pipelines, and storage
@@ -4494,16 +4521,19 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
+        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fontsize=5)
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
+        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fontsize=5)
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
+        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fontsize=5)
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
@@ -5105,12 +5135,18 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
+        text_artists = []
         for i, _row in df.iterrows():
-            ax[row,col].annotate(
-                _row.date, (_row.centroid_x, _row.centroid_y),
-                ha='center', va='center', color='k', fontsize=fontsize,
-                path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+            text_artists.append(
+                ax[row,col].annotate(
+                    _row.date, (_row.centroid_x, _row.centroid_y),
+                    ha='center', va='center', color='k', fontsize=fontsize,
+                    path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+                )
             )
+        adjust_text(text_artists, ax=ax[row,col],
+                    avoid_self=False, ensure_inside_axes=True,
+                )
 
 
     ### Max load
@@ -5141,12 +5177,18 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
+        text_artists = []
         for i, _row in df.iterrows():
-            ax[row,col].annotate(
-                _row.date, (_row.centroid_x, _row.centroid_y),
-                ha='center', va='center', color='k', fontsize=fontsize,
-                path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+            text_artists.append(
+                ax[row,col].annotate(
+                    _row.date, (_row.centroid_x, _row.centroid_y),
+                    ha='center', va='center', color='k', fontsize=fontsize,
+                    path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
+                )
             )
+        adjust_text(text_artists, ax=ax[row,col],
+                    avoid_self=False, ensure_inside_axes=True,
+                )
 
     ### Colorbar
     row, col = 0, 0
@@ -6084,7 +6126,7 @@ def map_outage_days(
     techs=['gas-cc', 'gas-ct', 'coaloldscr', 'nuclear', 'hyded'],
     outage_type='forced',
     aggfunc='max',
-    cmap=cmocean.cm.rain,
+    cmap=cmocean.cm.tempo,
     vmin=0,
     vmax='auto',
     fontsize=4,
@@ -6142,14 +6184,20 @@ def map_outage_days(
         dfplot.plot(ax=_ax, column='outage_pct', cmap=cmap, vmin=vmin, vmax=vmax)
         ## Data values
         if fontsize:
+            text_artists = []
             for r, row in dfplot.sort_values('outage_pct').iterrows():
-                _ax.annotate(
-                    f"{row.outage_pct:.0f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k',
-                    fontsize=fontsize,
-                    path_effects=[pe.withStroke(linewidth=1.4, foreground='w', alpha=0.7)],
+                text_artists.append(
+                    _ax.annotate(
+                        f"{row.outage_pct:.0f}",
+                        [row.centroid_x, row.centroid_y],
+                        ha='center', va='center', c='k',
+                        fontsize=fontsize,
+                        path_effects=[pe.withStroke(linewidth=1.4, foreground='w', alpha=0.7)],
+                    )
                 )
+            adjust_text(text_artists, ax=_ax,
+                        avoid_self=False, ensure_inside_axes=True,
+                    )
         _ax.axis('off')
         ## Formatting
         if date == dates[0]:
@@ -6216,7 +6264,8 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     dfsc['i'] = tech + '_' + dfsc['class'].astype(str)
     sitemap = reeds.io.get_sitemap(offshore=(True if tech == 'wind-ofs' else False))
     dfsc['geometry'] = dfsc.index.map(sitemap.geometry)
-    dfsc = gpd.GeoDataFrame(dfsc).to_crs(crs)
+    dfsc = gpd.GeoDataFrame(dfsc, geometry='geometry', crs=sitemap.crs)
+    dfsc = dfsc.to_crs(crs)
     dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
 
     ## Convert to polygons
@@ -6225,18 +6274,39 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     return dfsc
 
 
-def label_region_value(df, ax, column, fmt='{:.2f}', color='k', fontsize=8, **kwargs):
+def label_region_value(
+    df, 
+    ax, 
+    column, 
+    opt_single_decimal=True, 
+    fmt='{:.0f}', 
+    color='k', 
+    fontsize=8, 
+    **kwargs
+):
     """kwargs are passed to patheffects.withStroke()"""
-    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':1}, **kwargs}
+    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':0.7}, **kwargs}
+    text_artists = []
     for r, row in df.iterrows():
-        ax.annotate(
-            fmt.format(row[column]),
-            (row.geometry.centroid.x, row.geometry.centroid.y),
-            ha='center', va='center', fontsize=fontsize,
-            color=color,
-            path_effects=[pe.withStroke(**pe_kwargs)],
-            zorder=1e9,
+        value = row.get(column, np.nan)
+        if not np.isfinite(value):
+            continue
+        if opt_single_decimal:
+            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
+            fmt = f"{{:.{decimals}f}}"
+        text_artists.append(
+            ax.annotate(
+                fmt.format(value),
+                (row.geometry.centroid.x, row.geometry.centroid.y),
+                ha='center', va='center', fontsize=fontsize,
+                color=color,
+                path_effects=[pe.withStroke(**pe_kwargs)],
+                zorder=1e9,
+            )
         )
+    adjust_text(text_artists, ax=ax,
+                avoid_self=False, ensure_inside_axes=True,
+            )
 
 
 def map_stressors(
@@ -6276,7 +6346,7 @@ def map_stressors(
     """
     ### Plot setup
     cmaps = {
-        'load': cmocean.cm.rain,
+        'load': cmocean.cm.tempo,
         # 'load': plt.cm.turbo,
         # 'wind-ons': cmocean.cm.ice_r,
         'wind-ons': cmocean.cm.ice,
@@ -6555,7 +6625,8 @@ def map_stressors(
             ax=ax[1,0], column='load_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
         )
         label_region_value(
-            df=dflevel, ax=ax[1,0], column='load_rank', fmt='{:.0f}%',
+            df=dflevel, ax=ax[1,0], column='load_rank',
+            opt_single_decimal=False, fmt='{:.0f}%',
             linewidth=2.0, alpha=0.8,
         )
         ax[1,0].set_title('Demand', y=0.9)
@@ -6570,7 +6641,8 @@ def map_stressors(
                 ax=ax[1,col], column=f'{tech}_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
             )
             label_region_value(
-                df=dflevel, ax=ax[1,col], column=f'{tech}_rank', fmt='{:.0f}%',
+                df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
+                opt_single_decimal=False, fmt='{:.0f}%',
                 linewidth=2.0, alpha=0.8,
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
@@ -6584,7 +6656,8 @@ def map_stressors(
             ax=ax[1,3], column='temperature_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
         )
         label_region_value(
-            df=dflevel, ax=ax[1,3], column='temperature_rank', fmt='{:.0f}%',
+            df=dflevel, ax=ax[1,3], column='temperature_rank',
+            opt_single_decimal=False, fmt='{:.0f}%',
             linewidth=2.0, alpha=0.8,
         )
         ax[1,3].set_title('Temperature', y=0.9)
@@ -6602,7 +6675,8 @@ def map_stressors(
             )
             dflevel[f'outage_{tech}'] = outage_region.loc[(y,m,d), tech]
             label_region_value(
-                df=dflevel, ax=ax[2,col], column=f'outage_{tech}', fmt='{:.0f}%',
+                df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
+                opt_single_decimal=False, fmt='{:.0f}%',
                 linewidth=2.0, alpha=0.8,
             )
             ax[2,col].set_title(label, y=0.9)
@@ -6778,7 +6852,7 @@ def map_output_byyear(
     oneaxis='columns',
     yearaxis='rows',
     mapscale=4,
-    cmap=cmocean.cm.rain,
+    cmap=cmocean.cm.tempo,
     vscale=1,
     vmin=None,
     vmax=None,
@@ -6850,7 +6924,7 @@ def map_output_byyear(
     return f, ax, dictplot
 
 
-def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=None):
+def map_prm(case, tmin=2023, cmap=cmocean.cm.tempo, scale=3, fontsize=7, vmax=None):
     dfmap = reeds.io.get_dfmap(case)
     sw = reeds.io.get_switches(case)
     ### Get final iterations

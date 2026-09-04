@@ -29,7 +29,7 @@ wscale_h2 = 10
 ## the position of the annotations
 crs = 'ESRI:102008'
 ### General purpose
-cmap = cmocean.cm.rain
+cmap = cmocean.cm.tempo
 ### For VRE siting & transmission maps
 transalpha = 0.25
 transcolor = 'k'

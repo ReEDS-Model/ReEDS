@@ -10,6 +10,7 @@ from matplotlib import patheffects as pe
 from glob import glob
 import traceback
 import cmocean
+from adjustText import adjust_text
 ### Local imports
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -426,18 +427,30 @@ def map_dropped_load(sw, dfs, level='r'):
             ### Background
             dfba.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
             ### Data
-            dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.rain)
+            dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.tempo)
+            text_artists = []
             for r, row in dfplot.iterrows():
                 if row.val > 0:
-                    ax.annotate(
-                        f'{row.val:,.0f} {units[metric,agg][0]}',
-                        (row.centroid_x, row.centroid_y),
-                        color='r', ha='center', va='top', fontsize=6, weight='bold')
+                    text_artists.append(
+                        ax.annotate(
+                            f'{row.val:,.0f} {units[metric,agg][0]}',
+                            (row.centroid_x, row.centroid_y),
+                            color='r', ha='center', va='top', fontsize=6, weight='bold')
+                    )
+            adjust_text(text_artists, ax=ax,
+            avoid_self=False, ensure_inside_axes=True,
+            )
             ### Formatting
             if level in ['r','rb','ba']:
+                text_artists = []
                 for r, row in dfba.iterrows():
-                    ax.annotate(r, (row.centroid_x, row.centroid_y),
-                                ha='center', va='bottom', fontsize=6, color='C7')
+                    text_artists.append(
+                        ax.annotate(r, (row.centroid_x, row.centroid_y),
+                                    ha='center', va='bottom', fontsize=6, color='C7')
+                    )
+                adjust_text(text_artists, ax=ax,
+                avoid_self=False, ensure_inside_axes=True,
+                )
             ax.axis('off')
             if savefig:
                 plt.savefig(os.path.join(sw['savepath'],savename))
@@ -987,7 +1000,7 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
     plottechs = failsum.loc[failsum != 0].index.get_level_values('i').unique()
 
     for tech in plottechs:
-        savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','')}-{sw['t']}"
+        savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
         plt.close()
         f, ax = plots.map_years_months(
             dfzones=dfzones, dfdata=failrate[tech],
@@ -1008,7 +1021,7 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
         )
         repairrate.index = dfs['pras_system']['genrepairrate'].index
         for tech in plottechs:
-            savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','')}-{sw['t']}"
+            savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
             plt.close()
             f, ax = plots.map_years_months(
                 dfzones=dfzones, dfdata=repairrate[tech],

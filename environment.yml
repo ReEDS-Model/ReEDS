@@ -1,4 +1,4 @@
-name: reeds
+name: reeds-at
 channels:
   - conda-forge
   - nodefaults
@@ -25,6 +25,7 @@ dependencies:
   - scipy=1.18
   - shapely=2.1
   - tqdm=4.68
+  - adjustText
   ## vvv The next packages are optional for default settings and may
   ## vvv be excluded if you're having trouble building the environment.
   - fiona=1.10 # for interactive maps
