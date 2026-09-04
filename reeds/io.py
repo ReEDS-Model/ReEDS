@@ -1505,6 +1505,52 @@ def floatify(df:pd.DataFrame, col_label:str='cost') -> pd.DataFrame:
     return dfout
 
 
+def modify_supplycurve_costs(dfsc, sw, crs='EPSG:5070'):
+    """
+    Modify a supply curve dataframe (dfsc) with user-provided
+    GSw_SitingCostModFpath and GSw_SitingCostModMult switches (sw)
+    """
+    ### Stop here if inputs are not specified
+    if (sw.GSw_SitingCostModFpath == 'none') and (sw.GSw_SitingCostModMult == 'none'):
+        return dfsc
+    ### Check inputs
+    elif (sw.GSw_SitingCostModFpath != 'none') and (sw.GSw_SitingCostModMult != 'none'):
+        maskpath = Path(sw.GSw_SitingCostModFpath).expanduser()
+        if not (maskpath.is_file() or maskpath.is_dir()):
+            raise FileNotFoundError(maskpath)
+        _siting_cost_mults = sw.GSw_SitingCostModMult.split('//')
+        siting_cost_mults = {kv.split('/')[0]: float(kv.split('/')[1]) for kv in _siting_cost_mults}
+        for k,v in siting_cost_mults.items():
+            if k not in dfsc:
+                err = (
+                    f'Invalid GSw_SitingCostModMult key: {k}.\nThe options are:\n'
+                    + '\n'.join(siting_cost_mults.columns)
+                )
+                raise ValueError(err)
+    else:
+        err = (
+            f'Need to specify both GSw_SitingCostModFpath (provided {sw.GSw_SitingCostModFpath})'
+            f'and GSw_SitingCostModMult (provided {sw.GSw_SitingCostModMult})'
+        )
+        raise ValueError(err)
+    
+    ### Get the siting mask and align CRS's
+    dfmask = gpd.read_file(maskpath).to_crs(crs)
+    dfmask.geometry = dfmask.buffer(0.)
+    maskpoly = dfmask[['geometry']].dissolve().squeeze(0).geometry
+    dfout = reeds.plots.df2gdf(dfsc, crs=crs)
+
+    ### For sites within dfmask, modify supply curve costs using GSw_SitingCostModMult
+    ### (could alternatively get the overlap fraction between each site's polygon and 
+    ### the provided mask and scale the site multiplier by that fraction)
+    dfout['within_mask'] = dfout.within(maskpoly)
+    for col, mult in siting_cost_mults.items():
+        dfout.loc[dfout.within_mask, col] = dfout.loc[dfout.within_mask, col] * mult
+    ### Remove the added columns
+    dfout = dfout[dfsc.columns].copy()
+    return dfout
+
+
 def assemble_supplycurve(
     scfile=None,
     case=None,
@@ -1583,6 +1629,9 @@ def assemble_supplycurve(
             dfout.loc[offshore_zones, 'region'] = dfout.loc[offshore_zones, 'ba'].copy()
         else:
             dfout['ba'] = dfout['region'].copy()
+
+    ## Apply cost modifiers if necessary
+    dfout = modify_supplycurve_costs(dfout, sw)
 
     if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
         'drop_single_county_reinforcement_cost'
