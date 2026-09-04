@@ -319,6 +319,10 @@ capcost_adjust = pd.Series(
 alldata['capcost'] *= capcost_adjust
 if 'capcost_energy' in alldata:
     alldata['capcost_energy'] *= capcost_adjust
+    
+# Trim to the last year all techs have data for; forecast.py extends from there to endyear
+trimyear = min(int(sw.endyear), alldata.groupby('i')['t'].max().min())
+alldata = alldata.loc[alldata['t'] <= trimyear]
 
 #Convert from $/kw to $/MW
 alldata['capcost'] = alldata['capcost']*1000
