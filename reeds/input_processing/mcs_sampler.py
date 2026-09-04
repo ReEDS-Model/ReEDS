@@ -928,15 +928,15 @@ class WeightCalculator:
             # Store in dictionary
             dict_df_weights[f] = w_df_tmp.drop(columns=["old c|r"])
 
-            # Normalize the weights to sum to 1
-            # Divide the weights by the sum of the weights across all files
-            sum_weights = sum(dict_df_weights[f][modifiable_columns] for f in range(len(dist_files)))
-            sum_weights[sum_weights == 0] = 1
+        # Normalize the weights to sum to 1
+        # Divide the weights by the sum of the weights across all files
+        sum_weights = sum(dict_df_weights[f][modifiable_columns] for f in range(len(dist_files)))
+        sum_weights[sum_weights == 0] = 1
 
-            for f in range(len(dist_files)):
-                dict_df_weights[f][modifiable_columns] /= sum_weights
-                # recf_weights_map is not normalized here because it will be normalized later
-                # values need to be aggregated according to the new c|r column from supply curves
+        for f in range(len(dist_files)):
+            dict_df_weights[f][modifiable_columns] /= sum_weights
+            # recf_weights_map is not normalized here because it will be normalized later
+            # values need to be aggregated according to the new c|r column from supply curves
 
         return dict_df_weights
 
@@ -980,7 +980,7 @@ class WeightCalculator:
                 Each element of this dictionary is a pd.DataFrame (for the reference file f)
                 with the normalized weights, indexed by new and old class|region (c|r).
         """
-        n_files = len({key[1] for key in self.recf_weights_map[sw_name].keys()})
+        n_files = len(self.recf_weights_map[sw_name])
 
         # The normalization can change depending on the sample #
         for f in range(n_files):
@@ -1917,8 +1917,9 @@ def main_mga_rv(
     mga_weights = mga_weights.rename(columns={'r':'*r'})[['*r','i_subtech','weight']]
     mga_weights = mga_weights.sort_values(by=['*r', 'i_subtech'], ascending=True)
     mga_weights.to_csv(os.path.join(inputs_case, "mga_weights.csv"), index=False)
-    
 
+
+#%% Procedure
 if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     parser = argparse.ArgumentParser(description='Copy files needed for this run')
     parser.add_argument('reeds_path', help='ReEDS directory')
@@ -1932,7 +1933,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # ---- Settings for testing ----
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20250825_revM2_MonteCarlo_MC1','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20260904_mcM0_MonteCarlo_Random_MC0001','inputs_case')
     # n_samples = 1
     # seed = 0
 
