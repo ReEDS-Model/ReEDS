@@ -49,8 +49,6 @@ class MCSConstants:
         "supplycurve_wind-ofs.csv",
         "supplycurve_wind-ons.csv",
     ]
-    EXOG_CAP_FILES = ["exog_cap_upv.csv", "exog_cap_wind-ons.csv"]
-    PRESCRIBED_BUILDS_FILES = ["prescribed_builds_wind-ofs.csv", "prescribed_builds_wind-ons.csv"]
     RECF_FILES = ["recf_wind-ons.h5", "recf_wind-ofs.h5", "recf_upv.h5"]
 
     ### --- Switch-File(s) combinations hardcoded in copy_files.py
@@ -411,17 +409,8 @@ def general_mcs_dist_validation(reeds_path: str, mcs_dist_path: str, sw: pd.Seri
             f"The following switches are not valid (check cases.csv): {invalid_switches}"
         )
 
-    ## sampling using siting switches is currently disabled
-    siting_set = set(MCSConstants.SITING_SWITCHES)
-    used_siting = all_switch_names & siting_set
-    if used_siting:
-        raise ValueError(
-            f"Sampling using siting switches {MCSConstants.SITING_SWITCHES} is "
-            "currently disabled. For details see "
-            "https://github.com/ReEDS-Model/ReEDS/issues/41."
-        )
-
     ## siting switches can only use specific distributions
+    siting_set = set(MCSConstants.SITING_SWITCHES)
     for _, row in df_input_dist.iterrows():
         if set(row['switch_names']) & siting_set:
             if row['dist'] not in ['dirichlet', 'discrete']:
@@ -728,8 +717,7 @@ class WeightCalculator:
         single_r_weight = len(unique_sample_levels) == 1
 
         # Group files that require special treatment
-        except_files = MCSConstants.SUPPLY_CURVE_FILES + MCSConstants.EXOG_CAP_FILES + (
-            MCSConstants.PRESCRIBED_BUILDS_FILES + MCSConstants.RECF_FILES)
+        except_files = MCSConstants.SUPPLY_CURVE_FILES + MCSConstants.RECF_FILES
 
         # Return an error if you have multiple weight assignments but the mcs_distributions.yaml object is
         # pointing to a set of switches that have no region columns
@@ -791,8 +779,6 @@ class WeightCalculator:
             return self._get_weights_supply_curve(dist_files, modifiable_columns, sw_name)
         elif file_name in MCSConstants.RECF_FILES:
             return self._get_weights_recf(sw_name)
-        elif file_name in MCSConstants.EXOG_CAP_FILES + MCSConstants.PRESCRIBED_BUILDS_FILES:
-            return self._get_weights_exog_prescribed(dist_files)
         else:
             return self._get_weights_general(dist_files, modifiable_columns, sw_name, file_name)
 
@@ -954,33 +940,6 @@ class WeightCalculator:
 
         return dict_df_weights
 
-    def _get_weights_exog_prescribed(self, dist_files: list) -> dict:
-        """
-        Get the weights for exogenous capacity and prescribed builds files.
-
-        Args:
-            dist_files (list of pd.DataFrame): List of reference dataframes (ajusted to have the same # of rows)
-
-        Returns:
-            Dict[int, pd.DataFrame]: Dictionary mapping reference file index to
-                the weight DataFrame for that file.
-        """
-        dict_df_weights = {}
-        for f, df in enumerate(dist_files):
-
-            region_to_weight = {
-                r: self.r_weights[r][f]
-                for r in df["region"].unique()
-            }
-
-            dict_df_weights[f] = pd.DataFrame(
-                data=df["region"].map(region_to_weight).values,
-                columns=["capacity"],
-                index=df.index,
-            )
-
-        return dict_df_weights
-
     def _get_weights_recf(self, sw_name: str) -> dict:
         """
         Get the weights for the recf files (CF files). This file construction is 
@@ -1133,9 +1092,7 @@ class MCS_Sampler:
         # (e.g For the supply curves we will make sure that all files are
         # ajusted to contain all regions and sc_point_gid combinations)
         map_files2ref_columns = {
-            **{file: ["region", "sc_point_gid"] for file in MCSConstants.SUPPLY_CURVE_FILES},
-            **{file: ["region", "year", "sc_point_gid"] for file in MCSConstants.EXOG_CAP_FILES},
-            **{file: ["region", "year"] for file in MCSConstants.PRESCRIBED_BUILDS_FILES},
+            file: ["region", "sc_point_gid"] for file in MCSConstants.SUPPLY_CURVE_FILES
         }
 
         if file_name in map_files2ref_columns:
@@ -1179,8 +1136,6 @@ class MCS_Sampler:
 
         exceptions_mult_col = {
             **{file: ["class"] + list(general_mult_columns) for file in MCSConstants.SUPPLY_CURVE_FILES},
-            **{file: ["capacity"] for file in MCSConstants.EXOG_CAP_FILES},
-            **{file: ["capacity"] for file in MCSConstants.PRESCRIBED_BUILDS_FILES},
             **{file: [] for file in MCSConstants.RECF_FILES}, # treated separately
         }
         modifiable_columns = exceptions_mult_col.get(file_name, list(general_mult_columns))
@@ -1266,45 +1221,6 @@ class MCS_Sampler:
         
         return samples_sw
 
-    def _adjust_exog_cap_samples(self, samples_sw: pd.DataFrame, file_name: str) -> pd.DataFrame:
-        """
-        Adjust samples for exogenous capacity files:
-          - Remove rows with no capacity.
-          - Adjust the tech classes based on available classes per sc_point_gid.
-
-        Args:
-            samples_sw (pd.DataFrame): The sampled exogenous capacity DataFrame.
-            file_name (str): Name of the file being sampled.
-
-        Returns:
-            pd.DataFrame: Adjusted exogenous capacity sample.
-        """
-        # Remove samples with no capacity
-        samples_sw = samples_sw[samples_sw["capacity"] > 0].copy()
-
-        tech_mapping = {
-            "exog_cap_upv.csv": ("upv", "supplycurve_upv.csv"),
-            "exog_cap_wind-ons.csv": ("wind-ons", "supplycurve_wind-ons.csv"),
-        }
-        tech_name, Sample_ID = tech_mapping[file_name]
-
-        # Get the class available for each sc_point_gid
-        class_sc_point_map = self.samples[Sample_ID][["sc_point_gid", "class"]]
-        class_sc_point_map = class_sc_point_map.set_index("sc_point_gid").to_dict()["class"]
-
-        # Remove any rows from samples_sw that cannot be mapped
-        # These are cases with zero supply in the region
-        valid_sc_point_gids = samples_sw["sc_point_gid"].isin(class_sc_point_map.keys())
-        samples_sw = samples_sw[valid_sc_point_gids].copy()
-
-        # Create a new tech name for each sc_point_gid
-        new_tech_name = [tech_name + "_" + str(int(c)) for c in 
-            samples_sw["sc_point_gid"].map(class_sc_point_map).values]
-
-        samples_sw["*tech"] = new_tech_name
-
-        return samples_sw
-
     def _apply_weights_general(
         self,
         dist_files: list,
@@ -1344,14 +1260,6 @@ class MCS_Sampler:
 
         if file_name in MCSConstants.SUPPLY_CURVE_FILES:
             adjusted_samples = self._adjust_supply_curve_sample(samples_sw, sw_name, sample_idx)
-
-        elif file_name in MCSConstants.EXOG_CAP_FILES:
-            adjusted_samples = self._adjust_exog_cap_samples(samples_sw, file_name)
-
-        elif file_name in MCSConstants.PRESCRIBED_BUILDS_FILES:
-            # Remove samples with no capacity
-            adjusted_samples = samples_sw[samples_sw["capacity"] > 0]
-
         else:
             # For all other files we can directly apply the weights
             adjusted_samples = samples_sw
@@ -2065,4 +1973,3 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         process='input_processing/mcs_sampler.py',
         path=os.path.join(os.path.dirname(inputs_case))
     )
-
