@@ -721,7 +721,7 @@ In addition to the performance parameters listed above, technologies are differe
 In general, natural gas plants---especially combustion turbines---are better suited for ramping and reserve provision, whereas coal and large-scale nuclear plants are typically designed for steady operation.
 See the [Operational Reliability](#operational-reliability) section for more details.
 
-The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2025 {cite}`eiaAnnualEnergyOutlook2025`, with data supplemented from the October 2025 EIA 860M.
+The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2026 {cite}`eiaAnnualEnergyOutlook2026`, with data supplemented from the June 2026 EIA 860M.
 In particular, ReEDS uses the net summer capacity, net winter capacity,[^ref23] location, heat rate, variable O&M (VOM), and FOM to characterize the existing fleet.
 ReEDS uses a modified "average" heat rate for any builds occurring after 2010: A technology-specific increase on the full-load heat rate is applied to accommodate units not always operating at their design point.
 The modifiers, shown in {numref}`heat-rate-adjustments`, are based on the relationship between the reported heat rate in the ATB and the actual observed heat rate, calculated on a fleetwide basis for each fuel type.
@@ -775,7 +775,7 @@ Landfill gas is assumed to have negative effective carbon emissions because the 
 <sup>c</sup> Assumed CO<sub>2</sub> emissions rate for natural gas fuel cells is the same as for Gas-CC/CT plants. 
 
 ReEDS allows unabated gas-CC and coal plants to be retrofitted with CCS.
-For existing plants, the cost of the upgrade and the performance changes are based on values from the NEMS unit database from AEO2025 {cite}`eiaAnnualEnergyOutlook2025`.
+For existing plants, the cost of the upgrade and the performance changes are based on values from the NEMS unit database from AEO2026 {cite}`eiaAnnualEnergyOutlook2026`.
 For new plants, the upgrade cost is the difference between the CCS and non-CCS versions of the plant, and the performance of the CCS plant adopts the CCS operating costs and characteristics.[^upgrade]
 For all CCS plant upgrades, there is also a capacity derate for plants that add CCS to represent the parasitic load of the CCS portion of the plant.
 Upgraded capacity is by default allowed to operate for 50 years, which may extend the lifetime of the plant beyond its regularly defined lifetime.
@@ -1436,7 +1436,7 @@ The explicit representation is turned off by default.
 ### Capital Stock
 #### Initial capital stock, prescribed builds, and restrictions
 
-Existing electricity generation capacity is taken from the EIA NEMS unit database {cite}`eiaAnnualEnergyOutlook2025` and updated using the March 2025 EIA 860M ({numref}`figure-capacity-existing`).
+Existing electricity generation capacity is taken from the EIA NEMS unit database {cite}`eiaAnnualEnergyOutlook2026` and updated using the June 2026 EIA 860M ({numref}`figure-capacity-existing`).
 Units are mapped to ReEDS technologies based on the fuel source and prime mover of the generation technology.
 Units of the same technology type within a region can be aggregated or represented individually.[^ref29]
 If they are aggregated, the aggregation is done by clustering the units based on heat rates.
@@ -1448,7 +1448,7 @@ Plants can be aggregated to one plant type per region or left at their native un
 ```{figure} figs/docs/capacity-existing.png
 :name: figure-capacity-existing
 
-Existing generation and storage units in 2025, taken from the EIA NEMS database {cite}`eiaAnnualEnergyOutlook2025`.
+Existing generation and storage units in 2026, taken from the EIA NEMS database {cite}`eiaAnnualEnergyOutlook2026`.
 ```
 
 The binning structure is designed flexibly so users can choose the appropriate levels of model fidelity and computational speed for each application.
@@ -1525,11 +1525,9 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 | Nuclear SMR | 80 | {cite}`abbABBVelocitySuite2018a` |
 ```
 
-Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2025 NEMS plant database and EIA 860M.
-Retirement dates of coal plants are further checked and updated in case the EIA 860M does not capture the latest retirement dates.
-Retirement dates for several nuclear plants which are not current in NEMS and EIA 860M
-(e.g., the Diablo Canyon nuclear power plant in California and Palisades nuclear power plant in Michigan)
-are manually updated.
+Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2026 NEMS plant database and EIA 860M.
+Retirement dates of several nuclear and coal plants are further checked and manually updated in case the EIA 860M does not capture the latest retirement dates.
+(e.g., the Diablo Canyon nuclear power plant in California and Monroe coal power plant in Michigan).
 Both existing and economically built generators have the lifetimes shown in {numref}`technology-lifetimes`.
 These lifetimes are used as necessary when the solution period extends beyond 2050.
 
@@ -2365,7 +2363,7 @@ to the individual units considered in PRAS,
 making the following assumptions (some of which can be changed by the user):
 
 - Thermal generation
-  - Existing thermal generation capacity is disaggregated using unit sizes from the EIA-NEMS database of existing units ({numref}`figure-capacity-existing`) {cite}`eiaAnnualEnergyOutlook2025`.
+  - Existing thermal generation capacity is disaggregated using unit sizes from the EIA-NEMS database of existing units ({numref}`figure-capacity-existing`) {cite}`eiaAnnualEnergyOutlook2026`.
   - Unit sizes for new thermal generation capacity depend on whether the model zone hosts existing capacity of that technology type
   and on the planning reserve margin of the model zone.
   Remainder capacity is assigned to its own unit (so 210 MW of capacity, with a 100 MW unit size, would be disaggregated into 3 = 2 × 100 MW + 1 × 10 MW units).
