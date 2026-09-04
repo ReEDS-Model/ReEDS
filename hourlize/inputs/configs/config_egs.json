@@ -1,6 +1,5 @@
 {
     "atb_scenario": "moderate",
-    "cost_out": "combined_trans" ,
     "capacity_col": "capacity_ac_mw",
     "class_bin_col": "capacity_factor_ac",
     "class_bin_num": 10,
@@ -11,10 +10,7 @@
     "profile_dir": "" ,
     "profile_dset": "",
     "profile_file_format": "" ,
-    "profile_id_col": "sc_point_gid",
-    "profile_weight_col": "capacity",
     "single_profile": null,
-    "upv_type": null,
     "geo_run_supply_curve_aggregation": true,
     "geo_aggregation_method": "lowest_lcoe",
     "process_profiles": false

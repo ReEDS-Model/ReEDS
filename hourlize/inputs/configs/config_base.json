@@ -1,15 +1,13 @@
 {
   "shared": {
-    "compression_opts": 4,
-    "decimals": 4,
-    "filetype": "h5",
-    "select_year": 2012
-},
-
+    "compression_opts": 4
+  },
+  
   "resource": {
     "class_bin_method": "kmeans",
     "copy_to_reeds": true,
     "copy_to_shared": true,
+    "filetype": "h5",
     "hourly_out_years": [2007,2008,2009,2010,2011,2012,2013,2016,2017,2018,2019,2020,2021,2022,2023],
     "inputfiles": ["reg_map_file", "class_path"],
     "offshore_meshed": false,
@@ -18,7 +16,6 @@
     "reg_map_file": "{reeds_path}/inputs/zones/z90/county2zone.csv",
     "rev_paths_file": "{reeds_path}/inputs/supply_curve/rev_paths.csv",
     "scale_factor": 1e4,
-    "start_year": 2010,
     "state_abbrev": "{hourlize_path}/inputs/resource/state_abbrev.csv",
     "subsetvars": ["tech", "access_case"],
     "subtract_exog": false
