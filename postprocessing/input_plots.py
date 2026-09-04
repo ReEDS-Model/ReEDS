@@ -1052,7 +1052,7 @@ def map_supplycurves(
         costadder = 0
     ## Convert from point to polygons if desired (raster is 11.52 km but include a little extra)
     if not markers:
-        dfsc.geometry = dfsc.buffer(11530/2, cap_style='square')
+        dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     ###### Format inputs
     ## Use 4.5 for limited access wind-ofs

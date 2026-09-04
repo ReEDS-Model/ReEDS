@@ -1598,8 +1598,8 @@ def plot_vresites_transmission(
                 lambda row: shapely.geometry.Point(row.longitude, row.latitude),
                 axis=1)
             cap[tech] = gpd.GeoDataFrame(cap[tech]).set_crs('EPSG:4326').to_crs(crs)
-            ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-            cap[tech]['geometry'] = cap[tech].buffer(11530/2, cap_style='square')
+            ## Convert from point to polygons
+            cap[tech] = reeds.spatial.site2poly_buffer(cap[tech])
 
         except FileNotFoundError as err:
             print(err)
@@ -6220,7 +6220,7 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
 
     ## Convert to polygons
-    dfsc['geometry'] = dfsc.buffer(11530/2, cap_style='square')
+    dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     return dfsc
 

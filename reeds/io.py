@@ -1533,19 +1533,19 @@ def modify_supplycurve_costs(dfsc, sw, crs='EPSG:5070'):
             f'and GSw_SitingCostModMult (provided {sw.GSw_SitingCostModMult})'
         )
         raise ValueError(err)
-    
+
     ### Get the siting mask and align CRS's
     dfmask = gpd.read_file(maskpath).to_crs(crs)
     dfmask.geometry = dfmask.buffer(0.)
     maskpoly = dfmask[['geometry']].dissolve().squeeze(0).geometry
     dfout = reeds.plots.df2gdf(dfsc, crs=crs)
+    dfout = reeds.spatial.site2poly_buffer(dfout)
 
-    ### For sites within dfmask, modify supply curve costs using GSw_SitingCostModMult
-    ### (could alternatively get the overlap fraction between each site's polygon and 
-    ### the provided mask and scale the site multiplier by that fraction)
-    dfout['within_mask'] = dfout.within(maskpoly)
+    ### For each specified column and multiplier in GSw_SitingCostModMult,
+    ### scale each site's value by the site polygon's overlap with the provided shapefile
+    dfout['maskfrac'] = dfout.geometry.intersection(maskpoly).area / dfout.geometry.area
     for col, mult in siting_cost_mults.items():
-        dfout.loc[dfout.within_mask, col] = dfout.loc[dfout.within_mask, col] * mult
+        dfout[col] = dfout[col] * ((1 - dfout['maskfrac']) + dfout['maskfrac'] * mult)
     ### Remove the added columns
     dfout = dfout[dfsc.columns].copy()
     return dfout

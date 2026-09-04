@@ -568,3 +568,16 @@ def aggregate_by_weighted_average(
         .transpose()
     )
     return aggregional_data
+
+
+def site2poly_buffer(df:gpd.GeoDataFrame, meters:float=11530/2, crs='EPSG:5070'):
+    """
+    Turn reV sites into polygons using a square buffer.
+    Only works if sites are on a square grid, which, for the data in the repository,
+    is only true when using the EPSG:5070 projection.
+    The stated reV grid is 11.52 km; we use 11.53 km by default to fill gaps.
+    """
+    if df.crs != crs:
+        raise ValueError(f"GeoDataFrame uses CRS {df.crs} but must use {crs}")
+    df['geometry'] = df.buffer(meters, cap_style='square')
+    return df
