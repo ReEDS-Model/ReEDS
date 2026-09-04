@@ -632,7 +632,7 @@ Cost and performance assumptions for these technologies are not included in this
 ### Technology Cost and Performance Trajectories
 
 The ATB cost trajectories underlying these inputs are summarized in {numref}`figure-atb-2025-capex` through {numref}`figure-atb-2025-variable-oandm`.
-Each panel covers one ATB technology; the solid line is the Moderate scenario and the shaded band spans the Advanced and Conservative scenarios, all at a 20-year cost recovery period.
+Each panel covers one ATB technology; the solid line is the Moderate scenario and the shaded band spans the Advanced and Conservative scenarios.
 These are the published ATB values as reported, before ReEDS applies regional capital cost multipliers, financing assumptions, and the conversion to 2004\$.
 ATB 2025 is reported in 2023\$.
 
