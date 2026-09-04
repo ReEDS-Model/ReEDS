@@ -69,18 +69,25 @@ The `run_hourlize.py` script serves as a wrapper for calling either `load.py` or
   * Entries with {variable} in the text will have the {variable} text replaced with the value referenced by 'variable', which typically refers to another config entry or a file path.
   * Entries with {eval_expression} will evaluate 'expression' as a python expression; useful for creating lists using ranges.
   * Combines all configs into a single config.json sent to resource.py.
-* Creates an output folder for the supply curve run in `hourlize/out/[casename]`, where casename is defined in the `cases.json file`.
+* Creates an output folder for each supply curve run in `hourlize/out/[casename]`, where `casename = {tech}_{access_case}` from `rev_paths.csv`.
 * Creates a .sh or .bat script to run the case with a call to `resource.py`.
 * Optionally submits jobs to the HPC or initiates the runs directly.
 
 Example calls:
 
 ```bash
-python run_hourlize.py load                  # run load.py
-python run_hourlize.py resource              # run resource.py with default cases
-python run_hourlize.py resource --local      # if on HPC run all cases sequentially on current node without batch submission to slurm
-python run_hourlize.py resource --nosubmit   # if on HPC create launch scripts and input folders but don't submit runs
-python run_hourlize.py status                # check status on a set of resource runs
+# run load.py
+python run_hourlize.py load
+# run resource.py for all tech/access_case combinations in rev_paths.csv
+python run_hourlize.py resource
+# run resource.py for select tech/access_case combinations
+python run_hourlize.py resource --tech upv --access_case limited
+# if on HPC run all cases sequentially on current node without batch submission to slurm
+python run_hourlize.py resource --local
+# if on HPC create launch scripts and input folders but don't submit runs
+python run_hourlize.py resource --nosubmit
+# check status on a set of resource runs
+python run_hourlize.py status     
 ```
 
 Command-line arguments can be used to run a subset of technologies or access cases.
