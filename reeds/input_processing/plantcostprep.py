@@ -274,6 +274,10 @@ if sw.upgradescen != 'default':
 
 alldata['t'] = alldata['t'].astype(int)
 
+# Trim to the last year all techs have data for; forecast.py extends from there to endyear
+trimyear = min(int(sw.endyear), alldata.groupby('i')['t'].max().min())
+alldata = alldata.loc[alldata['t'] <= trimyear]
+
 #Convert from $/kw to $/MW
 alldata['capcost'] = alldata['capcost']*1000
 alldata['capcost_energy'] = alldata.get('capcost_energy', 0) * 1000
