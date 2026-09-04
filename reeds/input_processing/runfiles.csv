@@ -229,6 +229,7 @@ supplycurve_wind-ofs.csv,inputs/supply_curve/supplycurve_wind-ofs-{GSw_SitingWin
 supplycurve_wind-ons.csv,inputs/supply_curve/supplycurve_wind-ons-{GSw_SitingWindOns}.csv,1,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
 wst_surface.csv,inputs/sets/wst_surface.csv,1,ignore,ignore,,,,,0,,,set,wst_surface,surface water types where access is based on consumption not withdrawal,
 tc_phaseout_schedule.csv,inputs/financials/tc_phaseout_schedule_{GSw_TCPhaseout_schedule}.csv,int(sw.GSw_TCPhaseout) != 0,ignore,ignore,,,,,0,,,,,,
+tech_cost_adjustments.csv,inputs/plant_characteristics/tech_cost_adjustments_{GSw_TechCostAdjust}.csv,sw.GSw_TechCostAdjust != 'none',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 tech-subset-table.csv,inputs/tech-subset-table.csv,1,ignore,ignore,,,,,0,,,,,,
 techs.csv,inputs/techs/techs_{techs_suffix}.csv,1,ignore,ignore,,,,,0,,,,,,
 techs_banned.csv,inputs/state_policies/techs_banned.yaml,1,ignore,ignore,wide,i,,,0,,,,,,
