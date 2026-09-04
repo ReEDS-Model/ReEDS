@@ -1082,7 +1082,7 @@ Fixed operation and maintenance costs for coal plants increase over time with th
 <p>In addition to the performance parameters listed above, technologies are differentiated by their ability to provide operating reserves.
 In general, natural gas plants—especially combustion turbines—are better suited for ramping and reserve provision, whereas coal and large-scale nuclear plants are typically designed for steady operation.
 See the <a class="reference internal" href="#operational-reliability"><span class="xref myst">Operational Reliability</span></a> section for more details.</p>
-<p>The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2025 <span class="bibtex-citation" id="id40">[<a class="reference internal" href="#id955" title="EIA. Annual Energy Outlook 2025. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2025. URL: https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf.">EIA, 2025</a>]</span>, with data supplemented from the October 2025 EIA 860M.
+<p>The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2026 <span class="bibtex-citation" id="id40">[<a class="reference internal" href="#id956" title="EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: https://www.eia.gov/outlooks/aeo/.">EIA, 2026</a>]</span>, with data supplemented from the June 2026 EIA 860M.
 In particular, ReEDS uses the net summer capacity, net winter capacity,<a class="footnote-reference brackets" href="#ref23" id="id41" role="doc-noteref"><span class="fn-bracket">[</span>9<span class="fn-bracket">]</span></a> location, heat rate, variable O&amp;M (VOM), and FOM to characterize the existing fleet.
 ReEDS uses a modified “average” heat rate for any builds occurring after 2010: A technology-specific increase on the full-load heat rate is applied to accommodate units not always operating at their design point.
 The modifiers, shown in <a class="reference internal" href="#heat-rate-adjustments"><span class="std std-numref">Table 2</span></a>, are based on the relationship between the reported heat rate in the ATB and the actual observed heat rate, calculated on a fleetwide basis for each fuel type.</p>
@@ -1195,7 +1195,7 @@ However, ReEDS can track landfill gas emissions and the associated benefits as a
 Landfill gas is assumed to have negative effective carbon emissions because the methane gas would otherwise be flared; therefore, it produces the less potent greenhouse gas.</p>
 <p><sup>c</sup> Assumed CO<sub>2</sub> emissions rate for natural gas fuel cells is the same as for Gas-CC/CT plants.</p>
 <p>ReEDS allows unabated gas-CC and coal plants to be retrofitted with CCS.
-For existing plants, the cost of the upgrade and the performance changes are based on values from the NEMS unit database from AEO2025 <span class="bibtex-citation" id="id44">[<a class="reference internal" href="#id955" title="EIA. Annual Energy Outlook 2025. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2025. URL: https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf.">EIA, 2025</a>]</span>.
+For existing plants, the cost of the upgrade and the performance changes are based on values from the NEMS unit database from AEO2026 <span class="bibtex-citation" id="id44">[<a class="reference internal" href="#id956" title="EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: https://www.eia.gov/outlooks/aeo/.">EIA, 2026</a>]</span>.
 For new plants, the upgrade cost is the difference between the CCS and non-CCS versions of the plant, and the performance of the CCS plant adopts the CCS operating costs and characteristics.<a class="footnote-reference brackets" href="#upgrade" id="id45" role="doc-noteref"><span class="fn-bracket">[</span>10<span class="fn-bracket">]</span></a>
 For all CCS plant upgrades, there is also a capacity derate for plants that add CCS to represent the parasitic load of the CCS portion of the plant.
 Upgraded capacity is by default allowed to operate for 50 years, which may extend the lifetime of the plant beyond its regularly defined lifetime.
@@ -1961,7 +1961,7 @@ The explicit representation is turned off by default.</p>
 <h3>Capital Stock<a class="headerlink" href="#capital-stock" title="Link to this heading"></a></h3>
 <section id="initial-capital-stock-prescribed-builds-and-restrictions">
 <h4>Initial capital stock, prescribed builds, and restrictions<a class="headerlink" href="#initial-capital-stock-prescribed-builds-and-restrictions" title="Link to this heading"></a></h4>
-<p>Existing electricity generation capacity is taken from the EIA NEMS unit database <span class="bibtex-citation" id="id115">[<a class="reference internal" href="#id955" title="EIA. Annual Energy Outlook 2025. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2025. URL: https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf.">EIA, 2025</a>]</span> and updated using the March 2025 EIA 860M (<a class="reference internal" href="#figure-capacity-existing"><span class="std std-numref">Fig. 38</span></a>).
+<p>Existing electricity generation capacity is taken from the EIA NEMS unit database <span class="bibtex-citation" id="id115">[<a class="reference internal" href="#id956" title="EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: https://www.eia.gov/outlooks/aeo/.">EIA, 2026</a>]</span> and updated using the June 2026 EIA 860M (<a class="reference internal" href="#figure-capacity-existing"><span class="std std-numref">Fig. 38</span></a>).
 Units are mapped to ReEDS technologies based on the fuel source and prime mover of the generation technology.
 Units of the same technology type within a region can be aggregated or represented individually.<a class="footnote-reference brackets" href="#ref29" id="id116" role="doc-noteref"><span class="fn-bracket">[</span>17<span class="fn-bracket">]</span></a>
 If they are aggregated, the aggregation is done by clustering the units based on heat rates.</p>
@@ -1969,7 +1969,7 @@ If they are aggregated, the aggregation is done by clustering the units based on
 <figure class="align-default" id="figure-capacity-existing">
 <img alt="_images/capacity-existing.png" src="_images/capacity-existing.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 38 </span><span class="caption-text">Existing generation and storage units in 2025, taken from the EIA NEMS database <span class="bibtex-citation" id="id117">[<a class="reference internal" href="#id955" title="EIA. Annual Energy Outlook 2025. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2025. URL: https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf.">EIA, 2025</a>]</span>.</span><a class="headerlink" href="#figure-capacity-existing" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 38 </span><span class="caption-text">Existing generation and storage units in 2026, taken from the EIA NEMS database <span class="bibtex-citation" id="id117">[<a class="reference internal" href="#id956" title="EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: https://www.eia.gov/outlooks/aeo/.">EIA, 2026</a>]</span>.</span><a class="headerlink" href="#figure-capacity-existing" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The binning structure is designed flexibly so users can choose the appropriate levels of model fidelity and computational speed for each application.
@@ -2102,11 +2102,9 @@ One exception to this procedure is hydropower, which—because of assumed nonpow
 </tr>
 </tbody>
 </table>
-<p>Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2025 NEMS plant database and EIA 860M.
-Retirement dates of coal plants are further checked and updated in case the EIA 860M does not capture the latest retirement dates.
-Retirement dates for several nuclear plants which are not current in NEMS and EIA 860M
-(e.g., the Diablo Canyon nuclear power plant in California and Palisades nuclear power plant in Michigan)
-are manually updated.
+<p>Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2026 NEMS plant database and EIA 860M.
+Retirement dates of several nuclear and coal plants are further checked and manually updated in case the EIA 860M does not capture the latest retirement dates.
+(e.g., the Diablo Canyon nuclear power plant in California and Monroe coal power plant in Michigan).
 Both existing and economically built generators have the lifetimes shown in <a class="reference internal" href="#technology-lifetimes"><span class="std std-numref">Table 8</span></a>.
 These lifetimes are used as necessary when the solution period extends beyond 2050.</p>
 <p>In addition to age-based retirements, ReEDS includes the option to endogenously retire technologies (this option is turned on by default).
@@ -2996,7 +2994,7 @@ making the following assumptions (some of which can be changed by the user):</p>
 <ul class="simple">
 <li><p>Thermal generation</p>
 <ul>
-<li><p>Existing thermal generation capacity is disaggregated using unit sizes from the EIA-NEMS database of existing units (<a class="reference internal" href="#figure-capacity-existing"><span class="std std-numref">Fig. 38</span></a>) <span class="bibtex-citation" id="id195">[<a class="reference internal" href="#id955" title="EIA. Annual Energy Outlook 2025. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2025. URL: https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf.">EIA, 2025</a>]</span>.</p></li>
+<li><p>Existing thermal generation capacity is disaggregated using unit sizes from the EIA-NEMS database of existing units (<a class="reference internal" href="#figure-capacity-existing"><span class="std std-numref">Fig. 38</span></a>) <span class="bibtex-citation" id="id195">[<a class="reference internal" href="#id956" title="EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: https://www.eia.gov/outlooks/aeo/.">EIA, 2026</a>]</span>.</p></li>
 <li><p>Unit sizes for new thermal generation capacity depend on whether the model zone hosts existing capacity of that technology type
 and on the planning reserve margin of the model zone.
 Remainder capacity is assigned to its own unit (so 210 MW of capacity, with a 100 MW unit size, would be disaggregated into 3 = 2 × 100 MW + 1 × 10 MW units).</p>
@@ -5031,7 +5029,8 @@ The ReEDS-reV linkage is a key component in the translation of ReEDS capacity ex
 <p>EIA. Form EIA-861M - March 2025. 2025. URL: <a class="reference external" href="https://www.eia.gov/electricity/data/eia861m/index.php">https://www.eia.gov/electricity/data/eia861m/index.php</a> (visited on 2025-06-09).</p>
 </div>
 <div class="citation" id="id956" role="doc-biblioentry">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id148">48</a><span class="fn-bracket">]</span></span>
+<span class="label"><span class="fn-bracket">[</span>48<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id40">1</a>,<a role="doc-backlink" href="#id44">2</a>,<a role="doc-backlink" href="#id115">3</a>,<a role="doc-backlink" href="#id117">4</a>,<a role="doc-backlink" href="#id148">5</a>,<a role="doc-backlink" href="#id195">6</a>)</span>
 <p>EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: <a class="reference external" href="https://www.eia.gov/outlooks/aeo/">https://www.eia.gov/outlooks/aeo/</a>.</p>
 </div>
 <div class="citation" id="id1049" role="doc-biblioentry">
@@ -5505,8 +5504,7 @@ The ReEDS-reV linkage is a key component in the translation of ReEDS capacity ex
 <p>EIA. Capital Cost Estimates for Utility Scale Electricity Generating Plants. Technical Report, U.S. DOE Energy Information Administration, Washington, D.C., November 2016. URL: <a class="reference external" href="http://www.eia.gov/analysis/studies/powerplants/capitalcost/pdf/capcost_assumption.pdf">http://www.eia.gov/analysis/studies/powerplants/capitalcost/pdf/capcost_assumption.pdf</a>.</p>
 </div>
 <div class="citation" id="id955" role="doc-biblioentry">
-<span class="label"><span class="fn-bracket">[</span>160<span class="fn-bracket">]</span></span>
-<span class="backrefs">(<a role="doc-backlink" href="#id39">1</a>,<a role="doc-backlink" href="#id40">2</a>,<a role="doc-backlink" href="#id44">3</a>,<a role="doc-backlink" href="#id115">4</a>,<a role="doc-backlink" href="#id117">5</a>,<a role="doc-backlink" href="#id195">6</a>)</span>
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id39">160</a><span class="fn-bracket">]</span></span>
 <p>EIA. Annual Energy Outlook 2025. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2025. URL: <a class="reference external" href="https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf">https://www.eia.gov/outlooks/aeo/pdf/2025/AEO2025-narrative.pdf</a>.</p>
 </div>
 <div class="citation" id="id981" role="doc-biblioentry">
