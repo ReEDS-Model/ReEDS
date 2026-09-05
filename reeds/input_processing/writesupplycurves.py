@@ -30,8 +30,6 @@ reeds_path = reeds.io.reeds_path
 numbins_other = 5
 ### Rounding precision
 decimals = 7
-### spur_cutoff [$/MW]: Cutoff for spur line costs; clip cost for sites with larger costs
-spur_cutoff = 1e7
 
 # %% ===========================================================================
 ### --- FUNCTIONS ---
@@ -113,8 +111,6 @@ def agg_supplycurve(
         )
     ### Aggregate it
     dfout = dfin.groupby(index_cols).agg(aggs)
-    ### Clip negative costs and costs above cutoff
-    dfout.supply_curve_cost_per_mw = dfout.supply_curve_cost_per_mw.clip(lower=0, upper=spur_cutoff)
 
     return dfin, dfout
 
