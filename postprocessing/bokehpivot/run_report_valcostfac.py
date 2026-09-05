@@ -44,7 +44,8 @@ rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.stat
 #Copy this script and everything downstream of it that carries settings or figure code, so the
 #configuration and plotting behind a given report stay recorded alongside the report itself.
 shutil.copy2(os.path.realpath(__file__), output_dir)
-for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py', 'lvoe_vs_lcoe.py']:
+for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py', 'lvoe_vs_lcoe.py',
+              'spatial_value.py']:
     shutil.copy2(f'{bokehpivot_dir}/{fname}', output_dir)
 
 #CUSTOM POSTPROCESSING
@@ -413,6 +414,22 @@ try:
     lvoe_vs_lcoe.make_figs(f'{output_dir}/valcostfac_core.csv', scenarios_path=data_source)
 except Exception as e:
     msg = f'WARNING: lvoe_vs_lcoe figure skipped ({type(e).__name__}: {e}). Everything else is complete.'
+    print(msg)
+    with open(out_txt, 'a') as f:
+        print(msg, file=f)
+
+print('Make spatial value figures')
+#Writes spatial_value_map_<tech>.png, spatial_value_suppression.png, spatial_value_cost_decomp.png
+#and their csvs into output_dir, testing whether local build-out suppresses local value and how much
+#of the cost rise that relocation explains. Like reeds_vs_rev and lvoe_vs_lcoe this reaches into each
+#tech's run directory - here for outputs/revenue.csv, gen_ivrt_uncurt.csv, valnew.csv, lcoe.csv and
+#cap_new_bin_out.csv, plus inputs_case for the zone geometries - so it is guarded the same way and
+#cannot discard a finished report.
+import spatial_value
+try:
+    spatial_value.make_figs(f'{output_dir}/valcostfac_core.csv', scenarios_path=data_source)
+except Exception as e:
+    msg = f'WARNING: spatial_value figures skipped ({type(e).__name__}: {e}). Everything else is complete.'
     print(msg)
     with open(out_txt, 'a') as f:
         print(msg, file=f)
