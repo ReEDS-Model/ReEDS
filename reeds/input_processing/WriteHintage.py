@@ -64,6 +64,48 @@ warnings.filterwarnings("ignore", message="KMeans is known to have a memory leak
 #%% ===========================================================================
 ### --- FUNCTIONS AND CLASSES ---
 ### ===========================================================================
+def infer_capacity_weighted_onlineyear(years, capacities):
+    """Estimate distpv's average build year from its capacity history.
+
+    Increases are new builds. Decreases retire the oldest capacity first.
+    """
+    years = np.asarray(years, dtype=int)
+    capacities = np.asarray(capacities, dtype=float)
+    if len(years) != len(capacities):
+        raise ValueError('years and capacities must have the same length')
+    if (np.diff(years) <= 0).any():
+        raise ValueError('years must be strictly increasing')
+    if np.isnan(capacities).any() or (capacities < 0).any():
+        raise ValueError('capacities must be finite and nonnegative')
+
+    cohorts = []
+    onlineyears = []
+    for year, target_capacity in zip(years, capacities):
+        current_capacity = sum(capacity for _, capacity in cohorts)
+        capacity_change = target_capacity - current_capacity
+        if capacity_change > 0:
+            cohorts.append([year, capacity_change])
+        elif capacity_change < 0:
+            capacity_to_retire = -capacity_change
+            while capacity_to_retire > 1e-9 and cohorts:
+                retired = min(capacity_to_retire, cohorts[0][1])
+                cohorts[0][1] -= retired
+                capacity_to_retire -= retired
+                if cohorts[0][1] <= 1e-9:
+                    cohorts.pop(0)
+
+        remaining_capacity = sum(capacity for _, capacity in cohorts)
+        if remaining_capacity:
+            onlineyears.append(
+                sum(cohort_year * capacity for cohort_year, capacity in cohorts)
+                / remaining_capacity
+            )
+        else:
+            onlineyears.append(float(year))
+
+    return np.asarray(onlineyears)
+
+
 class grouping:
     def __init__(self, nbins, *args, **kwargs):
         #df = tdat
@@ -530,8 +572,17 @@ def main(reeds_path, inputs_case):
     dpv['wFOM'] = 0
     dpv['Winter.capacity'] = dpv['Summer.capacity']
     dpv['bin'] = 1
-    dpv['solveYearOnline'] = startyear
     dpv['year'] = dpv['year'].astype(int)
+    dpv['solveYearOnline'] = np.nan
+    # Estimate distpv's average build year in each region and year.
+    for _, region_index in dpv.groupby('r').groups.items():
+        region_dpv = dpv.loc[region_index].sort_values('year')
+        dpv.loc[region_dpv.index, 'solveYearOnline'] = (
+            infer_capacity_weighted_onlineyear(
+                region_dpv.year,
+                region_dpv['Summer.capacity'],
+            )
+        )
 
     # Concat dpv and the output dataframes
     zout = pd.concat([zout, dpv])
@@ -802,4 +853,3 @@ if __name__ == '__main__':
         path=os.path.join(inputs_case,'..'))
 
     print('Finished WriteHintage.py')
-  
