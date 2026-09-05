@@ -627,7 +627,32 @@ The available options for this switch are:
 ## Generation and Storage Technologies
 
 This section describes the electricity generating technologies included in ReEDS.
-Cost and performance assumptions for these technologies are not included in this report but are taken directly from the 2024 Annual Technology Baseline (ATB) {cite}`nrel2024AnnualTechnology2024` for all generation and storage technologies except BECCS (see the [Biopower](#biopower) section).
+Cost and performance assumptions for these technologies are not included in this report but are taken directly from the 2025 Annual Technology Baseline (ATB) {cite}`nrel2025AnnualTechnology2025` for all generation and storage technologies except BECCS (see the [Biopower](#biopower) section).
+
+### Technology Cost and Performance Trajectories
+
+The ATB cost trajectories underlying these inputs are summarized in {numref}`figure-atb-2025-capex` through {numref}`figure-atb-2025-variable-oandm`.
+Each panel covers one ATB technology; the solid line is the Moderate scenario and the shaded band spans the Advanced and Conservative scenarios.
+These are the published ATB values as reported, before ReEDS applies regional capital cost multipliers, financing assumptions, and the conversion to 2004\$.
+ATB 2025 is reported in 2023\$.
+
+```{figure} figs/docs/atb_2025_capex.png
+:name: figure-atb-2025-capex
+
+ATB 2025 overnight capital cost by technology (2023\$/kW).
+```
+
+```{figure} figs/docs/atb_2025_fixed_oandm.png
+:name: figure-atb-2025-fixed-oandm
+
+ATB 2025 fixed O&M cost by technology (2023\$/kW-yr).
+```
+
+```{figure} figs/docs/atb_2025_variable_oandm.png
+:name: figure-atb-2025-variable-oandm
+
+ATB 2025 variable O&M cost by technology (2023\$/MWh).
+```
 
 ### Fossil and Nuclear Technologies
 
@@ -687,7 +712,7 @@ Fossil and nuclear technologies are characterized by the following parameters:
 
 - Scheduled and forced outage rates (%).
 
-Cost and performance assumptions for all new fossil and nuclear technologies are taken from the ATB {cite}`nrel2024AnnualTechnology2024` with options to use the Conservative, Moderate, or Advanced trajectories.
+Cost and performance assumptions for all new fossil and nuclear technologies are taken from the ATB {cite}`nrel2025AnnualTechnology2025` with options to use the Conservative, Moderate, or Advanced trajectories.
 Thermal plant heat rates and fuel costs are specified in higher heating value (HHV) terms, consistent with the EIA and the ATB. 
 Regional variations and adjustments are described below.
 Fixed operation and maintenance costs for coal plants increase over time with the plant's age. Fixed operation and maintenance costs for nuclear plants increase by a fixed amount after 50 years of being online. These escalation factors are taken from the Annual Energy Outlook 2025 {cite}`eiaAnnualEnergyOutlook2025`.
@@ -760,7 +785,7 @@ Upgraded CCS units are allowed to revert to their previous state in any solve ye
 This ensures building and then immediately upgrading a plant is always more expensive than simply building a greenfield plant.
 
 Not all parameter data are given in this report.
-For those values not included here, see the NLR ATB {cite}`nrel2024AnnualTechnology2024`, or see the values in the ReEDS repository.
+For those values not included here, see the NREL ATB {cite}`nrel2025AnnualTechnology2025`, or see the values in the ReEDS repository.
 Financing parameters and calculations are discussed in the [Capital Financing, System Costs, and Economic Metrics](#capital-financing-system-costs-and-economic-metrics) section.
 
 
@@ -1030,7 +1055,7 @@ Additional site-specific analysis could allow recategorizing portions of these r
 
 #### Land-Based Wind
 
-Land-based wind cost and performance assumptions are taken directly from ATB 2024 {cite}`nrel2024AnnualTechnology2024`.
+Land-based wind cost and performance assumptions are taken directly from ATB 2025 {cite}`nrel2025AnnualTechnology2025`.
 These inputs include capital costs, fixed O&M (FOM) costs, and average capacity factor improvements over time.
 Capacity factors for wind plants coming online from 2010 through 2023 are taken from the Land-Based Wind Market report {cite}`wiserLandBasedWindMarket2023`.
 
@@ -1211,7 +1236,7 @@ These options are configured in `cases.csv` or a user-defined `cases_{label}.csv
 
 Utility-scale batteries are not restricted by location-specific resource constraints.
 Existing battery capacity is represented in the model based on the input plant database.
-Battery cost and performance assumptions are based on lithium-ion battery systems, originally sourced from the ATB {cite}`nrelAnnualTechnologyBaseline2024`.
+Battery cost and performance assumptions are based on lithium-ion battery systems, originally sourced from the ATB {cite}`nrelAnnualTechnologyBaseline2025`.
 Low, mid, and high cost projections are available.
 The capital cost of a battery comprises two components: the overnight power unit cost (in \$/kW), which reflects the cost associated with the battery's maximum power output, and the overnight energy unit cost (in \$/kWh), which represents the cost associated with its maximum energy storage capacity---allowing the model to independently size power and energy capacities based on the respective unit costs.
 FOM costs of the battery are divided into two components as well: a 2.5% per year power FOM based on the power-related capital cost and a 2.5% per year energy FOM based on the energy-related capital cost.
