@@ -5207,29 +5207,16 @@ m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rsc
 * Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
 geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
 
-parameter geo_bin1_add_orig(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery"
-          geo_bin1_add(i,r)      "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with updated geo_discovery" ;
+parameter geo_bin1_add(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
 
 *Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
-*total geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
-geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
-
-* If there is not sufficient geothermal resource (i.e., geo_bin1_add_orig is positive), then
-* set geo_discovery to 1 for that region for years after the prescribed builds start
-geo_discovery(i,r,t)$[geo_hydro(i)$[geo_bin1_add_orig(i,r) > 0]
-                     $tmodel_new(t)$cap_prescribed_ir(i,r)
-                     $(yeart(t)>=smin{tt$[cap_prescribed(i,r,tt)], yeart(tt) })] = 1 ;
-
-* Now recompute the geo_bin1_add parameter with the updated geo_discovery values
+*remaining geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
 geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+      smax{t$[geo_discovery(i,r,t)$tmodel_new(t)
+             $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }],
+           sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }
+               / geo_discovery(i,r,t) }
+      - ( sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } - cap_existing(i,r) ) ;
 
 * Only use positive values of geo_bin1_add, as negative values would indicate that the
 * existing resource is already sufficient to cover prescriptions
