@@ -2382,14 +2382,14 @@ hydro_capcredit_delta(i,t)$hydro_d(i) =
 *         --- RPS data ---
 *====================================
 
-set RPSCat_i(RPSCat,i,st)     "mapping between rps category and technologies for each state",
-    RecMap(i,RPSCat,st,ast,t) "Mapping set for technologies to RPS categories and indicates if credits can be sent from st to ast",
+set RPSCat_i(RPSCat,i,st)       "mapping between rps category and technologies for each state",
+    RecMap(i,RPSCat,st,ast,htype,t) "Mapping set for technologies to RPS categories and indicates if credits can be sent from st to ast",
     RecStates(RPSCat,st,t)    "states that can generate RECS for their own or other states' requirements",
     RecTrade(RPSCat,st,ast,t) "mapping set between states that can trade RECs with each other (from st to ast)",
     RecTech(RPSCat,i,st,t)    "set to indicate which technologies and classes can contribute to a state's RPSCat",
     r_st_rps(r,st)            "mapping of eligible regions to each state for RPS/CES purposes" ;
 
-Parameter RecPerc(RPSCat,st,t)     "--fraction-- fraction of total generation for each state that must be met by RECs for each category"
+Parameter RecPerc(RPSCat,st,htype,t) "--fraction-- fraction of total generation for each state that must be met by RECs for each category"
           RPSTechMult(RPSCat,i,st) "--fraction-- fraction of generation from each technology that counts towards the requirement for each category"
 ;
 
@@ -2453,14 +2453,18 @@ $onlisting
 ;
 $offempty
 
-RecPerc(RPSCat,st,t) = sum{allt$att(allt,t), rps_fraction(allt,st,RPSCat) } ;
-RecPerc(RPSCat,st,t)$[(Sw_StateRPS_Carveouts = 0)$(sameas(RPSCat, "RPS_solar") or sameas(RPSCat, "RPS_Wind"))] = 0;
-RecPerc("CES",st,t) = ces_fraction(t,st) ;
+RecPerc(RPSCat,st,htype,t) = sum{allt$att(allt,t), rps_fraction(allt,st,RPSCat) } ;
+RecPerc(RPSCat,st,htype,t)$[(Sw_StateRPS_Carveouts = 0)$(sameas(RPSCat, "RPS_solar") or sameas(RPSCat, "RPS_Wind"))] = 0;
+RecPerc("CES",st,htype,t) = ces_fraction(t,st) ;
 
 * RE generation creates both CES and RPS credits, which can cause double-counting
 * if a state has an RPS but not a CES. By setting each state's CES as the maximum
 * of its RPS or CES, we prevent the double-counting.
-RecPerc("CES",st,t) = max(RecPerc("CES",st,t), RecPerc("RPS_all",st,t)) ;
+RecPerc("CES",st,htype,t) = max(RecPerc("CES",st,htype,t), RecPerc("RPS_all",st,htype,t)) ;
+
+* The stress-period requirement is populated above with the same target as the
+* representative-period requirement; zero it out unless explicitly enabled.
+RecPerc(RPSCat,st,"stress",t)$[not Sw_StateRPS_Stress] = 0 ;
 
 *Some links (value in RECtable = 2) restricted to bundled trading, while
 *some (value in RECtable = 1) allowed to also trade unbundled RECs.
@@ -2483,7 +2487,7 @@ $offdelim
 $onlisting
 ;
 
-RecStates(RPSCat,st,t)$[RecPerc(RPSCat,st,t) or sum{ast, rectable(ast,st) }] = yes ;
+RecStates(RPSCat,st,t)$[sum{htype, RecPerc(RPSCat,st,htype,t) } or sum{ast, rectable(ast,st) }] = yes ;
 
 *If both states have an RPS for the RPSCat and if they're allowed to trade, they can trade
 RecTrade(RPSCat,st,ast,t)$((rectable(ast,st)=1)$RecStates(RPSCat,ast,t)) = yes ;
@@ -2554,9 +2558,9 @@ $offempty
 
 *CCS technologies have a variety of capture rates, so we assign them below after reading in capture rates
 
-RecMap(i,RPSCat,st,ast,t)$[
+RecMap(i,RPSCat,st,ast,htype,t)$[
 *if the receiving state has a requirement for RPSCat
-      RecPerc(RPSCat,ast,t)
+      RecPerc(RPSCat,ast,htype,t)
 *if both states can use that technology
       $RecTech(RPSCat,i,st,t)
       $RecTech(RPSCat,i,ast,t)
@@ -2564,9 +2568,9 @@ RecMap(i,RPSCat,st,ast,t)$[
       $RecTrade(RPSCat,st,ast,t)
                ] = yes ;
 
-RecMap(i,"RPS_bundled",st,ast,t)$(
+RecMap(i,"RPS_bundled",st,ast,htype,t)$(
 *if the receiving state has a requirement for RPSCat
-      RecPerc("RPS_all",ast,t)
+      RecPerc("RPS_all",ast,htype,t)
 *if both states can use that technology
       $RecTech("RPS_bundled",i,st,t)
       $RecTech("RPS_bundled",i,ast,t)
@@ -2575,9 +2579,9 @@ RecMap(i,"RPS_bundled",st,ast,t)$(
                ) = yes ;
 
 
-RecMap(i,"CES_bundled",st,ast,t)$(
+RecMap(i,"CES_bundled",st,ast,htype,t)$(
 *if the receiving state has a requirement for RPSCat
-      RecPerc("CES",ast,t)
+      RecPerc("CES",ast,htype,t)
 *if both states can use that technology
       $RecTech("CES_bundled",i,st,t)
       $RecTech("CES_bundled",i,ast,t)
@@ -2586,43 +2590,43 @@ RecMap(i,"CES_bundled",st,ast,t)$(
                ) = yes ;
 
 *states can "import" their own RECs (except for "voluntary")
-RecMap(i,RPSCat,st,ast,t)$[
+RecMap(i,RPSCat,st,ast,htype,t)$[
     sameas(st,ast)
     $RecTech(RPSCat,i,st,t)
-    $RecPerc(RPSCat,st,t)
+    $RecPerc(RPSCat,st,htype,t)
     $(not sameas(st,"voluntary"))
       ] = yes ;
 
 *states that allow hydro to fulfill their RPS requirements can trade hydro recs
-RecMap(i,RPSCat,st,ast,t)$[
+RecMap(i,RPSCat,st,ast,htype,t)$[
       hydro(i)
       $RPSTechMult(RPSCat,i,st)
       $RPSTechMult(RPSCat,i,ast)
-      $RecMap("hydro",RPSCat,st,ast,t)
+      $RecMap("hydro",RPSCat,st,ast,htype,t)
       $valcap_i(i)
       ] = yes ;
 
 *Do not allow banned imports
-RecMap(i,RPSCat,st,ast,t)$[
+RecMap(i,RPSCat,st,ast,htype,t)$[
       (sameas(RPSCat,"RPS_All") or sameas(RPSCat,"RPS_bundled"))
       $(not sameas(st,ast))
       $techs_banned_imports_rps(i,ast)
       ] = no ;
 
 *Only allow voluntary market to use renewable energy when consuming CES credits
-RecMap(i,RPSCat,st,"voluntary",t)$[
+RecMap(i,RPSCat,st,"voluntary",htype,t)$[
       (not re(i))
       $(sameas(RPSCat,"CES") or sameas(RPSCat,"CES_bundled"))
       ] = no ;
 
 *Do not allow voluntary market to use canadian imports
-RecMap(i,RPSCat,st,"voluntary",t)$[
+RecMap(i,RPSCat,st,"voluntary",htype,t)$[
       (canada(i))
       ] = no ;
 
 if(Sw_WaterMain=1,
-  RecMap(i,RPSCat,st,ast,t)$[i_water_cooling(i)$(not RecMap(i,RPSCat,st,ast,t))]
-     = sum{ii$ctt_i_ii(i,ii), RecMap(ii,RPSCat,st,ast,t) } ;
+  RecMap(i,RPSCat,st,ast,htype,t)$[i_water_cooling(i)$(not RecMap(i,RPSCat,st,ast,htype,t))]
+     = sum{ii$ctt_i_ii(i,ii), RecMap(ii,RPSCat,st,ast,htype,t) } ;
 ) ;
 
 $onempty
@@ -5425,6 +5429,7 @@ Set
     h_preh(allh, allh)                     "mapping set between one timeslice and all other timeslices earlier in that period"
     h_rep(allh)                            "representative timeslices"
     h_stress(allh)                         "stress timeslices"
+    h_htype(allh,htype)                    "mapping of representative/stress timeslices to htype"
     h_t(allh,allt)                         "representative and stress timeslices by model year"
     h_stress_t(allh,t)                     "stress timeslices by model year"
 * "Seasons" (both seasons and representative days/weks)
@@ -5471,6 +5476,7 @@ Parameter
 * Hour/period weighting
     hours(allh)                            "--hours-- number of hours in each time block"
     hours_t(allh,t)                        "--hours-- number of hours in each time block by model year"
+    rps_hours(allh,st,htype)               "--hours-- number of hours for weighting state RPS/CES requirements"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"

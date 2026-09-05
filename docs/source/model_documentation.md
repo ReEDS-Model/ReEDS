@@ -3096,6 +3096,9 @@ These CESs are in effect generalized versions of RPSs; their model representatio
 
 ```{admonition} CES input data
 The annual compliance for states with a CES policy can be found in `inputs/state_policies/ces_fraction.csv`.
+
+By default, RPS and CES requirements are enforced during representative periods only.
+'GSw_StateRPS_Stress' allows the requirements to also be enforced during stress periods: 0=off (default), 1=weight all modeled stress hours equally, 2=weight only each state's own peak-load stress period(s).
 ```
 
 [^ref56]: Not all electricity produced in a state is subject to the state law.
