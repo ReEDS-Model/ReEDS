@@ -71,7 +71,6 @@ def agg_supplycurve(
     numbins_tech,
     bin_method='equal_cap_cut',
     bin_col='supply_curve_cost_per_mw',
-    spur_cutoff=1e7,
     deflate=None,
 ):
     """
@@ -205,7 +204,6 @@ def main(
             scpath=os.path.join(inputs_case,f'supplycurve_wind-{s}.csv'),
             inputs_case=inputs_case,
             numbins_tech=numbins[f'wind-{s}'],
-            spur_cutoff=spur_cutoff,
             deflate=deflate,
         )
         
@@ -303,7 +301,6 @@ def main(
         scpath=os.path.join(inputs_case, 'supplycurve_upv.csv'),
         inputs_case=inputs_case,
         numbins_tech=numbins['upv'],
-        spur_cutoff=spur_cutoff,
         deflate=deflate,
     )
 
@@ -383,7 +380,6 @@ def main(
             scpath=os.path.join(inputs_case, 'supplycurve_csp.csv'),
             inputs_case=inputs_case,
             numbins_tech=numbins['csp'],
-            spur_cutoff=spur_cutoff,
             deflate=deflate,
         )
 
@@ -464,7 +460,6 @@ def main(
                 ),
                 numbins_tech=numbins[s],
                 inputs_case=inputs_case,
-                spur_cutoff=spur_cutoff,
                 deflate=deflate
             )
             spurout_list.append(
