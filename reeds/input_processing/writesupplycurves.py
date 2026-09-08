@@ -52,7 +52,7 @@ def wm(df):
     return _wm
 
 
-def get_exog_cap(inputs_case, tech, dfsc):
+def get_exog_cap(inputs_case, tech, dfsc, i2c):
     """Get exogenous capacity by class, region, rscbin, and year"""
     dfexog = (
         pd.read_csv(os.path.join(inputs_case, f'exog_cap_{tech}.csv'))
@@ -63,7 +63,8 @@ def get_exog_cap(inputs_case, tech, dfsc):
         .rename(columns={'capacity':'MW'})
     )
     dfexog['rscbin'] = dfexog['bin'].map('bin{}'.format)
-    dfexog = dfexog.groupby(['*tech', 'region', 'rscbin', 'year']).MW.sum()
+    dfexog['c'] = dfexog['*tech'].map(i2c)
+    dfexog = dfexog.groupby(['*tech', 'c', 'region', 'rscbin', 'year']).MW.sum()
     return dfexog
 
 
@@ -145,6 +146,9 @@ def main(
         "geohydro": int(sw.numbins_geohydro_allkm),
         "egs": int(sw.numbins_egs_allkm),
     }
+
+    ### Resource class of each technology; techs with no class are assigned class '0'
+    i2c = reeds.techs.get_class_map(inputs_case)
 
     val_r_all = pd.read_csv(
         os.path.join(inputs_case,'val_r_all.csv'), header=None).squeeze(1).tolist()
@@ -294,9 +298,9 @@ def main(
 
     if write:
         ## Exogenous wind capacity
-        exog_wind_ons_rsc = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
+        exog_wind_ons_rsc = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'], i2c=i2c)
         exog_wind_ons_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
-        exog_wind_ofs_rsc = get_exog_cap(inputs_case, tech='wind-ofs', dfsc=wind['ofs'])
+        exog_wind_ofs_rsc = get_exog_cap(inputs_case, tech='wind-ofs', dfsc=wind['ofs'], i2c=i2c)
         exog_wind_ofs_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
 
     # %%###############
@@ -336,7 +340,7 @@ def main(
 
     if write:    
         ## Exogenous UPV capacity
-        exog_upv_rsc = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
+        exog_upv_rsc = get_exog_cap(inputs_case, tech='upv', dfsc=upv, i2c=i2c)
         exog_upv_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
 
     ### Normalize formatting
@@ -554,7 +558,7 @@ def main(
 
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
-                exog_geohydro_rsc = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
+                exog_geohydro_rsc = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'], i2c=i2c)
                 exog_geohydro_rsc.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
@@ -597,8 +601,9 @@ def main(
         )
         ## Reformat to save for GAMS
         .rename(columns={"i": "*i"})
-        .set_index(["*i", "r", "rscbin"])
     )
+    poi_distance_out["c"] = poi_distance_out["*i"].map(i2c)
+    poi_distance_out = poi_distance_out.set_index(["*i", "c", "r", "rscbin"])
     ## Convert to miles
     distance_spur = (poi_distance_out.dist_spur_km.rename("miles") / 1.609).round(3)
     if write:
@@ -939,6 +944,8 @@ def main(
 
     ### Combine with cost components
     alloutm = pd.concat([alloutm, cost_components_upv, cost_components_wind])
+    alloutm["c"] = alloutm["*i"].map(i2c)
+    alloutm = alloutm[["*i", "c", "r", "sc_cat", "rscbin", "value"]]
     if write:
         alloutm.to_csv(
             os.path.join(inputs_case, "rsc_combined.csv"), index=False, header=True
@@ -1043,6 +1050,8 @@ def main(
     spurline_sitemap = spurline_sitemap.loc[
         spurline_sitemap.x.isin(spursites.x.values)
     ].copy()
+    spurline_sitemap["c"] = spurline_sitemap["*i"].map(i2c)
+    spurline_sitemap = spurline_sitemap[["*i", "c", "r", "rscbin", "x"]]
     if write:
         spurline_sitemap.to_csv(
             os.path.join(inputs_case, "spurline_sitemap.csv"), index=False

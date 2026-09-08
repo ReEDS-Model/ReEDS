@@ -40,37 +40,37 @@ $ifthene.post_startyear %cur_year%>%startyear%
 * Here we calculate the RHS value of eq_rsc_INVlim because floating point
 * differences can cause small number issues that either make the model
 * infeasible or result in very tiny number (order 1e-16) in the matrix
-rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)] = 
+rhs_eq_rsc_INVlim(r,i,c,rscbin,t)$[tmodel(t)$i_c(i,c)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)$m_rsc_con(r,i,c)] = 
 
 *capacity indicated by the resource supply curve (with undiscovered geo available
 *at the "discovered" amount and hydro upgrade availability adjusted over time)
-    m_rsc_dat(r,i,rscbin,"cap") * (
+    m_rsc_dat(r,i,c,rscbin,"cap") * (
         1$[not geo_hydro(i)] + geo_discovery(i,r,t)$geo_hydro(i))
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 *minus the cumulative invested capacity in that region/class/bin...
 *Note that yeart(tt) is stricly < here, while it is <= in eq_rsc_INVlim. That is because
 *values where yeart(tt)==yeart(t) are variables rather than parameters because they are not
 *values from prior solve years.
-    - sum{(ii,c,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))],
+    - sum{(ii,v,tt)$[rsc_agg(i,ii)$valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))],
          INV_RSC.l(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 *minus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
     - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
+         capacity_exog_rsc(ii,c,v,r,rscbin,tt) }
 ;
 
 
-flag_eq_rsc_INVlim(r,i,rscbin,t)$tmodel(t) = no ;
+flag_eq_rsc_INVlim(r,i,c,rscbin,t)$tmodel(t) = no ;
 
 * Identify instances when the RHS values are within rhs_tolerance of zero
-flag_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)
-                                 $(rhs_eq_rsc_INVlim(r,i,rscbin,t) > -rhs_tolerance)
-                                 $(rhs_eq_rsc_INVlim(r,i,rscbin,t) < rhs_tolerance)] = yes ;
+flag_eq_rsc_INVlim(r,i,c,rscbin,t)$[tmodel(t)$i_c(i,c)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)$m_rsc_con(r,i,c)
+                                 $(rhs_eq_rsc_INVlim(r,i,c,rscbin,t) > -rhs_tolerance)
+                                 $(rhs_eq_rsc_INVlim(r,i,c,rscbin,t) < rhs_tolerance)] = yes ;
 
 * When RHS is 0 (or close enough), the eq_rsc_INVlim equation says that all relevant INV_RSC are 0.
 * Therefore we can set the INV_RSC variable to zero anywhere the flag_eq_rsc_INVlim is true
 loop(i$rsc_i(i),
-    INV_RSC.fx(ii,c,v,r,rscbin,t)$[tmodel(t)$i_c(ii,c)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)
-                                $(flag_eq_rsc_INVlim(r,i,rscbin,t))$(valinv(ii,v,r,t)$rsc_agg(i,ii))] = 0 ;
+    INV_RSC.fx(ii,c,v,r,rscbin,t)$[tmodel(t)$i_c(ii,c)$m_rscfeas(r,i,c,rscbin)$m_rsc_con(r,i,c)
+                                $(flag_eq_rsc_INVlim(r,i,c,rscbin,t))$(valinv(ii,v,r,t)$rsc_agg(i,ii))] = 0 ;
 ) ;
 
 * set m_capacity_exog to the maximum of either its original amount
@@ -212,8 +212,8 @@ if(Sw_GrowthPenalties > 0,
 
 *rsc_fin_mult holds the capital costs for sccapcosttech
     cost_growth(i,st,t)$[tmodel(t)$sum{r$[r_st(r,st)], valinv_irt(i,r,t) }$stfeas(st)$sccapcosttech(i)] = 
-        smin{(r,rscbin)$[valinv_irt(i,r,t)$r_st(r,st)$rsc_fin_mult(i,r,t)],
-            rsc_fin_mult(i,r,t) * m_rsc_dat(r,i,rscbin,"cost") } ;
+        smin{(r,c,rscbin)$[i_c(i,c)$valinv_irt(i,r,t)$r_st(r,st)$rsc_fin_mult(i,r,t)],
+            rsc_fin_mult(i,r,t) * m_rsc_dat(r,i,c,rscbin,"cost") } ;
 
     cost_growth(i,st,t)$cost_growth(i,st,t) = round(cost_growth(i,st,t),3) ;
 ) ;

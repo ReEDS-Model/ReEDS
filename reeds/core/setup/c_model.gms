@@ -167,7 +167,7 @@ EQUATION
 
 * renewable supply curves
  eq_rsc_inv_account(i,v,r,t)              "--MW-- INV for rsc techs is the sum over all bins of INV_RSC"
- eq_rsc_INVlim(r,i,rscbin,t)              "--MW-- total investment from each rsc bin cannot exceed the available investment"
+ eq_rsc_INVlim(r,i,c,rscbin,t)            "--MW-- total investment from each rsc bin cannot exceed the available investment"
 
 * capacity growth limits
  eq_growthlimit_relative(i,st,t)          "--MW-- relative growth limit on technologies"
@@ -835,10 +835,10 @@ eq_cap_rsc(i,c,v,r,rscbin,t)
     $(not Sw_PCM)]..
 
     sum{tt$[tfirst(tt)$exog_rsc(i)],
-         capacity_exog_rsc(i,v,r,rscbin,tt) }
+         capacity_exog_rsc(i,c,v,r,rscbin,tt) }
 
     + sum{tt$[(yeart(tt) <= yeart(t))$(tmodel(tt) or tfix(tt))
-          $m_rscfeas(r,i,rscbin)
+          $m_rscfeas(r,i,c,rscbin)
           $valinv(i,v,r,tt)],
           INV_RSC(i,c,v,r,rscbin,tt)
     }
@@ -1021,7 +1021,7 @@ eq_refurblim(i,r,t)$[tmodel(t)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)]..
 
 eq_rsc_inv_account(i,v,r,t)$[tmodel(t)$valinv(i,v,r,t)$rsc_i(i)$(not Sw_PCM)]..
 
-  sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,rscbin)], INV_RSC(i,c,v,r,rscbin,t) }
+  sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,c,rscbin)], INV_RSC(i,c,v,r,rscbin,t) }
 
   =e=
 
@@ -1035,18 +1035,19 @@ eq_rsc_inv_account(i,v,r,t)$[tmodel(t)$valinv(i,v,r,t)$rsc_i(i)$(not Sw_PCM)]..
 *but the plant can still be refurbished
 *Also note the flag_eq_rsc_INVlim--its calculation needs to be updated if this equation
 *is changed
-eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
+eq_rsc_INVlim(r,i,c,rscbin,t)$[tmodel(t)
+                            $i_c(i,c)
                             $rsc_i(i)
-                            $m_rscfeas(r,i,rscbin)
-                            $m_rsc_con(r,i)
-                            $(not flag_eq_rsc_INVlim(r,i,rscbin,t))
+                            $m_rscfeas(r,i,c,rscbin)
+                            $m_rsc_con(r,i,c)
+                            $(not flag_eq_rsc_INVlim(r,i,c,rscbin,t))
                             $(not Sw_PCM)]..
 *With water constraints, some RSC techs are expanded to include cooling technologies
 *but the combination of m_rsc_con and rsc_agg allows for those investments
 *to be limited by the numeraire techs' m_rsc_dat
 
 *capacity indicated by the resource supply curve (scaled by rsc_capacity_scalar)
-    m_rsc_dat(r,i,rscbin,"cap")$[not evmc(i)] * (
+    m_rsc_dat(r,i,c,rscbin,"cap")$[not evmc(i)] * (
         1$[not rsc_capacity_scalar_i(i)] + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
 * available hydro upgrade capacity
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
@@ -1054,12 +1055,12 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
     =g=
 
 *must exceed the cumulative invested capacity in that region/class/bin...
-    sum{(ii,c,v,tt)$[rsc_agg(i,ii)$i_c(ii,c)$valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))],
+    sum{(ii,v,tt)$[rsc_agg(i,ii)$valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))],
          INV_RSC(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 
 *plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
     + sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
+         capacity_exog_rsc(ii,c,v,r,rscbin,tt) }
 
 ;
 
@@ -1139,8 +1140,8 @@ eq_site_cf(x,h,t)
         * sum{(c,rscbin)
               $[i_c(i,c)
               $valcap(i,v,r,t)
-              $m_rscfeas(r,i,rscbin)
-              $spurline_sitemap(i,r,rscbin,x)],
+              $m_rscfeas(r,i,c,rscbin)
+              $spurline_sitemap(i,c,r,rscbin,x)],
               CAP_RSC(i,c,v,r,rscbin,t)
         }
     }
@@ -1186,7 +1187,7 @@ eq_spur_noclip(x,t)
 *  ILR is 1 for all non-PV techs.)
     sum{(i,c,v,r,rscbin)
         $[i_c(i,c)
-        $spurline_sitemap(i,r,rscbin,x)
+        $spurline_sitemap(i,c,r,rscbin,x)
         $valcap(i,v,r,t)],
         CAP_RSC(i,c,v,r,rscbin,t) / ilr(i)
     }
@@ -2306,10 +2307,10 @@ eq_transmission_investment_max(t)
 * Spur lines + network reinforcement
     + sum{(i,c,v,r,rscbin)
           $[((Sw_TransInvMaxTypes=2) or (Sw_TransInvMaxTypes=3))
-          $i_c(i,c)$valinv(i,v,r,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)],
+          $i_c(i,c)$valinv(i,v,r,t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)],
           INV_RSC(i,c,v,r,rscbin,t) * (
-              distance_reinforcement(i,r,rscbin)
-              + distance_spur(i,r,rscbin)$(Sw_TransInvMaxTypes=3)
+              distance_reinforcement(i,c,r,rscbin)
+              + distance_spur(i,c,r,rscbin)$(Sw_TransInvMaxTypes=3)
           )
     }
 ;
@@ -3492,7 +3493,7 @@ eq_water_capacity_total(i,v,r,t)$[tmodel(t)$valcap(i,v,r,t)
 *require enough water capacity to fill PSH reservoir.
 *uses investment so that term is only applied in the single investment year
 *   as a proxy for water needs during construction phase.
-    + sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,rscbin)$psh(i)], INV_RSC(i,c,v,r,rscbin,t) * water_req_psh(r,rscbin) }$Sw_PSHwatercon
+    + sum{(c,rscbin)$[i_c(i,c)$m_rscfeas(r,i,c,rscbin)$psh(i)], INV_RSC(i,c,v,r,rscbin,t) * water_req_psh(r,rscbin) }$Sw_PSHwatercon
 ;
 
 * ---------------------------------------------------------------------------
