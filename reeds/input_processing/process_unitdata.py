@@ -163,11 +163,16 @@ def main(inputs_case):
     unitdata['T_LAT'] = unitdata['T_LAT'].fillna(unitdata['T_LAT_orig'])
     unitdata['r'] = unitdata['r'].fillna(unitdata['r_orig'])
 
-    # Update RetireYear column based on nukeretscen
+    # Update RetireYear column based on nukeretscen for operating nuclear units
     # (unit Diablo Canyon with PID=6099 is exempted from this rule since its units 
     # are set to retire in 2029 and 2030
+    # Operating units are assumed to include both operating and standby/out of service status
+    operating_cat = ['(OP) Operating',
+                     '(OS) Out of service and NOT expected to return to service in next calendar year',
+                     '(OA) Out of service but expected to return to service in next calendar year',
+                     '(SB) Standby/Backup: available for service but not normally used']
     unitdata.loc[(unitdata['tech']=='nuclear') & 
-                 (unitdata['status']== '(OP) Operating') &
+                 (unitdata['status'].isin(operating_cat)) &
                  ((unitdata['T_PID']!='6099') & (unitdata['T_PID']!=6099)), 
                  'RetireYear'] = unitdata['StartYear'] + int(sw['nukeretscen'])
 
