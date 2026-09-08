@@ -2589,7 +2589,8 @@ eq_caa_rate_standard(st,t)$[tmodel(t)
 
 *coal emissions in that state [metric tons CO2]
     sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
-         hours(h) * emit_rate("process","CO2",i,v,r,t) * emit_rate_coal_mult(i,r,"process","CO2")$initv(v) * GEN(i,v,r,h,t) }
+         hours(h) * emit_rate("process","CO2",i,v,r,t) * GEN(i,v,r,h,t) 
+         * emit_rate_coal_mult(i,r,"process","CO2")$initv(v)}
 ;
 
 *==========================
