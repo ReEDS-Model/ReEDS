@@ -40,8 +40,6 @@ dependencies:
   - sphinx_rtd_theme=3.1 # for documentation
   - sphinx-design=0.7 # for documentation
   - sphinxcontrib-bibtex=2.7 # for documentation
-  - tableauhyperapi # finito: python-Tableau interaction
-  - pantab # finito: python-Tableau interaction  
   ## ^^^
   - pip:
     - gamsapi[transfer]==53.5.0
@@ -50,3 +48,5 @@ dependencies:
     ## vvv The next packages are optional for default settings and may
     ## vvv be excluded if they cause trouble building the environment.
     - gamspy_base==53.5.0 # for tests on the github runner
+    - tableauhyperapi # finito: python-Tableau interaction
+    - pantab # finito: python-Tableau interaction  
