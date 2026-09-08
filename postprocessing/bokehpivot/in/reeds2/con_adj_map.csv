@@ -20,8 +20,6 @@ eq_capacity_limit,eq_capacity_limit
 eq_captran,eq_captran
 eq_csapr_assurance,eq_csapr_assurance
 eq_csapr_budget,eq_csapr_budget
-eq_curt_gen_balance,Curtailment Realized
-eq_curtailment,Curtailment Caused
 eq_dhyd_dispatch,eq_dhyd_dispatch
 eq_emit_accounting,Emissions
 eq_forceprescription,eq_forceprescription
