@@ -40,6 +40,8 @@ dependencies:
   - sphinx_rtd_theme=3.1 # for documentation
   - sphinx-design=0.7 # for documentation
   - sphinxcontrib-bibtex=2.7 # for documentation
+  - tableauhyperapi # finito: python-Tableau interaction
+  - pantab # finito: python-Tableau interaction  
   ## ^^^
   - pip:
     - gamsapi[transfer]==53.5.0
