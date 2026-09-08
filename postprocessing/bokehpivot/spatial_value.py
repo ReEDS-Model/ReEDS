@@ -63,7 +63,7 @@ map_shared_scale = False #True gives both years one colour scale, so colour is c
 map_clip_pct = (2, 98) #Percentiles the map colour range is clipped to. A linear scale is otherwise wrecked by single outliers - onshore wind's 2050 value factor reaches 1.54 in NY_NYCLI against a median of 0.17. Values outside saturate at the end colours.
 rev_cats = ['load', 'res_marg'] #Revenue categories summed into fleet value, matching the paper's LVOE.
 storage_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
-byyear_cmaps = ('RdYlBu', 'Greens', 'Purples', 'YlOrBr') #Colormaps for the by-year figure: value factor vs national (diverging, used for both the fleet and new-build rows), cumulative capacity, new capacity, regional market share.
+byyear_cmaps = ('RdYlBu', 'PuRd', 'Greens', 'Purples', 'YlOrBr') #Colormaps for the by-year figure: value factor vs national (diverging, both value rows), penetration (both penetration rows), cumulative capacity, new capacity, regional market share.
 byyear_clip_pct = (2, 98) #Percentiles the by-year colour ranges are clipped to, pooled over all years so one colorbar serves a whole row.
 byyear_cap_clip_pct = 90 #Percentile the two capacity rows top out at, above which colour saturates. Tighter than byyear_clip_pct because both distributions are heavily skewed and the ramps are linear: cumulative capacity runs to 306 GW against a median of 39, and a range set by the extreme would leave the early years and most regions blank.
 byyear_year_step = 4 #Calendar-year stride for the by-year figure, counted from the first modelled year. 2 shows every model year; 4 halves the columns and roughly doubles the panel area. The intermediate years carry little: consecutive-year correlations of the regional pattern run 0.96-0.99 through the steady state, so a 2-year step draws nearly the same map twice. Note the trade-off - the first and last years are the two least representative (the inherited fleet, and the terminal-year build) and a coarser stride raises their share of the figure.
@@ -167,6 +167,17 @@ def load_regional(run_dir, prefix):
     df['price_rel'] = df['price_r'] / df['price_nat']
     df['price_energy_rel'] = df['price_energy_r'] / df['price_energy_nat']
     df['pen'] = df['gen'] / df['load']
+    #Penetration of the whole transmission region this region sits in. Solar value is set at this
+    #scale rather than locally: regressed together, UPV's value factor loads -0.62 on transreg
+    #penetration against -0.20 on its own, so a region can be nearly empty and still have its PV
+    #value crushed by its neighbours. Wind is the other way round, -0.42 own against -0.23 transreg.
+    hier = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'hierarchy.csv'))
+    hier = hier.rename(columns={hier.columns[0]: 'r'})[['r', 'transreg']]
+    df = df.merge(hier, on='r', how='left')
+    df['_gen0'] = df['gen'].fillna(0)
+    grp = df.groupby(['transreg', 't'])[['_gen0', 'load']].transform('sum')
+    df['pen_transreg'] = grp['_gen0'] / grp['load']
+    df = df.drop(columns='_gen0')
     df['market_share'] = df['gen_act'] / df['gen_tot']
     df['cap_gw'] = df['cap_mw'] / 1000
     df['new_mw'] = df['new_mw'].fillna(0)
@@ -410,7 +421,7 @@ def plot_maps(data, tech, output_path):
 
 
 def plot_maps_byyear(data, tech, output_path):
-    """Figure A2: every plotted model year as a column, five metrics as rows.
+    """Figure A2: every plotted model year as a column, seven metrics as rows.
 
     The mechanism as a filmstrip rather than a before/after. Read a column downward for one year -
     where value stands, where capacity has accumulated, where the model is building right now, how
@@ -441,21 +452,38 @@ def plot_maps_byyear(data, tech, output_path):
       composition effect figure C measures. Row 2 is grey wherever the model did not invest that
       year, so its coverage rather than its colour is the informative part.
 
-      Row 3 plots cumulative capacity on ONE scale across years, so the map darkens as capacity
-      accumulates - the median region grows twenty to thirtyfold over the horizon. It is the
-      denominator-free measure of deployment, which row 5 is not.
+      Rows 3 and 4 plot penetration - uncurtailed generation over load - for the region itself and
+      then for the whole transmission region it sits in, on one shared scale. Penetration is the
+      measure that tracks the value factor best (r = -0.43 wind, -0.44 UPV against -0.27/-0.28 for
+      market share and -0.21/-0.26 for cumulative GW), because its denominator is stable, it keeps
+      resolving past the point where market share saturates at 1, and its uncurtailed numerator
+      matches the basis LVOE is defined on. It is unbounded above - wind reaches 5.08 in NM, which
+      generates five times its own load and curtails 56% of it.
 
-      Row 4 plots each region's new capacity for that year, scaled within the year to its
+      Row 4 is there because the two techs differ in where their value is set. Regressed together,
+      UPV loads -0.62 on transreg penetration against -0.20 on its own region, so its midday price
+      collapse is a regional-market phenomenon and a nearly empty region can still have its PV value
+      crushed by neighbours. Wind is the reverse, -0.42 own against -0.23 transreg. This is the
+      ceiling on how well row 1 can ever line up with a single own-region row for PV.
+
+      Row 5 plots cumulative capacity on ONE scale across years, so the map darkens as capacity
+      accumulates - the median region grows twenty to thirtyfold over the horizon. It is the
+      denominator-free measure of deployment, though in GW it is confounded by region size: Texas
+      has many GW because Texas is large, which is why it tracks value worst of the three
+      saturation measures.
+
+      Row 6 plots each region's new capacity for that year, scaled within the year to its
       byyear_cap_clip_pct percentile rather than to the national total: with forty-odd regions
       building, shares of the total cluster near 1/40 and the row washes out. The absolute GW,
       spanning 2 GW in the first year to 709 GW in the last, is in the panel annotation. Regions
       that built nothing are grey rather than zero-coloured, since about a third of region-years
       have no build at all.
 
-      Row 5 plots regional market share, which is already bounded. Its denominator is total
-      regional generation, which moves for reasons unrelated to this tech - 0.06x to 6.3x of its
-      starting value across regions, against regional load at 1.35-1.75x - so row 3 is the better
-      reading of how much got built and this row is the saturation reading.
+      Row 7 plots regional market share, which is already bounded. It is kept for continuity with
+      the paper's gen_frac, but it is the weakest of the saturation measures here: its denominator
+      is total regional generation, which moves 0.06x to 6.3x across regions against load's
+      1.35-1.75x, and its curtailed numerator falls as curtailment rises, partly cancelling the very
+      saturation it is meant to show. Prefer row 3.
 
     Both capacity rows use linear ramps topping out at byyear_cap_clip_pct, above which colour
     saturates; the colorbar arrows mark it.
@@ -476,6 +504,9 @@ def plot_maps_byyear(data, tech, output_path):
             'gw': x['new_mw'].sum() / 1000,
             'cum_gw': x['cap_gw'].sum(),
             'share': x['gen_act'].sum() / x['gen_tot'].sum(),
+            'pen': x['gen'].sum() / x['load'].sum(),
+            'pen_lo': x['pen_transreg'].min(),
+            'pen_hi': x['pen_transreg'].max(),
         }
 
     d = panel[panel['t'].isin(years)].copy()
@@ -505,20 +536,30 @@ def plot_maps_byyear(data, tech, output_path):
     pooled = pd.concat([d['vf_rel'], d['vf_new_rel']]).replace([np.inf, -np.inf], np.nan).dropna()
     lo, hi = np.percentile(pooled, byyear_clip_pct)
     norm_vf = TwoSlopeNorm(vmin=min(lo, 0.99), vcenter=1.0, vmax=max(hi, 1.01))
+    #Penetration is unbounded above - onshore wind reaches 5.08 in NM, a heavy net exporter - so the
+    #ramp tops out at the same percentile the capacity rows use and the extremes saturate.
+    pen_pool = pd.concat([d['pen'], d['pen_transreg']]).replace([np.inf, -np.inf], np.nan).dropna()
+    norm_pen = Normalize(0, float(np.percentile(pen_pool, byyear_cap_clip_pct)))
     rows = [
         ('vf_rel', 'Fleet VF / national', byyear_cmaps[0], norm_vf,
          lambda t: f"VF {nat[t]['vf']:.3f}"),
         ('vf_new_rel', 'New-build VF / national', byyear_cmaps[0], norm_vf,
          lambda t: f"new builds only"),
+        #The two penetration rows share a scale, so the transreg row reads as the same quantity
+        #smoothed over a wider footprint rather than as a different measure.
+        ('pen', 'Penetration (gen / load)', byyear_cmaps[1], norm_pen,
+         lambda t: f"{nat[t]['pen']:.2f}"),
+        ('pen_transreg', 'Penetration, transreg', byyear_cmaps[1], norm_pen,
+         lambda t: f"{nat[t]['pen_lo']:.2f}-{nat[t]['pen_hi']:.2f} across transregs"),
         #Cumulative capacity keeps ONE scale across years, unlike the new-capacity row below it, so
         #the map visibly darkens as capacity accumulates - the median region grows twentyfold over
         #the horizon, which is the point of the row.
-        ('cap_gw', 'Cumulative capacity (GW)', byyear_cmaps[1],
+        ('cap_gw', 'Cumulative capacity (GW)', byyear_cmaps[2],
          Normalize(0, float(np.percentile(d['cap_gw'].dropna(), byyear_cap_clip_pct))),
          lambda t: f"{nat[t]['cum_gw']:.0f} GW"),
-        ('new_share', 'New capacity', byyear_cmaps[2],
+        ('new_share', 'New capacity', byyear_cmaps[3],
          Normalize(0, 1), lambda t: f"{nat[t]['gw']:.0f} GW"),
-        ('market_share', 'Market share', byyear_cmaps[3],
+        ('market_share', 'Market share', byyear_cmaps[4],
          Normalize(0, clip('market_share')[1]), lambda t: f"{nat[t]['share']:.2f}"),
     ]
 
@@ -556,7 +597,8 @@ def plot_maps_byyear(data, tech, output_path):
         f'{tech}: value, deployment and saturation by model year   '
         f'(grey = no capacity, or no build that year in the new-build rows)\n'
         f'row 1 is relative to each year national value factor, so colour is comparable across '
-        f'years; capacity rows are linear, scaled so the top decile saturates (arrow); '
+        f'years; penetration and capacity rows are linear, scaled so the top decile saturates '
+        f'(arrow); '
         f'national levels are annotated in every panel',
         fontsize=11.5, y=0.99)
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
