@@ -610,9 +610,16 @@ Example national dispatch profiles for gas CCS and nuclear in illustrative low-c
 ```{admonition} Unit startup considerations
 Two switches control unit startup considerations:
 - `GSw_MingenFixed` (default `1`): Turn on (if `1`) or off (if `0`) the minimum generation constraint for the technologies included in `inputs/plant_characteristics/mingen_fixed.csv` (affects only nuclear by default).
-- `GSw_StartCost` (default `4`): Specifies generation technologies for which to apply startup costs.
-The default setting of `4` specifies combined cycle, coal and CCS (leaving out nuclear, which is handled by `GSw_MingenFixed`).
-Startup costs are found at `inputs/plant_characteristics/startcost.csv`.
+- `GSw_StartCost` (default `3`): Specifies generation technologies for which to apply startup costs.
+Startup costs are found in `inputs/plant_characteristics/startcost.csv`.
+The available options for this switch are:
+  - 0: None
+  - 1: Nuclear
+  - 2: Nuclear, coal, and CCS
+  - 3: Coal and CCS (default)
+  - 4: Coal, CCS, and gas combined cycle
+  - 5: All fuel-consuming technologies except nuclear
+  - 6: All fuel-consuming technologies
 ```
 
 
@@ -689,7 +696,7 @@ In addition to the performance parameters listed above, technologies are differe
 In general, natural gas plants---especially combustion turbines---are better suited for ramping and reserve provision, whereas coal and large-scale nuclear plants are typically designed for steady operation.
 See the [Operational Reliability](#operational-reliability) section for more details.
 
-The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2025 {cite}`eiaAnnualEnergyOutlook2025`, with data supplemented from the October 2025 EIA 860M.
+The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2026 {cite}`eiaAnnualEnergyOutlook2026`, with data supplemented from the June 2026 EIA 860M.
 In particular, ReEDS uses the net summer capacity, net winter capacity,[^ref23] location, heat rate, variable O&M (VOM), and FOM to characterize the existing fleet.
 ReEDS uses a modified "average" heat rate for any builds occurring after 2010: A technology-specific increase on the full-load heat rate is applied to accommodate units not always operating at their design point.
 The modifiers, shown in {numref}`heat-rate-adjustments`, are based on the relationship between the reported heat rate in the ATB and the actual observed heat rate, calculated on a fleetwide basis for each fuel type.
@@ -743,7 +750,7 @@ Landfill gas is assumed to have negative effective carbon emissions because the 
 <sup>c</sup> Assumed CO<sub>2</sub> emissions rate for natural gas fuel cells is the same as for Gas-CC/CT plants. 
 
 ReEDS allows unabated gas-CC and coal plants to be retrofitted with CCS.
-For existing plants, the cost of the upgrade and the performance changes are based on values from the NEMS unit database from AEO2025 {cite}`eiaAnnualEnergyOutlook2025`.
+For existing plants, the cost of the upgrade and the performance changes are based on values from the NEMS unit database from AEO2026 {cite}`eiaAnnualEnergyOutlook2026`.
 For new plants, the upgrade cost is the difference between the CCS and non-CCS versions of the plant, and the performance of the CCS plant adopts the CCS operating costs and characteristics.[^upgrade]
 For all CCS plant upgrades, there is also a capacity derate for plants that add CCS to represent the parasitic load of the CCS portion of the plant.
 Upgraded capacity is by default allowed to operate for 50 years, which may extend the lifetime of the plant beyond its regularly defined lifetime.
@@ -1404,7 +1411,7 @@ The explicit representation is turned off by default.
 ### Capital Stock
 #### Initial capital stock, prescribed builds, and restrictions
 
-Existing electricity generation capacity is taken from the EIA NEMS unit database {cite}`eiaAnnualEnergyOutlook2025` and updated using the March 2025 EIA 860M ({numref}`figure-capacity-existing`).
+Existing electricity generation capacity is taken from the EIA NEMS unit database {cite}`eiaAnnualEnergyOutlook2026` and updated using the June 2026 EIA 860M ({numref}`figure-capacity-existing`).
 Units are mapped to ReEDS technologies based on the fuel source and prime mover of the generation technology.
 Units of the same technology type within a region can be aggregated or represented individually.[^ref29]
 If they are aggregated, the aggregation is done by clustering the units based on heat rates.
@@ -1416,7 +1423,7 @@ Plants can be aggregated to one plant type per region or left at their native un
 ```{figure} figs/docs/capacity-existing.png
 :name: figure-capacity-existing
 
-Existing generation and storage units in 2025, taken from the EIA NEMS database {cite}`eiaAnnualEnergyOutlook2025`.
+Existing generation and storage units in 2026, taken from the EIA NEMS database {cite}`eiaAnnualEnergyOutlook2026`.
 ```
 
 The binning structure is designed flexibly so users can choose the appropriate levels of model fidelity and computational speed for each application.
@@ -1493,11 +1500,9 @@ One exception to this procedure is hydropower, which---because of assumed nonpow
 | Nuclear SMR | 80 | {cite}`abbABBVelocitySuite2018a` |
 ```
 
-Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2025 NEMS plant database and EIA 860M.
-Retirement dates of coal plants are further checked and updated in case the EIA 860M does not capture the latest retirement dates.
-Retirement dates for several nuclear plants which are not current in NEMS and EIA 860M
-(e.g., the Diablo Canyon nuclear power plant in California and Palisades nuclear power plant in Michigan)
-are manually updated.
+Retirement of existing fossil and nuclear capacity in ReEDS is primarily a function of announced retirement dates and technology-specific estimated lifetimes, taken from the AEO 2026 NEMS plant database and EIA 860M.
+Retirement dates of several nuclear and coal plants are further checked and manually updated in case the EIA 860M does not capture the latest retirement dates.
+(e.g., the Diablo Canyon nuclear power plant in California and Monroe coal power plant in Michigan).
 Both existing and economically built generators have the lifetimes shown in {numref}`technology-lifetimes`.
 These lifetimes are used as necessary when the solution period extends beyond 2050.
 
@@ -1684,14 +1689,14 @@ If `GSw_GasRegionSmooth` is set to 0, the 1:1 zone:census-division mapping in {n
 ```
 
 The natural gas fuel prices also include time-based price adjustors.
-The default option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
-For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
-The other option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
+The default option is a daily price adjustor, which adjusts prices in accordance with regional temperatures using coefficients developed through a linear regression analysis regressing daily heating and cooling degree days on daily deviations of natural gas spot prices from their annual averages.
 For details, see the [Daily Natural Gas Price Adjustments section](#daily-natural-gas-price-adjustments) of the appendix.
+The other option is a seasonal price adjustor, which makes winter prices higher than the natural gas prices seen during the other seasons of the year CONUS-wide.
+For details, see the [Seasonal Natural Gas Price Adjustments section](#seasonal-natural-gas-price-adjustments) of the appendix.
 
 ```{admonition} Natural gas price adjustments
 The switch `GSw_GasPriceAdjMethod` controls the choice of natural gas price adjustments.
-0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 1)
+0 = no adjustment, 1 = national wintertime markup, 2 = daily adjustments based on regional temperatures (default: 2)
 ```
 
 
@@ -2333,7 +2338,7 @@ to the individual units considered in PRAS,
 making the following assumptions (some of which can be changed by the user):
 
 - Thermal generation
-  - Existing thermal generation capacity is disaggregated using unit sizes from the EIA-NEMS database of existing units ({numref}`figure-capacity-existing`) {cite}`eiaAnnualEnergyOutlook2025`.
+  - Existing thermal generation capacity is disaggregated using unit sizes from the EIA-NEMS database of existing units ({numref}`figure-capacity-existing`) {cite}`eiaAnnualEnergyOutlook2026`.
   - Unit sizes for new thermal generation capacity depend on whether the model zone hosts existing capacity of that technology type
   and on the planning reserve margin of the model zone.
   Remainder capacity is assigned to its own unit (so 210 MW of capacity, with a 100 MW unit size, would be disaggregated into 3 = 2 × 100 MW + 1 × 10 MW units).
@@ -2879,8 +2884,8 @@ This section primarily focuses on existing policies, but additional frameworks t
 #### Clean Air Act
 ReEDS represents EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
 For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
-In 2032 and for every year thereafter, the emissions rate (metric tons CO<sub>2</sub> per MWh) of a state's coal fleet must be less than or equal to the emissions rate of a coal-CCS plant with a 90% capture rate.
-This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with high capture rates that stay online and generate, decreasing the average emissions rate.
+This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
+This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
 Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
 Existing gas plants fall outside the scope of this rule.
 
