@@ -326,9 +326,8 @@ def get_yearly_flexibility(
     for stype in ["increase", "decrease", "energy"]:
         if stype == "energy":
             if drcat.lower() == "dr_shift":
-                shape[stype] = pd.read_csv(
-                    os.path.join(inputs_case, f"dr_shift_profile_{stype}.csv")
-                )
+                shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shift_profile_{stype}.h5"))
+
             else:
                 continue
 

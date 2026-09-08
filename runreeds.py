@@ -817,7 +817,7 @@ def setupEnvironment(
 
     #%% Check whether the ReEDS conda environment is activated
     if (not skip_checks) and (
-        ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
+        ('reeds5' not in os.environ['CONDA_DEFAULT_ENV'].lower())
         or (not pd.__version__.startswith('3'))
     ):
         err = (
@@ -1257,7 +1257,7 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda activate reeds \n")
+            OPATH.writelines("conda activate reeds5 \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls

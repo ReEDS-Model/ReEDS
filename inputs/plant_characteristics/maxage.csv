@@ -60,8 +60,8 @@ csp3_1*csp3_12,30
 csp4_1*csp4_12,30
 battery_li,30
 dr_shed_1*dr_shed_2,8
-dr_shape_1*dr_shape_5,8
-dr_shift_1*dr_shift_5,8
+dr_shape_1*dr_shape_2,8
+dr_shift_1*dr_shift_2,8
 electrolyzer,20
 smr,25
 smr_ccs,25

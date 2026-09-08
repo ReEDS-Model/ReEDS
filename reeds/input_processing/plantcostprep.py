@@ -257,10 +257,6 @@ battery['capcost_energy'] = (
 )
 battery = battery.reset_index()
 
-evmc_storage = pd.read_csv(os.path.join(inputs_case,'plantchar_evmc_storage.csv'))
-evmc_storage = deflate_func(evmc_storage, 'evmc_storage_' + sw.evmcscen)
-evmc_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_evmc_shape.csv'), dtype = {'fom':float,'vom':float,'rte':float})
-evmc_shape = deflate_func(evmc_shape, 'evmc_shape_' + sw.evmcscen)
 
 #%%############################
 #    -- Concat all data --    #
@@ -327,7 +323,7 @@ mask = (consume_char['*i'].isin(['electrolyzer'])) & (consume_char['parameter'].
 consume_char.loc[mask, 'value'] = consume_char[mask]['value'] + round( (elec_cost_future * scalars['h2_elec_stack_replace_perc'])/(discount_rate**scalars['h2_elec_stack_replace_year']) ,3)
 
 #%%###############################
-#    -- DR Shed --    #
+#    -- DR --    #
 ##################################
 # Capital cost multipliers for DR Shed vary by state and year
 # Input cost data are state-level and are assigned to model region resolution here

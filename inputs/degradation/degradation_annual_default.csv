@@ -56,5 +56,5 @@ egs_allkm_1*egs_allkm_10,0
 geohydro_allkm_1*geohydro_allkm_10,0
 egs_nearfield_1*egs_nearfield_10,0
 dr_shed_1*dr_shed_2,0
-dr_shape_1*dr_shape_5,0
-dr_shift_1*dr_shift_5,0
+dr_shape_1*dr_shape_2,0
+dr_shift_1*dr_shift_2,0

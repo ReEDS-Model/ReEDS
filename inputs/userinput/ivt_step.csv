@@ -53,8 +53,8 @@ csp2_1*csp2_12,5
 csp3_1*csp3_12,5
 csp4_1*csp4_12,5
 dr_shed_1*dr_shed_2,0
-dr_shape_1*dr_shape_5,2
-dr_shift_1*dr_shift_5,2
+dr_shape_1*dr_shape_2,2
+dr_shift_1*dr_shift_2,2
 hydD,5
 hydND,5
 hydSD,5
