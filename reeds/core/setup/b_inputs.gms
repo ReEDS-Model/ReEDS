@@ -277,7 +277,7 @@ set
   pvb3(i)              "pvb generation technologies 3",
   re(i)                "renewable energy technologies",
   refurbtech(i)        "technologies that can be refurbished",
-  rsc_i(i)             "technologies based on Resource supply curves",
+  rsc_i(i)             "technologies based on resource supply curves",
   smr(i)               "steam methane reforming technologies",
   storage_hybrid(i)    "hybrid VRE-storage technologies",
   storage_standalone(i) "stand alone storage technologies",
@@ -1747,9 +1747,9 @@ set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for
 * define qualifier for renewable supply curve investment variables
 m_rscfeas(r,i,c,rscbin) = rscfeas(i,c,r,rscbin) ;
 * CSP
-m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_cspagg(ii, i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_cspagg(ii,i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
 * Hybrid PV+battery
-m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii, i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii,i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
 
 parameter m_required_prescriptions(i,v,r,t)        "--MW-- required power prescriptions by year (cumulative)" ;
 
@@ -5254,7 +5254,7 @@ m_rsc_con(r,i,c)$sum{rscbin, m_rsc_dat(r,i,c,rscbin,"cap") } = yes ;
 
 m_rscfeas(r,i,c,rscbin) = no ;
 m_rscfeas(r,i,c,rscbin)$m_rsc_dat(r,i,c,rscbin,"cap") = yes ;
-m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$tg_rsc_cspagg(ii, i),m_rscfeas(r,ii,c,rscbin) }
+m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$tg_rsc_cspagg(ii,i),m_rscfeas(r,ii,c,rscbin) }
                       $sum{t$tmodel_new(t), valcap_irt(i,r,t) }] = yes ;
 m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$rsc_agg(ii,i),m_rscfeas(r,ii,c,rscbin) }$sum{t$tmodel_new(t),valcap_irt(i,r,t) }$psh(i)$Sw_WaterMain] = yes ;
 m_rsc_dat(r,i,c,rscbin,sc_cat)$[i_c(i,c)$sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,c,rscbin,sc_cat) }
