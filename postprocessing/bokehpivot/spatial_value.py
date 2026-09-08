@@ -64,6 +64,7 @@ map_clip_pct = (2, 98) #Percentiles the map colour range is clipped to. A linear
 rev_cats = ['load', 'res_marg'] #Revenue categories summed into fleet value, matching the paper's LVOE.
 storage_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
 byyear_cmaps = ('RdYlBu', 'PuRd', 'Greens', 'Purples', 'YlOrBr') #Colormaps for the by-year figure: value factor vs national (diverging, both value rows), penetration (both penetration rows), cumulative capacity, new capacity, regional market share.
+pen_scope_levels = ('cendiv', 'transreg', 'interconnect') #Hierarchy levels at which penetration is also computed, to test whether value tracks local or neighbourhood saturation. transreg is the one the by-year figure plots; the others exist for spatial_value_alignment.csv.
 byyear_clip_pct = (2, 98) #Percentiles the by-year colour ranges are clipped to, pooled over all years so one colorbar serves a whole row.
 byyear_cap_clip_pct = 90 #Percentile the two capacity rows top out at, above which colour saturates. Tighter than byyear_clip_pct because both distributions are heavily skewed and the ramps are linear: cumulative capacity runs to 306 GW against a median of 39, and a range set by the extreme would leave the early years and most regions blank.
 byyear_year_step = 4 #Calendar-year stride for the by-year figure, counted from the first modelled year. 2 shows every model year; 4 halves the columns and roughly doubles the panel area. The intermediate years carry little: consecutive-year correlations of the regional pattern run 0.96-0.99 through the steady state, so a 2-year step draws nearly the same map twice. Note the trade-off - the first and last years are the two least representative (the inherited fleet, and the terminal-year build) and a coarser stride raises their share of the figure.
@@ -172,12 +173,16 @@ def load_regional(run_dir, prefix):
     #penetration against -0.20 on its own, so a region can be nearly empty and still have its PV
     #value crushed by its neighbours. Wind is the other way round, -0.42 own against -0.23 transreg.
     hier = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'hierarchy.csv'))
-    hier = hier.rename(columns={hier.columns[0]: 'r'})[['r', 'transreg']]
+    hier = hier.rename(columns={hier.columns[0]: 'r'})[['r', *pen_scope_levels]]
     df = df.merge(hier, on='r', how='left')
     df['_gen0'] = df['gen'].fillna(0)
-    grp = df.groupby(['transreg', 't'])[['_gen0', 'load']].transform('sum')
-    df['pen_transreg'] = grp['_gen0'] / grp['load']
+    for lvl in pen_scope_levels:
+        grp = df.groupby([lvl, 't'])[['_gen0', 'load']].transform('sum')
+        df[f'pen_{lvl}'] = grp['_gen0'] / grp['load']
     df = df.drop(columns='_gen0')
+    #Capacity as a multiple of average load: cumulative GW is confounded by region size, and this
+    #is the size-free version of it.
+    df['cap_per_load'] = df['cap_mw'] / (df['load'] / 8760)
     df['market_share'] = df['gen_act'] / df['gen_tot']
     df['cap_gw'] = df['cap_mw'] / 1000
     df['new_mw'] = df['new_mw'].fillna(0)
@@ -318,6 +323,14 @@ def prep_data(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
         idx, c_r = composition_index(cost)
         panel = panel.merge(c_r.reset_index(), on='r', how='left')
 
+        #Value factors relative to the national fleet value factor of the same year. Defined here
+        #rather than in the figure so the by-year maps and spatial_value_alignment.csv cannot drift
+        #apart - the maps plot exactly the columns the correlations are computed on.
+        nat_vf = panel.groupby('t').apply(
+            lambda x: np.average(x['vf_nat'].fillna(0), weights=x['gen'].fillna(0)))
+        panel['vf_rel'] = panel['vf_nat'] / panel['t'].map(nat_vf)
+        panel['vf_new_rel'] = panel['vf_new_nat'] / panel['t'].map(nat_vf)
+
         #Logs, so the regressions read as proportional value loss per unit of penetration.
         for src, dst in [('vf_nat', 'ln_vf'), ('vf_energy_nat', 'ln_vf_energy'),
                          ('price_rel', 'ln_price_rel'),
@@ -330,12 +343,73 @@ def prep_data(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
             'index': idx,
             'c_r': c_r,
             'early_late': early_late_ratio(cost, c_r),
+            'alignment': alignment_stats(panel),
+            'scope_fit': scope_fit(panel),
             'run_dir': run_dir,
             'stats': {k: fe_slope(panel, k, 'pen')
                       for k in ['ln_vf', 'ln_vf_energy', 'ln_price_rel',
                                 'ln_price_energy_rel']},
         }
     return out
+
+
+def alignment_stats(panel):
+    """How closely each deployment measure tracks the value factor, across regions.
+
+    This is the quantitative version of "the value maps should line up with the deployment maps".
+    They line up only partly, and how well depends on which measure is used: penetration tracks
+    best (r about -0.43), market share and cumulative GW much worse (-0.21 to -0.28). Market share
+    is hurt by a denominator that moves 0.06x to 6.3x across regions and by a curtailed numerator
+    that falls as saturation rises; cumulative GW in absolute terms is confounded by region size,
+    which cap_per_load removes.
+
+    Reported both per year and pooled with year means removed. The pooled figure is the one to
+    quote: it strips the national trend common to every region, leaving the cross-regional
+    relationship that the maps actually display.
+    """
+    metrics = (['pen', 'market_share', 'cap_gw', 'cap_per_load']
+               + [f'pen_{lvl}' for lvl in pen_scope_levels])
+    rows = []
+    for metric in metrics:
+        if metric not in panel:
+            continue
+        d = panel.dropna(subset=['vf_rel', metric])
+        d = d[np.isfinite(d['vf_rel']) & np.isfinite(d[metric])]
+        if len(d) < 10:
+            continue
+        a = d['vf_rel'] - d.groupby('t')['vf_rel'].transform('mean')
+        b = d[metric] - d.groupby('t')[metric].transform('mean')
+        rows.append({'metric': metric, 'year': 'pooled_year_fe', 'r': a.corr(b), 'n': len(d)})
+        for t, x in d.groupby('t'):
+            rows.append({'metric': metric, 'year': int(t),
+                         'r': x['vf_rel'].corr(x[metric]), 'n': len(x)})
+    return pd.DataFrame(rows)
+
+
+def scope_fit(panel):
+    """Own-region against neighbourhood penetration, entered together.
+
+    Separates the two, which the correlations on their own cannot: own-region and transreg
+    penetration are themselves correlated, so each looks explanatory in isolation. Fitted with year
+    means removed, so this is cross-regional variation only. UPV loads far more heavily on the
+    transmission region than on itself, wind the other way round - which is why an own-region map
+    can never line up well with the UPV value maps however it is normalised.
+    """
+    cols = ['vf_rel', 'pen', 'pen_transreg']
+    if not all(c in panel for c in cols):
+        return {}
+    d = panel.dropna(subset=cols).copy()
+    d = d[np.all(np.isfinite(d[cols].to_numpy()), axis=1)]
+    if len(d) < 20:
+        return {}
+    for c in cols:
+        d[c] = d[c] - d.groupby('t')[c].transform('mean')
+    A = np.column_stack([d['pen'], d['pen_transreg'], np.ones(len(d))])
+    coef = np.linalg.lstsq(A, d['vf_rel'].to_numpy(), rcond=None)[0]
+    resid = d['vf_rel'].to_numpy() - A @ coef
+    ss_tot = ((d['vf_rel'] - d['vf_rel'].mean()) ** 2).sum()
+    return {'slope_own': coef[0], 'slope_transreg': coef[1],
+            'r2': 1 - (resid ** 2).sum() / ss_tot if ss_tot else np.nan, 'n': len(d)}
 
 
 def _pick_years(panel, years):
@@ -509,15 +583,11 @@ def plot_maps_byyear(data, tech, output_path):
             'pen_hi': x['pen_transreg'].max(),
         }
 
+    #vf_rel and vf_new_rel come from prep_data. Both divide by the national FLEET value factor of
+    #the same year, so the two value rows share a denominator and only their numerator differs -
+    #fleet (revenue.csv) against new builds (valnew.csv). Dividing the new-build row by the national
+    #new-build value factor instead would recentre it on itself and hide that comparison.
     d = panel[panel['t'].isin(years)].copy()
-    nat_vf = {t: v['vf'] for t, v in nat.items()}
-    d['vf_rel'] = d['vf_nat'] / d['t'].map(nat_vf)
-    #New-build value over the SAME denominator as the fleet row - the national fleet value factor -
-    #so the two rows are on one scale and the comparison between them is the only thing that moves.
-    #Dividing instead by the national new-build value factor would recentre this row on itself and
-    #hide that comparison. The numerator is valnew, so it exists only where the model invested that
-    #year and is grey elsewhere, unlike the fleet row above it.
-    d['vf_new_rel'] = d['vf_new_nat'] / d['t'].map(nat_vf)
     #Scaled within the year rather than to the national total: with forty-odd regions building,
     #shares of the total cluster near 1/40 and every panel washes out. The reference is the year's
     #high percentile rather than its single largest build - on a linear ramp one outsized region
@@ -754,6 +824,11 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
         {'tech': t, 'metric': k, **v} for t, d in data.items() for k, v in d['stats'].items()
     ])
     stats.to_csv(os.path.join(output_dir, 'spatial_value_stats.csv'), index=False)
+    align = pd.concat([d['alignment'].assign(tech=t) for t, d in data.items()], ignore_index=True)
+    align.to_csv(os.path.join(output_dir, 'spatial_value_alignment.csv'), index=False)
+    scope = pd.DataFrame([{'tech': t, **d['scope_fit']} for t, d in data.items()
+                          if d['scope_fit']])
+    scope.to_csv(os.path.join(output_dir, 'spatial_value_scope_fit.csv'), index=False)
     return data
 
 
