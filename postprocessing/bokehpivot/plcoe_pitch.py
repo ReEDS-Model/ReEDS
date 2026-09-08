@@ -24,7 +24,7 @@ cost_factor_ylim = (0.8, 3)
 fit_techs = ['Onshore Wind','UPV'] #Techs given a dotted OLS fit vs market share on the value/cost-factor figures.
 show_cost_factor = True #On the VRE_VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
 cost_factor_direct = False #False plots 1/(cost factor), which declines like the other two series and peaks near 1.0, keeping the shaded band legible. True plots the cost factor itself, which rises so it reads as escalation directly and ends at the number quoted in the panel text, but reaches ~2.2 and so roughly halves the band's share of the axis (wind 10.8% -> 5.7%, UPV 3.7% -> 2.0%).
-show_cost_factor_fit = False #Draw the cost-factor curve implied by the VF and VCF fits. Off by default: the fitted ratio and the data part company at high market share for UPV (0.70 implied against 0.45 observed), so drawing it puts a visible contradiction on a figure whose point is the VF-to-VCF decomposition. The two numbers are still reported in the panel text. Only has an effect when show_cost_factor is on.
+show_cost_factor_fit = True #Draw the cost-factor curve implied by the VF and VCF fits, alongside the cost-factor data. It is the ratio of the two fits, not a fit of its own, so it is exactly the curve the shaded band asserts. Note the fitted ratio and the data part company at high market share for UPV - 0.70 implied against 0.45 observed - which is a real limitation of describing a ratio by the ratio of two fits; both numbers are in plcoe_pitch_vcf_scales.csv. Only has an effect when show_cost_factor is on.
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
@@ -616,6 +616,24 @@ def _fit_form(form):
             lambda p: f'y = {p[0]:.2f}(1-x)$^{{{p[1]:.2f}}}$')
 
 
+def implied_cf_equation(form, vf_p, vcf_p, direct):
+    """Equation of the cost-factor curve implied by the VF and VCF fits.
+
+    The implied curve is the ratio of the two fits, so its equation follows from theirs rather than
+    from a fit of its own. Under the power form that ratio is itself a power curve, and because the
+    intercepts were matched the coefficients cancel exactly, leaving y = (1-x)^(k_vcf - k_vf) for
+    1/(cost factor). That single exponent difference is what the shaded band measures. Under the
+    linear form the ratio of two straight lines is not a straight line, so it is written as the
+    quotient rather than forced into a slope-intercept that would not be true.
+    """
+    num, den = (vf_p, vcf_p) if direct else (vcf_p, vf_p)
+    if form == 'linear':
+        return f'y = ({num[0]:.2f} {num[1]:+.2f}x) / ({den[0]:.2f} {den[1]:+.2f}x)'
+    coef = num[0] / den[0]
+    lead = '' if abs(coef - 1) < 5e-3 else f'{coef:.2f}'
+    return f'y = {lead}(1-x)$^{{{num[1] - den[1]:.2f}}}$'
+
+
 def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
     """One panel per tech, showing value factor against value-cost factor after LCOE base has been
     scaled so the two share a fit intercept.
@@ -691,6 +709,7 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
         #it - and for UPV they depart a long way at the top of the range - that gap is a real
         #limitation of describing a ratio by the ratio of two fits, and is better shown than hidden.
         y_cf, cf_observed = np.array([]), np.nan
+        eq_cf, r2_cf, cf_tag = None, np.nan, None
         if show_cost_factor:
             #Scaling LCOE base by s divides the cost factor by s, which is the same as multiplying
             #1/(cost factor) by s. Either way the series passes through 1.0 at zero market share.
@@ -706,10 +725,23 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
             ax.plot(x, y_cf, color=cost_color, linestyle='-.', marker='^', markersize=4.5,
                     linewidth=1.3, alpha=0.85, label=cf_label, zorder=3)
             if show_cost_factor_fit:
+                #R^2 of the implied curve against the cost-factor data it is drawn over. This is not
+                #a goodness-of-fit for a fitted curve - nothing was fitted to these points - but a
+                #measure of how far the ratio of the two fits departs from the ratio actually
+                #observed, which is exactly the limitation worth quoting next to the equation. It
+                #can go negative, and for the linear UPV panel it does, where the value-factor fit
+                #crosses zero inside the data range.
+                num, den = (vf_p, vcf_p) if cost_factor_direct else (vcf_p, vf_p)
+                p_num, p_den = predict(num, x), predict(den, x)
+                ok = (p_num > 0) & (p_den > 0)
+                r2_cf = r2_y(y_cf[ok], p_num[ok] / p_den[ok]) if ok.sum() > 1 else np.nan
+                eq_cf = implied_cf_equation(form, vf_p, vcf_p, cost_factor_direct)
+                cf_tag = 'CF (implied)' if cost_factor_direct else '1/CF (implied)'
                 ax.plot(xs, implied, color=cost_color, linestyle=':', linewidth=1.2, alpha=0.35,
                         zorder=5)
                 ax.plot(xs[observed], implied[observed], color=cost_color, linestyle=':',
-                        linewidth=1.4, alpha=0.9, zorder=5)
+                        linewidth=1.4, alpha=0.9, zorder=5,
+                        label=f'{cf_label}, implied by fits')
 
         #Implied cost factor from the fits: 1.00 at zero market share by construction, so the value
         #at the top of the range is the cost escalation the scaling makes visible. It is recorded in
@@ -721,11 +753,19 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
         pred_vf, pred_vcf = predict(vf_p, x.max()), predict(vcf_p, x.max())
         valid = pred_vf > 0 and pred_vcf > 0
         cf_hi = pred_vf / pred_vcf if valid else np.nan
-        text = '\n'.join([
+        #The cost-factor line sits with the two fits it is the ratio of, so the arithmetic is on
+        #the page: under the power form its exponent is exactly k_vcf - k_vf, and the reader can
+        #check the subtraction against the two lines above it. Its R^2 is not a goodness-of-fit -
+        #nothing was fitted to the cost-factor points - but a measure of how far the ratio of the
+        #two fits departs from the ratio observed.
+        lines = [
             f'LCOE base x {s:.4f}',
             f'VF   {equation(vf_p)}  (R$^2$={r2_y(y_vf, predict(vf_p, x)):.2f})',
             f'VCF  {equation(vcf_p)}  (R$^2$={r2_y(y_vcf, predict(vcf_p, x)):.2f})',
-        ])
+        ]
+        if eq_cf is not None:
+            lines.append(f'{cf_tag}  {eq_cf}  (R$^2$={r2_cf:.2f})')
+        text = '\n'.join(lines)
         ax.text(0.97, 0.97, text, transform=ax.transAxes, fontsize=8, va='top', ha='right',
                 multialignment='left', zorder=7,
                 bbox={'facecolor': 'white', 'edgecolor': '0.7', 'boxstyle': 'round,pad=0.4',

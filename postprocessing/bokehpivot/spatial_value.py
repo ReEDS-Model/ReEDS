@@ -41,7 +41,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, PowerNorm, TwoSlopeNorm
+from matplotlib.colors import Normalize, TwoSlopeNorm
 from plcoe_pitch import build_color_map, default_rc, cost_color
 from reeds_vs_rev import tech_run_dirs
 from report_switches import start_year
@@ -63,8 +63,11 @@ map_shared_scale = False #True gives both years one colour scale, so colour is c
 map_clip_pct = (2, 98) #Percentiles the map colour range is clipped to. A linear scale is otherwise wrecked by single outliers - onshore wind's 2050 value factor reaches 1.54 in NY_NYCLI against a median of 0.17. Values outside saturate at the end colours.
 rev_cats = ['load', 'res_marg'] #Revenue categories summed into fleet value, matching the paper's LVOE.
 storage_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
-byyear_cmaps = ('RdYlBu', 'Purples', 'YlOrBr') #Colormaps for the by-year figure: value factor vs national (diverging), share of the year's new capacity, regional market share.
+byyear_cmaps = ('RdYlBu', 'Greens', 'Purples', 'YlOrBr') #Colormaps for the by-year figure: value factor vs national (diverging, used for both the fleet and new-build rows), cumulative capacity, new capacity, regional market share.
 byyear_clip_pct = (2, 98) #Percentiles the by-year colour ranges are clipped to, pooled over all years so one colorbar serves a whole row.
+byyear_cap_clip_pct = 90 #Percentile the two capacity rows top out at, above which colour saturates. Tighter than byyear_clip_pct because both distributions are heavily skewed and the ramps are linear: cumulative capacity runs to 306 GW against a median of 39, and a range set by the extreme would leave the early years and most regions blank.
+byyear_year_step = 4 #Calendar-year stride for the by-year figure, counted from the first modelled year. 2 shows every model year; 4 halves the columns and roughly doubles the panel area. The intermediate years carry little: consecutive-year correlations of the regional pattern run 0.96-0.99 through the steady state, so a 2-year step draws nearly the same map twice. Note the trade-off - the first and last years are the two least representative (the inherited fleet, and the terminal-year build) and a coarser stride raises their share of the figure.
+byyear_panel_width = 2.6 #Inches per map column in the by-year figure. Wider than the 13-column version needed, since a coarser stride leaves room.
 
 
 _dfmap_cache = {}
@@ -113,6 +116,14 @@ def load_regional(run_dir, prefix):
     gen_act = (ga[ga['i'].str.startswith(prefix)]
                .groupby(['r', 't'])['gen'].sum().rename('gen_act'))
 
+    #Cumulative installed capacity, the denominator-free measure of deployment. Regional market
+    #share below divides by total regional generation, which moves for reasons that have nothing to
+    #do with this tech - over 2026-2050 that denominator ranges from 0.06x (NY_NYCLI) to 6.3x (WV)
+    #of its starting value, against regional load which stays within 1.35-1.75x.
+    cap = _read(run_dir, 'cap.csv', ['i', 'r', 't', 'mw'])
+    cap_mw = (cap[cap['i'].str.startswith(prefix)]
+              .groupby(['r', 't'])['mw'].sum().rename('cap_mw'))
+
     #valnew carries the benchmark load and load-weighted price, by region and for the system.
     vn = _read(run_dir, 'valnew.csv', ['metric', 'i', 'r', 't', 'val'])
     bench = vn[vn['i'] == 'benchmark']
@@ -134,7 +145,7 @@ def load_regional(run_dir, prefix):
            .fillna(0))
     new['lvoe_new'] = np.where(new['MWh'] > 0, (new['val_load'] + new['val_resmarg']) / new['MWh'], np.nan)
 
-    df = pd.concat([fleet_rev, energy_rev, gen, gen_act, gen_tot], axis=1)
+    df = pd.concat([fleet_rev, energy_rev, gen, gen_act, gen_tot, cap_mw], axis=1)
     df = df.join(reg[['MWh', 'val_load', 'val_resmarg']]
                  .rename(columns={'MWh': 'load', 'val_load': 'load_val',
                                   'val_resmarg': 'resmarg_val'}))
@@ -157,6 +168,7 @@ def load_regional(run_dir, prefix):
     df['price_energy_rel'] = df['price_energy_r'] / df['price_energy_nat']
     df['pen'] = df['gen'] / df['load']
     df['market_share'] = df['gen_act'] / df['gen_tot']
+    df['cap_gw'] = df['cap_mw'] / 1000
     df['new_mw'] = df['new_mw'].fillna(0)
     return df[df['t'] >= start_year].copy()
 
@@ -398,77 +410,125 @@ def plot_maps(data, tech, output_path):
 
 
 def plot_maps_byyear(data, tech, output_path):
-    """Figure A2: every model year as a column, three metrics as rows.
+    """Figure A2: every plotted model year as a column, five metrics as rows.
 
     The mechanism as a filmstrip rather than a before/after. Read a column downward for one year -
-    where value stands, where the model is building right now, how saturated each region already
-    is - and read a row rightward to watch deployment walk out of the regions it has already
-    devalued. Row 2 is the weight w_r(t) from the composition index in figure C, so this figure and
-    that one are showing the same quantity in different form.
+    where value stands, where capacity has accumulated, where the model is building right now, how
+    saturated each region already is - and read a row rightward to watch deployment walk out of the
+    regions it has already devalued. The new-capacity row is the weight w_r(t) behind the
+    composition index in figure C, so this figure and that one show the same quantity in different
+    form.
 
-    With thirteen years there is one colorbar per row, not per panel, so every row needs a scale
-    that stays legible across the whole horizon:
+    byyear_year_step picks the columns; at the default of 4 that is seven of the thirteen model
+    years. The intermediate years carry little, since consecutive-year correlations of the regional
+    pattern run 0.96-0.99 through the steady state. There is one colorbar per row rather than per
+    panel, so every row needs a scale that stays legible across the whole horizon:
 
-      Row 1 plots the value factor RELATIVE to the national value factor of the same year, not the
-      value factor itself. Absolute VF falls roughly fortyfold over the horizon, so a shared linear
-      scale would be flat black by 2050 and a shared log scale would reintroduce exactly what the
-      two-year maps dropped. Dividing by the year's national value keeps the scale linear, shared
-      and centred on 1, and it is the right quantity here anyway: relocation is driven by where
-      value is high or low relative to elsewhere at that moment, not by the national level.
+      Rows 1 and 2 plot the value factor RELATIVE to the national FLEET value factor of the same
+      year, not the value factor itself. Absolute VF falls roughly fortyfold over the horizon, so a
+      shared linear scale would be flat black by the last year and a shared log scale would
+      reintroduce exactly what the two-year maps dropped. Dividing by the year's national value
+      keeps the scale linear, shared and centred on 1, and it is the right quantity here anyway:
+      relocation is driven by where value is high or low relative to elsewhere at that moment, not
+      by the national level.
 
-      Row 2 plots each region's new capacity relative to the largest regional build of that same
-      year, which is self normalising - the absolute GW, spanning 2 GW in 2026 to 709 GW in 2050,
-      is in the panel annotation instead. Scaling to the national total instead would wash the row
-      out, because with forty-odd regions building, shares cluster near 1/40. Regions that built
-      nothing are grey rather than zero-coloured, since about a third of region-years have no build
-      at all.
+      Row 1's numerator is the fleet (revenue.csv), row 2's is new builds only (valnew.csv). The
+      denominator is the same for both, so the rows are directly comparable and share one colour
+      scale. Within a region the two are nearly identical - median ratio 1.000, and 0.997-1.008
+      between the deciles for UPV - because all units of a tech in a region share a profile and a
+      forced build-out keeps the fleet young. They separate at the national level, where the fleet
+      weights regions by fleet MWh and new builds weight them by new-build MWh, which is the
+      composition effect figure C measures. Row 2 is grey wherever the model did not invest that
+      year, so its coverage rather than its colour is the informative part.
 
-      Row 3 plots regional market share, which is already bounded and needs no rescaling.
+      Row 3 plots cumulative capacity on ONE scale across years, so the map darkens as capacity
+      accumulates - the median region grows twenty to thirtyfold over the horizon. It is the
+      denominator-free measure of deployment, which row 5 is not.
+
+      Row 4 plots each region's new capacity for that year, scaled within the year to its
+      byyear_cap_clip_pct percentile rather than to the national total: with forty-odd regions
+      building, shares of the total cluster near 1/40 and the row washes out. The absolute GW,
+      spanning 2 GW in the first year to 709 GW in the last, is in the panel annotation. Regions
+      that built nothing are grey rather than zero-coloured, since about a third of region-years
+      have no build at all.
+
+      Row 5 plots regional market share, which is already bounded. Its denominator is total
+      regional generation, which moves for reasons unrelated to this tech - 0.06x to 6.3x of its
+      starting value across regions, against regional load at 1.35-1.75x - so row 3 is the better
+      reading of how much got built and this row is the saturation reading.
+
+    Both capacity rows use linear ramps topping out at byyear_cap_clip_pct, above which colour
+    saturates; the colorbar arrows mark it.
     """
     panel = data[tech]['panel']
-    years = sorted(panel['t'].unique())
+    all_years = sorted(panel['t'].unique())
+    #Stride in calendar years from the first modelled year, so the selection does not depend on the
+    #model's solve-year spacing and always keeps both endpoints when the span divides evenly.
+    years = [y for y in all_years if (y - all_years[0]) % byyear_year_step == 0]
     dfmap = zone_map(data[tech]['run_dir'])
     zones, country = dfmap['r'], dfmap['country']
 
     #National anchors, one per year, quoted in each panel so the levels survive the rescaling.
     nat = {}
-    for t, x in panel.groupby('t'):
+    for t, x in panel[panel['t'].isin(years)].groupby('t'):
         nat[t] = {
             'vf': np.average(x['vf_nat'].fillna(0), weights=x['gen'].fillna(0)),
             'gw': x['new_mw'].sum() / 1000,
+            'cum_gw': x['cap_gw'].sum(),
             'share': x['gen_act'].sum() / x['gen_tot'].sum(),
         }
 
-    d = panel.copy()
-    d['vf_rel'] = d['vf_nat'] / d['t'].map({t: v['vf'] for t, v in nat.items()})
-    #Scaled to the year's largest regional build rather than to the national total: with forty-odd
-    #regions building, shares of the total cluster near 1/40 and every panel washes out. Relative to
-    #the year's maximum the pattern - which regions this year's capacity actually went to - is
-    #legible in every year, and the absolute GW is annotated.
-    max_mw = d.groupby('t')['new_mw'].transform('max')
-    d['new_share'] = np.where(max_mw > 0, d['new_mw'] / max_mw, np.nan)
+    d = panel[panel['t'].isin(years)].copy()
+    nat_vf = {t: v['vf'] for t, v in nat.items()}
+    d['vf_rel'] = d['vf_nat'] / d['t'].map(nat_vf)
+    #New-build value over the SAME denominator as the fleet row - the national fleet value factor -
+    #so the two rows are on one scale and the comparison between them is the only thing that moves.
+    #Dividing instead by the national new-build value factor would recentre this row on itself and
+    #hide that comparison. The numerator is valnew, so it exists only where the model invested that
+    #year and is grey elsewhere, unlike the fleet row above it.
+    d['vf_new_rel'] = d['vf_new_nat'] / d['t'].map(nat_vf)
+    #Scaled within the year rather than to the national total: with forty-odd regions building,
+    #shares of the total cluster near 1/40 and every panel washes out. The reference is the year's
+    #high percentile rather than its single largest build - on a linear ramp one outsized region
+    #would otherwise compress everything else into the bottom of the scale - so the year's biggest
+    #few saturate and the middle of the distribution stays separable. Absolute GW is annotated.
+    ref = d[d['new_mw'] > 0].groupby('t')['new_mw'].quantile(byyear_cap_clip_pct / 100)
+    d['new_share'] = d['new_mw'] / d['t'].map(ref)
     d.loc[d['new_mw'] <= 0, 'new_share'] = np.nan
 
     def clip(col):
         v = d[col].replace([np.inf, -np.inf], np.nan).dropna()
         return np.percentile(v, byyear_clip_pct)
 
-    lo, hi = clip('vf_rel')
+    #One norm shared by both value rows, spanning the pooled range of the two, so a colour means
+    #the same thing in each and the rows can be read against each other panel by panel.
+    pooled = pd.concat([d['vf_rel'], d['vf_new_rel']]).replace([np.inf, -np.inf], np.nan).dropna()
+    lo, hi = np.percentile(pooled, byyear_clip_pct)
+    norm_vf = TwoSlopeNorm(vmin=min(lo, 0.99), vcenter=1.0, vmax=max(hi, 1.01))
     rows = [
-        ('vf_rel', 'VF / national VF', byyear_cmaps[0],
-         TwoSlopeNorm(vmin=min(lo, 0.99), vcenter=1.0, vmax=max(hi, 1.01)),
+        ('vf_rel', 'Fleet VF / national', byyear_cmaps[0], norm_vf,
          lambda t: f"VF {nat[t]['vf']:.3f}"),
-        #Square-root scaled: regional builds are heavily skewed - a median of 1.2 GW against a
-        #94 GW maximum - so a linear ramp leaves everything but the year's one or two largest
-        #builders indistinguishable from white.
-        ('new_share', "New capacity (max = 1)", byyear_cmaps[1],
-         PowerNorm(0.5, vmin=0, vmax=1), lambda t: f"{nat[t]['gw']:.0f} GW"),
-        ('market_share', 'Market share', byyear_cmaps[2],
+        ('vf_new_rel', 'New-build VF / national', byyear_cmaps[0], norm_vf,
+         lambda t: f"new builds only"),
+        #Cumulative capacity keeps ONE scale across years, unlike the new-capacity row below it, so
+        #the map visibly darkens as capacity accumulates - the median region grows twentyfold over
+        #the horizon, which is the point of the row.
+        ('cap_gw', 'Cumulative capacity (GW)', byyear_cmaps[1],
+         Normalize(0, float(np.percentile(d['cap_gw'].dropna(), byyear_cap_clip_pct))),
+         lambda t: f"{nat[t]['cum_gw']:.0f} GW"),
+        ('new_share', 'New capacity', byyear_cmaps[2],
+         Normalize(0, 1), lambda t: f"{nat[t]['gw']:.0f} GW"),
+        ('market_share', 'Market share', byyear_cmaps[3],
          Normalize(0, clip('market_share')[1]), lambda t: f"{nat[t]['share']:.2f}"),
     ]
 
-    fig, axes = plt.subplots(len(rows), len(years), figsize=(1.95 * len(years), 2.35 * len(rows)),
-                             gridspec_kw={'hspace': 0.16, 'wspace': 0.02})
+    fig, axes = plt.subplots(
+        len(rows), len(years),
+        #0.86 rather than a square cell: the Albers-projected map is about 1.55 times wider than
+        #tall, so a taller cell just adds whitespace between rows. The remainder is the per-panel
+        #title and the national-level annotation below each map.
+        figsize=(byyear_panel_width * len(years), byyear_panel_width * 0.86 * len(rows)),
+        gridspec_kw={'hspace': 0.26, 'wspace': 0.02})
 
     for i, (col, label, cmap, norm, note) in enumerate(rows):
         for j, year in enumerate(years):
@@ -488,15 +548,15 @@ def plot_maps_byyear(data, tech, output_path):
 
         cb = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=list(axes[i, :]),
                           fraction=0.010, pad=0.008, location='right',
-                          extend='both' if col == 'vf_rel' else 'neither')
+                          extend='both' if col.startswith('vf_') else 'max')
         cb.set_label(label, fontsize=8.5)
         cb.ax.tick_params(labelsize=7)
 
     fig.suptitle(
         f'{tech}: value, deployment and saturation by model year   '
-        f'(grey = no capacity, or no build that year in the middle row)\n'
+        f'(grey = no capacity, or no build that year in the new-build rows)\n'
         f'row 1 is relative to each year national value factor, so colour is comparable across '
-        f'years; row 2 is scaled to that year largest regional build, square-root ramp; '
+        f'years; capacity rows are linear, scaled so the top decile saturates (arrow); '
         f'national levels are annotated in every panel',
         fontsize=11.5, y=0.99)
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
