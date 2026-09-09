@@ -267,8 +267,8 @@ COLNAMES = {
             ['t','i','v','r','coolingwatertech','ctt','wst','value']
         ),
         'prescribed_RSC': (
-            ['StartYear','tech','vin','r','summer_power_capacity_MW'],
-            ['t','i','v','r','value']
+            ['StartYear','tech','class','vin','r','summer_power_capacity_MW'],
+            ['t','i','c','v','r','value']
         ),
         'rsc': (
             ['tech','r','v','ctt','wst','summer_power_capacity_MW'],
@@ -710,7 +710,7 @@ def main(reeds_path, inputs_case):
             cap_pres[tech] =  pd.merge(cap_pres[tech], ivt_df_mask, how='left', left_on='StartYear', right_on='year')
             cap_pres[tech] = cap_pres[tech][COLNAMES['prescribed_RSC'][0]]
             cap_pres[tech].columns = COLNAMES['prescribed_RSC'][1]
-            cap_pres[tech] = cap_pres[tech].groupby(['i','v','r','t']).sum().reset_index()
+            cap_pres[tech] = cap_pres[tech].groupby(['i','c','v','r','t']).sum().reset_index()
     # Concat all RSC Existing Data to one dataframe:
     prescribed_rsc = pd.concat([cap_pres[tech] for tech in TECH["rsc_wsc"]
                                 if tech in cap_pres and not cap_pres[tech].empty],ignore_index=True)
@@ -968,7 +968,7 @@ def main(reeds_path, inputs_case):
 
     # Final Groupby step for capacity groupings not affected by GSw_WaterMain:
     caprsc = caprsc.groupby(['i','v','r']).value.sum().reset_index()
-    prescribed_rsc = prescribed_rsc.groupby(['i','v','r','t']).value.sum().reset_index()
+    prescribed_rsc = prescribed_rsc.groupby(['i','c','v','r','t']).value.sum().reset_index()
 
 
     #%%----------------------------------------------------------------------------
@@ -1033,7 +1033,7 @@ def main(reeds_path, inputs_case):
                 'prescribed_nonRSC' : prescribed_nonRSC[['i','v','r','t','value']],
                 'prescribed_nonRSC_energy' : prescribed_nonRSC_energy[['i','v','r','t','value']],
                 'caprsc' :caprsc[['i','v','r','value']],
-                'prescribed_rsc' : prescribed_rsc[['i','v','r','t','value']],
+                'prescribed_rsc' : prescribed_rsc[['i','c','v','r','t','value']],
                 'wind_rets' : wind_rets,
                 'h2_existing_smr_cap' : h2_existing_smr_cap[['r','t','value']],
                 'geo_retirements' : geo_retirements,

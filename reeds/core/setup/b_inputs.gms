@@ -1170,7 +1170,7 @@ $offempty
 
 *Created using reeds/input_processing/writecapdat.py
 $onempty
-parameter prescribedrsc(i,v,r,allt) "--MW-- prescribed capacity data for resource supply curve (RSC) technologies"
+parameter prescribedrsc(i,c,v,r,allt) "--MW-- prescribed capacity data for resource supply curve (RSC) technologies"
 /
 $offlisting
 $ondelim
@@ -1754,22 +1754,22 @@ m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_r
 * Hybrid PV+battery
 m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii,i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
 
-parameter m_required_prescriptions(i,v,r,t)        "--MW-- required power prescriptions by year (cumulative)" ;
+parameter m_required_prescriptions(i,c,v,r,t)      "--MW-- required power prescriptions by year (cumulative)" ;
 
 parameter m_required_prescriptions_energy(i,v,r,t) "--MWh-- required energy prescriptions by year (cumulative)" ;
 
 *following does not include wind
 *conditional here is due to no prescribed retirements for RSC tech
 *distpv is an rsc tech but is handled different via binned_capacity as explained above
-m_required_prescriptions(i,v,r,t)$tmodel_new(t)
+m_required_prescriptions(i,c,v,r,t)$[tmodel_new(t)$i_c(i,c)]
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc(i,v,r,tt) } ;
 
 
-m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
-                                   $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(i,v,r,tt) }
-                                     or sum{c, m_capacity_exog(i,c,v,r,t) } )$rsc_i(i)]
-        = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(i,v,r,tt) }
-        + sum{c, m_capacity_exog(i,c,v,r,t) }
+m_required_prescriptions(i,c,v,r,t)$[tmodel_new(t)$i_c(i,c)
+                                   $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(i,c,v,r,tt) }
+                                     or m_capacity_exog(i,c,v,r,t) )$rsc_i(i)]
+        = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(i,c,v,r,tt) }
+        + m_capacity_exog(i,c,v,r,t)
 ;
 
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
@@ -1808,7 +1808,8 @@ prescribed_build(i,v,r,t)$tmodel_new(t)
 * previous modeled year and the current year
                                           $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
                                           ],
-                                        prescribednonrsc(i,v,r,tt) + prescribedrsc(i,v,r,tt)
+                                        prescribednonrsc(i,v,r,tt)
+                                        + sum{c, prescribedrsc(i,c,v,r,tt) }
                                       } ;
 
 parameter prescribed_build_energy(i,v,r,t) "--MWh-- prescribed energy capacity that comes online in a given year" ;
@@ -1978,13 +1979,13 @@ valcap(i,newv,r,t)$[rsc_i(i)$tmodel_new(t)$(not ban(i))$(not bannew(i))
 *enable capacity if there is a required prescription in that region
 *first for non-rsc techs
 valcap(i,newv,r,t)$[(not rsc_i(i))
-                    $m_required_prescriptions(i,newv,r,t)
-                    $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
+                    $sum{c, m_required_prescriptions(i,c,newv,r,t) }
+                    $sum{(c,tt)$[m_required_prescriptions(i,c,newv,r,tt) 
                           $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))] = yes ;
 *then for rsc techs
 valcap(i,newv,r,t)$[rsc_i(i)
-                    $m_required_prescriptions(i,newv,r,t)
-                    $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
+                    $sum{c, m_required_prescriptions(i,c,newv,r,t) }
+                    $sum{(c,tt)$[m_required_prescriptions(i,c,newv,r,tt) 
                       $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))
                     $sum{(c,rscbin), m_rscfeas(r,i,c,rscbin) }] = yes ;
 
@@ -2005,7 +2006,7 @@ valcap(i,newv,r,t)
 *therefore remove the consideration of valcap if...
 valcap(i,newv,r,t)$[
 *if there are no required prescriptions
-                   (not m_required_prescriptions(i,newv,r,t))
+                   (not sum{c, m_required_prescriptions(i,c,newv,r,t) })
 *if the year is before the first year the technology is allowed
                    $(yeart(t)<firstyear(i))
 *if there is not a mandate for that technology in the region
@@ -2015,8 +2016,8 @@ valcap(i,newv,r,t)$[
 *remove vintages that cannot be built because they only occur before firstyear
 valcap(i,newv,r,t)$[
 *if there are no required prescriptions before the last year of that vintage
-                   (not sum{tt$[(yeart(tt)<=lastyear_v(i,newv))],
-                      m_required_prescriptions(i,newv,r,tt) } )
+                   (not sum{(c,tt)$[(yeart(tt)<=lastyear_v(i,newv))],
+                      m_required_prescriptions(i,c,newv,r,tt) } )
 *if the vintage is not allowed before the firstyear
                    $(lastyear_v(i,newv)<firstyear(i))
 *if there is not a mandate for that technology in the region
@@ -2032,7 +2033,7 @@ valcap(i,newv,r,t)$[(not sameas(i,'gas-ct'))$(yeart(t)<firstyear(i))
 
 *enable prescribed builds of technologies that are earlier listed in bannew when Sw_WaterMain is ON
 valcap(i,newv,r,t)$[Sw_WaterMain$sum{ctt$bannew_ctt(ctt),i_ctt(i,ctt) }$tmodel_new(t)
-                  $sum{tt$[yeart(tt)<=yeart(t)], m_required_prescriptions(i,newv,r,tt) }
+                  $sum{(c,tt)$[yeart(tt)<=yeart(t)], m_required_prescriptions(i,c,newv,r,tt) }
                   $sum{tt$(yeart(tt)<=yeart(t)), ivt(i,newv,tt) }] = yes ;
 
 
@@ -5125,7 +5126,7 @@ if (Sw_ReducedResource = 1,
 *Calculate the fraction of prescribed builds to the available resource
 * 2021-05-05 the prescriptions are being applied across all years until we decide a better way to do this
   prescrip_rsc_frac(i,r)$[sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } > 0] =
-      smax((tt),sum{newv,m_required_prescriptions(i,newv,r,tt)}) / sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
+      smax((tt),sum{(c,newv),m_required_prescriptions(i,c,newv,r,tt)}) / sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
 *Set the default resource reduction fraction
   rsc_reduct_frac(i,r) = reduced_resource_frac ;
 *If the resource reduction fraction will reduce the resource to the point that prescribed builds will be infeasible,
