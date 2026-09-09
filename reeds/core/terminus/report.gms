@@ -523,7 +523,7 @@ repbioprice(r,t)$[tmodel_new(t)$tfuel(t)] = max{0, smax{bioclass$BIOUSED.l(biocl
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
 repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
-    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') *
+    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('%FINITO_dollaryear%') *
     sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
     / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
 ;
@@ -579,13 +579,13 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 * approach with GSw_FixedCostSupply=1 or default supply curves
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedFuels)] =
-    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+    deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
     * eq_supplydemand_fsc.m('NG',cendiv,t)
 ;
 
 * approach with detailed fuels representation (GSw_DetailedFuels=1)
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedFuels] =
-    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+    deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
     * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
 *   electric-sector markup for natural gas
@@ -1825,7 +1825,7 @@ error_check('z') = (
 * account for costs from FINITO: deflate from $2018 to $2004,
 * remove any FINITO scaling, and then apply ReEDS scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
-        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('2018') / obj_scale )
+        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('%FINITO_dollaryear%') / obj_scale )
 $endif.linked_objective 
     }
 ) / z.l ;
