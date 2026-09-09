@@ -709,6 +709,11 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_a
     linear and power versions of this figure are the same construction under two fit forms; agreement
     between them is the check that the result does not depend on the form.
 
+    log_y is retained as an option but no figure is written with it any more - the additive
+    reading it enables is carried by plcoe_pitch_VRE_VCF_decomposition.png, which does the same
+    split as stacked bars and does not need the reader to measure gaps off a log axis. What follows
+    is why it helps, should it be wanted again:
+
     log_y is the better axis for reading the decomposition. VCF is the product VF * (1/CF), so only in
     logs do the two components sum to the whole: on a linear axis their declines over-account for the
     VCF decline by about 1.5x, and reading the split off them overstates the cost share (39% against a
@@ -1057,14 +1062,6 @@ def make_figs(valcostfac_core_path, output_dir=None):
         fig_vcf_pow_sync, _ = plot_vre_vcf(
             df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_synced.png'), form='power',
             sync_axes=True)
-        #Log-scale counterparts. Same fits and the same LCOE base scaling - only the axis differs -
-        #so they add no rows to the scales table.
-        fig_vcf_lin_log, _ = plot_vre_vcf(
-            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_linear_logy.png'), form='linear',
-            log_y=True)
-        fig_vcf_pow_log, _ = plot_vre_vcf(
-            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_logy.png'), form='power',
-            log_y=True)
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)
@@ -1077,8 +1074,6 @@ def make_figs(valcostfac_core_path, output_dir=None):
         plt.close(fig_vcf_lin)
         plt.close(fig_vcf_pow)
         plt.close(fig_vcf_pow_sync)
-        plt.close(fig_vcf_lin_log)
-        plt.close(fig_vcf_pow_log)
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
     fits = summarize_fits(df)
     fits.to_csv(os.path.join(output_dir, 'plcoe_pitch_fits.csv'), index=False)
