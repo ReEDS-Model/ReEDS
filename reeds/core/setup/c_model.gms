@@ -954,7 +954,7 @@ eq_forceprescription_power(i,newv,r,t)
 
 *must equal the cumulative prescribed amount
 
-        prescribed_build(i,newv,r,t)
+        sum{c, prescribed_build(i,c,newv,r,t) }
 
 * plus any extra power buildouts (no penalty here - used as free slack)
 * only on or after the first year the techs are available
