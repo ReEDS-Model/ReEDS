@@ -1522,7 +1522,7 @@ $onempty
 parameter capacity_exog(i,v,r,allt)             "--MW-- exogenously specified capacity",
           capacity_exog_energy(i,v,r,allt)      "--MWh-- exogenously specified energy capacity",
           capacity_exog_rsc(i,c,v,r,rscbin,allt)  "--MW-- exogenous (pre-tfirst) capacity for wind-ons and upv",
-          m_capacity_exog(i,v,r,allt)           "--MW-- exogenous power capacity used in the model",
+          m_capacity_exog(i,c,v,r,allt)         "--MW-- exogenous power capacity used in the model",
           m_capacity_exog_energy(i,v,r,allt)    "--MWh-- exogenous energy capacity used in the model",
           geo_cap_exog(i,r)                     "--MW-- existing geothermal capacity"
 /
@@ -1637,9 +1637,11 @@ avail_retire_exog_rsc(i,v,r,t)$[refurbtech(i)$(capacity_exog(i,v,r,t-1) > capaci
 
 avail_retire_exog_rsc(i,v,r,t)$[not initv(v)] = 0 ;
 
-m_capacity_exog(i,v,r,t)$capacity_exog(i,v,r,t) = capacity_exog(i,v,r,t) ;
+m_capacity_exog(i,c,v,r,t)$[i_c(i,c)$capacity_exog(i,v,r,t)] = capacity_exog(i,v,r,t) ;
 m_capacity_exog_energy(i,v,r,t)$capacity_exog_energy(i,v,r,t) = capacity_exog_energy(i,v,r,t) ;
-m_capacity_exog(i,"init-1",r,t)$geo(i) = geo_cap_exog(i,r) ;
+m_capacity_exog(i,c,"init-1",r,t)$[i_c(i,c)$geo(i)] = geo_cap_exog(i,r) ;
+m_capacity_exog(i,c,v,r,t)$sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } =
+    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
 
 * We assign the ~1.3 GW of existing csp-ns to upv throughout the model, both in the
 * exogenous and the prescribed capacity, and convert it back to csp-ns when reporting.
@@ -1719,8 +1721,8 @@ $onlisting
 
 parameter inv_distpv(r,t) "--MW-- capacity of distpv that is build in year t (i.e., INV for distpv)" ;
 
-inv_distpv(r,t) = sum{(i,v)$distpv(i),
-                      m_capacity_exog(i,v,r,t) - sum{tt$tprev(t,tt), m_capacity_exog(i,v,r,tt) }
+inv_distpv(r,t) = sum{(i,c,v)$[distpv(i)$i_c(i,c)],
+                      m_capacity_exog(i,c,v,r,t) - sum{tt$tprev(t,tt), m_capacity_exog(i,c,v,r,tt) }
                      } ;
 
 set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for capacity",
@@ -1765,9 +1767,9 @@ m_required_prescriptions(i,v,r,t)$tmodel_new(t)
 
 m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
                                    $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(i,v,r,tt) }
-                                     or m_capacity_exog(i,v,r,t) )$rsc_i(i)]
+                                     or sum{c, m_capacity_exog(i,c,v,r,t) } )$rsc_i(i)]
         = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(i,v,r,tt) }
-        + m_capacity_exog(i,v,r,t)
+        + sum{c, m_capacity_exog(i,c,v,r,t) }
 ;
 
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
@@ -1946,11 +1948,11 @@ tc_phaseout_mult_t(i,t)$tmodel_new(t) = 1 ;
 valcap(i,v,r,t) = no ;
 
 *existing plants are enabled if not in ban(i)
-valcap(i,v,r,t)$[m_capacity_exog(i,v,r,t)$(not ban(i))$tmodel_new(t)] = yes ;
+valcap(i,v,r,t)$[sum{c, m_capacity_exog(i,c,v,r,t) }$(not ban(i))$tmodel_new(t)] = yes ;
 
 * if a plant is still available by upgrade year
 * and it is able to be upgraded - keep that plant in the valcap set
-valcap(i,v,r,t)$[sum{tt$[tt.val = Sw_UpgradeYear], m_capacity_exog(i,v,r,tt) }
+valcap(i,v,r,t)$[sum{(c,tt)$[tt.val = Sw_UpgradeYear], m_capacity_exog(i,c,v,r,tt) }
                 $(Sw_Upgrades = 1)$(t.val >= Sw_UpgradeYear)
                 $(not ban(i))
                 $sum{ii, upgrade_from(ii,i) }$tmodel_new(t)] = yes ;
@@ -2078,21 +2080,21 @@ valcap(i,v,r,t)$[upgrade(i)$(not Sw_Upgrades)] = no ;
 valcap(i,v,r,t)$[forced_retire(i,r,t)] = no ;
 
 * for any technologies that are forced to retire and cannot upgrade, remove m_capacity_exog
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)
                          $(not sum{ii$(not forced_retire(ii,r,t)), upgrade_from(ii,i) })] = 0 ;
 
 * for any technologies that are forced to retire, can upgrade, and are not unabated coal, remove m_capacity_exog
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)$(not coal_noccs(i))
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)$(not coal_noccs(i))
                          $(sum{ii$(not forced_retire(ii,r,t)), upgrade_from(ii,i) })] = 0 ;
 
 * if Clean Air Act requirements are enabled, coal technologies that can be upgraded are allowed to stay in m_capacity_exog
 * if Clean Air Act requirements are not enabled, coal technologies that can be upgraded are excluded from m_capacity_exog
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)$(not Sw_Clean_Air_Act)$coal_noccs(i)
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)$(not Sw_Clean_Air_Act)$coal_noccs(i)
                          $(sum{ii$(not forced_retire(ii,r,t)) ,upgrade_from(ii,i) })] = 0 ;
 
 * If, in the last year in which coal must either retire or upgrade, coal is upgraded, we can continue to 
 * use that m_capacity_exog beyond caa_coal_retire_year. But unabated coal plants must not have capacity after caa_coal_retire_year.
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)$coal_noccs(i)
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)$coal_noccs(i)
                          $(t.val > caa_coal_retire_year)
                          $(sum{ii$(not forced_retire(ii,r,t)), upgrade_from(ii,i) }) ] = 0 ;
 
@@ -5360,7 +5362,7 @@ cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,
 
 * Parameter tracking for sequential solve
 parameter
-    m_capacity_exog0(i,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
+    m_capacity_exog0(i,c,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
     z_rep(t)      "--$-- objective function value by year"
     z_rep_inv(t)  "--$-- investment component of objective function by year"
     z_rep_op(t)   "--$-- operation component of objective function by year"
@@ -5573,7 +5575,7 @@ mean_forced_outage_rate(i,r,ccseason,t) = 0 ;
 cost_vom(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
 cost_fom(i,v,r,t)$[not valcap(i,v,r,t)] = 0 ;
 heat_rate(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
-m_capacity_exog(i,v,r,t)$[not valcap(i,v,r,t)] = 0 ;
+m_capacity_exog(i,c,v,r,t)$[not valcap(i,v,r,t)] = 0 ;
 emit_rate(etype,e,i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
 
 *============================================================

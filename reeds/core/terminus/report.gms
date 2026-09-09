@@ -848,9 +848,7 @@ cap_out(i,c,r,t)$[upv(i)$i_c(i,c)$cap_cspns(c,r,t)$tmodel_new(t)] =
 cap_nat(i,t)$tmodel_new(t) = sum{(c,r)$i_c(i,c), cap_out(i,c,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)
-cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)] = m_capacity_exog(i,v,r,t) ;
-cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)$exog_rsc(i)] =
-    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
+cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)] = m_capacity_exog(i,c,v,r,t) ;
 
 *=========================
 * NEW CAPACITY
