@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
-from report_switches import dollar_year, lcoe_base_dollar_year
+from report_switches import dollar_year, lcoe_base_dollar_year, start_year
 
 # User inputs
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
@@ -22,9 +22,11 @@ max_cost_value_factor = 5
 inv_value_factor_ylim = (0.8, 3)
 cost_factor_ylim = (0.8, 3)
 fit_techs = ['Onshore Wind','UPV'] #Techs given a dotted OLS fit vs market share on the value/cost-factor figures.
-vcf_techs = None #Techs on the value-cost-factor figures. None takes every tech in the core results that clears vcf_min_anchor_gen_frac, which brings in the dispatchable techs; the contrast is the point, since their bands are thin or absent (nuclear's k_vcf - k_vf is -0.00 against 0.55 for wind). Set a list to override.
+vcf_techs = None #Techs on the value-cost-factor figures. None takes every tech in the results that clears vcf_min_anchor_gen_frac, which brings in the dispatchable techs; the contrast is the point, since their bands are far thinner than the VRE ones (nuclear's k_vcf - k_vf is 0.08 against 0.54 for wind). Set a list to override.
 vcf_max_cols = 3 #Panels per row on the value-cost-factor figures before wrapping to a new row.
-vcf_min_anchor_gen_frac = 0.25 #A tech is only plotted if its data reaches this low a market share. The figure matches the VF and VCF fit intercepts AT x=0, so a tech whose data never approaches zero has that match, and the whole shaded band, extrapolated from nowhere. Gas-CC is the case this excludes: its market share never falls below 0.463, and its VF fit has R2 0.24, yet it would draw a k difference of 0.56 - as wide as onshore wind's - purely from extrapolation. Coal (0.170) and nuclear (0.172) clear it.
+vcf_min_anchor_gen_frac = 0.5 #A tech is only plotted if its data reaches this low a market share. The figure matches the VF and VCF fit intercepts AT x=0, so a tech whose data never approaches zero has that match, and the whole shaded band, extrapolated rather than measured. At 0.5 every tech in these results qualifies; Gas-CC is the marginal one at 0.463.
+vcf_anchor_warn_gen_frac = 0.25 #Panels whose data starts above this market share get the extrapolation noted in the panel box. Gas-CC starts at 0.463, so nearly half its plotted axis - including the matched intercept the whole construction rests on - is extrapolation.
+vcf_use_full_range = True #Read the VCF figures' data from valcostfac.csv rather than valcostfac_core.csv, which report_switches' gen_frac_max truncates at 0.65 market share. That cap is scoped to the intermediary "lim" plots and badly distorts these figures: it removes 4 coal points, 7 gas-CC, 6 nuclear and 1 wind, and with them most of the dispatchable techs' escalation. Filtered, nuclear's k difference reads -0.00 and gas-CC's 0.56 on an R2-0.24 fit; over the full range they are 0.08 (R2 0.77) and 0.05 (R2 0.86). Only the VCF figures can use it - the _adj figures need value_cost_factor_adj and cost_factor_adj, which run_report_valcostfac.py derives after the cap and writes only to valcostfac_core.csv.
 show_cost_factor = True #On the VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
 cost_factor_direct = False #False plots 1/(cost factor), which declines like the other two series and peaks near 1.0, keeping the shaded band legible. True plots the cost factor itself, which rises so it reads as escalation directly and ends at the number quoted in the panel text, but reaches ~2.2 and so roughly halves the band's share of the axis (wind 10.8% -> 5.7%, UPV 3.7% -> 2.0%).
 show_cost_factor_fit = True #Draw the cost-factor curve implied by the VF and VCF fits, alongside the cost-factor data. It is the ratio of the two fits, not a fit of its own, so it is exactly the curve the shaded band asserts. Note the fitted ratio and the data part company at high market share for UPV - 0.70 implied against 0.45 observed - which is a real limitation of describing a ratio by the ratio of two fits; both numbers are in plcoe_pitch_vcf_scales.csv. Only has an effect when show_cost_factor is on.
@@ -637,6 +639,47 @@ def implied_cf_equation(form, vf_p, vcf_p, direct):
     return f'y = {lead}(1-x)$^{{{num[1] - den[1]:.2f}}}$'
 
 
+def load_full_range(valcostfac_core_path, core):
+    """The same core results, without report_switches' gen_frac_max truncation.
+
+    valcostfac_core.csv is filtered to gen_frac <= gen_frac_max, a cap meant for the intermediary
+    "lim" plots. The value-cost-factor figures are about how value and cost move as market share
+    rises, so truncating market share removes exactly the part they exist to show - and for the
+    dispatchable techs it removes most of it. Each tech is taken from its own scenario, matching the
+    core file, and only core == 1 rows are kept. Falls back to the core file if valcostfac.csv is
+    not alongside it.
+    """
+    full_path = os.path.join(os.path.dirname(os.path.abspath(valcostfac_core_path)),
+                             'valcostfac.csv')
+    if not os.path.exists(full_path):
+        print('valcostfac.csv not found; VCF figures fall back to the truncated core results.')
+        return core
+    full = pd.read_csv(full_path)
+    scen = core.groupby('tech')['scenario'].first()
+    keep = [t in scen.index and sc == scen[t] for t, sc in zip(full['tech'], full['scenario'])]
+    out = full[keep & (full['core'] == 1) & (full['year'] >= start_year)].copy()
+    #Derived columns the figures read. The _adj family is deliberately absent: it is normalised
+    #against the conventional techs' means computed after the cap, so it exists only in the core
+    #file and only the figures that stay on the core file use it.
+    out['cost_value_factor'] = 1 / out['value_cost_factor']
+    out['inv_value_factor'] = 1 / out['value_factor']
+    out['inv_cost_factor'] = 1 / out['cost_factor']
+    return out
+
+
+def _log_ticks(ax):
+    """Label a log axis at 1-2-3-5 per decade in plain decimals.
+
+    Decades alone leave only one or two labelled ticks over the range these figures span.
+    """
+    lo_lim, hi_lim = ax.get_ylim()
+    nice = [d * 10.0 ** e for e in range(-4, 2) for d in (1, 2, 3, 5)]
+    ticks = [t for t in nice if lo_lim <= t <= hi_lim]
+    ax.set_yticks(ticks)
+    ax.set_yticklabels([f'{t:g}' for t in ticks])
+    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+
+
 def vcf_panel_techs(df, techs=None):
     """Techs eligible for the value-cost-factor figures, in a stable order.
 
@@ -657,7 +700,7 @@ def vcf_panel_techs(df, techs=None):
     return [t for t in fit_techs if t in lo.index] + rest
 
 
-def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
+def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_axes=False):
     """One panel per tech, showing value factor against value-cost factor after LCOE base has been
     scaled so the two share a fit intercept.
 
@@ -685,6 +728,7 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
     axes = axes.ravel()
     for ax in axes[len(techs):]:
         ax.set_visible(False)
+    panel_lims = []
     scales = []
     for ax, tech in zip(axes, techs):
         d = df[df['tech'] == tech].dropna(
@@ -793,6 +837,11 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
         ]
         if eq_cf is not None:
             lines.append(f'{cf_tag}  {eq_cf}  (R$^2$={r2_cf:.2f})')
+        #The intercept match at x=0 is the construction the band rests on. Where the data starts
+        #well above zero that match is extrapolated, not measured, so the panel says so rather than
+        #letting the band read as though it were observed all the way down.
+        if x.min() > vcf_anchor_warn_gen_frac:
+            lines.append(f'data starts at x={x.min():.2f}; intercept extrapolated')
         text = '\n'.join(lines)
         ax.text(0.97, 0.97, text, transform=ax.transAxes, fontsize=8, va='top', ha='right',
                 multialignment='left', zorder=7,
@@ -819,27 +868,45 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
             #A smaller fraction than the linear axis uses: over a decade or more, 0.30 of the span
             #is a factor of three of empty sky above the curves.
             ax.set_ylim(10 ** (np.log10(floor) - 0.05 * pad), 10 ** (np.log10(ceil) + 0.17 * pad))
-            #Decades alone leave only one or two labelled ticks over this range, so label the usual
-            #1-2-3-5 points in plain decimals instead.
-            lo_lim, hi_lim = ax.get_ylim()
-            nice = [d * 10.0 ** e for e in range(-4, 2) for d in (1, 2, 3, 5)]
-            ticks = [t for t in nice if lo_lim <= t <= hi_lim]
-            ax.set_yticks(ticks)
-            ax.set_yticklabels([f'{t:g}' for t in ticks])
-            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            _log_ticks(ax)
+            panel_lims.append({'ax': ax, 'x_hi': x_hi, 'floor': floor, 'ceil': ceil})
         else:
-            ax.set_ylim(0, max(v.max() for v in series) / 0.80)
+            ymax = max(v.max() for v in series)
+            ax.set_ylim(0, ymax / 0.80)
+            panel_lims.append({'ax': ax, 'x_hi': x_hi, 'ymax': ymax})
         ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
         ax.legend(loc='lower left', fontsize=8)
         scales.append({'tech': tech, 'form': form, 'lcoe_base_scale': s,
                        'implied_cost_factor_at_gen_frac_max': cf_hi,
                        'observed_cost_factor_at_gen_frac_max': cf_observed,
                        'gen_frac_max': x.max()})
+    #One axis range for every panel, so band thickness and curve steepness can be compared by eye
+    #across techs instead of only within a panel. Each tech's curves still stop where its own data
+    #stops - extending them to the shared limit would manufacture extrapolation that the unsynced
+    #figure does not have - so the differing curve lengths are themselves informative: UPV reaches
+    #0.45 market share where gas-CC reaches 0.90.
+    if sync_axes and panel_lims:
+        x_all = max(q['x_hi'] for q in panel_lims)
+        if log_y:
+            floor_all = min(q['floor'] for q in panel_lims)
+            ceil_all = max(q['ceil'] for q in panel_lims)
+            pad_all = np.log10(ceil_all / floor_all)
+            y_lo = 10 ** (np.log10(floor_all) - 0.05 * pad_all)
+            y_hi = 10 ** (np.log10(ceil_all) + 0.17 * pad_all)
+        else:
+            y_lo, y_hi = 0, max(q['ymax'] for q in panel_lims) / 0.80
+        for q in panel_lims:
+            q['ax'].set_xlim(0, x_all)
+            q['ax'].set_ylim(y_lo, y_hi)
+            if log_y:
+                _log_ticks(q['ax'])
+
     for i in range(0, len(techs), ncol):
         axes[i].set_ylabel('Value factor / value-cost factor')
     fig.suptitle(
         f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)'
-        + (' - log scale, so the value and cost declines stack' if log_y else ''),
+        + (' - log scale, so the value and cost declines stack' if log_y else '')
+        + (' - shared axes' if sync_axes else ''),
         fontsize=12)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -980,17 +1047,23 @@ def make_figs(valcostfac_core_path, output_dir=None):
         #share a fit intercept, under each fit form. Panels cover every tech clearing
         #vcf_min_anchor_gen_frac, not just VRE, so the dispatchable techs' near-absent bands sit
         #beside the VRE ones. The _adj figures above are left as they were.
+        df_vcf = load_full_range(valcostfac_core_path, df) if vcf_use_full_range else df
         fig_vcf_lin, scales_lin = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VCF_linear.png'), form='linear')
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_linear.png'), form='linear')
         fig_vcf_pow, scales_pow = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VCF_power.png'), form='power')
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power.png'), form='power')
+        #Same figure on one shared pair of axis ranges, for comparing panels against each other
+        #rather than reading each on its own. Adds no rows to the scales table.
+        fig_vcf_pow_sync, _ = plot_vre_vcf(
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_synced.png'), form='power',
+            sync_axes=True)
         #Log-scale counterparts. Same fits and the same LCOE base scaling - only the axis differs -
         #so they add no rows to the scales table.
         fig_vcf_lin_log, _ = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VCF_linear_logy.png'), form='linear',
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_linear_logy.png'), form='linear',
             log_y=True)
         fig_vcf_pow_log, _ = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VCF_power_logy.png'), form='power',
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_logy.png'), form='power',
             log_y=True)
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
@@ -998,10 +1071,12 @@ def make_figs(valcostfac_core_path, output_dir=None):
         fig_vcf_bars, decomp = plot_vcf_decomposition(
             #Still VRE-only: it takes fit_techs, and a stacked split of a near-zero total is
             #not worth a panel for the dispatchable techs.
-            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png'), form='power')
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png'),
+            form='power')
         plt.close(fig_vcf_bars)
         plt.close(fig_vcf_lin)
         plt.close(fig_vcf_pow)
+        plt.close(fig_vcf_pow_sync)
         plt.close(fig_vcf_lin_log)
         plt.close(fig_vcf_pow_log)
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
