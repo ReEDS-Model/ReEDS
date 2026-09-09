@@ -201,7 +201,7 @@ lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i
 ;
 
 gen_rsc(i,v,r,t)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)] =
-    sum{h, m_cf(i,v,r,h,t) * hours(h) } ;
+    sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * hours(h) } ;
 
 lcoe(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
 * cost of capacity divided by generation
@@ -523,7 +523,7 @@ repbioprice(r,t)$[tmodel_new(t)$tfuel(t)] = max{0, smax{bioclass$BIOUSED.l(biocl
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
 repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
-    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') *
+    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('%FINITO_dollaryear%') *
     sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
     / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
 ;
@@ -578,14 +578,14 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 * gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 * approach with GSw_FixedCostSupply=1 or default supply curves
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedFuels)] =
-    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedNG)] =
+    deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
     * eq_supplydemand_fsc.m('NG',cendiv,t)
 ;
 
 * approach with detailed fuels representation (GSw_DetailedFuels=1)
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedFuels] =
-    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedNG] =
+    deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
     * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
 *   electric-sector markup for natural gas
@@ -711,7 +711,7 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR.
 gen_h("csp-ns",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
-    = cap_cspns(r,t) * m_cf("upv_5","new1",r,h,t) ;
+    = cap_cspns(r,t) * sum{c$i_c("upv_5",c), m_cf("upv_5",c,"new1",r,h,t) } ;
 * We have to take csp-ns generation from somewhere, so take it from upv_5 (which all the
 * csp-ns-containing regions have)
 gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
@@ -737,7 +737,7 @@ gen_ann_nat(i,t)$tmodel_new(t) = sum{r, gen_ann(i,r,t) } ;
 * Report generation without the charging and production included as above
 gen_ivrt(i,v,r,t)$valgen(i,v,r,t) = sum{h, GEN.l(i,v,r,h,t) * hours(h) } ;
 gen_ivrt_uncurt(i,v,r,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valgen(i,v,r,t)] =
-  sum{h, m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+  sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 * Report generation that will be used as a denominator in outputs, where VRE uses uncurtailed gen and storage uses GEN
 gen_uncurtailed(i,r,t)$[valgen_irt(i,r,t)$(not vre(i))] = sum{v, gen_ivrt(i,v,r,t) } ;
@@ -815,13 +815,13 @@ opres_trade(ortype,r,rr,t)$[opres_routes(r,rr,t)$tmodel_new(t)] =
 *=========================
 
 gen_new_uncurt(i,r,h,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] =
-      sum{v$valinv(i,v,r,t), (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)) * m_cf(i,v,r,h,t) * hours(h) }
+      sum{(v,c)$[valinv(i,v,r,t)$i_c(i,c)], (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
 ;
 
 * curtailment = (availability - generation - operating reserves)
 curt_h(r,h,t)$tmodel_new(t) =
-      sum{(i,v)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))],
-          m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) }
+      sum{(i,v,c)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))$i_c(i,c)],
+          m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     - sum{(i,v)$[valgen(i,v,r,t)$vre(i)], GEN.l(i,v,r,h,t) }
     - sum{(i,v)$[valgen(i,v,r,t)$storage_hybrid(i)$(not csp(i))], GEN_PLANT.l(i,v,r,h,t) }$Sw_HybridPlant
     - sum{(ortype,i,v)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)$vre(i)],
@@ -831,8 +831,8 @@ curt_h(r,h,t)$tmodel_new(t) =
 curt_ann(r,t)$tmodel_new(t) = sum{h, curt_h(r,h,t) * hours(h) } ;
 
 curt_tech(i,r,t)$[tmodel_new(t)$vre(i)] =
-      sum{(v,h)$valcap(i,v,r,t),
-          m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) }
+      sum{(v,h,c)$[valcap(i,v,r,t)$i_c(i,c)],
+          m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) }
     - sum{(v,h)$valgen(i,v,r,t),
           GEN.l(i,v,r,h,t) * hours(h) }
     - sum{(ortype,v,h)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)],
@@ -1069,10 +1069,10 @@ revenue_en(rev_cat,i,r,t)
 
 revenue_en(rev_cat,i,r,t)
     $[tmodel_new(t)
-    $sum{(v,h)$[valcap(i,v,r,t)], m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) }
+    $sum{(v,h,c)$[valcap(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     $vre(i)] =
-    revenue(rev_cat,i,r,t) / sum{(v,h)$valcap(i,v,r,t),
-      m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+    revenue(rev_cat,i,r,t) / sum{(v,h,c)$[valcap(i,v,r,t)$i_c(i,c)],
+      m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 revenue_en_nat(rev_cat,i,t)
     $[tmodel_new(t)
@@ -1082,10 +1082,10 @@ revenue_en_nat(rev_cat,i,t)
 
 revenue_en_nat(rev_cat,i,t)
     $[tmodel_new(t)
-    $sum{(v,r,h)$[valcap(i,v,r,t)], m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) }
+    $sum{(v,r,h,c)$[valcap(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     $vre(i)] =
-    revenue_nat(rev_cat,i,t) / sum{(v,r,h)$valcap(i,v,r,t),
-      m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+    revenue_nat(rev_cat,i,t) / sum{(v,r,h,c)$[valcap(i,v,r,t)$i_c(i,c)],
+      m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 revenue_cap(rev_cat,i,r,t)$[tmodel_new(t)$cap_out(i,r,t)] =
   revenue(rev_cat,i,r,t) / cap_out(i,r,t) ;
@@ -1825,7 +1825,7 @@ error_check('z') = (
 * account for costs from FINITO: deflate from $2018 to $2004,
 * remove any FINITO scaling, and then apply ReEDS scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
-        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('2018') / obj_scale )
+        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('%FINITO_dollaryear%') / obj_scale )
 $endif.linked_objective 
     }
 ) / z.l ;
