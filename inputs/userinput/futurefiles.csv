@@ -146,6 +146,7 @@ exog_cap_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_cap_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 exog_cap_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 exog_geohydro_allkm_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+exog_onlineyear.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_upv_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_wind_ofs_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_wind_ons_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

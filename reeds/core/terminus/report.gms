@@ -815,9 +815,9 @@ losses_tran_h(rr,r,h,trtype,t)$[routes(r,rr,trtype,t)$tmodel_new(t)]
 
 cap_deg_ivrt(i,v,r,t)$valcap(i,v,r,t) = CAP.l(i,v,r,t) / ilr(i) ;
 
-cap_ivrt(i,v,r,t)$[(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,v,r,t) ;
-*upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
-cap_ivrt(i,v,r,t)$[(upv(i) or wind(i))$valcap(i,v,r,t)] = (
+cap_ivrt(i,v,r,t)$[(not (upv(i) or wind(i) or distpv(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,v,r,t) ;
+* Report nameplate capacity for degrading wind and PV technologies.
+cap_ivrt(i,v,r,t)$[(upv(i) or wind(i) or distpv(i))$valcap(i,v,r,t)] = (
   m_capacity_exog(i,v,r,t)$tmodel_new(t)
   + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
         INV.l(i,v,r,tt) + INV_REFURB.l(i,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;

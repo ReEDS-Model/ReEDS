@@ -193,9 +193,61 @@ def expand_exog_cap(row, start_year):
         "tech": [row["tech"]] * len(years),
         "region": [row["region"]] * len(years),
         "year": years,
+        "onlineyear": [row["onlineyear"]] * len(years),
         "sc_point_gid": [row["sc_point_gid"]] * len(years),
         "MW": [row["MW"]] * len(years)})
     return df
+
+
+ONLINEYEAR_COLUMNS = [
+    'i', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW',
+]
+
+
+def get_capacity_weighted_onlineyear(df, start_year, end_year):
+    """Calculate the average build year of surviving existing capacity.
+
+    ``df`` must contain ``i``, ``r``, ``StartYear``, ``RetireYear``, and
+    ``summer_power_capacity_MW``. Existing capacity is assigned to ``init-1``.
+    GAMS later replaces binned capacity with its vintage-specific build year.
+    """
+    columns = ['i', 'v', 'r', 't', 'onlineyear']
+    missing = set(ONLINEYEAR_COLUMNS).difference(df.columns)
+    if missing:
+        raise ValueError(
+            f'Missing columns for online-year calculation: {sorted(missing)}'
+        )
+    if end_year < start_year:
+        raise ValueError('end_year must not be earlier than start_year')
+
+    units = df.loc[
+        (df.StartYear < start_year)
+        & (df.RetireYear > start_year)
+        & (df.summer_power_capacity_MW > 0),
+        ONLINEYEAR_COLUMNS,
+    ].copy()
+    if units.empty:
+        return pd.DataFrame(columns=columns)
+
+    units['MW_onlineyear'] = (
+        units.summer_power_capacity_MW * units.StartYear
+    )
+    output = []
+    for year in range(start_year, end_year + 1):
+        surviving = units.loc[units.RetireYear > year]
+        if surviving.empty:
+            continue
+        grouped = surviving.groupby(['i', 'r'])[
+            ['summer_power_capacity_MW', 'MW_onlineyear']
+        ].sum()
+        onlineyear = (
+            grouped.MW_onlineyear / grouped.summer_power_capacity_MW
+        ).rename('onlineyear').reset_index()
+        onlineyear['v'] = 'init-1'
+        onlineyear['t'] = year
+        output.append(onlineyear[columns])
+
+    return pd.concat(output, ignore_index=True)
 
 # Assign each calendar year to its appropriate modeledyear
 # (For example: capacity that comes online in 2016 will
@@ -247,8 +299,8 @@ def process_ivt(years, inputs_case):
 # And rename column names for easier processing
 COLNAMES = {
         'capexog_rsc': (
-            ['tech','r','RetireYear','sc_point_gid','summer_power_capacity_MW'],
-            ['tech','region','year','sc_point_gid','MW']
+            ['tech','r','RetireYear','StartYear','sc_point_gid','summer_power_capacity_MW'],
+            ['tech','region','year','onlineyear','sc_point_gid','MW']
         ),
         'capnonrsc': (
             ['tech','coolingwatertech','r','ctt','wst','summer_power_capacity_MW'],
@@ -484,6 +536,8 @@ def main(reeds_path, inputs_case):
     #    -- All Existing Capacity --    #
     #####################################
 
+    onlineyear_units = []
+
     ### Used as the starting point for intra-zone network reinforcement costs
     #   Power capacity in MW
     poi_cap_init = gdb_use.loc[(gdb_use['StartYear'] < startyear) &
@@ -495,10 +549,19 @@ def main(reeds_path, inputs_case):
     #########################################
 
     print('Gathering non-RSC Existing Capacity...')
-    capnonrsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['capnonrsc'])) &
-                            (gdb_use['StartYear'] < startyear) &
-                            (gdb_use['RetireYear'] > startyear)
-                            ]
+    capnonrsc_units = gdb_use.loc[
+        (gdb_use['tech'].isin(TECH['capnonrsc']))
+        & (gdb_use['StartYear'] < startyear)
+        & (gdb_use['RetireYear'] > startyear)
+    ].copy()
+    capnonrsc_units['i'] = (
+        capnonrsc_units.coolingwatertech
+        if GSw_WaterMain == 1
+        else capnonrsc_units.tech
+    )
+    onlineyear_units.append(capnonrsc_units[ONLINEYEAR_COLUMNS])
+
+    capnonrsc = capnonrsc_units
     capnonrsc = capnonrsc[COLNAMES['capnonrsc'][0]]
     capnonrsc.columns = COLNAMES['capnonrsc'][1]
     capnonrsc = capnonrsc.groupby(COLNAMES['capnonrsc'][1][:-1]).sum().reset_index()
@@ -588,6 +651,8 @@ def main(reeds_path, inputs_case):
     caprsc['v']='init-1'
     # Assign existing upv as upv_5 based on their average cf
     caprsc.loc[caprsc['tech']=='upv','tech']='upv_5'
+    caprsc['i'] = caprsc.tech
+    onlineyear_units.append(caprsc[ONLINEYEAR_COLUMNS])
     caprsc = caprsc[COLNAMES['rsc'][0]]
     caprsc.columns = COLNAMES['rsc'][1]
     caprsc = caprsc.groupby(COLNAMES['rsc'][1][:-2]).value.sum().reset_index()
@@ -601,6 +666,10 @@ def main(reeds_path, inputs_case):
                     (gdb_use['RetireYear'] > startyear)
                     ]
     csp['v']='init-1'
+    csp['i'] = csp.tech
+    if GSw_WaterMain == 1:
+        csp['i'] = csp['i'] + '_' + csp['ctt'] + '_' + csp['wst']
+    onlineyear_units.append(csp[ONLINEYEAR_COLUMNS])
     csp = csp[COLNAMES['rsc'][0]]
     csp.columns = COLNAMES['rsc'][1]
     csp = csp.groupby(COLNAMES['rsc'][1][:-1]).sum().reset_index()
@@ -609,6 +678,14 @@ def main(reeds_path, inputs_case):
     csp.drop('wst', axis=1, inplace=True)
 
     # Add existing hydro builds:
+    hyd_units = gdb_use.loc[
+        gdb_use.tech.isin(['hydED', 'hydEND'])
+        & (gdb_use.StartYear < startyear)
+        & (gdb_use.RetireYear > startyear)
+    ].copy()
+    hyd_units['i'] = hyd_units.tech
+    onlineyear_units.append(hyd_units[ONLINEYEAR_COLUMNS])
+
     gendb = gdb_use[["tech", 'r', "summer_power_capacity_MW"]]
     gendb = gendb[(gendb.tech == 'hydED') | (gendb.tech == 'hydEND')]
 
@@ -628,7 +705,9 @@ def main(reeds_path, inputs_case):
     geoexist = gdb_use.loc[(gdb_use['tech'].isin(['geohydro_allkm','egs_allkm'])) &
                        (gdb_use['StartYear'] < startyear) &
                        (gdb_use['RetireYear'] > startyear)
-                       ]
+                       ].copy()
+    geoexist['i'] = 'geohydro_allkm_1'
+    onlineyear_units.append(geoexist[ONLINEYEAR_COLUMNS])
     geoexist = (geoexist[['tech','r','summer_power_capacity_MW']]
                 .rename(columns={'tech':'i','summer_power_capacity_MW':'MW'})
                 )
@@ -960,6 +1039,15 @@ def main(reeds_path, inputs_case):
     caprsc = caprsc.groupby(['i','v','r']).value.sum().reset_index()
     prescribed_rsc = prescribed_rsc.groupby(['i','v','r','t']).value.sum().reset_index()
 
+    # Average build year for existing capacity.
+    # GAMS replaces these averages for binned vintages.
+    exog_onlineyear = get_capacity_weighted_onlineyear(
+        pd.concat(onlineyear_units, ignore_index=True, sort=False),
+        start_year=startyear,
+        end_year=endyear,
+    ).sort_values(['i', 'v', 'r', 't'])
+    exog_onlineyear['onlineyear'] = exog_onlineyear.onlineyear.round(2)
+
 
     #%%----------------------------------------------------------------------------
     ################################
@@ -1033,6 +1121,7 @@ def main(reeds_path, inputs_case):
                 'hydcapadj_ccszn' : hydcapadj_ccszn[['i','ccseason','r','value']],
                 'can_imports_capacity' : can_imports_capacity.reset_index(),
                 'geoexist' : geoexist,
+                'exog_onlineyear': exog_onlineyear,
                 'h2_ba_share': h2_ba_share_out,
                 'exog_cap_upv':cap_exog['upv'],
                 'exog_cap_wind-ons':cap_exog['wind-ons'],
