@@ -6948,6 +6948,46 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     return f, ax, prm_final
 
 
+def map_capacity_byclass(
+    case,
+    tech:Literal['upv','wind-ons','wind-ofs'],
+    year=None,
+    ax=None,
+    crs='EPSG:5070',
+    cmap=cmocean.cm.rain,
+    vmax=None,
+):
+    """Map capacity by resource class, giving sub-zone resolution"""
+    ## Parse inputs
+    if year in [None, 0, 'last']:
+        fpath = Path(case,'inputs_case','modeledyears.csv')
+        year = int(pd.read_csv(fpath).columns.astype(int).values[-1])
+    if ax is None:
+        f,ax = plt.subplots()
+    ## Get inputs
+    dfcap = reeds.io.read_output(case, 'cap', valname='GW')
+    dfcap.GW /= 1e3
+    scpath = Path(case, 'inputs_case', f'supplycurve_{tech}.csv')
+    dfsc = reeds.plots.df2gdf(
+        reeds.io.assemble_supplycurve(scfile=scpath, case=case, drop_extra=False),
+        crs=crs,
+    ).rename(columns={'region':'r'})
+    dfsc['i'] = f'{tech}_' + dfsc['class'].astype(str)
+    dfsc = reeds.spatial.site2poly_buffer(dfsc)
+    dfgeom = dfsc.dissolve(['r','i'])[['geometry']]
+    ## Downselect and link to geometry
+    dfplot = dfgeom.merge(
+        dfcap.loc[dfcap.i.str.startswith(tech) & (dfcap.t == year)],
+        on=['i', 'r'], how='right',
+    )
+    ## Set up plot
+    if vmax is None:
+        vmax = dfplot.GW.max()
+    ## Plot it
+    dfplot.plot(ax=ax, column='GW', cmap=cmap, vmin=0, vmax=vmax)
+    return ax, dfplot
+
+
 def validate_regional_capacity(
     case,
     mapmethod:Literal['FIPS','latlon']='county',
