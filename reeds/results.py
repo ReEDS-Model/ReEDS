@@ -529,7 +529,8 @@ def calc_reinforcement_spur_capacity_miles(case):
     val_r = reeds.io.read_input(case, 'r').squeeze(1).values
 
     # Get the spur/reinforcement distance for each i/r/rscbin  
-    spur_parameters = pd.read_csv(os.path.join(inputs_case, 'spur_parameters.csv'))
+    spur_parameters = pd.read_csv(
+        os.path.join(inputs_case, 'spur_parameters.csv'), dtype={'c': str})
 
     # Get added capacity by i/v/r/t/rscbin
     cap_new_bin_out = reeds.io.read_output(case, 'cap_new_bin_out')
@@ -540,8 +541,9 @@ def calc_reinforcement_spur_capacity_miles(case):
         inplace=True)
 
     # Sum new capacity by technology and resource bin
+    cap_new_bin_out['c'] = cap_new_bin_out['c'].astype(str)
     cap_new_bin_out = cap_new_bin_out.groupby(
-        ['i', 'r', 'rscbin', 'year'], as_index=False)['New Cap (GW)'].sum()
+        ['i', 'c', 'r', 'rscbin', 'year'], as_index=False)['New Cap (GW)'].sum()
 
     # Convert UPV from DC to AC
     upv_mask = cap_new_bin_out['i'].str.startswith('upv')
@@ -551,7 +553,8 @@ def calc_reinforcement_spur_capacity_miles(case):
     cap_new_filtered = cap_new_bin_out[cap_new_bin_out['i'].str.startswith(('wind', 'upv', 'csp'))]
 
     # Merge spur parameters
-    cap_new_filtered = cap_new_filtered.merge(spur_parameters, on=['i', 'r', 'rscbin'], how='left')
+    cap_new_filtered = cap_new_filtered.merge(
+        spur_parameters, on=['i', 'c', 'r', 'rscbin'], how='left')
 
     # Compute spur and reinforcement distances (GW-mi)
     tech_trans = pd.concat([

@@ -782,7 +782,10 @@ opres_trade(ortype,r,rr,t)$[opres_routes(r,rr,t)$tmodel_new(t)] =
 *=========================
 
 gen_new_uncurt(i,r,h,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] =
-      sum{(v,c)$[i_c(i,c)$valinv(i,v,r,t)], (INV.l(i,v,r,t) + INV_REFURB.l(i,c,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
+      sum{(v,c)$[i_c(i,c)$valinv(i,v,r,t)],
+          (INV.l(i,v,r,t)$(not rsc_i(i))
+           + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+           + INV_REFURB.l(i,c,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
 ;
 
 * curtailment = (availability - generation - operating reserves)

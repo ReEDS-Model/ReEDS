@@ -52,18 +52,17 @@ def wm(df):
     return _wm
 
 
-def get_exog_cap(inputs_case, tech, dfsc, i2c):
+def get_exog_cap(inputs_case, tech, dfsc):
     """Get exogenous capacity by class, region, rscbin, and year"""
     dfexog = (
         pd.read_csv(os.path.join(inputs_case, f'exog_cap_{tech}.csv'))
         .merge(
-            dfsc.explode('sc_point_gid').reset_index()[['sc_point_gid','bin']],
+            dfsc.explode('sc_point_gid').reset_index()[['sc_point_gid','bin','class']],
             on='sc_point_gid',
         )
-        .rename(columns={'capacity':'MW'})
+        .rename(columns={'capacity':'MW', 'class':'c'})
     )
     dfexog['rscbin'] = dfexog['bin'].map('bin{}'.format)
-    dfexog['c'] = dfexog['*tech'].map(i2c)
     dfexog = dfexog.groupby(['*tech', 'c', 'region', 'rscbin', 'year']).MW.sum()
     return dfexog
 
@@ -250,6 +249,7 @@ def main(
             wind[s]
             .reset_index()
             .assign(i=f"wind-{s}_" + wind[s].reset_index()["class"].astype(str))
+            .assign(c=wind[s].reset_index()["class"].astype(str))
             .assign(rscbin="bin" + wind[s].reset_index()["bin"].astype(str))
             .rename(columns={"region": "r"})
         )
@@ -298,9 +298,9 @@ def main(
 
     if write:
         ## Exogenous wind capacity
-        exog_wind_ons_rsc = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'], i2c=i2c)
+        exog_wind_ons_rsc = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
         exog_wind_ons_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
-        exog_wind_ofs_rsc = get_exog_cap(inputs_case, tech='wind-ofs', dfsc=wind['ofs'], i2c=i2c)
+        exog_wind_ofs_rsc = get_exog_cap(inputs_case, tech='wind-ofs', dfsc=wind['ofs'])
         exog_wind_ofs_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
 
     # %%###############
@@ -340,7 +340,7 @@ def main(
 
     if write:    
         ## Exogenous UPV capacity
-        exog_upv_rsc = get_exog_cap(inputs_case, tech='upv', dfsc=upv, i2c=i2c)
+        exog_upv_rsc = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
         exog_upv_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
 
     ### Normalize formatting
@@ -350,6 +350,7 @@ def main(
 
     spurout_list.append(
         upv.assign(i="upv_" + upv["class"].astype(str).str.strip("class"))
+        .assign(c=upv["class"].astype(str).str.strip("class"))
         .assign(rscbin="bin" + upv["bin"].str.strip("upvsc"))
         .rename(columns={"region": "r"})
     )
@@ -402,6 +403,7 @@ def main(
 
         spurout_list.append(
             csp.assign(i="csp_" + csp["class"].astype(str).str.strip("class"))
+            .assign(c=csp["class"].astype(str).str.strip("class"))
             .assign(rscbin="bin" + csp["bin"].str.strip("cspsc"))
             .rename(columns={"region": "r"})
         )
@@ -479,6 +481,7 @@ def main(
                 geo[s]
                 .reset_index()
                 .assign(i=f"{s}_allkm_" + geo[s].reset_index()["class"].astype(str))
+                .assign(c=geo[s].reset_index()["class"].astype(str))
                 .assign(rscbin="bin" + geo[s].reset_index()["bin"].astype(str))
                 .rename(columns={"region": "r"})
             )
@@ -558,7 +561,7 @@ def main(
 
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
-                exog_geohydro_rsc = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'], i2c=i2c)
+                exog_geohydro_rsc = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
                 exog_geohydro_rsc.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
@@ -566,6 +569,7 @@ def main(
     # %% Get supply-curve data for postprocessing
     spurcols = [
         'i',
+        'c',
         'r',
         'rscbin',
         'capacity',
@@ -602,7 +606,6 @@ def main(
         ## Reformat to save for GAMS
         .rename(columns={"i": "*i"})
     )
-    poi_distance_out["c"] = poi_distance_out["*i"].map(i2c)
     poi_distance_out = poi_distance_out.set_index(["*i", "c", "r", "rscbin"])
     ## Convert to miles
     distance_spur = (poi_distance_out.dist_spur_km.rename("miles") / 1.609).round(3)
