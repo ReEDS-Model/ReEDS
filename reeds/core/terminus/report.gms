@@ -578,13 +578,13 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 * gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 * approach with GSw_FixedCostSupply=1 or default supply curves
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedFuels)] =
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedNG)] =
     deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
     * eq_supplydemand_fsc.m('NG',cendiv,t)
 ;
 
 * approach with detailed fuels representation (GSw_DetailedFuels=1)
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedFuels] =
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedNG] =
     deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
     * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
