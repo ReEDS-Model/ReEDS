@@ -451,19 +451,19 @@ def main(reeds_path, inputs_case):
         cap_cspns = pd.concat(
             [
                 pd.DataFrame({
-                    'r': row.r,
                     'c': row.c,
+                    'r': row.r,
                     't': list(range(row.StartYear, row.RetireYear + 2)),
                     'MWac': row.summer_power_capacity_MW,
                 })
                 for (_, row) in csp_units.iterrows()
             ],
             ignore_index=True,
-        ).groupby(['r','c','t']).MWac.sum()
+        ).groupby(['c','r','t']).MWac.sum()
         cap_cspns = (
             cap_cspns.loc[cap_cspns.index.get_level_values('t') >= startyear].copy())
     else:
-        cap_cspns = pd.DataFrame(columns=['r','c','t','MWac']).set_index(['r','c','t'])
+        cap_cspns = pd.DataFrame(columns=['c','r','t','MWac']).set_index(['c','r','t'])
     # Rename csp-ns to upv
     gdb_use.loc[gdb_use['tech']=='csp-ns','coolingwatertech'] = (
         gdb_use.loc[gdb_use['tech']=='csp-ns','coolingwatertech']

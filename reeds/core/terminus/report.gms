@@ -650,27 +650,41 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * less load from hydrogen production
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
+* Capacity is needed here to reassign csp-ns, so calculate it before generation.
+cap_deg_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
+cap_deg_ivrt(i,c,v,r,t)$valcap_class(i,c,v,r,t) = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
+
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
+*upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
+cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
+  sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$tmodel_new(t)
+  + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
+        sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
+        + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
+
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * writecapdat.py bins csp-ns into the upv resource classes it is modeled as, so take it
 * back out of those same classes. cap_cspns_short catches any csp-ns left with no upv to
 * come out of, which means the capacity written by writecapdat.py and the capacity carried
 * by the model have diverged.
+* cap_upv_class uses the same undegraded basis as cap_ivrt so that the capacity moved out
+* of upv and the generation that goes with it are taken from the same denominator.
 cap_upv_class(c,r,t)$tmodel_new(t) =
-    sum{(i,v)$[upv(i)$valcap_class(i,c,v,r,t)], CAP_CLASS.l(i,c,v,r,t) / ilr(i) } ;
+    sum{(i,v)$[upv(i)$i_c(i,c)$valcap(i,v,r,t)], cap_ivrt(i,c,v,r,t) } ;
 
-cap_cspns_short(c,r,t)$[cap_cspns(r,c,t)$tmodel_new(t)] =
-    max(0, cap_cspns(r,c,t) - cap_upv_class(c,r,t)) ;
+cap_cspns_short(c,r,t)$[cap_cspns(c,r,t)$tmodel_new(t)] =
+    max(0, cap_cspns(c,r,t) - cap_upv_class(c,r,t)) ;
 
 * Move the generation that goes with the reassigned capacity, class by class
-gen_h("csp-ns",r,h,t)$[sum{c, cap_cspns(r,c,t) }$tmodel_new(t)] =
+gen_h("csp-ns",r,h,t)$[sum{c, cap_cspns(c,r,t) }$tmodel_new(t)] =
     sum{(i,c)$[upv(i)$i_c(i,c)$cap_upv_class(c,r,t)],
-        gen_h(i,r,h,t) * min(cap_cspns(r,c,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) } ;
+        gen_h(i,r,h,t) * min(cap_cspns(c,r,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) } ;
 
-gen_h(i,r,h,t)$[upv(i)$tmodel_new(t)$sum{c$i_c(i,c), cap_cspns(r,c,t) }
+gen_h(i,r,h,t)$[upv(i)$tmodel_new(t)$sum{c$i_c(i,c), cap_cspns(c,r,t) }
                $sum{c$i_c(i,c), cap_upv_class(c,r,t) }] =
     gen_h(i,r,h,t)
     * (1 - sum{c$i_c(i,c),
-               min(cap_cspns(r,c,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) }) ;
+               min(cap_cspns(c,r,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) }) ;
 gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 
 * Do it again for stress periods
@@ -823,25 +837,14 @@ losses_tran_h(rr,r,h,trtype,t)$[routes(r,rr,trtype,t)$tmodel_new(t)]
 * CAPACITY
 *=========================
 
-cap_deg_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
-cap_deg_ivrt(i,c,v,r,t)$valcap_class(i,c,v,r,t) = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
-
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
-*upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
-  sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$tmodel_new(t)
-  + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
-        sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
-        + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;
-
 cap_out(i,c,r,t)$[i_c(i,c)$valcap_irt(i,r,t)$tmodel_new(t)] = sum{v$valcap(i,v,r,t), cap_ivrt(i,c,v,r,t) } ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR
-cap_out("csp-ns",c,r,t)$[i_c("csp-ns",c)$tmodel_new(t)] = sum{cc, cap_cspns(r,cc,t) } ;
+cap_out("csp-ns",c,r,t)$[i_c("csp-ns",c)$tmodel_new(t)] = sum{cc, cap_cspns(cc,r,t) } ;
 * Take it back out of the same upv classes it was binned into
-cap_out(i,c,r,t)$[upv(i)$i_c(i,c)$cap_cspns(r,c,t)$tmodel_new(t)] =
-    max(0, cap_out(i,c,r,t) - cap_cspns(r,c,t)) ;
+cap_out(i,c,r,t)$[upv(i)$i_c(i,c)$cap_cspns(c,r,t)$tmodel_new(t)] =
+    max(0, cap_out(i,c,r,t) - cap_cspns(c,r,t)) ;
 cap_nat(i,t)$tmodel_new(t) = sum{(c,r)$i_c(i,c), cap_out(i,c,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)

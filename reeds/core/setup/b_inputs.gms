@@ -1645,7 +1645,7 @@ m_capacity_exog(i,"init-1",r,t)$geo(i) = geo_cap_exog(i,r) ;
 * exogenous and the prescribed capacity, and convert it back to csp-ns when reporting.
 * Written by writecapdat.py
 $onempty
-parameter cap_cspns(r,c,allt) "--MW-- csp-ns capacity modeled as upv, by resource class"
+parameter cap_cspns(c,r,allt) "--MW-- csp-ns capacity modeled as upv, by resource class"
 /
 $offlisting
 $ondelim
