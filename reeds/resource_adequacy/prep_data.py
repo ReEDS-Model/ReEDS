@@ -440,7 +440,8 @@ def main(t, casedir, iteration=0):
     ])
 
     ### Nameplate capacity
-    max_cap = cap_nonloadtechs.drop(columns='c').set_index(['i','v','r']).Value.rename('MW')
+    max_cap = (
+        cap_nonloadtechs.groupby(['i','v','r']).Value.sum().rename('MW'))
     ## Drop VRE since it is handled through pras_vre_gen
     max_cap = max_cap.loc[
         ~max_cap.index.get_level_values('i').str.startswith(
