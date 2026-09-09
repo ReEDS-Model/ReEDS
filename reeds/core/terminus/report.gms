@@ -653,9 +653,6 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * writecapdat.py bins csp-ns into the upv resource classes it is modeled as, so take it
 * back out of those same classes.
-parameter cap_upv_class(c,r,t)   "--MWac-- upv capacity by resource class" ;
-parameter cap_cspns_short(c,r,t) "--MWac-- csp-ns capacity with no upv capacity to come out of" ;
-
 cap_upv_class(c,r,t)$tmodel_new(t) =
     sum{(i,v)$[upv(i)$valcap_class(i,c,v,r,t)], CAP_CLASS.l(i,c,v,r,t) / ilr(i) } ;
 
