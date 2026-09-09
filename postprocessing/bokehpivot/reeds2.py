@@ -1489,7 +1489,7 @@ results_meta = collections.OrderedDict((
 
     ('New Annual Capacity BA (GW)',
         {'file':'cap_new_ann',
-        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1523,7 +1523,7 @@ results_meta = collections.OrderedDict((
 
     ('Annual Retirements BA (GW)',
         {'file':'ret_ann',
-        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -2551,7 +2551,7 @@ results_meta = collections.OrderedDict((
     ('Value Streams Sequential Existing Techs',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -3066,7 +3066,7 @@ results_meta = collections.OrderedDict((
     ),
     ('Upgraded Capacity (GW)',
         {'file':'cap_upgrade',
-        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
 #            {'func': sum_over_cols, 'args': {'drop_cols': ['rb'], 'group_cols': ['tech', 'year']}},
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
