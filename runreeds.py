@@ -1299,6 +1299,7 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
+            OPATH.writelines("conda deactivate \n")
             OPATH.writelines("conda activate reeds \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
