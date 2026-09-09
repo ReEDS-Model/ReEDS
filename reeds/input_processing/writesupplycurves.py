@@ -146,9 +146,6 @@ def main(
         "egs": int(sw.numbins_egs_allkm),
     }
 
-    ### Resource class of each technology; techs with no class are assigned class '0'
-    i2c = reeds.techs.get_class_map(inputs_case)
-
     val_r_all = pd.read_csv(
         os.path.join(inputs_case,'val_r_all.csv'), header=None).squeeze(1).tolist()
     # Read in tech-subset-table.csv to determine number of csp configurations
@@ -231,6 +228,7 @@ def main(
             )
         )
 
+        cost_components["c"] = cost_components["*i"].astype(str)
         cost_components["*i"] = f"wind-{s}_" + cost_components[
             "*i"
         ].astype(str)
@@ -239,7 +237,7 @@ def main(
         ].astype(str)
         cost_components = pd.melt(
             cost_components,
-            id_vars=["*i", "r", "rscbin"],
+            id_vars=["*i", "c", "r", "rscbin"],
             var_name="sc_cat",
             value_name="value",
         )
@@ -329,11 +327,12 @@ def main(
             "capital_adder_per_mw": "cost_cap",
         }
     )
+    cost_components_upv["c"] = cost_components_upv["*i"].astype(str)
     cost_components_upv["*i"] = "upv_" + cost_components_upv["*i"].astype(str)
     cost_components_upv["rscbin"] = "bin" + cost_components_upv["rscbin"].astype(str)
     cost_components_upv = pd.melt(
         cost_components_upv,
-        id_vars=["*i", "r", "rscbin"],
+        id_vars=["*i", "c", "r", "rscbin"],
         var_name="sc_cat",
         value_name="value",
     )
@@ -682,8 +681,9 @@ def main(
     alloutcost["class"] = alloutcost["class"].map(lambda x: x.lstrip("class"))
 
     allout = pd.concat([outcapfin, alloutcost])
+    allout["c"] = allout["class"].astype(str)
     allout["tech"] = allout["tech"] + "_" + allout["class"].astype(str)
-    alloutm = pd.melt(allout, id_vars=["r", "tech", "var"])
+    alloutm = pd.melt(allout, id_vars=["r", "tech", "c", "var"])
     alloutm.rename(columns={"bin":"variable"}, inplace=True)
     alloutm = alloutm.loc[alloutm.variable != "class"].copy()
     allout_list = [alloutm]
@@ -721,7 +721,8 @@ def main(
     hyddat["class"] = hyddat["class"].map(lambda x: x.replace("hydclass", ""))
 
     hyddat.rename(columns={"variable": "r", "bin": "variable"}, inplace=True)
-    hyddat = hyddat[["tech", "r", "value", "var", "variable"]].fillna(0)
+    hyddat["c"] = "0"
+    hyddat = hyddat[["tech", "c", "r", "value", "var", "variable"]].fillna(0)
     allout_list.append(hyddat)
 
     #########################################
@@ -748,6 +749,7 @@ def main(
         psh_out = pd.concat([psh_cap, psh_cost]).fillna(0)
         psh_out["tech"] = "pumped-hydro"
         psh_out["variable"] = psh_out.variable.map(lambda x: x.replace("pshclass", "bin"))
+        psh_out["c"] = "0"
         psh_out = psh_out[hyddat.columns].copy()
         allout_list.append(psh_out)
 
@@ -855,7 +857,8 @@ def main(
         dr_shed_dat['class'] = dr_shed_dat['class'].map(lambda x: x.replace('dr_shed_',''))
 
         dr_shed_dat.rename(columns={'variable':'r','bin':'variable'}, inplace=True)
-        dr_shed_dat = dr_shed_dat[['tech','r','value','var','variable']].fillna(0)
+        dr_shed_dat['c'] = '0'
+        dr_shed_dat = dr_shed_dat[['tech','c','r','value','var','variable']].fillna(0)
         allout_list.append(dr_shed_dat)
 
     if write:
@@ -885,12 +888,12 @@ def main(
     alloutm = (
         pd.concat(allout_list)
         .pivot(
-            index=["r", "tech", "variable"], columns=["var"], values=["value"]
+            index=["r", "tech", "c", "variable"], columns=["var"], values=["value"]
         )
         .dropna()["value"]
         .reset_index()
-        .melt(id_vars=["r", "tech", "variable"])[
-            ["tech", "r", "var", "variable", "value"]
+        .melt(id_vars=["r", "tech", "c", "variable"])[
+            ["tech", "c", "r", "var", "variable", "value"]
         ]
         ### Rename the first column so GAMS reads the header as a comment
         .rename(columns={"tech": "*i", "var": "sc_cat", "variable": "rscbin"})
@@ -915,6 +918,7 @@ def main(
             geohydro_rsc.loc[geohydro_rsc.sc_cat == "cost", "value"] *= deflate[
                 "geo_rsc_{}".format(geohydrosupplycurve)
             ]
+            geohydro_rsc["c"] = geohydro_rsc["*i"].str.rsplit("_", n=1).str[1]
             geohydro_rsc["rscbin"] = "bin1"
             alloutm = pd.concat([alloutm, geohydro_rsc])
 
@@ -928,6 +932,7 @@ def main(
             egs_rsc.loc[egs_rsc.sc_cat == "cost", "value"] *= deflate[
                 "geo_rsc_{}".format(egssupplycurve)
             ]
+            egs_rsc["c"] = egs_rsc["*i"].str.rsplit("_", n=1).str[1]
             egs_rsc["rscbin"] = "bin1"
             alloutm = pd.concat([alloutm, egs_rsc])
 
@@ -942,12 +947,12 @@ def main(
         egsnearfield_rsc.loc[egsnearfield_rsc.sc_cat == "cost", "value"] *= deflate[
             "geo_rsc_{}".format(egsnearfieldsupplycurve)
         ]
+        egsnearfield_rsc["c"] = egsnearfield_rsc["*i"].str.rsplit("_", n=1).str[1]
         egsnearfield_rsc["rscbin"] = "bin1"
         alloutm = pd.concat([alloutm, egsnearfield_rsc])
 
     ### Combine with cost components
     alloutm = pd.concat([alloutm, cost_components_upv, cost_components_wind])
-    alloutm["c"] = alloutm["*i"].map(i2c)
     alloutm = alloutm[["*i", "c", "r", "sc_cat", "rscbin", "value"]]
     if write:
         alloutm.to_csv(
@@ -989,6 +994,7 @@ def main(
     ### UPV
     sitemap_upv = (
         upvin.assign(i="upv_" + upvin["class"].astype(str))
+        .assign(c=upvin["class"].astype(str))
         .assign(rscbin="bin" + upvin["bin"].astype(str))
         .assign(x="i" + upvin["sc_point_gid"].astype(str))
     )
@@ -996,13 +1002,14 @@ def main(
         sitemap_upv
         ### Assign rb's based on the no-exclusions transmission table
         .assign(r=sitemap_upv.x.map(spursites.set_index("x").r))[
-            ["i", "r", "rscbin", "x"]
+            ["i", "c", "r", "rscbin", "x"]
         ].rename(columns={"i": "*i"})
     )
     ### wind-ons
     sitemap_windons = (
         windin["ons"]
         .assign(i="wind-ons_" + windin["ons"]["class"].astype(str))
+        .assign(c=windin["ons"]["class"].astype(str))
         .assign(rscbin="bin" + windin["ons"]["bin"].astype(str))
         .assign(x="i" + windin["ons"]["sc_point_gid"].astype(str))
     )
@@ -1010,7 +1017,7 @@ def main(
         sitemap_windons
         ### Assign r's based on the no-exclusions transmission table
         .assign(r=sitemap_windons.x.map(spursites.set_index("x").r))[
-            ["i", "r", "rscbin", "x"]
+            ["i", "c", "r", "rscbin", "x"]
         ].rename(columns={"i": "*i"})
     )
 
@@ -1021,6 +1028,7 @@ def main(
         sitemap_geohydro = (
             geoin["geohydro"]
             .assign(i="geohydro_allkm_" + geoin["geohydro"]["class"].astype(str))
+            .assign(c=geoin["geohydro"]["class"].astype(str))
             .assign(rscbin="bin" + geoin["geohydro"]["bin"].astype(str))
             .assign(x="i" + geoin["geohydro"]["sc_point_gid"].astype(str))
         )
@@ -1028,7 +1036,7 @@ def main(
             sitemap_geohydro
             ### Assign rb's based on the no-exclusions transmission table
             .assign(r=sitemap_geohydro.x.map(spursites.set_index("x").r))[
-                ["i", "r", "rscbin", "x"]
+                ["i", "c", "r", "rscbin", "x"]
             ].rename(columns={"i": "*i"})
         )
         spurline_sitemap_list.append(sitemap_geohydro)
@@ -1037,6 +1045,7 @@ def main(
         sitemap_egs = (
             geoin["egs"]
             .assign(i="egs_allkm_" + geoin["egs"]["class"].astype(str))
+            .assign(c=geoin["egs"]["class"].astype(str))
             .assign(rscbin="bin" + geoin["egs"]["bin"].astype(str))
             .assign(x="i" + geoin["egs"]["sc_point_gid"].astype(str))
         )
@@ -1044,7 +1053,7 @@ def main(
             sitemap_egs
             ### Assign rb's based on the no-exclusions transmission table
             .assign(r=sitemap_egs.x.map(spursites.set_index("x").r))[
-                ["i", "r", "rscbin", "x"]
+                ["i", "c", "r", "rscbin", "x"]
             ].rename(columns={"i": "*i"})
         )
         spurline_sitemap_list.append(sitemap_egs)
@@ -1053,7 +1062,6 @@ def main(
     spurline_sitemap = spurline_sitemap.loc[
         spurline_sitemap.x.isin(spursites.x.values)
     ].copy()
-    spurline_sitemap["c"] = spurline_sitemap["*i"].map(i2c)
     spurline_sitemap = spurline_sitemap[["*i", "c", "r", "rscbin", "x"]]
     if write:
         spurline_sitemap.to_csv(
