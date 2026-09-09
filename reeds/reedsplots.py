@@ -5304,7 +5304,7 @@ def separate_charge_discharge(df):
 
 def check_metric(metric):
     allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
+        r'(cap|rep_mean|stress_(mean|price_weighted|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
     )
     if not re.match(allowed, metric):
         raise ValueError(f"metric={metric} must match {allowed}")
@@ -5444,6 +5444,23 @@ def get_cap_rep_stress_mix(
                     .divide(gen_h_stress.groupby('t').h.unique().map(len), axis=0)
                 )
 
+            elif key == 'stress_price_weighted':
+                ## Price-weighted average generation across all stress hours:
+                ## sum_h(gen*price) / sum_h(price)
+                price_long = price_stress.stack('r').rename('price').reset_index()
+                price_sum = price_long.groupby(['t','r'], as_index=False).price.sum()
+                gen_price = gen_h_stress.merge(price_long, on=['t','r','h'], how='left')
+                gen_price['price'] = gen_price['price'].fillna(0)
+                gen_price['gen_x_price'] = gen_price.MW * gen_price.price
+                numer = gen_price.groupby(['t','i','r'], as_index=False).gen_x_price.sum()
+                df = numer.merge(price_sum, on=['t','r'], how='left')
+                df['MW'] = df.gen_x_price / df.price
+                df = df.set_index(['t','i','r']).MW.unstack('r')
+                ## Guard against exact-cancellation division by zero (positive/negative hourly
+                ## prices summing to ~0 while gen_x_price is nonzero); NaN (0/0) is also possible
+                ## and both should collapse to 0
+                df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+
             ## Generation during regional max hours
             elif key.startswith('stress'):
                 direction = ('top' if 'top' in key else 'bottom')
@@ -5514,6 +5531,8 @@ def stress_mix_label(case, metric):
         xlabel = f"Rep {metric.split('_')[1]} gen"
     elif metric == 'stress_mean':
         xlabel = 'Stress mean gen'
+    elif metric == 'stress_price_weighted':
+        xlabel = 'Stress: price-weighted gen'
     elif ('top' in metric) or ('bottom' in metric):
         direction = ('top' if 'top' in metric else 'bottom')
         xlabel = "Stress: {} {} {} hours".format(
@@ -5796,7 +5815,7 @@ def plot_stress_mix(
 def plot_stress_cf(
     case:str|Path,
     level='transreg',
-    metric='stress_top10_netload',
+    metric='stress_price_weighted',
     include_rep=True,
     figwidth=1.2,
     figheight=1.2,
@@ -5830,6 +5849,9 @@ def plot_stress_cf(
     techs = dfstress['cap'].index.tolist()
     capcredit = (dfstress[metric] / dfstress['cap']).reindex(techs) * 100
     repfraction = (dfstress['rep_mean'] / dfstress['cap']).reindex(techs) * 100
+    ## Replace and INF values with NaN (can occur due to small-number division)
+    capcredit = capcredit.replace([np.inf, -np.inf], np.nan)
+    repfraction = repfraction.replace([np.inf, -np.inf], np.nan)
     ### Set up plot
     dfmap = reeds.io.get_dfmap(case)
     regions = dfmap[level].bounds.minx.sort_values().index
@@ -5877,7 +5899,13 @@ def plot_stress_cf(
                     )
             _ax.set_xlabel(None)
     ## Formatting
-    _ax.set_ylim(0, 100)
+    finite_vals = np.concatenate([
+        capcredit.values[np.isfinite(capcredit.values)],
+        repfraction.values[np.isfinite(repfraction.values)],
+    ])
+    datamax = finite_vals.max() if finite_vals.size else 0
+    ymax = datamax * 1.02 if datamax > 100 else 100
+    _ax.set_ylim(0, ymax)
     _ax.set_xlim(yearmin, yearmax)
     _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
     _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
