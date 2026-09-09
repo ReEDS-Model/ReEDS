@@ -22,7 +22,10 @@ max_cost_value_factor = 5
 inv_value_factor_ylim = (0.8, 3)
 cost_factor_ylim = (0.8, 3)
 fit_techs = ['Onshore Wind','UPV'] #Techs given a dotted OLS fit vs market share on the value/cost-factor figures.
-show_cost_factor = True #On the VRE_VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
+vcf_techs = None #Techs on the value-cost-factor figures. None takes every tech in the core results that clears vcf_min_anchor_gen_frac, which brings in the dispatchable techs; the contrast is the point, since their bands are thin or absent (nuclear's k_vcf - k_vf is -0.00 against 0.55 for wind). Set a list to override.
+vcf_max_cols = 3 #Panels per row on the value-cost-factor figures before wrapping to a new row.
+vcf_min_anchor_gen_frac = 0.25 #A tech is only plotted if its data reaches this low a market share. The figure matches the VF and VCF fit intercepts AT x=0, so a tech whose data never approaches zero has that match, and the whole shaded band, extrapolated from nowhere. Gas-CC is the case this excludes: its market share never falls below 0.463, and its VF fit has R2 0.24, yet it would draw a k difference of 0.56 - as wide as onshore wind's - purely from extrapolation. Coal (0.170) and nuclear (0.172) clear it.
+show_cost_factor = True #On the VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
 cost_factor_direct = False #False plots 1/(cost factor), which declines like the other two series and peaks near 1.0, keeping the shaded band legible. True plots the cost factor itself, which rises so it reads as escalation directly and ends at the number quoted in the panel text, but reaches ~2.2 and so roughly halves the band's share of the axis (wind 10.8% -> 5.7%, UPV 3.7% -> 2.0%).
 show_cost_factor_fit = True #Draw the cost-factor curve implied by the VF and VCF fits, alongside the cost-factor data. It is the ratio of the two fits, not a fit of its own, so it is exactly the curve the shaded band asserts. Note the fitted ratio and the data part company at high market share for UPV - 0.70 implied against 0.45 observed - which is a real limitation of describing a ratio by the ratio of two fits; both numbers are in plcoe_pitch_vcf_scales.csv. Only has an effect when show_cost_factor is on.
 
@@ -634,6 +637,26 @@ def implied_cf_equation(form, vf_p, vcf_p, direct):
     return f'y = {lead}(1-x)$^{{{num[1] - den[1]:.2f}}}$'
 
 
+def vcf_panel_techs(df, techs=None):
+    """Techs eligible for the value-cost-factor figures, in a stable order.
+
+    The figure's construction - scale LCOE base until the VF and VCF fits share an intercept at
+    x=0, then shade between them - only means something if the data comes near x=0. A tech whose
+    market share starts high has its intercept, and therefore the entire band, produced by
+    extrapolation rather than measurement, so vcf_min_anchor_gen_frac gates on the lowest observed
+    market share rather than on the tech name.
+    """
+    if techs is not None:
+        return [t for t in techs if t in set(df['tech'])]
+    if vcf_techs is not None:
+        return [t for t in vcf_techs if t in set(df['tech'])]
+    lo = df.groupby('tech')['gen_frac'].min()
+    #fit_techs first so the VRE panels lead, then the rest by how far their market share reaches.
+    rest = sorted([t for t in lo.index if t not in fit_techs and lo[t] <= vcf_min_anchor_gen_frac],
+                  key=lambda t: -df[df['tech'] == t]['gen_frac'].max())
+    return [t for t in fit_techs if t in lo.index] + rest
+
+
 def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
     """One panel per tech, showing value factor against value-cost factor after LCOE base has been
     scaled so the two share a fit intercept.
@@ -649,14 +672,19 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
     true 31% for wind, 35% against 20% for UPV). On a log axis equal vertical distances are equal
     ratios, the band's thickness is exactly ln(cost factor), and the value and cost gaps stack to the
     VCF gap, so the split can be measured off the page at any market share."""
-    techs = fit_techs if techs is None else techs
+    techs = vcf_panel_techs(df, techs)
     colors = build_color_map(techs)
     predict, equation = _fit_form(form)
     label = 'linear' if form == 'linear' else 'power (NLS)'
 
-
-    fig, axes = plt.subplots(1, len(techs), figsize=(6.8 * len(techs), 5.2), squeeze=False)
-    axes = axes[0]
+    #Wrap onto a grid rather than one long row: with the dispatchable techs included a single row
+    #would be well over two feet wide.
+    ncol = min(len(techs), vcf_max_cols)
+    nrow = int(np.ceil(len(techs) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(6.8 * ncol, 5.2 * nrow), squeeze=False)
+    axes = axes.ravel()
+    for ax in axes[len(techs):]:
+        ax.set_visible(False)
     scales = []
     for ax, tech in zip(axes, techs):
         d = df[df['tech'] == tech].dropna(
@@ -807,7 +835,8 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False):
                        'implied_cost_factor_at_gen_frac_max': cf_hi,
                        'observed_cost_factor_at_gen_frac_max': cf_observed,
                        'gen_frac_max': x.max()})
-    axes[0].set_ylabel('Value factor / value-cost factor')
+    for i in range(0, len(techs), ncol):
+        axes[i].set_ylabel('Value factor / value-cost factor')
     fig.suptitle(
         f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)'
         + (' - log scale, so the value and cost declines stack' if log_y else ''),
@@ -947,24 +976,28 @@ def make_figs(valcostfac_core_path, output_dir=None):
             use_adj=True,
             show_fits=True,
         )
-        #The VRE_VCF pair: value factor against value-cost factor with LCOE base scaled so the two
-        #share a fit intercept, under each fit form. The _adj figures above are left as they were.
+        #The VCF pair: value factor against value-cost factor with LCOE base scaled so the two
+        #share a fit intercept, under each fit form. Panels cover every tech clearing
+        #vcf_min_anchor_gen_frac, not just VRE, so the dispatchable techs' near-absent bands sit
+        #beside the VRE ones. The _adj figures above are left as they were.
         fig_vcf_lin, scales_lin = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_linear.png'), form='linear')
+            df, os.path.join(output_dir, 'plcoe_pitch_VCF_linear.png'), form='linear')
         fig_vcf_pow, scales_pow = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_power.png'), form='power')
+            df, os.path.join(output_dir, 'plcoe_pitch_VCF_power.png'), form='power')
         #Log-scale counterparts. Same fits and the same LCOE base scaling - only the axis differs -
         #so they add no rows to the scales table.
         fig_vcf_lin_log, _ = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_linear_logy.png'), form='linear',
+            df, os.path.join(output_dir, 'plcoe_pitch_VCF_linear_logy.png'), form='linear',
             log_y=True)
         fig_vcf_pow_log, _ = plot_vre_vcf(
-            df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_power_logy.png'), form='power',
+            df, os.path.join(output_dir, 'plcoe_pitch_VCF_power_logy.png'), form='power',
             log_y=True)
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)
         fig_vcf_bars, decomp = plot_vcf_decomposition(
+            #Still VRE-only: it takes fit_techs, and a stacked split of a near-zero total is
+            #not worth a panel for the dispatchable techs.
             df, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png'), form='power')
         plt.close(fig_vcf_bars)
         plt.close(fig_vcf_lin)
