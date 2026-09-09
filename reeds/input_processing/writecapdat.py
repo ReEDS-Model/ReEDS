@@ -647,6 +647,11 @@ def main(reeds_path, inputs_case):
 
     (cap_exog, rsc_class) = create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear)
 
+    # csp-ns is modeled as upv, so its pre-startyear capacity belongs with the exogenous
+    # upv capacity.
+    exog_cap_upv = pd.concat(
+        [cap_exog['upv'], cap_exog['csp-ns']], ignore_index=True)
+
 
     #%%####################################
     #    -- RSC Prescribed Capacity --    #
@@ -1039,7 +1044,7 @@ def main(reeds_path, inputs_case):
                 'can_imports_capacity' : can_imports_capacity.reset_index(),
                 'geoexist' : geoexist,
                 'h2_ba_share': h2_ba_share_out,
-                'exog_cap_upv':cap_exog['upv'],
+                'exog_cap_upv':exog_cap_upv,
                 'exog_cap_wind-ons':cap_exog['wind-ons'],
                 'exog_cap_wind-ofs':cap_exog['wind-ofs'],
                 'exog_cap_geohydro':cap_exog['geohydro_allkm']

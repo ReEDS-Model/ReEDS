@@ -652,7 +652,9 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * writecapdat.py bins csp-ns into the upv resource classes it is modeled as, so take it
-* back out of those same classes.
+* back out of those same classes. cap_cspns_short catches any csp-ns left with no upv to
+* come out of, which means the capacity written by writecapdat.py and the capacity carried
+* by the model have diverged.
 cap_upv_class(c,r,t)$tmodel_new(t) =
     sum{(i,v)$[upv(i)$valcap_class(i,c,v,r,t)], CAP_CLASS.l(i,c,v,r,t) / ilr(i) } ;
 
