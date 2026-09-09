@@ -523,7 +523,7 @@ repbioprice(r,t)$[tmodel_new(t)$tfuel(t)] = max{0, smax{bioclass$BIOUSED.l(biocl
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
 repbioprice(r,t)$[tmodel_new(t)$(not tfuel(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
-    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('2018') *
+    1/(cost_scale) * 1/(pvf_onm(t)) *
     sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
     / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
 ;
@@ -577,21 +577,23 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 
 * gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
-* approach with GSw_FixedCostSupply=1 or default supply curves
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedFuels)] =
-    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
-    * eq_supplydemand_fsc.m('NG',cendiv,t)
+* Raw FINITO marginals in a linked solve already include deflator('2018').
+* Undo cost_scale and pvf_onm only to report $2004; FINITO obj_scale cancels
+* in the linked ReEDS objective. Annual FSC balances do not use hours(h).
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedNG)] =
+    1/(cost_scale) * 1/(pvf_onm(t))
+    * eq_supplydemand_fsc.m('NG','Electric_Power',cendiv,t)
 ;
 
-* approach with detailed fuels representation (GSw_DetailedFuels=1)
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedFuels] =
-    deflator('2018') * 1/(obj_scale) * 1/(pvf_onm(t)) 
-*   citygate price of natural gas
-    * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
-*   electric-sector markup for natural gas
-* TODO: activate after FINITO pricing PR is merged
-*       + smax{cfp$[gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)], cf_markup(cfp,'NG','Electric_Power',cendiv,t) }
-    ]
+* Detailed NG: citygate marginal plus the electric-sector consumption markup.
+* Both equations are hourly, so divide their marginals by hours(h).
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedNG] =
+    1/(cost_scale) * 1/(pvf_onm(t))
+    * [ smax{(cfp,st)$[st_cendiv(st,cendiv)$gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],
+              eq_supplydemand_cf.m(cfp,'NG',st,h,t)}
+        + smax{cfp$[gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],
+              eq_consumption_cf.m(cfp,'NG','Electric_Power',cendiv,h,t)}
+      ] / hours(h)
 ;
 $else.finitogasprice
     repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] = 0 ;

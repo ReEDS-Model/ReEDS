@@ -195,8 +195,8 @@ def get_hourly_finito_load(
     inputs_case: str,
 ) -> pd.DataFrame:
     """
-    Load FINITO's reference annual industrial demand (load_finito.csv), aggregate it
-    to this run's model regions, and spread it evenly across all hours.
+    Load FINITO's annual reference electricity demand, already aggregated
+    by FINITO copy_files.py to this run's model regions, and spread it over hours.
 
     Returns an hourly load dataframe (year index, model-region columns, MW).
     """
@@ -210,24 +210,18 @@ def get_hourly_finito_load(
     load_finito = load_finito.pivot(index='year', columns='r', values='load_MWh')
     load_finito.columns.name = None
 
-    # load_finito.csv is at z134 (p) resolution, so aggregate to this
-    # run's model regions
-    county2p = reeds.io.get_county2zone(GSw_ZoneSet='z134')
-    county2zone = reeds.io.get_county2zone(case=Path(inputs_case).parent)
-    p2zone = (
-        pd.concat({'p': county2p, 'zone': county2zone}, axis=1)
-        .dropna()
-        .drop_duplicates()
-    )
-    zones_per_p = p2zone.groupby('p')['zone'].nunique()
-    if (zones_per_p > 1).any():
-        raise ValueError(
-            'Cannot aggregate load_finito.csv from z134 to model regions because '
-            'these p regions span multiple model regions: '
-            f'{zones_per_p.loc[zones_per_p > 1].index.tolist()}'
-        )
-    p2zone = p2zone.set_index('p')['zone']
-    load_finito = load_finito.rename(columns=p2zone).T.groupby(level=0).sum().T
+    # The linked FINITO producer now writes model-region rows, not z134 BAs.
+    # Reapplying a BA-to-zone map can map a model label a second time.
+    # Use the domain exported by the same FINITO preprocessing run instead.
+    region_frame = pd.read_csv(inputs_case_finito / "reeds" / "r.csv", dtype=str)
+    if list(region_frame.columns) != ["*r"] or region_frame["*r"].isna().any():
+        raise ValueError("Expected one nonempty *r column in FINITO inputs_case/reeds/r.csv")
+    model_regions = region_frame["*r"].tolist()
+    if len(model_regions) != len(set(model_regions)):
+        raise ValueError("Duplicate model regions in FINITO inputs_case/reeds/r.csv")
+    if set(load_finito.columns) != set(model_regions):
+        raise ValueError("load_finito.csv does not match its FINITO model-region domain")
+    load_finito = load_finito.reindex(columns=model_regions)
 
     # allocate annual load to hours, assuming flat demand
     # TODO: should this use h_weight_finito?
