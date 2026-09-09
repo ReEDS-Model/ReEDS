@@ -335,38 +335,36 @@ def get_yearly_flexibility(
             shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shape_profile_{stype}.h5"))
                  
         elif drcat.lower() == "dr_shift":
-            shape[stype] = pd.read_csv(
-                os.path.join(inputs_case, f"dr_shift_profile_{stype}.csv")
-            )
+            shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shift_profile_{stype}.h5"))
         else:
             raise ValueError(
                 f"drcat must be in ['dr','dr_shape','dr_shift'] but is '{drcat}'"
             )
 
         modeledyears_int = [int(y) for y in modeledyears]        
-        shape[stype] = shape[stype].loc[shape[stype].year.isin(modeledyears_int)].reset_index(drop = True)
+        shape[stype] = shape[stype].loc[shape[stype].year.isin(modeledyears_int)]
 
-        unique_techs = len(shape[stype].i.unique()) if 'i' in shape[stype].columns else 1
+        unique_techs = list({x.split('|')[0] for x in shape[stype].columns[1:]})
 
         # EER derived shape data is populated for multiple weather years
         # The hour column is populated as a timestamp
-        if len(str(shape[stype].hour[0])) > 4:
+        # if len(str(shape[stype].hour[0])) > 4:
+        if len(str(shape[stype].index[0])) > 4:
             # Define timezone to UTC-6
-            shape[stype].set_index(pd.to_datetime(shape[stype]['hour']), inplace=True)
+            shape[stype].set_index(pd.to_datetime(shape[stype].index), inplace=True)
             shape[stype].index = shape[stype].index.tz_localize('Etc/GMT+6')
-            shape[stype].drop('hour', axis=1, inplace=True)
             shape[stype].reset_index(inplace=True)
 
             # create dictionary from hmap 
             hour2h = hmap_1yr.set_index('timestamp')['h'].to_dict()
             # Map timestamps to h values
-            shape[stype]['h'] = shape[stype]['hour'].map(hour2h)
+            shape[stype]['h'] = shape[stype]['datetime'].map(hour2h)
             # Filter out hours not in hmap
             shape[stype] = shape[stype].loc[~shape[stype]['h'].isnull()]
             # Remove timestamp col
-            shape[stype] = shape[stype].drop(columns = 'hour')
+            shape[stype] = shape[stype].drop(columns = 'datetime')
             # Flip region columns to single column
-            region_cols = [col for col in shape[stype].columns if col not in ['i','year','h']]
+            region_cols = [col for col in shape[stype].columns if col not in ['year','h']]
             if region_cols:
                 shape[stype] = shape[stype].melt(
                     id_vars=[col for col in shape[stype].columns if col not in region_cols],
@@ -374,10 +372,13 @@ def get_yearly_flexibility(
                     var_name='r',
                     value_name='Values'
                 )
-
+            # Split the region column into dr type and region
+            shape[stype]['i'] = shape[stype]['r'].apply(lambda x: x.split('|')[0])
+            shape[stype]['r'] = shape[stype]['r'].apply(lambda x: x.split('|')[1])
+            shape[stype]['year'] = shape[stype]['year'].astype(int)
             # Reorder columns
             shape_out[stype] = shape[stype][['i','r','h','year','Values']].copy()
-            shape_out[stype] = shape_out[stype].rename(columns={'year':'t','i':'*i'})
+            shape_out[stype] = shape_out[stype].rename(columns={'year':'t'})
 
 
         # End use shape data populated for single weather year
@@ -1342,8 +1343,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     else:
         # populate empty dataframe
-        dr_shape_dec = pd.DataFrame(columns=["*i", "r", "h","t"])
-        dr_shape_inc = pd.DataFrame(columns=["*i", "r", "h","t"])
+        dr_shape_dec = pd.DataFrame(columns=["i", "r", "h","t"])
+        dr_shape_inc = pd.DataFrame(columns=["i", "r", "h","t"])
 
     if int(sw.GSw_DRShift):
         dr_shift_dec, dr_shift_inc, dr_shift_profile_energy = (
@@ -1360,9 +1361,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         )
     else:
         # Populate empty dataframe
-        dr_shift_dec = pd.DataFrame(columns=["*i", "r", "h", "t"])
-        dr_shift_inc = pd.DataFrame(columns=["*i", "r", "h", "t"])
-        dr_shift_profile_energy = pd.DataFrame(columns=["*i", "r", "h", "t"])
+        dr_shift_dec = pd.DataFrame(columns=["i", "r", "h", "t"])
+        dr_shift_inc = pd.DataFrame(columns=["i", "r", "h", "t"])
+        dr_shift_profile_energy = pd.DataFrame(columns=["i", "r", "h", "t"])
 
 
 
@@ -1571,7 +1572,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "dr_shape_generation": [
             (
                 dr_shape_dec.assign(h=dr_shape_dec.h.map(chunkmap))
-                .groupby(["*i", "r", "h","t"])
+                .groupby(["i", "r", "h","t"])
                 .mean()
                 .round(decimals)
                 .reset_index()
@@ -1582,7 +1583,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "dr_shape_load": [
             (
                 dr_shape_inc.assign(h=dr_shape_inc.h.map(chunkmap))
-                .groupby(["*i", "r", "h","t"])
+                .groupby(["i", "r", "h","t"])
                 .mean()
                 .round(decimals)
                 .reset_index()
@@ -1593,7 +1594,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "dr_shift_discharge": [
             (
                 dr_shift_dec.assign(h=dr_shift_dec.h.map(chunkmap))
-                .groupby(["*i", "r", "h", "t"])
+                .groupby(["i", "r", "h", "t"])
                 .max()
                 .round(decimals)
                 .reset_index()
@@ -1604,7 +1605,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "dr_shift_charge": [
             (
                 dr_shift_inc.assign(h=dr_shift_inc.h.map(chunkmap))
-                .groupby(["*i", "r", "h", "t"])
+                .groupby(["i", "r", "h", "t"])
                 .max()
                 .round(decimals)
                 .reset_index()
@@ -1615,7 +1616,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         "dr_shift_profile_energy": [
             (
                 dr_shift_profile_energy.assign(h=dr_shift_profile_energy.h.map(chunkmap))
-                .groupby(["*i", "r", "h", "t"])
+                .groupby(["i", "r", "h", "t"])
                 .max()
                 .round(decimals)
                 .reset_index()

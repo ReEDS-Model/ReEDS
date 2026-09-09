@@ -908,15 +908,16 @@ def read_file(filename, parse_timestamps=True):
 
     # All values being NaN indicates that the region filtering in copy_files.py removed all
     # data, leaving an empty dataframe.
-    # Return an empty dataframe with the original file's index if all values are NaN
-    if all(df.isnull().all()):
+    # Return an empty dataframe with the original file's index if all values are NaN.
+    if df.isna().to_numpy().all():
         df = df.drop(columns=df.columns)
         return df
 
     # NOTE: Some files are saved as float16, so we cast to float32 to prevent issues with
     # large/small numbers
-    numeric_cols = [c for c in df if is_float_dtype(df[c].dtype)]
-    df = df.astype({column: np.float32 for column in numeric_cols})
+    numeric_cols = list(df.select_dtypes(include=[np.floating]).columns)
+    if numeric_cols:
+        df = df.astype({column: np.float32 for column in numeric_cols})
 
     return df
 
