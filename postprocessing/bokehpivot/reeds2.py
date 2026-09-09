@@ -818,12 +818,12 @@ def pre_lcoe(dfs, **kw):
     #Apply inflation
     dfs['lcoe']['$/MWh'] = inflate_series(dfs['lcoe']['$/MWh'])
     #Merge with available capacity
-    df = pd.merge(left=dfs['lcoe'], right=dfs['avail'], how='left', on=['tech', 'rb', 'year', 'bin'], sort=False)
+    df = pd.merge(left=dfs['lcoe'], right=dfs['avail'], how='left', on=['tech', 'class', 'rb', 'year', 'bin'], sort=False)
     df['available MW'] = df['available MW'].fillna(0)
     df['available'] = 'no'
     df.loc[df['available MW'] > 0.001, 'available'] = 'yes'
     #Merge with chosen capacity
-    df = pd.merge(left=df, right=dfs['inv'], how='left', on=['tech', 'vintage', 'rb', 'year', 'bin'], sort=False)
+    df = pd.merge(left=df, right=dfs['inv'], how='left', on=['tech', 'class', 'vintage', 'rb', 'year', 'bin'], sort=False)
     df['chosen MW'] = df['chosen MW'].fillna(0)
     df['chosen'] = 'no'
     df.loc[df['chosen MW'] != 0, 'chosen'] = 'yes'
