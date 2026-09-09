@@ -386,6 +386,9 @@ def setup_resource_run(casename, case, args):
     else:
         dct_rev = df_rev_case.squeeze().to_dict()
 
+    if dct_rev['original_rev_folder'].lower() == 'none':
+        raise Exception(f"original_rev_folder='none' for {dct_rev['tech']}--skipping hourlize.")
+
     # update relevant categories with full rev path information
     # rev_cases_path should have files for each year with hourly generation data for each supply curve point
     # or gen_gid, called [rev_case]_rep-profiles_[select_year].h5.
@@ -395,8 +398,12 @@ def setup_resource_run(casename, case, args):
     case['sc_path'] = os.path.join(remotepath, "Supply_Curve_Data", dct_rev['sc_path'])
     case['rev_path'] = os.path.join(remotepath, "Supply_Curve_Data", dct_rev['sc_path'], "reV", dct_rev['rev_case'])
     case['original_sc_file'] = os.path.join(remotepath, "Supply_Curve_Data", dct_rev['sc_path'], "reV", dct_rev['original_sc_file'])
+    case['original_rev_folder'] = dct_rev['original_rev_folder']
     case['sc_file'] = os.path.join(outpath, 'results', case['tech'] + '_supply_curve_raw.csv')
     case['rev_paths_file'] = rev_paths_file
+
+    # add date updated
+    case['date_updated'] = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
     # create combined config for run (add tech config later after additional processing)
     # order of dictionary merges here means that the precedence for overridding duplicated entries
@@ -443,22 +450,78 @@ def setup_resource_run(casename, case, args):
     launch_batch_file(casename, configpath, outpath, args)
 
 
+def get_cases(args):
+    """Build resource run cases from rev_paths.csv with optional filters."""
+    # Load base config and resolve rev_paths_file.
+    config = load_base_config()
+    resource_config = dict(config['resource'])
+    config_string_formatter(resource_config, args.verbose)
+
+    # check file exists and then load rev_paths file
+    rev_paths_file = resource_config.get('rev_paths_file')
+    if not rev_paths_file:
+        raise Exception("'rev_paths_file' is not set in config_base.json under 'resource'.")
+    if not os.path.exists(rev_paths_file):
+        raise Exception(f"Could not find rev_paths file at {rev_paths_file}.")
+    df_rev = pd.read_csv(rev_paths_file)
+   
+    # Keep rows with valid selector values and apply filters
+    df_rev = df_rev[df_rev['tech'].notna() & df_rev['access_case'].notna()].copy()
+    df_rev['tech'] = df_rev['tech'].astype(str).str.strip()
+    df_rev['access_case'] = df_rev['access_case'].astype(str).str.strip()
+
+    tech_filter = [t.strip() for t in args.tech] if args.tech else None
+    exclude_techs = [t.strip() for t in args.exclude_tech] if args.exclude_tech else None
+    access_case_filter = [a.strip() for a in args.access_case] if args.access_case else None
+    if tech_filter:
+        df_rev = df_rev[df_rev['tech'].isin(tech_filter)]
+    if exclude_techs:
+        df_rev = df_rev[~df_rev['tech'].isin(exclude_techs)]
+    if access_case_filter:
+        df_rev = df_rev[df_rev['access_case'].isin(access_case_filter)]
+
+    if df_rev.empty:
+        valid_techs = sorted(pd.read_csv(rev_paths_file)['tech'].dropna().astype(str).str.strip().unique())
+        valid_access = sorted(pd.read_csv(rev_paths_file)['access_case'].dropna().astype(str).str.strip().unique())
+        raise Exception(
+            "No rev_paths rows matched the requested filters. "
+            f"tech={tech_filter}, access_case={access_case_filter}. "
+            f"Valid tech values: {valid_techs}. "
+            f"Valid access_case values: {valid_access}."
+        )
+
+    # Guard against ambiguous case definitions.
+    dupes = df_rev.duplicated(subset=['tech', 'access_case'], keep=False)
+    if dupes.any():
+        dup_pairs = (
+            df_rev.loc[dupes, ['tech', 'access_case']]
+            .drop_duplicates()
+            .sort_values(['tech', 'access_case'])
+        )
+        dup_msg = ", ".join(
+            f"{row.tech}/{row.access_case}" for row in dup_pairs.itertuples(index=False)
+        )
+        raise Exception(
+            "Duplicate (tech, access_case) pairs found in rev_paths file: "
+            f"{dup_msg}. Please update rev_paths file to ensure each row is unique."
+        )
+
+    cases = {}
+    for row in df_rev[['tech', 'access_case']].drop_duplicates().itertuples(index=False):
+        casename = f"{row.tech}_{row.access_case}"
+        cases[casename] = {
+            'tech': row.tech,
+            'access_case': row.access_case,
+        }
+
+    return cases
+
+
 def setup_resource(args):
     """procedure for setting up resource.py runs"""
     ## Cases to run
-    # load cases from json using specified suffix (default: "cases_default.json")
-    if args.cases == "default":
-        print("Loading cases from cases.json")
-        casepath = os.path.join(hourlize_path, "inputs", "configs", "cases.json")
-    else:
-        print(f"Loading cases from cases_{args.cases}.json")
-        casepath = os.path.join(hourlize_path, "inputs", "configs", f"cases_{args.cases}.json")
-    # confirm that cases file exists
-    if not os.path.exists(casepath):
-        raise Exception(f"Could not find cases json at {casepath}.")
-    # load cases
-    with open(casepath, "r") as f:
-        cases = json.load(f, object_pairs_hook=OrderedDict)
+    print("Loading resource cases from rev_paths.csv")
+    cases = get_cases(args)
 
     print("\nSetting up resource.py runs for the following cases:\n")
     for c in cases:
@@ -499,6 +562,111 @@ def setup_load(args):
     launch_batch_file(casename, configpath, outpath, args)
 
 
+def check_status(out_dir, cases=None):
+    """
+    Scan log files in out_dir and print a summary table of case outcomes.
+
+    Parameters
+    ----------
+    out_dir : str
+        Path to the hourlize output directory containing case subdirectories.
+    cases : list of str, optional
+        Subset of case folder names to check. If None, all subdirectories are scanned.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Table with columns: case, status, elapsed, last_error.
+        Status values: 'success', 'failed', 'running', 'not started'.
+    """
+    out_dir = os.path.abspath(out_dir)
+    if not os.path.isdir(out_dir):
+        print(f"Output directory not found: {out_dir}")
+        return pd.DataFrame(columns=['case', 'status', 'elapsed', 'last_error'])
+
+    # collect case folders to check
+    all_dirs = sorted([
+        d for d in os.listdir(out_dir)
+        if os.path.isdir(os.path.join(out_dir, d))
+    ])
+    if cases is not None:
+        all_dirs = [d for d in all_dirs if d in cases]
+
+    rows = []
+    for casename in all_dirs:
+        casedir = os.path.join(out_dir, casename)
+        logfile = os.path.join(casedir, f'log_{casename}.txt')
+
+        status = 'not started'
+        elapsed = ''
+        last_error = ''
+
+        if not os.path.exists(logfile):
+            pass  # status remains 'not started'
+        else:
+            with open(logfile, 'r', errors='replace') as f:
+                lines = [line.rstrip() for line in f if line.strip()]
+
+            if not lines:
+                pass  # empty log → 'not started'
+            elif 'All done! total time:' in lines[-1]:
+                status = 'success'
+                match = re.search(r'All done! total time:\s*(.+)$', lines[-1])
+                if match:
+                    elapsed = re.sub(r'\.\d+$', '', match.group(1).strip())
+            else:
+                # check for ERROR-level lines in the log
+                error_lines = [l for l in lines if '| ERROR |' in l]
+                if error_lines:
+                    status = 'failed'
+                    match = re.search(r'\| ERROR \|\s*(.+)$', error_lines[-1])
+                    if match:
+                        last_error = match.group(1).strip()
+                else:
+                    # fall back to SLURM output for traceback detection
+                    slurm_files = sorted([
+                        f for f in os.listdir(casedir)
+                        if f.startswith('slurm-') and f.endswith('.out')
+                    ])
+                    slurm_failed = False
+                    if slurm_files:
+                        slurm_path = os.path.join(casedir, slurm_files[-1])
+                        with open(slurm_path, 'r', errors='replace') as sf:
+                            slurm_lines = sf.readlines()
+                        if any('Traceback' in l or 'Error:' in l for l in slurm_lines):
+                            slurm_failed = True
+                            err_candidates = [
+                                l.strip() for l in slurm_lines
+                                if re.search(r'Error:', l)
+                            ]
+                            if err_candidates:
+                                last_error = err_candidates[-1][:120]
+                    status = 'failed' if slurm_failed else 'running'
+
+        rows.append({
+            'case': casename,
+            'status': status,
+            'elapsed': elapsed,
+            'last_error': last_error,
+        })
+
+    df = pd.DataFrame(rows, columns=['case', 'status', 'elapsed', 'last_error'])
+
+    # print status summary as a table
+    col_widths = [max(len(str(v)) for v in [col] + df[col].tolist()) for col in df.columns]
+    divider = '+' + '+'.join('-' * (w + 2) for w in col_widths) + '+'
+    def fmt_row(vals):
+        return '|' + '|'.join(f' {str(v):<{w}} ' for v, w in zip(vals, col_widths)) + '|'
+    print(divider)
+    print(fmt_row(df.columns))
+    print(divider)
+    for _, row in df.iterrows():
+        print(fmt_row(row))
+    print(divider)
+
+    return df
+
+
 #%% ===========================================================================
 ### --- PROCEDURE ---
 ### ===========================================================================
@@ -506,10 +674,14 @@ if __name__== '__main__':
     ## Command line arguments to script
     parser = argparse.ArgumentParser(description='Sets up hourlize resource or load runs.')
     parser.add_argument('mode', type=str,
-                        choices=['load', 'resource'],
-                        help='Setup runs for load.py or resource.py?')
-    parser.add_argument('--cases', '-c', type=str, default='default',
-                    help='Suffix for cases json file (currently only used for resource.py)')
+                        choices=['load', 'resource', 'status'],
+                        help='Setup runs for load.py or resource.py, or check status of existing runs.')
+    parser.add_argument('--tech', '-t', nargs='+',
+                    help='Optional tech filter(s) for resource/status mode, e.g. --tech upv wind-ons')
+    parser.add_argument('--exclude_tech', '-e', nargs='+',
+                    help='Optional techs to exclude for resource/status mode, e.g. --exclude_tech geohydro')
+    parser.add_argument('--access_case', '-c',  nargs='+',
+                    help='Optional access_case filter(s) for resource mode, e.g. --access_case reference limited')
     parser.add_argument('--debugnode', '-d', default=False, action='store_true',
                     help='Run using debug specifications for slurm on an hpc system')
     parser.add_argument('--local', '-l', default=False, action='store_true',
@@ -528,7 +700,8 @@ if __name__== '__main__':
     # class Args:
     #     def __init__(self):
     #         self.mode = 'resource'
-    #         self.cases = 'default'
+    #         self.tech = ['upv']
+    #         self.access_case = ['reference']
     #         self.debugnode = False
     #         self.local = True
     #         self.nosubmit = False
@@ -540,14 +713,40 @@ if __name__== '__main__':
     #%% set paths
     hourlize_path = os.path.dirname(os.path.realpath(__file__))
     reeds_path = os.path.abspath(os.path.join(hourlize_path, ".."))
-    remotepath, args.local = get_remote_path(args.local)
 
     #%% run setup
-    print(f"\nSetting up hourlize calls to {args.mode}.py")
-    if args.mode == "load":
-        setup_load(args)
-    elif args.mode == "resource":
-        setup_resource(args)
+    if args.mode == 'status':
+        out_dir = os.path.join(hourlize_path, 'out')
+
+        # build optional case-name filter from --tech / --exclude_tech / --access_case
+        cases = None
+        if args.tech or args.exclude_tech or args.access_case:
+            if os.path.isdir(out_dir):
+                cases = []
+                for d in os.listdir(out_dir):
+                    if not os.path.isdir(os.path.join(out_dir, d)):
+                        continue
+                    # case folder names follow the pattern {tech}_{access_case};
+                    # split on the last underscore to recover the two parts
+                    last_us = d.rfind('_')
+                    tech = d[:last_us] if last_us != -1 else d
+                    access = d[last_us + 1:] if last_us != -1 else ''
+                    if args.tech and tech not in args.tech:
+                        continue
+                    if args.exclude_tech and tech in args.exclude_tech:
+                        continue
+                    if args.access_case and access not in args.access_case:
+                        continue
+                    cases.append(d)
+
+        check_status(out_dir, cases)
     else:
-        print("Unsupported method for hourlize")
-    print(f"Hourlize setup for {args.mode}.py complete\n")
+        remotepath, args.local = get_remote_path(args.local)
+        print(f"\nSetting up hourlize calls to {args.mode}.py")
+        if args.mode == "load":
+            setup_load(args)
+        elif args.mode == "resource":
+            setup_resource(args)
+        else:
+            print("Unsupported method for hourlize")
+        print(f"Hourlize setup for {args.mode}.py complete\n")

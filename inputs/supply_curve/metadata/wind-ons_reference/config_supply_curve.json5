@@ -1,6 +1,6 @@
 {
     "execution_control": {
-        "allocation": "rev",
+        "allocation": "wetosa",
         "feature": "-p debug",
         "option": "kestrel",
         "walltime": 1
