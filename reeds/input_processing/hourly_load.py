@@ -703,7 +703,10 @@ def main(reeds_path, inputs_case):
     # includes a baseline estimate of industrial load captured by FINITO
     if int(sw.GSw_FINITO_Link):
             regional_load_hourly = reeds.finito.remove_finito_load(
-        )
+                load_hourly=regional_load_hourly,
+                inputs_case=inputs_case,
+                distloss=reeds.io.get_scalars(inputs_case)["distloss"],
+            )
 
     #############################################
     #    -- DR Shed Load Modifications --    #
