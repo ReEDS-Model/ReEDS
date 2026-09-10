@@ -4,9 +4,11 @@ the argument, as one page.
 Run after the figure modules, from run_report_valcostfac.py. It reads what they wrote into
 output_dir - the csvs for numbers, the pngs for figures - and writes the report alongside them.
 
-Every figure is referenced by relative filename rather than embedded, so the html stays a few tens
-of kB and the pngs stay full resolution for the paper. The page therefore only works in place, next
-to its figures; moving it means moving the directory.
+Figures are embedded as downscaled data URIs by default, so the page is a single self-contained
+file that can be moved or sent on its own. Set embed_figures to False to reference the pngs by
+relative filename instead, which keeps the html at a few tens of kB and the figures at full
+resolution, at the cost of the page only working in place next to them. Either way the full-size
+pngs stay in the directory for the paper.
 
 The page carries figures, tables and descriptions of what each one plots - the quantities, how they
 are constructed, what the axes and marks mean. It deliberately draws no conclusions and states no
@@ -27,6 +29,9 @@ from report_switches import dollar_year
 # User inputs
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone.
 report_name = 'valcostfac_report.html' #Written into output_dir.
+embed_figures = True #Embed each figure as a downscaled data URI, making the page self-contained and portable. False references the pngs by relative filename, which keeps the file small and the figures at full resolution but ties the page to this directory. Embedding needs Pillow; without it the report falls back to references and says so.
+embed_max_width = 2600 #Pixels. Figures wider than this are downscaled before embedding; narrower ones are left alone. The by-year maps are the widest at about 4900px, and 2600 keeps their per-year panels legible.
+embed_quality = 82 #JPEG quality for embedded figures. These are line charts and choropleths, where 82 is visually clean and roughly a fifth the size of the equivalent png.
 report_title = 'Value-Cost Factor Figures' #Page title and headline.
 vre_techs = ['Onshore Wind', 'UPV'] #Techs with per-tech map figures and rows in the suppression table. Names as they appear in valcostfac_core.csv, before display_tech.
 
@@ -189,15 +194,42 @@ footer code{font-family:"IBM Plex Mono",monospace;font-size:.95em;}
 '''
 
 
+def embed_source(path):
+    """A data URI for one figure, downscaled to embed_max_width.
+
+    Returns None if Pillow is unavailable, so the caller can fall back to a relative reference
+    rather than the report failing over a packaging choice.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    import base64
+    import io
+    with Image.open(path) as im:
+        im = im.convert('RGB')
+        if im.width > embed_max_width:
+            height = round(im.height * embed_max_width / im.width)
+            im = im.resize((embed_max_width, height), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, 'JPEG', quality=embed_quality, optimize=True, progressive=True)
+    return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()
+
+
 def figure(output_dir, filename, num, title, body, order):
     """One figure block, or nothing if that png was not produced.
 
     body describes what the figure plots - axes, marks, construction - and stops there.
     """
-    if not os.path.exists(os.path.join(output_dir, filename)):
+    path = os.path.join(output_dir, filename)
+    if not os.path.exists(path):
         return ''
+    src = embed_source(path) if embed_figures else None
+    if embed_figures and src is None:
+        order.append(('fallback', filename))
+    src = src or filename
     order.append(filename)
-    return (f'<figure><img src="{filename}" alt="{title}">'
+    return (f'<figure><img src="{src}" alt="{title}">'
             f'<figcaption><span class="fignum">Fig {num}</span>'
             f'<span><b>{title}</b> {body}</span></figcaption></figure>')
 
@@ -416,6 +448,16 @@ def build_html(output_dir, core_path):
                        [('Technology', False), ('Min', True), ('Median', True), ('Max', True),
                         ('Years', True)], lvoe_rows)
 
+    fell_back = any(isinstance(o, tuple) for o in order)
+    if embed_figures and not fell_back:
+        packaging = (f'Figures are embedded at up to {embed_max_width}px wide; the full-size pngs '
+                     f'are alongside this file.')
+    elif embed_figures:
+        packaging = ('Figures are referenced rather than embedded, because Pillow was not '
+                     'available. This page only renders next to them.')
+    else:
+        packaging = 'Figures are referenced by filename. This page only renders next to them.'
+
     techs_str = ', '.join(display_tech(t) for t in core['tech'].unique())
     yr_lo, yr_hi = int(core['year'].min()), int(core['year'].max())
     scen = ', '.join(sorted(core['scenario'].unique()))
@@ -484,7 +526,7 @@ def build_html(output_dir, core_path):
 
 <section style="border-bottom:none">
   <footer>Generated by <code>valcostfac_report.py</code> from the figures and tables in this
-  directory. Technologies: {techs_str}. All monetary values {dollar_year}$.</footer>
+  directory. Technologies: {techs_str}. All monetary values {dollar_year}$. {packaging}</footer>
 </section>
 </div>
 '''
@@ -498,7 +540,10 @@ def make_report(valcostfac_core_path=valcostfac_core_path, output_dir=None):
     path = os.path.join(output_dir, report_name)
     with open(path, 'w') as f:
         f.write(html)
-    print(f'Wrote {path} ({os.path.getsize(path) / 1024:.0f} kB)')
+    size = os.path.getsize(path)
+    how = 'figures embedded' if embed_figures else 'figures referenced'
+    unit = f'{size / 1048576:.1f} MB' if size > 1048576 else f'{size / 1024:.0f} kB'
+    print(f'Wrote {path} ({unit}, {how})')
     return path
 
 
