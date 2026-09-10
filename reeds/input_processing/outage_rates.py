@@ -19,6 +19,7 @@ tz_in = 'UTC'
 tz_out = 'Etc/GMT+6'
 temp_min = -50
 temp_max = 60
+cmap = cmocean.cm.tempo
 ## Only use during_quarters for techs without a monthly scheduled outage rate
 during_quarters = ['spring', 'fall']
 ## Cap the extrapolation of forced outage rates at high/low temperatures to 0.4 because
@@ -383,7 +384,7 @@ def plot_outage_forced(
 
         plt.close()
         f, ax = reeds.plots.map_years_months(
-            dfzones=dfzones, dfdata=dfdata, aggfunc=aggfunc,
+            dfzones=dfzones, dfdata=dfdata, cmap=cmap, aggfunc=aggfunc,
             title=f"Monthly {aggfunc}\nforced outage rate,\n{nicelabels.get(pm,pm)} [%]",
         )
         plt.savefig(os.path.join(figpath, f'FOR_monthly-{aggfunc}-{pm}.png'))

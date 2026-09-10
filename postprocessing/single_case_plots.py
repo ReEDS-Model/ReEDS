@@ -29,7 +29,7 @@ wscale_h2 = 10
 ## the position of the annotations
 crs = 'ESRI:102008'
 ### General purpose
-cmap = cmocean.cm.rain
+cmap = cmocean.cm.tempo
 ### For VRE siting & transmission maps
 transalpha = 0.25
 transcolor = 'k'
@@ -255,7 +255,7 @@ try:
     plt.close()
     f,ax = reedsplots.plot_trans_vsc(
         case=case, year=year, wscale=wscale_straight*1e3,
-        alpha=1.0, miles=300,
+        alpha=1.0, miles=300, cmap=cmap,
     )
     savename = f'map_translines_vsc-{year}.png'
     if write and (f is not None):
@@ -276,7 +276,7 @@ ncols = 4
 for vmax in ['each', 'shared']:
     try:
         f,ax = reedsplots.map_capacity_techs(
-            case, year=year, ncols=ncols, vmax=vmax,
+            case, year=year, ncols=ncols, vmax=vmax, cmap=cmap,
         )
         savename = f'map_capacity-{year}-{vmax}.png'
         if write:
@@ -634,7 +634,7 @@ except Exception:
 try:
     for y in [y for y in years if y >= 2025]:
         plt.close()
-        f, ax, neue, _iteration = reedsplots.map_neue(case=case, year=y)
+        f, ax, neue, _iteration = reedsplots.map_neue(case=case, year=y, cmap=cmap)
         savename = f"map_PRAS_neue-{y}i{_iteration}.png"
         if write:
             plt.savefig(os.path.join(savepath, savename))
@@ -848,7 +848,7 @@ if not int(sw.GSw_PRM_CapCredit):
 #%% PRM if iterating
 if int(sw.GSw_PRM_StressIterateMax) and int(sw.GSw_PRM_UpdateMethod):
     try:
-        f, ax, prm_final = reedsplots.map_prm(case)
+        f, ax, prm_final = reedsplots.map_prm(case, cmap=cmap)
         savename = 'map_prm.png'
         if write:
             plt.savefig(os.path.join(savepath, savename))
@@ -916,6 +916,7 @@ if float(sw.get('GSw_LoadSiteCF', 0)):
             years=[year],
             vscale=1e-3,
             vmin=0,
+            cmap=cmap,
             title='Sited demand [GW]',
         )
         savename = f'map_loadsite-{year}.png'
