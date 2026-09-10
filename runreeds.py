@@ -1409,8 +1409,8 @@ def write_batch_script(
             + ' gdxcompress=1'
             + toLogGamsString
             + f"--fname={batch_case}"
-            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']}"
-            # + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']} \n"
+            # + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']}"
+            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
         if not LINUXORMAC and int(caseSwitches['GSw_FINITO_Link']) != 1:
