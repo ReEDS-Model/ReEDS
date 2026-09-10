@@ -6344,32 +6344,29 @@ $endif.referencesupply
 
 * include domestic supply if the domestic supply switch is set to 1
 $ifthene.domesticsupply %GSw_mat_domestic% == 1
-mat_supply(mat,t) = domestic_supply(mat,t) * share_consumption_dom(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = domestic_supply(mat,t) * share_consumption_dom(mat) ;
 $endif.domesticsupply
 
 * include byproduct supply if the byproduct supply switch is set to 1
 $ifthene.byproductsupply %GSw_mat_byproduct% == 1
-mat_supply(mat,t) = byproduct_supply(mat,t) * share_consumption_dom(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = byproduct_supply(mat,t) * share_consumption_dom(mat) ;
 $endif.byproductsupply
 
 * include allied supply if the allied supply switch is set to 1
 * !!! come back to update share to be specific to each case if decide to do so.
 $ifthene.alliedsupply %GSw_mat_allies% == 1
-mat_supply(mat,t) = allied_supply(mat,t) * share_consumption_glb(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = allied_supply(mat,t) * share_consumption_glb(mat) ;
 $endif.alliedsupply
 
 $ifthene.nonfeocsupply %GSw_mat_nonfeoc% == 1
 * !!! come back to update share to be specific to each case if decide to do so.
-mat_supply(mat,t) = nonfeoc_supply(mat,t) * share_consumption_glb(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = nonfeoc_supply(mat,t) * share_consumption_glb(mat) ;
 $endif.nonfeocsupply
 
 * reset supply to zero if no supply is allowed for a given material in a shock year
+$ifthene.nosupply %GSw_mat_nosupply% == 1
 mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = 0 ;
-
-* turn of rare earth supply if the rare earth shock switch is set to 1
-*$ifthene.supplyshockre %GSw_supplyshock_re% == 1
-*mat_supply(mat,t)$[rare_earth(mat)$years_matshock(t)] = 0 ;
-*$endif.supplyshockre
+$endif.nosupply
 
 **** price multiplier ****
 * set price multiplier for materials
@@ -6379,13 +6376,19 @@ $ifthene.priceshockone %GSw_priceshock_one% == 1
 matprice_multiplier(mat,t)$[(sameas(mat,'%GSw_matprice_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockone
 
-* idea see below; apply price shock to rare earths
-*set rare_earth(mat) "subset of materials considered rare earths"
-*  /Dysprosium, Neodymium, Praseodymium, Terbium, Yttrium/ ;
+**** rare earth scenarios ****
+* set of rare earths for additional scenarios
+set rare_earth(mat) "subset of materials considered rare earths"
+  /Dysprosium, Neodymium, Praseodymium, Terbium, Yttrium/ ;
 
-*$ifthene.priceshockre %GSw_priceshock_re% == 1
-*matprice_multiplier(mat,t)$[rare_earth(mat)$years_matshock(t)] = %GSw_matprice_multiplier% ;
-*$endif.priceshockre
+* turn off rare earth supply if the rare earth shock switch is set to 1
+$ifthene.supplyshockre %GSw_supplyshock_re% == 1
+mat_supply(mat,t)$[rare_earth(mat)$years_matshock(t)] = 0 ;
+$endif.supplyshockre
+
+$ifthene.priceshockre %GSw_priceshock_re% == 1
+matprice_multiplier(mat,t)$[rare_earth(mat)$years_matshock(t)] = %GSw_matprice_multiplier% ;
+$endif.priceshockre
 
 **** slack price ****
 * set slack price for materials to be 100x the base price to avoid infeasibilities in the model

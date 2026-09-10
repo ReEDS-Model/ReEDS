@@ -114,17 +114,22 @@ dimensions:
     nosupply:
       GSw_mat_restrict: 1
       GSw_mat_glb: 1
+      GSw_mat_nosupply: 1
     domesticsupply:
       GSw_mat_restrict: 1
+      GSw_mat_glb: 1
       GSw_mat_domestic: 1
     byproductsupply:
       GSw_mat_restrict: 1
+      GSw_mat_glb: 1
       GSw_mat_byproduct: 1
     alliedsupply:
       GSw_mat_restrict: 1
+      GSw_mat_glb: 1
       GSw_mat_allies: 1
     nonfeocsupply:
       GSw_mat_restrict: 1
+      GSw_mat_glb: 1
       GSw_mat_nonfeoc: 1
   duration: 
     long: 

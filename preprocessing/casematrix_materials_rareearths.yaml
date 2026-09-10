@@ -1,0 +1,107 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010_2015_2020..2050..3
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  shock:
+    2xreprice:
+      GSw_priceshock_re: 1
+      GSw_matprice_multiplier: 2
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+    noresupply:
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+      GSw_supplyshock_re: 1
+  duration: 
+    long: 
+      GSw_years_matshock: "2029,2032,2035,2038,2041"
+    med:
+      GSw_years_matshock: "2029,2032,2035"
+    short:
+      GSw_years_matshock: "2029"
+    volatile: 
+      GSw_years_matshock: "2029,2035,2041"
+  sensitivity: 
+    reference: {}
+    lowdem:
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_low.h5
+    highdem:
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+    hog: 
+      ngscen: AEO_2026_HOG
+    log: 
+      ngscen: AEO_2026_LOG
+    advrest: 
+      distpvscen: stscen2023_lowre
+      plantchar_battery: battery_ATB_2024_advanced
+      plantchar_upv: upv_ATB_2024_advanced
+      plantchar_onswind: ons-wind_ATB_2024_advanced
+      plantchar_ofswind: ofs-wind_ATB_2024_advanced
+    conrest:
+      distpvscen: stscen2023_highre
+      plantchar_battery: battery_ATB_2024_conservative
+      plantchar_upv: upv_ATB_2024_conservative
+      plantchar_onswind: ons-wind_ATB_2024_conservative
+      plantchar_ofswind: ofs-wind_ATB_2024_conservative
+    best:
+      ngscen: AEO_2026_HOG
+      distpvscen: stscen2023_highre
+      plantchar_battery: battery_ATB_2024_conservative
+      geodiscov: TI
+      plantchar_geo: geo_ATB_2024_advanced
+      plantchar_upv: upv_ATB_2024_conservative
+      plantchar_onswind: ons-wind_ATB_2024_conservative
+      plantchar_ofswind: ofs-wind_ATB_2024_conservative
+      plantchar_nuclear_smr: nuclear-smr_ATB_2024_advanced
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+    worst: 
+      ngscen: AEO_2026_LOG
+      distpvscen: stscen2023_lowre
+      plantchar_battery: battery_ATB_2024_advanced
+      geodiscov: BAU
+      plantchar_geo: geo_ATB_2024_conservative
+      plantchar_upv: upv_ATB_2024_advanced
+      plantchar_onswind: ons-wind_ATB_2024_advanced
+      plantchar_ofswind: ofs-wind_ATB_2024_advanced
+      plantchar_nuclear_smr: nuclear-smr_ATB_2024_conservative
+      GSw_LoadProfiles: /projects/finitoreeds/kpitman/dc_load_EER_scaled/demand_EER_scaled_high.h5
+
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+## dimensions:
+# shock (6): 2xprice,4xprice,8xprice,nosupply,domestic,allies
+# duration (4): long, med, short, volatile
+# material (39): aluminumprice, aluminumsupply.. etc.
+# sensitivity (9) 
+# NEXT
+# note: run reference across range of sensitivities separately.
+# run restriction of ALL materials to full restrict, domestic, allied, and global separately
+
+casegroups:
+  ## run restriction of 
+  ## (All policy scenarios) × (all demand scenarios) × (single core sensitivity)
+
+# main runs - supply
+  - [[noresupply],[long],[]]
+# main runs - price
+  - [[2xreprice],[long],[]]
+
+
+  # run as case with the command:  python casemaker.py yaml-name -b batch-name
+# e.g.,  python casemaker.py materials -b materials_test
