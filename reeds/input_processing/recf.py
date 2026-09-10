@@ -532,6 +532,16 @@ def main(reeds_path, inputs_case):
     #    -- Data Write-Out --    #
     ##############################
 
+    ### Key each profile by tech, class and region. Class is still part of the tech
+    ### name here, but the name alone will no longer identify a profile once tech is
+    ### is not part of the name.
+    rekey = dict(zip(
+        resources['resource'],
+        resources['i'] + '|' + resources['c'].astype(str) + '|' + resources['r'],
+    ))
+    recf.columns = recf.columns.map(rekey)
+    resources['resource'] = resources['resource'].map(rekey)
+
     reeds.io.write_profile_to_h5(recf.astype(np.float16), 'recf.h5', inputs_case)
     resources.to_csv(os.path.join(inputs_case,'resources.csv'), index=False)
     ### Write the CSP solar field CF (no SM or storage) for hourly_writetimeseries.py

@@ -281,7 +281,7 @@ def main(
     ### Downselect to modeled regions
     sc = sc.loc[sc.region.isin(val_r_all)].copy()
     sc['i'] = sc.tech+'_'+sc['class'].astype(str)
-    sc['resource'] = sc.i + '|' + sc.region
+    sc['resource'] = sc.i + '|' + sc['class'].astype(str) + '|' + sc.region
     sc['aggreg'] = sc.region.map(rmap)
 
     #%%### Load RE CF data, then take available-capacity-weighted average by (tech,region)

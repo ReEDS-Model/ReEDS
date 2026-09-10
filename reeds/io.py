@@ -1445,7 +1445,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
         .reset_index(level='drop', drop=True).reset_index()
     )
     sc['i'] = sc.tech+'_'+sc['class'].astype(str)
-    sc['resource'] = sc.i + '|' + sc.region
+    sc['resource'] = sc.i + '|' + sc['class'].astype(str) + '|' + sc.region
     sc['aggreg'] = sc.region.map(r2region)
     ## Get CF
     recf = reeds.io.read_file(
@@ -1455,7 +1455,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
     recapcf = (recf * sc.set_index('resource')['capacity']).dropna(axis=1, how='all')
     recapcf.columns = pd.MultiIndex.from_arrays([
         recapcf.columns.map(lambda x: x.split('|')[0].strip('_0123456789')),
-        recapcf.columns.map(lambda x: r2region[x.split('|')[1]]),
+        recapcf.columns.map(lambda x: r2region[x.split('|')[-1]]),
     ], names=['i', 'r'])
     dfout = (
         recapcf.T.groupby(['i','r']).sum().T
