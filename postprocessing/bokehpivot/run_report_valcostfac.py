@@ -45,7 +45,7 @@ rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.stat
 #configuration and plotting behind a given report stay recorded alongside the report itself.
 shutil.copy2(os.path.realpath(__file__), output_dir)
 for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py', 'lvoe_vs_lcoe.py',
-              'spatial_value.py']:
+              'spatial_value.py', 'valcostfac_report.py']:
     shutil.copy2(f'{bokehpivot_dir}/{fname}', output_dir)
 
 #CUSTOM POSTPROCESSING
@@ -430,6 +430,21 @@ try:
     spatial_value.make_figs(f'{output_dir}/valcostfac_core.csv', scenarios_path=data_source)
 except Exception as e:
     msg = f'WARNING: spatial_value figures skipped ({type(e).__name__}: {e}). Everything else is complete.'
+    print(msg)
+    with open(out_txt, 'a') as f:
+        print(msg, file=f)
+
+print('Build the html report')
+#Writes valcostfac_report.html into output_dir: the figures above with the text and tables that
+#carry the argument. Runs last because it reads what the other modules wrote - both their pngs, by
+#relative filename, and their csvs, from which every number in the page is computed. Guarded like
+#the others, and it skips any section whose inputs are missing rather than failing, so a partial
+#report still renders if one of the figure modules was skipped.
+import valcostfac_report
+try:
+    valcostfac_report.make_report(f'{output_dir}/valcostfac_core.csv')
+except Exception as e:
+    msg = f'WARNING: html report skipped ({type(e).__name__}: {e}). Everything else is complete.'
     print(msg)
     with open(out_txt, 'a') as f:
         print(msg, file=f)
