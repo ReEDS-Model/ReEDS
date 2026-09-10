@@ -60,6 +60,7 @@ FINITO,Switch to enable running linked ReEDS-FINITO model (mapped to GSw_FINITO_
 FINITO_cases_file,"Filename suffix of the FINITO cases file that includes the scenarios to be run (e.g., 'linked' for cases_linked.csv)",N/A,linked,
 FINITO_case,FINITO case for this run; must be a column in the files specified by FINITO_cases_file. Use 'same' if the ReEDS run name matches the FINITO case name,N/A,same,
 FINITO_dir,Directory with cloned FINITO repository,N/A,{reeds_path}/../FINITO,
+FINITO_dollaryear,[$] real dollar year for FINITO; do not change until all inputs and reporting are adjusted appropriately,2018,2018
 FINITO_first_year,First year when the FINITO module is to be run,N/A,2018,
 incentives_suffix,File suffix for incentive definition,ira; obbba; obbba_conservative; annual; biennial; ira_45q_45v_extension; none,obbba,
 inflation_suffix,File suffix for historical inflation schedule,default,default,
