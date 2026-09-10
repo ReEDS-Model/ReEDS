@@ -12,65 +12,6 @@ shared:
 ### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
 ### To use the default settings from cases.csv, provide an empty dictionary: {}.
 dimensions:
-  shock:
-    2xprice:
-      GSw_priceshock_one: 1
-      GSw_matprice_multiplier: 2
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 1
-      GSw_mat_allies: 0
-      GSw_mat_byproduct: 0
-    4xprice:
-      GSw_priceshock_one: 1
-      GSw_matprice_multiplier: 4
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 1
-      GSw_mat_allies: 0
-      GSw_mat_byproduct: 0
-    8xprice:
-      GSw_priceshock_one: 1
-      GSw_matprice_multiplier: 8
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 1
-      GSw_mat_allies: 0
-      GSw_mat_byproduct: 0
-    nosupply:
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 1
-      GSw_mat_allies: 0
-      GSw_mat_byproduct: 0
-    domestic:
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 0
-      GSw_mat_allies: 0
-      GSw_mat_byproduct: 0
-    quarterdomestic:
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 0
-      GSw_mat_allies: 0
-      GSw_mat_byproduct: 0
-      GSw_prod_multiplier_usa: 0.25
-    allies:
-      GSw_mat_restrict: 1
-      GSw_mat_domestic: 1
-      GSw_mat_glb: 0
-      GSw_mat_allies: 1
-      GSw_mat_byproduct: 0
-  duration: 
-    long: 
-      GSw_years_matshock: "2029,2032,2035,2038,2041"
-    med:
-      GSw_years_matshock: "2029,2032,2035"
-    short:
-      GSw_years_matshock: "2029"
-    volatile: 
-      GSw_years_matshock: "2029,2035,2041"
   material:
     all: {}
     aluminumprice:
@@ -149,6 +90,51 @@ dimensions:
       GSw_matprice_spec: Yttrium
     yttriumsupply:
       GSw_matsupply_spec: Yttrium
+  shock:
+    2xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 2
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+    4xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 4
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+    8xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 8
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+    10xprice:
+      GSw_priceshock_one: 1
+      GSw_matprice_multiplier: 10
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+    nosupply:
+      GSw_mat_restrict: 1
+      GSw_mat_glb: 1
+    domesticsupply:
+      GSw_mat_restrict: 1
+      GSw_mat_domestic: 1
+    byproductsupply:
+      GSw_mat_restrict: 1
+      GSw_mat_byproduct: 1
+    alliedsupply:
+      GSw_mat_restrict: 1
+      GSw_mat_allies: 1
+    nonfeocsupply:
+      GSw_mat_restrict: 1
+      GSw_mat_nonfeoc: 1
+  duration: 
+    long: 
+      GSw_years_matshock: "2029,2032,2035,2038,2041"
+    med:
+      GSw_years_matshock: "2029,2032,2035"
+    short:
+      GSw_years_matshock: "2029"
+    volatile: 
+      GSw_years_matshock: "2029,2035,2041"
   sensitivity: 
     reference: {}
     lowdem:
@@ -214,8 +200,28 @@ dimensions:
 casegroups:
   ## run restriction of 
   ## (All policy scenarios) × (all demand scenarios) × (single core sensitivity)
-  - [[nosupply],[long],[coppersupply],[]]
-  - [[nosupply],[med,short,volatile],[coppersupply],[reference,best,worst]]
-  - [[2xprice],[long],[copperprice],[]]
-  - [[4xprice,8xprice],[med,short,volatile],[copperprice],[reference,best,worst]]
 
+# main runs - supply
+#  - [[aluminumsupply,cobaltsupply,coppersupply,dysprosiumsupply,galliumsupply,hafniumsupply,indiumsupply,lithiumsupply,magnesiumsupply,manganesesupply,neodymiumsupply,nickelsupply,praseodymiumsupply,silversupply,telluriumsupply,terbiumsupply,tinsupply,vanadiumsupply,yttriumsupply],[nosupply],[long],[]]
+# sensitivity runs - supply and duration
+#  - [[aluminumsupply,coppersupply,manganesesupply,nickelsupply,silversupply,tinsupply,cobaltsupply],[nosupply],[med,short,volatile],[reference,best,worst]]
+# additional sensitivity runs - supply and duration
+#  - [[dysprosiumsupply,galliumsupply,hafniumsupply,indiumsupply,lithiumsupply,magnesiumsupply,neodymiumsupply,praseodymiumsupply,telluriumsupply,terbiumsupply,vanadiumsupply,yttriumsupply],[nosupply],[med,short,volatile],[reference,best,worst]]
+# main runs - price
+#  - [[aluminumprice,cobaltprice,copperprice,dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,manganeseprice,neodymiumprice,nickelprice,praseodymiumprice,silverprice,telluriumprice,terbiumprice,tinprice,vanadiumprice,yttriumprice],[2xprice],[long],[]]
+# sensitivity runs - price and duration 
+#  - [[aluminumprice,copperprice,manganeseprice,nickelprice,silverprice,tinprice,cobaltprice],[2xprice],[med,short,volatile],[reference,best,worst]]
+# additional sensitivity runs - price and duration
+#  - [[dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,neodymiumprice,praseodymiumprice,telluriumprice,terbiumprice,vanadiumprice,yttriumprice],[2xprice],[med,short,volatile],[reference,best,worst]]
+# sensitivity runs - price and magnitude
+#  - [[aluminumprice,copperprice,manganeseprice,nickelprice,silverprice,tinprice,cobaltprice],[4xprice,8xprice],[long],[reference,best,worst]]
+# additional sensitivity runs - price and magnitude
+#  - [[dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,neodymiumprice,praseodymiumprice,telluriumprice,terbiumprice,vanadiumprice,yttriumprice],[4xprice,8xprice],[long],[reference,best,worst]]
+# additional sensitivity runs - 10x for all 
+#  - [[aluminumprice,cobaltprice,copperprice,dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,manganeseprice,neodymiumprice,nickelprice,praseodymiumprice,silverprice,telluriumprice,terbiumprice,tinprice,vanadiumprice,yttriumprice],[10xprice],[long],[reference,best,worst]]
+# sensitivity runs - supply magnitude
+  - [[aluminumsupply,cobaltsupply,coppersupply,dysprosiumsupply,galliumsupply,hafniumsupply,indiumsupply,lithiumsupply,magnesiumsupply,manganesesupply,neodymiumsupply,nickelsupply,praseodymiumsupply,silversupply,telluriumsupply,terbiumsupply,tinsupply,vanadiumsupply,yttriumsupply],[domesticsupply,byproductsupply,alliedsupply,nonfeocsupply],[long],[reference,best,worst]]
+
+
+  # run as case with the command:  python casemaker.py yaml-name -b batch-name
+# e.g.,  python casemaker.py materials -b materials_test

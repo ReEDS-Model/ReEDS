@@ -6180,10 +6180,12 @@ $include ../../cmm_allies.csv
 $onlisting
 / ;
 
-set glb_nochina(mat_ctry) "set of countries excluding USA and China"
-;
+set feoc(mat_ctry) "set of FEOC countries"
+  /China, Russia, North_Korea, Iran/ ; 
 
-glb_nochina(mat_ctry)$[(not usa(mat_ctry))$(not sameas(mat_ctry,'China'))] = yes ;
+set nonfeoc(mat_ctry) "set of countries excluding FEOC countries" ;
+
+nonfeoc(mat_ctry)$[(not feoc(mat_ctry))] = yes ;
 
 * materials sets
 set mat "materials"     
@@ -6269,11 +6271,19 @@ $include ../../cmm_global_mat_price.csv
 $offdelim
 $onlisting
 /
-share_consumption(mat)        "-- share of total material supply that is consumed by power sector"
+share_consumption_glb(mat)        "-- share of global material supply that is consumed by power sector"
 /
 $offlisting
 $ondelim
-$include ../../cmm_consumption_share.csv
+$include ../../cmm_consumption_share_glb.csv
+$offdelim
+$onlisting
+/
+share_consumption_dom(mat)        "-- share of domestic material supply that is consumed by power sector"
+/
+$offlisting
+$ondelim
+$include ../../cmm_consumption_share_dom.csv
 $offdelim
 $onlisting
 /
@@ -6308,11 +6318,11 @@ years_matshock(t) /%GSw_years_matshock%/
 
 **** material supply ****
 
-* domestic supply
-domestic_supply(mat,t) = Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t) ;
-
 * global supply
 global_supply(mat,t) = sum{mat_ctry, mat_prod(mat,mat_ctry)} * yearweight(t) ;
+
+* domestic supply
+domestic_supply(mat,t) = Sw_prod_multiplier_usa * sum{mat_ctry$[usa(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t) ;
 
 * domestic byproduct recovery supply
 byproduct_supply(mat,t) = sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ctry)} * yearweight(t) ;
@@ -6320,16 +6330,38 @@ byproduct_supply(mat,t) = sum{mat_ctry$[usa(mat_ctry)], mat_byproduct(mat,mat_ct
 * allied country supply
 allied_supply(mat,t) = sum{mat_ctry$[allies(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t) ;
 
+* nonfeoc country supply 
+nonfeoc_supply(mat,t) = sum{mat_ctry$[nonfeoc(mat_ctry)], mat_prod(mat,mat_ctry)} * yearweight(t) ;
+
 * set up reference supply 
 * by default material supply is set to zero
 mat_supply(mat,t) = 0;
 
 * include global supply if the reference supply switch is set to 1
 $ifthene.referencesupply %GSw_mat_glb% == 1
-mat_supply(mat,t) = global_supply(mat,t) * share_consumption(mat) ;
+mat_supply(mat,t) = global_supply(mat,t) * share_consumption_glb(mat) ;
 $endif.referencesupply
 
-*** come add in domestic and allied cases once designed ***
+* include domestic supply if the domestic supply switch is set to 1
+$ifthene.domesticsupply %GSw_mat_domestic% == 1
+mat_supply(mat,t) = domestic_supply(mat,t) * share_consumption_dom(mat) ;
+$endif.domesticsupply
+
+* include byproduct supply if the byproduct supply switch is set to 1
+$ifthene.byproductsupply %GSw_mat_byproduct% == 1
+mat_supply(mat,t) = byproduct_supply(mat,t) * share_consumption_dom(mat) ;
+$endif.byproductsupply
+
+* include allied supply if the allied supply switch is set to 1
+* !!! come back to update share to be specific to each case if decide to do so.
+$ifthene.alliedsupply %GSw_mat_allies% == 1
+mat_supply(mat,t) = allied_supply(mat,t) * share_consumption_glb(mat) ;
+$endif.alliedsupply
+
+$ifthene.nonfeocsupply %GSw_mat_nonfeoc% == 1
+* !!! come back to update share to be specific to each case if decide to do so.
+mat_supply(mat,t) = nonfeoc_supply(mat,t) * share_consumption_glb(mat) ;
+$endif.nonfeocsupply
 
 * reset supply to zero if no supply is allowed for a given material in a shock year
 mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = 0 ;
