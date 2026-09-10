@@ -1056,6 +1056,7 @@ def map_outagerate_new_stressperiods(sw, dfs):
             dates=dates,
             outage_type=outage_type,
             aggfunc=aggfunc,
+            cmap=cmap,
             vmax=vmax[outage_type],
         )
         ## Save it
