@@ -2596,7 +2596,7 @@ try:
                 year=lastyear, casebase=casebase, casecomp=casecomp,
                 level=level,
                 plot='base', f=f, ax=ax[0],
-                cmap=cmocean.cm.tempo,
+                cmap=cmap,
             )
             ax[0].annotate(
                 casebase_name,
@@ -2607,7 +2607,7 @@ try:
                 year=lastyear, casebase=casebase, casecomp=casecomp,
                 level=level,
                 plot='comp', f=f, ax=ax[1],
-                cmap=cmocean.cm.tempo,
+                cmap=cmap,
             )
             ax[1].annotate(
                 casecomp_name,
