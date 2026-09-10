@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+from reeds.input_processing import finito_ng_seasonality
 ##% Time the operation of this script
 tic = datetime.datetime.now()
 ## Turn off logging for imported packages
@@ -556,6 +557,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             pd.DataFrame(columns=columns).to_csv(
                 os.path.join(outpath, f+'.csv'), index=False)
 
+        finito_ng_seasonality.write_empty(sw, inputs_case, periodtype)
         return write
 
 
@@ -1656,6 +1658,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             os.path.join(outpath, f+'.csv'),
             index=write[f][2],
         )
+
+    # Exogenous FINITO NG demand uses the selected day's own month.
+    finito_ng_seasonality.write_for_run(sw, inputs_case, periodtype, hmap_allyrs)
 
     #%% Map weighted average profile values and difference from full-resolution mean
     if make_plots:
