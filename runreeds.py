@@ -329,7 +329,7 @@ def check_compatibility(sw):
                     f"stress value in {ra_switches[metric]} must be a positive number "
                     f"but '{stress_value}' was provided"
                 )
-    
+
     ## CVAR value in [0,1)
     alpha = float(sw['GSw_PRM_CVARalpha'])
     if not (0 <= alpha < 1):
