@@ -186,7 +186,7 @@ def setup_finito(casedir, caseSwitches, BatchName):
         finito_dir / 'input_processing' / 'processing' / 'mecs' / 'read_mecs_heat.py'
     )
     subprocess.run(
-        ['python', str(read_mecs_path), '-s', mecs_sectors, '-d', str(inputs_case_finito)],
+        ['python', str(read_mecs_path), '-s', *mecs_sectors.split(), '-d', str(inputs_case_finito)],
         check=True,
     )
 
