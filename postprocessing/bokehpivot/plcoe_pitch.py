@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
-from report_switches import dollar_year, lcoe_base_dollar_year, start_year
+from report_switches import (dollar_year, lcoe_base_dollar_year, start_year,
+                             tech_display_names)
 
 # User inputs
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
@@ -44,6 +45,11 @@ usd_label = f'{dollar_year}$/MWh'
 #active backend isn't swapped out mid-run.
 default_rc = {k: v for k, v in matplotlib.rcParamsDefault.items() if k != 'backend'}
 cost_color = '0.35' #Neutral grey for everything cost-side, so it reads as distinct from the tech-coloured value series.
+
+
+def display_tech(tech):
+    """The label to print for a tech, per tech_display_names. Identity if it has no entry."""
+    return tech_display_names.get(tech, tech)
 
 
 def prep_data(valcostfac_core_path):
@@ -853,7 +859,7 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_a
                 bbox={'facecolor': 'white', 'edgecolor': '0.7', 'boxstyle': 'round,pad=0.4',
                       'alpha': 0.92})
 
-        ax.set_title(tech)
+        ax.set_title(display_tech(tech))
         ax.set_xlabel('Market share (generation fraction)')
         ax.set_xlim(0, x_hi)
         #Headroom accounts for the fits at x=0, which rise above the data (UPV's reaches 1.17).
@@ -990,7 +996,7 @@ def plot_vcf_decomposition(df, output_path, form='power', techs=None):
         ax.set_xticks(idx)
         ax.set_xticklabels([f'{g:.2f}\n{int(y)}' for g, y in zip(t['gen_frac'], t['year'])],
                            fontsize=6.5)
-        ax.set_title(tech)
+        ax.set_title(display_tech(tech))
         ax.set_xlabel('Market share (generation fraction) and year')
         ax.set_ylim(0, t['total_decline'].max() / 0.78)
         ax.grid(True, axis='y', linestyle='--', linewidth=0.6, alpha=0.7)

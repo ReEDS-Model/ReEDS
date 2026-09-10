@@ -24,3 +24,4 @@ vcf_min = 0 #Minimum value_cost_factor_adj2 to retain in df_plot_core
 stor_report_techs = ['Battery'] #Techs whose gen_twh/generation is overridden with gross discharge
 storage_techs = ['Pumped-Hydro','Pumped-Hydro-Flex','Battery','EVMC_Storage','CAES'] #Techs excluded from the total-generation market-share denominator
 metrics_subreg = ['vf','vcf'] #Metrics to plot vs gen_frac for each subregion (transreg/interconnect)
+tech_display_names = {'Onshore Wind': 'Land-based Wind'} #Figure labels only. The keys stay whatever bokehpivot's in/reeds2/tech_map.csv produces, because that name is the join key for valcostfac.csv, LCOE_base.csv, core_tech_scen.csv and forcetech_map.csv, and renaming it there would also rename it for every other bokehpivot report - standard_report_RE100.py and standard_report_expanded.py filter on the literal string and would silently match nothing. Add an entry here to change what appears on the valcostfac figures without touching any of that.

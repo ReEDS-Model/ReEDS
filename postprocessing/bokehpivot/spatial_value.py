@@ -42,7 +42,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, TwoSlopeNorm
-from plcoe_pitch import build_color_map, default_rc, cost_color
+from plcoe_pitch import build_color_map, cost_color, default_rc, display_tech
 from reeds_vs_rev import tech_run_dirs
 from report_switches import start_year
 
@@ -485,7 +485,7 @@ def plot_maps(data, tech, output_path):
                   f'each year on its own colour scale, clipped to p{map_clip_pct[0]}-'
                   f'p{map_clip_pct[1]} (arrows = saturated)')
     fig.suptitle(
-        f'{tech}: fleet value factor (vs national benchmark price) and penetration '
+        f'{display_tech(tech)}: fleet value factor (vs national benchmark price) and penetration '
         f'(uncurtailed generation / regional load)\n'
         f'{scale_note}; unfilled = no capacity  |  d ln(VF)/d penetration = '
         f'{st["slope_year_fe"]:+.3f} (year FE), {st["slope_region_fe"]:+.3f} (+ region FE)',
@@ -664,7 +664,7 @@ def plot_maps_byyear(data, tech, output_path):
         cb.ax.tick_params(labelsize=7)
 
     fig.suptitle(
-        f'{tech}: value, deployment and saturation by model year   '
+        f'{display_tech(tech)}: value, deployment and saturation by model year   '
         f'(grey = no capacity, or no build that year in the new-build rows)\n'
         f'row 1 is relative to each year national value factor, so colour is comparable across '
         f'years; penetration and capacity rows are linear, scaled so the top decile saturates '
@@ -733,7 +733,7 @@ def plot_suppression(data, output_path):
             ax.axvline(0, color='0.7', linewidth=0.8, zorder=1)
             ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
             ax.set_axisbelow(True)
-            ax.set_title(f'{tech} - {tag}' if i == 0 else tag, fontsize=10.5)
+            ax.set_title(f'{display_tech(tech)} - {tag}' if i == 0 else tag, fontsize=10.5)
             if i == len(rows) - 1:
                 ax.set_xlabel('penetration, year mean removed')
             if j == 0:
@@ -778,7 +778,7 @@ def plot_cost_decomp(data, output_path):
         ax.axvspan(min(el['early_years']), max(el['early_years']), color='0.85', alpha=0.45,
                    zorder=0, label=f'normalisation window ({idx["nreg"].iloc[0]} regions at first year)')
         ax.axhline(1, color='0.7', linewidth=0.8, zorder=1)
-        ax.set_title(f'{tech}\ncomposition {el["early"]:.3f} -> {el["late"]:.3f} '
+        ax.set_title(f'{display_tech(tech)}\ncomposition {el["early"]:.3f} -> {el["late"]:.3f} '
                      f'= {el["ratio"]:.2f}x over the horizon', fontsize=11)
         ax.set_xlabel('Model year')
         ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
@@ -805,7 +805,7 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
 
     with matplotlib.rc_context(default_rc):
         for tech in data:
-            slug = tech.lower().replace(' ', '-')
+            slug = display_tech(tech).lower().replace(' ', '-')
             fig = plot_maps(data, tech, os.path.join(output_dir, f'spatial_value_map_{slug}.png'))
             plt.close(fig)
             fig = plot_maps_byyear(

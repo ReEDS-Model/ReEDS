@@ -35,7 +35,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-from plcoe_pitch import build_color_map, default_rc, lcoe_base_path
+from plcoe_pitch import build_color_map, default_rc, display_tech, lcoe_base_path
 from report_switches import dollar_year, lcoe_base_dollar_year
 
 # User inputs
@@ -234,7 +234,7 @@ def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
             transform=ax.transAxes, fontsize=7.5, family='monospace', va='top', ha='left', zorder=6,
             bbox={'facecolor': 'white', 'edgecolor': '0.7', 'boxstyle': 'round,pad=0.4', 'alpha': 0.9},
         )
-        ax.set_title(tech)
+        ax.set_title(display_tech(tech))
         ax.set_xlabel('Cumulative annual generation (TWh)')
         ax.set_xlim(0, xmax)
         ax.set_ylim(0, ax.get_ylim()[1] * ylim_headroom) #Room for the summary box above the lines.

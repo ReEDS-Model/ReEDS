@@ -31,7 +31,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from plcoe_pitch import build_color_map, default_rc, cost_color
+from plcoe_pitch import build_color_map, cost_color, default_rc, display_tech
 from reeds_vs_rev import tech_run_dirs, load_deflator, deflate_factor
 from report_switches import dollar_year
 
@@ -157,7 +157,7 @@ def plot_lvoe_vs_lcoe(data, output_path):
 
         ax.set_xticks(pos)
         ax.set_xticklabels([f'{y}\n{g:.2f}' for y, g in zip(t['year'], t['gen_frac'])], fontsize=7)
-        ax.set_title(tech)
+        ax.set_title(display_tech(tech))
         ax.set_xlabel('Model year and market share')
         ax.set_ylim(bottom=0)
         ax.grid(True, axis='y', linestyle='--', linewidth=0.6, alpha=0.7)
