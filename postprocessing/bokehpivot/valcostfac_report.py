@@ -31,6 +31,7 @@ valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokeh
 report_name = 'valcostfac_report.html' #Written into output_dir.
 embed_figures = True #Embed each figure as a downscaled data URI, making the page self-contained and portable. False references the pngs by relative filename, which keeps the file small and the figures at full resolution but ties the page to this directory. Embedding needs Pillow; without it the report falls back to references and says so.
 embed_max_width = 2600 #Pixels. Figures wider than this are downscaled before embedding; narrower ones are left alone. The by-year maps are the widest at about 4900px, and 2600 keeps their per-year panels legible.
+decline_shares = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6] #Market shares tabulated in the cost-escalation decline table under the VCF figure.
 embed_quality = 82 #JPEG quality for embedded figures. These are line charts and choropleths, where 82 is visually clean and roughly a fifth the size of the equivalent png.
 report_title = 'Value-Cost Factor Figures' #Page title and headline.
 vre_techs = ['Onshore Wind', 'UPV'] #Techs with per-tech map figures and rows in the suppression table. Names as they appear in valcostfac_core.csv, before display_tech.
@@ -66,6 +67,29 @@ def vcf_fit_table(df):
             'cf_lo': d['cost_factor'].min(), 'cf_hi': d['cost_factor'].max(), 'n': len(d),
         })
     return pd.DataFrame(rows)
+
+
+def cost_decline_table(fits):
+    """1 - 1/CF at each tabulated market share, from the power fits.
+
+    The fitted cost factor is the ratio of the two fits, and because the LCOE base scaling matched
+    their intercepts the coefficients cancel, leaving (1-x)^(k_vcf - k_vf). So the decline in
+    competitiveness attributable to cost is 1 - (1-x)^(k_vcf - k_vf) - zero at zero market share by
+    construction, which is what makes the column an anchor rather than a measurement.
+
+    Cells outside a technology's observed market-share range are flagged, not hidden: UPV's data
+    ends at 0.45 and gas-CC's begins at 0.46, so a plain table would present reach and measurement
+    at the same authority.
+    """
+    rows = []
+    for _, r in fits.iterrows():
+        cells = []
+        for x in decline_shares:
+            value = 1 - (1 - x) ** r['band'] if x < 1 else np.nan
+            outside = x > 0 and (x < r['x_lo'] - 1e-9 or x > r['x_hi'] + 1e-9)
+            cells.append((value, outside))
+        rows.append({'tech': r['tech'], 'cells': cells})
+    return rows
 
 
 def rev_slopes(output_dir):
@@ -185,6 +209,7 @@ tbody tr:last-child td{border-bottom:none;}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;
   font-family:"IBM Plex Mono",monospace;}
 td.t{font-weight:600;color:var(--ink);}
+td.out{color:var(--muted);opacity:.62;}
 .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:.5rem;}
 .eq{font-family:"IBM Plex Mono",monospace;font-size:.93em;color:var(--ink);
   background:var(--rule-soft);padding:.08em .38em;border-radius:3px;}
@@ -305,6 +330,18 @@ def build_html(output_dir, core_path):
         f'<td class="num">{r["cf_lo"]:.2f}&#8211;{r["cf_hi"]:.2f}</td>'
         f'<td class="num">{int(r["n"])}</td></tr>'
         for _, r in fits.sort_values('band', ascending=False).iterrows()] if not fits.empty else []
+    decline_rows = []
+    for r in cost_decline_table(fits.sort_values('band', ascending=False)) if not fits.empty else []:
+        cells = ''.join(
+            f'<td class="num{" out" if outside else ""}">{_num(v, "{:.1%}")}</td>'
+            for v, outside in r['cells'])
+        decline_rows.append(f'<tr>{tech_cell(r["tech"])}{cells}</tr>')
+    decline_table = table(
+        'Competitiveness decline from cost escalation, 1 &minus; 1/CF from the power fits. '
+        'Zero at zero market share by construction; muted cells are outside that '
+        'technology&rsquo;s observed range',
+        [('Technology', False)] + [(f'{x:.0%}', True) for x in decline_shares], decline_rows)
+
     fit_table = table(
         'Power fits, y = A(1-x)^k, over the full market-share range',
         [('Technology', False), ('k<sub>VF</sub>', True), ('k<sub>VCF</sub>', True),
@@ -498,7 +535,7 @@ def build_html(output_dir, core_path):
      '<span class="eq">(1&minus;x)<sup>k<sub>VCF</sub> &minus; k<sub>VF</sub></sup></span>, so the '
      'exponent difference is the band width in the table below. Technologies whose data does not '
      'approach zero market share have that intercept extrapolated rather than measured, and the '
-     'figure marks them.</p></div>', fig2, fit_table)}
+     'figure marks them.</p></div>', fig2, fit_table, decline_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '
