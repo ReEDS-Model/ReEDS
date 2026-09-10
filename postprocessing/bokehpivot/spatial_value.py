@@ -4,7 +4,6 @@ suppresses that tech's value there, pushing later deployment into regions with w
 Three figures, in the order the argument runs:
 
   A  spatial_value_map_<tech>.png         where value falls and where capacity goes, two years
-  A3 spatial_value_distribution.png       how the spread of regional value factors changes
   A2 spatial_value_map_byyear_<tech>.png  the same in every model year, as a filmstrip
   B  spatial_value_suppression.png        that local build-out causes local value decline (scatter)
   C  spatial_value_cost_decomp.png        how much of the cost rise that relocation explains
@@ -69,8 +68,6 @@ pen_scope_levels = ('cendiv', 'transreg', 'interconnect') #Hierarchy levels at w
 byyear_clip_pct = (2, 98) #Percentiles the by-year colour ranges are clipped to, pooled over all years so one colorbar serves a whole row.
 byyear_cap_clip_pct = 90 #Percentile the two capacity rows top out at, above which colour saturates. Tighter than byyear_clip_pct because both distributions are heavily skewed and the ramps are linear: cumulative capacity runs to 306 GW against a median of 39, and a range set by the extreme would leave the early years and most regions blank.
 byyear_year_step = 4 #Calendar-year stride for the by-year figure, counted from the first modelled year. 2 shows every model year; 4 halves the columns and roughly doubles the panel area. The intermediate years carry little: consecutive-year correlations of the regional pattern run 0.96-0.99 through the steady state, so a 2-year step draws nearly the same map twice. Note the trade-off - the first and last years are the two least representative (the inherited fleet, and the terminal-year build) and a coarser stride raises their share of the figure.
-dist_nbins = 16 #Bins in the relative-value distribution histogram.
-dist_clip_pct = (1, 99) #Generation-weighted percentiles, pooled over years per tech, that set each row's bin range. Wind's relative value reaches 8.6 in a region carrying almost no generation, which would otherwise set the axis; capacity outside the range is folded into the end bins so every panel still sums to one.
 byyear_panel_width = 2.6 #Inches per map column in the by-year figure. Wider than the 13-column version needed, since a coarser stride leaves room.
 
 
@@ -678,120 +675,6 @@ def plot_maps_byyear(data, tech, output_path):
     return fig
 
 
-def weighted_stats(values, weights):
-    """Generation-weighted mean, sd and decile spread of one panel's distribution."""
-    v, w = np.asarray(values, float), np.asarray(weights, float)
-    keep = np.isfinite(v) & np.isfinite(w) & (w > 0)
-    v, w = v[keep], w[keep]
-    if not len(v):
-        return {}
-    mean = np.average(v, weights=w)
-    order = np.argsort(v)
-    v_s, w_s = v[order], w[order]
-    cum = np.cumsum(w_s) / w_s.sum()
-    p10, p90 = np.interp([0.10, 0.90], cum, v_s)
-    return {'mean': mean, 'sd': np.sqrt(np.average((v - mean) ** 2, weights=w)),
-            'p10': p10, 'p90': p90, 'total': w.sum()}
-
-
-def plot_value_distribution(data, output_path):
-    """How the spread of regional value factors changes, year by year.
-
-    x is the fleet value factor over the national fleet value factor of the same year - row 1 of
-    the by-year maps - binned, with bars weighted by generation. Because the national value factor
-    is itself the generation-weighted mean of the regional ones, the mean of every panel is exactly
-    1 by construction. Nothing about the level can move, so the only thing the row shows is the
-    shape: whether generation sits tightly around the national average or spreads away from it.
-
-    Bars are a share of that year's generation, since the fleet grows more than twentyfold over the
-    horizon; the absolute TWh is annotated with the weighted standard deviation and decile spread.
-
-    Bin ranges are per tech, from generation-weighted percentiles pooled over the plotted years,
-    because the two techs differ by a factor of three in spread and a shared range would leave one
-    row unreadable.
-    """
-    techs = [t for t in tech_prefix_map if t in data]
-    colors = build_color_map(techs)
-    years = []
-    frames = {}
-    for tech in techs:
-        panel = data[tech]['panel']
-        all_years = sorted(panel['t'].unique())
-        years = [y for y in all_years if (y - all_years[0]) % byyear_year_step == 0]
-        d = panel[panel['t'].isin(years)].dropna(subset=['vf_rel', 'gen'])
-        frames[tech] = d[d['gen'] > 0]
-
-    fig, axes = plt.subplots(len(techs), len(years), squeeze=False,
-                             figsize=(1.55 * len(years), 2.5 * len(techs)),
-                             gridspec_kw={'hspace': 0.34, 'wspace': 0.10})
-
-    for i, tech in enumerate(techs):
-        d = frames[tech]
-        stats_all = weighted_stats(d['vf_rel'], d['gen'])
-        order = np.argsort(d['vf_rel'].to_numpy())
-        v_s = d['vf_rel'].to_numpy()[order]
-        cum = np.cumsum(d['gen'].to_numpy()[order]) / d['gen'].sum()
-        lo, hi = np.interp([dist_clip_pct[0] / 100, dist_clip_pct[1] / 100], cum, v_s)
-        edges = np.linspace(lo, hi, dist_nbins + 1)
-        centres = (edges[:-1] + edges[1:]) / 2
-        width = (edges[1] - edges[0]) * 0.92
-        ymax = 0
-        panel_bars = {}
-        for year in years:
-            x = d[d['t'] == year]
-            if x.empty:
-                continue
-            idx = np.digitize(x['vf_rel'].clip(lo + 1e-9, hi - 1e-9), edges) - 1
-            shares = np.zeros(dist_nbins)
-            for b, mw in zip(idx, x['gen']):
-                shares[min(max(b, 0), dist_nbins - 1)] += mw
-            shares /= x['gen'].sum()
-            panel_bars[year] = (shares, weighted_stats(x['vf_rel'], x['gen']))
-            ymax = max(ymax, shares.max())
-
-        for j, year in enumerate(years):
-            ax = axes[i, j]
-            if year not in panel_bars:
-                ax.axis('off')
-                continue
-            shares, st = panel_bars[year]
-            ax.bar(centres, shares, width=width, color=colors[tech], alpha=0.85,
-                   edgecolor='white', linewidth=0.4, zorder=3)
-            #The decile spread is the quantity the row is about, so it is drawn, not only printed.
-            ax.axvline(1.0, color='0.45', linewidth=0.9, zorder=2)
-            ax.annotate('', xy=(st['p10'], ymax * 1.10), xytext=(st['p90'], ymax * 1.10),
-                        arrowprops={'arrowstyle': '<->', 'color': cost_color, 'linewidth': 1.2},
-                        annotation_clip=False, zorder=7)
-            ax.set_xlim(lo, hi)
-            ax.set_ylim(0, ymax * 1.52)
-            ax.set_title(f'{year}', fontsize=9.5)
-            #p10-90 is the arrow's job, so the box carries only what the arrow cannot show.
-            ax.text(0.5, 0.985,
-                    f"sd {st['sd']:.2f}   {st['p90'] - st['p10']:.2f} wide\n"
-                    f"{st['total'] / 1e6:.0f} TWh",
-                    transform=ax.transAxes, ha='center', va='top', fontsize=6.8, color='0.25',
-                    linespacing=1.3, zorder=6,
-                    bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.82,
-                          'boxstyle': 'round,pad=0.22'})
-            ax.grid(True, axis='y', linestyle='--', linewidth=0.5, alpha=0.6)
-            ax.set_axisbelow(True)
-            ax.tick_params(labelsize=7)
-            if j:
-                ax.set_yticklabels([])
-            else:
-                ax.set_ylabel(f'{display_tech(tech)}\nshare of generation', fontsize=8.5)
-            if i == len(techs) - 1:
-                ax.set_xlabel('VF / national', fontsize=8)
-
-    fig.suptitle(
-        'Distribution of regional value factor relative to the national value factor of the same '
-        'year\ngeneration-weighted, so every panel has mean 1 by construction; the arrow spans the '
-        '10th to 90th percentile',
-        fontsize=11, y=0.995)
-    fig.savefig(output_path, dpi=300, bbox_inches='tight')
-    return fig
-
-
 def plot_suppression(data, output_path):
     """Figure B: does local build-out cause local value decline, and through which channel.
 
@@ -929,9 +812,6 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
                 data, tech, os.path.join(output_dir, f'spatial_value_map_byyear_{slug}.png'))
             plt.close(fig)
         fig = plot_suppression(data, os.path.join(output_dir, 'spatial_value_suppression.png'))
-        plt.close(fig)
-        fig = plot_value_distribution(
-            data, os.path.join(output_dir, 'spatial_value_distribution.png'))
         plt.close(fig)
         fig = plot_cost_decomp(data, os.path.join(output_dir, 'spatial_value_cost_decomp.png'))
         plt.close(fig)
