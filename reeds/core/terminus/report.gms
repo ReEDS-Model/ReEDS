@@ -577,7 +577,7 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$tfu
 
 * gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
-* Raw FINITO marginals in a linked solve already include deflator('2018').
+* Raw FINITO marginals in a linked solve already include the FINITO dollar-year deflator.
 * Undo cost_scale and pvf_onm only to report $2004; FINITO obj_scale cancels
 * in the linked ReEDS objective. Annual FSC balances do not use hours(h).
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedNG)] =
@@ -1827,7 +1827,7 @@ error_check('z') = (
 * account for costs from FINITO: deflate from $2018 to $2004,
 * remove any FINITO scaling, and then apply ReEDS scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
-        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('2018') / obj_scale )
+        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('%FINITO_dollaryear%') / obj_scale )
 $endif.linked_objective 
     }
 ) / z.l ;

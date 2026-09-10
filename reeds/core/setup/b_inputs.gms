@@ -960,7 +960,7 @@ tfix(t) = no ;
 stfeas(st) = no ;
 tprev(t,tt) = no ;
 tsolved(t) = no ;
-tfuel(t)=no;
+tfuel(t) = no ;
 
 *==============================
 * Year specification

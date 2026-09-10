@@ -51,7 +51,7 @@ interactive = False
 techs_min_vre = ['upv', 'wind-ons']
 
 #%%### Functions
-def get_load(inputs_case, sw, keep_modelyear=None, keep_weatheryears=[2012]):
+def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
     """
     """
     ### Subset to modeled regions
@@ -59,6 +59,7 @@ def get_load(inputs_case, sw, keep_modelyear=None, keep_weatheryears=[2012]):
 
     ### When running the linked model (GSw_FINITO_Link=1) we add reference load estimates
     ### for FINITO load back in to use when selecting representative periods
+    sw = reeds.io.get_switches(inputs_case) 
     if int(sw.GSw_FINITO_Link):
         load_hourly_finito = reeds.finito.get_hourly_finito_load(inputs_case)
         load = load + load_hourly_finito
@@ -335,7 +336,6 @@ def main(
     print("Collecting 8760 load data")
     load = get_load(
         inputs_case=inputs_case,
-        sw=sw,
         keep_modelyear=(int(sw['GSw_HourlyClusterYear'])
                   if int(sw['GSw_HourlyClusterYear']) in modelyears
                   else max(modelyears)),
@@ -494,7 +494,7 @@ def main(
         and (sw['GSw_PRM_StressSeedLoadLevel'].lower() not in ['false','none'])
     ):
         ## Get load for all model and weather years
-        load_allyears = get_load(inputs_case, sw, keep_weatheryears='all').loc[modelyears]
+        load_allyears = get_load(inputs_case, keep_weatheryears='all').loc[modelyears]
         ## Add descriptive index
         load_allyears = load_allyears.merge(
             timestamps[['year', 'yperiod', 'h_of_period']], left_on='datetime', right_index=True)
