@@ -160,19 +160,29 @@ def linfit(x, y):
     return slope, intercept, r2
 
 
-def series_specs(color):
-    """The lines drawn in one panel: (key, label, column, color, linestyle, marker)."""
+def series_specs(color, show_adder=None):
+    """The lines drawn in one panel: (key, label, column, color, linestyle, marker).
+
+    show_adder defaults to the show_adder_method switch; pass it explicitly to draw one figure each
+    way from a single run.
+    """
     specs = [
         ('rev', 'reV supply curve', 'rev_lcoe', '0.35', '-', None),
         ('cf', 'ReEDS (cost factor)', 'lcoe_cf', color, '-', 'o'),
     ]
-    if show_adder_method:
+    if show_adder_method if show_adder is None else show_adder:
         specs.append(('add', 'ReEDS (LCOE adder)', 'lcoe_add', color, '--', 's'))
     return specs
 
 
-def plot_reeds_vs_rev(reeds, curves, output_path):
-    """One panel per tech: the reV supply curve with the ReEDS marginal LCOE points over it."""
+def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
+    """One panel per tech: the reV supply curve with the ReEDS marginal LCOE points over it.
+
+    show_adder=False drops the LCOE-adder re-basing and leaves the multiplicative cost-factor one
+    against the reV curve. The two re-basings bracket the answer (see the module docstring), so the
+    both-methods figure is the honest one for judging how much the choice matters; this version is
+    for reading the cost-factor comparison on its own without a second ReEDS line beside it.
+    """
     techs = [t for t in tech_rev_map if t in reeds]
     colors = build_color_map(techs)
     fig, axes = plt.subplots(1, len(techs), figsize=(6.5 * len(techs), 5.2), squeeze=False)
@@ -191,7 +201,7 @@ def plot_reeds_vs_rev(reeds, curves, output_path):
         ax.plot(vis['cum_twh'], vis['lcoe'], color='0.35', linewidth=2.2, zorder=3)
 
         rows, rev_slope = [], None
-        for key, label, col, color, ls, marker in series_specs(colors[tech]):
+        for key, label, col, color, ls, marker in series_specs(colors[tech], show_adder):
             y = r[col].to_numpy()
             if key != 'rev':
                 ax.plot(x, y, color=color, linewidth=1.8, linestyle=ls, marker=marker,
@@ -232,9 +242,11 @@ def plot_reeds_vs_rev(reeds, curves, output_path):
         ax.legend(loc='lower right', fontsize=9)
     axes[0].set_ylabel(f'Marginal LCOE ({target_dollar_year}$/MWh)')
 
+    both = show_adder_method if show_adder is None else show_adder
     fig.suptitle(
         f'ReEDS cost escalation vs the underlying reV supply curves '
-        f'(LCOE base year {lcoe_year})', fontsize=12)
+        f'(LCOE base year {lcoe_year})'
+        + ('' if both else ' - cost-factor re-basing only'), fontsize=12)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig
@@ -252,6 +264,13 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
     with matplotlib.rc_context(default_rc):
         fig = plot_reeds_vs_rev(reeds, curves, os.path.join(output_dir, 'reeds_vs_rev.png'))
         plt.close(fig)
+        #Same comparison with only the multiplicative cost-factor re-basing of the ReEDS marginal
+        #LCOE. Same data and same fits as above - only the adder series is dropped - so it adds no
+        #rows to reeds_vs_rev.csv.
+        fig_cf = plot_reeds_vs_rev(
+            reeds, curves, os.path.join(output_dir, 'reeds_vs_rev_cost-factor.png'),
+            show_adder=False)
+        plt.close(fig_cf)
 
     #run_dir and sc_file are carried through so the table records which run and which supply curve
     #file each tech was compared against.
