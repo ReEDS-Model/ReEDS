@@ -16,7 +16,7 @@ setup
 developer_best_practices
 model_documentation
 user_guide
-sources
+inputs
 postprocessing_tools
 publications
 faq

@@ -132,7 +132,7 @@ def append_csp_profiles(cf_rep, sw):
         sw["GSw_CSP_Types"] = [int(i) for i in sw["GSw_CSP_Types"].split("_")]
     ### Get the CSP profiles
     cfcsp = cf_rep[[c for c in cf_rep if c.startswith("csp")]].copy()
-    ### As in cfgather.py, we duplicate the csp1 profiles for each CSP tech
+    ### Duplicate the csp1 profiles for each CSP tech
     cfcsp_out = pd.concat(
         (
             [
@@ -203,9 +203,6 @@ def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     load_in = reeds.io.read_file(
         os.path.join(inputs_case,'load.h5')).unstack(level=0)
     load_in.columns = load_in.columns.rename(['r','t'])
-    ### load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
-    scalars = reeds.io.get_scalars(inputs_case)
-    load_in *= (1 - scalars['distloss'])
 
     ### Add time index
     load_in.index = load_in.index.map(hmap_allyrs.set_index('timestamp')['actual_h']).rename('h')
@@ -584,7 +581,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'h_ccseason_prm': ['*h','ccseason'],
             'load_allyear': ['*r','h','t','MW'],
             'peak_ccseason': ['*r','ccseason','t','MW'],
-            'cf_vre': ['*i','r','h','cf'],
+            'cf_vre': ['*i','c','r','h','cf'],
             'cf_hyd': ['*i','szn','r','t','cf'],
             'cap_hyd_szn_adj': ['*i','szn','r','value'],
             'can_exports_h_frac': ['*h','frac_weighted'],
@@ -672,6 +669,11 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .rename("cf")
         .reset_index()
     )
+    ### Pull the resource class out of the tech name (e.g. 'upv_5' -> 5); techs with
+    ### no class suffix (e.g. 'distpv') are assigned class '0'
+    cf_out['c'] = [
+        str(reeds.techs.split_class(_i)[1] or 0) for _i in cf_out['i']
+    ]
 
     # %%### Create the temporal sets used by ReEDS
     ### Calculate number of hours represented by each timeslice
@@ -1393,9 +1395,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     cf_vre = (
         cf_out
-        .sort_values(['i','r','h'])
+        .sort_values(['i','c','r','h'])
         .assign(h=cf_out.h.map(chunkmap))
-        .groupby(['i','r','h'], as_index=False)
+        .groupby(['i','c','r','h'], as_index=False)
         .agg(aggmethod, *args)
     )
 
@@ -1544,7 +1546,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         'load_allyear': [load_allyear.round(decimals), False, False],
         ## Seasonal peak demand
         "peak_ccseason": [peak_all.round(decimals), False, False],
-        ## Capacity factors (i,r,h)
+        ## Capacity factors (i,c,r,h)
         'cf_vre': [cf_vre.round(5), False, False],
         ## Exports to Canada [fraction] (h)
         "can_exports_h_frac": [

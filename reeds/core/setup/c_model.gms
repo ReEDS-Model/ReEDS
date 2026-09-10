@@ -49,7 +49,6 @@ positive variables
   STORAGE_IN_PLANT(i,v,r,allh,t)         "--MW-- hybrid plant storage charging in hour h that is charging from a coupled technology"
   STORAGE_IN_GRID(i,v,r,allh,t)          "--MW-- hybrid plant storage charging in hour h that is charging from the grid"
   AVAIL_SITE(x,allh,t)                   "--MW-- available generation from all resources at reV site x"
-  CURT(r,allh,t)                         "--MW-- curtailment from vre generators in hour h"
   MINGEN(r,allszn,t)                     "--MW-- minimum generation level in each season"
   STORAGE_IN(i,v,r,allh,t)               "--MW-- storage charging in hour h that is charging from a given source technology; not used for CSP-TES"
   STORAGE_LEVEL(i,v,r,allh,t)            "--MWh-- storage level in hour h"
@@ -190,7 +189,6 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_capacity_limit(i,v,r,allh,t)               "--MW-- generation limited to available capacity"
  eq_capacity_limit_hybrid(r,allh,t)            "--MW-- generation from hybrid resources limited to available capacity"
  eq_capacity_limit_nd(i,v,r,allh,t)            "--MW-- generation limited to available capacity for non-dispatchable resources"
- eq_curt_gen_balance(r,allh,t)                 "--MW-- net generation and curtailment must equal gross generation"
  eq_dhyd_dispatch(i,v,r,allszn,t)              "--MWh-- dispatchable hydro seasonal energy constraint (when not allowing seasonal enregy shifting)"
  eq_min_cf(i,r,t)                              "--MWh-- minimum capacity factor constraint for each generator fleet, applied to (i,r)"
  eq_max_daily_cf(i,r,allszn,t)                 "--MWh-- maximum daily capacity factor constraint for any technology with maxdailycf(i,t) specified"
@@ -1069,10 +1067,13 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *but the combination of m_rsc_con and rsc_agg allows for those investments
 *to be limited by the numeraire techs' m_rsc_dat
 
-*capacity indicated by the resource supply curve (scaled by rsc_capacity_scalar)
-    m_rsc_dat(r,i,rscbin,"cap") * (
-        1$(not rsc_capacity_scalar_i(i)) + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i) )
-        
+*capacity indicated by the resource supply curve minus exogenous (pre-start-year)
+*capacity (scaled by rsc_capacity_scalar)
+    (m_rsc_dat(r,i,rscbin,"cap")
+     - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
+         capacity_exog_rsc(ii,v,r,rscbin,tt) } )
+        * (1$[not rsc_capacity_scalar_i(i)]
+           + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
 * available hydro upgrade capacity
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 
@@ -1081,10 +1082,6 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *must exceed the cumulative invested capacity in that region/class/bin...
     sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)],
          INV_RSC(ii,v,r,rscbin,tt) * resourcescaler(ii) }
-
-*plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
-    + sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
 
 ;
 
@@ -1159,7 +1156,7 @@ eq_site_cf(x,h,t)
         $x_r(x,r)
         $valgen(i,v,r,t)],
 * Capacity factor of techs with endogenously-modeled spur lines
-        m_cf(i,v,r,h,t)
+        sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
 * multiplied by total capacity of those techs
         * sum{rscbin
               $[valcap(i,v,r,t)
@@ -1244,7 +1241,7 @@ eq_capacity_limit(i,v,r,h,t)
 *only vre technologies are curtailable.
 * This term accounts for energy-only and capacity-only upsizing,
 * which is initially implemented only for hydro.
-    + (m_cf(i,v,r,h,t)
+    + (sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
         * (CAP(i,v,r,t)
 *add energy embedded in energy-only upsizing
             + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
@@ -1294,7 +1291,7 @@ eq_capacity_limit_hybrid(r,h,t)
 eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 *sum of non-dispatchable capacity multiplied by its rated capacity factor,
-    + m_cf(i,v,r,h,t) * CAP(i,v,r,t)
+    + sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
 
     =e=
 
@@ -1303,30 +1300,6 @@ eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 *[plus] sum of operating reserves by type
     + sum{ortype$[Sw_OpRes$opres_model(ortype)$reserve_frac(i,ortype)$opres_h(h)],
-          OPRES(ortype,i,v,r,h,t) }
-;
-
-* ---------------------------------------------------------------------------
-
-eq_curt_gen_balance(r,h,t)$tmodel(t)..
-
-*total potential generation
-    sum{(i,v)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))$(not nondispatch(i))],
-         m_cf(i,v,r,h,t) * CAP(i,v,r,t) }
-
-*[minus] curtailed generation
-    - CURT(r,h,t)$Sw_CurtMarket
-
-    =g=
-
-*must exceed realized generation; exclude hybrid plants
-    sum{(i,v)$[valgen(i,v,r,t)$vre(i)$(not nondispatch(i))], GEN(i,v,r,h,t) }
-
-*[plus] realized generation from hybrid plant
-  + sum{(i,v)$[valgen(i,v,r,t)$storage_hybrid(i)$(not csp(i))$(not nondispatch(i))], GEN_PLANT(i,v,r,h,t) }$Sw_HybridPlant
-
-*[plus] sum of operating reserves by type
-    + sum{(ortype,i,v)$[Sw_OpRes$reserve_frac(i,ortype)$opres_h(h)$valgen(i,v,r,t)$vre(i)$(not nondispatch(i))$opres_model(ortype)],
           OPRES(ortype,i,v,r,h,t) }
 ;
 
@@ -2623,24 +2596,23 @@ eq_caa_max_cf(i,v,r,t)$[tmodel(t)$valgen(i,v,r,t)
 
 * ---------------------------------------------------------------------------
 
-*Under the Clean Air Act Section 111, the emissions from existing coal plants per state must be less than or equal to a rate-based emissions standard
-
-*The rate is equivalent to average coal CCS emissions assuming 90% capture rate [metric tons CO2 / MWh]
+*Under the Clean Air Act Section 111, the emissions from existing coal plants per state must be no greater
+*than they would be if every coal unit captured caa_capture_rate_standard of the CO2 it produces
 eq_caa_rate_standard(st,t)$[tmodel(t)
                         $(yeart(t)>=caa_coal_retire_year)
                         $Sw_Clean_Air_Act]..
 
-*rate equivalent to average coal CCS emissions assuming 90% capture rate [metric tons CO2 / MWh]
-    caa_rate_emis_standard 
+*coal emissions in that state if each unit captured at the standard's rate [metric tons CO2]
+*emit_rate plus capture_rate is the uncontrolled rate, which accounts for the capture energy penalty
+    (1 - caa_capture_rate_standard)
+    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
+         hours(h) * (emit_rate("process","CO2",i,v,r,t) + capture_rate("CO2",i,v,r,t)) * GEN(i,v,r,h,t) }
 
-*coal generation in that state [MWh]
-    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         GEN(i,v,r,h,t)}
-    =g= 
+    =g=
 
 *coal emissions in that state [metric tons CO2]
-    sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         GEN(i,v,r,h,t) * emit_rate("process","CO2",i,v,r,t)}
+    sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
+         hours(h) * emit_rate("process","CO2",i,v,r,t) * GEN(i,v,r,h,t) }
 ;
 
 *==========================
@@ -3156,7 +3128,7 @@ eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
           STORAGE_IN(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
 
 *energy into storage from CSP field
-        + (CAP(i,v,r,t) * csp_sm(i) * m_cf(i,v,r,h,t)
+        + (CAP(i,v,r,t) * csp_sm(i) * sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
           )$[CSP_Storage(i)$valcap(i,v,r,t)]
       )
 *[plus] water inflow energy available for hydropower that adds pumping
@@ -3455,7 +3427,7 @@ eq_plant_total_gen(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i
 eq_hybrid_plant_energy_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
 * [plus] plant output
-    m_cf(i,v,r,h,t) * CAP(i,v,r,t)
+    sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
 
     =g=
 
