@@ -5238,10 +5238,6 @@ if (Sw_ReducedResource = 1,
           m_rsc_dat(r,i,rscbin,"cap") * (1 - rsc_reduct_frac(i,r)) ;
 ) ;
 
-* Only geothermal and dr_shed/shape/shift have supply curve capacities that change over time irrespective of bins
-rsc_capacity_scalar(i,r,t) = geo_discovery(i,r,t)+ dr_shed_capacity_scalar(i,r,t)  +dr_shape_capacity_scalar(i,r,t) + dr_shift_capacity_scalar(i,r,t) ;
-rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
-
 *convert UPV and PVB interconnection costs from $/MW-AC to $/MW-DC using ILR
 m_rsc_dat(r,i,rscbin,"cost")$[m_rsc_dat(r,i,rscbin,"cap")$(upv(i) or pvb(i))] = m_rsc_dat(r,i,rscbin,"cost") / ilr(i) ; 
 
@@ -5344,7 +5340,7 @@ geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
 m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
     m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
 
-rsc_capacity_scalar(i,r,t) =  ceil(1000 *geo_discovery(i,r,t) + dr_shed_capacity_scalar(i,r,t) ) / 1000 ;
+rsc_capacity_scalar(i,r,t) =  ceil(1000 *geo_discovery(i,r,t) + 1000*dr_shed_capacity_scalar(i,r,t) + 1000*dr_shape_capacity_scalar(i,r,t) + 1000*dr_shift_capacity_scalar(i,r,t)) / 1000 ;
 rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
 
 * * Apply spur-line cost multiplier for relevant technologies
