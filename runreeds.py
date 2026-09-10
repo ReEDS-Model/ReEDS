@@ -1294,11 +1294,11 @@ def write_batch_script(
                 OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
                 OPATH.writelines("module load conda || exit 1\n")
                 OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
-                OPATH.writelines("module load gams \n")
+                OPATH.writelines("module load gams/53.5.1 || exit 1\n")
                 OPATH.writelines("module load julia/1.12.1 \n")
             else:
                 OPATH.writelines("module load conda || exit 1\n")
-                OPATH.writelines("module load gams \n")
+                OPATH.writelines("module load gams/53.5.1 || exit 1\n")
 
             # Freeze the submitting Python's Conda prefix into this job.
             # A folder rename does not select a Conda environment.
