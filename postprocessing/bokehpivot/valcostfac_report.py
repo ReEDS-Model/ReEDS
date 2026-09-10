@@ -394,6 +394,20 @@ def build_html(output_dir, core_path):
                       'whose slopes are quoted on each panel.', order)
     n += 1 if fig_supp else 0
 
+    fig_dist = figure(output_dir, 'spatial_value_distribution.png', n,
+                      'Distribution of regional value factor relative to the national value factor.',
+                      'Columns are model years, matching the map figures. x is the fleet value '
+                      'factor over the national fleet value factor of the same year, binned; bars '
+                      'are that bin&rsquo;s share of the year&rsquo;s generation, with tails folded '
+                      'into the end bins. Because the national value factor is the '
+                      'generation-weighted mean of the regional ones, every panel has mean 1 by '
+                      'construction, so only the shape varies. The grey line marks 1.0, the arrow '
+                      'spans the 10th to 90th percentile, and the weighted standard deviation, that '
+                      'decile width and the year&rsquo;s generation are annotated. Bin ranges are '
+                      'per technology, from generation-weighted percentiles pooled over the plotted '
+                      'years.', order)
+    n += 1 if fig_dist else 0
+
     supp_rows = []
     if not supp.empty:
         techs_s = [t for t in vre if t in set(supp['tech'])]
@@ -549,7 +563,7 @@ def build_html(output_dir, core_path):
      'comparable across years and the regional price, which is itself affected by deployment, is '
      'not divided back out.</p></div>' + map_figs)}
 
-{sec('05', 'Regional value factor against penetration', fig_supp, supp_table,
+{sec('05', 'Regional value factor against penetration', fig_supp, fig_dist, supp_table,
      '<div class="col"><p>The table below enters own-region and transmission-region penetration in '
      'the same regression, which separates two regressors that are themselves correlated.</p></div>',
      scope_table, align_table)}
