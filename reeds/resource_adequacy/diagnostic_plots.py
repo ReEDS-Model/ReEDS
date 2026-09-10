@@ -24,7 +24,7 @@ plots.plotparams()
 dpi = None
 interactive = False
 savefig = True
-
+cmap = cmocean.cm.tempo
 
 #%%### Functions
 def delete_temporary_files(sw):
@@ -427,7 +427,7 @@ def map_dropped_load(sw, dfs, level='r'):
             ### Background
             dfba.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
             ### Data
-            dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.tempo)
+            dfplot.plot(ax=ax, column='val', cmap=cmap)
             text_artists = []
             for r, row in dfplot.iterrows():
                 if row.val > 0:
@@ -1003,7 +1003,7 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
         savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
         plt.close()
         f, ax = plots.map_years_months(
-            dfzones=dfzones, dfdata=failrate[tech],
+            dfzones=dfzones, dfdata=failrate[tech], cmap=cmap,
             title=f"Monthly {aggfunc}\nhourly failure rate,\n{tech} [%]",
         )
         ## Save it
@@ -1024,7 +1024,7 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
             savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
             plt.close()
             f, ax = plots.map_years_months(
-                dfzones=dfzones, dfdata=repairrate[tech],
+                dfzones=dfzones, dfdata=repairrate[tech], cmap=cmap,
                 title=f"Monthly {aggfunc}\nhourly repair rate,\n{tech} [%]",
             )
             ## Save it
@@ -1367,12 +1367,12 @@ if __name__ == '__main__':
     debug = args.debug
 
     # #%%### Inputs for debugging
-    # reeds_path = reeds.io.reeds_path
-    # casedir = os.path.join(reeds_path, 'runs', 'v20260715_stressM3_MultiMetricRA')
-    # t = 2050
-    # interactive = True
-    # iteration = 0
-    # debug = True
+    reeds_path = reeds.io.reeds_path
+    casedir = os.path.join(reeds_path, 'runs', 'v20260820_USA_defaults')
+    t = 2035
+    interactive = True
+    iteration = 0
+    debug = True
 
     #%%### INPUTS
     ### Switches
