@@ -1094,7 +1094,7 @@ def plot_diff_maps(
 
 def plot_trans_vsc(
         case, year=2050, wscale=0.4, alpha=1.0, miles=300,
-        cmap=cmocean.cm.tempo, scale=True, title=True,
+        cmap=cmocean.cm.rain, scale=True, title=True,
         convertermax=None,
         f=None, ax=None,
     ):
@@ -1189,7 +1189,7 @@ def plot_trans_vsc(
 
 def plot_transmission_utilization(
         case, year=2050, plottype='mean', network='trans',
-        wscale=0.0004, alpha=1.0, cmap=cmocean.cm.tempo,
+        wscale=0.0004, alpha=1.0, cmap=cmocean.cm.rain,
         extent='modeled',
         f=None, ax=None,
         thicklevel='transreg',
@@ -2717,7 +2717,7 @@ def map_capacity_techs(
         techs='aggregation',
         ncols=4,
         vmax='shared',
-        cmap=cmocean.cm.tempo,
+        cmap=cmocean.cm.rain,
     ):
     """
     techs: list of technologies to plot, or 'aggregation' to plot all aggregated technologies
@@ -3458,7 +3458,7 @@ def map_hybrid_pv_wind(
         case, val='site_cap', year=2050,
         tech=None, vmax=None,
         markersize=10.75, #stretch=1.2,
-        cmap=cmocean.cm.tempo,
+        cmap=cmocean.cm.rain,
         f=None, ax=None, figsize=(6,6), dpi=None,
     ):
     """
@@ -3466,7 +3466,7 @@ def map_hybrid_pv_wind(
     cmap: Suggestions:
         val=site_cap, tech=wind-ons: plt.cm.Blues
         val=site_cap, tech=upv: plt.cm.Oranges
-        val=(site_hybridization,site_spurcap), tech=None: cmocean.cm.tempo
+        val=(site_hybridization,site_spurcap), tech=None: cmocean.cm.rain
         val=(site_pv_fraction,site_gir), tech=either: plt.cm.turbo
             or mpl.colors.LinearSegmentedColormap.from_list
                 'turboclip', [plt.cm.turbo(c) for c in np.linspace(0.1,0.91,101)])
@@ -4345,7 +4345,7 @@ def plot_ra_metrics_bylevel(
 
 def map_neue(
         case, year=2050, iteration='last', samples=None,
-        vmax=10., cmap=cmocean.cm.tempo, label=True,
+        vmax=10., cmap=cmocean.cm.rain, label=True,
         over_vmax_mapcolor=None,
         over_threshold_textcolor='C3',
         highlight_over_threshold=True,
@@ -4435,7 +4435,7 @@ def map_neue(
 def map_h2_capacity(
         case, year=2050, wscale_h2=10, figheight=6, pipescale=0.1,
         legend_kwds={'shrink':0.6, 'pad':0, 'orientation':'horizontal', 'aspect':12},
-        cmap=cmocean.cm.tempo,
+        cmap=cmocean.cm.rain,
     ):
     """
     H2 turbines, production (Electrolyzer/SMR), pipelines, and storage
@@ -6126,7 +6126,7 @@ def map_outage_days(
     techs=['gas-cc', 'gas-ct', 'coaloldscr', 'nuclear', 'hyded'],
     outage_type='forced',
     aggfunc='max',
-    cmap=cmocean.cm.tempo,
+    cmap=cmocean.cm.rain,
     vmin=0,
     vmax='auto',
     fontsize=4,
@@ -6852,7 +6852,7 @@ def map_output_byyear(
     oneaxis='columns',
     yearaxis='rows',
     mapscale=4,
-    cmap=cmocean.cm.tempo,
+    cmap=cmocean.cm.rain,
     vscale=1,
     vmin=None,
     vmax=None,
@@ -6924,7 +6924,7 @@ def map_output_byyear(
     return f, ax, dictplot
 
 
-def map_prm(case, tmin=2023, cmap=cmocean.cm.tempo, scale=3, fontsize=7, vmax=None):
+def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=None):
     dfmap = reeds.io.get_dfmap(case)
     sw = reeds.io.get_switches(case)
     ### Get final iterations
