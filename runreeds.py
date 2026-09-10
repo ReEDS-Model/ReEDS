@@ -1409,7 +1409,7 @@ def write_batch_script(
             + ' gdxcompress=1'
             + toLogGamsString
             + f"--fname={batch_case}"
-            # + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']}"
+            + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']}"
             + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
