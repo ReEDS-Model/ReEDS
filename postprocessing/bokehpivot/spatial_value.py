@@ -4,6 +4,7 @@ suppresses that tech's value there, pushing later deployment into regions with w
 Three figures, in the order the argument runs:
 
   A  spatial_value_map_<tech>.png         where value falls and where capacity goes, two years
+  A3 spatial_value_seeking.png            new capacity binned by relative value, shaded by cost
   A2 spatial_value_map_byyear_<tech>.png  the same in every model year, as a filmstrip
   B  spatial_value_suppression.png        that local build-out causes local value decline (scatter)
   C  spatial_value_cost_decomp.png        how much of the cost rise that relocation explains
@@ -68,6 +69,8 @@ pen_scope_levels = ('cendiv', 'transreg', 'interconnect') #Hierarchy levels at w
 byyear_clip_pct = (2, 98) #Percentiles the by-year colour ranges are clipped to, pooled over all years so one colorbar serves a whole row.
 byyear_cap_clip_pct = 90 #Percentile the two capacity rows top out at, above which colour saturates. Tighter than byyear_clip_pct because both distributions are heavily skewed and the ramps are linear: cumulative capacity runs to 306 GW against a median of 39, and a range set by the extreme would leave the early years and most regions blank.
 byyear_year_step = 4 #Calendar-year stride for the by-year figure, counted from the first modelled year. 2 shows every model year; 4 halves the columns and roughly doubles the panel area. The intermediate years carry little: consecutive-year correlations of the regional pattern run 0.96-0.99 through the steady state, so a 2-year step draws nearly the same map twice. Note the trade-off - the first and last years are the two least representative (the inherited fleet, and the terminal-year build) and a coarser stride raises their share of the figure.
+seek_bins = (0.5, 1.8, 13) #Value-seeking histogram: (low, high, count) for the vf_new_rel bins. Under 1% of capacity falls outside 0.5-1.8, and those tails are folded into the end bins rather than stretching the axis.
+seek_cost_cmap = 'YlOrRd' #Colours the value-seeking bars by the intrinsic regional cost of the capacity in each bin.
 byyear_panel_width = 2.6 #Inches per map column in the by-year figure. Wider than the 13-column version needed, since a coarser stride leaves room.
 
 
@@ -675,6 +678,99 @@ def plot_maps_byyear(data, tech, output_path):
     return fig
 
 
+def plot_value_seeking(data, output_path):
+    """Where new capacity sits in relative-value space, year by year, coloured by regional cost.
+
+    Two things at once. The bars are new capacity binned by vf_new_rel - the new-build value factor
+    over the national fleet value factor of the same year - so a distribution sitting right of 1 is
+    the model building where value is above average. The annotated capacity-weighted mean across
+    the row shows whether that headroom is being used up.
+
+    The colour is the second half. Each bar is shaded by the MW-weighted mean of c_r for the
+    capacity in it, the intrinsic regional cost from the composition index. Where the right-hand
+    bars come out dark, the regions with relatively high value are also the expensive ones, which is
+    what connects the search for value to cost rather than leaving it a value story alone.
+
+    Bars are a share of that year's own new capacity, since annual builds span two orders of
+    magnitude; the absolute GW is annotated instead.
+    """
+    techs = [t for t in tech_prefix_map if t in data]
+    lo, hi, nbin = seek_bins
+    edges = np.linspace(lo, hi, nbin + 1)
+    centres = (edges[:-1] + edges[1:]) / 2
+    width = (edges[1] - edges[0]) * 0.92
+
+    panels, years = {}, []
+    for tech in techs:
+        panel = data[tech]['panel']
+        all_years = sorted(panel['t'].unique())
+        years = [y for y in all_years if (y - all_years[0]) % byyear_year_step == 0]
+        d = panel[panel['t'].isin(years) & (panel['new_mw'] > 0)].dropna(subset=['vf_new_rel'])
+        #Tails folded into the end bins rather than dropped, so every panel's bars sum to one.
+        panels[tech] = d.assign(
+            binned=np.digitize(d['vf_new_rel'].clip(lo + 1e-9, hi - 1e-9), edges) - 1)
+
+    cost_pool = pd.concat([d['c_r'] for d in panels.values()]).dropna()
+    cnorm = Normalize(*np.percentile(cost_pool, byyear_clip_pct)) if len(cost_pool) else Normalize()
+
+    fig, axes = plt.subplots(len(techs), len(years), squeeze=False, sharey=True,
+                             figsize=(1.55 * len(years), 2.5 * len(techs)),
+                             gridspec_kw={'hspace': 0.32, 'wspace': 0.08})
+    cmap = plt.get_cmap(seek_cost_cmap)
+
+    for i, tech in enumerate(techs):
+        d = panels[tech]
+        for j, year in enumerate(years):
+            ax = axes[i, j]
+            x = d[d['t'] == year]
+            if x.empty:
+                ax.axis('off')
+                continue
+            total = x['new_mw'].sum()
+            for b in range(nbin):
+                g = x[x['binned'] == b]
+                if g.empty:
+                    continue
+                share = g['new_mw'].sum() / total
+                cost = (np.average(g['c_r'], weights=g['new_mw'])
+                        if g['c_r'].notna().all() else np.nan)
+                ax.bar(centres[b], share, width=width, zorder=3,
+                       color=cmap(cnorm(cost)) if np.isfinite(cost) else '0.8',
+                       edgecolor='white', linewidth=0.4)
+            mean = np.average(x['vf_new_rel'], weights=x['new_mw'])
+            ax.axvline(1.0, color='0.45', linewidth=0.9, zorder=2)
+            ax.axvline(mean, color=cost_color, linestyle='--', linewidth=1.4, zorder=4)
+            ax.set_xlim(lo, hi)
+            ax.set_title(f'{year}', fontsize=9.5)
+            #Boxed, because the dashed mean line and the tallest bars both compete for the top of
+            #the panel and the position that is clear varies year to year.
+            ax.text(0.5, 0.97, f'mean {mean:.2f}\n{total / 1000:.0f} GW',
+                    transform=ax.transAxes, ha='center', va='top', fontsize=7, color='0.25',
+                    linespacing=1.3, zorder=6,
+                    bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.82,
+                          'boxstyle': 'round,pad=0.22'})
+            ax.grid(True, axis='y', linestyle='--', linewidth=0.5, alpha=0.6)
+            ax.set_axisbelow(True)
+            ax.tick_params(labelsize=7)
+            if j == 0:
+                ax.set_ylabel(f'{display_tech(tech)}\nshare of new capacity', fontsize=8.5)
+            if i == len(techs) - 1:
+                ax.set_xlabel('VF$_{new}$ / national', fontsize=8)
+
+    cb = fig.colorbar(plt.cm.ScalarMappable(norm=cnorm, cmap=cmap), ax=axes.ravel().tolist(),
+                      fraction=0.014, pad=0.008, location='right', extend='both')
+    cb.set_label('Intrinsic regional cost factor', fontsize=8.5)
+    cb.ax.tick_params(labelsize=7)
+
+    fig.suptitle(
+        'New capacity by new-build value factor relative to the national value factor of the same '
+        'year\nbars shaded by the intrinsic cost of the regions in them; grey line at 1.0, dashed '
+        'line at the capacity-weighted mean',
+        fontsize=11, y=0.995)
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    return fig
+
+
 def plot_suppression(data, output_path):
     """Figure B: does local build-out cause local value decline, and through which channel.
 
@@ -812,6 +908,8 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
                 data, tech, os.path.join(output_dir, f'spatial_value_map_byyear_{slug}.png'))
             plt.close(fig)
         fig = plot_suppression(data, os.path.join(output_dir, 'spatial_value_suppression.png'))
+        plt.close(fig)
+        fig = plot_value_seeking(data, os.path.join(output_dir, 'spatial_value_seeking.png'))
         plt.close(fig)
         fig = plot_cost_decomp(data, os.path.join(output_dir, 'spatial_value_cost_decomp.png'))
         plt.close(fig)
