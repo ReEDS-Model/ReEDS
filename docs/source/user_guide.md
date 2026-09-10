@@ -436,6 +436,15 @@ if a single unit is larger than the planning reserve margin, unserved energy is 
 This approach should therefore be used with caution.
 
 
+## State RPS/CES stress-period requirement
+
+By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over representative periods only. `GSw_StateRPS_Stress` adds a parallel requirement over stress periods, reusing the same compliance target:
+
+- `0` (default): off.
+- `1`: weight all modeled stress hours equally.
+- `2`: weight only each state's own peak-load stress period(s) — the seeded peak-load period(s) that the state's regions belong to (a state spanning multiple `GSw_PRM_StressSeedLoadLevel` groups gets the union of all of them). Requires `GSw_PRM_CapCredit=0` and `GSw_PRM_StressSeedLoadLevel` to be enabled.
+
+
 ## Monte Carlo Sampling (MCS)
 
 This guide explains how to enable, configure, and run Monte Carlo simulations so you can propagate input uncertainty through ReEDS runs.

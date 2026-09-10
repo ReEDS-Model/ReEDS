@@ -210,6 +210,7 @@ hierarchy_original.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hierarchy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hintage_char.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hintage_data.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
+htype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 hyd_add_upg_cap.csv,.csv,0,None,wide,"r,i,rscbin",1,0,constant,0,None,done,constant
 hyd_fom.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 hydadjann.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"new; input data extends to 2098, and interpolation between data years occurs in climateprep.py",

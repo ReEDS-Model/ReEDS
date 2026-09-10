@@ -42,12 +42,27 @@ $include inputs_case%ds%stress%stress_year%%ds%set_szn.csv
 $onlisting
 /
 $offempty
+
+$onempty
+st_szn_stresspeak(st,allszn) "seasons that are one of the state own peak-load stress periods"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%stress%stress_year%%ds%ces_peakday_st.csv
+$offdelim
+$onlisting
+/
+$offempty
 ;
 
 * The h set contains h_rep and h_stress; the szn set containts szn_rep and szn_stress
 h(allh) = no ;
 h(allh)$[h_rep(allh)] = yes ;
 h(allh)$[h_stress(allh)] = yes ;
+
+h_htype(h,htype) = no ;
+h_htype(h,"rep")$h_rep(h) = yes ;
+h_htype(h,"stress")$h_stress(h) = yes ;
 
 szn(allszn) = no ;
 szn(allszn)$[szn_rep(allszn)] = yes ;
@@ -206,6 +221,18 @@ $onlisting
 
 hours_t(allh,t)$tmodel(t) = 0 ;
 hours_t(h,t)$tmodel(t) = hours(h) ;
+
+hours_t(allh,t)$tmodel(t) = 0 ;
+hours_t(h,t)$tmodel(t) = hours(h) ;
+
+rps_hours(h,st,htype) = 0 ;
+* For representative periods, rps_hours is the same as hours
+rps_hours(h,st,"rep")$h_rep(h) = hours(h) ;
+* For Sw_StateRPS_Stress=1, all hours are equally weighted (with value 1)
+rps_hours(h,st,"stress")$[h_stress(h)$(Sw_StateRPS_Stress=1)] = 1 ;
+* For Sw_StateRPS_Stress=2, only hours that are in the state's own peak-load stress days are weighted
+rps_hours(h,st,"stress")$[h_stress(h)$(Sw_StateRPS_Stress=2)
+                          $sum{allszn$h_szn(h,allszn), st_szn_stresspeak(st,allszn) }] = 1 ;
 
 parameter numdays(allszn) "--number of days-- number of days for each season" ;
 numdays(allszn) = 0 ;

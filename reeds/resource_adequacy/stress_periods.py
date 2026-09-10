@@ -1,5 +1,6 @@
 #%%### General imports
 import os
+import shutil
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -846,6 +847,14 @@ def main(sw, t, iteration=0, logging=True):
         periodtype=newstresspath,
         make_plots=0,
         logging=logging
+    )
+
+    # Carry forward the state RPS/CES peak-day file. It's computed once per model
+    # year and doesn't change across iterations, but each iteration's folder needs
+    # its own copy.
+    shutil.copy2(
+        os.path.join(sw.casedir, 'inputs_case', f'stress{t}i0', 'ces_peakday_st.csv'),
+        os.path.join(sw.casedir, 'inputs_case', newstresspath, 'ces_peakday_st.csv'),
     )
 
     #%% Write updated PRM values
