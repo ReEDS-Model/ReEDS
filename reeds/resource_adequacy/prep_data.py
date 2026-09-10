@@ -149,7 +149,8 @@ def main(t, casedir, iteration=0):
 
     load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
 
-    resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
+    resources = pd.read_csv(
+        os.path.join(inputs_case, 'resources.csv'), dtype={'c': str})
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
                                              names=('i','c','r'))

@@ -118,7 +118,8 @@ def reeds_cc(t, tnext, casedir):
     #%% Load some inputs
     inputs_case = os.path.join(casedir, 'inputs_case')
     hierarchy = reeds.io.get_hierarchy(casedir).reset_index()
-    resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
+    resources = pd.read_csv(
+        os.path.join(inputs_case, 'resources.csv'), dtype={'c': str})
     
     reeds_data = os.path.join(casedir, 'handoff', 'reeds_data')
     cap = pd.read_csv(os.path.join(reeds_data, f'max_cap_{t}.csv'))

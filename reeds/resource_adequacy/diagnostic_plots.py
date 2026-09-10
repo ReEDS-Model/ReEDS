@@ -76,7 +76,7 @@ def get_inputs(sw):
     hierarchy = reeds.io.get_hierarchy(sw.casedir)
 
     resources = pd.read_csv(
-        os.path.join(sw['casedir'],'inputs_case','resources.csv')
+        os.path.join(sw['casedir'],'inputs_case','resources.csv'), dtype={'c': str}
     ).set_index('resource')
     resources['tech'] = reeds.reedsplots.simplify_techs(resources.i, display_level = 'diagnostics')
     resources['rb'] = resources.r
