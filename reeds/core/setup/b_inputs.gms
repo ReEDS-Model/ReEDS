@@ -6292,6 +6292,7 @@ domestic_supply(mat,t)      "-- metric tons -- domestic material supply by year"
 global_supply(mat,t)        "-- metric tons -- global material supply by year"
 byproduct_supply(mat,t)     "-- metric tons -- domestic byproduct recovery supply by year"
 allied_supply(mat,t)        "-- metric tons -- allied country material supply by year"
+nonfeoc_supply(mat,t)       "-- metric tons -- non-feoc country material supply by year"
 mat_supply(mat,t)           "-- metric tons -- total material supply by year"
 matprice_multiplier(mat,t)  "-- multiplier -- multiplier on material prices"
 mat_slackprice(mat)         "-- 2004$ / metric ton -- slack price for material supply"
@@ -6316,7 +6317,7 @@ set
 years_matshock(t) /%GSw_years_matshock%/ 
 ;
 
-**** material supply ****
+*** material supply ***
 
 * global supply
 global_supply(mat,t) = sum{mat_ctry, mat_prod(mat,mat_ctry)} * yearweight(t) ;
@@ -6368,7 +6369,7 @@ $ifthene.nosupply %GSw_mat_nosupply% == 1
 mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = 0 ;
 $endif.nosupply
 
-**** price multiplier ****
+*** price multiplier ***
 * set price multiplier for materials
 matprice_multiplier(mat,t) = 1;
 
@@ -6376,7 +6377,7 @@ $ifthene.priceshockone %GSw_priceshock_one% == 1
 matprice_multiplier(mat,t)$[(sameas(mat,'%GSw_matprice_spec%'))$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockone
 
-**** rare earth scenarios ****
+*** rare earth scenarios ***
 * set of rare earths for additional scenarios
 set rare_earth(mat) "subset of materials considered rare earths"
   /Dysprosium, Neodymium, Praseodymium, Terbium, Yttrium/ ;
@@ -6390,6 +6391,6 @@ $ifthene.priceshockre %GSw_priceshock_re% == 1
 matprice_multiplier(mat,t)$[rare_earth(mat)$years_matshock(t)] = %GSw_matprice_multiplier% ;
 $endif.priceshockre
 
-**** slack price ****
+*** slack price ***
 * set slack price for materials to be 100x the base price to avoid infeasibilities in the model
 mat_slackprice(mat) = 100 * mat_price(mat) ;
