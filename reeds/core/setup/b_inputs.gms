@@ -5541,11 +5541,11 @@ Parameter
     sdbin_size(ccreg,ccseason,sdbin,t)     "--MW-- available power capacity by storage duration bin - used to bin the peaking power capacity contribution of storage by duration"
     cc_old(i,r,ccseason,t)                 "--MW-- capacity credit for existing capacity - used in sequential solve similar to heritage reeds"
     cc_mar(i,r,ccseason,t)                 "--fraction--  cc_mar loading initialized to some reasonable value for the 2010 solve"
-    cc_int(i,v,r,ccseason,t)               "--fraction--  average fractional capacity credit - used in intertemporal solve"
+    cc_int(i,c,v,r,ccseason,t)             "--fraction--  average fractional capacity credit - used in intertemporal solve"
     cc_excess(i,r,ccseason,t)              "--MW-- this is the excess capacity credit when assuming marginal capacity credit in intertemporal solve"
     vre_gen_last_year(r,allh,t)            "--MW-- generation from VRE generators in the prior solve year"
     hybrid_cc_derate(i,r,ccseason,sdbin,t) "--fraction-- derate factor for hybrid PV+battery storage capacity credit"
-    m_cc_mar(i,r,ccseason,t)               "--fraction-- marginal capacity credit"
+    m_cc_mar(i,c,r,ccseason,t)             "--fraction-- marginal capacity credit"
     mean_forced_outage_rate(i,r,ccseason,t)"--fraction-- mean forced outage rate for each technology, region, and ccseason - used to derate thermal generator capacity"
 * Heuristic climate impacts
     trans_cap_delta(allh,allt)             "--fraction-- fractional adjustment to transmission capacity from climate heuristics"
@@ -5565,10 +5565,10 @@ Parameter
 
 * Initialize some parameters
 sdbin_size(ccreg,ccseason,sdbin,"%startyear%") = 1000 ;
-cc_int(i,v,r,ccseason,t) = 0 ;
+cc_int(i,c,v,r,ccseason,t) = 0 ;
 cc_excess(i,r,ccseason,t) = 0 ;
 cc_old(i,r,ccseason,t) = 0 ;
-m_cc_mar(i,r,ccseason,t) = 0 ;
+m_cc_mar(i,c,r,ccseason,t) = 0 ;
 hybrid_cc_derate(i,r,ccseason,sdbin,t)$[pvb(i)$valcap_irt(i,r,t)] = 1 ;
 mean_forced_outage_rate(i,r,ccseason,t) = 0 ;
 

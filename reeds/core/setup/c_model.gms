@@ -1731,8 +1731,11 @@ eq_reserve_margin(r,ccseason,t)
 *[plus] marginal capacity credit of VRE and csp times new investment
 *only used in sequential solve case (otherwise m_cc_mar = 0)
 *Note: new distpv is included with cc_old
-    + sum{(i,v)$[(vre(i) or csp(i) or pvb(i))$valinv(i,v,r,t)$(not forced_retire(i,r,t))],
-          m_cc_mar(i,r,ccseason,t) * (INV(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,t) }$[refurbtech(i)$Sw_Refurb])
+    + sum{(i,c,v)$[i_c(i,c)$(vre(i) or csp(i) or pvb(i))$valinv(i,v,r,t)$(not forced_retire(i,r,t))],
+          m_cc_mar(i,c,r,ccseason,t)
+          * (INV(i,v,r,t)$(not rsc_i(i))
+             + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC(i,c,v,r,rscbin,t) }$rsc_i(i)
+             + INV_REFURB(i,c,v,r,t)$[refurbtech(i)$Sw_Refurb])
          }
 
 *[plus] firm capacity contribution from all binned storage capacity
@@ -1748,8 +1751,10 @@ eq_reserve_margin(r,ccseason,t)
 
 *[plus] average capacity credit times capacity of VRE and storage
 *used in rolling window and full intertemporal solve (otherwise cc_int = 0)
-    + sum{(i,v)$[(vre(i) or storage(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
-          cc_int(i,v,r,ccseason,t) * CAP(i,v,r,t)
+    + sum{(i,c,v)$[i_c(i,c)$(vre(i) or storage(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
+          cc_int(i,c,v,r,ccseason,t)
+          * (CAP_CLASS(i,c,v,r,t)$valcap_class(i,c,v,r,t)
+             + CAP(i,v,r,t)$(not cf_tech(i)))
          }
 
 *[plus] excess capacity credit
