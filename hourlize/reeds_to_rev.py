@@ -335,9 +335,7 @@ def get_capacity_check_data(run_folder, tech):
     df_cap_chk = pd.read_csv(
         cap_chk, low_memory=False, names=["tech", "class", "region", "year", "MW"], header=0
     )
-    df_cap_chk[["tech_cat", "class"]] = df_cap_chk["tech"].str.rsplit(
-        "_", n=1, expand=True
-    )
+    df_cap_chk["tech_cat"] = df_cap_chk["tech"].str.rsplit("_", n=1).str[0]
     df_cap_chk = df_cap_chk[df_cap_chk["tech_cat"] == tech].copy()
     df_cap_chk = df_cap_chk[["year", "region", "class", "MW"]].dropna(subset=["class"])
     df_cap_chk["class"] = df_cap_chk["class"].astype("int")
@@ -1531,7 +1529,7 @@ def simultaneous_fill(
                     break
                 # check to make sure inv_left isn't negative
                 if ret_left < 0:
-                    print(f"ERROR at rcby={rcby}: ret_left is negative: {ret_left}")
+                    print(f"ERROR at rcy={rcy}: ret_left is negative: {ret_left}")
 
             if np.floor(ret_left * 100) / 100 != 0:
                 print(
@@ -1598,7 +1596,7 @@ def simultaneous_fill(
                 # check to make sure inv_left isn't negative
                 if refurb_left < 0:
                     print(
-                        f"ERROR at rcby={rcby}: refurb_left is negative: {refurb_left}"
+                        f"ERROR at rcy={rcy}: refurb_left is negative: {refurb_left}"
                     )
 
             if round(refurb_left, 2) != 0:
