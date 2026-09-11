@@ -437,28 +437,33 @@ def main(reeds_path, inputs_case):
 
     # We model csp-ns (CSP No Storage) as upv throughout ReEDS, but switch it back for reporting.
     # So save the csp-ns capacity separately, then rename it.
-    csp_units = (
-        gdb_use.loc[(gdb_use['tech']=='csp-ns') & (gdb_use['RetireYear'] > startyear)]
-        .groupby(['r','StartYear','RetireYear']).summer_power_capacity_MW.sum()
-        .reset_index()
-    )
+    csp_units = gdb_use.loc[
+        (gdb_use['tech']=='csp-ns') & (gdb_use['RetireYear'] > startyear)
+    ].copy()
     if len(csp_units):
-        cap_cspns = (
-            pd.concat(
-                {i: pd.Series(
-                    [row.summer_power_capacity_MW]*(row.RetireYear - row.StartYear + 2),
-                    index=range(row.StartYear, row.RetireYear + 2)
-                ) for (i,row) in csp_units.iterrows()},
-                axis=1)
-            .rename(columns=csp_units['r']).fillna(0)
-            .T.groupby(level=0).sum().T
-            .stack().replace(0,np.nan).dropna()
-            .rename_axis(['t','r']).reorder_levels(['r','t']).rename('MWac')
-        )
+        # csp-ns is modeled as upv, so bin it into the same resource classes that the
+        # upv capacity it becomes will be binned into. Reporting takes it back out of
+        # those classes.
+        upv_class = get_class_cf_bounds(
+            reeds_path, tech='upv', access_case=sw.GSw_SitingUPV, subtech='')
+        csp_units['c'] = csp_units['reV_capacity_factor_ac'].apply(
+            lambda x: assign_class(x, 'upv', upv_class))
+        cap_cspns = pd.concat(
+            [
+                pd.DataFrame({
+                    'c': row.c,
+                    'r': row.r,
+                    't': list(range(row.StartYear, row.RetireYear + 2)),
+                    'MWac': row.summer_power_capacity_MW,
+                })
+                for (_, row) in csp_units.iterrows()
+            ],
+            ignore_index=True,
+        ).groupby(['c','r','t']).MWac.sum()
         cap_cspns = (
             cap_cspns.loc[cap_cspns.index.get_level_values('t') >= startyear].copy())
     else:
-        cap_cspns = pd.DataFrame(columns=['r','t','MWac']).set_index(['r','t'])
+        cap_cspns = pd.DataFrame(columns=['c','r','t','MWac']).set_index(['c','r','t'])
     # Rename csp-ns to upv
     gdb_use.loc[gdb_use['tech']=='csp-ns','coolingwatertech'] = (
         gdb_use.loc[gdb_use['tech']=='csp-ns','coolingwatertech']
@@ -641,6 +646,11 @@ def main(reeds_path, inputs_case):
     ######################################
 
     (cap_exog, rsc_class) = create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear)
+
+    # csp-ns is modeled as upv, so its pre-startyear capacity belongs with the exogenous
+    # upv capacity.
+    exog_cap_upv = pd.concat(
+        [cap_exog['upv'], cap_exog['csp-ns']], ignore_index=True)
 
 
     #%%####################################
@@ -1034,7 +1044,7 @@ def main(reeds_path, inputs_case):
                 'can_imports_capacity' : can_imports_capacity.reset_index(),
                 'geoexist' : geoexist,
                 'h2_ba_share': h2_ba_share_out,
-                'exog_cap_upv':cap_exog['upv'],
+                'exog_cap_upv':exog_cap_upv,
                 'exog_cap_wind-ons':cap_exog['wind-ons'],
                 'exog_cap_wind-ofs':cap_exog['wind-ofs'],
                 'exog_cap_geohydro':cap_exog['geohydro_allkm']

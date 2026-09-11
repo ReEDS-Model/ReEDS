@@ -279,7 +279,7 @@ def get_preexisting_capacity(df_sc_in, tech, first_model_year=2009):
     # Find existing capacity by bin with raw supply curve.
     # Consider existing capacity as investment in 2009 to use the
     # same logic as inv_rsc when assigning to gid.
-    exist_columns = ["tech", "region", "year", "bin", "MW"]
+    exist_columns = ["tech", "class", "region", "year", "bin", "MW"]
     if "existing_capacity" in df_sc_in:
         if "online_year" not in df_sc_in:
             raise KeyError(
@@ -333,11 +333,9 @@ def get_capacity_check_data(run_folder, tech):
     # Get check for capacity
     cap_chk = os.path.join(run_folder, "outputs", "cap.csv")
     df_cap_chk = pd.read_csv(
-        cap_chk, low_memory=False, names=["tech", "region", "year", "MW"], header=0
+        cap_chk, low_memory=False, names=["tech", "class", "region", "year", "MW"], header=0
     )
-    df_cap_chk[["tech_cat", "class"]] = df_cap_chk["tech"].str.rsplit(
-        "_", n=1, expand=True
-    )
+    df_cap_chk["tech_cat"] = df_cap_chk["tech"].str.rsplit("_", n=1).str[0]
     df_cap_chk = df_cap_chk[df_cap_chk["tech_cat"] == tech].copy()
     df_cap_chk = df_cap_chk[["year", "region", "class", "MW"]].dropna(subset=["class"])
     df_cap_chk["class"] = df_cap_chk["class"].astype("int")
@@ -370,8 +368,8 @@ def get_new_investments(run_folder, tech):
     df_inv_rsc = pd.read_csv(
         inv_rsc,
         low_memory=False,
-        names=["tech", "vintage", "region", "year", "bin", "MW"],
-        usecols=["tech", "region", "year", "bin", "MW"],
+        names=["tech", "class", "vintage", "region", "year", "bin", "MW"],
+        usecols=["tech", "class", "region", "year", "bin", "MW"],
         header=0,
     )
     df_inv_rsc = df_inv_rsc[df_inv_rsc["tech"].str.startswith(tech)].copy()
@@ -401,8 +399,6 @@ def combine_preexisting_and_new_investments(df_bin_exist, df_inv_rsc):
     """
     # Concatenate existing and inv_rsc
     df_inv = pd.concat([df_bin_exist, df_inv_rsc], sort=False, ignore_index=True)
-    # Split tech from class
-    df_inv[["tech_cat", "class"]] = df_inv["tech"].str.rsplit("_", n=1, expand=True)
     df_inv = df_inv[["year", "region", "class", "bin", "MW"]]
     df_inv["class"] = df_inv["class"].astype("int")
     df_inv["bin"] = df_inv["bin"].str.replace("bin", "", regex=False).astype("int")
@@ -435,9 +431,9 @@ def get_input_refurbishments(run_folder, tech):
     df_inv_refurb_in = pd.read_csv(
         inv_refurb,
         low_memory=False,
-        names=["tech", "vintage", "region", "year", "MW"],
+        names=["tech", "class", "vintage", "region", "year", "MW"],
         header=0,
-        usecols=["tech", "region", "year", "MW"],
+        usecols=["tech", "class", "region", "year", "MW"],
     )
     df_inv_refurb_in = df_inv_refurb_in[
         df_inv_refurb_in["tech"].str.startswith(tech)
@@ -462,14 +458,7 @@ def amend_refurbishments(df_inv_refurb_in):
         Returns refurbishments for the given technology, by year, region, and class.
         Output columns include: ["year", "region", "class", "MW"]
     """
-    # Split tech from class
     df_inv_refurb = df_inv_refurb_in.copy()
-    if df_inv_refurb.empty:
-        df_inv_refurb[["tech_cat", "class"]] = ""
-    else:
-        df_inv_refurb[["tech_cat", "class"]] = df_inv_refurb["tech"].str.split(
-            "_", n=1, expand=True
-        )
     df_inv_refurb = df_inv_refurb[["year", "region", "class", "MW"]]
     df_inv_refurb["class"] = df_inv_refurb["class"].astype("int")
     df_inv_refurb = df_inv_refurb.sort_values(by=["year", "region", "class"])
@@ -593,9 +582,9 @@ def get_exogenous_capacity(run_folder, tech):
     df_cap_exog = pd.read_csv(
         cap_exog,
         low_memory=False,
-        names=["tech", "vintage", "region", "year", "MW"],
+        names=["tech", "class", "vintage", "region", "year", "MW"],
         header=0,
-        usecols=["tech", "region", "year", "MW"],
+        usecols=["tech", "class", "region", "year", "MW"],
     )
     df_cap_exog = df_cap_exog[df_cap_exog["tech"].str.startswith(tech)].copy()
 
@@ -1540,7 +1529,7 @@ def simultaneous_fill(
                     break
                 # check to make sure inv_left isn't negative
                 if ret_left < 0:
-                    print(f"ERROR at rcby={rcby}: ret_left is negative: {ret_left}")
+                    print(f"ERROR at rcy={rcy}: ret_left is negative: {ret_left}")
 
             if np.floor(ret_left * 100) / 100 != 0:
                 print(
@@ -1607,7 +1596,7 @@ def simultaneous_fill(
                 # check to make sure inv_left isn't negative
                 if refurb_left < 0:
                     print(
-                        f"ERROR at rcby={rcby}: refurb_left is negative: {refurb_left}"
+                        f"ERROR at rcy={rcy}: refurb_left is negative: {refurb_left}"
                     )
 
             if round(refurb_left, 2) != 0:
@@ -2016,7 +2005,7 @@ def check_tech(run_folder, tech):
     """
     cap_chk = os.path.join(run_folder, "outputs", "cap.csv")
     df_cap = pd.read_csv(
-        cap_chk, low_memory=False, names=["tech", "region", "year", "MW"], header=0
+        cap_chk, low_memory=False, names=["tech", "class", "region", "year", "MW"], header=0
     )
     tech_included = df_cap["tech"].str.startswith(tech).any()
 

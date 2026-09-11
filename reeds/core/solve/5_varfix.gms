@@ -8,6 +8,7 @@ if(Sw_RemoveSmallNumbers = 1,
     CAP_ABOVE_LIM.l(tg,r,tfix)$[abs(CAP_ABOVE_LIM.l(tg,r,tfix)) < rhs_tolerance] = 0 ;
     INV.l(i,v,r,tfix)$[abs(INV.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     INV_ENERGY.l(i,v,r,tfix)$[abs(INV_ENERGY.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
+    INV_REFURB.l(i,c,v,r,tfix)$[abs(INV_REFURB.l(i,c,v,r,tfix)) < rhs_tolerance] = 0 ;
     INV_RSC.l(i,c,v,r,rscbin,tfix)$[abs(INV_RSC.l(i,c,v,r,rscbin,tfix)) < rhs_tolerance] = 0 ;
     INV_POI.l(r,tfix)$[abs(INV_POI.l(r,tfix)) < rhs_tolerance] = 0 ;
     H2_STOR_INV.l(h2_stor,r,tfix)$[abs(H2_STOR_INV.l(h2_stor,r,tfix)) < rhs_tolerance] = 0 ;
@@ -36,7 +37,7 @@ CAP_SDBIN_ENERGY.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$battery(i)$Sw
 GROWTH_BIN.fx(gbin,i,st,tfix)$[sum{r$[r_st(r,st)], valinv_irt(i,r,tfix) }$stfeas(st)$Sw_GrowthPenalties$(yeart(tfix)<=Sw_GrowthPenLastYear)] = GROWTH_BIN.l(gbin,i,st,tfix) ;
 INV.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)] = INV.l(i,v,r,tfix) ;
 INV_ENERGY.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$battery(i)] = INV_ENERGY.l(i,v,r,tfix) ;
-INV_REFURB.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$refurbtech(i)] = INV_REFURB.l(i,v,r,tfix) ;
+INV_REFURB.fx(i,c,v,r,tfix)$[i_c(i,c)$valinv(i,v,r,tfix)$refurbtech(i)] = INV_REFURB.l(i,c,v,r,tfix) ;
 INV_RSC.fx(i,c,v,r,rscbin,tfix)$[i_c(i,c)$valinv(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)] = INV_RSC.l(i,c,v,r,rscbin,tfix) ;
 CAP_RSC.fx(i,c,v,r,rscbin,tfix)$[i_c(i,c)$valcap(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)] = CAP_RSC.l(i,c,v,r,rscbin,tfix) ;
 INV_CAP_UP.fx(i,v,r,rscbin,tfix)$[allow_cap_up(i,v,r,rscbin,tfix)] = INV_CAP_UP.l(i,v,r,rscbin,tfix) ;

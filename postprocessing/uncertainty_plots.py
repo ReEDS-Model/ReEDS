@@ -588,6 +588,10 @@ class DataFetcher:
             columns={'Value': 'Capacity (GW)', 't': 'year', 'i': 'tech'},
             inplace=True,
         )
+
+        # Sum over resource class
+        df = df.groupby(['tech', 'r', 'year'], as_index=False)['Capacity (GW)'].sum()
+
         return df
 
 
@@ -973,7 +977,8 @@ class DataFetcher:
                 items_map = Conventions.items_color_map[items_map_name][0]
                 if items_column == 'tech':
                     df['tech'] = df['tech'].str.lower().map(lambda x: items_map.get(x, x))
-                    df = df.groupby(['tech', 'r', 'year']).sum().reset_index()
+                    valcols = df.select_dtypes('number').columns.difference(['year'])
+                    df = df.groupby(['tech', 'r', 'year'])[valcols].sum().reset_index()
 
                     # Fill missing techs with 0
                     idx = pd.MultiIndex.from_product(

@@ -476,9 +476,10 @@ def pre_abatement_cost(dfs, **kw):
     return df
 
 def add_class(df, **kw):
-    cond = df['tech'].str.contains('_', regex=False)
-    #Assume class is at the end, after the final underscore:
-    df.loc[cond, 'class']='class_' + df.loc[cond, 'tech'].str.split('_').str[-1]
+    #Class is read from the class column; '0' marks techs with no resource class
+    cond = df['class'].astype(str) != '0'
+    df.loc[cond, 'class'] = 'class_' + df.loc[cond, 'class'].astype(str)
+    df.loc[~cond, 'class'] = None
     return df
 
 def sort_timeslices(df, **kw):
@@ -817,12 +818,12 @@ def pre_lcoe(dfs, **kw):
     #Apply inflation
     dfs['lcoe']['$/MWh'] = inflate_series(dfs['lcoe']['$/MWh'])
     #Merge with available capacity
-    df = pd.merge(left=dfs['lcoe'], right=dfs['avail'], how='left', on=['tech', 'rb', 'year', 'bin'], sort=False)
+    df = pd.merge(left=dfs['lcoe'], right=dfs['avail'], how='left', on=['tech', 'class', 'rb', 'year', 'bin'], sort=False)
     df['available MW'] = df['available MW'].fillna(0)
     df['available'] = 'no'
     df.loc[df['available MW'] > 0.001, 'available'] = 'yes'
     #Merge with chosen capacity
-    df = pd.merge(left=df, right=dfs['inv'], how='left', on=['tech', 'vintage', 'rb', 'year', 'bin'], sort=False)
+    df = pd.merge(left=df, right=dfs['inv'], how='left', on=['tech', 'class', 'vintage', 'rb', 'year', 'bin'], sort=False)
     df['chosen MW'] = df['chosen MW'].fillna(0)
     df['chosen'] = 'no'
     df.loc[df['chosen MW'] != 0, 'chosen'] = 'yes'
@@ -1375,7 +1376,7 @@ results_meta = collections.OrderedDict((
     
     ('Capacity BA (GW)',
         {'file':'cap',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1395,7 +1396,7 @@ results_meta = collections.OrderedDict((
 
     ('Capacity BA by class (GW)',
         {'file':'cap',
-        'columns': ['tech', 'rb', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': add_class, 'args': {}},
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
@@ -1407,7 +1408,7 @@ results_meta = collections.OrderedDict((
 
     ('Capacity ivrt (GW)',
         {'file':'cap_ivrt',
-        'columns': ['tech', 'vintage', 'rb', 'year','Capacity (GW)'],
+        'columns': ['tech', 'class', 'vintage', 'rb', 'year','Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1456,7 +1457,7 @@ results_meta = collections.OrderedDict((
     ('Storage Capacity (GW or GWh)',
 
         {'sources': [
-            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)']},
             {'name': 'energy', 'file': 'stor_energy_cap', 'columns': ['tech', 'vintage', 'rb', 'year', 'Energy (GWh)']},
             {'name': 'bcr', 'file': '../inputs_case/bcr.csv', 'columns': ['tech', 'bcr']},
         ],
@@ -1540,7 +1541,7 @@ results_meta = collections.OrderedDict((
 
     ('Exogenous capacity (GW)',
         {'file':'cap_exog',
-        'columns': ['tech', 'vintage', 'region', 'year', 'Capacity (GW)'],
+        'columns': ['tech', 'class', 'vintage', 'region', 'year', 'Capacity (GW)'],
         'preprocess': [
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Capacity (GW)'}},
         ],
@@ -1893,7 +1894,7 @@ results_meta = collections.OrderedDict((
     ('Capacity Factor ivrt',
         {'sources': [
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year','MWh']},
-            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year','MW']},
+            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year','MW']},
         ],
         'preprocess': [
             {'func': pre_cf, 'args': {}},
@@ -1979,7 +1980,7 @@ results_meta = collections.OrderedDict((
     ('Firm Capacity National (GW)',
         {'sources': [
             {'name': 'firmcap', 'file': 'cap_firm', 'columns': ['tech', 'rb', 'season', 'year', 'Firm Capacity (GW)']},
-            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)']},
         ],
         'index': ['tech', 'season', 'year'],
         'preprocess': [
@@ -1997,7 +1998,7 @@ results_meta = collections.OrderedDict((
     ('Firm Capacity BA (GW)',
         {'sources': [
             {'name': 'firmcap', 'file': 'cap_firm', 'columns': ['tech', 'rb', 'season', 'year', 'Firm Capacity (GW)']},
-            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name': 'cap', 'file': 'cap', 'columns': ['tech', 'class', 'rb', 'year', 'Capacity (GW)']},
         ],
         'index': ['tech', 'rb', 'season', 'year'],
         'preprocess': [
@@ -2464,7 +2465,7 @@ results_meta = collections.OrderedDict((
     ('Value Streams Sequential New Techs',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -2494,7 +2495,7 @@ results_meta = collections.OrderedDict((
     ('Competitiveness Sequential New Techs',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -2530,7 +2531,7 @@ results_meta = collections.OrderedDict((
     ('LCOE ($/MWh) Sequential New Techs (uncurt MWh)',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'gen_uncurt', 'file': 'gen_ivrt_uncurt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
@@ -2550,7 +2551,7 @@ results_meta = collections.OrderedDict((
     ('Value Streams Sequential Existing Techs',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -2573,7 +2574,7 @@ results_meta = collections.OrderedDict((
     ('Value Streams Intertemporal',
         {'sources': [
             {'name': 'vs', 'file': 'valuestreams_chosen.csv', 'columns': ['tech', 'vintage', 'rb', 'year', 'var_name', 'con_name', '$']},
-            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MW']},
+            {'name': 'cap', 'file': 'cap_new_ivrt', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'MW']},
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'MWh']},
             {'name': 'pvf_cap', 'file': 'pvf_capital', 'columns': ['year', 'pvfcap']},
             {'name': 'pvf_onm', 'file': 'pvf_onm', 'columns': ['year', 'pvfonm']},
@@ -2679,9 +2680,9 @@ results_meta = collections.OrderedDict((
 
     ('LCOE ($/MWh)',
         {'sources': [
-            {'name': 'lcoe', 'file': 'lcoe', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'lcoe', 'file': 'lcoe', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2697,9 +2698,9 @@ results_meta = collections.OrderedDict((
 
     ('LCOE cf_act ($/MWh)',
         {'sources': [
-            {'name': 'lcoe', 'file': 'lcoe_cf_act', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'lcoe', 'file': 'lcoe_cf_act', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2715,9 +2716,9 @@ results_meta = collections.OrderedDict((
 
     ('LCOE nopol ($/MWh)',
         {'sources': [
-            {'name': 'lcoe', 'file': 'lcoe_nopol', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'lcoe', 'file': 'lcoe_nopol', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2733,9 +2734,9 @@ results_meta = collections.OrderedDict((
 
     ('LCOE fullpol ($/MWh)',
         {'sources': [
-            {'name': 'lcoe', 'file': 'lcoe_fullpol', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','$/MWh']},
-            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'vintage', 'rb', 'year', 'bin','chosen MW']},
-            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'rb', 'year', 'bin','available MW']},
+            {'name': 'lcoe', 'file': 'lcoe_fullpol', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','$/MWh']},
+            {'name': 'inv', 'file': 'cap_new_bin_out', 'columns': ['tech', 'class', 'vintage', 'rb', 'year', 'bin','chosen MW']},
+            {'name': 'avail', 'file': 'cap_avail', 'columns': ['tech', 'class', 'rb', 'year', 'bin','available MW']},
         ],
         'preprocess': [
             {'func': pre_lcoe, 'args': {}},
@@ -2837,7 +2838,7 @@ results_meta = collections.OrderedDict((
             {'name':'tran_mi_out', 'file':'tran_mi_out', 'columns':['trtype', 'year', 'Amount (GW-mi)']},
             {'name':'tran_prm_mi_out', 'file':'tran_prm_mi_out', 'columns':['trtype', 'year', 'Trans cap, PRM (GW-mi)']},
             {'name':'spur_parameters', 'file':'../inputs_case/spur_parameters.csv'},
-            {'name':'cap_new_bin_out', 'file':'cap_new_bin_out', 'columns':['i','v','r','year','rscbin','MW']},
+            {'name':'cap_new_bin_out', 'file':'cap_new_bin_out', 'columns':['i','c','v','r','year','rscbin','MW']},
             {'name': 'scalars', 'file': '../inputs_case/scalars.csv', 'header':None, 'columns': ['scalar', 'value', 'comment']},
         ],
         'preprocess': [
