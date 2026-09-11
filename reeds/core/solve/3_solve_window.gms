@@ -54,7 +54,7 @@ $gdxin
 *collapse the set that came from merging the gdx files
 
 cc_old_load(i,r,szn,t) = sum{loadset, sum{ccreg$r_ccreg(r,ccreg), cc_old_load2(loadset,i,r,ccreg,szn,t) } } ;
-cc_mar_load(i,r,szn,t) = sum{loadset, sum{ccreg$r_ccreg(r,ccreg), cc_mar_load2(loadset,i,r,ccreg,szn,t) } } ;
+cc_mar_load(i,c,r,ccreg,szn,t)$r_ccreg(r,ccreg) = sum{loadset, cc_mar_load2(loadset,i,c,r,ccreg,szn,t) } ;
 
 sdbin_size_load(ccreg,szn,sdbin,t) = sum{loadset, sdbin_size_load2(loadset,ccreg,szn,sdbin,t) } ;
 
@@ -63,7 +63,7 @@ sdbin_size_load(ccreg,szn,sdbin,t) = sum{loadset, sdbin_size_load2(loadset,ccreg
 *===============================
 
 *Clear params before calculation
-cc_int(i,v,r,szn,t) = 0 ;
+cc_int(i,c,v,r,szn,t) = 0 ;
 cc_totmarg(i,r,szn,t) = 0 ;
 cc_excess(i,r,szn,t) = 0 ;
 cc_scale(i,r,szn,t) = 0 ;
@@ -75,16 +75,19 @@ sdbin_size(ccreg,szn,sdbin,t)$tload(t) = sdbin_size_load(ccreg,szn,sdbin,t) ;
 *Sw_Int_CC=0 means use average capacity credit for each tech, and don't differentiate vintages
 *If there is no existing capacity to calculate average, use marginal capacity credit instead.
 if(Sw_Int_CC=0,
-    cc_int(i,v,r,szn,t)$[tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)$sum{(vv)$(valcap(i,vv,r,t)), CAP.l(i,vv,r,t) }] =
+    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)$sum{(vv)$(valcap(i,vv,r,t)), CAP.l(i,vv,r,t) }] =
         cc_old_load(i,r,szn,t) / sum{(vv)$(valcap(i,vv,r,t)), CAP.l(i,vv,r,t) } ;
-    cc_int(i,v,r,szn,t)$[tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)$(cc_old_load(i,r,szn,t)=0)] = m_cc_mar(i,r,szn,t) ;
+    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)$(cc_old_load(i,r,szn,t)=0)] = m_cc_mar(i,c,r,szn,t) ;
 ) ;
 
 *For the remaining options we initially use marginal values for cc_int, differentiated by vintage based on seasonal capacity factors.
 if(Sw_Int_CC=1 or Sw_Int_CC=2,
-    cc_int(i,v,r,szn,t)$[tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)$sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) }] =
-        m_cc_mar(i,r,szn,t) * m_cf_szn(i,v,r,szn,t) / sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) } ;
-    cc_totmarg(i,r,szn,t)$[tload(t)$(vre(i) or storage(i))] = sum{v$valcap(i,v,r,t), cc_int(i,v,r,szn,t) * CAP.l(i,v,r,t) } ;
+    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)$sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) }] =
+        m_cc_mar(i,c,r,szn,t) * m_cf_szn(i,v,r,szn,t) / sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) } ;
+    cc_totmarg(i,r,szn,t)$[tload(t)$(vre(i) or storage(i))] =
+        sum{(c,v)$[i_c(i,c)$valcap(i,v,r,t)],
+            cc_int(i,c,v,r,szn,t)
+            * (CAP_CLASS.l(i,c,v,r,t)$valcap_class(i,c,v,r,t) + CAP.l(i,v,r,t)$(not cf_tech(i))) } ;
 ) ;
 
 *Sw_Int_CC=1 means use average capacity credit for each tech, but differentiate based on vintage.
@@ -93,7 +96,7 @@ if(Sw_Int_CC=1 or Sw_Int_CC=2,
 if(Sw_Int_CC=1,
     cc_scale(i,r,szn,t)$[tload(t)$(vre(i) or storage(i))] = 1 ;
     cc_scale(i,r,szn,t)$[tload(t)$(vre(i) or storage(i))$cc_totmarg(i,r,szn,t)] = cc_old_load(i,r,szn,t) / cc_totmarg(i,r,szn,t) ;
-    cc_int(i,v,r,szn,t)$[tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)] = cc_int(i,v,r,szn,t) * cc_scale(i,r,szn,t) ;
+    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)] = cc_int(i,c,v,r,szn,t) * cc_scale(i,r,szn,t) ;
 ) ;
 
 *Sw_Int_CC=2 means use marginal capacity credit, adjusted by seasonal capacity factors by vintage
@@ -103,10 +106,10 @@ if(Sw_Int_CC=2,
 
 
 *no longer want m_cc_mar since it should not enter the planning reserve margin constraint
-m_cc_mar(i,r,szn,t) = 0 ;
+m_cc_mar(i,c,r,szn,t) = 0 ;
 
-cc_int(i,v,r,szn,t)$[cc_int(i,v,r,szn,t) > 1] = 1 ;
-cc_int(i,v,r,szn,t)$[tload(t)$csp_storage(i)$valcap(i,v,r,t)] = 1 ;
+cc_int(i,c,v,r,szn,t)$[cc_int(i,c,v,r,szn,t) > 1] = 1 ;
+cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$csp_storage(i)$valcap(i,v,r,t)] = 1 ;
 
 *=======================================
 * --- Begin Averaging of CC/Curt ---
@@ -116,15 +119,15 @@ $ifthene.afterseconditer %niter%>1
 
 *when set to 1 - it will take the average over all previous iterations
 if(Sw_AVG_iter=1,
-        cc_int(i,v,r,szn,t)$[tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)] = round((cc_int(i,v,r,szn,t) + cc_iter(i,v,r,szn,t,"%previter%")) / 2 ,4) ;
+        cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$(vre(i) or storage(i))$valcap(i,v,r,t)] = round((cc_int(i,c,v,r,szn,t) + cc_iter(i,c,v,r,szn,t,"%previter%")) / 2 ,4) ;
     ) ;
 
 $endif.afterseconditer
 
 *Remove very small numbers to make it easier for the solver
-cc_int(i,v,r,szn,t)$[cc_int(i,v,r,szn,t) < 0.001] = 0 ;
+cc_int(i,c,v,r,szn,t)$[cc_int(i,c,v,r,szn,t) < 0.001] = 0 ;
 
-cc_iter(i,v,r,szn,t,"%niter%")$cc_int(i,v,r,szn,t) = cc_int(i,v,r,szn,t) ;
+cc_iter(i,c,v,r,szn,t,"%niter%")$cc_int(i,c,v,r,szn,t) = cc_int(i,c,v,r,szn,t) ;
 
 execute_unload 'handoff%ds%reeds_data%ds%curtout_%case%_%niter%.gdx' cc_int ;
 
