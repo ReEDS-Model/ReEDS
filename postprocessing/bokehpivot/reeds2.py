@@ -842,7 +842,7 @@ def pre_curt_new(dfs, **kw):
     return df
 
 def pre_cc_new(dfs, **kw):
-    df = pd.merge(left=dfs['cap'], right=dfs['cc'], how='left',on=['tech', 'rb', 'season', 'year'], sort=False)
+    df = pd.merge(left=dfs['cap'], right=dfs['cc'], how='left',on=['tech', 'class', 'rb', 'season', 'year'], sort=False)
     df['CC Rate']=df['CC Rate'].fillna(0)
     return df
 
@@ -2820,8 +2820,8 @@ results_meta = collections.OrderedDict((
 
     ('New Tech Capacity Credit',
         {'sources': [
-            {'name': 'cap', 'file': 'cap_new_cc', 'columns': ['tech', 'rb', 'season', 'year', 'MW']},
-            {'name': 'cc', 'file': 'cc_new', 'columns': ['tech', 'rb', 'season', 'year', 'CC Rate']},
+            {'name': 'cap', 'file': 'cap_new_cc', 'columns': ['tech', 'class', 'rb', 'season', 'year', 'MW']},
+            {'name': 'cc', 'file': 'cc_new', 'columns': ['tech', 'class', 'rb', 'season', 'year', 'CC Rate']},
         ],
         'preprocess': [
             {'func': pre_cc_new, 'args': {}},

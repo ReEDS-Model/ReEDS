@@ -966,14 +966,14 @@ storage_duration_out(i,v,r,t)$[valcap(i,v,r,t)$battery(i)$CAP.l(i,v,r,t)] =
 * CAPACITY CREDIT AND FIRM CAPACITY
 *==================================
 
-cc_all_out(i,v,r,ccseason,t)$tmodel_new(t) =
-    cc_int(i,v,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)] +
-    m_cc_mar(i,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valinv_init(i,v,r,t)]
+cc_all_out(i,c,v,r,ccseason,t)$[i_c(i,c)$tmodel_new(t)] =
+    cc_int(i,c,v,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)] +
+    m_cc_mar(i,c,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valinv_init(i,v,r,t)]
 ;
 
-cap_new_cc(i,r,ccseason,t)$[(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{(c,v)$[i_c(i,c)$ivt(i,v,t)], cap_new_ivrt(i,c,v,r,t) } ;
+cap_new_cc(i,c,r,ccseason,t)$[i_c(i,c)$(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{v$ivt(i,v,t), cap_new_ivrt(i,c,v,r,t) } ;
 
-cc_new(i,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,r,ccseason,t)] = sum{v$ivt(i,v,t), cc_all_out(i,v,r,ccseason,t) } ;
+cc_new(i,c,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,c,r,ccseason,t)] = sum{v$ivt(i,v,t), cc_all_out(i,c,v,r,ccseason,t) } ;
 
 cap_firm(i,r,ccseason,t)$[valcap_irt(i,r,t)$[not consume(i)]$tmodel_new(t)$Sw_PRM_CapCredit] =
       sum{v$[(not vre(i))$(not hydro(i))$(not storage(i))$(not storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
@@ -982,10 +982,13 @@ cap_firm(i,r,ccseason,t)$[valcap_irt(i,r,t)$[not consume(i)]$tmodel_new(t)$Sw_PR
           * (1 - mean_forced_outage_rate(i,r,ccseason,t))
           }
     + cc_old(i,r,ccseason,t)
-    + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valinv(i,v,r,t)],
-         m_cc_mar(i,r,ccseason,t) * (INV.l(i,v,r,t) + sum{c$i_c(i,c), INV_REFURB.l(i,c,v,r,t) }$[refurbtech(i)$Sw_Refurb]) }
-    + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
-            cc_int(i,v,r,ccseason,t) * CAP.l(i,v,r,t) }
+    + sum{(c,v)$[i_c(i,c)$(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valinv(i,v,r,t)],
+         m_cc_mar(i,c,r,ccseason,t)
+         * (INV.l(i,v,r,t)$(not rsc_i(i))
+            + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+            + INV_REFURB.l(i,c,v,r,t)$[refurbtech(i)$Sw_Refurb]) }
+    + sum{(c,v)$[valcap_class(i,c,v,r,t)$(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))],
+            cc_int(i,c,v,r,ccseason,t) * CAP_CLASS.l(i,c,v,r,t) }
     + cc_excess(i,r,ccseason,t)$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))]
     + sum{(v,h)$[hydro_nd(i)$valgen(i,v,r,t)$h_ccseason_prm(h,ccseason)],
          GEN.l(i,v,r,h,t) }
@@ -1094,13 +1097,25 @@ valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=0)$valnew('MW',i,r,t)] =
     * reqt_price('res_marg','na',r,allh,t)} * valnew('inv_cap_ratio',i,r,t) ;
 * New VRE for the CapCredit formulation is a special case in that new is distinct from old of the same vintage
 valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=1)$vre(i)$valnew('MW',i,r,t)] =
-    sum{ccseason, m_cc_mar(i,r,ccseason,t) * valnew('MW',i,r,t) * reqt_price('res_marg','na',r,ccseason,t)};
+    sum{ccseason,
+        reqt_price('res_marg','na',r,ccseason,t)
+        * sum{(c,v)$[i_c(i,c)$valinv(i,v,r,t)],
+              m_cc_mar(i,c,r,ccseason,t)
+              * (INV.l(i,v,r,t)$(not rsc_i(i))
+                 + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+                 + INV_REFURB.l(i,c,v,r,t)) } } / ilr(i) ;
 valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=0)$valnew('MW',i,r,t)] =
     sum{(v,allh)$[h_stress_t(allh,t)$valinv(i,v,r,t)],
     (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)])
     * reqt_price_sys('res_marg','na',allh,t)} * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=1)$vre(i)$valnew('MW',i,r,t)] =
-    sum{ccseason, m_cc_mar(i,r,ccseason,t) * valnew('MW',i,r,t) * reqt_price_sys('res_marg','na',ccseason,t)} ;
+    sum{ccseason,
+        reqt_price_sys('res_marg','na',ccseason,t)
+        * sum{(c,v)$[i_c(i,c)$valinv(i,v,r,t)],
+              m_cc_mar(i,c,r,ccseason,t)
+              * (INV.l(i,v,r,t)$(not rsc_i(i))
+                 + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+                 + INV_REFURB.l(i,c,v,r,t)) } } / ilr(i) ;
 * Note: val_resmarg and val_resmarg_sys are missing for the capacity credit formulation for non-VRE.
 * These would need cap_firm() but with vintage...
 valnew('val_resmarg','benchmark',r,t)$[(Sw_PRM_CapCredit=0)$tmodel_new(t)] =
