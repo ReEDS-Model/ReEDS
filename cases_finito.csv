@@ -1,8 +1,8 @@
 ,Default Value,Pacific,Pacific_FINITO,Defaults_ReEDSonly,Mid_Case_ReEDSonly,BAU
 ignore,1,,,0,0,0
 GSw_Region,cendiv/Pacific,,,country/USA,country/USA,country/USA
-endyear,2035,,,2050,2050,
-yearset,,,,,,
+endyear,2050,2035,2035,,,
+yearset,2010..2050..5,,,,,
 GSw_ZoneSet,z54,,z54,,,z54
 GSw_GasCurve,2,,,1,1,
 GSw_Geothermal,,,,,2,
