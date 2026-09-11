@@ -588,6 +588,10 @@ class DataFetcher:
             columns={'Value': 'Capacity (GW)', 't': 'year', 'i': 'tech'},
             inplace=True,
         )
+
+        # Sum over resource class
+        df = df.groupby(['tech', 'r', 'year'], as_index=False)['Capacity (GW)'].sum()
+
         return df
 
 
