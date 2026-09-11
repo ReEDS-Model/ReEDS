@@ -82,7 +82,7 @@ def plot_diff_maps(
     col = 2
     _ax = ax[col]
     df = dfr.copy()
-    df['value'] = (data['new'] - data['old']) * scale
+    df['value'] = data['new'].sub(data['old'], fill_value=0) * scale
     _diffmax = max((df['value'].abs().max() if not diffmax else diffmax), 0.1)
     if 'st' in dfmap:
         dfmap['st'].plot(ax=_ax, facecolor='none', edgecolor='0.9', lw=0.1, zorder=1e7)
@@ -192,14 +192,15 @@ def plot_cf_diff(
 def get_supplycurves(
     repo_old,
     repo_new,
-    tech:Literal['upv','wind-ons','egs',None]='wind-ons',
+    tech:Literal['upv','wind-ons','wind-ofs','egs',None]='wind-ons',
     access:Literal['limited','reference','open',None]='reference',
     crs:str='EPSG:5070',
 ) -> dict:
     """Get supply curves from two repos"""
     dfs = {}
     for label, repo in [('old', repo_old), ('new', repo_new)]:
-        sitespath = Path(repo, 'inputs', 'supply_curve', 'interconnection_land.h5')
+        flabel = 'offshore' if tech == 'wind-ofs' else 'land'
+        sitespath = Path(repo, 'inputs', 'supply_curve', f'interconnection_{flabel}.h5')
         dfsites = reeds.plots.df2gdf(
             reeds.io.floatify(reeds.io.read_h5_groups(sitespath)),
             crs=crs,
@@ -219,7 +220,7 @@ def get_supplycurves(
 def plot_sc_diffs(
     repo_old,
     repo_new,
-    tech:Literal['upv','wind-ons','egs',None]='wind-ons',
+    tech:Literal['upv','wind-ons','wind-ofs','egs',None]='wind-ons',
     access:Literal['limited','reference','open',None]='reference',
     crs:str='EPSG:5070',
     cmap=cmocean.cm.rain,
@@ -244,7 +245,20 @@ def plot_sc_diffs(
             'cost_spur_usd_per_mw': '$/MW',
             'cost_reinforcement_usd_per_mw': '$/MW',
             'cost_total_trans_usd_per_mw': '$/MW',
-    })
+        })
+        if tech == 'wind-ofs':
+            column_units.update({
+                'dist_export_km|radial': 'km',
+                'dist_export_km|meshed': 'km',
+                'cost_export_usd_per_mw|radial': '$/MW',
+                'cost_export_usd_per_mw|meshed': '$/MW',
+                'cost_total_trans_usd_per_mw|radial': 'km',
+                'cost_total_trans_usd_per_mw|meshed': 'km',
+            })
+            for remove in ['cost_total_trans_usd_per_mw']:
+                column_units.pop(remove, None)
+    if tech in ['egs', 'geohydro']:
+        column_units['mean_resource_temp'] = '°C'
     for column, units in column_units.items():
         dfs = {key: df[column] for key, df in data.items()}
         f, ax = plot_diff_maps(
@@ -382,20 +396,21 @@ def main(repo_old, repo_new, outpath):
 
     ## Supply curves
     tech_accesses = [
-        ('upv', 'limited'),
-        ('upv', 'reference'),
-        ('upv', 'open'),
-        ('wind-ons', 'limited'),
-        ('wind-ons', 'reference'),
-        ('wind-ons', 'open'),
+        ('upv', 'limited'), ('upv', 'reference'), ('upv', 'open'),
+        ('wind-ons', 'limited'), ('wind-ons', 'reference'), ('wind-ons', 'open'),
+        ('wind-ofs', 'limited'), ('wind-ofs', 'reference'), ('wind-ofs', 'open'),
         ('egs', 'reference'),
         (None, None),
     ]
     for tech, access in tech_accesses:
         label = 'interconnection' if tech is None else f"{tech.replace('-','')}-{access}"
+        interconnection = (
+            True if (tech is None) or (tech, access) == ('wind-ofs', 'open')
+            else False
+        )
         plot_generator = plot_sc_diffs(
             repo_old, repo_new, tech=tech, access=access,
-            interconnection=(True if tech is None else False),
+            interconnection=interconnection,
         )
         while True:
             try:
