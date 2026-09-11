@@ -142,7 +142,7 @@ ret_ivrt(i,c,v,r,t)$([abs(ret_ivrt(i,c,v,r,t) < 1e-6)]$valcap(i,v,r,t)) = 0 ;
 
 ret(i,v,r)$valcap_ivr(i,v,r) = sum{(c,t)$i_c(i,c), ret_ivrt(i,c,v,r,t) } ;
 
-cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{t$tnext(t), m_capacity_exog(i,v,r,t) } ;
+cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{(c,t)$tnext(t), m_capacity_exog(i,c,v,r,t) } ;
 
 gen_h_stress_filt(i,r,allh,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   sum{v$valgen(i,v,r,t), GEN.l(i,v,r,allh,t)}
@@ -205,7 +205,7 @@ avail_filt(i,v,r,szn)$[cap_exist_iv(i,v)$(not vre(i))] =
 
 can_exports_h_filt(r,h) = sum{t$tcur(t), can_exports_h(r,h,t)} ;
 
-can_imports_cap(i,v,r)$canada(i) = sum{t$tcur(t), m_capacity_exog(i,v,r,t) } ;
+can_imports_cap(i,v,r)$canada(i) = sum{(c,t)$tcur(t), m_capacity_exog(i,c,v,r,t) } ;
 
 can_imports_szn_filt(r,szn) = sum{t$tcur(t), can_imports_szn(r,szn,t)} ;
 

@@ -76,7 +76,7 @@ def get_inputs(sw):
     hierarchy = reeds.io.get_hierarchy(sw.casedir)
 
     resources = pd.read_csv(
-        os.path.join(sw['casedir'],'inputs_case','resources.csv')
+        os.path.join(sw['casedir'],'inputs_case','resources.csv'), dtype={'c': str}
     ).set_index('resource')
     resources['tech'] = reeds.reedsplots.simplify_techs(resources.i, display_level = 'diagnostics')
     resources['rb'] = resources.r
@@ -111,7 +111,7 @@ def get_inputs(sw):
     ### Get vre_gen summed over tech by BA (full 7 years)
     vre_gen_r = (
         vre_gen
-        .rename(columns=dict(zip(vre_gen.columns, vre_gen.columns.map(lambda x: x.split('|')[1]))))
+        .rename(columns=dict(zip(vre_gen.columns, vre_gen.columns.map(lambda x: x.split('|')[-1]))))
         .T.groupby(level=0).sum().T
     )
 
@@ -811,7 +811,7 @@ def plot_pras_load_units(sw, dfs):
     ## Net demand
     vre_gen = dfs['vre_gen'].copy()
     vre_gen.columns = pd.MultiIndex.from_tuples(
-        vre_gen.columns.map(lambda x: tuple(x.split('|'))),
+        vre_gen.columns.map(lambda x: (x.split('|')[0], x.split('|')[-1])),
         names=['i','r'],
     )
     net_demand = (dfs['pras_system']['load'] - vre_gen.T.groupby('r').sum().T) / 1e3

@@ -782,7 +782,10 @@ opres_trade(ortype,r,rr,t)$[opres_routes(r,rr,t)$tmodel_new(t)] =
 *=========================
 
 gen_new_uncurt(i,r,h,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] =
-      sum{(v,c)$[i_c(i,c)$valinv(i,v,r,t)], (INV.l(i,v,r,t) + INV_REFURB.l(i,c,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
+      sum{(v,c)$[i_c(i,c)$valinv(i,v,r,t)],
+          (INV.l(i,v,r,t)$(not rsc_i(i))
+           + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
+           + INV_REFURB.l(i,c,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
 ;
 
 * curtailment = (availability - generation - operating reserves)
@@ -848,9 +851,7 @@ cap_out(i,c,r,t)$[upv(i)$i_c(i,c)$cap_cspns(c,r,t)$tmodel_new(t)] =
 cap_nat(i,t)$tmodel_new(t) = sum{(c,r)$i_c(i,c), cap_out(i,c,r,t) } ;
 
 * Exogenous capacity (used by reeds_to_rev)
-cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)] = m_capacity_exog(i,v,r,t) ;
-cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)$exog_rsc(i)] =
-    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
+cap_exog(i,c,v,r,t)$[i_c(i,c)$tmodel_new(t)] = m_capacity_exog(i,c,v,r,t) ;
 
 *=========================
 * NEW CAPACITY

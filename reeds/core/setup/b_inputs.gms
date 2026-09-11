@@ -1170,7 +1170,7 @@ $offempty
 
 *Created using reeds/input_processing/writecapdat.py
 $onempty
-parameter prescribedrsc(i,v,r,allt) "--MW-- prescribed capacity data for resource supply curve (RSC) technologies"
+parameter prescribedrsc(i,c,v,r,allt) "--MW-- prescribed capacity data for resource supply curve (RSC) technologies"
 /
 $offlisting
 $ondelim
@@ -1522,7 +1522,7 @@ $onempty
 parameter capacity_exog(i,v,r,allt)             "--MW-- exogenously specified capacity",
           capacity_exog_energy(i,v,r,allt)      "--MWh-- exogenously specified energy capacity",
           capacity_exog_rsc(i,c,v,r,rscbin,allt)  "--MW-- exogenous (pre-tfirst) capacity for wind-ons and upv",
-          m_capacity_exog(i,v,r,allt)           "--MW-- exogenous power capacity used in the model",
+          m_capacity_exog(i,c,v,r,allt)         "--MW-- exogenous power capacity used in the model",
           m_capacity_exog_energy(i,v,r,allt)    "--MWh-- exogenous energy capacity used in the model",
           geo_cap_exog(i,r)                     "--MW-- existing geothermal capacity"
 /
@@ -1637,9 +1637,11 @@ avail_retire_exog_rsc(i,v,r,t)$[refurbtech(i)$(capacity_exog(i,v,r,t-1) > capaci
 
 avail_retire_exog_rsc(i,v,r,t)$[not initv(v)] = 0 ;
 
-m_capacity_exog(i,v,r,t)$capacity_exog(i,v,r,t) = capacity_exog(i,v,r,t) ;
+m_capacity_exog(i,c,v,r,t)$[i_c(i,c)$capacity_exog(i,v,r,t)] = capacity_exog(i,v,r,t) ;
 m_capacity_exog_energy(i,v,r,t)$capacity_exog_energy(i,v,r,t) = capacity_exog_energy(i,v,r,t) ;
-m_capacity_exog(i,"init-1",r,t)$geo(i) = geo_cap_exog(i,r) ;
+m_capacity_exog(i,c,"init-1",r,t)$[i_c(i,c)$geo(i)] = geo_cap_exog(i,r) ;
+m_capacity_exog(i,c,v,r,t)$sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } =
+    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
 
 * We assign the ~1.3 GW of existing csp-ns to upv throughout the model, both in the
 * exogenous and the prescribed capacity, and convert it back to csp-ns when reporting.
@@ -1719,8 +1721,8 @@ $onlisting
 
 parameter inv_distpv(r,t) "--MW-- capacity of distpv that is build in year t (i.e., INV for distpv)" ;
 
-inv_distpv(r,t) = sum{(i,v)$distpv(i),
-                      m_capacity_exog(i,v,r,t) - sum{tt$tprev(t,tt), m_capacity_exog(i,v,r,tt) }
+inv_distpv(r,t) = sum{(i,c,v)$[distpv(i)$i_c(i,c)],
+                      m_capacity_exog(i,c,v,r,t) - sum{tt$tprev(t,tt), m_capacity_exog(i,c,v,r,tt) }
                      } ;
 
 set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for capacity",
@@ -1752,22 +1754,22 @@ m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$csp(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_r
 * Hybrid PV+battery
 m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$pvb(i)$(not ban(i))$sum{ii$[(not ban(ii))$tg_rsc_upvagg(ii,i)], m_rscfeas(r,ii,c,rscbin) }] = yes ;
 
-parameter m_required_prescriptions(i,v,r,t)        "--MW-- required power prescriptions by year (cumulative)" ;
+parameter m_required_prescriptions(i,c,v,r,t)      "--MW-- required power prescriptions by year (cumulative)" ;
 
 parameter m_required_prescriptions_energy(i,v,r,t) "--MWh-- required energy prescriptions by year (cumulative)" ;
 
 *following does not include wind
 *conditional here is due to no prescribed retirements for RSC tech
 *distpv is an rsc tech but is handled different via binned_capacity as explained above
-m_required_prescriptions(i,v,r,t)$tmodel_new(t)
+m_required_prescriptions(i,c,v,r,t)$[tmodel_new(t)$i_c(i,c)]
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc(i,v,r,tt) } ;
 
 
-m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
-                                   $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(i,v,r,tt) }
-                                     or m_capacity_exog(i,v,r,t) )$rsc_i(i)]
-        = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(i,v,r,tt) }
-        + m_capacity_exog(i,v,r,t)
+m_required_prescriptions(i,c,v,r,t)$[tmodel_new(t)$i_c(i,c)
+                                   $(sum{tt$[yeart(t)>=yeart(tt)], prescribedrsc(i,c,v,r,tt) }
+                                     or m_capacity_exog(i,c,v,r,t) )$rsc_i(i)]
+        = sum{(tt)$[(yeart(t) >= yeart(tt))], prescribedrsc(i,c,v,r,tt) }
+        + m_capacity_exog(i,c,v,r,t)
 ;
 
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
@@ -1797,16 +1799,17 @@ degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(y
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 
-parameter prescribed_build(i,v,r,t) "--MW-- prescribed capacity that comes online in a given year" ;
+parameter prescribed_build(i,c,v,r,t) "--MW-- prescribed capacity that comes online in a given year" ;
 * need to fill in for unmodeled, gap years via tprev but
 * tprev is not defined with tprev(t,tfirst)
-prescribed_build(i,v,r,t)$tmodel_new(t)
+prescribed_build(i,c,v,r,t)$[tmodel_new(t)$i_c(i,c)]
                                   = sum{tt$[(yeart(tt)<=yeart(t)
 * this condition populates values of tt which exist between the
 * previous modeled year and the current year
                                           $(yeart(tt)>sum{ttt$tprev(t,ttt), yeart(ttt) }))
                                           ],
-                                        prescribednonrsc(i,v,r,tt) + prescribedrsc(i,v,r,tt)
+                                        prescribednonrsc(i,v,r,tt)
+                                        + prescribedrsc(i,c,v,r,tt)
                                       } ;
 
 parameter prescribed_build_energy(i,v,r,t) "--MWh-- prescribed energy capacity that comes online in a given year" ;
@@ -1829,13 +1832,13 @@ prescribed_retirements_energy(i,v,r,t,tt)$[tmodel_new(tt)$tmodel_new(t)]
                                   = prescribedretirements_energy(v,r,i,t,tt,"prescribed") ;
 
 
-prescription_check(i,newv,r,t)$[prescribed_build(i,newv,r,t)
+prescription_check(i,newv,r,t)$[sum{c, prescribed_build(i,c,newv,r,t) }
                                  $ivt(i,newv,t)$tmodel_new(t)$(not ban(i))] = yes ;
 
 *Extend feasibility for prescribed rsc capacity where there is no supply curve data.
 *Resource will be manualy added to supply curve in bin1 in these cases.
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
-m_rscfeas(r,i,c,"bin1")$[i_c(i,c)$sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,c,r,"cap",rscbin) }=0)] = yes ;
+m_rscfeas(r,i,c,"bin1")$[i_c(i,c)$sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,c,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,c,r,"cap",rscbin) }=0)] = yes ;
 
 *==========================================================
 *--- Interconnection queues (Capacity deployment limit) ---
@@ -1946,11 +1949,11 @@ tc_phaseout_mult_t(i,t)$tmodel_new(t) = 1 ;
 valcap(i,v,r,t) = no ;
 
 *existing plants are enabled if not in ban(i)
-valcap(i,v,r,t)$[m_capacity_exog(i,v,r,t)$(not ban(i))$tmodel_new(t)] = yes ;
+valcap(i,v,r,t)$[sum{c, m_capacity_exog(i,c,v,r,t) }$(not ban(i))$tmodel_new(t)] = yes ;
 
 * if a plant is still available by upgrade year
 * and it is able to be upgraded - keep that plant in the valcap set
-valcap(i,v,r,t)$[sum{tt$[tt.val = Sw_UpgradeYear], m_capacity_exog(i,v,r,tt) }
+valcap(i,v,r,t)$[sum{(c,tt)$[tt.val = Sw_UpgradeYear], m_capacity_exog(i,c,v,r,tt) }
                 $(Sw_Upgrades = 1)$(t.val >= Sw_UpgradeYear)
                 $(not ban(i))
                 $sum{ii, upgrade_from(ii,i) }$tmodel_new(t)] = yes ;
@@ -1976,13 +1979,13 @@ valcap(i,newv,r,t)$[rsc_i(i)$tmodel_new(t)$(not ban(i))$(not bannew(i))
 *enable capacity if there is a required prescription in that region
 *first for non-rsc techs
 valcap(i,newv,r,t)$[(not rsc_i(i))
-                    $m_required_prescriptions(i,newv,r,t)
-                    $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
+                    $sum{c, m_required_prescriptions(i,c,newv,r,t) }
+                    $sum{(c,tt)$[m_required_prescriptions(i,c,newv,r,tt) 
                           $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))] = yes ;
 *then for rsc techs
 valcap(i,newv,r,t)$[rsc_i(i)
-                    $m_required_prescriptions(i,newv,r,t)
-                    $sum{tt$[m_required_prescriptions(i,newv,r,tt) 
+                    $sum{c, m_required_prescriptions(i,c,newv,r,t) }
+                    $sum{(c,tt)$[m_required_prescriptions(i,c,newv,r,tt) 
                       $(yeart(tt)<=yeart(t))], ivt(i,newv,tt) }$(not ban(i))
                     $sum{(c,rscbin), m_rscfeas(r,i,c,rscbin) }] = yes ;
 
@@ -1992,7 +1995,7 @@ valcap(i,newv,r,t)$bannew(i) = no ;
 valcap(i,newv,r,t)
        $[bannew(i)
        $(not ban(i))
-       $sum{tt$ivt(i,newv,tt), prescribed_build(i,newv,r,tt)}]
+       $sum{(c,tt)$ivt(i,newv,tt), prescribed_build(i,c,newv,r,tt)}]
        = yes ;
 
 *NEW capacity only valid in historical years if and only if it has required prescriptions
@@ -2003,7 +2006,7 @@ valcap(i,newv,r,t)
 *therefore remove the consideration of valcap if...
 valcap(i,newv,r,t)$[
 *if there are no required prescriptions
-                   (not m_required_prescriptions(i,newv,r,t))
+                   (not sum{c, m_required_prescriptions(i,c,newv,r,t) })
 *if the year is before the first year the technology is allowed
                    $(yeart(t)<firstyear(i))
 *if there is not a mandate for that technology in the region
@@ -2013,8 +2016,8 @@ valcap(i,newv,r,t)$[
 *remove vintages that cannot be built because they only occur before firstyear
 valcap(i,newv,r,t)$[
 *if there are no required prescriptions before the last year of that vintage
-                   (not sum{tt$[(yeart(tt)<=lastyear_v(i,newv))],
-                      m_required_prescriptions(i,newv,r,tt) } )
+                   (not sum{(c,tt)$[(yeart(tt)<=lastyear_v(i,newv))],
+                      m_required_prescriptions(i,c,newv,r,tt) } )
 *if the vintage is not allowed before the firstyear
                    $(lastyear_v(i,newv)<firstyear(i))
 *if there is not a mandate for that technology in the region
@@ -2030,7 +2033,7 @@ valcap(i,newv,r,t)$[(not sameas(i,'gas-ct'))$(yeart(t)<firstyear(i))
 
 *enable prescribed builds of technologies that are earlier listed in bannew when Sw_WaterMain is ON
 valcap(i,newv,r,t)$[Sw_WaterMain$sum{ctt$bannew_ctt(ctt),i_ctt(i,ctt) }$tmodel_new(t)
-                  $sum{tt$[yeart(tt)<=yeart(t)], m_required_prescriptions(i,newv,r,tt) }
+                  $sum{(c,tt)$[yeart(tt)<=yeart(t)], m_required_prescriptions(i,c,newv,r,tt) }
                   $sum{tt$(yeart(tt)<=yeart(t)), ivt(i,newv,tt) }] = yes ;
 
 
@@ -2078,21 +2081,21 @@ valcap(i,v,r,t)$[upgrade(i)$(not Sw_Upgrades)] = no ;
 valcap(i,v,r,t)$[forced_retire(i,r,t)] = no ;
 
 * for any technologies that are forced to retire and cannot upgrade, remove m_capacity_exog
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)
                          $(not sum{ii$(not forced_retire(ii,r,t)), upgrade_from(ii,i) })] = 0 ;
 
 * for any technologies that are forced to retire, can upgrade, and are not unabated coal, remove m_capacity_exog
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)$(not coal_noccs(i))
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)$(not coal_noccs(i))
                          $(sum{ii$(not forced_retire(ii,r,t)), upgrade_from(ii,i) })] = 0 ;
 
 * if Clean Air Act requirements are enabled, coal technologies that can be upgraded are allowed to stay in m_capacity_exog
 * if Clean Air Act requirements are not enabled, coal technologies that can be upgraded are excluded from m_capacity_exog
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)$(not Sw_Clean_Air_Act)$coal_noccs(i)
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)$(not Sw_Clean_Air_Act)$coal_noccs(i)
                          $(sum{ii$(not forced_retire(ii,r,t)) ,upgrade_from(ii,i) })] = 0 ;
 
 * If, in the last year in which coal must either retire or upgrade, coal is upgraded, we can continue to 
 * use that m_capacity_exog beyond caa_coal_retire_year. But unabated coal plants must not have capacity after caa_coal_retire_year.
-m_capacity_exog(i,v,r,t)$[forced_retire(i,r,t)$coal_noccs(i)
+m_capacity_exog(i,c,v,r,t)$[forced_retire(i,r,t)$coal_noccs(i)
                          $(t.val > caa_coal_retire_year)
                          $(sum{ii$(not forced_retire(ii,r,t)), upgrade_from(ii,i) }) ] = 0 ;
 
@@ -2130,17 +2133,17 @@ valinv(i,v,r,t) = no ;
 valinv(i,v,r,t)$[valcap(i,v,r,t)$ivt(i,v,t)] = yes ;
 
 * Do not allow investments in regions where that technology is banned, expect for prescribed builds
-valinv(i,v,r,t)$[tech_banned(i,r)$(not prescribed_build(i,v,r,t))] = no ;
+valinv(i,v,r,t)$[tech_banned(i,r)$(not sum{c, prescribed_build(i,c,v,r,t) })] = no ;
 
 *remove non-prescribed numeraire technologies that remain in valcap
-valinv(i,newv,r,t)$[i_numeraire(i)$Sw_WaterMain$(not prescribed_build(i,newv,r,t))] = no ;
+valinv(i,newv,r,t)$[i_numeraire(i)$Sw_WaterMain$(not sum{c, prescribed_build(i,c,newv,r,t) })] = no ;
 
 *upgrades are not allowed for the INV variable as they are the sum of UPGRADES
 valinv(i,v,r,t)$upgrade(i) = no ;
 
 valinv(i,v,r,t)$[(yeart(t)<firstyear(i))
 * Allow investments before firstyear(i) in technologies with prescribed capacity
-                 $(not prescribed_build(i,v,r,t))
+                 $(not sum{c, prescribed_build(i,c,v,r,t) })
 * Allow investments before firstyear(i) in mandated technologies
                  $(not [sum{st$r_st(r,st), batterymandate(st,t) }  and battery(i)])
                  $(not [sum{st$r_st(r,st), offshore_cap_req(st,t)} and ofswind(i)])
@@ -2210,7 +2213,7 @@ inv_cond(i,newv,r,t,tt)$[(not ban(i))
                       ] = yes ;
 
 inv_cond(i,newv,r,t,tt)$[Sw_WaterMain$sum{ctt$bannew_ctt(ctt),i_ctt(i,ctt) }$tmodel_new(t)$tmodel_new(tt)
-                      $prescribed_build(i,newv,r,tt)
+                      $sum{c, prescribed_build(i,c,newv,r,tt) }
                       $(yeart(tt) <= yeart(t))
                       $valinv(i,newv,r,tt)
                       $(ord(t)-ord(tt) < maxage(i))
@@ -5123,7 +5126,7 @@ if (Sw_ReducedResource = 1,
 *Calculate the fraction of prescribed builds to the available resource
 * 2021-05-05 the prescriptions are being applied across all years until we decide a better way to do this
   prescrip_rsc_frac(i,r)$[sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } > 0] =
-      smax((tt),sum{newv,m_required_prescriptions(i,newv,r,tt)}) / sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
+      smax((tt),sum{(c,newv),m_required_prescriptions(i,c,newv,r,tt)}) / sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
 *Set the default resource reduction fraction
   rsc_reduct_frac(i,r) = reduced_resource_frac ;
 *If the resource reduction fraction will reduce the resource to the point that prescribed builds will be infeasible,
@@ -5183,7 +5186,7 @@ available_supply(i,r) = 0 ;
 cap_existing(i,r)$exog_rsc(i) = sum{(c,v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
 
 *Get prescribed capacity
-cap_prescribed(i,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{v, prescribed_build(i,v,r,t) } ;
+cap_prescribed(i,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{(c,v), prescribed_build(i,c,v,r,t) } ;
 cap_prescribed_ir(i,r)$rsc_i(i) = sum{t$tmodel_new(t), cap_prescribed(i,r,t) } ;
 
 *Get total available supply for all i .
@@ -5268,7 +5271,7 @@ m_rsc_dat(r,i,c,rscbin,sc_cat)$[i_c(i,c)$sum{ii$rsc_agg(ii,i), m_rsc_dat(r,ii,c,
 set force_prescribe(i,v,r,t) "conditional to indicate whether the force prescription equation should be active for technology i and vintage v in year t" ;
 
 force_prescribe(i,v,r,t)$[(yeart(t) < firstyear(i))$newv(v)] = yes ;
-force_prescribe(i,v,r,t)$[ prescribed_build(i,v,r,t)] = yes ;
+force_prescribe(i,v,r,t)$[ sum{c, prescribed_build(i,c,v,r,t) }] = yes ;
 
 *=========================================
 * Decoupled Capacity/Energy Upgrades for hydropower
@@ -5360,7 +5363,7 @@ cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,
 
 * Parameter tracking for sequential solve
 parameter
-    m_capacity_exog0(i,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
+    m_capacity_exog0(i,c,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
     z_rep(t)      "--$-- objective function value by year"
     z_rep_inv(t)  "--$-- investment component of objective function by year"
     z_rep_op(t)   "--$-- operation component of objective function by year"
@@ -5573,7 +5576,7 @@ mean_forced_outage_rate(i,r,ccseason,t) = 0 ;
 cost_vom(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
 cost_fom(i,v,r,t)$[not valcap(i,v,r,t)] = 0 ;
 heat_rate(i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
-m_capacity_exog(i,v,r,t)$[not valcap(i,v,r,t)] = 0 ;
+m_capacity_exog(i,c,v,r,t)$[not valcap(i,v,r,t)] = 0 ;
 emit_rate(etype,e,i,v,r,t)$[not valgen(i,v,r,t)] = 0 ;
 
 *============================================================

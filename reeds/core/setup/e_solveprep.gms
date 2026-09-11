@@ -85,7 +85,7 @@ capture_rate(e,i,v,r,t)$valgen(i,v,r,t) = round(capture_rate(e,i,v,r,t),6) ;
 fuel_price(i,r,t)$fuel_price(i,r,t) = round(fuel_price(i,r,t),2) ;
 gasmultterm(cendiv,t)$gasmultterm(cendiv,t) = round(gasmultterm(cendiv,t),3) ;
 heat_rate(i,v,r,t)$heat_rate(i,v,r,t) = round(heat_rate(i,v,r,t),2) ;
-m_capacity_exog(i,v,r,t)$[valcap(i,v,r,t)$(not sameas(i,"smr"))] = round(m_capacity_exog(i,v,r,t),3) ;
+m_capacity_exog(i,c,v,r,t)$[valcap(i,v,r,t)$(not sameas(i,"smr"))] = round(m_capacity_exog(i,c,v,r,t),3) ;
 m_capacity_exog_energy(i,v,r,t)$[valcap(i,v,r,t)] = round(m_capacity_exog_energy(i,v,r,t),3) ;
 m_rsc_dat(r,i,c,rscbin,"cap")$m_rsc_dat(r,i,c,rscbin,"cap") = round(m_rsc_dat(r,i,c,rscbin,"cap"),3) ;
 m_rsc_dat(r,i,c,rscbin,"cost")$m_rsc_dat(r,i,c,rscbin,"cost") = round(m_rsc_dat(r,i,c,rscbin,"cost"),2) ;
@@ -116,7 +116,7 @@ winter_cap_frac_delta(i,v,r)$winter_cap_frac_delta(i,v,r) = round(winter_cap_fra
 $ifthen.seq %timetype%=="seq"
 
 * -- upgrade capacity tracking --
-m_capacity_exog0(i,v,r,t) = m_capacity_exog(i,v,r,t) ;
+m_capacity_exog0(i,c,v,r,t) = m_capacity_exog(i,c,v,r,t) ;
 
 * remove cc_int as it is only used in the intertemporal setting
 cc_int(i,v,r,ccseason,t) = 0 ;

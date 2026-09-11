@@ -585,7 +585,7 @@ $offtext
 eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t)
+    sum{c, m_capacity_exog(i,c,v,r,t) }
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
@@ -615,7 +615,7 @@ eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t)
+    sum{c, m_capacity_exog(i,c,v,r,t) }
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
@@ -954,7 +954,7 @@ eq_forceprescription_power(i,newv,r,t)
 
 *must equal the cumulative prescribed amount
 
-        prescribed_build(i,newv,r,t)
+        sum{c, prescribed_build(i,c,newv,r,t) }
 
 * plus any extra power buildouts (no penalty here - used as free slack)
 * only on or after the first year the techs are available
@@ -2814,7 +2814,7 @@ eq_RPS_OFSWind(st,t)$[tmodel(t)$stfeas(st)$offshore_cap_req(st,t)$Sw_StateRPS
                       $(yeart(t)>=firstyear_RPS)$(not Sw_PCM)]..
 
 * existing capacity of wind
-    sum{(i,v,r)$[r_st(r,st)$ofswind(i)], m_capacity_exog(i,v,r,t) }
+    sum{(i,c,v,r)$[r_st(r,st)$ofswind(i)], m_capacity_exog(i,c,v,r,t) }
 
 * investments over time
     + sum{(i,v,r,tt)$[r_st(r,st)$ofswind(i)$inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))],
