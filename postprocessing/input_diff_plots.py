@@ -2,8 +2,8 @@
 import os
 import sys
 import argparse
+import itertools
 import pandas as pd
-import geopandas as gpd
 from pathlib import Path
 from typing import Literal
 import matplotlib.pyplot as plt
@@ -11,11 +11,6 @@ from matplotlib import patheffects as pe
 import cmocean
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
-
-
-#%% User-defined plot settings
-## Percent absolute difference in CF
-diffmax = 2
 
 
 #%% Plotting functions
@@ -117,9 +112,11 @@ def plot_cf_diff(
     repo_new,
     tech='wind-ons',
     access='reference',
-    special='',
+    crs:str='EPSG:5070',
     cmap=plt.cm.turbo,
     cmap_diff=plt.cm.RdBu_r,
+    year=2012,
+    aggfunc='mean',
     diffmax=2,
 ):
     """
@@ -135,57 +132,29 @@ def plot_cf_diff(
     """
     ### Collect inputs
     repos = {'old': repo_old, 'new':repo_new}
+    switchname = {
+        'upv':'GSw_SitingUPV',
+        'wind-ons':'GSw_SitingWindOns',
+        'wind-ofs':'GSw_SitingWindOfs',
+    }[tech]
     dfcf = {
-        case: reeds.io.read_file(
-            os.path.join(
-                repos[case], 'inputs', 'profiles_cf',
-                f"cf_{tech}{f'_{special}' if special else ''}_{access}_ba.h5",
-            )
-        ).mean()
+        case: (
+            reeds.io.get_site_cf_hourly(tech, year, **{switchname:access})
+            .agg(aggfunc)
+            .rename(f'cf{year}')
+        )
         for case in repos
     }
-
-    ###
-    cf = {}
-    for case in repos:
-        cf[case] = dfcf[case].rename('cf').reset_index()
-        cf[case]['class'] = cf[case]['index'].map(lambda x: int(x.split('|')[0]))
-        cf[case]['region'] = cf[case]['index'].map(lambda x: x.split('|')[1])
-        cf[case] = cf[case].set_index(['class','region']).cf
-
-    ### Get available-capacity-weighted CF by zone
-    dfmap = reeds.io.get_dfmap()
-    if special == 'meshed':
-        dfmap['r'] = pd.concat([
-            dfmap['r'], 
-            gpd.read_file(
-                os.path.join(reeds.io.reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
-            ).set_index('zone').to_crs(dfmap['r'].crs),
-        ])
-    supplycurve = reeds.io.assemble_supplycurve(
-        scfile=os.path.join(
-            repos['new'], 'inputs', 'supply_curve', f'supplycurve_{tech}-{access}.csv',
-        ),
-        GSw_OffshoreZones=(1 if special == 'meshed' else 0),
-    )
-
-    cap_ir = supplycurve.groupby(['class','region']).capacity.sum()
-    cf_weighted = {
-        case: (cf[case] * cap_ir).groupby('region').sum() / cap_ir.groupby('region').sum()
-        for case in repos
-    }
-
+    dfsc = get_supplycurves(repo_old, repo_new, tech, access, crs)
     ### Plot it
     f, ax = plot_diff_maps(
-        dfmap=dfmap,
-        data=cf_weighted,
+        dfmap=dfsc['old'][['geometry']],
+        data=dfcf,
         title=f"{tech} {access}",
-        cmap=cmap,
-        cmap_diff=cmap_diff,
-        diffmax=diffmax,
-        scale=100,
+        cmap=cmap, cmap_diff=cmap_diff,
+        value_name=f'{year} {aggfunc} CF',
+        units='%', scale=100, diffmax=diffmax,
     )
-
     return f, ax
 
 
@@ -269,6 +238,35 @@ def plot_sc_diffs(
             value_name=column, units=units,
         )
         yield f, ax, column
+
+
+def save_sc_diffs(repo_old, repo_new, outpath):
+    """Plot and save SC diffs for all techs and columns"""
+    tech_accesses = [
+        ('upv', 'limited'), ('upv', 'reference'), ('upv', 'open'),
+        ('wind-ons', 'limited'), ('wind-ons', 'reference'), ('wind-ons', 'open'),
+        ('wind-ofs', 'limited'), ('wind-ofs', 'reference'), ('wind-ofs', 'open'),
+        ('egs', 'reference'),
+        (None, None),
+    ]
+    for tech, access in tech_accesses:
+        label = 'interconnection' if tech is None else f"{tech.replace('-','')}-{access}"
+        interconnection = (
+            True if (tech is None) or (tech, access) == ('wind-ofs', 'open')
+            else False
+        )
+        plot_generator = plot_sc_diffs(
+            repo_old, repo_new, tech=tech, access=access,
+            interconnection=interconnection,
+        )
+        while True:
+            try:
+                f, ax, column = next(plot_generator)
+                fpath = Path(outpath, f'sc_diff-{label}-{column}.png')
+                plt.savefig(fpath)
+                print(fpath)
+            except StopIteration:
+                break
 
 
 def plot_distpv_diff(
@@ -372,22 +370,17 @@ def main(repo_old, repo_new, outpath):
     os.makedirs(outpath, exist_ok=True)
 
     ## Capacity factors
-    for tech, special in [
-        ('wind-ofs', 'meshed'),
-        ('wind-ofs', 'radial'),
-        ('upv', ''),
-        ('wind-ons', ''),
-    ]:
-        for access in ['reference', 'limited', 'open']:
-            f, ax = plot_cf_diff(
-                repo_old, repo_new, tech=tech, access=access, special=special, diffmax=diffmax,
-            )
-            plt.savefig(os.path.join(
-                outpath,
-                f"cf_diff-{tech}{f'_{special}' if special else ''}-{access}.png"
-            ))
+    years = [2012, 2023]
+    techs = ['upv', 'wind-ons', 'wind-ofs']
+    accesses = ['reference', 'limited', 'open']
+    for year, tech, access in itertools.product(years, techs, accesses):
+        f, ax = plot_cf_diff(
+            repo_old, repo_new, tech=tech, access=access, year=year,
+            diffmax=2,
+        )
+        plt.savefig(Path(outpath, f"cf_diff-{tech}-{access}-{year}.png"))
 
-    plot_distpv_diff(repo_old, repo_new, diffmax=diffmax)
+    plot_distpv_diff(repo_old, repo_new, diffmax=2)
     plt.savefig(os.path.join(outpath, 'cf_diff-distpv.png'))
 
     ## Planning reserve margin
@@ -395,31 +388,7 @@ def main(repo_old, repo_new, outpath):
     plt.savefig(os.path.join(outpath, 'prm_diff-nerc.png'))
 
     ## Supply curves
-    tech_accesses = [
-        ('upv', 'limited'), ('upv', 'reference'), ('upv', 'open'),
-        ('wind-ons', 'limited'), ('wind-ons', 'reference'), ('wind-ons', 'open'),
-        ('wind-ofs', 'limited'), ('wind-ofs', 'reference'), ('wind-ofs', 'open'),
-        ('egs', 'reference'),
-        (None, None),
-    ]
-    for tech, access in tech_accesses:
-        label = 'interconnection' if tech is None else f"{tech.replace('-','')}-{access}"
-        interconnection = (
-            True if (tech is None) or (tech, access) == ('wind-ofs', 'open')
-            else False
-        )
-        plot_generator = plot_sc_diffs(
-            repo_old, repo_new, tech=tech, access=access,
-            interconnection=interconnection,
-        )
-        while True:
-            try:
-                f, ax, column = next(plot_generator)
-                fpath = Path(outpath, f'sc_diff-{label}-{column}.png')
-                plt.savefig(fpath)
-                print(fpath)
-            except StopIteration:
-                break
+    save_sc_diffs(repo_old, repo_new, outpath)
 
 
 #%% Procedure
