@@ -532,9 +532,7 @@ def main(reeds_path, inputs_case):
     #    -- Data Write-Out --    #
     ##############################
 
-    ### Key each profile by tech, class and region. Class is still part of the tech
-    ### name here, but the name alone will no longer identify a profile once tech is
-    ### is not part of the name.
+    ### Key each profile by tech, class and region
     rekey = dict(zip(
         resources['resource'],
         resources['i'] + '|' + resources['c'].astype(str) + '|' + resources['r'],

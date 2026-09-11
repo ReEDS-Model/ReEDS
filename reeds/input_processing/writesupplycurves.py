@@ -220,7 +220,7 @@ def main(
             .rename(
                 columns={
                     "region": "r",
-                    "class": "*i",
+                    "class": "c",
                     "bin": "rscbin",
                     "cost_total_trans_usd_per_mw": "cost_trans",
                     "capital_adder_per_mw": "cost_cap",
@@ -228,10 +228,8 @@ def main(
             )
         )
 
-        cost_components["c"] = cost_components["*i"].astype(str)
-        cost_components["*i"] = f"wind-{s}_" + cost_components[
-            "*i"
-        ].astype(str)
+        cost_components["c"] = cost_components["c"].astype(str)
+        cost_components["*i"] = f"wind-{s}_" + cost_components["c"]
         cost_components["rscbin"] = "bin" + cost_components[
             "rscbin"
         ].astype(str)
@@ -321,14 +319,14 @@ def main(
     cost_components_upv = cost_components_upv.rename(
         columns={
             "region": "r",
-            "class": "*i",
+            "class": "c",
             "bin": "rscbin",
             "cost_total_trans_usd_per_mw": "cost_trans",
             "capital_adder_per_mw": "cost_cap",
         }
     )
-    cost_components_upv["c"] = cost_components_upv["*i"].astype(str)
-    cost_components_upv["*i"] = "upv_" + cost_components_upv["*i"].astype(str)
+    cost_components_upv["c"] = cost_components_upv["c"].astype(str)
+    cost_components_upv["*i"] = "upv_" + cost_components_upv["c"]
     cost_components_upv["rscbin"] = "bin" + cost_components_upv["rscbin"].astype(str)
     cost_components_upv = pd.melt(
         cost_components_upv,
