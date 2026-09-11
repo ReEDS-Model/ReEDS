@@ -78,7 +78,7 @@ loop(i$rsc_i(i),
 * to avoid forcing recently upgraded capacity into retirement
 if(Sw_Upgrades = 1,
 
-    m_capacity_exog(i,c,v,r,t)$[valcap(i,v,r,t)$sameas(t,"%cur_year%")
+    m_capacity_exog(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$sameas(t,"%cur_year%")
                          $(sum{(ii,tt)$[(tt.val <= t.val)$(t.val - tt.val <= Sw_UpgradeLifespan)
                                        $valcap(ii,v,r,tt)$upgrade_from(ii,i)], UPGRADES.l(ii,v,r,tt) } ) ] =
 * [maximum of] initial capacity recorded in e_solveprep
