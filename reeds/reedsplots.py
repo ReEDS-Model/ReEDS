@@ -15,7 +15,6 @@ from warnings import warn
 import geopandas as gpd
 import shapely
 import cmocean
-from adjustText import adjust_text
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 from reeds import plots
@@ -1029,7 +1028,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
-        label_region_value(dfplot, ax=ax, column=valcol, fontsize=5)
+        label_region_value(dfplot, ax=ax, column=valcol, text_kwargs={'fontsize':5})
 
     ###### Plot the comp
     elif plot == 'comp':
@@ -1041,7 +1040,7 @@ def plot_diff_maps(
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
 
-        label_region_value(dfplot, ax=ax, column=valcol, fontsize=5)
+        label_region_value(dfplot, ax=ax, column=valcol, text_kwargs={'fontsize':5})
 
     ###### Plot the pct diff
     elif plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
@@ -1061,7 +1060,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_pctdiff', cmap=cmap, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
-        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', fontsize=5)
+        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', text_kwargs={'fontsize':5})
 
     ###### Plot the absolute diff
     elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
@@ -1081,7 +1080,7 @@ def plot_diff_maps(
 
         dfplot.plot(ax=ax, column=valcol+'_diff', cmap=plt.cm.RdBu_r, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
-        label_region_value(dfplot, ax=ax, column=valcol+'_diff', fontsize=5)
+        label_region_value(dfplot, ax=ax, column=valcol+'_diff', text_kwargs={'fontsize':5})
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
@@ -1377,7 +1376,7 @@ def map_net_imports(
             vmin=-vmax[year], vmax=vmax[year],
         )
         label_region_value(df, ax=ax[coords[year]], column='net_import', 
-                            opt_single_decimal=False, fmt = '{:.0f}', fontsize=5)
+                            opt_single_decimal=False, fmt = '{:.0f}', text_kwargs={'fontsize':5})
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -2771,7 +2770,7 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
-        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', fontsize=5)
+        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', text_kwargs={'fontsize':5})
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -4394,31 +4393,28 @@ def map_neue(
         ## Labels
         # decimals = (0 if df.NEUE_ppm.max() >= 10 else 1)
         decimals = (0 if level in ['st','r'] else 1)
-        text_artists = []
+        # label_region_value can't handle conditional formating, so keep as-is
         for r, row in df.sort_values('NEUE_ppm').iterrows():
             if highlight_over_threshold:
                 over_threshold = row.NEUE_ppm > neue_threshold
             else:
                 over_threshold = False
-            text_artists.append(
-                ax[coords[level]].annotate(
-                    f"{row.NEUE_ppm:.{decimals}f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center',
-                    c=(over_threshold_textcolor if over_threshold else 'k'),
-                    weight=('bold' if over_threshold else 'normal'),
-                    fontsize={'r':5}.get(level,7),
-                    zorder=1e9,
-                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
-                )
+            ax[coords[level]].annotate(
+                f"{row.NEUE_ppm:.{decimals}f}",
+                [row.centroid_x, row.centroid_y],
+                ha='center', va='center',
+                c=(over_threshold_textcolor if over_threshold else 'k'),
+                weight=('bold' if over_threshold else 'normal'),
+                fontsize={'r':5}.get(level,7),
+                zorder=1e9,
+                path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
             )
+        
             if over_threshold and (level == neue_threshold_level):
                 ax[coords[level]].set_title(
                     level, y=0.9, weight='bold', color=over_threshold_textcolor,
                 )
-        adjust_text(text_artists, ax=ax[coords[level]],
-                    avoid_self=False, ensure_inside_axes=True,
-                )
+
     ### Formatting
     plots.addcolorbarhist(
         f=f, ax0=ax[coords[level]], data=df.NEUE_ppm,
@@ -4521,19 +4517,19 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
-        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', fontsize=5)
+        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', text_kwargs={'fontsize':5})
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
-        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', fontsize=5)
+        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', text_kwargs={'fontsize':5})
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
-        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', fontsize=5)
+        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', text_kwargs={'fontsize':5})
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
@@ -5135,18 +5131,13 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
-        text_artists = []
-        for i, _row in df.iterrows():
-            text_artists.append(
-                ax[row,col].annotate(
-                    _row.date, (_row.centroid_x, _row.centroid_y),
-                    ha='center', va='center', color='k', fontsize=fontsize,
-                    path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
-                )
-            )
-        adjust_text(text_artists, ax=ax[row,col],
-                    avoid_self=False, ensure_inside_axes=True,
-                )
+        label_region_value(
+            df,
+            ax=ax[row,col],
+            column='val',
+            text_kwargs={'fontsize': fontsize},
+            pe_kwargs={'linewidth': pelinewidth, 'foreground': 'w', 'alpha': pealpha},
+        )
 
 
     ### Max load
@@ -5177,18 +5168,13 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
-        text_artists = []
-        for i, _row in df.iterrows():
-            text_artists.append(
-                ax[row,col].annotate(
-                    _row.date, (_row.centroid_x, _row.centroid_y),
-                    ha='center', va='center', color='k', fontsize=fontsize,
-                    path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
-                )
-            )
-        adjust_text(text_artists, ax=ax[row,col],
-                    avoid_self=False, ensure_inside_axes=True,
-                )
+        label_region_value(
+            df,
+            ax=ax[row,col],
+            column='date',
+            text_kwargs={'fontsize': fontsize},
+            pe_kwargs={'linewidth': pelinewidth, 'foreground': 'w', 'alpha': pealpha},
+        )
 
     ### Colorbar
     row, col = 0, 0
@@ -6184,20 +6170,14 @@ def map_outage_days(
         dfplot.plot(ax=_ax, column='outage_pct', cmap=cmap, vmin=vmin, vmax=vmax)
         ## Data values
         if fontsize:
-            text_artists = []
-            for r, row in dfplot.sort_values('outage_pct').iterrows():
-                text_artists.append(
-                    _ax.annotate(
-                        f"{row.outage_pct:.0f}",
-                        [row.centroid_x, row.centroid_y],
-                        ha='center', va='center', c='k',
-                        fontsize=fontsize,
-                        path_effects=[pe.withStroke(linewidth=1.4, foreground='w', alpha=0.7)],
-                    )
-                )
-            adjust_text(text_artists, ax=_ax,
-                        avoid_self=False, ensure_inside_axes=True,
-                    )
+            label_region_value(
+                df=dfplot,
+                ax=_ax,
+                column='outage_pct',
+                fmt="{:.0f}",
+                text_kwargs={'fontsize': fontsize},
+                pe_kwargs={'linewidth': 1.4, 'foreground': 'w', 'alpha': 0.7},
+            )
         _ax.axis('off')
         ## Formatting
         if date == dates[0]:
@@ -6280,30 +6260,35 @@ def label_region_value(
     column, 
     opt_single_decimal=True, 
     fmt='{:.0f}', 
-    color='k', 
-    fontsize=8, 
-    **kwargs
+    text_kwargs={'ha':'center', 'va':'center', 'color':'k', 'fontsize':8},
+    pe_kwargs={'linewidth':1.5, 'foreground':'w', 'alpha':0.7}
 ):
-    """kwargs are passed to patheffects.withStroke()"""
-    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':0.7}, **kwargs}
+    """pe_kwargs are passed to patheffects.withStroke()"""
+    text_kwargs = {**{'ha':'center', 'va':'center', 'color':'k', 'fontsize':8}, **text_kwargs}
+    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':0.7}, **pe_kwargs}
     text_artists = []
     for r, row in df.iterrows():
         value = row.get(column, np.nan)
-        if not np.isfinite(value):
-            continue
-        if opt_single_decimal:
-            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
-            fmt = f"{{:.{decimals}f}}"
+        if isinstance(value, (int, float, complex)):
+            if not np.isfinite(value):
+                continue
+            if opt_single_decimal:
+                decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
+                fmt = f"{{:.{decimals}f}}"
         text_artists.append(
             ax.annotate(
-                fmt.format(value),
+                (fmt.format(value) if not isinstance(value, str) else value),
                 (row.geometry.centroid.x, row.geometry.centroid.y),
-                ha='center', va='center', fontsize=fontsize,
-                color=color,
+                **text_kwargs,
                 path_effects=[pe.withStroke(**pe_kwargs)],
                 zorder=1e9,
             )
         )
+    try:
+        from adjustText import adjust_text
+    except ImportError:
+        return
+
     adjust_text(text_artists, ax=ax,
                 avoid_self=False, ensure_inside_axes=True,
             )
@@ -6627,7 +6612,7 @@ def map_stressors(
         label_region_value(
             df=dflevel, ax=ax[1,0], column='load_rank',
             opt_single_decimal=False, fmt='{:.0f}%',
-            linewidth=2.0, alpha=0.8,
+            pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,0].set_title('Demand', y=0.9)
         plots.addcolorbarhist(
@@ -6643,7 +6628,7 @@ def map_stressors(
             label_region_value(
                 df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
                 opt_single_decimal=False, fmt='{:.0f}%',
-                linewidth=2.0, alpha=0.8,
+                pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
             plots.addcolorbarhist(
@@ -6658,7 +6643,7 @@ def map_stressors(
         label_region_value(
             df=dflevel, ax=ax[1,3], column='temperature_rank',
             opt_single_decimal=False, fmt='{:.0f}%',
-            linewidth=2.0, alpha=0.8,
+            pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,3].set_title('Temperature', y=0.9)
         plots.addcolorbarhist(
@@ -6677,7 +6662,7 @@ def map_stressors(
             label_region_value(
                 df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
                 opt_single_decimal=False, fmt='{:.0f}%',
-                linewidth=2.0, alpha=0.8,
+                pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[2,col].set_title(label, y=0.9)
             plots.addcolorbarhist(
