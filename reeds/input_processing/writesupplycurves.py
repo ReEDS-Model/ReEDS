@@ -786,88 +786,142 @@ def main(
     #######################################################
     #    -- Demand Response  --    #
     #######################################################
-    # Use capacity and cost to add DR Shed to rsc_combined
-    disagg_data = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'))
-    state2r = disagg_data.groupby('state')['r'].unique().apply(list).to_dict()
-    if int(sw["GSw_DRShed"]) and write:
-        # DR Shed input data at state-level, need to assign to model resolution
-        # State cost are uniformaly distributed across model regions within the state 
-        # State capacity is distributed based on load 
-
-        # Calculate state-to-region aggregation/disaggregation factors
-        state_region_factors = (
-            disagg_data.groupby(['state', 'r'], as_index=False)
-            ['state_frac']
-            .sum()
-            .pivot(index='state', columns='r', values='state_frac')
-            .rename_axis(None, axis=1)
-            .fillna(0)
-        )
-        dr_shed_cap_state = pd.read_csv(os.path.join(inputs_case,'dr_shed_cap.csv'))
-        dr_shed_cap_reg = dr_shed_cap_state.copy()
-        state_region_factors = state_region_factors.loc[state_region_factors.index.intersection(dr_shed_cap_reg.columns), :]
     
-        # Multiply the hourly state load profiles by the state-to-region factors
-        dr_shed_cap_reg = (
-            dr_shed_cap_reg[state_region_factors.index]
-            .dot(state_region_factors)
-        )
-        dr_shed_cap_reg.insert(0, 'tech', dr_shed_cap_state['tech'])
-
-        dr_shed_cost_state = pd.read_csv(os.path.join(inputs_case,'dr_shed_cost.csv'))
-        dr_shed_cost_reg = dr_shed_cost_state.copy()
-        for col in dr_shed_cost_state.columns[1:]:
-            # Copy state columns to each model region
-            for r in state2r[col]:
-                dr_shed_cost_reg[r] = dr_shed_cost_state[col]
-            dr_shed_cost_reg.drop(columns=col, inplace=True)
-
-        # Define rsc class using tech
-        dr_shed_cap =  dr_shed_cap_reg.copy()
-        dr_shed_cap['class'] = dr_shed_cap['tech']
-        dr_shed_cost = dr_shed_cost_reg.copy()
-        dr_shed_cost['class'] = dr_shed_cost['tech']
-
-        dr_shed_cap = (pd.melt(dr_shed_cap, id_vars=['tech','class'])
-                    .set_index(['tech','class','variable'])
-                    .sort_index())
-        dr_shed_cap = dr_shed_cap.reset_index()
-        dr_shed_cost = pd.melt(dr_shed_cost, id_vars=['tech','class'])
-
-        # Convert dollar year
-        dr_shed_cost[dr_shed_cost.select_dtypes(include=['number']).columns] *= deflate['dr_shed']
-
-        # Assign rsc cat
-        dr_shed_cap['var'] = 'cap'
-        dr_shed_cost['var'] = 'cost'
-
-        # Combined cost and capacity
-        dr_shed_dat = pd.concat([dr_shed_cap, dr_shed_cost])
-        dr_shed_dat['bin'] = dr_shed_dat['class'].map(lambda x: x.replace('dr_shed_','bin'))
-        dr_shed_dat['class'] = dr_shed_dat['class'].map(lambda x: x.replace('dr_shed_',''))
-
-        dr_shed_dat.rename(columns={'variable':'r','bin':'variable'}, inplace=True)
-        dr_shed_dat = dr_shed_dat[['tech','r','value','var','variable']].fillna(0)
-        allout_list.append(dr_shed_dat)
-
-    if write:
-        # Update supply curve capacity multiplier from state-level to region-level
-        dr_shed_capacity_scalar_state = pd.read_csv(os.path.join(inputs_case,'dr_shed_capacity_scalar.csv'))
-        # Could be empty if regions included in run do not have DR data
-        if dr_shed_capacity_scalar_state.empty:
-            pass
-        else:
-            dr_shed_capacity_scalar_reg ={}
-            for st in dr_shed_capacity_scalar_state['r'].unique():
-                scalar_df = {}
-                for r in state2r[st]:
-                    scalar_ba= dr_shed_capacity_scalar_state[dr_shed_capacity_scalar_state['r'] == st].copy()
-                    scalar_ba['r'] = r
-                    scalar_df[r] = scalar_ba
-                dr_shed_capacity_scalar_reg[st] = pd.concat(scalar_df)
-            dr_shed_capacity_scalar_reg = pd.concat(dr_shed_capacity_scalar_reg.values(), ignore_index=True)
-            dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case,'dr_shed_capacity_scalar.csv'), index=False)
+    ##### DR Shed, Shape, and Shift #####
+    # Write region-level supply curve capacity and cost data for DR Shed, Shape, and Shift
+    # Write region-level supply curve capacity scalars
+    if int(sw.GSw_DRShed) == 1 or int(sw.GSw_DRShape) == 1 or int(sw.GSw_DRShift) == 1:
+        # State-level DR data processing function
+        def process_dr_state_level(dr_type, disagg_data, state2r):
+            """
+            Process state-level DR data and disaggregate to region-level.
             
+            Parameters:
+            - dr_type: 'dr_shed', 'dr_shape', or 'dr_shift'
+            - disagg_data: disaggregation data with state-to-region mapping
+            - state2r: dictionary mapping states to regions
+            
+            Returns:
+            - dr_dat: processed dataframe with regional DR data
+            """
+            # Calculate state-to-region aggregation/disaggregation factors
+            state_region_factors = (
+                disagg_data.groupby(['state', 'r'], as_index=False)
+                ['state_frac']
+                .sum()
+                .pivot(index='state', columns='r', values='state_frac')
+                .rename_axis(None, axis=1)
+                .fillna(0)
+            )
+            
+            # Read state-level capacity and cost data
+            cap_state = pd.read_csv(os.path.join(inputs_case, f'{dr_type}_cap.csv'))
+            cost_state = pd.read_csv(os.path.join(inputs_case, f'{dr_type}_cost.csv'))
+            
+            # Disaggregate capacity from state to region level
+            cap_reg = cap_state.copy()
+            state_region_factors = state_region_factors.loc[state_region_factors.index.intersection(cap_reg.columns), :]
+            cap_reg = cap_reg[state_region_factors.index].dot(state_region_factors)
+            cap_reg.insert(0, 'tech', cap_state['tech'])
+            if dr_type == 'dr_shift' or dr_type == 'dr_shape':
+                # cap_reg.insert(0, 'rscbin', cap_state['rscbin'])
+                cap_reg.insert(0, 'class', cap_state['rscbin'])
+            # Disaggregate cost from state to region level
+            cost_reg = pd.DataFrame()
+            for col in [x for x in cost_state.columns if x not in ['tech', 'rscbin']]:
+                for r in state2r[col]:
+                    cost_reg[r] = cost_state[col]
+            cost_reg.insert(0, 'tech', cost_state['tech'])
+            if dr_type == 'dr_shift' or dr_type == 'dr_shape':
+                # cost_reg.insert(0, 'rscbin', cost_state['rscbin'])      
+                cost_reg.insert(0, 'class', cost_state['rscbin'])        
+
+            cap = cap_reg.copy()
+            cost = cost_reg.copy()
+            # Define rsc class using tech for dr_shed
+            if dr_type == 'dr_shed':
+                cap['class'] = cap['tech']
+                cost['class'] = cost['tech']
+
+            cap = (pd.melt(cap, id_vars=['tech', 'class'])
+                .set_index(['tech', 'class', 'variable'])
+                .sort_index())
+            cap = cap.reset_index()
+            cost = pd.melt(cost, id_vars=['tech', 'class'])
+
+            # Convert dollar year
+            cost[cost.select_dtypes(include=['number']).columns] *= deflate[dr_type]
+
+            # Assign rsc cat
+            cap['var'] = 'cap'
+            cost['var'] = 'cost'
+
+            # Combined cost and capacity
+            dr_dat = pd.concat([cap, cost])
+            dr_dat['bin'] = dr_dat['class'].map(lambda x: x.replace(f'{dr_type}_', 'bin'))
+            dr_dat['class'] = dr_dat['class'].map(lambda x: x.replace(f'{dr_type}_', ''))
+
+            dr_dat.rename(columns={'variable': 'r', 'bin': 'variable'}, inplace=True)
+            dr_dat = dr_dat[['tech', 'r', 'value','var','variable']].fillna(0)
+
+            # Update supply curve capacity multiplier from state-level to region-level
+            dr_capacity_scalar_state = pd.read_csv(os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv'))
+            # Could be empty if regions included in run do not have DR data
+            if not dr_capacity_scalar_state.empty:
+                dr_capacity_scalar_reg = {}
+                for st in dr_capacity_scalar_state['r'].unique():
+                    scalar_df = {}
+                    for r in state2r[st]:
+                        scalar_ba = dr_capacity_scalar_state[dr_capacity_scalar_state['r'] == st].copy()
+                        scalar_ba['r'] = r
+                        scalar_df[r] = scalar_ba
+                    dr_capacity_scalar_reg[st] = pd.concat(scalar_df)
+                dr_capacity_scalar_reg = pd.concat(dr_capacity_scalar_reg.values(), ignore_index=True)
+            
+            return dr_dat,dr_capacity_scalar_reg
+
+        # State-level DR data - process state-level shape and shift data
+        # Use capacity and cost to add DR to rsc_combined
+        disagg_data = pd.read_csv(os.path.join(inputs_case, 'disagg_state_lpf.csv'))
+        state2r = disagg_data.groupby('state')['r'].unique().apply(list).to_dict()
+        
+        dr_shed_dat, dr_shed_capacity_scalar_reg = process_dr_state_level('dr_shed', disagg_data, state2r)
+        dr_shape_dat, dr_shape_capacity_scalar_reg = process_dr_state_level('dr_shape', disagg_data, state2r)
+        dr_shift_dat, dr_shift_capacity_scalar_reg = process_dr_state_level('dr_shift', disagg_data, state2r)
+
+        # Add DR data to rsc_combined if turned on, otherwise populate empty files 
+        if int(sw.GSw_DRShed) == 1:
+            allout_list.append(dr_shed_dat)
+            dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shed_capacity_scalar.csv'), index=False)
+
+        else:
+            dr_shed_capacity_scalar_reg = pd.DataFrame(columns=dr_shed_capacity_scalar_reg.columns)
+            dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shed_capacity_scalar.csv'), index=False)
+
+        if int(sw.GSw_DRShape) == 1:
+            allout_list.append(dr_shape_dat)
+            dr_shape_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shape_capacity_scalar.csv'), index=False)
+
+        else:
+            dr_shape_capacity_scalar_reg = pd.DataFrame(columns=dr_shape_capacity_scalar_reg.columns)
+            dr_shape_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shape_capacity_scalar.csv'), index=False)
+
+        if int(sw.GSw_DRShift) == 1:  
+            allout_list.append(dr_shift_dat)
+            dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
+
+        else:
+            dr_shift_capacity_scalar_reg = pd.DataFrame(columns=dr_shift_capacity_scalar_reg.columns)
+            dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
+    
+    # write out empty files if DR is turned off
+    else:
+        for dr_type in ['dr_shed','dr_shape','dr_shift']:
+            dr_capacity_scalar_reg = pd.read_csv(os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv'), header=0)
+            dr_capacity_scalar_reg = pd.DataFrame(columns=dr_capacity_scalar_reg.columns)
+            dr_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv'), index=False)
+
+
     # %%----------------------------------------------------------------------------------
     ##################################
     #    -- Combine everything --    #
@@ -943,7 +997,7 @@ def main(
         alloutm.to_csv(
             os.path.join(inputs_case, "rsc_combined.csv"), index=False, header=True
         )
-    
+
     #%%----------------------------------------------------------------------------------
     #######################
     #    -- Biomass --    #

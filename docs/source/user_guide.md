@@ -143,7 +143,7 @@ Demand response is turned off by default. To enable it the following switches ar
 
 - `GSw_DRShed`: turns on/off the demand response resource
 - `GSw_MaxDailyCF` : turns on/off daily maximum capacity factor constraint
-- `dr_shedscen`: scenario to define which scalars will be used for the supply curve cost and capacity
+- `dr_shedscen`: scenario to define which scalars will be used for the supply curve cost and capacity, VOM, FOM, and hourly profile
 
 ## Hydrogen inputs
 

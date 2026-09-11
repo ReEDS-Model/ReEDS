@@ -956,3 +956,15 @@ try:
 except Exception:
     print('map_hybrids failed:')
     print(traceback.format_exc())
+
+
+#%% DR Shiftresource plots
+try: 
+    if int(sw.GSw_DRShift) == 1:
+        dr_plots = reedsplots.dr_shift_resource_compare(
+            case = case,
+            year = year,
+            savepath = savepath,
+        )
+except:
+    print('dr_shift_resource plots failed')

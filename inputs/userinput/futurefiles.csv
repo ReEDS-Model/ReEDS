@@ -116,12 +116,23 @@ dollaryear_sc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 dr_dec.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
 dr_hrs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 dr_inc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
+dr_shape_cap.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,,,,,
+dr_shape_capacity_scalar.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,,,,,
+dr_shape_cost.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,,,,,
+dr_shape_profile_decrease.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant,,,,
+dr_shape_profile_increase.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant,,,,
 dr_shed_avail_scalar.csv,.csv,0,None,t,None,0,0,constant,None,None,new,
 dr_shed_cap.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 dr_shed_capacity_scalar.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,
 dr_shed_capcostmult.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,
 dr_shed_cost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 dr_shed_hourly.h5,.h5,0,None,year,datetime,1,keepindex,constant,None,None,new,
+dr_shift_cap.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,,,,,
+dr_shift_capacity_scalar.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,,,,,
+dr_shift_cost.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,,,,,
+dr_shift_profile_energy.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant,,,,
+dr_shift_profile_decrease.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant,,,,
+dr_shift_profile_increase.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant,,,,
 dr_types.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 e.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 eall.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -133,14 +144,6 @@ energy_communities.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 etype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ev_baseline_load.csv,.csv,0,None,2,"0,1",0,None,linear_5,None,None,linear or saturate?,linear_5
 eval_period_adj_mult.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
-evmc_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create rsc_evmc.csv so no need to forecast,
-evmc_shape_generation.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-evmc_shape_load.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-evmc_shape_profile_decrease.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
-evmc_shape_profile_increase.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
-evmc_storage_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
-evmc_storage_profile_decrease.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
-evmc_storage_profile_increase.csv,.csv,1,None,9999,None,9999,0,constant,None,None,,constant
 exog_cap_geohydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_cap_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_cap_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -325,8 +328,12 @@ plantchar_csp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to c
 plantchar_dr_shed_fom.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new,
 plantchar_dr_shed_vom.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new,
 plantchar_dr_shed.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,
-plantchar_evmc_shape.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
-plantchar_evmc_storage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
+plantchar_dr_shape_fom.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new,,,,,
+plantchar_dr_shape_vom.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new,,,,,
+plantchar_dr_shape.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,,,,,
+plantchar_dr_shift_fom.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new,,,,,
+plantchar_dr_shift_vom.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new,,,,,
+plantchar_dr_shift.csv,.csv,0,None,wide,"tech,r",1,0,constant,None,None,new; check constant,,,,,
 plantchar_fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_h2fuelcell.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
 plantchar_gas_ccs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to create plantcharout.csv so no need to forecast,
@@ -400,7 +407,6 @@ rps_fraction.csv,.csv,0,None,t,st,1,0,linear_5,None,1,done,linear_5
 RPSCat.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 rsc_combined.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 rsc_combined.txt,.txt,1,None,9999,None,9999,0,constant,None,None,done,constant
-rsc_evmc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,"[CHECK] don't know what this input file is supposed to look like, but needs to be forecasted; new",
 rsc_wsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 safe_harbor_max.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 safe_harbor.csv,.csv,0,None,t,i,0,0,constant,None,None,new,

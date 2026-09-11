@@ -91,13 +91,6 @@ def set_marg_vre_step_size(t, sw, gdx, hierarchy):
 
     return marg_vre_mw_cc
 
-def load_evmc_data(csv_path,inputs_case,h_dt_szn,
-                set_h_szn_cols=['h','ccseason','hour'],
-                set_idx_cols=['h','hour', 'year','ccseason']):
-    df = pd.read_csv(os.path.join(inputs_case,csv_path))
-    df = pd.merge(df,h_dt_szn[set_h_szn_cols],on='hour',how='left')
-    return df.set_index(set_idx_cols)
-     
 
 #%% Main function
 def reeds_cc(t, tnext, casedir):
@@ -213,17 +206,10 @@ def reeds_cc(t, tnext, casedir):
         # Restrict capacity credit evaluation to use 2012 only (rather than multi-year)
         load_profiles = load_profiles[load_profiles.index.get_level_values('year') == 2012].copy()
 
-    # Get EVMC data if necessary
-    if int(sw['GSw_EVMC']):
-        # Get EVMC props
-        evmccf_shape_increase = load_evmc_data('evmc_shape_profile_increase.csv',inputs_case,h_dt_szn)
-        evmccf_shape_decrease = load_evmc_data('evmc_shape_profile_decrease.csv',inputs_case,h_dt_szn)
-
     # Initialize dataframes to store results
     dict_cc_old = {}
     dict_cc_mar = {}
     dict_sdbin_size = {}
-    dict_cc_evmc = {}
     dict_net_load = {}
     dict_net_load_2012 = {}
 
@@ -245,15 +231,6 @@ def reeds_cc(t, tnext, casedir):
 
         # Hourly profiles
         load_profile_ccreg = load_profiles[ccreg]      
-
-        # EVMC profile
-        if int(sw['GSw_EVMC']):
-            evmc_shape_reg = [r for r in resources_ccreg.r.drop_duplicates()
-                      if r in evmccf_shape_increase.columns]
-            evmccf_shape_increase_ccreg = evmccf_shape_increase[['i'] + evmc_shape_reg]
-            evmc_shape_reg = [r for r in resources_ccreg.r.drop_duplicates()
-                      if r in evmccf_shape_decrease.columns]
-            evmccf_shape_decrease_ccreg = evmccf_shape_decrease[['i'] + evmc_shape_reg]
 
         # Storage information
         # Note that we only calculate storage capacity credit for storage in the same ccreg
@@ -292,22 +269,13 @@ def reeds_cc(t, tnext, casedir):
             if ccseason == 'year':
                 load_profile_ccseason = load_profile_ccreg.copy()
                 hours_considered = int(sw['cc_ann_hours'])
-                if int(sw['GSw_EVMC']):
-                    evmc_shape_load_ccseason = evmccf_shape_increase_ccreg.copy()
-                    evmc_shape_gen_ccseason = evmccf_shape_decrease_ccreg.copy()
 
             else:
                 load_profile_ccseason = load_profile_ccreg.xs(
                     ccseason, axis=0, level='ccseason').reset_index()
                 hours_considered = int(sw['GSw_PRM_CapCreditHours'])
 
-                if int(sw['GSw_EVMC']):
-                    evmc_shape_load_ccseason = evmccf_shape_increase_ccreg.xs(
-                        ccseason, axis=0, level='ccseason').reset_index()
-                    evmc_shape_gen_ccseason = evmccf_shape_decrease_ccreg.xs(
-                        ccseason, axis=0, level='ccseason').reset_index()
-
-            # log.debug(ccseason, int(len(load_profile_ccseason) / 7))
+                  # log.debug(ccseason, int(len(load_profile_ccseason) / 7))
             ###### Calculate the capacity credit for each resource
             cc_vg_results = cc_vg(
                 vg_power=vregen_ccseason[ccseason][resourcelist].values,
@@ -389,38 +357,6 @@ def reeds_cc(t, tnext, casedir):
                         var_name='r'),
                 index=['year','hour','h'],
                 columns=['i','r'], values='value')
-
-            if int(sw['GSw_EVMC']):
-                evmc_shape_inc_timestamp = pivot_melt_data(evmc_shape_load_ccseason)
-                evmc_shape_dec_timestamp = pivot_melt_data(evmc_shape_gen_ccseason)
-                evmc_years = evmc_shape_dec_timestamp.index.get_level_values('year').unique()
-                #do as evmc cap credit instead?
-                if len(evmc_years)==1:
-                    gen_array = evmc_shape_dec_timestamp.values - evmc_shape_inc_timestamp.values 
-                    evmc_shape_marg_power = np.tile(gen_array,(7,1))
-                elif len(evmc_years)==7:
-                    evmc_shape_marg_power = evmc_shape_dec_timestamp.values - evmc_shape_inc_timestamp.values 
-                else:
-                    log.info("no weather year data on EVMC for any relevant regions; skipping")
-                    continue
-                
-                ###### Calculate the capacity credit for each evmc_shape resource
-                results_evmc_shape = cc_evmc_shape(load=cc_vg_results['load'],
-                    load_net=cc_vg_results['load_net'],
-                    top_hours_net=cc_vg_results['top_hours_net'],
-                    top_hours_n=hours_considered,
-                    evmc_shape_marg_power=evmc_shape_marg_power*float(sw['marg_evmc_mw']),
-                    cap_marg=float(sw['marg_evmc_mw']))
-
-                evmc_cc_i = pd.melt(pd.DataFrame(data=[np.round(results_evmc_shape, decimals=5), ],
-                                        columns=evmc_shape_dec_timestamp.columns))
-
-                if (ccreg, ccseason) in dict_cc_evmc.keys():
-                    dict_cc_evmc[ccreg, ccseason] = pd.concat(
-                    [dict_cc_evmc[ccreg, ccseason],
-                    evmc_cc_i[['r', 'i', 'value']]])
-                else:
-                    dict_cc_evmc[ccreg, ccseason] = evmc_cc_i[['r', 'i', 'value']]
 
     # ------ AGGREGATE OUTPUTS ------
     cc_old = (
@@ -514,7 +450,6 @@ def reeds_cc(t, tnext, casedir):
     cc_results = {
         'cc_mar': cc_mar,
         'cc_old': cc_old,
-        'cc_evmc': cc_evmc,
         'sdbin_size': sdbin_size,
         'net_load': net_load,
         'net_load_2012': net_load_2012,
@@ -648,53 +583,6 @@ def cc_vg(vg_power, load, vg_marg_power, top_hours_n, cap_marg):
 
     return results
 
-def cc_evmc_shape(load,load_net,top_hours_net,top_hours_n,evmc_shape_marg_power,cap_marg):
-    '''
-    Calculate the capacity credit of marginal evmc_shape resources
-    using a top hour approximation.
-    Args:
-        load: numpy array containing time-synchronous load profile for all
-            hours_n. Units: MW
-        load_net: net load profile. Units: MW
-        top_hours_net: arguments for the highest net load hours in load_net,
-            calculated in cc_vg(). Is of length top_hours_n
-        top_hours_n: number of top hours to consider for the calculation
-        evmc_shape_marg: numpy array containing capacity factor profiles for marginal
-            builds of each evmc_shape resource bin
-        cap_marg: marginal capacity used to calculate marginal capacity credit
-    Returns:
-        cc_marg: marginal capacity credit for each evmc_shape resource
-    Notes:
-        Currently only built for hourly profiles. Generalize to any duration
-            timestep.
-    '''
-    hours_n = len(load)
-
-    # get the marg net load for each evmc_shape resource [hours x resources]
-    load_marg = (
-        np.tile(load_net.reshape(hours_n, 1), (1, evmc_shape_marg_power.shape[1]))
-        - evmc_shape_marg_power)
-
-    ### Get the peak net load hours [top_hours_n x evmc_shape resources]
-    peak_net_load = np.transpose(np.array(
-        ### np.partition returns the max top_hours_n values, unsorted; then np.sort sorts.
-        ### So we only sort top_hours_n values instead of the whole array, saving time.
-        [np.sort(
-            np.partition(load_marg[:,n], -top_hours_n)[-top_hours_n:]
-         )[::-1]
-         for n in range(load_marg.shape[1])]
-    ))
-
-    load_reduct_marg = np.tile(
-        load_net[top_hours_net].reshape(top_hours_n, 1),
-        (1, evmc_shape_marg_power.shape[1])
-    ) - peak_net_load
-    # get the marginal CCs for each resource
-    cc_marg = np.sum(load_reduct_marg, axis=0) / top_hours_n / cap_marg
-
-    # setting the lower bound for marginal CC to be 0.01
-    cc_marg[cc_marg < 0.01] = 0.0
-    return cc_marg
 
 # -------------------------CALC REQUIRED MWHS----------------------------------
 # @numba.jit(nopython=True, cache=True)

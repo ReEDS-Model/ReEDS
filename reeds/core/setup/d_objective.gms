@@ -14,7 +14,7 @@ Equation
 * note these are not restricited to positive domain
 Variable    Z        "--$-- total cost of operations and investment, scale varies based on cost_scale"
             Z_op(t)  "--$-- total cost of operations",
-            Z_inv(t)  "--$-- total cost of operations"
+            Z_inv(t)  "--$-- total cost of investment"
 ;
 
 * objective function is the sum over modeled years of the investment
@@ -85,6 +85,9 @@ eq_ObjFn_inv(t)$tmodel(t)..
 *slack variable to update water source type (wst) in the unit database
 *Note that existing wst data is not consistent with availability of water source in the region
                   + sum{(wst,r), 1E6 * WATER_CAPACITY_LIMIT_SLACK(wst,r,t) }$[Sw_WaterMain$Sw_WaterCapacity]
+
+*slack variable for DR infeasibilites
+                  + sum{(r,h), 1E6 * RHS_DRSHAPE_SLACK(r,h,t) }
 
 * --- cost of refurbishments of RSC tech---
                   + sum{(i,v,r)$[Sw_Refurb$valinv(i,v,r,t)$refurbtech(i)],

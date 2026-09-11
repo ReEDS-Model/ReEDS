@@ -43,6 +43,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | dGen | Distributed Generation Market Demand model |
 | DNI | direct normal insolation |
 | DOE | U.S. Department of Energy |
+| DR | demand response
 | DSIRE | Database of State Incentives for Renewables and Efficiency |
 | EAC | energy attribute credit |
 | EGS | enhanced geothermal system |
@@ -1561,7 +1562,7 @@ The 2026 limits are based on plants with a signed interconnection agreement, and
 Values between years are interpolated based on the 2026 and 2030 points.
 The limits are applied regionally by technology.
 
-To avoid infeasibility, the constraint allows a technology to be built over the capacity limits with a penalty of $10,000/kW.
+To avoid infeasibility, the constraint allows for a technology to be built over the capacity limits with a penalty of $10,000/kW.
 
 
 ### Regional Parameter Variations and Adjustments
@@ -1812,9 +1813,17 @@ The `GSw_RetailAdder` switch (default 0, units of [2004\$/MWh]) adds a cost adde
 
 ### Demand Response
 
-Demand response (DR) is turned off by default in ReEDS, but the user has the option to enable DR via load shedding.
-The demonstration data used to characterize the amount of load shedding available were obtained from a workflow which includes ResStock, DR-Path, and dsgrid.
-The data reflect the technical potential for residential load shedding in 11 states (AZ, CA, CO, FL, GA, MN, MT, NM, NY, TX, WA) and were developed using the 2018 weather year.
+Unlike other generation or storage technologies, demand response (DR) contributes to system supply-demand balance through the management of demand-side loads. 
+Load management can be facilitated by different types of signals and responses on different timescales and with different types of communication. 
+For example, price-responsive dispatch mechanisms like time-of-use rates or real-time pricing involve one-way communication of prices that electricity users and/or their devices can use to inform consumption decisions. 
+On the other hand, direct load control programs often involve two-way communications between a utility or an aggregator and devices (e.g., thermostat, electric vehicle charger, industrial equipment) whose consumption patterns are modified to shed or shift load away from peak or reliability event times. 
+ReEDS represents price-responsive DR as a resource that modifies load based on exogenous shapes and represents direct load control programs as dispatchable shed or shift resources.
+
+DR is turned off by default in ReEDS, but the user has the option to enable DR via load shedding.
+
+#### Load Shedding
+
+The demonstration data used to characterize the amount of load shedding avaiable were obtained from a workflow which includes ResStock, DR-Path, and dsgrid. The data reflect the technical potential for residential load shedding in 11 states (AZ, CA, CO, FL, GA, MN, MT, NM, NY, TX, WA) and were developed using the 2018 weather year.
 Through this implementation the demand response is effectively added as a new supply curve-based resource; however, the DR shed potential is only available during stress periods.
 If ReEDS chooses to dispatch DR shed, the "generation" from the resource is subtracted from the load considered in the resource adeqaucy calculations.
 The capital costs for the residential resource are derived from the installation cost for the DR-enabling technology (program implementation or procurement costs are not included).

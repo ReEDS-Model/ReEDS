@@ -541,7 +541,8 @@ def reaggregate_to_model_regions(
     state_load_hourly: pd.DataFrame,
     inputs_case: str,
     GSw_LoadAllocationMethod: str,
-    dr_data: bool = False
+    dr_data: bool = False,
+    dr_agg_type: str = None,
 ) -> pd.DataFrame:
     """
     Allocate hourly state load to model regions according to the provided
@@ -562,6 +563,7 @@ def reaggregate_to_model_regions(
         os.path.dirname(inputs_case),
         disagg_variable=GSw_LoadAllocationMethod
     )
+
     # Calculate state-to-region aggregation/disaggregation factors
     state_region_factors = (
         disagg_data.groupby(['state', 'r'], as_index=False)
@@ -588,6 +590,21 @@ def reaggregate_to_model_regions(
     if dr_data:
         state_region_factors = state_region_factors.loc[state_region_factors.index.intersection(state_load_hourly.columns), :]
     
+    # Demand response shape and shift data are fractions which should be distributed uniformly across all regions within a state
+    if dr_data and dr_agg_type == 'fraction':
+        # Determine the number of regions within each state
+        unique_state = disagg_data['state'].unique()
+        state_map = {}
+        for st in unique_state:
+            regs_in_state = disagg_data.loc[disagg_data['state'] == st]['r'].unique().tolist()
+            for reg in regs_in_state:
+                state_map[reg] = state_load_hourly[st]
+
+        regional_load_hourly = pd.DataFrame(state_map)
+
+        return regional_load_hourly
+            
+
     # Multiply the hourly state load profiles by the state-to-region factors
     regional_load_hourly = (
         state_load_hourly[state_region_factors.index]
@@ -696,40 +713,53 @@ def main(reeds_path, inputs_case):
 
     peakload = calculate_peak_load(regional_load_hourly, hierarchy)
 
-    #%%%#########################################
-    #    -- DR Shed Load Modifications --    #
-    #############################################
+#%%
+    # #%%%############################################
+    # # -- DR Shed, Shape, Shift Load Modifications --    #
+    # ################################################
+    def process_dr_profiles(profile_type, file_suffix, dr_data=False, dr_agg_type=None):
+        if profile_type == 'shed':
+            state_profiles = reeds.io.read_file(os.path.join(inputs_case, f'dr_{profile_type}_hourly.h5'))
+        else:
+            state_profiles = reeds.io.read_file(os.path.join(inputs_case, f'dr_{profile_type}_profile_{file_suffix}.h5'))
+        state_profiles = state_profiles.reset_index().set_index(['year', 'datetime'])
+        dr_types = list({x.split('|')[0] for x in state_profiles.columns[1:]})
+        regional_profiles = {}
 
-    if int(sw.GSw_DRShed): 
-        state_dr_shed_hourly = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'))
-        dr_types = list({x.split('|')[0] for x in state_dr_shed_hourly.columns[1:]})
-
-        # Reformat to match state load profiles
-        state_dr_shed_hourly = state_dr_shed_hourly.reset_index().set_index(['year','datetime'])
-        regional_dr_shed_hourly = {}
         for dr_type in dr_types:
-            type_cols = [col for col in state_dr_shed_hourly.columns if col.startswith(dr_type)]
-            reg_shed = state_dr_shed_hourly[type_cols].copy()
-            reg_shed.columns = [col.split('|')[1] for col in reg_shed.columns]
-            reg_shed = reaggregate_to_model_regions(
-                reg_shed,
+            type_cols = [col for col in state_profiles.columns if col.startswith(dr_type)]
+            reg_profile = state_profiles[type_cols].copy()
+            reg_profile.columns = [col.split('|')[1] for col in reg_profile.columns]
+            reg_profile = reaggregate_to_model_regions(
+                reg_profile,
                 inputs_case,
                 'state_lpf',
-                dr_data=True
+                dr_data=dr_data,
+                dr_agg_type=dr_agg_type
             )
-            # Add back dr type to column header 
-            reg_shed.columns = [f"{dr_type}|{col}" for col in reg_shed.columns]            
-            reg_shed = reg_shed.reset_index()
-            if isinstance(reg_shed['datetime'].iloc[0], bytes):
-                reg_shed['datetime'] = reg_shed['datetime'].str.decode('utf-8')
-            reg_shed['datetime'] = pd.to_datetime(reg_shed['datetime'])
-            reg_shed = reg_shed.set_index(['year','datetime'])
-            regional_dr_shed_hourly[dr_type] = reg_shed
+            reg_profile = reg_profile.reset_index().set_index(['datetime'])
+            reg_profile.columns = [f"{dr_type}|{col}" if col not in ['year'] else col for col in reg_profile.columns]
+            regional_profiles[dr_type] = reg_profile
 
-        # Combined dr shed types
-        regional_dr_shed_hourly = pd.concat(regional_dr_shed_hourly.values(), axis=1)
-        regional_dr_shed_hourly = regional_dr_shed_hourly.astype(np.float32)
-        regional_dr_shed_hourly = regional_dr_shed_hourly.reset_index().set_index(['datetime'])
+        combined_profiles = pd.concat(regional_profiles.values(), axis=1)
+        combined_profiles = combined_profiles.loc[:, ~combined_profiles.columns.duplicated()]
+        combined_profiles['year'] = combined_profiles['year'].astype('float64')
+        
+        return combined_profiles
+
+    if int(sw.GSw_DRShed):
+        regional_dr_shed_hourly = process_dr_profiles('shed', 'hourly', dr_data=True)
+
+    if int(sw.GSw_DRShape):
+        regional_dr_shape_profile_inc = process_dr_profiles('shape', 'increase', dr_data=True, dr_agg_type='fraction')
+        regional_dr_shape_profile_dec = process_dr_profiles('shape', 'decrease', dr_data=True, dr_agg_type='fraction')
+
+    if int(sw.GSw_DRShift):
+        regional_dr_shift_profile_inc = process_dr_profiles('shift', 'increase', dr_data=True, dr_agg_type='fraction')
+        regional_dr_shift_profile_dec = process_dr_profiles('shift', 'decrease', dr_data=True, dr_agg_type='fraction')
+        regional_dr_shift_profile_energy = process_dr_profiles('shift', 'energy', dr_data=True, dr_agg_type='fraction')
+
+
 
     #%%###########################
     #    -- Data Write-Out --    #
@@ -750,6 +780,15 @@ def main(reeds_path, inputs_case):
     )
     if int(sw.GSw_DRShed):
         reeds.io.write_profile_to_h5(regional_dr_shed_hourly, 'dr_shed_hourly.h5', inputs_case)
+
+    if int(sw.GSw_DRShape):
+        regional_dr_shape_profile_inc.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'), key='data', complevel=4)
+        regional_dr_shape_profile_dec.to_hdf(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'), key='data', complevel=4)
+
+    if int(sw.GSw_DRShift):
+        regional_dr_shift_profile_inc.to_hdf(os.path.join(inputs_case, 'dr_shift_profile_increase.h5'), key='data', complevel=4)
+        regional_dr_shift_profile_dec.to_hdf(os.path.join(inputs_case, 'dr_shift_profile_decrease.h5'), key='data', complevel=4)
+        regional_dr_shift_profile_energy.to_hdf(os.path.join(inputs_case, 'dr_shift_profile_energy.h5'), key='data', complevel=4)
 
 #%% ===========================================================================
 ### --- PROCEDURE ---

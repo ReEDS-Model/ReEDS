@@ -25,7 +25,7 @@ positive variables
 * capacity and investment variables
   CAP_SDBIN(i,v,r,ccseason,sdbin,t)        "--MW-- generation power capacity by storage duration bin for relevant technologies"
   CAP_SDBIN_ENERGY(i,v,r,ccseason,sdbin,t) "--MWh-- generation energy capacity by storage duration bin for relevant technologies"
-  CAP(i,v,r,t)                             "--MW-- total generation capacity in MWac (MWdc for PV); PV capacity of hybrid PV+battery; max native, flexible EV load for EVMC"
+  CAP(i,v,r,t)                             "--MW-- total generation capacity in MWac (MWdc for PV); PV capacity of hybrid PV+battery; max native"
   CAP_ENERGY(i,v,r,t)                      "--MWh-- battery capacity in terms of energy"
   CAP_ABOVE_LIM(tg,r,t)                    "--MW-- amount of capacity that is deployed above the interconnection queue limits"
   CAP_RSC(i,v,r,rscbin,t)                  "--MW-- total generation capacity in MWac (MWdc for PV) for wind-ons and upv"
@@ -111,6 +111,8 @@ positive variables
   H2_STOR_LEVEL(h2_stor,r,actualszn,allh,t) "--metric tons-- total storage level of H2 in a timeslice by storage type"
   H2_STOR_LEVEL_SZN(h2_stor,r,actualszn,t)  "--metric tons-- total storage level of H2 in a period by storage type"
   CREDIT_H2PTC(i,v,r,allh,t)              "--MW-- generation by resources which qualify for the hydrogen production tax credit, in hour h"
+
+ RHS_DRSHAPE_SLACK(r,allh,t)            "--slack variable for DR shape in eq_loadcon"
 
 * water climate variables
   WATCAP(i,v,r,t)                        "--million gallons/year; Mgal/yr-- total water access capacity available in terms of withdraw/consumption per year"
@@ -313,6 +315,8 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_storage_opres(i,v,r,allh,t)                   "--MWh-- there must be sufficient energy in the storage to be able to provide operating reserves"
  eq_storage_thermalres(i,v,r,allh,t)              "--MW-- thermal storage contribution to operating reserves is store_in only"
  eq_battery_minduration(i,v,r,t)                  "--MWh-- when power capacity is built, energy capacity should have a minimum capacity"
+ eq_dr_shift_gen_capacity(i,v,r,allh,t)           "--MW-- storage generation capacity (deferment) for DR shifting resources is limited to a fraction of total capacity"
+ eq_dr_shift_storage_in_capacity(i,v,r,allh,t)    "--MW-- storage load capacity (payback) for DR shifting resources is limited to a fraction of total capacity"
 
 * hybrid plant equations
  eq_plant_total_gen(i,v,r,allh,t)           "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
@@ -335,7 +339,40 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_ccsflex_sto_ccsenergy_balance(i,v,r,allszn,t)    "--MWh-- Total CCS energy requirement can be distributed across a characteristic day"
  eq_ccsflex_sto_storage_level(i,v,r,allh,t)          "--varies-- Track the level of the CCS storage balance for each time-slice"
  eq_ccsflex_sto_storage_level_max(i,v,r,allh,t)      "--varies-- Limit the level of the CCS storage system"
+
+
+*  eq_force_drshift_gen(t)
+*  eq_force_drshape_cap(t)
 ;
+
+
+* eq_force_drshift_gen(t)
+*     $[tmodel(t)
+*     $(Sw_DRShift=1)
+*     $(yeart(t)>model_builds_start_yr)
+*     ]..
+
+*     sum{(i,v,r,h)$[valgen(i,v,r,t)$dr_shift(i)],
+*        hours(h) *  GEN(i,v,r,h,t)
+*     }
+*     =g=
+
+*     1000
+* ;
+
+* eq_force_drshape_cap(t)
+*     $[tmodel(t)
+*     $(Sw_DRShape=1)
+*     $(yeart(t)>model_builds_start_yr)
+*     ]..
+
+*     sum{(i,v,r)$[valcap(i,v,r,t)$dr_shape(i)],
+*        CAP(i,v,r,t)
+*     }
+*     =g=
+
+*     10
+* ;
 
 *==========================
 * --- LOAD CONSTRAINTS ---
@@ -362,11 +399,12 @@ eq_loadcon(r,h,t)$tmodel(t)..
 * while net_trade can be negative and cause infeasibilities
     + can_exports_h(r,h,t)$[Sw_Canada=1]
 
-*[plus] load from EV charging (baseline/unmanaged)
-    + evmc_baseline_load(r,h,t)$Sw_EVMC
+*[plus] shifted load from adopted DR shape resources
+    + sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_load(i,r,h,t) * CAP(i,v,r,t)}
+    - sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_gen(i,r,h,t) * CAP(i,v,r,t)}
 
-*[plus] shifted load from adopted EVMC shape resources
-    + sum{(i,v)$[evmc_shape(i)$valcap(i,v,r,t)], evmc_shape_load(i,r,h) * CAP(i,v,r,t)}
+* add slack variable to avoid infeasibilities
+    + RHS_DRSHAPE_SLACK(r,h,t)  
 
 *[plus] load shifted from other timeslices
     + sum{flex_type, FLEX(flex_type,r,h,t) }$Sw_EFS_flex
@@ -1187,8 +1225,8 @@ eq_capacity_limit(i,v,r,h,t)
     $(not spur_techs(i))
     $(not storage_standalone(i))$(not storage_hybrid(i)$(not csp(i)))$(not nondispatch(i))]..
     
-*total amount of dispatchable, non-hydro capacity
-    avail(i,r,h)$[dispatchtech(i)$(not hydro_d(i))]
+*total amount of dispatchable, non-hydro, non DR shape and shift capacity
+    avail(i,r,h)$[dispatchtech(i)$(not hydro_d(i))$(not dr_shape(i))$(not dr_shift(i))]
     * derate_geo_vintage(i,v)
     * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
     * CAP(i,v,r,t)
@@ -1211,8 +1249,6 @@ eq_capacity_limit(i,v,r,h,t)
 *subtract energy that would be embedded in a capacity-only upsizing
                 - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
       )$[not dispatchtech(i)]
-*add EVMC shape generation
-    + (evmc_shape_gen(i,r,h) * CAP(i,v,r,t))
 
     =g=
 
@@ -2993,11 +3029,10 @@ eq_biousedlimit(bioclass,usda_region,t)$tmodel(t)..
 * ---------------------------------------------------------------------------
 
 *storage use cannot exceed capacity
-*this constraint does not apply to CSP+TES or hydro pump upgrades
-eq_storage_capacity(i,v,r,h,t)$[valgen(i,v,r,t)
-    $(storage_standalone(i)$(not evmc_storage(i))
-        or evmc_storage(i)
-            $[evmc_storage_charge_frac(i,r,h,t)$evmc_storage_discharge_frac(i,r,h,t)]
+*this constraint does not apply to DR Shift, CSP+TES or hydro pump upgrades
+eq_storage_capacity(i,v,r,h,t)
+    $[valgen(i,v,r,t)
+    $(storage_standalone(i)
         or storage_hybrid(i)$(not csp(i)))
     $tmodel(t)]..
 
@@ -3008,16 +3043,15 @@ eq_storage_capacity(i,v,r,h,t)$[valgen(i,v,r,t)
 
     =g=
 
-* [plus] Generation from storage, excluding hybrid+storage and adjusting evmc_storage for time-varying discharge (deferral) availability
-    GEN(i,v,r,h,t)$(not storage_hybrid(i)$(not csp(i))) / (1$(not evmc_storage(i)) + evmc_storage_discharge_frac(i,r,h,t)$evmc_storage(i))
+* [plus] Generation from storage, excluding hybrid+storage 
+    GEN(i,v,r,h,t)$(not storage_hybrid(i)$(not csp(i)))
 
 * [plus] Generation from battery of hybrid+storage
     + GEN_STORAGE(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
 
 * [plus] Storage charging
-* excludes hybrid plant+storage and adjusting evmc_storage for time-varying charge (add back deferred EV load) availability
-    + STORAGE_IN(i,v,r,h,t)$[not storage_hybrid(i)$(not csp(i))] / (1$(not evmc_storage(i)) + evmc_storage_charge_frac(i,r,h,t)$evmc_storage(i)) 
-   
+* excludes hybrid plant+storage 
+    + STORAGE_IN(i,v,r,h,t)$(not storage_hybrid(i)$(not csp(i)))
 * hybrid+storage plant: plant generation
     + STORAGE_IN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$dayhours(h)$Sw_HybridPlant]
 * hybrid+storage plant: Grid generation
@@ -3026,6 +3060,43 @@ eq_storage_capacity(i,v,r,h,t)$[valgen(i,v,r,t)
 * [plus] Operating reserves
     + sum{ortype$[Sw_OpRes$opres_model(ortype)$opres_h(h)],
           reserve_frac(i,ortype) * OPRES(ortype,i,v,r,h,t) }
+;
+* ---------------------------------------------------------------------------
+* demand shifting specific storage constraints to handle 0 avaialbility fractions of charge/disharge.
+* constrain generation from demand shifting storage to be less than or equal 
+* to capacity adjusted for availability fraction
+
+* DR shift resource can only generate when discharge fraction is non-zero
+eq_dr_shift_gen_capacity(i,v,r,h,t)
+    $[Sw_DRShift
+    $dr_shift(i)
+    $valgen(i,v,r,t)
+    $tmodel(t)]..
+
+* capacity of demand shifting storage technologies modified by availability fraction
+    CAP(i,v,r,t)* dr_shift_discharge_frac(i,r,h,t)
+
+    =g=
+
+* demand shifting deferment
+    GEN(i,v,r,h,t)
+;
+
+
+* DR shift resource can only charge when charge fraction is non-zero
+eq_dr_shift_storage_in_capacity(i,v,r,h,t)
+    $[Sw_DRShift
+    $dr_shift(i)
+    $valgen(i,v,r,t)
+    $tmodel(t)]..
+
+* capacity of demand shifting storage technologies modified by availability fraction
+    CAP(i,v,r,t)* dr_shift_charge_frac(i,r,h,t)
+
+    =g=
+
+* demand shifting payback/charging
+    STORAGE_IN(i,v,r,h,t)
 ;
 
 * ---------------------------------------------------------------------------
@@ -3144,8 +3215,8 @@ eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
 * [plus] storage duration times storage capacity for fixed-duration techs
     storage_duration_m(i,v,r) * CAP(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$pvb(i))
 
-* [plus] EVMC storage has time-varying energy capacity
-    + evmc_storage_energy_hours(i,r,h,t) * CAP(i,v,r,t) * (bcr(i)$evmc_storage(i))
+* [plus] DR Shift has time-varying energy capacity
+    + dr_shift_energy_hours(i,r,h,t) * CAP(i,v,r,t) * (bcr(i)$dr_shift(i))
 
 * [plus] battery storage capacity
     + CAP_ENERGY(i,v,r,t)$battery(i)
@@ -3159,16 +3230,15 @@ eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
 
 * Charging power must be less than a specified fraction of power output capacity
 * This is required in addition to eq_storage_capacity for facilities where input capacity < output capacity.
-* If storinmaxfrac were applied to CAP in eq_storage_capacity, it would also limit output capacity.
 eq_storage_in_cap(i,v,r,h,t)$[(storage_standalone(i) or hyd_add_pump(i))$valgen(i,v,r,t)$valcap(i,v,r,t)
                               $tmodel(t)$(storinmaxfrac(i,v,r) < 1)]..
 
 *[plus] maximum storage input capacity as a fraction of output capacity and accounting for availability
-* for evmc_storage this adjust for time-varying availability of charging (add back deferred EV load)
+* for DR Shifting this adjust for time-varying availability of charging (add back deferred EV load)
     avail(i,r,h) * storinmaxfrac(i,v,r)
     * CAP(i,v,r,t)
     * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
-    * (1$(not evmc_storage(i)) + evmc_storage_charge_frac(i,r,h,t)$evmc_storage(i))
+    * (1$(not dr_shift(i)) + dr_shift_charge_frac(i,r,h,t)$dr_shift(i))
 
     =g=
 
