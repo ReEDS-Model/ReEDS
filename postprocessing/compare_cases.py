@@ -661,7 +661,7 @@ try:
         'RPS': {'title': 'Non-RecMap\nRECS\n[GWh]', 'scale':1e-3},
         'OpRes': {'title': 'Non-valgen\nopres\n[MWh]', 'scale':1},
         'm_rsc_dat': {'title': 'Supply curve\ntweaks [GW]', 'scale':1e-3},
-        'cspns': {'title': 'Unreassigned\ncsp-ns [MW]', 'scale':1},
+        'cspns': {'title': 'Unassigned\ncsp-ns [MW]', 'scale':1},
         'dropped': {'title': 'Dropped load\n[GWh]', 'scale':1e-3},
         'excess': {'title': 'Excess load\n[GWh]', 'scale':1e-3},
     }
