@@ -144,7 +144,6 @@ if __name__ == '__main__':
                     last_lst = os.path.splitext(lastfile)[0].split('_')[-1]
 
                 if (key == 'running'):
-
                     # check if PRAS is stalled
                     logfile = os.path.join(fullcase,'gamslog.txt')
                     with open(logfile, "r") as file: 
@@ -177,8 +176,19 @@ if __name__ == '__main__':
                         # check if infeasible
                         elif "3_solve_oneyear.gms failed with return code 3" in slurm:
                             errortext = "(infeasible)"
+                        # check for out of memory error
                         elif "Out of Memory" in slurm or "OOM Killed" in slurm:
                             errortext = "(out of memory)"
+                        # check if PRAS failed
+                        elif "Exception: run_pras.jl" in slurm:
+                            logfile = os.path.join(fullcase,'gamslog.txt')
+                            with open(logfile, "r") as file:
+                                gamslog = file.readlines()
+                                gamslog = ''.join(gamslog[-100:])
+                            if "OutOfMemoryError" in gamslog:
+                                errortext = "(out of memory - PRAS)"
+                            else:
+                                errortext = "(failed in PRAS)"
                         else:
                             errortext = ""
                     print(f"{case:<{longest}}: failed in {last_lst} {errortext}")
