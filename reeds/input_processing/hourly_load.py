@@ -713,176 +713,15 @@ def main(reeds_path, inputs_case):
 
     peakload = calculate_peak_load(regional_load_hourly, hierarchy)
 
-    # #%%%#########################################
-    # #    -- DR Shed Load Modifications --    #
-    # #############################################
-
-    # if int(sw.GSw_DRShed): 
-    #     state_dr_shed_hourly = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'))
-    #     dr_types = list({x.split('|')[0] for x in state_dr_shed_hourly.columns[1:]})
-
-    #     # Reformat to match state load profiles
-    #     state_dr_shed_hourly = state_dr_shed_hourly.reset_index().set_index(['year','datetime'])
-    #     regional_dr_shed_hourly = {}
-    #     for dr_type in dr_types:
-    #         type_cols = [col for col in state_dr_shed_hourly.columns if col.startswith(dr_type)]
-    #         reg_shed = state_dr_shed_hourly[type_cols].copy()
-    #         reg_shed.columns = [col.split('|')[1] for col in reg_shed.columns]
-    #         reg_shed = reaggregate_to_model_regions(
-    #             reg_shed,
-    #             inputs_case,
-    #             'state_lpf',
-    #             dr_data=True
-    #         )
-    #         # Add back dr type to column header 
-    #         reg_shed.columns = [f"{dr_type}|{col}" for col in reg_shed.columns]            
-    #         reg_shed = reg_shed.reset_index()
-    #         if isinstance(reg_shed['datetime'].iloc[0], bytes):
-    #             reg_shed['datetime'] = reg_shed['datetime'].str.decode('utf-8')
-    #         reg_shed['datetime'] = pd.to_datetime(reg_shed['datetime'])
-    #         reg_shed = reg_shed.set_index(['year','datetime'])
-    #         regional_dr_shed_hourly[dr_type] = reg_shed
-
-    #     # Combined dr shed types
-    #     regional_dr_shed_hourly = pd.concat(regional_dr_shed_hourly.values(), axis=1)
-    #     regional_dr_shed_hourly = regional_dr_shed_hourly.astype(np.float32)
-    #     regional_dr_shed_hourly = regional_dr_shed_hourly.reset_index().set_index(['datetime']) 
-
-    # #%%%#########################################
-    # #    -- DR Shape Load Modifications --    #
-    # #############################################
-    # # 
-    # if int(sw.GSw_DRShape): 
-    #     state_dr_shape_profile_inc = reeds.io.read_file(os.path.join(inputs_case, 'dr_shape_profile_increase.h5'))
-    #     state_dr_shape_profile_dec = reeds.io.read_file(os.path.join(inputs_case, 'dr_shape_profile_decrease.h5'))
-
-    #     # To use reaggreagte_to_model_regions function, need to reformat inc/dec df so index = ['year','hour'] 
-    #     state_dr_shape_profile_inc = state_dr_shape_profile_inc.reset_index().set_index(['year','datetime'])
-    #     state_dr_shape_profile_dec = state_dr_shape_profile_dec.reset_index().set_index(['year','datetime'])
-
-    #     dr_types = list({x.split('|')[0] for x in state_dr_shape_profile_inc.columns[1:]})
-    #     regional_dr_shape_profile_inc = {}
-    #     regional_dr_shape_profile_dec = {}
-    #     for dr_type in dr_types:
-    #         type_cols_inc = [col for col in state_dr_shape_profile_inc.columns if col.startswith(dr_type)]
-    #         type_cols_dec = [col for col in state_dr_shape_profile_dec.columns if col.startswith(dr_type)]
-    #         reg_shape_inc = state_dr_shape_profile_inc[type_cols_inc].copy()
-    #         reg_shape_dec = state_dr_shape_profile_dec[type_cols_dec].copy()
-    #         reg_shape_inc.columns = [col.split('|')[1] for col in reg_shape_inc.columns]
-    #         reg_shape_dec.columns = [col.split('|')[1] for col in reg_shape_dec.columns]
-
-    #         reg_shape_inc = reaggregate_to_model_regions(
-    #             reg_shape_inc,
-    #             inputs_case,
-    #             'state_lpf',
-    #             dr_data=True,
-    #             dr_type='fraction',
-    #         )
-    #         reg_shape_dec = reaggregate_to_model_regions(
-    #             reg_shape_dec,
-    #             inputs_case,
-    #             'state_lpf',
-    #             dr_data=True,
-    #             dr_type='fraction',
-    #         )
-
-    #         reg_shape_inc = reg_shape_inc.reset_index().set_index(['datetime'])
-    #         reg_shape_dec = reg_shape_dec.reset_index().set_index(['datetime'])
-    #         # Add back dr type to column header 
-    #         reg_shape_inc.columns = [f"{dr_type}|{col}" if col not in ['year'] else col for col in reg_shape_inc.columns] 
-    #         reg_shape_dec.columns = [f"{dr_type}|{col}" if col not in ['year'] else col for col in reg_shape_dec.columns]
-
-    #         regional_dr_shape_profile_inc[dr_type] = reg_shape_inc
-    #         regional_dr_shape_profile_dec[dr_type] = reg_shape_dec
-
-    #     # Combined dr shape types
-    #     regional_dr_shape_profile_inc = pd.concat(regional_dr_shape_profile_inc.values(), axis=1)
-    #     regional_dr_shape_profile_dec = pd.concat(regional_dr_shape_profile_dec.values(), axis=1)
-
-    #     # Remove duplucate year columns
-    #     regional_dr_shape_profile_inc = regional_dr_shape_profile_inc.loc[:,~regional_dr_shape_profile_inc.columns.duplicated()]
-    #     regional_dr_shape_profile_dec = regional_dr_shape_profile_dec.loc[:,~regional_dr_shape_profile_dec.columns.duplicated()]
-
-    # #%%%#########################################
-    # # -- DR Shape or Shift Load Modifications -- #
-    # #############################################
-    # # 
-    # if int(sw.GSw_DRShift): 
-
-    #     state_dr_shift_profile_inc = reeds.io.read_file(os.path.join(inputs_case, 'dr_shift_profile_increase.h5'))
-    #     state_dr_shift_profile_dec = reeds.io.read_file(os.path.join(inputs_case, 'dr_shift_profile_decrease.h5'))
-    #     state_dr_shift_profile_energy = reeds.io.read_file(os.path.join(inputs_case, 'dr_shift_profile_energy.h5'))
-
-    #     # To use reaggreagte_to_model_regions function, need to reformat inc/dec df so index = ['year','hour'] 
-    #     state_dr_shift_profile_inc = state_dr_shift_profile_inc.reset_index().set_index(['year','datetime'])
-    #     state_dr_shift_profile_dec = state_dr_shift_profile_dec.reset_index().set_index(['year','datetime'])
-    #     state_dr_shift_profile_energy = state_dr_shift_profile_energy.reset_index().set_index(['year','datetime'])
-
-    #     dr_types = list({x.split('|')[0] for x in state_dr_shift_profile_inc.columns[1:]})
-    #     regional_dr_shift_profile_inc = {}
-    #     regional_dr_shift_profile_dec = {}
-    #     regional_dr_shift_profile_energy = {}
-    #     for dr_type in dr_types:
-    #         type_cols_inc = [col for col in state_dr_shift_profile_inc.columns if col.startswith(dr_type)]
-    #         type_cols_dec = [col for col in state_dr_shift_profile_dec.columns if col.startswith(dr_type)]
-    #         type_cols_energy = [col for col in state_dr_shift_profile_energy.columns if col.startswith(dr_type)]
-    #         reg_shift_inc = state_dr_shift_profile_inc[type_cols_inc].copy()
-    #         reg_shift_dec = state_dr_shift_profile_dec[type_cols_dec].copy()
-    #         reg_shift_energy = state_dr_shift_profile_energy[type_cols_energy].copy()
-    #         reg_shift_inc.columns = [col.split('|')[1] for col in reg_shift_inc.columns]
-    #         reg_shift_dec.columns = [col.split('|')[1] for col in reg_shift_dec.columns]
-    #         reg_shift_energy.columns = [col.split('|')[1] for col in reg_shift_energy.columns]
-
-    #         reg_shift_inc = reaggregate_to_model_regions(
-    #             reg_shift_inc,
-    #             inputs_case,
-    #             'state_lpf',
-    #             dr_data=True,
-    #             dr_type='fraction',
-    #         )
-    #         reg_shift_dec = reaggregate_to_model_regions(
-    #             reg_shift_dec,
-    #             inputs_case,
-    #             'state_lpf',
-    #             dr_data=True,
-    #             dr_type='fraction',
-    #         )
-    #         reg_shift_energy = reaggregate_to_model_regions(
-    #             reg_shift_energy,
-    #             inputs_case,
-    #             'state_lpf',
-    #             dr_data=True,
-    #             dr_type='fraction',
-    #         )
-
-    #         reg_shift_inc = reg_shift_inc.reset_index().set_index(['datetime'])
-    #         reg_shift_dec = reg_shift_dec.reset_index().set_index(['datetime'])
-    #         reg_shift_energy = reg_shift_energy.reset_index().set_index(['datetime'])
-    #         # Add back dr type to column header 
-    #         reg_shift_inc.columns = [f"{dr_type}|{col}" if col not in ['year'] else col for col in reg_shift_inc.columns] 
-    #         reg_shift_dec.columns = [f"{dr_type}|{col}" if col not in ['year'] else col for col in reg_shift_dec.columns]
-    #         reg_shift_energy.columns = [f"{dr_type}|{col}" if col not in ['year'] else col for col in reg_shift_energy.columns] 
-
-    #         regional_dr_shift_profile_inc[dr_type] = reg_shift_inc
-    #         regional_dr_shift_profile_dec[dr_type] = reg_shift_dec  
-    #         regional_dr_shift_profile_energy[dr_type] = reg_shift_energy
-
-    #     # Combined dr shape types
-    #     regional_dr_shift_profile_inc = pd.concat(regional_dr_shift_profile_inc.values(), axis=1)
-    #     regional_dr_shift_profile_dec = pd.concat(regional_dr_shift_profile_dec.values(), axis=1)
-    #     regional_dr_shift_profile_energy = pd.concat(regional_dr_shift_profile_energy.values(), axis=1)
-
-    #     # Remove duplucate year columns
-    #     regional_dr_shift_profile_inc = regional_dr_shift_profile_inc.loc[:,~regional_dr_shift_profile_inc.columns.duplicated()]
-    #     regional_dr_shift_profile_dec = regional_dr_shift_profile_dec.loc[:,~regional_dr_shift_profile_dec.columns.duplicated()]
-    #     regional_dr_shift_profile_energy = regional_dr_shift_profile_energy.loc[:,~regional_dr_shift_profile_energy.columns.duplicated()]
-
 #%%
     # #%%%############################################
     # # -- DR Shed, Shape, Shift Load Modifications --    #
     # ################################################
     def process_dr_profiles(profile_type, file_suffix, dr_data=False, dr_agg_type=None):
-        state_profiles = reeds.io.read_file(os.path.join(inputs_case, f'dr_{profile_type}_profile_{file_suffix}.h5'))
+        if profile_type == 'shed':
+            state_profiles = reeds.io.read_file(os.path.join(inputs_case, f'dr_{profile_type}_hourly.h5'))
+        else:
+            state_profiles = reeds.io.read_file(os.path.join(inputs_case, f'dr_{profile_type}_profile_{file_suffix}.h5'))
         state_profiles = state_profiles.reset_index().set_index(['year', 'datetime'])
         dr_types = list({x.split('|')[0] for x in state_profiles.columns[1:]})
         regional_profiles = {}
@@ -904,6 +743,8 @@ def main(reeds_path, inputs_case):
 
         combined_profiles = pd.concat(regional_profiles.values(), axis=1)
         combined_profiles = combined_profiles.loc[:, ~combined_profiles.columns.duplicated()]
+        combined_profiles['year'] = combined_profiles['year'].astype('float64')
+        
         return combined_profiles
 
     if int(sw.GSw_DRShed):
