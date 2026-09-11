@@ -180,13 +180,13 @@ def setup_finito(casedir, caseSwitches, BatchName):
         check=True,
     )
 
-## Call read_mecs_heat.py to generate heat/nonheat/feedstock ratios for FINITO Rest of Industry (ROI)
-    mecs_sectors = caseSwitches['focus_sectors'].replace('.', ' ')
+    ## Call read_mecs_heat.py to generate heat/nonheat/feedstock ratios for FINITO Rest of Industry (ROI)
+    mecs_sectors = [s for s in caseSwitches['focus_sectors'].split('.') if s]
     read_mecs_path = (
         finito_dir / 'input_processing' / 'processing' / 'mecs' / 'read_mecs_heat.py'
     )
     subprocess.run(
-        ['python', str(read_mecs_path), '-s', mecs_sectors, '-d', str(inputs_case_finito)],
+        ['python', str(read_mecs_path), '-s', *mecs_sectors, '-d', str(inputs_case_finito)],
         check=True,
     )
 
