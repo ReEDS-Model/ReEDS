@@ -134,7 +134,7 @@ def main(t, tnext, casedir, iteration=0):
         cc_results = reeds.resource_adequacy.capacity_credit.reeds_cc(t, tnext, casedir)
     else:
         cc_results = {
-            'cc_mar': pd.DataFrame(columns=['i','r','ccreg','szn','t','Value']),
+            'cc_mar': pd.DataFrame(columns=['i','c','r','ccreg','szn','t','Value']),
             'cc_old': pd.DataFrame(columns=['i','r','ccreg','szn','t','Value']),
             'cc_evmc': pd.DataFrame(columns=['i','r','szn','t','Value']),
             'sdbin_size': pd.DataFrame(columns=['ccreg','szn','bin','t','Value']),
