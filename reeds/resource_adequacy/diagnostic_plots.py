@@ -10,11 +10,11 @@ from matplotlib import patheffects as pe
 from glob import glob
 import traceback
 import cmocean
-from adjustText import adjust_text
 ### Local imports
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+from reeds import reedsplots
 from reeds import plots
 
 plots.plotparams()
@@ -428,28 +428,20 @@ def map_dropped_load(sw, dfs, level='r'):
             dfba.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
             ### Data
             dfplot.plot(ax=ax, column='val', cmap=cmap)
-            text_artists = []
-            for r, row in dfplot.iterrows():
-                if row.val > 0:
-                    text_artists.append(
-                        ax.annotate(
-                            f'{row.val:,.0f} {units[metric,agg][0]}',
-                            (row.centroid_x, row.centroid_y),
-                            color='r', ha='center', va='top', fontsize=6, weight='bold')
-                    )
-            adjust_text(text_artists, ax=ax,
-            avoid_self=False, ensure_inside_axes=True,
-            )
+            reedsplots.label_region_value(
+                dfplot, 
+                ax=ax, 
+                column='val', 
+                fmt=f'{{:,.0f}} {units[metric,agg][0]}',
+                text_kwargs={'color':'r', 'ha':'center', 'va':'top', 'fontsize':6, 'weight':'bold'}
+                )
             ### Formatting
             if level in ['r','rb','ba']:
-                text_artists = []
-                for r, row in dfba.iterrows():
-                    text_artists.append(
-                        ax.annotate(r, (row.centroid_x, row.centroid_y),
-                                    ha='center', va='bottom', fontsize=6, color='C7')
-                    )
-                adjust_text(text_artists, ax=ax,
-                avoid_self=False, ensure_inside_axes=True,
+                reedsplots.label_region_value(
+                    dfba,
+                    ax=ax,
+                    column=dfba.index,
+                    text_kwargs={'ha':'center', 'va':'bottom', 'fontsize':6, 'color':'C7'}
                 )
             ax.axis('off')
             if savefig:
@@ -1370,7 +1362,7 @@ if __name__ == '__main__':
     # #%%### Inputs for debugging
     reeds_path = reeds.io.reeds_path
     casedir = os.path.join(reeds_path, 'runs', 'v20260820_USA_defaults')
-    t = 2035
+    t = 2041
     interactive = True
     iteration = 0
     debug = True
