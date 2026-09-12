@@ -1,17 +1,19 @@
-,Default Value,ERCOT_rep_days,ERCOT_rep_wek,ERCOT_full_year,ERCOT_cap_credit,USA_20_rep_days,USA_69_regions,USA_54_regions,USA_FasterSolve,NorthDakota_county,NY_VT_mixed,ERCOT_county
-ignore,1,,,,,,,,,,,
-endyear,2035,,,,,,,,,,,
-GSw_Region,,interconnect/texas,interconnect/texas,interconnect/texas,interconnect/texas,,,,,st/ND,st/NY.VT,interconnect/texas
-GSw_ZoneSet,,,,,,,z70,z54,z54,z3109,PJMcounty,z3109
-GSw_GasCurve,,2,2,2,2,,,,,2,2,2
-GSw_HourlyType,,,wek,year,,,,,,,,
-GSw_OpRes,,,,0,,,,,0,,,
-GSw_HourlyNumClusters,,,,,,20,,,20,,,
-GSw_PRM_CapCredit,,,,,1,,,,,,,
-GSw_StartCost,,,,,,,,,0,,,
-GSw_LfillGas,,,,,,,,,0,,,
-GSw_Geothermal,,,,,,,,,0,,,
-GSw_Biopower,,,,,,,,,0,,,
-GSw_Nuclear,,,,,,,,,0,,,
-GSw_HourlyChunkLengthRep,,,,,,,,,4,,,
-GSw_HourlyChunkLengthStress,,,,,,,,,4,,,
+,Default Value,ERCOT_rep_days,ERCOT_rep_wek,ERCOT_full_year,ERCOT_cap_credit,USA_20_rep_days,USA_69_regions,USA_54_regions,USA_FasterSolve,NorthDakota_county,NY_VT_mixed,ERCOT_county,FINITO
+ignore,1,,,,,,,,,,,,
+endyear,2035,,,,,,,,,,,,
+GSw_Region,,interconnect/texas,interconnect/texas,interconnect/texas,interconnect/texas,,,,,st/ND,st/NY.VT,interconnect/texas,
+GSw_ZoneSet,,,,,,,z70,z54,z54,z3109,PJMcounty,z3109,z54
+GSw_GasCurve,,2,2,2,2,,,,,2,2,2,
+GSw_HourlyType,,,wek,year,,,,,,,,,
+GSw_OpRes,,,,0,,,,,0,,,,
+GSw_HourlyNumClusters,,,,,,20,,,20,,,,
+GSw_PRM_CapCredit,,,,,1,,,,,,,,
+GSw_StartCost,,,,,,,,,0,,,,
+GSw_LfillGas,,,,,,,,,0,,,,
+GSw_Geothermal,,,,,,,,,0,,,,
+GSw_Biopower,,,,,,,,,0,,,,
+GSw_Nuclear,,,,,,,,,0,,,,
+GSw_HourlyChunkLengthRep,,,,,,,,,4,,,,
+GSw_HourlyChunkLengthStress,,,,,,,,,4,,,,
+FINITO,,,,,,,,,,,,,1
+FINITO_case,,,,,,,,,,,,,BAU
