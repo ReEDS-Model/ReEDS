@@ -1,19 +1,19 @@
-i,years_from_now,comment
+i,years_from_now,
 battery_li,0,
-biopower,4,match ATB 2025
-beccs_mod,5,match coal CCS (ATB 2025)
-beccs_max,5,match coal CCS (ATB 2025)
+biopower,4,#match ATB 2025
+beccs_mod,5,#match coal CCS (ATB 2025)
+beccs_max,5,#match coal CCS (ATB 2025)
 can-imports,500,
-coal-CCS_mod,5,match retrofit construction time in ATB 2025
-coal-CCS_max,5,match retrofit construction time in ATB 2025
-coal-CCS-F1,5,match retrofit construction time in ATB 2025
-coal-CCS-F2,5,match retrofit construction time in ATB 2025
-coal-CCS-F3,5,match retrofit construction time in ATB 2025
-Coal-IGCC,5,match coal construction time in ATB 2025
-coal-new,5,match coal construction time in ATB 2025
+coal-CCS_mod,5,#match retrofit construction time in ATB 2025
+coal-CCS_max,5,#match retrofit construction time in ATB 2025
+coal-CCS-F1,5,#match retrofit construction time in ATB 2025
+coal-CCS-F2,5,#match retrofit construction time in ATB 2025
+coal-CCS-F3,5,#match retrofit construction time in ATB 2025
+Coal-IGCC,5,#match coal construction time in ATB 2025
+coal-new,5,#match coal construction time in ATB 2025
 CoalOldScr,500,
 CoalOldUns,500,
-CofireNew,5,match coal construction time in ATB 2025
+CofireNew,5,#match coal construction time in ATB 2025
 CofireOld,500,
 csp1_1,3,
 csp1_2,3,
@@ -100,15 +100,15 @@ h2-fuel-cell,4,
 Gas-CC,0,
 Gas-CC_H_1x1,0,
 Gas-CC_H_2x1,0,
-Gas-CC-CCS_mod,3,match retrofit values in ATB 2025
-Gas-CC-CCS_max,3,match retrofit values in ATB 2025
-Gas-CC_H_1x1-CCS_mod,3,match retrofit values in ATB 2025
-Gas-CC_H_1x1-CCS_max,3,match retrofit values in ATB 2025
-Gas-CC_H_2x1-CCS_mod,3,match retrofit values in ATB 2025
-Gas-CC_H_2x1-CCS_max,3,match retrofit values in ATB 2025
-Gas-CC-CCS-F1,3,match retrofit values in ATB 2025
-Gas-CC-CCS-F2,3,match retrofit values in ATB 2025
-Gas-CC-CCS-F3,3,match retrofit values in ATB 2025
+Gas-CC-CCS_mod,3,#match retrofit values in ATB 2025
+Gas-CC-CCS_max,3,#match retrofit values in ATB 2025
+Gas-CC_H_1x1-CCS_mod,3,#match retrofit values in ATB 2025
+Gas-CC_H_1x1-CCS_max,3,#match retrofit values in ATB 2025
+Gas-CC_H_2x1-CCS_mod,3,#match retrofit values in ATB 2025
+Gas-CC_H_2x1-CCS_max,3,#match retrofit values in ATB 2025
+Gas-CC-CCS-F1,3,#match retrofit values in ATB 2025
+Gas-CC-CCS-F2,3,#match retrofit values in ATB 2025
+Gas-CC-CCS-F3,3,#match retrofit values in ATB 2025
 Gas-CT,0,
 Gas-CT_aero,0,
 H2-CT,3,
@@ -214,6 +214,6 @@ wind-ons_9,0,
 wind-ons_10,0,
 electrolyzer,0,
 smr,0,
-smr_ccs,5,match coal CCS (ATB 2025)
+smr_ccs,5,#match coal CCS (ATB 2025)
 dac,3,
 dac_gas,3,
