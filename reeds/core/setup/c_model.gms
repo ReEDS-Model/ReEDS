@@ -149,13 +149,13 @@ EQUATION
  eq_loadsite_siting(loadsitereg,t)      "--MW-- Optimally sited load capacity must sum to loadsite_annual"
 
 * capital stock constraints
- eq_cap_init_noret(i,v,r,t)               "--MW-- Existing capacity that cannot be retired is equal to exogenously-specified amount"
- eq_cap_init_retmo(i,v,r,t)               "--MW-- Existing capacity that can be retired must be monotonically decreasing"
- eq_cap_init_retub(i,v,r,t)               "--MW-- Existing capacity that can be retired is less than or equal to exogenously-specified amount"
- eq_cap_new_noret(i,v,r,t)                "--MW-- New power capacity that cannot be retired is equal to sum of all previous years investment"
+ eq_cap_init_noret(i,c,v,r,t)             "--MW-- Existing capacity that cannot be retired is equal to exogenously-specified amount"
+ eq_cap_init_retmo(i,c,v,r,t)             "--MW-- Existing capacity that can be retired must be monotonically decreasing"
+ eq_cap_init_retub(i,c,v,r,t)             "--MW-- Existing capacity that can be retired is less than or equal to exogenously-specified amount"
+ eq_cap_new_noret(i,c,v,r,t)              "--MW-- New power capacity that cannot be retired is equal to sum of all previous years investment"
  eq_cap_energy_new_noret(i,v,r,t)         "--MWh-- New energy capacity that cannot be retired is equal to sum of all previous years investment"
- eq_cap_new_retmo(i,v,r,t)                "--MW-- New capacity that can be retired must be monotonically decreasing unless increased by investment"
- eq_cap_new_retub(i,v,r,t)                "--MW-- New capacity that can be retired is less than or equal to all previous years investment"
+ eq_cap_new_retmo(i,c,v,r,t)              "--MW-- New capacity that can be retired must be monotonically decreasing unless increased by investment"
+ eq_cap_new_retub(i,c,v,r,t)              "--MW-- New capacity that can be retired is less than or equal to all previous years investment"
  eq_cap_rsc(i,c,v,r,rscbin,t)             "--MW-- Capacity accounting for techs with exogenous capacity tracked by rscbin"
  eq_cap_class_total(i,v,r,t)              "--MW-- Capacity of each resource class sums to total capacity"
  eq_cap_up(i,v,r,rscbin,t)                "--MW-- limit on capacity upsizing"
@@ -582,10 +582,10 @@ $offtext
 
 * ---------------------------------------------------------------------------
 
-eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
-                           $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
+eq_cap_init_noret(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
+                             $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
 
-    sum{c, m_capacity_exog(i,c,v,r,t) }
+    m_capacity_exog(i,c,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
@@ -593,7 +593,8 @@ eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
     =e=
 
-    CAP(i,v,r,t)
+    CAP_CLASS(i,c,v,r,t)$cf_tech(i)
+    + CAP(i,v,r,t)$(not cf_tech(i))
 
     + sum{(ii,tt)$[(tfix(tt) or tmodel(tt))$(yeart(tt)<=yeart(t))
                    $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
@@ -612,10 +613,10 @@ eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
 * ---------------------------------------------------------------------------
 
-eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
-                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
+eq_cap_init_retub(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
+                             $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
-    sum{c, m_capacity_exog(i,c,v,r,t) }
+    m_capacity_exog(i,c,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
@@ -623,7 +624,8 @@ eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
     =g=
 
-    CAP(i,v,r,t)
+    CAP_CLASS(i,c,v,r,t)$cf_tech(i)
+    + CAP(i,v,r,t)$(not cf_tech(i))
 
     + sum{(ii,tt)$[(tfix(tt) or tmodel(tt))$(yeart(tt)<=yeart(t))
                    $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
@@ -643,12 +645,12 @@ eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
 * ---------------------------------------------------------------------------
 
-eq_cap_init_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
-                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
+eq_cap_init_retmo(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
+                             $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
 
-         CAP(i,v,r,tt)
+         (CAP_CLASS(i,c,v,r,tt)$cf_tech(i) + CAP(i,v,r,tt)$(not cf_tech(i)))
 
          + sum{(ii,ttt)$[(tfix(ttt) or tmodel(ttt))$(yeart(ttt)<=yeart(tt))
                          $valcap(ii,v,r,ttt)$upgrade_from(ii,i)],
@@ -665,7 +667,8 @@ eq_cap_init_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
     =g=
 
-    CAP(i,v,r,t)
+    CAP_CLASS(i,c,v,r,t)$cf_tech(i)
+    + CAP(i,v,r,t)$(not cf_tech(i))
 
     + sum{(ii,tt)$[(tfix(tt) or tmodel(tt))$(yeart(tt)<=yeart(t))
                    $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
@@ -690,11 +693,14 @@ eq_cap_init_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 
 * ---------------------------------------------------------------------------
 
-eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
-                          $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
+eq_cap_new_noret(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
+                            $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb])
+              degrade(i,tt,t) * (INV(i,v,r,tt)$(not cf_tech(i))
+                                 + sum{rscbin$m_rscfeas(r,i,c,rscbin),
+                                       INV_RSC(i,c,v,r,rscbin,tt) }$cf_tech(i)
+                                 + INV_REFURB(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb])
         }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
@@ -707,7 +713,8 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
     =e=
 
-    CAP(i,v,r,t)
+    CAP_CLASS(i,c,v,r,t)$cf_tech(i)
+    + CAP(i,v,r,t)$(not cf_tech(i))
 
     + sum{(ii,tt)$[(tfix(tt) or tmodel(tt))$(yeart(tt)<=yeart(t))
                    $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
@@ -747,11 +754,14 @@ eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_P
 
 * ---------------------------------------------------------------------------
 
-eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
-                          $retiretech(i,v,r,t)$(not Sw_PCM)]..
+eq_cap_new_retub(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
+                            $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb])
+              degrade(i,tt,t) * (INV(i,v,r,tt)$(not cf_tech(i))
+                                 + sum{rscbin$m_rscfeas(r,i,c,rscbin),
+                                       INV_RSC(i,c,v,r,rscbin,tt) }$cf_tech(i)
+                                 + INV_REFURB(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb])
       }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
@@ -764,7 +774,8 @@ eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
     =g=
 
-    CAP(i,v,r,t)
+    CAP_CLASS(i,c,v,r,t)$cf_tech(i)
+    + CAP(i,v,r,t)$(not cf_tech(i))
 
     + sum{(ii,tt)$[(tfix(tt) or tmodel(tt))$(yeart(tt)<=yeart(t))
                    $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
@@ -783,11 +794,11 @@ eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
 * ---------------------------------------------------------------------------
 
-eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
-                          $retiretech(i,v,r,t)$(not Sw_PCM)]..
+eq_cap_new_retmo(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
+                            $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
-         degrade(i,tt,t) * CAP(i,v,r,tt)
+         degrade(i,tt,t) * (CAP_CLASS(i,c,v,r,tt)$cf_tech(i) + CAP(i,v,r,tt)$(not cf_tech(i)))
 
          + sum{(ii,ttt)$[(tfix(ttt) or tmodel(ttt))$(yeart(ttt)<=yeart(tt))
                         $valcap(ii,v,r,ttt)$upgrade_from(ii,i)],
@@ -800,16 +811,20 @@ eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
         }
 
-    + INV(i,v,r,t)$valinv(i,v,r,t)
+    + INV(i,v,r,t)$[valinv(i,v,r,t)$(not cf_tech(i))]
 
-    + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,t) }$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
+    + sum{rscbin$m_rscfeas(r,i,c,rscbin),
+          INV_RSC(i,c,v,r,rscbin,t) }$[valinv(i,v,r,t)$cf_tech(i)]
+
+    + INV_REFURB(i,c,v,r,t)$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
 
 * Account for capacity upsizing within new vintages
     + sum{rscbin$allow_cap_up(i,v,r,rscbin,t), INV_CAP_UP(i,v,r,rscbin,t) }
 
     =g=
 
-    CAP(i,v,r,t)
+    CAP_CLASS(i,c,v,r,t)$cf_tech(i)
+    + CAP(i,v,r,t)$(not cf_tech(i))
 
     + sum{(ii,tt)$[(tfix(tt) or tmodel(tt))$(yeart(tt)<=yeart(t))
                    $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
