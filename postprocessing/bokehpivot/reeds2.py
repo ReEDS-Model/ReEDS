@@ -581,7 +581,7 @@ def pre_valnew(df, **kw):
 def pre_val_streams(dfs, **kw):
     index_cols = ['tech', 'vintage', 'rb', 'year']
     inv_vars = ['inv','inv_refurb','upgrades','invtran','inv_rsc']
-    cap_vars = ['cap','captran']
+    cap_vars = ['cap','cap_class','captran']
     cum_vars = ['gen','cap','opres','storage_in','captran','flow','opres_flow','prmtrade','storage_in_pvb_p','storage_in_pvb_g','cap_sdbin','storage_level','recs','gen_pvb_p','gen_pvb_b','produce']
 
     if 'remove_inv' in kw:
