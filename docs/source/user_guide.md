@@ -734,6 +734,64 @@ MCS Example: Total transmission capacity by interface.
 
 For additional information on using Hourlize, you can watch the training video: [Hourlize wind/solar resource preprocessing tutorial](https://nrel-my.sharepoint.com/:v:/r/personal/bsergi_nrel_gov/Documents/Misc/Recordings/Hourlize%20wind_solar%20resource%20preprocessing%20tutorial-20240212_150245-Meeting%20Recording.mp4?csf=1&web=1&e=vIds6r&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D)
 
+## ReEDS-FINITO 
+
+The Fuels and Industry Integrated Optimization Model (FINITO) provides a representation of the U.S. energy system with a bottom-up, technology-rich representation of the industrial sector. 
+ReEDS and FINITO can be linked to provide integrated modeling of the power sector with economy-wide energy supply and demand dynamics.
+When linked, ReEDS and FINITO are formulated as a single optimization problem.
+
+### Setup
+
+FINITO can be cloned from https://github.com/NatLabRockies/FINITO (Note: this repository is currently private and only available within NLR).
+By default ReEDS will look for a copy of the FINITO in the parent directory, but this can be configured by setting a value for `FINITO_dir` in your cases file.
+
+ReEdS switches controlling ReEDS-FINITO linkage:
+- `FINITO` (default 0): Turn off/on the linked model. 
+Passes its value to `GSw_FINITO_Link` which is used to activate the linkage in the model.
+- `FINITO_cases_file` (default 'linked'): Filename suffix of the FINITO cases file to use.
+- `FINITO_case` (default 'same'): Name of the case in `FINITO_cases_file` to use for the ReEDS run; used to determine FINITO switch settings.
+When set to 'same' it will assume the same case name as used in ReEDS.
+
+A linked model run is launched using the same call to `runreeds.py` as a normal ReEDS run. 
+
+All ReEDS and FINITO switches are combined into a single group of switches. 
+As FINITO can also be run as a standalone model, some switches in the FINITO cases files have the same name as switches in ReEDS.
+For any switches with conflicting values, a linked run will always use the value specified from ReEDS, using the default in the ReEDS `cases.csv` file as a fallback for any unspecfied switches.
+
+### Linkage points
+
+**Load balance**
+- Electricity demand from FINITO's industrial focus sectors (set by the FINITO `focus_sectors` switch) and from converted fuel processing is added to the ReEDS load balancing equation via `USE_ELE_FINITO`.
+- The load projection input data in ReEDS accounts for demand from sectors represented endogenously in FINITO. 
+To avoid double-counting, in a linked run the estimated 'reference' electricity demand for covered sectors is substracted from the load data processed for ReEDS in `hourly_load.py` (see the `finito.remove_finito_load` function)
+- Due to lack of granular sector electricity demand data, the current approach takes annual demand estimates and allocates to hourly profiles assuming constant demand, and the broadcasts those across all weather years. This approach is a coarse assumption that enables running the linked model with detailed hourly sectoral, and future work aims to improve the temporal and interannual characterization of industrial loads. 
+- When itereating with PRAS, the demand represented by `USE_ELE_FINITO` is added back to the original load file. Values from each representative timeslice are mapped back to their corresponding 'actual' hour for the modeled year, with the data being repeated for other weather years. Currently all load is assumed to be inflexible; future work aims to explore characterizing the flexibility of this load in PRAS.
+- The FINITO switch `GSw_ConstantProduction` can be used to enforce flat hourly production (and therefore electricity demand) across all hours represented by the model.
+
+**Fuel supply curves**
+- When linked, ReEDS defers to FINITO for representation of hydrocarbon and biomass supply curves for solve years with FINITO activated. This representation supersedes any settings specified by fuel price switches in ReEDS (e.g., `ngscen`, `GSw_GasCurve`).
+- Consumption of fuel equivalents in ReEDS is accounted for in FINITO by the `USE_FE_REEDS` variable.
+- The activation of the ReEDS supply curves is controlled by the `tfuel` set, which is populated for any years using the ReEDS version. In a standalone run `tfuel` will include all solve years; in a linked run it will only includes t < `FINITO_first_year`. 
+- When linked, the output reporting in `report.gms` utilizes the FINITO marginals for calculating prices on the relevant quantities.
+- The fuel supply curves can be adjusted by scenario by the `GSw_supply_scen` in FINITO, which includes scenarios from the AEO (e.g., Reference, HOG, LOG).
+- Setting `GSw_DetailedNG=1` in FINITO enables explicit representation of natural gas production and interstate pipeline transport. 
+- Projections for non-power sector demand are scenario based and can be toggled using `GSw_demand_scen`.
+
+**Hydrogen**
+- WHen linked FINITO defers to ReEDS for the representation of the production and transport of hydrogen. 
+- FINITO focus sector hydrogen demand from future conversion to hydrogen processes is tracked in ReEDS by `USE_H2_FINITO`. 
+- Note that when linked, FINITO does not represent existing industrial hydrogen demand; to account for this demand, when linked `GSw_H2_Demand_Case` should be set to `FINITO`.
+
+**CO2 representation**
+- The link model relies on ReEDS for the representation of CO2 transport and storage. 
+- Total CO2 captured from FINITO is represented by `CAPTURE_CO2EM`.
+- In the absence of explicit CO2 transport and storage modeling (i.e., `GSw_CO2_Detail=0`), the FINITO switches `GSw_CO2Cost_opt` and `GSw_CO2Cost_value` should be used to provide a cost for transport and sequestration. 
+
+**Other linkages**
+- Functions for processing related the linked model are located in the `reeds/finito.py` module.
+- Costs represented by FINITO are captured by `Z_finito`, which is rescaled and converted from `FINITO_dollaryear` before being added to costs from ReEDS in `eq_ObjFn`. 
+- Select outputs are saved by FINITO to a `finito_reeds_outputs_%case%.gdx` file, which is processed by `report_dump.py` to save csv/h5 outputs alongside other ReEDS results.
+
 
 ## Troubleshooting
 
