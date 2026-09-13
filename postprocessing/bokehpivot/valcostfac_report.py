@@ -373,6 +373,18 @@ def build_html(output_dir, core_path):
         'technology&rsquo;s observed range',
         [('Technology', False)] + [(f'{x:.0%}', True) for x in decline_shares], decline_rows)
 
+    fig2b = figure(output_dir, 'plcoe_pitch_VCF_power_synced_postcurt.png', 4,
+                   'The same figure with VRE per MWh generated.',
+                   'A sensitivity on the energy basis. Above, wind and UPV value and cost are per '
+                   'uncurtailed MWh, the basis of LVOE in valnew, while the dispatchable technologies '
+                   'are per MWh dispatched; here every technology is per MWh actually generated. '
+                   'Value factor and cost factor each scale by one over one minus the curtailment of '
+                   'that year&rsquo;s new builds, taken over the invested vintages from gen_ivrt and '
+                   'gen_ivrt_uncurt, and the value&#8211;cost factor is unchanged because the '
+                   'multiplier cancels in the ratio. Only the split between value and cost moves. '
+                   'New-build curtailment is well above fleet curtailment, since the marginal unit '
+                   'is built into an already saturated region.', order)
+
     fit_table = table(
         'Power fits, y = A(1-x)^k, over the full market-share range',
         [('Technology', False), ('k<sub>VF</sub>', True), ('k<sub>VCF</sub>', True),
@@ -380,7 +392,7 @@ def build_html(output_dir, core_path):
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 4,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 5,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -397,7 +409,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 5
+    map_figs, n = '', 6
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -566,7 +578,7 @@ def build_html(output_dir, core_path):
      '<span class="eq">(1&minus;x)<sup>k<sub>VCF</sub> &minus; k<sub>VF</sub></sup></span>, so the '
      'exponent difference is the band width in the table below. Technologies whose data does not '
      'approach zero market share have that intercept extrapolated rather than measured, and the '
-     'figure marks them.</p></div>', fig2, fit_table, decline_table)}
+     'figure marks them.</p></div>', fig2, fit_table, decline_table, fig2b)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '

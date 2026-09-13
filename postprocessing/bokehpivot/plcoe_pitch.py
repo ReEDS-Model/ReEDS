@@ -27,6 +27,7 @@ vcf_techs = None #Techs on the value-cost-factor figures. None takes every tech 
 vcf_max_cols = 3 #Panels per row on the value-cost-factor figures before wrapping to a new row.
 vcf_min_anchor_gen_frac = 0.5 #A tech is only plotted if its data reaches this low a market share. The figure matches the VF and VCF fit intercepts AT x=0, so a tech whose data never approaches zero has that match, and the whole shaded band, extrapolated rather than measured. At 0.5 every tech in these results qualifies; Gas-CC is the marginal one at 0.463.
 vcf_anchor_warn_gen_frac = 0.25 #Panels whose data starts above this market share get the extrapolation noted in the panel box. Gas-CC starts at 0.463, so nearly half its plotted axis - including the matched intercept the whole construction rests on - is extrapolation.
+vcf_post_curtailment = True #Also write plcoe_pitch_VCF_power_synced_postcurt.png, the synced VCF figure with VRE value and cost per MWh actually generated rather than per MWh that could have been. Both LVOE and the re-based LCOE are per uncurtailed MWh (valnew's gen_ivrt_uncurt override), while dispatchable techs are per MWh dispatched; this sensitivity puts every tech on the dispatched basis. Value factor and cost factor each scale by 1/(1 - curtailment) and the value-cost factor is unchanged to machine precision - only the split between value and cost moves. The multiplier is NEW-BUILD curtailment over the valinv vintages, which is what valnew's MWh actually is: it runs 2-3x the fleet figure (wind 70% against 40% at 2050), because the marginal unit lands in an already-saturated region. The convention of Hirth and of most of the LBNL value work is the uncurtailed basis, so this is a sensitivity rather than the headline.
 vcf_use_full_range = True #Read the VCF figures' data from valcostfac.csv rather than valcostfac_core.csv, which report_switches' gen_frac_max truncates at 0.65 market share. That cap is scoped to the intermediary "lim" plots and badly distorts these figures: it removes 4 coal points, 7 gas-CC, 6 nuclear and 1 wind, and with them most of the dispatchable techs' escalation. Filtered, nuclear's k difference reads -0.00 and gas-CC's 0.56 on an R2-0.24 fit; over the full range they are 0.08 (R2 0.77) and 0.05 (R2 0.86). Only the VCF figures can use it - the _adj figures need value_cost_factor_adj and cost_factor_adj, which run_report_valcostfac.py derives after the cap and writes only to valcostfac_core.csv.
 show_cost_factor = True #On the VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
 cost_factor_direct = False #False plots 1/(cost factor), which declines like the other two series and peaks near 1.0, keeping the shaded band legible. True plots the cost factor itself, which rises so it reads as escalation directly and ends at the number quoted in the panel text, but reaches ~2.2 and so roughly halves the band's share of the axis (wind 10.8% -> 5.7%, UPV 3.7% -> 2.0%).
@@ -645,6 +646,57 @@ def implied_cf_equation(form, vf_p, vcf_p, direct):
     return f'y = {lead}(1-x)$^{{{num[1] - den[1]:.2f}}}$'
 
 
+def new_build_curtailment(run_dir, prefix):
+    """Curtailment of each year's new builds: 1 - gen_ivrt / gen_ivrt_uncurt over the vintages
+    invested in that year.
+
+    Those vintages are read from cap_new_ivrt, and the uncurtailed side reconciles exactly to
+    valnew('MWh') - the denominator LVOE is built on - so the multiplier lands on the quantity it
+    is meant to correct. Fleet curtailment would be the wrong number here by a factor of two or
+    more, since the marginal build is curtailed far more heavily than the average one.
+    """
+    out = os.path.join(run_dir, 'outputs')
+    cols = ['i', 'v', 'r', 't']
+    gc = pd.read_csv(os.path.join(out, 'gen_ivrt.csv'), names=cols + ['gc'], header=0)
+    gu = pd.read_csv(os.path.join(out, 'gen_ivrt_uncurt.csv'), names=cols + ['gu'], header=0)
+    nv = pd.read_csv(os.path.join(out, 'cap_new_ivrt.csv'), names=cols + ['mw'], header=0)
+    keys = nv[nv['mw'] > 0][cols].drop_duplicates()
+    keys = keys[keys['i'].str.startswith(prefix)]
+    m = keys.merge(gc, on=cols, how='left').merge(gu, on=cols, how='left')
+    nat = m.groupby('t')[['gc', 'gu']].sum()
+    return (1 - nat['gc'] / nat['gu']).rename('curtailment')
+
+
+def apply_post_curtailment(df, valcostfac_core_path):
+    """Put VRE value and cost per MWh generated, matching the dispatched basis of the other techs.
+
+    value_factor and cost_factor each pick up 1/(1 - curtailment); value_cost_factor is their ratio
+    and does not move. Techs without a run directory or without a tech_prefix entry are left on
+    their existing basis, which for dispatchable techs is already the dispatched one. The scenario
+    -> run mapping is the same one reeds_vs_rev and lvoe_vs_lcoe use.
+    """
+    from reeds_vs_rev import tech_run_dirs, scenarios_path
+    from lvoe_vs_lcoe import tech_prefix_map
+    run_dirs = tech_run_dirs(df, scenarios_path)
+    out = df.copy()
+    out['curtailment_new'] = 0.0
+    for tech, prefix in tech_prefix_map.items():
+        if tech not in run_dirs or tech not in set(out['tech']):
+            continue
+        curt = new_build_curtailment(run_dirs[tech], prefix)
+        sel = out['tech'] == tech
+        out.loc[sel, 'curtailment_new'] = out.loc[sel, 'year'].map(curt).fillna(0).to_numpy()
+    mult = 1 / (1 - out['curtailment_new'])
+    for col in ['value_factor', 'cost_factor', 'lvoe']:
+        if col in out:
+            out[col] = out[col] * mult
+    #value_cost_factor is left as is: it is value_factor / cost_factor and the multiplier cancels.
+    for col, src in [('inv_value_factor', 'value_factor'), ('inv_cost_factor', 'cost_factor')]:
+        if src in out:
+            out[col] = 1 / out[src]
+    return out
+
+
 def load_full_range(valcostfac_core_path, core):
     """The same core results, without report_switches' gen_frac_max truncation.
 
@@ -706,7 +758,8 @@ def vcf_panel_techs(df, techs=None):
     return [t for t in fit_techs if t in lo.index] + rest
 
 
-def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_axes=False):
+def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_axes=False,
+                 basis_note=''):
     """One panel per tech, showing value factor against value-cost factor after LCOE base has been
     scaled so the two share a fit intercept.
 
@@ -917,7 +970,8 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_a
     fig.suptitle(
         f'Value factor vs value-cost factor, LCOE base scaled to match intercepts ({label} fits)'
         + (' - log scale, so the value and cost declines stack' if log_y else '')
-        + (' - shared axes' if sync_axes else ''),
+        + (' - shared axes' if sync_axes else '')
+        + basis_note,
         fontsize=12)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -1068,6 +1122,20 @@ def make_figs(valcostfac_core_path, output_dir=None):
         fig_vcf_pow_sync, _ = plot_vre_vcf(
             df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_synced.png'), form='power',
             sync_axes=True)
+        #Sensitivity: VRE per MWh generated rather than per MWh that could have been, so every
+        #tech is on the dispatched basis. VCF is identical; only the value/cost split moves.
+        scales_post = pd.DataFrame()
+        if vcf_post_curtailment:
+            try:
+                df_post = apply_post_curtailment(df_vcf, valcostfac_core_path)
+                fig_vcf_post, scales_post = plot_vre_vcf(
+                    df_post, os.path.join(output_dir, 'plcoe_pitch_VCF_power_synced_postcurt.png'),
+                    form='power', sync_axes=True,
+                    basis_note=' - VRE per MWh generated (post-curtailment)')
+                plt.close(fig_vcf_post)
+                scales_post = scales_post.assign(basis='post_curtailment')
+            except Exception as e:
+                print(f'Post-curtailment VCF figure skipped ({type(e).__name__}: {e}).')
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)
@@ -1083,7 +1151,9 @@ def make_figs(valcostfac_core_path, output_dir=None):
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
     fits = summarize_fits(df)
     fits.to_csv(os.path.join(output_dir, 'plcoe_pitch_fits.csv'), index=False)
-    pd.concat([scales_lin, scales_pow], ignore_index=True).to_csv(
+    pd.concat([scales_lin.assign(basis='pre_curtailment'),
+               scales_pow.assign(basis='pre_curtailment'), scales_post],
+              ignore_index=True).to_csv(
         os.path.join(output_dir, 'plcoe_pitch_vcf_scales.csv'), index=False)
     decomp.to_csv(os.path.join(output_dir, 'plcoe_pitch_vcf_decomposition.csv'), index=False)
     return df
