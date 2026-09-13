@@ -27,6 +27,17 @@ Each tech is compared against the supply curve from its own run - the scenario t
 which is the scenario its core results come from - rather than against one run's curves for all
 techs. See tech_run_dirs.
 
+Curtailment basis. The ReEDS points as first drawn are on a MIXED basis: the y value comes from
+LVOE, which valnew defines per UNCURTAILED MWh (the gen_ivrt_uncurt override in report.gms), while
+the x value is gen_ann_nat, actual generation AFTER curtailment. The two agree while curtailment is
+a few percent and diverge by 40% at 2050 in these runs, where both wind and UPV curtail about two
+fifths of what they could generate. reeds_vs_rev_curtailment.png replaces that line with two
+consistent ones. Pre-curtailment keeps y and puts x on gen_ivrt_uncurt, which is the like-for-like
+basis against the reV curve - lcoe_all_in is built on nominal capacity factors and knows nothing of
+curtailment. Post-curtailment keeps x and scales y by uncurtailed/curtailed generation, the cost per
+MWh actually delivered, which answers a different question and is labelled as such. The mixed line
+sits between them.
+
 Run this file on the reeds2 conda environment. It is also imported by run_report_valcostfac.py, which
 calls make_figs() so the figure lands in the report's output_dir alongside valcostfac_core.csv.
 '''
@@ -43,6 +54,7 @@ valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokeh
 scenarios_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reeds_scenarios_valcostfac.csv') #Maps each scenario name to its run directory, which supplies rev_paths.csv, dollaryear_sc.csv and deflator.csv. Also only used standalone; run_report_valcostfac.py passes its own data_source.
 tech_rev_map = {'Onshore Wind': 'wind-ons', 'UPV': 'upv'} #ReEDS tech name -> rev_paths.csv tech name
 lcoe_year = 2035 #Year of LCOE base to re-base ReEDS costs onto. Match the reV supply curve's cost year (confirmed ATB Moderate 2035 for both upv and wind-ons).
+show_curtailment_basis = True #Also write reeds_vs_rev_curtailment.png: the cost-factor re-basing drawn on two internally consistent bases, pre- and post-curtailment, instead of the mixed one. See the module docstring.
 show_adder_method = True #Also plot the LCOE-adder re-basing alongside the cost-factor one. See the module docstring; the two bracket the answer.
 fit_lines = True #Overlay a least-squares line on each series and report its slope, for comparing how fast ReEDS and reV rise with generation.
 target_dollar_year = dollar_year #Dollar year everything is converted to for plotting. From report_switches, so this figure shares a basis with the report and the pitch figures.
@@ -136,6 +148,22 @@ def prep_data(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
         r['lcoe_add'] = base.iloc[0] + r['lcoe_adder']
         r['run_dir'] = run_dir
 
+        #Pre- and post-curtailment generation for the tech, from the run itself. gen_twh from the
+        #report is gen_ann_nat, so gen_post reproduces it and is kept as a check; gen_pre is what
+        #the LVOE denominator actually is.
+        prefix = rev_tech
+        gu = pd.read_csv(os.path.join(run_dir, 'outputs', 'gen_ivrt_uncurt.csv'),
+                         names=['i', 'v', 'r', 't', 'gen'], header=0)
+        ga = pd.read_csv(os.path.join(run_dir, 'outputs', 'gen_ann_nat.csv'),
+                         names=['i', 't', 'gen'], header=0)
+        pre = gu[gu['i'].str.startswith(prefix)].groupby('t')['gen'].sum() / 1e6
+        post = ga[ga['i'].str.startswith(prefix)].groupby('t')['gen'].sum() / 1e6
+        r['gen_pre_twh'] = r['year'].map(pre)
+        r['gen_post_twh'] = r['year'].map(post)
+        r['curtailment'] = 1 - r['gen_post_twh'] / r['gen_pre_twh']
+        #Cost per delivered MWh: the same dollars spread over the MWh that survive curtailment.
+        r['lcoe_cf_post'] = r['lcoe_cf'] / (1 - r['curtailment'])
+
         rev_paths = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'rev_paths.csv')).set_index('tech')
         sc_file = rev_paths.loc[rev_tech, 'sc_file']
         if not isinstance(sc_file, str) or not os.path.exists(sc_file):
@@ -147,6 +175,9 @@ def prep_data(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
         r['rev_lcoe'] = np.interp(r['gen_twh'], curve['cum_twh'], curve['lcoe'])
         r['ratio_cf'] = r['lcoe_cf'] / r['rev_lcoe']
         r['ratio_add'] = r['lcoe_add'] / r['rev_lcoe']
+        #reV sampled at pre-curtailment generation, the basis its own LCOE is on.
+        r['rev_lcoe_pre'] = np.interp(r['gen_pre_twh'], curve['cum_twh'], curve['lcoe'])
+        r['ratio_cf_pre'] = r['lcoe_cf'] / r['rev_lcoe_pre']
         r['sc_file'] = sc_file
         reeds[tech], curves[tech] = r, curve
     return reeds, curves
@@ -160,22 +191,29 @@ def linfit(x, y):
     return slope, intercept, r2
 
 
-def series_specs(color, show_adder=None):
-    """The lines drawn in one panel: (key, label, column, color, linestyle, marker).
+def series_specs(color, show_adder=None, basis='mixed'):
+    """The lines drawn in one panel: (key, label, x column, y column, color, linestyle, marker).
 
     show_adder defaults to the show_adder_method switch; pass it explicitly to draw one figure each
-    way from a single run.
+    way from a single run. basis='mixed' is the original figure, y per uncurtailed MWh against
+    post-curtailment TWh. basis='curtailment' replaces that with the two consistent lines.
     """
+    if basis == 'curtailment':
+        return [
+            ('rev', 'reV supply curve', 'gen_pre_twh', 'rev_lcoe_pre', '0.35', '-', None),
+            ('pre', 'ReEDS, pre-curtailment', 'gen_pre_twh', 'lcoe_cf', color, '-', 'o'),
+            ('post', 'ReEDS, post-curtailment', 'gen_post_twh', 'lcoe_cf_post', color, '--', 's'),
+        ]
     specs = [
-        ('rev', 'reV supply curve', 'rev_lcoe', '0.35', '-', None),
-        ('cf', 'ReEDS (cost factor)', 'lcoe_cf', color, '-', 'o'),
+        ('rev', 'reV supply curve', 'gen_twh', 'rev_lcoe', '0.35', '-', None),
+        ('cf', 'ReEDS (cost factor)', 'gen_twh', 'lcoe_cf', color, '-', 'o'),
     ]
     if show_adder_method if show_adder is None else show_adder:
-        specs.append(('add', 'ReEDS (LCOE adder)', 'lcoe_add', color, '--', 's'))
+        specs.append(('add', 'ReEDS (LCOE adder)', 'gen_twh', 'lcoe_add', color, '--', 's'))
     return specs
 
 
-def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
+def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None, basis='mixed'):
     """One panel per tech: the reV supply curve with the ReEDS marginal LCOE points over it.
 
     show_adder=False drops the LCOE-adder re-basing and leaves the multiplicative cost-factor one
@@ -190,8 +228,8 @@ def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
 
     for ax, tech in zip(axes, techs):
         r, curve = reeds[tech], curves[tech]
-        xmax = r['gen_twh'].max() * xlim_headroom
-        x = r['gen_twh'].to_numpy()
+        specs = series_specs(colors[tech], show_adder, basis)
+        xmax = max(r[xc].max() for _, _, xc, _, _, _, _ in specs) * xlim_headroom
 
         #The full reV curve is drawn from the supply curve itself, but its fit and its summary
         #statistics use rev_lcoe - the curve sampled at the ReEDS generation levels. That puts every
@@ -201,11 +239,12 @@ def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
         ax.plot(vis['cum_twh'], vis['lcoe'], color='0.35', linewidth=2.2, zorder=3)
 
         rows, rev_slope = [], None
-        for key, label, col, color, ls, marker in series_specs(colors[tech], show_adder):
-            y = r[col].to_numpy()
+        for key, label, xcol, col, color, ls, marker in specs:
+            x, y = r[xcol].to_numpy(), r[col].to_numpy()
             if key != 'rev':
                 ax.plot(x, y, color=color, linewidth=1.8, linestyle=ls, marker=marker,
-                        markersize=5, alpha=1.0 if key == 'cf' else 0.75, label=label, zorder=4)
+                        markersize=5, alpha=1.0 if key in ('cf', 'pre') else 0.75, label=label,
+                        zorder=4)
             else:
                 #Legend handle for the curve already drawn above.
                 ax.plot([], [], color=color, linewidth=2.2, label=label)
@@ -235,7 +274,11 @@ def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
             bbox={'facecolor': 'white', 'edgecolor': '0.7', 'boxstyle': 'round,pad=0.4', 'alpha': 0.9},
         )
         ax.set_title(display_tech(tech))
-        ax.set_xlabel('Cumulative annual generation (TWh)')
+        if basis == 'curtailment':
+            #The two ReEDS lines are on different x bases, so the label has to say so.
+            ax.set_xlabel('Cumulative annual generation (TWh), pre- or post-curtailment per series')
+        else:
+            ax.set_xlabel('Cumulative annual generation (TWh)')
         ax.set_xlim(0, xmax)
         ax.set_ylim(0, ax.get_ylim()[1] * ylim_headroom) #Room for the summary box above the lines.
         ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
@@ -243,10 +286,13 @@ def plot_reeds_vs_rev(reeds, curves, output_path, show_adder=None):
     axes[0].set_ylabel(f'Marginal LCOE ({target_dollar_year}$/MWh)')
 
     both = show_adder_method if show_adder is None else show_adder
+    if basis == 'curtailment':
+        sub = ' - cost-factor re-basing on consistent pre- and post-curtailment bases'
+    else:
+        sub = '' if both else ' - cost-factor re-basing only'
     fig.suptitle(
         f'ReEDS cost escalation vs the underlying reV supply curves '
-        f'(LCOE base year {lcoe_year})'
-        + ('' if both else ' - cost-factor re-basing only'), fontsize=12)
+        f'(LCOE base year {lcoe_year}){sub}', fontsize=12)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig
@@ -271,12 +317,19 @@ def make_figs(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
             reeds, curves, os.path.join(output_dir, 'reeds_vs_rev_cost-factor.png'),
             show_adder=False)
         plt.close(fig_cf)
+        if show_curtailment_basis:
+            fig_curt = plot_reeds_vs_rev(
+                reeds, curves, os.path.join(output_dir, 'reeds_vs_rev_curtailment.png'),
+                basis='curtailment')
+            plt.close(fig_curt)
 
     #run_dir and sc_file are carried through so the table records which run and which supply curve
     #file each tech was compared against.
     out = pd.concat(
         [r[['tech', 'scenario', 'year', 'gen_twh', 'gen_frac', 'cost_factor', 'lcoe_adder',
-            'lcoe_cf', 'lcoe_add', 'rev_lcoe', 'ratio_cf', 'ratio_add', 'run_dir', 'sc_file']]
+            'lcoe_cf', 'lcoe_add', 'rev_lcoe', 'ratio_cf', 'ratio_add',
+            'gen_pre_twh', 'gen_post_twh', 'curtailment', 'lcoe_cf_post', 'rev_lcoe_pre',
+            'ratio_cf_pre', 'run_dir', 'sc_file']]
          for r in reeds.values()],
         ignore_index=True,
     ).rename(columns={'lcoe_cf': 'reeds_lcoe_cost_factor', 'lcoe_add': 'reeds_lcoe_adder_based'})

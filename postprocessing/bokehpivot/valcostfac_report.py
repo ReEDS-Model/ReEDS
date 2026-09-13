@@ -313,8 +313,39 @@ def build_html(output_dir, core_path):
         [('Technology', False), ('reV slope', True), ('ReEDS slope', True), ('Ratio', True),
          ('reV escalation', True), ('ReEDS escalation', True)], rev_rows)
 
+    fig1b = figure(output_dir, 'reeds_vs_rev_curtailment.png', 2,
+                   'The same comparison on consistent curtailment bases.',
+                   'The cost-factor re-basing drawn twice. Pre-curtailment keeps the LVOE-based '
+                   'cost, which is per uncurtailed MWh, and puts it against uncurtailed generation '
+                   'from gen_ivrt_uncurt; the reV curve is sampled on the same basis, as its LCOE '
+                   'is built on nominal capacity factors. Post-curtailment keeps actual generation '
+                   'and divides the same cost by one minus the curtailment fraction, giving cost '
+                   'per delivered MWh. The figure above is a mix of the two: cost per uncurtailed '
+                   'MWh against post-curtailment TWh.', order)
+    curt_rows = []
+    curt_path = os.path.join(output_dir, 'reeds_vs_rev.csv')
+    if os.path.exists(curt_path):
+        rc = pd.read_csv(curt_path)
+        if 'curtailment' in rc:
+            for tech, g in rc.groupby('tech'):
+                g = g.sort_values('year')
+                last = g.iloc[-1]
+                curt_rows.append(
+                    f'<tr>{tech_cell(tech)}'
+                    f'<td class="num">{int(last["year"])}</td>'
+                    f'<td class="num">{_num(last["gen_pre_twh"], "{:.0f}")}</td>'
+                    f'<td class="num">{_num(last["gen_post_twh"], "{:.0f}")}</td>'
+                    f'<td class="num">{last["curtailment"]:.1%}</td>'
+                    f'<td class="num">{_num(last["reeds_lcoe_cost_factor"], "{:.1f}")}</td>'
+                    f'<td class="num">{_num(last["lcoe_cf_post"], "{:.1f}")}</td></tr>')
+    curt_table = table(
+        f'Generation bases and cost at the last modelled year, {dollar_year}$/MWh',
+        [('Technology', False), ('Year', True), ('Pre-curtailment TWh', True),
+         ('Post-curtailment TWh', True), ('Curtailment', True), ('Cost, pre', True),
+         ('Cost, post', True)], curt_rows)
+
     # ---- 02 value factor and value-cost factor ----
-    fig2 = figure(output_dir, 'plcoe_pitch_VCF_power_synced.png', 2,
+    fig2 = figure(output_dir, 'plcoe_pitch_VCF_power_synced.png', 3,
                   'Value factor and value&#8211;cost factor against market share.',
                   'One panel per technology, all on one pair of axis ranges. LCOE base is scaled '
                   'per technology until the two power fits share an intercept at zero market share; '
@@ -349,7 +380,7 @@ def build_html(output_dir, core_path):
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 3,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 4,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -366,7 +397,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 4
+    map_figs, n = '', 5
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -526,7 +557,7 @@ def build_html(output_dir, core_path):
      'base cost for the same year, net of the mandate ramp. This section places the ReEDS marginal '
      'LCOE, re-based onto the LCOE base year by that factor, on the reV supply curve the runs were '
      'built from. The additive re-basing using the LCOE adder is plotted in the companion figure '
-     '<span class="eq">reeds_vs_rev.png</span>.</p></div>', fig1, rev_table)}
+     '<span class="eq">reeds_vs_rev.png</span>.</p></div>', fig1, rev_table, fig1b, curt_table)}
 
 {sec('02', 'Value factor and value&#8211;cost factor by technology',
      '<div class="col"><p>For each technology the LCOE base is scaled until the value factor and '
