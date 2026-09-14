@@ -489,7 +489,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
             reedsplots.label_region_value(
-                dfmap[level],
+                dfdiffs[level],
                 ax[coords[level]],
                 column=val,
                 text_kwargs={'fontsize': {'r':5}.get(level,7)},
