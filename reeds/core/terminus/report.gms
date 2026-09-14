@@ -203,6 +203,9 @@ lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i
 gen_rsc(i,v,r,t)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)] =
     sum{h, m_cf(i,v,r,h,t) * hours(h) } ;
 
+* populate gen_rsc for geothermal using avg_avail to trigger RSC lcoe calculations
+gen_rsc(i,v,r,t)$[valcap_init(i,v,r,t)$ivt(i,v,t)$geo(i)] = avg_avail(i,v,r) * 8760 ;
+
 lcoe(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
