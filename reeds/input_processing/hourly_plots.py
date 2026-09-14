@@ -14,6 +14,7 @@ import cmocean
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+from reeds import reedsplots
 from reeds import plots
 plots.plotparams()
 
@@ -230,7 +231,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     ### Settings
     cmaps = {
         'cf_actual':plt.cm.turbo, 'cf_rep':plt.cm.turbo, 'cf_diff':plt.cm.RdBu_r,
-        'GW_actual':cmocean.cm.rain, 'GW_rep':cmocean.cm.rain,
+        'GW_actual':cmocean.cm.tempo, 'GW_rep':cmocean.cm.tempo,
         'GW_diff':plt.cm.RdBu_r, 'GW_frac':plt.cm.RdBu_r, 'pct_diff':plt.cm.RdBu_r, 
     }
     vm = {
@@ -351,17 +352,16 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
             dfdiffs[level].plot(
                 ax=ax[coords[level]], column='cf_diff', cmap=cmaps['cf_diff'],
                 vmin=vm[tech]['cf_diff'][0], vmax=vm[tech]['cf_diff'][1], 
-                lw=0, legend=False,
+                lw=0, legend=False, missing_kwds={"color": "lightgrey"},
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
-            ## Text differences
-            for r, row in (dfdiffs[level].assign(val=dfdiffs[level].cf_diff.abs()).sort_values('val')).iterrows():
-                decimals = 0 if abs(row.cf_diff) >= 1 else 1
-                ax[coords[level]].annotate(
-                    f"{row.cf_diff*100:+.{decimals}f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k', fontsize={'r':5}.get(level,7),
-                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.5)],
+            dfmap[level]['cf_diff_pct'] = (dfdiffs[level].cf_diff * 100).values
+            reedsplots.label_region_value(
+                dfmap[level],
+                ax[coords[level]],
+                column='cf_diff_pct',
+                text_kwargs={'fontsize': {'r':5}.get(level,7)},
+                pe_kwargs={'linewidth': 1.5, 'foreground': 'w', 'alpha': 0.5},
                 )
             ## Colorbar
             plots.addcolorbarhist(
@@ -485,14 +485,12 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
                 lw=0, legend=False,
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
-            ## Text differences
-            for r, row in (dfdiffs[level].assign(val=dfdiffs[level][val].abs()).sort_values('val')).iterrows():
-                decimals = 0 if abs(row[val]) >= 1 else 1
-                ax[coords[level]].annotate(
-                    f"{row[val]:+.{decimals}f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k', fontsize={'r':5}.get(level,7),
-                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.5)],
+            reedsplots.label_region_value(
+                dfdiffs[level],
+                ax[coords[level]],
+                column=val,
+                text_kwargs={'fontsize': {'r':5}.get(level,7)},
+                pe_kwargs={'linewidth': 1.5, 'foreground': 'w', 'alpha': 0.5},
                 )
             ## Colorbar
             plots.addcolorbarhist(
