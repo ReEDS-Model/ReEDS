@@ -380,7 +380,7 @@ def get_ferc_costs(
         (dfall.t == 1993) | (dfall.state.isin(['AK','HI']))
         ].index).reset_index(drop=True)
     ### Assign DC to MD (since that's how ReEDS treats it)
-    dfall.state.replace({'DC':'MD'}, inplace=True)
+    dfall['state'] = dfall['state'].replace({'DC':'MD'})
     ### Fill missing states
     dfall.state = dfall.apply(lambda row: missingstates.get(row['Utility Name'],row.state), axis=1)
     ### Add a column for region
@@ -446,7 +446,7 @@ def get_ferc_costs(
         df_extrapolate_dim['t'] = df_extrapolate_dim['index'] + df_loop['t'].max() + 1
 
         df_extrapolate_dim['index'] = numprojyears - df_extrapolate_dim['index']
-        df_extrapolate_dim['index'][df_extrapolate_dim['index'].values < 0] = 0
+        df_extrapolate_dim.loc[df_extrapolate_dim['index'] < 0, 'index'] = 0
 
         # List the years of historical data used for extrapolation
         slopeyears = np.array(df_loop['t'].tail(numslopeyears))
