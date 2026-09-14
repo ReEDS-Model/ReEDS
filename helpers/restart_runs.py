@@ -93,6 +93,15 @@ for case in runs_failed:
         )
         shutil.copy(fpath_settings, os.path.join(case,''))
 
+        # If running MGA copy those solver settings as well
+        sw = reeds.io.get_switches_base(case)
+        if float(sw.GSw_MGA_CostDelta) > 0:
+            fpath_settings = Path(
+                reeds.io.reeds_path, 'reeds', 'solver', 
+                reeds.io.get_optfile(case, GSw_gopt=sw.GSw_gopt_mga)
+            )
+            shutil.copy(fpath_settings, os.path.join(case,''))
+
     #%% Copy additional files if desired
     for f in more_copyfiles:
         shutil.copy(f, Path(case, f))
