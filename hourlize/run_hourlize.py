@@ -22,25 +22,32 @@ from collections import OrderedDict
 ### --- FUNCTIONS ---
 ### ===========================================================================
 
-def get_remote_path(local):
+def get_remote_path(local, sc_base_path=None):
     """detect path to supply curve files either on the HPC or nrelnas01"""
     # remote path for supply curves
     hpc = True if ('NREL_CLUSTER' in os.environ) else False
-    if hpc:
-        #For running hourlize on the HPC link to shared-projects folder
-        if os.environ.get('NREL_CLUSTER') == 'kestrel':
-            remotepath = '/kfs2/shared-projects/reeds'
-        elif os.environ.get('NREL_CLUSTER') == 'eagle':
-            remotepath = '/shared-projects/reeds'
+    if sc_base_path:
+        if os.path.basename(os.path.normpath(sc_base_path)) == 'Supply_Curve_Data':
+            remotepath = os.path.dirname(os.path.normpath(sc_base_path))
         else:
-            raise Exception(f"Detected {os.environ.get('NREL_CLUSTER')} as NLR Cluster; "
-                            "only 'eagle' and 'kestrel' are supported")
-    else:
-        # if not on the hpc running link to nrelnas01 and set local to true
-        remotepath = os.path.join(
-            ('/Volumes' if sys.platform == 'darwin' else '//nrelnas01'), 'ReEDS'
-            )
+            remotepath = sc_base_path
         local = True
+    else:
+        if hpc:
+            #For running hourlize on the HPC link to shared-projects folder
+            if os.environ.get('NREL_CLUSTER') == 'kestrel':
+                remotepath = '/kfs2/shared-projects/reeds'
+            elif os.environ.get('NREL_CLUSTER') == 'eagle':
+                remotepath = '/shared-projects/reeds'
+            else:
+                raise Exception(f"Detected {os.environ.get('NREL_CLUSTER')} as NLR Cluster; "
+                                "only 'eagle' and 'kestrel' are supported")
+        else:
+            #if not on hpc running link to nrelnas01 and set local=True
+            remotepath = os.path.join(
+                ('/Volumes' if sys.platform == 'darwin' else '//nrelnas01'), 'ReEDS'
+                )
+            local=True
 
     # check remote connection
     if not os.path.exists(remotepath):
@@ -521,6 +528,8 @@ if __name__== '__main__':
     parser.add_argument('--verbose', '-v', default=False, action='store_true',
                     help='Prints more output to the console for setting up run (useful for debugging in run_hourlize.py)')
     parser.add_argument('--nolog', '-g', default=False, action='store_true', help='turn off logging for debugging')
+    parser.add_argument('--sc_base_path', type=str, default=None,
+                        help='Local path to the Supply_Curve_Data folder or its parent directory to override remote paths')
 
     args = parser.parse_args()
 
@@ -540,7 +549,7 @@ if __name__== '__main__':
     #%% set paths
     hourlize_path = os.path.dirname(os.path.realpath(__file__))
     reeds_path = os.path.abspath(os.path.join(hourlize_path, ".."))
-    remotepath, args.local = get_remote_path(args.local)
+    remotepath, args.local = get_remote_path(args.local, args.sc_base_path)
 
     #%% run setup
     print(f"\nSetting up hourlize calls to {args.mode}.py")

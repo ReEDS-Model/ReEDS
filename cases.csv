@@ -394,6 +394,7 @@ pras_unitsize_source,Data source for characteristic unit sizes in ReESD2PRAS,atb
 pras_vre_combine,Combine VRE into a single VRE tech in ReEDS2PRAS,0; 1,0,
 reeds_to_rev,switch to turn on/off ReV outputs,0; 1,1,
 resource_adequacy_years,_-delimited years to include in resource adequacy calculations,N/A,2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023,
+sc_base_path,Local base path to Supply_Curve_Data folder,/Users/ssharma2/Documents/Supply_Curve_Data/,/Users/ssharma2/Documents/Supply_Curve_Data/,
 MCS_runs,Number of Monte Carlo simulation runs. Set to 0 to disable MCS. Set to an integer N > 0 to run N ReEDS simulations with sampling.,int,0,
 MCS_dist,Name of the `.yaml` file defining the MCS distributions. Use 'default' or a string beginning with 'user' to reference `inputs/userinput/mcs_distributions_{MCS_dist}.yaml`,N/A,default,
 MCS_dist_groups,Define the distribution groups to use in a Monte Carlo Simulation. Each entry should refer to a key from `inputs/userinput/mcs_distributions_{MCS_dist}.yaml` with multiple entries separated by a dot (e.g. Example1.Example2.Example3),N/A,tech,

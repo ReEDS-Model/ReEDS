@@ -1,4 +1,5 @@
 nlcd_value,nlcd_class,color
+0,unknown,#808080
 11,open water,#5475a8
 12,perennial ice/snow,#ffffff
 21,"developed, open space",#e8d1d1

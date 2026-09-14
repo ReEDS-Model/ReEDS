@@ -115,8 +115,8 @@ def get_reeds_formatted_rev_supply_curve(sc_file, tech, run_folder):
                 os.path.join(run_folder, "inputs_case", "site_bin_map.csv")
             )
             tech_site_bin_map = df_site_bin_map[df_site_bin_map["tech"] == tech].copy()
-            tech_site_bin_map.drop(columns=["tech"], inplace=True)
-            tech_site_bin_map.drop_duplicates(inplace=True)
+            tech_site_bin_map = tech_site_bin_map.drop(columns=["tech"])
+            tech_site_bin_map = tech_site_bin_map.drop_duplicates()
             in_sc_df = in_sc_df.merge(tech_site_bin_map, on="sc_point_gid", how="inner")
             in_sc_df["bin"] = in_sc_df["bin"].astype(int)
     elif os.path.splitext(sc_file)[1] == ".h5":
@@ -228,8 +228,8 @@ def subset_supply_curve_columns(df_sc_in, tech, priority_cols):
         df_sc_in["capacity"] = df_sc_in["capacity_ac_mw"]
         # existing capacity for upv is also in dc. change to ac using derived ILR
         df_sc_in["existing_capacity"] = df_sc_in["existing_capacity"] / df_sc_in["ilr"]
-    elif tech == "egs_allkm":
-        add_cols = ["online_year", "retire_year"]
+    elif tech in ["egs_allkm", "geohydro_allkm"]:
+        add_cols = ["existing_capacity", "online_year", "retire_year"]
         for add_col in add_cols:
             if add_col not in df_sc_in.columns:
                 df_sc_in[add_col] = np.nan
@@ -631,7 +631,7 @@ def get_retirements_of_preexisting(df_cap_exog, years):
         df_cap_exog = df_cap_exog.pivot_table(
             index=["tech", "region"], columns=["year"], values="MW"
         ).reset_index()
-        df_cap_exog.fillna(0, inplace=True)
+        df_cap_exog = df_cap_exog.fillna(0)
         # This finds the next year in years and sets it equal to zero.
         # If there are more years in df_cap_exog, latest year + 1 is
         # set equal to 0. This only happens if run is only through 2020s
@@ -650,7 +650,7 @@ def get_retirements_of_preexisting(df_cap_exog, years):
         )
         df_ret_exist = df_cap_exog.copy()
         df_ret_exist["MW"] = df_ret_exist.groupby(["tech", "region"])["MW"].diff()
-        df_ret_exist["MW"].fillna(0, inplace=True)
+        df_ret_exist["MW"] = df_ret_exist["MW"].fillna(0)
         df_ret_exist["MW"] = df_ret_exist["MW"] * -1
     else:
         df_ret_exist = pd.DataFrame()
@@ -781,6 +781,24 @@ def prepare_data(run_folder, sc_file, tech, priority_cols, check_results=True):
 
     # Load and prepare supply curve data and pre-existing capacity
     input_sc_df = get_reeds_formatted_rev_supply_curve(sc_file, tech, run_folder)
+
+    ## Check for any missing priority_cols, if present fetch them from the processed supply curve file in inputs_case
+    required_extra_cols = ["existing_capacity", "online_year", "retire_year"]
+    missing_cols = [c for c in priority_cols if c not in input_sc_df.columns]
+    missing_extra = [c for c in required_extra_cols if c not in input_sc_df.columns]
+    all_missing = missing_cols + missing_extra
+    if all_missing:
+        tech_file = tech.replace("_allkm", "")
+        sc_processed = os.path.join(run_folder, "inputs_case", f"supplycurve_{tech_file}.csv")
+        if os.path.exists(sc_processed):
+            proc_cols = pd.read_csv(sc_processed, nrows=0).columns.tolist()
+            fetch_cols = [c for c in all_missing if c in proc_cols]
+            if fetch_cols:
+                df_sc_extra = pd.read_csv(
+                    sc_processed, usecols=["sc_point_gid"] + fetch_cols
+                )
+                input_sc_df = input_sc_df.merge(df_sc_extra, on="sc_point_gid", how="left")
+
     input_sc_df = reaggregate_supply_curve_regions(input_sc_df, run_folder)
 
     df_sc_in = subset_supply_curve_columns(input_sc_df, tech, priority_cols)
@@ -845,10 +863,10 @@ def add_accounting_columns(df_sc_in):
     df_sc = df_sc_in.copy()
     df_sc["cap_expand"] = df_sc["cap_avail"]
     df_sc["cap_left"] = df_sc["cap_avail"]
-    df_sc["cap"] = 0
-    df_sc["inv_rsc"] = 0
-    df_sc["ret"] = 0
-    df_sc["refurb"] = 0
+    df_sc["cap"] = 0.0
+    df_sc["inv_rsc"] = 0.0
+    df_sc["ret"] = 0.0
+    df_sc["refurb"] = 0.0
     df_sc["expanded"] = "no"
 
     return df_sc
@@ -996,8 +1014,8 @@ def disaggregate_reeds_to_rev(
     print("Adding accounting columns")
     df_sc = add_accounting_columns(df_sc_in)
     df_sc["lifetime_cap_left"] = np.nan
-    df_sc.drop(columns=["cap_expand"], inplace=True)
-    df_sc.rename(columns={"cap_avail": "cap_sc"}, inplace=True)
+    df_sc = df_sc.drop(columns=["cap_expand"])
+    df_sc = df_sc.rename(columns={"cap_avail": "cap_sc"})
 
     # apply tech lifetime as a new value to the sc dataframe
     print("Adding tech lifetimes to dataframe")
@@ -1033,11 +1051,11 @@ def disaggregate_reeds_to_rev(
 
     # combine all the yearly dataframes together to build the full accounting dataframe
     df_sc_out = pd.concat(year_dfs, axis=0)
-    df_sc_out.set_index(
-        ["sc_point_gid", "year"], inplace=True, verify_integrity=True, drop=False
+    df_sc_out = df_sc_out.set_index(
+        ["sc_point_gid", "year"], verify_integrity=True, drop=False
     )
-    df_sc_out.rename(
-        columns={"year": "inv_year", "sc_point_gid": "sc_point_gid_"}, inplace=True
+    df_sc_out = df_sc_out.rename(
+        columns={"year": "inv_year", "sc_point_gid": "sc_point_gid_"}
     )
 
     # --------------------------------------------------------------------------------
@@ -1097,8 +1115,8 @@ def disaggregate_reeds_to_rev(
         df_new_investments["bin"] = (
             df_new_investments["bin"].str.replace("bin", "", regex=False).astype("int")
         )
-        df_new_investments.sort_values(
-            by=["region", "class", "bin", "year"], inplace=True
+        df_new_investments = df_new_investments.sort_values(
+            by=["region", "class", "bin", "year"]
         )
 
         # loop over the new investments for each region x class x (bin) x year
@@ -1165,7 +1183,7 @@ def disaggregate_reeds_to_rev(
             # make the investments, looping over each of the sites and filling up
             # capacity up to the lifetime_cap_left.
             inv_left = new_inv["MW"]
-            candidate_sites_year["site_inv"] = 0
+            candidate_sites_year["site_inv"] = 0.0
             for i in range(0, stop_site):
                 site_inv = np.maximum(
                     np.minimum(
@@ -1227,7 +1245,7 @@ def disaggregate_reeds_to_rev(
             retirements["year"] = retirements["inv_year"] + retirements["tech_lifetime"]
             # filter out any retirements past the modeled years
             retirements_modeled = retirements[retirements["year"].isin(years)]
-            retirements_modeled.set_index(["sc_point_gid", "year"], inplace=True)
+            retirements_modeled = retirements_modeled.set_index(["sc_point_gid", "year"])
             df_sc_out.loc[retirements_modeled.index, "ret"] += retirements_modeled[
                 "site_inv"
             ]
@@ -1239,7 +1257,7 @@ def disaggregate_reeds_to_rev(
     # Refurbishments
     print("Disaggregating refurbishments")
     if not df_refurbishments.empty:
-        df_refurbishments.sort_values(by=["region", "class", "year"], inplace=True)
+        df_refurbishments = df_refurbishments.sort_values(by=["region", "class", "year"])
         # loop over the refurbishments for each region x class x year
         for i, refurb_inv in df_refurbishments.iterrows():
             # identify the candidate sc sites corresponding to these refurbishments
@@ -1309,7 +1327,7 @@ def disaggregate_reeds_to_rev(
                     candidate_sites_year["sc_point_gid_"]
                 )
             ]
-            candidate_sites.drop(drop_sites, axis=0, inplace=True)
+            candidate_sites = candidate_sites.drop(drop_sites, axis=0)
 
             # find the subset of sites to allocate capacity to. logic is the same as
             # used in new investments
@@ -1321,7 +1339,7 @@ def disaggregate_reeds_to_rev(
                 stop_site = len(enough_capacity_left)
             # make the investments
             inv_left = refurb_inv["MW"]
-            candidate_sites_year["site_inv"] = 0
+            candidate_sites_year["site_inv"] = 0.0
             for i in range(0, stop_site):
                 site_inv = np.maximum(
                     np.minimum(
@@ -1375,7 +1393,7 @@ def disaggregate_reeds_to_rev(
             retirements = candidate_sites_year[
                 ["sc_point_gid_", "inv_year", "site_inv", "tech_lifetime"]
             ].reset_index(drop=True)
-            retirements.rename(columns={"sc_point_gid_": "sc_point_gid"}, inplace=True)
+            retirements = retirements.rename(columns={"sc_point_gid_": "sc_point_gid"})
             retirements["year"] = retirements["inv_year"] + retirements["tech_lifetime"]
             # filter out any retirements past the modeled years
             retirements_modeled = retirements[retirements["year"].isin(years)]
@@ -1403,7 +1421,7 @@ def disaggregate_reeds_to_rev(
             print(f"\tDifference (error): {cap_diff}")
 
     # fix column names for year and sc_point_gid
-    df_sc_out.reset_index(inplace=True)
+    df_sc_out = df_sc_out.reset_index()
     # drop columns that are not consistent with outputs from
     # reeds_to_rev.disaggregate_reeds_to_rev
     drop_cols = [
@@ -1412,10 +1430,11 @@ def disaggregate_reeds_to_rev(
         "prev_year",
         "lifetime_cap_left",
         "tech_lifetime",
-        "max_prev_cap",
     ]
-    df_sc_out.drop(
-        columns=[c for c in drop_cols if c in df_sc_out.columns], inplace=True
+    if "max_prev_cap" in df_sc_out.columns:
+        drop_cols.append("max_prev_cap")
+    df_sc_out = df_sc_out.drop(
+        columns=[c for c in drop_cols if c in df_sc_out.columns]
     )
 
     return df_sc_out
@@ -1497,7 +1516,7 @@ def simultaneous_fill(
         # First retirements; sort by built capacity (smallest first) and
         # reset retirements associated with gids for each year.
         df_sc_sorted = sort_sites_by_priority(df_sc_sorted, {"cap": "ascending"})
-        df_sc_sorted["ret"] = 0
+        df_sc_sorted["ret"] = 0.0
         df_ret_yr = df_ret[df_ret["year"] == year].copy()
 
         for _, r in df_ret_yr.iterrows():
@@ -1553,7 +1572,7 @@ def simultaneous_fill(
         # Next refurbishments
         # reset refurbishments associated with gids for each year.
         df_sc_sorted = sort_sites_by_priority(df_sc_sorted, {"cap": "ascending"})
-        df_sc_sorted["refurb"] = 0
+        df_sc_sorted["refurb"] = 0.0
         df_inv_refurb_yr = df_refurbishments[df_refurbishments["year"] == year].copy()
 
         for _, r in df_inv_refurb_yr.iterrows():
@@ -1621,7 +1640,7 @@ def simultaneous_fill(
         # Finally, new site investments
         # reset investments associated with gids for each year.
         df_sc_sorted = sort_sites_by_priority(df_sc_sorted, {"cap_avail": "ascending"})
-        df_sc_sorted["inv_rsc"] = 0
+        df_sc_sorted["inv_rsc"] = 0.0
         df_inv_yr = df_new_and_preexisting_investments[
             df_new_and_preexisting_investments["year"] == year
         ].copy()
@@ -1795,7 +1814,7 @@ def format_outputs(reeds_to_rev_df, priority_cols, reduced_only=False):
         Input DataFrame reformatted for output to CSV.
     """
 
-    reeds_to_rev_df.rename(columns={"cap": "built_capacity"}, inplace=True)
+    reeds_to_rev_df = reeds_to_rev_df.rename(columns={"cap": "built_capacity"})
     reeds_to_rev_df["investment_bool"] = 0
     has_investments = (reeds_to_rev_df["inv_rsc"] > 1e-3) | (
         reeds_to_rev_df["refurb"] > 1e-3
@@ -1925,7 +1944,7 @@ def get_cost_col(tech, sc_file):
 
 
 def get_supply_curve_info(
-    reeds_run_path, filter_tech=None, rev_case=None, sc_path=None, bins=None
+    reeds_run_path, filter_tech=None, rev_case=None, sc_path=None, bins=None, sc_base_path=None
 ):
     """
     Get information about supply curves to use in the analysis. Supply curve information
@@ -1953,6 +1972,9 @@ def get_supply_curve_info(
     bins : int, optional
         Number of bins used in the supply curve bins. This has no effect, but is
         maintained for compatibility with legacy ReEDS to reV options.
+    sc_base_path : str, optional
+        Optional base path to the Supply_Curve_Data folder. If not specified, the
+        default remote path will be used.
 
     Returns
     -------
@@ -1966,6 +1988,21 @@ def get_supply_curve_info(
     sc_info_df = pd.read_csv(source_path)
 
     sc_info_df["tech"] = sc_info_df["tech"].replace(TECH_ALIASES)
+
+    if sc_base_path is not None:
+        #Ensure sc_base_path ends with Supply_Curve_Data for replacement logic
+        if os.path.basename(os.path.normpath(sc_base_path)) != 'Supply_Curve_Data':
+            sc_base_path = os.path.join(sc_base_path, "Supply_Curve_Data")
+
+        def replace_base_path(path):
+            if isinstance(path, str) and "Supply_Curve_Data" in path:
+                parts = path.split("Supply_Curve_Data")
+                return os.path.join(sc_base_path, parts[-1].lstrip(os.sep + '/'))
+            return path
+
+        for col in ["sc_path", "sc_file", "hpc_sc_file", "rev_path"]:
+            if col in sc_info_df.columns:
+                sc_info_df[col] = sc_info_df[col].apply(replace_base_path)
 
     if bins is not None:
         print("Warning: bins option is deprecated and has no effect.")
@@ -2032,6 +2069,7 @@ def run(
     bins=None,
     rev_case=None,
     sc_path=None,
+    sc_base_path=None,
     **kwargs,  # pylint: disable=unused-argument
 ):
     """
@@ -2078,6 +2116,8 @@ def run(
         Optional path to supply curve files where the specified version resides. If not
         specified (i.e., None), the sc_path will in the supply curve metadata will
         be used. Will have no effect if specified but tech is None.
+    sc_base_path : str, optional
+        Optional base path to a local Supply_Curve_Data folder to override remote path
 
     Raises
     ------
@@ -2101,6 +2141,7 @@ def run(
         rev_case=rev_case,
         bins=bins,
         sc_path=sc_path,
+        sc_base_path=sc_base_path,
     )
 
     print("Creating output directory")
@@ -2249,6 +2290,11 @@ def build_parser():
         help="Path to supply curve files where the specified version"
         + " resides. Does not need to be specified if the path is the same"
         + " as the current default.",
+    )
+    parser.add_argument(
+        "--sc_base_path",
+        default=None,
+        help="Local base path to Supply_Curve_Data folder to override remote path",
     )
 
     return parser
