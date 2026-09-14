@@ -46,6 +46,7 @@ box_pcts = (0.25, 0.75) #Box edges, as capacity-weighted percentiles.
 whisker_pcts = (0.10, 0.90) #Whisker ends. Not Tukey - stated on the figure.
 scatter_descale = True #On the by-year scatter, divide LCOE by force_mult so it is the unforced cost rather than the mandate-scaled one the model optimised on. LVOE is already unforced. With both unforced the 45-degree line means "worth what it costs at unforced prices"; with LCOE scaled it would mean "worth what the model paid", and points would sit far above the line simply because the mandate made them cheap.
 scatter_year_step = 4 #Calendar-year stride for the by-year scatter, matching spatial_value's byyear_year_step so the columns line up with the maps.
+scatter_shared_axes = False #True gives every panel in a technology row one axis range, so the cloud can be watched moving year to year; False scales each panel on its own, which resolves the within-year pattern - on a shared range the early years, where LCOE and LVOE both sit near 40 $/MWh, are a dot in the corner of a range set by the last year. The 45-degree line and the LVOE/LCOE annotation carry the cross-year comparison either way.
 scatter_size_max = 260 #Marker area in points^2 for the largest AEP in the figure; sizes scale linearly with AEP from there.
 scatter_pen_cmap = 'YlOrRd' #Colours each dot by the penetration of its region.
 
@@ -251,9 +252,12 @@ def plot_lvoe_vs_lcoe_scatter(data, output_path):
     """By-year scatter of LVOE against LCOE for every new-build bin, techs as rows.
 
     One dot per (class, region, bin) built that year, sized by its AEP and coloured by the
-    penetration of its region. The 45-degree line is LVOE = LCOE. Axes are shared within a
-    technology row so the cloud can be watched moving year to year, and the columns are the same
-    model years as the by-year maps.
+    penetration of its region. The solid line is LVOE = force_mult * LCOE - with LCOE de-scaled,
+    that is where a build is worth exactly what the model paid for it - and the dotted line is
+    LVOE = LCOE, break-even at unforced cost. Each axis follows its own data, so the frame is not
+    square and the unit line generally leaves the panel early. Each panel is scaled on its own
+    by default (scatter_shared_axes), and the columns are the same model years as the by-year
+    maps.
     """
     techs = [t for t in tech_prefix_map if t in data]
     frames = {t: data[t] for t in techs}
@@ -267,18 +271,36 @@ def plot_lvoe_vs_lcoe_scatter(data, output_path):
     aep_max = max(f['aep_gwh'].max() for f in frames.values())
     cmap = plt.get_cmap(scatter_pen_cmap)
 
-    fig, axes = plt.subplots(len(techs), len(years), squeeze=False, sharex='row', sharey='row',
-                             figsize=(2.05 * len(years), 2.45 * len(techs)),
-                             gridspec_kw={'hspace': 0.30, 'wspace': 0.06})
+    share = 'row' if scatter_shared_axes else 'none'
+    fig, axes = plt.subplots(len(techs), len(years), squeeze=False, sharex=share, sharey=share,
+                             figsize=(2.05 * len(years), 2.3 * len(techs)),
+                             gridspec_kw={'hspace': 0.22, 'wspace': 0.06 if scatter_shared_axes else 0.28})
     for i, tech in enumerate(techs):
         f = frames[tech]
-        #Shared per row so the cloud can be watched moving. Set from the 98th percentile, since
-        #a handful of very high-LCOE bins in the last year would otherwise stretch the whole row.
-        lim = float(np.nanpercentile(pd.concat([f[xcol], f['lvoe']]), 98)) * 1.05
+        #Set from the 98th percentile rather than the maximum, since a handful of very
+        #high-LCOE bins would otherwise stretch the range past everything else.
+        #Each axis follows its own data - x from LCOE, y from LVOE - rather than a square frame,
+        #which would let the wider of the two set both and push the data to the bottom of the
+        #panel once LVOE falls well below LCOE. The 98th percentile rather than the maximum, so a
+        #handful of very high-LCOE bins do not stretch the range past everything else. The lines
+        #are then drawn across whatever range that gives.
+        def limits(frame):
+            xlim = float(np.nanpercentile(frame[xcol], 98)) * 1.08
+            ylim = float(np.nanpercentile(frame['lvoe'], 98)) * 1.15 #Room for the text box.
+            return xlim, ylim
+        row_lims = limits(f)
         for j, year in enumerate(years):
             ax = axes[i, j]
             x = f[f['year'] == year]
-            ax.plot([0, lim], [0, lim], color='0.55', linewidth=0.9, zorder=1)
+            xlim, ylim = row_lims if (scatter_shared_axes or x.empty) else limits(x)
+            #The break-even the model actually faced. With LCOE de-scaled to its unforced value,
+            #a build is worth what it cost the model when LVOE = force_mult * LCOE, so that is the
+            #line drawn; on the as-optimised basis force_mult is already in x and the slope is 1.
+            #The unit line is kept faint for reference and may leave the panel early.
+            slope = float(x['force_mult'].iloc[0]) if (scatter_descale and not x.empty) else 1.0
+            ax.plot([0, xlim], [0, xlim], color='0.75', linewidth=0.7, linestyle=':', zorder=1)
+            if slope != 1.0:
+                ax.plot([0, xlim], [0, slope * xlim], color='0.35', linewidth=1.0, zorder=2)
             if not x.empty:
                 x = x.sort_values('aep_gwh', ascending=False)
                 ax.scatter(x[xcol], x['lvoe'],
@@ -289,14 +311,14 @@ def plot_lvoe_vs_lcoe_scatter(data, output_path):
                 ax.text(0.03, 0.97,
                         f"{len(x)} bins, {x['rb'].nunique()} regions\n"
                         f"{w.sum() / 1000:.0f} TWh\n"
-                        f"LVOE/LCOE {np.average(x['lvoe'], weights=w) / np.average(x[xcol], weights=w):.2f}",
+                        f"LVOE/LCOE {np.average(x['lvoe'], weights=w) / np.average(x[xcol], weights=w):.2f}"
+                        + (f"\nforce_mult {slope:.2f}" if slope != 1.0 else ''),
                         transform=ax.transAxes, va='top', ha='left', fontsize=6.6, color='0.25',
                         linespacing=1.3, zorder=6,
                         bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.8,
                               'boxstyle': 'round,pad=0.2'})
-            ax.set_xlim(0, lim)
-            ax.set_ylim(0, lim)
-            ax.set_aspect('equal')
+            ax.set_xlim(0, xlim)
+            ax.set_ylim(0, ylim)
             ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
             ax.set_axisbelow(True)
             ax.tick_params(labelsize=7)
@@ -313,9 +335,10 @@ def plot_lvoe_vs_lcoe_scatter(data, output_path):
     cb.ax.tick_params(labelsize=7)
     fig.suptitle(
         'LVOE against LCOE for each new-build bin, by model year\n'
-        'one dot per class-region-bin built that year, sized by its AEP and coloured by regional '
-        'penetration; grey line is LVOE = LCOE',
-        fontsize=11, y=0.995)
+        'one dot per class-region-bin, sized by AEP, coloured by regional penetration\n'
+        'solid line: LVOE = force_mult x LCOE (break-even at the cost the model optimised on); '
+        'dotted: LVOE = LCOE',
+        fontsize=11, y=1.04)
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig
 

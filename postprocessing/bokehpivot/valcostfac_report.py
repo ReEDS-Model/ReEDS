@@ -522,9 +522,10 @@ def build_html(output_dir, core_path):
                        'valnew, which is per class and region and so shared by every bin of a class '
                        'in a region. Dot area is the bin&rsquo;s annual energy, chosen capacity times '
                        'gen_rsc, which reconciles to valnew&rsquo;s MWh; colour is the '
-                       'region&rsquo;s penetration, uncurtailed generation over load. The grey line '
-                       'is LVOE = LCOE. Axes are shared within each technology row and set from the '
-                       '98th percentile. Only invested bins are shown, since the model writes lcoe '
+                       'region&rsquo;s penetration, uncurtailed generation over load. The solid line '
+                       'is LVOE = force_mult times LCOE, the break-even at the cost the model optimised on, '
+                       'and the dotted line is LVOE = LCOE. Each panel is scaled on its own, from the 98th percentile of its '
+                       'own values. Only invested bins are shown, since the model writes lcoe '
                        'for those alone.', order)
 
     lvoe_rows = []
