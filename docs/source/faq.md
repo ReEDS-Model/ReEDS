@@ -25,7 +25,7 @@ Please contact GAMS for more information.
 
 ### Is there a trial version of the GAMS license so that I can test ReEDS?
 
-We have created a reduced size version of the ReEDS model that has less than 5,000 rows and columns, and therefore should be compatible with the GAMS community license ([https://www.gams.com/try_gams/](https://www.gams.com/try_gams/) -- Please contact GAMS if you need additional information regarding the community license). You can run this reduced model version by using the cases_small.csv input file. This reduced model uses a smaller technology subset, smaller geographic extent, and simplifies several model constraints.
+We have created a reduced size version of the ReEDS model that has less than 5,000 rows and columns, and therefore should be compatible with the GAMS community license ([https://www.gams.com/sales/licensing/](https://www.gams.com/sales/licensing/) -- Please contact GAMS if you need additional information regarding the community license). You can run this reduced model version using the ND_small case in cases_test.csv (`python runreeds.py -c test -s ND_small`). This reduced model uses a smaller technology subset, smaller geographic extent, and simplifies several model constraints.
 
 ### What if the GAMS community license isn't enough to run my ReEDS case?
 
