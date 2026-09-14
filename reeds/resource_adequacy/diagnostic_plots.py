@@ -1360,12 +1360,12 @@ if __name__ == '__main__':
     debug = args.debug
 
     # #%%### Inputs for debugging
-    reeds_path = reeds.io.reeds_path
-    casedir = os.path.join(reeds_path, 'runs', 'v20260820_USA_defaults')
-    t = 2041
-    interactive = True
-    iteration = 0
-    debug = True
+    # reeds_path = reeds.io.reeds_path
+    # casedir = os.path.join(reeds_path, 'runs', 'v20260715_stressM3_MultiMetricRA')
+    # t = 2050
+    # interactive = True
+    # iteration = 0
+    # debug = True
 
     #%%### INPUTS
     ### Switches
