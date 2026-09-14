@@ -557,8 +557,9 @@ $ontext
 The following six equations dictate how capacity is represented in the model.
 
 The first three equations handle init-X vintages (those that existed pre-startyear)
-which are bounded by m_capacity_exog less the degradation it has accumulated since
-coming online (degrade_init). With retirements (in the second and third
+which are bounded by m_capacity_exog scaled by the fraction remaining after
+the degradation accumulated since coming online (degrade_init). With
+retirements (in the second and third
 equations), the constraints imply that capacity must be less than or
 equal to m_capacity_exog and monotonically decreasing over time -
 implying that if endogenous capacity was reduced in the previous year,
@@ -584,7 +585,7 @@ $offtext
 eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t) * (1 - degrade_init(i,v,r,t))
+    m_capacity_exog(i,v,r,t) * degrade_init(i,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
@@ -614,7 +615,7 @@ eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t) * (1 - degrade_init(i,v,r,t))
+    m_capacity_exog(i,v,r,t) * degrade_init(i,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],

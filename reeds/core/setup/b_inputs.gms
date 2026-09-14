@@ -1786,7 +1786,7 @@ m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
 
 parameter degrade_new(i,t,tt) "--fraction-- the fraction of capacity from year t that remains after degradation is applied through the year tt" ;
 
-parameter degrade_init(i,v,r,allt) "--fraction-- existing (initv) capacity lost to degradation since it came online" ;
+parameter degrade_init(i,v,r,t) "--fraction-- the fraction of existing (initv) capacity that remains after degradation is applied from its online year through the year t" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
@@ -1814,8 +1814,12 @@ degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))
 exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
     = hintage_data(i,v,r,t,"wOnlineYear") ;
 
+* Capacity without an online year (or without degradation) keeps its full nameplate.
+* Fill all years for which the unit has exogenous capacity in any year, since upgrades
+* can restore m_capacity_exog in years where it starts at zero (3_solve_oneyear.gms).
+degrade_init(i,v,r,t)$[initv(v)$sum{tt, m_capacity_exog(i,v,r,tt) }] = 1 ;
 degrade_init(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
-    = 1 - (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
+    = (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 
