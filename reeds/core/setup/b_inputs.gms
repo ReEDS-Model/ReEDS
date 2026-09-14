@@ -4228,7 +4228,9 @@ parameter emit_rate_ref(allt) "--metric tons per MWh-- reference CO2 emission-ra
 /
 $offlisting
 $ondelim
+$ifthene.emitratelimitfile %GSw_EmitRateLimit% == 1
 $include inputs_case%ds%emit_rate_ref.csv
+$endif.emitratelimitfile
 $offdelim
 $onlisting
 / ;
