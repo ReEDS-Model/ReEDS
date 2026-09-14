@@ -420,7 +420,7 @@ def main(reeds_path, inputs_case):
     recf = pd.concat(
         [df_windons, df_windofs, df_upv, df_distpv]
         + [df_pvb[pvb_type] for pvb_type in df_pvb],
-        sort=False, axis=1, copy=False)
+        sort=False, axis=1)
     
     ### Downselect RECF data to resource adequacy and weather years
     recf = recf.loc[recf.index.year.isin(resource_adequacy_years)]
@@ -444,7 +444,7 @@ def main(reeds_path, inputs_case):
     
     # Sorting profiles of resources to match the order of the rows in resources
     resources = resources.sort_values(['resource','area'])
-    recf = recf.reindex(labels=resources['resource'].drop_duplicates(), axis=1, copy=False)
+    recf = recf.reindex(labels=resources['resource'].drop_duplicates(), axis=1)
 
     ### Scale up distpv by 1/(1-distloss)
     recf.loc[
