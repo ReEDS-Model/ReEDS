@@ -4409,12 +4409,10 @@ def map_neue(
                 zorder=1e9,
                 path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
             )
-        
             if over_threshold and (level == neue_threshold_level):
                 ax[coords[level]].set_title(
                     level, y=0.9, weight='bold', color=over_threshold_textcolor,
                 )
-
     ### Formatting
     plots.addcolorbarhist(
         f=f, ax0=ax[coords[level]], data=df.NEUE_ppm,
