@@ -410,8 +410,8 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
     df['ba'] = df.FIPS.map(lambda x: county2zone.get(x,x))
 
     if min_cap > 0:
-        #Remove sites with less than minimum capacity threshold, but keep sites that have existing capacity
-        df = df[(df['capacity'] >= min_cap) | (df['existing_capacity'] > 0)].copy()
+        #Remove sites with less than minimum capacity threshold
+        df = df[df['capacity'] >= min_cap].copy()
 
     print('Done reading supply curve inputs and filtering: '+ str(datetime.datetime.now() - startTime))
     return df
@@ -428,9 +428,9 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
     startTime = datetime.datetime.now()
     #Create class column.
     if class_path is None:
-        df_sc['class'] = '1'
+        df_sc['class'] = 1
     else:
-        df_sc['class'] = 'NA' #Initialize to NA to make sure we have full coverage of classes here.
+        df_sc['class'] = pd.Series(pd.NA, index=df_sc.index, dtype='Int64')
         df_class = pd.read_csv(class_path, index_col='class')
         #Now loop through classes (rows in df_class). Classes may have multiple defining criteria (columns in df_class),
         #so we loop through columns to build the selection criteria for each class, building up a 'mask' of criteria for each class.
@@ -450,7 +450,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                     #No pipe symbol means we do a simple match.
                     mask = mask & (df_sc[col] == val)
             #Finally, apply the mask that has been built for this class.
-            df_sc.loc[mask, 'class'] = cname
+            df_sc.loc[mask, 'class'] = int(cname)
     # Add dynamic, region-specific class bins based on class_bin_method
     if class_bin:
         #In this case, class names in class_path must be numbered, starting at 1
@@ -467,7 +467,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                 bin_num=class_bin_num,
                 bin_method=class_bin_method,
             )
-            .reset_index(drop=True)
+            .reset_index()
         )
         df_sc['class'] = (df_sc['class_orig'] - 1) * class_bin_num + df_sc['class_bin']
     print('Done adding classes: '+ str(datetime.datetime.now() - startTime))
@@ -558,6 +558,11 @@ def read_cf_file(
     ## associated id specified by profile_id_col (usually sc_point_gid)
     dfall.columns = dfall.columns.map(df_meta[profile_id_col])
     ## Add time index
+    # first decode from bytes
+    if df_index.dtype.kind == "S":
+        df_index = df_index.str.decode("utf-8").str.rstrip("\x00")
+    # now save as datetime and add as index
+    df_index = pd.to_datetime(df_index, errors="raise")
     dfall = dfall.set_index(df_index)
     
     return dfall
@@ -612,7 +617,7 @@ def process_cf_profiles(
         df_prof_out = df_prof_out * scale_factor
 
         ### Convert dtype
-        if 'int' in dtype and scale_factor < 100:
+        if np.issubdtype(dtype, np.integer) and scale_factor < 100:
             raise ValueError(
                 "scale_factor must be greater than 100 when converting "
                 "CF values to ints. Update scale_factor or dtype."
@@ -686,15 +691,24 @@ def save_sc_outputs(
     df_sc = df_sc.copy()
     # save copy of pre-processed reV supply curve
     df_sc.to_csv(os.path.join(outpath, 'results', tech + '_supply_curve_raw.csv'), index=False)
-    #Round now to prevent infeasibility in model because existing (pre-2010 + prescribed) capacity is slightly higher than supply curve capacity
-    df_sc[['capacity','existing_capacity']] = df_sc[['capacity','existing_capacity']].round(decimals)
+    df_sc['capacity'] = df_sc['capacity'].round(decimals)
 
+    cols_out = [profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', 'cf']
+    # for EGS identify the resource based on mean temperature
+    if tech == 'egs':
+        rescol = 'mean_resource_temp'
+        # convert mean temperature to int
+        df_sc[rescol] = df_sc[rescol].round().astype(int)
+        cols_out += [rescol]
+        
+    # include capacity factor
     cfcol = 'capacity_factor_ac' if 'capacity_factor_ac' in df_sc else 'mean_cf'
+    df_sc[cfcol] = df_sc[cfcol].round(decimals+2)
+    df_sc = df_sc.rename(columns={cfcol:'cf'})
     keepcols = ['mean_resource_depth', 'plant_type', 'lcoe_all_in_usd_per_mwh'] if (tech == 'egs' or tech == 'geohydro') else []
     df_sc_out = (
-        df_sc[[profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', cfcol] + keepcols]
+        df_sc[cols_out + keepcols]
         .sort_values(profile_id_col)
-        .rename(columns={cfcol:'cf'})
         .round({'capacity':decimals, 'capital_adder_per_mw':decimals, 'cf':decimals+2})
     )
     df_sc_out.to_csv(
