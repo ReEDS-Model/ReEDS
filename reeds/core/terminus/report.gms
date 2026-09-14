@@ -652,7 +652,7 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 ;
 * Capacity is needed here to reassign csp-ns, so calculate it before generation.
 cap_deg_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
-cap_deg_ivrt(i,c,v,r,t)$valcap_class(i,c,v,r,t) = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
+cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)] = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
 
 cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
 *upv, and wind have degradation, so use INV rather than CAP to get the reported capacity

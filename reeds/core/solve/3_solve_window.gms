@@ -87,7 +87,7 @@ if(Sw_Int_CC=1 or Sw_Int_CC=2,
     cc_totmarg(i,r,szn,t)$[tload(t)$(vre(i) or storage(i))] =
         sum{(c,v)$[i_c(i,c)$valcap(i,v,r,t)],
             cc_int(i,c,v,r,szn,t)
-            * (CAP_CLASS.l(i,c,v,r,t)$valcap_class(i,c,v,r,t) + CAP.l(i,v,r,t)$(not cf_tech(i))) } ;
+            * (CAP_CLASS.l(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)] + CAP.l(i,v,r,t)$(not cf_tech(i))) } ;
 ) ;
 
 *Sw_Int_CC=1 means use average capacity credit for each tech, but differentiate based on vintage.

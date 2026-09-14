@@ -119,7 +119,7 @@ cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
 cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)$trange(t)] = CAP.l(i,v,r,t) ;
-cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(not (upv(i) or wind(i)))$trange(t)] = CAP_CLASS.l(i,c,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(not (upv(i) or wind(i)))$trange(t)] = CAP_CLASS.l(i,c,v,r,t) ;
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
 cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] =
     sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$trange(t)

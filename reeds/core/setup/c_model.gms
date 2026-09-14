@@ -1768,7 +1768,7 @@ eq_reserve_margin(r,ccseason,t)
 *used in rolling window and full intertemporal solve (otherwise cc_int = 0)
     + sum{(i,c,v)$[i_c(i,c)$(vre(i) or storage(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
           cc_int(i,c,v,r,ccseason,t)
-          * (CAP_CLASS(i,c,v,r,t)$valcap_class(i,c,v,r,t)
+          * (CAP_CLASS(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)]
              + CAP(i,v,r,t)$(not cf_tech(i)))
          }
 
