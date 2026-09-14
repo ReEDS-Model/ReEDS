@@ -39,6 +39,8 @@ import reeds
 ### FIXED INPUTS ###
 WINDOFS_FIXED_CLASSES = list(range(5))
 WINDOFS_FLOATING_CLASSES = list(range(6,11))
+# Columns required to calculate the capacity-weighted online year
+ONLINEYEAR_COLUMNS = ['i', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW']
 
 #%% ===========================================================================
 ### --- FUNCTIONS ---
@@ -197,11 +199,6 @@ def expand_exog_cap(row, start_year):
         "sc_point_gid": [row["sc_point_gid"]] * len(years),
         "MW": [row["MW"]] * len(years)})
     return df
-
-
-ONLINEYEAR_COLUMNS = [
-    'i', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW',
-]
 
 
 def get_capacity_weighted_onlineyear(df, start_year, end_year):
