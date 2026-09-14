@@ -1816,7 +1816,7 @@ exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
 
 * Capacity without an online year (or without degradation) is left undegraded.
 * Fill all years for which the unit has exogenous capacity in any year, since upgrades
-* can restore m_capacity_exog in years where it starts at zero (3_solve_oneyear.gms).
+* can restore m_capacity_exog in years where it starts at zero.
 degrade_init(i,v,r,t)$[initv(v)$sum{tt, m_capacity_exog(i,v,r,tt) }] = 1 ;
 degrade_init(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
     = (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
