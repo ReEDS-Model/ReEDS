@@ -7,6 +7,7 @@ import datetime
 import argparse
 import h5py
 from pathlib import Path
+import cmocean
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 reeds_path = reeds.io.reeds_path
