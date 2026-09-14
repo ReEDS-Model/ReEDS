@@ -1784,7 +1784,7 @@ m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(i,v,r,tt) } ;
 
-parameter degrade_new(i,t,tt) "--fraction-- new built capacity from year t remaining after degradation in year tt" ;
+parameter degrade_new(i,t,tt) "--fraction-- the fraction of capacity from year t that remains after degradation is applied through the year tt" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
