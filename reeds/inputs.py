@@ -106,22 +106,10 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
     for case in cases:
         sw = dfcases[case]
         new_switches[case] = {}
-        ### TEMPORARY 20260402: The GSw_RegionResolution switch is deprecated;
-        ### for now, hardcode its value for the region resolutions that use it
-        match sw['GSw_ZoneSet']:
-            case 'z134':
-                GSw_RegionResolution = 'ba'
-            case 'z3109':
-                GSw_RegionResolution = 'county'
-            case 'PJMcounty' | 'UTcounty':
-                GSw_RegionResolution = 'mixed'
-            case _:
-                GSw_RegionResolution = 'aggreg'
-        new_switches[case]['GSw_RegionResolution'] = GSw_RegionResolution
+        # Add startyear switch as the first year in yearset
+        new_switches[case]['startyear'] = str(parse_yearset(sw['yearset'])[0])
+
         ### TEMPORARY 20260402: Turn off itlgrp constraint until it's fixed
-        # new_switches[case]['GSw_itlgrpConstraint'] = str(int(
-        #     sw['GSw_RegionResolution'] in ['county', 'mixed']
-        # ))
         new_switches[case]['GSw_itlgrpConstraint'] = '0'
         ## 'meshed' offshore files are only used when offshore zones are turned on
         new_switches[case]['GSw_OffshoreFiles'] = (
@@ -261,19 +249,20 @@ def parse_cases(
             print("Please change the delimeter in the GSw_Region switch from ',' to '.'")
             quit()
 
-    # If doing a Monte Carlo run, modify dfcases by adding new columns
-    # for each scenario run. Also validate the distribution file.
+    # If doing a Monte Carlo or MGA Random Vector run, modify dfcases by adding new columns
+    # for each scenario run. For Monte Carlo we also validate the distribution file.
     warned_about_cluster_alg = False
-    if 'MCS_runs' in dfcases.index:
+    if 'MCS_runs' in dfcases.index or 'GSw_MGA_RV_runs' in dfcases.index:
         for c in dfcases.columns:
             if (
                 c not in ['Description','Default Value','Choices']
-                and (int(dfcases.loc['MCS_runs',c]) > 0)
+                and ((int(dfcases.loc['MCS_runs',c]) > 0) or (int(dfcases.loc['GSw_MGA_RV_runs',c]) > 0))
                 and (not int(dfcases.loc['ignore',c]))
             ):
                 # Warn user if the hourly clustering algorithm is not fixed for Monte Carlo runs
                 if (
-                    not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
+                    int(dfcases.loc['MCS_runs',c]) > 0
+                    and not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
                     and not warned_about_cluster_alg
                 ):
                     print(f"\n[Warning] Case Column: '{c}'")
@@ -298,23 +287,29 @@ def parse_cases(
                     reeds.io.reeds_path, 'inputs', 'userinput',
                     'mcs_distributions_{}.yaml'.format(sw.MCS_dist)
                 )
-                mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
+                if int(dfcases[c].MCS_runs) > 0:
+                    mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
+                    numruns = int(dfcases[c].MCS_runs)
+                    run_type = 'MC'
+                else:                    
+                    numruns = int(dfcases[c].GSw_MGA_RV_runs)
+                    run_type = 'R'
 
-                # c (column) is a case with monte carlo runs.
-                # replicate this column N (NumMonteCarloRuns) times
-                NumMonteCarloRuns = int(dfcases.loc['MCS_runs',c])
+                # c (column) is a case with monte carlo or MGA random vector runs.
+                # replicate this column N times
                 NewColumnNames = [
-                    f"{c}_MC{i:0>4}"
-                    for i in range(1, NumMonteCarloRuns + 1)
+                    f"{c}_{run_type}{i:0>4}"
+                    for i in range(1, numruns + 1)
                 ]
 
-                # Each new column is a copy of the original column with name c_{MC1,MC2,...}
-                dfcases_MC = pd.DataFrame(
-                    data=np.array([dfcases[c].values]*NumMonteCarloRuns).T,
+                # Each new column is a copy of the original column with name 
+                # c_{MCS1,MCS2,...} or c_{R1,R2,...}
+                dfcases_all = pd.DataFrame(
+                    data=np.array([dfcases[c].values]*numruns).T,
                     index=dfcases.index,
                     columns=NewColumnNames,
                 )
-                dfcases = pd.concat([dfcases, dfcases_MC], axis=1)
+                dfcases = pd.concat([dfcases, dfcases_all], axis=1)
                 # drop the original column
                 dfcases.drop(c, axis=1, inplace=True)
 
@@ -360,12 +355,14 @@ def solvestring_sequential(
             'GSw_ClimateHydro',
             'GSw_ClimateWater',
             'GSw_gopt',
+            'GSw_gopt_mga',
             'GSw_HourlyChunkLengthRep',
             'GSw_HourlyChunkLengthStress',
             'GSw_HourlyType',
             'GSw_HourlyWrapLevel',
             'GSw_MGA_CostDelta',
             'GSw_MGA_Direction',
+            'GSw_MGA_RV_runs',
             'GSw_PVB_Dur',
             'GSw_SkipRAyear',
             'GSw_StateCO2ImportLevel',
@@ -789,25 +786,47 @@ def get_b2b(case=None, **kwargs) -> pd.DataFrame:
     return b2b
 
 
-def check_aggreg_unique(hierarchy):
-    """
-    Make sure each aggreg is only assigned to a single transreg / transgrp / st / etc.
-    """
-    testcols = [i for i in hierarchy.columns if i != 'aggreg']
-    aggreg_errors = {}
-    for col in testcols:
-        unique_aggregs = (
-            hierarchy[[col,'aggreg']]
-            .drop_duplicates()
-            .groupby('aggreg')[col].count()
+def get_county_populations():
+    return pd.read_csv(
+        os.path.join(
+            reeds.io.reeds_path,
+            'inputs',
+            'disaggregation',
+            'county_population.csv'
         )
-        duplicated = unique_aggregs.loc[unique_aggregs>1]
-        if len(duplicated):
-            aggreg_errors[col] = hierarchy.loc[
-                hierarchy.aggreg.isin(duplicated.index),
-                [col,'aggreg']
-            ]
-    return aggreg_errors
+    )
+
+
+def get_state_groups():
+    return pd.read_csv(
+        os.path.join(
+            reeds.io.reeds_path,
+            'inputs',
+            'zones',
+            'state_groups.csv'
+        )
+    )
+
+
+def get_zoneset_config() -> dict:
+    configpath = Path(reeds.io.reeds_path, 'inputs', 'zones', 'zoneset_config.yaml')
+    with open(configpath, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
+
+
+def get_applicable_zonesets(setting: str) -> list[str]:
+    """
+    Get the list of zonesets that a setting should apply to. The provided
+    setting should be a field in 'inputs/zones/zoneset_config.yaml'.
+    """
+    zoneset_config = get_zoneset_config()
+    if setting not in zoneset_config:
+        raise NotImplementedError(
+            f"The provided setting '{setting}' is invalid. "
+            "Update inputs/zones/zoneset_config.yaml to include it."
+        )
+    return zoneset_config[setting]
 
 
 def validate_zoneset(GSw_ZoneSet):
@@ -818,7 +837,7 @@ def validate_zoneset(GSw_ZoneSet):
         GSw_ZoneSets = [
             'z48',
             'z54',
-            'z69',
+            'z70',
             'z90',
             'z132',
             'z134',
@@ -896,19 +915,3 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
-    ## TEMPORARY 20260402: Is each aggreg only assigned to a single hierarchy level?
-    fpath_134 = Path(zonepath, 'hierarchy_from134.csv')
-    if fpath_134.is_file():
-        hierarchy_134 = pd.read_csv(fpath_134, index_col='ba')
-        errors = check_aggreg_unique(hierarchy_134)
-        if len(errors):
-            for v in errors.values():
-                print(v)
-                print()
-            err = (
-                "There are aggreg values spanning multiple hierarchy levels for:\n > "
-                + '\n > '.join(errors.keys())
-                + f"\nPlease modify {fpath_134}\n"
-                "to ensure each aggreg is only assigned to a single hierarchy level."
-            )
-            raise ValueError(err)

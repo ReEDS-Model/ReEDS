@@ -441,7 +441,7 @@ def plot_demand(
         load_hourly = pd.concat(reeds.io.read_h5_groups(h5path))
     ## Average by state and convert to GW
     if isinstance(load_hourly.index, pd.MultiIndex):
-        dfload = load_hourly.groupby(axis=0, level=0).mean().rename_axis('t') / 1e3
+        dfload = load_hourly.groupby(level=0).mean().rename_axis('t') / 1e3
     else:
         dfload = load_hourly.mean().to_frame().T.rename_axis('t') / 1e3
 

@@ -1,3 +1,3 @@
-call conda activate reeds2
+call conda activate reeds
 bokeh serve . --sh --port 0
 cmd /k

@@ -374,7 +374,7 @@ def static_report(data_type, data_source, static_presets, report_path, report_fo
         excel_meta.append('Default Config:')
         for vwc in variant_wdg_config:
             excel_meta.append(vwc['name'] + ': ' + str(vwc['val']))
-        pd.Series(excel_meta).to_excel(excel_report, 'meta', index=False, header=False)
+        pd.Series(excel_meta).to_excel(excel_report, sheet_name='meta', index=False, header=False)
     if 'html' in report_format:
         with open(this_dir_path + '/templates/index.html', 'r') as template_file:
             template_string=template_file.read()
@@ -445,9 +445,9 @@ def static_report(data_type, data_source, static_presets, report_path, report_fo
                 sheet_name = re.sub(r"[\\/*\[\]:?]", '-', sheet_name) #replace disallowed sheet name characters with dash
                 sheet_name = sheet_name[:31] #excel sheet names can only be 31 characters long
                 if download_full_source:
-                    GL['df_source'].to_excel(excel_report, sheet_name, index=False)
+                    GL['df_source'].to_excel(excel_report, sheet_name=sheet_name, index=False)
                 else:
-                    GL['df_plots'].to_excel(excel_report, sheet_name, index=False)
+                    GL['df_plots'].to_excel(excel_report, sheet_name=sheet_name, index=False)
             if 'csv' in report_format:
                 sheet_name = static_preset['sheet_name'] if 'sheet_name' in static_preset else str(sec_i) + '_' + name
                 sheet_name = re.sub(r'[\\/:"*?<>|]', '-', sheet_name) #replace disallowed sheet name characters with dash
@@ -457,7 +457,7 @@ def static_report(data_type, data_source, static_presets, report_path, report_fo
                     GL['df_plots'].to_csv(output_dir + 'csvs/' + sheet_name + '.csv', index=False)
         except Exception:
             logger.info('***Error in section ' + str(sec_i) + '...\n' + traceback.format_exc())
-            if html_num == 'one':
+            if 'html' in report_format and html_num == 'one':
                 static_plots.append(bl.row(bmw.Div(text='<h2 id="section-' + str(sec_i) + '" style="color:red;text-decoration:underline">' + str(sec_i) + '. ' + name + '. ERROR!</h2>')))
         sec_i += 1
     if 'excel' in report_format:
@@ -561,8 +561,8 @@ def vizit_report(data_type, data_source, vizit_data, output_dir, auto_open):
                 style_config['Colorscale (region)'] = 'Reds'
             if 'sync_axes' not in v['preset']['config'] or v['preset']['config']['sync_axes'] == 'Yes':
                 if v['preset']['config']['chart_type'] == 'Area Map':
-                    style_config['Colorscale Min (region)'] = v['data'][trace_config['z']].min()
-                    style_config['Colorscale Max (region)'] = v['data'][trace_config['z']].max()
+                    style_config['Colorscale Min (region)'] = float(v['data'][trace_config['z']].min())
+                    style_config['Colorscale Max (region)'] = float(v['data'][trace_config['z']].max())
                 else:
                     val_col = trace_config['y']
                     if v['preset']['config']['chart_type'] in STACKEDTYPES and 'series' in v['preset']['config']:
@@ -580,8 +580,8 @@ def vizit_report(data_type, data_source, vizit_data, output_dir, auto_open):
                     else:
                         y_min = v['data'][val_col].min() if v['data'][val_col].min() < 0 else 0
                         y_max = v['data'][val_col].max() if v['data'][val_col].max() > 0 else 0
-                    style_config['Y Min'] = y_min
-                    style_config['Y Max'] = y_max
+                    style_config['Y Min'] = float(y_min)
+                    style_config['Y Max'] = float(y_max)
             dashboard = {'title': v['preset']['name'], 'charts':[{'traces':[trace_config], 'style':style_config}]}
             vizit_config['dashboards'].append(dashboard)
         #Add the data itself (even if we're downloading the full source, so we can make charts with the full data)
@@ -766,7 +766,7 @@ def get_df_csv(data_source):
     df_source = pd.concat(dfs,sort=False,ignore_index=True)
     cols = {}
     cols['all'] = df_source.columns.values.tolist()
-    cols['discrete'] = [x for x in cols['all'] if df_source[x].dtype == object]
+    cols['discrete'] = [x for x in cols['all'] if pd.api.types.is_object_dtype(df_source[x]) or pd.api.types.is_string_dtype(df_source[x])]
     cols['continuous'] = [x for x in cols['all'] if x not in cols['discrete']]
     cols['x-axis'] = cols['all']
     cols['y-axis'] = cols['continuous']
@@ -1235,7 +1235,8 @@ def do_op(df_plots, wdg, cols, sfx):
             df_plots['tempgroup'] = 1
             df_grouped = df_plots.groupby('tempgroup', sort=False)
         #Now do operations with the groups:
-        df_plots = df_grouped.apply(op_with_base, op, col, col_base, y_val).reset_index(drop=True)
+        #groupby columns are excluded from the groups passed to apply, so restore them from the index
+        df_plots = df_grouped.apply(op_with_base, op, col, col_base, y_val).reset_index(groupcols).reset_index(drop=True)
         df_plots = df_plots.replace([np.inf, -np.inf], np.nan)
         #Finally, clean up df_plots, dropping unnecessary columns, rows with the base value, and any rows with NAs for y_vals
         if 'tempgroup' in df_plots:
@@ -1636,7 +1637,7 @@ def create_maps(df, wdg, cols):
     breakpoints = []
     x_axis = df.iloc[:,-2]
     y_axis = df.iloc[:,-1]
-    if y_axis.dtype == object:
+    if pd.api.types.is_object_dtype(y_axis) or pd.api.types.is_string_dtype(y_axis):
         logger.info('***Error, your y-axis is a string.')
         return (maps, breakpoints) #empty list
     if wdg['chart_type'].value == 'Area Map':

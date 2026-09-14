@@ -206,7 +206,7 @@ def reeds_cc(t, tnext, casedir):
         pd.read_hdf(os.path.join(reeds_data,f'load_{t}.h5'))
         ### Map BA regions to ccreg's and sum over them
         .rename(columns=hierarchy.set_index('r').ccreg)
-        .groupby(axis=1, level=0).sum()
+        .T.groupby(level=0).sum().T
     )
 
     if int(sw['GSw_PRM_CapCreditMulti']) == 0:

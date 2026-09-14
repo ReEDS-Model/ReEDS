@@ -204,9 +204,9 @@ function run_pras(pras_system_path::String, args::Dict)
     results = Dict{String,Any}(zip(keys(resultspec), results_tuple))
 
     #%% Print some results for the entire modeled region to show it worked
-    @info "$(PRAS.LOLE(results["short"])) event-h"
-    @info "$(PRAS.EUE(results["short"])) MWh"
-    @info "NEUE = $(1e6 * PRAS.EUE(results["short"]).eue.estimate / sum(sys.regions.load)) ppm"
+    @info "$(PRAS.LOLE(results["short"]))"
+    @info "$(PRAS.EUE(results["short"]))"
+    @info "$(PRAS.NEUE(results["short"]))"
 
     ## Filter out DC regions used for VSC HVDC transmission
     regions = [r for r in sys.regions.names if !(occursin("|", r))]

@@ -58,64 +58,6 @@ def get_reeds_years(run_folder, first_year=2009):
     return years
 
 
-def expand_star(df, index=True, col=None):
-    """
-    Expands technologies according to GAMS syntax.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame to be expanded.
-    index : bool, optional
-        If True (default), uses index as technology to expand. If False, uses the
-        column specified by ``col``.
-    col : str, optional
-        If ``index = False``, this value is required and is used as the technology
-        to expand. By default, this is None.
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame with the values in index or col expanded according to GAMS syntax.
-    """
-
-    def expand(df):
-        df_new = pd.DataFrame(columns=df.columns)
-        for subset in df.index:
-            temp_save = []
-            if "*" in subset:
-                temp_remove = df.loc[[subset]]
-                df.drop(subset, inplace=True)
-                temp = subset.split("*")
-                temp2 = temp[0].split("_")
-                temp_low = pd.to_numeric(temp[0].split("_")[-1])
-                temp_high = pd.to_numeric(temp[1].split("_")[-1])
-                temp_tech = ""
-                for n in range(0, len(temp2) - 1):
-                    temp_tech += temp2[n]
-                    if not n == len(temp2) - 2:
-                        temp_tech += "_"
-                for c in range(temp_low, temp_high + 1):
-                    temp_save.append(f"{temp_tech}_{c}")
-                df_new = pd.concat(
-                    [
-                        df_new,
-                        pd.DataFrame(
-                            np.repeat(temp_remove.values, len(temp_save), axis=0),
-                            index=temp_save,
-                            columns=df.columns,
-                        ),
-                    ]
-                )
-        return pd.concat([df, df_new])
-
-    if index:
-        return expand(df)
-
-    tmp = expand(df.set_index(col))
-    return tmp.reset_index().rename(columns={"index": col})
-
-
 def get_reeds_tech_lifetimes(run_folder):
     """
     Helper function for prepare_data(). Finds the lifetime (in years) for each
@@ -136,7 +78,7 @@ def get_reeds_tech_lifetimes(run_folder):
     lifetimes_src = os.path.join(run_folder, "inputs_case", "maxage.csv")
     lifetimes_df = pd.read_csv(lifetimes_src, names=["tech", "lifetime"])
 
-    lifetimes_expanded_df = expand_star(lifetimes_df, index=False, col="tech")
+    lifetimes_expanded_df = reeds.techs.expand_GAMS_tech_groups(lifetimes_df, col="tech")
 
     return lifetimes_expanded_df
 
@@ -217,22 +159,13 @@ def reaggregate_supply_curve_regions(df_sc_in, run_folder):
         ``df_sc_in`` where values of "region" are remapped to aggregated regions.
         If not, returns ``df_sc_in`` unchanged.
     """
-    sw = reeds.io.get_switches(run_folder)
-    if sw["GSw_RegionResolution"] == "county":
-        ### Map original sc regions to county
-        # pylint: disable-next=consider-using-f-string
-        df_sc_in["region"] = "p" + df_sc_in.FIPS.astype(str).map("{:>05}".format)
-
-    elif sw["GSw_RegionResolution"] == "aggreg":
-        ### Load  hierarchy file
-        hierarchy = pd.read_csv(
-            os.path.join(run_folder, "inputs_case", "hierarchy_original.csv"),
-            index_col="ba",
-        )
-        if "aggreg" in hierarchy.columns:
-            r2aggreg = hierarchy.aggreg.copy()
-            ### Map original regions to new aggreg's
-            df_sc_in["region"] = df_sc_in["region"].map(r2aggreg)
+    county2zone = reeds.io.get_county2zone(run_folder)
+    df_sc_in["region"] = (
+        df_sc_in.FIPS
+        .astype(str)
+        .map("{:>05}".format)
+        .map(county2zone)
+    )
 
     return df_sc_in
 

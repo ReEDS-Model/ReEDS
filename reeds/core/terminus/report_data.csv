@@ -1,0 +1,25 @@
+***
+*** Sets and parameters
+***
+distance
+h_rep
+h_stress_t
+hours
+hours_t
+r
+routes
+***
+*** Variables
+***
+CAP_ABOVE_LIM
+CAP_CONVERTER
+CAPTRAN_ENERGY
+CAPTRAN_GRP
+CAPTRAN_PRM
+CO2_CAPTURED
+CO2_FLOW
+CO2_SPURLINE_INV
+CO2_STORED
+CO2_TRANSPORT_INV
+FLOW
+INVTRAN

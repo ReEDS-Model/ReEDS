@@ -1,0 +1,11 @@
+class,access_case,min_reV_mean_temp,max_reV_mean_temp
+1,reference,325,500
+2,reference,300,325
+3,reference,275,300
+4,reference,250,275
+5,reference,225,250
+6,reference,200,225
+7,reference,175,200
+8,reference,150,175
+9,reference,125,150
+10,reference,0,125

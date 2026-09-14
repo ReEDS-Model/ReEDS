@@ -86,6 +86,213 @@ def plot_cendivweights(inputs_case, dfmap, cendivweights):
     return f, ax
 
 
+def calculate_daily_state_degree_days(
+    inputs_case: str
+) -> dict[str, pd.DataFrame]:
+    """
+    Calculate daily historical heating and cooling degree days for each state
+    and each weather year (based on the GSw_HourlyWeatherYears switch) using
+    hourly state-level temperature data.
+
+    Args:
+        inputs_case: Path to the inputs case directory.
+
+    Returns:
+        dict[str, pd.DataFrame]
+    """
+    # Get hourly state-level temperatures
+    temp_hourly = reeds.io.get_temperatures(inputs_case)
+
+    # Get baseline temperature for calculating degree days
+    scalars = reeds.io.get_scalars(inputs_case)
+    base_temp = scalars['degree_days_base_temperature']
+
+    # Calculate degree-hours (hourly deviations from baseline)
+    # and then take the daily averages of degree-hours to
+    # get degree days. This is different from the traditional
+    # approach for calculating degree days
+    # (https://www.eia.gov/energyexplained/units-and-calculators/degree-days.php),
+    # but we found that this approach generally resulted in better
+    # predictors of daily deviations from annual average gas prices.
+    hdd_hourly = (base_temp - temp_hourly).clip(lower=0)
+    hdd_daily = hdd_hourly.resample('D').mean()
+
+    cdd_hourly = (temp_hourly - base_temp).clip(lower=0)
+    cdd_daily = cdd_hourly.resample('D').mean()
+
+    degree_days_daily = {
+        'hdd': hdd_daily,
+        'cdd': cdd_daily
+    }
+
+    return degree_days_daily
+
+
+def calculate_daily_gasreg_degree_days(
+    inputs_case: str,
+) -> dict[str, pd.DataFrame]:
+    """
+    Calculate daily gasreg-level heating and cooling degree days.
+    This is done by calculating daily state-level degree days for
+    the weather year(s) of the given case and then aggregating
+    them to the gasreg level via population-weighted average.
+
+    Args:
+        inputs_case: Path to the inputs case directory.
+
+    Returns:
+        dict[str, pd.DataFrame]
+    """
+    # Calculate population-based state-gasreg weights
+    state_gasreg_weights = (
+        reeds.spatial.calculate_region_aggregion_population_weights(
+            inputs_case,
+            region_level='state',
+            aggregion_level='gasreg'
+        )
+    )
+
+    # Calculate state-level daily HDDs and CDDs
+    degree_days_daily_st = calculate_daily_state_degree_days(inputs_case)
+    hdd_daily_st = degree_days_daily_st['hdd']
+    cdd_daily_st = degree_days_daily_st['cdd']
+
+    # Aggregate daily state-level degree days to
+    # the gasreg level via population-weighted average
+    state_groups = reeds.inputs.get_state_groups()
+    st2gasreg = state_groups.set_index('st')['gasreg']
+    hdd_daily_gasreg = reeds.spatial.aggregate_by_weighted_average(
+        hdd_daily_st,
+        state_gasreg_weights,
+        st2gasreg
+    )
+    hdd_daily_gasreg = hdd_daily_gasreg.rename_axis(index='datetime')
+    cdd_daily_gasreg = reeds.spatial.aggregate_by_weighted_average(
+        cdd_daily_st,
+        state_gasreg_weights,
+        st2gasreg
+    )
+    cdd_daily_gasreg = cdd_daily_gasreg.rename_axis(index='datetime')
+
+    degree_days_daily = {
+        'hdd': hdd_daily_gasreg,
+        'cdd': cdd_daily_gasreg
+    }
+
+    return degree_days_daily
+
+
+def calculate_daily_gasprice_multipliers(
+    inputs_case: str
+) -> dict[str, pd.DataFrame]:
+    """
+    Calculate daily gas price multipliers at the r and cendiv levels.
+    This is done by calculating daily gasreg-level heating and cooling
+    degree days and then applying price adjustment regression parameters
+    to them to derive gasreg-level price multipliers. Then, to derive r-level
+    multipliers, the gasreg-level multipliers are copied to their constituent
+    zones. To derive cendiv-level multipliers, gasreg-level multipliers are
+    aggregated via population-weighted average.
+
+    Note that this function just gives an intermediate result, which is
+    passed to hourly_writetimeseries.py for further processing. In
+    hourly_writetimeseries.py, the multipliers are renormalized so that the
+    average of the multipliers for the set of representative periods
+    is 1 for each region.
+
+    Args:
+        inputs_case: Path to the inputs case directory.
+
+    Returns:
+        dict[str, pd.DataFrame]
+    """
+    # Get degree day-price multiplier regression parameters. These
+    # parameters represent a regression model where heating and
+    # cooling degree days were regressed on the log of the multiplicative
+    # difference between daily gas prices and the annual price for each
+    # gasreg with monthly fixed effects.
+    regression_params = pd.read_csv(
+        os.path.join(
+            inputs_case,
+            'gasreg_price_adj_regression_params.csv'
+        ),
+        index_col='param'
+    )
+
+    # Calculate daily gasreg-level HDDs and CDDs
+    degree_days_daily_gasreg = calculate_daily_gasreg_degree_days(inputs_case)
+    hdd_daily_gasreg = degree_days_daily_gasreg['hdd']
+    cdd_daily_gasreg = degree_days_daily_gasreg['cdd']
+
+    # Apply regression parameters to daily HDD/CDDs
+    # to get daily gasreg-level price multipliers
+    df_out = pd.DataFrame(index=hdd_daily_gasreg.index)
+    for gasreg in regression_params.columns:
+        beta_cdd = regression_params.loc['beta_CDD', gasreg]
+        beta_hdd = regression_params.loc['beta_HDD', gasreg]
+        alpha = regression_params.loc['alpha', gasreg]
+        month_effects_map = (
+            regression_params
+            .loc[regression_params.index.str.contains('alpha_')]
+            [gasreg]
+        )
+        month_effects_map.index = (
+            month_effects_map.index
+            .str
+            .removeprefix('alpha_')
+        )
+        month_effects = (
+            hdd_daily_gasreg.index
+            .strftime('%b')
+            .str
+            .upper()
+            .map(month_effects_map)
+        )
+        # Applying the regression parameters gives the log of the
+        # daily multiplicative difference from the annual average
+        # price, so exponentiate to get daily price multipliers.
+        gasreg_price_log_mult_diffs = (
+            alpha
+            + beta_cdd * cdd_daily_gasreg[gasreg]
+            + beta_hdd * hdd_daily_gasreg[gasreg]
+            + month_effects.values
+        )
+        gasreg_price_multipliers = np.exp(gasreg_price_log_mult_diffs)
+        df_out[gasreg] = gasreg_price_multipliers
+
+    # Get hierarchy
+    hierarchy = reeds.io.get_hierarchy(os.path.dirname(inputs_case))
+
+    # Create one set of multipliers at the r hierarchy level
+    # by copying the gasreg-level multipliers to their constitutent zones
+    df_out_r = pd.DataFrame(data={
+        r: df_out[gasreg] for r, gasreg in hierarchy['gasreg'].items()
+    })
+
+    # Create another set of multipliers for census divisions by aggregating
+    # the gasreg-level multipliers via population-weighted average
+    gasreg_cendiv_weights = (
+        reeds.spatial.calculate_region_aggregion_population_weights(
+            inputs_case,
+            region_level='gasreg',
+            aggregion_level='cendiv'
+        )
+    )
+    gasreg_cendiv_map = dict(zip(hierarchy['gasreg'], hierarchy['cendiv']))
+    df_out_cendiv = reeds.spatial.aggregate_by_weighted_average(
+        df_out,
+        gasreg_cendiv_weights,
+        gasreg_cendiv_map
+    )
+
+    dict_out = {
+        'r': df_out_r,
+        'cendiv': df_out_cendiv
+    }
+
+    return dict_out
+
+
 #%% Procedure
 if __name__ == '__main__':
     #%% Parse arguments
@@ -208,11 +415,19 @@ if __name__ == '__main__':
         except Exception as err:
             print(err)
 
+    # Daily gas price multipliers
+    daily_gasprice_multipliers = calculate_daily_gasprice_multipliers(
+        inputs_case
+    )
+    daily_gasprice_multipliers_r = daily_gasprice_multipliers['r']
+    daily_gasprice_multipliers_cendiv = daily_gasprice_multipliers['cendiv']
+
     # Combine all fuel data
     fuel = coal.merge(uranium,on=['t','r'],how='left')
     fuel = fuel.merge(ngprice,on=['t','r'],how='left')
     fuel = fuel.merge(h2fuel,on=['t','r'],how='left')
     fuel = fuel.sort_values(['t','r'])
+
 
     #%%#################################### 
     ### Natural Gas Demand Calculations ###
@@ -240,6 +455,16 @@ if __name__ == '__main__':
 
     fuel.to_csv(os.path.join(inputs_case,'fprice.csv'),index=False)
     ngprice_cendiv.to_csv(os.path.join(inputs_case,'gasprice_ref.csv'))
+    reeds.io.write_profile_to_h5(
+        daily_gasprice_multipliers_r,
+        'daily_gasprice_multipliers_r.h5',
+        inputs_case
+    )
+    reeds.io.write_profile_to_h5(
+        daily_gasprice_multipliers_cendiv,
+        'daily_gasprice_multipliers_cendiv.h5',
+        inputs_case
+    )
 
     ngdemand.to_csv(os.path.join(inputs_case,'ng_demand_elec.csv'))
     ngtotdemand.to_csv(os.path.join(inputs_case,'ng_demand_tot.csv'))

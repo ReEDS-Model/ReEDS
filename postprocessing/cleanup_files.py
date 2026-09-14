@@ -52,7 +52,7 @@ file_levels = {
         'handoff',
         ## The following regex matches the rep_{casename}.gdx file written by
         ## report.gms (which contains the same data as outputs.h5)
-        os.path.join('outputs', '^rep_.*\.gdx$'),
+        os.path.join('outputs', r'^rep_.*\.gdx$'),
     ]
 }
 

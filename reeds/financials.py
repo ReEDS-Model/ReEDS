@@ -3,8 +3,8 @@ import numpy as np
 import os
 import sys
 import itertools
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 
 
@@ -110,25 +110,22 @@ def build_dfs(years, techs, vintage_definition, year_map):
 
 
 def import_sys_financials(
-    financials_sys_suffix,
+    sw,
+    scalars,
     inflation_df,
     modeled_years,
     years,
     year_map,
-    sys_eval_years,
     scen_settings,
-    co2_incentive_length,
-    h2_incentive_length,
 ):
     '''
     Import system-wide financial parameters, and calculate discount rate from them
-
     '''
 
     # Import and merge on inflation rate data
     sys_financials = import_data(
         file_root='financials_sys',
-        file_suffix=financials_sys_suffix,
+        file_suffix=sw['financials_sys_suffix'],
         indices=['t'],
         scen_settings=scen_settings,
     )
@@ -153,7 +150,7 @@ def import_sys_financials(
     sys_financials = sys_financials.set_index('t')
 
     # Calculate pvf_capital.
-    sys_financials['pvf_capital'] = 1
+    sys_financials['pvf_capital'] = 1.
     for year in np.arange(np.min(modeled_years) + 1, np.max(years) + 1):
         sys_financials.loc[year, 'pvf_capital'] = (
             sys_financials.loc[year - 1, 'pvf_capital'] / sys_financials.loc[year - 1, 'd_real']
@@ -171,10 +168,13 @@ def import_sys_financials(
     sys_financials = sys_financials.reset_index()
 
     # Calculate the capital recovery factor for each year (for pvf_onm for sequential mode).
-    sys_financials['crf'] = calc_crf(sys_financials['d_real'], sys_eval_years)
+    sys_financials['crf'] = calc_crf(sys_financials['d_real'], sw['sys_eval_years'])
 
-    sys_financials['crf_co2_incentive'] = calc_crf(sys_financials['d_real'], co2_incentive_length)
-    sys_financials['crf_h2_incentive'] = calc_crf(sys_financials['d_real'], h2_incentive_length)
+    sys_financials['crf_co2_incentive'] = calc_crf(
+        sys_financials['d_real'],
+        scalars['co2_capture_incentive_length'],
+    )
+    sys_financials['crf_h2_incentive'] = calc_crf(sys_financials['d_real'], scalars['h2_ptc_length'])
 
     # Merge on year_map for the model year column
     # As an inner merge, this removes any extraneous years, that weren't part of year_map
@@ -183,12 +183,12 @@ def import_sys_financials(
     return sys_financials
 
 
-def read_regional_cap_cost_diff(inputs_case):
+def read_regional_cap_cost_diff(fpath):
     """
     Read file and reshape to long format.
     Column names are |-delimited tech groups, so broadcast to individual tech groups.
     """
-    dfin = pd.read_csv(os.path.join(inputs_case, 'regional_cap_cost_diff.csv'), index_col='r')
+    dfin = pd.read_csv(fpath, index_col='r')
     dictout = {}
     for tech_groups in dfin:
         for tech_group in tech_groups.split('|'):
@@ -221,10 +221,11 @@ def import_data(
 
 
     '''
-    if file_root == 'regional_cap_cost_diff':
-        df = read_regional_cap_cost_diff(os.path.join(scen_settings.inputs_case))
+    fpath = Path(reeds.io.reeds_path, 'inputs', 'financials', f'{file_root}_{file_suffix}.csv')
+    if file_root == 'reg_cap_cost_diff':
+        df = read_regional_cap_cost_diff(fpath)
     else:
-        df = pd.read_csv(os.path.join(scen_settings.inputs_case, f'{file_root}.csv'))
+        df = pd.read_csv(fpath)
 
     # Expand tech groups, if there is an 'i' column and the argument is True
     if 'i' in df.columns and expand_tech_groups is True:
@@ -290,8 +291,8 @@ def import_data(
     if check_for_dups is True:
         df_index_check = df[indices].copy()
         if len(df_index_check) != len(df_index_check.drop_duplicates()):
-            print('Error: Duplicate entries for', file_root, file_suffix, 'on indices', indices)
-            sys.exit()
+            err = f'Error: Duplicate entries for {file_root} {file_suffix} on indices {indices}'
+            raise ValueError(err)
 
     return df
 
@@ -744,7 +745,9 @@ def adjust_ptc_values(df_ivt):
     return df_ivt
 
 
-def inv_param_exporter(df, modeled_years, parameter, indices, file_name, output_dir):
+def inv_param_exporter(
+    df, modeled_years, parameter, indices, file_name, inputs_case, units='', comment='',
+):
     '''
     General exporter for investment parameters, to be used in the GAMS model.
 
@@ -756,35 +759,24 @@ def inv_param_exporter(df, modeled_years, parameter, indices, file_name, output_
 
     # For investment parameters we only care about modeled_year values
     # Skip this step if there is no 't' index, inducated by modeled_years=None
-    if 't' in indices:
-        df = df[df['t'].isin(modeled_years)]
+    for tcol in ['t', 'allt']:
+        if tcol in indices:
+            df = df[df[tcol].isin(modeled_years)]
 
     df_param = df[indices + [parameter]].drop_duplicates()
     df_check_size = df[indices].drop_duplicates()
 
     if len(df_param) != len(df_check_size):
-        print(
+        err = (
             'Attempting to collapse parameter down, but it varies across a non-specified '
-            'index\nParameter:',
-            parameter,
-        )
-        print(
+            f'index\nParameter: {parameter}\n'
             'To debug, use df_param.duplicated(indices), pick something that is duplicated, '
             'then filter down to that\nin the larger df, looking for reasons why it would '
             'vary across the indices given.'
         )
-        sys.exit()
+        raise ValueError(err)
 
     df_param[parameter] = np.round(df_param[parameter], 6)
-    ### Add '*' to first column name so GAMS reads it as a comment
-    df_param = df_param.rename(
-        columns={c: (f'*{c}' if not i else c) for i, c in enumerate(df_param.columns)}
+    reeds.io.write_to_inputs_h5(
+        df_param, file_name, inputs_case, gamstype='parameter', units=units, comment=comment,
     )
-    df_param.to_csv(os.path.join(output_dir, f'{file_name}.csv'), index=False, header=True)
-
-
-def param_exporter(df, parameter, file_name, output_dir):
-    """Export parameters"""
-    ### Add '*' to first column name so GAMS reads it as a comment
-    df = df.rename(columns={c: (f'*{c}' if not i else c) for i, c in enumerate(df.columns)})
-    df.round(5).to_csv(os.path.join(output_dir, f'{file_name}.csv'), index=False, header=True)

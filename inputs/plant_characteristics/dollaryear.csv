@@ -25,12 +25,15 @@ csp_ATB_2024_moderate,2022
 csp_SunShot2030,2017
 evmc_shape_Baseline,2020
 evmc_storage_Baseline,2020
-fuelcell_ATB_2024_advanced,2022
-fuelcell_ATB_2024_moderate,2022
+h2fuelcell_advanced,2022
+h2fuelcell_moderate,2022
+h2fuelcell_conservative,2022
 gas_ATB_2024_moderate,2022
 gas-ccs_ATB_2024_advanced,2022
 gas-ccs_ATB_2024_conservative,2022
 gas-ccs_ATB_2024_moderate,2022
+fuelcell_ATB_2024_advanced,2022
+fuelcell_ATB_2024_moderate,2022
 geo_ATB_2023_advanced,2020
 geo_ATB_2023_conservative,2020
 geo_ATB_2023_moderate,2020

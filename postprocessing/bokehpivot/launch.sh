@@ -1,2 +1,2 @@
-conda activate reeds2
+conda activate reeds
 bokeh serve . --sh --port 0

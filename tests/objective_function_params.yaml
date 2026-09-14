@@ -208,11 +208,20 @@ gasmultterm:
   - r_cendiv
   switchon:
     GSw_GasCurve: 1
-szn_adj_gas:
+gasprice_adj_r:
   indexsets:
   - h
   switchon:
-    GSw_GasCurve: 1
+    GSw_GasCurve:
+    - 1
+    - 2
+gasprice_adj_cendiv:
+  indexsets:
+  - h
+  switchon:
+    GSw_GasCurve:
+    - 0
+    - 3
 cendiv_weights:
   indexsets:
   - valgen

@@ -204,6 +204,9 @@ $offdelim
 $onlisting
 / ;
 
+hours_t(allh,t)$tmodel(t) = 0 ;
+hours_t(h,t)$tmodel(t) = hours(h) ;
+
 parameter numdays(allszn) "--number of days-- number of days for each season" ;
 numdays(allszn) = 0 ;
 numdays(szn) = sum{h$h_szn(h,szn),hours(h) } / 24 ;
@@ -441,8 +444,8 @@ h2_exogenous_demand_regional(r,p,h,t)$[tmodel_new(t)$h2_share(r,t)]
 * -- Capacity factor --
 *=============================================
 
-* Written by cfgather.py, overwritten by hourly_writetimeseries.py
-parameter cf_in(i,r,allh) "--fraction-- capacity factors for renewable technologies"
+* Written by hourly_writetimeseries.py
+parameter cf_in(i,c,r,allh) "--fraction-- capacity factors for renewable technologies"
 /
 $offlisting
 $ondelim
@@ -452,12 +455,12 @@ $offdelim
 $onlisting
 / ;
 
-cf_in(i,r,h)$[i_water_cooling(i)$Sw_WaterMain] =
-  sum{ii$ctt_i_ii(i,ii), cf_in(ii,r,h) } ;
+cf_in(i,c,r,h)$[i_water_cooling(i)$Sw_WaterMain] =
+  sum{ii$ctt_i_ii(i,ii), cf_in(ii,c,r,h) } ;
 
 *initial assignment of capacity factors
-cf_rsc(i,v,r,allh,t) = 0 ;
-cf_rsc(i,v,r,h,t)$[cf_in(i,r,h)$cf_tech(i)$valcap(i,v,r,t)] = cf_in(i,r,h) ;
+cf_rsc(i,c,v,r,allh,t)$i_c(i,c) = 0 ;
+cf_rsc(i,c,v,r,h,t)$[cf_in(i,c,r,h)$cf_tech(i)$valcap(i,v,r,t)] = cf_in(i,c,r,h) ;
 
 * Written by reeds/input_processing/hourly_writetimeseries.py
 $onempty
@@ -471,29 +474,6 @@ $offdelim
 $onlisting
 / ;
 $offempty
-
-$ifthen.climatehydro %GSw_ClimateHydro% == 1
-
-* Written by climateprep.py
-table climate_hydro_seasonal(r,allszn,allt)  "annual/seasonal nondispatchable hydropower availability"
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%climate_hydadjsea.csv
-$offdelim
-$onlisting
-;
-
-* adjust cf_hyd based on annual/seasonal climate multipliers
-* non-dispatchable hydro gets new seasonal profiles as well as annually-varying CF
-* dispatchable hydro keeps the original seasonal profiles; only annual CF changes. Reflects the assumption
-* that reservoirs will be utilized in the same seasonal pattern even if seasonal inflows change.
-cf_hyd(i,szn,r,t)$[hydro_nd(i)$(yeart(t)>=Sw_ClimateStartYear)] =
-    sum{allt$att(allt,t), cf_hyd(i,szn,r,t) * climate_hydro_seasonal(r,szn,allt) } ;
-
-cf_hyd(i,szn,r,t)$[hydro_d(i)$(yeart(t)>=Sw_ClimateStartYear)]  =
-    sum{allt$att(allt,t), cf_hyd(i,szn,r,t) * climate_hydro_annual(r,allt) } ;
-
-$endif.climatehydro
 
 *created by reeds/input_processing/writecapdat.py
 parameter cap_hyd_szn_adj(i,allszn,r) "--fraction-- seasonal max capacity adjustment for dispatchable hydro"
@@ -512,10 +492,10 @@ cf_hyd(i,szn,r,t)$[upgrade(i)$(hydro(i) or psh(i))] =
     sum{ii$upgrade_from(i,ii), cf_hyd(ii,szn,r,t) } ;
 
 * dispatchable hydro has a separate constraint for seasonal generation which uses m_cf_szn
-cf_rsc(i,v,r,h,t)$[hydro(i)$valcap(i,v,r,t)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
+cf_rsc(i,c,v,r,h,t)$[hydro(i)$valcap(i,v,r,t)$i_c(i,c)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
 
-cf_rsc(i,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,v,r,tt) })] =
-        cf_rsc(i,"init-1",r,h,t) ;
+cf_rsc(i,c,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,v,r,tt) })] =
+        cf_rsc(i,c,"init-1",r,h,t) ;
 
 * For cap_hyd_szn_adj, which only applies to dispatchable hydro or upgraded disp hydro with added pumping, we first try using the from-tech, but if that is
 * not available we use to to-tech, and if not that either we just use 1.
@@ -527,31 +507,28 @@ cap_hyd_szn_adj(i,szn,r)$[upgrade(i)$hydro_d(i)$(not cap_hyd_szn_adj(i,szn,r))] 
 
 
 * do not apply "avail" for hybrid PV+battery because "avail" represents the battery availability
-m_cf(i,v,r,allh,t) = 0 ;
-m_cf(i,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$cf_rsc(i,v,r,h,t)$cf_adj_t(i,v,t)] =
-    cf_rsc(i,v,r,h,t)
-    * cf_adj_t(i,v,t)
+m_cf(i,c,v,r,allh,t)$i_c(i,c) = 0 ;
+m_cf(i,c,v,r,h,t)$[i_c(i,c)$cf_tech(i)$valcap(i,v,r,t)$cf_rsc(i,c,v,r,h,t)$cf_adj_t(i,c,v,t)] =
+    cf_rsc(i,c,v,r,h,t)
+    * cf_adj_t(i,c,v,t)
     * (avail(i,r,h)$[not pvb(i) and not hydro(i)] + 1$(pvb(i) or hydro(i)) );
 
 * can remove capacity factors for new vintages that have not been introduced yet
-m_cf(i,newv,r,h,t)$[not sum{tt$(yeart(tt) <= yeart(t)), ivt(i,newv,tt ) }$valcap(i,newv,r,t)$m_cf(i,newv,r,h,t)] = 0 ;
+m_cf(i,c,newv,r,h,t)$[not sum{tt$(yeart(tt) <= yeart(t)), ivt(i,newv,tt ) }$valcap(i,newv,r,t)$m_cf(i,c,newv,r,h,t)] = 0 ;
 
-* distpv capacity factor is divided by (1.0 - distloss) to provide a busbar equivalent capacity factor
-m_cf(i,v,r,h,t)$[distpv(i)$valcap(i,v,r,t)] = m_cf(i,v,r,h,t) / (1.0 - distloss) ;
-
-* doing this before calculating m_cf_szn to make sure 
+* doing this before calculating m_cf_szn to make sure
 * m_cf_szn does not get populated with very small values
-m_cf(i,v,r,h,t)$[not valcap(i,v,r,t)] = 0 ;
-m_cf(i,v,r,h,t)$[(m_cf(i,v,r,h,t)<0.01)$valcap(i,v,r,t)] = 0 ;
-m_cf(i,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$m_cf(i,v,r,h,t)] = round(m_cf(i,v,r,h,t),3) ;
+m_cf(i,c,v,r,h,t)$[i_c(i,c)$(not valcap(i,v,r,t))] = 0 ;
+m_cf(i,c,v,r,h,t)$[(m_cf(i,c,v,r,h,t)<0.01)$valcap(i,v,r,t)] = 0 ;
+m_cf(i,c,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$m_cf(i,c,v,r,h,t)] = round(m_cf(i,c,v,r,h,t),3) ;
 
 * Remove capacity when there is no corresponding capacity factor
-m_capacity_exog(i,v,r,t)$[initv(v)$cf_tech(i)$(not sum{h, m_cf(i,v,r,h,t) })] = 0 ;
+m_capacity_exog(i,v,r,t)$[initv(v)$cf_tech(i)$(not sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) })] = 0 ;
 
 * Average CF by season
 m_cf_szn(i,v,r,allszn,t) = 0 ;
 m_cf_szn(i,v,r,szn,t)$[cf_tech(i)$valcap(i,v,r,t)$(hydro_d(i) or hyd_add_pump(i))] =
-    sum{h$h_szn(h,szn), hours(h) * m_cf(i,v,r,h,t) }
+    sum{(h,c)$[h_szn(h,szn)$i_c(i,c)], hours(h) * m_cf(i,c,v,r,h,t) }
     / sum{h$h_szn(h,szn), hours(h) } ;
 
 * adding upgrade techs for hydro
@@ -569,7 +546,7 @@ m_cf_szn(i,v,r,szn,t)
 
 * Calculate daytime hours (for PVB) based on hours with nonzero PV CF
 dayhours(allh) = 0 ;
-dayhours(h)$[sum{(i,v,r,t)$[pv(i)$valgen(i,v,r,t)], m_cf(i,v,r,h,t) }] = yes ;
+dayhours(h)$[sum{(i,c,v,r,t)$[pv(i)$valgen(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t)}] = yes ;
 
 
 *=====================================================================================
@@ -771,7 +748,7 @@ $onlisting
 $offempty
 
 * Written by hourly_writetimeseries.py
-parameter load_allyear(r,allh,allt) "--MW-- end-use load by region, timeslice, and year"
+parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"
 / 
 $offlisting
 $ondelim
@@ -780,9 +757,8 @@ $include inputs_case%ds%stress%stress_year%%ds%load_allyear.csv
 $offdelim
 $onlisting
 / ;
-* Dividing by (1-distloss) converts end-use load to busbar load
 load_exog(r,allh,t) = 0 ;
-load_exog(r,h,t) = load_allyear(r,h,t) / (1.0 - distloss) ;
+load_exog(r,h,t) = load_allyear(r,h,t) ;
 
 parameter prm_year(r) "--fraction-- planning reserve margin for the current solve year"
 / 
@@ -845,7 +821,7 @@ peak_static_frac(r,ccseason,t) = 1 - sum{(flex_type,h)$h_ccseason_prm(h,ccseason
 
 
 * Written by hourly_writetimeseries.py
-parameter peak_ccseason(r,ccseason,allt) "--MW-- end-use peak demand by region, season, year"
+parameter peak_ccseason(r,ccseason,allt) "--MW-- busbar peak demand by region, season, year"
 /
 $offlisting
 $ondelim
@@ -853,8 +829,7 @@ $include inputs_case%ds%%temporal_inputs%%ds%peak_ccseason.csv
 $offdelim
 $onlisting
 / ;
-*Dividing by (1-distloss) converts end-use load to busbar load
-peakdem_static_ccseason(r,ccseason,t) = peak_ccseason(r,ccseason,t) * peak_static_frac(r,ccseason,t) / (1.0 - distloss) ;
+peakdem_static_ccseason(r,ccseason,t) = peak_ccseason(r,ccseason,t) * peak_static_frac(r,ccseason,t) ;
 
 
 $onempty
@@ -869,7 +844,7 @@ $onlisting
 $offempty
 
 peakdem_static_h(r,allh,t) = 0 ;
-peakdem_static_h(r,h,t) = peak_h(r,h,t) * (1 - sum{flex_type, flex_demand_frac(flex_type,r,h,t) }) / (1.0 - distloss) ;
+peakdem_static_h(r,h,t) = peak_h(r,h,t) * (1 - sum{flex_type, flex_demand_frac(flex_type,r,h,t) }) ;
 
 
 *=============================================
@@ -879,15 +854,44 @@ peakdem_static_h(r,h,t) = peak_h(r,h,t) * (1 - sum{flex_type, flex_demand_frac(f
 gasadder_cd(cendiv,t,allh) = 0 ;
 gasadder_cd(cendiv,t,h) = (gasprice_ref(cendiv,t) - gasprice_nat(t))/2 ;
 
-*winter gas gets marked up
-gasadder_cd(cendiv,t,h) =
-    gasadder_cd(cendiv,t,h)
-    + gasprice_ref_frac_adder * frac_h_quarter_weights(h,"wint") * gasprice_ref(cendiv,t) ;
+* Written by hourly_writetimeseries.py
+$onempty
+parameter gasprice_adj_r(r,allh) "--unitless-- daily gas price multipliers by region and timeslice"
+/ 
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%daily_gasprice_multipliers_r.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
 
+$onempty
+parameter gasprice_adj_cendiv(cendiv,allh) "--unitless-- daily gas price multipliers by cendiv and timeslice"
+/ 
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%daily_gasprice_multipliers_cendiv.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+* If GSw_GasPriceAdjMethod = 1, replace daily regional adjustments with the national wintertime markup
 szn_adj_gas(allh) = 0 ;
 szn_adj_gas(h) = 1 ;
 szn_adj_gas(h)$frac_h_quarter_weights(h,"wint") =
     szn_adj_gas(h) + frac_h_quarter_weights(h,"wint") * szn_adj_gas_winter ;
+* Renormalize so hour-weighted average of szn_adj_gas is 1
+scalar szn_adj_gas_avg "--unitless-- hour-weighted average of natural gas seasonal adjustment" ;
+szn_adj_gas_avg = sum{h, szn_adj_gas(h) * hours(h) } / sum{h, hours(h) } ;
+szn_adj_gas(h) = szn_adj_gas(h) / szn_adj_gas_avg ;
+gasprice_adj_r(r,h)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
+gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 1) = szn_adj_gas(h) ;
+
+* If GSw_GasPriceAdjMethod = 0, nullify the price adjustments
+gasprice_adj_r(r,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
+gasprice_adj_cendiv(cendiv,h)$(Sw_GasPriceAdjMethod = 0) = 1 ;
 
 
 *=============================================
@@ -906,6 +910,8 @@ load_exog_static(r,h,t)$load_exog_static(r,h,t) = round(load_exog_static(r,h,t),
 minloadfrac(r,i,h)$minloadfrac(r,i,h) = round(minloadfrac(r,i,h),3) ;
 numdays(szn)$numdays(szn) = round(numdays(szn),3) ;
 szn_adj_gas(h)$szn_adj_gas(h) = round(szn_adj_gas(h), 3) ;
+gasprice_adj_r(r,h)$gasprice_adj_r(r,h) = round(gasprice_adj_r(r,h), 3) ;
+gasprice_adj_cendiv(cendiv,h)$gasprice_adj_cendiv(cendiv,h) = round(gasprice_adj_cendiv(cendiv,h), 3) ;
 cap_hyd_szn_adj(i,szn,r)$cap_hyd_szn_adj(i,szn,r) = round(cap_hyd_szn_adj(i,szn,r),3) ;
 peakdem_static_ccseason(r,ccseason,t)$peakdem_static_ccseason(r,ccseason,t) = round(peakdem_static_ccseason(r,ccseason,t),2) ;
 seas_cap_frac_delta(i,v,r,szn,t)$seas_cap_frac_delta(i,v,r,szn,t) = round(seas_cap_frac_delta(i,v,r,szn,t),3) ;

@@ -68,9 +68,10 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
     # Note that even though we can specify incentive-level safe harbors in the inputs, we are
     # calculating the single phaseout mult with the maximum safe harbor. This is an expedient for
     # lack of time to create a phaseout for each incentive. 
-    safe_harbors = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'safe_harbor.csv')
-    ).rename(columns={'*i':'i', 't':'t_online'})
+    safe_harbors = (
+        reeds.io.read_input(case, 'safe_harbor')
+        .rename(columns={'t':'t_online', 'Value':'safe_harbor'})
+    )
 
     const_times = pd.read_csv(
         os.path.join(case, 'inputs_case', 'construction_times.csv'))
@@ -190,13 +191,13 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
         # If no years fell below the trigger value, tc phaseout has not begun,
         # so just set tc_phaseout_mult to 1.0 for all techs
         else:
-            tc_phaseout_mult = const_times[['i']].copy()
+            tc_phaseout_mult = const_times[['i']].drop_duplicates().copy()
             tc_phaseout_mult['tc_phaseout_mult'] = 1.0
 
     # If the first allowable trigger year has not yet been reached, tc phaseout has not begun,
     # so just set tc_phaseout_mult to 1.0 for all techs
     else:
-        tc_phaseout_mult = const_times[['i']].copy()
+        tc_phaseout_mult = const_times[['i']].drop_duplicates().copy()
         tc_phaseout_mult['tc_phaseout_mult'] = 1.0
 
     # Round for GAMS
@@ -204,7 +205,7 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
     tc_phaseout_mult['t'] = year
 
     data = {'tc_phaseout_mult_t':tc_phaseout_mult[['i', 't', 'tc_phaseout_mult']]}
-    gdxpds.to_gdx(data, os.path.join(tc_file_dir, 'tc_phaseout_mult_%s.gdx' % year))
+    gdxpds.to_gdx(data, os.path.join(tc_file_dir, f'tc_phaseout_mult_{year}.gdx'))
 
 
 #############

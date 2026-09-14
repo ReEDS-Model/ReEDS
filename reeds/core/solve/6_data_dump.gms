@@ -68,9 +68,6 @@ minloadfrac_filt(r,i,allszn)       "--fraction-- modelled mingen fraction filter
 prod_filt(i,v,r,allh)              "--MW-- power consumed for PRODUCE.l"
 ra_cap_loadsite(r,t)               "--MW-- capacity of flexibly sited load"
 repbioprice_filt(r)                "--2004$/MWh-- marginal price for biofuel in region where biofuel was used"
-repgasprice_filt(r)                "--$/mmBTU-- NG prices in ReEDS filtered for the previous solve year"
-repgasprice_r(r,t)                 "--$/mmBTU-- NG prices in ReEDS, switch-dependent, at the BA level"
-repgasprice(cendiv,t)              "--$/mmBTU-- NG prices in ReEDS, the calculation of which depends on what switch is used"
 repgasquant(cendiv,t)              "--mmBTU-- NG fuel usage in ReEDS - used to determine NG price"
 ret_ivrt(i,v,r,t)                  "--MW-- retirements of generation capacity"
 ret(i,v,r)                         "--MW-- retirements of generation capacity"
@@ -159,12 +156,12 @@ fuel_price_filt(i,r)$cap_exist_ir(i,r) = sum{t$tcur(t), fuel_price(i,r,t) } ;
 h2_usage_regional(r,h,t)$tcur(t) =
     hours(h) * ( 
         h2_exogenous_demand_regional(r,'h2',h,t)
-        + sum{(i,v)$[valgen(i,v,r,t)$h2_combustion(i)],
+        + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
             GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
     )
 ;
 
-fuel_price_filt(i,r)$[Sw_H2$h2_combustion(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
+fuel_price_filt(i,r)$[Sw_H2$h2_gen(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
     sum{t$tcur(t),
         (1 / cost_scale) * (1 / pvf_onm(t)) * h2_combustion_intensity * (
             eq_h2_demand.m('h2',t)$[Sw_H2=1]
@@ -193,32 +190,6 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
           hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)
        } ;
 
-repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tcur(t)] =
-    smax{gb$[sum{h, GASUSED.l(cendiv,gb,h,t) }], gasprice(cendiv,gb,t) } ;
-
-repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tcur(t)$repgasquant(cendiv,t)] =
-    sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h)*heat_rate(i,v,r,t)*fuel_price(i,r,t)*GEN.l(i,v,r,h,t)
-       } / (repgasquant(cendiv,t)) ;
-
-repgasprice_r(r,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 2)$tcur(t)] = sum{cendiv$r_cendiv(r,cendiv), repgasprice(cendiv,t) } ;
-
-repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tcur(t)] =
-              ( sum{(h,cendiv),
-                   gasmultterm(cendiv,t) * szn_adj_gas(h) * cendiv_weights(r,cendiv) *
-                   hours(h) } / sum{h, hours(h) }
-
-              + smax((fuelbin,cendiv)$[VGASBINQ_REGIONAL.l(fuelbin,cendiv,t)$r_cendiv(r,cendiv)], gasbinp_regional(fuelbin,cendiv,t) )
-
-              + smax(fuelbin$VGASBINQ_NATIONAL.l(fuelbin,t), gasbinp_national(fuelbin,t) )
-              ) ;
-
-* catch any infinite values, assign to reference gas price
-repgasprice_r(r,t)$[(repgasprice_r(r,t) = -inf or repgasprice_r(r,t) = inf)$tcur(t)] =
-    smax{cendiv$r_cendiv(r,cendiv), gasprice_ref(cendiv,t) } ;
-
-repgasprice_filt(r) = sum{t$tcur(t), repgasprice_r(r,t) } ;
-
 *============================
 * Filter necessary input data
 *============================
@@ -244,8 +215,8 @@ cost_cap_fin_mult_filt(i,r,t)$([storage_standalone(i)]) = cost_cap_fin_mult(i,r,
 
 cost_vom_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), cost_vom(i,v,r,t) } ;
 
-cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = cf_adj_t(i,v,t) ;
-cf_adj_t_filt(i,v,"%next_year%") = cf_adj_t(i,v,"%next_year%")$(vre(i) or pvb(i)) ;
+cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = sum{c$i_c(i,c), cf_adj_t(i,c,v,t) } ;
+cf_adj_t_filt(i,v,"%next_year%") = sum{c$i_c(i,c), cf_adj_t(i,c,v,"%next_year%") }$(vre(i) or pvb(i)) ;
 
 ctt_i_ii_filt(i,ii) = ctt_i_ii(i,ii)$cap_exist_i(i) ;
 
@@ -257,7 +228,7 @@ heat_rate_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), heat_rate(i,v,r,t) } ;
 
 inv_cond_filt(i,v,t)$[(vre(i) or pvb(i))$tnext(t)] = sum{(tt,r), inv_cond(i,v,r,tt,t) } ;
 
-m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{t$tnext(t), m_cf(i,v,r,h,t) } ;
+m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{(t,c)$[tnext(t)$i_c(i,c)], m_cf(i,c,v,r,h,t) } ;
 
 m_cf_szn_filt(i,v,r,szn)$[hydro(i)$cap_exist(i,v,r)] = sum{t$tcur(t), m_cf_szn(i,v,r,szn,t) } ;
 
@@ -396,7 +367,6 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     r_cendiv
     ra_cap_loadsite
     repbioprice_filt
-    repgasprice_filt
     ret
     ret_ivrt
     routes_filt
