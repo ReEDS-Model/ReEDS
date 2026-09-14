@@ -39,7 +39,6 @@ import reeds
 ### FIXED INPUTS ###
 WINDOFS_FIXED_CLASSES = list(range(5))
 WINDOFS_FLOATING_CLASSES = list(range(6,11))
-# Columns required to calculate the capacity-weighted online year
 ONLINEYEAR_COLUMNS = ['i', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW']
 
 #%% ===========================================================================
