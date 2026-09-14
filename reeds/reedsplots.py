@@ -6192,7 +6192,7 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
         )
     if not isinstance(recf.columns, pd.core.indexes.multi.MultiIndex):
         recf.columns = pd.MultiIndex.from_tuples(
-            recf.columns.map(lambda x: tuple(x.split('|'))),
+            recf.columns.map(lambda x: (x.split('|')[0], x.split('|')[-1])),
             names=['i','r'],
         )
     ## Downselect to time range and technology of interest
@@ -6334,7 +6334,7 @@ def map_stressors(
 
     vre_gen = reeds.io.read_file(ra_files['vre_gen'])
     vre_gen.columns = pd.MultiIndex.from_tuples(
-        vre_gen.columns.map(lambda x: tuple(x.split('|'))),
+        vre_gen.columns.map(lambda x: (x.split('|')[0], x.split('|')[-1])),
         names=['i','r'],
     )
 
@@ -6342,7 +6342,7 @@ def map_stressors(
         os.path.join(case, 'inputs_case', 'recf.h5'),
     )
     recf.columns = pd.MultiIndex.from_tuples(
-        recf.columns.map(lambda x: tuple(x.split('|'))),
+        recf.columns.map(lambda x: (x.split('|')[0], x.split('|')[-1])),
         names=['i','r'],
     )
 

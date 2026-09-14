@@ -78,11 +78,11 @@ loop(i$rsc_i(i),
 * to avoid forcing recently upgraded capacity into retirement
 if(Sw_Upgrades = 1,
 
-    m_capacity_exog(i,v,r,t)$[valcap(i,v,r,t)$sameas(t,"%cur_year%")
+    m_capacity_exog(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$sameas(t,"%cur_year%")
                          $(sum{(ii,tt)$[(tt.val <= t.val)$(t.val - tt.val <= Sw_UpgradeLifespan)
                                        $valcap(ii,v,r,tt)$upgrade_from(ii,i)], UPGRADES.l(ii,v,r,tt) } ) ] =
 * [maximum of] initial capacity recorded in e_solveprep
-                    max( m_capacity_exog0(i,v,r,t),
+                    max( m_capacity_exog0(i,c,v,r,t),
 * -or- capacity of upgrades that have occurred from this i v r t combination
                     sum{(ii,tt)$[(tt.val <= t.val)$(t.val - tt.val <= Sw_UpgradeLifespan)
                                  $valcap(ii,v,r,tt)$upgrade_from(ii,i)],
@@ -194,7 +194,7 @@ $include reeds%ds%core%ds%solve%ds%2_financials.gms
 
 $ifthene %cur_year%==%startyear%
 *initialize CAP.l for 2010 because it has not been defined yet
-CAP.l(i,v,r,"%startyear%")$[m_capacity_exog(i,v,r,"%startyear%")] = m_capacity_exog(i,v,r,"%startyear%") ;
+CAP.l(i,v,r,"%startyear%")$[sum{c, m_capacity_exog(i,c,v,r,"%startyear%") }] = sum{c, m_capacity_exog(i,c,v,r,"%startyear%") } ;
 $endif
 
 $ifthene %cur_year%==%startyear%

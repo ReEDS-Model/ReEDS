@@ -286,7 +286,8 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
         dfsc['longitude'] = dfsc.sc_point_gid.map(sitemap.longitude)
         dfsc = plots.df2gdf(dfsc, crs=crs)
         dfsc['resource'] = dfsc.i + '|' + dfsc.r
-        dfsc['cf_actual'] = dfsc.resource.map(recf)
+        dfsc['resource_recf'] = dfsc.i + '|' + dfsc['class'].astype(str) + '|' + dfsc.r
+        dfsc['cf_actual'] = dfsc.resource_recf.map(recf)
 
         ### Get the annual average CF of the hourly-processed data
         cf_hourly = dfcf.loc[dfcf.i.str.startswith(tech)].pivot(

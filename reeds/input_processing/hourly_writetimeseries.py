@@ -606,7 +606,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     cf_out = cf_rep.rename_axis("h").copy()
     i = cf_rep.columns.map(lambda x: x.split("|")[0])
-    r = cf_rep.columns.map(lambda x: x.split("|")[1])
+    r = cf_rep.columns.map(lambda x: x.split("|")[-1])
     cf_out.columns = pd.MultiIndex.from_arrays([i, r], names=["i", "r"])
     cf_out = (
         cf_out.stack(["i", "r"])

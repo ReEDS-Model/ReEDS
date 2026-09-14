@@ -526,7 +526,7 @@ m_cf(i,c,v,r,h,t)$[(m_cf(i,c,v,r,h,t)<0.01)$valcap(i,v,r,t)] = 0 ;
 m_cf(i,c,v,r,h,t)$[cf_tech(i)$valcap(i,v,r,t)$m_cf(i,c,v,r,h,t)] = round(m_cf(i,c,v,r,h,t),3) ;
 
 * Remove capacity when there is no corresponding capacity factor
-m_capacity_exog(i,v,r,t)$[initv(v)$cf_tech(i)$(not sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) })] = 0 ;
+m_capacity_exog(i,c,v,r,t)$[initv(v)$cf_tech(i)$(not sum{h, m_cf(i,c,v,r,h,t) })] = 0 ;
 
 * Average CF by season
 m_cf_szn(i,v,r,allszn,t) = 0 ;
@@ -562,7 +562,7 @@ dayhours(h)$[sum{(i,c,v,r,t)$[pv(i)$valgen(i,v,r,t)$i_c(i,c)], m_cf(i,c,v,r,h,t)
 if(%cur_year% = sum{t$tfirst(t), yeart(t) },
     wat_supply_init(wst,r) = sum{(i,v,h,t)$[h_rep(h)$valcap(i,v,r,t)$initv(v)$i_wst(i,wst)$tfirst(t)],
                                 hours(h)
-                                * (sum{w$i_w(i,w), m_capacity_exog(i,v,r,t) * water_rate(i,w)}) 
+                                * (sum{(c,w)$i_w(i,w), m_capacity_exog(i,c,v,r,t) * water_rate(i,w)}) 
                                 * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
                                 } / 1E6 ;
 

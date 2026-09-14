@@ -149,10 +149,11 @@ def main(t, casedir, iteration=0):
 
     load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
 
-    resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
+    resources = pd.read_csv(
+        os.path.join(inputs_case, 'resources.csv'), dtype={'c': str})
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
-                                             names=('i','r'))
+                                             names=('i','c','r'))
 
     tech_subset_table = reeds.techs.expand_GAMS_tech_groups(
         reeds.techs.get_tech_subset_table(casedir).reset_index()
@@ -255,7 +256,7 @@ def main(t, casedir, iteration=0):
             "CF adjustment didn't work; probably missing values in cf_adj_t_filt. "
             f"len(cap_vre) = {len(cap_vre)}; len(cap_vre_derated) = {(len(cap_vre_derated))}."
         )
-    cap_vre_derated = cap_vre_derated.groupby(['i','r']).Value.sum()
+    cap_vre_derated = cap_vre_derated.groupby(['i','c','r']).Value.sum()
 
     ### Multiply derated capacity by CF to get generation
     gen_vre_ir = recf.multiply(cap_vre_derated, axis=1).dropna(axis=1)
@@ -273,7 +274,7 @@ def main(t, casedir, iteration=0):
     gen_vre_r = gen_vre_r.T.groupby(level='r').sum().T
 
     ### Store generation by (i,r) for capacity_credit.py
-    gen_vre_resources = gen_vre_ir.reindex(resources[['i','r']], axis=1).fillna(0).clip(lower=0)
+    gen_vre_resources = gen_vre_ir.reindex(resources[['i','c','r']], axis=1).fillna(0).clip(lower=0)
 
     vre_gen_exist = gen_vre_resources.copy()
     vre_gen_exist.columns = ['|'.join(c) for c in vre_gen_exist.columns]
@@ -315,7 +316,7 @@ def main(t, casedir, iteration=0):
     ### Multiply [CF] * [CF adjustment] to get marginal CF
     vre_cf_marg = (
         recf.multiply(cf_adj_i, level='i', axis=1)
-        .reindex(resources[['i','r']], axis=1)
+        .reindex(resources[['i','c','r']], axis=1)
     )
     vre_cf_marg.columns = ['|'.join(c) for c in vre_cf_marg.columns]
     vre_cf_marg.index = h_dt_szn.set_index(['ccseason','year','h','hour']).index
