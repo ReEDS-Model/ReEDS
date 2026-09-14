@@ -1786,6 +1786,8 @@ m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
 
 parameter degrade_new(i,t,tt) "--fraction-- new built capacity from year t remaining after degradation in year tt" ;
 
+parameter degrade_init(i,v,r,allt) "--fraction-- existing (initv) capacity lost to degradation since it came online" ;
+
 parameter degrade_annual(i) "annual degredation rate"
 /
 $offlisting
@@ -1809,9 +1811,6 @@ degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))
 
 * Degrade existing nameplate capacity from its average build year.
 * Use hintage_data for binned technologies and distpv.
-
-parameter degrade_init(i,v,r,allt) "--fraction-- existing (initv) capacity lost to degradation since it came online" ;
-
 exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
     = hintage_data(i,v,r,t,"wOnlineYear") ;
 
