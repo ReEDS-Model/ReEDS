@@ -4952,6 +4952,7 @@ biofeas(r)$[sum{bioclass, sum{usda_region$r_usda(r, usda_region), biosupply(usda
 
 *removal of bio techs that are not in biofeas(r)
 valcap(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
+valcap_class(i,c,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 valgen(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 valinv(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 
