@@ -68,14 +68,14 @@ sdbin_size(ccreg,szn,sdbin,t)$tload(t) = sdbin_size_load(ccreg,szn,sdbin,t) ;
 *Sw_Int_CC=0 means use average capacity credit for each tech, and don't differentiate vintages
 *If there is no existing capacity to calculate average, use marginal capacity credit instead.
 if(Sw_Int_CC=0,
-    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$vre(i)$valcap(i,v,r,t)$sum{(vv)$(valcap(i,vv,r,t)), CAP.l(i,vv,r,t) }] =
+    cc_int(i,c,v,r,szn,t)$[tload(t)$vre(i)$valcap_class(i,c,v,r,t)$sum{(vv)$(valcap(i,vv,r,t)), CAP.l(i,vv,r,t) }] =
         cc_old_load(i,r,szn,t) / sum{(vv)$(valcap(i,vv,r,t)), CAP.l(i,vv,r,t) } ;
-    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$vre(i)$valcap(i,v,r,t)$(cc_old_load(i,r,szn,t)=0)] = m_cc_mar(i,c,r,szn,t) ;
+    cc_int(i,c,v,r,szn,t)$[tload(t)$vre(i)$valcap_class(i,c,v,r,t)$(cc_old_load(i,r,szn,t)=0)] = m_cc_mar(i,c,r,szn,t) ;
 ) ;
 
 *For the remaining options we initially use marginal values for cc_int, differentiated by vintage based on seasonal capacity factors.
 if(Sw_Int_CC=1 or Sw_Int_CC=2,
-    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$vre(i)$valcap(i,v,r,t)$sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) }] =
+    cc_int(i,c,v,r,szn,t)$[tload(t)$vre(i)$valcap_class(i,c,v,r,t)$sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) }] =
         m_cc_mar(i,c,r,szn,t) * m_cf_szn(i,v,r,szn,t) / sum{vv$ivt(i,vv,t), m_cf_szn(i,vv,r,szn,t) } ;
     cc_totmarg(i,r,szn,t)$[tload(t)$vre(i)] =
         sum{(c,v)$valcap_class(i,c,v,r,t), cc_int(i,c,v,r,szn,t) * CAP_CLASS.l(i,c,v,r,t) } ;
@@ -87,7 +87,7 @@ if(Sw_Int_CC=1 or Sw_Int_CC=2,
 if(Sw_Int_CC=1,
     cc_scale(i,r,szn,t)$[tload(t)$vre(i)] = 1 ;
     cc_scale(i,r,szn,t)$[tload(t)$vre(i)$cc_totmarg(i,r,szn,t)] = cc_old_load(i,r,szn,t) / cc_totmarg(i,r,szn,t) ;
-    cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$vre(i)$valcap(i,v,r,t)] = cc_int(i,c,v,r,szn,t) * cc_scale(i,r,szn,t) ;
+    cc_int(i,c,v,r,szn,t)$[tload(t)$vre(i)$valcap_class(i,c,v,r,t)] = cc_int(i,c,v,r,szn,t) * cc_scale(i,r,szn,t) ;
 ) ;
 
 *Sw_Int_CC=2 means use marginal capacity credit, adjusted by seasonal capacity factors by vintage
@@ -100,7 +100,7 @@ if(Sw_Int_CC=2,
 m_cc_mar(i,c,r,szn,t) = 0 ;
 
 cc_int(i,c,v,r,szn,t)$[cc_int(i,c,v,r,szn,t) > 1] = 1 ;
-cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$csp_storage(i)$valcap(i,v,r,t)] = 1 ;
+cc_int(i,c,v,r,szn,t)$[tload(t)$csp_storage(i)$valcap_class(i,c,v,r,t)] = 1 ;
 
 *=======================================
 * --- Begin Averaging of CC/Curt ---
@@ -110,7 +110,7 @@ $ifthene.afterseconditer %niter%>1
 
 *when set to 1 - it will take the average over all previous iterations
 if(Sw_AVG_iter=1,
-        cc_int(i,c,v,r,szn,t)$[i_c(i,c)$tload(t)$vre(i)$valcap(i,v,r,t)] =
+        cc_int(i,c,v,r,szn,t)$[tload(t)$vre(i)$valcap_class(i,c,v,r,t)] =
           (cc_int(i,c,v,r,szn,t) + cc_iter(i,c,v,r,szn,t,"%previter%")) / 2 ;
     ) ;
 

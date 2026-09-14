@@ -118,17 +118,17 @@ cap_exist_ir(i,r)$valcap_ir_filt(i,r) = sum{v, cap_exist(i,v,r) } ;
 cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)$trange(t)] = CAP.l(i,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i)))$valcap_class(i,c,v,r,t)$trange(t)] = CAP.l(i,v,r,t) ;
 cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(not (upv(i) or wind(i)))$trange(t)] = CAP_CLASS.l(i,c,v,r,t) ;
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] =
+cap_ivrt(i,c,v,r,t)$[(upv(i) or wind(i))$valcap_class(i,c,v,r,t)] =
     sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
           sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
           + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]} ;
 cap_init(i,v,r)$([not distpv(i)]$valcap_ivr(i,v,r)) = sum{(c,t)$[i_c(i,c)$tcur(t)], cap_ivrt(i,c,v,r,t)$initv(v) } ;
 cap_init(i,v,r)$(distpv(i)$valcap_ivr(i,v,r)) = sum{(c,t)$[i_c(i,c)$tfirst(t)], cap_ivrt(i,c,v,r,t) } ;
-inv_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$trange(t)] =
+inv_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$trange(t)] =
     [INV.l(i,v,r,t)$(not rsc_i(i))
      + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
      + INV_REFURB.l(i,c,v,r,t)]$valinv(i,v,r,t)
@@ -137,7 +137,7 @@ inv_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = INV_ENERGY.l(i
 inv_ivrt("distpv",c,v,r,t)$[i_c("distpv",c)$trange(t)$(not tfirst(t))$valcap("distpv",v,r,t)] = cap_ivrt("distpv",c,v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",c,v,r,tt) } ;
 inv_ivrt("distpv",c,"init-1",r,"%next_year%")$i_c("distpv",c) = inv_distpv(r,"%next_year%") ;
 
-ret_ivrt(i,c,v,r,t)$[i_c(i,c)$trange(t)$(not tfirst(t))$newv(v)$valcap(i,v,r,t)] = sum{tt$tprev(t,tt), cap_ivrt(i,c,v,r,tt)} - cap_ivrt(i,c,v,r,t) + inv_ivrt(i,c,v,r,t) ;
+ret_ivrt(i,c,v,r,t)$[trange(t)$(not tfirst(t))$newv(v)$valcap_class(i,c,v,r,t)] = sum{tt$tprev(t,tt), cap_ivrt(i,c,v,r,tt)} - cap_ivrt(i,c,v,r,t) + inv_ivrt(i,c,v,r,t) ;
 ret_ivrt(i,c,v,r,t)$([abs(ret_ivrt(i,c,v,r,t) < 1e-6)]$valcap(i,v,r,t)) = 0 ;
 
 ret(i,v,r)$valcap_ivr(i,v,r) = sum{(c,t)$i_c(i,c), ret_ivrt(i,c,v,r,t) } ;

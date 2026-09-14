@@ -582,7 +582,7 @@ $offtext
 
 * ---------------------------------------------------------------------------
 
-eq_cap_init_noret(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
+eq_cap_init_noret(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                              $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
 
     m_capacity_exog(i,c,v,r,t)
@@ -613,7 +613,7 @@ eq_cap_init_noret(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not u
 
 * ---------------------------------------------------------------------------
 
-eq_cap_init_retub(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
+eq_cap_init_retub(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                              $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     m_capacity_exog(i,c,v,r,t)
@@ -645,7 +645,7 @@ eq_cap_init_retub(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not u
 
 * ---------------------------------------------------------------------------
 
-eq_cap_init_retmo(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
+eq_cap_init_retmo(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                              $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
@@ -693,7 +693,7 @@ eq_cap_init_retmo(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$initv(v)$(not u
 
 * ---------------------------------------------------------------------------
 
-eq_cap_new_noret(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
+eq_cap_new_noret(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                             $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
@@ -754,7 +754,7 @@ eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_P
 
 * ---------------------------------------------------------------------------
 
-eq_cap_new_retub(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
+eq_cap_new_retub(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                             $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
@@ -794,7 +794,7 @@ eq_cap_new_retub(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upg
 
 * ---------------------------------------------------------------------------
 
-eq_cap_new_retmo(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
+eq_cap_new_retmo(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                             $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
@@ -1766,7 +1766,7 @@ eq_reserve_margin(r,ccseason,t)
 
 *[plus] average capacity credit times capacity of VRE and storage
 *used in rolling window and full intertemporal solve (otherwise cc_int = 0)
-    + sum{(i,c,v)$[i_c(i,c)$(vre(i) or storage(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
+    + sum{(i,c,v)$[(vre(i) or storage(i))$valcap_class(i,c,v,r,t)$(not forced_retire(i,r,t))],
           cc_int(i,c,v,r,ccseason,t)
           * (CAP_CLASS(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)]
              + CAP(i,v,r,t)$(not cf_tech(i)))

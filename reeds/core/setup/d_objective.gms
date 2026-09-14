@@ -193,7 +193,7 @@ eq_Objfn_op(t)$tmodel(t)..
 
 * spur lines modeled as part of supply curve
               + sum{(i,c,v,r,rscbin)
-                    $[i_c(i,c)$m_rscfeas(r,i,c,rscbin)$valcap(i,v,r,t)
+                    $[m_rscfeas(r,i,c,rscbin)$valcap_class(i,c,v,r,t)
                     $rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
                     m_rsc_dat(r,i,c,rscbin,"cost_trans") * trans_fom_frac
                     * CAP_RSC(i,c,v,r,rscbin,t) }

@@ -492,7 +492,7 @@ cf_hyd(i,szn,r,t)$[upgrade(i)$(hydro(i) or psh(i))] =
     sum{ii$upgrade_from(i,ii), cf_hyd(ii,szn,r,t) } ;
 
 * dispatchable hydro has a separate constraint for seasonal generation which uses m_cf_szn
-cf_rsc(i,c,v,r,h,t)$[hydro(i)$valcap(i,v,r,t)$i_c(i,c)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
+cf_rsc(i,c,v,r,h,t)$[hydro(i)$valcap_class(i,c,v,r,t)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
 
 cf_rsc(i,c,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,v,r,tt) })] =
         cf_rsc(i,c,"init-1",r,h,t) ;
@@ -508,7 +508,7 @@ cap_hyd_szn_adj(i,szn,r)$[upgrade(i)$hydro_d(i)$(not cap_hyd_szn_adj(i,szn,r))] 
 
 * do not apply "avail" for hybrid PV+battery because "avail" represents the battery availability
 m_cf(i,c,v,r,allh,t)$i_c(i,c) = 0 ;
-m_cf(i,c,v,r,h,t)$[i_c(i,c)$cf_tech(i)$valcap(i,v,r,t)$cf_rsc(i,c,v,r,h,t)$cf_adj_t(i,c,v,t)] =
+m_cf(i,c,v,r,h,t)$[cf_tech(i)$valcap_class(i,c,v,r,t)$cf_rsc(i,c,v,r,h,t)$cf_adj_t(i,c,v,t)] =
     cf_rsc(i,c,v,r,h,t)
     * cf_adj_t(i,c,v,t)
     * (avail(i,r,h)$[not pvb(i) and not hydro(i)] + 1$(pvb(i) or hydro(i)) );

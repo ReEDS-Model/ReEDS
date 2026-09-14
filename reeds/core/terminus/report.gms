@@ -651,12 +651,12 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
 * Capacity is needed here to reassign csp-ns, so calculate it before generation.
-cap_deg_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
+cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
 cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)] = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
 
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(not (upv(i) or wind(i)))$valcap(i,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i)))$valcap_class(i,c,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
 *upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
-cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
+cap_ivrt(i,c,v,r,t)$[(upv(i) or wind(i))$valcap_class(i,c,v,r,t)] = (
   sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$tmodel_new(t)
   + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
         sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
@@ -670,7 +670,7 @@ cap_ivrt(i,c,v,r,t)$[i_c(i,c)$(upv(i) or wind(i))$valcap(i,v,r,t)] = (
 * cap_upv_class uses the same undegraded basis as cap_ivrt so that the capacity moved out
 * of upv and the generation that goes with it are taken from the same denominator.
 cap_upv_class(c,r,t)$tmodel_new(t) =
-    sum{(i,v)$[upv(i)$i_c(i,c)$valcap(i,v,r,t)], cap_ivrt(i,c,v,r,t) } ;
+    sum{(i,v)$[upv(i)$valcap_class(i,c,v,r,t)], cap_ivrt(i,c,v,r,t) } ;
 
 cap_cspns_short(c,r,t)$[cap_cspns(c,r,t)$tmodel_new(t)] =
     max(0, cap_cspns(c,r,t) - cap_upv_class(c,r,t)) ;
@@ -872,7 +872,7 @@ cap_new_ann_nat(i,t)$tmodel_new(t) = sum{r, cap_new_ann(i,r,t) } ;
 cap_new_bin_out(i,c,v,r,t,rscbin)$[i_c(i,c)$rsc_i(i)$valinv(i,v,r,t)] =
     INV_RSC.l(i,c,v,r,rscbin,t) / ilr(i) ;
 cap_new_bin_out(i,c,v,r,t,"bin1")$[i_c(i,c)$(not rsc_i(i))$valinv(i,v,r,t)] = INV.l(i,v,r,t) / ilr(i) ;
-cap_new_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = [
+cap_new_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)] = [
   [INV.l(i,v,r,t)$(not rsc_i(i))
    + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)
    + INV_REFURB.l(i,c,v,r,t)]$valinv(i,v,r,t)
@@ -1252,7 +1252,7 @@ RE_gen_price_nat(t)$tmodel_new(t) = (1/cost_scale) * crf(t) * eq_national_gen.m(
 * [i,v,r,t]-level capital expenditures (for retail rate calculations)
 *=========================
 
-capex_ivrt(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] =
+capex_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)] =
                       [INV.l(i,v,r,t)$(not rsc_i(i))
                        + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,t) }$rsc_i(i)]
                         * (cost_cap_fin_mult_no_credits(i,r,t) * cost_cap(i,t) )
@@ -1586,7 +1586,7 @@ systemcost_ba("op_spurline_fom",r,t)$tmodel_new(t) =
     sum{x$[Sw_SpurScen$xfeas(x)$x_r(x,r)], spurline_cost(x) * trans_fom_frac * CAP_SPUR.l(x,t) }
 * fixed O&M cost of spur lines modeled as part of supply curve
     + sum{(i,c,v,rscbin)
-          $[i_c(i,c)$m_rscfeas(r,i,c,rscbin)$valcap(i,v,r,t)
+          $[m_rscfeas(r,i,c,rscbin)$valcap_class(i,c,v,r,t)
           $rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
           m_rsc_dat(r,i,c,rscbin,"cost_trans") * trans_fom_frac * CAP_RSC.l(i,c,v,r,rscbin,t)
     }
