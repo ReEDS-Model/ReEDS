@@ -202,7 +202,10 @@ def expand_exog_cap(row, start_year):
 
 
 def get_capacity_weighted_onlineyear(df, start_year, end_year):
-    """Calculate the average build year of surviving existing capacity.
+    """Calculate the capacity-weighted average build year of existing capacity.
+
+    The average is calculated separately for each year between ``start_year``
+    and ``end_year`` over the units that have not yet retired in that year.
 
     ``df`` must contain ``i``, ``r``, ``StartYear``, ``RetireYear``, and
     ``summer_power_capacity_MW``. Existing capacity is assigned to ``init-1``.
