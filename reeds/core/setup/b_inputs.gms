@@ -1809,12 +1809,12 @@ degrade_annual(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), deg
 degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
 degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
 
-* Degrade existing nameplate capacity from its average build year.
+* Degrade existing capacity from its average build year.
 * Use hintage_data for binned technologies and distpv.
 exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
     = hintage_data(i,v,r,t,"wOnlineYear") ;
 
-* Capacity without an online year (or without degradation) keeps its full nameplate.
+* Capacity without an online year (or without degradation) is left undegraded.
 * Fill all years for which the unit has exogenous capacity in any year, since upgrades
 * can restore m_capacity_exog in years where it starts at zero (3_solve_oneyear.gms).
 degrade_init(i,v,r,t)$[initv(v)$sum{tt, m_capacity_exog(i,v,r,tt) }] = 1 ;
