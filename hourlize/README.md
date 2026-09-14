@@ -274,3 +274,36 @@ This section provides some descriptions and typical values for the settings in t
 | scenarios | List of load scenarios (of those listed as subdirectories in 'load_source') to include in exported load profiles. | ['IRA cons', 'central', 'baseline'] |
 | sector_config_file | File containing configuration defining the subsectors of each sector, the model years for which sectoral load should be replaced, and information concerning the files containing exogenous sectoral load. | '{hourlize_path}/inputs/load/sector_config.json' |
 | weather_years | List of weather years to include in exported load profiles. | [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023] |
+
+## QA/QC 
+
+### Load
+The `hourlize/qaqc/load_comparison.py` script creates plots of annual and hourly demand using hourlize load configuration files, raw EER demand profiles and/or processed `inputs/profiles_demand/demand_*.h5` files.
+
+It currently supports three plot types:
+
+* `--plot_type 1`: Annual demand by model year, recomputed from the raw EER source files. Can be specified by subsector. 
+* `--plot_type 2`: Hourly demand , with one trace per scenario/model year/weather year combination.
+* `--plot_type 3`: Annual demand by model year, read directly from existing processed `inputs/profiles_demand/demand_*.h5` files.
+
+Example calls:
+
+```bash
+python hourlize/qaqc/load_comparison.py --scenarios "IRA cons high data center" "central high data center" --plot_type 1
+python hourlize/qaqc/load_comparison.py --scenarios "IRA cons" "IRA cons high data center" --plot_type 1 --subsectors "data center cooling" "data center it"
+python hourlize/qaqc/load_comparison.py --scenarios "IRA cons high data center" --plot_type 2 --subsectors "data center cooling" "data center it" --model_years 2035 2050 --weather_years 2012
+python hourlize/qaqc/load_comparison.py --scenarios "central" --plot_type 3 --weather_years 2012
+python hourlize/qaqc/load_comparison.py --scenarios "central" --plot_type 3 --weather_years 2012 --batch --nosubmit --jobname central_3_2012
+python hourlize/qaqc/load_comparison.py --scenarios "IRA cons high data center" --plot_type 1 --batch --debugnode --jobname IRAconsHighDC_1
+```
+
+#### Slurm batching
+
+`load_comparison.py` submits itself to slurm by default using the `hourlize/inputs/configs/srun_template.sh` settings because the raw EER profiles are only available on Kestrel and are quite large.
+
+* `--batch`: create run and batch shell scripts and submit with `sbatch`.
+* `--nosubmit`: create scripts only (no submission); use with `--batch`.
+* `--debugnode`: when batching, comment out existing time setting in the template and append `--time=01:00:00` and `--partition=debug`.
+* `--jobname`: set the Slurm job name (default: `load_comparison`).
+
+Batch artifacts are written to the QA/QC output directory (`hourlize/qaqc/out` by default, or `--savepath` if provided), including timestamped `*_run.sh` and `*_batch.sh` files.
