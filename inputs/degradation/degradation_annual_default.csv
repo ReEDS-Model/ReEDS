@@ -1,6 +1,6 @@
 distpv,0.007
 upv_1*upv_10,0.007
-wind-ons_1*wind-ons_10,0.0027
+wind-ons,0.0027
 battery_li,0
 biopower,0
 beccs_mod,0
