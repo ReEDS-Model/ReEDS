@@ -12,6 +12,7 @@ tg.csv,inputs/sets/tg.csv,1,ignore,ignore,,,,,,,1,set,tg,tech groups for growth 
 quarter.csv,inputs/sets/quarter.csv,1,ignore,ignore,,,,,,,1,set,quarter,original h17 seasons (four per year),
 month.csv,inputs/sets/month.csv,1,ignore,ignore,,,,,,,1,set,month,calendar months in a year,
 RPSCat.csv,inputs/sets/RPSCat.csv,1,ignore,ignore,,,,,,,,set,RPSCat,RPS constraint categories including clean energy standards,
+htype.csv,inputs/sets/htype.csv,1,ignore,ignore,,,,,,,,set,htype,type of timeslice (representative vs stress period) for RPS/CES accounting,
 aclike.csv,inputs/sets/aclike.csv,1,ignore,ignore,,,,,0,,,set,aclike,AC transmission capacity types,
 acp_disallowed.csv,inputs/state_policies/acp_disallowed.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,"RPSCat,val",,,0,,,parameter,,--integer-- Indication for whether ACP purchases are disallowed (1) or allowed (0),
 acp_prices.csv,inputs/state_policies/acp_prices.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,st,st,,1,0,,,,,,
