@@ -1435,13 +1435,13 @@ def write_batch_script(
             + f" --inputs_case_finito_dir={os.path.join('finito','inputs_case')}"
             + f" --linked_report_dir={caseSwitches['linked_report_dir']} \n"
             )
-            # (ReEDS-FINITO) calls FINITO postprocessing
-            OPATH.writelines(
-            f"python {os.path.join(casedir, 'finito', 'visualization', 'postprocessing.py')}"
-            + " -b 0"            
-            + f" -l {caseSwitches['GSw_FINITO_Link']}"
-            + f' -c {batch_case} \n\n'
-            )  
+            # # (ReEDS-FINITO) calls FINITO postprocessing
+            # OPATH.writelines(
+            # f"python {os.path.join(casedir, 'finito', 'visualization', 'postprocessing.py')}"
+            # + " -b 0"            
+            # + f" -l {caseSwitches['GSw_FINITO_Link']}"
+            # + f' -c {batch_case} \n\n'
+            # )  
             if not LINUXORMAC:
                 OPATH.writelines("endlocal\n")
 
