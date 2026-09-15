@@ -1726,6 +1726,7 @@ set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for
     valgen_irt(i,r,t)          "i, r, and t combinations that are allowed for generation",
     valinv(i,v,r,t)            "i, v, r, and t combinations that are allowed for investments",
     valinv_init(i,v,r,t)       "Initialized i, v, r, and t combinations that are allowed for investments, while valinv can change",
+    valinv_class(i,c,v,r,t)    "i, c, v, r, and t combinations that are allowed for investments",
     valinv_irt(i,r,t)          "i, r, and t combinations that are allowed for investments",
     valinv_tg(st,tg,t)         "valid technology groups for investments"
     valgen(i,v,r,t)            "i, v, r, and t combinations that are allowed for generation",
@@ -4950,12 +4951,24 @@ valinv(i,v,r,t)$[not valcap(i,v,r,t)] = no ;
 valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
 * For technologies with several classes, a class needs existing capacity (init vintages),
 * supply curve (new vintages that can be built in or after firstyear, unless the class is banned),
-* or prescribed capacity
+* or prescribed capacity (before firstyear, prescribed by year t)
 valcap_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(sum{cc$i_c(i,cc), 1 } > 1)
                         $(not [m_capacity_exog(i,c,v,r,t)$initv(v)])
                         $(not [sum{rscbin, m_rscfeas(r,i,c,rscbin) }$newv(v)$(lastyear_v(i,v) >= firstyear(i))
                                $(not bannew_class(i,c))])
-                        $(not sum{tt, prescribed_build(i,c,v,r,tt) })] = no ;
+                        $(not sum{tt$[(yeart(tt) <= yeart(t)) or (yeart(t) >= firstyear(i))],
+                                  prescribed_build(i,c,v,r,tt) })] = no ;
+
+* Valid investment by resource class
+valinv_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$valinv(i,v,r,t)] = yes ;
+* For technologies with several classes, investment before firstyear, in banned regions, or in
+* numeraire techs with water constraints is limited to classes with prescribed capacity in year t
+valinv_class(i,c,v,r,t)$[valinv_class(i,c,v,r,t)$cf_tech(i)$(sum{cc$i_c(i,cc), 1 } > 1)
+                        $([(yeart(t) < firstyear(i))
+                           $(not [sum{st$r_st(r,st), offshore_cap_req(st,t) } and ofswind(i)])]
+                          or tech_banned(i,r)
+                          or [i_numeraire(i)$Sw_WaterMain$newv(v)])
+                        $(not prescribed_build(i,c,v,r,t))] = no ;
 
 scalar bio_transport_cost ;
 * biomass transport cost enter in $ per ton, convert to $ per MMBtu
