@@ -141,9 +141,13 @@ For EER’s load profiles, “weather” includes everything considered by NLR's
 
 Demand response is turned off by default. To enable it the following switches are needed:
 
-- `GSw_DRShed`: turns on/off the demand response resource
+- `GSw_DRShed`: turns on/off the demand response shed resource
 - `GSw_MaxDailyCF` : turns on/off daily maximum capacity factor constraint
 - `dr_shedscen`: scenario to define which scalars will be used for the supply curve cost and capacity, VOM, FOM, and hourly profile
+- `GSw_DRShape`: turns on/off the demand response shape resource
+- `dr_shapescen`: scenario to define which scalars will be used for the supply curve cost and capacity, VOM, FOM, and hourly profiles
+- `GSw_DRShift`: turns on/off the demand response shift resource
+- `dr_shiftscen`: scenario to define which scalars will be used for the supply curve cost and capacity, VOM, FOM, and hourly profiles
 
 ## Hydrogen inputs
 

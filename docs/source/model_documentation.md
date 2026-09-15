@@ -1562,7 +1562,7 @@ The 2026 limits are based on plants with a signed interconnection agreement, and
 Values between years are interpolated based on the 2026 and 2030 points.
 The limits are applied regionally by technology.
 
-To avoid infeasibility, the constraint allows for a technology to be built over the capacity limits with a penalty of $10,000/kW.
+To avoid infeasibility, the constraint allows a technology to be built over the capacity limits with a penalty of $10,000/kW.
 
 
 ### Regional Parameter Variations and Adjustments
@@ -1832,7 +1832,7 @@ For the residential heating and cooling resources the max daily capacity factor 
 
 #### Adoptable Load Shape Modification
 
-This load management method reflects price-responsive demand response resources and is classified as a DR Shape technology in the model. DR-Shape is implemented in ReEDS as an endogenous flexibility resource rooted in pre-computed shape profiles that characterize the potential for deferred demand. The resource is represented as hourly time series of fractions describing two quantities: the share of load that can be delayed away from its baseline hour ("generation," in the sense of load reduction), and the corresponding additional load that appears in a later hour when the deferred energy is consumed. These fractional profiles are coupled with the adopted DR Shape capaicty the model chooses to invest in, with the upper bound on adoptable capacity informed by the MW quantity of load eligible to participate in demand response. In the model, the DR-Shape "generation" fraction is subtracted from the load in the hours when deferral occurs, while the "load" fraction is added back in the hours when deferred energy is recovered, such that net energy consumption is conserved. These adjusted load profiles — reflecting both the reduction and the payback — are also carried through to the Probabilistic Resource Adequacy Suite (PRAS), so that the reliability assessment accounts for the modified load shape produced by DR-Shape adoption.
+This load management method reflects price-responsive demand response resources and is classified as a DR Shape technology in the model. DR-Shape is implemented in ReEDS as an endogenous flexibility resource rooted in pre-computed shape profiles that characterize the potential for deferred demand. The resource is represented as hourly time series of fractions describing two quantities: the share of load that can be delayed away from its baseline hour ("generation," in the sense of load reduction), and the corresponding additional load that appears in a later hour when the deferred energy is consumed. These fractional profiles are coupled with the adopted DR Shape capaicty the model chooses to invest in, with the upper bound on adoptable capacity informed by the MW quantity of load eligible to participate in demand response. In the model, the DR-Shape "generation" fraction is subtracted from the load in the hours when deferral occurs, while the "load" fraction is added back in the hours when deferred energy is recovered, such that net energy consumption is conserved. These adjusted load profiles — reflecting both the reduction and the payback — are also carried through to the Probabilistic Resource Adequacy Suite (PRAS), so that the reliability assessment accounts for the modified load shape produced by DR-Shape adoption. 
 
 #### Load Shifting
 

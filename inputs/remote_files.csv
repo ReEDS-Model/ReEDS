@@ -28,3 +28,8 @@ demand_EFS_REFERENCE.h5,profiles_demand,https://zenodo.org/records/{record_id}/f
 demand_historic.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18462671,06ca6b65088a870afafc25191dcfd6f3
 dr_shed_hourly_demo_data_January_2025.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},18761062,f1f688e3a3167bffb7cc1e2486fdda32
 temperature_state.h5,profiles_temperature,https://zenodo.org/records/{record_id}/files/{filename},19390491,43f69d6216f209082417b558e74bd349
+dr_shape_decrease_profile_ex_dr1.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},20821467,859ace7ca4016a19100d1143928be3a5
+dr_shape_increase_profile_ex_dr1.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},20821467,659a69cae5f31202065a92f6c9a9ebbe
+dr_shift_decrease_profile_ex_dr1.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},20821467,fb3ef11a8f04b1a146f43f5b56277b6b
+dr_shift_increase_profile_ex_dr1.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},20821467,08795e21156107f2e6d3ec67fb316906 
+dr_shift_energy_profile_ex_dr1.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},20821467,1700595f3d2e8ed1faab5b4dd2aab232
