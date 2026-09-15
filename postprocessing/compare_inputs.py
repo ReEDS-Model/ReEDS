@@ -14,6 +14,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
+from postprocessing import input_plots
 
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 reeds.plots.plotparams()
@@ -68,6 +69,7 @@ def _validate_selected_weatheryears(selected_years, available_years, case_label,
             f'Available weather years: {sorted(available_years)}'
         )
 
+# should this  be replaced with Patrick's script?
 def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
     """
     Compare mean daily demand profiles across cases for one or more weather years.
@@ -161,8 +163,7 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
     
     # Format x-axis dates
     ax.xaxis.set_major_locator(mpl.dates.MonthLocator())
-    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter('%b-1'))
-    ax.tick_params(axis='x', rotation=45)
+    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter('%b'))
     if x_start is not None and x_end is not None:
         ax.set_xlim(x_start, x_end)
     ax.margins(x=0)
@@ -180,6 +181,68 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
 
     return f, ax
 
+def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
+    if len(cases) < 2:
+        raise ValueError('Need at least 2 cases to compare inputs.')
+
+    selected_weatheryears = _parse_weatheryears(weatheryear)
+    selected_label = _weatheryears_label(selected_weatheryears)
+    yearlabel = year if year not in [0, None, 'last'] else 'last model year'
+    wy_title_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
+
+    plt.close()
+    f, ax = plt.subplots(figsize=(13.33, 4))
+    
+    for idx, (casename, casepath) in enumerate(cases.items()):
+        color = colors.get(casename, f'C{idx}')
+
+        input_plots.plot_profile(
+            casepath, datum='demand', year=year, weatheryears=selected_weatheryears,
+            color=color, label=casename, f=f, ax=ax, hourly=True, 
+        )
+    ax.margins(x=0)
+    ax.grid(True, which='major', axis='y', alpha=0.3)
+    
+    ax.set_title(
+        f'Hourly demand in {yearlabel} for {wy_title_label} {selected_label} with min/max daily envelope',
+        x=0,
+        ha='left',
+    )
+    ax.legend(frameon=False, loc='lower center', ncol=len(cases))
+
+    return f, ax
+
+def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
+    yearlabel = year if year not in [0, None, 'last'] else 'last model year'
+
+    plt.close()
+    for idx, (casename, casepath) in enumerate(cases.items()):
+        color = colors.get(casename, f'C{idx}')
+        # replace with reeds.results.summarize_load_data?
+        dfprofile = (
+            reeds.io.read_file(os.path.join(casepath, 'inputs_case', 'load.h5'),
+                               parse_timestamps=True)
+            .loc[year].loc[str(weatheryear)].sum(axis=1)
+        )
+        if idx == 0:
+            f,ax = reeds.plots.plotyearbymonth(
+                dfprofile.rename(casename).to_frame(), 
+                style='line', colors=[color]
+            )
+        else:
+            reeds.plots.plotyearbymonth(
+                dfprofile.rename(casename).to_frame(),
+                style='line', colors=[color], f=f, ax=ax
+            )
+                   
+    ax[0].set_title(
+        f'Hourly demand in {yearlabel} for weather year {weatheryear}',
+        x=0,
+        ha='left',
+    )
+    ax[0].legend(loc='upper left', bbox_to_anchor=(1,1), frameon=False, fontsize='x-large')
+    
+    return f, ax
 
 def plot_peak_and_total_load(cases, colors, weatheryear=2012):
     """
@@ -197,7 +260,7 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
         1, 2, figsize=(12, 4.5), constrained_layout=True
     )
     stats_by_case = {}
-
+    # replace most of this with reeds.results.summarize_load_data?
     for idx, (casename, casepath) in enumerate(cases.items()):
         print(f'  {casename}: loading annual and peak stats by model year...')
         color = colors.get(casename, f'C{idx}')
@@ -735,6 +798,28 @@ if __name__ == '__main__':
     except Exception as e:
         print(traceback.format_exc())
 
+    try:
+        f, ax = plot_hourly_demand_profiles(
+            cases,
+            colors,
+            year=year,
+            weatheryear=selected_weatheryears,
+        )
+        saveit(f'Demand hourly profile {selected_weatheryears}')
+    except Exception as e:
+        print(traceback.format_exc())
+    
+    try:
+        f, ax = plot_demand_yearbymonth(
+            cases,
+            colors,
+            year=year,
+            weatheryear=selected_weatheryears,
+        )
+        saveit(f'Demand by year and month {year}')
+    except Exception as e:
+        print(traceback.format_exc())
+    
     try:
         f_modelyear, _, _ = plot_peak_and_total_load(
             cases,
