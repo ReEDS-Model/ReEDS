@@ -2838,7 +2838,7 @@ eq_RPS_OFSWind(st,t)$[tmodel(t)$stfeas(st)$offshore_cap_req(st,t)$Sw_StateRPS
 
 * investments over time
     + sum{(i,v,r,tt)$[r_st(r,st)$ofswind(i)$inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))],
-          INV(i,v,r,tt) + sum{c$i_c(i,c), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb] }
+          INV(i,v,r,tt) + sum{c$valinv_class(i,c,v,r,tt), INV_REFURB(i,c,v,r,tt) }$[refurbtech(i)$Sw_Refurb] }
 
     =g=
 
