@@ -310,126 +310,179 @@ def get_yearly_flexibility(
     set_szn,
     inputs_case,
     drcat,
+    modeledyears,
 ):
     """
     After clustering based on GSw_HourlyClusterYear and identifying the modeled days,
     reload the raw flexible DR or EV profiles and extract for the modeled days of each year
     """
-    hoursperperiod = {"day": 24, "wek": 120, "year": np.nan}[sw["GSw_HourlyType"]]
-    ### Get the set of szn's and h's
-    szn_h = (
-        hmap_1yr.drop_duplicates(["h", "season"])
-        .sort_values(["season", "hour"])
-        .reset_index(drop=True)[["season", "h"]]
-        .assign(
-            periodhour=np.ravel(
-                (
-                    [range(1, 25)] * 365
-                    if sw["GSw_HourlyType"] == "year"
-                    else [range(1, hoursperperiod + 1)] * len(set_szn)
-                )
-            )
-        )
-        .set_index(["season", "periodhour"])
-        .h
-    ).copy()
-
-    idx_vals = [i + 1 for i in period_szn.index.values]
-    period_szn_dict = period_szn.set_index("yperiod").to_dict()["season"]
-
     ### Original flexibility data
     shape = {}
     shape_out = {}
 
     for stype in ["increase", "decrease", "energy"]:
         if stype == "energy":
-            if drcat.lower() == "evmc_storage":
-                shape[stype] = pd.read_csv(
-                    os.path.join(inputs_case, f"evmc_storage_{stype}.csv")
-                )
+            if drcat.lower() == "dr_shift":
+                shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shift_profile_{stype}.h5"))
+
             else:
                 continue
-        elif drcat.lower() == "evmc_shape":
-            shape[stype] = pd.read_csv(
-                os.path.join(inputs_case, f"evmc_shape_profile_{stype}.csv")
-            )
-        elif drcat.lower() == "evmc_storage":
-            shape[stype] = pd.read_csv(
-                os.path.join(inputs_case, f"evmc_storage_profile_{stype}.csv")
-            )
+
+        elif drcat.lower() == "dr_shape":
+            shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shape_profile_{stype}.h5"))
+                 
+        elif drcat.lower() == "dr_shift":
+            shape[stype] = reeds.io.read_file(os.path.join(inputs_case, f"dr_shift_profile_{stype}.h5"))
         else:
             raise ValueError(
-                f"drcat must be in ['dr','evmc_shape','evmc_storage'] but is '{drcat}'"
+                f"drcat must be in ['dr','dr_shape','dr_shift'] but is '{drcat}'"
             )
 
-        unique_techs = len(shape[stype].i.unique())
-        unique_years = len(shape[stype].year.unique())
-        ### Add time indices ("season" is the identifier for modeled periods)
-        shape[stype]["yperiod"] = (
-            np.ravel([[d] * 24 for d in range(1, 366)] * unique_techs * unique_years)
-            if sw["GSw_HourlyType"] == "year"
-            else np.ravel(
-                [[d] * hoursperperiod for d in idx_vals] * unique_techs * unique_years
-            )
-        )
-        shape[stype]["periodhour"] = (
-            np.ravel([range(1, 25) for d in range(365)] * unique_techs * unique_years)
-            if sw["GSw_HourlyType"] == "year"
-            else np.ravel(
-                [range(1, hoursperperiod + 1) for d in idx_vals]
-                * unique_techs
-                * unique_years
-            )
-        )
-        shape[stype]["season"] = shape[stype].yperiod.map(period_szn_dict)
+        modeledyears_int = [int(y) for y in modeledyears]        
+        shape[stype] = shape[stype].loc[shape[stype].year.isin(modeledyears_int)]
 
-        ### If modeling a full year, keep everything
-        if sw["GSw_HourlyType"] == "year":
-            shape_out[stype] = shape[stype].drop(
-                ["yperiod", "periodhour", "season"], axis=1
-            )
-            shape_out[stype].index = hmap_1yr.h
-        ### If using representative periods, pull out the representative periods
-        elif unique_years == 1:
-            shape_out[stype] = (
-                shape[stype]
-                .loc[shape[stype].season.isin(rep_periods)]
-                .drop(["yperiod", "hour", "year"], axis=1)
-                .set_index(["season", "periodhour"])
-                .sort_index()
-            )
-            shape_out[stype].index = shape_out[stype].index.map(szn_h).rename("h")
-            shape_out[stype] = (
-                shape_out[stype]
-                .reset_index()
-                .set_index(["h", "i"])
-                .stack()
-                .reset_index()
-                .rename(columns={"i": "*i", "level_2": "r", 0: "Values"})[
-                    ["*i", "r", "h", "Values"]
-                ]
-            )
+        unique_techs = list({x.split('|')[0] for x in shape[stype].columns[1:]})
+
+        # EER derived shape data is populated for multiple weather years
+        # The hour column is populated as a timestamp
+        # if len(str(shape[stype].hour[0])) > 4:
+        if len(str(shape[stype].index[0])) > 4:
+            # Define timezone to UTC-6
+            shape[stype].set_index(pd.to_datetime(shape[stype].index), inplace=True)
+            shape[stype].index = shape[stype].index.tz_localize('Etc/GMT+6')
+            shape[stype].reset_index(inplace=True)
+
+            # create dictionary from hmap 
+            hour2h = hmap_1yr.set_index('timestamp')['h'].to_dict()
+            # Map timestamps to h values
+            shape[stype]['h'] = shape[stype]['datetime'].map(hour2h)
+            # Filter out hours not in hmap
+            shape[stype] = shape[stype].loc[~shape[stype]['h'].isnull()]
+            # Remove timestamp col
+            shape[stype] = shape[stype].drop(columns = 'datetime')
+            # Flip region columns to single column
+            region_cols = [col for col in shape[stype].columns if col not in ['year','h']]
+            if region_cols:
+                shape[stype] = shape[stype].melt(
+                    id_vars=[col for col in shape[stype].columns if col not in region_cols],
+                    value_vars=region_cols,
+                    var_name='r',
+                    value_name='Values'
+                )
+            # Split the region column into dr type and region
+            shape[stype]['i'] = shape[stype]['r'].apply(lambda x: x.split('|')[0])
+            shape[stype]['r'] = shape[stype]['r'].apply(lambda x: x.split('|')[1])
+            shape[stype]['year'] = shape[stype]['year'].astype(int)
+            # Reorder columns
+            shape_out[stype] = shape[stype][['i','r','h','year','Values']].copy()
+            shape_out[stype] = shape_out[stype].rename(columns={'year':'t'})
+
+
+        # End use shape data populated for single weather year
+        # The hour column is populated as an integer hour of year
         else:
-            shape_out[stype] = (
-                shape[stype]
-                .loc[shape[stype].season.isin(rep_periods)]
-                .drop(["yperiod", "hour"], axis=1)
+            hoursperperiod = {"day": 24, "wek": 120, "year": np.nan}[sw["GSw_HourlyType"]]
+            ### Get the set of szn's and h's
+            szn_h = (
+                hmap_1yr.drop_duplicates(["h", "season"])
+                .sort_values(["season", "hour"])
+                .reset_index(drop=True)[["season", "h"]]
+                .assign(
+                    periodhour=np.ravel(
+                        (
+                            [range(1, 25)] * 365
+                            if sw["GSw_HourlyType"] == "year"
+                            else [range(1, hoursperperiod + 1)] * len(set_szn)
+                        )
+                    )
+                )
                 .set_index(["season", "periodhour"])
-                .sort_index()
+                .h
+            ).copy()
+
+            idx_vals = [i + 1 for i in period_szn.index.values]
+            period_szn_dict = period_szn.set_index("yperiod").to_dict()["season"]
+            
+            ### Filter out the days not in the stress periods
+            shape[stype]['day'] = np.ceil(shape[stype].hour/24)
+
+            shape[stype] = shape[stype].loc[shape[stype]['day'].isin(list(period_szn_dict.keys()))]
+
+            unique_years = len(shape[stype].year.unique())
+
+            ### Add time indices ("season" is the identifier for modeled periods)
+            shape[stype]["yperiod"] = shape[stype]["day"].astype(int)
+
+            shape[stype].drop('day', axis = 1, inplace = True)
+            shape[stype].sort_values(by = ['i','year','hour'],inplace = True)
+
+            # Sort data by year so periodhour is assigned correctly
+            shape[stype] = shape[stype].sort_values(['i','year', 'yperiod', 'hour',])
+
+            shape[stype]["periodhour"] = (
+                np.ravel([range(1, 25) for d in range(365)] * unique_techs * unique_years)
+                if sw["GSw_HourlyType"] == "year"
+                else np.ravel(
+                    [range(1, hoursperperiod + 1) for d in idx_vals]
+                    * unique_techs
+                    * unique_years
+                )
             )
 
-            shape_out[stype].index = shape_out[stype].index.map(szn_h).rename("h")
-            shape_out[stype] = (
-                shape_out[stype]
-                .reset_index()
-                .set_index(["h", "i", "year"])
-                .stack()
-                .reset_index()
-                .rename(columns={"i": "*i", "level_3": "r", "year": "t", 0: "Values"})[
-                    ["*i", "r", "h", "t", "Values"]
-                ]
-            )
+            shape[stype]["season"] = shape[stype].yperiod.map(period_szn_dict)
 
+            ### If modeling a full year, keep everything
+            if sw["GSw_HourlyType"] == "year":
+                shape_out[stype] = shape[stype].drop(
+                    ["yperiod", "periodhour", "season"], axis=1
+                )
+                shape_out[stype].index = hmap_1yr.h
+            
+            ### If using representative periods, pull out the representative periods
+            elif unique_years == 1:
+                shape_out[stype] = (
+                    shape[stype]
+                    .loc[shape[stype].season.isin(rep_periods)]
+                    .drop(["yperiod", "hour", "year"], axis=1)
+                    .set_index(["season", "periodhour"])
+                    .sort_index()
+                )
+                shape_out[stype].index = shape_out[stype].index.map(szn_h).rename("h")
+
+                shape_out[stype] = (
+                    shape_out[stype]
+                    .reset_index()
+                    .set_index(["h", "i"])
+                    .stack()
+                    .reset_index()
+                    .rename(columns={"i": "*i", "level_2": "r", 0: "Values"})[
+                        ["*i", "r", "h", "Values"]
+                    ]
+                )
+            else:
+                shape_out[stype] = (
+                    shape[stype]
+                    .loc[shape[stype].season.isin(rep_periods)]
+                    .drop(["yperiod", "hour"], axis=1)
+                    .set_index(["season", "periodhour"])
+                    .sort_index()
+                )
+
+                shape_out[stype].index = shape_out[stype].index.map(szn_h).rename("h")
+
+                shape_out[stype] = (
+                    shape_out[stype]
+                    .reset_index()
+                    .set_index(["h", "i", "year"])
+                    .stack()
+                    .reset_index()
+                    .rename(columns={"i": "*i", "level_3": "r", "year": "t", 0: "Values"})[
+                        ["*i", "r", "h", "t", "Values"]
+                    ]
+                )
+
+    shape_out = {k: v.drop_duplicates() for k, v in shape_out.items()}
+    
     if "energy" in shape.keys():
         return shape_out["decrease"], shape_out["increase"], shape_out["energy"]
     else:
@@ -483,6 +536,12 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .set_index("r")
     )
 
+    val_r = hierarchy.index.tolist()
+
+    modeledyears = (
+        pd.read_csv(os.path.join(inputs_case, "modeledyears.csv"))
+    ).columns.tolist()
+
     #%%### Load period-szn map, get representative and stress periods
     period_szn = pd.read_csv(os.path.join(outpath, 'period_szn.csv'))
     try:
@@ -534,13 +593,12 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'canmexload': ['*r','h'],
             'outage_forced_h': ['*i','r','h'],
             'outage_scheduled_h': ['*i','h'],
+            'dr_shape_generation': ['*i','r','h','t'],
+            'dr_shape_load': ['*i','r','h','t'],
             'dr_shed_out': ['*i','r','h'],
-            'evmc_baseline_load': ['r','h','t'],
-            'evmc_shape_generation': ['*i','r','h'],
-            'evmc_shape_load': ['*i','r','h'],
-            'evmc_storage_discharge': ['*i','r','h','t'],
-            'evmc_storage_charge': ['*i','r','h','t'],
-            'evmc_storage_energy': ['*i','r','h','t'],
+            'dr_shift_discharge': ['*i','r','h','t'],
+            'dr_shift_charge': ['*i','r','h','t'],
+            'dr_shift_profile_energy': ['*i','r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
             'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
@@ -1205,26 +1263,32 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         # identify year      
         t = int(periodtype[6:10])
 
-        # each year (2030-2050) has a different dr shed profile
-        # prior years assume 2030 data
-        t_set = max(t, 2030)
+        # Shed demonstration data only for 1 weather year
+        if sw.dr_shedscen == 'demo_data_January_2025':
+            # each year (2030-2050) has a different dr shed profile
+            # prior years assume 2030 data
+            t_set = max(t, 2030)
+                
+            dr_shed_avail_allyears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'), parse_timestamps=True)
+            dr_shed_avail_allyears['year'] = round(dr_shed_avail_allyears['year'],0).astype(int)
+            dr_shed_avail = dr_shed_avail_allyears.loc[dr_shed_avail_allyears['year']==t_set].copy().drop('year', axis=1)
+
+            # dr_shed only has 2018 weather year data, need to populate for other RA years
+            dr_shed_avail_all_weatheryears = pd.DataFrame()
+            # copy 2018 data to other weather years
+            for y in sw.resource_adequacy_years_list:
+                #set datetime column to match hmap_allyrs.timestamp for y 
+                dr_shed_avail_new_index = dr_shed_avail.copy()
+                dr_shed_avail_new_index.index = pd.to_datetime(hmap_allyrs[hmap_allyrs['year']==y].timestamp)            
+                dr_shed_avail_all_weatheryears = pd.concat([dr_shed_avail_all_weatheryears, dr_shed_avail_new_index])
+        else:
+            t_set = max(t, 2021)
+            dr_shed_avail_all_weatheryears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'), parse_timestamps=True)
+            dr_shed_avail_all_weatheryears['year'] = round(dr_shed_avail_all_weatheryears['year'],0).astype(int)
+            dr_shed_avail_all_weatheryears = dr_shed_avail_all_weatheryears.loc[dr_shed_avail_all_weatheryears['year']==t_set].copy().drop('year', axis=1)
             
-        dr_shed_avail_allyears = reeds.io.read_file(os.path.join(inputs_case, 'dr_shed_hourly.h5'))
-        dr_shed_avail_allyears['year'] = round(dr_shed_avail_allyears['year'],0).astype(int)
-        dr_shed_avail = dr_shed_avail_allyears.loc[dr_shed_avail_allyears['year']==t_set].copy().drop('year', axis=1)
-
-        # dr_shed only has 2018 weather year data, need to populate for other RA years
-        dr_shed_avail_all_weatheryears = pd.DataFrame()
-        # copy 2018 data to other weather years
-        for y in sw.resource_adequacy_years_list:
-            #set datetime column to match hmap_allyrs.timestamp for y 
-            dr_shed_avail_new_index = dr_shed_avail.copy()
-            dr_shed_avail_new_index.index = pd.to_datetime(hmap_allyrs[hmap_allyrs['year']==y].timestamp)
-        
-            dr_shed_avail_all_weatheryears = pd.concat([dr_shed_avail_all_weatheryears, dr_shed_avail_new_index])
-
         # downselect dr_shed_avail to timestamps in all weather years
-        dr_shed_avail_all_weatheryears.loc[hmap_allyrs.timestamp]
+        dr_shed_avail_all_weatheryears = dr_shed_avail_all_weatheryears.loc[hmap_allyrs.timestamp]
         # map dr_shed_avail index to actual period
         dr_shed_avail_all_weatheryears.index = hmap_allyrs.loc[hmap_allyrs.timestamp.isin(dr_shed_avail_all_weatheryears.index)].actual_h
         # Map actual periods to rep periods
@@ -1236,7 +1300,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         dr_shed_avail_scalar = dr_shed_avail_scalar[dr_shed_avail_scalar['t']==t_set]['Value'].item()
         dr_shed_avail_all_weatheryears  = (dr_shed_avail_all_weatheryears
                                            .div(dr_shed_avail_all_weatheryears .max()))*dr_shed_avail_scalar                                                 
-                                          
+                                       
                                                                                            
         # Reformat to be indexed by i,r,h 
         dr_shed_avail_out = dr_shed_avail_all_weatheryears.rename_axis('h').copy()
@@ -1250,51 +1314,42 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         dr_shed_avail_out = pd.DataFrame(columns=['i','r','h','cap'])
 
     #############################
-    # -- EV Managed Charging -- #
+    # -- DR Shape and DR Shift -- #
     #############################
 
-    if int(sw.GSw_EVMC):
-        evmc_baseline_load = (
-            pd.read_hdf(os.path.join(inputs_case, "ev_baseline_load.h5"))
-            .rename(columns={"h": "hour"})
-            .astype({"r": str})
-        )
-        ## Drop the h
-        evmc_baseline_load.hour = evmc_baseline_load.hour.str.strip("h").astype("int")
-        ## Concat for each weather year
-        evmc_baseline_load_weatheryears = evmc_baseline_load.pivot(
-            index="hour", columns=["t", "r"], values="net"
-        )
-        evmc_baseline_load_weatheryears = pd.concat(
-            {y: evmc_baseline_load_weatheryears for y in sw.resource_adequacy_years_list},
-            axis=0, ignore_index=True).loc[hmap_myr.hour0]
-        ## Map 8760 hours to modeled hours
-        evmc_baseline_load_weatheryears.index = hmap_myr.h
-        ### Sum by (r,h,t) to get net trade in MWh during modeled hours
-        evmc_baseline_load_out = (
-            evmc_baseline_load_weatheryears.stack(["r", "t"])
-            .groupby(["r", "h", "t"])
-            .sum()
-            .rename("MWh")
-            ## Divide by number of weather years since we concatted that number of weather years
-            / (len(sw['GSw_HourlyWeatherYears']) if (not periodtype.startswith('stress')) else 1)
-        ).reset_index()
-        ## Only keep modeled regions
-        evmc_baseline_load_out = evmc_baseline_load_out.loc[
-            evmc_baseline_load_out.r.isin(val_r_all)
-        ].copy()
+    if int(sw.GSw_DRShape):
+        # DR shape mapped to all weather years
+        if periodtype.startswith('stress'):
+            dr_shape_dec, dr_shape_inc = get_yearly_flexibility(
+                sw=sw,
+                period_szn=period_szn,
+                rep_periods=rep_periods,
+                hmap_1yr=hmap_allyrs,
+                set_szn=set_szn,
+                inputs_case=inputs_case,
+                drcat="dr_shape",
+                modeledyears=modeledyears,
+            )
+        # DR shape mapped to single year
+        else:        
+            dr_shape_dec, dr_shape_inc = get_yearly_flexibility(
+                sw=sw,
+                period_szn=period_szn,
+                rep_periods=rep_periods,
+                hmap_1yr=hmap_myr,
+                set_szn=set_szn,
+                inputs_case=inputs_case,
+                drcat="dr_shape",
+                modeledyears=modeledyears,
+            )
 
-        evmc_shape_dec, evmc_shape_inc = get_yearly_flexibility(
-            sw=sw,
-            period_szn=period_szn,
-            rep_periods=rep_periods,
-            hmap_1yr=hmap_myr,
-            set_szn=set_szn,
-            inputs_case=inputs_case,
-            drcat="evmc_shape",
-        )
+    else:
+        # populate empty dataframe
+        dr_shape_dec = pd.DataFrame(columns=["i", "r", "h","t"])
+        dr_shape_inc = pd.DataFrame(columns=["i", "r", "h","t"])
 
-        evmc_storage_dec, evmc_storage_inc, evmc_storage_energy = (
+    if int(sw.GSw_DRShift):
+        dr_shift_dec, dr_shift_inc, dr_shift_profile_energy = (
             get_yearly_flexibility(
                 sw=sw,
                 period_szn=period_szn,
@@ -1302,16 +1357,16 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
                 hmap_1yr=hmap_myr,
                 set_szn=set_szn,
                 inputs_case=inputs_case,
-                drcat="evmc_storage",
+                drcat="dr_shift",
+                modeledyears=modeledyears,
             )
         )
     else:
-        evmc_shape_dec = pd.DataFrame(columns=["*i", "r", "h"])
-        evmc_shape_inc = pd.DataFrame(columns=["*i", "r", "h"])
-        evmc_storage_dec = pd.DataFrame(columns=["*i", "r", "h", "t"])
-        evmc_storage_inc = pd.DataFrame(columns=["*i", "r", "h", "t"])
-        evmc_storage_energy = pd.DataFrame(columns=["*i", "r", "h", "t"])
-        evmc_baseline_load_out = pd.DataFrame(columns=["r", "h", "t", "MWh"])
+        # Populate empty dataframe
+        dr_shift_dec = pd.DataFrame(columns=["i", "r", "h", "t"])
+        dr_shift_inc = pd.DataFrame(columns=["i", "r", "h", "t"])
+        dr_shift_profile_energy = pd.DataFrame(columns=["i", "r", "h", "t"])
+
 
 
     #%% Chunk the profiles
@@ -1509,26 +1564,17 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         ## Outage rates
         'outage_forced_h': [outage_h['forced'].round(3), False, False],
         'outage_scheduled_h': [outage_h['scheduled'].round(3), False, False],
-        # DR        
+        # DR Shed       
         "dr_shed_out": [
             (dr_shed_avail_out.assign(h=dr_shed_avail_out.h.map(chunkmap))
              .groupby(['i','r','h'], as_index=False).cap.mean().round(5)),
             False, False],
-        ## EVMC
-        "evmc_baseline_load": [
+
+        ## DR shape
+        "dr_shape_generation": [
             (
-                evmc_baseline_load_out.assign(h=evmc_baseline_load_out.h.map(chunkmap))
-                .groupby(["r", "h", "t"], as_index=False)
-                .MWh.sum()
-                .round(decimals)
-            ),
-            False,
-            False,
-        ],
-        "evmc_shape_generation": [
-            (
-                evmc_shape_dec.assign(h=evmc_shape_dec.h.map(chunkmap))
-                .groupby(["*i", "r", "h"])
+                dr_shape_dec.assign(h=dr_shape_dec.h.map(chunkmap))
+                .groupby(["i", "r", "h","t"])
                 .mean()
                 .round(decimals)
                 .reset_index()
@@ -1536,10 +1582,10 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False,
         ],
-        "evmc_shape_load": [
+        "dr_shape_load": [
             (
-                evmc_shape_inc.assign(h=evmc_shape_inc.h.map(chunkmap))
-                .groupby(["*i", "r", "h"])
+                dr_shape_inc.assign(h=dr_shape_inc.h.map(chunkmap))
+                .groupby(["i", "r", "h","t"])
                 .mean()
                 .round(decimals)
                 .reset_index()
@@ -1547,33 +1593,33 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False,
         ],
-        "evmc_storage_discharge": [
+        "dr_shift_discharge": [
             (
-                evmc_storage_dec.assign(h=evmc_storage_dec.h.map(chunkmap))
-                .groupby(["*i", "r", "h", "t"])
-                .mean()
+                dr_shift_dec.assign(h=dr_shift_dec.h.map(chunkmap))
+                .groupby(["i", "r", "h", "t"])
+                .max()
                 .round(decimals)
                 .reset_index()
             ),
             False,
             False,
         ],
-        "evmc_storage_charge": [
+        "dr_shift_charge": [
             (
-                evmc_storage_inc.assign(h=evmc_storage_inc.h.map(chunkmap))
-                .groupby(["*i", "r", "h", "t"])
-                .mean()
+                dr_shift_inc.assign(h=dr_shift_inc.h.map(chunkmap))
+                .groupby(["i", "r", "h", "t"])
+                .max()
                 .round(decimals)
                 .reset_index()
             ),
             False,
             False,
         ],
-        "evmc_storage_energy": [
+        "dr_shift_profile_energy": [
             (
-                evmc_storage_energy.assign(h=evmc_storage_energy.h.map(chunkmap))
-                .groupby(["*i", "r", "h", "t"])
-                .mean()
+                dr_shift_profile_energy.assign(h=dr_shift_profile_energy.h.map(chunkmap))
+                .groupby(["i", "r", "h", "t"])
+                .max()
                 .round(decimals)
                 .reset_index()
             ),

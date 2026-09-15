@@ -43,6 +43,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | dGen | Distributed Generation Market Demand model |
 | DNI | direct normal insolation |
 | DOE | U.S. Department of Energy |
+| DR | demand response
 | DSIRE | Database of State Incentives for Renewables and Efficiency |
 | EAC | energy attribute credit |
 | EGS | enhanced geothermal system |
@@ -1814,14 +1815,30 @@ The `GSw_RetailAdder` switch (default 0, units of [2004\$/MWh]) adds a cost adde
 
 ### Demand Response
 
-Demand response (DR) is turned off by default in ReEDS, but the user has the option to enable DR via load shedding.
-The demonstration data used to characterize the amount of load shedding available were obtained from a workflow which includes ResStock, DR-Path, and dsgrid.
-The data reflect the technical potential for residential load shedding in 11 states (AZ, CA, CO, FL, GA, MN, MT, NM, NY, TX, WA) and were developed using the 2018 weather year.
+Unlike other generation or storage technologies, demand response (DR) contributes to system supply-demand balance through the management of demand-side loads. 
+Load management can be facilitated by different types of signals and responses on different timescales and with different types of communication. 
+For example, price-responsive dispatch mechanisms like time-of-use rates or real-time pricing involve one-way communication of prices that electricity users and/or their devices can use to inform consumption decisions. 
+On the other hand, direct load control programs often involve two-way communications between a utility or an aggregator and devices (e.g., thermostat, electric vehicle charger, industrial equipment) whose consumption patterns are modified to shed or shift load away from peak or reliability event times. 
+ReEDS represents price-responsive DR as a resource that modifies load based on exogenous shapes and represents direct load control programs as dispatchable shed or shift resources.
+
+DR is turned off by default in ReEDS, but the user has the option to enable DR via three types of demand response resources.
+
+#### Load Shedding
+
+The demonstration data used to characterize the amount of load shedding avaiable were obtained from a workflow which includes ResStock, DR-Path, and dsgrid. The data reflect the technical potential for residential load shedding in 11 states (AZ, CA, CO, FL, GA, MN, MT, NM, NY, TX, WA) and were developed using the 2018 weather year.
 Through this implementation the demand response is effectively added as a new supply curve-based resource; however, the DR shed potential is only available during stress periods.
 If ReEDS chooses to dispatch DR shed, the "generation" from the resource is subtracted from the load considered in the resource adeqaucy calculations.
 The capital costs for the residential resource are derived from the installation cost for the DR-enabling technology (program implementation or procurement costs are not included).
 In addition to only allowing the shed resource to be dispatched during stress periods, a max daily capacity factor is defined.
 For the residential heating and cooling resources the max daily capacity factor is set to 4 hours per day.
+
+#### Adoptable Load Shape Modification
+
+This load management method reflects price-responsive demand response resources and is classified as a DR Shape technology in the model. DR-Shape is implemented in ReEDS as an endogenous flexibility resource rooted in pre-computed shape profiles that characterize the potential for deferred demand. The resource is represented as hourly time series of fractions describing two quantities: the share of load that can be delayed away from its baseline hour ("generation," in the sense of load reduction), and the corresponding additional load that appears in a later hour when the deferred energy is consumed. These fractional profiles are coupled with the adopted DR Shape capaicty the model chooses to invest in, with the upper bound on adoptable capacity informed by the MW quantity of load eligible to participate in demand response. In the model, the DR-Shape "generation" fraction is subtracted from the load in the hours when deferral occurs, while the "load" fraction is added back in the hours when deferred energy is recovered, such that net energy consumption is conserved. These adjusted load profiles — reflecting both the reduction and the payback — are also carried through to the Probabilistic Resource Adequacy Suite (PRAS), so that the reliability assessment accounts for the modified load shape produced by DR-Shape adoption. 
+
+#### Load Shifting
+
+DR-Shift is implemented in ReEDS as an endogenous flexibility resource that represents load-shifting potential through a storage-like formulation with time-dependent charge and discharge bounds. Rather than pre-computing fixed shape profiles, DR-Shift is characterized by three inputs: a discharge profile defining the baseline load available to be deferred in each hour (equivalent to immediate consumption if the resource is not participating in demand response), a charge profile defining the outer bound on when deferred energy can be recovered (the latest possible payback window), and an energy profile defining the maximum cumulative quantity of load that could have been deferred from previous hours. Within the ReEDS optimization, DR-Shift is dispatched endogenously subject to three constraints: a capacity constraint ensuring that resource use does not exceed time-varying availability, a storage level constraint that tracks the state of charge of the DR-Shift device, and a duration constraint ensuring that the storage level does not exceed the time-varying energy capacity at any hour. This formulation is intended to reflect direct load control programs in which a utility or aggregator can shift flexible end-use loads — such as water heating, space conditioning, or electric vehicle charging — within bounded windows, conserving net energy consumption while allowing the optimization to determine the least-cost dispatch timing across the planning horizon.
 
 ## Transmission
 

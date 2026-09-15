@@ -689,63 +689,67 @@ $include inputs_case%ds%%temporal_inputs%%ds%flex_frac_all.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-
-* EV adoptable managed charging
-parameter evmc_baseline_load(r,allh,allt) "--fraction-- how much adopted shaped EV load is allowed to be shed in each timeslice h"
+* DR Shape 
+$onempty
+parameter dr_shape_gen(i,r,allh,allt) "--fraction-- how much adopted DR shape load is allowed to be shed in each timeslice h"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_baseline_load.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter evmc_shape_gen(i,r,allh) "--fraction-- how much adopted shaped EV load is allowed to be shed in each timeslice h"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_shape_generation.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter evmc_shape_load(i,r,allh) "--fraction-- how much adopted shaped EV load is added in each timeslice h"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_shape_load.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter evmc_storage_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted EV storage discharge capacity that can be discharged (deferred charging) in each timeslice h"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_storage_discharge.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter evmc_storage_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted EV storage discharge capacity that can be charged (add back deferred charging) in each timeslice h"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_storage_charge.csv
-$offdelim
-$onlisting
-/ ;
-
-parameter evmc_storage_energy_hours(i,r,allh,allt) "--hours-- Allowable EV storage SOC (quantity deferred EV charge) [MWh] divided by nameplate EVMC discharge capacity [MW]"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_storage_energy.csv
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shape_generation.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shape_generation.csv
 $offdelim
 $onlisting
 / ;
 $offempty
+
+$onempty
+parameter dr_shape_load(i,r,allh,allt) "--fraction-- how much adopted DR shape load is added in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shape_load.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shape_load.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+* DR shift adoption
+parameter dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift discharge capacity that can be discharged (deferred charging) in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shift_discharge.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter dr_shift_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift discharge capacity that can be charged (add back deferred charging) in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shift_charge.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter dr_shift_energy_hours(i,r,allh,allt) "--hours-- Allowable DR shift device storage SOC (quantity deferred charge) [MWh] divided by nameplate discharge capacity [MW]"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shift_profile_energy.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 
 * Written by hourly_writetimeseries.py
 parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"

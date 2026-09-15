@@ -193,7 +193,6 @@ def get_rev_paths(revswitches):
 
     return revswitches
 
-
 def check_cases_format(df_cases):
     """Check the integrity of the input cases_{}.csv data"""
     dfkeep = df_cases.loc[:, ~df_cases.loc['ignore'].astype(int).astype(bool)]
@@ -213,8 +212,7 @@ def check_cases_format(df_cases):
             + '\n'.join(f'"{i}"' for i in spaces)
         )
         raise ValueError(err)
-
-
+    
 def check_compatibility(sw):
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
@@ -377,16 +375,6 @@ def check_compatibility(sw):
                 float(limit)
             except ValueError:
                 raise ValueError(err)
-
-    if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
-        raise ValueError(
-            "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
-            "and GSw_PRM_StressIterateMax>0 is not supported.\n"
-            "To iteratively update the PRM, set GSw_PRM_UpdateMethod to an integer between 1-3:"
-            "\n1: static update set by GSw_PRM_UpdateFraction; "
-            "\n2: dynamic update informed by PRAS; "
-            "\n3: dynamic update but only after all new stress periods have been added"
-        )
 
     for bir in sw['GSw_PVB_BIR'].split('_'):
         if not (float(bir) >= 0):
@@ -849,7 +837,7 @@ def setupEnvironment(
 
     #%% Check whether the ReEDS conda environment is activated
     if (not skip_checks) and (
-        ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
+        ('reeds5' not in os.environ['CONDA_DEFAULT_ENV'].lower())
         or (not pd.__version__.startswith('3'))
     ):
         err = (
@@ -1289,7 +1277,7 @@ def write_batch_script(
                 OPATH.writelines("module load conda \n")
                 OPATH.writelines("module load gams \n")
 
-            OPATH.writelines("conda activate reeds \n")
+            OPATH.writelines("conda activate reeds5 \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls

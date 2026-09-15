@@ -40,14 +40,12 @@ tload(t)$tmodel(t) = yes ;
 $gdxin handoff%ds%reeds_data%ds%ccdata_merged_%niter%.gdx
 $loaddcr cc_old_load2 = cc_old
 $loaddcr cc_mar_load2 = cc_mar
-$loaddcr cc_evmc_load2 = cc_evmc
 $loaddcr sdbin_size_load2 = sdbin_size
 $gdxin
 
 cc_old_load(i,r,szn,t) = sum{loadset, sum{ccreg$r_ccreg(r,ccreg), cc_old_load2(loadset,i,r,ccreg,szn,t) } } ;
 cc_mar_load(i,r,szn,t) = sum{loadset, sum{ccreg$r_ccreg(r,ccreg), cc_mar_load2(loadset,i,r,ccreg,szn,t) } } ;
 
-cc_evmc_load(i,r,szn,t) = sum{loadset, cc_evmc_load2(loadset,i,r,szn,t) } ;
 
 sdbin_size_load(ccreg,szn,sdbin,t) = sum{loadset, sdbin_size_load2(loadset,ccreg,szn,sdbin,t) } ;
 
