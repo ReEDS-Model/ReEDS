@@ -452,7 +452,7 @@ def reeds_cc(t, tnext, casedir):
         .assign(t=str(tnext))
     )
     ### Reorder to match ReEDS convention
-    cc_mar = cc_mar.reindex(['i','r','ccreg','ccseason','t','value'], axis=1)
+    cc_mar = cc_mar.reindex(['i','c','r','ccreg','ccseason','t','value'], axis=1)
 
     net_load = (
         pd.concat(dict_net_load, axis=0)

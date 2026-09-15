@@ -1082,9 +1082,9 @@ def plot_cc_mar(sw, dfs):
         1, numcols, figsize=(len(techs)*1.2, 3.75), sharex=True, sharey=True)
     for row, tech in enumerate(techs):
         df = dfplot.loc[(dfplot.tech==tech)].copy()
-        ### Each observation in the histogram is a (i,r) pair
-        df['i_r'] = df.i + '_' + df.r
-        df = df.pivot(columns='ccseason',values='Value',index='i_r')[ccseasons]
+        ### Each observation in the histogram is a (i,c,r) triple
+        df['i_c_r'] = df.i + '_' + df.c + '_' + df.r
+        df = df.pivot(columns='ccseason',values='Value',index='i_c_r')[ccseasons]
 
         plots.plotquarthist(
             ax[row], df, histcolor=histcolor,

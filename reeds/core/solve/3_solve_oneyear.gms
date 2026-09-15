@@ -78,7 +78,7 @@ loop(i$rsc_i(i),
 * to avoid forcing recently upgraded capacity into retirement
 if(Sw_Upgrades = 1,
 
-    m_capacity_exog(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)$sameas(t,"%cur_year%")
+    m_capacity_exog(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$sameas(t,"%cur_year%")
                          $(sum{(ii,tt)$[(tt.val <= t.val)$(t.val - tt.val <= Sw_UpgradeLifespan)
                                        $valcap(ii,v,r,tt)$upgrade_from(ii,i)], UPGRADES.l(ii,v,r,tt) } ) ] =
 * [maximum of] initial capacity recorded in e_solveprep
@@ -157,8 +157,8 @@ $gdxin
 cc_old(i,r,ccseason,t)$[tload(t)$(vre(i) or csp(i) or pvb(i))] =
     sum{ccreg$r_ccreg(r,ccreg), cc_old_load(i,r,ccreg,ccseason,t) } ;
 
-m_cc_mar(i,r,ccseason,t)$[tload(t)$(vre(i) or csp(i) or pvb(i))] =
-    sum{ccreg$r_ccreg(r,ccreg), cc_mar_load(i,r,ccreg,ccseason,t) } ;
+m_cc_mar(i,c,r,ccseason,t)$[i_c(i,c)$tload(t)$(vre(i) or csp(i) or pvb(i))] =
+    sum{ccreg$r_ccreg(r,ccreg), cc_mar_load(i,c,r,ccreg,ccseason,t) } ;
 
 sdbin_size(ccreg,ccseason,sdbin,t)$tload(t) = sdbin_size_load(ccreg,ccseason,sdbin,t) ;
 
@@ -172,7 +172,7 @@ sdbin_size(ccreg,ccseason,sdbin,t)$tload(t) = sdbin_size_load(ccreg,ccseason,sdb
 *                                    = (PV_dc / ILR - PV_dc * BCR) / PV_dc
 *                                    = 1/ILR - BCR
 * marginal capacity credit
-m_cc_mar(i,r,ccseason,t)$[tload(t)$pvb(i)] = min{ m_cc_mar(i,r,ccseason,t), 1 / ilr(i) - bcr(i) } ;
+m_cc_mar(i,c,r,ccseason,t)$[i_c(i,c)$tload(t)$pvb(i)] = min{ m_cc_mar(i,c,r,ccseason,t), 1 / ilr(i) - bcr(i) } ;
 
 * old capacity credit
 * (1) convert cc_old from MW to a fractional basis

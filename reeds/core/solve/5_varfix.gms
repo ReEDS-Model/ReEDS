@@ -27,7 +27,7 @@ OP_LOADSITE.fx(r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_
 
 * capacity and investment variables
 CAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)] = CAP.l(i,v,r,tfix) ;
-CAP_CLASS.fx(i,c,v,r,tfix)$[valcap_class(i,c,v,r,tfix)] = CAP_CLASS.l(i,c,v,r,tfix) ;
+CAP_CLASS.fx(i,c,v,r,tfix)$[valcap_class(i,c,v,r,tfix)$cf_tech(i)] = CAP_CLASS.l(i,c,v,r,tfix) ;
 CAP_ENERGY.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$battery(i)] = CAP_ENERGY.l(i,v,r,tfix) ;
 CAP_ABOVE_LIM.fx(tg,r,tfix)$[(yeart(tfix)>=model_builds_start_yr)
                                 $(sum{(tgg,rr), cap_limit(tgg,rr,tfix)})
@@ -39,7 +39,7 @@ INV.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)] = INV.l(i,v,r,tfix) ;
 INV_ENERGY.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$battery(i)] = INV_ENERGY.l(i,v,r,tfix) ;
 INV_REFURB.fx(i,c,v,r,tfix)$[i_c(i,c)$valinv(i,v,r,tfix)$refurbtech(i)] = INV_REFURB.l(i,c,v,r,tfix) ;
 INV_RSC.fx(i,c,v,r,rscbin,tfix)$[i_c(i,c)$valinv(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)] = INV_RSC.l(i,c,v,r,rscbin,tfix) ;
-CAP_RSC.fx(i,c,v,r,rscbin,tfix)$[i_c(i,c)$valcap(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)] = CAP_RSC.l(i,c,v,r,rscbin,tfix) ;
+CAP_RSC.fx(i,c,v,r,rscbin,tfix)$[valcap_class(i,c,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)] = CAP_RSC.l(i,c,v,r,rscbin,tfix) ;
 INV_CAP_UP.fx(i,v,r,rscbin,tfix)$[allow_cap_up(i,v,r,rscbin,tfix)] = INV_CAP_UP.l(i,v,r,rscbin,tfix) ;
 INV_ENER_UP.fx(i,v,r,rscbin,tfix)$[allow_ener_up(i,v,r,rscbin,tfix)] = INV_ENER_UP.l(i,v,r,rscbin,tfix) ;
 UPGRADES.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$upgrade(i)] = UPGRADES.l(i,v,r,tfix) ;

@@ -38,7 +38,7 @@ tload(t) = no ;
 parameter
     cc_old_load(i,r,ccreg,ccseason,t)        "--MW-- cc_old loading in from the cc_out gdx file"
     sdbin_size_load(ccreg,ccseason,sdbin,t)  "--MW-- bin_size power loading in from the cc_out gdx file"
-    cc_mar_load(i,r,ccreg,ccseason,t)        "--fraction-- cc_mar loading in from the cc_out gdx file"
+    cc_mar_load(i,c,r,ccreg,ccseason,t)      "--fraction-- cc_mar loading in from the cc_out gdx file"
     cc_evmc_load(i,r,ccseason,t)               "--fraction--  cc_evmc loading in from the cc_out gdx file"
     mean_forced_outage_rate_load(i,r,ccseason,t)  "--fraction-- mean_forced_outage_rate loading in from the cc_out gdx file"
 ;
@@ -119,7 +119,7 @@ $ifthen.seq %timetype%=="seq"
 m_capacity_exog0(i,c,v,r,t) = m_capacity_exog(i,c,v,r,t) ;
 
 * remove cc_int as it is only used in the intertemporal setting
-cc_int(i,v,r,ccseason,t) = 0 ;
+cc_int(i,c,v,r,ccseason,t) = 0 ;
 
 *for the sequential solve, what matters is the relative ratio of the pvf for capital and the pvf for onm
 *therefore, we set the pvf capital to one, and then pvf_onm to the relative 20 year present value by using the crf
@@ -141,9 +141,9 @@ set
 
 parameter
     cc_evmc_load2(loadset,i,r,ccseason,t)  "--fraction--  cc_evmc loading in from the cc_out gdx file"
-    cc_iter(i,v,r,ccseason,t,cciter)     "--fraction-- Actual capacity value in iteration cciter"
-    cc_mar_load2(loadset,i,r,ccseason,t) "--fraction-- cc_mar loading in from the cc_out gdx file"
-    cc_old_load2(loadset,i,r,ccseason,t) "--MW-- cc_old loading in from the cc_out gdx file"
+    cc_iter(i,c,v,r,ccseason,t,cciter)   "--fraction-- Actual capacity value in iteration cciter"
+    cc_mar_load2(loadset,i,c,r,ccreg,ccseason,t) "--fraction-- cc_mar loading in from the cc_out gdx file"
+    cc_old_load2(loadset,i,r,ccreg,ccseason,t) "--MW-- cc_old loading in from the cc_out gdx file"
     cc_scale(i,r,ccseason,t)             "--unitless-- scaling of marginal capacity value levels in intertemporal runs to equal total capacity value"
     cc_totmarg(i,r,ccseason,t)           "--MW-- original estimate of total capacity value for intertemporal, based on marginals"
     sdbin_size_load2(loadset,ccreg,ccseason,sdbin,t)  "--MW-- bin_size power loading in from the cc_out gdx file"
@@ -175,22 +175,22 @@ gen_iter(i,v,r,t,cciter) = 0 ;
 
 
 *Assign csp3 and csp4 to use the same initial values as csp2_1
-cc_int(i,v,r,ccseason,t)$[csp3(i) or csp4(i)] = cc_int('csp2_1',v,r,ccseason,t) ;
+cc_int(i,c,v,r,ccseason,t)$[i_c(i,c)$(csp3(i) or csp4(i))] = sum{cc$i_c('csp2_1',cc), cc_int('csp2_1',cc,v,r,ccseason,t) } ;
 
 tmodel(t) = no ;
 tmodel(t)$[tmodel_new(t)$(yeart(t)<=%endyear%)] = yes ;
 
 
 *Cap the maximum CC in the first solve iteration
-cc_int(i,v,r,ccseason,t)$[rsc_i(i)$(cc_int(i,v,r,ccseason,t)>0.4)$wind(i)] = 0.4 ;
-cc_int(i,v,r,ccseason,t)$[rsc_i(i)$(cc_int(i,v,r,ccseason,t)>0.6)$pv(i)] = 0.6 ;
+cc_int(i,c,v,r,ccseason,t)$[rsc_i(i)$(cc_int(i,c,v,r,ccseason,t)>0.4)$wind(i)] = 0.4 ;
+cc_int(i,c,v,r,ccseason,t)$[rsc_i(i)$(cc_int(i,c,v,r,ccseason,t)>0.6)$pv(i)] = 0.6 ;
 
 
 *set objective function to millions of dollars
 cost_scale = 1 ;
 
 *marginal capacity value not used in intertemporal case
-m_cc_mar(i,r,ccseason,t) = 0 ;
+m_cc_mar(i,c,r,ccseason,t) = 0 ;
 *static capacity value for existing capacity not used in intertemporal case
 cc_old(i,r,ccseason,t) = 0 ;
 
@@ -225,10 +225,10 @@ pvf_onm0(t) = pvf_onm(t) ;
 cost_scale = 1e-3 ;
 
 *Assign csp3 and csp4 to use the same initial values as csp2_1
-cc_int(i,v,r,ccseason,t)$[csp3(i) or csp4(i)] = cc_int('csp2_1',v,r,ccseason,t) ;
+cc_int(i,c,v,r,ccseason,t)$[i_c(i,c)$(csp3(i) or csp4(i))] = sum{cc$i_c('csp2_1',cc), cc_int('csp2_1',cc,v,r,ccseason,t) } ;
 
 *marginal capacity value not used in intertemporal case
-m_cc_mar(i,r,ccseason,t) = 0 ;
+m_cc_mar(i,c,r,ccseason,t) = 0 ;
 *static capacity value for existing capacity not used in intertemporal case
 cc_old(i,r,ccseason,t) = 0 ;
 
