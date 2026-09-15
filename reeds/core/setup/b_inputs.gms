@@ -1867,10 +1867,10 @@ m_rscfeas(r,i,"bin1")$[sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t
 *--- Interconnection queues (Capacity deployment limit) ---
 *==========================================================
 $onempty
-table cap_limit(tg,r,allt) "--MW-- capacity deployment limit by region and technology based on interconnection queues"
+table queue_limit(tg,r,allt) "--MW-- capacity deployment limit by region and technology based on interconnection queues"
 $offlisting
 $ondelim
-$include inputs_case%ds%cap_limit.csv
+$include inputs_case%ds%queue_limit.csv
 $offdelim
 $onlisting
 ;

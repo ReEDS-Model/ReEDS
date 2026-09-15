@@ -1198,20 +1198,20 @@ def write_miscellaneous_files(
         prm_initial.xs(t, 0, 't').to_csv(os.path.join(stresspath, 'prm.csv'))
 
     # Add capacity deployment limits based on interconnection queue data
-    cap_queue = pd.read_csv(
+    queue_limit = pd.read_csv(
         os.path.join(reeds_path,'inputs','capacity_exogenous','interconnection_queues.csv'))
     # Only keep the next GSw_QueueConstraintYears
     keepyears = [
-        i for i in cap_queue.set_index(['r','tg']).columns
+        i for i in queue_limit.set_index(['r','tg']).columns
         if int(i) <= scalars.this_year + int(sw.GSw_QueueConstraintYears)
     ]
-    cap_queue = cap_queue[['r','tg']+keepyears].copy()
+    queue_limit = queue_limit[['r','tg']+keepyears].copy()
     # Map counties to zones
-    cap_queue['r'] = cap_queue['r'].map(county2zone)
-    cap_queue = cap_queue.dropna(subset='r')
+    queue_limit['r'] = queue_limit['r'].map(county2zone)
+    queue_limit = queue_limit.dropna(subset='r')
 
-    cap_queue = cap_queue.groupby(['tg','r'],as_index=False).sum()
-    cap_queue.to_csv(os.path.join(inputs_case,'cap_limit.csv'), index=False)
+    queue_limit = queue_limit.groupby(['tg','r'],as_index=False).sum()
+    queue_limit.to_csv(os.path.join(inputs_case,'queue_limit.csv'), index=False)
     # ----  Miscelanous files in non_region_files or region_files (in this case we are overwriting them)
     # Expand i (technologies) set if modeling water use. Overwrite originals.
     if int(sw['GSw_WaterMain']):
