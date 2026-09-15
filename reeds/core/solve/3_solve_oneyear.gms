@@ -54,7 +54,7 @@ rhs_eq_rsc_INVlim(r,i,c,rscbin,t)$[tmodel(t)$i_c(i,c)$rsc_i(i)$m_rscfeas(r,i,c,r
 *Note that yeart(tt) is stricly < here, while it is <= in eq_rsc_INVlim. That is because
 *values where yeart(tt)==yeart(t) are variables rather than parameters because they are not
 *values from prior solve years.
-    - sum{(ii,v,tt)$[rsc_agg(i,ii)$valinv(ii,v,r,tt)$valcap_class(ii,c,v,r,tt)$(yeart(tt) < yeart(t))],
+    - sum{(ii,v,tt)$[rsc_agg(i,ii)$valinv_class(ii,c,v,r,tt)$(yeart(tt) < yeart(t))],
          INV_RSC.l(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 ;
 

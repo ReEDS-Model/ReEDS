@@ -699,8 +699,8 @@ eq_cap_new_noret(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$newv(v)$(not upgr
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
               degrade(i,tt,t) * (INV(i,v,r,tt)$(not cf_tech(i))
                                  + sum{rscbin$m_rscfeas(r,i,c,rscbin),
-                                       INV_RSC(i,c,v,r,rscbin,tt) }$cf_tech(i)
-                                 + INV_REFURB(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+                                       INV_RSC(i,c,v,r,rscbin,tt) }$[cf_tech(i)$valinv_class(i,c,v,r,tt)]
+                                 + INV_REFURB(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb$valinv_class(i,c,v,r,tt)])
         }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
@@ -760,8 +760,8 @@ eq_cap_new_retub(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$newv(v)$(not upgr
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
               degrade(i,tt,t) * (INV(i,v,r,tt)$(not cf_tech(i))
                                  + sum{rscbin$m_rscfeas(r,i,c,rscbin),
-                                       INV_RSC(i,c,v,r,rscbin,tt) }$cf_tech(i)
-                                 + INV_REFURB(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+                                       INV_RSC(i,c,v,r,rscbin,tt) }$[cf_tech(i)$valinv_class(i,c,v,r,tt)]
+                                 + INV_REFURB(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb$valinv_class(i,c,v,r,tt)])
       }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
@@ -814,9 +814,9 @@ eq_cap_new_retmo(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$tmodel(t)$newv(v)$(not upgr
     + INV(i,v,r,t)$[valinv(i,v,r,t)$(not cf_tech(i))]
 
     + sum{rscbin$m_rscfeas(r,i,c,rscbin),
-          INV_RSC(i,c,v,r,rscbin,t) }$[valinv(i,v,r,t)$cf_tech(i)]
+          INV_RSC(i,c,v,r,rscbin,t) }$[valinv_class(i,c,v,r,t)$cf_tech(i)]
 
-    + INV_REFURB(i,c,v,r,t)$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
+    + INV_REFURB(i,c,v,r,t)$[valinv_class(i,c,v,r,t)$refurbtech(i)$Sw_Refurb]
 
 * Account for capacity upsizing within new vintages
     + sum{rscbin$allow_cap_up(i,v,r,rscbin,t), INV_CAP_UP(i,v,r,rscbin,t) }
@@ -854,7 +854,7 @@ eq_cap_rsc(i,c,v,r,rscbin,t)
 
     + sum{tt$[(yeart(tt) <= yeart(t))$(tmodel(tt) or tfix(tt))
           $m_rscfeas(r,i,c,rscbin)
-          $valinv(i,v,r,tt)],
+          $valinv_class(i,c,v,r,tt)],
           INV_RSC(i,c,v,r,rscbin,tt)
     }
 
@@ -958,7 +958,7 @@ eq_ener_up(i,v,r,rscbin,t)$[tmodel(t)$allow_ener_up(i,v,r,rscbin,t)$(not Sw_PCM)
 * Prescribe power capacity
 eq_forceprescription_power(i,c,newv,r,t)
     $[tmodel(t)$force_prescribe_class(i,c,newv,r,t)$Sw_ForcePrescription
-    $valinv(i,newv,r,t)
+    $valinv_class(i,c,newv,r,t)
     $(not Sw_PCM)]..
 
 *capacity built in the current period or prior
@@ -1016,7 +1016,7 @@ eq_refurblim(i,c,r,t)$[tmodel(t)$i_c(i,c)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)].
 *investments that meet the refurbishment requirement (i.e. they've expired)
     sum{(vv,tt)$[m_refurb_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)],
          INV(i,vv,r,tt)$(not rsc_i(i))
-         + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC(i,c,vv,r,rscbin,tt) }$[rsc_i(i)$valcap_class(i,c,vv,r,tt)] }
+         + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC(i,c,vv,r,rscbin,tt) }$[rsc_i(i)$valinv_class(i,c,vv,r,tt)] }
 
 *[plus] exogenous decay in capacity
 *note here that the tfix or tmodel set does not apply
@@ -1030,7 +1030,7 @@ eq_refurblim(i,c,r,t)$[tmodel(t)$i_c(i,c)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)].
 *must exceed the total sum of investments in refurbishments
 *that have yet to expire - implying an investment can be refurbished more than once
 *if the first refurbishment has exceed its age limit
-    sum{(vv,tt)$[inv_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)$valcap_class(i,c,vv,r,tt)],
+    sum{(vv,tt)$[inv_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv_class(i,c,vv,r,tt)],
          INV_REFURB(i,c,vv,r,tt)
        }
 ;
@@ -1039,7 +1039,7 @@ eq_refurblim(i,c,r,t)$[tmodel(t)$i_c(i,c)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)].
 
 eq_rsc_inv_account(i,v,r,t)$[tmodel(t)$valinv(i,v,r,t)$rsc_i(i)$(not Sw_PCM)]..
 
-  sum{(c,rscbin)$[valcap_class(i,c,v,r,t)$m_rscfeas(r,i,c,rscbin)], INV_RSC(i,c,v,r,rscbin,t) }
+  sum{(c,rscbin)$[valinv_class(i,c,v,r,t)$m_rscfeas(r,i,c,rscbin)], INV_RSC(i,c,v,r,rscbin,t) }
 
   =e=
 
@@ -1077,7 +1077,7 @@ eq_rsc_INVlim(r,i,c,rscbin,t)$[tmodel(t)
     =g=
 
 *must exceed the cumulative invested capacity in that region/class/bin...
-    sum{(ii,v,tt)$[rsc_agg(i,ii)$valinv(ii,v,r,tt)$valcap_class(ii,c,v,r,tt)$(yeart(tt) <= yeart(t))],
+    sum{(ii,v,tt)$[rsc_agg(i,ii)$valinv_class(ii,c,v,r,tt)$(yeart(tt) <= yeart(t))],
          INV_RSC(ii,c,v,r,rscbin,tt) * resourcescaler(ii) }
 
 ;
@@ -1415,7 +1415,7 @@ eq_interconnection_queues(tg,r,t)
     sum{(i,newv,tt)$[valinv(i,newv,r,tt)$tg_i(tg,i)
                                     $(yeart(tt)>=interconnection_start)
                                     $(tmodel(tt) or tfix(tt))],
-        INV(i,newv,r,tt) + sum{c$valcap_class(i,c,newv,r,tt), INV_REFURB(i,c,newv,r,tt) }$[refurbtech(i)$Sw_Refurb] }
+        INV(i,newv,r,tt) + sum{c$valinv_class(i,c,newv,r,tt), INV_REFURB(i,c,newv,r,tt) }$[refurbtech(i)$Sw_Refurb] }
 ;
 
 *===============================
@@ -1746,7 +1746,7 @@ eq_reserve_margin(r,ccseason,t)
 *[plus] marginal capacity credit of VRE and csp times new investment
 *only used in sequential solve case (otherwise m_cc_mar = 0)
 *Note: new distpv is included with cc_old
-    + sum{(i,c,v)$[valcap_class(i,c,v,r,t)$(vre(i) or csp(i) or pvb(i))$valinv(i,v,r,t)$(not forced_retire(i,r,t))],
+    + sum{(i,c,v)$[valinv_class(i,c,v,r,t)$(vre(i) or csp(i) or pvb(i))$(not forced_retire(i,r,t))],
           m_cc_mar(i,c,r,ccseason,t)
           * (INV(i,v,r,t)$(not rsc_i(i))
              + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC(i,c,v,r,rscbin,t) }$rsc_i(i)
@@ -2327,7 +2327,7 @@ eq_transmission_investment_max(t)
 * Spur lines + network reinforcement
     + sum{(i,c,v,r,rscbin)
           $[((Sw_TransInvMaxTypes=2) or (Sw_TransInvMaxTypes=3))
-          $valcap_class(i,c,v,r,t)$valinv(i,v,r,t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)],
+          $valinv_class(i,c,v,r,t)$rsc_i(i)$m_rscfeas(r,i,c,rscbin)],
           INV_RSC(i,c,v,r,rscbin,t) * (
               distance_reinforcement(i,c,r,rscbin)
               + distance_spur(i,c,r,rscbin)$(Sw_TransInvMaxTypes=3)
