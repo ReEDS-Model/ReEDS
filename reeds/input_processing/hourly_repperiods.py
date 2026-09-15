@@ -277,7 +277,8 @@ def main(
         .reset_index(level='drop', drop=True).reset_index())
     ### Downselect to modeled regions
     sc = sc.loc[sc.region.isin(val_r_all)].copy()
-    sc['i'] = sc.tech+'_'+sc['class'].astype(str)
+    sc['i'] = reeds.techs.get_tech_class_name(
+        sc.tech, sc['class'], reeds.techs.get_collapsed_techs(inputs_case))
     sc['resource'] = sc.i + '|' + sc['class'].astype(str) + '|' + sc.region
     sc['aggreg'] = sc.region.map(rmap)
 
