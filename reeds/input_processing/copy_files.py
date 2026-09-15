@@ -1200,6 +1200,12 @@ def write_miscellaneous_files(
     # Add capacity deployment limits based on interconnection queue data
     cap_queue = pd.read_csv(
         os.path.join(reeds_path,'inputs','capacity_exogenous','interconnection_queues.csv'))
+    # Only keep the next GSw_QueueConstraintYears
+    keepyears = [
+        i for i in cap_queue.set_index(['r','tg']).columns
+        if int(i) <= scalars.this_year + int(sw.GSw_QueueConstraintYears)
+    ]
+    cap_queue = cap_queue[['r','tg']+keepyears].copy()
     # Map counties to zones
     cap_queue['r'] = cap_queue['r'].map(county2zone)
     cap_queue = cap_queue.dropna(subset='r')

@@ -1368,6 +1368,7 @@ eq_interconnection_queues(tg,r,t)
     $[tmodel(t)$(yeart(t)>=model_builds_start_yr)
     $(sum{(tgg,rr), cap_limit(tgg,rr,t)})
     $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,t)}
+    $Sw_QueueConstraintYears
     $(not Sw_PCM)]..
 
 * the capacity limit from the interconnection queue data
