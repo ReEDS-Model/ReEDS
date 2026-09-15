@@ -2125,9 +2125,6 @@ valcap_ir(i,r)$sum{(v,t)$tmodel_new(t), valcap(i,v,r,t) } = yes ;
 valcap_i(i)$sum{v, valcap_iv(i,v) } = yes ;
 valcap_ivr(i,v,r)$sum{t, valcap(i,v,r,t) } = yes ;
 
-* Valid capacity by resource class
-valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
-
 * -- valinv specification --
 valinv(i,v,r,t) = no ;
 valinv(i,v,r,t)$[valcap(i,v,r,t)$ivt(i,v,t)] = yes ;
@@ -4952,12 +4949,14 @@ biofeas(r)$[sum{bioclass, sum{usda_region$r_usda(r, usda_region), biosupply(usda
 
 *removal of bio techs that are not in biofeas(r)
 valcap(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
-valcap_class(i,c,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 valgen(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 valinv(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 
 valgen(i,v,r,t)$[not valcap(i,v,r,t)] = no ;
 valinv(i,v,r,t)$[not valcap(i,v,r,t)] = no ;
+
+* Valid capacity by resource class
+valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
 
 scalar bio_transport_cost ;
 * biomass transport cost enter in $ per ton, convert to $ per MMBtu

@@ -651,7 +651,7 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
 * Capacity is needed here to reassign csp-ns, so calculate it before generation.
-cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)] = CAP.l(i,v,r,t) / ilr(i) ;
+cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(not cf_tech(i))] = CAP.l(i,v,r,t) / ilr(i) ;
 cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)] = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
 
 cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i)))$valcap_class(i,c,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
@@ -971,9 +971,9 @@ cc_all_out(i,c,v,r,ccseason,t)$[i_c(i,c)$tmodel_new(t)] =
     m_cc_mar(i,c,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valinv_init(i,v,r,t)]
 ;
 
-cap_new_cc(i,c,r,ccseason,t)$[i_c(i,c)$(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{v$ivt(i,v,t), cap_new_ivrt(i,c,v,r,t) } ;
+cap_new_cc(i,c,r,ccseason,t)$[i_c(i,c)$(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{v$[ivt(i,v,t)$valcap_class(i,c,v,r,t)], cap_new_ivrt(i,c,v,r,t) } ;
 
-cc_new(i,c,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,c,r,ccseason,t)] = sum{v$ivt(i,v,t), cc_all_out(i,c,v,r,ccseason,t) } ;
+cc_new(i,c,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,c,r,ccseason,t)] = sum{v$[ivt(i,v,t)$valcap_class(i,c,v,r,t)], cc_all_out(i,c,v,r,ccseason,t) } ;
 
 cap_firm(i,r,ccseason,t)$[valcap_irt(i,r,t)$[not consume(i)]$tmodel_new(t)$Sw_PRM_CapCredit] =
       sum{v$[(not vre(i))$(not hydro(i))$(not storage(i))$(not storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
