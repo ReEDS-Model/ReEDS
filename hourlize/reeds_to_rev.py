@@ -988,14 +988,20 @@ def disaggregate_reeds_to_rev(
 
     # apply tech lifetime as a new value to the sc dataframe
     print("Adding tech lifetimes to dataframe")
-    tech_lifetimes[["tech_cat", "class"]] = tech_lifetimes["tech"].str.rsplit(
-        "_", n=1, expand=True
-    )
-    tech_lifetimes_filter = tech_lifetimes[tech_lifetimes["tech_cat"] == tech].copy()
-    tech_lifetimes_lkup = dict(
-        tech_lifetimes_filter[["class", "lifetime"]].values.tolist()
-    )
-    df_sc["tech_lifetime"] = df_sc["class"].astype(str).map(tech_lifetimes_lkup)
+    if tech in tech_lifetimes["tech"].values:
+        # Technologies that hold all their classes under one name have one lifetime
+        df_sc["tech_lifetime"] = (
+            tech_lifetimes.loc[tech_lifetimes["tech"] == tech, "lifetime"].iloc[0]
+        )
+    else:
+        tech_lifetimes[["tech_cat", "class"]] = tech_lifetimes["tech"].str.rsplit(
+            "_", n=1, expand=True
+        )
+        tech_lifetimes_filter = tech_lifetimes[tech_lifetimes["tech_cat"] == tech].copy()
+        tech_lifetimes_lkup = dict(
+            tech_lifetimes_filter[["class", "lifetime"]].values.tolist()
+        )
+        df_sc["tech_lifetime"] = df_sc["class"].astype(str).map(tech_lifetimes_lkup)
 
     print("Setting up full dataset with all years")
     # build up the accounting table, which consists of all supply curve points
