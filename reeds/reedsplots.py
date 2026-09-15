@@ -2113,7 +2113,6 @@ def animate_dispatch(
     ###### Define tech aggregations and colors
     aggtechs = {
         **{f'battery_{i}': 'battery' for i in [2,4,6,8,10,12,24,48,72,100]},
-        **{f'wind-ons_{i}': 'wind-ons' for i in range(1,11)},
         **{f'wind-ofs_{i}': 'wind-ofs' for i in range(1,11)},
         **{f'upv_{i}': 'pv' for i in range(1,11)},
         **{
