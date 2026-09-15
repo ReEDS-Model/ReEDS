@@ -827,6 +827,7 @@ if not int(sw.GSw_PRM_CapCredit):
         'stress_top10_netload',
         'stress_top10_load',
         'stress_bottom10_vregen',
+        'stress_price_weighted',
     ]:
         savename = f"plot_stress_cf-{level}-{metric}.png"
         try:
