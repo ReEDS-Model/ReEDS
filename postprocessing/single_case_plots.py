@@ -680,6 +680,20 @@ except Exception:
 
 try:
     plt.close()
+    f, ax, _ = reeds.prasplots.plot_interface_flows(case=case, source='reeds', level='transgrp', year=year)
+    savename = f'plot_ReEDS_transgrp_flows-{year}.png'
+    if write:
+        plt.savefig(os.path.join(savepath, savename))
+    if interactive:
+        plt.show()
+    plt.close()
+    print(savename)
+except Exception:
+    print('plot_interface_flows failed:')
+    print(traceback.format_exc())
+
+try:
+    plt.close()
     f, ax, _ = reeds.prasplots.plot_storage_soc(case=case, year=year)
     savename = f'plot_PRAS_storage-{year}.png'
     if write:

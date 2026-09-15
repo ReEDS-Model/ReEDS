@@ -29,15 +29,33 @@ def plot_interface_flows(
     weatheryear=2012,
     decimals=0,
     flowcolors={'forward':'C0', 'reverse':'C3'},
+    trtypes=None,
     onlydata=False,
+    savefig=False,
 ):
     """
+    Plot interface flows between regions at the given hierarchy `level`.
+
+    Two columns per interface:
+      * left: sorted duration curve of the flow
+      * right: hourly timeseries for `weatheryear`
+    Positive ("forward") = dominant flow direction, negative ("reverse") = other way.
+
+    Inputs
+    ------
+    source: 'pras' to use hourly PRAS flow samples;
+            'reeds' to use ReEDS `tran_flow_rep` broadcast from representative
+            timeslices to actual hours (via inputs_case/rep/hmap_myr.csv).
+    level: hierarchy level to aggregate to. Use 'r' (or 'rb') for no aggregation.
+    trtypes: only used for source='reeds'; None for all, or list/str of trtypes.
+    savefig: False, True (save to {case}/outputs/figures/), or an explicit path.
     """
     sw = reeds.io.get_switches(case)
-    timeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
     hierarchy = reeds.io.get_hierarchy(case)
 
+    ###### Get the hourly flow data, indexed by timestamp, columns as 'r→rr'
     if source.lower() == 'pras':
+        timeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
         infile, _iteration = reeds.io.get_last_iteration(
             case=case, year=year, datum='flow', samples=samples)
         dfflow = reeds.io.read_pras_results(infile).set_index(timeindex)
@@ -45,12 +63,59 @@ def plot_interface_flows(
         dfflow = dfflow[[c for c in dfflow if '"DC|' not in c]].copy()
         ## Normalize the interface names
         renamer = {i: '→'.join(i.replace('"','').split(' => ')) for i in dfflow}
-    else:
-        raise NotImplementedError(f"source must be 'pras' but is '{source}'")
 
-    ### Group by hierarchy level
+    elif source.lower() == 'reeds':
+        ### ReEDS reports flows only for representative timeslices, so we read them,
+        ### pivot to (h × interface), then broadcast to actual hours using hmap_myr.
+        _iteration = 0 if iteration in [None, 'last'] else iteration
+
+        flow = reeds.io.read_output(case, 'tran_flow_rep', valname='MW')
+        flow = flow.astype({'t': int})
+        flow = flow.loc[flow.t == year].copy()
+        if not len(flow):
+            raise ValueError(
+                f"No tran_flow_rep values for t={year}; "
+                f"available years: {sorted(flow.t.unique())}"
+            )
+        ## Optionally filter transmission types, then sum over the rest
+        if trtypes is not None:
+            _trtypes = [trtypes] if isinstance(trtypes, str) else list(trtypes)
+            flow = flow.loc[flow.trtype.isin(_trtypes)].copy()
+        flow = flow.groupby(['r','rr','h'], as_index=False).MW.sum()
+
+        ## Use the same 'r→rr' naming convention as the PRAS branch
+        flow['interface'] = flow['r'] + '→' + flow['rr']
+        dfflow_h = flow.pivot(index='h', columns='interface', values='MW').fillna(0.)
+
+        ## Broadcast representative timeslices to actual hours
+        hmap_myr = pd.read_csv(
+            os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv')
+        )
+        dfflow = (
+            hmap_myr[['actual_h','h']]
+            .merge(dfflow_h, left_on='h', right_index=True, how='left')
+            .fillna(0.)
+            .sort_values('actual_h')
+            .set_index('actual_h')
+            .drop(columns='h')
+        )
+        ## Convert the 'actual_h' labels (e.g. 'y2012d015h003') to timestamps
+        dfflow.index = dfflow.index.map(reeds.timeseries.h2timestamp)
+        dfflow.index.name = None
+        ## Names are already normalized
+        renamer = {c: c for c in dfflow.columns}
+
+    else:
+        raise NotImplementedError(
+            f"source must be 'pras' or 'reeds' but is '{source}'")
+
+    ### Group by hierarchy level ('r'/'rb' => no aggregation)
     df = dfflow.rename(columns=renamer)
-    aggcols = {c: '→'.join([hierarchy[level][i] for i in c.split('→')]) for c in df}
+    if level in ['r','rb','ba','zone']:
+        r2agg = pd.Series(index=hierarchy.index, data=hierarchy.index)
+    else:
+        r2agg = hierarchy[level]
+    aggcols = {c: '→'.join([r2agg[i] for i in c.split('→')]) for c in df}
     df = df.rename(columns=aggcols).T.groupby(level=0).sum().T
     df = df[[c for c in df if c.split('→')[0] != c.split('→')[1]]].copy()
     if df.shape[1] == 0:
@@ -93,6 +158,11 @@ def plot_interface_flows(
             'distribution': {interface: (row,0) for row, interface in enumerate(interfaces)},
             'profile': {interface: (row,1) for row, interface in enumerate(interfaces)},
         }
+    if str(weatheryear) not in dfplot.index.strftime('%Y').unique():
+        raise ValueError(
+            f"weatheryear={weatheryear} not in modeled years "
+            f"{sorted(dfplot.index.year.unique())}"
+        )
     index = dfplot.loc[str(weatheryear)].index
     plt.close()
     f,ax = plt.subplots(
@@ -143,7 +213,9 @@ def plot_interface_flows(
         weight='bold', fontsize='large', color=flowcolors['reverse'],
     )
     ax[coords['profile'][interfaces[0]]].annotate(
-        f'{os.path.basename(case)}\nsystem year: {year}i{iteration}\nweather year: {weatheryear}',
+        f'{os.path.basename(case)}\n'
+        f'source: {source.lower()}\n'
+        f'system year: {year}i{_iteration}\nweather year: {weatheryear}',
         (1,1), xycoords='axes fraction', ha='right', annotation_clip=False,
     )
     ## Full time range
@@ -151,6 +223,23 @@ def plot_interface_flows(
     ax[coords['profile'][interfaces[-1]]].xaxis.set_major_locator(mpl.dates.MonthLocator())
     ax[coords['profile'][interfaces[-1]]].xaxis.set_major_formatter(mpl.dates.DateFormatter('%b'))
     plots.despine(ax)
+
+    ### Save it if requested
+    if savefig:
+        if savefig is True:
+            figpath = os.path.join(case, 'outputs', 'figures')
+            os.makedirs(figpath, exist_ok=True)
+            savename = os.path.join(
+                figpath,
+                f'interface_flows-{source.lower()}-{level}-{year}i{_iteration}'
+                f'-{weatheryear}.png'
+            )
+        else:
+            savename = savefig
+            os.makedirs(os.path.dirname(savename), exist_ok=True)
+        plt.savefig(savename, bbox_inches='tight', dpi=150)
+        print(f'Saved {savename}')
+
     return f, ax, dfplot
 
 
