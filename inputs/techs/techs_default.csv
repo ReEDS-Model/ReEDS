@@ -53,7 +53,7 @@ pvb1_1*pvb1_10,p
 pvb2_1*pvb2_10,p
 pvb3_1*pvb3_10,p
 wind-ofs_1*wind-ofs_10,p
-wind-ons_1*wind-ons_10,p
+wind-ons,p
 csp1_1*csp1_12,p
 csp2_1*csp2_12,p
 csp3_1*csp3_12,p
