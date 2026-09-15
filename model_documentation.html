@@ -1084,6 +1084,8 @@ In general, natural gas plants—especially combustion turbines—are better sui
 See the <a class="reference internal" href="#operational-reliability"><span class="xref myst">Operational Reliability</span></a> section for more details.</p>
 <p>The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2026 <span class="bibtex-citation" id="id40">[<a class="reference internal" href="#id956" title="EIA. Annual Energy Outlook 2026. Technical Report, U.S. Energy Information Administration, Washington, D.C., April 2026. URL: https://www.eia.gov/outlooks/aeo/.">EIA, 2026</a>]</span>, with data supplemented from the June 2026 EIA 860M.
 In particular, ReEDS uses the net summer capacity, net winter capacity,<a class="footnote-reference brackets" href="#ref23" id="id41" role="doc-noteref"><span class="fn-bracket">[</span>9<span class="fn-bracket">]</span></a> location, heat rate, variable O&amp;M (VOM), and FOM to characterize the existing fleet.
+ReEDS degrades existing capacity from its capacity-weighted average online year using the degradation rate specified for each technology.
+Reported capacity is always the undegraded capacity, while degradation reduces the capacity available within the model for generation.
 ReEDS uses a modified “average” heat rate for any builds occurring after 2010: A technology-specific increase on the full-load heat rate is applied to accommodate units not always operating at their design point.
 The modifiers, shown in <a class="reference internal" href="#heat-rate-adjustments"><span class="std std-numref">Table 2</span></a>, are based on the relationship between the reported heat rate in the ATB and the actual observed heat rate, calculated on a fleetwide basis for each fuel type.</p>
 <table class="docutils align-default" id="heat-rate-adjustments">
@@ -6570,7 +6572,7 @@ Prescribed retirements are power plant retirements that are forced into the mode
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on September 14, 2026.
+      <span class="lastupdated">Last updated on September 15, 2026.
       </span></p>
   </div>
 
