@@ -1514,6 +1514,19 @@ $offempty
 parameter exog_upv(i,r,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor" ;
 exog_upv(i,r,t) = sum{rscbin, exog_upv_rsc(i,r,rscbin,t) } ;
 
+* Average build year of existing capacity.
+* writecapdat.py creates the file; writesupplycurves.py adds resource classes.
+$onempty
+parameter exog_onlineyear(i,v,r,allt) "--year-- capacity-weighted online year of exogenous (pre-tfirst) capacity"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%exog_onlineyear.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 parameter avail_retire_exog_rsc(i,v,r,t) "--MW-- available retired capacity for refurbishments" ;
 avail_retire_exog_rsc(i,v,r,t) = 0 ;
 
@@ -1771,7 +1784,9 @@ m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(i,v,r,tt) } ;
 
-parameter degrade(i,t,tt) "degradation factor by i" ;
+parameter degrade_new(i,t,tt) "--fraction-- the fraction of capacity from year t that remains after degradation is applied through the year tt" ;
+
+parameter degrade_init(i,v,r,t) "--fraction-- the fraction of existing (initv) capacity that remains after degradation is applied from its online year through the year t" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
@@ -1790,8 +1805,21 @@ degrade_annual(i)$pvb(i) = sum{ii$[upv(ii)$rsc_agg(ii,i)], degrade_annual(ii) } 
 
 degrade_annual(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), degrade_annual(ii) } ;
 
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+* Degrade new built capacity from its build year (t) to the evaluation year (tt).
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+
+* Degrade existing capacity from its average build year.
+* Use hintage_data for binned technologies and distpv.
+exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
+    = hintage_data(i,v,r,t,"wOnlineYear") ;
+
+* Capacity without an online year (or without degradation) is left undegraded.
+* Fill all years for which the unit has exogenous capacity in any year, since upgrades
+* can restore m_capacity_exog in years where it starts at zero.
+degrade_init(i,v,r,t)$[initv(v)$sum{tt, m_capacity_exog(i,v,r,tt) }] = 1 ;
+degrade_init(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
+    = (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 
@@ -5230,29 +5258,16 @@ m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rsc
 * Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
 geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
 
-parameter geo_bin1_add_orig(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery"
-          geo_bin1_add(i,r)      "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with updated geo_discovery" ;
+parameter geo_bin1_add(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
 
 *Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
-*total geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
-geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
-
-* If there is not sufficient geothermal resource (i.e., geo_bin1_add_orig is positive), then
-* set geo_discovery to 1 for that region for years after the prescribed builds start
-geo_discovery(i,r,t)$[geo_hydro(i)$[geo_bin1_add_orig(i,r) > 0]
-                     $tmodel_new(t)$cap_prescribed_ir(i,r)
-                     $(yeart(t)>=smin{tt$[cap_prescribed(i,r,tt)], yeart(tt) })] = 1 ;
-
-* Now recompute the geo_bin1_add parameter with the updated geo_discovery values
+*remaining geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
 geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+      smax{t$[geo_discovery(i,r,t)$tmodel_new(t)
+             $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }],
+           sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }
+               / geo_discovery(i,r,t) }
+      - ( sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } - cap_existing(i,r) ) ;
 
 * Only use positive values of geo_bin1_add, as negative values would indicate that the
 * existing resource is already sufficient to cover prescriptions
@@ -5521,7 +5536,7 @@ Parameter
 * Demand
     load_exog(r,allh,t)                               "--MW-- busbar load"
     load_exog0(r,allh,t)                              "--MW-- original load by region hour and year - unchanged by demand side"
-    load_allyear(r,allh,allt)                         "--MW-- end-use load by region, timeslice, and year"
+    load_allyear(r,allh,allt)                         "--MW-- busbar load by region, timeslice, and year"
     h2_exogenous_demand_regional(r,p,allh,allt)       "--metric tons per hour-- exogenous demand for hydrogen at the BA level"
 * Peak demand
     peak_static_frac(r,ccseason,t)         "--fraction-- fraction of peak demand that is static"

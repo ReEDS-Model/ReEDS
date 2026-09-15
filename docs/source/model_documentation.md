@@ -698,6 +698,8 @@ See the [Operational Reliability](#operational-reliability) section for more det
 
 The existing fleet of generators in ReEDS is taken from the National Energy Modeling System (NEMS) unit database from AEO2026 {cite}`eiaAnnualEnergyOutlook2026`, with data supplemented from the June 2026 EIA 860M.
 In particular, ReEDS uses the net summer capacity, net winter capacity,[^ref23] location, heat rate, variable O&M (VOM), and FOM to characterize the existing fleet.
+ReEDS degrades existing capacity from its capacity-weighted average online year using the degradation rate specified for each technology.
+Reported capacity is always the undegraded capacity, while degradation reduces the capacity available within the model for generation.
 ReEDS uses a modified "average" heat rate for any builds occurring after 2010: A technology-specific increase on the full-load heat rate is applied to accommodate units not always operating at their design point.
 The modifiers, shown in {numref}`heat-rate-adjustments`, are based on the relationship between the reported heat rate in the ATB and the actual observed heat rate, calculated on a fleetwide basis for each fuel type.
 
@@ -923,6 +925,8 @@ Resource availability for hydrothermal (left) and deep EGS (right) for the CONUS
 The default geothermal resource assumptions allow for hydrothermal sites.
 Identified hydrothermal resources are based on the U.S. Geological Survey's 2008 geothermal resource assessment.
 The undiscovered portion of the hydrothermal resource is limited by a discovery rate defined as part of the GeoVision Study {cite}`doeGeoVisionHarnessingHeat2019`.
+Existing exogenous hydrothermal capacity is treated as already discovered; the discovery rate applies to the remaining resource available for new investment.
+Prescribed builds retain this discovery treatment, with first-bin resource added only as needed to keep the prescriptions feasible.
 The geothermal supply curves are based on the analysis described by {cite}`augustineGeoVisionAnalysisSupporting2019` and are shown in {numref}`figure-geothermal-resource-availability`.
 The hydrothermal and near-field EGS resource potential is derived from the U.S. Geological Survey's 2008 geothermal resource assessment {cite}`williamsReviewMethodsApplied2008a`, whereas the deep EGS resource potential is based on an update of the EGS potential from the Massachusetts Institute of Technology {cite}`testerFutureGeothermalEnergy2006`.
 As with other technologies, geothermal cost and performance projections are from the ATB {cite}`nrel2024AnnualTechnology2024`.
