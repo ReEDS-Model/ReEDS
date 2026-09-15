@@ -60,7 +60,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
 *but hydro and geo rsc_fin_mult is equal to the same value as cost_cap_fin_mult
 * Note: for OSW, export cable, inter-array and POI/substations are eligible for ITC. The rest are not. 
 * However we apply the ITC to all transmission costs to be consistent with LBW format
-                  + sum{(i,c,v,r,rscbin)$[i_c(i,c)$m_rscfeas(r,i,c,rscbin)$valinv(i,v,r,t)$rsc_i(i)$(not spur_techs(i))],
+                  + sum{(i,c,v,r,rscbin)$[valcap_class(i,c,v,r,t)$m_rscfeas(r,i,c,rscbin)$valinv(i,v,r,t)$rsc_i(i)$(not spur_techs(i))],
                       m_rsc_dat(r,i,c,rscbin,"cost") * rsc_fin_mult(i,r,t)
                       * sum{ii$rsc_agg(i,ii), INV_RSC(ii,c,v,r,rscbin,t) } }
 
@@ -88,7 +88,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
                   + sum{(wst,r), 1E6 * WATER_CAPACITY_LIMIT_SLACK(wst,r,t) }$[Sw_WaterMain$Sw_WaterCapacity]
 
 * --- cost of refurbishments of RSC tech---
-                  + sum{(i,c,v,r)$[i_c(i,c)$Sw_Refurb$valinv(i,v,r,t)$refurbtech(i)],
+                  + sum{(i,c,v,r)$[valcap_class(i,c,v,r,t)$Sw_Refurb$valinv(i,v,r,t)$refurbtech(i)],
                       cost_cap_fin_mult(i,r,t) * cost_cap(i,t) * INV_REFURB(i,c,v,r,t)
                       }
 
@@ -213,7 +213,7 @@ eq_Objfn_op(t)$tmodel(t)..
                    cost_fom(i,v,r,t) * retire_penalty(t) *
                    (CAP(i,v,r,t)
                     - INV(i,v,r,t)$valinv(i,v,r,t)
-                    - sum{c$i_c(i,c), INV_REFURB(i,c,v,r,t) }$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
+                    - sum{c$valcap_class(i,c,v,r,t), INV_REFURB(i,c,v,r,t) }$[valinv(i,v,r,t)$refurbtech(i)$Sw_Refurb]
                     - UPGRADES(i,v,r,t)$[upgrade(i)$Sw_Upgrades] )
                    }
 
