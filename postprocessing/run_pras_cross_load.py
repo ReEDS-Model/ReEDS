@@ -25,6 +25,9 @@ import site
 import subprocess
 from glob import glob
 import pandas as pd
+### plot_pras_cross_load.py lives alongside this script and doesn't need `reeds`
+### at import time, so it's safe to import unconditionally here.
+import plot_pras_cross_load
 
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -70,12 +73,16 @@ def find_pras_system(case, year=0, iteration=None):
 
 
 def submit_job(
-    case,
-    julia_command,
+    run_dir,
+    commands,
     jobname,
     threads=1,
 ):
-    """Write and submit a SLURM job that runs a single julia_command string"""
+    """
+    Write and submit a SLURM job that runs a sequence of shell commands.
+    The call script and the SLURM output both land in run_dir, alongside the
+    run's other files (log, results).
+    """
     commands_header, commands_sbatch, commands_other = [], [], []
     with open(os.path.join(reeds_path, 'reeds', 'hpc', 'srun_template.sh'), 'r') as f:
         for line in f:
@@ -89,14 +96,12 @@ def submit_job(
         commands_header
         + commands_sbatch
         + [f"#SBATCH --job-name={jobname}"]
-        + [f"#SBATCH --output={os.path.join(case, 'handoff', 'PRAS', 'crossload', f'slurm-{jobname}-%j.out')}"]
+        + [f"#SBATCH --output={os.path.join(run_dir, 'slurm-%j.out')}"]
         + [f"#SBATCH --cpus-per-task={threads}" if threads else '']
         + commands_other + ['']
-        + [julia_command]
+        + commands
     )
-    os.makedirs(os.path.join(case, 'handoff', 'PRAS', 'crossload'), exist_ok=True)
-    callfile = os.path.join(
-        case, 'handoff', 'PRAS', 'crossload', f'call_{jobname}.sh')
+    callfile = os.path.join(run_dir, 'call.sh')
     with open(callfile, 'w+') as f:
         for line in slurm:
             f.writelines(line + '\n')
@@ -121,6 +126,7 @@ def main(
     write_availability_samples=False,
     outdir=None,
     local=False,
+    no_plots=False,
 ):
     """
     For each load_case, submit (or run) a job that assesses base_case's PRAS
@@ -149,11 +155,15 @@ def main(
 
         base_name = os.path.basename(base_case)
         load_name = os.path.basename(load_case)
-        outfile = os.path.join(
-            outdir,
+        ## Each (base, load, year) run gets its own folder, holding the call
+        ## script, log file, SLURM output, and results together.
+        run_name = (
             f'PRAS_{base_name}_{base_year}i{base_it}'
-            f'_loadfrom_{load_name}_{load_year}i{load_it}-{samples}.h5'
+            f'_loadfrom_{load_name}_{load_year}i{load_it}-{samples}'
         )
+        run_dir = os.path.join(outdir, run_name)
+        os.makedirs(run_dir, exist_ok=True)
+        outfile = os.path.join(run_dir, f'{run_name}.h5')
 
         julia_command = ' '.join([
             "julia",
@@ -173,15 +183,27 @@ def main(
             f"--write_availability_samples={int(write_availability_samples)}",
         ])
 
+        plot_command = ' '.join([
+            "python",
+            os.path.join(reeds_path, 'postprocessing', 'plot_pras_cross_load.py'),
+            base_case,
+            load_case,
+            outfile,
+            f"--t={base_year}",
+            f"--load_year={load_year}",
+            f"--load_iteration={load_it}",
+        ])
+
         jobname = f'PRASxLoad-{base_name}-{load_name}-{samples}'
 
         if hpc:
             print(f'Submitting SLURM job {jobname}')
-            submit_job(base_case, julia_command, jobname, threads=threads)
+            commands = [julia_command] + ([] if no_plots else ['', plot_command])
+            submit_job(run_dir, commands, jobname, threads=threads)
         else:
             print(f'Running locally: {jobname}')
             print(julia_command)
-            log = open(os.path.join(outdir, f'{jobname}.log'), 'a')
+            log = open(os.path.join(run_dir, 'run.log'), 'a')
             result = subprocess.run(
                 julia_command, stdout=log, stderr=log, text=True, shell=True)
             log.close()
@@ -189,6 +211,12 @@ def main(
                 raise Exception(
                     f"run_pras_cross_load.jl returned code {result.returncode} for "
                     f"{jobname}. Check {log.name} for the error trace."
+                )
+            if not no_plots:
+                print(f'Making diagnostic plots for {jobname}')
+                plot_pras_cross_load.main(
+                    base_case=base_case, load_case=load_case, outfile=outfile,
+                    t=base_year, load_year=load_year, load_iteration=load_it,
                 )
 
 
@@ -239,6 +267,8 @@ if __name__ == '__main__':
                               '(default: <base_case>/handoff/PRAS/crossload)')
     parser.add_argument('--local', '-l', action='store_true',
                          help='run locally (not as a SLURM job)')
+    parser.add_argument('--no_plots', action='store_true',
+                         help='skip automatic diagnostic-plot generation')
 
     args = parser.parse_args()
 
@@ -258,4 +288,5 @@ if __name__ == '__main__':
         write_availability_samples=args.availability,
         outdir=(args.outdir if len(args.outdir) else None),
         local=args.local,
+        no_plots=args.no_plots,
     )
