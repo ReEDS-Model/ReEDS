@@ -51,7 +51,7 @@ parameter
 * and all other parameter should be rounded to no more than 3 decimal places
 * Some exceptions might exist due to number scaling (e.g., emission rates)
 acp_price(st,t)$acp_price(st,t) = round(acp_price(st,t),2) ;
-avail_retire_exog_rsc(i,v,r,t)$valcap(i,v,r,t) = round(avail_retire_exog_rsc(i,v,r,t),3) ;
+avail_retire_exog_rsc(i,c,v,r,t)$valcap(i,v,r,t) = round(avail_retire_exog_rsc(i,c,v,r,t),3) ;
 batterymandate(st,t)$batterymandate(st,t) = round(batterymandate(st,t),2) ;
 bcr(i)$bcr(i) = round(bcr(i),4) ;
 biosupply(usda_region,bioclass,"price") = round(biosupply(usda_region,bioclass,"price"),2) ;
