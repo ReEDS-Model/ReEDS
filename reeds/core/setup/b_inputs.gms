@@ -1481,9 +1481,6 @@ $onlisting
 / ;
 $offempty
 
-parameter exog_wind_ons(i,r,allt) "exogenous (pre-tfirst) wind-ons capacity binned by capacity factor" ;
-exog_wind_ons(i,r,t) = sum{(c,rscbin), exog_wind_ons_rsc(i,c,r,rscbin,t) } ;
-
 * Exogeneous offshore wind cap 
 $onempty
 parameter exog_wind_ofs_rsc(i,c,r,rscbin,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor and rscbin"
@@ -1495,9 +1492,6 @@ $offdelim
 $onlisting
 / ;
 $offempty
-
-parameter exog_wind_ofs(i,r,allt) "exogenous (pre-tfirst) wind-ofs capacity binned by capacity factor" ;
-exog_wind_ofs(i,r,t) = sum{(c,rscbin), exog_wind_ofs_rsc(i,c,r,rscbin,t) } ;
 
 * Exogeneous upv cap 
 $onempty
@@ -1511,15 +1505,12 @@ $onlisting
 / ;
 $offempty
 
-parameter exog_upv(i,r,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor" ;
-exog_upv(i,r,t) = sum{(c,rscbin), exog_upv_rsc(i,c,r,rscbin,t) } ;
-
-parameter avail_retire_exog_rsc(i,v,r,t) "--MW-- available retired capacity for refurbishments" ;
-avail_retire_exog_rsc(i,v,r,t) = 0 ;
+parameter avail_retire_exog_rsc(i,c,v,r,t) "--MW-- available retired capacity for refurbishments" ;
+avail_retire_exog_rsc(i,c,v,r,t) = 0 ;
 
 * declared over allt to allow for external data files that extend beyond end_year
 $onempty
-parameter capacity_exog(i,v,r,allt)             "--MW-- exogenously specified capacity",
+parameter capacity_exog(i,c,v,r,allt)           "--MW-- exogenously specified capacity",
           capacity_exog_energy(i,v,r,allt)      "--MWh-- exogenously specified energy capacity",
           capacity_exog_rsc(i,c,v,r,rscbin,allt)  "--MW-- exogenous (pre-tfirst) capacity for wind-ons and upv",
           m_capacity_exog(i,c,v,r,allt)         "--MW-- exogenous power capacity used in the model",
@@ -1554,20 +1545,21 @@ $onlisting
 / ;
 $offempty
 
+* Capacity with class-resolved data is assigned by class; other capacity goes to
+* the class of the technology
+
 *reset all geothermal exogenous capacity levels
-capacity_exog(i,v,r,t)$geo(i) = 0 ;
+capacity_exog(i,c,v,r,t)$geo(i) = 0 ;
 
 $ifthen.geohydrorevexog %geohydrosupplycurve% == 'reV'
-parameter exog_geohydro_allkm(i,r,allt) "exogenous (pre-tfirst) geohydro_allkm capacity binned by temperature" ;
-exog_geohydro_allkm(i,r,t) = sum{(c,rscbin), exog_geohydro_allkm_rsc(i,c,r,rscbin,t) } ;
 exog_rsc(i)$(geo_hydro(i)) = yes ;
-capacity_exog(i,"init-1",r,t)$geo_hydro(i) = exog_geohydro_allkm(i,r,t) ;
+capacity_exog(i,c,"init-1",r,t)$geo_hydro(i) = sum{rscbin, exog_geohydro_allkm_rsc(i,c,r,rscbin,t) } ;
 capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$geo_hydro(i) = exog_geohydro_allkm_rsc(i,c,r,rscbin,t) ;
 $else.geohydrorevexog
-capacity_exog(i,"init-1",r,t)$geo_hydro(i) = geo_cap_exog(i,r) ;
+capacity_exog(i,c,"init-1",r,t)$[i_c(i,c)$geo_hydro(i)] = geo_cap_exog(i,r) ;
 $endif.geohydrorevexog
 
-capacity_exog(i,"init-1",r,t)$geo_egs(i) = geo_cap_exog(i,r) ;
+capacity_exog(i,c,"init-1",r,t)$[i_c(i,c)$geo_egs(i)] = geo_cap_exog(i,r) ;
 
 * existing capacity equals all capacity before start year less retirements
 * here we use the max of zero or that number to avoid any errors
@@ -1575,7 +1567,7 @@ capacity_exog(i,"init-1",r,t)$geo_egs(i) = geo_cap_exog(i,r) ;
 * also have expiration of capital if t - tfirst is greater than the maximum age
 * note the first conditional limits this calculation to units that
 * do NOT have their capacity binned by heat rates (this include distpv for reasons explained below)
-capacity_exog(i,v,r,t)${[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)]$sameas(v,'init-1')} =
+capacity_exog(i,c,v,r,t)${i_c(i,c)$[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)]$sameas(v,'init-1')} =
                                  max(0,capnonrsc(i,r)
                                        - sum{(allt,alltt)$[allt.val <= t.val],
                                        prescribedretirements(i,v,r,allt,alltt,"existing") }
@@ -1591,57 +1583,55 @@ capacity_exog_energy(i,v,r,t)${[yeart(t)-sum{tt$tfirst(tt),yeart(tt) }<maxage(i)
 *reset any exogenous capacity that is also specified in binned_capacity
 *as these are computed based on bins specified by the numhintage global
 *in the data-writing files
-capacity_exog(i,v,r,t)$[initv(v)$(sum{(vv,rr)$[initv(vv)], binned_capacity(i,vv,rr,t) })] = 0 ;
+capacity_exog(i,c,v,r,t)$[initv(v)$(sum{(vv,rr)$[initv(vv)], binned_capacity(i,vv,rr,t) })] = 0 ;
 
-capacity_exog("hydED",v,r,t) = caprsc("hydED",v,r) ;
-capacity_exog("hydEND",v,r,t) = caprsc("hydEND",v,r) ;
-capacity_exog(i,v,r,t)$[sum{allt, binned_capacity(i,v,r,allt) }] =
+capacity_exog("hydED",c,v,r,t)$i_c("hydED",c) = caprsc("hydED",v,r) ;
+capacity_exog("hydEND",c,v,r,t)$i_c("hydEND",c) = caprsc("hydEND",v,r) ;
+capacity_exog(i,c,v,r,t)$[i_c(i,c)$sum{allt, binned_capacity(i,v,r,allt) }] =
                sum{allt$att(allt,t), binned_capacity(i,v,r,allt) } ;
 
 *reset all wind exogenous capacity levels
-capacity_exog(i,v,r,t)$wind(i) = 0 ;
+capacity_exog(i,c,v,r,t)$wind(i) = 0 ;
 
 *wind-ons
-capacity_exog(i,"init-1",r,t)$onswind(i) = exog_wind_ons(i,r,t) ;
+capacity_exog(i,c,"init-1",r,t)$onswind(i) = sum{rscbin, exog_wind_ons_rsc(i,c,r,rscbin,t) } ;
 capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$onswind(i) = exog_wind_ons_rsc(i,c,r,rscbin,t) ;
 *wind-ofs
-capacity_exog(i,"init-1",r,t)$ofswind(i) = exog_wind_ofs(i,r,t) ;
+capacity_exog(i,c,"init-1",r,t)$ofswind(i) = sum{rscbin, exog_wind_ofs_rsc(i,c,r,rscbin,t) } ;
 capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$ofswind(i) = exog_wind_ofs_rsc(i,c,r,rscbin,t) ;
 
 *reset all upv exogenous capacity levels
-capacity_exog(i,v,r,t)$upv(i) = 0 ;
+capacity_exog(i,c,v,r,t)$upv(i) = 0 ;
 
-capacity_exog(i,"init-1",r,t)$upv(i) = exog_upv(i,r,t) ;
+capacity_exog(i,c,"init-1",r,t)$upv(i) = sum{rscbin, exog_upv_rsc(i,c,r,rscbin,t) } ;
 capacity_exog_rsc(i,c,"init-1",r,rscbin,t)$upv(i) = exog_upv_rsc(i,c,r,rscbin,t) ;
 
 *capacity for geothermal is determined through forcing of prescribed builds
 *geothermal is also not a valid technology and rather a placeholder
-capacity_exog("geothermal",v,r,t) = 0 ;
+capacity_exog("geothermal",c,v,r,t) = 0 ;
 
 *capacity for hydro is specified for technologies in RSC techs
 *ie hydro has specific classes (e.g. HydEd) that are specified
 *separately, therefore the general 'hydro' category is not needed
-capacity_exog("hydro",v,r,t) = 0 ;
+capacity_exog("hydro",c,v,r,t) = 0 ;
 
 * set existing capacity for smr
-capacity_exog("smr","init-1",r,t)$Sw_H2 = h2_existing_smr_cap(r,t) ;
+capacity_exog("smr",c,"init-1",r,t)$[i_c("smr",c)$Sw_H2] = h2_existing_smr_cap(r,t) ;
 
 $ifthene.Canada %GSw_Canada% == 1
 *set Canadian imports as prescribed capacity
-capacity_exog("can-imports","init-1",r,t) = can_imports_capacity(r,t) ;
+capacity_exog("can-imports",c,"init-1",r,t)$i_c("can-imports",c) = can_imports_capacity(r,t) ;
 $endif.Canada
 
-*if you've declined in value
-avail_retire_exog_rsc(i,v,r,t)$[refurbtech(i)$(capacity_exog(i,v,r,t-1) > capacity_exog(i,v,r,t))] =
-    capacity_exog(i,v,r,t-1) - capacity_exog(i,v,r,t) ;
-
-avail_retire_exog_rsc(i,v,r,t)$[not initv(v)] = 0 ;
-
-m_capacity_exog(i,c,v,r,t)$[i_c(i,c)$capacity_exog(i,v,r,t)] = capacity_exog(i,v,r,t) ;
+m_capacity_exog(i,c,v,r,t)$capacity_exog(i,c,v,r,t) = capacity_exog(i,c,v,r,t) ;
 m_capacity_exog_energy(i,v,r,t)$capacity_exog_energy(i,v,r,t) = capacity_exog_energy(i,v,r,t) ;
 m_capacity_exog(i,c,"init-1",r,t)$[i_c(i,c)$geo(i)] = geo_cap_exog(i,r) ;
 m_capacity_exog(i,c,v,r,t)$sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } =
     sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
+
+*if you've declined in value
+avail_retire_exog_rsc(i,c,v,r,t)$[refurbtech(i)$initv(v)$(capacity_exog(i,c,v,r,t-1) > capacity_exog(i,c,v,r,t))] =
+    capacity_exog(i,c,v,r,t-1) - capacity_exog(i,c,v,r,t) ;
 
 * We assign the ~1.3 GW of existing csp-ns to upv throughout the model, both in the
 * exogenous and the prescribed capacity, and convert it back to csp-ns when reporting.
@@ -2127,6 +2117,12 @@ valcap_ivr(i,v,r)$sum{t, valcap(i,v,r,t) } = yes ;
 
 * Valid capacity by resource class
 valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
+* For technologies with several classes, a class needs existing capacity (init vintages),
+* supply curve (new vintages), or prescribed capacity
+valcap_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(sum{cc$i_c(i,cc), 1 } > 1)
+                        $(not [m_capacity_exog(i,c,v,r,t)$initv(v)])
+                        $(not [sum{rscbin, m_rscfeas(r,i,c,rscbin) }$newv(v)])
+                        $(not sum{tt, prescribed_build(i,c,v,r,tt) })] = no ;
 
 * -- valinv specification --
 valinv(i,v,r,t) = no ;
@@ -5174,35 +5170,35 @@ m_rsc_dat(r,i,c,rscbin,"cap")$[rsc_i(i)
 *   but prescribed capacity exists, assign prescribed capacity to the first bin at zero cost.
 
 *Define auxiliary parameters to organize the computation
-parameter cap_existing(i,r)       "--MW-- amount of existing resource supply curve (rsc) capacity in each region"
-          cap_prescribed(i,r,t)   "--MW-- amount of prescribed (required builds) rsc capacity in each region and year"
-          cap_prescribed_ir(i,r)  "--MW-- amount of prescribed (required builds) rsc capacity in each region"
-          available_supply(i,r)   "--MW-- amount of available rsc supply in each region"
+parameter cap_existing(i,c,r)       "--MW-- amount of existing resource supply curve (rsc) capacity in each region"
+          cap_prescribed(i,c,r,t)   "--MW-- amount of prescribed (required builds) rsc capacity in each region and year"
+          cap_prescribed_ir(i,c,r)  "--MW-- amount of prescribed (required builds) rsc capacity in each region"
+          available_supply(i,c,r)   "--MW-- amount of available rsc supply in each region"
 ;
 
 *Initialize the available supply to zero
-available_supply(i,r) = 0 ;
+available_supply(i,c,r) = 0 ;
 
 *Get existing capacity
-cap_existing(i,r)$exog_rsc(i) = sum{(c,v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
+cap_existing(i,c,r)$exog_rsc(i) = sum{(v,t,rscbin)$[tfirst(t)], capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
 
 *Get prescribed capacity
-cap_prescribed(i,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{(c,v), prescribed_build(i,c,v,r,t) } ;
-cap_prescribed_ir(i,r)$rsc_i(i) = sum{t$tmodel_new(t), cap_prescribed(i,r,t) } ;
+cap_prescribed(i,c,r,t)$[rsc_i(i)$tmodel_new(t)] = sum{v, prescribed_build(i,c,v,r,t) } ;
+cap_prescribed_ir(i,c,r)$rsc_i(i) = sum{t$tmodel_new(t), cap_prescribed(i,c,r,t) } ;
 
 *Get total available supply for all i .
-available_supply(i,r)$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))] = sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } ;
+available_supply(i,c,r)$[rsc_i(i)$sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))] = sum{rscbin, m_rsc_dat(r,i,c,rscbin,"cap") } ;
 
 *Apply multiplier if prescribed capacity exceeds available supply
-m_rsc_dat(r,i,c,rscbin,"cap")$[((cap_existing(i,r) + cap_prescribed_ir(i,r)) >  available_supply(i,r))
-                              $(available_supply(i,r))] 
-                  = m_rsc_dat(r,i,c,rscbin,"cap") * ((cap_existing(i,r) + cap_prescribed_ir(i,r)) / available_supply(i,r)) ;
+m_rsc_dat(r,i,c,rscbin,"cap")$[((cap_existing(i,c,r) + cap_prescribed_ir(i,c,r)) >  available_supply(i,c,r))
+                              $(available_supply(i,c,r))]
+                  = m_rsc_dat(r,i,c,rscbin,"cap") * ((cap_existing(i,c,r) + cap_prescribed_ir(i,c,r)) / available_supply(i,c,r)) ;
 
 
 *Assign prescribed capacity to first bin at no cost if no supply is available
-m_rsc_dat(r,i,c,"bin1","cap")$[i_c(i,c)$(cap_prescribed_ir(i,r) > 0)$(not available_supply(i,r))
+m_rsc_dat(r,i,c,"bin1","cap")$[i_c(i,c)$(cap_prescribed_ir(i,c,r) > 0)$(not available_supply(i,c,r))
                              $sum{(v,t)$newv(v), valcap(i,v,r,t) }$(not sameas("geothermal",i))]
-                      = cap_prescribed_ir(i,r) ;
+                      = cap_prescribed_ir(i,c,r) ;
 
 
 *Compute the difference between m_rsc_dat_original and m_rsc_dat
@@ -5214,18 +5210,18 @@ m_rsc_dat(r,i,c,rscbin,"cap")$m_rsc_dat(r,i,c,rscbin,"cap") = ceil(m_rsc_dat(r,i
 
 *Currently only geothermal and dr_shed have supply curve capacities that change over time
 * Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
-geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
+geo_discovery(i,r,t)$[geo_hydro(i)$sum{c, cap_prescribed_ir(i,c,r) }$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
 
 parameter geo_bin1_add(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
 
 *Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
 *remaining geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
-geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
+geo_bin1_add(i,r)$[geo_hydro(i)$sum{c, cap_prescribed_ir(i,c,r) }] =
       smax{t$[geo_discovery(i,r,t)$tmodel_new(t)
-             $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }],
-           sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }
+             $sum{(c,tt)$[yeart(tt)<=yeart(t)], cap_prescribed(i,c,r,tt) }],
+           sum{(c,tt)$[yeart(tt)<=yeart(t)], cap_prescribed(i,c,r,tt) }
                / geo_discovery(i,r,t) }
-      - ( sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } - cap_existing(i,r) ) ;
+      - ( sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } - sum{c, cap_existing(i,c,r) } ) ;
 
 * Only use positive values of geo_bin1_add, as negative values would indicate that the
 * existing resource is already sufficient to cover prescriptions
@@ -5260,6 +5256,11 @@ set force_prescribe(i,v,r,t) "conditional to indicate whether the force prescrip
 
 force_prescribe(i,v,r,t)$[(yeart(t) < firstyear(i))$newv(v)] = yes ;
 force_prescribe(i,v,r,t)$[ sum{c, prescribed_build(i,c,v,r,t) }] = yes ;
+
+set force_prescribe_class(i,c,v,r,t) "conditional to indicate whether the force prescription equation should be active for technology i and class c" ;
+
+force_prescribe_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(yeart(t) < firstyear(i))$newv(v)] = yes ;
+force_prescribe_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$prescribed_build(i,c,v,r,t)] = yes ;
 
 *=========================================
 * Decoupled Capacity/Energy Upgrades for hydropower
