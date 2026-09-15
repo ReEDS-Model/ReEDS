@@ -432,8 +432,11 @@ def reeds_cc(t, tnext, casedir):
         .assign(t=str(tnext))
         .merge(resources.drop('ccreg',axis=1), on='resource', how='left')
     )
-    ### Reorder to match ReEDS convention
-    cc_old = cc_old.reindex(['i','r','ccreg','ccseason','t','value'], axis=1)
+    ### Reorder to match ReEDS convention; resource classes that share a tech name are summed
+    cc_old = (
+        cc_old.groupby(['i','r','ccreg','ccseason','t'], sort=False, dropna=False, as_index=False)
+        .value.sum()
+    )
 
     sdbin_size = (
         pd.concat(dict_sdbin_size, axis=0)
