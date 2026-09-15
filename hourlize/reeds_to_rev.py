@@ -1074,9 +1074,6 @@ def disaggregate_reeds_to_rev(
     # New Investments
     print("Disaggregating new investments")
     if not df_new_investments.empty:
-        df_new_investments[["tech_cat", "class"]] = df_new_investments[
-            "tech"
-        ].str.rsplit("_", n=1, expand=True)
         df_new_investments = df_new_investments[
             ["year", "region", "class", "bin", "MW"]
         ].copy()
