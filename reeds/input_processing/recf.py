@@ -273,14 +273,14 @@ def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
 
 # Identify resources with missing classes and assign them to 
 # closest resources of similar classes
-def check_missing_class_resource(existing_techs, resources):
-    missing_class_resource = existing_techs.merge(
-        resources[['i','r']], on=['i','r'], how='left', indicator=True,
+def check_missing_class_resource(existing_techs, resources, keys):
+    missing_class_resource = existing_techs[keys].drop_duplicates().merge(
+        resources[keys].astype(str), on=keys, how='left', indicator=True,
     )
     missing_class_resource = missing_class_resource[
         missing_class_resource['i'].str.contains('upv|wind')].reset_index(drop=True)
     missing_class_resource = missing_class_resource[
-        missing_class_resource['_merge'] == 'left_only'][['i','r']].copy()
+        missing_class_resource['_merge'] == 'left_only'][keys].copy()
     
     if len(missing_class_resource) > 0:
             # Print out missing classes
@@ -295,7 +295,15 @@ def check_missing_class_resource(existing_techs, resources):
         raise ValueError(err)
     else:
         print('All capacities and resources are matched.')
-            
+
+
+def label_class_region(tech, columns, collapsed):
+    """Relabel {c}|{r} profile columns as {i}|{c}|{r}"""
+    return [
+        '|'.join([reeds.techs.get_tech_class_name(tech, c, collapsed), c, r])
+        for c, r in (col.split('|') for col in columns)
+    ]
+
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
@@ -346,6 +354,7 @@ def main(reeds_path, inputs_case):
         # Interpreting GAMS syntax in tech-subset-table.csv
         techs[tech] = reeds.techs.expand_star(techs[tech])
     vre_dist = techs['VRE_DISTRIBUTED']
+    collapsed = reeds.techs.get_collapsed_techs(inputs_case)
 
     #%% Read capacity factor profiles
 
@@ -355,11 +364,11 @@ def main(reeds_path, inputs_case):
         'wind-ons',
         resource_adequacy_years
     )
-    df_windons.columns = ['wind-ons_' + col for col in df_windons]
+    df_windons.columns = label_class_region('wind-ons', df_windons.columns, collapsed)
     ### Don't do aggregation in this case, so make a 1:1 lookup table
     lookup = pd.DataFrame({'ragg':df_windons.columns.values})
     lookup['r'] = lookup.ragg.map(lambda x: x.rsplit('|',1)[1])
-    lookup['i'] = lookup.ragg.map(lambda x: x.rsplit('|',1)[0])
+    lookup['i'] = lookup.ragg.map(lambda x: x.split('|')[0])
 
     ### Offshore Wind
     if int(sw['GSw_OfsWind']) != 0:
@@ -368,7 +377,7 @@ def main(reeds_path, inputs_case):
             'wind-ofs',
             resource_adequacy_years
         )
-        df_windofs.columns = ['wind-ofs_' + col for col in df_windofs]
+        df_windofs.columns = label_class_region('wind-ofs', df_windofs.columns, collapsed)
 
     ### UPV
     df_upv = calculate_class_region_cf_hourly(
@@ -376,7 +385,7 @@ def main(reeds_path, inputs_case):
         'upv',
         resource_adequacy_years
     )
-    df_upv.columns = ['upv_' + col for col in df_upv]
+    df_upv.columns = label_class_region('upv', df_upv.columns, collapsed)
 
     # If DistPV is turned off, create an empty dataframe with the same index as df_upv to concat
     if int(sw['GSw_distpv']) == 0: 
@@ -412,8 +421,8 @@ def main(reeds_path, inputs_case):
         df_pvb[pvb_type] = reeds.io.read_file(
             os.path.join(inputs_case,infile+'.h5'),
         )
-        df_pvb[pvb_type].columns = [f'pvb{pvb_type}_{c}'
-                                    for c in df_pvb[pvb_type].columns]
+        df_pvb[pvb_type].columns = label_class_region(
+            f'pvb{pvb_type}', df_pvb[pvb_type].columns, collapsed)
         df_pvb[pvb_type].index = df_upv.index.copy()
 
     ### Concat RECF data
@@ -428,7 +437,7 @@ def main(reeds_path, inputs_case):
     ### Add the other recf techs to the resources lookup table
     toadd = pd.DataFrame({'ragg': [c for c in recf.columns if c not in lookup.ragg.values]})
     toadd['r'] = [c.rsplit('|', 1)[1] for c in toadd.ragg.values]
-    toadd['i'] = [c.rsplit('|', 1)[0] for c in toadd.ragg.values]
+    toadd['i'] = [c.split('|')[0] for c in toadd.ragg.values]
     resources = (
         pd.concat([lookup, toadd], axis=0, ignore_index=True)
         .rename(columns={'ragg':'resource','r':'area','i':'tech'})
@@ -455,7 +464,11 @@ def main(reeds_path, inputs_case):
     resources['ccreg'] = resources.area.map(r2ccreg)
     resources.rename(columns={'area':'r','tech':'i'}, inplace=True)
     i2c = reeds.techs.get_class_map(inputs_case)
-    resources['c'] = resources['i'].map(i2c)
+    ## Read the class from {i}|{c}|{r} labels; profiles labeled {i}|{r} use the class of i from i_c
+    resources['c'] = [
+        x.split('|')[1] if x.count('|') == 2 else i2c.get(i)
+        for x, i in zip(resources['resource'], resources['i'])
+    ]
     resources = resources[['r','i','c','ccreg','resource']]
 
 
@@ -509,16 +522,14 @@ def main(reeds_path, inputs_case):
         for i in ['upv', 'wind-ons', 'wind-ofs']
     ])[['i','r']].drop_duplicates()
     prescribed_rsc = (
-        pd.read_csv(os.path.join(inputs_case, 'prescribed_rsc.csv')).rename(columns={'*i':'i'})
-        [['i', 'r']].drop_duplicates()
+        pd.read_csv(os.path.join(inputs_case, 'prescribed_rsc.csv'), dtype={'c': str})
+        .rename(columns={'*i':'i'})
+        [['i', 'c', 'r']].drop_duplicates()
     )
-    existing_techs = pd.concat(
-        [existing_exog_techs, prescribed_rsc],
-        axis=0, ignore_index=True
-    )[['i','r']].drop_duplicates()
 
     # Check missing technology-class - region combinations in resources
-    check_missing_class_resource(existing_techs, resources)
+    check_missing_class_resource(existing_exog_techs, resources, keys=['i','r'])
+    check_missing_class_resource(prescribed_rsc, resources, keys=['i','c','r'])
     
     #%% Check for errors
     nulls = recf.isnull().sum()
