@@ -347,7 +347,7 @@ plantchar_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; used to c
 plantcharout.csv,.csv,0,None,t,"*i,variable",0,0,constant,None,None,new,
 plexos_inputs.gdx,.gdx,1,None,9999,None,9999,0,constant,None,None,done (wouldn't exist yet in normal run),constant
 poi_cap_init.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-prepost.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+vintage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prescribed_nonRSC_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 prescribed_nonRSC.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 prescribed_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant

@@ -3683,7 +3683,7 @@ heat_rate(i,v,r,t)$[valcap(i,v,r,t)$sum{allt$att(allt,t), binned_heatrates(i,v,r
 *this reflects the indescrepancy from the partial-loaded heat rate
 *and the fully-loaded heat rate
 
-table heat_rate_adj(i,prepost) "--unitless-- partial load heatrate adjuster based on historical EIA generation and fuel use data"
+table heat_rate_adj(i,vintage) "--unitless-- partial load heatrate adjuster based on historical EIA generation and fuel use data"
 $offlisting
 $ondelim
 $include inputs_case%ds%heat_rate_adj.csv
@@ -3691,10 +3691,10 @@ $offdelim
 $onlisting
 ;
 
-heat_rate_adj(i,prepost)$[i_water_cooling(i)$Sw_WaterMain] =
-  sum{ii$ctt_i_ii(i,ii), heat_rate_adj(ii,prepost) } ;
+heat_rate_adj(i,vintage)$[i_water_cooling(i)$Sw_WaterMain] =
+  sum{ii$ctt_i_ii(i,ii), heat_rate_adj(ii,vintage) } ;
 
-heat_rate_adj(i,prepost)$upgrade(i) = sum{ii$upgrade_to(i,ii), heat_rate_adj(ii,prepost) } ;
+heat_rate_adj(i,vintage)$upgrade(i) = sum{ii$upgrade_to(i,ii), heat_rate_adj(ii,vintage) } ;
 
 *upgrade heat rates for initial classes are the heat rates for that tech
 *plus the delta between upgrade_to and upgrade_from for the initial year
@@ -3715,8 +3715,8 @@ heat_rate(i,initv,r,t)$[upgrade(i)$Sw_Upgrades$ccs(i)
 heat_rate(i,newv,r,t)$[upgrade(i)$Sw_Upgrades$valcap(i,newv,r,t)] =
         sum{ii$upgrade_to(i,ii), heat_rate(ii,newv,r,t) } ;
 
-heat_rate(i,v,r,t)$[heat_rate_adj(i,'pre2010')$initv(v)] = heat_rate_adj(i,'pre2010') * heat_rate(i,v,r,t) ;
-heat_rate(i,v,r,t)$[heat_rate_adj(i,'post2010')$newv(v)] = heat_rate_adj(i,'post2010') * heat_rate(i,v,r,t) ;
+heat_rate(i,v,r,t)$[heat_rate_adj(i,'init')$initv(v)] = heat_rate_adj(i,'init') * heat_rate(i,v,r,t) ;
+heat_rate(i,v,r,t)$[heat_rate_adj(i,'new')$newv(v)] = heat_rate_adj(i,'new') * heat_rate(i,v,r,t) ;
 
 *=========================================
 * --- Fuel Prices ---
@@ -4090,7 +4090,7 @@ parameter rsc_fin_mult(i,r,t)       "--fraction-- financial cost multiplier for 
 * Emission rate by technology and etype (broken down to process and upstream)
 * Note that CH4 upstream emission rate of natural gas is 0 here 
 * as we will use CH4 methane leakage from GSw_MethaneLeakageScen for it later)
-table emit_rate_fuel(i,etype,prepost,e)  "--metric tons per MMBtu-- emissions rate of fuel by technology and emission type"
+table emit_rate_fuel(i,etype,vintage,e)  "--metric tons per MMBtu-- emissions rate of fuel by technology and emission type"
 $offlisting
 $ondelim
 $include inputs_case%ds%emitrate.csv
@@ -4138,43 +4138,43 @@ capture_rate_input(i,"CO2")$[upgrade(i)$(coal_ccs(i) or gas_cc_ccs(i))$ccs_mod(i
 capture_rate_input(i,"CO2")$[upgrade(i)$(coal_ccs(i) or gas_cc_ccs(i))$ccs_max(i)]=Sw_CCS_Rate_Upgrade_max;
 
 * emit_rate_fuel water expansion
-emit_rate_fuel(i,etype,prepost,e)$[i_water_cooling(i)$Sw_WaterMain] =
-  sum{ii$ctt_i_ii(i,ii), emit_rate_fuel(ii,etype,prepost,e) } ;
+emit_rate_fuel(i,etype,vintage,e)$[i_water_cooling(i)$Sw_WaterMain] =
+  sum{ii$ctt_i_ii(i,ii), emit_rate_fuel(ii,etype,vintage,e) } ;
   
 * Assign the appropriate % of generation for each technology to count toward CES requirements.
 * Exclude capture rates of BECCS, which receive full credit in a CES and were already set to 1 above in the "RPS" section.
 RPSTechMult(RPSCat,i,st)$[ccs(i)$(sameas(RPSCat,"CES") or sameas(RPSCat,"CES_Bundled"))$(not beccs(i))] = capture_rate_input(i,"CO2") ;
 
 * calculate process emit rate for CCS techs (except beccs techs, which are defined directly in emitrate.csv)
-emit_rate_fuel(i,"process",prepost,e)$[ccs(i)$(not beccs(i))] =
-  (1 - capture_rate_input(i,e)) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",prepost,e) } ; 
+emit_rate_fuel(i,"process",vintage,e)$[ccs(i)$(not beccs(i))] =
+  (1 - capture_rate_input(i,e)) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",vintage,e) } ; 
 
 * calculate upstream emit rate for CCS techs (except beccs techs, which are defined directly in emitrate.csv)
-emit_rate_fuel(i,"upstream",prepost,e)$[ccs(i)$(not beccs(i))] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"upstream",prepost,e) } ;
+emit_rate_fuel(i,"upstream",vintage,e)$[ccs(i)$(not beccs(i))] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"upstream",vintage,e) } ;
 
 * assign flexible ccs the same process emission rate as the uncontrolled technology to allow variable CO2 removal (e.g., for gas-cc-ccs-f1, use gas-cc)
-emit_rate_fuel(i,"process",prepost,e)$[ccsflex(i)] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",prepost,e) } ;
+emit_rate_fuel(i,"process",vintage,e)$[ccsflex(i)] = sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",vintage,e) } ;
 
 * set upgrade tech process emissions for non-CCS upgrades (e.g. gas-ct -> h2-ct); CCS upgrade emissions are handled above
-emit_rate_fuel(i,"process",prepost,e)$[upgrade(i)$(not ccs(i))] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"process",prepost,e) } ;
+emit_rate_fuel(i,"process",vintage,e)$[upgrade(i)$(not ccs(i))] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"process",vintage,e) } ;
 
 * set upgrade tech upstream emissions for upgrades
-emit_rate_fuel(i,"upstream",prepost,e)$[upgrade(i)] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"upstream",prepost,e) } ;
+emit_rate_fuel(i,"upstream",vintage,e)$[upgrade(i)] = sum{ii$upgrade_to(i,ii), emit_rate_fuel(ii,"upstream",vintage,e) } ;
 
 * parameters for calculating captured emissions
-parameter capture_rate_fuel(i,prepost,e) "--metric tons per MMBtu-- emissions capture rate of fuel by technology type";
-capture_rate_fuel(i,prepost,e) = capture_rate_input(i,e) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",prepost,e) } ;
+parameter capture_rate_fuel(i,vintage,e) "--metric tons per MMBtu-- emissions capture rate of fuel by technology type";
+capture_rate_fuel(i,vintage,e) = capture_rate_input(i,e) * sum{ii$ccs_link(i,ii), emit_rate_fuel(ii,"process",vintage,e) } ;
 
 * capture_rate_fuel is used to calculate how much CO2 is captured and stored;
 * for beccs, the captured CO2 is the entire negative emissions rate
 * since any uncontrolled emissions are assumed to be lifecycle net zero
-capture_rate_fuel(i,prepost,"CO2")$beccs(i) = - emit_rate_fuel(i,"process",prepost,"CO2")
+capture_rate_fuel(i,vintage,"CO2")$beccs(i) = - emit_rate_fuel(i,"process",vintage,"CO2")
 
 parameter capture_rate(e,i,v,r,t) "--metric tons per MWh-- emissions capture rate" ;
 
 scalar methane_tonperMMBtu "--metric tons per MMBtu-- methane content of natural gas" ;
 * [ton CO2 / MMBtu] * [ton CH4 / ton CO2]
-methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","pre2010","CO2") * molWeightCH4 / molWeightCO2 ;
+methane_tonperMMBtu = emit_rate_fuel("gas-CC","process","init","CO2") * molWeightCH4 / molWeightCO2 ;
 
 parameter prod_emit_rate(etype,e,i,allt) "--metric tons emitted per metric ton product-- emissions rate per metric ton of product (e.g. tonCO2/tonH2 for SMR & SMR-CCS)" ;
 * Steam methane reformer (SMR)'s process emission here refers to emissions from steam methane reforming process
@@ -4213,16 +4213,16 @@ parameter
     emit_nat_tc(t)  "--metric tons-- CO2 emissions, national"
 ;
 
-emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,"pre2010",e)$initv(v)$valcap(i,v,r,t)]
-  = round(heat_rate(i,v,r,t) * emit_rate_fuel(i,etype,"pre2010",e),10) ;
-emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,"post2010",e)$newv(v)$valcap(i,v,r,t)]
-  = round(heat_rate(i,v,r,t) * emit_rate_fuel(i,etype,"post2010",e),10) ;
+emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,"init",e)$initv(v)$valcap(i,v,r,t)]
+  = round(heat_rate(i,v,r,t) * emit_rate_fuel(i,etype,"init",e),10) ;
+emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,"new",e)$newv(v)$valcap(i,v,r,t)]
+  = round(heat_rate(i,v,r,t) * emit_rate_fuel(i,etype,"new",e),10) ;
 
 *only emissions from the coal portion of cofire plants are considered
-emit_rate(etype,e,i,v,r,t)$[sameas(i,"cofire")$emit_rate_fuel("coal-new",etype,"pre2010",e)$initv(v)$valcap(i,v,r,t)]
-  = round((1-bio_cofire_perc) * heat_rate(i,v,r,t) * emit_rate_fuel("coal-new",etype,"pre2010",e),10) ;
-emit_rate(etype,e,i,v,r,t)$[sameas(i,"cofire")$emit_rate_fuel("coal-new",etype,"post2010",e)$newv(v)$valcap(i,v,r,t)]
-  = round((1-bio_cofire_perc) * heat_rate(i,v,r,t) * emit_rate_fuel("coal-new",etype,"post2010",e),10) ;
+emit_rate(etype,e,i,v,r,t)$[sameas(i,"cofire")$emit_rate_fuel("coal-new",etype,"init",e)$initv(v)$valcap(i,v,r,t)]
+  = round((1-bio_cofire_perc) * heat_rate(i,v,r,t) * emit_rate_fuel("coal-new",etype,"init",e),10) ;
+emit_rate(etype,e,i,v,r,t)$[sameas(i,"cofire")$emit_rate_fuel("coal-new",etype,"new",e)$newv(v)$valcap(i,v,r,t)]
+  = round((1-bio_cofire_perc) * heat_rate(i,v,r,t) * emit_rate_fuel("coal-new",etype,"new",e),10) ;
 
 * Fill in CH4 upstream emission rate
 *** [MMBtu/MWh] * [ton methane used / MMBtu] * [ton methane leaked / ton methane produced]
@@ -4254,13 +4254,13 @@ emit_rate(etype,"CO2e",i,v,r,t)$[Sw_AnnualCap<>2]
   = round(sum{e, emit_rate(etype,e,i,v,r,t) * gwp(e)},10) ;
 
 * calculate emissions capture rates (same logic as emissions calc above)
-capture_rate(e,i,v,r,t)$[capture_rate_fuel(i,"pre2010",e)$initv(v)$valcap(i,v,r,t)]
-  = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"pre2010",e),10) ;
-capture_rate(e,i,v,r,t)$[capture_rate_fuel(i,"post2010",e)$newv(v)$valcap(i,v,r,t)]
-  = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"post2010",e),10) ;
+capture_rate(e,i,v,r,t)$[capture_rate_fuel(i,"init",e)$initv(v)$valcap(i,v,r,t)]
+  = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"init",e),10) ;
+capture_rate(e,i,v,r,t)$[capture_rate_fuel(i,"new",e)$newv(v)$valcap(i,v,r,t)]
+  = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"new",e),10) ;
 
-capture_rate(e,i,v,r,t)$[upgrade(i)$initv(v)$capture_rate_fuel(i,"pre2010",e)] = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"pre2010",e),10) ;
-capture_rate(e,i,v,r,t)$[upgrade(i)$newv(v)$capture_rate_fuel(i,"post2010",e)] = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"post2010",e),10) ;
+capture_rate(e,i,v,r,t)$[upgrade(i)$initv(v)$capture_rate_fuel(i,"init",e)] = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"init",e),10) ;
+capture_rate(e,i,v,r,t)$[upgrade(i)$newv(v)$capture_rate_fuel(i,"new",e)] = round(heat_rate(i,v,r,t) * capture_rate_fuel(i,"new",e),10) ;
 
 * Regional emissions rate
 parameter

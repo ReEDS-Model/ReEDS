@@ -201,7 +201,6 @@ plantchar_other.csv,inputs/plant_characteristics/{plantchar_other}.csv,1,ignore,
 plantchar_pvb.csv,inputs/plant_characteristics/pvb_{pvbscen}.csv,int(sw.GSw_PVB) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upgrades.csv,inputs/upgrades/{upgradescen}.csv,sw.upgradescen != 'default',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upv.csv,inputs/plant_characteristics/{plantchar_upv}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
-prepost.csv,inputs/sets/prepost.csv,1,ignore,ignore,,,,,,,,set,prepost,defines pre-2010 versus post-2010 years,
 psh_supply_curves_duration.csv,inputs/storage/PSH_supply_curves_durations.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,1,,,,
 psh_supply_curves_capacity.csv,inputs/supply_curve/PSH_supply_curves_capacity_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,sum,geosize,r,wide,,1,0,,,,,,
 psh_supply_curves_cost.csv,inputs/supply_curve/PSH_supply_curves_cost_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,mean,uniform,r,wide,,1,0,,,,,,
@@ -257,6 +256,7 @@ upgrade_mult_mid.csv,inputs/upgrades/upgrade_mult_atb23_ccs_mid.csv,"int(sw.GSw_
 upgradelink_water.csv,inputs/upgrades/upgradelink_water.csv,1,ignore,ignore,,,,,0,,,,,,
 uranium_price.csv,inputs/fuelprices/uranium_{uraniumscen}.csv,1,ignore,ignore,,,,0,0,,,,,,
 var_map.csv,inputs/valuestreams/var_map.csv,1,ignore,ignore,,,,,0,,,,,,
+vintage.csv,inputs/sets/vintage.csv,1,ignore,ignore,,,,,,,,set,vintage,defines pre-2010 (init) versus post-2010 (new) years,
 wat_access_cap_cost.csv,inputs/waterclimate/wat_access_cap_cost.csv,int(sw.GSw_WaterMain) != 0,sc_cat,geosize,r,*wst,,0,0,value,,,,,
 water_req_psh_10h_1_51.csv,inputs/waterclimate/water_req_psh_10h_1_51.csv,(int(sw.GSw_PSHwatercon) != 0) and (int(sw.GSw_WaterMain) != 0),sum,geosize,r,wide,,1,0,,,,,,not yet ready for county-level disaggregation
 water_with_cons_rate.csv,inputs/waterclimate/water_with_cons_rate.csv,int(sw.GSw_WaterMain) != 0,ignore,ignore,,,,,0,,,parameter,,--gal/MWh-- technology specific-cooling tech based water withdrawal and consumption data,

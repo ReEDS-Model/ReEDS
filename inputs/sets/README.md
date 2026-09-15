@@ -126,8 +126,6 @@
 
 - `plantcat.csv`: set of categories for plant characteristics
 
-- `prepost.csv`:
-
 - `prescriptivelink0.csv`: initial set of prescribed categories and their technologies - used in assigning prescribed builds
 
 - `pvb_agg.csv`: crosswalk between hybrid pv+battery configurations and technology options
@@ -151,6 +149,8 @@
 - `unitspec_upgrades.csv`: set of upgraded technologies that get unit-specific characteristics
 
 - `upgrade_hintage_char.csv`: set to operate over in extension of hintage_data characteristics when sw_upgrades = 1
+
+- `vintage.csv`:
 
 - `w.csv`: set of water withdrawal or consumption options for water techs
 
