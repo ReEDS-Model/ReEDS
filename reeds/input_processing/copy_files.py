@@ -1013,14 +1013,14 @@ def write_miscellaneous_files(
     )
     
     # Add this_year to years_until_endogenous to generate the tech-specific firstyear parameter
-    scalars = reeds.io.get_scalars(full=True)
+    scalars = reeds.io.get_scalars()
     firstyear = (
         pd.read_csv(
             # years_until_endogenous created using function write_non_region_files
             os.path.join(inputs_case, 'years_until_endogenous.csv'),
             index_col=0,
         ).squeeze(1)
-        + int(scalars.loc['this_year','value'])
+        + int(scalars.this_year)
     )
     reeds.io.write_to_inputs_h5(
         firstyear, 'firstyear', inputs_case, gamstype='parameter',
@@ -1045,7 +1045,7 @@ def write_miscellaneous_files(
         gwp_ch4, gwp_n2o = [float(i.split('_')[1]) for i in sw['GSw_GWP'].split('/')]
         gwp_write = pd.Series({'CO2':1, 'CH4':gwp_ch4, 'N2O':gwp_n2o})
 
-    gwp_write['H2'] = scalars.loc['h2_gwp','value'].copy()
+    gwp_write['H2'] = scalars.h2_gwp
 
     reeds.io.write_to_inputs_h5(
         gwp_write, 'gwp', inputs_case, gamstype='parameter',
