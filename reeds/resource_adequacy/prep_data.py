@@ -147,7 +147,37 @@ def main(t, casedir, iteration=0):
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
+    # load exogenous demand seen by ReEDS
     load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
+
+    load_year = load.loc[t]
+
+    # when running linked model with FINITO (GSw_FINITO_Link=1), 
+    # we also need to add in the load from FINITO
+    if int(sw.GSw_FINITO_Link):
+        load_finito_rt = gdxreeds['load_finito_rt'].rename(columns={'allh':'h', 'Value':'load_MW'})
+
+        # down select to relevant model year
+        load_finito = load_finito_rt.loc[load_finito_rt.t==t].drop('t', axis=1).copy()
+        #TODO: why so much shifting? validate the dynamics here with FINITO team
+        #TODO: also check against reference quantity
+
+        # map from rep day to actual hour
+        # since we don't have multi-year profiles for FINITO load 
+        # we assume they repeat across all weather years
+        load_finito = pd.merge(load_finito, h_dt_szn.reset_index(), on='h', how='outer')[['timestamp', 'r', 'load_MW']]
+        load_finito = load_finito.rename(columns={'timestamp':'datetime'})
+        # add model year back in 
+        #load_finito = load_finito.assign(year=t)
+        load_finito = load_finito.pivot(index=['datetime'], columns='r', values='load_MW')
+
+        # convert timezone and fill any missing columns
+        load_finito.index = load_finito.index.tz_convert(load_year.index.tz)
+        load_finito = load_finito.reindex(columns=load_year.columns, fill_value=0)
+        load_finito = load_finito.fillna(0)
+
+        # add to load
+        load_year = load_year + load_finito
 
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
@@ -364,7 +394,7 @@ def main(t, casedir, iteration=0):
         .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
         .pivot(index='timestamp', columns='r', values='Value')
     )
-    load_year = load.loc[t].add(can_exports, fill_value=0)
+    load_year = load_year.add(can_exports, fill_value=0)
 
     ### PRAS doesn't yet handle flexible load, so include all H2/DAC load in the
     ### version we write for PRAS
