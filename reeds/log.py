@@ -39,6 +39,10 @@ def makelog(scriptname, logpath):
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[logging.FileHandler(logpath, mode='a'), sh, eh],
     )
+    ### Route warnings.warn() through the logging system at WARNING level.
+    ### Without this they reach the sys.stderr redirect below and get logged as ERROR.
+    logging.captureWarnings(True)
+
     log = logging.getLogger(__name__)
     sys.stdout = StreamToLogger(log, logging.INFO)
     sys.stderr = StreamToLogger(log, logging.ERROR)
