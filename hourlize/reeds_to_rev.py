@@ -618,7 +618,7 @@ def get_retirements_of_preexisting(df_cap_exog, years):
         df_cap_exog = df_cap_exog[df_cap_exog["year"].isin(years)].copy()
         # pivot out table, add another year and fill with zeros, then melt back
         df_cap_exog = df_cap_exog.pivot_table(
-            index=["tech", "region"], columns=["year"], values="MW"
+            index=["tech", "class", "region"], columns=["year"], values="MW"
         ).reset_index()
         df_cap_exog.fillna(0, inplace=True)
         # This finds the next year in years and sets it equal to zero.
@@ -632,13 +632,13 @@ def get_retirements_of_preexisting(df_cap_exog, years):
         # Melt back and diff
         df_cap_exog = pd.melt(
             df_cap_exog,
-            id_vars=["tech", "region"],
-            value_vars=df_cap_exog.columns.tolist()[2:],
+            id_vars=["tech", "class", "region"],
+            value_vars=df_cap_exog.columns.tolist()[3:],
             var_name="year",
             value_name="MW",
         )
         df_ret_exist = df_cap_exog.copy()
-        df_ret_exist["MW"] = df_ret_exist.groupby(["tech", "region"])["MW"].diff()
+        df_ret_exist["MW"] = df_ret_exist.groupby(["tech", "class", "region"])["MW"].diff()
         df_ret_exist["MW"] = df_ret_exist["MW"].fillna(0)
         df_ret_exist["MW"] = df_ret_exist["MW"] * -1
     else:
@@ -685,9 +685,7 @@ def combine_retirements(
     df_ret = df_ret[df_ret["MW"] != 0].copy()
     # Remove retirements in later years
     df_ret = df_ret[df_ret["year"].isin(years)].copy()
-    # Split tech from class
     if not df_ret.empty:
-        df_ret[["tech_cat", "class"]] = df_ret["tech"].str.rsplit("_", n=1, expand=True)
         df_ret = df_ret[["year", "region", "class", "MW"]]
         df_ret["class"] = df_ret["class"].astype("int")
         df_ret = df_ret.sort_values(by=["year", "region", "class"])
