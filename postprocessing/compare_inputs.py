@@ -11,7 +11,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
 import pandas as pd
-# from adjustText import adjust_text
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
@@ -428,23 +427,14 @@ def plot_regional_peak_demand_maps(cases, year='last'):
         dfplot.plot(ax=_ax, column='val', cmap=_cmap, vmin=vmin, vmax=vmax, legend=False)
 
         # Value labels for states
-        texts = []
-        for st, row in dfplot.iterrows():
-            if pd.isna(row['val']):
-                continue
-            centroid = dfstates.loc[st, 'geometry'].representative_point()
-            label = f'{row["val"]:.0f}' if casename == basecasename else f'{row["val"]:+.0f}'
-            texts.append(_ax.text(
-                centroid.x, centroid.y, label,
-                fontsize=7, ha='center', va='center', color='k',
-                path_effects=[pe.withStroke(linewidth=1.5, foreground='white')],
-                zorder=20000,
-            ))
-        # adjust_text(
-        #     texts, 
-        #     ax=_ax, 
-        #     avoid_self=False,
-        # )
+        reeds.reedsplots.label_region_value(
+            dfplot,
+            ax=_ax,
+            column='val',
+            fmt='{:.0f}' if casename == basecasename else '{:+.0f}',
+            text_kwargs={'fontsize': 7, 'ha': 'center', 'va': 'center', 'color': 'k'},
+            pe_kwargs={'linewidth': 1.5, 'foreground': 'white'}
+        )
 
         if col == 0 or col == 1:
             reeds.plots.addcolorbarhist(
@@ -595,23 +585,14 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
         dfplot.plot(ax=_ax, column='val', cmap=_cmap, vmin=vmin, vmax=vmax, legend=False)
 
         # Value labels for states
-        texts = []
-        for st, row in dfplot.iterrows():
-            if pd.isna(row['val']):
-                continue
-            centroid = dfstates.loc[st, 'geometry'].representative_point()
-            label = f'{row["val"]:.0f}' if casename == basecasename else f'{row["val"]:+.0f}'
-            texts.append(_ax.text(
-                centroid.x, centroid.y, label,
-                fontsize=7, ha='center', va='center', color='k',
-                path_effects=[pe.withStroke(linewidth=1.5, foreground='white')],
-                zorder=20000,
-            ))
-        # adjust_text(
-        #     texts, 
-        #     ax=_ax, 
-        #     avoid_self=False,
-        # )
+        reeds.reedsplots.label_region_value(
+            dfplot,
+            ax=_ax,
+            column='val',
+            fmt='{:.0f}' if casename == basecasename else '{:+.0f}',
+            text_kwargs={'fontsize': 7, 'ha': 'center', 'va': 'center', 'color': 'k'},
+            pe_kwargs={'linewidth': 1.5, 'foreground': 'white'}
+        )
         
         if col == 0 or col == 1:
             reeds.plots.addcolorbarhist(
