@@ -2115,15 +2115,6 @@ valcap_ir(i,r)$sum{(v,t)$tmodel_new(t), valcap(i,v,r,t) } = yes ;
 valcap_i(i)$sum{v, valcap_iv(i,v) } = yes ;
 valcap_ivr(i,v,r)$sum{t, valcap(i,v,r,t) } = yes ;
 
-* Valid capacity by resource class
-valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
-* For technologies with several classes, a class needs existing capacity (init vintages),
-* supply curve (new vintages), or prescribed capacity
-valcap_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(sum{cc$i_c(i,cc), 1 } > 1)
-                        $(not [m_capacity_exog(i,c,v,r,t)$initv(v)])
-                        $(not [sum{rscbin, m_rscfeas(r,i,c,rscbin) }$newv(v)])
-                        $(not sum{tt, prescribed_build(i,c,v,r,tt) })] = no ;
-
 * -- valinv specification --
 valinv(i,v,r,t) = no ;
 valinv(i,v,r,t)$[valcap(i,v,r,t)$ivt(i,v,t)] = yes ;
@@ -4948,12 +4939,20 @@ biofeas(r)$[sum{bioclass, sum{usda_region$r_usda(r, usda_region), biosupply(usda
 
 *removal of bio techs that are not in biofeas(r)
 valcap(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
-valcap_class(i,c,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 valgen(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 valinv(i,v,r,t)$[(cofire(i) or bio(i))$(not biofeas(r))] = no ;
 
 valgen(i,v,r,t)$[not valcap(i,v,r,t)] = no ;
 valinv(i,v,r,t)$[not valcap(i,v,r,t)] = no ;
+
+* Valid capacity by resource class
+valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
+* For technologies with several classes, a class needs existing capacity (init vintages),
+* supply curve (new vintages), or prescribed capacity
+valcap_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(sum{cc$i_c(i,cc), 1 } > 1)
+                        $(not [m_capacity_exog(i,c,v,r,t)$initv(v)])
+                        $(not [sum{rscbin, m_rscfeas(r,i,c,rscbin) }$newv(v)])
+                        $(not sum{tt, prescribed_build(i,c,v,r,tt) })] = no ;
 
 scalar bio_transport_cost ;
 * biomass transport cost enter in $ per ton, convert to $ per MMBtu

@@ -4,6 +4,7 @@ inv_refurb,0,1,2,,3
 upgrades,0,1,2,,3
 gen,0,1,2,3,4
 cap,0,1,2,,3
+cap_class,0,2,3,,4
 opres,1,2,3,4,5
 storage_in,0,1,2,3,4
 captran,trans,,0,,3
