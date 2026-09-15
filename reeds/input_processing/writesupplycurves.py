@@ -169,6 +169,8 @@ def main(
     ).squeeze(1)
     deflate = dollaryear.map(deflator).rename('Deflator')
 
+    collapsed = reeds.techs.get_collapsed_techs(inputs_case)
+
     #%% Load the existing RSC capacity (PV plants, wind, and CSP)
     rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv")).rename(columns={'*r':'r'})
 
@@ -229,7 +231,8 @@ def main(
         )
 
         cost_components["c"] = cost_components["c"].astype(str)
-        cost_components["*i"] = f"wind-{s}_" + cost_components["c"]
+        cost_components["*i"] = reeds.techs.get_tech_class_name(
+            pd.Series(f"wind-{s}", index=cost_components.index), cost_components["c"], collapsed)
         cost_components["rscbin"] = "bin" + cost_components[
             "rscbin"
         ].astype(str)
@@ -244,7 +247,9 @@ def main(
         spurout_list.append(
             wind[s]
             .reset_index()
-            .assign(i=f"wind-{s}_" + wind[s].reset_index()["class"].astype(str))
+            .assign(i=reeds.techs.get_tech_class_name(
+                pd.Series(f"wind-{s}", index=wind[s].reset_index().index),
+                wind[s].reset_index()["class"], collapsed))
             .assign(c=wind[s].reset_index()["class"].astype(str))
             .assign(rscbin="bin" + wind[s].reset_index()["bin"].astype(str))
             .rename(columns={"region": "r"})
@@ -680,7 +685,7 @@ def main(
 
     allout = pd.concat([outcapfin, alloutcost])
     allout["c"] = allout["class"].astype(str)
-    allout["tech"] = allout["tech"] + "_" + allout["class"].astype(str)
+    allout["tech"] = reeds.techs.get_tech_class_name(allout["tech"], allout["class"], collapsed)
     alloutm = pd.melt(allout, id_vars=["r", "tech", "c", "var"])
     alloutm.rename(columns={"bin":"variable"}, inplace=True)
     alloutm = alloutm.loc[alloutm.variable != "class"].copy()
@@ -1006,7 +1011,8 @@ def main(
     ### wind-ons
     sitemap_windons = (
         windin["ons"]
-        .assign(i="wind-ons_" + windin["ons"]["class"].astype(str))
+        .assign(i=reeds.techs.get_tech_class_name(
+            pd.Series("wind-ons", index=windin["ons"].index), windin["ons"]["class"], collapsed))
         .assign(c=windin["ons"]["class"].astype(str))
         .assign(rscbin="bin" + windin["ons"]["bin"].astype(str))
         .assign(x="i" + windin["ons"]["sc_point_gid"].astype(str))
