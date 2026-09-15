@@ -3,13 +3,13 @@ AL,AL,SERTP,SERTP,SERC_SE,eastern,PowerSouth_Energy_Coop
 AR,AR,MISO,MISO_South,MISO,eastern,MISO
 AZ,AZ,WestConnect,WestConnect_South,WECC_SW,western,Arizona_Public_Service_Co
 CA,CA,CAISO,CAISO,WECC_CA,western,CAISO
-CO,CO,WestConnect,WestConnect_North,WECC_NW,western,Public_Service_Co_of_Colorado
+CO,CO,WestConnect,WestConnect_North,WECC_RM,western,Public_Service_Co_of_Colorado
 CT,CT,ISONE,ISONE,NPCC_NE,eastern,ISONE
 DE,DE,PJM,PJM_East,PJM,eastern,PJM
 FL,FL,FRCC,FRCC,SERC_F,eastern,Seminole_Electric_Coop_Inc
 GA,GA,SERTP,SERTP,SERC_SE,eastern,Southern_Co_Services_Inc
 IA,IA,MISO,MISO_North,MISO,eastern,MISO
-ID,ID,NorthernGrid,NorthernGrid_East,WECC_NW,western,Idaho_Power_Co
+ID,ID,NorthernGrid,NorthernGrid_East,WECC_BA,western,Idaho_Power_Co
 IL,IL,MISO,MISO_Central,MISO,eastern,MISO
 IN,IN,MISO,MISO_Central,MISO,eastern,MISO
 KS,KS,SPP,SPP_South,SPP,eastern,SPP
@@ -29,7 +29,7 @@ NE,NE,SPP,SPP_North,SPP,eastern,SPP
 NH,NH,ISONE,ISONE,NPCC_NE,eastern,ISONE
 NJ,NJ,PJM,PJM_East,PJM,eastern,PJM
 NM,NM,WestConnect,WestConnect_South,WECC_SW,western,Public_Service_Co_of_New_Mexico
-NV,NV,NorthernGrid,NorthernGrid_South,WECC_NW,western,Nevada_Power_Co
+NV,NV,NorthernGrid,NorthernGrid_South,WECC_SW,western,Nevada_Power_Co
 NY,NY,NYISO,NYISO,NPCC_NY,eastern,NYISO
 OH,OH,PJM,PJM_East,PJM,eastern,PJM
 OK,OK,SPP,SPP_South,SPP,eastern,SPP
@@ -40,10 +40,10 @@ SC,SC,SERTP,SERTP,SERC_E,eastern,Duke_Energy_Carolinas_LLC
 SD,SD,SPP,SPP_North,SPP,eastern,SPP
 TN,TN,SERTP,SERTP,SERC_C,eastern,Tennessee_Valley_Authority
 TX,TX,ERCOT,ERCOT,ERCOT,texas,ERCOT
-UT,UT,NorthernGrid,NorthernGrid_South,WECC_NW,western,PacifiCorp_East
+UT,UT,NorthernGrid,NorthernGrid_South,WECC_BA,western,PacifiCorp_East
 VA,VA,PJM,PJM_East,PJM,eastern,PJM
 VT,VT,ISONE,ISONE,NPCC_NE,eastern,ISONE
 WA,WA,NorthernGrid,NorthernGrid_West,WECC_NW,western,Bonneville_Power_Administration
 WI,WI,MISO,MISO_North,MISO,eastern,MISO
 WV,WV,PJM,PJM_East,PJM,eastern,PJM
-WY,WY,NorthernGrid,NorthernGrid_East,WECC_NW,western,PacifiCorp_East
+WY,WY,NorthernGrid,NorthernGrid_East,WECC_RM,western,PacifiCorp_East

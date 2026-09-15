@@ -99,7 +99,7 @@ upv_stack = pd.concat(
 ###########################
 
 conv_in = []
-conv_techs = ['gas', 'gas_ccs', 'coal', 'coal_ccs', 'biopower', 'nuclear', 'nuclear_smr','fuelcell', 'other']
+conv_techs = ['gas', 'gas_ccs', 'coal', 'coal_ccs', 'biopower', 'nuclear', 'nuclear_smr','fuelcell','h2fuelcell', 'other']
 for ct in conv_techs:
     print(f"Loading plantchar_{ct}")
     df = pd.read_csv(os.path.join(inputs_case,f'plantchar_{ct}.csv'))
@@ -220,7 +220,8 @@ battery = pd.read_csv(os.path.join(inputs_case,'plantchar_battery.csv'))
 battery = deflate_func(battery, sw.plantchar_battery)
 
 ### Battery Mid-Life Refurbishment Cost
-# battery_li operates for 30 years, but its energy capacity (e.g., battery packs)
+# Battery plant lifetime is specified in `inputs/plant_characteristics/maxage.csv`,
+# but its energy capacity (e.g., battery packs)
 # must be replaced after batt_years_until_refurb years. The power capacity lasts
 # the full lifetime and is not refurbished. The energy refurbishment is represented
 # as a discounted adder to the overnight energy capital cost, valued at the cost
@@ -234,6 +235,8 @@ d_real = financials_sys.set_index('t')['d_real']
 
 # cost of new energy capacity in the refurbishment year, holding the
 # last year of the cost projection constant beyond the end of the input data
+# (consistent with futurefiles.csv used by forecast.py--it should be adjusted
+# if it is changed there)
 cost_by_year = battery.set_index('t')['capcost_energy']
 future_cost_batt = (
     cost_by_year
@@ -244,13 +247,13 @@ future_cost_batt = (
     .loc[cost_by_year.index + years_until_refurb]
     .set_axis(cost_by_year.index)
 )
-discount = d_real.reindex(cost_by_year.index) ** years_until_refurb
+discount = 1 / (d_real.reindex(cost_by_year.index) ** years_until_refurb)
 
 # Add the discounted refurbishment cost to the overnight energy capital cost
 battery = battery.set_index('t')
 battery['capcost_energy'] = (
     battery['capcost_energy']
-    + scalars['batt_refurb_perc_energy'] * future_cost_batt / discount
+    + scalars['batt_refurb_perc_energy'] * future_cost_batt * discount
 )
 battery = battery.reset_index()
 

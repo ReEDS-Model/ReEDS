@@ -106,6 +106,7 @@ def plot_profile(
     ax=None,
     figsize=(6,4),
     yscale_zero=True,
+    label=None,
 ):
     """
     Plot daily electricity demand over all weather years.
@@ -173,7 +174,7 @@ def plot_profile(
         dfprofile.plot(ax=ax, lw=0.1, color=color)
     ax.fill_between(
         dfday['mean'].index, dfday['max'], dfday['min'],
-        lw=0, alpha=0.25, color=color,
+        lw=0, alpha=0.25, color=color, label=label,
     )
     ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax.set_ylabel(ylabel)
@@ -344,7 +345,7 @@ def plot_units_existing(
     case=None,
     year=None,
     markers=None,
-    scale=0.2,
+    scale=0.07,
     alpha=0.8,
     f=None,
     ax=None,
@@ -445,11 +446,11 @@ def plot_units_existing(
     leg = ax.legend(
         loc='lower left', bbox_to_anchor=(0.04,0.04), ncol=2, frameon=False,
         handletextpad=0.3, handlelength=0.7, columnspacing=0.6, labelspacing=0.3,
-        title=('Tech (GW)' if gw_label else 'Tech'), fontsize=9.5,
-        alignment='left', title_fontproperties={'weight':'bold', 'size':12},
+        title=('Tech (GW)' if gw_label else 'Tech'), fontsize=6.5,
+        alignment='left', title_fontproperties={'weight':'bold', 'size':9},
     )
     for handle in leg.legend_handles:
-        handle.set_sizes([50])
+        handle.set_sizes([20])
         handle.set_alpha(1)
     ## Scale
     if len(scalemw):
@@ -1181,7 +1182,7 @@ if __name__ == '__main__':
         def saveit(savename):
             outpath = os.path.join(savepath, savename.lower().replace(' ', '-') + f'.{suffix}')
             plt.savefig(outpath)
-            print(os.path.basename(outpath))
+            print(outpath)
             if interactive:
                 plt.show()
 

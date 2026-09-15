@@ -3,6 +3,7 @@ Hydro,1
 Biopower,0.04
 beccs_mod,0.04
 beccs_max,0.04
+h2-fuel-cell,1
 gas-CT,0.08
 gas-CT_aero,0.08
 gas-CC,0.05

@@ -3,6 +3,7 @@ allh,allhh
 allh,allhhh
 allszn,allsznn
 allt,alltt
+c,cc
 cendiv,cendiv2
 dummy,adummy
 fuelbin,afuelbin
@@ -20,6 +21,7 @@ t,tt
 t,ttt
 tg,tgg
 transgrp,transgrpp
+transreg,transregg
 trtype,intype
 trtype,outtype
 v,vv

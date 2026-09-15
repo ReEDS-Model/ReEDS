@@ -15,8 +15,6 @@ GEN_PLANT.lo(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unf
 GEN_PLANT.up(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = +inf ;
 GEN_STORAGE.lo(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = 0 ;
 GEN_STORAGE.up(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = +inf ;
-CURT.lo(r,h,t_unfix)$Sw_CurtMarket = 0 ;
-CURT.up(r,h,t_unfix)$Sw_CurtMarket = +inf ;
 MINGEN.lo(r,szn,t_unfix)$Sw_Mingen = 0 ;
 MINGEN.up(r,szn,t_unfix)$Sw_Mingen = +inf ;
 STORAGE_IN.lo(i,v,r,h,t_unfix)$[valgen(i,v,r,t_unfix)$(storage_standalone(i) or hyd_add_pump(i))] = 0 ;

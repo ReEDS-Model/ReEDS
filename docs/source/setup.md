@@ -134,8 +134,12 @@ When creating the `reeds` environment locally, you might run into an SSL error t
 
 
 ### GAMS Configuration
-NLR uses GAMS versions 51.3.0 and 49.6.0; however, older versions might also work. A valid GAMS license must be installed.
 
+ReEDS is actively developed for GAMS versions ≥51.3.0 and is backwards-compatible without modification for GAMS versions ≥44.2.0.
+To use GAMS versions back to 34.3.0, revert to an older version of `gdxpds` by running `pip install gdxpds==1.4.0` within the `reeds` conda environment.
+ReEDS compatibility with GAMS versions older than 34.3.0 is not tested or actively supported.
+
+A valid GAMS license must be installed.
 For more information on getting a trial license for GAMS, see the [FAQ](faq.md#table-of-contents)
 
 1. Install GAMS: [https://www.gams.com/download/](https://www.gams.com/download/)

@@ -75,7 +75,7 @@ year = args.year
 # case = os.path.join(reeds_path,'runs','v20260624_raM1_MultiMetricRA')
 # year = 0
 # interactive = True
-# write = False
+# write = True
 # import importlib
 # importlib.reload(reedsplots)
 
@@ -818,6 +818,30 @@ if not int(sw.GSw_PRM_CapCredit):
             print(savename)
         except Exception:
             print(f'plot_stress_mix failed for {metric}:')
+            print(traceback.format_exc())
+
+    # level, figheight = 'transreg', 1.2
+    level, figheight = 'interconnect', 1.8
+    for metric in [
+        'stress_top10_price',
+        'stress_top10_netload',
+        'stress_top10_load',
+        'stress_bottom10_vregen',
+    ]:
+        savename = f"plot_stress_cf-{level}-{metric}.png"
+        try:
+            plt.close()
+            f, ax, dictout = reedsplots.plot_stress_cf(
+                case=case, level=level, metric=metric, figheight=figheight,
+            )
+            if write:
+                plt.savefig(os.path.join(savepath, savename))
+            if interactive:
+                plt.show()
+            plt.close()
+            print(savename)
+        except Exception:
+            print(f'{savename} failed:')
             print(traceback.format_exc())
 
 

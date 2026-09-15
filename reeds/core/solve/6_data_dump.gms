@@ -156,12 +156,12 @@ fuel_price_filt(i,r)$cap_exist_ir(i,r) = sum{t$tcur(t), fuel_price(i,r,t) } ;
 h2_usage_regional(r,h,t)$tcur(t) =
     hours(h) * ( 
         h2_exogenous_demand_regional(r,'h2',h,t)
-        + sum{(i,v)$[valgen(i,v,r,t)$h2_combustion(i)],
+        + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
             GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
     )
 ;
 
-fuel_price_filt(i,r)$[Sw_H2$h2_combustion(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
+fuel_price_filt(i,r)$[Sw_H2$h2_gen(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
     sum{t$tcur(t),
         (1 / cost_scale) * (1 / pvf_onm(t)) * h2_combustion_intensity * (
             eq_h2_demand.m('h2',t)$[Sw_H2=1]
@@ -215,8 +215,8 @@ cost_cap_fin_mult_filt(i,r,t)$([storage_standalone(i)]) = cost_cap_fin_mult(i,r,
 
 cost_vom_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), cost_vom(i,v,r,t) } ;
 
-cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = cf_adj_t(i,v,t) ;
-cf_adj_t_filt(i,v,"%next_year%") = cf_adj_t(i,v,"%next_year%")$(vre(i) or pvb(i)) ;
+cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = sum{c$i_c(i,c), cf_adj_t(i,c,v,t) } ;
+cf_adj_t_filt(i,v,"%next_year%") = sum{c$i_c(i,c), cf_adj_t(i,c,v,"%next_year%") }$(vre(i) or pvb(i)) ;
 
 ctt_i_ii_filt(i,ii) = ctt_i_ii(i,ii)$cap_exist_i(i) ;
 
@@ -228,7 +228,7 @@ heat_rate_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), heat_rate(i,v,r,t) } ;
 
 inv_cond_filt(i,v,t)$[(vre(i) or pvb(i))$tnext(t)] = sum{(tt,r), inv_cond(i,v,r,tt,t) } ;
 
-m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{t$tnext(t), m_cf(i,v,r,h,t) } ;
+m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{(t,c)$[tnext(t)$i_c(i,c)], m_cf(i,c,v,r,h,t) } ;
 
 m_cf_szn_filt(i,v,r,szn)$[hydro(i)$cap_exist(i,v,r)] = sum{t$tcur(t), m_cf_szn(i,v,r,szn,t) } ;
 
