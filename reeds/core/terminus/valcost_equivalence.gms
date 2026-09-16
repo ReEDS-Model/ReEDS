@@ -40,6 +40,20 @@
 * looks like profit and is not. Its dual sits on eq_cap_rsc, which is how it was
 * found: that equation carried exactly the missing amount.
 *
+* A restart-file hazard, for anyone extending this. 2_temporal_params.gms runs
+* every solve year and begins with m_cf(i,v,r,allh,t) = 0 over ALL years before
+* refilling only the current year's active timeslices. In the final restart,
+* m_cf for a prior year is therefore zero at any stress day that year used but
+* the final year does not - 112 of 184 timeslices for 2030 in the upv run. The
+* representative days are fixed across years (clustered once, on
+* GSw_HourlyClusterYear) and survive; only stress days move. GEN.l is fixed by
+* 5_varfix.gms after each solve and is preserved. So: m_cf is safe on rep hours
+* for any year, and on stress hours only for the restart year. Every stress-hour
+* term here uses GEN.l for that reason, and at a binding capacity limit
+* GEN = m_cf * CAP so nothing is lost. Reading m_cf at a prior year's stress
+* hours silently undercounts, and by an amount that grows the further the year
+* is from the restart.
+*
 * Sequential solves see one year of value against one year of annualised cost
 * (pvf_onm = 1/crf), so the identity closes within the year and vintages need
 * no forward tracing.
