@@ -211,25 +211,32 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012,
     return f, ax
 
 def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
+    selected_weatheryears = _parse_weatheryears(weatheryear)
     yearlabel = year if year not in [0, None, 'last'] else 'last model year'
 
     plt.close()
     for idx, (casename, casepath) in enumerate(cases.items()):
         color = colors.get(casename, f'C{idx}')
-        # replace with reeds.results.summarize_load_data?
+        
         dfprofile = (
-            reeds.io.read_file(os.path.join(casepath, 'inputs_case', 'load.h5'),
-                               parse_timestamps=True)
-            .loc[year].loc[str(weatheryear)].sum(axis=1)
+            reeds.results.summarize_load_data(
+                casepath, 
+                use_run=True,
+                agg_reg_lvl='all',
+                model_year_sub=[year], 
+                weather_year_sub=selected_weatheryears,
+            )
+            / 1e3
         )
+        dfprofile.index = pd.to_datetime(dfprofile.index.get_level_values('datetime'))
         if idx == 0:
             f,ax = reeds.plots.plotyearbymonth(
-                dfprofile.rename(casename).to_frame(), 
+                dfprofile.rename({'load_MWh': casename}), 
                 style='line', colors=[color]
             )
         else:
             reeds.plots.plotyearbymonth(
-                dfprofile.rename(casename).to_frame(),
+                dfprofile.rename({'load_MWh': casename}),
                 style='line', colors=[color], f=f, ax=ax
             )
                    
