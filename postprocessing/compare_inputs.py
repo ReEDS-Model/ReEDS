@@ -99,22 +99,17 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
 
         # Load demand profile
         dfprofile = (
-            reeds.io.read_file(
-                os.path.join(casepath, 'inputs_case', 'load.h5'),
-                parse_timestamps=True,
+            reeds.results.summarize_load_data(
+                casepath, 
+                use_run=True, 
+                reg_sub=rs,
+                model_year_sub=[year], 
+                weather_year_sub=[weatheryear]
             )
             / 1e3
         )
-        dfprofile = (
-            dfprofile
-            .loc[t, [r for r in dfprofile if r in rs]]
-            .sum(axis=1)
-        )
 
         # Slice to weather years range
-        dfprofile = dfprofile.loc[
-            str(min(case_weatheryears)) : str(max(case_weatheryears))
-        ].copy()
         dfprofile.index = pd.to_datetime(dfprofile.index)
         
         # Group by day of year (1-365/366) across all weather years
@@ -270,21 +265,19 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
         rs = reeds.inputs.parse_regions(casepath)
         case_weatheryears = sw.resource_adequacy_years_list
 
-        dfload = (
-            reeds.io.read_file(
-                os.path.join(casepath, 'inputs_case', 'load.h5'),
-                parse_timestamps=True,
+        dfprofile = (
+            reeds.results.summarize_load_data(
+                casepath, 
+                use_run=True, 
+                reg_sub=rs,
+                weather_year_sub=selected_weatheryears,
             )
             / 1e3
         )
-        region_cols = [r for r in dfload if r in rs]
 
         rows = []
         for t in modelyears:
-            profile = dfload.loc[t, region_cols].sum(axis=1)
-            profile = profile.loc[
-                str(min(case_weatheryears)) : str(max(case_weatheryears))
-            ].copy()
+            profile = dfprofile.loc[t].sum(axis=1)
             profile.index = pd.to_datetime(profile.index)
 
             # profile is in GW and timestamps are hourly, so annual sum is GWh.
@@ -421,14 +414,14 @@ def plot_regional_peak_demand_maps(cases, year='last'):
         region_to_state = reeds.io.get_hierarchy(casepath)['st']
 
         dfprofile = (
-            reeds.io.read_file(
-                os.path.join(casepath, 'inputs_case', 'load.h5'),
-                parse_timestamps=True,
+            reeds.results.summarize_load_data(
+                casepath, 
+                use_run=True, 
+                reg_sub=rs,
+                model_year_sub=[t], 
             )
-            / 1e3  # MW -> GW
+            / 1e3
         )
-        valid_cols = [r for r in dfprofile.columns if r in rs]
-        dfprofile = dfprofile[valid_cols]
 
         try:
             df_t = dfprofile.loc[t].copy()
@@ -436,10 +429,6 @@ def plot_regional_peak_demand_maps(cases, year='last'):
             raise KeyError(f'Model year {t} not found in load.h5 for case {casename}.')
 
         df_t.index = pd.to_datetime(df_t.index)
-        # Use the full weather-year range — max across ALL years
-        df_t = df_t.loc[
-            str(min(case_weatheryears)) : str(max(case_weatheryears))
-        ]
         # Aggregate BAs to states, then take the max simultaneous hour
         df_t_st = df_t.T.groupby(df_t.columns.map(region_to_state)).sum().T
         peak_st[casename] = df_t_st.max()
@@ -572,31 +561,26 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
         region_to_state = reeds.io.get_hierarchy(casepath)['st']
 
         dfprofile = (
-            reeds.io.read_file(
-                os.path.join(casepath, 'inputs_case', 'load.h5'),
-                parse_timestamps=True,
+            reeds.results.summarize_load_data(
+                casepath, 
+                use_run=True, 
+                reg_sub=rs,
+                model_year_sub=[t], 
+                weather_year_sub=selected_weatheryears,
             )
-            / 1e3  # MW -> GW
+            / 1e3
         )
-        valid_cols = [r for r in dfprofile.columns if r in rs]
-        dfprofile = dfprofile[valid_cols]
-
-        try:
-            df_t = dfprofile.loc[t].copy()
-        except KeyError:
-            raise KeyError(f'Model year {t} not found in load.h5 for case {casename}.')
-
-        df_t.index = pd.to_datetime(df_t.index)
-        df_t = df_t.loc[
+        dfprofile.index = pd.to_datetime(dfprofile.index)
+        dfprofile = dfprofile.loc[
             str(min(case_weatheryears)) : str(max(case_weatheryears))
         ]
-        available_wy = sorted(df_t.index.year.unique().tolist())
+        available_wy = sorted(dfprofile.index.year.unique().tolist())
         _validate_selected_weatheryears(selected_weatheryears, available_wy, casename, t)
 
         # Aggregate BAs to states, then average annual total across ALL available weather years
-        df_t_st = df_t.T.groupby(df_t.columns.map(region_to_state)).sum().T
+        dfprofile_st = dfprofile.T.groupby(dfprofile.columns.map(region_to_state)).sum().T
         wy_totals = pd.concat(
-            [df_t_st.loc[df_t_st.index.year == wy].sum() / 1e3  # GWh -> TWh
+            [dfprofile_st.loc[dfprofile_st.index.year == wy].sum() / 1e3  # GWh -> TWh
              for wy in available_wy],
             axis=1,
         ).mean(axis=1)
