@@ -9,8 +9,12 @@
 * those variables only to each other (eq_rsc_inv_account, eq_cap_new_*,
 * eq_capacity_limit) cancel out, and what remains is an identity in dollars:
 *
-*     objective cost of the plant  =  sum over EXTERNAL constraints of
-*                                     (level x coefficient x marginal)
+*     revenue the plant collects  =  objective cost  +  resource rent
+*
+* where revenue is GEN times the load-balance duals (rep and stress hours) and
+* resource rent is INV_RSC times the dual on the bin capacity limit. Rent is on
+* the cost side of the equals sign: it is what remains of revenue after costs,
+* assigned by the LP to the scarce site, not an extra payment to the plant.
 *
 * This file computes both sides for the new vintage of each (i,r,t) - valinv -
 * and writes the residual. A residual near zero says every stream is
@@ -89,11 +93,11 @@ set vc_stream "cost and value streams" /
   cost_total        "sum of cost streams"
   val_load          "energy value at rep hours, GEN * marginal of eq_supply_demand_balance"
   val_resmarg       "reserve-margin value at stress hours, same equation"
-  val_rsc           "resource rent, INV_RSC * marginal of eq_rsc_INVlim"
+  val_rsc           "resource rent, INV_RSC * marginal of eq_rsc_INVlim. NOT added to val_total: see residual"
   val_curt          "curtailment-balance value, (m_cf*CAP - GEN) * marginal of eq_curt_gen_balance"
   val_opres         "operating-reserve requirement induced, -orperc*GEN * marginal of eq_OpRes_requirement"
   val_total         "sum of value streams"
-  residual          "cost_total - val_total; zero if every stream is accounted for"
+  residual          "val_total - cost_total - val_rsc; zero if every stream is accounted for"
   inv_mw            "INV level, MW"
   gen_mwh           "GEN summed over rep hours, MWh (curtailed)"
   gen_uncurt_mwh    "m_cf*CAP summed over rep hours, MWh (uncurtailed)"
@@ -182,12 +186,20 @@ valcost('val_opres',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_OpRes$(pv(i) or pvb(i))] 
     sum{(v,ortype,h)$[vc_new(i,v,r,t)$valcap(i,v,r,t)$opres_model(ortype)$opres_h(h)$dayhours(h)],
         orperc(ortype,"or_pv") * CAP.l(i,v,r,t) / ilr(i) * eq_OpRes_requirement.m(ortype,r,h,t) } ;
 
+* val_total is what the plant COLLECTS: its generation times the prices it faces.
+* Resource rent is deliberately not in it. The plant does not receive rent on
+* top of its revenue; rent is the part of that revenue left over after every
+* cost, and the LP assigns it to the binding resource constraint. So the
+* identity is  revenue = cost + rent, or  val_total - cost_total - val_rsc = 0.
+* Adding val_rsc to the value side counts it twice, which shows up as a
+* one-sided "profit" of exactly val_rsc on every build with an exhausted bin -
+* large for wind, which fills its bins, and invisible for UPV, which does not.
 valcost('val_total',i,r,t) =
-    valcost('val_load',i,r,t) + valcost('val_resmarg',i,r,t) + valcost('val_rsc',i,r,t)
+    valcost('val_load',i,r,t) + valcost('val_resmarg',i,r,t)
   + valcost('val_curt',i,r,t) + valcost('val_opres',i,r,t) ;
 
 valcost('residual',i,r,t)$sum{v, vc_new(i,v,r,t)} =
-    valcost('cost_total',i,r,t) - valcost('val_total',i,r,t) ;
+    valcost('val_total',i,r,t) - valcost('cost_total',i,r,t) - valcost('val_rsc',i,r,t) ;
 
 * ---- quantities, for whatever normalisation the reader wants ----
 valcost('inv_mw',i,r,t)$sum{v, vc_new(i,v,r,t)} = sum{v$vc_new(i,v,r,t), INV.l(i,v,r,t) } ;
