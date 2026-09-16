@@ -204,6 +204,8 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
         ha='left',
     )
     ax.legend(frameon=False, loc='lower center', ncol=len(cases))
+    plt.autoscale(enable=True, axis='y')
+    ax.set_ylim(0)
 
     return f, ax
 
