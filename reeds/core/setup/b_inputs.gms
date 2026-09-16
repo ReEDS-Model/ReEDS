@@ -1863,28 +1863,6 @@ prescription_check(i,newv,r,t)$[prescribed_build(i,newv,r,t)
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
 m_rscfeas(r,i,"bin1")$[sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
 
-*==========================================================
-*--- Interconnection queues (Capacity deployment limit) ---
-*==========================================================
-$onempty
-table queue_limit(tg,r,allt) "--MW-- capacity deployment limit by region and technology based on interconnection queues"
-$offlisting
-$ondelim
-$include inputs_case%ds%queue_limit.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-
-parameter cap_penalty(tg) "--per MW-- cost penalty for capacity deployment above cap limit"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cap_penalty.csv
-$offdelim
-$onlisting
-/ ;
 
 *=============================================
 * -- Explicit spur-line capacity (if used) --

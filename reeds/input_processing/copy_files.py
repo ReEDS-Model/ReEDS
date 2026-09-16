@@ -1210,8 +1210,12 @@ def write_miscellaneous_files(
     queue_limit['r'] = queue_limit['r'].map(county2zone)
     queue_limit = queue_limit.dropna(subset='r')
 
-    queue_limit = queue_limit.groupby(['tg','r'],as_index=False).sum()
-    queue_limit.to_csv(os.path.join(inputs_case,'queue_limit.csv'), index=False)
+    queue_limit = queue_limit.groupby(['tg', 'r']).sum().stack().rename_axis(['tg', 'r', 'allt'])
+    reeds.io.write_to_inputs_h5(
+        queue_limit, 'queue_limit', inputs_case, gamstype='parameter', units='MW',
+        comment='capacity deployment limit by region and technology based on interconnection queues',
+    )
+    queue_limit.to_csv(Path(inputs_case, 'queue_limit.csv'))
     # ----  Miscelanous files in non_region_files or region_files (in this case we are overwriting them)
     # Expand i (technologies) set if modeling water use. Overwrite originals.
     if int(sw['GSw_WaterMain']):
