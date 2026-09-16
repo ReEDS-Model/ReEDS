@@ -344,8 +344,7 @@ def get_yearly_flexibility(
         unique_techs = list({x.split('|')[0] for x in shape[stype].columns[1:]})
 
         # EER derived shape data is populated for multiple weather years
-        # The hour column is populated as a timestamp
-        # if len(str(shape[stype].hour[0])) > 4:
+        # The index is populated as a timestamp
         if len(str(shape[stype].index[0])) > 4:
             # Define timezone to UTC-6
             shape[stype].set_index(pd.to_datetime(shape[stype].index), inplace=True)
@@ -1597,7 +1596,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             (
                 dr_shift_dec.assign(h=dr_shift_dec.h.map(chunkmap))
                 .groupby(["i", "r", "h", "t"])
-                .max()
+                .mean()
                 .round(decimals)
                 .reset_index()
             ),
@@ -1608,7 +1607,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             (
                 dr_shift_inc.assign(h=dr_shift_inc.h.map(chunkmap))
                 .groupby(["i", "r", "h", "t"])
-                .max()
+                .mean()
                 .round(decimals)
                 .reset_index()
             ),
@@ -1619,7 +1618,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             (
                 dr_shift_profile_energy.assign(h=dr_shift_profile_energy.h.map(chunkmap))
                 .groupby(["i", "r", "h", "t"])
-                .max()
+                .mean()
                 .round(decimals)
                 .reset_index()
             ),

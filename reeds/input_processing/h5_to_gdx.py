@@ -104,9 +104,7 @@ def write_declare_and_load(
                 f.write(f'alias({name},{alias}) ;\n')
             ## Load
             key = line.split('(')[0]
-            # Use $load instead of $loadDCR because sets are already declared in the model
-            # and cannot be cleared if they are used as domains
-            f.write(f'$load {key} = {key}\n')
+            f.write(f'$loadDCR {key} = {key}\n')
     print(f'Wrote {fpath}')
 
 

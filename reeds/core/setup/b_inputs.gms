@@ -3480,7 +3480,7 @@ $onlisting
 ;
 $offempty
 
-* Written in input processing repo under Demand_Response
+* Written by writesupplycurves.py
 $onempty
 table dr_shed_capacity_scalar(i,r,allt) "--unitless-- dr_shed capacity multipliers over time"
 $offlisting
@@ -3491,7 +3491,7 @@ $onlisting
 ;
 $offempty
 
-* Written in input processing repo under Demand_Response
+* Written by writesupplycurves.py
 $onempty
 table dr_shape_capacity_scalar(i,r,allt) "--unitless-- dr_shape capacity multipliers over time"
 $offlisting
@@ -3502,7 +3502,7 @@ $onlisting
 ;
 $offempty
 
-* Written in input processing repo under Demand_Response
+* Written by writesupplycurves.py
 $onempty
 table dr_shift_capacity_scalar(i,r,allt) "--unitless-- dr_shift capacity multipliers over time"
 $offlisting
@@ -3513,7 +3513,7 @@ $onlisting
 ;
 $offempty
 
-*Written in copy_files.py
+* Written by plantcostprep.py
 $onempty
 table vom_dr_shed(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
 $offlisting
@@ -3525,7 +3525,7 @@ $onlisting
 $offempty
 
 
-*Written in copy_files.py
+* Written by plantcostprep.py
 $onempty
 table fom_dr_shed(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
 $offlisting
@@ -3537,9 +3537,9 @@ $onlisting
 $offempty
 
 
-*Written in copy_files.py
+* Written by plantcostprep.py
 $onempty
-table vom_dr_shape(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table vom_dr_shape(i,r,allt) "--$/MWh-- dr_shape vom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shape_vom.csv
@@ -3549,9 +3549,9 @@ $onlisting
 $offempty
 
 
-*Written in copy_files.py
+* Written by plantcostprep.py
 $onempty
-table fom_dr_shape(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table fom_dr_shape(i,r,allt) "--$/MWh-- dr_shape vom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shape_fom.csv
@@ -3560,9 +3560,9 @@ $onlisting
 ;
 $offempty
 
-*Written in copy_files.py
+* Written by plantcostprep.py
 $onempty
-table vom_dr_shift(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table vom_dr_shift(i,r,allt) "--$/MWh-- dr_shift vom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shift_vom.csv
@@ -3572,9 +3572,9 @@ $onlisting
 $offempty
 
 
-*Written in copy_files.py
+* Written by plantcostprep.py
 $onempty
-table fom_dr_shift(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table fom_dr_shift(i,r,allt) "--$/MWh-- dr_shift vom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shift_fom.csv
@@ -5639,9 +5639,9 @@ Parameter
     dr_shed_out(i,r,allh)                  "--fraction-- dr shed capacity availability"
     dr_shape_load(i,r,allh,allt)                "--fraction-- fraction of adopted price-responsive DR shape load added by timeslice"
     dr_shape_gen(i,r,allh,allt)                 "--fraction-- fraction of adopted price-responsive DR shape load subtracted by timeslice"
-    dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift discharge capacity that can be discharged in each timeslice h"
-    dr_shift_charge_frac(i,r,allh,allt)    "--fraction-- fraction of adopted DR shift charge capacity that can be charged in each timeslice h"
-    dr_shift_energy_hours(i,r,allh,allt)   "--hours-- Allowable DR shift SOC (quantity deferred DR charge) [MWh] divided by nameplate DR shift discharge capacity [MW]"
+    dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be discharged (deferred charging) in each timeslice h"
+    dr_shift_charge_frac(i,r,allh,allt)    "--fraction-- fraction of adopted DR shift capacity that can be charged (add back deferred charging) in each timeslice h"
+    dr_shift_energy_hours(i,r,allh,allt)   "--hours-- Allowable DR shift device storage SOC (quantity deferred charge) [MWh] divided by nameplate discharge capacity [MW]"
 * Flexible Canadian imports/exports [Sw_Canada=1]
     can_imports_szn(r,allszn,t)            "--MWh-- [Sw_Canada=1] seasonal imports from Canada by year"
     can_imports_szn_frac(allszn)           "--fraction-- [Sw_Canada=1] fraction of annual imports that occur in each season"

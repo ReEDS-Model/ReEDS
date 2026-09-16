@@ -112,7 +112,6 @@ positive variables
   H2_STOR_LEVEL_SZN(h2_stor,r,actualszn,t)  "--metric tons-- total storage level of H2 in a period by storage type"
   CREDIT_H2PTC(i,v,r,allh,t)              "--MW-- generation by resources which qualify for the hydrogen production tax credit, in hour h"
 
- RHS_DRSHAPE_SLACK(r,allh,t)            "--slack variable for DR shape in eq_loadcon"
 
 * water climate variables
   WATCAP(i,v,r,t)                        "--million gallons/year; Mgal/yr-- total water access capacity available in terms of withdraw/consumption per year"
@@ -340,40 +339,6 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_ccsflex_sto_storage_level(i,v,r,allh,t)          "--varies-- Track the level of the CCS storage balance for each time-slice"
  eq_ccsflex_sto_storage_level_max(i,v,r,allh,t)      "--varies-- Limit the level of the CCS storage system"
 
-
-*  eq_force_drshift_gen(t)
-*  eq_force_drshape_cap(t)
-;
-
-
-* eq_force_drshift_gen(t)
-*     $[tmodel(t)
-*     $(Sw_DRShift=1)
-*     $(yeart(t)>model_builds_start_yr)
-*     ]..
-
-*     sum{(i,v,r,h)$[valgen(i,v,r,t)$dr_shift(i)],
-*        hours(h) *  GEN(i,v,r,h,t)
-*     }
-*     =g=
-
-*     1000
-* ;
-
-* eq_force_drshape_cap(t)
-*     $[tmodel(t)
-*     $(Sw_DRShape=1)
-*     $(yeart(t)>model_builds_start_yr)
-*     ]..
-
-*     sum{(i,v,r)$[valcap(i,v,r,t)$dr_shape(i)],
-*        CAP(i,v,r,t)
-*     }
-*     =g=
-
-*     10
-* ;
-
 *==========================
 * --- LOAD CONSTRAINTS ---
 *==========================
@@ -403,8 +368,6 @@ eq_loadcon(r,h,t)$tmodel(t)..
     + sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_load(i,r,h,t) * CAP(i,v,r,t)}
     - sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_gen(i,r,h,t) * CAP(i,v,r,t)}
 
-* add slack variable to avoid infeasibilities
-    + RHS_DRSHAPE_SLACK(r,h,t)  
 
 *[plus] load shifted from other timeslices
     + sum{flex_type, FLEX(flex_type,r,h,t) }$Sw_EFS_flex

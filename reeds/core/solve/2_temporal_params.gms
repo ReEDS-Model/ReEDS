@@ -718,7 +718,7 @@ $offempty
 
 $onempty
 * DR shift adoption
-parameter dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift discharge capacity that can be discharged (deferred charging) in each timeslice h"
+parameter dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be discharged (deferred charging) in each timeslice h"
 /
 $offlisting
 $ondelim
@@ -729,7 +729,7 @@ $onlisting
 $offempty
 
 $onempty
-parameter dr_shift_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift discharge capacity that can be charged (add back deferred charging) in each timeslice h"
+parameter dr_shift_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be charged (add back deferred charging) in each timeslice h"
 /
 $offlisting
 $ondelim
@@ -749,7 +749,6 @@ $offdelim
 $onlisting
 / ;
 $offempty
-
 
 * Written by hourly_writetimeseries.py
 parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"

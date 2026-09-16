@@ -230,8 +230,7 @@ def calc_financial_inputs(inputs_case):
                             'ptc_value_monetized_posttax', 'ptc_grossup_value', 'ptc_value_scaled']].iloc[0:5,:] # this is just a hack because pjg didn't know how to have gams handle empty files
     ptc_values_df = ptc_values_df.drop_duplicates(['i', 'v', 't'])
     ptc_values_df['v'] = ['new%s' % v for v in ptc_values_df['v']]
-    ptc_values_df['allt'] = ptc_values_df['t'].astype(int)
-        
+    ptc_values_df['allt'] = ptc_values_df['t'].astype(int)        
 
     #%%
     # Import schedules for financial calculations
