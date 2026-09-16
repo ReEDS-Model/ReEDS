@@ -2306,3 +2306,227 @@ def wraptext(text, width, fontsize=14):
     outlist = [text[i*numchars:(i+1)*numchars] for i in range(numlines)]
     out = '\n'.join(outlist)
     return out
+
+
+def percentile2col(x):
+    """Copied from https://github.nrel.gov/cobika/DLR/blob/main/dlr/plots.py"""
+    return f"{x*100:.1f}%".replace('.0%','%')
+
+
+def label_percentiles(
+    dfdescribe,
+    xs,
+    ax,
+    percentiles=None,
+    overlabel='arrow',
+    ymin=None,
+    ymax=None,
+    label_curves=10,
+    median='k',
+    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
+    label_kwargs={},
+):
+    """Copied from https://github.nrel.gov/cobika/DLR/blob/main/dlr/plots.py"""
+    if percentiles is None:
+        _percentiles = [0, 0.01, 0.1, 0.2]
+    else:
+        _percentiles = sorted(percentiles)
+    percentiles_2side = sorted(set(_percentiles + [1-i for i in _percentiles]))
+
+    _ymin = ymin if ymin is not None else ax.get_ylim()[0]
+    _ymax = ymax if ymax is not None else ax.get_ylim()[1]
+    i = abs(xs - label_curves).argmin()
+    iprev = i-1 if i > 0 else i
+    inext = i+1 if i < len(dfdescribe)-1 else i
+    _idiff = inext - iprev
+    xprev = xs[iprev]
+    xnext = xs[inext]
+    for p in sorted(percentiles_2side + ([0.5] if median else [])):
+        last = True if p == percentiles_2side[-1] else False
+        col = percentile2col(p)
+        suffix = {0.01:'st', 0.02:'nd', 0.03:'rd'}.get(p, 'th')
+        text = (col+'\npercentile\nof lines' if last else col).replace('%', suffix)
+        ## Get y and angle
+        y = dfdescribe.loc[i, col]
+        if overlabel == 'offset':
+            va = 'center'
+            if y > _ymax:
+                x = 100 - label_curves
+                _y = dfdescribe.loc[abs(xs - x).argmin(), col]
+            else:
+                x, _y = label_curves, y
+        else:
+            x = label_curves
+            if y > _ymax:
+                _y = _ymax
+                text = '↑ ' + text
+                va = 'top'
+            else:
+                _y = y
+                va = 'center'
+        _angle = np.degrees(np.arctan(
+            (dfdescribe.loc[inext, col] - dfdescribe.loc[iprev, col])
+            /
+            (xnext - xprev)
+        ))
+        # print(_angle)
+        ax.annotate(
+            text,
+            (x, _y), ha='center', va=va,
+            # rotation=_angle, rotation_mode='anchor', transform_rotates_text=True,
+            path_effects=path_effects,
+            zorder=1e9, annotation_clip=False,
+            **label_kwargs,
+        )
+
+
+def plot_distribution(
+    dfraw=None,
+    dfsorted=None,
+    dfdescribe=None,
+    percentiles=None,
+    median='k',
+    median_ls='-',
+    mean=False,
+    color='C7',
+    alpha_min=0.15,
+    alpha_max=1.0,
+    drawgrid='w',
+    grid_params={},
+    drawmarkers=False,
+    drawlegend=False,
+    ax=None,
+    label_curves=0,
+    overlabel='arrow',
+    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.7)],
+    label_kwargs={},
+    ymin=None,
+    ymax=None,
+):
+    """Copied from https://github.nrel.gov/cobika/DLR/blob/main/dlr/plots.py"""
+    if percentiles is None:
+        _percentiles = [0, 0.01, 0.1, 0.2]
+    else:
+        _percentiles = sorted(percentiles)
+
+    percentiles_2side = sorted(set(_percentiles + [0.5] + [1-i for i in _percentiles]))
+
+    alphas = dict(zip(_percentiles, np.linspace(alpha_min, alpha_max, len(_percentiles))))
+
+    if dfdescribe is None:
+        if dfsorted is None:
+            _dfsorted = pd.DataFrame({
+                col: dfraw[col].sort_values(ascending=False).values
+                for col in dfraw
+            })
+        else:
+            _dfsorted = dfsorted
+        _dfdescribe = _dfsorted.T.describe(percentiles=percentiles_2side).T
+    else:
+        _dfdescribe = dfdescribe
+
+    xs = np.linspace(0, 100, len(_dfdescribe))
+
+    ###### Plot it
+    if ax is None:
+        plt.close()
+        f, ax = plt.subplots()
+
+    for p1 in _percentiles:
+        p2 = 1 - p1
+        label = f"{percentile2col(p1).strip('%')}–{percentile2col(p2).strip('%')}%"
+        ax.fill_between(
+            xs,
+            _dfdescribe[percentile2col(p1)].values,
+            _dfdescribe[percentile2col(p2)].values,
+            color=color, alpha=alphas[p1], lw=0, label=label,
+        )
+
+    if median:
+        ax.plot(
+            xs,
+            _dfdescribe['50%'].values,
+            c=median, ls=median_ls, label='50%', zorder=1e7,
+        )
+    ### Middle
+    if drawmarkers:
+        ...
+
+    if label_curves:
+        label_percentiles(
+            _dfdescribe,
+            xs,
+            ax,
+            percentiles=percentiles,
+            overlabel=overlabel,
+            ymin=ymin,
+            ymax=ymax,
+            label_curves=label_curves,
+            median=median,
+            path_effects=path_effects,
+            label_kwargs=label_kwargs,
+        )
+
+    if drawlegend:
+        ax.legend(
+            loc='upper right', frameon=False,
+            handlelength=0.7, handletextpad=0.5,
+            fontsize='large',
+        )
+    ax.set_xlim(0,100)
+    if (ymin is not None) and (ymax is not None):
+        ax.set_ylim(ymin, ymax)
+    if drawgrid:
+        for axis in ['x', 'y']:
+            _grid_params = {
+                **{'which':'major', 'ls':':', 'lw':0.75},
+                **grid_params.get(axis,{})
+            }
+            ax.grid(
+                axis=axis,
+                which=_grid_params['which'],
+                ls=_grid_params['ls'],
+                lw=_grid_params['lw'],
+                c=drawgrid,
+                zorder=1e5
+            )
+    despine(ax)
+
+    return ax, _dfdescribe
+
+
+def plot_percentile_range(
+    dfplot,
+    ax,
+    percentiles=None,
+    color='k',
+    median='k',
+    alpha_min=0.1,
+    alpha_max=0.5,
+):
+    """Copied from https://github.nrel.gov/cobika/DLR/blob/main/dlr/plots.py"""
+    if percentiles is None:
+        _percentiles = [0.01, 0.1, 0.2]
+    else:
+        _percentiles = sorted(percentiles)
+
+    alphas = dict(zip(_percentiles, np.linspace(alpha_min, alpha_max, len(_percentiles))))
+
+    for p1 in _percentiles:
+        p2 = 1 - p1
+        label = f"{percentile2col(p1).strip('%')}–{percentile2col(p2).strip('%')}%"
+        ax.fill_between(
+            dfplot.index,
+            dfplot[percentile2col(p1)].values,
+            dfplot[percentile2col(p2)].values,
+            color=color, alpha=alphas[p1], lw=0, label=label,
+        )
+
+    if median:
+        ax.plot(
+            dfplot.index,
+            dfplot['50%'].values,
+            c=median, label='50%', zorder=1e7,
+        )
+
+    return ax
