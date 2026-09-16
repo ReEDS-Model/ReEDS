@@ -176,7 +176,8 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
 
     return f, ax
 
-def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
+def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012,
+                                region=None, region_title_label=None):
     if len(cases) < 2:
         raise ValueError('Need at least 2 cases to compare inputs.')
 
@@ -184,6 +185,7 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
     selected_label = _weatheryears_label(selected_weatheryears)
     yearlabel = year if year not in [0, None, 'last'] else 'last model year'
     wy_title_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
+    region_title_label = 'CONUS' if region_title_label is None else region_title_label
 
     plt.close()
     f, ax = plt.subplots(figsize=(13.33, 4))
@@ -193,13 +195,13 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012):
 
         input_plots.plot_profile(
             casepath, datum='demand', year=year, weatheryears=selected_weatheryears,
-            color=color, label=casename, f=f, ax=ax, hourly=True, 
+            reg_sub=region, color=color, label=casename, f=f, ax=ax, hourly=True,
         )
     ax.margins(x=0)
     ax.grid(True, which='major', axis='y', alpha=0.3)
     
     ax.set_title(
-        f'Hourly demand in {yearlabel} for {wy_title_label} {selected_label} with min/max daily envelope',
+        f'Hourly demand in {region_title_label} in {yearlabel} for {wy_title_label} {selected_label} with min/max daily envelope',
         x=0,
         ha='left',
     )
@@ -792,6 +794,32 @@ if __name__ == '__main__':
             weatheryear=selected_weatheryears,
         )
         saveit(f'Demand hourly profile {selected_weatheryears}')
+    except Exception as e:
+        print(traceback.format_exc())
+    
+    try:
+        f, ax = plot_hourly_demand_profiles(
+            cases,
+            colors,
+            year=year,
+            weatheryear=selected_weatheryears,
+            region=['IL_MISO','IL_PJM'],
+            region_title_label='Illinois',
+        )
+        saveit(f'Demand hourly profile {selected_weatheryears} IL')
+    except Exception as e:
+        print(traceback.format_exc())
+    
+    try:
+        f, ax = plot_hourly_demand_profiles(
+            cases,
+            colors,
+            year=year,
+            weatheryear=selected_weatheryears,
+            region=['TX_ERCOT_E', 'TX_ERCOT_W', 'TX_MISO', 'TX_SPP'],
+            region_title_label='Texas',
+        )
+        saveit(f'Demand hourly profile {selected_weatheryears} TX')
     except Exception as e:
         print(traceback.format_exc())
     
