@@ -517,11 +517,6 @@ def main(reeds_path, inputs_case):
     #%% Assign existing and prescribed generator technology classes if it is not exist in resouces. 
     ### Collect all existing and prescribed generator technology classes - region combinations
     existing_exog_techs = pd.concat([
-        pd.read_csv(Path(inputs_case,f'exog_cap_{i}.csv'))
-        .rename(columns={'*tech':'i', 'region':'r'})
-        for i in ['upv', 'wind-ons', 'wind-ofs']
-    ])[['i','r']].drop_duplicates()
-    existing_exog_classes = pd.concat([
         pd.read_csv(Path(inputs_case,f'exog_{i}_rsc.csv'), dtype={'c': str})
         .rename(columns={'*tech':'i', 'region':'r'})
         for i in ['upv', 'wind_ons', 'wind_ofs']
@@ -533,8 +528,7 @@ def main(reeds_path, inputs_case):
     )
 
     # Check missing technology-class - region combinations in resources
-    check_missing_class_resource(existing_exog_techs, resources, keys=['i','r'])
-    check_missing_class_resource(existing_exog_classes, resources, keys=['i','c','r'])
+    check_missing_class_resource(existing_exog_techs, resources, keys=['i','c','r'])
     check_missing_class_resource(prescribed_rsc, resources, keys=['i','c','r'])
     
     #%% Check for errors
