@@ -388,7 +388,7 @@ def main(
     forceperiods_write['szn'] = (
         'y' + forceperiods_write.year.astype(str)
         + ('d' if sw.GSw_HourlyType=='year' else sw.GSw_HourlyType[0])
-        + forceperiods_write.yperiod.map('{:>03}'.format)
+        + forceperiods_write.yperiod.map('{:>03}'.format).astype(str)
     )
     forceperiods_write.drop_duplicates('szn', inplace=True)
 
@@ -513,7 +513,7 @@ def main(
     stressperiods_write['szn'] = (
         'y' + stressperiods_write.year.astype(str)
         + ('d' if sw.GSw_HourlyType=='year' else sw.GSw_HourlyType[0])
-        + stressperiods_write.yperiod.map('{:>03}'.format)
+        + stressperiods_write.yperiod.map('{:>03}'.format).astype(str)
     )
 
 

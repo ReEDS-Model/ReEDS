@@ -473,7 +473,7 @@ def main(reeds_path, inputs_case):
     csp_resources = (
         csp_resources
         .assign(i=csp_resources['tech'] + '_' + csp_resources['class'].astype(str))
-        .assign(resource=csp_resources['tech'] + '_' + csp_resources['resource'])
+        .assign(resource=csp_resources['tech'] + '_' + csp_resources['resource'].astype(str))
         .assign(ccreg=csp_resources.r.map(r2ccreg))
         [['i','r','resource','ccreg']]
     )    
