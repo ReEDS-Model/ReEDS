@@ -84,18 +84,11 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
     plt.close()
     f, ax = plt.subplots(figsize=(12, 4.5))
     x_start, x_end = None, None
-    # use plots.differentiate_lines instead
 
     for idx, (casename, casepath) in enumerate(cases.items()):
         print(f'  {casename}: loading demand...')
         color = colors.get(casename, f'C{idx}')
-
-        # Parse inputs
-        sw = reeds.io.get_switches(casepath)
         t = reeds.io.get_years(casepath)[-1] if year in [0, None, 'last'] else year
-        rs = reeds.inputs.parse_regions(casepath)
-
-        case_weatheryears = sw.resource_adequacy_years_list
 
         # Load demand profile
         dfprofile = (
@@ -103,7 +96,7 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
                 casepath, 
                 use_run=True,
                 agg_reg_lvl='all',
-                model_year_sub=[year], 
+                model_year_sub=[t], 
             )
             / 1e3
         )
@@ -216,6 +209,7 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
 
     plt.close()
     for idx, (casename, casepath) in enumerate(cases.items()):
+        t = reeds.io.get_years(casepath)[-1] if year in [0, None, 'last'] else year
         color = colors.get(casename, f'C{idx}')
         
         dfprofile = (
@@ -223,7 +217,7 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
                 casepath, 
                 use_run=True,
                 agg_reg_lvl='all',
-                model_year_sub=[year], 
+                model_year_sub=[t], 
                 weather_year_sub=selected_weatheryears,
             )
             / 1e3
@@ -271,14 +265,12 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
 
         sw = reeds.io.get_switches(casepath)
         modelyears = reeds.io.get_years(casepath)
-        rs = reeds.inputs.parse_regions(casepath)
         case_weatheryears = sw.resource_adequacy_years_list
 
         dfprofile = (
             reeds.results.summarize_load_data(
                 casepath, 
                 use_run=True, 
-                reg_sub=rs,
             )
             / 1e3
         )
@@ -417,7 +409,6 @@ def plot_regional_peak_demand_maps(cases, year='last'):
     for casename, casepath in cases.items():
         print(f'  {casename}: loading state-level peak demand...')
         sw = reeds.io.get_switches(casepath)
-        rs = reeds.inputs.parse_regions(casepath)
         case_weatheryears = sw.resource_adequacy_years_list
         region_to_state = reeds.io.get_hierarchy(casepath)['st']
 
@@ -425,7 +416,6 @@ def plot_regional_peak_demand_maps(cases, year='last'):
             reeds.results.summarize_load_data(
                 casepath, 
                 use_run=True, 
-                reg_sub=rs,
                 model_year_sub=[t], 
             )
             / 1e3
@@ -564,7 +554,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
     for casename, casepath in cases.items():
         print(f'  {casename}: loading state-level total demand...')
         sw = reeds.io.get_switches(casepath)
-        rs = reeds.inputs.parse_regions(casepath)
         case_weatheryears = sw.resource_adequacy_years_list
         region_to_state = reeds.io.get_hierarchy(casepath)['st']
 
@@ -572,7 +561,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
             reeds.results.summarize_load_data(
                 casepath, 
                 use_run=True, 
-                reg_sub=rs,
                 model_year_sub=[t], 
                 weather_year_sub=selected_weatheryears,
             )
