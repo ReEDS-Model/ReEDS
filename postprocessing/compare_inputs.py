@@ -101,16 +101,15 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
         dfprofile = (
             reeds.results.summarize_load_data(
                 casepath, 
-                use_run=True, 
-                reg_sub=rs,
+                use_run=True,
+                agg_reg_lvl='all',
                 model_year_sub=[year], 
-                weather_year_sub=[weatheryear]
             )
             / 1e3
         )
 
         # Slice to weather years range
-        dfprofile.index = pd.to_datetime(dfprofile.index)
+        dfprofile.index = pd.to_datetime(dfprofile.index.get_level_values('datetime'))
         
         # Group by day of year (1-365/366) across all weather years
         doy = dfprofile.index.dayofyear
@@ -259,7 +258,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
         1, 2, figsize=(12, 4.5), constrained_layout=True
     )
     stats_by_case = {}
-    # replace most of this with reeds.results.summarize_load_data?
     for idx, (casename, casepath) in enumerate(cases.items()):
         print(f'  {casename}: loading annual and peak stats by model year...')
         color = colors.get(casename, f'C{idx}')
@@ -274,7 +272,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
                 casepath, 
                 use_run=True, 
                 reg_sub=rs,
-                weather_year_sub=selected_weatheryears,
             )
             / 1e3
         )
@@ -574,7 +571,7 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
             )
             / 1e3
         )
-        dfprofile.index = pd.to_datetime(dfprofile.index)
+        dfprofile.index = pd.to_datetime(dfprofile.index.get_level_values('datetime'))
         dfprofile = dfprofile.loc[
             str(min(case_weatheryears)) : str(max(case_weatheryears))
         ]
