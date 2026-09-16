@@ -248,6 +248,10 @@ def get_trancap_fut(case):
     for i, row in trancap_fut.iterrows():
         if row.t not in years.values:
             newyear = years.loc[years > row.t].min()
+            ## Additions after the last modeled year have no year to move to,
+            ## so leave them as-is (they're outside the model horizon and are ignored by GAMS)
+            if pd.isnull(newyear):
+                continue
             trancap_fut.loc[i,'t'] = newyear
             print(f'trancap_fut: Moved {row.values} to {newyear}')
 
