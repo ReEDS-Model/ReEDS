@@ -19,6 +19,9 @@ from postprocessing import input_plots
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 reeds.plots.plotparams()
 
+cmap = cmocean.cm.tempo
+cmap_diff = plt.cm.RdBu_r
+
 #%% Plotting
 
 def _parse_weatheryears(weatheryear):
@@ -432,8 +435,8 @@ def plot_regional_peak_demand_maps(cases, year='last'):
         peak_st[casename] = df_t_st.max()
 
     ncols = len(cases)
-    cmap_abs = cmocean.cm.tempo
-    cmap_diff = plt.cm.RdBu_r
+    cmap_abs = cmap
+    cmap_diff = cmap_diff
 
     plt.close()
     f, ax = plt.subplots(
@@ -583,8 +586,8 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
         total_st[casename] = wy_totals
 
     ncols = len(cases)
-    cmap_abs = cmocean.cm.tempo
-    cmap_diff = plt.cm.RdBu_r
+    cmap_abs = cmap
+    cmap_diff = cmap_diff
 
     plt.close()
     f, ax = plt.subplots(
