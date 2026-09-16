@@ -1211,11 +1211,11 @@ def pre_spur(dfs, **kw):
     if ('ignore_spur' in kw) and kw['ignore_spur']:
         return tran_mi_out
     ### Load the spur-line distance for each PV/wind investment category
-    spur_parameters = dfs['spur_parameters'].copy()
+    spur_parameters = dfs['spur_parameters'].astype({'c': str})
     ### Load the PV/wind investment, combine with spur-line distance
     cap_new_bin_out = (
-        dfs['cap_new_bin_out']
-        .groupby(['i','r','rscbin','year'], as_index=False).MW.sum()
+        dfs['cap_new_bin_out'].astype({'c': str})
+        .groupby(['i','c','r','rscbin','year'], as_index=False).MW.sum()
     )
     ### cap_new_bin_out is in MW_AC, but spur-line costs and distances are in MW_DC
     ### for use in ReEDS, so switch back to MW_DC
@@ -1229,7 +1229,7 @@ def pre_spur(dfs, **kw):
             | cap_new_bin_out.i.str.startswith('upv')
             | cap_new_bin_out.i.str.startswith('csp')
         ]
-        .merge(spur_parameters, on=['i','r','rscbin'], how='left')
+        .merge(spur_parameters, on=['i','c','r','rscbin'], how='left')
     )
     spur = (cap_new_bin_out[['year','MW','dist_spur_km']]
         .rename(columns={'dist_spur_km':'dist'})
