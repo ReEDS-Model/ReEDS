@@ -387,6 +387,8 @@ In addition, the `GSw_ReducedResource` switch allows for a uniform reduction of 
 `acss` applies the assumptions from the [MISO Transmission Cost Estimation Guide](https://www.misoenergy.org/planning/transmission-planning/mtep), using either ACSS or ACSR depending on voltage level;
 `acsr` uses ACSR for all voltage levels, reducing the power capacity of some representative lines and increasing the \$/MW cost.
 1. `GSw_TransCostMult`: Applies to interzonal transmission capacity (including AC/DC converters) but not FOM costs
+1. `GSw_TransCountyOverlay`: Add county-resolution transfer capacity and new county-county routes to the initial AC transmission network, read from `inputs/transmission/county_overlay/{value}.csv` (capacity) and `{value}_cost_distance.csv` (cost and distance for the new routes).
+Only supported for the zone sets listed under `county_overlay` in `inputs/zones/zoneset_config.yaml`.
 1. `GSw_TransSquigglinessMin`: Minimum squiggliness (straight-line length multiplier) to apply for interzonal transmission; the default value of 1.3 is from the [MISO Transmission Cost Estimation Guide](https://www.misoenergy.org/planning/transmission-planning/mtep).
 The cost and length of representative interzonal transmission routes that are straighter than `GSw_TransSquigglinessMin` are scaled up to match `GSw_TransSquigglinessMin`
 (i.e., if a representative route is 11 miles long and the straight-line distance between its endpoints is 10 miles, giving a squiggliness factor of 1.1, its cost and length are scaled up by 1.3 / 1.1 = 1.18).

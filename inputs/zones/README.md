@@ -98,3 +98,4 @@ If `GSw_ZoneSet` is listed beneath one of the following switch names, the descri
   (Turned off for most zone sets because we'd rather stop the run and add the missing data.
   Turned on for some zone sets with single-county zones that have no high-voltage transmission lines crossing the single-county zone boundaries.)
   - `reeds2pras_unitsize_unconstrain_counties`: Do not specify max unit sizes using the planning reserve margin (PRM) for single-county zones during ReEDS2PRAS unit disaggregation
+  - `county_overlay`: Allow `GSw_TransCountyOverlay` to add county-resolution transfer capacity and new county-county routes to the initial AC transmission network.

@@ -65,8 +65,8 @@ def _make_line(row):
     return shapely.LineString([[row.start_lon, row.start_lat], [row.end_lon, row.end_lat]])
 
 
-def get_countyhash2zone(case):
-    sw = reeds.io.get_switches(case)
+def get_countyhash2zone(case, **kwargs):
+    sw = reeds.io.get_switches(case, **kwargs)
     hashfunc = reeds.inputs.get_itl_config()['hashfunc']
     county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw.GSw_ZoneSet)
     countyhash2zone = pd.Series(
@@ -79,8 +79,8 @@ def get_countyhash2zone(case):
     return countyhash2zone
 
 
-def read_county_overlay(case, suffix=''):
-    sw = reeds.io.get_switches(case)
+def read_county_overlay(case, suffix='', **kwargs):
+    sw = reeds.io.get_switches(case, **kwargs)
     if sw.GSw_TransCountyOverlay == 'none':
         return None
 
@@ -111,7 +111,7 @@ def read_county_overlay(case, suffix=''):
 
     unresolved = dfout.loc[dfout[['r', 'rr']].isnull().any(axis=1)].copy()
     if len(unresolved):
-        countyhash2zone = get_countyhash2zone(case)
+        countyhash2zone = get_countyhash2zone(case, **kwargs)
         for zone, side in [('start_zone', 'start'), ('end_zone', 'end')]:
             unresolved[zone] = unresolved[side].map(countyhash2zone)
 
@@ -155,12 +155,12 @@ def read_county_overlay(case, suffix=''):
     return dfout
 
 
-def get_county_overlay_cost_distance(case):
-    dfout = read_county_overlay(case, suffix='_cost_distance')
+def get_county_overlay_cost_distance(case, **kwargs):
+    dfout = read_county_overlay(case, suffix='_cost_distance', **kwargs)
     if dfout is None:
         return None
 
-    sw = reeds.io.get_switches(case)
+    sw = reeds.io.get_switches(case, **kwargs)
     hashfunc = reeds.inputs.get_itl_config()['hashfunc']
     zone2latlon = pd.read_csv(
         Path(reeds.io.reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
@@ -263,7 +263,7 @@ def get_interface_params(case, **kwargs):
     scalars = reeds.io.get_scalars(case)
 
     interface_params = reeds.inputs.get_distances(case)
-    overlay_cost_distance = get_county_overlay_cost_distance(case)
+    overlay_cost_distance = get_county_overlay_cost_distance(case, **kwargs)
     if overlay_cost_distance is not None:
         interface_params = pd.concat(
             [interface_params, overlay_cost_distance], ignore_index=True,
@@ -337,7 +337,17 @@ def get_interface_params(case, **kwargs):
         Path(reeds.io.reeds_path, 'inputs', 'transmission', 'dollaryear.csv'), index_col=0,
     ).squeeze(1)
 
-    deflator = inflatable[input_dollar_year['transmission_cost_distance.csv'], int(sw.dollar_year)]
+    cost_files = ['transmission_cost_distance.csv']
+    if sw.GSw_TransCountyOverlay != 'none':
+        cost_files.append(f'{sw.GSw_TransCountyOverlay}_cost_distance.csv')
+    cost_dollar_years = set(input_dollar_year[f] for f in cost_files)
+    if len(cost_dollar_years) > 1:
+        raise ValueError(
+            f'{cost_files} have different dollar years ({sorted(cost_dollar_years)}) but a'
+            ' single deflator is applied to all of interface_params. Deflate each source'
+            ' file before concatenating them in get_interface_params.'
+        )
+    deflator = inflatable[input_dollar_year[cost_files[0]], int(sw.dollar_year)]
     interface_params[f'USD{sw.dollar_year}perMW'] = (
         interface_params['cost_MUSD'] * 1e6
         / interface_params['MW']
