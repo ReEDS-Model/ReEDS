@@ -1085,14 +1085,7 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     ## Subset to weather years used in ReEDS
     temperatures = temperatures.loc[temperatures.index.year.isin(weather_years)].copy()
     ### On leap years, drop Dec 31
-    leap_year = temperatures.iloc[:,:1].groupby(temperatures.index.year).count().squeeze(1) == 8784
-    for year in weather_years:
-        if leap_year[year]:
-            temperatures.drop(temperatures.loc[f'{year}-12-31'].index, inplace=True)
-    if len(temperatures) != len(weather_years) * 8760:
-        raise ValueError(
-            f'len(temperatures) = {len(temperatures)} but should be {len(weather_years) * 8760}'
-        )
+    temperatures = reeds.timeseries.truncate_leap_years(temperatures)
     ### Subset to states used in this run
     temperatures = temperatures[[c for c in temperatures if c in val_st]].copy()
 
@@ -1288,17 +1281,37 @@ def get_distpv_capacities(case=None, **kwargs):
 
     return distpv_cap
 
-def get_distpv_cf_hourly():
+def get_distpv_cf_hourly(case=None, tz='Etc/GMT+6', **kwargs):
     """
-    Get hourly county-level distpv capacity factors in CST.
+    Get hourly county-level distpv capacity factors in provided timezone (tz).
     """
+    sw = reeds.io.get_switches(case, **kwargs)
     h5path = os.path.join(
         reeds_path,
         'inputs',
         'profiles_cf',
         'cf_distpv_county.h5'
     )
-    return read_file(h5path)
+    df = read_file(h5path)
+
+    weather_years = sw.resource_adequacy_years_list
+    df_list = []
+    for year in weather_years:
+        df_sub = df.loc[df.index.year == year]
+        next_year = year + 1
+        if (
+            (next_year not in weather_years)
+            or reeds.timeseries.is_leap_year(year)
+        ):
+            df_sub = reeds.timeseries.repeat_last_day(df_sub)
+        df_list.append(df_sub)
+
+    # Combine and convert from UTC to 'tz'
+    df = pd.concat(df_list).tz_convert(tz)
+    df = df.loc[df.index.year.isin(weather_years)]
+    df = reeds.timeseries.truncate_leap_years(df)
+
+    return df
 
 def get_years(case):
     return pd.read_csv(

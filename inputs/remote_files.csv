@@ -1,5 +1,5 @@
 filename,inputs_path,url_base,record_id,md5
-cf_distpv_county.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18636038,39be391056bd6b04afcaeed237c2dcf2
+cf_distpv_county.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},DRAFT,7aabd6401d57538e939f898ea3aacd9a
 cf_upv_limited.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18826700,9b99c5ad9029f20ca4eb633956e3f443
 cf_upv_open.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18826700,c7eaede5ea27287a1bab64a2abc04998
 cf_upv_reference.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18826700,de7666fa824e146da45eebf168f6559b
@@ -25,6 +25,6 @@ demand_EFS_MEDIUM.h5,profiles_demand,https://zenodo.org/records/{record_id}/file
 demand_EFS_MEDIUMStretch2040.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18461543,f49939d02a08c3006f1d81dc3accbc7f
 demand_EFS_MEDIUMStretch2046.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18461543,81a22ed0b2fb5a49ec99e8f6f27974da
 demand_EFS_REFERENCE.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18461543,7b2055d43200744a16a8c4fed68b1a17
-demand_historic.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18462671,06ca6b65088a870afafc25191dcfd6f3
+demand_historic.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},DRAFT,95450a75e9f4ca6b8b6e44a76523f31e
 dr_shed_hourly_demo_data_January_2025.h5,profiles_dr,https://zenodo.org/records/{record_id}/files/{filename},18761062,f1f688e3a3167bffb7cc1e2486fdda32
-temperature_state.h5,profiles_temperature,https://zenodo.org/records/{record_id}/files/{filename},19390491,43f69d6216f209082417b558e74bd349
+temperature_state.h5,profiles_temperature,https://zenodo.org/records/{record_id}/files/{filename},DRAFT,1a0ee7d63606c9bea6528db6500ad3e3

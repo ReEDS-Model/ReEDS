@@ -204,15 +204,10 @@ def calculate_class_region_cf_hourly(
         # the next year and append to the end of the set of profiles.
         next_year = year + 1
         if next_year not in weather_years:
-            next_year_first_day_data = (
-                weather_year_class_region_cf_hourly.tail(24)
-            )
-            next_year_first_day_data.index += pd.Timedelta(days=1)
             weather_year_class_region_cf_hourly = (
-                pd.concat([
-                    weather_year_class_region_cf_hourly,
-                    next_year_first_day_data
-                ])
+                reeds.timeseries.repeat_last_day(
+                    weather_year_class_region_cf_hourly
+                )
             )
         # Append to list of yearly data
         df_list.append(weather_year_class_region_cf_hourly)
@@ -235,12 +230,13 @@ def calculate_class_region_cf_hourly(
 
 
 def calculate_regional_distpv_cf(inputs_case, cap_min=0.0001):
+    case = os.path.dirname(inputs_case)
     # Get county-to-region mapping
-    county2zone = reeds.io.get_county2zone(os.path.dirname(inputs_case))
+    county2zone = reeds.io.get_county2zone(case)
     county2zone.index = 'p' + county2zone.index
     # Read county-level distpv capacity factors and
     # downselect to relevant counties
-    county_distpv_cf = reeds.io.get_distpv_cf_hourly()
+    county_distpv_cf = reeds.io.get_distpv_cf_hourly(case)
     county_distpv_cf = county_distpv_cf[county2zone.index]
     # Read county- and model region-level distpv capacities to use
     # in capacity-weighted averages

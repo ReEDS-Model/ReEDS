@@ -525,3 +525,41 @@ def match_act2rep_bestfirst(
     out.index = out.index.tolist()
     out.index = out.index.rename('act')
     return out
+
+
+def is_leap_year(year):
+    if year % 4 != 0:
+        return False
+    elif year % 100 != 0:
+        return True
+    else:
+        return year % 400 == 0
+
+
+def repeat_last_day(dfin: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(dfin.index, pd.DatetimeIndex):
+        raise TypeError("'dfin' must be a DataFrame with a DatetimeIndex.")
+
+    next_year_first_day_data = dfin.tail(24)
+    next_year_first_day_data.index += pd.Timedelta(days=1)
+    dfout = pd.concat([dfin, next_year_first_day_data])
+
+    return dfout
+
+
+def truncate_leap_years(dfin: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(dfin.index, pd.DatetimeIndex):
+        raise TypeError("'df' must be a DataFrame with a DatetimeIndex.")
+
+    dfout = dfin.copy()
+    ### On leap years, drop Dec 31
+    years = dfout.index.year.unique()
+    for year in years:
+        if is_leap_year(year):
+            dfout.drop(dfout.loc[f'{year}-12-31'].index, inplace=True)
+    if len(dfout) != len(years) * 8760:
+        raise ValueError(
+            f'len(df) = {len(dfout)} but should be {len(years) * 8760}'
+        )
+
+    return dfout
