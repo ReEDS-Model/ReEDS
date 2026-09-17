@@ -100,6 +100,7 @@ def plot_profile(
     datum='demand',
     year=0,
     weatheryears=None,
+    reg_sub=None,
     color='k',
     hourly=False,
     f=None,
@@ -131,11 +132,18 @@ def plot_profile(
             os.path.join(case, 'inputs_case', 'load.h5'),
         ## Convert to GW
         ) / 1e3
-        dfprofile = (
-            dfprofile
-            .loc[t, [r for r in dfprofile if r in rs]]
-            .sum(axis=1)
-        )
+        if reg_sub is not None:
+            dfprofile = (
+                dfprofile
+                .loc[t, reg_sub]
+                .sum(axis=1)
+            )
+        else:
+            dfprofile = (
+                dfprofile
+                .loc[t, [r for r in dfprofile if r in rs]]
+                .sum(axis=1)
+            )
     elif datum in ['temperature']:
         ylabel = 'Temperature [°C]'
         ...
