@@ -5304,7 +5304,7 @@ def separate_charge_discharge(df):
 
 def check_metric(metric):
     allowed = (
-        r'(cap|rep_mean|stress_(mean|price_weighted|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
+        r'(cap|rep_mean|stress_(mean|weight_price|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
     )
     if not re.match(allowed, metric):
         raise ValueError(f"metric={metric} must match {allowed}")
@@ -5444,7 +5444,7 @@ def get_cap_rep_stress_mix(
                     .divide(gen_h_stress.groupby('t').h.unique().map(len), axis=0)
                 )
 
-            elif key == 'stress_price_weighted':
+            elif key == 'stress_weight_price':
                 ## Price-weighted average generation across all stress hours:
                 ## sum_h(gen*price) / sum_h(price)
                 price_long = price_stress.stack('r').rename('price').reset_index()
@@ -5531,7 +5531,7 @@ def stress_mix_label(case, metric):
         xlabel = f"Rep {metric.split('_')[1]} gen"
     elif metric == 'stress_mean':
         xlabel = 'Stress mean gen'
-    elif metric == 'stress_price_weighted':
+    elif metric == 'stress_weight_price':
         xlabel = 'Stress: price-weighted gen'
     elif ('top' in metric) or ('bottom' in metric):
         direction = ('top' if 'top' in metric else 'bottom')
@@ -5815,7 +5815,7 @@ def plot_stress_mix(
 def plot_stress_cf(
     case:str|Path,
     level='transreg',
-    metric='stress_price_weighted',
+    metric='stress_weight_price',
     include_rep=True,
     figwidth=1.2,
     figheight=1.2,
