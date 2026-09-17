@@ -924,6 +924,8 @@ Resource availability for deep EGS.
 The default geothermal resource assumptions allow for hydrothermal sites.
 Identified hydrothermal resources are based on the U.S. Geological Survey's 2008 geothermal resource assessment.
 The undiscovered portion of the hydrothermal resource is limited by a discovery rate defined as part of the GeoVision Study {cite}`doeGeoVisionHarnessingHeat2019`.
+Existing exogenous hydrothermal capacity is treated as already discovered; the discovery rate applies to the remaining resource available for new investment.
+Prescribed builds retain this discovery treatment, with first-bin resource added only as needed to keep the prescriptions feasible.
 The geothermal supply curves are based on the analysis described by {cite}`augustineGeoVisionAnalysisSupporting2019`.
 The hydrothermal and near-field EGS resource potential is derived from the U.S. Geological Survey's 2008 geothermal resource assessment {cite}`williamsReviewMethodsApplied2008a`, whereas the deep EGS resource potential is based on an update of the EGS potential from the Massachusetts Institute of Technology {cite}`testerFutureGeothermalEnergy2006`.
 As with other technologies, geothermal cost and performance projections are from the ATB {cite}`nrel2024AnnualTechnology2024`.
