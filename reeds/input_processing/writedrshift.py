@@ -61,22 +61,6 @@ if __name__ == "__main__":
     sw = reeds.io.get_switches(inputs_case)
     val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).tolist()
 
-    ### Create empty EVMC data files if GSw_EVMC == 0:
-    evmc_files = [
-        "evmc_shape_profile_decrease",
-        "evmc_shape_profile_increase",
-        "evmc_storage_profile_decrease",
-        "evmc_storage_profile_increase",
-        "evmc_storage_energy",
-    ]
-    for file in evmc_files:
-        if int(sw["GSw_EVMC"]):
-            pass
-        else:
-            # Overwrite empty dataframes created in copy_files.py
-            df = pd.DataFrame(columns=["i", "hour", "year"] + val_r)
-            df.to_csv(os.path.join(inputs_case, file + ".csv"), index=False)
-
     reeds.log.toc(tic=tic, year=0, process='input_processing/writedrshift.py', 
         path=os.path.join(inputs_case,'..'))
     print('Finished writedrshift.py')  

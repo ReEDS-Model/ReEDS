@@ -14,7 +14,7 @@ Equation
 * note these are not restricited to positive domain
 Variable    Z        "--$-- total cost of operations and investment, scale varies based on cost_scale"
             Z_op(t)  "--$-- total cost of operations",
-            Z_inv(t)  "--$-- total cost of operations"
+            Z_inv(t)  "--$-- total cost of investment"
 ;
 
 * objective function is the sum over modeled years of the investment

@@ -650,6 +650,13 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * less load from hydrogen production
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
+* Calculate 'generation' from DR shape resource
+gen_h(i,r,h,t)$[tmodel_new(t)$dr_shape(i)] =
+* minus dr_shape_load loads
+ - sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_load(i,r,h,t) * CAP.l(i,v,r,t)}
+* plus dr_shape_gen loads
+ + sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_gen(i,r,h,t) * CAP.l(i,v,r,t)}
+;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR.
@@ -663,6 +670,7 @@ gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
 gen_h("upv_5",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)$(gen_h("upv_5",r,h,t) < 0)] = 0 ;
 gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 
+
 * Do it again for stress periods
 gen_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   sum{v$valgen(i,v,r,t), GEN.l(i,v,r,allh,t)
@@ -672,6 +680,15 @@ gen_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)],
         PRODUCE.l(p,i,v,r,allh,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
+
+* Calculate stress period 'generation' from DR shape resource
+gen_h_stress(i,r,allh,t)$[tmodel_new(t)$dr_shape(i)$h_stress_t(allh,t)] =
+* minus dr_shape_load loads
+ - sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_load(i,r,allh,t) * CAP.l(i,v,r,t)}
+* plus dr_shape_gen loads
+ + sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_gen(i,r,allh,t) * CAP.l(i,v,r,t)}
+;
+
 gen_h_stress_nat(i,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = sum{r, gen_h_stress(i,r,allh,t) } ;
 
 gen_ann(i,r,t)$tmodel_new(t) = sum{h, gen_h(i,r,h,t) * hours(h) } ;
@@ -935,6 +952,10 @@ cap_sdbin_out(i,r,ccseason,sdbin,t)$valcap_irt(i,r,t) = sum{v, CAP_SDBIN.l(i,v,r
 * energy capacity of storage
 stor_energy_cap(i,v,r,t)$[tmodel_new(t)$valcap(i,v,r,t)] =
         storage_duration_m(i,v,r) * CAP.l(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$[battery(i) or storage_hybrid(i)$(not csp(i))]) ;
+
+* stor_level_cap; energy capacity of DR shift, which has time-varying energy capacity
+stor_energy_cap_DR_shift(i,v,r,h,t)$[valgen(i,v,r,t)$dr_shift(i)] = 
+    dr_shift_energy_hours(i,r,h,t) * CAP.l(i,v,r,t) * (bcr(i)) ;
 
 * add PSH energy capacity to cap_energy_ivrt
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$psh(i)] = CAP.l(i,v,r,t) * storage_duration_m(i,v,r) ;
