@@ -1082,7 +1082,11 @@ def get_trans_cap_delta_hourly(
     )
     ## Add one more year to the end of desired weather
     ## years to allow for timezone conversion
-    read_years = range(min(weather_years), max(weather_years)+1)
+    read_years = list(range(min(weather_years), max(weather_years)+1))
+    if 2014 in read_years:
+        read_years.remove(2014)
+    if 2015 in read_years:
+        read_years.remove(2015)
     ### Load deltas
     _deltas = []
     with h5py.File(h5path, 'r') as f:
