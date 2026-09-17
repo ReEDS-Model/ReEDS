@@ -745,8 +745,7 @@ if __name__== '__main__':
         print(f"\nSetting up hourlize calls to {args.mode}.py")
         if args.mode == "load":
             setup_load(args)
-        elif args.mode == "resource":
-            setup_resource(args)
         else:
-            print("Unsupported method for hourlize")
+            setup_resource(args)
+        
         print(f"Hourlize setup for {args.mode}.py complete\n")
