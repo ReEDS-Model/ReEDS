@@ -5899,13 +5899,7 @@ def plot_stress_cf(
                     )
             _ax.set_xlabel(None)
     ## Formatting
-    finite_vals = np.concatenate([
-        capcredit.values[np.isfinite(capcredit.values)],
-        repfraction.values[np.isfinite(repfraction.values)],
-    ])
-    datamax = finite_vals.max() if finite_vals.size else 0
-    ymax = datamax * 1.02 if datamax > 100 else 100
-    _ax.set_ylim(0, ymax)
+    _ax.set_ylim(0, max(100, _ax.get_ylim()[1]))
     _ax.set_xlim(yearmin, yearmax)
     _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
     _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
