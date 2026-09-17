@@ -3,6 +3,7 @@
 #%% Imports
 import os
 import sys
+from adjustText import adjust_text
 import shapely
 import datetime
 import numpy as np
@@ -230,6 +231,7 @@ for level in dfmap:
         dfcounty.plot(ax=ax, facecolor='none', edgecolor='C7', lw=0.02, zorder=1e6)
     if draw_lakes:
         greatlakes.plot(ax=ax, edgecolor='#2CA8E7', facecolor='#D3EFFA', lw=0.2, zorder=-1)
+    text_artists = []
     for r, row in dfregion.iterrows():
         dfregion.loc[[r]].plot(ax=ax, color=colors[r], alpha=alpha_region, lw=0, zorder=1)
         if label_regions.get(level, True):
@@ -237,32 +239,53 @@ for level in dfmap:
                 np.array([row.geometry.centroid.x, row.geometry.centroid.y])
                 + np.array(offset.get(level, {}).get(r, (0,0)))
             )
-            for i, (c, a) in enumerate([('k',1), (colors[r], 0.6)]):
-                if i == 1 and level != 'r':
-                    continue
-                ax.annotate(
-                    (r if level == 'r' else r.replace('_','\n')),
-                    (x, y),
-                    ha='center', va='center', weight='bold',
-                    size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
-                    color=c, zorder=1e11+i, alpha=a,
-                    path_effects=(
-                        [pe.withStroke(linewidth=1.5, foreground='w', alpha=(1 if i == 0 else 0))]
+            if level == 'r':
+                # adds region-colored label for r
+                text_artists.append(
+                    ax.annotate(
+                        r,
+                        (x, y),
+                        ha='center', va='center', weight='bold',
+                        size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
+                        color=colors[r], zorder=1e11, alpha=1,
+                        path_effects=(
+                        [pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
                     ),
+                    )
                 )
+            else:
+                # adds black label for other levels
+                text_artists.append(
+                    ax.annotate(
+                        (r if level == 'r' else r.replace('_','\n')),
+                        (x, y),
+                        ha='center', va='center', weight='bold',
+                        size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
+                        color='k', zorder=1e11, alpha=1,
+                        path_effects=(
+                            [pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
+                        ),
+                    )
+                )
+    adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
+
+    text_artists = []
     if label_zones.get(level, True):
         for r, row in dfmap['r'].iterrows():
             x, y = (
                 np.array([row.geometry.centroid.x, row.geometry.centroid.y])
                 + np.array(offset.get('r', {}).get(r, (0,0)))
             )
-            ax.annotate(
-                r,
-                (x, y),
-                ha='center', va='center', size=6, weight='normal',
-                color='C7', zorder=1e10,
-                path_effects=[pe.withStroke(linewidth=0.7, foreground='w', alpha=1)]
+            text_artists.append(
+                ax.annotate(
+                    r,
+                    (x, y),
+                    ha='center', va='center', size=6, weight='normal',
+                    color='C7', zorder=1e10,
+                    path_effects=[pe.withStroke(linewidth=0.7, foreground='w', alpha=1)]
+                )
             )
+        adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
 
     ax.axis('off')
     savename = (
