@@ -1083,7 +1083,7 @@ def map_supplycurves(
         'capacity': {
             'label':'Capacity [MW]',
             'vmax':{
-                'upv':5000., 'wind-ons':400., 'wind-ofs':530.,
+                'upv':5000., 'wind-ons':342., 'wind-ofs':530.,
                 'geohydro':700., 'egs':2000., 'csp':4900.,
             }.get(tech, vmax_default),
             'background':False,
