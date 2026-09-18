@@ -1205,6 +1205,8 @@ def write_miscellaneous_files(
         i for i in queue_limit.set_index(['r','tg']).columns
         if int(i) <= scalars.this_year + int(sw.GSw_QueueConstraintYears)
     ]
+    if len(keepyears):
+        print(f"Applying interconnection queue cap in {','.join(keepyears)}")
     queue_limit = queue_limit[['r','tg']+keepyears].copy()
     # Map counties to zones
     queue_limit['r'] = queue_limit['r'].map(county2zone)
