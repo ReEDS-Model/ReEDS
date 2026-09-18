@@ -777,11 +777,11 @@ if not int(sw.GSw_PRM_CapCredit):
             'cap',
             'rep_mean',
             'stress_mean',
-            'stress_top5_load',
-            'stress_top5_netload',
-            'stress_bottom5_vregen',
-            'stress_max_load',
-            'stress_max_price',
+            'stress_top10_load',
+            'stress_top10_netload',
+            'stress_bottom10_vregen',
+            'stress_top10_price',
+            'stress_weight_price',
         ]
         for units in ['percent', 'GW']:
             plt.close()
@@ -827,6 +827,7 @@ if not int(sw.GSw_PRM_CapCredit):
         'stress_top10_netload',
         'stress_top10_load',
         'stress_bottom10_vregen',
+        'stress_weight_price',
     ]:
         savename = f"plot_stress_cf-{level}-{metric}.png"
         try:
