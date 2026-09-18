@@ -5399,7 +5399,7 @@ def get_cap_rep_stress_mix(
         & (reqt_price.t.isin(years))
     ].rename(columns={'*.2':'h'}).copy()
     price_stress.r = price_stress.r.map(r2agg)
-    price_stress = price_stress.groupby(['t','r','h']).Value.max().unstack('r')
+    price_stress = price_stress.groupby(['t','r','h']).Value.max()
 
     ### VRE generation hours
     vregen_stress = (
@@ -5446,19 +5446,25 @@ def get_cap_rep_stress_mix(
 
             elif key == 'stress_weight_price':
                 ## Price-weighted average generation across all stress hours:
-                ## sum_h(gen*price) / sum_h(price)
-                price_long = price_stress.stack('r').rename('price').reset_index()
+                ## sum_h(gen*price*hours) / sum_h(price*hours)
+                from reeds.core.terminus import report_calcs
+                hours_t = (
+                    report_calcs.get_gams_results(case, 'hours_t')['hours_t'].reset_index()
+                    .astype({'t':int}).rename(columns={'allh':'h', 'Value':'hours'})
+                )
+                price_long = price_stress.rename('price').reset_index().merge(
+                    hours_t, on=['t','h'], how='left')
+                price_long['price'] *= price_long.hours
                 price_sum = price_long.groupby(['t','r'], as_index=False).price.sum()
-                gen_price = gen_h_stress.merge(price_long, on=['t','r','h'], how='left')
+                gen_price = gen_h_stress.merge(
+                    price_long[['t','r','h','price']], on=['t','r','h'], how='left')
                 gen_price['price'] = gen_price['price'].fillna(0)
                 gen_price['gen_x_price'] = gen_price.MW * gen_price.price
                 numer = gen_price.groupby(['t','i','r'], as_index=False).gen_x_price.sum()
                 df = numer.merge(price_sum, on=['t','r'], how='left')
                 df['MW'] = df.gen_x_price / df.price
                 df = df.set_index(['t','i','r']).MW.unstack('r')
-                ## Guard against exact-cancellation division by zero (positive/negative hourly
-                ## prices summing to ~0 while gen_x_price is nonzero); NaN (0/0) is also possible
-                ## and both should collapse to 0
+                ## A region-year with no binding PRM has a zero price sum, giving inf or NaN
                 df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
 
             ## Generation during regional max hours
@@ -5470,7 +5476,7 @@ def get_cap_rep_stress_mix(
                 elif key.split('_')[-1] == 'gen':
                     dfindex = gen_h_stress.groupby(['t','r','h']).MW.sum()
                 elif key.split('_')[-1] == 'price':
-                    dfindex = price_stress.stack('r').reorder_levels(['t','r','h'])
+                    dfindex = price_stress
                 elif key.split('_')[-1] == 'vregen':
                     dfindex = vregen_stress.stack('r').reorder_levels(['t','r','h'])
                 elif key.split('_')[-1] == 'netload':
