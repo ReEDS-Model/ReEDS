@@ -331,7 +331,8 @@ def main(
         }
     )
     cost_components_upv["c"] = cost_components_upv["c"].astype(str)
-    cost_components_upv["*i"] = "upv_" + cost_components_upv["c"]
+    cost_components_upv["*i"] = reeds.techs.get_tech_class_name(
+        pd.Series("upv", index=cost_components_upv.index), cost_components_upv["c"], collapsed)
     cost_components_upv["rscbin"] = "bin" + cost_components_upv["rscbin"].astype(str)
     cost_components_upv = pd.melt(
         cost_components_upv,
@@ -351,7 +352,9 @@ def main(
     upv["bin"] = "upvsc" + upv["bin"].astype(str)
 
     spurout_list.append(
-        upv.assign(i="upv_" + upv["class"].astype(str).str.strip("class"))
+        upv.assign(i=reeds.techs.get_tech_class_name(
+            pd.Series("upv", index=upv.index),
+            upv["class"].astype(str).str.strip("class"), collapsed))
         .assign(c=upv["class"].astype(str).str.strip("class"))
         .assign(rscbin="bin" + upv["bin"].str.strip("upvsc"))
         .rename(columns={"region": "r"})
@@ -996,7 +999,8 @@ def main(
     ###### Site maps
     ### UPV
     sitemap_upv = (
-        upvin.assign(i="upv_" + upvin["class"].astype(str))
+        upvin.assign(i=reeds.techs.get_tech_class_name(
+            pd.Series("upv", index=upvin.index), upvin["class"], collapsed))
         .assign(c=upvin["class"].astype(str))
         .assign(rscbin="bin" + upvin["bin"].astype(str))
         .assign(x="i" + upvin["sc_point_gid"].astype(str))
