@@ -11,8 +11,7 @@ pvb1_1,p
 pvb1_2,p
 wind-ofs_1,s
 wind-ofs_2,s
-wind-ons_1,s
-wind-ons_2,s
+wind-ons,s
 csp1_1,s
 csp1_2,s
 csp2_1,s

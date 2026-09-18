@@ -29,6 +29,7 @@ if(Sw_NewValCapShrink = 1,
     valgen(i,v,r,t)$valcap_remove(i,v,r,t,"%cur_year%") = no ;
     valgen_h2ptc(i,v,r,t)$valcap_remove(i,v,r,t,"%cur_year%") = no;
     valinv(i,v,r,t)$valcap_remove(i,v,r,t,"%cur_year%") = no ;
+    valinv_class(i,c,v,r,t)$valcap_remove(i,v,r,t,"%cur_year%") = no ;
     inv_cond(i,v,r,t,"%cur_year%")$valcap_remove(i,v,r,t,"%cur_year%") = no ;
     valcap_irt(i,r,t) = sum{v, valcap(i,v,r,t) } ;
     valcap_iv(i,v)$sum{(r,t)$tmodel_new(t), valcap(i,v,r,t) } = yes ;

@@ -47,7 +47,7 @@ pvb1_1 * pvb1_10,1
 pvb2_1 * pvb2_10,1
 pvb3_1 * pvb3_10,1
 wind-ofs_1*wind-ofs_10,1
-wind-ons_1*wind-ons_10,1
+wind-ons,1
 csp1_1*csp1_12,5
 csp2_1*csp2_12,5
 csp3_1*csp3_12,5

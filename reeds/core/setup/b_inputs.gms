@@ -513,12 +513,10 @@ if(Sw_OfsWind = 0,
   ban(i)$i_subsets(i,'ofswind') = yes ;
 ) ;
 
+set bannew_class(i,c) "resource classes banned from creating new capacity, except where the class has prescribed capacity" ;
+
 if(Sw_OnsWind6to10 = 0,
-  bannew('wind-ons_6') = yes ;
-  bannew('wind-ons_7') = yes ;
-  bannew('wind-ons_8') = yes ;
-  bannew('wind-ons_9') = yes ;
-  bannew('wind-ons_10') = yes ;
+  bannew_class('wind-ons',c)$[i_c('wind-ons',c)$(c.val >= 6)] = yes ;
 ) ;
 
 if(Sw_DRShed = 0,
@@ -614,11 +612,14 @@ parameter resourceclassnum(c) "numeric value for resource class" ;
 resourceclassnum(c) = c.val ;
 
 * i_c(i,c) is loaded with only the default techs populated; it is expanded
-* here so every i maps to exactly one c
+* here so every i maps to at least one c
 * Broadcast class to  water-cooled variants
 i_c(i,c)$[(not sum{cc, i_c(i,cc)})$sum{ii$ctt_i_ii(i,ii), i_c(ii,c)}] = yes ;
 * Any technology without a class is assigned to class '0'
 i_c(i,'0')$[not sum{cc, i_c(i,cc)}] = yes ;
+
+set i_multiclass(i) "technologies that hold several resource classes under one name" ;
+i_multiclass(i)$[sum{c$i_c(i,c), 1 } > 1] = yes ;
 
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
@@ -1728,6 +1729,7 @@ set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for
     valgen_irt(i,r,t)          "i, r, and t combinations that are allowed for generation",
     valinv(i,v,r,t)            "i, v, r, and t combinations that are allowed for investments",
     valinv_init(i,v,r,t)       "Initialized i, v, r, and t combinations that are allowed for investments, while valinv can change",
+    valinv_class(i,c,v,r,t)    "i, c, v, r, and t combinations that are allowed for investments",
     valinv_irt(i,r,t)          "i, r, and t combinations that are allowed for investments",
     valinv_tg(st,tg,t)         "valid technology groups for investments"
     valgen(i,v,r,t)            "i, v, r, and t combinations that are allowed for generation",
@@ -1829,6 +1831,10 @@ prescription_check(i,newv,r,t)$[sum{c, prescribed_build(i,c,newv,r,t) }
 *Resource will be manualy added to supply curve in bin1 in these cases.
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
 m_rscfeas(r,i,c,"bin1")$[i_c(i,c)$sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,c,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,c,r,"cap",rscbin) }=0)] = yes ;
+
+* Remove the supply curve of banned classes in regions where the class has no prescribed capacity,
+* so banned classes do not make new vintages valid (reapplied when m_rscfeas is rebuilt below)
+m_rscfeas(r,i,c,rscbin)$[bannew_class(i,c)$(not sum{(v,t), prescribed_build(i,c,v,r,t) })] = no ;
 
 *==========================================================
 *--- Interconnection queues (Capacity deployment limit) ---
@@ -4948,11 +4954,25 @@ valinv(i,v,r,t)$[not valcap(i,v,r,t)] = no ;
 * Valid capacity by resource class
 valcap_class(i,c,v,r,t)$[i_c(i,c)$valcap(i,v,r,t)] = yes ;
 * For technologies with several classes, a class needs existing capacity (init vintages),
-* supply curve (new vintages), or prescribed capacity
-valcap_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(sum{cc$i_c(i,cc), 1 } > 1)
+* supply curve (new vintages that can be built in or after firstyear, unless the class is banned),
+* or prescribed capacity (before firstyear, prescribed by year t)
+valcap_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$i_multiclass(i)
                         $(not [m_capacity_exog(i,c,v,r,t)$initv(v)])
-                        $(not [sum{rscbin, m_rscfeas(r,i,c,rscbin) }$newv(v)])
-                        $(not sum{tt, prescribed_build(i,c,v,r,tt) })] = no ;
+                        $(not [sum{rscbin, m_rscfeas(r,i,c,rscbin) }$newv(v)$(lastyear_v(i,v) >= firstyear(i))
+                               $(not bannew_class(i,c))])
+                        $(not sum{tt$[(yeart(tt) <= yeart(t)) or (yeart(t) >= firstyear(i))],
+                                  prescribed_build(i,c,v,r,tt) })] = no ;
+
+* Valid investment by resource class
+valinv_class(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$valinv(i,v,r,t)] = yes ;
+* For technologies with several classes, investment before firstyear, in banned regions, or in
+* numeraire techs with water constraints is limited to classes with prescribed capacity in year t
+valinv_class(i,c,v,r,t)$[valinv_class(i,c,v,r,t)$cf_tech(i)$i_multiclass(i)
+                        $([(yeart(t) < firstyear(i))
+                           $(not [sum{st$r_st(r,st), offshore_cap_req(st,t) } and ofswind(i)])]
+                          or tech_banned(i,r)
+                          or [i_numeraire(i)$Sw_WaterMain$newv(v)])
+                        $(not prescribed_build(i,c,v,r,t))] = no ;
 
 scalar bio_transport_cost ;
 * biomass transport cost enter in $ per ton, convert to $ per MMBtu
@@ -5241,6 +5261,11 @@ m_rsc_con(r,i,c)$sum{rscbin, m_rsc_dat(r,i,c,rscbin,"cap") } = yes ;
 
 m_rscfeas(r,i,c,rscbin) = no ;
 m_rscfeas(r,i,c,rscbin)$m_rsc_dat(r,i,c,rscbin,"cap") = yes ;
+* Reapply the class ban to the rebuilt m_rscfeas; bins with existing capacity are kept
+* because existing CAP_RSC will need them
+m_rscfeas(r,i,c,rscbin)$[bannew_class(i,c)
+                        $(not sum{(v,t), prescribed_build(i,c,v,r,t) })
+                        $(not sum{(v,t), capacity_exog_rsc(i,c,v,r,rscbin,t) })] = no ;
 m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$tg_rsc_cspagg(ii,i),m_rscfeas(r,ii,c,rscbin) }
                       $sum{t$tmodel_new(t), valcap_irt(i,r,t) }] = yes ;
 m_rscfeas(r,i,c,rscbin)$[i_c(i,c)$sum{ii$rsc_agg(ii,i),m_rscfeas(r,ii,c,rscbin) }$sum{t$tmodel_new(t),valcap_irt(i,r,t) }$psh(i)$Sw_WaterMain] = yes ;

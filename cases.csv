@@ -251,7 +251,7 @@ GSw_OffshoreBackflow,Power can flow from land zones to offshore zones (allowing 
 GSw_OffshoreZones,Add new model zones for offshore resources,0; 1,0,
 GSw_OfsWind,Turn on/off offshore wind,0; 1,1,
 GSw_OfsWindForceScen,Scenario for state offshore mandates. Select {suffix} from state_policies/offshore_req_{suffix}.csv. Only active if GSw_StateRPS is on,N/A,default,
-GSw_OnsWind6to10,Turn on/off onshore wind 6-10,0; 1,1,
+GSw_OnsWind6to10,Turn on/off new builds of onshore wind resource classes 6-10 (classes with prescribed capacity in a region can still be built there),0; 1,1,
 GSw_OpRes,Turn on/off operating reserve constraints (0/1) or use simplified version (2),0; 1; 2,2,
 GSw_OpResCost,"Case used to select values used for the cost of operating reserves (e.g. default, market)",default; market,default,
 GSw_OpResPeriods,Indicate which periods the operating reserve constraint should apply within (representative = clustered; stress/peakload/minre refer to peak load & min-RE periods) (has no effect for GSw_HourlyType=year),representative; all; stress; peakload; minre; peak; vre,peakload,

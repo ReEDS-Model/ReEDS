@@ -797,6 +797,8 @@ curt_h(r,h,t)$tmodel_new(t) =
     - sum{(ortype,i,v)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)$vre(i)],
           OPRES.l(ortype,i,v,r,h,t) }
 ;
+* Zero out floating point noise to make the output more useful
+curt_h(r,h,t)$[abs(curt_h(r,h,t)) < 1e-6] = 0 ;
 
 curt_ann(r,t)$tmodel_new(t) = sum{h, curt_h(r,h,t) * hours(h) } ;
 
@@ -1901,9 +1903,9 @@ expenditure_flow_int(r,t)$tmodel_new(t) =
 *=========================
 * Reduced Cost
 *=========================
-reduced_cost(i,c,v,r,t,"nobin","CAP")$[i_c(i,c)$valinv_init(i,v,r,t)] = CAP.m(i,v,r,t) / (1000 * cost_scale * pvf_capital(t)) ;
-reduced_cost(i,c,v,r,t,"nobin","INV")$[i_c(i,c)$valinv_init(i,v,r,t)] = INV.m(i,v,r,t) / (1000 * cost_scale * pvf_capital(t)) ;
-reduced_cost(i,c,v,r,t,rscbin,"INV_RSC")$[i_c(i,c)$rsc_i(i)$valinv_init(i,v,r,t)$m_rscfeas(r,i,c,rscbin)] =
+reduced_cost(i,c,v,r,t,"nobin","CAP")$[valcap_class(i,c,v,r,t)$valinv_init(i,v,r,t)] = CAP.m(i,v,r,t) / (1000 * cost_scale * pvf_capital(t)) ;
+reduced_cost(i,c,v,r,t,"nobin","INV")$[valcap_class(i,c,v,r,t)$valinv_init(i,v,r,t)] = INV.m(i,v,r,t) / (1000 * cost_scale * pvf_capital(t)) ;
+reduced_cost(i,c,v,r,t,rscbin,"INV_RSC")$[valcap_class(i,c,v,r,t)$rsc_i(i)$valinv_init(i,v,r,t)$m_rscfeas(r,i,c,rscbin)] =
     INV_RSC.m(i,c,v,r,rscbin,t) / (1000 * cost_scale * pvf_capital(t)) ;
 
 *=========================

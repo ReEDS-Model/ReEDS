@@ -54,7 +54,7 @@ class Conventions:
     tech_map1 = {
         **{f'upv_{i}':'PV' for i in range(20)},
         **{f'dupv_{i}':'PV' for i in range(20)},
-        **{f'wind-ons_{i}':'Wind' for i in range(20)},
+        'wind-ons': 'Wind',
         **{f'wind-ofs_{i}':'Wind' for i in range(20)},
         **dict(zip(['nuclear','nuclear-smr', 'smr'], ['Nuclear']*20)),
         **dict(zip(
@@ -89,7 +89,7 @@ class Conventions:
     tech_map2 = {
         **{f'upv_{i}': 'PV' for i in range(20)},
         **{f'dupv_{i}': 'PV' for i in range(20)},
-        **{f'wind-ons_{i}': 'Wind' for i in range(20)},
+        'wind-ons': 'Wind',
         **{f'wind-ofs_{i}': 'Offshore Wind' for i in range(20)},
         'nuclear': 'Nuclear',
         **dict(zip(['nuclear-smr', 'smr'], ['Nuclear-SMR']*20)),
