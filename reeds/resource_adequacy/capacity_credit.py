@@ -434,16 +434,6 @@ def reeds_cc(t, tnext, casedir):
         .reindex(['i','r','ccseason','t','value'], axis=1)
     )
 
-    if int(sw['GSw_EVMC']):
-        cc_evmc = (
-            pd.concat(dict_cc_evmc, axis=0)
-            .reset_index().drop(['level_2', 'level_0'], axis=1)
-            .rename(columns={'level_1':'ccseason'})
-            .assign(t=str(tnext))
-            .reindex(['i','r','ccseason','t','value'], axis=1)
-            )
-    else:
-        cc_evmc = pd.DataFrame(columns=['i', 'r', 'ccseason', 't', 'value'])
 
     # ---------------- RETURN A DICTIONARY WITH THE OUTPUTS FOR REEDS --------
 
