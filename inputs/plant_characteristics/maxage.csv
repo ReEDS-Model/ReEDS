@@ -29,10 +29,10 @@ CofireNew,70
 CofireOld,70
 wind-ofs_1*wind-ofs_10,30
 wind-ons,30
-upv_1*upv_10,30
-pvb1_1*pvb1_10,30
-pvb2_1*pvb2_10,30
-pvb3_1*pvb3_10,30
+upv,30
+pvb1,30
+pvb2,30
+pvb3,30
 H2-CC,55
 biopower,45
 beccs_mod,45
