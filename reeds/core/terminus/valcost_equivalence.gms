@@ -74,14 +74,27 @@ $setglobal ds /
 $endif.unix
 $if not set fname $setglobal fname ref
 
-* Techs to evaluate. Every rsc tech is fine, but start narrow: the rest of the
-* identity (curtailment, opres) is written for VRE.
+* Techs to evaluate. VRE, plus the thermal techs whose fuel is a fixed price
+* (the generic fuel term in d_objective.gms): coal and nuclear. Gas is not here
+* because with GSw_GasCurve its fuel cost runs through a supply curve and its
+* own variables, and CCS techs would need the CO2 storage and 45Q terms.
 set vc_tech(i) "techs given the equivalence check" ;
-vc_tech(i)$[wind(i) or pv(i)] = yes ;
+vc_tech(i)$[wind(i) or pv(i) or (coal(i) and not ccs(i)) or nuclear(i)] = yes ;
 
 * The new vintage of each (i,r,t): valinv(i,v,r,t) is exactly that.
 set vc_new(i,v,r,t) "new-vintage plants to check" ;
 vc_new(i,v,r,t)$[vc_tech(i)$valinv(i,v,r,t)$tmodel_new(t)$(INV.l(i,v,r,t) > 0)] = yes ;
+
+* A vintage can span several solve years (ivt.csv: nuclear's new7 is 2046-2050;
+* wind, PV and coal get a fresh vintage each year). CAP and GEN belong to the
+* whole vintage, INV to this year. The reduced-cost identities are per MW of
+* each variable, so every CAP-, GEN- and CAP_RSC-based stream is scaled by
+* INV/CAP to credit this year's investment its pro-rata share - the same
+* inv_cap_ratio that valnew in report.gms applies. Without it, the second and
+* later years of a multi-year vintage show value/cost well above 1 (nuclear
+* 2038: 1.4) because a whole vintage's revenue is set against one year's capex.
+parameter vc_ratio(i,v,r,t) "INV/CAP of the new vintage" ;
+vc_ratio(i,v,r,t)$[vc_new(i,v,r,t)$CAP.l(i,v,r,t)] = INV.l(i,v,r,t) / CAP.l(i,v,r,t) ;
 
 scalar vc_dual "dual scaling, 1/(cost_scale*pvf_onm), applied per year below" ;
 
@@ -91,15 +104,21 @@ set vc_stream "cost and value streams" /
   cost_fom          "fixed O&M on the new vintage's CAP"
   cost_transfom     "fixed O&M on supply-curve transmission, m_rsc_dat(cost_trans) * trans_fom_frac * CAP_RSC"
   cost_vom          "variable O&M on the new vintage's GEN"
+  cost_fuel         "fuel, hours * heat_rate * fuel_price * GEN (fixed-price fuels only)"
   cost_total        "sum of cost streams"
   val_load          "energy value at rep hours, GEN * marginal of eq_supply_demand_balance"
   val_resmarg       "reserve-margin value at stress hours, same equation"
   val_rsc           "resource rent, INV_RSC * marginal of eq_rsc_INVlim. NOT added to val_total: see residual"
+  val_csapr         "NOx-cap rent, h_weight_csapr*hours*emit_rate(NOX)*GEN * marginal of eq_CSAPR_Assurance. Also a rent: see residual"
+  val_prescribed    "prescription rent, INV * marginal of eq_forceprescription_power; negative when a mandated plant does not earn its cost. Rent side"
   val_curt          "curtailment-balance value, (m_cf*CAP - GEN) * marginal of eq_curt_gen_balance"
   val_opres         "operating-reserve requirement induced, -orperc*GEN * marginal of eq_OpRes_requirement"
+  val_mincf         "minimum-CF credit, (sum_h hours*GEN - H*minCF*CAP) * marginal of eq_min_cf"
+  val_ramp          "start-cost share, -(GEN(hh)-GEN(h)) * marginal of eq_ramping"
   val_total         "sum of value streams"
-  residual          "val_total - cost_total - val_rsc; zero if every stream is accounted for"
+  residual          "val_total - cost_total - val_rsc - val_csapr - val_prescribed; zero if every stream is accounted for"
   inv_mw            "INV level, MW"
+  prescribed_mw     "prescribed capacity for this tech's pcat in this region-year, MW. Nonzero marks a mandated build: filter these out of any zero-profit statistic"
   gen_mwh           "GEN summed over rep hours, MWh (curtailed)"
   gen_uncurt_mwh    "m_cf*CAP summed over rep hours, MWh (uncurtailed)"
 / ;
@@ -123,21 +142,29 @@ valcost('cost_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
         crf(t) * m_rsc_dat(r,i,rscbin,"cost") * rsc_fin_mult_out(i,r,t) * INV_RSC.l(i,v,r,rscbin,t) } ;
 
 valcost('cost_fom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
-    sum{v$vc_new(i,v,r,t), cost_fom(i,v,r,t) * CAP.l(i,v,r,t) } ;
+    sum{v$vc_new(i,v,r,t), cost_fom(i,v,r,t) * vc_ratio(i,v,r,t) * CAP.l(i,v,r,t) } ;
 
 * Transmission FOM on the new vintage's bin capacity. CAP_RSC is cumulative over
 * years, but for the new vintage in year t it equals this year's INV_RSC.
 valcost('cost_transfom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,rscbin)$[vc_new(i,v,r,t)$m_rscfeas(r,i,rscbin)$rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-        m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * CAP_RSC.l(i,v,r,rscbin,t) } ;
+        m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * vc_ratio(i,v,r,t) * CAP_RSC.l(i,v,r,rscbin,t) } ;
 
 valcost('cost_vom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
-    sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)], cost_vom(i,v,r,t) * GEN.l(i,v,r,h,t) * hours(h) } ;
+    sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)], cost_vom(i,v,r,t) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) * hours(h) } ;
+
+* Fuel, mirroring the generic term in d_objective.gms (which excludes gas, bio,
+* cofire and endogenous H2). fuel_price is scaled once per year in
+* 2_financials.gms on its own value, so prior years keep theirs in the restart.
+valcost('cost_fuel',i,r,t)$sum{v, vc_new(i,v,r,t)} =
+    sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$heat_rate(i,v,r,t)
+               $(not gas(i))$(not bio(i))$(not cofire(i))$(not h2_combustion(i))],
+        hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) } ;
 
 valcost('cost_total',i,r,t) =
     valcost('cost_capex',i,r,t) + valcost('cost_rsc',i,r,t)
   + valcost('cost_fom',i,r,t)   + valcost('cost_transfom',i,r,t)
-  + valcost('cost_vom',i,r,t) ;
+  + valcost('cost_vom',i,r,t)   + valcost('cost_fuel',i,r,t) ;
 
 * ---- value side: level x coefficient x marginal, per external constraint ----
 * Marginals are scaled exactly as report.gms scales reqt_price. The per-hour
@@ -150,12 +177,12 @@ valcost('cost_total',i,r,t) =
 valcost('val_load',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))],
-        GEN.l(i,v,r,h,t) * eq_supply_demand_balance.m(r,h,t) } ;
+        vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) * eq_supply_demand_balance.m(r,h,t) } ;
 
 valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(Sw_PRM_CapCredit=0)] =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,allh)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_stress_t(allh,t)],
-        GEN.l(i,v,r,allh,t) * eq_supply_demand_balance.m(r,allh,t) } ;
+        vc_ratio(i,v,r,t) * GEN.l(i,v,r,allh,t) * eq_supply_demand_balance.m(r,allh,t) } ;
 
 valcost('val_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
@@ -168,11 +195,15 @@ valcost('val_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 * stream is identically zero for a single plant - the constraint is internal to
 * the VRE fleet and cancels, as eq_capacity_limit does. Kept so the cancellation
 * is visible in the output rather than assumed.
-valcost('val_curt',i,r,t)$sum{v, vc_new(i,v,r,t)} =
+* Only VRE (and hybrid storage) enter eq_curt_gen_balance, so only they get this
+* stream. Applied to a thermal tech it becomes -GEN * lambda_curt for a
+* constraint the plant is not in, and silently charged coal 80% of its cost
+* in states where VRE curtailment binds (SC, NH, the Southeast).
+valcost('val_curt',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(vre(i) or storage_hybrid(i))] =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,h)$[vc_new(i,v,r,t)$valcap(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))],
-        ( m_cf(i,v,r,h,t) * CAP.l(i,v,r,t)
-        - GEN.l(i,v,r,h,t)$valgen(i,v,r,t) )
+        ( m_cf(i,v,r,h,t) * vc_ratio(i,v,r,t) * CAP.l(i,v,r,t)
+        - vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t)$valgen(i,v,r,t) )
         * eq_curt_gen_balance.m(r,h,t) } ;
 
 * eq_OpRes_requirement: wind GEN raises the requirement by orperc(or_wind), PV
@@ -181,11 +212,63 @@ valcost('val_curt',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 valcost('val_opres',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_OpRes$wind(i)] =
     -1 * (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,ortype,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$opres_model(ortype)$opres_h(h)],
-        orperc(ortype,"or_wind") * GEN.l(i,v,r,h,t) * eq_OpRes_requirement.m(ortype,r,h,t) } ;
+        orperc(ortype,"or_wind") * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) * eq_OpRes_requirement.m(ortype,r,h,t) } ;
 valcost('val_opres',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_OpRes$(pv(i) or pvb(i))] =
     -1 * (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,ortype,h)$[vc_new(i,v,r,t)$valcap(i,v,r,t)$opres_model(ortype)$opres_h(h)$dayhours(h)],
-        orperc(ortype,"or_pv") * CAP.l(i,v,r,t) / ilr(i) * eq_OpRes_requirement.m(ortype,r,h,t) } ;
+        orperc(ortype,"or_pv") * vc_ratio(i,v,r,t) * CAP.l(i,v,r,t) / ilr(i) * eq_OpRes_requirement.m(ortype,r,h,t) } ;
+
+* eq_min_cf(i,r,t): sum over vintages of hours*GEN >= sum of CAP * H * minCF.
+* External to a single vintage because it sums over v, so its dual does not
+* cancel plant-internally. The vintage's net contribution is its GEN term less
+* its CAP term. Binding means the fleet is forced to run at hours where price is
+* below marginal cost; the dual credits that forced generation, so this is
+* usually a positive value stream that offsets a fuel cost with no revenue.
+valcost('val_mincf',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_MinCF$minCF(i,t)] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) * (
+        sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_rep(h)], hours(h) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) }
+      - sum{v$[vc_new(i,v,r,t)$valgen(i,v,r,t)], vc_ratio(i,v,r,t) * CAP.l(i,v,r,t) } * sum{h$h_rep(h), hours(h) } * minCF(i,t)
+    ) * eq_min_cf.m(i,r,t) ;
+
+* eq_ramping(i,r,h,hh,t): RAMPUP >= sum over vintages of GEN(hh) - GEN(h). Start
+* costs sit on RAMPUP, shared across vintages, so the objective cannot attribute
+* them; the vintage's share is its GEN swing times the dual, and it is a cost,
+* hence the sign. Only rep hours are ramp-linked (numhours_nexth), so no
+* restart hazard.
+valcost('val_ramp',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_StartCost$startcost(i)] =
+    -1 * (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,h,hh)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$numhours_nexth(h,hh)],
+        (vc_ratio(i,v,r,t) * GEN.l(i,v,r,hh,t) - vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t)) * eq_ramping.m(i,r,h,hh,t) } ;
+
+* eq_CSAPR_Assurance(st,t): a state ozone-season NOx cap. Found the way the
+* transmission FOM was found - the coal identity failed only in CSAPR states
+* (TX, PA), by a constant per rep day, and the LP column of a GEN variable,
+* dumped with CONVERT, showed this equation with coefficient
+* h_weight_csapr*hours*emit_rate. It is NOT gated on Sw_CSAPR (eq_CSAPR_Budget
+* is), so it binds in runs that think CSAPR is off. Under forced coal the Texas
+* cap's dual reached 99,600 $/ton. Like val_rsc this is rent the LP assigns to
+* a scarce allowance out of the plant's revenue, so it sits on the rent side.
+valcost('val_csapr',i,r,t)$[sum{v, vc_new(i,v,r,t)}$sum{st$r_st(r,st), csapr_cap(st,"Assurance",t)}] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,h,st)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$r_st(r,st)$h_rep(h)],
+        h_weight_csapr(h) * hours(h) * emit_rate("process","NOX",i,v,r,t) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t)
+        * eq_CSAPR_Assurance.m(st,t) } ;
+
+* eq_forceprescription_power(pcat,r,t): cumulative INV of the techs in pcat must
+* equal the prescribed amount (Vogtle, Watts Bar, the nuclear restarts, and so
+* on). An equality, so its dual takes either sign; for a plant the LP would not
+* have built it is negative by the shortfall. Zero-profit does not apply to a
+* prescribed build, and this stream is what says so: the residual closes once
+* it is on the rent side, and the reader can filter on it (prescribed_mw).
+* Known gap: in the ref run the pre-2026 prescriptions (Vogtle, Watts Bar)
+* close to the dollar with this stream, but the 2026-2030 nuclear restarts do
+* not - the stored dual is 2.8-3.5x the shortfall and the reason could not be
+* read without that year's restart file. Forced runs on this branch drop
+* prescriptions from ForceStartYear (commit 20b335e0), so it only shows in ref.
+valcost('val_prescribed',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_ForcePrescription] =
+    -1 * (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,pcat)$[vc_new(i,v,r,t)$prescriptivelink(pcat,i)$force_pcat(pcat,t)],
+        INV.l(i,v,r,t) * eq_forceprescription_power.m(pcat,r,t) } ;
 
 * val_total is what the plant COLLECTS: its generation times the prices it faces.
 * Resource rent is deliberately not in it. The plant does not receive rent on
@@ -197,17 +280,20 @@ valcost('val_opres',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_OpRes$(pv(i) or pvb(i))] 
 * large for wind, which fills its bins, and invisible for UPV, which does not.
 valcost('val_total',i,r,t) =
     valcost('val_load',i,r,t) + valcost('val_resmarg',i,r,t)
-  + valcost('val_curt',i,r,t) + valcost('val_opres',i,r,t) ;
+  + valcost('val_curt',i,r,t) + valcost('val_opres',i,r,t)
+  + valcost('val_mincf',i,r,t) + valcost('val_ramp',i,r,t) ;
 
 valcost('residual',i,r,t)$sum{v, vc_new(i,v,r,t)} =
-    valcost('val_total',i,r,t) - valcost('cost_total',i,r,t) - valcost('val_rsc',i,r,t) ;
+    valcost('val_total',i,r,t) - valcost('cost_total',i,r,t)
+  - valcost('val_rsc',i,r,t) - valcost('val_csapr',i,r,t) - valcost('val_prescribed',i,r,t) ;
 
 * ---- quantities, for whatever normalisation the reader wants ----
 valcost('inv_mw',i,r,t)$sum{v, vc_new(i,v,r,t)} = sum{v$vc_new(i,v,r,t), INV.l(i,v,r,t) } ;
+valcost('prescribed_mw',i,r,t)$sum{v, vc_new(i,v,r,t)} = sum{pcat$prescriptivelink(pcat,i), noncumulative_prescriptions(pcat,r,t) } ;
 valcost('gen_mwh',i,r,t)$sum{v, vc_new(i,v,r,t)} =
-    sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))], GEN.l(i,v,r,h,t) * hours(h) } ;
+    sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))], vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) * hours(h) } ;
 valcost('gen_uncurt_mwh',i,r,t)$sum{v, vc_new(i,v,r,t)} =
-    sum{(v,h)$[vc_new(i,v,r,t)$valcap(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))], m_cf(i,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
+    sum{(v,h)$[vc_new(i,v,r,t)$valcap(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))], m_cf(i,v,r,h,t) * vc_ratio(i,v,r,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 * Also keep the raw reduced cost of INV_RSC on built bins. It should be zero;
 * where it is not, the bin is degenerate and the per-stream split is not unique
