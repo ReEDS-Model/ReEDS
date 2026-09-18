@@ -48,10 +48,10 @@ hydNPD,p
 hydNPND,p
 hydED,p
 hydEND,p
-upv_1*upv_10,p
-pvb1_1*pvb1_10,p
-pvb2_1*pvb2_10,p
-pvb3_1*pvb3_10,p
+upv,p
+pvb1,p
+pvb2,p
+pvb3,p
 wind-ofs_1*wind-ofs_10,p
 wind-ons,p
 csp1_1*csp1_12,p
