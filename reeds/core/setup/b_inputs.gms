@@ -1623,15 +1623,15 @@ $ifthene.Canada %GSw_Canada% == 1
 capacity_exog("can-imports",c,"init-1",r,t)$i_c("can-imports",c) = can_imports_capacity(r,t) ;
 $endif.Canada
 
+*if you've declined in value
+avail_retire_exog_rsc(i,c,v,r,t)$[refurbtech(i)$initv(v)$(capacity_exog(i,c,v,r,t-1) > capacity_exog(i,c,v,r,t))] =
+    capacity_exog(i,c,v,r,t-1) - capacity_exog(i,c,v,r,t) ;
+
 m_capacity_exog(i,c,v,r,t)$capacity_exog(i,c,v,r,t) = capacity_exog(i,c,v,r,t) ;
 m_capacity_exog_energy(i,v,r,t)$capacity_exog_energy(i,v,r,t) = capacity_exog_energy(i,v,r,t) ;
 m_capacity_exog(i,c,"init-1",r,t)$[i_c(i,c)$geo(i)] = geo_cap_exog(i,r) ;
 m_capacity_exog(i,c,v,r,t)$sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } =
     sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) } ;
-
-*if you've declined in value
-avail_retire_exog_rsc(i,c,v,r,t)$[refurbtech(i)$initv(v)$(capacity_exog(i,c,v,r,t-1) > capacity_exog(i,c,v,r,t))] =
-    capacity_exog(i,c,v,r,t-1) - capacity_exog(i,c,v,r,t) ;
 
 * We assign the ~1.3 GW of existing csp-ns to upv throughout the model, both in the
 * exogenous and the prescribed capacity, and convert it back to csp-ns when reporting.
@@ -5211,24 +5211,24 @@ m_rsc_dat(r,i,c,rscbin,"cap")$m_rsc_dat(r,i,c,rscbin,"cap") = ceil(m_rsc_dat(r,i
 * Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
 geo_discovery(i,r,t)$[geo_hydro(i)$sum{c, cap_prescribed_ir(i,c,r) }$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
 
-parameter geo_bin1_add(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
+parameter geo_bin1_add(i,c,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
 
 *Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
 *remaining geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
-geo_bin1_add(i,r)$[geo_hydro(i)$sum{c, cap_prescribed_ir(i,c,r) }] =
+geo_bin1_add(i,c,r)$[geo_hydro(i)$cap_prescribed_ir(i,c,r)] =
       smax{t$[geo_discovery(i,r,t)$tmodel_new(t)
-             $sum{(c,tt)$[yeart(tt)<=yeart(t)], cap_prescribed(i,c,r,tt) }],
-           sum{(c,tt)$[yeart(tt)<=yeart(t)], cap_prescribed(i,c,r,tt) }
+             $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,c,r,tt) }],
+           sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,c,r,tt) }
                / geo_discovery(i,r,t) }
-      - ( sum{(c,rscbin), m_rsc_dat(r,i,c,rscbin,"cap") } - sum{c, cap_existing(i,c,r) } ) ;
+      - ( sum{rscbin, m_rsc_dat(r,i,c,rscbin,"cap") } - cap_existing(i,c,r) ) ;
 
 * Only use positive values of geo_bin1_add, as negative values would indicate that the
 * existing resource is already sufficient to cover prescriptions
-geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
+geo_bin1_add(i,c,r)$[geo_hydro(i)$(geo_bin1_add(i,c,r) < 0)] = 0 ;
 
 * Add any additional resource needed to the first bin of the supply curve
-m_rsc_dat(r,i,c,"bin1","cap")$[i_c(i,c)$geo_hydro(i)$geo_bin1_add(i,r)] =
-    m_rsc_dat(r,i,c,"bin1","cap") + geo_bin1_add(i,r) ;
+m_rsc_dat(r,i,c,"bin1","cap")$[i_c(i,c)$geo_hydro(i)$geo_bin1_add(i,c,r)] =
+    m_rsc_dat(r,i,c,"bin1","cap") + geo_bin1_add(i,c,r) ;
 
 rsc_capacity_scalar(i,r,t) =  ceil(1000 *geo_discovery(i,r,t) + dr_shed_capacity_scalar(i,r,t) ) / 1000 ;
 rsc_capacity_scalar_i(i)$[sum{(r,t), rsc_capacity_scalar(i,r,t) }] = yes ;
