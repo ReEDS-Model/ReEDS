@@ -2475,7 +2475,7 @@ eq_CSAPR_Budget(csapr_group,t)$[Sw_CSAPR$tmodel(t)$(yeart(t)>=csapr_startyr)]..
 
 * along with the cap on trading groups, each state has
 * a maximum amount of NOX emissions during ozone season
-eq_CSAPR_Assurance(st,t)$[stfeas(st)$(yeart(t)>=csapr_startyr)
+eq_CSAPR_Assurance(st,t)$[Sw_CSAPR$stfeas(st)$(yeart(t)>=csapr_startyr)
                          $csapr_cap(st,"Assurance",t)$tmodel(t)]..
 
 *the state level assurance cap
