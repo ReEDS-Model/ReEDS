@@ -797,6 +797,7 @@ curt_h(r,h,t)$tmodel_new(t) =
     - sum{(ortype,i,v)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)$vre(i)],
           OPRES.l(ortype,i,v,r,h,t) }
 ;
+* Zero out floating point noise to make the output more useful
 curt_h(r,h,t)$[abs(curt_h(r,h,t)) < 1e-6] = 0 ;
 
 curt_ann(r,t)$tmodel_new(t) = sum{h, curt_h(r,h,t) * hours(h) } ;
