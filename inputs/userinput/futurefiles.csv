@@ -360,10 +360,8 @@ ptc_value_scaled.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handle
 ptc_values.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 pv_cf_improve.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
 pv_frac_of_depreciation.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
-pvb_agg.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 pvb_bcr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 pvb_bir.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-pvb_config.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 pvb_ilr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 pvbcapcostmult.csv,.csv,0,None,t,None,0,0,constant,None,None,done,constant
 pvf_cap.csv,.csv,1,None,*t,None,0,0,linear_5,0,None,done (but double-check that it is written correctly by calc_financial_inputs.py),linear_5
