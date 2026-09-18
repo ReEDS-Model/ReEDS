@@ -494,7 +494,7 @@ cf_hyd(i,szn,r,t)$[upgrade(i)$(hydro(i) or psh(i))] =
 * dispatchable hydro has a separate constraint for seasonal generation which uses m_cf_szn
 cf_rsc(i,c,v,r,h,t)$[hydro(i)$valcap_class(i,c,v,r,t)] = sum{szn$h_szn(h,szn), cf_hyd(i,szn,r,t) } ;
 
-cf_rsc(i,c,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,v,r,tt) })] =
+cf_rsc(i,c,v,r,h,t)$[rsc_i(i)$(sum{tt, capacity_exog(i,c,v,r,tt) })] =
         cf_rsc(i,c,"init-1",r,h,t) ;
 
 * For cap_hyd_szn_adj, which only applies to dispatchable hydro or upgraded disp hydro with added pumping, we first try using the from-tech, but if that is

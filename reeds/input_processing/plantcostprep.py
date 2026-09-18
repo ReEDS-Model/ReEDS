@@ -180,7 +180,12 @@ winddata = pd.concat([onswinddata.copy(),ofswinddata.copy()])
 
 winddata.loc[winddata['tech'].str.contains('ONSHORE'),'tech'] = 'wind-ons'
 winddata.loc[winddata['tech'].str.contains('OFFSHORE'),'tech'] = 'wind-ofs'
-winddata['i'] = winddata['tech'] + '_' + winddata['class'].astype(str)
+winddata['i'] = reeds.techs.get_tech_class_name(
+    winddata['tech'], winddata['class'], reeds.techs.get_collapsed_techs(inputs_case))
+## Technologies whose classes share one name keep one row per year
+winddata = winddata.drop_duplicates(subset=['i','t','cf_mult','capcost','fom','vom'])
+if winddata.duplicated(subset=['i','t']).any():
+    raise ValueError('Costs differ across resource classes that share a technology name')
 wind_stack = winddata[['t','i','capcost','fom','vom']].copy()
 
 #%%#######################

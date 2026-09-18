@@ -1298,10 +1298,11 @@ class MCS_Sampler:
         samples_sw = samples_sw[valid_sc_point_gids].copy()
 
         # Create a new tech name for each sc_point_gid
-        new_tech_name = [tech_name + "_" + str(int(c)) for c in 
-            samples_sw["sc_point_gid"].map(class_sc_point_map).values]
-
-        samples_sw["*tech"] = new_tech_name
+        samples_sw["*tech"] = reeds.techs.get_tech_class_name(
+            pd.Series(tech_name, index=samples_sw.index),
+            samples_sw["sc_point_gid"].map(class_sc_point_map).astype(int),
+            reeds.techs.get_collapsed_techs(self.inputs_case),
+        )
 
         return samples_sw
 

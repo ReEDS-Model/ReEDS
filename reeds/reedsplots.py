@@ -6192,8 +6192,8 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
         )
     if not isinstance(recf.columns, pd.core.indexes.multi.MultiIndex):
         recf.columns = pd.MultiIndex.from_tuples(
-            recf.columns.map(lambda x: (x.split('|')[0], x.split('|')[-1])),
-            names=['i','r'],
+            recf.columns.map(lambda x: tuple(x.split('|'))),
+            names=['i','c','r'],
         )
     ## Downselect to time range and technology of interest
     if timestamp is None:
@@ -6213,11 +6213,14 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
         os.path.join(case, 'inputs_case', f'supplycurve_{tech}.csv'),
         index_col='sc_point_gid',
     ).rename(columns={'region':'r'})
-    dfsc['i'] = tech + '_' + dfsc['class'].astype(str)
+    dfsc['i'] = reeds.techs.get_tech_class_name(
+        pd.Series(tech, index=dfsc.index), dfsc['class'], reeds.techs.get_collapsed_techs(case))
+    dfsc['c'] = dfsc['class'].astype(str)
     sitemap = reeds.io.get_sitemap(offshore=(True if tech == 'wind-ofs' else False))
     dfsc['geometry'] = dfsc.index.map(sitemap.geometry)
     dfsc = gpd.GeoDataFrame(dfsc).to_crs(crs)
-    dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
+    dfsc['cf'] = dfsc[['i','c','r']].merge(
+        cf.rename('cf'), on=['i','c','r'], how='left').cf.values
 
     ## Convert to polygons
     dfsc['geometry'] = dfsc.buffer(11530/2, cap_style='square')
@@ -6342,8 +6345,8 @@ def map_stressors(
         os.path.join(case, 'inputs_case', 'recf.h5'),
     )
     recf.columns = pd.MultiIndex.from_tuples(
-        recf.columns.map(lambda x: (x.split('|')[0], x.split('|')[-1])),
-        names=['i','r'],
+        recf.columns.map(lambda x: tuple(x.split('|'))),
+        names=['i','c','r'],
     )
 
     load = reeds.io.read_file(ra_files['load']).tz_convert(recf.index.tz)

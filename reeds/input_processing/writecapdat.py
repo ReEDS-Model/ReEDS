@@ -55,7 +55,7 @@ def create_rsc_wsc(gendb,TECH,startyear):
 
     return rsc_wsc
 
-def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
+def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear,collapsed):
     # Mappings to resource class are based on the resource quality of the technology as it comes from reV
     # Establish resource classification inputs for technologies (UPV, wind-ons, wind-ofs)
     # from supply curves
@@ -98,20 +98,20 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
             if tech in ['geohydro_allkm','egs_allkm']:
                 cap_exog[tech]["class"] = cap_exog[tech]["reV_mean_resource_temp"].apply(
                         lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_exog[tech]["tech"] = (cap_exog[tech]["tech"].astype(str) + "_" +
-                                    cap_exog[tech]["class"].astype(str))
+                cap_exog[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    cap_exog[tech]["tech"].astype(str), cap_exog[tech]["class"], collapsed)
             # Assigning each solar, wind unit in unit database to a class based on
             # groups' minimum and maximum capacity factors
             elif tech in TECH['rsc_pv_all']:
                 cap_exog[tech]["class"] = cap_exog[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class['upv']))
-                cap_exog[tech]["tech"] = ('upv' + "_" +
-                                    cap_exog[tech]["class"].astype(str))
+                cap_exog[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    pd.Series('upv', index=cap_exog[tech].index), cap_exog[tech]["class"], collapsed)
             else:
                 cap_exog[tech]["class"] = cap_exog[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_exog[tech]["tech"] = (cap_exog[tech]["tech"].astype(str) + "_" +
-                                    cap_exog[tech]["class"].astype(str))
+                cap_exog[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    cap_exog[tech]["tech"].astype(str), cap_exog[tech]["class"], collapsed)
 
         cap_exog[tech] = cap_exog[tech][COLNAMES['capexog_rsc'][0]]
         cap_exog[tech].columns = COLNAMES['capexog_rsc'][1]
@@ -645,7 +645,9 @@ def main(reeds_path, inputs_case):
     #    -- RSC Exogenous Capacity --    #
     ######################################
 
-    (cap_exog, rsc_class) = create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear)
+    collapsed = reeds.techs.get_collapsed_techs(inputs_case)
+    (cap_exog, rsc_class) = create_exog_rsc(
+        reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear, collapsed)
 
     # csp-ns is modeled as upv, so its pre-startyear capacity belongs with the exogenous
     # upv capacity.
@@ -671,15 +673,15 @@ def main(reeds_path, inputs_case):
                 print(tech)
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class['upv']))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
+                cap_pres[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    cap_pres[tech]["tech"].astype(str), cap_pres[tech]["class"], collapsed)
             # Load in wind builds:
             elif tech in TECH['rsc_w']:
                 print(tech)
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
+                cap_pres[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    cap_pres[tech]["tech"].astype(str), cap_pres[tech]["class"], collapsed)
             # Add prescribed csp builds:
             #   Note: Since csp is affected by GSw_WaterMain, it must be dealt with separate
             #         from the other RSC tech (dupv, upv, wind, etc)
@@ -687,8 +689,8 @@ def main(reeds_path, inputs_case):
                 print(tech)
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
                         lambda x: assign_class(x, tech, rsc_class['upv']))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
+                cap_pres[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    cap_pres[tech]["tech"].astype(str), cap_pres[tech]["class"], collapsed)
                 if GSw_WaterMain == 1:
                      cap_pres[tech]["tech"] = np.where( cap_pres[tech]["tech"]=='csp-ws',
                                           cap_pres[tech]["tech"]+'_'+cap_pres[tech]['ctt']+'_'+cap_pres[tech]['wst'],
@@ -697,8 +699,8 @@ def main(reeds_path, inputs_case):
             elif tech in TECH['prsc_geo']:
                 cap_pres[tech]["class"] = cap_pres[tech]["reV_mean_resource_temp"].apply(
                         lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
+                cap_pres[tech]["tech"] = reeds.techs.get_tech_class_name(
+                    cap_pres[tech]["tech"].astype(str), cap_pres[tech]["class"], collapsed)
             # assign vintages based on start year of the unit
             ivt_df_mask = (ivt_df[mask]                                   # filter rows
                             .iloc[:, 1:]                                  # drop first technology column

@@ -44,7 +44,7 @@ INV_CAP_UP.fx(i,v,r,rscbin,tfix)$[allow_cap_up(i,v,r,rscbin,tfix)] = INV_CAP_UP.
 INV_ENER_UP.fx(i,v,r,rscbin,tfix)$[allow_ener_up(i,v,r,rscbin,tfix)] = INV_ENER_UP.l(i,v,r,rscbin,tfix) ;
 UPGRADES.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$upgrade(i)] = UPGRADES.l(i,v,r,tfix) ;
 UPGRADES_RETIRE.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$upgrade(i)] = UPGRADES_RETIRE.l(i,v,r,tfix) ;
-EXTRA_PRESCRIP.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,tfix)] = EXTRA_PRESCRIP.l(i,v,r,tfix) ;
+EXTRA_PRESCRIP.fx(i,c,v,r,tfix)$[force_prescribe_class(i,c,v,r,tfix)$valinv(i,v,r,tfix)] = EXTRA_PRESCRIP.l(i,c,v,r,tfix) ;
 EXTRA_PRESCRIP_ENERGY.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,tfix)] = EXTRA_PRESCRIP_ENERGY.l(i,v,r,tfix) ;
 
 * generation and storage variables

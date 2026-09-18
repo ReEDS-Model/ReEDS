@@ -604,18 +604,19 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
     cf_out = cf_rep.rename_axis("h").copy()
     i = cf_rep.columns.map(lambda x: x.split("|")[0])
     r = cf_rep.columns.map(lambda x: x.split("|")[-1])
-    cf_out.columns = pd.MultiIndex.from_arrays([i, r], names=["i", "r"])
+    ### Profiles are keyed {i}|{c}|{r}; CSP profiles (keyed {i}|{r}) take the class
+    ### from the tech name (e.g. 'csp1_5' -> 5)
+    c = cf_rep.columns.map(
+        lambda x: x.split("|")[1] if x.count("|") == 2
+        else str(reeds.techs.split_class(x.split("|")[0])[1] or 0)
+    )
+    cf_out.columns = pd.MultiIndex.from_arrays([i, c, r], names=["i", "c", "r"])
     cf_out = (
-        cf_out.stack(["i", "r"])
-        .reorder_levels(["i", "r", "h"])
+        cf_out.stack(["i", "c", "r"])
+        .reorder_levels(["i", "r", "h", "c"])
         .rename("cf")
         .reset_index()
     )
-    ### Pull the resource class out of the tech name (e.g. 'upv_5' -> 5); techs with
-    ### no class suffix (e.g. 'distpv') are assigned class '0'
-    cf_out['c'] = [
-        str(reeds.techs.split_class(_i)[1] or 0) for _i in cf_out['i']
-    ]
 
     # %%### Create the temporal sets used by ReEDS
     ### Calculate number of hours represented by each timeslice

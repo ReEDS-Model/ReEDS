@@ -33,7 +33,7 @@ positive variables
   GROWTH_BIN(gbin,i,st,t)                  "--MW-- total new (from INV) generation capacity in each growth bin by state and technology group"
   INV(i,v,r,t)                             "--MW-- generation capacity additions in year t"
   INV_ENERGY(i,v,r,t)                      "--MWh-- generation energy capacity additions in year t"
-  EXTRA_PRESCRIP(i,v,r,t)                  "--MW-- builds beyond those prescribed power capacity once allowed in firstyear(i) - exceptions for gas-ct, wind-ons, and wind-ofs"
+  EXTRA_PRESCRIP(i,c,v,r,t)                "--MW-- builds beyond those prescribed power capacity once allowed in firstyear(i) - exceptions for gas-ct, wind-ons, and wind-ofs"
   EXTRA_PRESCRIP_ENERGY(i,v,r,t)           "--MWh-- builds beyond those prescribed battery energy capacity once allowed in firstyear(i)"
   INV_CAP_UP(i,v,r,rscbin,t)               "--MW-- upsized generation capacity addition in year t"
   INV_ENER_UP(i,v,r,rscbin,t)              "--MW-- upsized energy addition in year t using capacity factor to convert to capacity units"
@@ -161,9 +161,9 @@ EQUATION
  eq_cap_up(i,v,r,rscbin,t)                "--MW-- limit on capacity upsizing"
  eq_cap_upgrade(i,v,r,t)                  "--MW-- All purchased upgrades are greater than or equal to the sum of upgraded capacity"
  eq_ener_up(i,v,r,rscbin,t)               "--MW-- limit on energy upsizing"
- eq_forceprescription_power(i,v,r,t)     "--MW-- total power investment in prescribed capacity must equal amount from exogenous prescriptions"
- eq_forceprescription_energy(i,v,r,t)    "--MWh-- total energy investment in prescribed capacity must equal amount from exogenous prescriptions"
- eq_refurblim(i,r,t)                      "--MW-- total refurbishments cannot exceed the amount of capacity that has reached the end of its life"
+ eq_forceprescription_power(i,c,v,r,t)    "--MW-- total power investment in prescribed capacity must equal amount from exogenous prescriptions"
+ eq_forceprescription_energy(i,v,r,t)     "--MWh-- total energy investment in prescribed capacity must equal amount from exogenous prescriptions"
+ eq_refurblim(i,c,r,t)                    "--MW-- total refurbishments cannot exceed the amount of capacity that has reached the end of its life"
 
 * renewable supply curves
  eq_rsc_inv_account(i,v,r,t)              "--MW-- INV for rsc techs is the sum over all bins of INV_RSC"
@@ -208,7 +208,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_ORCap_small_res_frac(ortype,i,v,r,allh,t)  "--MW-- operating reserve capacity availability constraint for generators with reserve_frac <= 0.5"
 
 * regional and national policies
- eq_emit_accounting(etype,e,r,t)                "--metric tons-- accounting for total emissions in a region"
+ eq_emit_accounting(etype,e,r,t)          "--metric tons-- accounting for total emissions in a region"
  eq_emit_rate_limit(e,r,t)                "--metric tons per MWh-- emission rate limit"
  eq_annual_cap(eall,t)                    "--metric tons-- annual (year-specific) emissions cap",
  eq_bankborrowcap(e)                      "--weighted metric tons-- flexible banking and borrowing cap (to be used w/intertemporal solve only"
@@ -956,27 +956,29 @@ eq_ener_up(i,v,r,rscbin,t)$[tmodel(t)$allow_ener_up(i,v,r,rscbin,t)$(not Sw_PCM)
 * ---------------------------------------------------------------------------
 
 * Prescribe power capacity
-eq_forceprescription_power(i,newv,r,t)
-    $[tmodel(t)$force_prescribe(i,newv,r,t)$Sw_ForcePrescription
+eq_forceprescription_power(i,c,newv,r,t)
+    $[tmodel(t)$force_prescribe_class(i,c,newv,r,t)$Sw_ForcePrescription
     $valinv(i,newv,r,t)
     $(not Sw_PCM)]..
 
 *capacity built in the current period or prior
 
-        INV(i,newv,r,t) + sum{c$i_c(i,c), INV_REFURB(i,c,newv,r,t) }$[refurbtech(i)$Sw_Refurb]
+        INV(i,newv,r,t)$(not rsc_i(i))
+        + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC(i,c,newv,r,rscbin,t) }$rsc_i(i)
+        + INV_REFURB(i,c,newv,r,t)$[refurbtech(i)$Sw_Refurb]
 
     =e=
 
 *must equal the cumulative prescribed amount
 
-        sum{c, prescribed_build(i,c,newv,r,t) }
+        prescribed_build(i,c,newv,r,t)
 
 * plus any extra power buildouts (no penalty here - used as free slack)
 * only on or after the first year the techs are available
-        + EXTRA_PRESCRIP(i,newv,r,t)$[yeart(t)>=firstyear(i)]
+        + EXTRA_PRESCRIP(i,c,newv,r,t)$[yeart(t)>=firstyear(i)]
 
 * or in regions where there is a offshore wind requirement
-        + EXTRA_PRESCRIP(i,newv,r,t)$[r_offshore(r,t)$ofswind(i)
+        + EXTRA_PRESCRIP(i,c,newv,r,t)$[r_offshore(r,t)$ofswind(i)
                                $(yeart(t)>=firstyear_RPS)
                                $sum{st$r_st(r,st), offshore_cap_req(st,t) }]
 ;
@@ -1009,25 +1011,26 @@ eq_forceprescription_energy(i,newv,r,t)
 *this is the sum of all previous year's investment that is now beyond the age
 *limit (i.e. it has exited service) plus the amount of retired exogenous capacity
 *that we begin with
-eq_refurblim(i,r,t)$[tmodel(t)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)]..
+eq_refurblim(i,c,r,t)$[tmodel(t)$i_c(i,c)$refurbtech(i)$Sw_Refurb$(not Sw_PCM)]..
 
 *investments that meet the refurbishment requirement (i.e. they've expired)
     sum{(vv,tt)$[m_refurb_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)],
-         INV(i,vv,r,tt) }
+         INV(i,vv,r,tt)$(not rsc_i(i))
+         + sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC(i,c,vv,r,rscbin,tt) }$rsc_i(i) }
 
 *[plus] exogenous decay in capacity
 *note here that the tfix or tmodel set does not apply
 *since we'd want capital that expires in off-years to
 *be included in this calculation as well
     + sum{(v,tt)$[yeart(tt)<=yeart(t)],
-         avail_retire_exog_rsc(i,v,r,tt) }
+         avail_retire_exog_rsc(i,c,v,r,tt) }
 
     =g=
 
 *must exceed the total sum of investments in refurbishments
 *that have yet to expire - implying an investment can be refurbished more than once
 *if the first refurbishment has exceed its age limit
-    sum{(c,vv,tt)$[i_c(i,c)$inv_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)],
+    sum{(vv,tt)$[inv_cond(i,vv,r,t,tt)$(tmodel(tt) or tfix(tt))$valinv(i,vv,r,tt)],
          INV_REFURB(i,c,vv,r,tt)
        }
 ;
@@ -1150,14 +1153,13 @@ eq_site_cf(x,h,t)
         $x_r(x,r)
         $valgen(i,v,r,t)],
 * Capacity factor of techs with endogenously-modeled spur lines
-        sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
 * multiplied by total capacity of those techs
-        * sum{(c,rscbin)
+        sum{(c,rscbin)
               $[i_c(i,c)
               $valcap(i,v,r,t)
               $m_rscfeas(r,i,c,rscbin)
               $spurline_sitemap(i,c,r,rscbin,x)],
-              CAP_RSC(i,c,v,r,rscbin,t)
+              m_cf(i,c,v,r,h,t) * CAP_RSC(i,c,v,r,rscbin,t)
         }
     }
 

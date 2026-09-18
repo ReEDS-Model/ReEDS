@@ -43,13 +43,45 @@ def split_class(i):
     return match.group(1), int(match.group(2))
 
 
+def get_collapsed_techs(case):
+    '''
+    Get the technologies that are mapped to more than one class
+    (i.e., technologies listed with more than one class in i_c).
+    '''
+    i_c = reeds.io.read_input(case, 'i_c')
+    num_classes = i_c.groupby('i').c.nunique()
+    return set(num_classes.loc[num_classes > 1].index)
+
+
+def get_tech_class_name(tech, c, collapsed):
+    '''
+    Return the name in the ReEDS technology set i for class c of technology
+    family tech.
+
+    Families whose classes are separate techs get the class appended
+    ('upv', 5 -> 'upv_5'). Families in collapsed hold all their classes under one
+    tech name, so the name is returned unchanged ('wind-ons', 5 -> 'wind-ons').
+    Get collapsed from get_collapsed_techs(case).
+
+    tech and c can be scalars, or pd.Series with the same index (returns a
+    pd.Series).
+    '''
+    if isinstance(tech, pd.Series):
+        c = c.astype(str) if isinstance(c, pd.Series) else str(c)
+        return tech.where(tech.isin(collapsed), tech + '_' + c)
+    return tech if tech in collapsed else f'{tech}_{c}'
+
+
 def get_class_map(case):
     '''
-    Map each technology to its resource class, matching the i_c that b_inputs.gms
-    completes: water-cooled techs take the class of the technology they derive from,
-    and technologies with no class of their own are assigned class '0'.
+    Map each technology to its resource class. Water-cooled techs are assigned the
+    class of the technology they derive from, and technologies with no class are
+    assigned class '0'. Technologies with several classes map to None.
     '''
-    i_c = reeds.io.read_input(case, 'i_c').set_index('i').c.astype(str)
+    i_c = (
+        reeds.io.read_input(case, 'i_c').astype({'c': str})
+        .groupby('i').c.agg(lambda x: x.iloc[0] if len(x) == 1 else None)
+    )
     ### Broadcast class to water-cooled variants
     if int(reeds.io.get_switches(case).GSw_WaterMain) == 1:
         ctt_i_ii = (

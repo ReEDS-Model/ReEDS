@@ -811,7 +811,7 @@ def pre_val_streams(dfs, **kw):
     return df
 
 def pre_reduced_cost(df, **kw):
-    df['irbv'] = df['tech'] + ' | ' + df['rb'] + ' | ' + df['bin'] + ' | ' + df['variable']
+    df['irbv'] = df['tech'] + ' | ' + df['class'].astype(str) + ' | ' + df['rb'] + ' | ' + df['bin'] + ' | ' + df['variable']
     return df
 
 def pre_lcoe(dfs, **kw):
@@ -2666,7 +2666,7 @@ results_meta = collections.OrderedDict((
 
     ('Reduced Cost ($/kW)',
         {'file':'reduced_cost',
-        'columns': ['tech', 'vintage', 'rb', 'year','bin','variable','$/kW'],
+        'columns': ['tech', 'class', 'vintage', 'rb', 'year','bin','variable','$/kW'],
         'preprocess': [
             {'func': pre_reduced_cost, 'args': {}},
             {'func': apply_inflation, 'args': {'column': '$/kW'}},

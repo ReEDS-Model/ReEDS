@@ -1444,7 +1444,8 @@ def get_available_capacity_weighted_cf(case, level='country'):
         pd.concat(sc, names=['tech', 'drop'], axis=0)
         .reset_index(level='drop', drop=True).reset_index()
     )
-    sc['i'] = sc.tech+'_'+sc['class'].astype(str)
+    sc['i'] = reeds.techs.get_tech_class_name(
+        sc.tech, sc['class'], reeds.techs.get_collapsed_techs(case))
     sc['resource'] = sc.i + '|' + sc['class'].astype(str) + '|' + sc.region
     sc['aggreg'] = sc.region.map(r2region)
     ## Get CF

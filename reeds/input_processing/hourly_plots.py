@@ -271,31 +271,34 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     hours = pd.read_csv(
         os.path.join(inputs_case, periodtype, 'numhours.csv')
     ).rename(columns={'*h':'h'}).set_index('h').numhours
-    dfcf = pd.read_csv(os.path.join(inputs_case, periodtype, 'cf_vre.csv')).rename(columns={'*i':'i'})
+    dfcf = pd.read_csv(
+        os.path.join(inputs_case, periodtype, 'cf_vre.csv'), dtype={'c': str},
+    ).rename(columns={'*i':'i'})
+    collapsed = reeds.techs.get_collapsed_techs(inputs_case)
 
     for tech in techs:
         ### Get supply curve
         dfsc = pd.read_csv(
             os.path.join(inputs_case, f'supplycurve_{tech}.csv')
         ).rename(columns={'region':'r'})
-        dfsc['i'] = tech + '_' + dfsc['class'].astype(str)
+        dfsc['i'] = reeds.techs.get_tech_class_name(
+            pd.Series(tech, index=dfsc.index), dfsc['class'], collapsed)
         ### Add geographic and CF information
         sitemap = reeds.io.get_sitemap(offshore=(True if tech == 'wind-ofs' else False))
 
         dfsc['latitude'] = dfsc.sc_point_gid.map(sitemap.latitude)
         dfsc['longitude'] = dfsc.sc_point_gid.map(sitemap.longitude)
         dfsc = plots.df2gdf(dfsc, crs=crs)
-        dfsc['resource'] = dfsc.i + '|' + dfsc.r
-        dfsc['resource_recf'] = dfsc.i + '|' + dfsc['class'].astype(str) + '|' + dfsc.r
-        dfsc['cf_actual'] = dfsc.resource_recf.map(recf)
+        dfsc['resource'] = dfsc.i + '|' + dfsc['class'].astype(str) + '|' + dfsc.r
+        dfsc['cf_actual'] = dfsc.resource.map(recf)
 
         ### Get the annual average CF of the hourly-processed data
         cf_hourly = dfcf.loc[dfcf.i.str.startswith(tech)].pivot(
-            index=['i','r'],columns='h',values='cf')
+            index=['i','c','r'],columns='h',values='cf')
         cf_hourly = (
             (cf_hourly * cf_hourly.columns.map(hours)).sum(axis=1) / hours.sum()
         ).rename('cf_rep').reset_index()
-        cf_hourly['resource'] = cf_hourly.i + '|' + cf_hourly.r
+        cf_hourly['resource'] = cf_hourly.i + '|' + cf_hourly.c + '|' + cf_hourly.r
 
         ### Merge with supply curve, take the difference
         cfmap = dfsc.assign(
