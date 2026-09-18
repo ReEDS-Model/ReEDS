@@ -37,12 +37,13 @@
 * One cost stream is easy to miss and is the largest one late in a forced run:
 * the fixed O&M on supply-curve transmission, charged in the objective as
 * m_rsc_dat(cost_trans) * trans_fom_frac * CAP_RSC. The lcoe output omits it
-* entirely, and the ForceMandate multiplier does not scale it (it scales
-* cost_fom, not this), so in a forced run it is charged at full cost while
-* every other component is scaled down - by 2050 in the onswind run it is 3.4x
-* the plant FOM. Without it the identity shows a 67% hole on 2050 builds that
-* looks like profit and is not. Its dual sits on eq_cap_rsc, which is how it was
-* found: that equation carried exactly the missing amount.
+* entirely. Until 2026-09 the ForceMandate multiplier did not scale it either
+* (it scaled cost_fom, not this), so in a forced run it was charged at full cost
+* while every other component was scaled down - by 2050 in the onswind run it
+* was 3.4x the plant FOM, and the identity showed a 67% hole on 2050 builds that
+* looked like profit and was not. Its dual sits on eq_cap_rsc, which is how it
+* was found: that equation carried exactly the missing amount. The objective now
+* multiplies the term by forcetechmult, and so does this file.
 *
 * A restart-file hazard, for anyone extending this. 2_temporal_params.gms runs
 * every solve year and begins with m_cf(i,v,r,allh,t) = 0 over ALL years before
@@ -128,7 +129,7 @@ valcost('cost_fom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 * years, but for the new vintage in year t it equals this year's INV_RSC.
 valcost('cost_transfom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,rscbin)$[vc_new(i,v,r,t)$m_rscfeas(r,i,rscbin)$rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-        m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * CAP_RSC.l(i,v,r,rscbin,t) } ;
+        m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * CAP_RSC.l(i,v,r,rscbin,t) } ;
 
 valcost('cost_vom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)], cost_vom(i,v,r,t) * GEN.l(i,v,r,h,t) * hours(h) } ;

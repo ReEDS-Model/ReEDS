@@ -193,9 +193,8 @@ lcoe(i,v,r,t,rscbin)$[rsc_i(i)$INV_RSC.l(i,v,r,rscbin,t)$gen_rsc(i,v,r,t)] =
      + cost_fom(i,v,r,t)
 * fixed O&M on supply-curve transmission (spur + reinforcement), charged in the
 * objective as cost_trans * trans_fom_frac * CAP_RSC with this same conditioning.
-* Not scaled by ForceMandate (it scales cost_fom, not this), so under a forced
-* run it becomes the largest annual cost of the forced tech by the late years.
-     + (m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac)$[(not spur_techs(i))$(not sccapcosttech(i))]
+* Scaled by forcetechmult in the objective, so scaled here too; 1 unless forced.
+     + (m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t))$[(not spur_techs(i))$(not sccapcosttech(i))]
     ) / gen_rsc(i,v,r,t)
 *plus VOM costs
     + cost_vom(i,v,r,t)
@@ -261,7 +260,7 @@ lcoe_built(i,r,t)$[ [sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], GEN.l(i,v,r,h,t
        + sum{v$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades], cost_fom(i,v,r,t) * UPGRADES.l(i,v,r,t) }
 * transmission FOM on the year's new supply-curve capacity (see lcoe)
        + sum{(v,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-             m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * INV_RSC.l(i,v,r,rscbin,t) }
+             m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * INV_RSC.l(i,v,r,rscbin,t) }
        + sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(i,v,r,h,t) * hours(h) }
        + sum{(v,h)$[UPGRADES.l(i,v,r,t)$Sw_Upgrades], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(i,v,r,h,t) * hours(h) }
         ) / (sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], GEN.l(i,v,r,h,t) * hours(h) }
@@ -295,7 +294,7 @@ lcoe_pieces("fomcost",i,r,t)$tmodel_new(t) =
 
 lcoe_pieces("transfomcost",i,r,t)$tmodel_new(t) =
                   sum{(v,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-                      m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * INV_RSC.l(i,v,r,rscbin,t) } ;
+                      m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * INV_RSC.l(i,v,r,rscbin,t) } ;
 
 lcoe_pieces("vomcost",i,r,t)$tmodel_new(t) =
                   sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)],
@@ -1533,7 +1532,7 @@ systemcost_ba("op_spurline_fom",r,t)$tmodel_new(t) =
     + sum{(i,v,rscbin)
           $[m_rscfeas(r,i,rscbin)$valcap(i,v,r,t)
           $rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-          m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * CAP_RSC.l(i,v,r,rscbin,t)
+          m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * CAP_RSC.l(i,v,r,rscbin,t)
     }
 ;
 

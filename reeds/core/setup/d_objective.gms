@@ -187,11 +187,12 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{r$val_converter(r,t),
                     cost_acdc_vsc * trans_fom_frac * CAP_CONVERTER(r,t) }
 
-* spur lines modeled as part of supply curve
+* spur lines modeled as part of supply curve. Scaled by forcetechmult like every
+* other cost of a ForceMandate tech (2_financials.gms); it is 1 otherwise.
               + sum{(i,v,r,rscbin)
                     $[m_rscfeas(r,i,rscbin)$valcap(i,v,r,t)
                     $rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
-                    m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * CAP_RSC(i,v,r,rscbin,t) }
+                    m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * CAP_RSC(i,v,r,rscbin,t) }
 
 * spur lines modeled explicitly
               + sum{x$[Sw_SpurScen$xfeas(x)],
