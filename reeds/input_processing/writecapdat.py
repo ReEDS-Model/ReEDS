@@ -584,6 +584,8 @@ def main(reeds_path, inputs_case):
     '''
     print('Gathering RSC Existing Capacity...')
 
+    collapsed = reeds.techs.get_collapsed_techs(inputs_case)
+
     # PVB and UPV values are collected at the same time here:
     caprsc = gdb_use.loc[(gdb_use['tech'].isin(TECH['rsc_upv'])) &
                         (gdb_use['StartYear'] < startyear)  &
@@ -591,8 +593,9 @@ def main(reeds_path, inputs_case):
                         ]
 
     caprsc['v']='init-1'
-    # Assign existing upv as upv_5 based on their average cf
-    caprsc.loc[caprsc['tech']=='upv','tech']='upv_5'
+    # Assign existing upv to class 5 based on their average cf
+    caprsc.loc[caprsc['tech']=='upv','tech'] = reeds.techs.get_tech_class_name(
+        'upv', 5, collapsed)
     caprsc = caprsc[COLNAMES['rsc'][0]]
     caprsc.columns = COLNAMES['rsc'][1]
     caprsc = caprsc.groupby(COLNAMES['rsc'][1][:-2]).value.sum().reset_index()
@@ -645,7 +648,6 @@ def main(reeds_path, inputs_case):
     #    -- RSC Exogenous Capacity --    #
     ######################################
 
-    collapsed = reeds.techs.get_collapsed_techs(inputs_case)
     (cap_exog, rsc_class) = create_exog_rsc(
         reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear, collapsed)
 
