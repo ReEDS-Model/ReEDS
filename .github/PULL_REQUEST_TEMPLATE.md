@@ -85,7 +85,7 @@ Include additional illustrative plots describing input data, methods, testing, a
 <!-- - [ ] Demand data: @ahamilton5 -->
 <!-- - [ ] Emissions: @atpham88 -->
 <!-- - [ ] Financial calculations: @wesleyjcole -->
-<!-- - [ ] FINITO: @merveturan or @cavraam -->
+<!-- - [ ] FINITO: @bsergi or @cavraam -->
 <!-- - [ ] Hybrids: @aschleif -->
 <!-- - [ ] Monte Carlo: @bsergi -->
 <!-- - [ ] Sparse chronology or interday diurnal storage: @Yunzhi-Chen -->
