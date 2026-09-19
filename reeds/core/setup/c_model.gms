@@ -1958,6 +1958,7 @@ eq_CAPTRAN_PRM(r,rr,trtype,t)
 eq_prescribed_transmission(r,rr,trtype,t)
     $[routes_inv(r,rr,trtype,t)
     $tmodel(t)$(yeart(t)<firstyear_trans_nearterm)
+    $sum{tt$(yeart(tt)<=yeart(t)), trancap_fut(r,rr,"possible",trtype,tt)}
     $(not Sw_PCM)]..
 
 *all available transmission capacity expansion that is 'possible'
