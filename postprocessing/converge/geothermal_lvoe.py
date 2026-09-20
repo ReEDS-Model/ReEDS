@@ -15,8 +15,14 @@ Two generation profiles are evaluated:
 
 Prices are inflated from the case's dollar year to --dollar_year (default: bokehpivot default).
 
+Also writes the underlying price signals mapped back to hours using the run's hmap files:
+    prices_energy_hourly.csv / prices_energy-yearbymonth.png: rep-year hourly energy price
+        per region, one line per solve year, in the 12-rows-of-months layout
+    prices_stress.csv / prices_stress.png: stress-period price ($/kW per timeslice) per
+        region, one panel per stress day, one row per solve year
+
 Usage:
-    python postprocessing/converge/geothermal_lvoe.py runs/{case} [--tech geothermal]
+    python postprocessing/converge/geothermal_lvoe.py runs/{case} [--tech geothermal] [--start_year 2025]
 Outputs are written to runs/{case}/outputs/converge/.
 """
 #%% Imports
@@ -42,6 +48,8 @@ COLORS = {
     'National CES': '#B279A2',
 }
 PROFILES = {'avail': 'Modeled availability', 'flat': 'Flat block (avail = 1)'}
+## Cycle linestyles by region so regions with identical prices remain visible
+LINESTYLES = ['-', '--', '-.', ':']
 
 
 #%% Functions
@@ -75,13 +83,49 @@ def get_avail(folder, tech, regions):
     return avail
 
 
-def get_lvoe(case, tech='geothermal', dollar_year=DEFAULT_DOLLAR_YEAR):
+def get_prices(case, dollar_year=DEFAULT_DOLLAR_YEAR):
+    """reqt_price inflated to dollar_year"""
     sw = reeds.io.get_switches(case)
     inflator = reeds.io.get_inflatable()[int(sw['dollar_year']), dollar_year]
-
     prices = reeds.io.read_output(case, 'reqt_price')
     prices.columns = ['type', 'subtype', 'r', 'h', 't', 'value']
     prices['value'] *= inflator
+    return prices
+
+
+def read_hmap(folder):
+    hmap = pd.read_csv(os.path.join(folder, 'hmap_myr.csv'))
+    hmap = hmap.rename(columns={'*timestamp': 'timestamp'})
+    hmap['timestamp'] = pd.to_datetime(hmap.timestamp)
+    return hmap
+
+
+def get_energy_prices_hourly(case, prices):
+    """Map rep-timeslice energy prices to the hours of the rep year: index = timestamp,
+    columns = (t, r)"""
+    hmap = read_hmap(os.path.join(case, 'inputs_case', 'rep'))
+    energy = (
+        prices.loc[prices.type == 'load']
+        .pivot(index='h', columns=['t', 'r'], values='value')
+    )
+    hourly = energy.reindex(hmap.h).set_index(hmap.timestamp)
+    return hourly
+
+
+def get_stress_prices(case, prices):
+    """Map stress-timeslice reserve-margin prices ($/MW per timeslice) to the hours of the
+    stress periods: columns = t, r, period, timestamp, value"""
+    out = []
+    for t, dft in prices.loc[prices.type == 'res_marg'].groupby('t'):
+        stressdir = get_stress_dir(case, t, dft.h.unique())
+        hmap = read_hmap(stressdir)[['timestamp', 'season', 'h']].rename(columns={'season': 'period'})
+        out.append(hmap.merge(dft[['r', 'h', 'value']], on='h').assign(t=t))
+    return pd.concat(out)[['t', 'r', 'period', 'timestamp', 'h', 'value']]
+
+
+def get_lvoe(case, tech='geothermal', dollar_year=DEFAULT_DOLLAR_YEAR, prices=None):
+    if prices is None:
+        prices = get_prices(case, dollar_year)
     hours = reeds.io.read_output(case, 'hours').set_index('h').Value
     regions = sorted(prices.r.unique())
     avail_rep = get_avail(os.path.join(case, 'inputs_case', 'rep'), tech, regions)
@@ -178,6 +222,86 @@ def plot_lvoe(lvoe, column, unit, title, savepath):
     plt.close(fig)
 
 
+def plot_energy_prices_yearbymonth(hourly, unit, title, savepath):
+    """12-rows-of-months hourly price plot per region (columns), one line per solve year"""
+    years = sorted(hourly.columns.get_level_values('t').unique())
+    regions = sorted(hourly.columns.get_level_values('r').unique())
+    cmap = plt.get_cmap('viridis', len(years))
+    fig, axes = plt.subplots(
+        12, len(regions), figsize=(4 * len(regions), 12), sharex=True, sharey=True,
+        squeeze=False, dpi=150, gridspec_kw={'hspace': 0.15, 'wspace': 0.1},
+    )
+    for j, r in enumerate(regions):
+        df = hourly.xs(r, axis=1, level='r')[years]
+        df.columns = [str(t) for t in years]
+        plots.plotyearbymonth(
+            df, plotcols=df.columns.tolist(), colors=[cmap(k) for k in range(len(years))],
+            style='line', lwforline=0.8, f=fig, ax=axes[:, j],
+        )
+        axes[0, j].set_title(r, fontsize=10)
+        if j:
+            for ax in axes[:, j]:
+                ax.set_ylabel('')
+    ymax = hourly.max().max()
+    axes[0, 0].set_ylim(0, ymax * 1.05)
+    ## Scale reference, since plotyearbymonth hides the y ticks
+    axes[0, 0].annotate(
+        f'{unit} 0–{ymax:.0f}', (0, 1), xycoords='axes fraction', ha='left', va='bottom',
+        fontsize=7, color='0.4', xytext=(0, 1), textcoords='offset points',
+    )
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(1.0, 0.98),
+               frameon=False, fontsize=9, title='Solve year', title_fontsize=9)
+    fig.suptitle(title, x=0.01, ha='left', fontsize=11)
+    fig.savefig(savepath, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_stress_prices(stress, unit, title, savepath):
+    """Stress-period prices: one row per solve year, one panel per stress day, one line per
+    region. The y axis is shared within each year but not across years."""
+    years = sorted(stress.t.unique())
+    regions = sorted(stress.r.unique())
+    periods = {t: sorted(df.period.unique()) for t, df in stress.groupby('t')}
+    ncols = max(len(p) for p in periods.values())
+    cmap = plt.get_cmap('tab10')
+    fig, axes = plt.subplots(
+        len(years), ncols, figsize=(1.6 * ncols, 1.6 * len(years)), sharex=True,
+        squeeze=False, dpi=150, gridspec_kw={'hspace': 0.5, 'wspace': 0.1},
+    )
+    for i, t in enumerate(years):
+        dft = stress.loc[stress.t == t]
+        ymax = dft.value.max()
+        for j in range(ncols):
+            ax = axes[i, j]
+            if j >= len(periods[t]):
+                ax.axis('off')
+                continue
+            period = periods[t][j]
+            dfp = dft.loc[dft.period == period]
+            for k, r in enumerate(regions):
+                s = dfp.loc[dfp.r == r].set_index('timestamp').value.sort_index()
+                ax.step(s.index.hour, s.values, where='post', lw=1, color=cmap(k),
+                        ls=LINESTYLES[k % len(LINESTYLES)], label=r)
+            ax.set_title(dfp.timestamp.iloc[0].strftime('%Y-%m-%d'), fontsize=7, pad=2)
+            ax.set_ylim(0, ymax * 1.05)
+            ax.set_xlim(0, 23)
+            ax.set_xticks([0, 12])
+            ax.tick_params(labelsize=6, top=False, right=False, labelleft=(j == 0))
+            ax.grid(axis='y', color='0.9', lw=0.5)
+            for side in ['top', 'right']:
+                ax.spines[side].set_visible(False)
+        axes[i, 0].set_ylabel(f'{t}\n{unit}', fontsize=8, fontweight='normal')
+    for ax in axes[-1]:
+        ax.set_xlabel('hour', fontsize=7, fontweight='normal')
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(1.0, 0.98),
+               frameon=False, fontsize=8)
+    fig.suptitle(title, x=0.01, ha='left', fontsize=11)
+    fig.savefig(savepath, bbox_inches='tight')
+    plt.close(fig)
+
+
 #%% Main
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -189,16 +313,38 @@ if __name__ == '__main__':
                         help='tech name used in outage_forced_h.csv / outage_scheduled_h.csv')
     parser.add_argument('--dollar_year', '-d', type=int, default=DEFAULT_DOLLAR_YEAR,
                         help='output dollar year')
+    parser.add_argument('--start_year', '-y', type=int, default=2025,
+                        help='first solve year to include')
     args = parser.parse_args()
     case = os.path.abspath(args.case)
 
     outpath = os.path.join(case, 'outputs', 'converge')
     os.makedirs(outpath, exist_ok=True)
 
-    lvoe = get_lvoe(case, tech=args.tech, dollar_year=args.dollar_year)
-    lvoe.round(4).to_csv(os.path.join(outpath, f'lvoe_{args.tech}.csv'), index=False)
-
     casename = os.path.basename(case)
+    prices = get_prices(case, dollar_year=args.dollar_year)
+    prices = prices.loc[prices.t >= args.start_year]
+
+    ## Price signals mapped back to hours
+    hourly = get_energy_prices_hourly(case, prices)
+    hourly.round(3).to_csv(os.path.join(outpath, 'prices_energy_hourly.csv'))
+    plot_energy_prices_yearbymonth(
+        hourly, unit=f'{args.dollar_year}$/MWh',
+        title=f'{casename}: rep-year hourly energy price [{args.dollar_year}$/MWh]',
+        savepath=os.path.join(outpath, 'prices_energy-yearbymonth.png'),
+    )
+    stress = get_stress_prices(case, prices)
+    stress['value'] = (stress.value / 1e3).round(4)
+    stress.to_csv(os.path.join(outpath, 'prices_stress.csv'), index=False)
+    plot_stress_prices(
+        stress, unit=f'{args.dollar_year}$/kW',
+        title=f'{casename}: stress-period price [{args.dollar_year}$/kW per timeslice]',
+        savepath=os.path.join(outpath, 'prices_stress.png'),
+    )
+
+    ## LVOE
+    lvoe = get_lvoe(case, tech=args.tech, dollar_year=args.dollar_year, prices=prices)
+    lvoe.round(4).to_csv(os.path.join(outpath, f'lvoe_{args.tech}.csv'), index=False)
     for column, unit in [('usd_per_mwh', f'{args.dollar_year}$/MWh'),
                          ('usd_per_kwyr', f'{args.dollar_year}$/kW-yr')]:
         plot_lvoe(
