@@ -1203,7 +1203,7 @@ def write_miscellaneous_files(
     # Only keep the next GSw_QueueConstraintYears
     keepyears = [
         i for i in queue_limit.set_index(['r','tg']).columns
-        if int(i) <= scalars.this_year + int(sw.GSw_QueueConstraintYears)
+        if int(i) < scalars.this_year + int(sw.GSw_QueueConstraintYears)
     ]
     if len(keepyears):
         print(f"Applying interconnection queue cap in {','.join(keepyears)}")
