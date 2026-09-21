@@ -112,15 +112,14 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
             / 1e3
         )
         dfprofile.index = pd.to_datetime(dfprofile.index.get_level_values('datetime'))
+        dfprofile.rename(columns={'load_MWh': casename}, inplace=True)
         if idx == 0:
             f,ax = reeds.plots.plotyearbymonth(
-                dfprofile.rename({'load_MWh': casename}), 
-                style='line', colors=[color]
+                dfprofile, style='line', colors=[color],
             )
         else:
             reeds.plots.plotyearbymonth(
-                dfprofile.rename({'load_MWh': casename}),
-                style='line', colors=[color], f=f, ax=ax
+                dfprofile, style='line', colors=[color], f=f, ax=ax,
             )
                    
     ax[0].legend(loc='upper left', bbox_to_anchor=(1,1), frameon=False, fontsize='x-large')
