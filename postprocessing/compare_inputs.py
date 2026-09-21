@@ -64,99 +64,6 @@ def _validate_selected_weatheryears(selected_years, available_years, case_label,
             f'Available weather years: {sorted(available_years)}'
         )
 
-# should this  be replaced with Patrick's script?
-def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
-    """
-    Compare mean daily demand profiles across cases for one or more weather years.
-    Overlays the selected weather year profile(s) and fills envelope of min/max across all weather years.
-    """
-    if len(cases) < 2:
-        raise ValueError('Need at least 2 cases to compare inputs.')
-
-    selected_weatheryears = _parse_weatheryears(weatheryear)
-    selected_label = _weatheryears_label(selected_weatheryears)
-
-    plt.close()
-    f, ax = plt.subplots(figsize=(12, 4.5))
-    x_start, x_end = None, None
-
-    for idx, (casename, casepath) in enumerate(cases.items()):
-        print(f'  {casename}: loading demand...')
-        color = colors.get(casename, f'C{idx}')
-        t = reeds.io.get_years(casepath)[-1] if year in [0, None, 'last'] else year
-
-        # Load demand profile
-        dfprofile = (
-            reeds.results.summarize_load_data(
-                casepath, 
-                use_run=True,
-                agg_reg_lvl='all',
-                model_year_sub=[t], 
-            )
-            / 1e3
-        )
-
-        # Slice to weather years range
-        dfprofile.index = pd.to_datetime(dfprofile.index.get_level_values('datetime'))
-        
-        # Group by day of year (1-365/366) across all weather years
-        doy = dfprofile.index.dayofyear
-        hourly_stats = dfprofile.groupby(doy).agg(['min', 'max'])
-        hourly_stats.columns = ['min', 'max']
-
-        available_years = sorted(dfprofile.index.year.unique().tolist())
-        _validate_selected_weatheryears(selected_weatheryears, available_years, casename)
-        selected_daily_profiles = {}
-        for wy in selected_weatheryears:
-            selected_profile = dfprofile.loc[dfprofile.index.year == wy]
-            daily_profile = selected_profile.groupby(selected_profile.index.dayofyear).mean()
-            selected_daily_profiles[wy] = daily_profile.reindex(hourly_stats.index)
-
-        # Create date x-axis for a standard year
-        date_range = pd.date_range('2025-01-01', periods=len(hourly_stats), freq='D')
-        if x_start is None:
-            x_start, x_end = date_range[0], date_range[-1]
-
-        # Plot average daily profile across selected weather year(s)
-        avg_daily_profile = pd.concat(
-            [selected_daily_profiles[wy] for wy in selected_weatheryears], axis=1
-        ).mean(axis=1)
-        ax.plot(
-            date_range,
-            avg_daily_profile.values,
-            lw=1.0,
-            color=color,
-            label=casename,
-        )
-
-        # Fill envelope (min/max across weather years)
-        ax.fill_between(
-            date_range, hourly_stats['max'], hourly_stats['min'],
-            lw=0, alpha=0.15, color=color,
-        )
-
-        # Plot min/max dotted lines
-        ax.plot(date_range, hourly_stats['max'], lw=0.5, linestyle=':', color=color, alpha=0.6)
-        ax.plot(date_range, hourly_stats['min'], lw=0.5, linestyle=':', color=color, alpha=0.6)
-
-    ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ax.set_ylabel('Daily mean electricity demand [GW]')
-    ax.set_ylim(0)
-    
-    # Format x-axis dates
-    ax.xaxis.set_major_locator(mpl.dates.MonthLocator())
-    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter('%b'))
-    if x_start is not None and x_end is not None:
-        ax.set_xlim(x_start, x_end)
-    ax.margins(x=0)
-    ax.grid(True, which='major', axis='y', alpha=0.3)
-
-    yearlabel = year if year not in [0, None, 'last'] else 'last model year'
-    ax.legend(frameon=False, loc='lower center', ncol=len(cases))
-    reeds.plots.despine(ax)
-
-    return f, ax
-
 def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, region=None,):
     if len(cases) < 2:
         raise ValueError('Need at least 2 cases to compare inputs.')
@@ -712,17 +619,6 @@ if __name__ == '__main__':
     else:
         selected_weatheryears = _parse_weatheryears(args.weatheryear)
     weatheryear_label = _weatheryears_label(selected_weatheryears)
-
-    try:
-        f, ax = plot_daily_demand_profiles(
-            cases,
-            colors,
-            year=year,
-            weatheryear=selected_weatheryears,
-        )
-        saveit(f'Demand daily profile {year}')
-    except Exception as e:
-        print(traceback.format_exc())
 
     try:
         f, ax = plot_hourly_demand_profiles(
