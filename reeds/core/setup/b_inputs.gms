@@ -5250,6 +5250,10 @@ geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
 * existing resource is already sufficient to cover prescriptions
 geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
 
+* Round up and add a 1 MW margin so that m_rsc_dat * rsc_capacity_scalar (both rounded to 3
+* decimals below) cannot fall an epsilon short of the prescribed capacity in eq_rsc_INVlim
+geo_bin1_add(i,r)$[geo_hydro(i)$geo_bin1_add(i,r)] = ceil(geo_bin1_add(i,r)) + 1 ;
+
 * Add any additional resource needed to the first bin of the supply curve
 m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
     m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
