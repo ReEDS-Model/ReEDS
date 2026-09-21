@@ -188,7 +188,7 @@ itc_fractions = pd.read_csv(
 ### Take a look
 if verbose:
     print('\nitc_fractions example before backfill')
-    print(itc_fractions.loc[itc_fractions.i=='upv_1'].head())
+    print(itc_fractions.loc[itc_fractions.i=='upv'].head())
 
 ### Extend backwards to 2010
 ### (calc_financial_inputs.py only includes entries that begin construction in 2010,
@@ -205,7 +205,7 @@ itc_fractions = itc_extend.sort_index(axis=1).stack().rename('itc_frac').dropna(
 ### Take another look
 if verbose:
     print('\nitc_fractions example after backfill')
-    print(itc_fractions.loc[itc_fractions.i=='upv_1'].head())
+    print(itc_fractions.loc[itc_fractions.i=='upv'].head())
 
 
 #%% Get ITC-eligible capex spending

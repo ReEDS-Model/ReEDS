@@ -32,12 +32,11 @@ def get_historical_units(inputs_case):
     # Rename techs for consistency with capital cost data from inputs.gdx
     tech_name_map = {
         'csp-ns': 'csp1_1',
-        'dupv': 'upv_1',
+        'dupv': 'upv',
         'geohydro_allkm': 'geohydro_allkm_1',
         'hyded': 'hydnd',
         'hydend': 'hydnd',
-        'pvb': 'upv_1',
-        'upv': 'upv_1',
+        'pvb': 'upv',
     }
     init_cap['i'] = init_cap['i'].str.lower().replace(tech_name_map)
 
