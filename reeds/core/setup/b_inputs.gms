@@ -89,7 +89,6 @@ sets
 *bannew - will remove the ability to invest in that technology
   ban(i) "ban from existing, prescribed, and new generation -- usually indicative of missing data or operational constraints"
   /
-    upv_10
 * csp-ns is "CSP, no storage". There is ~1.3 GW existing capacity but we group it with UPV and
 * don't allow new builds of csp-ns.
     csp-ns
@@ -868,8 +867,8 @@ tg_rsc_cspagg(i,ii)$[csp(ii)$i_numeraire(ii)$Sw_WaterMain] = no ;
 $ontext
 Replicating the construct for CSP to link Hybrid PV+battery and UPV for the resoruce supply curve constraints
   eq_rsc_invlim(i,bin).. sum{ii$rsc_agg(i,ii), INV_RSC(i,bin) } <= bin_capacity(i,bin) ;
-  When i = "upv_1", this constraint looks like:
-  eq_rsc_invlim("upv_1",bin).. INV_RSC("pvb1_1") + INV_RSC("upv_1") <= bin_capacity("upv_1",bin)
+  When i = "upv", this constraint looks like:
+  eq_rsc_invlim("upv",c,bin).. INV_RSC("pvb1",c) + INV_RSC("upv",c) <= bin_capacity("upv",c,bin)
   Because the first index of rsc_agg is only a UPV technology the above constraint will never be generated when "i" is a pvb(i).
 $offtext
 
@@ -3346,7 +3345,7 @@ plant_char(i,v,t,"rte")$[i_water_cooling(i)$newv(v)] =
 * --- PV+Battery Configurations ---
 *==================================
 
-parameter ilr_pvb_config(pvb_config) "--unitless-- inverter loading ratio for each hybrid pv+battery configuration"
+parameter ilr_pvb_config(i) "--unitless-- inverter loading ratio for each hybrid pv+battery configuration"
 /
 $offlisting
 $ondelim
@@ -3361,9 +3360,9 @@ ilr(i)$[valcap_i(i)] = 1 ;
 ilr(i)$[upv(i)] = ilr_utility ;
 ilr(i)$distpv(i) = ilr_dist ;
 * assign an ILR to hybrid PV+battery technologies based on the ILR for the configurations
-ilr(pvb) = sum{pvb_config$pvb_agg(pvb_config,pvb), ilr_pvb_config(pvb_config) } ;
+ilr(pvb) = ilr_pvb_config(pvb) ;
 
-parameter bir_pvb_config(pvb_config) "--unitless-- ratio of the battery capacity to the inverter capacity (MW_battery / MW_inverter) for each hybrid pv+battery configuration"
+parameter bir_pvb_config(i) "--unitless-- ratio of the battery capacity to the inverter capacity (MW_battery / MW_inverter) for each hybrid pv+battery configuration"
 /
 $offlisting
 $ondelim
@@ -3374,7 +3373,7 @@ $onlisting
 
 * Assign a battery capacity ratio to each hybrid PV+battery technology
 parameter bcr(i) "--unitless-- ratio of the battery capacity to the PV DC capacity (battery capacity ratio)" ;
-bcr(pvb) = sum{pvb_config$pvb_agg(pvb_config,pvb), bir_pvb_config(pvb_config) / ilr_pvb_config(pvb_config) } ;
+bcr(pvb) = bir_pvb_config(pvb) / ilr_pvb_config(pvb) ;
 bcr(i)$[storage_standalone(i) or csp_storage(i) or hyd_add_pump(i)] = 1 ;
 
 *=========================================
@@ -4648,7 +4647,7 @@ storinmaxfrac(i,v,r)$[(storage_standalone(i) or hyd_add_pump(i))$(not storinmaxf
 
 * --- Hybrid PV+Battery ---
 
-table pvbcapmult(allt,pvb_config) "PV+Battery capital cost multipliers over time"
+table pvbcapmult(allt,i) "PV+Battery capital cost multipliers over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%pvbcapcostmult.csv
@@ -4660,7 +4659,7 @@ $onlisting
 * total cost = cost(PV) * cap(PV) + cost(B) * cap(B)
 *            = cost(PV) * cap(PV) + cost(B) * bcr * cap(PV)
 *            = [cost(PV) + cost(B) * bcr ] * cap(PV)
-cost_cap(i,t)$pvb(i) = (cost_cap_pvb_p(i,t) + bcr(i) * cost_cap_pvb_b(i,t)) * sum{pvb_config$pvb_agg(pvb_config,i), pvbcapmult(t,pvb_config) } ;
+cost_cap(i,t)$pvb(i) = (cost_cap_pvb_p(i,t) + bcr(i) * cost_cap_pvb_b(i,t)) * pvbcapmult(t,i) ;
 
 scalar pvb_itc_qual_frac "--fraction-- fraction of energy that must be charged from local PV for hybrid PV+battery" ;
 pvb_itc_qual_frac = %GSw_PVB_Charge_Constraint% ;
