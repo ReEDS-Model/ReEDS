@@ -71,8 +71,6 @@ def _validate_selected_weatheryears(selected_years, available_years, case_label,
         )
 
 def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, region=None,):
-    if len(cases) < 2:
-        raise ValueError('Need at least 2 cases to compare inputs.')
 
     selected_weatheryears = _parse_weatheryears(weatheryear)
 
@@ -135,9 +133,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
     For each model year and case, compute min/max across weather years and
     the value for each selected weather year.
     """
-    if len(cases) < 2:
-        raise ValueError('Need at least 2 cases to compare inputs.')
-
     selected_weatheryears = _parse_weatheryears(weatheryear)
 
     f, (ax_total, ax_peak) = plt.subplots(
@@ -261,9 +256,6 @@ def plot_regional_peak_demand_maps(cases, year='last'):
     f, ax, df_peak
         df_peak has one column per case, indexed by state, values in GW.
     """
-    if len(cases) < 2:
-        raise ValueError('Need at least 2 cases to compare inputs.')
-
     basecasename = list(cases.keys())[0]
     basecasepath = list(cases.values())[0]
 
@@ -398,9 +390,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
         df_total has one column per case, indexed by state, values in TWh.
         df_total has one column per case, indexed by region, values in TWh.
     """
-    if len(cases) < 2:
-        raise ValueError('Need at least 2 cases to compare inputs.')
-
     selected_weatheryears = _parse_weatheryears(weatheryear)
     basecasename = list(cases.keys())[0]
     basecasepath = list(cases.values())[0]
@@ -574,6 +563,8 @@ if __name__ == '__main__':
         args.basecase,
         titleshorten,
     )
+    if len(cases) < 2:
+        raise ValueError('Need at least 2 cases to compare inputs.')
 
     firstcasepath = list(cases.values())[0]
     outpath = os.path.join(firstcasepath, 'outputs', 'comparisons','inputs')
