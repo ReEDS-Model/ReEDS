@@ -52,14 +52,6 @@ def _parse_weatheryears(weatheryear):
 
     return years
 
-
-def _weatheryears_label(weatheryears):
-    """Create a compact weather-year label for titles and output names."""
-    if len(weatheryears) == 1:
-        return str(weatheryears[0])
-    return ','.join("'"+str(y)[2:] for y in weatheryears)
-
-
 def _validate_selected_weatheryears(selected_years, available_years, case_label, modelyear=None):
     """Ensure selected weather years exist in available years for a given case/model year."""
     missing = sorted(set(selected_years) - set(available_years))
@@ -192,7 +184,6 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, re
 
 def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
     selected_weatheryears = _parse_weatheryears(weatheryear)
-    yearlabel = year if year not in [0, None, 'last'] else 'last model year'
 
     plt.close()
     for idx, (casename, casepath) in enumerate(cases.items()):
