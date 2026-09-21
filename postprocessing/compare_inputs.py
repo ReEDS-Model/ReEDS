@@ -133,7 +133,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
         raise ValueError('Need at least 2 cases to compare inputs.')
 
     selected_weatheryears = _parse_weatheryears(weatheryear)
-    selected_label = _weatheryears_label(selected_weatheryears)
 
     f, (ax_total, ax_peak) = plt.subplots(
         1, 2, figsize=(12, 4.5), constrained_layout=True
@@ -397,7 +396,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
         raise ValueError('Need at least 2 cases to compare inputs.')
 
     selected_weatheryears = _parse_weatheryears(weatheryear)
-    wy_label = _weatheryears_label(selected_weatheryears)
     basecasename = list(cases.keys())[0]
     basecasepath = list(cases.values())[0]
 
@@ -618,7 +616,6 @@ if __name__ == '__main__':
         selected_weatheryears = sw.GSw_HourlyWeatherYears
     else:
         selected_weatheryears = _parse_weatheryears(args.weatheryear)
-    weatheryear_label = _weatheryears_label(selected_weatheryears)
 
     try:
         f, ax = plot_hourly_demand_profiles(
