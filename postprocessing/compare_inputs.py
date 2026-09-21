@@ -510,18 +510,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
     df_total = pd.DataFrame(total_st).reindex(dfstates.index)
     return f, ax, df_total
 
-
-def plot_peak_and_total_load_maps(cases, colors, year='last', weatheryear=2012):
-    """
-    Convenience wrapper: calls plot_regional_peak_demand_maps and
-    plot_regional_total_demand_maps and returns their results as a tuple.
-    """
-    f_peak, ax_peak, df_peak = plot_regional_peak_demand_maps(cases, year=year)
-    f_total, ax_total, df_total = plot_regional_total_demand_maps(
-        cases, colors, year=year, weatheryear=weatheryear
-    )
-    return (f_peak, f_total), (ax_peak, ax_total), (df_peak, df_total)
-
 #%% Main
 
 
