@@ -160,27 +160,16 @@ def plot_daily_demand_profiles(cases, colors, year='last', weatheryear=2012):
     ax.grid(True, which='major', axis='y', alpha=0.3)
 
     yearlabel = year if year not in [0, None, 'last'] else 'last model year'
-    wy_title_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
-    ax.set_title(
-        f'Daily mean demand in {yearlabel} for {wy_title_label} {selected_label} with min/max envelope across all weather years',
-        x=0,
-        ha='left',
-    )
     ax.legend(frameon=False, loc='lower center', ncol=len(cases))
     reeds.plots.despine(ax)
 
     return f, ax
 
-def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012,
-                                region=None, region_title_label=None):
+def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, region=None,):
     if len(cases) < 2:
         raise ValueError('Need at least 2 cases to compare inputs.')
 
     selected_weatheryears = _parse_weatheryears(weatheryear)
-    selected_label = _weatheryears_label(selected_weatheryears)
-    yearlabel = year if year not in [0, None, 'last'] else 'last model year'
-    wy_title_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
-    region_title_label = 'CONUS' if region_title_label is None else region_title_label
 
     plt.close()
     f, ax = plt.subplots(figsize=(13.33, 4))
@@ -195,11 +184,6 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012,
     ax.margins(x=0)
     ax.grid(True, which='major', axis='y', alpha=0.3)
     
-    ax.set_title(
-        f'Hourly demand in {region_title_label} in {yearlabel} for {wy_title_label} {selected_label} with min/max daily envelope',
-        x=0,
-        ha='left',
-    )
     ax.legend(frameon=False, loc='lower center', ncol=len(cases))
     plt.autoscale(enable=True, axis='y')
     ax.set_ylim(0)
@@ -237,11 +221,6 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
                 style='line', colors=[color], f=f, ax=ax
             )
                    
-    ax[0].set_title(
-        f'Hourly demand in {yearlabel} for weather year {weatheryear}',
-        x=0,
-        ha='left',
-    )
     ax[0].legend(loc='upper left', bbox_to_anchor=(1,1), frameon=False, fontsize='x-large')
     
     return f, ax
@@ -336,14 +315,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
 
     ax_total.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax_total.set_ylabel('Annual total load [TWh]')
-    wy_total_label = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
-    ax_total.set_title(
-        textwrap.fill(
-            f'Annual total load by model year ({wy_total_label} {selected_label}, min/max envelope)',
-            width=55,
-        ),
-        x=0, ha='left',
-    )
     ax_total.legend(frameon=False, loc='best')
     ax_total.margins(x=0)
     ax_total.set_xlim(left=2020)
@@ -353,13 +324,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
     ax_peak.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax_peak.set_xlabel('Model year')
     ax_peak.set_ylabel('Annual peak load [GW]')
-    ax_peak.set_title(
-        textwrap.fill(
-            f'Annual peak load by model year ({wy_total_label} {selected_label}, min/max envelope)',
-            width=55,
-        ),
-        x=0, ha='left',
-    )
     ax_peak.legend(frameon=False, loc='best')
     ax_peak.margins(x=0)
     ax_peak.set_xlim(left=2020)
@@ -436,7 +400,6 @@ def plot_regional_peak_demand_maps(cases, year='last'):
 
     ncols = len(cases)
     cmap_abs = cmap
-    cmap_diff = cmap_diff
 
     plt.close()
     f, ax = plt.subplots(
@@ -496,16 +459,11 @@ def plot_regional_peak_demand_maps(cases, year='last'):
                 orientation='horizontal', labelpad=2.25, histratio=0.,
                 cbarwidth=0.05, cbarheight=0.85,
                 cbarbottom=-0.05, cbarhoffset=0.,
+                title_fontsize=18, ticklabel_fontsize=16
             )
 
-        _ax.annotate(casename, (0.1, 1), xycoords='axes fraction', fontsize=14)
+        _ax.annotate(casename, (0.1, 1), xycoords='axes fraction', fontsize=18)
         _ax.axis('off')
-
-    f.suptitle(
-        f'Peak demand in {t} (max across all weather years)',
-        fontsize=18,
-        y=0.9,
-    )
 
     df_peak = pd.DataFrame(peak_st).reindex(dfstates.index)
     return f, ax, df_peak
@@ -587,7 +545,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
 
     ncols = len(cases)
     cmap_abs = cmap
-    cmap_diff = cmap_diff
 
     plt.close()
     f, ax = plt.subplots(
@@ -647,17 +604,12 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
                 orientation='horizontal', labelpad=2.25, histratio=0.,
                 cbarwidth=0.05, cbarheight=0.85,
                 cbarbottom=-0.05, cbarhoffset=0.,
+                title_fontsize=18, ticklabel_fontsize=16
             )
 
-        _ax.annotate(casename, (0.1, 1), xycoords='axes fraction', fontsize=14)
+        _ax.annotate(casename, (0.1, 1), xycoords='axes fraction', fontsize=18)
         _ax.axis('off')
 
-    wy_title = 'weather year' if len(selected_weatheryears) == 1 else 'weather years'
-    f.suptitle(
-        f'Annual demand in {t}, {wy_title} {wy_label}',
-        fontsize=18,
-        y=0.9,
-    )
 
     df_total = pd.DataFrame(total_st).reindex(dfstates.index)
     return f, ax, df_total
@@ -799,7 +751,6 @@ if __name__ == '__main__':
             year=year,
             weatheryear=selected_weatheryears,
             region=['IL_MISO','IL_PJM'],
-            region_title_label='Illinois',
         )
         saveit(f'Demand hourly profile {selected_weatheryears} IL')
     except Exception as e:
@@ -812,7 +763,6 @@ if __name__ == '__main__':
             year=year,
             weatheryear=selected_weatheryears,
             region=['TX_ERCOT_E', 'TX_ERCOT_W', 'TX_MISO', 'TX_SPP'],
-            region_title_label='Texas',
         )
         saveit(f'Demand hourly profile {selected_weatheryears} TX')
     except Exception as e:
