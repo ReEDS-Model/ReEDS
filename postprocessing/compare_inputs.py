@@ -19,6 +19,12 @@ from postprocessing import input_plots
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 reeds.plots.plotparams()
 
+#%% Global Variables
+# Define regions for which hourly demand profiles will be plotted
+hourly_regions = {
+    'IL':['IL_MISO','IL_PJM'],
+    'TX':['TX_ERCOT_E', 'TX_ERCOT_W', 'TX_MISO', 'TX_SPP'],
+}
 cmap = cmocean.cm.tempo
 cmap_diff = plt.cm.RdBu_r
 
@@ -616,29 +622,18 @@ if __name__ == '__main__':
     except Exception as e:
         print(traceback.format_exc())
     
-    try:
-        f, ax = plot_hourly_demand_profiles(
-            cases,
-            colors,
-            year=year,
-            weatheryear=selected_weatheryears,
-            region=['IL_MISO','IL_PJM'],
-        )
-        saveit(f'Demand hourly profile {selected_weatheryears} IL')
-    except Exception as e:
-        print(traceback.format_exc())
-    
-    try:
-        f, ax = plot_hourly_demand_profiles(
-            cases,
-            colors,
-            year=year,
-            weatheryear=selected_weatheryears,
-            region=['TX_ERCOT_E', 'TX_ERCOT_W', 'TX_MISO', 'TX_SPP'],
-        )
-        saveit(f'Demand hourly profile {selected_weatheryears} TX')
-    except Exception as e:
-        print(traceback.format_exc())
+    for region_label, region_list in hourly_regions.items():
+        try:
+            f, ax = plot_hourly_demand_profiles(
+                cases,
+                colors,
+                year=year,
+                weatheryear=selected_weatheryears,
+                region=region_list,
+            )
+            saveit(f'Demand hourly profile {selected_weatheryears} {region_label}')
+        except Exception as e:
+            print(traceback.format_exc())
     
     try:
         f, ax = plot_demand_yearbymonth(
