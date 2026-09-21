@@ -89,8 +89,12 @@ if '2019' not in sw.plantchar_upv:
     upv[['capcost','fom','vom']] = upv[['capcost','fom','vom']] / scalars['ilr_utility']
 
 # Broadcast costs to all UPV resource classes
+# (one entry if the classes share a technology name)
+collapsed = reeds.techs.get_collapsed_techs(inputs_case)
+upv_names = list(dict.fromkeys(
+    reeds.techs.get_tech_class_name('upv', c, collapsed).upper() for c in range(1,11)))
 upv_stack = pd.concat(
-    {'UPV_{}'.format(c): upv for c in range(1,11)},
+    {i: upv for i in upv_names},
     axis=0, names=['i','t']
 ).reset_index()
 

@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sys
 import itertools
+import re
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
@@ -317,17 +318,17 @@ def append_pvb_parameters(dfin, tech_to_copy='battery_li', column_scaler=None, p
     -------
     dfout: pd.DataFrame consisting of PV+B parameters appended to input dataframe.
     """
-    ### Get the pvb classes from upv
-    pvb_classes = [i.split('_')[1] for i in dfin.i.unique() if i.startswith('upv')]
+    ### Name the pvb techs after the upv techs, so pvb follows upv's naming ('upv' -> 'pvb1')
+    upv_names = [i for i in dfin.i.unique() if i.startswith('upv')]
     ### Get values for tech_to_copy
     copy_params = dfin.set_index('i').loc[[tech_to_copy]].reset_index(drop=True).copy()
     ### Create output dataframe, copying tech_to_copy assumptions for PV batteries
     append_pvb_params = (
         pd.concat(
             {
-                'pvb{}_{}'.format(pvb_type, pvb_class): copy_params
+                re.sub('^upv', 'pvb{}'.format(pvb_type), upv_name): copy_params
                 for pvb_type in pvb_types
-                for pvb_class in pvb_classes
+                for upv_name in upv_names
             }
         )
         .reset_index(level=0)
@@ -381,7 +382,7 @@ def import_and_mod_incentives(
     # and if upv takes the ITC, pvb will take the ITC on all components
     incentive_df = append_pvb_parameters(
         dfin=incentive_df,
-        tech_to_copy='upv_1',
+        tech_to_copy='upv',
     )
     # Inherit from battery if GSw_PVB_BatteryITC = 1 so that the battery component of pvb
     # can take the ITC even though the pv component takes the PTC
