@@ -7154,15 +7154,15 @@ def dr_shift_plots(case, year,savepath, region = 'ex', shift_tech = 'dr_shift_1'
     plots_dr = {'DR Shift Resource Availability': {'Energy':(baseline_dfs['Energy'],'k','line'),
                                 'Deferred Charging':(baseline_dfs['Charge'],'red','fill'),
                                 'Baseline':(baseline_dfs['Discharge'],'green','fill')},
-                'DR Shift Rep-period: Charge': {'Baseline':(baseline_dfs['Charge'],'k','line'),
-                                            'Rep':(rep_dfs['Charge'],'grey','fill'),
-                                            'Deploy':(rep_gen['Charge'],'red','line')},
+                'DR Shift Rep-period: Deferred Charging': {'Available':(baseline_dfs['Charge'],'k','line'),
+                                            'Available Rep':(rep_dfs['Charge'],'grey','fill'),
+                                            'Deployed':(rep_gen['Charge'],'red','line')},
                 'DR Shift Rep-period: Discharge': {'Baseline':(baseline_dfs['Discharge'],'k','line'),
                                             'Rep':(rep_dfs['Discharge'],'grey','fill'),
                                             'Deploy':(rep_gen['Discharge'],'red','line')},
-                'DR Shift Rep-period: Energy': {'Baseline':(baseline_dfs['Energy'],'k','line'),
-                                            'Rep':(rep_dfs['Energy'],'grey','fill'),
-                                            'Deploy':(rep_gen['Energy'],'red','line')},
+                'DR Shift Rep-period: Energy': {'Available':(baseline_dfs['Energy'],'k','line'),
+                                            'Available Rep':(rep_dfs['Energy'],'grey','fill'),
+                                            'Deployed':(rep_gen['Energy'],'red','line')},
             }
 
     output_csv.to_csv(os.path.join(os.path.split(savepath)[0],f"dr_shift-{region}-{year}.csv"))
