@@ -15,6 +15,7 @@ ccsflex_ATB_2020,2019
 coal_ATB_2024_moderate,2022
 coal-ccs_ATB_2024_advanced,2022
 coal-ccs_ATB_2024_conservative,2022
+coal-ccs_ATB_2024_extraconservative,2022
 coal-ccs_ATB_2024_moderate,2022
 csp_ATB_2023_advanced,2021
 csp_ATB_2023_conservative,2021
@@ -31,6 +32,7 @@ h2fuelcell_conservative,2022
 gas_ATB_2024_moderate,2022
 gas-ccs_ATB_2024_advanced,2022
 gas-ccs_ATB_2024_conservative,2022
+gas-ccs_ATB_2024_extraconservative,2022
 gas-ccs_ATB_2024_moderate,2022
 fuelcell_ATB_2024_advanced,2022
 fuelcell_ATB_2024_moderate,2022

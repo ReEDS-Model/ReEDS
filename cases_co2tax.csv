@@ -1,0 +1,9 @@
+,Default Value,Reference_NoCO2detail,Reference_YesCO2detail,Reference_NoCO2detail_NoCoalCCS,Reference_NoCO2detail_HighCCSCcapex,Reference_NoCO2detail_ExtraHighCCSCcapex,Reference_YesCO2detail_NoCoalCCS,Reference_YesCO2detail_HighCCSCcapex,Reference_YesCO2detail_ExtraHighCCSCcapex,CO2tax_NoCO2detail,CO2tax_YesCO2detail,CO2tax_NoCO2detail_NoCoalCCS,CO2tax_NoCO2detail_HighCCSCcapex,CO2tax_NoCO2detail_ExtraHighCCSCcapex,CO2tax_YesCO2detail_NoCoalCCS,CO2tax_YesCO2detail_HighCCSCcapex,CO2tax_YesCO2detail_ExtraHighCCSCcapex
+ignore,0,,,,,,,,,,,,,,,,
+GSw_CarbTax,0,,,,,,,,,1,1,1,1,1,1,1,1
+GSw_CarbTaxOption,default,,,,,,,,,t200_2050,t200_2050,t200_2050,t200_2050,t200_2050,t200_2050,t200_2050,t200_2050
+GSw_CO2_Detail,0,,1,,,,1,1,1,,1,,,,1,1,1
+GSw_CoalCCS,1,,,0,,,0,,,,,0,,,0,,
+plantchar_coal_ccs,coal-ccs_ATB_2024_moderate,,,,coal-ccs_ATB_2024_conservative,coal-ccs_ATB_2024_extraconservative,,coal-ccs_ATB_2024_conservative,coal-ccs_ATB_2024_extraconservative,,,,coal-ccs_ATB_2024_conservative,coal-ccs_ATB_2024_extraconservative,,coal-ccs_ATB_2024_conservative,coal-ccs_ATB_2024_extraconservative
+plantchar_gas_ccs,gas-ccs_ATB_2024_moderate,,,,gas-ccs_ATB_2024_conservative,gas-ccs_ATB_2024_extraconservative,,gas-ccs_ATB_2024_conservative,gas-ccs_ATB_2024_extraconservative,,,,gas-ccs_ATB_2024_conservative,gas-ccs_ATB_2024_extraconservative,,gas-ccs_ATB_2024_conservative,gas-ccs_ATB_2024_extraconservative
+ccs_upgrade_cost_case,atb22_1p2_moderate,,,,atb22_1p2_mod30percIncrease,atb22_1p2_mod80percIncrease,,atb22_1p2_mod30percIncrease,atb22_1p2_mod80percIncrease,,,,atb22_1p2_mod30percIncrease,atb22_1p2_mod80percIncrease,,atb22_1p2_mod30percIncrease,atb22_1p2_mod80percIncrease

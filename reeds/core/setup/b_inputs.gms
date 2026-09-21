@@ -394,6 +394,11 @@ if(Sw_CCS = 0,
   ban(i)$i_subsets(i,'ccs') = yes ;
 ) ;
 
+if(Sw_CoalCCS = 0,
+  ban(i)$i_subsets(i,'coal_ccs') = yes ;
+  bannew(i)$i_subsets(i,'coal_ccs') = yes ;
+) ;
+
 if(Sw_CCSFLEX_BYP = 0,
   ban('Gas-CC-CCS-F1') = yes ;
   ban('coal-CCS-F1') = yes ;
