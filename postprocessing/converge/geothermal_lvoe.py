@@ -22,7 +22,7 @@ Also writes the underlying price signals mapped back to hours using the run's hm
         region, one panel per stress day, one row per solve year
 
 Usage:
-    python postprocessing/converge/geothermal_lvoe.py runs/{case} [--tech geothermal] [--start_year 2025]
+    python postprocessing/converge/geothermal_lvoe.py runs/{case} [--tech geothermal] [--start_year 2025] [--regions CO_E,CO_W]
 Outputs are written to runs/{case}/outputs/converge/.
 """
 #%% Imports
@@ -315,6 +315,8 @@ if __name__ == '__main__':
                         help='output dollar year')
     parser.add_argument('--start_year', '-y', type=int, default=2025,
                         help='first solve year to include')
+    parser.add_argument('--regions', '-r', type=str, default='',
+                        help='comma-delimited zones to include (default: all)')
     args = parser.parse_args()
     case = os.path.abspath(args.case)
 
@@ -324,6 +326,8 @@ if __name__ == '__main__':
     casename = os.path.basename(case)
     prices = get_prices(case, dollar_year=args.dollar_year)
     prices = prices.loc[prices.t >= args.start_year]
+    if args.regions:
+        prices = prices.loc[prices.r.isin(args.regions.split(','))]
 
     ## Price signals mapped back to hours
     hourly = get_energy_prices_hourly(case, prices)
