@@ -3345,11 +3345,11 @@ plant_char(i,v,t,"rte")$[i_water_cooling(i)$newv(v)] =
 * --- PV+Battery Configurations ---
 *==================================
 
-parameter ilr_pvb_config(i) "--unitless-- inverter loading ratio for each hybrid pv+battery configuration"
+parameter ilr_pvb(i) "--unitless-- inverter loading ratio for hybrid pv+battery technologies"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%pvb_ilr.csv
+$include inputs_case%ds%ilr_pvb.csv
 $offdelim
 $onlisting
 / ;
@@ -3359,21 +3359,21 @@ parameter ilr(i) "--unitless-- inverter loading ratio - used to convert DC capac
 ilr(i)$[valcap_i(i)] = 1 ;
 ilr(i)$[upv(i)] = ilr_utility ;
 ilr(i)$distpv(i) = ilr_dist ;
-* assign an ILR to hybrid PV+battery technologies based on the ILR for the configurations
-ilr(pvb) = ilr_pvb_config(pvb) ;
+* Assign an ILR to each hybrid PV+battery technology
+ilr(pvb) = ilr_pvb(pvb) ;
 
-parameter bir_pvb_config(i) "--unitless-- ratio of the battery capacity to the inverter capacity (MW_battery / MW_inverter) for each hybrid pv+battery configuration"
+parameter bir_pvb(i) "--unitless-- ratio of the battery capacity to the inverter capacity (MW_battery / MW_inverter) for hybrid pv+battery technologies"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%pvb_bir.csv
+$include inputs_case%ds%bir_pvb.csv
 $offdelim
 $onlisting
 / ;
 
 * Assign a battery capacity ratio to each hybrid PV+battery technology
 parameter bcr(i) "--unitless-- ratio of the battery capacity to the PV DC capacity (battery capacity ratio)" ;
-bcr(pvb) = bir_pvb_config(pvb) / ilr_pvb_config(pvb) ;
+bcr(pvb) = bir_pvb(pvb) / ilr_pvb(pvb) ;
 bcr(i)$[storage_standalone(i) or csp_storage(i) or hyd_add_pump(i)] = 1 ;
 
 *=========================================

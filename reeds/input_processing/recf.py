@@ -405,8 +405,8 @@ def main(reeds_path, inputs_case):
 
     ### Format PV+battery profiles
     # Get the PVB types
-    pvb_ilr = pd.read_csv(
-        os.path.join(inputs_case, 'pvb_ilr.csv'),
+    ilr_pvb = pd.read_csv(
+        os.path.join(inputs_case, 'ilr_pvb.csv'),
         header=0, names=['pvb_type','ilr'], index_col='pvb_type').squeeze(1)
     df_pvb = {}
     # Override GSw_PVB_Types if GSw_PVB is turned off
@@ -415,7 +415,7 @@ def main(reeds_path, inputs_case):
         else []
     )
     for pvb_type in GSw_PVB_Types:
-        ilr = int(pvb_ilr['pvb{}'.format(pvb_type)] * 100)
+        ilr = int(ilr_pvb['pvb{}'.format(pvb_type)] * 100)
         # If PVB uses same ILR as UPV then use its profile
         infile = 'recf_upv' if ilr == scalars['ilr_utility'] * 100 else f'recf_upv_{ilr}AC'
         df_pvb[pvb_type] = reeds.io.read_file(

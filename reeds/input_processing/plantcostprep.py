@@ -389,11 +389,11 @@ degrade = degrade.set_index('i').round(6)
 #####################################
 
 # Get PVB designs
-pvb_ilr = pd.read_csv(
-    os.path.join(inputs_case, 'pvb_ilr.csv'),
+ilr_pvb = pd.read_csv(
+    os.path.join(inputs_case, 'ilr_pvb.csv'),
     header=0, names=['pvb_type','ilr'], index_col='pvb_type').squeeze(1)
-pvb_bir = pd.read_csv(
-    os.path.join(inputs_case, 'pvb_bir.csv'),
+bir_pvb = pd.read_csv(
+    os.path.join(inputs_case, 'bir_pvb.csv'),
     header=0, names=['pvb_type','bir'], index_col='pvb_type').squeeze(1)
 # Get PV and battery $/Wac costs for PVB
 battery_USDperWac = (
@@ -475,8 +475,8 @@ for i in sw['GSw_PVB_Types'].split('_'):
     pvb['pvb{}'.format(i)] = get_pvb_cost(
         UPV_defaultILR_USDperWac=UPV_defaultILR_USDperWac,
         battery_USDperWac=battery_USDperWac,
-        ILR_user=pvb_ilr['pvb{}'.format(i)],
-        BIR_user=pvb_bir['pvb{}'.format(i)],
+        ILR_user=ilr_pvb['pvb{}'.format(i)],
+        BIR_user=bir_pvb['pvb{}'.format(i)],
         inverter_cost_ac_fraction=pvbvalues.loc['inverter_fraction','value'],
         fixed_ac_noninverter_cost_USDperWac=fixed_ac_noninverter_cost_USDperWac,
         ILR_ATB=scalars['ilr_utility'],

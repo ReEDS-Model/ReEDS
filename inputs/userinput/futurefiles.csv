@@ -8,6 +8,7 @@ alpha.csv,.csv,0,None,t,None,1,0,constant,None,None,done,linear_10
 bio_priceramp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 bio_supplycurve.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 bioclass.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+bir_pvb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 c.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 can_exports_h_frac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 can_exports_szn_frac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -237,6 +238,7 @@ i_p.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 i_subtech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 i_water_nocooling.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 i.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+ilr_pvb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 incentives.csv,.csv,0,None,t_start_construction,"i,country",1,0,constant,None,None,[CHECK] do we need to forecast within calc_financial_inputs?; new,
 inflation.csv,.csv,0,None,t,None,0,0,constant,None,None,done,constant
 inputs.gdx,.gdx,1,None,9999,None,9999,0,constant,None,None,done (wouldn't exist yet in normal run),constant
@@ -361,8 +363,6 @@ ptc_values.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 pv_cf_improve.csv,.csv,0,None,0,None,0,None,constant,None,None,done,constant
 pv_frac_of_depreciation.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new; handled in calc_financial_inputs.py,
 pvb_bcr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-pvb_bir.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-pvb_ilr.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 pvbcapcostmult.csv,.csv,0,None,t,None,0,0,constant,None,None,done,constant
 pvf_cap.csv,.csv,1,None,*t,None,0,0,linear_5,0,None,done (but double-check that it is written correctly by calc_financial_inputs.py),linear_5
 pvf_onm_int.csv,.csv,1,None,*t,None,0,0,linear_10,0,None,done (but double-check that it is written correctly by calc_financial_inputs.py),linear_10
