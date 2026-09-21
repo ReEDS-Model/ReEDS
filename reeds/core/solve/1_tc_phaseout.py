@@ -56,7 +56,7 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
     tc_file_dir = os.path.join(case, 'outputs', 'tc_phaseout_data')
 
     # Import tech groups. Used to expand const_times
-    # (e.g., 'UPV' expands to all of the upv subclasses, like upv_1, upv_2, etc)
+    # (e.g., 'CSP1' expands to all of the csp1 subclasses, like csp1_1, csp1_2, etc)
     tech_groups = reeds.techs.import_tech_groups(
         os.path.join(case, 'inputs_case', 'tech-subset-table.csv'))
 
