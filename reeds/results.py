@@ -873,9 +873,11 @@ def summarize_load_data(
     if reg_sub is None:
         dfout = dfin.copy()
     else:
-        print(f"...subsettting to {reg_sub}")
-        dfout = dfin.loc[:, reg_sub].copy()
-        # TODO: add error checking for misspecified region list
+        print(f"...subsetting to {' '.join([reg for reg in reg_sub])}")
+        if not all(reg in dfin.columns for reg in reg_sub):
+            raise KeyError("Region(s) {} not in the data.".format(
+                " ".join([reg for reg in reg_sub if reg not in dfin.columns])))
+        dfout = dfin.loc[:, [reg for reg in reg_sub if reg in dfin.columns]].copy()
 
     ## aggregate to desired regionality
     if agg_reg_lvl is None:
@@ -899,7 +901,7 @@ def summarize_load_data(
         hierarchy = pd.read_csv(hierarchy_file_path)
         # set up region mapping
         if agg_reg_lvl not in hierarchy.columns:
-            print(f"ERROR: {agg_reg_lvl} is not a column in hierarchy file. Skipping aggregation.")
+            raise UserWarning(f"{agg_reg_lvl} is not a column in hierarchy file. Skipping aggregation.")
         else:
             region_map = hierarchy[[reg_col, agg_reg_lvl]].set_index(reg_col).squeeze()
 
@@ -911,15 +913,19 @@ def summarize_load_data(
 
     # subset to desired model years
     if model_year_sub is not None:
-        print(f"...subsetting to {model_year_sub} model years")
-        # TODO: implement 'last' option, convert int to list of last value
-        # TODO: warning on missing values?
+        print(f"...subsetting to {' '.join([str(my) for my in model_year_sub])} model years")
+        model_year_sub = reeds.io.get_years(casepath)[-1] if model_year_sub in [0,'last'] else model_year_sub
+        if isinstance(model_year_sub, int):
+            model_year_sub = [model_year_sub]
         my_vals = dfout.index.get_level_values('year')
+        if not all(my in my_vals for my in model_year_sub):
+            raise KeyError("Model year(s) {} not in the data.".format(
+                " ".join([str(my) for my in model_year_sub if my not in my_vals])))
         dfout = dfout[my_vals.isin(model_year_sub)]
 
     ## subset to desired weather years
     if weather_year_sub is not None:
-        print(f"...subsetting to {weather_year_sub} weather years")
+        print(f"...subsetting to {' '.join([str(wy) for wy in weather_year_sub])} weather years")
         # temporarily reset index to slice
         idx_names = dfout.index.names
         dfout = dfout.reset_index()
@@ -930,6 +936,9 @@ def summarize_load_data(
         elif not isinstance(weather_year_sub, list):
             print("'weather_year_sub' only accepts int or list.")
             raise Exception
+        if not all(wy in dfout['weather_year'].unique() for wy in weather_year_sub):
+            raise KeyError("Weather year(s) {} not in the data.".format(
+                " ".join([str(wy) for wy in weather_year_sub if wy not in dfout['weather_year'].unique()])))
         dfout = dfout.loc[dfout.weather_year.isin(weather_year_sub)]
         # reset index
         dfout = dfout.drop('weather_year', axis=1).set_index(idx_names)

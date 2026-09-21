@@ -58,18 +58,6 @@ def _parse_weatheryears(weatheryear):
 
     return years
 
-def _validate_selected_weatheryears(selected_years, available_years, case_label, modelyear=None):
-    """Ensure selected weather years exist in available years for a given case/model year."""
-    missing = sorted(set(selected_years) - set(available_years))
-    if missing:
-        where = f' for case {case_label}'
-        if modelyear is not None:
-            where += f', model year {modelyear}'
-        raise ValueError(
-            f'Weather year(s) {missing} not found{where}. '
-            f'Available weather years: {sorted(available_years)}'
-        )
-
 def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, region=None,):
 
     selected_weatheryears = _parse_weatheryears(weatheryear)
@@ -98,7 +86,6 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
 
     plt.close()
     for idx, (casename, casepath) in enumerate(cases.items()):
-        t = reeds.io.get_years(casepath)[-1] if year in [0, None, 'last'] else year
         color = colors.get(casename, f'C{idx}')
         
         dfprofile = (
@@ -106,7 +93,7 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
                 casepath, 
                 use_run=True,
                 agg_reg_lvl='all',
-                model_year_sub=[t], 
+                model_year_sub=year if year in [0, 'last'] else [year], 
                 weather_year_sub=selected_weatheryears,
             )
             / 1e3
@@ -126,7 +113,7 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
     
     return f, ax
 
-def plot_peak_and_total_load(cases, colors, weatheryear=2012):
+def plot_peak_and_total_load(cases, colors, weatheryear=None):
     """
     Compare annual total load and annual peak load by model year.
     For each model year and case, compute min/max across weather years and
@@ -149,7 +136,8 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
         dfprofile = (
             reeds.results.summarize_load_data(
                 casepath, 
-                use_run=True, 
+                use_run=True,
+                weather_year_sub=selected_weatheryears,
             )
             / 1e3
         )
@@ -163,13 +151,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
             # Convert to TWh for plotting.
             annual_total_by_wy = profile.groupby(profile.index.year).sum() / 1e3
             annual_peak_by_wy = profile.groupby(profile.index.year).max()
-
-            _validate_selected_weatheryears(
-                selected_weatheryears,
-                annual_total_by_wy.index.tolist(),
-                casename,
-                modelyear=t,
-            )
 
             rows.append(
                 {
@@ -232,7 +213,7 @@ def plot_peak_and_total_load(cases, colors, weatheryear=2012):
 
     return f, (ax_total, ax_peak), stats_by_case
 
-def plot_regional_peak_demand_maps(cases, year='last'):
+def plot_regional_peak_demand_maps(cases, year='last', weatheryear=None):
     """
     Map the max peak demand per state, comparing across cases.
 
@@ -249,7 +230,8 @@ def plot_regional_peak_demand_maps(cases, year='last'):
     cases : dict  {casename: casepath}
     year : int or 'last'
         Model year to plot. Defaults to the last solved year of the base case.
-
+    weatheryear : int, list, or None
+        Specific weather year(s) to use. Defaults to None, which uses all available weather years.
     Returns
     -------
     f, ax, df_peak
@@ -258,10 +240,7 @@ def plot_regional_peak_demand_maps(cases, year='last'):
     basecasename = list(cases.keys())[0]
     basecasepath = list(cases.values())[0]
 
-    if year in [0, None, 'last']:
-        t = reeds.io.get_years(basecasepath)[-1]
-    else:
-        t = int(year)
+    selected_weatheryears = _parse_weatheryears(weatheryear) if weatheryear is not None else None
 
     dfmap = reeds.io.get_dfmap(basecasepath)
     dfstates = dfmap['st']
@@ -277,19 +256,15 @@ def plot_regional_peak_demand_maps(cases, year='last'):
             reeds.results.summarize_load_data(
                 casepath, 
                 use_run=True, 
-                model_year_sub=[t], 
+                model_year_sub=year if year in [0, None, 'last'] else [year], 
+                weather_year_sub=selected_weatheryears,
             )
             / 1e3
         )
 
-        try:
-            df_t = dfprofile.loc[t].copy()
-        except KeyError:
-            raise KeyError(f'Model year {t} not found in load.h5 for case {casename}.')
-
-        df_t.index = pd.to_datetime(df_t.index)
+        dfprofile.index = pd.to_datetime(dfprofile.index)
         # Aggregate BAs to states, then take the max simultaneous hour
-        df_t_st = df_t.T.groupby(df_t.columns.map(region_to_state)).sum().T
+        df_t_st = dfprofile.T.groupby(dfprofile.columns.map(region_to_state)).sum().T
         peak_st[casename] = df_t_st.max()
 
     ncols = len(cases)
@@ -421,14 +396,12 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
         dfprofile = dfprofile.loc[
             str(min(case_weatheryears)) : str(max(case_weatheryears))
         ]
-        available_wy = sorted(dfprofile.index.year.unique().tolist())
-        _validate_selected_weatheryears(selected_weatheryears, available_wy, casename, t)
 
         # Aggregate BAs to states, then average annual total across ALL available weather years
         dfprofile_st = dfprofile.T.groupby(dfprofile.columns.map(region_to_state)).sum().T
         wy_totals = pd.concat(
             [dfprofile_st.loc[dfprofile_st.index.year == wy].sum() / 1e3  # GWh -> TWh
-             for wy in available_wy],
+             for wy in selected_weatheryears],
             axis=1,
         ).mean(axis=1)
         total_st[casename] = wy_totals
@@ -650,6 +623,7 @@ if __name__ == '__main__':
         f_peak, _, _ = plot_regional_peak_demand_maps(
             cases,
             year=year,
+            weatheryear=selected_weatheryears,
         )
         saveit(f'Demand peak by region {year}')
     except Exception as e:
