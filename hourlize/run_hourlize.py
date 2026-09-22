@@ -407,6 +407,10 @@ def setup_resource_run(casename, case, args):
     case['original_rev_folder'] = dct_rev['original_rev_folder']
     case['sc_file'] = os.path.join(outpath, 'results', case['tech'] + '_supply_curve_raw.csv')
     case['rev_paths_file'] = rev_paths_file
+    
+    # also get sc file from original reV location for column checking
+    rev_sc_file = os.path.join(case['original_rev_folder'], os.path.basename(dct_rev['original_sc_file']))
+
 
     # add date updated
     case['date_updated'] = datetime.datetime.now().date().strftime('%Y-%m-%d')
@@ -442,7 +446,7 @@ def setup_resource_run(casename, case, args):
 
     # now check for missing columns
     if(not (case['tech']=='egs' or case['tech']=='geohydro')):
-        check_cols(case['original_sc_file'], hourlize_path, config_cols + req_cols_all)
+        check_cols(rev_sc_file, hourlize_path, config_cols + req_cols_all)
     else:
         print(
             "Skipping column check for geothermal technologies as supply curve is "
