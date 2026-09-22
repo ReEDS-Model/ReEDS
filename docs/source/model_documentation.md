@@ -896,24 +896,6 @@ Energy conversion processes, including binary and flash cycles, are linked to re
 Plants with reservoir temperatures \<200°C (Class 7--10) use a binary cycle, which uses a heat exchanger and secondary working fluid with a lower boiling point to drive a turbine.
 All other reservoir temperatures assume a turbine is driven directly by working fluid from the geothermal wells.
 
-{numref}`geothermal-technical-resource-potential` lists the technical resource potential for the different geothermal categories.
-
-```{table} Technical Resource Potential (GW)
-:name: geothermal-technical-resource-potential
-| **Resource Class** | Reservoir Temperature **(°C)** | **Hydrothermal** | **Near-Field EGS** | **Deep EGS** |
-|:------------------:|:------------------------------:|:----------------:|:------------------:|:------------:|
-|           Class 1  |                         \> 325 |               \- |                0.2 |          544 |
-|           Class 2  |                        300–325 |              1.8 |                0.2 |           18 |
-|           Class 3  |                        275–300 |              9.3 |                1.3 |           \- |
-|           Class 4  |                        250–275 |              0.7 |                8.3 |           \- |
-|           Class 5  |                        225–250 |              1.1 |                 74 |            1 |
-|           Class 6  |                        200–225 |              2.4 |                320 |          169 |
-|           Class 7  |                        175–200 |              0.2 |                709 |         3509 |
-|           Class 8  |                        150–175 |              2.6 |                996 |         8012 |
-|           Class 9  |                        125–150 |              1.1 |               1268 |          686 |
-|           Class 10 |                          \<125 |              4.7 |                 \- |            8 |
-|              Total |                                |             23.9 |               3377 |        12947 |
-```
 
 ```{figure} figs/docs/supplycurve-egs.png
 :name: figure-supplycurve-egs
