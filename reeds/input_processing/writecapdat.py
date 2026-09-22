@@ -527,8 +527,8 @@ def main(reeds_path, inputs_case):
     #%%##########################################################
     #    -- Force retirement + replacement (battery, gas) --    #
     ##############################################################
-    maxage_raw = pd.read_csv(os.path.join(inputs_case, 'maxage.csv'), header=None)
-    maxage_lookup = dict(zip(maxage_raw[0].str.lower(), maxage_raw[1]))
+    maxage_data = pd.read_csv(os.path.join(inputs_case, 'maxage.csv'), header=None)
+    maxage_lookup = dict(zip(maxage_data[0].str.lower(), maxage_data[1]))
 
     gdb_use = force_retire_and_replace(
         gdb_use, 'battery_li', int(sw.GSw_ForceRetireBatteryYear),
@@ -986,7 +986,6 @@ def main(reeds_path, inputs_case):
     #    -- Wind Retirements --    #
     ################################
     print('Gathering Wind Retirement Data...')
-    maxage_data = pd.read_csv(os.path.join(inputs_case, 'maxage.csv'))
     wind_maxage = maxage_data[maxage_data.iloc[:,0].str.contains('wind-ons')].values[0,1]
 
     wind_rets = gdb_use.loc[(gdb_use['tech'].isin(TECH['windret'])) &
