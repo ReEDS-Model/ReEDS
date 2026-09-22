@@ -683,7 +683,6 @@ def save_sc_outputs(
     df_sc,
     outpath,
     tech,
-    subtract_exog,
     profile_id_col,
     decimals,
 ):
@@ -899,7 +898,6 @@ if __name__== '__main__':
         df_sc=df_sc,
         outpath=cf.outpath,
         tech=cf.tech,
-        subtract_exog=cf.subtract_exog,
         profile_id_col=cf.profile_id_col,
         decimals=2,
     )

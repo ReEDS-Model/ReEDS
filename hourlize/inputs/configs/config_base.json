@@ -17,8 +17,7 @@
     "rev_paths_file": "{reeds_path}/inputs/supply_curve/rev_paths.csv",
     "scale_factor": 1e4,
     "state_abbrev": "{hourlize_path}/inputs/resource/state_abbrev.csv",
-    "subsetvars": ["tech", "access_case"],
-    "subtract_exog": false
+    "subsetvars": ["tech", "access_case"]
   },
 
   "load": {
