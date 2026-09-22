@@ -345,6 +345,32 @@ def check_cols(sc_file, hourlize_path, req_cols=[], opt_cols=[]):
 
     return req_missing, opt_missing
 
+def check_profiles(config):
+    """check for required profile h5 files"""
+    
+    if config['multiyear_file']:
+        prof_paths = [os.path.join(
+            config['rev_path'], 
+            config['profile_dir'],
+            f'{config["rev_case"]}_bespoke.h5'
+        )]
+    else:
+        prof_paths = []
+        for y in config['hourly_out_years']:
+            prof_paths.append(os.path.join(
+                config['rev_path'], 
+                config['profile_dir'],
+                f'{config["profile_file_format"]}_{y}.h5'
+            ))
+
+    missing_profiles = [path for path in prof_paths if not os.path.exists(path)]
+    if missing_profiles:
+        errotext = (
+            f'\nThe following profile file(s) do not exist:\n'
+            f'{"\n".join(missing_profiles)}'
+            '\n\nCheck your config entries for "profile_dir" and "profile_file_format".'
+        )
+        raise FileNotFoundError(errotext)
 
 def setup_resource_run(casename, case, args):
     """function to set up and submit each resource case to run"""
@@ -444,9 +470,10 @@ def setup_resource_run(casename, case, args):
     # subset to just the ones needed by hourlize or ReEDS
     req_cols_all = rev_cols.loc[rev_cols.used_by_hourlize == "X", "new_colname"].to_list()
 
-    # now check for missing columns
+    # now check for missing columns in sc and profile files
     if(not (case['tech']=='egs' or case['tech']=='geohydro')):
         check_cols(rev_sc_file, hourlize_path, config_cols + req_cols_all)
+        check_profiles(configout)
     else:
         print(
             "Skipping column check for geothermal technologies as supply curve is "
