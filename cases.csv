@@ -137,7 +137,7 @@ GSw_EmploymentFactor,Source for employment factor data - see inputs/employment/R
 GSw_EVMC,Turn on adoptable EV managed charging,0; 1,0,
 GSw_FakeData,Use fake capacity factor profiles (for TESTING ONLY when you do not want to download the real CF data),^[0-1]$,0,
 GSw_ForcePrescription,Turn on/off forced prescriptions - turning off will allow unlimited but not free builds in historical years,0; 1,1,
-GSw_ForceRetireBatteryYear,"Force all battery_li capacity that would otherwise still be online in this year to retire and be replaced 1-for-1 (same MW/MWh, same region) by new prescribed battery_li capacity in that year (0 = disabled)",N/A,2027,
+GSw_ForceRetireBatteryYear,"Force all battery_li capacity that would otherwise still be online in this year to retire and be replaced 1-for-1 (same MW/MWh, same region) by new prescribed battery_li capacity in that year (0 = disabled)",N/A,0,
 GSw_ForceRetireGasYear,"Force all gas-cc and gas-ct capacity that would otherwise still be online in this year to retire and be replaced 1-for-1 (same MW, same region and tech) by new prescribed capacity in that year (0 = disabled)",N/A,0,
 GSw_ForceRetireGasThresholdYear,"When GSw_ForceRetireGasYear is enabled, exempt gas-cc/gas-ct capacity built before this year from forced retirement (0 = no exemption; apply to all capacity as of GSw_ForceRetireGasYear)",N/A,0,
 GSw_GasFuelCell,Turn on/off natural gas fuel cell (ng-fuel-cell) as a technology option,0; 1,0,
