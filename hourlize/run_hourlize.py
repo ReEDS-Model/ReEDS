@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import traceback
+import copy_rev_folders
 from collections import OrderedDict
 
 #%% ===========================================================================
@@ -156,7 +157,7 @@ def load_base_config(config_base=None):
     return config
 
 
-def launch_batch_file(casename, configpath, outpath, args):
+def launch_batch_file(casename, configpath, outpath, args, copy_from_rev=False):
     """
     launches hourlize run, either by submitting jobs to the HPC or initiating
     a call to load.py or resource.py
@@ -173,10 +174,15 @@ def launch_batch_file(casename, configpath, outpath, args):
             OPATH.writelines("conda activate reeds \n\n")
         # run hourlize
         OPATH.writelines(f"cd {hourlize_path}\n")
+        callstring = f"python {args.mode}.py --config {configpath}"
         if args.nolog:
-            OPATH.writelines(f"python {args.mode}.py --config {configpath} --nolog\n")
-        else:
-            OPATH.writelines(f"python {args.mode}.py --config {configpath}\n")
+            callstring += " --nolog"
+        if copy_from_rev:
+            callstring += " --copy_from_rev"
+        callstring += "\n"
+        OPATH.writelines(callstring)
+
+        
 
     # launch run locally or submit to hpc
     if args.local:
@@ -401,6 +407,10 @@ def setup_resource_run(casename, case, args):
     case['original_rev_folder'] = dct_rev['original_rev_folder']
     case['sc_file'] = os.path.join(outpath, 'results', case['tech'] + '_supply_curve_raw.csv')
     case['rev_paths_file'] = rev_paths_file
+    
+    # also get sc file from original reV location for column checking
+    rev_sc_file = os.path.join(case['original_rev_folder'], os.path.basename(dct_rev['original_sc_file']))
+
 
     # add date updated
     case['date_updated'] = datetime.datetime.now().date().strftime('%Y-%m-%d')
@@ -436,7 +446,7 @@ def setup_resource_run(casename, case, args):
 
     # now check for missing columns
     if(not (case['tech']=='egs' or case['tech']=='geohydro')):
-        check_cols(case['original_sc_file'], hourlize_path, config_cols + req_cols_all)
+        check_cols(rev_sc_file, hourlize_path, config_cols + req_cols_all)
     else:
         print(
             "Skipping column check for geothermal technologies as supply curve is "
@@ -447,7 +457,7 @@ def setup_resource_run(casename, case, args):
     configpath = copy_files(casename, configout, outpath, args)
 
     ## launch case
-    launch_batch_file(casename, configpath, outpath, args)
+    launch_batch_file(casename, configpath, outpath, args, case['copy_from_rev'])
 
 
 def get_cases(args):
@@ -506,12 +516,43 @@ def get_cases(args):
             f"{dup_msg}. Please update rev_paths file to ensure each row is unique."
         )
 
+    # flag if reV folders have already been copied, with option to overwrite or skip
+    df_rev = copy_rev_folders.get_dest_folder(df_rev)
+    df_rev['dst_exists'] = df_rev['dst'].apply(os.path.exists)
+    existing_dsts = df_rev.loc[df_rev['dst_exists'], 'dst'].tolist()
+    df_rev['copy_from_rev'] = True
+
+    if existing_dsts:
+        print(f"\nThe following {len(existing_dsts)} destination folder(s) already exist:")
+        for dst in existing_dsts:
+            print(f"  {dst}")
+        answer = input(
+            '\nDo you want to update with data from the original reV folders?'
+            '\nEnter [y] to overwrite, '
+            '[n] to skip copying from reV source and run hourlize using the current data, '
+            'or [q] to quit: '
+        ).strip().lower()
+        
+        if answer == 'y':
+            pass
+        elif answer == 'n':
+            df_rev['copy_from_rev'] = False
+        elif answer == 'q':
+            print("Existing run_hourlize now.")
+            sys.exit(0)
+        else:
+            raise Exception(f"Unsupported response '{answer}'; please enter [y], [n], or [q].")
+    else: 
+        df_rev['copy_from_rev'] = True
+
+
     cases = {}
-    for row in df_rev[['tech', 'access_case']].drop_duplicates().itertuples(index=False):
+    for row in df_rev[['tech', 'access_case', 'copy_from_rev']].drop_duplicates().itertuples(index=False):
         casename = f"{row.tech}_{row.access_case}"
         cases[casename] = {
             'tech': row.tech,
             'access_case': row.access_case,
+            'copy_from_rev': row.copy_from_rev
         }
 
     return cases
@@ -745,8 +786,7 @@ if __name__== '__main__':
         print(f"\nSetting up hourlize calls to {args.mode}.py")
         if args.mode == "load":
             setup_load(args)
-        elif args.mode == "resource":
-            setup_resource(args)
         else:
-            print("Unsupported method for hourlize")
+            setup_resource(args)
+        
         print(f"Hourlize setup for {args.mode}.py complete\n")

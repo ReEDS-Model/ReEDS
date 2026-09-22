@@ -990,6 +990,7 @@ def map_supplycurves(
     cbar_labelpad=2.1,
     draw_colorbar=True,
     vmax_default=1000.,
+    plot_ac=True,
 ):
     """
     Returns an iterator over supply-curve columns. Use as follows:
@@ -1039,6 +1040,10 @@ def map_supplycurves(
         else:
             scpath = os.path.join(case, 'inputs_case', f'supplycurve_{tech}.csv')
         dfsc = reeds.io.assemble_supplycurve(scpath, case=case, drop_extra=False)
+        # convert upv capacity from dc to ac
+        if plot_ac and tech == 'upv':
+            scalars = reeds.io.get_scalars(case=case)
+            dfsc['capacity'] /= float(scalars.ilr_utility)
         if 'latitude' not in dfsc:
             sitemap = reeds.io.get_sitemap(geo=True).to_crs(crs)
             dfsc = gpd.GeoDataFrame(
@@ -1061,9 +1066,9 @@ def map_supplycurves(
         costadder = float(sw.GSw_TransIntraCost) * inflatable[2004, dollaryear]
     else:
         costadder = 0
-    ## Convert from point to polygons if desired (raster is 11.52 km but include a little extra)
+    ## Convert from points to polygons if desired
     if not markers:
-        dfsc.geometry = dfsc.buffer(11530/2, cap_style='square')
+        dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     ###### Format inputs
     ## Use 4.5 for limited access wind-ofs
@@ -1078,7 +1083,7 @@ def map_supplycurves(
         'capacity': {
             'label':'Capacity [MW]',
             'vmax':{
-                'upv':5700., 'wind-ons':342., 'wind-ofs':530.,
+                'upv':5000., 'wind-ons':342., 'wind-ofs':530.,
                 'geohydro':700., 'egs':2000., 'csp':4900.,
             }.get(tech, vmax_default),
             'background':False,
