@@ -31,7 +31,20 @@ cmap_diff = plt.cm.RdBu_r
 #%% Plotting
 
 def _parse_weatheryears(weatheryear):
-    """Parse a weather-year input into a sorted list of unique integer years."""
+    """
+    Parse a weather-year input into a sorted list of unique integer years.
+    
+    Parameters
+    ----------
+    weatheryear : int, str, or iterable of int
+        The weather year(s) to parse. Can be a single integer, a string with
+        years separated by underscores or spaces, or an iterable of integers.
+
+    Returns
+    -------
+    list of int
+        Sorted list of unique weather years.
+    """
     if isinstance(weatheryear, int):
         return [weatheryear]
 
@@ -59,7 +72,30 @@ def _parse_weatheryears(weatheryear):
     return years
 
 def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, region=None,):
+    '''
+    Plot hourly demand profiles for the specified cases and region
+    using reeds.input_plots.plot_profile().
 
+    Parameters
+    ----------
+    cases : dict
+        Dictionary of case names and their corresponding paths.
+    colors : dict
+        Dictionary of case names and their corresponding colors.
+    year : int or str, optional
+        Model year to plot. Default is 'last'.
+    weatheryear : int, str, or iterable of int, optional
+        Weather year(s) to plot. Default is 2012.
+    region : str, optional
+        Region for which to plot the demand profiles. Default is None.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The figure object containing the plot.
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    '''
     selected_weatheryears = _parse_weatheryears(weatheryear)
 
     plt.close()
@@ -82,6 +118,27 @@ def plot_hourly_demand_profiles(cases, colors, year='last', weatheryear=2012, re
     return f, ax
 
 def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
+    '''
+    Plot demand profiles in rows by month for the specified cases.
+
+    Parameters
+    ----------
+    cases : dict
+        Dictionary of case names and their corresponding paths.
+    colors : dict
+        Dictionary of case names and their corresponding colors.
+    year : int or str, optional
+        Model year to plot. Default is 'last'.
+    weatheryear : int, str, or iterable of int, optional
+        Weather year(s) to plot. Default is 2012.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The figure object containing the plot.
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    '''
     selected_weatheryears = _parse_weatheryears(weatheryear)
 
     plt.close()
@@ -115,9 +172,26 @@ def plot_demand_yearbymonth(cases, colors, year='last', weatheryear=2012):
 
 def plot_peak_and_total_load(cases, colors, weatheryear=None):
     """
-    Compare annual total load and annual peak load by model year.
-    For each model year and case, compute min/max across weather years and
-    the value for each selected weather year.
+    Plots annual total load and annual peak load by model year
+    for the specified cases, including range across all weather years.
+    
+    Parameters
+    ----------
+    cases : dict
+        Dictionary of case names and their corresponding paths.
+    colors : dict
+        Dictionary of case names and their corresponding colors.
+    weatheryear : int, str, or iterable of int, optional
+        Weather year(s) to plot with a line. Default is None.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The figure object containing the plot.
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    pandas.DataFrame
+        The statistics by case, indexed by model year.
     """
     selected_weatheryears = _parse_weatheryears(weatheryear)
 
@@ -215,11 +289,8 @@ def plot_peak_and_total_load(cases, colors, weatheryear=None):
 
 def plot_regional_peak_demand_maps(cases, year='last', weatheryear=None):
     """
-    Map the max peak demand per state, comparing across cases.
-
-    For each state, peak demand is the highest simultaneous (summed across
-    BAs in that state) hourly value across ALL available weather years for
-    the given model year.
+    Maps peak demand by state across specified weather years (default all available),
+    comparing across cases.
 
     Layout: 1 row x N-cases columns.
       Base case (first case): absolute peak demand [GW] with a sequential colormap.
@@ -234,8 +305,12 @@ def plot_regional_peak_demand_maps(cases, year='last', weatheryear=None):
         Specific weather year(s) to use. Defaults to None, which uses all available weather years.
     Returns
     -------
-    f, ax, df_peak
-        df_peak has one column per case, indexed by state, values in GW.
+    matplotlib.figure.Figure
+        The figure object containing the plot.
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    pandas.DataFrame
+        The peak demand by state for each case, indexed by state, values in GW.
     """
     basecasename = list(cases.keys())[0]
     basecasepath = list(cases.values())[0]
@@ -338,9 +413,9 @@ def plot_regional_peak_demand_maps(cases, year='last', weatheryear=None):
     return f, ax, df_peak
 
 
-def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012):
+def plot_regional_total_demand_maps(cases, year='last', weatheryear=2012):
     """
-    Map total annual demand per state, comparing across cases.
+    Maps total annual demand by state, comparing across cases.
 
     For each state, total demand is summed across all BAs in that state over
     the selected weather year(s) and averaged if more than one year is given.
@@ -352,7 +427,6 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
     Parameters
     ----------
     cases : dict  {casename: casepath}
-    colors : dict {casename: color}  (unused in maps but kept for API parity)
     year : int or 'last'
         Model year to plot. Defaults to the last solved year of the base case.
     weatheryear : int, str, or iterable
@@ -360,9 +434,12 @@ def plot_regional_total_demand_maps(cases, colors, year='last', weatheryear=2012
 
     Returns
     -------
-    f, ax, df_total
-        df_total has one column per case, indexed by state, values in TWh.
-        df_total has one column per case, indexed by region, values in TWh.
+    matplotlib.figure.Figure
+        The figure object containing the plot.
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    pandas.DataFrame
+        The total demand by state for each case, indexed by state, values in TWh.
     """
     selected_weatheryears = _parse_weatheryears(weatheryear)
     basecasename = list(cases.keys())[0]
@@ -632,7 +709,6 @@ if __name__ == '__main__':
     try:
         f_total, _, _ = plot_regional_total_demand_maps(
             cases,
-            colors,
             year=year,
             weatheryear=selected_weatheryears,
         )
