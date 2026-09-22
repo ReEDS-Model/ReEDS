@@ -245,11 +245,19 @@ def get_trancap_fut(case):
         .astype({'t':int}).round(3)
     )
     ## Move additions between model years to the next modeled year
+    drop_indices = []
     for i, row in trancap_fut.iterrows():
         if row.t not in years.values:
-            newyear = years.loc[years > row.t].min()
-            trancap_fut.loc[i,'t'] = newyear
-            print(f'trancap_fut: Moved {row.values} to {newyear}')
+            future_years = years.loc[years > row.t]
+            if len(future_years):
+                newyear = future_years.min()
+                trancap_fut.loc[i,'t'] = newyear
+                print(f'trancap_fut: Moved {row.values} to {newyear}')
+            else:
+                # Online year is beyond the modeled horizon; drop rather than pull capacity in early
+                drop_indices.append(i)
+                print(f'trancap_fut: Dropping {row.values} (online year beyond modeled horizon)')
+    trancap_fut = trancap_fut.drop(index=drop_indices)
 
     return trancap_fut.rename(columns={'t':'allt'})
 
