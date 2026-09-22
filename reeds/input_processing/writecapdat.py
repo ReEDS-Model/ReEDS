@@ -409,6 +409,60 @@ TECH = {
 }
 
 
+def force_retire_and_replace(
+    gdb_use, tech, force_retire_year, startyear, endyear, maxage_lookup,
+    threshold_year=0, is_storage=False, has_energy=False,
+):
+    """Cap RetireYear for `tech` units still online at force_retire_year and inject a
+    matching prescribed replacement build (same capacity, region, and cooling type) in
+    that year, so it flows through the existing capnonrsc/prescribed_nonRSC/retirements
+    pipeline below like any other retiring/newly-built generator.
+    """
+    if force_retire_year <= 0:
+        return gdb_use
+    if not (startyear <= force_retire_year <= endyear):
+        print(
+            f'WARNING: force-retire year {force_retire_year} for {tech} is outside '
+            f'[{startyear},{endyear}]; skipping forced retirement/replacement.'
+        )
+        return gdb_use
+
+    mask = (
+        (gdb_use['tech'] == tech)
+        & (gdb_use['StartYear'] < force_retire_year)
+        & (gdb_use['RetireYear'] > force_retire_year)
+    )
+    # Grandfather capacity built before threshold_year (exempt from forced retirement)
+    if threshold_year > 0:
+        mask &= (gdb_use['StartYear'] >= threshold_year)
+
+    group_cols = ['r','ctt','wst','coolingwatertech']
+    value_cols = ['summer_power_capacity_MW'] + (['energy_capacity_MWh'] if has_energy else [])
+    retired = (
+        gdb_use.loc[mask, group_cols + value_cols]
+        .groupby(group_cols, dropna=False).sum().reset_index()
+    )
+
+    # Cap RetireYear so this capacity naturally drops out of capnonrsc/rets below,
+    # same as any other retiring generator
+    gdb_use.loc[mask, 'RetireYear'] = force_retire_year
+
+    if len(retired):
+        maxage = int(maxage_lookup[tech.lower()])
+        replace = retired.copy()
+        replace['tech'] = tech
+        replace['StartYear'] = force_retire_year
+        replace['RetireYear'] = force_retire_year + maxage
+        if is_storage:
+            replace['ctt'] = 'n'
+            replace['wst'] = 'n'
+            replace['coolingwatertech'] = tech
+        # Adding these rows makes the existing prescribed_nonRSC/_energy pipeline below
+        # treat the retired capacity as a forced (eq_forceprescription) replacement build
+        gdb_use = pd.concat([gdb_use, replace], ignore_index=True, sort=False)
+
+    return gdb_use
+
 
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
@@ -471,49 +525,21 @@ def main(reeds_path, inputs_case):
     gdb_use['tech'] = gdb_use['tech'].replace('dupv','upv')
 
     #%%##########################################################
-    #    -- Force battery retirement and replacement --    #
+    #    -- Force retirement + replacement (battery, gas) --    #
     ##############################################################
-    GSw_BatteryForceRetireYear = int(sw.GSw_BatteryForceRetireYear)
-    if GSw_BatteryForceRetireYear > 0:
-        if not (startyear <= GSw_BatteryForceRetireYear <= endyear):
-            print(
-                f'WARNING: GSw_BatteryForceRetireYear={GSw_BatteryForceRetireYear} is outside '
-                f'[{startyear},{endyear}]; skipping forced battery retirement/replacement.'
-            )
-        else:
-            battery_force_retire_mask = (
-                (gdb_use['tech'] == 'battery_li')
-                & (gdb_use['StartYear'] < GSw_BatteryForceRetireYear)
-                & (gdb_use['RetireYear'] > GSw_BatteryForceRetireYear)
-            )
-            battery_retired_by_r = (
-                gdb_use.loc[
-                    battery_force_retire_mask,
-                    ['r','summer_power_capacity_MW','energy_capacity_MWh']
-                ]
-                .groupby('r').sum().reset_index()
-            )
-            # Cap RetireYear so this capacity naturally drops out of capnonrsc/rets below,
-            # same as any other retiring generator
-            gdb_use.loc[battery_force_retire_mask, 'RetireYear'] = GSw_BatteryForceRetireYear
+    maxage_raw = pd.read_csv(os.path.join(inputs_case, 'maxage.csv'), header=None)
+    maxage_lookup = dict(zip(maxage_raw[0].str.lower(), maxage_raw[1]))
 
-            if len(battery_retired_by_r):
-                maxage_data_battery = pd.read_csv(os.path.join(inputs_case, 'maxage.csv'))
-                battery_maxage = int(
-                    maxage_data_battery[
-                        maxage_data_battery.iloc[:,0].str.contains('battery_li')
-                    ].values[0,1]
-                )
-                battery_replace = battery_retired_by_r.copy()
-                battery_replace['tech'] = 'battery_li'
-                battery_replace['StartYear'] = GSw_BatteryForceRetireYear
-                battery_replace['RetireYear'] = GSw_BatteryForceRetireYear + battery_maxage
-                battery_replace['ctt'] = 'n'
-                battery_replace['wst'] = 'n'
-                battery_replace['coolingwatertech'] = 'battery_li'
-                # Adding these rows makes the existing prescribed_nonRSC/_energy pipeline below
-                # treat the retired capacity as a forced (eq_forceprescription) replacement build
-                gdb_use = pd.concat([gdb_use, battery_replace], ignore_index=True, sort=False)
+    gdb_use = force_retire_and_replace(
+        gdb_use, 'battery_li', int(sw.GSw_ForceRetireBatteryYear),
+        startyear, endyear, maxage_lookup, is_storage=True, has_energy=True,
+    )
+    for gas_tech in ['gas-cc', 'gas-ct']:
+        gdb_use = force_retire_and_replace(
+            gdb_use, gas_tech, int(sw.GSw_ForceRetireGasYear),
+            startyear, endyear, maxage_lookup,
+            threshold_year=int(sw.GSw_ForceRetireGasThresholdYear),
+        )
 
     # Change tech category of hydro that will be prescribed to use upgrade tech
     # This is a coarse assumption that all recent new hydro is upgrades
