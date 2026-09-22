@@ -1,0 +1,11 @@
+,Default Value,Ref,CB,CG,CS,RB,RG,CBGS_RBG
+ignore,1,1,,,,,,0
+yearset,2010..2025..5_2027..2035..2,,,,,,,
+endyear,2035,,,,,,,
+GSw_LoadProfiles,historic,,,,,,,
+demandscen,AEO_2026_baseline,,,,,,,
+plantchar_upv,upv_ATB_2025_moderate,,,,upv_ATB_2025_conservative,,,upv_ATB_2025_conservative
+plantchar_battery,battery_ATB_2025_moderate,,battery_ATB_2025_conservative,,,,,battery_ATB_2025_conservative
+GSw_ForceRetireBatteryYear,0,,,,,2027,,2027
+GSw_ForceRetireGasYear,0,,,,,,2027,2027
+GSw_ForceRetireGasThresholdYear,0,,,,,,,
