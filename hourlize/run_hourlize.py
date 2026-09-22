@@ -269,7 +269,7 @@ def copy_files(casename, configout, outpath, args):
 def check_config_value(configs, entry, format=False, format_config={}):
     """
     helper function that will check for duplicate values for 'entry' across a list of
-     config files and use the first one if finds
+     config files and use the first one it finds
     """
     output = None
     for config in configs:

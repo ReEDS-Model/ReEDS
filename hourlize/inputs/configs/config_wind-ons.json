@@ -9,5 +9,5 @@
     "profile_dir": "" ,
     "profile_dset": "rep_profiles_0",
     "profile_file_format": "" ,
-    "single_profile": true  
+    "multiyear_file": true  
 }

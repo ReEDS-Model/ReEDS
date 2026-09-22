@@ -200,7 +200,7 @@ This section provides some descriptions and typical values for the settings in t
 | profile_dset | HDF5 dataset containing hourly profiles | upv, wind-ons, wind-ofs: 'rep_profiles_0'<br>egs, geohydro: '' |
 | profile_file_format | Filename format for hourly profiles | upv: '{access_case}_ac_rep-profiles'<br>wind-ofs: '{rev_case}_rep-profiles'<br>wind-ons, egs, geohydro: '' |
 | process_profiles | Whether to process hourly profiles for the technology | egs, geohydro: false |
-| single_profile | Whether all profile years are stored in a single profile file | upv, wind-ofs: false<br>wind-ons: true<br>egs, geohydro: null |
+| multiyear_file | Whether all profile years are stored in a single profile file | upv, wind-ofs: false<br>wind-ons: true<br>egs, geohydro: null |
 | upv_type_out | UPV capacity and profile type to produce: 'ac' or 'dc' | upv: 'dc' |
 
 ### Load config

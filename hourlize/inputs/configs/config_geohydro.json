@@ -9,7 +9,7 @@
     "profile_dir": "" ,
     "profile_dset": "",
     "profile_file_format": "" ,
-    "single_profile": null,
+    "multiyear_file": null,
     "geo_run_supply_curve_aggregation": true,
     "geo_aggregation_method": "lowest_lcoe",
     "process_profiles": false

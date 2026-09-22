@@ -581,7 +581,7 @@ def process_cf_profiles(
     profile_dir,
     profile_id_col,
     profile_file_format,
-    single_profile,
+    multiyear_file,
     output_dirpath,
     output_filetype='.h5',
     compression_opts=4,
@@ -603,7 +603,7 @@ def process_cf_profiles(
             profile_file_format=profile_file_format,
             profile_dset=profile_dset,
             profile_id_col=profile_id_col,
-            multiyear_file=single_profile
+            multiyear_file=multiyear_file
         )
 
         ### Downselect to sites with supply curve data
@@ -916,7 +916,7 @@ if __name__== '__main__':
             profile_dir=cf.profile_dir,
             profile_id_col=cf.profile_id_col,
             profile_file_format=cf.profile_file_format,
-            single_profile=cf.single_profile,
+            multiyear_file=cf.multiyear_file,
             output_dirpath=cf.outpath,
             output_filetype=cf.filetype,
             compression_opts=cf.compression_opts,

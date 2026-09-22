@@ -10,6 +10,6 @@
     "profile_dset": "rep_profiles_0",
     "profile_file_format": "{access_case}_ac_rep-profiles",
     "profile_weight_col": "capacity",
-    "single_profile": false,
+    "multiyear_file": false,
     "upv_type_out": "dc"
 }
