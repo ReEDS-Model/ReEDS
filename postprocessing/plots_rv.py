@@ -76,8 +76,11 @@ crs = 'EPSG:5070'
 dfmap = reeds.io.get_dfmap(casebase)
 for key, df in dfmap.items():
     dfmap[key] = df.to_crs(crs)
-    ## TODO: Replace with simplify_geometry once we update the environment
+    dfmap[key]['centroid_x'] = dfmap[key].centroid.x
+    dfmap[key]['centroid_y'] = dfmap[key].centroid.y
+    ## TODO: Replace with simplify_coverage once we update the environment
     dfmap[key].geometry = dfmap[key].simplify(2000)
+    # dfmap[key].geometry = dfmap[key].simplify_coverage(2000)
 ## Scale maps
 bounds = dfmap['country'].bounds.squeeze(0)
 mapsize = {
@@ -90,7 +93,7 @@ plot_settings = reeds.io.get_plot_formatting()
 tech_color = plot_settings['tech_color'].color
 
 #%%### Capacity deviation from optimal
-scale = 1
+scale = 2
 cmap = plt.cm.coolwarm
 cmap = plt.cm.bwr
 cmap = plt.cm.seismic
@@ -99,15 +102,23 @@ cmap = cmocean.tools.crop_by_percent(plt.cm.RdBu_r, 10)
 
 _diffmax = 20
 techs = ['UPV', 'Onshore Wind', 'Battery', 'Gas-CT', 'Gas-CC']
+style = 'marker'
+style = 'bar'
+style = 'arrow'
+style = 'text'
+style = 'dots'
 
-nrows, ncols, coords = reeds.plots.get_coordinates(samplenames, aspect=1)
+_samplenames = samplenames[:6]
+
+nrows, ncols, coords = reeds.plots.get_coordinates(_samplenames, aspect=1)
 offset = {dim: size * 1.05 for dim, size in mapsize.items()}
 
 
 for tech in techs:
+    print(tech)
     ## Get diffs
     dictplot = {}
-    for name in samplenames:
+    for name in _samplenames:
         dictplot[name] = (
             dictin_cap[name].loc[year].loc[tech]
             - dictin_cap[basename].loc[year].loc[tech]
@@ -123,7 +134,7 @@ for tech in techs:
     #     gridspec_kw={'hspace':0, 'wspace':0},
     # )
     # ## Data
-    # for name in samplenames:
+    # for name in _samplenames:
     #     _ax = ax[coords[name]]
     #     dfmap['country'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.1)
     # ## Formatting
@@ -135,15 +146,24 @@ for tech in techs:
     ### One plot
     plt.close()
     f,ax = plt.subplots(figsize=(ncols*scale, nrows*scale*mapheight))
-    for name in samplenames:
+    for name in tqdm(_samplenames):
         row, col = coords[name]
         country = dfmap['country'].translate(row*offset['x'], col*offset['y'])
-        country.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.1, zorder=1e9)
+        country.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.1, zorder=1e10)
+        st = dfmap['st'].translate(row*offset['x'], col*offset['y'])
+        st.plot(ax=ax, facecolor='none', edgecolor='0.7', lw=0.05, zorder=1e9)
         ## Data
         df = dfmap['r'].copy()
-        df['capdiff'] = dfplot.loc[name]
+        df['value'] = dfplot.loc[name]
         df.geometry = df.geometry.translate(row*offset['x'], col*offset['y'])
-        df.plot(ax=ax, column='capdiff', cmap=cmap, vmin=-diffmax, vmax=diffmax)
+        df['centroid_x'] = df.centroid.x
+        df['centroid_y'] = df.centroid.y
+        # df.plot(ax=ax, column='value', cmap=cmap, vmin=-diffmax, vmax=diffmax)
+        reeds.plots.diffmap(
+            df.fillna(0), ax=ax, style=style,
+            style_kwds={'ms':1, 'lw':0.2},
+            scale=1,
+        )
     ## Colorbar
     reeds.plots.addcolorbarhist(
         f, ax, dfplot.values, cmap=cmap, vmin=-diffmax, vmax=diffmax,
