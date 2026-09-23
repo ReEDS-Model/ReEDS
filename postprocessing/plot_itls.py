@@ -50,47 +50,32 @@ for key, df in dictin.items():
 #%%### Distributions
 import importlib
 importlib.reload(reeds.plots)
+
+## Plot settings
 ncols = len(rtypes)
 percentiles = [0.01, 0.1, 0.2]
 ylim = (-20, 80)
 
-#%% By hour
-plt.close()
-f,ax = plt.subplots(1, ncols, figsize=(1.5*ncols, 3.75), sharex=True, sharey=True)
-for col, rtype in enumerate(rtypes):
-    _ax = ax[col]
-    _ax.set_title(nicelabels.get(rtype,rtype))
-    reeds.plots.plot_distribution(
-        dfraw=dictin[rtype]*100,
-        ax=_ax,
-        percentiles=percentiles,
-        color=colors[rtype],
-        drawlegend=True,
-    )
-ax[0].set_ylabel('ITL increase [%]')
-ax[1].set_xlabel('Percent of hours [%]')
-ax[0].set_ylim(*ylim)
-reeds.plots.despine(ax)
-plt.show()
-
-
-#%% By interface and direction
-plt.close()
-f,ax = plt.subplots(1, ncols, figsize=(1.5*ncols, 3.75), sharex=True, sharey=True)
-for col, rtype in enumerate(rtypes):
-    _ax = ax[col]
-    _ax.set_title(nicelabels.get(rtype,rtype))
-    reeds.plots.plot_distribution(
-        dfraw=dictin[rtype].T*100,
-        ax=_ax,
-        percentiles=percentiles,
-        color=colors[rtype],
-        drawlegend=True,
-    )
-ax[0].set_ylabel('ITL increase [%]')
-ax[1].set_xlabel('Percent of interfaces and directions [%]')
-## Fiddles
-ax[-1].axhline(0, c='0.8', ls=':', lw=0.75)
-ax[0].set_ylim(*ylim)
-reeds.plots.despine(ax)
-plt.show()
+## Plot it
+for plottype in ['hours', 'interfaces and directions']:
+    plt.close()
+    f,ax = plt.subplots(1, ncols, figsize=(2.0*ncols, 3.75), sharex=True, sharey=True)
+    for col, rtype in enumerate(rtypes):
+        _ax = ax[col]
+        _ax.set_title(nicelabels.get(rtype,rtype), weight='bold', color=colors[rtype])
+        reeds.plots.plot_distribution(
+            dfraw=(dictin[rtype] if plottype == 'hours' else dictin[rtype].T)*100,
+            ax=_ax,
+            percentiles=percentiles,
+            color=colors[rtype],
+            drawlegend=True,
+        )
+    ax[0].set_ylabel('ITL increase [%]')
+    ax[1].set_xlabel(f'Percent of {plottype} [%]')
+    ## Fiddles
+    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
+    ax[0].xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    ax[-1].axhline(0, c='0.8', ls=':', lw=0.75)
+    ax[0].set_ylim(*ylim)
+    reeds.plots.despine(ax)
+    plt.show()
