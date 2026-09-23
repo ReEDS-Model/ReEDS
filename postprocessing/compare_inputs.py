@@ -211,7 +211,6 @@ def plot_peak_and_total_load(cases, colors, weatheryear=None):
             reeds.results.summarize_load_data(
                 casepath, 
                 use_run=True,
-                weather_year_sub=selected_weatheryears,
             )
             / 1e3
         )
@@ -219,7 +218,7 @@ def plot_peak_and_total_load(cases, colors, weatheryear=None):
         rows = []
         for t in modelyears:
             profile = dfprofile.loc[t].sum(axis=1)
-            profile.index = pd.to_datetime(profile.index)
+            profile.index = pd.to_datetime(profile.index.get_level_values('datetime'))
 
             # profile is in GW and timestamps are hourly, so annual sum is GWh.
             # Convert to TWh for plotting.
@@ -337,7 +336,7 @@ def plot_regional_peak_demand_maps(cases, year='last', weatheryear=None):
             / 1e3
         )
 
-        dfprofile.index = pd.to_datetime(dfprofile.index)
+        dfprofile.index = pd.to_datetime(dfprofile.index.get_level_values('datetime'))
         # Aggregate BAs to states, then take the max simultaneous hour
         df_t_st = dfprofile.T.groupby(dfprofile.columns.map(region_to_state)).sum().T
         peak_st[casename] = df_t_st.max()
