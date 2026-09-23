@@ -100,6 +100,7 @@ def plot_profile(
     datum='demand',
     year=0,
     weatheryears=None,
+    reg_sub=None,
     color='k',
     hourly=False,
     f=None,
@@ -118,6 +119,8 @@ def plot_profile(
     ## Parse inputs
     sw = reeds.io.get_switches(case)
     t = reeds.io.get_years(case)[-1] if year in [0, None, 'last'] else year
+    if t not in reeds.io.get_years(case):
+        raise KeyError("Year {} not in the data.".format(t))
     rs = reeds.inputs.parse_regions(case)
     if weatheryears is None:
         weatheryears = sw.resource_adequacy_years_list
@@ -131,11 +134,21 @@ def plot_profile(
             os.path.join(case, 'inputs_case', 'load.h5'),
         ## Convert to GW
         ) / 1e3
-        dfprofile = (
-            dfprofile
-            .loc[t, [r for r in dfprofile if r in rs]]
-            .sum(axis=1)
-        )
+        if reg_sub is not None:
+            if not all(reg in dfprofile.columns for reg in reg_sub):
+                raise KeyError("Region(s) {} not in the data.".format(
+                    " ".join([reg for reg in reg_sub if reg not in dfprofile.columns])))
+            dfprofile = (
+                dfprofile
+                .loc[t, reg_sub]
+                .sum(axis=1)
+            )
+        else:
+            dfprofile = (
+                dfprofile
+                .loc[t, [r for r in dfprofile if r in rs]]
+                .sum(axis=1)
+            )
     elif datum in ['temperature']:
         ylabel = 'Temperature [°C]'
         ...
@@ -148,6 +161,9 @@ def plot_profile(
             ylabel = 'PV CF [%]'
             dfprofile = recf['upv'].squeeze(1)
 
+    if not all(wy in dfprofile.index.year.unique() for wy in weatheryears):
+                    raise KeyError("Weather year(s) {} not in the data.".format(
+                        " ".join([str(wy) for wy in weatheryears if wy not in dfprofile.index.year.unique()])))
     dfprofile = dfprofile.loc[str(min(weatheryears)):str(max(weatheryears))].copy()
     ## Use a continuous set of datetimes to avoid interpolating over missing years
     full_timeseries = pd.date_range(dfprofile.index[0], dfprofile.index[-1], freq='h')
