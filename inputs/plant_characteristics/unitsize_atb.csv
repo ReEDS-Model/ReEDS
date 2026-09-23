@@ -62,6 +62,7 @@ hydnpnd,94,hydro assumption
 hyded,94,hydro assumption
 hydend,94,hydro assumption
 can-imports,20000,arbitrarily high (not disaggregated so doesn't matter)
-evmc,20000,arbitrarily high (not disaggregated so doesn't matter)
-dr_shed,20000,arbitrarily high (not disaggregated so doesn't matter)
+dr_shed,20000,set as an arbitrarily high number
+dr_shift,20000,set as an arbitrarily high number
+dr_shape,20000,set as an arbitrarily high number
 h2-fuel-cell,100,https://docs.nlr.gov/docs/fy26osti/91146.pdf
