@@ -26,6 +26,7 @@ def plot_diff_maps(
     units='%',
     vmin=None,
     vmax=None,
+    highlight_outliers=False,
 ):
     """
     Plot absolute and difference maps.
@@ -92,7 +93,7 @@ def plot_diff_maps(
     )
     ## Label zones with differences above diffmax
     for r, row in df.iterrows():
-        if abs(row.value) > _diffmax:
+        if (abs(row.value) > _diffmax) and highlight_outliers:
             _ax.annotate(
                 f"{row.value:+.0f}", (row.geometry.centroid.x, row.geometry.centroid.y),
                 ha='center', va='center', fontsize=8, alpha=0.8, zorder=1e9,
