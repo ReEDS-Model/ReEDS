@@ -557,7 +557,9 @@ $ontext
 The following six equations dictate how capacity is represented in the model.
 
 The first three equations handle init-X vintages (those that existed pre-startyear)
-which are bounded by m_capacity_exog. With retirements (in the second and third
+which are bounded by m_capacity_exog scaled by the fraction remaining after
+the degradation accumulated since coming online (degrade_init). With
+retirements (in the second and third
 equations), the constraints imply that capacity must be less than or
 equal to m_capacity_exog and monotonically decreasing over time -
 implying that if endogenous capacity was reduced in the previous year,
@@ -583,11 +585,11 @@ $offtext
 eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t)
+    m_capacity_exog(i,v,r,t) * degrade_init(i,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =e=
 
@@ -613,11 +615,11 @@ eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t)
+    m_capacity_exog(i,v,r,t) * degrade_init(i,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =g=
 
@@ -692,16 +694,16 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+              degrade_new(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
         }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
-               degrade(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
+               degrade_new(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
         }
 
 * Account for capacity upsizing within new vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =e=
 
@@ -728,11 +730,11 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV_ENERGY(i,v,r,tt))
+              degrade_new(i,tt,t) * (INV_ENERGY(i,v,r,tt))
         }
         
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
-               degrade(i,ttt,tt) * prescribed_retirements_energy(i,v,r,tt,ttt)
+               degrade_new(i,ttt,tt) * prescribed_retirements_energy(i,v,r,tt,ttt)
         }
 
     + m_capacity_exog_energy(i,v,r,t)
@@ -749,16 +751,16 @@ eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+              degrade_new(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
       }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
-              degrade(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
+              degrade_new(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
         }
 
 * Account for capacity upsizing within new vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =g=
 
@@ -785,7 +787,7 @@ eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
-         degrade(i,tt,t) * CAP(i,v,r,tt)
+         degrade_new(i,tt,t) * CAP(i,v,r,tt)
 
          + sum{(ii,ttt)$[(tfix(ttt) or tmodel(ttt))$(yeart(ttt)<=yeart(tt))
                         $valcap(ii,v,r,ttt)$upgrade_from(ii,i)],
@@ -1029,9 +1031,13 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *but the combination of m_rsc_con and rsc_agg allows for those investments
 *to be limited by the numeraire techs' m_rsc_dat
 
-*capacity indicated by the resource supply curve (scaled by rsc_capacity_scalar)
-    m_rsc_dat(r,i,rscbin,"cap")$[not evmc(i)] * (
-        1$[not rsc_capacity_scalar_i(i)] + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
+*capacity indicated by the resource supply curve minus exogenous (pre-start-year)
+*capacity (scaled by rsc_capacity_scalar)
+    (m_rsc_dat(r,i,rscbin,"cap")
+     - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
+         capacity_exog_rsc(ii,v,r,rscbin,tt) } )
+        * (1$[not rsc_capacity_scalar_i(i)]
+           + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
 * available hydro upgrade capacity
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 
@@ -1040,10 +1046,6 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *must exceed the cumulative invested capacity in that region/class/bin...
     sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)],
          INV_RSC(ii,v,r,rscbin,tt) * resourcescaler(ii) }
-
-*plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
-    + sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
 
 ;
 
@@ -1118,7 +1120,7 @@ eq_site_cf(x,h,t)
         $x_r(x,r)
         $valgen(i,v,r,t)],
 * Capacity factor of techs with endogenously-modeled spur lines
-        m_cf(i,v,r,h,t)
+        sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
 * multiplied by total capacity of those techs
         * sum{rscbin
               $[valcap(i,v,r,t)
@@ -1203,13 +1205,13 @@ eq_capacity_limit(i,v,r,h,t)
 *only vre technologies are curtailable.
 * This term accounts for energy-only and capacity-only upsizing,
 * which is initially implemented only for hydro.
-    + (m_cf(i,v,r,h,t)
+    + (sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
         * (CAP(i,v,r,t)
 *add energy embedded in energy-only upsizing
             + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
                 INV_ENER_UP(i,v,r,rscbin,tt)$allow_ener_up(i,v,r,rscbin,tt)
 *subtract energy that would be embedded in a capacity-only upsizing
-                - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
+                - degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
       )$[not dispatchtech(i)]
 *add EVMC shape generation
     + (evmc_shape_gen(i,r,h) * CAP(i,v,r,t))
@@ -1255,7 +1257,7 @@ eq_capacity_limit_hybrid(r,h,t)
 eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 *sum of non-dispatchable capacity multiplied by its rated capacity factor,
-    + m_cf(i,v,r,h,t) * CAP(i,v,r,t)
+    + sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
 
     =e=
 
@@ -1343,7 +1345,7 @@ eq_dhyd_dispatch(i,v,r,szn,t)
     sum{h$[h_szn(h,szn)], hours(h) }
     * (CAP(i,v,r,t) + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
                INV_ENER_UP(i,v,r,rscbin,tt)$allow_ener_up(i,v,r,rscbin,tt)
-             - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
+             - degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
     * m_cf_szn(i,v,r,szn,t)
 
     =g=
@@ -2560,24 +2562,23 @@ eq_caa_max_cf(i,v,r,t)$[tmodel(t)$valgen(i,v,r,t)
 
 * ---------------------------------------------------------------------------
 
-*Under the Clean Air Act Section 111, the emissions from existing coal plants per state must be less than or equal to a rate-based emissions standard
-
-*The rate is equivalent to average coal CCS emissions assuming 90% capture rate [metric tons CO2 / MWh]
+*Under the Clean Air Act Section 111, the emissions from existing coal plants per state must be no greater
+*than they would be if every coal unit captured caa_capture_rate_standard of the CO2 it produces
 eq_caa_rate_standard(st,t)$[tmodel(t)
                         $(yeart(t)>=caa_coal_retire_year)
                         $Sw_Clean_Air_Act]..
 
-*rate equivalent to average coal CCS emissions assuming 90% capture rate [metric tons CO2 / MWh]
-    caa_rate_emis_standard 
+*coal emissions in that state if each unit captured at the standard's rate [metric tons CO2]
+*emit_rate plus capture_rate is the uncontrolled rate, which accounts for the capture energy penalty
+    (1 - caa_capture_rate_standard)
+    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
+         hours(h) * (emit_rate("process","CO2",i,v,r,t) + capture_rate("CO2",i,v,r,t)) * GEN(i,v,r,h,t) }
 
-*coal generation in that state [MWh]
-    * sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         GEN(i,v,r,h,t)}
-    =g= 
+    =g=
 
 *coal emissions in that state [metric tons CO2]
-    sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)], 
-         GEN(i,v,r,h,t) * emit_rate("process","CO2",i,v,r,t)}
+    sum{(i,v,r,h)$[valgen(i,v,r,t)$coal(i)$(not cofire(i))$r_st(r,st)$h_rep(h)],
+         hours(h) * emit_rate("process","CO2",i,v,r,t) * GEN(i,v,r,h,t) }
 ;
 
 *==========================
@@ -3058,7 +3059,7 @@ eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
           STORAGE_IN(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
 
 *energy into storage from CSP field
-        + (CAP(i,v,r,t) * csp_sm(i) * m_cf(i,v,r,h,t)
+        + (CAP(i,v,r,t) * csp_sm(i) * sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) }
           )$[CSP_Storage(i)$valcap(i,v,r,t)]
       )
 *[plus] water inflow energy available for hydropower that adds pumping
@@ -3358,7 +3359,7 @@ eq_plant_total_gen(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i
 eq_hybrid_plant_energy_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
 * [plus] plant output
-    m_cf(i,v,r,h,t) * CAP(i,v,r,t)
+    sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
 
     =g=
 

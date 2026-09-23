@@ -610,28 +610,36 @@ $ifthen.naris %GSw_Region% == "naris"
   ban(i)$i_subsets(i,'canada') = yes ;
 $endif.naris
 
-parameter resourceclassnum(resourceclass) "numeric value for resource class" ;
-resourceclassnum(resourceclass) = resourceclass.val ;
+parameter resourceclassnum(c) "numeric value for resource class" ;
+resourceclassnum(c) = c.val ;
+
+* i_c(i,c) is loaded with only the default techs populated; it is expanded
+* here so every i maps to exactly one c
+* Broadcast class to  water-cooled variants
+i_c(i,c)$[(not sum{cc, i_c(i,cc)})$sum{ii$ctt_i_ii(i,ii), i_c(ii,c)}] = yes ;
+* Any technology without a class is assigned to class '0'
+i_c(i,'0')$[not sum{cc, i_c(i,cc)}] = yes ;
+
 * There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
 * CSP techs with resource class > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
 ban(i)$[i_subsets(i,'csp')
-      $sum{resourceclass$tech_resourceclass(i,resourceclass),
-           resourceclassnum(resourceclass)>Sw_NumCSPclasses }] = yes ;
+      $sum{c$i_c(i,c),
+           resourceclassnum(c)>Sw_NumCSPclasses }] = yes ;
 ) ;
 * If Sw_CSPRemoveLow is turned on, remove the last (worst) CSP class (which will be
 * equal to Sw_NumCSPclasses)
 if(Sw_CSPRemoveLow = 1,
 ban(i)$[i_subsets(i,'csp')
-      $sum{resourceclass$tech_resourceclass(i,resourceclass),
-           resourceclassnum(resourceclass)=Sw_NumCSPclasses }] = yes ;
+      $sum{c$i_c(i,c),
+           resourceclassnum(c)=Sw_NumCSPclasses }] = yes ;
 ) ;
 
 *Ban Geothermal resources that do not remain after aggregation
 if(Sw_NumGeoclasses < 10,
 ban(i)$[i_subsets(i,'geo')
-      $sum{resourceclass$tech_resourceclass(i,resourceclass),
-           resourceclassnum(resourceclass)>Sw_NumGeoclasses }] = yes ;
+      $sum{c$i_c(i,c),
+           resourceclassnum(c)>Sw_NumGeoclasses }] = yes ;
 ) ;
 
 *Ingest list of new nuclear restricted BAs ('p' regions), ba list is consistent with NCSL restrictions.
@@ -1503,6 +1511,19 @@ $offempty
 parameter exog_upv(i,r,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor" ;
 exog_upv(i,r,t) = sum{rscbin, exog_upv_rsc(i,r,rscbin,t) } ;
 
+* Average build year of existing capacity.
+* writecapdat.py creates the file; writesupplycurves.py adds resource classes.
+$onempty
+parameter exog_onlineyear(i,v,r,allt) "--year-- capacity-weighted online year of exogenous (pre-tfirst) capacity"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%exog_onlineyear.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 parameter avail_retire_exog_rsc(i,v,r,t) "--MW-- available retired capacity for refurbishments" ;
 avail_retire_exog_rsc(i,v,r,t) = 0 ;
 
@@ -1760,7 +1781,9 @@ m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(i,v,r,tt) } ;
 
-parameter degrade(i,t,tt) "degradation factor by i" ;
+parameter degrade_new(i,t,tt) "--fraction-- the fraction of capacity from year t that remains after degradation is applied through the year tt" ;
+
+parameter degrade_init(i,v,r,t) "--fraction-- the fraction of existing (initv) capacity that remains after degradation is applied from its online year through the year t" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
@@ -1779,8 +1802,21 @@ degrade_annual(i)$pvb(i) = sum{ii$[upv(ii)$rsc_agg(ii,i)], degrade_annual(ii) } 
 
 degrade_annual(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), degrade_annual(ii) } ;
 
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+* Degrade new built capacity from its build year (t) to the evaluation year (tt).
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+
+* Degrade existing capacity from its average build year.
+* Use hintage_data for binned technologies and distpv.
+exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
+    = hintage_data(i,v,r,t,"wOnlineYear") ;
+
+* Capacity without an online year (or without degradation) is left undegraded.
+* Fill all years for which the unit has exogenous capacity in any year, since upgrades
+* can restore m_capacity_exog in years where it starts at zero.
+degrade_init(i,v,r,t)$[initv(v)$sum{tt, m_capacity_exog(i,v,r,tt) }] = 1 ;
+degrade_init(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
+    = (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 
@@ -3763,18 +3799,18 @@ $offdelim
 $onlisting
 / ;
 
-parameter cf_adj_t(i,v,t)        "--unitless-- capacity factor adjustment over time for RSC technologies" ;
+parameter cf_adj_t(i,c,v,t)    "--unitless-- capacity factor adjustment over time for RSC technologies" ;
 
-cf_adj_t(i,v,t)$[(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
+cf_adj_t(i,c,v,t)$[i_c(i,c)$(rsc_i(i) or hydro(i))$sum{r, valcap(i,v,r,t) }] = 1 ;
 
 * Existing wind uses startyear cf adjustment
-cf_adj_t(i,initv,t)$[wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
+cf_adj_t(i,c,initv,t)$[i_c(i,c)$wind(i)$sum{r, valcap(i,initv,r,t) }] = wind_cf_adj_t("%startyear%",i) ;
 
-cf_adj_t(i,newv,t)$[wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
+cf_adj_t(i,c,newv,t)$[i_c(i,c)$wind_cf_adj_t(t,i)$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), wind_cf_adj_t(tt,i) } / countnc(i,newv) ;
 
 * Apply PV capacity factor improvements
-cf_adj_t(i,newv,t)$[(pv(i) or pvb(i))$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
+cf_adj_t(i,c,newv,t)$[i_c(i,c)$(pv(i) or pvb(i))$countnc(i,newv)$sum{r, valcap(i,newv,r,t) }] =
           sum{tt$ivt(i,newv,tt), pv_cf_improve(tt) } / countnc(i,newv) ;
 
 
@@ -5196,29 +5232,16 @@ m_rsc_dat(r,i,rscbin,"cap")$m_rsc_dat(r,i,rscbin,"cap") = ceil(m_rsc_dat(r,i,rsc
 * Assign geo_discovery_factor = 1 if geo_discovery_factor for prescribed build is missing
 geo_discovery(i,r,t)$[geo_hydro(i)$cap_prescribed_ir(i,r)$(not geo_discovery(i,r,t))$tmodel_new(t)] = 1 ;
 
-parameter geo_bin1_add_orig(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery"
-          geo_bin1_add(i,r)      "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with updated geo_discovery" ;
+parameter geo_bin1_add(i,r) "--MW-- additional geothermal bin1 resource needed so all prescribed years are feasible with original geo_discovery" ;
 
 *Find incremental bin1 capacity needed so that, for all model years t with prescriptions,
-*total geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
-geo_bin1_add_orig(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
-
-* If there is not sufficient geothermal resource (i.e., geo_bin1_add_orig is positive), then
-* set geo_discovery to 1 for that region for years after the prescribed builds start
-geo_discovery(i,r,t)$[geo_hydro(i)$[geo_bin1_add_orig(i,r) > 0]
-                     $tmodel_new(t)$cap_prescribed_ir(i,r)
-                     $(yeart(t)>=smin{tt$[cap_prescribed(i,r,tt)], yeart(tt) })] = 1 ;
-
-* Now recompute the geo_bin1_add parameter with the updated geo_discovery values
+*remaining geothermal resource scaled by geo_discovery(i,r,t) is at least cumulative prescribed builds.
 geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
-      ( cap_prescribed_ir(i,r)
-          / smin{t$[geo_discovery(i,r,t)$tmodel_new(t)
-                   $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }], geo_discovery(i,r,t) } )
-      - sum{(rscbin), m_rsc_dat(r,i,rscbin,"cap") } ;
+      smax{t$[geo_discovery(i,r,t)$tmodel_new(t)
+             $sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }],
+           sum{tt$[yeart(tt)<=yeart(t)], cap_prescribed(i,r,tt) }
+               / geo_discovery(i,r,t) }
+      - ( sum{rscbin, m_rsc_dat(r,i,rscbin,"cap") } - cap_existing(i,r) ) ;
 
 * Only use positive values of geo_bin1_add, as negative values would indicate that the
 * existing resource is already sufficient to cover prescriptions
@@ -5470,10 +5493,10 @@ Parameter
     szn_quarter_weights(allszn,quarter)    "--fraction-- fraction of season associated with each quarter"
     szn_ccseason_weights(allszn,ccseason)  "--fraction-- fraction of season associated with each ccseason"
 * Capacity factor
-    cf_rsc(i,v,r,allh,t)                   "--fraction-- capacity factor for rsc tech - t index included for use in CC/curt calculations"
-    m_cf(i,v,r,allh,t)                     "--fraction-- modeled capacity factor"
+    cf_rsc(i,c,v,r,allh,t)                 "--fraction-- capacity factor for rsc tech - t index included for use in CC/curt calculations"
+    m_cf(i,c,v,r,allh,t)                   "--fraction-- modeled capacity factor"
     m_cf_szn(i,v,r,allszn,t)               "--fraction-- modeled capacity factor, averaged by season"
-    cf_in(i,r,allh)                        "--fraction-- capacity factors for renewable technologies"
+    cf_in(i,c,r,allh)                      "--fraction-- capacity factors for renewable technologies"
 * Hydropower
     cf_hyd(i,allszn,r,allt)                "--fraction-- hydro capacity factors by season and year"
     climate_hydro_seasonal(r,allszn,allt)  "annual/seasonal nondispatchable hydropower availability"
@@ -5487,7 +5510,7 @@ Parameter
 * Demand
     load_exog(r,allh,t)                               "--MW-- busbar load"
     load_exog0(r,allh,t)                              "--MW-- original load by region hour and year - unchanged by demand side"
-    load_allyear(r,allh,allt)                         "--MW-- end-use load by region, timeslice, and year"
+    load_allyear(r,allh,allt)                         "--MW-- busbar load by region, timeslice, and year"
     h2_exogenous_demand_regional(r,p,allh,allt)       "--metric tons per hour-- exogenous demand for hydrogen at the BA level"
 * Peak demand
     peak_static_frac(r,ccseason,t)         "--fraction-- fraction of peak demand that is static"
