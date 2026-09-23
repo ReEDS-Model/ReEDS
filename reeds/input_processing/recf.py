@@ -184,11 +184,12 @@ def calculate_class_region_cf_hourly(
                 timeindex=reeds.timeseries.get_timeindex([year], tz='UTC'),
             )
         else:
-            weather_year_site_cf_hourly = reeds.io.get_site_cf_hourly(
+            cfpath = reeds.io.get_site_cf_path(
                 tech=tech,
                 year=year,
                 case=inputs_case,
             )
+            weather_year_site_cf_hourly = reeds.io.get_site_cf_hourly(cfpath, year)
         # Downselect to relevant sites
         weather_year_site_cf_hourly = weather_year_site_cf_hourly[df_sc.index]
         # Calculate the capacity-weighted average CF for each class-region pair

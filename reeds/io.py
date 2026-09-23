@@ -1099,14 +1099,10 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     return temperatures
 
 
-def get_site_cf_hourly(tech, year, case=None, **kwargs):
+def get_site_cf_path(tech, year, case=None, **kwargs):
     """
-    Get hourly site-level capacity factor profiles for the given tech and year
-    in UTC. Note that "distpv" is not a valid input to the "tech" parameter for
-    this function. To read the raw, county-level distpv CF profiles, use the
-    get_distpv_cf_hourly() function instead.
+    Get filepath for capacity factor profiles for the given tech and year.
     Accepts either {case} or {case}/inputs_case as input.
-
     In general, if a switch name/value pair is provided as a keyword
     argument, it replaces the switch value specified in {case}.
     Therefore, the given tech's siting level switch (e.g., "GSw_SitingUPV" for
@@ -1133,13 +1129,25 @@ def get_site_cf_hourly(tech, year, case=None, **kwargs):
                 f"The provided tech '{tech}' does not have CF profiles."
             )
 
-    h5path = os.path.join(
+    cfpath = Path(
         reeds_path,
         'inputs',
         'profiles_cf',
         f'{fname}.h5'
     )
-    with h5py.File(h5path, 'r') as f:
+    return cfpath
+
+
+def get_site_cf_hourly(cfpath:str|Path, year:int):
+    """
+    Get hourly site-level capacity factor profiles for the given cfpath and year in UTC.
+    Note that a different function is used for distpv.
+    To read the raw, county-level distpv CF profiles, use the
+    get_distpv_cf_hourly() function instead.
+    """
+    if not Path(cfpath).is_file():
+        raise FileNotFoundError(cfpath)
+    with h5py.File(cfpath, 'r') as f:
         time_index = pd.to_datetime(
             pd.Series(f[f'time_index_{year}'][:])
             .str

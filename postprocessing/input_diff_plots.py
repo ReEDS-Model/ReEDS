@@ -137,9 +137,14 @@ def plot_cf_diff(
         'wind-ons':'GSw_SitingWindOns',
         'wind-ofs':'GSw_SitingWindOfs',
     }[tech]
+    cfpaths = {
+        case: reeds.io.get_site_cf_path(tech, year, **{switchname:access})
+        for case in repos
+    }
+    cfpaths['old'] = Path(str(cfpaths['old']).replace(str(repo_new), str(repo_old)))
     dfcf = {
         case: (
-            reeds.io.get_site_cf_hourly(tech, year, **{switchname:access})
+            reeds.io.get_site_cf_hourly(cfpaths[case], year)
             .agg(aggfunc)
             .rename(f'cf{year}')
         )
