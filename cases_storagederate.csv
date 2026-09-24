@@ -1,5 +1,6 @@
 ,Default Value,USA_StorDerate0,USA_StorDerate25,USA_StorDerate50,USA_StorDerate100,USA_StorDerate0_NoQueue,USA_StorDerate25_NoQueue,USA_StorDerate50_NoQueue,USA_StorDerate100_NoQueue
 GSw_LoadProfiles,historic,,,,,,,,
 demandscen,AEO_2025_high,,,,,,,,
+plantchar_battery,battery_ATB_2025_moderate,,,,,,,,
 GSw_StorageStressDerate,0,0,0.25,0.5,1,0,0.25,0.5,1
 GSw_InterconnectionQueue,1,1,1,1,1,0,0,0,0
