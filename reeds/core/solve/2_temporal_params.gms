@@ -413,6 +413,12 @@ avail(i,r,h)
     $(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))
     ] = 1 ;
 
+* Derate the power capacity of batteries and pumped hydro during stress periods
+avail(i,r,h)
+    $[h_stress(h)$valcap_ir(i,r)$storage_standalone(i)$(not evmc_storage(i))
+    $Sw_StorageStressDerate
+    ] = avail(i,r,h) * (1 - Sw_StorageStressDerate) ;
+
 * Geothermal is currently the only tech where derate_geo_vintage(i,v) != 1.
 * If other techs with a non-unity vintage-dependent derate are added, avail(i,r,h) may need to be
 * multiplied by derate_geo_vintage(i,v) in additional locations throughout the model.

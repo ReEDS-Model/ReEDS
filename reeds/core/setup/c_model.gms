@@ -1402,6 +1402,7 @@ eq_interconnection_queues(tg,r,t)
     $[tmodel(t)$(yeart(t)>=model_builds_start_yr)
     $(sum{(tgg,rr), cap_limit(tgg,rr,t)})
     $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,t)}
+    $Sw_InterconnectionQueue
     $(not Sw_PCM)]..
 
 * the capacity limit from the interconnection queue data
@@ -3178,11 +3179,13 @@ eq_storage_thermalres(i,v,r,h,t)
 *batteries and CSP-TES are limited by their duration for each normalized hour per season
 *seas_cap_frac_delta is not applied here because we assume that the storage energy capacity is
 *constant across the year.
+*energy capacity of batteries and pumped hydro can be derated during stress periods
 eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
                                $storage(i)
                                $tmodel(t)
                                $(not storage_interday(i))]..
 
+    (
 * [plus] storage duration times storage capacity for fixed-duration techs
     storage_duration_m(i,v,r) * CAP(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$pvb(i))
 
@@ -3191,6 +3194,8 @@ eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
 
 * [plus] battery storage capacity
     + CAP_ENERGY(i,v,r,t)$battery(i)
+    )
+    * (1 - Sw_StorageStressDerate$[h_stress(h)$storage_standalone(i)$(not evmc_storage(i))])
 
     =g=
 
