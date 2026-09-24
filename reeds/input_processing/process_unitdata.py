@@ -39,12 +39,13 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
 
         df_sub = df[df.tech.isin(tech_sub)]
         # Read supply curves
-        if tech == 'geohydro':
-            # Use egs supply curve for geohydro for now
-            geo_tech = 'egs'
-            supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+geo_tech+'.csv'))
-        else:
-            supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+tech+'.csv'))
+        supply_curve = pd.read_csv(os.path.join(inputs_case, 'supplycurve_' + tech + '.csv'))
+
+        if tech in ('geohydro', 'egs') and 'mean_resource_temp' not in supply_curve.columns:
+            raise ValueError(
+                f"supplycurve_{tech}.csv is missing 'mean_resource_temp', which is "
+                "required to assign resource classes to existing geothermal units."
+            )
 
         # Only consider the sc_point_gids that are in supply curves
         # (to avoid unmatched units later)
@@ -93,6 +94,12 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
                 df_rev = df_rev.merge(supply_curve[['sc_point_gid','mean_resource_temp']],
                                         on='sc_point_gid',
                                         how='left').rename(columns={'mean_resource_temp':'reV_mean_resource_temp'})
+                unmatched = df_rev.loc[df_rev.reV_mean_resource_temp.isna(), 'sc_point_gid']
+                if len(unmatched):
+                    raise ValueError(
+                        f"{len(unmatched)} {tech} units matched to sc_point_gids with no "
+                        f"mean_resource_temp: {sorted(unmatched.unique())[:10]}"
+                    )
             else:
                 df_rev = df_rev.merge(supply_curve[['sc_point_gid','cf']],
                                         on='sc_point_gid',

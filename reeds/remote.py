@@ -115,7 +115,39 @@ def download_remote_files(only=None, force=False, access_token=None):
     for dirname in list(filemap.inputs_path.unique()) + ['remote']:
         Path(reeds.io.reeds_path, 'inputs', dirname).mkdir(exist_ok=True)
     if only:
-        filemap = filemap.loc[only]
+        # --- NEW: allow user-supplied local files that aren't in remote_files.csv ---
+        # If a requested file is not listed in remote_files.csv, look for it in the
+        # local inputs/ tree. If found, skip it (assume the user placed it there
+        # manually). If not found, raise a clear error instead of a KeyError.
+        available = set(filemap.index)
+        missing_from_map = [f for f in only if f not in available]
+        if missing_from_map:
+            inputs_dir = Path(reeds.io.reeds_path, 'inputs')
+            still_missing = []
+            for f in missing_from_map:
+                matches = list(inputs_dir.rglob(f))
+                if matches:
+                    print(
+                        f'Skipping remote download for {f}: not listed in '
+                        f'remote_files.csv but found locally at {matches[0]}'
+                    )
+                else:
+                    still_missing.append(f)
+            if still_missing:
+                raise FileNotFoundError(
+                    "The following required files are neither listed in "
+                    "inputs/remote_files.csv nor present anywhere under inputs/. "
+                    "Either add an entry to remote_files.csv or place the file "
+                    "manually in the appropriate inputs/ subdirectory:\n  - "
+                    + "\n  - ".join(still_missing)
+                )
+            # Only try to download files that actually have a remote entry
+            only = [f for f in only if f in available]
+        if only:
+            filemap = filemap.loc[only]
+        else:
+            # Nothing left to download; still fall through to write the cache below.
+            filemap = filemap.iloc[0:0]
     ## Load cached checksums, keyed by file size and mtime (modification time),
     ## so we skip re-hashing multi-GB files that haven't changed since the last run
     if CACHE_PATH.is_file():

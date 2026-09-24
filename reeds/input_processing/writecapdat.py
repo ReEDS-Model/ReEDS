@@ -80,7 +80,7 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
     # Read resource classification inputs for geothermal
     rsc_class["geohydro_allkm"] = (
         pd.read_csv(os.path.join(inputs_case, 'classification_geothermal.csv'))
-        .query(f"access_case == '{sw.GSw_SitingGeo}'")
+        .query(f"access_case == '{sw.GSw_SitingGeohydro}'")
     )
 
     # Check if any rsc_wsc tech class in unitdata does not match with a resource class

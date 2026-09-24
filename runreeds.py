@@ -1451,17 +1451,22 @@ def write_batch_script(
 
         ## ReEDS_to_rev processing
         if caseSwitches['reeds_to_rev'] == '1':
+            if 'sc_base_path' in caseSwitches and str(caseSwitches['sc_base_path']).strip() != '0':
+                sc_base_flag = f' --sc_base_path {caseSwitches["sc_base_path"]}'
+            else:
+                sc_base_flag = ''
+
             OPATH.writelines('cd {} \n\n'.format(reeds_path))
             OPATH.writelines(f'python hourlize/reeds_to_rev.py {reeds_path} {casedir} "priority" '
-                             '-t "wind-ons" -l "gamslog.txt" -r\n')
+                             f'-t "wind-ons" -l "gamslog.txt" -r{sc_base_flag}\n')
             OPATH.writelines(f'python hourlize/reeds_to_rev.py {reeds_path} {casedir} "priority" '
-                             '-t "wind-ofs" -l "gamslog.txt" -r\n')
+                             f'-t "wind-ofs" -l "gamslog.txt" -r{sc_base_flag}\n')
             OPATH.writelines(f'python hourlize/reeds_to_rev.py {reeds_path} {casedir} "simultaneous" '
-                             '-t "upv" -l "gamslog.txt" -r\n\n')
+                             f'-t "upv" -l "gamslog.txt" -r{sc_base_flag}\n\n')
             OPATH.writelines(f'python hourlize/reeds_to_rev.py {reeds_path} {casedir} "simultaneous" '
-                             '-t "geohydro_allkm" -l "gamslog.txt" -r\n\n')
+                             f'-t "geohydro_allkm" -l "gamslog.txt" -r{sc_base_flag}\n\n')
             OPATH.writelines(f'python hourlize/reeds_to_rev.py {reeds_path} {casedir} "simultaneous" '
-                             '-t "egs_allkm" -l "gamslog.txt" -r\n\n')
+                             f'-t "egs_allkm" -l "gamslog.txt" -r{sc_base_flag}\n\n')
 
         if caseSwitches['land_use_analysis'] == '1':
             # Run the land-used characterization module
