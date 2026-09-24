@@ -59,7 +59,7 @@ geohydro_allkm_10,p21,0.005336051
 geohydro_allkm_9,p24,0
 geohydro_allkm_10,p24,0
 geohydro_allkm_4,p25,0.1924206
-geohydro_allkm_8,p25,0
+geohydro_allkm_8,p25,0.5
 geohydro_allkm_9,p25,1.00E+00
 geohydro_allkm_10,p25,0.000503327
 geohydro_allkm_10,p26,0
@@ -165,3 +165,16 @@ geohydro_allkm_10,p90,0
 geohydro_allkm_9,p91,0
 geohydro_allkm_10,p91,0
 geohydro_allkm_10,p99,0
+geohydro_allkm_10,p13,0
+geohydro_allkm_8,p17,0
+geohydro_allkm_5,p25,0
+geohydro_allkm_6,p25,0
+geohydro_allkm_7,p25,0.5
+geohydro_allkm_9,p26,0
+geohydro_allkm_7,p5,0
+geohydro_allkm_6,p6,0
+geohydro_allkm_7,p6,0
+geohydro_allkm_7,p7,0
+geohydro_allkm_6,p8,0
+geohydro_allkm_7,p8,0
+geohydro_allkm_6,p9,0
