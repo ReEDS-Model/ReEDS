@@ -59,6 +59,36 @@
 * hours silently undercounts, and by an amount that grows the further the year
 * is from the restart.
 *
+* Storage: the streams here are right but the identity does NOT close for it,
+* and the reason is worth knowing before trusting this file on any multi-year
+* vintage. Dumping the 2050 matrix and reading every column a battery enters
+* (dump_jacobian.gms, jacobian_column.py) gives seven variables and, besides the
+* objective, only rows internal to the plant - eq_storage_level,
+* eq_storage_capacity, eq_storage_duration, eq_battery_minduration and the two
+* capacity-accounting rows all pair the plant's own variables. There is no
+* resource limit, no mandate (GSw_BatteryMandate=0) and no capacity-credit row
+* (GSw_PRM_CapCredit=0 routes storage's firm capacity through stress-hour GEN).
+* So a battery should show revenue = cost with no rent term. It does not: the
+* median build is exact but only a quarter are within 1%, and the error tracks
+* build size - a 4.9 GW build closes to the dollar, a 1.8 MW one is off 4x.
+*
+* The cause is the pro-rating above, not a missing stream. Battery's vintage
+* spans many solve years, so CAP is mostly earlier years' investment, and
+* INV/CAP attributes the vintage's AVERAGE value to this year's marginal MW.
+* For a single-year vintage (wind, PV, coal) the ratio is 1 and the question
+* does not arise; for nuclear the per-MW value barely moves across the vintage
+* so it is close; for storage it moves a lot, and INV_ENERGY moves independently
+* of INV, so the average is the wrong number for the margin.
+*
+* The exact test for storage is the LP's own optimality condition on the
+* investment variables, which needs no pro-rating:
+*     crf * cost_cap_fin_mult * cost_cap        = eq_cap_new_noret.m
+*     crf * cost_cap_fin_mult * cost_cap_energy = eq_cap_energy_new_noret.m
+* both scaled by (1/cost_scale)(1/pvf_onm). Checked on 2042 builds those close
+* to 1e-8 relative for INV at every build size, and for INV_ENERGY wherever it
+* is off its bound - where INV_ENERGY sits at zero its reduced cost is properly
+* nonzero and the plant is adding power to energy capacity it already has.
+*
 * Sequential solves see one year of value against one year of annualised cost
 * (pvf_onm = 1/crf), so the identity closes within the year and vintages need
 * no forward tracing.
@@ -79,7 +109,8 @@ $if not set fname $setglobal fname ref
 * because with GSw_GasCurve its fuel cost runs through a supply curve and its
 * own variables, and CCS techs would need the CO2 storage and 45Q terms.
 set vc_tech(i) "techs given the equivalence check" ;
-vc_tech(i)$[wind(i) or pv(i) or (coal(i) and not ccs(i)) or nuclear(i)] = yes ;
+vc_tech(i)$[wind(i) or pv(i) or (coal(i) and not ccs(i)) or nuclear(i)
+            or (battery(i) and storage_standalone(i))] = yes ;
 
 * The new vintage of each (i,r,t): valinv(i,v,r,t) is exactly that.
 set vc_new(i,v,r,t) "new-vintage plants to check" ;
@@ -96,12 +127,21 @@ vc_new(i,v,r,t)$[vc_tech(i)$valinv(i,v,r,t)$tmodel_new(t)$(INV.l(i,v,r,t) > 0)] 
 parameter vc_ratio(i,v,r,t) "INV/CAP of the new vintage" ;
 vc_ratio(i,v,r,t)$[vc_new(i,v,r,t)$CAP.l(i,v,r,t)] = INV.l(i,v,r,t) / CAP.l(i,v,r,t) ;
 
+* Storage carries a second capacity variable, and its own ratio: a battery is
+* sized by power (CAP, MW) and by energy (CAP_ENERGY, MWh), bought and paid for
+* separately, so the energy streams are pro-rated on INV_ENERGY/CAP_ENERGY.
+parameter vc_ratio_energy(i,v,r,t) "INV_ENERGY/CAP_ENERGY of the new vintage" ;
+vc_ratio_energy(i,v,r,t)$[vc_new(i,v,r,t)$CAP_ENERGY.l(i,v,r,t)] =
+    INV_ENERGY.l(i,v,r,t) / CAP_ENERGY.l(i,v,r,t) ;
+
 scalar vc_dual "dual scaling, 1/(cost_scale*pvf_onm), applied per year below" ;
 
 set vc_stream "cost and value streams" /
   cost_capex        "annualised capital, crf * cost_cap_fin_mult * cost_cap * INV"
   cost_rsc          "annualised supply-curve cost, crf * m_rsc_dat(cost) * rsc_fin_mult * INV_RSC"
   cost_fom          "fixed O&M on the new vintage's CAP"
+  cost_capex_energy "annualised energy-capacity capital, crf * cost_cap_fin_mult * cost_cap_energy * INV_ENERGY (storage)"
+  cost_fom_energy   "fixed O&M on the new vintage's CAP_ENERGY (storage)"
   cost_transfom     "fixed O&M on supply-curve transmission, m_rsc_dat(cost_trans) * trans_fom_frac * CAP_RSC"
   cost_vom          "variable O&M on the new vintage's GEN"
   cost_fuel         "fuel, hours * heat_rate * fuel_price * GEN (fixed-price fuels only)"
@@ -146,6 +186,16 @@ valcost('cost_fom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 
 * Transmission FOM on the new vintage's bin capacity. CAP_RSC is cumulative over
 * years, but for the new vintage in year t it equals this year's INV_RSC.
+* Storage energy capacity: a separate purchase from power capacity, with its own
+* capital and O&M terms in the objective (d_objective.gms:43 and :176).
+valcost('cost_capex_energy',i,r,t)$sum{v, vc_new(i,v,r,t)} =
+    sum{v$vc_new(i,v,r,t),
+        crf(t) * cost_cap_fin_mult(i,r,t) * cost_cap_energy(i,t) * INV_ENERGY.l(i,v,r,t) } ;
+
+valcost('cost_fom_energy',i,r,t)$sum{v, vc_new(i,v,r,t)} =
+    sum{v$vc_new(i,v,r,t),
+        cost_fom_energy(i,v,r,t) * vc_ratio_energy(i,v,r,t) * CAP_ENERGY.l(i,v,r,t) } ;
+
 valcost('cost_transfom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,rscbin)$[vc_new(i,v,r,t)$m_rscfeas(r,i,rscbin)$rsc_i(i)$(not spur_techs(i))$(not sccapcosttech(i))],
         m_rsc_dat(r,i,rscbin,"cost_trans") * trans_fom_frac * forcetechmult(i,t) * vc_ratio(i,v,r,t) * CAP_RSC.l(i,v,r,rscbin,t) } ;
@@ -164,7 +214,8 @@ valcost('cost_fuel',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 valcost('cost_total',i,r,t) =
     valcost('cost_capex',i,r,t) + valcost('cost_rsc',i,r,t)
   + valcost('cost_fom',i,r,t)   + valcost('cost_transfom',i,r,t)
-  + valcost('cost_vom',i,r,t)   + valcost('cost_fuel',i,r,t) ;
+  + valcost('cost_vom',i,r,t)   + valcost('cost_fuel',i,r,t)
+  + valcost('cost_capex_energy',i,r,t) + valcost('cost_fom_energy',i,r,t) ;
 
 * ---- value side: level x coefficient x marginal, per external constraint ----
 * Marginals are scaled exactly as report.gms scales reqt_price. The per-hour
@@ -177,12 +228,14 @@ valcost('cost_total',i,r,t) =
 valcost('val_load',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))],
-        vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) * eq_supply_demand_balance.m(r,h,t) } ;
+        vc_ratio(i,v,r,t) * (GEN.l(i,v,r,h,t) - STORAGE_IN.l(i,v,r,h,t)$storage_standalone(i))
+        * eq_supply_demand_balance.m(r,h,t) } ;
 
 valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(Sw_PRM_CapCredit=0)] =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,allh)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_stress_t(allh,t)],
-        vc_ratio(i,v,r,t) * GEN.l(i,v,r,allh,t) * eq_supply_demand_balance.m(r,allh,t) } ;
+        vc_ratio(i,v,r,t) * (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$storage_standalone(i))
+        * eq_supply_demand_balance.m(r,allh,t) } ;
 
 valcost('val_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
