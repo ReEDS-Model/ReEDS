@@ -9,13 +9,17 @@ import inspect
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from geopandas import GeoDataFrame
 from pathlib import Path
 from typing import Literal
 from pandas.api.types import is_float_dtype
-
+from shapely.geometry import Point
+# Appends run folder path to PATH
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
-
+# Append root ReEDS path to PATH for importing add_classes function from hourlize
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','..')))
+from hourlize.resource import add_classes
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if 'runs' in reeds_path.split(os.path.sep):
     reeds_path = reeds_path[: reeds_path.index(os.sep + 'runs' + os.sep)]
@@ -1540,6 +1544,10 @@ def assemble_supplycurve(
             True if ('wind-ofs' in os.path.basename(scfile)) or (scfile == 'offshore')
             else False
         )
+        psh = (
+            True if ('psh' in os.path.basename(scfile)) or (scfile == 'psh')
+            else False
+        )
     ### Get interconnection cost
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
@@ -1550,20 +1558,34 @@ def assemble_supplycurve(
         return interconnection_cost
 
     ### Get supply curve
-    dfin = floatify(pd.read_csv(scfile, index_col='sc_point_gid'))
+    dfin = floatify(pd.read_csv(scfile))
+    if 'sc_point_gid' in dfin.columns:
+        dfin = dfin.set_index('sc_point_gid')
     ## If derived columns are already in file, it's already been assembled, so stop here
     if 'supply_curve_cost_per_mw' in dfin:
         ## Rebuild it if not aggregating
         if skip_if_complete:
             return dfin
         else:
-            dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
+            if psh:
+                dfin = dfin[['capacity', 'capital_adder_per_mw']].copy()
+            else:
+                dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
     county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
     ### Combine
     dfout = dfin.copy()
-    dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
+    if not psh:
+        dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
+    elif psh:
+        # PSH supply curves need to be mapped to nearest sc_point_gid using lat/lon of lower reservoir
+        geometry_psh = [Point(xy) for xy in zip(dfout['low_reservoir_longitude'], dfout['low_reservoir_latitude'])]
+        gdf_psh = GeoDataFrame(dfout, crs='EPSG:5070', geometry=geometry_psh)
+        geometry_ic = [Point(xy) for xy in zip(interconnection_cost['longitude'], interconnection_cost['latitude'])]
+        gdf_ic = GeoDataFrame(interconnection_cost.reset_index(), crs='EPSG:5070', geometry=geometry_ic)
+        gdf_psh_ic = gpd.sjoin_nearest(gdf_psh, gdf_ic, how='left')
+        dfout = pd.DataFrame(gdf_psh_ic).drop(columns=['geometry','index_right'])
     dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:

@@ -23,3 +23,12 @@ pshsupplycurve,duration
 10hr_wExist_wEph_apr2025,10
 12hr_wExist_apr2025,12
 12hr_wExist_wEph_apr2025,12
+limited8hr,8
+reference8hr,8
+open8hr,8
+limited10hr,10
+reference10hr,10
+open10hr,10
+limited12hr,12
+reference12hr,12
+open12hr,12
