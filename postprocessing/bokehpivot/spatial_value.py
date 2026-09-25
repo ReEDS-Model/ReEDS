@@ -460,9 +460,16 @@ def plot_maps(data, tech, output_path):
             g = zones.copy()
             g['value'] = yr.set_index('r')[col]
             #Regions with no capacity of this tech are left unfilled rather than shown as zero.
-            g[g['value'].notna()].plot(ax=ax, column='value', cmap=cmap, norm=norm,
-                                       edgecolor='white', linewidth=0.2)
-            g[g['value'].isna()].plot(ax=ax, facecolor='0.92', edgecolor='white', linewidth=0.2)
+            filled, blank = g[g['value'].notna()], g[g['value'].isna()]
+            if not filled.empty:
+                filled.plot(ax=ax, column='value', cmap=cmap, norm=norm,
+                            edgecolor='white', linewidth=0.2)
+            #Guarded because a fully covered panel leaves nothing to grey out, and
+            #geopandas warns on an empty frame. Both subsets are routinely empty:
+            #the unfilled one whenever every region has the tech, the filled one
+            #never in practice, but the guard costs nothing and is symmetric.
+            if not blank.empty:
+                blank.plot(ax=ax, facecolor='0.92', edgecolor='white', linewidth=0.2)
             country.plot(ax=ax, facecolor='none', edgecolor='k', linewidth=0.6, zorder=10)
             ax.axis('off')
 
@@ -646,9 +653,12 @@ def plot_maps_byyear(data, tech, output_path):
             ax = axes[i, j]
             g = zones.copy()
             g['value'] = d[d['t'] == year].set_index('r')[col]
-            g[g['value'].notna()].plot(ax=ax, column='value', cmap=cmap, norm=norm,
-                                       edgecolor='white', linewidth=0.1)
-            g[g['value'].isna()].plot(ax=ax, facecolor='0.93', edgecolor='white', linewidth=0.1)
+            filled, blank = g[g['value'].notna()], g[g['value'].isna()]
+            if not filled.empty:
+                filled.plot(ax=ax, column='value', cmap=cmap, norm=norm,
+                            edgecolor='white', linewidth=0.1)
+            if not blank.empty:
+                blank.plot(ax=ax, facecolor='0.93', edgecolor='white', linewidth=0.1)
             country.plot(ax=ax, facecolor='none', edgecolor='k', linewidth=0.4, zorder=10)
             ax.axis('off')
             if i == 0:
