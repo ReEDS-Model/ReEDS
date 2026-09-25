@@ -590,6 +590,8 @@ repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
     deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
     * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) ]
+*   electric-sector markup for natural gas
+    + deflator('%FINITO_dollaryear%') * ng_markups(cendiv,'Electric_Power')
 ;
 
 $endif.finitodetailedNG
