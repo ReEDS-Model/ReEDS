@@ -195,9 +195,9 @@ def add_land_fom(
         sc['land_cap_adder_per_mw'] = 0
         return sc
 
-    # lease component of FO&M from ATB 2023 ($/kW-yr)
+    # lease component of FO&M from ATB 2025 ($/kW-yr)
     # note that upv is on a per kW-DC basis; we convert to AC later on to keep all costs in AC terms.
-    LEASE_FOM = {'upv': 2.1, 'wind-ons': 4.2}
+    LEASE_FOM = {'upv': 2.9, 'wind-ons': 4.2}
 
     ## calculate capital reovery factor (crf) using baseline ReEDS financial assumptions
     # note: a better approach would be to pass on as a fixed operating cost and then use the
