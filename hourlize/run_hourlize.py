@@ -318,6 +318,7 @@ def check_cols(sc_file, hourlize_path, req_cols=[], opt_cols=[]):
         'multiplier_cc_regional',
         'dist_reinforcement_km',
         'dist_spur_km',
+        'fair_market_private_lands_value'
     }
 
     # these are columns that are required by hourlize; if the supply curve is missing one
