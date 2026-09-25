@@ -264,8 +264,7 @@ def get_hourly_finito_load(
     p2zone = p2zone.set_index('p')['zone']
     load_finito = load_finito.rename(columns=p2zone).T.groupby(level=0).sum().T
 
-    # allocate annual load to hours, assuming flat demand
-    # TODO: should this use h_weight_finito?
+    # allocate annual load to hours, assuming flat demand (see h_weight_finito)
     hours_per_year = 8760
     load_hourly_finito = load_finito / hours_per_year
     load_hourly_finito = load_hourly_finito.astype(np.float32)

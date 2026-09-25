@@ -3555,7 +3555,6 @@ eq_h2_demand(p,t)$[(sameas(p,"H2"))$tmodel(t)$(yeart(t)>=h2_demand_start)$(Sw_H2
     }
 
 * hydrogen demand from industry when linked with FINITO: demand [MMBtu/yr] * conversion [metric tons-H2/MMBtu-H2]
-* TODO: should we disable exogenous H2 demand when linked?
 $ifthene.linked_h2_nat Sw_FINITO_Link==1
     + [sum{(r,h)$h_rep(h), hours(h) * USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu }]$t_finito(t)
 $endif.linked_h2_nat

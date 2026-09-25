@@ -159,8 +159,6 @@ def main(t, casedir, iteration=0):
 
         # down select to relevant model year
         load_finito = load_finito_rt.loc[load_finito_rt.t==t].drop('t', axis=1).copy()
-        #TODO: why so much shifting? validate the dynamics here with FINITO team
-        #TODO: also check against reference quantity
 
         # map from rep day to actual hour
         # since we don't have multi-year profiles for FINITO load 
