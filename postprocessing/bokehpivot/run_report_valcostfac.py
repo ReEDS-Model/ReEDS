@@ -434,6 +434,25 @@ except Exception as e:
     with open(out_txt, 'a') as f:
         print(msg, file=f)
 
+print('Make the gas supply-curve estimate')
+#Writes gas_supply_curve.png and .csv into output_dir: Gas-CC's cost factor re-estimated with the
+#national term of the model's default gas supply curve, which these runs switch off (GSw_GasCurve=2).
+#Reaches into the gas run for its burn, heat rates and gas scalars, so it is guarded like the others.
+#usd_mult converts the run's 2004$ into the report's dollar year, matching how lcoe is converted.
+import gas_supply_curve
+try:
+    gas_run = pd.read_csv(data_source).set_index('name')['path'].get(gas_supply_curve.gas_scenario)
+    if gas_run is None:
+        print(f'WARNING: no "{gas_supply_curve.gas_scenario}" scenario; gas supply-curve figure skipped.')
+    else:
+        gas_supply_curve.make_fig(f'{output_dir}/valcostfac_core.csv', gas_run,
+                                  usd_mult=usd_mult(2004))
+except Exception as e:
+    msg = f'WARNING: gas supply-curve figure skipped ({type(e).__name__}: {e}). Everything else is complete.'
+    print(msg)
+    with open(out_txt, 'a') as f:
+        print(msg, file=f)
+
 print('Build the html report')
 #Writes valcostfac_report.html into output_dir: the figures above with the text and tables that
 #carry the argument. Runs last because it reads what the other modules wrote - both their pngs, by

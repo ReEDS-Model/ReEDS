@@ -391,6 +391,45 @@ def build_html(output_dir, core_path):
          ('k<sub>VCF</sub> &minus; k<sub>VF</sub>', True), ('R&sup2; of VF fit', True),
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
+    # ---- 02b gas against the national gas supply curve ----
+    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 5,
+                          'Fuel cost a new Gas-CC would face under the national gas supply curve.',
+                          'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
+                          'reference, converted at the new-build heat rate. Labels give the burn '
+                          'against that reference at each end. Only the national term of the supply '
+                          'curve is applied: the census-division term is omitted because re-siting '
+                          'would partly avoid it, while the national one can only be avoided by '
+                          'building less gas.', order)
+    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 6,
+                     'Value factor and value&#8211;cost factor for Gas-CC, static against '
+                     'supply-curve gas.',
+                     'The construction of the figure in section 02, drawn by the same function, '
+                     'with the solved run and the corrected series as the two panels. Left is what '
+                     'the model solved with static gas prices; right adds the fuel cost at left to '
+                     'the cost factor, holding the value factor at its modelled level so the whole '
+                     'increase falls on cost. The shaded band is the area between the two fits after '
+                     'the intercepts are matched, so its width is the cost escalation.', order)
+    gas_rows = []
+    if os.path.exists(os.path.join(output_dir, 'gas_supply_curve.csv')):
+        gdf = pd.read_csv(os.path.join(output_dir, 'gas_supply_curve.csv'))
+        for _, r in gdf.iterrows():
+            gas_rows.append(
+                f'<tr><td class="t">{int(r["year"])}</td>'
+                f'<td class="num">{_num(r["gen_frac"], "{:.2f}")}</td>'
+                f'<td class="num">{_num(r["burn_quads"], "{:.1f}")}</td>'
+                f'<td class="num">{_num(r["dq_quads"], "{:+.1f}")}</td>'
+                f'<td class="num">{_num(r["dcost_usd_per_mwh"], "{:.1f}")}</td>'
+                f'<td class="num">{_num(r["cost_factor_static"])}</td>'
+                f'<td class="num">{_num(r["cost_factor_corrected"])}</td>'
+                f'<td class="num">{_num(r["value_cost_factor_static"])}</td>'
+                f'<td class="num">{_num(r["value_cost_factor_corrected"])}</td></tr>')
+    gas_table = table(
+        f'Gas-CC with and without the national gas supply curve, {dollar_year}$/MWh',
+        [('Year', False), ('Market share', True), ('Electric gas burn, Quads', True),
+         ('vs AEO reference', True), ('Added fuel cost', True), ('Cost factor, static', True),
+         ('Cost factor, corrected', True), ('VCF, static', True), ('VCF, corrected', True)],
+        gas_rows)
+
     # ---- 03 log decomposition ----
     fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 5,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
@@ -593,6 +632,15 @@ def build_html(output_dir, core_path):
      'exponent difference is the band width in the table below. Technologies whose data does not '
      'approach zero market share have that intercept extrapolated rather than measured, and the '
      'figure marks them.</p></div>', fig2, fit_table, decline_table, fig2b)}
+
+{sec('02b', 'Gas-CC against the national natural gas supply curve',
+     '<div class="col"><p>The runs hold natural gas prices static, which removes the cost-escalation '
+     'channel a gas plant has through its own fuel: burning more gas raises its price. This section '
+     'adds the national term of the model&rsquo;s default gas supply curve to the solved run. The '
+     'correction is an estimate on a fixed solution rather than a re-solve, so it is an upper bound '
+     'on the cost side - a re-solve would build less gas - while the linear coefficient is '
+     'extrapolated well beyond the quantities it was calibrated on, which pushes the other way. '
+     'Neither figure nor table is a model result.</p></div>', gas_fuel_fig, gas_fig, gas_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '
