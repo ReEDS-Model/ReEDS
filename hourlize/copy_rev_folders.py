@@ -75,6 +75,8 @@ def main(rev_paths_csv, techs=None, sc_paths=None):
         os.makedirs(dst, exist_ok=True)
         t0_row = time.perf_counter()
         print('  Copying...')
+        rsync_command = ['rsync', '-a', '--progress', src.rstrip('/') + '/', dst]
+        print(f'{"".join(rsync_command)}')
         subprocess.run(
             ['rsync', '-a', '--progress', src.rstrip('/') + '/', dst],
             check=True,
