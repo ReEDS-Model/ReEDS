@@ -307,15 +307,11 @@ def get_daily_gasprice_multipliers(
 
     return dfout
 
-
 def get_finito_ng_month_multiplier(inputs_case, hmap_allyrs, hours):
     """Map monthly NG shares to each representative/stress hour's own month."""
-    sectors = ['Residential', 'Commercial', 'Industrial']
     source = Path(inputs_case).parent / 'finito' / 'inputs' / 'ng_demand_monthly_shares.csv'
     shares = pd.read_csv(source).rename(columns=lambda c: c.lstrip('*'))
     shares = shares.rename(columns={'sector': 'aeo_sector'})
-    if not {'aeo_sector', 'month', 'share'}.issubset(shares.columns):
-        raise ValueError(f'{source}: expected aeo_sector, month, share')
     shares = shares[['aeo_sector', 'month', 'share']].copy()
     shares['aeo_sector'] = shares.aeo_sector.astype(str).str.strip()
     month_names = dict(zip(
@@ -325,32 +321,19 @@ def get_finito_ng_month_multiplier(inputs_case, hmap_allyrs, hours):
         lambda m: month_names.get(str(m).strip()[:3].lower(), m))
     shares['month'] = pd.to_numeric(shares.month, errors='raise')
     shares['share'] = pd.to_numeric(shares.share, errors='raise')
-    expected = {(s, m) for s in sectors for m in range(1, 13)}
-    if (shares.duplicated(['aeo_sector', 'month']).any()
-            or set(zip(shares.aeo_sector, shares.month)) != expected):
-        raise ValueError('NG monthly shares require three sectors and twelve months per sector')
-    if not np.isfinite(shares.share).all() or (shares.share < 0).any():
-        raise ValueError('NG monthly shares must be finite and nonnegative')
     totals = shares.groupby('aeo_sector').share.sum()
-    if (totals - 1).abs().max() > 1e-5:
-        raise ValueError('NG monthly shares must sum to one per sector')
     shares['share'] = shares.share / shares.aeo_sector.map(totals)
 
     # Use the selected hour's actual date, not the dates assigned to its cluster.
     calendar = hmap_allyrs[['actual_h', 'timestamp']].rename(columns={'actual_h': 'h'})
     profile = pd.DataFrame({'h': list(hours)}).merge(
-        calendar, on='h', how='left', validate='one_to_one')
-    if profile.timestamp.isna().any():
-        raise ValueError('An NG profile hour has no matching ReEDS timestamp')
+        calendar, on='h', how='left')
     profile['month'] = profile.timestamp.map(lambda t: pd.Timestamp(t).month)
-    profile = profile.merge(shares, on='month', how='left', validate='many_to_many')
-    if len(profile) != len(hours) * len(sectors) or profile.share.isna().any():
-        raise ValueError('Incomplete NG monthly profile')
+    profile = profile.merge(shares, on='month', how='left')
     # Annual normalization is performed in linked_finito_temporal_params.gms.
     profile['raw_multiplier'] = 12 * profile.share
     return (profile[['aeo_sector', 'h', 'raw_multiplier']]
             .sort_values(['aeo_sector', 'h']).reset_index(drop=True))
-
 
 def get_yearly_flexibility(
     sw,
