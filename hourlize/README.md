@@ -180,8 +180,6 @@ This section provides some descriptions and typical values for the settings in t
 | scale_factor | Factor used to scale capacity-factor values when writing hourly profiles | 1e4 |
 | state_abbrev | Path to the state-abbreviation file | '{hourlize_path}/inputs/resource/state_abbrev.csv' |
 | subsetvars | Columns in `rev_paths_file` used to select the appropriate reV path | ['tech', 'access_case'] |
-| subtract_exog | Legacy flag passed to supply-curve output processing; currently has no effect | false |
-
 ### Tech configs
 
 | Setting | Description | Default |
