@@ -3,6 +3,10 @@ drop_single_county_reinforcement_cost:
 - PJMcounty
 - UTcounty
 - z2972
+county_overlay:
+- z3109
+- PJMcounty
+- UTcounty
 drop_interfaces_missing_cost:
 - z3109
 - PJMcounty
