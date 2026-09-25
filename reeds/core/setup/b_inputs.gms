@@ -947,7 +947,7 @@ set tmodel(t) "years to include in the model",
     tprev(t,tt) "previous modeled tt from year t",
     stfeas(st) "states to include in the model",
     tsolved(t) "years that have solved",
-    tfuel(t) "years that use ReEDS fuel supply curve module (otherwise uses supply curves in FINITO)" ;
+    tfuel(t) "years that use ReEDS fuel costs (years not included here use FINITO costs)" ;
 
 *following parameters get re-defined when the solve years have been declared
 parameter mindiff(t) "minimum difference between t and all other tt that are in tmodel(t)" ;
@@ -978,7 +978,7 @@ tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(t.val-tt.val<>mindiff(t))] = no ;
 * If FINITO linkage is on, remove all modeled years from tfuel after FINITO_first_year
 * as the FINITO supply curves will be used instead of those in ReEDS;
 * otherwise, all modeled years use ReEDS supply curves and are eligible for tfuel 
-tfuel(t)$[tmodel_new(t)]=yes;
+tfuel(t)$[tmodel_new(t)] = yes ;
 tfuel(t)$[tmodel_new(t)$Sw_FINITO_Link$(t.val>=%FINITO_first_year%)] = no ;
 
 * In order to fill all necessary dimensions of upgrade techs parameters, we require
