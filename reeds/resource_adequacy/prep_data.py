@@ -159,15 +159,16 @@ def main(t, casedir, iteration=0):
 
         # down select to relevant model year
         load_finito = load_finito_rt.loc[load_finito_rt.t==t].drop('t', axis=1).copy()
+        load_finito = load_finito.pivot(index=['h'], columns='r', values='load_MW')
 
         # map from rep day to actual hour
         # since we don't have multi-year profiles for FINITO load 
         # we assume they repeat across all weather years
-        load_finito = pd.merge(load_finito, h_dt_szn.reset_index(), on='h', how='outer')[['timestamp', 'r', 'load_MW']]
-        load_finito = load_finito.rename(columns={'timestamp':'datetime'})
-        # add model year back in 
-        #load_finito = load_finito.assign(year=t)
-        load_finito = load_finito.pivot(index=['datetime'], columns='r', values='load_MW')
+        load_finito = pd.merge(
+            load_finito.reset_index(), 
+            h_dt_szn.reset_index()[['h', 'timestamp']], 
+            on='h', how='outer').drop('h', axis=1)
+        load_finito = load_finito.rename(columns={'timestamp':'datetime'}).set_index('datetime')
 
         # convert timezone and fill any missing columns
         load_finito.index = load_finito.index.tz_convert(load_year.index.tz)
