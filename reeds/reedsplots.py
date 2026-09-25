@@ -6913,6 +6913,85 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     return f, ax, prm_final
 
 
+def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
+    """Map capacity in interconnection queues"""
+    ### Get inputs
+    if case is None:
+        fpath = Path(
+            reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+            'interconnection_queues.csv',
+        )
+        dfqueue = (
+            pd.read_csv(fpath).set_index(['tg','r']).stack()
+            .rename_axis(['tg','r','t']).rename('GW') / 1e3
+        ).reset_index().astype({'t':int})
+        dfqueue.r = dfqueue.r.str.replace('p','')
+        dfqueue = dfqueue.set_index(['tg','r','t']).squeeze(1)
+        dfzones = reeds.spatial.get_map('county', 'tiger')
+        dfstates = reeds.spatial.get_map('state', 'census')
+        years = sorted(set(dfqueue.index.get_level_values('t')))
+    else:
+        dfqueue = (
+            reeds.io.read_input(case, 'queue_limit')
+            .rename(columns={'allt':'t','Value':'GW'}).astype({'t':int})
+            .set_index(['tg','r','t']).GW / 1e3
+        )
+        dfmap = reeds.io.get_dfmap(case)
+        dfzones = dfmap['r']
+        modelyears = reeds.io.read_input(case, 'tmodel_new').squeeze(1).tolist()
+        years = [y for y in modelyears if y in dfqueue.index.get_level_values('t')]
+    ### Drop zeros since GAMS doesn't see them; stop here if the queue is turned off
+    dfqueue = dfqueue.replace(0,np.nan).dropna().loc[:,:,years]
+    if not len(dfqueue):
+        return None, None, dfqueue
+    ### Set up plot
+    tgs = dfqueue.groupby('tg').sum().sort_values(ascending=False).index.values
+    nrows, ncols, coords = layout_subplots(row_list=years, col_list=tgs)
+    bounds = dfzones.dissolve().bounds.squeeze(0)
+    yscale = (bounds.maxy - bounds.miny) / (bounds.maxx - bounds.minx)
+    if vmax in ['shared', 'same', 'all']:
+        _vmax = dict(zip(coords.keys(), [dfqueue.max()]*len(coords)))
+    elif isinstance(vmax, (float, int)):
+        _vmax = dict(zip(coords.keys(), [vmax]*len(coords)))
+    else:
+        _vmax = dfqueue.groupby(['t','tg']).max()
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*figscale, nrows*figscale*yscale),
+        sharex=True, sharey=True, gridspec_kw={'wspace':-0.1, 'hspace':0.5},
+    )
+    for tg in tgs:
+        for t in years:
+            _ax = ax[coords[t,tg]]
+            dfplot = dfzones.copy()
+            dfplot['GW'] = dfqueue.loc[tg,:,t]
+            if dfplot.GW.count():
+                dfplot.plot(ax=_ax, column='GW', cmap=cmap, vmin=0, vmax=_vmax[t,tg])
+                reeds.plots.addcolorbarhist(
+                    f, _ax, dfplot.GW, vmin=0, vmax=_vmax[t,tg], cmap=cmap,
+                    orientation='horizontal', cbarbottom=-0.15, cbarheight=0.8,
+                    histratio=1, nbins=51, cbarwidth=0.1,
+                )
+            if len(dfzones) < 300:
+                dfzones.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            else:
+                dfstates.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            _ax.axis('off')
+            ## Formatting
+            if t == years[0]:
+                _ax.annotate(
+                    tg, (0.5,1), xycoords='axes fraction',
+                    ha='center', weight='bold', fontsize=12,
+                )
+            if tg == tgs[0]:
+                _ax.annotate(
+                    f'{t}\n[GW]', (0,0.5), xycoords='axes fraction',
+                    ha='right', va='center', weight='bold', fontsize=12,
+                )
+    return f, ax, dfqueue
+
+
 def validate_regional_capacity(
     case,
     mapmethod:Literal['FIPS','latlon']='county',

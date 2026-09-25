@@ -126,6 +126,18 @@ try:
 except Exception:
     print(traceback.format_exc())
 
+try:
+    if int(sw.GSw_QueueConstraintYears):
+        f, ax, df = reedsplots.map_queue(case=case)
+        savename = 'validate_queue.png'
+        if write:
+            plt.savefig(os.path.join(savepath, savename))
+        if interactive:
+            plt.show()
+        plt.close()
+        print(savename)
+except Exception:
+    print(traceback.format_exc())
 
 #%% Transmission line map with disaggregated transmission types
 ### Plot both total capacity (subtract_baseyear=None) and new (subtract_baseyear=2020)
