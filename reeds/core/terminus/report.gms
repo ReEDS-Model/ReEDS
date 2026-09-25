@@ -580,21 +580,23 @@ $ifthene.finitogasprice Sw_FINITO_Link == 1
 * Raw FINITO marginals in a linked solve already include the FINITO dollar-year deflator.
 * Undo cost_scale and pvf_onm only to report $2004; FINITO obj_scale cancels
 * in the linked ReEDS objective. Annual FSC balances do not use hours(h).
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$(not Sw_DetailedNG)] =
+$ifthene.finitodetailedNG Sw_DetailedNG == 0
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
     1/(cost_scale) * 1/(pvf_onm(t))
     * eq_supplydemand_fsc.m('NG','Electric_Power',cendiv,t)
 ;
+$else.finitodetailedNG
 
 * Detailed NG: citygate marginal plus the electric-sector consumption markup.
-* Both equations are hourly, so divide their marginals by hours(h).
-repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))$Sw_DetailedNG] =
+repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] =
     1/(cost_scale) * 1/(pvf_onm(t))
     * [ smax{(cfp,st)$[st_cendiv(st,cendiv)$gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],
               eq_supplydemand_cf.m(cfp,'NG',st,h,t)}
-        + smax{cfp$[gasp(cfp)$map_cf_fe(cfp,'NG')$valcft(cfp,t)],
-              eq_consumption_cf.m(cfp,'NG','Electric_Power',cendiv,h,t)}
       ] / hours(h)
+    + deflator('%FINITO_dollaryear%') * ng_markups(cendiv,'Electric_Power')
 ;
+$endif.finitodetailedNG
+
 $else.finitogasprice
     repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(not tfuel(t))] = 0 ;
 $endif.finitogasprice

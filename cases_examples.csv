@@ -14,6 +14,7 @@ GSw_Geothermal,,,,,,,,,0,,,,
 GSw_Biopower,,,,,,,,,0,,,,
 GSw_Nuclear,,,,,,,,,0,,,,
 GSw_HourlyChunkLengthRep,,,,,,,,,4,,,,
+GSw_CO2_Detail,,,,,,,,,,,,,1
 GSw_HourlyChunkLengthStress,,,,,,,,,4,,,,
 FINITO,,,,,,,,,,,,,1
 FINITO_case,,,,,,,,,,,,,BAU

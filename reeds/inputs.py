@@ -358,6 +358,7 @@ def solvestring_sequential(
         + f" --prev_year={prev_year}"
         + f" --stress_year={_stress_year}"
         + f" --temporal_inputs={temporal_inputs}"
+        + f" --GSw_NGDemandSeasonality={caseSwitches.get('GSw_NGDemandSeasonality', 0)}"
         + ''.join([f" --{s}={caseSwitches[s]}" for s in [
             'GSw_Canada',
             'GSw_ClimateHydro',

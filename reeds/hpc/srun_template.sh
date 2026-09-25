@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=[your HPC allocation]
+#SBATCH --account=atm
 #SBATCH --time=2-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
