@@ -104,13 +104,26 @@ $setglobal ds /
 $endif.unix
 $if not set fname $setglobal fname ref
 
-* Techs to evaluate. VRE, plus the thermal techs whose fuel is a fixed price
-* (the generic fuel term in d_objective.gms): coal and nuclear. Gas is not here
-* because with GSw_GasCurve its fuel cost runs through a supply curve and its
-* own variables, and CCS techs would need the CO2 storage and 45Q terms.
+* Techs to evaluate. VRE, storage, and the thermal techs whose fuel is a fixed
+* price per MWh generated: coal, nuclear, and gas ONLY when GSw_GasCurve=2.
+*
+* Gas is conditional because the switch decides which objective term pays for
+* its fuel. At GSw_GasCurve=2 there is a per-tech term of the same form as the
+* generic one - hours * heat_rate * fuel_price * GEN - so gas behaves exactly
+* like coal, which the 2050 matrix confirms: dumping the gas run and reading
+* every column gas-cc enters (dump_jacobian.gms, jacobian_column.py) gives the
+* same four variable families and the same equation families as coal-new, with
+* no gas-specific row. At any other setting the fuel cost moves onto GASUSED,
+* which carries no tech index, and the plant's GEN instead enters eq_gasused;
+* that is a different accounting this file does not implement, so gas is left
+* out rather than silently mis-costed.
+*
+* CCS techs are excluded throughout: they would need the CO2 storage and 45Q
+* terms.
 set vc_tech(i) "techs given the equivalence check" ;
 vc_tech(i)$[wind(i) or pv(i) or (coal(i) and not ccs(i)) or nuclear(i)
-            or (battery(i) and storage_standalone(i))] = yes ;
+            or (battery(i) and storage_standalone(i))
+            or (gas(i) and (not ccs(i)) and (Sw_GasCurve = 2))] = yes ;
 
 * The new vintage of each (i,r,t): valinv(i,v,r,t) is exactly that.
 set vc_new(i,v,r,t) "new-vintage plants to check" ;
@@ -203,12 +216,16 @@ valcost('cost_transfom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 valcost('cost_vom',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)], cost_vom(i,v,r,t) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) * hours(h) } ;
 
-* Fuel, mirroring the generic term in d_objective.gms (which excludes gas, bio,
-* cofire and endogenous H2). fuel_price is scaled once per year in
+* Fuel. Two objective terms share this form: the generic one, which excludes
+* gas, bio, cofire and endogenous H2, and the GSw_GasCurve=2 one for gas. One
+* expression covers both, with gas admitted only at that switch setting -
+* vc_tech keeps gas out otherwise, and the condition is repeated here so this
+* line reads correctly on its own. fuel_price is scaled once per year in
 * 2_financials.gms on its own value, so prior years keep theirs in the restart.
 valcost('cost_fuel',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$heat_rate(i,v,r,t)
-               $(not gas(i))$(not bio(i))$(not cofire(i))$(not h2_combustion(i))],
+               $(not bio(i))$(not cofire(i))$(not h2_combustion(i))
+               $((not gas(i)) or (Sw_GasCurve = 2))],
         hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) } ;
 
 valcost('cost_total',i,r,t) =
