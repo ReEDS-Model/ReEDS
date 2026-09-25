@@ -101,10 +101,9 @@ for case in runs_failed:
             sw = reeds.io.get_switches(case)
             if int(sw.GSw_FINITO_Link):
                 f_copy = re.sub("^finito/", "" , f, flags=re.IGNORECASE)
-                shutil.copy(os.path.join(sw.FINITO_dir,f_copy), os.path.join(case,f))
+                shutil.copy(Path(sw.FINITO_dir,f_copy), Path(case,f))
         else:
-            shutil.copy(os.path.join(reeds_path,f), os.path.join(case,f))
-        shutil.copy(f, Path(case, f))
+            shutil.copy(f, Path(case, f))
     if copy_reeds:
         shutil.copytree(Path(reeds_path, 'reeds'), Path(case, 'reeds'), dirs_exist_ok=True)
 
