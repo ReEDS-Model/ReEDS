@@ -15,7 +15,6 @@ import importlib
 import numpy as np
 import pandas as pd
 import subprocess
-import shlex
 import re
 from datetime import datetime
 import argparse
@@ -1292,33 +1291,15 @@ def write_batch_script(
 
             if os.environ.get('NREL_CLUSTER') == 'kestrel':
                 OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
-                OPATH.writelines("module load conda || exit 1\n")
+                OPATH.writelines("module load anaconda3 \n")
                 OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
-                OPATH.writelines("module load gams/53.5.1 || exit 1\n")
+                OPATH.writelines("module load gams \n")
                 OPATH.writelines("module load julia/1.12.1 \n")
             else:
-                OPATH.writelines("module load conda || exit 1\n")
-                OPATH.writelines("module load gams/53.5.1 || exit 1\n")
+                OPATH.writelines("module load conda \n")
+                OPATH.writelines("module load gams \n")
 
-            # Freeze the submitting Python's Conda prefix into this job.
-            # A folder rename does not select a Conda environment.
-            runtime_prefix = str(Path(sys.prefix).absolute())
-            if not Path(runtime_prefix, 'conda-meta', 'history').is_file():
-                raise RuntimeError('Submit ReEDS using its activated Conda environment.')
-            OPATH.writelines("unset PYTHONHOME PYTHONPATH\n")
-            OPATH.writelines("export PYTHONNOUSERSITE=1\n")
-            OPATH.writelines(f"conda activate {shlex.quote(runtime_prefix)} || exit 1\n")
-            OPATH.writelines("hash -r\n")
-            runtime_check = (
-                "import os, sys; from pathlib import Path; "
-                f"expected = Path({runtime_prefix!r}).resolve(); "
-                "actual = Path(sys.prefix).resolve(); "
-                "active = Path(os.environ.get('CONDA_PREFIX', '')).resolve(); "
-                "print('JOB PYTHON:', sys.executable); "
-                "print('JOB CONDA PREFIX:', active); "
-                "sys.exit(0 if actual == expected == active else 1)"
-            )
-            OPATH.writelines(f"python -c {shlex.quote(runtime_check)} || exit 1\n")
+            OPATH.writelines("conda activate reeds \n")
             OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
 
         #%% Write the input_processing script calls
@@ -1428,7 +1409,6 @@ def write_batch_script(
             + toLogGamsString
             + f"--fname={batch_case}"
             + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']}"
-            + f" --FINITO_first_year={caseSwitches['FINITO_first_year']}"
             + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
