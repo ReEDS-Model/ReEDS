@@ -1439,7 +1439,7 @@ systemcost_techba('op_h2_ptc_payments_negative','electrolyzer',r,t)$[tmodel_new(
 * Startup/ramping costs
 systemcost_techba('op_startcost',i,r,t)$[tmodel_new(t)$Sw_StartCost$startcost(i)] =
     sum{(h,hh)$[numhours_nexth(h,hh)$valgen_irt(i,r,t)],
-        startcost(i) * numhours_nexth(h,hh) * RAMPUP.l(i,r,h,hh,t) }
+        startcost(i) * forcetechmult(i,t) * numhours_nexth(h,hh) * RAMPUP.l(i,r,h,hh,t) }
 ;
 
 

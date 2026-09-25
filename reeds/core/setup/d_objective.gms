@@ -228,8 +228,12 @@ eq_Objfn_op(t)$tmodel(t)..
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
 
 * --- startup/ramping costs
+* Scaled by forcetechmult like every other cost of a ForceMandate tech
+* (2_financials.gms); it is 1 otherwise. startcost has no year index, so the
+* multiplier is applied here rather than to the parameter, where scaling once
+* per solve year would compound.
               + sum{(i,r,h,hh)$[Sw_StartCost$startcost(i)$numhours_nexth(h,hh)$valgen_irt(i,r,t)],
-                    startcost(i) * numhours_nexth(h,hh) * RAMPUP(i,r,h,hh,t) }
+                    startcost(i) * forcetechmult(i,t) * numhours_nexth(h,hh) * RAMPUP(i,r,h,hh,t) }
 
 * --cofire coal consumption---
 * cofire bio consumption already accounted for in accounting of BIOUSED
