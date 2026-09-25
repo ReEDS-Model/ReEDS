@@ -103,7 +103,7 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
         case_out = df_cases[case].copy()
         # (ReEDS-FINITO) Combine the cases files for the linked model
         if int(case_out.loc['GSw_FINITO_Link']) == 1 :
-            case_out=reeds.finito.setup_linked_cases(df_cases,case)
+            case_out=reeds.finito.setup_linked_FINITO_cases(df_cases,case)
             
         #exclude certain switches that don't need to be passed to GAMS
         for i,v in case_out.items():
@@ -551,6 +551,11 @@ def check_compatibility(sw):
                 "    conda install -c conda-forge scikit-learn-extra=0.2"
             )
             raise ModuleNotFoundError(err)
+
+    ## ReEDS-FINITO switches
+    if int(sw['GSw_FINITO_Link'])==1:
+        reeds.finito.check_FINITO_switch_compatability(sw)
+
 
 # function to stop the model after input processing
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):

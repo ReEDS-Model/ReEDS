@@ -34,7 +34,41 @@ def update_FINITO_switches(case, sw, new_switches):
     
     return new_switches
 
-def setup_linked_cases(df_cases, case):
+def check_FINITO_switch_compatability(sw):
+    """
+    Checks for switch compatability for linked ReEDS-FINITO runs
+    """
+
+    ## gas settings
+    if int(sw['GSw_GasPriceAdjMethod']) > 0:
+        raise ValueError(
+            f"GSw_GasPriceAdjMethod = {sw['GSw_GasPriceAdjMethod']} is not compatible with the "
+             "linked ReEDS-FINITO model (FINITO = 1)"
+            )
+    print(
+        "Note: for ReEDS-FINITO runs (FINITO = 1) natural gas prices are\n"
+        "derived from FINITO constraints and will override the settings for\n"
+        "'ngscen' and 'GSw_GasCurve' for years >= FINITO_first_year.\n"
+    )
+    
+    # H2 settings
+    if int(sw['GSw_H2']) == 0:
+         raise ValueError(
+            "GSw_H2 > 0 is required for ReEDS-FINITO runs (FINITO = 1)"
+        )
+
+    if int(sw['GSw_H2_SMR']) == 0 or sw['GSw_H2_Demand_Case'] == 'none':
+        print(
+            "Note: for ReEDS-FINITO runs (FINITO = 1) it is recommended to run with exogenous\n"
+            f"H2 demand (GSw_H2_Demand_Case != 'none'; current setting = '{sw['GSw_H2_Demand_Case']}')\n"
+            f"and with steam methane reforming (GSw_H2_SMR = 1; current setting = {sw['GSw_H2_SMR']}).\n"
+        )
+        confirm = str(input('\nProceed? y/[n]: ') or 'n')
+        if confirm.lower() not in ['y', 'yes']:
+            sys.exit(0)
+            
+
+def setup_linked_FINITO_cases(df_cases, case):
     """
     Updates the cases dataframe to include FINITO-specific switches.
     When a switch is duplicated in FINITO and ReEDS, then we default to
