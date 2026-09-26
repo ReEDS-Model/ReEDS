@@ -41,6 +41,47 @@ import reeds
 ### --- FUNCTIONS ---
 ### ===========================================================================
 
+
+def combine_load_data(df1: pd.DataFrame,df2: pd.DataFrame) -> pd.DataFrame:
+    """
+    Helper function to add hourly profiles together.
+
+    First checks if shape and index/column names match, raising an exception
+    if they do not. Will attempt to add using numpy with fallback to pandas method.
+    """
+    if df1.shape != df2.shape:
+        raise ValueError(
+            "Load files have different dimensions: "
+            f"{df1.shape} != {df2.shape}"
+        )
+
+    if df1.index.equals(df2.index):
+        pass
+    elif df1.index.difference(df2.index).empty and df2.index.difference(df1.index).empty:
+        raise ValueError("Load file indices contain the same values but in a different order.")
+    else:
+        only_in_df1 = df1.index.difference(df2.index)
+        only_in_df2 = df2.index.difference(df1.index)
+        raise ValueError(
+            "Load file indices do not match. "
+            f"Only in first dataframe: {only_in_df1.tolist()[:10]}; "
+            f"only in second dataframe: {only_in_df2.tolist()[:10]}"
+        )
+
+    if not df1.columns.equals(df2.columns):
+        raise ValueError("Load file columns do not match.")
+    try:
+        np.add(
+            df1.to_numpy(copy=False),
+            df2.to_numpy(copy=False),
+            out=df1.to_numpy(copy=False),
+        )
+    except (TypeError, ValueError):
+        df1 = df1 + df2
+
+    return df1
+
+
 def get_historical_state_load_for_model_year(
     historical_state_load_annual: pd.DataFrame,
     model_year: int
@@ -596,6 +637,39 @@ def reaggregate_to_model_regions(
 
     return regional_load_hourly
 
+def splice_with_historical_demand(state_load_hourly, sw, weather_years, solveyears):
+    # load splice data with function used to get original load
+    print(f'splicing load data from demand_{sw.GSw_LoadSplice}')
+    splice_load = reeds.io.get_load_hourly(GSw_LoadProfiles=sw.GSw_LoadSplice)
+    # interpolate
+    endyear = int(sw.endyear)
+    splice_load = interpolate_missing_model_years(
+        splice_load,
+        endyear
+    )
+    # downselect to weather years
+    splice_load = downselect_to_weather_years(
+        splice_load,
+        weather_years
+    )
+    # downselect to model years
+    splice_load = downselect_to_model_years(
+        splice_load,
+        solveyears
+    )
+
+    # align indices, filling any missing years 
+    # (tyically historical) with zeroes
+    splice_load = splice_load.reindex(
+       state_load_hourly.index,
+        fill_value=0.0,
+    )
+
+    # add spliced load to total
+    state_load_hourly = combine_load_data(state_load_hourly, splice_load)
+    
+    return state_load_hourly
+
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
@@ -662,6 +736,18 @@ def main(reeds_path, inputs_case):
                     solveyears
                 )
             )
+            
+            # option to add additional load
+            if sw.GSw_LoadSplice != 'none':
+                state_load_hourly = (
+                    splice_with_historical_demand(
+                        state_load_hourly, 
+                        sw,
+                        weather_years,
+                        solveyears
+                    )
+                )
+
         case _:
             state_load_hourly = downselect_to_model_years(
                 state_load_hourly,

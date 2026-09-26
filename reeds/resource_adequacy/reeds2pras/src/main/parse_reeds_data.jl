@@ -129,5 +129,10 @@ function parse_reeds_data(
     #@info "Processing GeneratorStorages"
     #genstor_array = process_genstors(genstor_array, get_name.(regions), timesteps)
 
+    # Release large DataFrames — generator objects have already copied the data they need
+    forcedoutage_hourly = nothing
+    scheduled_outage_hourly = nothing
+    GC.gc()
+
     return lines, regions, gens_array, storage_array, genstor_array
 end

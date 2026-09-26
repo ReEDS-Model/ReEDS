@@ -16,6 +16,7 @@ import os
 import pandas as pd
 import shutil
 import site
+import copy_rev_folders
 from collections import OrderedDict
 from types import SimpleNamespace
 from glob import glob
@@ -54,15 +55,24 @@ def copy_rev_jsons(outpath, rev_path):
 ### --- SUPPLY CURVE PROCESSING ---
 ### ===========================================================================
 
-def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path):
+def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path, atb_scenario=None):
     """Only used for geothermal"""
-    raw_sc_files = os.path.join(rev_cases_path, "raw_supply_curves")
+    # get reV supply curves at different depths
+    sc_files = glob(os.path.join(rev_cases_path, "**", "*.csv"), recursive=True)
+    # if ATB scenario is specified, subset to only those files
+    if atb_scenario is not None:
+        sc_files = [path for path in sc_files if atb_scenario in os.path.basename(path)]
 
-    sc_list = []
-    for _, _, files in os.walk(raw_sc_files):
-        for file in files:
-            sc_list.append(pd.read_csv(os.path.join(raw_sc_files, file)))
-    
+    # raise error if no files are identified
+    if len(sc_files) == 0:
+        raise FileNotFoundError(
+            f"No geothermal supply curve CSVs found under {rev_cases_path}"
+            + (f" for atb_scenario='{atb_scenario}'" if atb_scenario is not None else "")
+        )
+    else:
+        print(f"Loading the following files:\n{'\n'.join([os.path.basename(f) for f in sc_files])}")
+        sc_list = [pd.read_csv(path) for path in sorted(sc_files)]
+
     df_sc_agg = pd.concat(sc_list)
     df_sc_lowest_lcoe = (
         df_sc_agg.sort_values(["lcoe_all_in_usd_per_mwh", "lcoe_site_usd_per_mwh"], ascending=True)
@@ -403,8 +413,8 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
     df['ba'] = df.FIPS.map(lambda x: county2zone.get(x,x))
 
     if min_cap > 0:
-        #Remove sites with less than minimum capacity threshold, but keep sites that have existing capacity
-        df = df[(df['capacity'] >= min_cap) | (df['existing_capacity'] > 0)].copy()
+        #Remove sites with less than minimum capacity threshold
+        df = df[df['capacity'] >= min_cap].copy()
 
     print('Done reading supply curve inputs and filtering: '+ str(datetime.datetime.now() - startTime))
     return df
@@ -421,9 +431,9 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
     startTime = datetime.datetime.now()
     #Create class column.
     if class_path is None:
-        df_sc['class'] = '1'
+        df_sc['class'] = 1
     else:
-        df_sc['class'] = 'NA' #Initialize to NA to make sure we have full coverage of classes here.
+        df_sc['class'] = pd.Series(pd.NA, index=df_sc.index, dtype='Int64')
         df_class = pd.read_csv(class_path, index_col='class')
         #Now loop through classes (rows in df_class). Classes may have multiple defining criteria (columns in df_class),
         #so we loop through columns to build the selection criteria for each class, building up a 'mask' of criteria for each class.
@@ -443,7 +453,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                     #No pipe symbol means we do a simple match.
                     mask = mask & (df_sc[col] == val)
             #Finally, apply the mask that has been built for this class.
-            df_sc.loc[mask, 'class'] = cname
+            df_sc.loc[mask, 'class'] = int(cname)
     # Add dynamic, region-specific class bins based on class_bin_method
     if class_bin:
         #In this case, class names in class_path must be numbered, starting at 1
@@ -460,7 +470,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                 bin_num=class_bin_num,
                 bin_method=class_bin_method,
             )
-            .reset_index(drop=True)
+            .reset_index()
         )
         df_sc['class'] = (df_sc['class_orig'] - 1) * class_bin_num + df_sc['class_bin']
     print('Done adding classes: '+ str(datetime.datetime.now() - startTime))
@@ -550,7 +560,13 @@ def read_cf_file(
     ## Change hourly profile column names from simple index to
     ## associated id specified by profile_id_col (usually sc_point_gid)
     dfall.columns = dfall.columns.map(df_meta[profile_id_col])
+    
     ## Add time index
+    # first decode from bytes
+    if df_index.dtype.kind == "S":
+        df_index = df_index.str.decode("utf-8").str.rstrip("\x00")
+    # now save as datetime and add as index
+    df_index = pd.to_datetime(df_index, errors="raise")
     dfall = dfall.set_index(df_index)
     
     return dfall
@@ -605,7 +621,7 @@ def process_cf_profiles(
         df_prof_out = df_prof_out * scale_factor
 
         ### Convert dtype
-        if 'int' in dtype and scale_factor < 100:
+        if np.issubdtype(dtype, np.integer) and scale_factor < 100:
             raise ValueError(
                 "scale_factor must be greater than 100 when converting "
                 "CF values to ints. Update scale_factor or dtype."
@@ -679,14 +695,23 @@ def save_sc_outputs(
     df_sc = df_sc.copy()
     # save copy of pre-processed reV supply curve
     df_sc.to_csv(os.path.join(outpath, 'results', tech + '_supply_curve_raw.csv'), index=False)
-    #Round now to prevent infeasibility in model because existing (pre-2010 + prescribed) capacity is slightly higher than supply curve capacity
-    df_sc[['capacity','existing_capacity']] = df_sc[['capacity','existing_capacity']].round(decimals)
+    df_sc['capacity'] = df_sc['capacity'].round(decimals)
 
+    cols_out = [profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', 'cf']
+    # for EGS identify the resource based on mean temperature
+    if tech == 'egs':
+        rescol = 'mean_resource_temp'
+        # convert mean temperature to int
+        df_sc[rescol] = df_sc[rescol].round().astype(int)
+        cols_out += [rescol]
+        
+    # include capacity factor
     cfcol = 'capacity_factor_ac' if 'capacity_factor_ac' in df_sc else 'mean_cf'
+    df_sc[cfcol] = df_sc[cfcol].round(decimals+2)
+    df_sc = df_sc.rename(columns={cfcol:'cf'})
     df_sc_out = (
-        df_sc[[profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', cfcol]]
+        df_sc[cols_out]
         .sort_values(profile_id_col)
-        .rename(columns={cfcol:'cf'})
         .round({'capacity':decimals, 'capital_adder_per_mw':decimals, 'cf':decimals+2})
     )
     df_sc_out.to_csv(
@@ -801,6 +826,9 @@ if __name__== '__main__':
         config = json.load(f, object_pairs_hook=OrderedDict)
     cf = SimpleNamespace(**config)
 
+    #%% copy reV folders
+    copy_rev_folders.main(cf.rev_paths_file, [cf.tech], overwrite=True)
+
     #%% look for upv output type (AC or DC)
     if cf.tech == "upv":
         upv_type_out = cf.upv_type_out
@@ -829,6 +857,7 @@ if __name__== '__main__':
                 aggregate_supply_curves_by_lowest_lcoe(
                     rev_cases_path=cf.rev_path,
                     rev_sc_file_path=cf.original_sc_file,
+                    atb_scenario=cf.atb_scenario
                 )
             else:
                 raise NotImplementedError(

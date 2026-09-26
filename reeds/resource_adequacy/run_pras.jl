@@ -405,6 +405,7 @@ function main(args::Dict)
     end
 
     #%% Run ReEDS2PRAS
+    @info "Memory before ReEDS2PRAS: $(round(Base.gc_live_bytes() / 1e9, digits=2)) GB live"
     if (args["overwrite"] == 1) | ~isfile(pras_system_path)
         ### Create and save the PRAS system
         ## Could use compression_level={integer} here but it doesn't really help
@@ -425,6 +426,10 @@ function main(args::Dict)
             verbose=true,
         )
         @info "Finished ReEDS2PRAS"
+        @info "Memory after ReEDS2PRAS (before GC): $(round(Base.gc_live_bytes() / 1e9, digits=2)) GB live"
+        # Release SystemModel from construction before Monte Carlo run
+        GC.gc()
+        @info "Memory after ReEDS2PRAS (after GC): $(round(Base.gc_live_bytes() / 1e9, digits=2)) GB live"
     end
 
     #%% Run PRAS
