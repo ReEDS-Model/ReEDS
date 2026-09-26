@@ -8,6 +8,7 @@ This file creates a gdx file with all of the data necessary for the resource ade
     - availability rates (1 - outage rates)
     - transmission capacities and loss rates
     - technology sets
+    - industrial electricity demand from FINITO when running linked model 
 $offtext
 
 $if not set start_year $setglobal start_year %startyear%
@@ -62,6 +63,7 @@ h2_usage_regional(r,allh,t)        "--metric tons-- H2 usage by region"
 inv_cond_filt(i,v,t)               "--set-- vintage-year mapping for investments by technology"
 inv_ivrt(i,v,r,t)                  "--MW-- investments in power generation capacity"
 inv_energy_ivrt(i,v,r,t)           "--MWh-- investments in energy generation capacity"
+load_finito_rt(r,allh,t)           "--MWh-- total load from industrial sectors and converted fuels modeled by FINITO"
 m_cf_filt(i,v,r,allh)              "--fraction-- capacity factor used in the model"
 m_cf_szn_filt(i,v,r,allszn)        "--fraction-- modelled capacity factors filtered for hydro resources to set seasonal energy constraints"
 minloadfrac_filt(r,i,allszn)       "--fraction-- modelled mingen fraction filtered for hydro resources to set mingen constraints"
@@ -158,6 +160,10 @@ h2_usage_regional(r,h,t)$tcur(t) =
         h2_exogenous_demand_regional(r,'h2',h,t)
         + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
             GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
+*       regional hydrogen demand for industry (FINITO)
+$ifthene.linked_h2_reg_report Sw_FINITO_Link==1
+        + [USE_H2_FINITO.l(r,h,t) * h2_metric_tons_per_mmbtu ]$t_finito(t)  
+$endif.linked_h2_reg_report
     )
 ;
 
@@ -255,14 +261,24 @@ cap_converter_filt(r) = sum{t$tcur(t), CAP_CONVERTER.l(r,t) } ;
 routes_filt(r,rr,trtype) = sum{t$tcur(t), routes(r,rr,trtype,t) } ;
 
 *============================
-* Flexible load data
+* Load data
 *============================
 
+* flexible load
 flex_load(r,h) = sum{(flex_type,t)$tcur(t), load_exog_flex(flex_type,r,h,t) } ;
 
 flex_load_opt(r,h) = sum{(flex_type,t)$tcur(t), FLEX.l(flex_type,r,h,t) } ;
 
 ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
+
+* FINITO load
+$ifthene.linked_load Sw_FINITO_Link==1
+* limit to representative timeslices since prep_data.py maps these to rep-period timestamps
+    load_finito_rt(r,h,t)$h_rep(h) = USE_ELE_FINITO.l(r,h,t) / (1.0 - distloss);
+$else.linked_load
+    load_finito_rt(r,h,t) = 0 ; 
+$endif.linked_load
+
 
 *============================
 * Extra consumption data
@@ -353,6 +369,7 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     inv_ivrt
     inv_energy_ivrt
     ivt_num
+    load_finito_rt
     m_cf_filt
     m_cf_szn_filt
     maxage

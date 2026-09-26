@@ -3079,7 +3079,7 @@ results_meta = collections.OrderedDict((
         }
     ),
     ('Load (TWh)',
-        {'file':'load_rt',
+        {'file':'loadvar_rt',
         'columns': ['rb', 'year', 'Load (TWh)'],
         'preprocess': [
             {'func': sum_over_cols, 'args': {'drop_cols': ['rb'], 'group_cols': ['year']}},

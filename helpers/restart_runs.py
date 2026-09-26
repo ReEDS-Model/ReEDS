@@ -4,6 +4,7 @@ import sys
 import shutil
 import subprocess
 import argparse
+import re
 from glob import glob
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -95,7 +96,14 @@ for case in runs_failed:
 
     #%% Copy additional files if desired
     for f in more_copyfiles:
-        shutil.copy(f, Path(case, f))
+        if f.lower().startswith('finito'):
+            # if file starts with 'finito' append the finito directory
+            sw = reeds.io.get_switches(case)
+            if int(sw.GSw_FINITO_Link):
+                f_copy = re.sub("^finito/", "" , f, flags=re.IGNORECASE)
+                shutil.copy(Path(sw.FINITO_dir,f_copy), Path(case,f))
+        else:
+            shutil.copy(f, Path(case, f))
     if copy_reeds:
         shutil.copytree(Path(reeds_path, 'reeds'), Path(case, 'reeds'), dirs_exist_ok=True)
 
