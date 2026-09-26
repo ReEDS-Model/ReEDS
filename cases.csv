@@ -301,6 +301,7 @@ GSw_PVB_ILR,'_'-delimited inverter loading ratio for the three PVB types express
 GSw_PVB_BatteryITC,Switch to apply ITC to battery in PV+B.,0; 1,1,
 GSw_PVB_Charge_Constraint,Fraction of battery charging in PV+B that is constrained to be from coupled PV; a value of zero turns off the constraint.,N/A,0,
 GSw_PVB_Types,'_'-delimited PV+battery types to include (i.e. 1 or 1_2 or 1_2_3),N/A,1,
+GSw_QueueConstraintYears,How many years (starting from and including this_year) to apply the interconnection queue capacity constraint for (0 turns off the constraint),^[0-5]$,3
 GSw_ReducedResource,Turn on/off switch to reduce the RE resource available,0; 1,0,
 GSw_Refurb,Turn on/off refurbishments,0; 1,1,
 GSw_RemoveSmallNumbers,Turn on/off rounding of variables known to cause very small values on the RHS of certain constraints (improve numerical stability),0; 1,1,
@@ -319,7 +320,7 @@ GSw_SkipRAyear,Last year in which to skip running the resource adequacy (RA) cal
 GSw_SpurCostMult,Multiplier for spur-line costs,float,1,
 GSw_SpurScen,Spur-line scenario: 0 to include in resource supply curve; 1 to model endoegenously,0; 1,0,
 GSw_SpurShare,Indicate whether wind-ons and upv are allowed to share spur line capacity,0; 1,0,
-GSw_StartMarkets,Indicate year in which load-balance and operating-reserve constraints start to be enforced,N/A,2026,
+GSw_StartMarkets,Indicate year in which load-balance and operating-reserve constraints start to be enforced,N/A,2027,
 GSw_StartCost,Technologies with startup costs (0=none; 1=nuclear; 2=nuclear/coal/ccs; 3=coal/ccs; 4=coal/cc/ccs; 5=all fuel-based except nuclear; 6=all fuel-based) (default is to leave out nuclear since it's always committed with GSw_MingenFixed=1),0; 1; 2; 3; 4; 5; 6,3,
 GSw_StateCap,Turn on/off state cap and trade constraints,0; 1,1,
 GSw_StateRPS,Turn on/off state RPS requirements,0; 1,1,

@@ -565,7 +565,9 @@ $ontext
 The following six equations dictate how capacity is represented in the model.
 
 The first three equations handle init-X vintages (those that existed pre-startyear)
-which are bounded by m_capacity_exog. With retirements (in the second and third
+which are bounded by m_capacity_exog scaled by the fraction remaining after
+the degradation accumulated since coming online (degrade_init). With
+retirements (in the second and third
 equations), the constraints imply that capacity must be less than or
 equal to m_capacity_exog and monotonically decreasing over time -
 implying that if endogenous capacity was reduced in the previous year,
@@ -591,11 +593,11 @@ $offtext
 eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t)
+    m_capacity_exog(i,v,r,t) * degrade_init(i,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =e=
 
@@ -621,11 +623,11 @@ eq_cap_init_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
 eq_cap_init_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$initv(v)$(not upgrade(i))
                            $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
-    m_capacity_exog(i,v,r,t)
+    m_capacity_exog(i,v,r,t) * degrade_init(i,v,r,t)
 
 * Account for capacity upsizing within init vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =g=
 
@@ -700,16 +702,16 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+              degrade_new(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
         }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
-               degrade(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
+               degrade_new(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
         }
 
 * Account for capacity upsizing within new vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =e=
 
@@ -736,11 +738,11 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_PCM)]..
     
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV_ENERGY(i,v,r,tt))
+              degrade_new(i,tt,t) * (INV_ENERGY(i,v,r,tt))
         }
         
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
-               degrade(i,ttt,tt) * prescribed_retirements_energy(i,v,r,tt,ttt)
+               degrade_new(i,ttt,tt) * prescribed_retirements_energy(i,v,r,tt,ttt)
         }
 
     + m_capacity_exog_energy(i,v,r,t)
@@ -757,16 +759,16 @@ eq_cap_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
-              degrade(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
+              degrade_new(i,tt,t) * (INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb])
       }
 
     - sum{(tt,ttt)$[inv_cond(i,v,r,tt,ttt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,ttt)$(tt.val>=ttt.val)$(t.val>=tt.val)],
-              degrade(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
+              degrade_new(i,ttt,tt) * prescribed_retirements(i,v,r,tt,ttt)
         }
 
 * Account for capacity upsizing within new vintages
     + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))$allow_cap_up(i,v,r,rscbin,tt)],
-                      degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
+                      degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt) }
 
     =g=
 
@@ -793,7 +795,7 @@ eq_cap_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
                           $retiretech(i,v,r,t)$(not Sw_PCM)]..
 
     sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
-         degrade(i,tt,t) * CAP(i,v,r,tt)
+         degrade_new(i,tt,t) * CAP(i,v,r,tt)
 
          + sum{(ii,ttt)$[(tfix(ttt) or tmodel(ttt))$(yeart(ttt)<=yeart(tt))
                         $valcap(ii,v,r,ttt)$upgrade_from(ii,i)],
@@ -1037,9 +1039,13 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *but the combination of m_rsc_con and rsc_agg allows for those investments
 *to be limited by the numeraire techs' m_rsc_dat
 
-*capacity indicated by the resource supply curve (scaled by rsc_capacity_scalar)
-    m_rsc_dat(r,i,rscbin,"cap")$[not evmc(i)] * (
-        1$[not rsc_capacity_scalar_i(i)] + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
+*capacity indicated by the resource supply curve minus exogenous (pre-start-year)
+*capacity (scaled by rsc_capacity_scalar)
+    (m_rsc_dat(r,i,rscbin,"cap")
+     - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
+         capacity_exog_rsc(ii,v,r,rscbin,tt) } )
+        * (1$[not rsc_capacity_scalar_i(i)]
+           + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
 * available hydro upgrade capacity
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 
@@ -1048,10 +1054,6 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 *must exceed the cumulative invested capacity in that region/class/bin...
     sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)],
          INV_RSC(ii,v,r,rscbin,tt) * resourcescaler(ii) }
-
-*plus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
-    + sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
 
 ;
 
@@ -1217,7 +1219,7 @@ eq_capacity_limit(i,v,r,h,t)
             + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
                 INV_ENER_UP(i,v,r,rscbin,tt)$allow_ener_up(i,v,r,rscbin,tt)
 *subtract energy that would be embedded in a capacity-only upsizing
-                - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
+                - degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
       )$[not dispatchtech(i)]
 *add EVMC shape generation
     + (evmc_shape_gen(i,r,h) * CAP(i,v,r,t))
@@ -1351,7 +1353,7 @@ eq_dhyd_dispatch(i,v,r,szn,t)
     sum{h$[h_szn(h,szn)], hours(h) }
     * (CAP(i,v,r,t) + sum{(tt,rscbin)$[(tmodel(tt) or tfix(tt))],
                INV_ENER_UP(i,v,r,rscbin,tt)$allow_ener_up(i,v,r,rscbin,tt)
-             - degrade(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
+             - degrade_new(i,tt,t) * INV_CAP_UP(i,v,r,rscbin,tt)$allow_cap_up(i,v,r,rscbin,tt) })
     * m_cf_szn(i,v,r,szn,t)
 
     =g=
@@ -1372,13 +1374,14 @@ eq_dhyd_dispatch(i,v,r,szn,t)
 * Limit near-term capacity deployments by tech and region based on interconnection queues
 eq_interconnection_queues(tg,r,t)
     $[tmodel(t)$(yeart(t)>=model_builds_start_yr)
-    $(sum{(tgg,rr), cap_limit(tgg,rr,t)})
+    $(sum{(tgg,rr), queue_limit(tgg,rr,t)})
     $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,t)}
+    $Sw_QueueConstraintYears
     $(not Sw_PCM)]..
 
 * the capacity limit from the interconnection queue data
 * (with CAP_ABOVE_LIM as a slack variable to address infeasibilities)
-    cap_limit(tg,r,t) + CAP_ABOVE_LIM(tg,r,t)
+    queue_limit(tg,r,t) + CAP_ABOVE_LIM(tg,r,t)
 
     =g=
 
@@ -1963,6 +1966,7 @@ eq_CAPTRAN_PRM(r,rr,trtype,t)
 eq_prescribed_transmission(r,rr,trtype,t)
     $[routes_inv(r,rr,trtype,t)
     $tmodel(t)$(yeart(t)<firstyear_trans_nearterm)
+    $sum{tt$(yeart(tt)<=yeart(t)), trancap_fut(r,rr,"possible",trtype,tt)}
     $(not Sw_PCM)]..
 
 *all available transmission capacity expansion that is 'possible'
