@@ -39,24 +39,23 @@ def check_FINITO_switch_compatability(sw):
     Checks for switch compatability for linked ReEDS-FINITO runs
     """
 
-    ## gas settings
+    ## natural gas settings
     if int(sw['GSw_GasPriceAdjMethod']) > 0:
         raise ValueError(
-            f"GSw_GasPriceAdjMethod = {sw['GSw_GasPriceAdjMethod']} is not compatible with the "
-             "linked ReEDS-FINITO model (FINITO = 1)"
-            )
-    print(
-        "Note: for ReEDS-FINITO runs (FINITO = 1) natural gas prices are\n"
-        "derived from FINITO constraints and will override the settings for\n"
-        "'ngscen' and 'GSw_GasCurve' for years >= FINITO_first_year.\n"
-    )
+            "ReEDS-FINITO runs are only compatible with GSw_GasPriceAdjMethod = 0 "
+            f"(current setting = {sw['GSw_GasPriceAdjMethod']})"
+        )
+    if int(sw['GSw_GasCurve']) != 2:
+        raise ValueError(
+            "ReEDS-FINITO runs are only compatible with GSw_GasCurve = 2 "
+            f"(current setting = {sw['GSw_GasCurve']})"
+        )
     
-    # H2 settings
+    ## H2 settings
     if int(sw['GSw_H2']) == 0:
          raise ValueError(
             "GSw_H2 > 0 is required for ReEDS-FINITO runs (FINITO = 1)"
         )
-
     if int(sw['GSw_H2_SMR']) == 0 or sw['GSw_H2_Demand_Case'] == 'none':
         print(
             "Note: for ReEDS-FINITO runs (FINITO = 1) it is recommended to run with exogenous\n"
