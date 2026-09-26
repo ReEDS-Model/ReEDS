@@ -408,7 +408,10 @@ def build_html(output_dir, core_path):
                      'the model solved with static gas prices; right adds the fuel cost at left to '
                      'the cost factor, holding the value factor at its modelled level so the whole '
                      'increase falls on cost. The shaded band is the area between the two fits after '
-                     'the intercepts are matched, so its width is the cost escalation.', order)
+                     'the intercepts are matched, so its width is the cost escalation. Across the '
+                     'four curve options the added fuel cost at the last model year spans 20.1 to '
+                     '27.8 2024$/MWh; the functional form matters more than the geographic scope, '
+                     'since the power-law option sits above all three linear ones.', order)
     gas_rows = []
     if os.path.exists(os.path.join(output_dir, 'gas_supply_curve.csv')):
         gdf = pd.read_csv(os.path.join(output_dir, 'gas_supply_curve.csv'))
