@@ -19,7 +19,7 @@ file_levels = {
         os.path.join('inputs_case', 'recf_upv.h5'),
         os.path.join('inputs_case', 'recf_wind-ofs.h5'),
         os.path.join('inputs_case', 'recf_wind-ons.h5'),
-    ],
+    ] + [f'225{i}' for i in 'abcdefghijklmnopqrstuvwxyz'],
     ## Intermediate input files plus more duplicates
     1: [
         os.path.join('inputs_case', 'csp.h5'),
@@ -27,7 +27,7 @@ file_levels = {
         ## The following regex matches the outputs/*.csv files
         ## except for neue*.csv, health*.csv, and h2_price_month.csv.
         ## All the other outputs/*.csv files are duplicates of data in outputs.h5.
-        os.path.join('outputs', r'^((?!(neue|health|h2_price_month)).)*csv$'),
+        os.path.join('outputs', r'^((?!(neue|eue|ra_metrics|health|h2_price_month)).)*csv$'),
     ],
     ## Large input files. Would need to rerun input_processing to recreate.
     2: [
