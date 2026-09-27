@@ -683,7 +683,6 @@ def save_sc_outputs(
     df_sc,
     outpath,
     tech,
-    subtract_exog,
     profile_id_col,
     decimals,
 ):
@@ -815,10 +814,14 @@ if __name__== '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c', type=str, default='', help='path to config file for this run')
     parser.add_argument('--nolog', '-n', default=False, action='store_true', help='turn off logging for debugging')
+    parser.add_argument('--copy_from_rev', '-r', action='store_true', 
+        help='Copy original reV folders to Supply_Curve_Data; if data exists will update.'
+    )
 
     args = parser.parse_args()
     configpath = args.config
     nolog = args.nolog
+    copy_from_rev = args.copy_from_rev
     startTime = datetime.datetime.now()
 
     #%% load config information
@@ -827,7 +830,8 @@ if __name__== '__main__':
     cf = SimpleNamespace(**config)
 
     #%% copy reV folders
-    copy_rev_folders.main(cf.rev_paths_file, [cf.tech], overwrite=True)
+    if copy_from_rev:
+        copy_rev_folders.main(cf.rev_paths_file, [cf.tech])
 
     #%% look for upv output type (AC or DC)
     if cf.tech == "upv":
@@ -894,7 +898,6 @@ if __name__== '__main__':
         df_sc=df_sc,
         outpath=cf.outpath,
         tech=cf.tech,
-        subtract_exog=cf.subtract_exog,
         profile_id_col=cf.profile_id_col,
         decimals=2,
     )

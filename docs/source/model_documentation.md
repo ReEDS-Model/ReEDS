@@ -921,24 +921,6 @@ Energy conversion processes, including binary and flash cycles, are linked to re
 Plants with reservoir temperatures \<200°C (Class 7--10) use a binary cycle, which uses a heat exchanger and secondary working fluid with a lower boiling point to drive a turbine.
 All other reservoir temperatures assume a turbine is driven directly by working fluid from the geothermal wells.
 
-{numref}`geothermal-technical-resource-potential` lists the technical resource potential for the different geothermal categories.
-
-```{table} Technical Resource Potential (GW)
-:name: geothermal-technical-resource-potential
-| **Resource Class** | Reservoir Temperature **(°C)** | **Hydrothermal** | **Near-Field EGS** | **Deep EGS** |
-|:------------------:|:------------------------------:|:----------------:|:------------------:|:------------:|
-|           Class 1  |                         \> 325 |               \- |                0.2 |          544 |
-|           Class 2  |                        300–325 |              1.8 |                0.2 |           18 |
-|           Class 3  |                        275–300 |              9.3 |                1.3 |           \- |
-|           Class 4  |                        250–275 |              0.7 |                8.3 |           \- |
-|           Class 5  |                        225–250 |              1.1 |                 74 |            1 |
-|           Class 6  |                        200–225 |              2.4 |                320 |          169 |
-|           Class 7  |                        175–200 |              0.2 |                709 |         3509 |
-|           Class 8  |                        150–175 |              2.6 |                996 |         8012 |
-|           Class 9  |                        125–150 |              1.1 |               1268 |          686 |
-|           Class 10 |                          \<125 |              4.7 |                 \- |            8 |
-|              Total |                                |             23.9 |               3377 |        12947 |
-```
 
 ```{figure} figs/docs/supplycurve-egs.png
 :name: figure-supplycurve-egs
@@ -951,7 +933,7 @@ Identified hydrothermal resources are based on the U.S. Geological Survey's 2008
 The undiscovered portion of the hydrothermal resource is limited by a discovery rate defined as part of the GeoVision Study {cite}`doeGeoVisionHarnessingHeat2019`.
 Existing exogenous hydrothermal capacity is treated as already discovered; the discovery rate applies to the remaining resource available for new investment.
 Prescribed builds retain this discovery treatment, with first-bin resource added only as needed to keep the prescriptions feasible.
-The geothermal supply curves are based on the analysis described by {cite}`augustineGeoVisionAnalysisSupporting2019` and are shown in {numref}`figure-geothermal-resource-availability`.
+The geothermal supply curves are based on the analysis described by {cite}`augustineGeoVisionAnalysisSupporting2019`.
 The hydrothermal and near-field EGS resource potential is derived from the U.S. Geological Survey's 2008 geothermal resource assessment {cite}`williamsReviewMethodsApplied2008a`, whereas the deep EGS resource potential is based on an update of the EGS potential from the Massachusetts Institute of Technology {cite}`testerFutureGeothermalEnergy2006`.
 As with other technologies, geothermal cost and performance projections are from the ATB {cite}`nrel2024AnnualTechnology2024`.
 Default geothermal capacity representation in ReEDS is categorized by depth and is based on reV analysis {cite}`pinchukpaulDevelopmentGeothermalModule2023`, which estimates potential and site-based levelized cost of energy (LCOE) based on resource assessment at various depths, development constraints, land use characteristics, and grid infrastructure (spur line transmission) costs.
