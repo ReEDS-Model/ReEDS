@@ -2,7 +2,6 @@
 
 Parameters
 material_demand "material demand for each technology category (including transmissions) by state"
-material_supply "material supply for each material"
 rep_mat "reporting parameter for aggregate material demand, supply, and slack" 
 ;
 
@@ -41,5 +40,4 @@ rep_mat(mat,t,'supply')$tmodel_new(t) = mat_supply(mat,t) / yearweight(t) ;
 rep_mat(mat,t,'slack')$tmodel_new(t) =  MAT_SLACK.l(mat,t) / yearweight(t) ;
 rep_mat(mat,t,'applied_price')$tmodel_new(t) = matprice_multiplier(mat,t) * mat_price(mat) ;
 
-execute_unload 'runs/cmm_custom_2026/cmm_report_%case%.gdx' rep_mat, material_demand, material_supply ;
-*execute_unload 'runs/cmm_custom_2026/outputs_%case%.gdx'
+execute_unload '%outdir%/outputs_%case%.gdx' rep_mat, material_demand ;
