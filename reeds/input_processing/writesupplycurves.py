@@ -119,8 +119,6 @@ def agg_supplycurve(
     if psh:
         ### Remove costs above psh_cutoff [in 2004$]
         dfin = dfin.loc[dfin['supply_curve_cost_per_mw']<=psh_cutoff].copy()
-        ### Export unbinned PSH supply curve that include transmission costs
-        dfin.to_csv(os.path.join(inputs_case,'supplycurve_psh_unbinned.csv'))
     
     ### Define the aggregation settings
     ## Cost and distance are weighted averages, with capacity as the weighting factor
