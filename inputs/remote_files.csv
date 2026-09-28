@@ -1,8 +1,8 @@
 filename,inputs_path,url_base,record_id,md5
 cf_distpv_county.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18636038,39be391056bd6b04afcaeed237c2dcf2
-cf_upv_limited.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18826700,9b99c5ad9029f20ca4eb633956e3f443
-cf_upv_open.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18826700,c7eaede5ea27287a1bab64a2abc04998
-cf_upv_reference.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18826700,de7666fa824e146da45eebf168f6559b
+cf_upv_limited.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},42,eae9e25a7f9e98413140cb3b2d1382d0
+cf_upv_open.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},42,6c87711a6b157e184b1065f035ab3740
+cf_upv_reference.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},42,18f0f46c70de727a06f99a5b3893413c
 cf_wind-ofs_limited.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},22771083,034e9e3558e5b22572abc557718a8382
 cf_wind-ofs_open.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},22771083,f3ade52d0c6e3121628a4b3249d4f0d7
 cf_wind-ofs_reference.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},22771083,6ce7f214a67636c996d9e3be6387f692
