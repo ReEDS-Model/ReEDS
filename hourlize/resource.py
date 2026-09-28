@@ -721,6 +721,17 @@ def save_sc_outputs(
     return df_sc_out
 
 
+def copy_to_shared(
+    outpath,
+    sc_path
+):
+    shared_drive_path = os.path.join(sc_path, os.path.basename(os.path.normpath(outpath)))
+    #Create output directory, creating backup if one already exists.
+    if os.path.exists(shared_drive_path):
+        time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        os.rename(shared_drive_path, shared_drive_path + '-archive-'+time)
+    shutil.copytree(outpath, shared_drive_path)
+
 def copy_outputs(
     outpath,
     reeds_path,
