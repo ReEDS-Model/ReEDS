@@ -10,7 +10,7 @@
     "sc_points": "PIPELINE",
     "sc_capacity_col": "capacity_ac_mw",
     "simple": true,
-    "fixed_charge_rate": 0.0809,
+    "fixed_charge_rate": 0.0539,
     "log_directory": "./logs",
     "log_level": "DEBUG",
     "columns": [

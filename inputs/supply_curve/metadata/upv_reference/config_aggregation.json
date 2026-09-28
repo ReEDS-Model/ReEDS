@@ -35,9 +35,9 @@
             "dset": "fed_land_owner",
             "method": "category"
         },
-        "nlcd_2023_tree_canopy_cover":
+        "nlcd_tree_canopy_cover":
         {
-            "dset": "nlcd_2023_tree_canopy_cover",
+            "dset": "nlcd_tree_canopy_cover",
             "method": "mean"
         },
         "croplands_data_layer_2016":
@@ -55,10 +55,6 @@
             "dset": "cdc_social_vulnerability_index_2018",
             "method": "mean"
         },
-        "defense_department_of_defense_lands": {
-            "dset": "defense_department_of_defense_lands",
-            "method": "sum"
-          },
         "resilient_and_connected_landscapes":
         {
             "dset": "resilient_and_connected_landscapes",
@@ -69,11 +65,15 @@
             "dset": "aft_productivity_versatility_resiliancy",
             "method": "mean"
         },
-        "aft_state_best_agriculture_land":
+        "aft_states_best_agrigulture_lands":
         {
-            "dset": "aft_state_best_agriculture_land",
+            "dset": "aft_states_best_agrigulture_lands",
             "method": "sum"
         },
+        "defense_department_of_defense_lands": {
+            "dset": "defense_department_of_defense_lands",
+            "method": "sum"
+          },
         "aft_nationally_significant_agricultural_lands":
         {
             "dset": "environment_aft_nationally_significant_agricultural_lands",
@@ -113,6 +113,14 @@
         {
             "dset": "energy_communities_metro_statistical_areas",
             "method": "mean"
+        },
+        "federal_land_by_categories": {
+            "dset": "federal_land_by_categories",
+            "method": "category"
+        },
+        "federal_lands_by_boolean": {
+            "dset": "federal_lands_by_boolean",
+            "method": "sum"
         }
     },
     "excl_dict": {
@@ -279,31 +287,27 @@
         {
             "exclude_values": 1
         },
-        "regulation_pv_parcel_reference_15m_setback":
+        "regulation_setbacks_parcel_reference_solar":
         {
             "use_as_weights": true
         },
-        "regulation_pv_pipeline_reference_30m_setback":
+        "regulation_setbacks_rail_reference_solar":
         {
             "use_as_weights": true
         },
-        "regulation_pv_rail_reference_30m_setback":
+        "regulation_setbacks_road_reference_solar":
         {
             "use_as_weights": true
         },
-        "regulation_pv_road_reference_30m_setback":
+        "regulation_setbacks_structure_reference_solar":
         {
             "use_as_weights": true
         },
-        "regulation_pv_structure_reference_61m_setback":
+        "regulation_setbacks_transmission_reference_solar":
         {
             "use_as_weights": true
         },
-        "regulation_pv_transmission_reference_30m_setback":
-        {
-            "use_as_weights": true
-        },
-        "regulation_pv_water_reference_30m_setback":
+        "regulation_setbacks_water_reference_solar":
         {
             "use_as_weights": true
         },
@@ -329,20 +333,20 @@
         }
     },
     "excl_fpath": [
-        "/kfs2/projects/rev/data/exclusions/north_america/conus/standard_exclusions_and_characterizations_fy25.h5"
+        "/kfs2/projects/rev/data/exclusions/north_america/conus/standard_exclusions_and_characterizations_fy26.h5"
     ],
     "execution_control": {
         "allocation": "rev",
         "option": "kestrel",
-        "walltime": 4
+        "walltime": 6
     },
     "area_filter_kernel": "queen",
     "min_area": 0.009,
-    "gen_fpath": "/projects/rev/projects/seto/fy25/standard_scenarios/rev/generation/moderate_2035/moderate_2035_multi_year.h5",
+    "gen_fpath": "/kfs2/projects/rev/projects/seto/fy26/standard_scenarios/rev/ordinances_eos_shading/generation/moderate_2035_shading_reference/moderate_2035_shading_reference_multi_year.h5",
     "lcoe_dset": "lcoe_fcr-means",
     "cf_dset": "cf_mean-means",
     "res_class_dset": "ghi_mean-means",
-    "tm_dset": "techmap_nsrdb_fy25",
+    "tm_dset": "techmap_nsrdb_fy26",
     "power_density": 43.0,
     "res_class_bins": null,
     "res_fpath": "/datasets/NSRDB/current/nsrdb_{}.h5",
@@ -351,5 +355,5 @@
     "log_level": "DEBUG",
     "log_directory": "./logs",
     "recalc_lcoe": true,
-    "cap_cost_scale": "np.where(1.841 * capacity_dc_mw ** -0.1345 > 1, 1.841 * capacity_dc_mw ** -0.1345, 1)"
+    "cap_cost_scale": "np.where(1.841 * capacity_dc_mw ** -0.1345 > 1, 1.841 * capacity_dc_mw ** -0.1345, 1) + (0.352544990 * np.exp(0.00446413000 * capacity_dc_mw - 4.82223986 * std_agg32_area_developable_sq_km - 6.27406581 * mean_agg32_area_developable_sq_km) - 5.50063957 * np.exp(-0.0375515100 * capacity_dc_mw - 0.0460453000 * mean_agg32_area_developable_sq_km) + 5.03873719 * np.exp(-0.0372527900 * capacity_dc_mw - 0.0884394800 * std_agg32_area_developable_sq_km) + 0.337937360 * np.exp(-0.461749890 * std_agg32_area_developable_sq_km - 1.11917647 * mean_agg32_area_developable_sq_km))"
 }

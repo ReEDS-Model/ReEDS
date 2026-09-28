@@ -3,7 +3,7 @@
         "allocation": "rev",
         "feature": "--qos=normal",
         "option": "kestrel",
-        "walltime": 1
+        "walltime": 4
     },
     "trans_table": [
         "/kfs2/projects/rev/data/transmission/north_america/conus/fy25/nrel_build/build/final/all_transmission_reinforced_128.csv"
@@ -11,7 +11,7 @@
     "sc_points": "PIPELINE",
     "sc_capacity_col": "capacity_ac_mw",
     "simple": true,
-    "fixed_charge_rate": 0.0641,
+    "fixed_charge_rate": 0.0539,
     "log_directory": "./logs",
     "log_level": "DEBUG",
     "columns": [
