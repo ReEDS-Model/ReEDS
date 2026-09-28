@@ -744,6 +744,7 @@ def copy_outputs(
     tech,
     access_case,
     offshore_meshed,
+    test_record_id=42,
 ):
     #Save outputs to the shared drive and to this reeds repo.
     print('Copying outputs to shared drive and/or reeds repo')
@@ -798,20 +799,22 @@ def copy_outputs(
                 pass
 
         # Hourly profiles
-        print(
-            "Hourly profiles are not copied to the ReEDS repository. "
-            "When finalized, these files should be uploaded to Zenodo "
-            "and inputs/remote_files.csv should be updated accordingly. "
-            "See preprocessing/README.md for upload instructions."
-        )
+        if tech in ['wind-ofs', 'wind-ons', 'upv']:
+            shutil.copy(
+                os.path.join(resultspath, f'{tech}.h5'),
+                os.path.join(inputspath, 'supply_curve', f'cf_{tech}_{access_case}_{test_record_id}.h5')
+            )
+            print(
+                "Hourly profiles copied to inputs/remote for testing 
+                f"using test record id = {test_record_id}. "
+                "These files are not stored directly in ReEDS repository. "
+                "When finalized, they should be uploaded to Zenodo "
+                "and inputs/remote_files.csv should be updated accordingly. "
+                "See preprocessing/README.md for upload instructions."
+            )
 
     if copy_to_shared:
-        shared_drive_path = os.path.join(sc_path, os.path.basename(os.path.normpath(outpath)))
-        #Create output directory, creating backup if one already exists.
-        if os.path.exists(shared_drive_path):
-            time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            os.rename(shared_drive_path, shared_drive_path + '-archive-'+time)
-        shutil.copytree(outpath, shared_drive_path)
+        copy_to_share(output, sc_path)
 
     print('Done copying outputs to shared drive and/or reeds repo: '+ str(datetime.datetime.now() - startTime))
 
