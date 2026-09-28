@@ -816,27 +816,6 @@ def main(
         psh_out.rename(columns={'region':'r','bin':'variable'}, inplace=True)
         allout_list.append(psh_out)
 
-    # if int(sw["GSw_Storage"]):
-    #     # Input processing currently assumes that cost data in CSV file is in 2004$
-    #     psh_cap = pd.read_csv(os.path.join(inputs_case, "psh_supply_curves_capacity.csv"))
-    #     psh_cost = pd.read_csv(os.path.join(inputs_case, "psh_supply_curves_cost.csv"))
-
-    #     psh_cap = pd.melt(psh_cap, id_vars=["r"])
-    #     psh_cost = pd.melt(psh_cost, id_vars=["r"])
-
-    #     # Convert dollar year
-    #     psh_cost[psh_cost.select_dtypes(include=["number"]).columns] *= deflate["PSHcostn"]
-
-    #     psh_cap["var"] = "cap"
-    #     psh_cost["var"] = "cost"
-
-    #     psh_out = pd.concat([psh_cap, psh_cost]).fillna(0)
-    #     psh_out["tech"] = "pumped-hydro"
-    #     psh_out["variable"] = psh_out.variable.map(lambda x: x.replace("pshclass", "bin"))
-    #     psh_out = psh_out[hyddat.columns].copy()
-    #     # psh_out.to_csv(os.path.join('/Users','jcarag','Desktop','psh_out_old.csv'))
-    #     allout_list.append(psh_out)
-
         if write:
             # Select storage duration correponding to the supply curve
             psh_durs = pd.read_csv(
