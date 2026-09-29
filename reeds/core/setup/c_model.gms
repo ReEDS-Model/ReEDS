@@ -259,12 +259,12 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_h2_storage_level_szn(h2_stor,r,actualszn,t)       "--metric tons-- tracks H2 storage level by storage type and BA within and across periods"
  
 * CO2 capture and storage
- eq_co2_capture(r,allh,t)                    "--metric tons-- accounting of CO2 captured from DAC and CCS technologies"
+ eq_co2_capture(r,allh,t)                    "--metric tons per hour-- accounting of CO2 captured from DAC and CCS technologies"
  eq_co2_injection_limit(cs,allh,t)           "--metric tons per hour-- limit on CO2 injection for each carbon site as a rate"
  eq_co2_sink(r,allh,t)                       "--metric tons per hour-- co2 stored or used must exceed co2 captured plus net trade"
  eq_co2_transport_caplimit(r,rr,allh,t)      "--metric tons-- limit on interregional co2 trade"
  eq_co2_spurline_caplimit(r,cs,allh,t)       "--metric tons-- limit on transport of CO2 from BA to carbon storage site"
- eq_co2_cumul_limit(cs,t)                    "--cumulative metric tons-- total stored in a reservor cannot exceed capacity"
+ eq_co2_cumul_limit(cs,t)                    "--metric tons-- cumulative total stored in a reservor cannot exceed capacity"
 
 * transmission equations
  eq_INVTRAN_DC(r,rr,trtype,t)                "--MW-- DC transmission additions are assumed to add the same capacity in both directions"
@@ -3594,7 +3594,7 @@ eq_h2_demand_regional(r,h,t)
             GEN(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)
        }
 
-* when linked includeregional hydrogen demand for industry from FINITO
+* when linked include regional hydrogen demand for industry from FINITO
 $ifthene.linked_h2_reg Sw_FINITO_Link==1
     + [ USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu ]$t_finito(t)
 $endif.linked_h2_reg
@@ -3819,12 +3819,11 @@ eq_h2_ptc_creditgen(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)
 * -- CO2 transport and storage --
 *=================================
 
-
+* [metric tons per hour]
 eq_co2_capture(r,h,t)
-    $[tmodel(t)
-    $Sw_CO2_Detail
-    $(yeart(t)>=co2_detail_startyr)
-    $h_rep(h)]..
+    $[Sw_CO2_Detail
+    $tmodel(t)
+    $(yeart(t)>=co2_detail_startyr)]..
 
     CO2_CAPTURED(r,h,t)
 
@@ -3840,17 +3839,21 @@ eq_co2_capture(r,h,t)
 
 * capture from DAC
     + sum{(i,v)$[dac(i)$valcap(i,v,r,t)$i_p(i,"DAC")], PRODUCE("DAC",i,v,r,h,t) }$Sw_DAC
+
 * capture from industry when linked with FINITO [metric_tons-CO2/hr]: 
-* calculation: hours_per_year [yrs/hr] * capture [scaled_metric_tons-CO2/yr] / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]
 $ifthene.linked_co2_capture Sw_FINITO_Link==1
-    + [CAPTURE_CO2EM(r,h,t) / co2_scale]$[t_finito(t)$h_rep(h)]
+    + [CAPTURE_CO2EM(r,h,t) / co2_scale]$[t_finito(t)]
 $endif.linked_co2_capture
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_co2_transport_caplimit(r,rr,h,t)$[co2_routes(r,rr)$Sw_CO2_Detail
-                                    $tmodel(t)$(yeart(t)>=co2_detail_startyr)]..
+* [metric tons per hour]
+eq_co2_transport_caplimit(r,rr,h,t)
+    $[Sw_CO2_Detail
+    $co2_routes(r,rr)
+    $tmodel(t)
+    $(yeart(t)>=co2_detail_startyr)]..
 
 *capacity computed as cumulative investments of co2 pipelines up to the current year
     sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))
@@ -3865,7 +3868,12 @@ eq_co2_transport_caplimit(r,rr,h,t)$[co2_routes(r,rr)$Sw_CO2_Detail
 
 * ---------------------------------------------------------------------------
 
-eq_co2_spurline_caplimit(r,cs,h,t)$[Sw_CO2_Detail$r_cs(r,cs)$tmodel(t)$(yeart(t)>=co2_detail_startyr)]..
+* [metric tons per hour]
+eq_co2_spurline_caplimit(r,cs,h,t)
+    $[Sw_CO2_Detail
+    $r_cs(r,cs)
+    $tmodel(t)
+    $(yeart(t)>=co2_detail_startyr)]..
 
 *capacity computed as cumulative investments of co2 spurlines up to the current year
     sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)],
@@ -3874,16 +3882,20 @@ eq_co2_spurline_caplimit(r,cs,h,t)$[Sw_CO2_Detail$r_cs(r,cs)$tmodel(t)$(yeart(t)
     =g=
 
     CO2_STORED(r,cs,h,t)
-* (ReEDS-FINITO) extraction of CO2 [metric_tons-CO2/hr] 
+* (ReEDS-FINITO) extraction of CO2 [metric tons per hour] 
 * calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * use [scaled_metric_tons-CO2/yr] 
 $ifthene.linked_co2_spurline_caplimit Sw_FINITO_Link==1
-    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[h_rep(h)$t_finito(t)]
+    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[t_finito(t)]
 $endif.linked_co2_spurline_caplimit
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_co2_sink(r,h,t)$[tmodel(t)$Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]..
+* [metric tons per hour]
+eq_co2_sink(r,h,t)
+    $[Sw_CO2_Detail
+    $tmodel(t)
+    $(yeart(t)>=co2_detail_startyr)]..
 
 *the amount of co2 stored from r in all of its cs sites
     sum{cs$r_cs(r,cs), CO2_STORED(r,cs,h,t) }
@@ -3899,22 +3911,26 @@ eq_co2_sink(r,h,t)$[tmodel(t)$Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]..
 * net trade
     + sum{rr$co2_routes(r,rr), CO2_FLOW(rr,r,h,t) - CO2_FLOW(r,rr,h,t) }
 
-* (ReEDS-FINITO) extraction - use of CO2 [metric_tons-CO2/hr] 
-*calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * extraction/use [scaled_metric_tons-CO2/yr]
+* (ReEDS-FINITO) extraction - use of CO2 [metric tons per hour] 
 $ifthene.linked_co2_sink Sw_FINITO_Link==1
-    + (1 / co2_scale) * [
+    + (1 / co2_scale) * [ sum{cs$[csfeas(cs)$r_cs(r,cs)], 
 *       extraction from all cs sites in r 
-        + sum{cs$[csfeas(cs)$r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t)}
+        + EXTRACT_CO2_CS(cs,r,h,t)}
 *       total use of CO2, equivalent to supply 
         - USE_CO2(r,h,t) 
-    ]$[h_rep(h)$t_finito(t)]
+    ]$[t_finito(t)]
 $endif.linked_co2_sink
 
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_co2_injection_limit(cs,h,t)$[Sw_CO2_Detail$tmodel(t)$(yeart(t)>=co2_detail_startyr)$csfeas(cs)]..
+* [metric tons per hour]
+eq_co2_injection_limit(cs,h,t)
+    $[Sw_CO2_Detail
+    $tmodel(t)
+    $(yeart(t)>=co2_detail_startyr)
+    $csfeas(cs)]..
 
 * exogenously defined injection limit
     co2_injection_limit(cs)
@@ -3924,18 +3940,20 @@ eq_co2_injection_limit(cs,h,t)$[Sw_CO2_Detail$tmodel(t)$(yeart(t)>=co2_detail_st
 * must exceed metric tons per hour entering storage
     sum{r$r_cs(r,cs), CO2_STORED(r,cs,h,t) }
 
-
-
-* (ReEDS-FINITO) extraction of CO2 for use [metric_tons-CO2/hr] 
-* calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * use [scaled_metric_tons-CO2/yr] 
+* (ReEDS-FINITO) extraction of CO2 for use [metric tons per hour] 
 $ifthene.linked_co2_injection_limit Sw_FINITO_Link==1
-    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[h_rep(h)$t_finito(t)]
+    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[t_finito(t)]
 $endif.linked_co2_injection_limit
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_co2_cumul_limit(cs,t)$[tmodel(t)$Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)$csfeas(cs)]..
+* [metric tons]
+eq_co2_cumul_limit(cs,t)
+    $[Sw_CO2_Detail
+    $csfeas(cs)
+    $tmodel(t)
+    $(yeart(t)>=co2_detail_startyr)]..
 
 *capacity by co2 bin for injections
     co2_storage_limit(cs)
@@ -3945,7 +3963,7 @@ eq_co2_cumul_limit(cs,t)$[tmodel(t)$Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)
 *cumulative amount stored over time
     sum{(r,h,tt)
         $[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)
-        $r_cs(r,cs)$h_rep(h)],
+        $r_cs(r,cs)],
         yearweight(tt) * hours(h) * CO2_STORED(r,cs,h,tt) }
 
 * (ReEDS-FINITO) cumulative amount extracted over time
