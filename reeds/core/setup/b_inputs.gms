@@ -6353,7 +6353,7 @@ $endif.domesticsupply
 
 * include byproduct supply if the byproduct supply switch is set to 1
 $ifthene.byproductsupply %GSw_mat_byproduct% == 1
-mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = byproduct_supply(mat,t) * 0.10 ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = (domestic_supply(mat,t) + byproduct_supply(mat,t)) * 0.10 ;
 $endif.byproductsupply
 
 * include allied supply if the allied supply switch is set to 1
