@@ -209,23 +209,15 @@ casegroups:
 # main runs - supply
 #  - [[aluminumsupply,cobaltsupply,coppersupply,dysprosiumsupply,galliumsupply,hafniumsupply,indiumsupply,lithiumsupply,magnesiumsupply,manganesesupply,neodymiumsupply,nickelsupply,praseodymiumsupply,silversupply,telluriumsupply,terbiumsupply,tinsupply,vanadiumsupply,yttriumsupply],[nosupply],[long],[]]
 # sensitivity runs - supply and duration
-#  - [[aluminumsupply,coppersupply,manganesesupply,nickelsupply,silversupply,tinsupply,cobaltsupply],[nosupply],[med,short,volatile],[reference,best,worst]]
-# additional sensitivity runs - supply and duration
-#  - [[dysprosiumsupply,galliumsupply,hafniumsupply,indiumsupply,lithiumsupply,magnesiumsupply,neodymiumsupply,praseodymiumsupply,telluriumsupply,terbiumsupply,vanadiumsupply,yttriumsupply],[nosupply],[med,short,volatile],[reference,best,worst]]
+  - [[aluminumsupply,coppersupply,manganesesupply,nickelsupply,silversupply,tinsupply,cobaltsupply],[nosupply],[med,short,volatile],[reference,best,worst]]
+# sensitivity runs - supply magnitude
+  - [[aluminumsupply,coppersupply,manganesesupply,nickelsupply,silversupply,tinsupply,cobaltsupply],[domesticsupply,byproductsupply,alliedsupply,nonfeocsupply],[long],[reference,best,worst]]
 # main runs - price
 #  - [[aluminumprice,cobaltprice,copperprice,dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,manganeseprice,neodymiumprice,nickelprice,praseodymiumprice,silverprice,telluriumprice,terbiumprice,tinprice,vanadiumprice,yttriumprice],[2xprice],[long],[]]
 # sensitivity runs - price and duration 
-#  - [[aluminumprice,copperprice,manganeseprice,nickelprice,silverprice,tinprice,cobaltprice],[2xprice],[med,short,volatile],[reference,best,worst]]
-# additional sensitivity runs - price and duration
-#  - [[dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,neodymiumprice,praseodymiumprice,telluriumprice,terbiumprice,vanadiumprice,yttriumprice],[2xprice],[med,short,volatile],[reference,best,worst]]
+  - [[aluminumprice,copperprice,manganeseprice,nickelprice,silverprice,tinprice,cobaltprice],[2xprice],[med,short,volatile],[reference,best,worst]]
 # sensitivity runs - price and magnitude
-#  - [[aluminumprice,copperprice,manganeseprice,nickelprice,silverprice,tinprice,cobaltprice],[4xprice,8xprice],[long],[reference,best,worst]]
-# additional sensitivity runs - price and magnitude
-#  - [[dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,neodymiumprice,praseodymiumprice,telluriumprice,terbiumprice,vanadiumprice,yttriumprice],[4xprice,8xprice],[long],[reference,best,worst]]
-# additional sensitivity runs - 10x for all 
-#  - [[aluminumprice,cobaltprice,copperprice,dysprosiumprice,galliumprice,hafniumprice,indiumprice,lithiumprice,magnesiumprice,manganeseprice,neodymiumprice,nickelprice,praseodymiumprice,silverprice,telluriumprice,terbiumprice,tinprice,vanadiumprice,yttriumprice],[10xprice],[long],[reference,best,worst]]
-# sensitivity runs - supply magnitude
-  - [[aluminumsupply,cobaltsupply,coppersupply,dysprosiumsupply,galliumsupply,hafniumsupply,indiumsupply,lithiumsupply,magnesiumsupply,manganesesupply,neodymiumsupply,nickelsupply,praseodymiumsupply,silversupply,telluriumsupply,terbiumsupply,tinsupply,vanadiumsupply,yttriumsupply],[domesticsupply,byproductsupply,alliedsupply,nonfeocsupply],[long],[reference,best,worst]]
+  - [[aluminumprice,copperprice,manganeseprice,nickelprice,silverprice,tinprice,cobaltprice],[4xprice,8xprice,10xprice],[long],[reference,best,worst]]
 
 
   # run as case with the command:  python casemaker.py yaml-name -b batch-name

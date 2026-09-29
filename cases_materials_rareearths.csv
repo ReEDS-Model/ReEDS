@@ -1,5 +1,5 @@
 ,Default Value,noresupply_long_reference,noresupply_long_lowdem,noresupply_long_highdem,noresupply_long_hog,noresupply_long_log,noresupply_long_advrest,noresupply_long_conrest,noresupply_long_best,noresupply_long_worst,2xreprice_long_reference,2xreprice_long_lowdem,2xreprice_long_highdem,2xreprice_long_hog,2xreprice_long_log,2xreprice_long_advrest,2xreprice_long_conrest,2xreprice_long_best,2xreprice_long_worst
-ignore,1,0,,,,,,,,,0,,,,,,,,
+ignore,0,,,,,,,,,,,,,,,,,,
 yearset,2010_2015_2020..2050..3,,,,,,,,,,,,,,,,,,
 distpvscen,stscen2023_mid_case,,,,,,stscen2023_lowre,stscen2023_highre,stscen2023_highre,stscen2023_lowre,,,,,,stscen2023_lowre,stscen2023_highre,stscen2023_highre,stscen2023_lowre
 plantchar_battery,battery_ATB_2024_moderate,,,,,,battery_ATB_2024_advanced,battery_ATB_2024_conservative,battery_ATB_2024_conservative,battery_ATB_2024_advanced,,,,,,battery_ATB_2024_advanced,battery_ATB_2024_conservative,battery_ATB_2024_conservative,battery_ATB_2024_advanced
