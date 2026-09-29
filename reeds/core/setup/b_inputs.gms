@@ -6203,15 +6203,17 @@ i_tcat(i,"Oil")$[ogs(i)] = yes ;
 i_tcat(i,"Coal")$[coal(i)$(not ccs(i))] = yes ;
 i_tcat(i,"CoalCCS")$[coal(i)$ccs(i)] = yes ;
 i_tcat(i,"NaturalGas")$[gas(i)$(not ccs(i))] = yes ;
+i_tcat(i,"NaturalGas")$[lfill(i)] = yes ;
 i_tcat(i,"NaturalGasCCS")$[gas(i)$ccs(i)] = yes ;
 i_tcat(i,"Nuclear")$[nuclear(i)] = yes ;
 i_tcat(i,"BiomassAndWaste")$[bio(i)$(not ccs(i))] = yes ;
 i_tcat(i,"BiomassCCS")$[bio(i)$ccs(i)] = yes ;
 i_tcat(i,"Hydro")$[hydro(i)] = yes ;
+i_tcat(i,"Hydro")$[psh(i)] = yes ;
 i_tcat(i,"Geothermal")$[geo(i)] = yes ;
 i_tcat(i,"WindOnshore")$[onswind(i)] = yes ;
 i_tcat(i,"WindOffshore")$[ofswind(i)] = yes ;
-* note we only want to include invested-in technologies, distributed PV can be handled separately
+* distributed PV is exogenous; not invested in by model 
 i_tcat(i,"SolarPV")$[pv(i)$(not sameas(i,"distpv"))] = yes ;
 i_tcat(i,"SolarCSP")$[csp(i)] = yes ;
 i_tcat(i,"StationaryLiionbatteries")$[battery(i)] = yes ;
@@ -6227,8 +6229,9 @@ $include ../../cmm_dataset_generation_storage.csv
 $offdelim
 ;
 
-* update lithium intensity for li-ion batteries to incorporate duration storage of 4 hours 
-mat_int('StationaryLiionbatteries','Lithium') = mat_int('StationaryLiionbatteries','Lithium') * 4 ;
+* Lithium battery input intensity is metric ton input per MW ofor a 4-hour duration battery.
+* convert to metric tons per MW to metric tons per MWh; metric tons / MW * 1 MW / 4 MWh = metric tons / MWh
+mat_int('StationaryLiionbatteries','Lithium') = mat_int('StationaryLiionbatteries','Lithium') / 4 ;
 
 table tran_int(ptype,mat) "--metric tons per GW-mile-- material intesnity matric for each transmission line power type (AC or DC)"
 $ondelim
@@ -6340,28 +6343,27 @@ mat_supply(mat,t) = 0;
 
 * include global supply if the reference supply switch is set to 1
 $ifthene.referencesupply %GSw_mat_glb% == 1
-mat_supply(mat,t) = global_supply(mat,t) * share_consumption_glb(mat) ;
+mat_supply(mat,t) = global_supply(mat,t) * 0.10 ;
 $endif.referencesupply
 
 * include domestic supply if the domestic supply switch is set to 1
 $ifthene.domesticsupply %GSw_mat_domestic% == 1
-mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = domestic_supply(mat,t) * share_consumption_dom(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = domestic_supply(mat,t) * 0.10 ;
 $endif.domesticsupply
 
 * include byproduct supply if the byproduct supply switch is set to 1
 $ifthene.byproductsupply %GSw_mat_byproduct% == 1
-mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = byproduct_supply(mat,t) * share_consumption_dom(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = byproduct_supply(mat,t) * 0.10 ;
 $endif.byproductsupply
 
 * include allied supply if the allied supply switch is set to 1
-* !!! come back to update share to be specific to each case if decide to do so.
 $ifthene.alliedsupply %GSw_mat_allies% == 1
-mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = allied_supply(mat,t) * share_consumption_glb(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = allied_supply(mat,t) * 0.10 ;
 $endif.alliedsupply
 
+* include non-feoc supply if the allied supply switch is set to 1
 $ifthene.nonfeocsupply %GSw_mat_nonfeoc% == 1
-* !!! come back to update share to be specific to each case if decide to do so.
-mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = nonfeoc_supply(mat,t) * share_consumption_glb(mat) ;
+mat_supply(mat,t)$[sameas(mat,'%GSw_matsupply_spec%')$years_matshock(t)] = nonfeoc_supply(mat,t) * 0.10 ;
 $endif.nonfeocsupply
 
 * reset supply to zero if no supply is allowed for a given material in a shock year
