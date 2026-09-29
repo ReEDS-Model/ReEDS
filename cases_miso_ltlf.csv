@@ -1,0 +1,6 @@
+,Default Value,LTLF_baseline,LTLF_low,LTLF_high
+ignore,0,0,,
+input_processing_only,1,,,
+GSw_LoadProfiles,historic,,,
+demandscen,MISOLTLF_2026_baseline,,MISOLTLF_2026_low,MISOLTLF_2026_high
+endyear,2045,,,
