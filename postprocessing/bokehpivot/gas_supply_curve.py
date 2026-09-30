@@ -384,6 +384,10 @@ def make_fig(valcostfac_core_path, run_dir, output_dir=None, usd_mult=1.0):
     finally:
         plcoe_pitch.build_color_map = original
 
+    #The two series as the figure sees them, so the report can run the same fit and
+    #competitiveness-decline table over them that section 02 runs over the other techs.
+    pair.to_csv(os.path.join(output_dir, 'gas_supply_curve_pairs.csv'), index=False)
+
     keep = ['year', 'gen_frac', 'cost_factor', 'value_factor', 'value_cost_factor']
     out = base[keep].rename(columns={c: c + '_static' for c in keep[2:]})
     for c in keep[2:]:

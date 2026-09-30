@@ -48,11 +48,15 @@ def _swatch(tech, colors):
     return f'<span class="sw" style="background:{c}"></span>'
 
 
-def vcf_fit_table(df):
-    """Power-fit exponents per tech: the band width is k_vcf - k_vf, what figure 2 shades."""
+def vcf_fit_table(df, techs=None):
+    """Power-fit exponents per tech: the band width is k_vcf - k_vf, what figure 3 shades.
+
+    techs overrides the default panel selection, for series that are not model technologies -
+    the gas supply-curve pair, which is one technology under two price assumptions.
+    """
     predict, _ = _fit_form('power')
     rows = []
-    for tech in vcf_panel_techs(df):
+    for tech in vcf_panel_techs(df, techs):
         d = df[df['tech'] == tech].dropna(
             subset=['gen_frac', 'value_factor', 'value_cost_factor'])
         matched = vcf_matched_scale(df, tech, 'power')
@@ -405,7 +409,7 @@ def build_html(output_dir, core_path):
                       'does not describe the cost-factor data.', order)
 
     # ---- 02c gas against the national gas supply curve ----
-    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 5,
+    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 6,
                           'Fuel cost a new Gas-CC would face under the national gas supply curve.',
                           'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
                           'reference, converted at the new-build heat rate. Labels give the burn '
@@ -413,7 +417,7 @@ def build_html(output_dir, core_path):
                           'curve is applied: the census-division term is omitted because re-siting '
                           'would partly avoid it, while the national one can only be avoided by '
                           'building less gas.', order)
-    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 6,
+    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 7,
                      'Value factor and value&#8211;cost factor for Gas-CC, static against '
                      'supply-curve gas.',
                      'The construction of the figure in section 02, drawn by the same function, '
@@ -425,6 +429,24 @@ def build_html(output_dir, core_path):
                      'four curve options the added fuel cost at the last model year spans 20.1 to '
                      '27.8 2024$/MWh; the functional form matters more than the geographic scope, '
                      'since the power-law option sits above all three linear ones.', order)
+    #The same competitiveness-decline table as section 02, over the two gas series. The two
+    #differ only in the cost factor, so the value-factor exponent is common and the whole gap
+    #between the rows is cost escalation the static-price run does not see.
+    gas_decline_rows = []
+    gas_pairs = read_csv_or_empty(output_dir, 'gas_supply_curve_pairs.csv')
+    if not gas_pairs.empty:
+        gas_fits = vcf_fit_table(gas_pairs, techs=sorted(gas_pairs['tech'].unique()))
+        for r in cost_decline_table(gas_fits.sort_values('band')):
+            cells = ''.join(
+                f'<td class="num{" out" if outside else ""}">{_num(v, "{:.1%}")}</td>'
+                for v, outside in r['cells'])
+            gas_decline_rows.append(f'<tr><td class="t">{r["tech"]}</td>{cells}</tr>')
+    gas_decline_table = table(
+        'Competitiveness decline from cost escalation for Gas-CC, 1 &minus; 1/CF from the power '
+        'fits, with and without the gas supply curve. Muted cells are outside the observed '
+        'market-share range',
+        [('Series', False)] + [(f'{x:.0%}', True) for x in decline_shares], gas_decline_rows)
+
     gas_rows = []
     if os.path.exists(os.path.join(output_dir, 'gas_supply_curve.csv')):
         gdf = pd.read_csv(os.path.join(output_dir, 'gas_supply_curve.csv'))
@@ -447,7 +469,7 @@ def build_html(output_dir, core_path):
         gas_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 5,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 8,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -464,7 +486,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 6
+    map_figs, n = '', 9
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -663,7 +685,7 @@ def build_html(output_dir, core_path):
      'correction is an estimate on a fixed solution rather than a re-solve, so it is an upper bound '
      'on the cost side - a re-solve would build less gas - while the linear coefficient is '
      'extrapolated well beyond the quantities it was calibrated on, which pushes the other way. '
-     'Neither figure nor table is a model result.</p></div>', gas_fuel_fig, gas_fig, gas_table)}
+     'Neither figure nor table is a model result.</p></div>', gas_fuel_fig, gas_fig, gas_decline_table, gas_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '
