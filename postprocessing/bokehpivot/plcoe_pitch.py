@@ -28,6 +28,10 @@ vcf_max_cols = 3 #Panels per row on the value-cost-factor figures before wrappin
 vcf_min_anchor_gen_frac = 0.5 #A tech is only plotted if its data reaches this low a market share. The figure matches the VF and VCF fit intercepts AT x=0, so a tech whose data never approaches zero has that match, and the whole shaded band, extrapolated rather than measured. At 0.5 every tech in these results qualifies; Gas-CC is the marginal one at 0.463.
 vcf_anchor_warn_gen_frac = 0.25 #Panels whose data starts above this market share get the extrapolation noted in the panel box. Gas-CC starts at 0.463, so nearly half its plotted axis - including the matched intercept the whole construction rests on - is extrapolation.
 vcf_post_curtailment = True #Also write plcoe_pitch_VCF_power_synced_postcurt.png, the synced VCF figure with VRE value and cost per MWh actually generated rather than per MWh that could have been. Both LVOE and the re-based LCOE are per uncurtailed MWh (valnew's gen_ivrt_uncurt override), while dispatchable techs are per MWh dispatched; this sensitivity puts every tech on the dispatched basis. Value factor and cost factor each scale by 1/(1 - curtailment) and the value-cost factor is unchanged to machine precision - only the split between value and cost moves. The multiplier is NEW-BUILD curtailment over the valinv vintages, which is what valnew's MWh actually is: it runs 2-3x the fleet figure (wind 70% against 40% at 2050), because the marginal unit lands in an already-saturated region. The convention of Hirth and of most of the LBNL value work is the uncurtailed basis, so this is a sensitivity rather than the headline.
+vcf_available_basis = True #Write a third VCF figure putting EVERY tech per MWh available rather than per MWh delivered, so VRE and non-VRE are treated alike. The default basis is mixed - VRE per MWh the resource could have produced, dispatchables per MWh dispatched - and the post-curtailment figure resolves that the other way, by putting everything per MWh generated. Available energy is the right-hand side of eq_capacity_limit in both cases: m_cf*CAP for VRE, which is gen_ivrt_uncurt, and avail*CAP for dispatchables, where avail is the forced- and planned-outage derate reported as avg_avail. Note what this does and does not mean: a peaker's unused availability is capacity held for scarcity, not output nobody wanted, so a low value here is not the same finding as it is for VRE.
+avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-cc',
+                      'Coal': 'coal', 'Nuclear': 'nuclear', 'Battery': 'battery'} #Report tech -> raw tech prefix in the run outputs, for the available-energy basis. Techs absent here keep their default basis.
+avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
 vcf_separate_techs = ['Battery'] #Techs drawn in their own figure rather than alongside the rest. Storage sits in a different part of the plane - value factor above 1, market share topping out near 15% - so sharing a figure with it stretches every other panel's axes to accommodate one corner. These techs are dropped from the main VCF figures and written to plcoe_pitch_VCF_power_storage.png instead; they stay in the fits table, which has no axis to distort. Empty list to keep everything in one figure.
 vcf_use_full_range = True #Read the VCF figures' data from valcostfac.csv rather than valcostfac_core.csv, which report_switches' gen_frac_max truncates at 0.65 market share. That cap is scoped to the intermediary "lim" plots and badly distorts these figures: it removes 4 coal points, 7 gas-CC, 6 nuclear and 1 wind, and with them most of the dispatchable techs' escalation. Filtered, nuclear's k difference reads -0.00 and gas-CC's 0.56 on an R2-0.24 fit; over the full range they are 0.08 (R2 0.77) and 0.05 (R2 0.86). Only the VCF figures can use it - the _adj figures need value_cost_factor_adj and cost_factor_adj, which run_report_valcostfac.py derives after the cap and writes only to valcostfac_core.csv.
 show_cost_factor = True #On the VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
@@ -668,6 +672,74 @@ def new_build_curtailment(run_dir, prefix):
     return (1 - nat['gc'] / nat['gu']).rename('curtailment')
 
 
+def new_build_available_ratio(run_dir, prefix, resource_basis):
+    """Delivered energy over available energy, per year, for each year's new builds.
+
+    Available means the most the plant could have produced: the right-hand side of
+    eq_capacity_limit. For VRE that is m_cf*CAP, reported as gen_ivrt_uncurt. For
+    everything else it is avail*CAP, with avail the forced- and planned-outage derate
+    that report.gms averages into avg_avail. avg_avail is 1.0 for VRE - it carries no
+    outage derate - so the two cannot share a source.
+
+    Vintages are the ones invested in that year, matching new_build_curtailment, so the
+    ratio describes the marginal build rather than the fleet.
+    """
+    out = os.path.join(run_dir, 'outputs')
+    cols = ['i', 'v', 'r', 't']
+    gen = pd.read_csv(os.path.join(out, 'gen_ivrt.csv'), names=cols + ['gen'], header=0)
+    nv = pd.read_csv(os.path.join(out, 'cap_new_ivrt.csv'), names=cols + ['mw'], header=0)
+    keys = nv[nv['mw'] > 0][cols].drop_duplicates()
+    keys = keys[keys['i'].str.startswith(prefix)]
+    if keys.empty:
+        return pd.Series(dtype=float)
+    m = keys.merge(gen, on=cols, how='left')
+    if resource_basis:
+        unc = pd.read_csv(os.path.join(out, 'gen_ivrt_uncurt.csv'),
+                          names=cols + ['avail_mwh'], header=0)
+        m = m.merge(unc, on=cols, how='left')
+    else:
+        cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=cols + ['mw'], header=0)
+        av = pd.read_csv(os.path.join(out, 'avg_avail.csv'),
+                         names=['i', 'v', 'r', 'avail'], header=0)
+        m = m.merge(cap, on=cols, how='left').merge(av, on=['i', 'v', 'r'], how='left')
+        m['avail_mwh'] = m['mw'] * m['avail'] * 8760
+    nat = m.groupby('t')[['gen', 'avail_mwh']].sum()
+    return (nat['gen'] / nat['avail_mwh']).replace([np.inf, -np.inf], np.nan).rename('ratio')
+
+
+def apply_available_basis(df, valcostfac_core_path):
+    """Put every tech's value and cost per MWh available rather than per MWh delivered.
+
+    VRE is already on that basis, so its multiplier is 1; the dispatchable techs are
+    scaled by delivered/available. As with the post-curtailment figure the value-cost
+    factor is unchanged, because the multiplier cancels in the ratio - only the split
+    between value and cost moves.
+    """
+    from reeds_vs_rev import tech_run_dirs, scenarios_path
+    run_dirs = tech_run_dirs(df, scenarios_path)
+    out = df.copy()
+    out['avail_mult'] = 1.0
+    for tech, prefix in avail_basis_prefix.items():
+        if tech in avail_basis_resource_techs:
+            continue  #already per MWh available
+        if tech not in run_dirs or tech not in set(out['tech']):
+            continue
+        try:
+            ratio = new_build_available_ratio(run_dirs[tech], prefix, resource_basis=False)
+        except FileNotFoundError as e:
+            print(f'available-basis ratio unavailable for {tech} ({e.filename}); left as is.')
+            continue
+        sel = out['tech'] == tech
+        out.loc[sel, 'avail_mult'] = out.loc[sel, 'year'].map(ratio).fillna(1.0).to_numpy()
+    for col in ['value_factor', 'cost_factor', 'lvoe']:
+        if col in out:
+            out[col] = out[col] * out['avail_mult']
+    for col, src in [('inv_value_factor', 'value_factor'), ('inv_cost_factor', 'cost_factor')]:
+        if src in out:
+            out[col] = 1 / out[src]
+    return out
+
+
 def apply_post_curtailment(df, valcostfac_core_path):
     """Put VRE value and cost per MWh generated, matching the dispatched basis of the other techs.
 
@@ -1151,6 +1223,20 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 scales_post = scales_post.assign(basis='post_curtailment')
             except Exception as e:
                 print(f'Post-curtailment VCF figure skipped ({type(e).__name__}: {e}).')
+        #Third basis: every tech per MWh available, the mirror of the post-curtailment figure.
+        if vcf_available_basis:
+            try:
+                df_avail = apply_available_basis(df_vcf, valcostfac_core_path)
+                fig_vcf_avail, scales_avail = plot_vre_vcf(
+                    df_avail, os.path.join(output_dir, 'plcoe_pitch_VCF_power_synced_avail.png'),
+                    form='power', sync_axes=True,
+                    basis_note=' - every tech per MWh available (VRE resource, others outage-derated)')
+                plt.close(fig_vcf_avail)
+                scales_post = pd.concat(
+                    [scales_post, scales_avail.assign(basis='available_energy')],
+                    ignore_index=True)
+            except Exception as e:
+                print(f'Available-basis VCF figure skipped ({type(e).__name__}: {e}).')
         plt.close(fig_cost_value)
         plt.close(fig_value_cost)
         plt.close(fig_value_cost_adj)

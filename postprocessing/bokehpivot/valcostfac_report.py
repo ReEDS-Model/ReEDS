@@ -389,6 +389,25 @@ def build_html(output_dir, core_path):
                    'New-build curtailment is well above fleet curtailment, since the marginal unit '
                    'is built into an already saturated region.', order)
 
+    fig2c = figure(output_dir, 'plcoe_pitch_VCF_power_synced_avail.png', 5,
+                   'The same figure with every technology per MWh available.',
+                   'The mirror of the sensitivity above. That one resolves the mixed default basis '
+                   'by putting every technology per MWh generated; this one resolves it the other '
+                   'way, per MWh available. Available energy is the right-hand side of the capacity '
+                   'limit in both cases: the resource, m_cf times capacity, for wind and UPV, and '
+                   'capacity derated for forced and planned outages for the rest. Value factor and '
+                   'cost factor scale together so the value&#8211;cost factor is again unchanged. '
+                   'Read the dispatchable panels with care, for two reasons. Unused availability for a '
+                   'peaking plant is capacity held for scarcity rather than output nobody wanted, '
+                   'so a low value here does not carry the meaning it carries for VRE. And as a '
+                   'dispatchable technology takes a larger share it has to cover peakier parts of '
+                   'the load duration curve, so its marginal build runs at a lower capacity factor '
+                   'and delivered over available falls with market share &mdash; from 1.01 to 0.76 '
+                   'for nuclear across the horizon. Both value and cost per available MWh therefore '
+                   'fall faster with market share than they otherwise would, which is what turns '
+                   'the fitted cost escalation slightly negative for these technologies. That is a '
+                   'statement about utilization, not about resource quality.', order)
+
     fit_table = table(
         'Power fits, y = A(1-x)^k, over the full market-share range',
         [('Technology', False), ('k<sub>VF</sub>', True), ('k<sub>VCF</sub>', True),
@@ -396,7 +415,7 @@ def build_html(output_dir, core_path):
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
     # ---- 02b storage, held out of the shared-axes figure ----
-    stor_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 5,
+    stor_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 6,
                       'Value factor and value&#8211;cost factor for storage.',
                       'The same construction as the figure above, drawn by the same function, for '
                       'the technologies held out of it. Storage occupies a different part of the '
@@ -409,7 +428,7 @@ def build_html(output_dir, core_path):
                       'does not describe the cost-factor data.', order)
 
     # ---- 02c gas against the national gas supply curve ----
-    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 6,
+    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 7,
                           'Fuel cost a new Gas-CC would face under the national gas supply curve.',
                           'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
                           'reference, converted at the new-build heat rate. Labels give the burn '
@@ -417,7 +436,7 @@ def build_html(output_dir, core_path):
                           'curve is applied: the census-division term is omitted because re-siting '
                           'would partly avoid it, while the national one can only be avoided by '
                           'building less gas.', order)
-    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 7,
+    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 8,
                      'Value factor and value&#8211;cost factor for Gas-CC, static against '
                      'supply-curve gas.',
                      'The construction of the figure in section 02, drawn by the same function, '
@@ -469,7 +488,7 @@ def build_html(output_dir, core_path):
         gas_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 8,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 9,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -486,7 +505,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 9
+    map_figs, n = '', 10
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -669,7 +688,7 @@ def build_html(output_dir, core_path):
      '<span class="eq">(1&minus;x)<sup>k<sub>VCF</sub> &minus; k<sub>VF</sub></sup></span>, so the '
      'exponent difference is the band width in the table below. Technologies whose data does not '
      'approach zero market share have that intercept extrapolated rather than measured, and the '
-     'figure marks them.</p></div>', fig2, fit_table, decline_table, fig2b)}
+     'figure marks them.</p></div>', fig2, fit_table, decline_table, fig2b, fig2c)}
 
 {sec('02b', 'Storage value factor and value&#8211;cost factor',
      '<div class="col"><p>Storage is drawn apart from the other technologies because its value '
