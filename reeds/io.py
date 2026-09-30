@@ -14,12 +14,10 @@ from pathlib import Path
 from typing import Literal
 from pandas.api.types import is_float_dtype
 from shapely.geometry import Point
-# Appends run folder path to PATH
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
-# Append root ReEDS path to PATH for importing add_classes function from hourlize
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','..')))
-from hourlize.resource import add_classes
+
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if 'runs' in reeds_path.split(os.path.sep):
     reeds_path = reeds_path[: reeds_path.index(os.sep + 'runs' + os.sep)]
