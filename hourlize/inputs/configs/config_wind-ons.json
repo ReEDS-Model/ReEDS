@@ -9,6 +9,5 @@
     "profile_dir": "" ,
     "profile_dset": "rep_profiles_0",
     "profile_file_format": "" ,
-    "profile_weight_col": "capacity",
     "single_profile": true  
 }
