@@ -391,7 +391,20 @@ def build_html(output_dir, core_path):
          ('k<sub>VCF</sub> &minus; k<sub>VF</sub>', True), ('R&sup2; of VF fit', True),
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
-    # ---- 02b gas against the national gas supply curve ----
+    # ---- 02b storage, held out of the shared-axes figure ----
+    stor_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 5,
+                      'Value factor and value&#8211;cost factor for storage.',
+                      'The same construction as the figure above, drawn by the same function, for '
+                      'the technologies held out of it. Storage occupies a different part of the '
+                      'plane &mdash; value factor above one at low market share, and a market share '
+                      'that stops near 15% &mdash; so sharing a pair of axis ranges with it '
+                      'compresses every other panel. The grey series is the reciprocal of the cost '
+                      'factor and the dotted grey curve is the ratio the two fits imply; for '
+                      'storage those two part company completely, and the R&sup2; of the implied '
+                      'curve against the data it is drawn over is negative, so the shaded band here '
+                      'does not describe the cost-factor data.', order)
+
+    # ---- 02c gas against the national gas supply curve ----
     gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 5,
                           'Fuel cost a new Gas-CC would face under the national gas supply curve.',
                           'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
@@ -636,7 +649,14 @@ def build_html(output_dir, core_path):
      'approach zero market share have that intercept extrapolated rather than measured, and the '
      'figure marks them.</p></div>', fig2, fit_table, decline_table, fig2b)}
 
-{sec('02b', 'Gas-CC against the national natural gas supply curve',
+{sec('02b', 'Storage value factor and value&#8211;cost factor',
+     '<div class="col"><p>Storage is drawn apart from the other technologies because its value '
+     'factor exceeds one at low market share and its market share stops near 15%, so a shared pair '
+     'of axis ranges spent most of its span on a corner of the plane that only storage occupies. '
+     'The construction is unchanged; only the axes are its own. Storage remains in the fits table '
+     'above, which has no axis to distort.</p></div>', stor_fig)}
+
+{sec('02c', 'Gas-CC against the national natural gas supply curve',
      '<div class="col"><p>The runs hold natural gas prices static, which removes the cost-escalation '
      'channel a gas plant has through its own fuel: burning more gas raises its price. This section '
      'adds the national term of the model&rsquo;s default gas supply curve to the solved run. The '

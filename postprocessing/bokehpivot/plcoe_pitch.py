@@ -28,6 +28,7 @@ vcf_max_cols = 3 #Panels per row on the value-cost-factor figures before wrappin
 vcf_min_anchor_gen_frac = 0.5 #A tech is only plotted if its data reaches this low a market share. The figure matches the VF and VCF fit intercepts AT x=0, so a tech whose data never approaches zero has that match, and the whole shaded band, extrapolated rather than measured. At 0.5 every tech in these results qualifies; Gas-CC is the marginal one at 0.463.
 vcf_anchor_warn_gen_frac = 0.25 #Panels whose data starts above this market share get the extrapolation noted in the panel box. Gas-CC starts at 0.463, so nearly half its plotted axis - including the matched intercept the whole construction rests on - is extrapolation.
 vcf_post_curtailment = True #Also write plcoe_pitch_VCF_power_synced_postcurt.png, the synced VCF figure with VRE value and cost per MWh actually generated rather than per MWh that could have been. Both LVOE and the re-based LCOE are per uncurtailed MWh (valnew's gen_ivrt_uncurt override), while dispatchable techs are per MWh dispatched; this sensitivity puts every tech on the dispatched basis. Value factor and cost factor each scale by 1/(1 - curtailment) and the value-cost factor is unchanged to machine precision - only the split between value and cost moves. The multiplier is NEW-BUILD curtailment over the valinv vintages, which is what valnew's MWh actually is: it runs 2-3x the fleet figure (wind 70% against 40% at 2050), because the marginal unit lands in an already-saturated region. The convention of Hirth and of most of the LBNL value work is the uncurtailed basis, so this is a sensitivity rather than the headline.
+vcf_separate_techs = ['Battery'] #Techs drawn in their own figure rather than alongside the rest. Storage sits in a different part of the plane - value factor above 1, market share topping out near 15% - so sharing a figure with it stretches every other panel's axes to accommodate one corner. These techs are dropped from the main VCF figures and written to plcoe_pitch_VCF_power_storage.png instead; they stay in the fits table, which has no axis to distort. Empty list to keep everything in one figure.
 vcf_use_full_range = True #Read the VCF figures' data from valcostfac.csv rather than valcostfac_core.csv, which report_switches' gen_frac_max truncates at 0.65 market share. That cap is scoped to the intermediary "lim" plots and badly distorts these figures: it removes 4 coal points, 7 gas-CC, 6 nuclear and 1 wind, and with them most of the dispatchable techs' escalation. Filtered, nuclear's k difference reads -0.00 and gas-CC's 0.56 on an R2-0.24 fit; over the full range they are 0.08 (R2 0.77) and 0.05 (R2 0.86). Only the VCF figures can use it - the _adj figures need value_cost_factor_adj and cost_factor_adj, which run_report_valcostfac.py derives after the cap and writes only to valcostfac_core.csv.
 show_cost_factor = True #On the VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
 cost_factor_direct = False #False plots 1/(cost factor), which declines like the other two series and peaks near 1.0, keeping the shaded band legible. True plots the cost factor itself, which rises so it reads as escalation directly and ends at the number quoted in the panel text, but reaches ~2.2 and so roughly halves the band's share of the axis (wind 10.8% -> 5.7%, UPV 3.7% -> 2.0%).
@@ -753,9 +754,11 @@ def vcf_panel_techs(df, techs=None):
         return [t for t in vcf_techs if t in set(df['tech'])]
     lo = df.groupby('tech')['gen_frac'].min()
     #fit_techs first so the VRE panels lead, then the rest by how far their market share reaches.
-    rest = sorted([t for t in lo.index if t not in fit_techs and lo[t] <= vcf_min_anchor_gen_frac],
+    #vcf_separate_techs are held back for their own figure.
+    rest = sorted([t for t in lo.index if t not in fit_techs and t not in vcf_separate_techs
+                   and lo[t] <= vcf_min_anchor_gen_frac],
                   key=lambda t: -df[df['tech'] == t]['gen_frac'].max())
-    return [t for t in fit_techs if t in lo.index] + rest
+    return [t for t in fit_techs if t in lo.index and t not in vcf_separate_techs] + rest
 
 
 def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_axes=False,
@@ -933,13 +936,14 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_a
             #is a factor of three of empty sky above the curves.
             ax.set_ylim(10 ** (np.log10(floor) - 0.05 * pad), 10 ** (np.log10(ceil) + 0.17 * pad))
             _log_ticks(ax)
-            panel_lims.append({'ax': ax, 'x_hi': x_hi, 'floor': floor, 'ceil': ceil})
+            panel_lims.append({'ax': ax, 'tech': tech, 'x_hi': x_hi, 'floor': floor,
+                               'ceil': ceil})
         else:
             ymax = max(v.max() for v in series)
             ax.set_ylim(0, ymax / 0.80)
-            panel_lims.append({'ax': ax, 'x_hi': x_hi, 'ymax': ymax})
+            panel_lims.append({'ax': ax, 'tech': tech, 'x_hi': x_hi, 'ymax': ymax})
         ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
-        ax.legend(loc='lower left', fontsize=8)
+        ax.legend(loc='upper left', fontsize=8)
         scales.append({'tech': tech, 'form': form, 'lcoe_base_scale': s,
                        'implied_cost_factor_at_gen_frac_max': cf_hi,
                        'observed_cost_factor_at_gen_frac_max': cf_observed,
@@ -1117,6 +1121,17 @@ def make_figs(valcostfac_core_path, output_dir=None):
             df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_linear.png'), form='linear')
         fig_vcf_pow, scales_pow = plot_vre_vcf(
             df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power.png'), form='power')
+        #The separated techs - storage - in their own figure, on their own axes. Same
+        #construction, drawn by the same function; kept apart only because sharing a figure
+        #with a tech whose value factor exceeds 1 and whose market share stops near 15%
+        #compresses every other panel.
+        scales_sep = pd.DataFrame()
+        sep = [t for t in vcf_separate_techs if t in set(df_vcf['tech'])]
+        if sep:
+            fig_vcf_sep, scales_sep = plot_vre_vcf(
+                df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_storage.png'),
+                form='power', techs=sep)
+            plt.close(fig_vcf_sep)
         #Same figure on one shared pair of axis ranges, for comparing panels against each other
         #rather than reading each on its own. Adds no rows to the scales table.
         fig_vcf_pow_sync, _ = plot_vre_vcf(
@@ -1151,8 +1166,12 @@ def make_figs(valcostfac_core_path, output_dir=None):
     df.to_csv(os.path.join(output_dir, 'plcoe_pitch_df.csv'), index=False)
     fits = summarize_fits(df)
     fits.to_csv(os.path.join(output_dir, 'plcoe_pitch_fits.csv'), index=False)
+    #scales_sep carries the separated techs, which are absent from scales_lin/scales_pow
+    #because they are held out of those figures. The table keeps every tech.
     pd.concat([scales_lin.assign(basis='pre_curtailment'),
-               scales_pow.assign(basis='pre_curtailment'), scales_post],
+               scales_pow.assign(basis='pre_curtailment'),
+               scales_sep.assign(basis='pre_curtailment') if not scales_sep.empty else scales_sep,
+               scales_post],
               ignore_index=True).to_csv(
         os.path.join(output_dir, 'plcoe_pitch_vcf_scales.csv'), index=False)
     decomp.to_csv(os.path.join(output_dir, 'plcoe_pitch_vcf_decomposition.csv'), index=False)
