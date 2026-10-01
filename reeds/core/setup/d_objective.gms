@@ -303,9 +303,6 @@ eq_Objfn_op(t)$tmodel(t)..
                     acp_price(st,t) * ACP_PURCHASES(RPSCat,st,t)
                    }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS]
 
-* --- revenues from purchases of curtailed VRE---
-              - sum{(r,h), CURT(r,h,t) * hours(h) * cost_curt(t) }$Sw_CurtMarket
-
 * --- dropped/excess load (ONLY if before Sw_StartMarkets)
               + sum{(r,h)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)],
                     (DROPPED(r,h,t) + EXCESS(r,h,t) ) * hours(h) * cost_dropped_load }

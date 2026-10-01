@@ -25,10 +25,6 @@ if reeds.io.hpc:
             '/projects', 'rev', 'projects', 'weto', 'fy25', 'standard_scenarios', 'osw',
             'rev', 'aggregation', 'open', 'open_supply-curve_post_proc.csv',
         ),
-        'esri_102008': os.path.join(
-            '/projects', 'rev', 'data', 'layers', 'north_america', 'conus', 'vectors',
-            'rev_grids', 'rev_grid_conus_template_128.csv'
-        ),
         'interzonal': os.path.join(
             '/projects', 'rev', 'data', 'transmission', 'north_america', 'conus', 'fy25',
             'nrel_build', 'build', 'offshore', 'osw_interregional', 'interregional_costs.csv',

@@ -666,6 +666,10 @@ def get_switches_base(case=None, **kwargs):
             index_col=0,
             header=None,
         ).squeeze(1)
+    ### Overwrite values with keyword arguments if provided
+    for key, value in kwargs.items():
+        if key in sw.keys():
+            sw[key] = value
     return sw
 
 
@@ -703,7 +707,7 @@ def get_switches(case=None, **kwargs):
     that is not a valid switch name, it is ignored.
     """
     case = standardize_case(case)
-    sw = get_switches_base(case)
+    sw = get_switches_base(case, **kwargs)
     ### Resource-adequacy-specific switches
     try:
         fpath_asw = os.path.join(

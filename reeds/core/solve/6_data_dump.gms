@@ -118,9 +118,9 @@ cap_exist_ir(i,r)$valcap_ir_filt(i,r) = sum{v, cap_exist(i,v,r) } ;
 cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
-cap_ivrt(i,v,r,t)$([not (upv(i) or wind(i))]$valcap(i,v,r,t)$trange(t)) = CAP.l(i,v,r,t) ;
+cap_ivrt(i,v,r,t)$([not (upv(i) or wind(i) or distpv(i))]$valcap(i,v,r,t)$trange(t)) = CAP.l(i,v,r,t) ;
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
-cap_ivrt(i,v,r,t)$([upv(i) or wind(i)]$valcap(i,v,r,t)) =
+cap_ivrt(i,v,r,t)$([upv(i) or wind(i) or distpv(i)]$valcap(i,v,r,t)) =
     m_capacity_exog(i,v,r,t)$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
           INV.l(i,v,r,tt) + INV_REFURB.l(i,v,r,tt)$[refurbtech(i)$Sw_Refurb]} ;
@@ -215,8 +215,8 @@ cost_cap_fin_mult_filt(i,r,t)$([storage_standalone(i)]) = cost_cap_fin_mult(i,r,
 
 cost_vom_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), cost_vom(i,v,r,t) } ;
 
-cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = cf_adj_t(i,v,t) ;
-cf_adj_t_filt(i,v,"%next_year%") = cf_adj_t(i,v,"%next_year%")$(vre(i) or pvb(i)) ;
+cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = sum{c$i_c(i,c), cf_adj_t(i,c,v,t) } ;
+cf_adj_t_filt(i,v,"%next_year%") = sum{c$i_c(i,c), cf_adj_t(i,c,v,"%next_year%") }$(vre(i) or pvb(i)) ;
 
 ctt_i_ii_filt(i,ii) = ctt_i_ii(i,ii)$cap_exist_i(i) ;
 
@@ -228,7 +228,7 @@ heat_rate_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), heat_rate(i,v,r,t) } ;
 
 inv_cond_filt(i,v,t)$[(vre(i) or pvb(i))$tnext(t)] = sum{(tt,r), inv_cond(i,v,r,tt,t) } ;
 
-m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{t$tnext(t), m_cf(i,v,r,h,t) } ;
+m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{(t,c)$[tnext(t)$i_c(i,c)], m_cf(i,c,v,r,h,t) } ;
 
 m_cf_szn_filt(i,v,r,szn)$[hydro(i)$cap_exist(i,v,r)] = sum{t$tcur(t), m_cf_szn(i,v,r,szn,t) } ;
 
