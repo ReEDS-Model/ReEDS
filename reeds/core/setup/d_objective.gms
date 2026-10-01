@@ -299,8 +299,8 @@ eq_Objfn_op(t)$tmodel(t)..
                               hours(h) * PRODUCE(p,i,v,r,h,t) * Sw_CO2_Storage }$[Sw_DAC$(not Sw_CO2_Detail)]
 
 * ---State RPS alternative compliance payments---
-              + sum{(RPSCat,st)$[(stfeas(st) or sameas(st,"voluntary"))$RecPerc(RPSCat,st,t)$(not acp_disallowed(st,RPSCat))],
-                    acp_price(st,t) * ACP_PURCHASES(RPSCat,st,t)
+              + sum{(RPSCat,st,htype)$[(stfeas(st) or sameas(st,"voluntary"))$RecPerc(RPSCat,st,htype,t)$(not acp_disallowed(st,RPSCat))],
+                    acp_price(st,t) * ACP_PURCHASES(RPSCat,st,htype,t)
                    }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS]
 
 * --- dropped/excess load (ONLY if before Sw_StartMarkets)
