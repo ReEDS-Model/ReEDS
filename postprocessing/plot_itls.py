@@ -1,5 +1,6 @@
 #%%### Imports
 import sys
+import numpy as np
 import pandas as pd
 from pathlib import Path
 import matplotlib as mpl
@@ -10,7 +11,7 @@ import reeds
 
 #%%### Inputs
 rtypes = ['NLR', 'NLR_clipped', 'DLR']
-periodtype = 'rep'
+periodtype = 'stress'
 nicelabels = {
     'NLR': 'AAR',
     'NLR_clipped': 'AAR (clipped)',
@@ -29,6 +30,7 @@ dictin = {
         periodtype=periodtype,
         GSw_HourlyLineRatingTypeRep=rtype,
         GSw_HourlyLineRatingTypeStress=rtype,
+        resource_adequacy_years_list=range(2007,2014),
     )
     for rtype in rtypes
 }
@@ -79,3 +81,30 @@ for plottype in ['hours', 'interfaces and directions']:
     ax[0].set_ylim(*ylim)
     reeds.plots.despine(ax)
     plt.show()
+
+
+#%%### Stats for paper
+plottype = 'interfaces and directions'
+dictsorted = {}
+for rtype in rtypes:
+    dfraw = (dictin[rtype] if plottype == 'hours' else dictin[rtype].T) * 100
+    dictsorted[rtype] = pd.DataFrame({
+        col: dfraw[col].sort_values(ascending=False).values
+        for col in dfraw
+    })
+
+#%%
+percentiles = [0, 0.01, 0.1, 0.2]
+percentiles_2side = sorted(set(percentiles + [0.5] + [1-i for i in percentiles]))
+dictdescribe = {}
+for rtype in rtypes:
+    dictdescribe[rtype] = dictsorted[rtype].T.describe(percentiles=percentiles_2side).T
+
+#%%
+rtype = 'DLR'
+ifrac = 0.9
+ifrac = 0.8
+ifrac = 0.1
+ifrac = 0.5
+index = int(np.around(ifrac * len(dictdescribe[rtype]), 0))
+dictdescribe['DLR'].iloc[index]
