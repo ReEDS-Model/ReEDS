@@ -380,14 +380,17 @@ def estimate_numperiods(sw):
 
     Inputs for testing:
         sw = {
+            'GSw_HourlyType': 'day',
             'GSw_ZoneSet': 'z90',
             'GSw_Region': 'cendiv/Pacific',
             'GSw_HourlyClusterRegionLevel': 'transgrp',
             'GSw_HourlyClusterWeights': 'load_1/upv_1/wind-ons_1/wind-ofs_0',
         }
     """
-    if str(sw['GSw_HourlyClusterAlgorithm']).startswith(('hierarchical','kmeans','kmedoids')):
-        numperiods = int(sw['GSw_HourlyNumPeriods'])
+    if sw['GSw_HourlyType'] == 'year':
+        numperiods = 365 * len(sw['GSw_HourlyWeatherYears'].split('_'))
+    elif str(sw['GSw_HourlyClusterAlgorithm']).startswith(('hierarchical','kmeans','kmedoids')):
+        numperiods = int(sw['GSw_HourlyNumClusters'])
     elif sw['GSw_HourlyClusterAlgorithm'] == 'optimized':
         zones = reeds.inputs.parse_regions(**sw)
         hierarchy = reeds.io.assemble_hierarchy(**sw).set_index('r').loc[zones]
