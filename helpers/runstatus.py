@@ -35,14 +35,20 @@ def print_log_if_verbose(fullcase, verbose=0):
         print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n')
 
 
-def run_seff(fullcase):
-    logs = Path(fullcase).glob('slurm*')
-    jobs = sorted([int(i.stem.split('-')[-1].split('_')[0]) for i in logs])
-    lastjob = jobs[-1]
-    raw = subprocess.run(f'seff {lastjob}', capture_output=True, shell=True)
+def seff(jobid) -> dict:
+    """Run seff on a slurm job. Only returns complete results if the job has finished."""
+    raw = subprocess.run(f'seff {jobid}', capture_output=True, shell=True)
     keyvals = [i.split(': ') for i in raw.stdout.decode().strip().split('\n')]
     result = {key: val for (key, val) in keyvals}
     return result
+
+
+def seff_reeds(casepath:str|Path) -> dict:
+    """Run seff on a ReEDS case. Only returns complete results if the job has finished."""
+    logs = Path(casepath).glob('slurm*')
+    jobs = sorted([int(i.stem.split('-')[-1].split('_')[0]) for i in logs])
+    lastjob = jobs[-1]
+    return seff(lastjob)
 
 
 def get_run_status(reeds_path, batch_name):
@@ -124,13 +130,14 @@ if __name__ == '__main__':
                         os.path.join(fullcase,'meta.csv'), skiprows=3).processtime.sum()
                     msg = f"{datetime.timedelta(seconds=int(duration))}"
                 elif include_finished > 1:
-                    seff = run_seff(fullcase)
-                    duration = seff['Job Wall-clock time']
-                    cpu_eff = seff['CPU Efficiency'].split('%')[0]
-                    mem_use = seff['Memory Utilized']
-                    mem_eff = seff['Memory Efficiency'].split('%')[0]
+                    result = seff_reeds(fullcase)
+                    duration = result['Job Wall-clock time']
+                    cpu_eff = result['CPU Efficiency'].split('%')[0]
+                    mem_use = result['Memory Utilized']
+                    mem_eff = result['Memory Efficiency'].split('%')[0]
                     msg = f"{duration:>10} | {cpu_eff:>5}% CPU | {mem_eff:>5}% memory ({mem_use})"
-                print(f"{case:<{longest}}: {msg}")
+                if include_finished:
+                    print(f"{case:<{longest}}: {msg}")
             else:
                 ### Get last .lst file
                 lstfiles = sorted(glob(os.path.join(fullcase,'lstfiles','*')))
