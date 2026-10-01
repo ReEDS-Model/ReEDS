@@ -215,7 +215,7 @@ def check_cases_format(df_cases):
         raise ValueError(err)
 
 
-def check_compatibility(sw):
+def check_compatibility(sw, force=0):
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
 
@@ -531,7 +531,7 @@ def check_compatibility(sw):
         )
 
     ### Contents of user-specified files
-    reeds.checks.check_switches(sw)
+    reeds.checks.check_switches(sw, force=(force>=1))
 
     ### Uncommonly used packages
     if sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kmedoids'):
@@ -545,6 +545,7 @@ def check_compatibility(sw):
                 "    conda install -c conda-forge scikit-learn-extra=0.2"
             )
             raise ModuleNotFoundError(err)
+
 
 # function to stop the model after input processing
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
@@ -778,7 +779,7 @@ def setup_window(
 
 def setupEnvironment(
         BatchName=False, cases_suffix=False, single='', simult_runs=0,
-        forcelocal=0, skip_checks=False,
+        forcelocal=0, force=0,
         debug=False, debugnode=False, cases_per_node=1,
         dryrun=False,
     ):
@@ -788,7 +789,7 @@ def setupEnvironment(
     # WORKERS = 1
     # forcelocal = 0
     # single = ''
-    # skip_checks = False
+    # force = 0
     # debug = False
     # dryrun = True
 
@@ -848,7 +849,7 @@ def setupEnvironment(
             quit()
 
     #%% Check whether the ReEDS conda environment is activated
-    if (not skip_checks) and (
+    if (force < 3) and (
         ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
         or (not pd.__version__.startswith('3'))
     ):
@@ -872,7 +873,7 @@ def setupEnvironment(
     df_cases = reeds.inputs.parse_cases(
         cases_filename=cases_filename,
         single=single,
-        skip_checks=skip_checks,
+        force=(force>=2),
     )
     ## Propagate debug setting
     if debug:
@@ -887,7 +888,7 @@ def setupEnvironment(
     #%% Stop now if any switches are incompatible
     check_cases_format(df_cases)
     for sw in caseSwitches:
-        check_compatibility(sw)
+        check_compatibility(sw, force=force)
     if dryrun:
         quit()
 
@@ -951,7 +952,7 @@ def setupEnvironment(
         quit()
 
     #%% User warnings
-    if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and not skip_checks:
+    if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and (force < 2):
         print(
             '\nWARNING: At least one case uses cleanup_level ≥ 1, which removes files '
             'used by R2X.\nIf you plan to run R2X, do not proceed; set cleanup_level '
@@ -1759,7 +1760,7 @@ def launch_single_case_run(
 
 def main(
         BatchName='', cases_suffix='', single='', simult_runs=0,
-        forcelocal=False, skip_checks=False,
+        forcelocal=False, force=0,
         debug=False, debugnode=False, cases_per_node=1,
         dryrun=False,
     ):
@@ -1797,7 +1798,7 @@ def main(
     envVar = setupEnvironment(
         BatchName=BatchName, cases_suffix=cases_suffix,
         single=single, simult_runs=simult_runs,
-        forcelocal=forcelocal, skip_checks=skip_checks,
+        forcelocal=forcelocal, force=force,
         debug=debug, debugnode=debugnode, cases_per_node=cases_per_node,
         dryrun=dryrun,
     )
@@ -1832,8 +1833,6 @@ if __name__ == '__main__':
                         help='Number of simultaneous runs. If negative, run all simultaneously.')
     parser.add_argument('--forcelocal', '-l', action='store_true',
                         help='Force model to run locally instead of submitting a slurm job')
-    parser.add_argument('--skip_checks', '-f', action="store_true",
-                        help="Force run, skipping checks on conda environment and switches")
     parser.add_argument('--debug', '-d', action='count', default=0,
                         help="Run in debug mode (same behavior as debug switch in cases.csv)")
     parser.add_argument('--debugnode', '-n', action="store_true",
@@ -1843,12 +1842,21 @@ if __name__ == '__main__':
                             "If not provided, the user will be prompted to specify it.")
     parser.add_argument('--dryrun', '-t', action='store_true',
                         help="Check inputs but don't start runs")
+    parser.add_argument(
+        '--force', '-f', action='count', default=0,
+        help=(
+            'Force run, skipping the following checks: '
+            '≥1: Enough representative periods for analysis; '
+            '≥2: Switches within allowed values; '
+            '≥3: Conda environment activated'
+        ),
+    )
 
     args = parser.parse_args()
 
     main(
         BatchName=args.BatchName, cases_suffix=args.cases_suffix, single=args.single,
-        simult_runs=args.simult_runs, forcelocal=args.forcelocal, skip_checks=args.skip_checks,
+        simult_runs=args.simult_runs, forcelocal=args.forcelocal, force=args.force,
         debug=args.debug, debugnode=args.debugnode, cases_per_node=args.cases_per_node,
         dryrun=args.dryrun,
     )
