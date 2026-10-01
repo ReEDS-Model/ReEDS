@@ -4,6 +4,7 @@ import sys
 import re
 import datetime
 import h5py
+import ctypes
 import inspect
 import numpy as np
 import pandas as pd
@@ -665,6 +666,10 @@ def get_switches_base(case=None, **kwargs):
             index_col=0,
             header=None,
         ).squeeze(1)
+    ### Overwrite values with keyword arguments if provided
+    for key, value in kwargs.items():
+        if key in sw.keys():
+            sw[key] = value
     return sw
 
 
@@ -702,7 +707,7 @@ def get_switches(case=None, **kwargs):
     that is not a valid switch name, it is ignored.
     """
     case = standardize_case(case)
-    sw = get_switches_base(case)
+    sw = get_switches_base(case, **kwargs)
     ### Resource-adequacy-specific switches
     try:
         fpath_asw = os.path.join(
@@ -1882,7 +1887,7 @@ def write_output_to_h5(
             print(f'{key} dataframe is empty, so it was not written to {filepath}')
         return dfwrite
     ## Drop the Value column if it's a set
-    if pd.api.types.is_string_dtype(dfwrite.Value):
+    if pd.api.types.is_string_dtype(dfwrite.Value) or isinstance(dfwrite.Value.values[0], ctypes.c_bool):
         dfwrite.drop("Value", axis=1, inplace=True)
     ## Make column names unique (necessary if '*' is overused)
     make_columns_unique(dfwrite)

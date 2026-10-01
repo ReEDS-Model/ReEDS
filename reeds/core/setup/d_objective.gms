@@ -226,7 +226,7 @@ eq_Objfn_op(t)$tmodel(t)..
 * via the capex + opex costs of H2 production and its associated electricity demand.
               + sum{(i,v,r,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
-                             $((not h2_combustion(i)) or h2_combustion(i)$[(Sw_H2=0) or h_stress(h)])],
+                             $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
 
 * --- startup/ramping costs
@@ -302,9 +302,6 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(RPSCat,st)$[(stfeas(st) or sameas(st,"voluntary"))$RecPerc(RPSCat,st,t)$(not acp_disallowed(st,RPSCat))],
                     acp_price(st,t) * ACP_PURCHASES(RPSCat,st,t)
                    }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS]
-
-* --- revenues from purchases of curtailed VRE---
-              - sum{(r,h), CURT(r,h,t) * hours(h) * cost_curt(t) }$Sw_CurtMarket
 
 * --- dropped/excess load (ONLY if before Sw_StartMarkets)
               + sum{(r,h)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)],
