@@ -343,26 +343,8 @@ def main(reeds_path, inputs_case):
     for tech in techs.keys():
         techs[tech] = tech_table[tech_table[tech]].index.values.tolist()
         techs[tech] = [x.lower() for x in techs[tech]]
-        temp_save = []
-        temp_remove = []
         # Interpreting GAMS syntax in tech-subset-table.csv
-        for subset in techs[tech]:
-            if '*' in subset:
-                temp_remove.append(subset)
-                temp = subset.split('*')
-                temp2 = temp[0].split('_')
-                temp_low = pd.to_numeric(temp[0].split('_')[-1])
-                temp_high = pd.to_numeric(temp[1].split('_')[-1])
-                temp_tech = ''
-                for n in range(0,len(temp2)-1):
-                    temp_tech += temp2[n]
-                    if not n == len(temp2)-2:
-                        temp_tech += '_'
-                for c in range(temp_low,temp_high+1):
-                    temp_save.append('{}_{}'.format(temp_tech,str(c)))
-        for subset in temp_remove:
-            techs[tech].remove(subset)
-        techs[tech].extend(temp_save)
+        techs[tech] = reeds.techs.expand_star(techs[tech])
     vre_dist = techs['VRE_DISTRIBUTED']
 
     #%% Read capacity factor profiles
@@ -438,7 +420,7 @@ def main(reeds_path, inputs_case):
     recf = pd.concat(
         [df_windons, df_windofs, df_upv, df_distpv]
         + [df_pvb[pvb_type] for pvb_type in df_pvb],
-        sort=False, axis=1, copy=False)
+        sort=False, axis=1)
     
     ### Downselect RECF data to resource adequacy and weather years
     recf = recf.loc[recf.index.year.isin(resource_adequacy_years)]
@@ -462,7 +444,7 @@ def main(reeds_path, inputs_case):
     
     # Sorting profiles of resources to match the order of the rows in resources
     resources = resources.sort_values(['resource','area'])
-    recf = recf.reindex(labels=resources['resource'].drop_duplicates(), axis=1, copy=False)
+    recf = recf.reindex(labels=resources['resource'].drop_duplicates(), axis=1)
 
     ### Scale up distpv by 1/(1-distloss)
     recf.loc[

@@ -1598,8 +1598,8 @@ def plot_vresites_transmission(
                 lambda row: shapely.geometry.Point(row.longitude, row.latitude),
                 axis=1)
             cap[tech] = gpd.GeoDataFrame(cap[tech]).set_crs('EPSG:4326').to_crs(crs)
-            ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-            cap[tech]['geometry'] = cap[tech].buffer(11530/2, cap_style='square')
+            ## Convert from points to polygons
+            cap[tech] = reeds.spatial.site2poly_buffer(cap[tech])
 
         except FileNotFoundError as err:
             print(err)
@@ -5302,6 +5302,14 @@ def separate_charge_discharge(df):
     df.loc[df.i.isin(storage_techs), 'i'] += '|discharge'
 
 
+def check_metric(metric):
+    allowed = (
+        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
+    )
+    if not re.match(allowed, metric):
+        raise ValueError(f"metric={metric} must match {allowed}")
+
+
 def get_cap_rep_stress_mix(
     case,
     years=None,
@@ -5320,12 +5328,8 @@ def get_cap_rep_stress_mix(
     order='fuel_storage_vre',
 ):
     ### Check inputs
-    allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
-    )
     for key in metrics:
-        if not re.match(allowed, key):
-            raise ValueError(f"{key} in metrics must match {allowed}")
+        check_metric(key)
 
     ### Parse inputs
     allyears = pd.read_csv(
@@ -5699,11 +5703,7 @@ def plot_stress_mix(
     moreticks=False,
 ):
     ### Parse inputs
-    allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
-    )
-    if not re.match(allowed, metric):
-        raise ValueError(f"metric={metric} must match {allowed}")
+    check_metric(metric)
     ## Replace 'max' with 'top1' since they're handled the same
     metric = metric.replace('max','top1').replace('min','bottom1')
 
@@ -5791,6 +5791,105 @@ def plot_stress_mix(
     plots.despine(ax)
 
     return f, ax, dfout
+
+
+def plot_stress_cf(
+    case:str|Path,
+    level='transreg',
+    metric='stress_top10_netload',
+    include_rep=True,
+    figwidth=1.2,
+    figheight=1.2,
+):
+    """
+    Plot stress dispatch over capacity, in the style of a capacity credit.
+    Rows are hierarchy levels, columns are techs, x axis is years.
+    """
+    ### Check inputs
+    check_metric(metric)
+    ### Get all the data
+    dfstress = get_cap_rep_stress_mix(
+        case, level=level, metrics=['cap', 'rep_mean', metric], order=None,
+    )
+    ## Drop some techs
+    plot_settings = reeds.io.get_plot_formatting()
+    tech_map = plot_settings['tech_map']
+    tech_color = plot_settings['tech_color'].color
+    droptechs = ['beccs', 'canad', 'bio', 'o-g-s', 'lfill', 'csp', 'distpv']
+    droplabels = []
+    for _tech in droptechs:
+        droplabels.extend(tech_map.loc[tech_map.index.str.lower().str.contains(_tech)].tolist())
+    droplabels = sorted(set(droplabels))
+    ## For storage techs, drop charge and keep discharge (relabeling as tech name)
+    storage_techs = sorted(set([i.split('|')[0] for i in dfstress['rep_mean'].index if '|' in i]))
+    drop = [f'{i}|charge' for i in storage_techs]
+    rename = {f'{i}|discharge':i for i in storage_techs}
+    for key in [metric, 'rep_mean', 'cap']:
+        dfstress[key] = dfstress[key].rename(rename).drop(drop+droplabels, errors='ignore')
+    ## Get the "capacity credit"
+    techs = dfstress['cap'].index.tolist()
+    capcredit = (dfstress[metric] / dfstress['cap']).reindex(techs) * 100
+    repfraction = (dfstress['rep_mean'] / dfstress['cap']).reindex(techs) * 100
+    ### Set up plot
+    dfmap = reeds.io.get_dfmap(case)
+    regions = dfmap[level].bounds.minx.sort_values().index
+    nrows, ncols, coords = layout_subplots(row_list=regions, col_list=techs)
+    metriclabel = stress_mix_label(case, metric).split(': ')[1]
+    sw = reeds.io.get_switches(case)
+    yearmin = int(sw.GSw_StartMarkets)
+    yearmax = int(sw.endyear)
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(figwidth*ncols, figheight*nrows),
+        sharex=True, sharey=True,
+    )
+    for _row, region in enumerate(regions):
+        for _col, tech in enumerate(techs):
+            _ax = ax[coords[region,tech]]
+            capcredit.loc[tech].loc[:,region].plot(
+                ax=_ax, ls='-', color=tech_color[tech], label='stress')
+            if include_rep:
+                repfraction.loc[tech].loc[:,region].plot(
+                    ax=_ax, ls=':', color=tech_color[tech], label='rep')
+            ## Formatting
+            if region == regions[0]:
+                _ax.set_title(tech.replace(' ','\n'), weight='bold')
+                if tech == techs[0]:
+                    _ax.legend(
+                        loc='center left', frameon=False,
+                        handletextpad=0.3, handlelength=1.5,
+                    )
+            if tech == techs[0]:
+                _ax.annotate(
+                    region, (0,0), xycoords='axes fraction',
+                    xytext=(3,3), textcoords='offset points',
+                    fontsize='large', weight='bold', va='bottom', ha='left',
+                )
+                if region == regions[-1]:
+                    _ax.set_ylabel('Dispatch / Capacity [%]', y=0, ha='left')
+                    _ax.annotate(
+                        f'Stress fraction shown: {metriclabel}',
+                        (0,0), xycoords='axes fraction',
+                        xytext=(0,-30), textcoords='offset points',
+                        fontsize='x-large', weight='normal', va='top', ha='left',
+                        annotation_clip=False,
+                    )
+            _ax.set_xlabel(None)
+    ## Formatting
+    _ax.set_ylim(0, 100)
+    _ax.set_xlim(yearmin, yearmax)
+    _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
+    _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
+    reeds.plots.despine(ax)
+    plt.draw()
+    try:
+        plots.shorten_years(_ax, start_shortening_in=yearmin+1)
+    except ValueError:
+        _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(5))
+        _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(1))
+    return f, ax, {'stress': capcredit, 'rep': repfraction}
 
 
 def plot_capacity_offline(
@@ -6121,7 +6220,7 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
 
     ## Convert to polygons
-    dfsc['geometry'] = dfsc.buffer(11530/2, cap_style='square')
+    dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     return dfsc
 
@@ -6812,6 +6911,85 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     plots.trim_subplots(ax, nrows, ncols, len(coords))
 
     return f, ax, prm_final
+
+
+def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
+    """Map capacity in interconnection queues"""
+    ### Get inputs
+    if case is None:
+        fpath = Path(
+            reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+            'interconnection_queues.csv',
+        )
+        dfqueue = (
+            pd.read_csv(fpath).set_index(['tg','r']).stack()
+            .rename_axis(['tg','r','t']).rename('GW') / 1e3
+        ).reset_index().astype({'t':int})
+        dfqueue.r = dfqueue.r.str.replace('p','')
+        dfqueue = dfqueue.set_index(['tg','r','t']).squeeze(1)
+        dfzones = reeds.spatial.get_map('county', 'tiger')
+        dfstates = reeds.spatial.get_map('state', 'census')
+        years = sorted(set(dfqueue.index.get_level_values('t')))
+    else:
+        dfqueue = (
+            reeds.io.read_input(case, 'queue_limit')
+            .rename(columns={'allt':'t','Value':'GW'}).astype({'t':int})
+            .set_index(['tg','r','t']).GW / 1e3
+        )
+        dfmap = reeds.io.get_dfmap(case)
+        dfzones = dfmap['r']
+        modelyears = reeds.io.read_input(case, 'tmodel_new').squeeze(1).tolist()
+        years = [y for y in modelyears if y in dfqueue.index.get_level_values('t')]
+    ### Drop zeros since GAMS doesn't see them; stop here if the queue is turned off
+    dfqueue = dfqueue.replace(0,np.nan).dropna().loc[:,:,years]
+    if not len(dfqueue):
+        return None, None, dfqueue
+    ### Set up plot
+    tgs = dfqueue.groupby('tg').sum().sort_values(ascending=False).index.values
+    nrows, ncols, coords = layout_subplots(row_list=years, col_list=tgs)
+    bounds = dfzones.dissolve().bounds.squeeze(0)
+    yscale = (bounds.maxy - bounds.miny) / (bounds.maxx - bounds.minx)
+    if vmax in ['shared', 'same', 'all']:
+        _vmax = dict(zip(coords.keys(), [dfqueue.max()]*len(coords)))
+    elif isinstance(vmax, (float, int)):
+        _vmax = dict(zip(coords.keys(), [vmax]*len(coords)))
+    else:
+        _vmax = dfqueue.groupby(['t','tg']).max()
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*figscale, nrows*figscale*yscale),
+        sharex=True, sharey=True, gridspec_kw={'wspace':-0.1, 'hspace':0.5},
+    )
+    for tg in tgs:
+        for t in years:
+            _ax = ax[coords[t,tg]]
+            dfplot = dfzones.copy()
+            dfplot['GW'] = dfqueue.loc[tg,:,t]
+            if dfplot.GW.count():
+                dfplot.plot(ax=_ax, column='GW', cmap=cmap, vmin=0, vmax=_vmax[t,tg])
+                reeds.plots.addcolorbarhist(
+                    f, _ax, dfplot.GW, vmin=0, vmax=_vmax[t,tg], cmap=cmap,
+                    orientation='horizontal', cbarbottom=-0.15, cbarheight=0.8,
+                    histratio=1, nbins=51, cbarwidth=0.1,
+                )
+            if len(dfzones) < 300:
+                dfzones.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            else:
+                dfstates.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            _ax.axis('off')
+            ## Formatting
+            if t == years[0]:
+                _ax.annotate(
+                    tg, (0.5,1), xycoords='axes fraction',
+                    ha='center', weight='bold', fontsize=12,
+                )
+            if tg == tgs[0]:
+                _ax.annotate(
+                    f'{t}\n[GW]', (0,0.5), xycoords='axes fraction',
+                    ha='right', va='center', weight='bold', fontsize=12,
+                )
+    return f, ax, dfqueue
 
 
 def validate_regional_capacity(
