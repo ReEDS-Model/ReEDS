@@ -554,7 +554,7 @@ def setupEnvironment(
     #%% Stop now if any switches are incompatible
     check_cases_format(df_cases)
     for sw in caseSwitches:
-        reeds.checks.check_compatibility(sw, force=force)
+        reeds.checks.check_switches(sw, force=force)
     if dryrun:
         quit()
 

@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
 
-def check_compatibility(sw, force=0):
+def check_compatibility(sw):
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
 
@@ -325,9 +325,6 @@ def check_compatibility(sw, force=0):
             f"({', '.join(disallowed_characters)}): {', '.join(invalid_switches)}"
         )
 
-    ### Contents of user-specified files
-    reeds.checks.check_switches(sw, force=(force>=1))
-
     ### Uncommonly used packages
     if sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kmedoids'):
         if importlib.util.find_spec("sklearn_extra") is None:
@@ -431,7 +428,7 @@ def check_numperiods(sw, threshold=24, force=0):
             'for suggestions on how to increase the number of representative periods when '
             'using a small number of regions.\n'
             'The simplest approach is to set GSw_HourlyClusteAlgorithm to "hierarchical" '
-            f'and GSw_HourlyNumClusters ≥ {threshold}.'
+            f'and GSw_HourlyNumClusters ≥ {threshold}.\n'
         )
         print(msg)
         err = f'Insufficient representative periods: {numperiods}'
@@ -445,5 +442,7 @@ def check_numperiods(sw, threshold=24, force=0):
 
 def check_switches(sw, force=0):
     """Run all the checks"""
-    check_GSw_LoadSiteReg(sw)
     check_numperiods(sw, force=force)
+    if force < 2:
+        check_compatibility(sw)
+        check_GSw_LoadSiteReg(sw)
