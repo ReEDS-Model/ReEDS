@@ -2758,6 +2758,110 @@ def map_capacity_techs(
     plots.trim_subplots(ax, nrows, ncols, len(techs))
     return f, ax
 
+def map_potential_and_load(
+        case, year=2050,
+        cmap=cmocean.cm.rain,data_type='potential',title = '1% Shed Potential',case2 = None,drscen='1pct_24h_transreg',
+    ):
+    """
+    """
+    # title = 'Max Load Difference (No DR - With DR) across all weather years'
+    ### Get maps
+    dfmap = reeds.io.get_dfmap(case)
+    dfba = dfmap['r']
+    dfstates = dfmap['st']
+    ### Case data
+    if data_type=='potential':
+        # get supply curve capacity
+        dfcap = pd.read_csv(os.path.join(case,'inputs_case','rsc_combined.csv'))
+        dfcap = dfcap.loc[dfcap.sc_cat=='cap'].copy()
+        dfcap = dfcap.loc[dfcap['*i'].str.contains('dr_')]
+        # get supply curve capacity multipliers
+        dr_types = ['dr_shape','dr_shed']
+        dr_cap_mults = {}
+        for dr_type in dr_types:
+            if dr_type =='dr_shape':
+                dr_cap_mults[dr_type] = pd.read_csv(os.path.join(reeds_path,'inputs','demand_response',f'{dr_type}_cap_scalar_{drscen}.csv'))  
+                # combine p28 and p30 into z28
+                dr_cap_mults[dr_type]['r'] = dr_cap_mults[dr_type]['r'].replace({'p28': 'z28', 'p30': 'z28'})   
+                # combine p119 and p122
+                dr_cap_mults[dr_type]['r'] = dr_cap_mults[dr_type]['r'].replace({'p122': 'z122', 'p119': 'z122'})         
+                dr_cap_mults[dr_type] = dr_cap_mults[dr_type].groupby(['tech', 'r'], as_index=False).mean()
+            else:
+                dr_cap_mults[dr_type] = pd.read_csv(os.path.join(case,'inputs_case',f'{dr_type}_capacity_scalar.csv'))            
+        dr_cap_mults = pd.concat(dr_cap_mults).reset_index(drop=True)
+        dr_cap_mults = dr_cap_mults[['tech','r',str(year)]].rename(columns={'tech':'*i'})
+        # scale cap by mutliplier
+        dfcap = dfcap.set_index(['*i','r']).drop(columns =['sc_cat','rscbin'])
+        dr_cap_mults = dr_cap_mults.set_index(['*i','r'])
+        dfcap = dfcap.merge(dr_cap_mults, on=['*i','r'])
+        dfcap['potential_MW'] = dfcap['value'] * dfcap[str(year)]
+        dfcap = dfcap.reset_index()
+        _vmax = None
+        _vmax = 2
+    elif data_type=='load':
+        # get load data
+        load_noDR = reeds.io.read_file(os.path.join(case,'inputs_case', 'load.h5'), parse_timestamps=True)
+        #load_noDR = reeds.io.read_file('/projects/last10p/lserpe/reeds_dr/repo1/ReEDS-2.0/inputs/load/EER_Baseline_AEO2023_load_hourly.h5', parse_timestamps=True)
+        load_noDR = load_noDR.reset_index()
+        load_noDR['datetime'] = load_noDR['datetime'].astype(str)
+        load_noDR = load_noDR[load_noDR['year']==year]
+
+        load_DR = reeds.io.read_file(os.path.join(case2,'inputs_case', 'load.h5'), parse_timestamps=True)
+        #load_DR = reeds.io.read_file('/projects/last10p/lserpe/reeds_dr/repo1/ReEDS-2.0/inputs/load/shed_1_pct_load_hourly.h5', parse_timestamps=True)
+        load_DR = load_DR.reset_index()
+        load_DR['datetime'] = load_DR['datetime'].astype(str)
+        load_DR = load_DR[load_DR['year']==year]
+
+        # difference in each hour across all weather years 
+        regions = [col for col in load_noDR.columns if col not in ['datetime','year']]
+        load_diff = load_noDR[regions] - load_DR[regions]
+        # Find max difference for each region 
+        dfcap = pd.DataFrame({
+            'r':regions,
+            'potential_MW':load_diff.max().values
+        })
+        # # Find mean difference for each region 
+        # dfcap = pd.DataFrame({
+        #     'r':regions,
+        #     'potential_MW':load_diff.mean().values
+        # })
+    
+    ### Plot it
+    plt.close()
+    f, ax = plt.subplots(figsize=(8, 8), dpi=150)
+
+    dfval = dfcap.groupby('r').potential_MW.sum().round(3)
+    dfplot = dfba.copy()
+    dfplot['GW'] = (dfval / 1000).fillna(0)
+
+    dfba.plot(
+        ax=ax,
+        facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
+    dfstates.plot(
+        ax=ax,
+        facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
+    dfplot.plot(
+        ax=ax, column='GW', cmap=cmap, legend=True,
+        # vmin=0, vmax=_vmax,
+        # legend_kwds={
+        #     'shrink': 0.75, 'pad': 0, 'orientation': 'horizontal',
+        #     'label': '[GW]',
+        # }
+        vmin=0, vmax=int(_vmax),
+        legend_kwds={
+            'shrink': 0.75, 'pad': 0, 'orientation': 'horizontal',
+            'label': '[GW]',
+            'format': '{:.0f}'.format,
+            'ticks': [0, 1, 2],  # Set 3 ticks: min, mid, max
+        }
+
+    )
+    ax.axis('off')
+    ax.set_title(
+        '{} ({})'.format(title, year),
+        x=0.1, ha='left', va='top')
+    return f, ax
+
 
 def map_capacity_markers(
         case, level='r', year=2050, ms=5,
@@ -5254,7 +5358,7 @@ def get_tech_colors_order(order='fuel_storage_vre'):
     ### For this particular plot we put storage below VRE
     if order == 'fuel_storage_vre':
         vre_keywords = ['wind', 'pv', 'solar', 'csp']
-        storage_keywords = ['battery', 'pump', 'evmc', 'storage']
+        storage_keywords = ['battery', 'pump', 'storage','dr']
         vre_stor_can = vre_keywords + storage_keywords + ['canada']
         plotorder = [
                 k for k in bokehcolors.keys()
@@ -6848,6 +6952,245 @@ def map_output_byyear(
                 **kwargs,
             )
     return f, ax, dictplot
+
+
+def dr_shift_resource_compare(case, year,savepath, region = 'ex', shift_tech = 'dr_shift_1',weather_year=2018):
+
+    dr_shift_input_files = {'Charge':'dr_shift_profile_increase.h5',
+                                'Discharge':'dr_shift_profile_decrease.h5',
+                                'Energy':'dr_shift_profile_energy.h5',}
+
+    dr_shift_rep_files = {'Charge':'dr_shift_charge.csv',
+                            'Discharge':'dr_shift_discharge.csv',
+                            'Energy':'dr_shift_profile_energy.csv',}
+
+    dr_shift_dispatch_rep_files = {'Charge':'gen_h.csv',
+                            'Discharge':'gen_h.csv',
+                            'Energy':'stor_level.csv',}
+    if region =='ex':
+        cap = pd.read_csv(os.path.join(case,'outputs','cap.csv'))
+        cap = cap.loc[cap.i == shift_tech]
+        region = cap.loc[cap['Value'].idxmax(), 'r']
+
+    output_csv = pd.DataFrame()
+
+    baseline_dfs ={}
+    for k,v in dr_shift_input_files.items():
+        df = reeds.io.read_file(os.path.join(case,'inputs_case',v))
+        df = df.loc[df.year == year]
+        cols_tech = [x for x in df.columns if x.startswith(shift_tech) and x.endswith(region)]
+        df = df[['year'] + cols_tech]
+        df = df.loc[df.index.year == weather_year]
+        baseline_dfs[k] = df
+        temp = df.rename(columns = {cols_tech[0]:f'baseline_{k}'})
+        output_csv = pd.concat((output_csv,temp[f'baseline_{k}']),axis = 1)
+
+
+    rep_dfs = {}
+    for k,v in dr_shift_rep_files.items():
+        df = pd.read_csv(os.path.join(case,'inputs_case','rep',v))
+        hr_map = pd.read_csv(os.path.join(case,'inputs_case','rep','hmap_myr.csv'))
+        df = pd.merge(left = df,right = hr_map, on = 'h', how = 'outer')
+        df = df.loc[(df.t == year)& (df['*i']== shift_tech)]
+        df = df.loc[df.r == region].sort_values('yearhour').rename(columns = {'t':'year'})
+        # # Determine number of unique DR Shift techs
+        # shift_techs = df['**i'].unique()
+        # df_tech_combined = pd.DataFrame()
+        # for tech in shift_techs:
+        #     df_tech = df.loc[df['**i'] == tech].copy()
+        #     df_tech.loc[:, 'date'] = pd.date_range(start=f'1/1/{year}', periods=8760, freq='H')
+        #     df_tech_combined = pd.concat((df_tech_combined, df_tech), axis=0)
+        # df = df_tech_combined.copy()
+        df['date'] = pd.date_range(start=f'1/1/{year}', periods=8760, freq='h')
+        df.set_index('date', inplace=True)
+        df = df[['Values']]
+        rep_dfs[k] = df
+        output_csv = pd.concat([output_csv,df.rename(columns = {'Values':f'rep_{k}'})],axis = 1)
+
+
+    rep_gen = {}
+    for k,v in dr_shift_dispatch_rep_files.items():
+        df = pd.read_csv(os.path.join(case,'outputs',v)).rename(columns = {'Value':'GEN','allh':'h'})
+        cap = pd.read_csv(os.path.join(case,'outputs','cap.csv')).rename(columns = {'Value':'CAP'})
+        df = pd.merge(left = df, right = cap)
+        hr_map = pd.read_csv(os.path.join(case,'inputs_case','rep','hmap_myr.csv'))
+        df = pd.merge(left = df,right = hr_map, on = 'h', how = 'outer')
+        df = df.loc[(df.t == year)& (df['i']== shift_tech)]
+        df = df.loc[df.r == region].sort_values('yearhour').rename(columns = {'t':'year'})
+        # # Determine number of unique DR Shift techs
+        # shift_techs = df['i'].unique()
+        # Duplicate the dataframe for each DR Shift tech
+        temp = pd.DataFrame({'yearhour': range(1, 8761), 'date': pd.date_range(start=f'1/1/{year}', periods=8760, freq='h')})
+        # # temp = pd.concat([temp] * len(shift_techs), ignore_index=True)
+        df = pd.merge(left = temp, right = df, how = 'outer').fillna(0)
+        df.set_index('date', inplace=True)
+        df['Values'] = df.GEN/df.CAP
+        if k == 'Charge':
+            df.Values *= -1
+        df.Values
+        df.loc[df.Values <0,'Values'] = 0
+        df = df[['Values']].fillna(0)
+        rep_gen[k] = df
+        output_csv = pd.concat([output_csv,df.rename(columns = {'Values':f'deploy_{k}'})],axis = 1)
+
+    plots_dr = {'DR Shift Resource': {'Energy':(baseline_dfs['Energy'],'k','line'),
+                                'Charge':(baseline_dfs['Charge'],'red','fill'),
+                                'Discharge':(baseline_dfs['Discharge'],'green','fill')},
+                'DR Shift Rep-period: Charge': {'Baseline':(baseline_dfs['Charge'],'k','line'),
+                                            'Rep':(rep_dfs['Charge'],'grey','fill'),
+                                            'Deploy':(rep_gen['Charge'],'red','line')},
+                'DR Shift Rep-period: Discharge': {'Baseline':(baseline_dfs['Discharge'],'k','line'),
+                                            'Rep':(rep_dfs['Discharge'],'grey','fill'),
+                                            'Deploy':(rep_gen['Discharge'],'red','line')},
+                'DR Shift Rep-period: Energy': {'Baseline':(baseline_dfs['Energy'],'k','line'),
+                                            'Rep':(rep_dfs['Energy'],'grey','fill'),
+                                            'Deploy':(rep_gen['Energy'],'red','line')},
+            }
+
+    output_csv.to_csv(os.path.join(os.path.split(savepath)[0],f"dr_shift-{region}-{year}.csv"))
+
+    save_dict = {}
+    # Plot Charge, Discharge, Energy together through year
+    for title, plot_dict in plots_dr.items():
+        key = list(plot_dict.keys())
+        plot_dict[key[0]][0]['Unit'] = 1
+        f,ax = plots.plotyearbymonth(
+            plot_dict[key[0]][0],
+            plotcols= ('Unit'),
+            colors=['grey'], style='line', lwforline=0.5, ls = ':'
+        )
+        for k in key:
+            plots.plotyearbymonth(
+                plot_dict[k][0], 
+                plotcols= ([shift_tech + '|' +region] if shift_tech + '|' +region in plot_dict[k][0].columns else 'Values'),
+                colors=[plot_dict[k][1]], alpha = 0.5,
+                style = plot_dict[k][2],
+                f=f, ax=ax,
+            )
+        ax.flat[0].set_title(f'{title}: {year}, {region}')
+
+        savename = f"dr_shift-{title.replace(':','').replace(' ','_')}-{region}-{year}.png"
+        f.savefig(os.path.join(savepath, savename))
+
+def dr_shift_plots(case, year,savepath, region = 'ex', shift_tech = 'dr_shift_1',weather_year=2018):
+
+    dr_shift_input_files = {'Charge':'dr_shift_profile_increase.h5',
+                                'Discharge':'dr_shift_profile_decrease.h5',
+                                'Energy':'dr_shift_profile_energy.h5',}
+
+    dr_shift_rep_files = {'Charge':'dr_shift_charge.csv',
+                            'Discharge':'dr_shift_discharge.csv',
+                            'Energy':'dr_shift_profile_energy.csv',}
+
+    dr_shift_dispatch_rep_files = {'Charge':'gen_h.csv',
+                            'Discharge':'gen_h.csv',
+                            'Energy':'stor_level.csv',}
+    if region =='ex':
+        cap = pd.read_csv(os.path.join(case,'outputs','cap.csv'))
+        cap = cap.loc[cap.i == shift_tech]
+        region = cap.loc[cap['Value'].idxmax(), 'r']
+
+    output_csv = pd.DataFrame()
+
+    baseline_dfs ={}
+    for k,v in dr_shift_input_files.items():
+        df = reeds.io.read_file(os.path.join(case,'inputs_case',v))
+        df = df.loc[df.year == year]
+        cols_tech = [x for x in df.columns if x.startswith(shift_tech) and x.endswith(region)]
+        df = df[['year'] + cols_tech]
+        df = df.loc[df.index.year == weather_year]
+        baseline_dfs[k] = df
+        temp = df.rename(columns = {cols_tech[0]:f'baseline_{k}'})
+        output_csv = pd.concat((output_csv,temp[f'baseline_{k}']),axis = 1)
+
+
+    rep_dfs = {}
+    for k,v in dr_shift_rep_files.items():
+        df = pd.read_csv(os.path.join(case,'inputs_case','rep',v))
+        hr_map = pd.read_csv(os.path.join(case,'inputs_case','rep','hmap_myr.csv'))
+        df = pd.merge(left = df,right = hr_map, on = 'h', how = 'outer')
+        df = df.loc[(df.t == year)& (df['*i']== shift_tech)]
+        df = df.loc[df.r == region].sort_values('yearhour').rename(columns = {'t':'year'})
+        # # Determine number of unique DR Shift techs
+        # shift_techs = df['**i'].unique()
+        # df_tech_combined = pd.DataFrame()
+        # for tech in shift_techs:
+        #     df_tech = df.loc[df['**i'] == tech].copy()
+        #     df_tech.loc[:, 'date'] = pd.date_range(start=f'1/1/{year}', periods=8760, freq='H')
+        #     df_tech_combined = pd.concat((df_tech_combined, df_tech), axis=0)
+        # df = df_tech_combined.copy()
+        df['date'] = pd.date_range(start=f'1/1/{year}', periods=8760, freq='h')
+        df.set_index('date', inplace=True)
+        df = df[['Values']]
+        rep_dfs[k] = df
+        output_csv = pd.concat([output_csv,df.rename(columns = {'Values':f'rep_{k}'})],axis = 1)
+
+
+    rep_gen = {}
+    for k,v in dr_shift_dispatch_rep_files.items():
+        df = pd.read_csv(os.path.join(case,'outputs',v)).rename(columns = {'Value':'GEN','allh':'h'})
+        cap = pd.read_csv(os.path.join(case,'outputs','cap.csv')).rename(columns = {'Value':'CAP'})
+        df = pd.merge(left = df, right = cap)
+        hr_map = pd.read_csv(os.path.join(case,'inputs_case','rep','hmap_myr.csv'))
+        df = pd.merge(left = df,right = hr_map, on = 'h', how = 'outer')
+        df = df.loc[(df.t == year)& (df['i']== shift_tech)]
+        df = df.loc[df.r == region].sort_values('yearhour').rename(columns = {'t':'year'})
+        # # Determine number of unique DR Shift techs
+        # shift_techs = df['i'].unique()
+        # Duplicate the dataframe for each DR Shift tech
+        temp = pd.DataFrame({'yearhour': range(1, 8761), 'date': pd.date_range(start=f'1/1/{year}', periods=8760, freq='h')})
+        # # temp = pd.concat([temp] * len(shift_techs), ignore_index=True)
+        df = pd.merge(left = temp, right = df, how = 'outer').fillna(0)
+        df.set_index('date', inplace=True)
+        df['Values'] = df.GEN/df.CAP
+        if k == 'Charge':
+            df.Values *= -1
+        df.Values
+        df.loc[df.Values <0,'Values'] = 0
+        df = df[['Values']].fillna(0)
+        rep_gen[k] = df
+        output_csv = pd.concat([output_csv,df.rename(columns = {'Values':f'deploy_{k}'})],axis = 1)
+
+    plots_dr = {'DR Shift Resource Availability': {'Energy':(baseline_dfs['Energy'],'k','line'),
+                                'Deferred Charging':(baseline_dfs['Charge'],'red','fill'),
+                                'Baseline':(baseline_dfs['Discharge'],'green','fill')},
+                'DR Shift Rep-period: Deferred Charging': {'Available':(baseline_dfs['Charge'],'k','line'),
+                                            'Available Rep':(rep_dfs['Charge'],'grey','fill'),
+                                            'Deployed':(rep_gen['Charge'],'red','line')},
+                'DR Shift Rep-period: Discharge': {'Baseline':(baseline_dfs['Discharge'],'k','line'),
+                                            'Rep':(rep_dfs['Discharge'],'grey','fill'),
+                                            'Deploy':(rep_gen['Discharge'],'red','line')},
+                'DR Shift Rep-period: Energy': {'Available':(baseline_dfs['Energy'],'k','line'),
+                                            'Available Rep':(rep_dfs['Energy'],'grey','fill'),
+                                            'Deployed':(rep_gen['Energy'],'red','line')},
+            }
+
+    output_csv.to_csv(os.path.join(os.path.split(savepath)[0],f"dr_shift-{region}-{year}.csv"))
+
+    save_dict = {}
+    # Plot Charge, Discharge, Energy together through year
+    for title, plot_dict in plots_dr.items():
+        key = list(plot_dict.keys())
+        plot_dict[key[0]][0]['Unit'] = 1
+        f,ax = plots.plotyearbymonth(
+            plot_dict[key[0]][0],
+            plotcols= ('Unit'),
+            colors=['grey'], style='line', lwforline=0.5, ls = ':'
+        )
+        for k in key:
+            plots.plotyearbymonth(
+                plot_dict[k][0], 
+                plotcols= ([shift_tech + '|' +region] if shift_tech + '|' +region in plot_dict[k][0].columns else 'Values'),
+                colors=[plot_dict[k][1]], alpha = 0.5,
+                style = plot_dict[k][2],
+                f=f, ax=ax, 
+            )
+        ax.flat[0].set_title(f'{title}: {year}, {region}')
+        handles = [plt.Line2D([0], [0], color=plot_dict[k][1], lw=2) for k in key]
+        ax.flat[0].legend(handles, [f'{k}' for k in key], loc='upper left', bbox_to_anchor=(1, 1))
+
+        savename = f"dr_shift-{title.replace(':','').replace(' ','_')}-{region}-{year}.png"
+        f.savefig(os.path.join(savepath, savename))
 
 
 def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=None):
