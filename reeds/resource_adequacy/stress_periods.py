@@ -143,6 +143,51 @@ def calc_neue(dfeue_agg, dfload_agg):
     return neue
 
 
+def get_shortfall_totals_by_sample(case, t, iteration=0):
+    filepath = os.path.join(case, 'handoff', 'PRAS', f'PRAS_{t}i{iteration}-shortfall_totals_by_sample.h5')
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"{filepath} not found. Re-run PRAS with --write_shortfall_samples_totals 1.")
+    df = reeds.io.read_pras_results(filepath)
+    df.columns = df.columns.astype(str)
+    if 'sample' in df.columns:
+        df = df.set_index('sample')
+    elif df.index.name != 'sample':
+        df.index = pd.RangeIndex(1, len(df) + 1, name='sample')
+    return df.apply(pd.to_numeric, errors='coerce').clip(lower=0)
+
+
+def _sample_cvar(samples, alpha=0.95):
+    x = pd.Series(samples).dropna().astype(float)
+    if x.empty:
+        return np.nan
+
+    # Round before applying ceil to remove floating-point noise.
+    # For example, a mathematically exact tail size of 50 may be
+    # represented as 50.00000000000004, which would otherwise select 51 samples.
+    tail_size = round((1 - alpha) * len(x), 12)
+    n_tail = max(1, int(np.ceil(tail_size)))
+
+    return x.nlargest(n_tail).mean()
+
+def calc_cvar(shortfall_samples_agg, alpha=0.95):
+    """
+    CVAR from total shortfall by PRAS sample.
+    """
+    cvar = shortfall_samples_agg.apply(
+        lambda s: _sample_cvar(s, alpha=alpha),
+        axis=0,
+    )
+    return cvar
+
+
+def calc_ncvar(cvar, dfload_agg):
+    """
+    NCVAR = CVAR / total load, in ppm.
+    """
+    ncvar = cvar / dfload_agg.sum().reindex(cvar.index) * 1e6
+    return ncvar
+
+
 def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute']='peak'):
     """
     Get the peak hourly outage magnitude
@@ -192,6 +237,12 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
+    ### Get total shortfall samples for CVAR calculation
+    shortfall_samples = (
+        get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
+        .drop(columns=['USA'], errors='ignore')
+    )
+
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
     for level in levels:
@@ -212,6 +263,18 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
+        ## Calculate tail-based metrics (CVAR and NCVAR)
+        regions = [c for c in shortfall_samples.columns if c in rmap.index]
+        if len(regions):
+            shortfall_samples_agg = (
+                shortfall_samples[regions]
+                .rename(columns=rmap)
+                .T.groupby(level=0)
+                .sum().T
+            )
+            cvar = calc_cvar(shortfall_samples_agg, alpha=float(sw.GSw_PRM_CVARalpha))
+            ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
+            ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
@@ -268,7 +331,7 @@ def get_longest_events(
     dates = []
     for i, row in eue_events.iterrows():
         dates.append(
-            pd.Series(index=pd.date_range(row.start, row.end, freq='h'), data=1)
+            pd.Series(index=pd.date_range(row.start, row.end, freq='H'), data=1)
             .resample('D').count()
         )
     if len(dates):
@@ -511,13 +574,12 @@ def get_stress_periods(case, sw, t, iteration):
         for i,row in stressperiods_this_iteration.iterrows()
     ]
     covered_hours = [i for sublist in covered_hours for i in sublist]
-
-    ### Check all stress criteria; for regions that fail, add new stress periods
     _failed = {}
     _high_stress_periods = {}
     _shoulder_periods = {}
 
     stress_metrics = [i.lower() for i in sw.GSw_PRM_StressThresholdMetrics.split('/')]
+
     for stress_metric in stress_metrics:
         switch = RA_SWITCHES[stress_metric]
         for criterion in sw[switch].split('/'):
