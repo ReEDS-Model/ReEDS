@@ -5,9 +5,9 @@ dr_shed,2020
 evmc_rsc_Baseline,2020
 geo_rsc_ATB_2023,2015
 hydcost,2004
-PSHcostn,2004
 supplycurve_egs,2023
 supplycurve_geohydro,2023
+supplycurve_psh,2022
 supplycurve_upv,2023
 supplycurve_wind-ofs,2023
 supplycurve_wind-ons,2022

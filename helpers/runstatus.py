@@ -110,7 +110,7 @@ if __name__ == '__main__':
                     import pandas as pd
                     duration = pd.read_csv(
                         os.path.join(fullcase,'meta.csv'), skiprows=3).processtime.sum()
-                    print(f"{case:<{longest}}: {datetime.timedelta(seconds=int(duration))}")
+                    print(f"{case:<{longest+1}}: {datetime.timedelta(seconds=int(duration))}")
             else:
                 ### Get last .lst file
                 lstfiles = sorted(glob(os.path.join(fullcase,'lstfiles','*')))
