@@ -374,6 +374,7 @@ def check_threshold_and_choose_periods(
     dfeue_agg,
     dflole_agg,
     dfenergy_agg,
+    dfeue_agg_full,
 ):
     ## NEUE Example: criterion = 'transgrp_1'
     hierarchy_level, metric_threshold = criterion.split('_')
@@ -417,7 +418,8 @@ def check_threshold_and_choose_periods(
                 ## we're still not meeting the duration threshold.
                 metric_periods = {
                     region: get_longest_events(
-                        dfeue_agg[region], sw=sw,
+                        # dfeue_agg[region], sw=sw,
+                        dfeue_agg_full[region], sw=sw,
                         num_events=int(sw.GSw_PRM_StressIncrement),
                     )
                     for region in failed.index
@@ -525,7 +527,9 @@ def get_stress_periods(case, sw, t, iteration):
             ## Example: criterion = 'transgrp_1'
             hierarchy_level, metric_threshold = criterion.split('_')
             rmap = reeds.io.get_rmap(case=case, hierarchy_level=hierarchy_level)
-            dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
+            dfeue_agg_full = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
+            dfeue_agg = dfeue_agg_full.drop(covered_hours)            
+            # dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
             dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T.drop(covered_hours)
             dfenergy_agg = dfenergy.rename(columns=rmap).T.groupby(level=0).sum().T.drop(covered_hours)
             ## Get the stress periods
@@ -538,6 +542,7 @@ def get_stress_periods(case, sw, t, iteration):
                 dfeue_agg,
                 dflole_agg,
                 dfenergy_agg,
+                dfeue_agg_full,
             )
             if dictout is not None:
                 _failed[stress_metric, criterion] = dictout['failed']
