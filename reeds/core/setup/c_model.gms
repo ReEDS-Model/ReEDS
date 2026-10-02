@@ -2873,7 +2873,7 @@ eq_national_gen(t)$[tmodel(t)$national_gen_frac(t)$Sw_GenMandate]..
 * ---------------------------------------------------------------------------
 
 *gas used from each bin is the sum of all gas used
-eq_gasused(cendiv,h,t)$[tmodel(t)$tfuel(t)$((Sw_GasCurve=0) or (Sw_GasCurve=3))]..
+eq_gasused(cendiv,h,t)$[tmodel(t)$(not tfinito_all(t))$((Sw_GasCurve=0) or (Sw_GasCurve=3))]..
 
     sum{gb,GASUSED(cendiv,gb,h,t) }
 
@@ -2890,7 +2890,7 @@ eq_gasused(cendiv,h,t)$[tmodel(t)$tfuel(t)$((Sw_GasCurve=0) or (Sw_GasCurve=3))]
 * ---------------------------------------------------------------------------
 
 * gas from each bin needs to less than its capacity
-eq_gasbinlimit(cendiv,gb,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=0)]..
+eq_gasbinlimit(cendiv,gb,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=0)]..
 
     gaslimit(cendiv,gb,t)
 
@@ -2901,7 +2901,7 @@ eq_gasbinlimit(cendiv,gb,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=0)]..
 
 * ---------------------------------------------------------------------------
 
-eq_gasbinlimit_nat(gb,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=3)]..
+eq_gasbinlimit_nat(gb,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=3)]..
 
    gaslimit_nat(gb,t)
 
@@ -2914,7 +2914,7 @@ eq_gasbinlimit_nat(gb,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=3)]..
 
 * ---------------------------------------------------------------------------
 
-eq_gasaccounting_regional(cendiv,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
+eq_gasaccounting_regional(cendiv,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
     sum{fuelbin, VGASBINQ_REGIONAL(fuelbin,cendiv,t) }
 
@@ -2927,7 +2927,7 @@ eq_gasaccounting_regional(cendiv,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
 
 * ---------------------------------------------------------------------------
 
-eq_gasaccounting_national(t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
+eq_gasaccounting_national(t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
     sum{fuelbin,VGASBINQ_NATIONAL(fuelbin,t) }
 
@@ -2940,7 +2940,7 @@ eq_gasaccounting_national(t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
 
 * ---------------------------------------------------------------------------
 
-eq_gasbinlimit_regional(fuelbin,cendiv,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
+eq_gasbinlimit_regional(fuelbin,cendiv,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
     Gasbinwidth_regional(fuelbin,cendiv,t)
 
@@ -2951,7 +2951,7 @@ eq_gasbinlimit_regional(fuelbin,cendiv,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
 
 * ---------------------------------------------------------------------------
 
-eq_gasbinlimit_national(fuelbin,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
+eq_gasbinlimit_national(fuelbin,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
     Gasbinwidth_national(fuelbin,t)
 
@@ -2968,7 +2968,7 @@ eq_gasbinlimit_national(fuelbin,t)$[tmodel(t)$tfuel(t)$(Sw_GasCurve=1)]..
 * defer to FINITO representation when models are linked (see eq_use_bs_reeds)
 
 * ---------------------------------------------------------------------------
-eq_bioused(r,t)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }$tmodel(t)$tfuel(t)]..
+eq_bioused(r,t)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }$tmodel(t)$(not tfinito_all(t))]..
 
     sum{bioclass, BIOUSED(bioclass,r,t) }
 
@@ -2987,7 +2987,7 @@ eq_bioused(r,t)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }$tmodel(t)$tf
 * ---------------------------------------------------------------------------
 
 * biomass consumption limit is annual
-eq_biousedlimit(bioclass,usda_region,t)$[tmodel(t)$tfuel(t)]..
+eq_biousedlimit(bioclass,usda_region,t)$[tmodel(t)$(not tfinito_all(t))]..
 
     biosupply(usda_region,bioclass,"cap")
 
@@ -3970,7 +3970,7 @@ eq_co2_cumul_limit(cs,t)
 $ifthene.linked_co2_storage_cumul_limit Sw_FINITO_Link==1
     - sum{(r,h,tt)
         $[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)
-        $r_cs(r,cs)$(tfuel(tt))],
+        $r_cs(r,cs)$(not tfinito_all(tt))],
         yearweight(tt) * hours(h) * EXTRACT_CO2_CS(cs,r,h,tt) }$[tfinito(t)]
 $endif.linked_co2_storage_cumul_limit 
 ;
