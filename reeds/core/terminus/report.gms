@@ -1826,7 +1826,7 @@ error_check('z') = (
 * account for costs from FINITO: deflate from $2018 to $2004,
 * remove any FINITO scaling, and then apply ReEDS scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
-        + cost_scale * ( Z_finito.l(t)$t_finito(t) * deflator('%FINITO_dollaryear%') / obj_scale )
+        + cost_scale * ( Z_finito.l(t)$tfinito(t) * deflator('%FINITO_dollaryear%') / obj_scale )
 $endif.linked_objective 
     }
 ) / z.l ;

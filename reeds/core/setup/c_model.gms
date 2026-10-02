@@ -400,7 +400,7 @@ eq_loadcon(r,h,t)$tmodel(t)..
 * USE_ELE_FINITO is end-use, so divide by (1-distloss) to convert it to busbar
 * [MWh/hr = MW]
 $ifthene.linked_load Sw_FINITO_Link==1
-    + (USE_ELE_FINITO(r,h,t) / (1.0 - distloss))$[t_finito(t)] * (1 + prm(r,t)$h_stress(h))
+    + (USE_ELE_FINITO(r,h,t) / (1.0 - distloss))$[tfinito(t)] * (1 + prm(r,t)$h_stress(h))
 $endif.linked_load
 ;
 
@@ -3560,7 +3560,7 @@ eq_h2_demand(p,t)$[(sameas(p,"H2"))$tmodel(t)$(yeart(t)>=h2_demand_start)$(Sw_H2
 
 * hydrogen demand from industry when linked with FINITO: demand [MMBtu/yr] * conversion [metric tons-H2/MMBtu-H2]
 $ifthene.linked_h2_nat Sw_FINITO_Link==1
-    + [sum{(r,h)$h_rep(h), hours(h) * USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu }]$t_finito(t)
+    + [sum{(r,h)$h_rep(h), hours(h) * USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu }]$tfinito(t)
 $endif.linked_h2_nat
 ;
 
@@ -3596,7 +3596,7 @@ eq_h2_demand_regional(r,h,t)
 
 * when linked include regional hydrogen demand for industry from FINITO
 $ifthene.linked_h2_reg Sw_FINITO_Link==1
-    + [ USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu ]$t_finito(t)
+    + [ USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu ]$tfinito(t)
 $endif.linked_h2_reg
 ;
 
@@ -3842,7 +3842,7 @@ eq_co2_capture(r,h,t)
 
 * capture from industry when linked with FINITO [metric_tons-CO2/hr]: 
 $ifthene.linked_co2_capture Sw_FINITO_Link==1
-    + [CAPTURE_CO2EM(r,h,t) / co2_scale]$[t_finito(t)]
+    + [CAPTURE_CO2EM(r,h,t) / co2_scale]$[tfinito(t)]
 $endif.linked_co2_capture
 ;
 
@@ -3885,7 +3885,7 @@ eq_co2_spurline_caplimit(r,cs,h,t)
 * (ReEDS-FINITO) extraction of CO2 [metric tons per hour] 
 * calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * use [scaled_metric_tons-CO2/yr] 
 $ifthene.linked_co2_spurline_caplimit Sw_FINITO_Link==1
-    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[t_finito(t)]
+    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[tfinito(t)]
 $endif.linked_co2_spurline_caplimit
 ;
 
@@ -3918,7 +3918,7 @@ $ifthene.linked_co2_sink Sw_FINITO_Link==1
         + EXTRACT_CO2_CS(cs,r,h,t)}
 *       total use of CO2, equivalent to supply 
         - USE_CO2(r,h,t) 
-    ]$[t_finito(t)]
+    ]$[tfinito(t)]
 $endif.linked_co2_sink
 
 ;
@@ -3942,7 +3942,7 @@ eq_co2_injection_limit(cs,h,t)
 
 * (ReEDS-FINITO) extraction of CO2 for use [metric tons per hour] 
 $ifthene.linked_co2_injection_limit Sw_FINITO_Link==1
-    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[t_finito(t)]
+    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[tfinito(t)]
 $endif.linked_co2_injection_limit
 ;
 
@@ -3971,7 +3971,7 @@ $ifthene.linked_co2_storage_cumul_limit Sw_FINITO_Link==1
     - sum{(r,h,tt)
         $[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)
         $r_cs(r,cs)$(tfuel(tt))],
-        yearweight(tt) * hours(h) * EXTRACT_CO2_CS(cs,r,h,tt) }$[t_finito(t)]
+        yearweight(tt) * hours(h) * EXTRACT_CO2_CS(cs,r,h,tt) }$[tfinito(t)]
 $endif.linked_co2_storage_cumul_limit 
 ;
 * ---------------------------------------------------------------------------

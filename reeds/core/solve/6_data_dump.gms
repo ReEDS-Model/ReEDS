@@ -162,7 +162,7 @@ h2_usage_regional(r,h,t)$tcur(t) =
             GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
 *       regional hydrogen demand for industry (FINITO)
 $ifthene.linked_h2_reg_report Sw_FINITO_Link==1
-        + [USE_H2_FINITO.l(r,h,t) * h2_metric_tons_per_mmbtu ]$t_finito(t)  
+        + [USE_H2_FINITO.l(r,h,t) * h2_metric_tons_per_mmbtu ]$tfinito(t)  
 $endif.linked_h2_reg_report
     )
 ;
