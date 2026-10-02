@@ -132,7 +132,7 @@ def append_csp_profiles(cf_rep, sw):
         sw["GSw_CSP_Types"] = [int(i) for i in sw["GSw_CSP_Types"].split("_")]
     ### Get the CSP profiles
     cfcsp = cf_rep[[c for c in cf_rep if c.startswith("csp")]].copy()
-    ### As in cfgather.py, we duplicate the csp1 profiles for each CSP tech
+    ### Duplicate the csp1 profiles for each CSP tech
     cfcsp_out = pd.concat(
         (
             [
@@ -203,9 +203,6 @@ def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     load_in = reeds.io.read_file(
         os.path.join(inputs_case,'load.h5')).unstack(level=0)
     load_in.columns = load_in.columns.rename(['r','t'])
-    ### load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
-    scalars = reeds.io.get_scalars(inputs_case)
-    load_in *= (1 - scalars['distloss'])
 
     ### Add time index
     load_in.index = load_in.index.map(hmap_allyrs.set_index('timestamp')['actual_h']).rename('h')
