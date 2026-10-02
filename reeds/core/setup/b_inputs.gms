@@ -5228,6 +5228,9 @@ geo_bin1_add(i,r)$[geo_hydro(i)$cap_prescribed_ir(i,r)] =
 * existing resource is already sufficient to cover prescriptions
 geo_bin1_add(i,r)$[geo_hydro(i)$(geo_bin1_add(i,r) < 0)] = 0 ;
 
+* Round up with a 1 MW margin so rounding in e_solveprep can't leave bin1 short of prescriptions
+geo_bin1_add(i,r)$[geo_hydro(i)$geo_bin1_add(i,r)] = ceil(geo_bin1_add(i,r)) + 1 ;
+
 * Add any additional resource needed to the first bin of the supply curve
 m_rsc_dat(r,i,"bin1","cap")$[geo_hydro(i)$geo_bin1_add(i,r)] =
     m_rsc_dat(r,i,"bin1","cap") + geo_bin1_add(i,r) ;
