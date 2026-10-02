@@ -397,7 +397,7 @@ eq_loadcon(r,h,t)$tmodel(t)..
 
 * [plus] load for industrial and converted fuel facilities (FINITO),
 * including the PRM for stress periods
-* USE_ELE_FINITO is end-use, so divide by (1-distloss) to convert it to busbar
+* USE_ELE_FINITO is enduse, so divide by (1-distloss) to convert it to busbar
 * [MWh/hr = MW]
 $ifthene.linked_load Sw_FINITO_Link==1
     + (USE_ELE_FINITO(r,h,t) / (1.0 - distloss))$[tfinito(t)] * (1 + prm(r,t)$h_stress(h))

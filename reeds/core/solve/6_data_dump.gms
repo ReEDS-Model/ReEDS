@@ -271,7 +271,7 @@ flex_load_opt(r,h) = sum{(flex_type,t)$tcur(t), FLEX.l(flex_type,r,h,t) } ;
 
 ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 
-* FINITO load
+* FINITO load, converted from enduse to busbar
 $ifthene.linked_load Sw_FINITO_Link==1
 * limit to representative timeslices since prep_data.py maps these to rep-period timestamps
     load_finito_rt(r,h,t)$h_rep(h) = USE_ELE_FINITO.l(r,h,t) / (1.0 - distloss);
