@@ -443,9 +443,57 @@ def check_numperiods(sw, threshold=24, force=0):
                 raise ValueError(err)
 
 
+def check_islands(sw, force=0):
+    """
+    Check if the choice of region resolution results in islanded zones
+    (which can lead to resource adequacy challenges) or a single zone
+    (which is not supported by ReEDS2PRAS)
+
+    Inputs for testing:
+        sw = {
+            'GSw_ZoneSet': 'z90',
+            'GSw_Region': 'transreg/PJM',
+            'pras': '2',
+        }
+    """
+    zones = reeds.inputs.parse_regions(**sw)
+    itls = reeds.inputs.get_itls(GSw_ZoneSet=sw['GSw_ZoneSet'])
+    dfitl = itls.loc[(itls.r.isin(zones)) & (itls.rr.isin(zones))].copy()
+    islands = [r for r in zones if r not in dfitl[['r','rr']].stack().values]
+
+    if (len(zones) == 1) and int(sw['pras']):
+        err = (
+            f"The system specified by GSw_ZoneSet = {sw['GSw_ZoneSet']} and "
+            f"GSw_Region = {sw['GSw_Region']} results in a single zone: {zones[0]}.\n"
+            "ReEDS2PRAS does not support single-zone systems. Please run a larger system."
+        )
+        raise ValueError(err)
+
+    if not len(islands):
+        return
+    else:
+        msg = (
+            f"The system specified by GSw_ZoneSet = {sw['GSw_ZoneSet']} and "
+            f"GSw_Region = {sw['GSw_Region']} results in {len(islands)} islanded zones:\n    "
+            f"{'\n    '.join(islands)}\n"
+            f"This approach may lead to resource adequacy challenges.\n"
+            f"Consider running a larger system.\n"
+            f"If you proceed with this system, be sure to check the resource adequacy results."
+        )
+        print(msg)
+        err = f'{len(islands)} islanded zones: {islands}'
+        if force:
+            warn(err)
+        else:
+            proceed = str(input(f'Do you want to proceed with {len(islands)} islanded zones? y/[n]'))
+            if proceed.lower() not in ['y','yes']:
+                raise ValueError(err)
+
+
 def check_switches(sw, force=0):
     """Run all the checks"""
     check_numperiods(sw, force=force)
+    check_islands(sw, force=force)
     if force < 2:
         check_compatibility(sw)
         check_GSw_LoadSiteReg(sw)
