@@ -433,7 +433,7 @@ def check_numperiods(sw, threshold=24, force=0):
             'https://reeds-model.github.io/ReEDS/user_guide.html#temporal-resolution-switches '
             'for suggestions on how to increase the number of representative periods when '
             'using a small number of regions.\n'
-            'The simplest approach is to set GSw_HourlyClusteAlgorithm to "hierarchical" '
+            'The simplest approach is to set GSw_HourlyClusterAlgorithm to "hierarchical" '
             f'and GSw_HourlyNumClusters ≥ {threshold}.\n'
         )
         print(msg)
