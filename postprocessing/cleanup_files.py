@@ -16,6 +16,9 @@ file_levels = {
         os.path.join('inputs_case', r'^recf_.*\.h5$'),
         os.path.join('inputs_case', 'unitdata_orig.h5'),
         '225*',
+        ## ReEDS2PRAS scratch files (deleted automatically unless run failed)
+        os.path.join('handoff', 'PRAS', r'^PRAS_.*\.pras$'),
+        os.path.join('handoff', 'reeds_data', r'^.*\.(csv|h5)$'),
     ],
     ## Intermediate input files and duplicates
     1: [
