@@ -11,6 +11,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
 
+ISLAND_EXCEPTIONS = ['TX', 'ERCOT', 'TX_ERCOT']
+
+
 def check_compatibility(sw):
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
@@ -423,7 +426,7 @@ def check_numperiods(sw, threshold=24, force=0):
         return
     else:
         msg = (
-            'The estimated number of representative periods for your switch settings is '
+            '\nThe estimated number of representative periods for your switch settings is '
             f'{numperiods}, which is less than the threshold of {threshold}.\n'
             'These conditions should only be used for testing and are not appropriate for '
             'analysis.\nSee '
@@ -459,13 +462,14 @@ def check_islands(sw, force=0):
     zones = reeds.inputs.parse_regions(**sw)
     itls = reeds.inputs.get_itls(GSw_ZoneSet=sw['GSw_ZoneSet'])
     dfitl = itls.loc[(itls.r.isin(zones)) & (itls.rr.isin(zones))].copy()
-    islands = [r for r in zones if r not in dfitl[['r','rr']].stack().values]
+    not_islands = dfitl[['r','rr']].stack().unique().tolist()
+    islands = [r for r in zones if r not in not_islands + ISLAND_EXCEPTIONS]
 
     if (len(zones) == 1) and int(sw['pras']):
         err = (
-            f"The system specified by GSw_ZoneSet = {sw['GSw_ZoneSet']} and "
-            f"GSw_Region = {sw['GSw_Region']} results in a single zone: {zones[0]}.\n"
-            "ReEDS2PRAS does not support single-zone systems. Please run a larger system."
+            f'\nThe system specified by GSw_ZoneSet = {sw["GSw_ZoneSet"]} and '
+            f'GSw_Region = {sw["GSw_Region"]} results in a single zone: {zones[0]}.\n'
+            'ReEDS2PRAS does not support single-zone systems. Please run a larger system.'
         )
         raise ValueError(err)
 
@@ -473,12 +477,12 @@ def check_islands(sw, force=0):
         return
     else:
         msg = (
-            f"The system specified by GSw_ZoneSet = {sw['GSw_ZoneSet']} and "
-            f"GSw_Region = {sw['GSw_Region']} results in {len(islands)} islanded zones:\n    "
-            f"{'\n    '.join(islands)}\n"
-            f"This approach may lead to resource adequacy challenges.\n"
-            f"Consider running a larger system.\n"
-            f"If you proceed with this system, be sure to check the resource adequacy results."
+            f'\nThe system specified by GSw_ZoneSet = {sw["GSw_ZoneSet"]} and '
+            f'GSw_Region = {sw["GSw_Region"]} results in {len(islands)} islanded zones:\n    '
+            f'{"\n    ".join(islands)}\n'
+            f'This approach may lead to resource adequacy challenges.\n'
+            f'Consider running a larger system.\n'
+            f'If you proceed with this system, be sure to check the resource adequacy results.'
         )
         print(msg)
         err = f'{len(islands)} islanded zones: {islands}'
