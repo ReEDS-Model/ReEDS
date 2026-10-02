@@ -26,7 +26,7 @@ tmodel("%cur_year%") = yes ;
 * (ReEDS-FINITO) also reset tfinito
 $ifthene.linked_finito_time %GSw_FINITO_Link% == 1
 tfinito(t) = no ; 
-tfinito(t)$[tmodel(t)$(t.val>=%FINITO_first_year%)$(t.val<=endyear)] = yes ;
+tfinito(t)$[tmodel(t)$tfinito_all(t)] = yes ;
 $endif.linked_finito_time
 
 
