@@ -638,7 +638,7 @@ Additionally, if you want to re-run a given scenario without having to run all o
         | `--simult_runs` / `-r` | Number of simultaneous runs. If negative, run all simultaneously |
         | `--forcelocal` / `-l` | Force model to run locally instead of submitting a slurm job |
         | `--restart` / `-r` | Switch to restart existing ReEDS runs |
-        | `--skip_checks` / `-f` | Force run, skipping checks on conda environment and switches |
+        | `--force` / `-f` | Force run, skipping checks on conda environment and switches |
         | `--debug` / `-d` | Run in debug mode (same behavior as debug switch in cases.csv) |
         | `--debugnode` / `-n` | Run using debug specifications for slurm on an hpc system |
 
