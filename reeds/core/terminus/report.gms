@@ -523,7 +523,7 @@ repbioprice(r,t)$[tmodel_new(t)$(not tfinito_all(t))] = max{0, smax{bioclass$BIO
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
 repbioprice(r,t)$[tmodel_new(t)$(tfinito_all(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
-    1/(obj_scale) * 1/(pvf_onm(t)) * deflator('%FINITO_dollaryear%') *
+    1/(cost_scale_finito) * 1/(pvf_onm(t)) * deflator('%FINITO_dollaryear%') *
     sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
     / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
 ;
@@ -581,13 +581,13 @@ $ifthene.finitogasprice Sw_FINITO_Link == 1
 $ifthene.finitodetailedNG Sw_DetailedNG == 0
 * approach with GSw_FixedCostSupply=1 or default supply curves
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
-    deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+    deflator('%FINITO_dollaryear%') * 1/(cost_scale_finito) * 1/(pvf_onm(t)) 
     * eq_supplydemand_fsc.m('NG',cendiv,t)
 ;
 $else.finitodetailedNG
 * approach with detailed fuels representation (GSw_DetailedFuels=1)
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
-    deflator('%FINITO_dollaryear%') * 1/(obj_scale) * 1/(pvf_onm(t)) 
+    deflator('%FINITO_dollaryear%') * 1/(cost_scale_finito) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
     * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) ]
 ;
@@ -1435,12 +1435,15 @@ systemcost_techba("op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
               + sum{(v,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
                          $(not gas(i))$(not bio(i))$(not cofire(i))
                          $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) 
+                }$(not tfinito_all(t))
+
 
 *cofire coal consumption - cofire bio consumption already accounted for in accounting of BIOUSED
               + sum{(v,h)$[valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
                    (1-bio_cofire_perc) * hours(h) * heat_rate(i,v,r,t)
-                   * fuel_price("coal-new",r,t) * GEN.l(i,v,r,h,t) }
+                   * fuel_price("coal-new",r,t) * GEN.l(i,v,r,h,t) 
+                }$(not tfinito_all(t))
 
 *cost of natural gas fuel
               + sum{cendiv$r_cendiv(r,cendiv), gascost_cendiv(cendiv,t) * gasshare_techba(i,r,cendiv,t) }
