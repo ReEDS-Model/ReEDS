@@ -23,7 +23,8 @@ import os
 import numpy as np
 import pandas as pd
 from plcoe_pitch import (display_tech, load_full_range, vcf_matched_scale, vcf_panel_techs,
-                         _fit_form, r2_y, load_style_colors, tech_style_path, normalize_tech_name)
+                         _fit_form, r2_y, load_style_colors, tech_style_path, normalize_tech_name,
+                         years as table_years)
 from report_switches import dollar_year
 
 # User inputs
@@ -215,6 +216,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;
 td.t{font-weight:600;color:var(--ink);}
 td.out{color:var(--muted);opacity:.62;}
 .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:.5rem;}
+.sub{color:var(--muted);font-size:.78em;}
 .eq{font-family:"IBM Plex Mono",monospace;font-size:.93em;color:var(--ink);
   background:var(--rule-soft);padding:.08em .38em;border-radius:3px;}
 footer{padding-top:2.6rem;font-size:.8rem;color:var(--muted);}
@@ -487,8 +489,43 @@ def build_html(output_dir, core_path):
          ('Cost factor, corrected', True), ('VCF, static', True), ('VCF, corrected', True)],
         gas_rows)
 
+    # ---- 02d capacity credit ----
+    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 9,
+                    'Capacity credit of new builds against market share.',
+                    'For each year&rsquo;s new builds, the reserve-margin value they earned divided '
+                    'by what the same capacity would have earned in the same regions had it been '
+                    'available in every stress hour: '
+                    '<span class="eq">&Sigma;<sub>r</sub> val_resmarg / '
+                    '&Sigma;<sub>r</sub> MW &middot; res_marg_ann</span>, where res_marg_ann is the '
+                    'sum of a region&rsquo;s stress-hour reserve-margin prices. Both sums run over '
+                    'regions before the division, matching how the regional quantity is itself '
+                    'built: report.gms forms val_resmarg as a sum over stress hours of firm '
+                    'contribution times that hour&rsquo;s price, so the number is price-weighted at '
+                    'every level. Because those prices are concentrated in a few hours, this sits '
+                    'below an hour-counting ELCC for resource-limited technologies. Storage is net '
+                    'of charging, so its credit is a round-trip-net quantity.', order)
+    cc_df = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit.csv')
+    cc_rows, cc_years = [], []
+    if not cc_df.empty:
+        #The figure carries the whole trajectory; the table gives anchor values at the
+        #report's headline years, since one column per model year runs to thirteen.
+        cc_years = [y for y in table_years if y in set(cc_df['year'])]
+        wide = cc_df.pivot_table(index='tech', columns='year', values='capacity_credit')
+        share = cc_df.pivot_table(index='tech', columns='year', values='gen_frac')
+        for tech in wide.index:
+            cells = ''.join(
+                f'<td class="num">{_num(wide.loc[tech, y], "{:.3f}")}'
+                + (f'<span class="sub"> {share.loc[tech, y]:.0%}</span>'
+                   if pd.notna(share.loc[tech, y]) else '') + '</td>'
+                for y in cc_years)
+            cc_rows.append(f'<tr>{tech_cell(tech)}{cells}</tr>')
+    cc_table = table(
+        'Capacity credit of each year&rsquo;s new builds, with that technology&rsquo;s market '
+        'share in small type beside it',
+        [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
+
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 9,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 10,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -505,7 +542,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 10
+    map_figs, n = '', 11
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -705,6 +742,16 @@ def build_html(output_dir, core_path):
      'on the cost side - a re-solve would build less gas - while the linear coefficient is '
      'extrapolated well beyond the quantities it was calibrated on, which pushes the other way. '
      'Neither figure nor table is a model result.</p></div>', gas_fuel_fig, gas_fig, gas_decline_table, gas_table)}
+
+{sec('02d', 'Capacity credit of new builds',
+     '<div class="col"><p>The reserve-margin component of value per MW, expressed as a share of '
+     'what a perfectly firm MW earns in the same place and year. It is the part of the value '
+     'factor that firmness accounts for, so it is plotted against the same market-share axis as '
+     'the curves above. The quantity is read from each technology&rsquo;s own forcing run and is '
+     'only defined under the stress-period reserve margin '
+     '(<span class="eq">GSw_PRM_CapCredit=0</span>); under the capacity-credit formulation ReEDS '
+     'does not write val_resmarg for non-VRE and the section is skipped.</p></div>',
+     cc_fig, cc_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '

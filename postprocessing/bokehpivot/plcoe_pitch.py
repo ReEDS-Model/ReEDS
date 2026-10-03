@@ -740,6 +740,119 @@ def apply_available_basis(df, valcostfac_core_path):
     return out
 
 
+def new_build_capacity_credit(run_dir, prefix):
+    """Capacity credit of each year's new builds: the share of fully-firm capacity value captured.
+
+        credit(t) = sum_r val_resmarg(r,t) / sum_r [ MW(r,t) * res_marg_ann(r,t) ]
+
+    The denominator is what the same new MW would have earned in its own region had it been
+    perfectly firm, since res_marg_ann(r,t) is the sum of that region's stress-hour reserve-margin
+    prices - exactly what a MW available in every stress hour collects.
+
+    It is a ratio of sums across regions, not a MW-weighted mean of regional credits, because that
+    is already the rule the regional number itself uses. report.gms builds val_resmarg as
+    sum over stress hours of (firm contribution * that hour's price), so the regional credit is a
+    price-weighted collapse over hours; aggregating regions by MW instead would switch rules
+    partway up the hierarchy. ReEDS' own national benchmark sums value across regions too. The
+    difference is not cosmetic - res_marg_ann spans $16k to $127k/MW across regions in 2050, and
+    the tight, expensive regions are where resource-limited techs do worst, so the MW-weighted
+    mean reads high (battery 2040: 0.45 against 0.34).
+
+    Being value-weighted over stress hours, this sits below a conventional hour-counting ELCC for
+    resource-limited techs: stress-hour prices are extremely concentrated (CV 4.7-13.2 within a
+    region; the top 10% of the 176 hours carry essentially all the annual firm value), so missing
+    the few priciest hours costs more here than missing many cheap ones.
+
+    Returns an empty Series rather than a wrong one when res_marg_ann is absent, which is the case
+    under the capacity-credit PRM formulation (GSw_PRM_CapCredit=1): report.gms:1066 notes
+    val_resmarg is simply not written for non-VRE there.
+    """
+    out = os.path.join(run_dir, 'outputs')
+    val = pd.read_csv(os.path.join(out, 'valnew.csv'),
+                      names=['metric', 'i', 'r', 't', 'val'], header=0)
+    price = pd.read_csv(os.path.join(out, 'reqt_price.csv'),
+                        names=['req', 'na', 'r', 'h', 't', 'price'], header=0)
+    ann = price.loc[price['req'] == 'res_marg_ann', ['r', 't', 'price']]
+    if ann.empty:
+        print(f'No res_marg_ann in {run_dir}; capacity credit needs GSw_PRM_CapCredit=0.')
+        return pd.Series(dtype=float)
+    sel = val[val['i'].str.startswith(prefix) & val['metric'].isin(['MW', 'val_resmarg'])]
+    wide = sel.pivot_table(index=['i', 'r', 't'], columns='metric', values='val').reset_index()
+    if 'val_resmarg' not in wide or 'MW' not in wide:
+        return pd.Series(dtype=float)
+    m = wide.merge(ann, on=['r', 't'], how='left')
+    m = m[(m['MW'] > 0) & (m['price'] > 0)]
+    if m.empty:
+        return pd.Series(dtype=float)
+    #A region with capacity but no val_resmarg row earned nothing there; GAMS omits zeros, and
+    #sum() skipping the NaN gives it the zero it should have in the numerator while it still
+    #counts in the denominator.
+    m['firm_value'] = m['MW'] * m['price']
+    nat = m.groupby('t')[['val_resmarg', 'firm_value']].sum()
+    return (nat['val_resmarg'] / nat['firm_value']).rename('capacity_credit')
+
+
+def capacity_credit_frame(df):
+    """Capacity credit per (tech, year), joined to the market share the rest of the report plots.
+
+    Each tech is read from the run that forces it, the same pairing the other per-run quantities
+    use. Techs whose prefix is not in avail_basis_prefix are skipped.
+    """
+    from reeds_vs_rev import tech_run_dirs, scenarios_path
+    run_dirs = tech_run_dirs(df, scenarios_path)
+    rows = []
+    for tech, prefix in avail_basis_prefix.items():
+        if tech not in run_dirs or tech not in set(df['tech']):
+            continue
+        try:
+            credit = new_build_capacity_credit(run_dirs[tech], prefix)
+        except FileNotFoundError as e:
+            print(f'capacity credit unavailable for {tech} ({e.filename}); skipped.')
+            continue
+        if credit.empty:
+            continue
+        sub = df.loc[df['tech'] == tech, ['tech', 'year', 'gen_frac']].drop_duplicates()
+        sub = sub.assign(capacity_credit=sub['year'].map(credit))
+        rows.append(sub.dropna(subset=['capacity_credit']))
+    if not rows:
+        return pd.DataFrame(columns=['tech', 'year', 'gen_frac', 'capacity_credit'])
+    return pd.concat(rows, ignore_index=True).sort_values(['tech', 'year'])
+
+
+def plot_capacity_credit(df, output_path):
+    """Capacity credit against market share, every tech on one pair of axes.
+
+    Market share rather than year, matching the rest of the report: the decline in capacity credit
+    is one of the mechanisms behind the value-factor decline, so it reads against the same x as the
+    value-factor curves. One axes rather than panels - six monotone curves separate cleanly, and
+    the point is the contrast between the dispatchable techs' flat lines and the resource-limited
+    techs' collapse.
+    """
+    cc = capacity_credit_frame(df)
+    if cc.empty:
+        return None, cc
+    colors = build_color_map(sorted(cc['tech'].unique()))
+    fig, ax = plt.subplots(figsize=(7.2, 4.6))
+    order = sorted(cc['tech'].unique(), key=lambda t: -cc.loc[cc['tech'] == t, 'capacity_credit'].mean())
+    for tech in order:
+        d = cc[cc['tech'] == tech].sort_values('gen_frac')
+        ax.plot(d['gen_frac'] * 100, d['capacity_credit'], marker='o', ms=4, lw=1.6,
+                color=colors[tech], label=display_tech(tech))
+    ax.axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
+    ax.annotate('perfectly firm', xy=(0.01, 1.0), xycoords=('axes fraction', 'data'),
+                va='bottom', ha='left', fontsize=7.5, color=cost_color)
+    ax.set_xlabel('Market share (% of generation)')
+    ax.set_ylabel('Capacity credit of new builds')
+    ax.set_ylim(bottom=0)
+    ax.grid(alpha=0.25, lw=0.6)
+    #Centre right: the dispatchable curves sit above 0.75 and the resource-limited ones below
+    #0.4 over the whole range, so the band between them is the one reliably empty region.
+    ax.legend(loc='center right', fontsize=8, frameon=False, ncol=2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, cc
+
+
 def apply_post_curtailment(df, valcostfac_core_path):
     """Put VRE value and cost per MWh generated, matching the dispatched basis of the other techs.
 
@@ -1246,6 +1359,17 @@ def make_figs(valcostfac_core_path, output_dir=None):
             df_vcf, os.path.join(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png'),
             form='power')
         plt.close(fig_vcf_bars)
+        #Capacity credit of each year's new builds, against the same market-share axis. Read from
+        #the runs rather than from valcostfac, and on the full range for the same reason the VCF
+        #figures are: the collapse happens above the gen_frac_max cut.
+        try:
+            fig_cc, cc = plot_capacity_credit(
+                df_vcf, os.path.join(output_dir, 'plcoe_pitch_capacity_credit.png'))
+            if fig_cc is not None:
+                plt.close(fig_cc)
+        except Exception as e:
+            print(f'Capacity-credit figure skipped ({type(e).__name__}: {e}).')
+            cc = pd.DataFrame()
         plt.close(fig_vcf_lin)
         plt.close(fig_vcf_pow)
         plt.close(fig_vcf_pow_sync)
@@ -1261,6 +1385,7 @@ def make_figs(valcostfac_core_path, output_dir=None):
               ignore_index=True).to_csv(
         os.path.join(output_dir, 'plcoe_pitch_vcf_scales.csv'), index=False)
     decomp.to_csv(os.path.join(output_dir, 'plcoe_pitch_vcf_decomposition.csv'), index=False)
+    cc.to_csv(os.path.join(output_dir, 'plcoe_pitch_capacity_credit.csv'), index=False)
     return df
 
 
