@@ -811,42 +811,61 @@ def capacity_credit_frame(df):
             continue
         if credit.empty:
             continue
+        #Cumulative national capacity of the tech in its own forcing run, the alternative x axis.
+        cap = pd.read_csv(os.path.join(run_dirs[tech], 'outputs', 'cap_ivrt.csv'),
+                          names=['i', 'v', 'r', 't', 'mw'], header=0)
+        cap_gw = cap[cap['i'].str.startswith(prefix)].groupby('t')['mw'].sum() / 1000
         sub = df.loc[df['tech'] == tech, ['tech', 'year', 'gen_frac']].drop_duplicates()
-        sub = sub.assign(capacity_credit=sub['year'].map(credit))
+        sub = sub.assign(capacity_credit=sub['year'].map(credit),
+                         cap_gw=sub['year'].map(cap_gw))
         rows.append(sub.dropna(subset=['capacity_credit']))
     if not rows:
-        return pd.DataFrame(columns=['tech', 'year', 'gen_frac', 'capacity_credit'])
+        return pd.DataFrame(columns=['tech', 'year', 'gen_frac', 'cap_gw', 'capacity_credit'])
     return pd.concat(rows, ignore_index=True).sort_values(['tech', 'year'])
 
 
-def plot_capacity_credit(df, output_path):
-    """Capacity credit against market share, every tech on one pair of axes.
+def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
+    """Capacity credit against market share or against cumulative capacity, every tech on one
+    pair of axes.
 
-    Market share rather than year, matching the rest of the report: the decline in capacity credit
-    is one of the mechanisms behind the value-factor decline, so it reads against the same x as the
-    value-factor curves. One axes rather than panels - six monotone curves separate cleanly, and
-    the point is the contrast between the dispatchable techs' flat lines and the resource-limited
-    techs' collapse.
+    Market share matches the rest of the report: the decline in capacity credit is one of the
+    mechanisms behind the value-factor decline, so it reads against the same x as the value-factor
+    curves. Cumulative capacity answers a different question - how much of a technology the system
+    can absorb before firmness stops being rewarded - and separates techs that market share puts
+    on top of each other, since a gigawatt of storage and a gigawatt of wind are nowhere near the
+    same share of generation. It runs on a log axis because the techs span twenty gigawatts to
+    three terawatts.
+
+    One axes rather than panels: six monotone curves separate cleanly, and the point is the
+    contrast between the dispatchable techs' flat lines and the resource-limited techs' collapse.
     """
-    cc = capacity_credit_frame(df)
-    if cc.empty:
+    if cc is None:
+        cc = capacity_credit_frame(df)
+    if cc.empty or x not in cc:
         return None, cc
     colors = build_color_map(sorted(cc['tech'].unique()))
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
     order = sorted(cc['tech'].unique(), key=lambda t: -cc.loc[cc['tech'] == t, 'capacity_credit'].mean())
     for tech in order:
-        d = cc[cc['tech'] == tech].sort_values('gen_frac')
-        ax.plot(d['gen_frac'] * 100, d['capacity_credit'], marker='o', ms=4, lw=1.6,
+        d = cc[cc['tech'] == tech].dropna(subset=[x]).sort_values(x)
+        xs = d[x] * 100 if x == 'gen_frac' else d[x]
+        ax.plot(xs, d['capacity_credit'], marker='o', ms=4, lw=1.6,
                 color=colors[tech], label=display_tech(tech))
     ax.axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
     ax.annotate('perfectly firm', xy=(0.01, 1.0), xycoords=('axes fraction', 'data'),
                 va='bottom', ha='left', fontsize=7.5, color=cost_color)
-    ax.set_xlabel('Market share (% of generation)')
+    if x == 'gen_frac':
+        ax.set_xlabel('Market share (% of generation)')
+    else:
+        ax.set_xscale('log')
+        ax.set_xlabel('Cumulative national capacity (GW)')
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f'{v:g}'))
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax.set_ylabel('Capacity credit of new builds')
     ax.set_ylim(bottom=0)
     ax.grid(alpha=0.25, lw=0.6)
-    #Centre right: the dispatchable curves sit above 0.75 and the resource-limited ones below
-    #0.4 over the whole range, so the band between them is the one reliably empty region.
+    #The dispatchable curves sit above 0.75 and the resource-limited ones below 0.4 over the whole
+    #range, so the band between them is the one reliably empty region.
     ax.legend(loc='center right', fontsize=8, frameon=False, ncol=2)
     fig.tight_layout()
     fig.savefig(output_path, dpi=200)
@@ -1534,6 +1553,12 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 df_vcf, os.path.join(output_dir, 'plcoe_pitch_capacity_credit.png'))
             if fig_cc is not None:
                 plt.close(fig_cc)
+            #Same data, against installed capacity instead of market share.
+            fig_cc_cap, _ = plot_capacity_credit(
+                df_vcf, os.path.join(output_dir, 'plcoe_pitch_capacity_credit_cap.png'),
+                x='cap_gw', cc=cc)
+            if fig_cc_cap is not None:
+                plt.close(fig_cc_cap)
         except Exception as e:
             print(f'Capacity-credit figure skipped ({type(e).__name__}: {e}).')
             cc = pd.DataFrame()

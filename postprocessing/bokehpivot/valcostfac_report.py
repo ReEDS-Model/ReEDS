@@ -534,6 +534,15 @@ def build_html(output_dir, core_path):
                     'every level. Because those prices are concentrated in a few hours, this sits '
                     'below an hour-counting ELCC for resource-limited technologies. Storage is net '
                     'of charging, so its credit is a round-trip-net quantity.', order)
+    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 11,
+                        'The same capacity credits against cumulative installed capacity.',
+                        'Identical data to the figure above on a different x axis: the cumulative '
+                        'national capacity of that technology in its own forcing run, on a log '
+                        'scale because the technologies span twenty gigawatts to three terawatts. '
+                        'Market share and installed capacity order the technologies differently, '
+                        'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
+                        'same share of generation; against capacity the resource-limited '
+                        'technologies fall along visibly separate paths rather than overlapping.', order)
     cc_df = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit.csv')
     cc_rows, cc_years = [], []
     if not cc_df.empty:
@@ -554,7 +563,7 @@ def build_html(output_dir, core_path):
         'share in small type beside it',
         [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
 
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 11,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 12,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the capacity-weighted stress-hour reserve-margin price in the hours '
                      'the storage fleet discharges and in the hours it charges, on a log scale, '
@@ -584,7 +593,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Net credit', True)], arb_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 12,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 13,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -601,7 +610,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 13
+    map_figs, n = '', 14
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -810,7 +819,7 @@ def build_html(output_dir, core_path):
      'only defined under the stress-period reserve margin '
      '(<span class="eq">GSw_PRM_CapCredit=0</span>); under the capacity-credit formulation ReEDS '
      'does not write val_resmarg for non-VRE and the section is skipped.</p></div>',
-     cc_fig, cc_table,
+     cc_fig, cc_table, cc_cap_fig,
      '<div class="col"><p>The second figure takes storage apart, because its credit is built differently from the others: a battery delivers no net energy over a stress period, so what it earns there is entirely the price spread between the hours it discharges in and the hours it charges in.</p></div>', arb_fig, arb_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
