@@ -118,9 +118,9 @@ cap_exist_ir(i,r)$valcap_ir_filt(i,r) = sum{v, cap_exist(i,v,r) } ;
 cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
-cap_ivrt(i,v,r,t)$([not (upv(i) or wind(i))]$valcap(i,v,r,t)$trange(t)) = CAP.l(i,v,r,t) ;
+cap_ivrt(i,v,r,t)$([not (upv(i) or wind(i) or distpv(i))]$valcap(i,v,r,t)$trange(t)) = CAP.l(i,v,r,t) ;
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
-cap_ivrt(i,v,r,t)$([upv(i) or wind(i)]$valcap(i,v,r,t)) =
+cap_ivrt(i,v,r,t)$([upv(i) or wind(i) or distpv(i)]$valcap(i,v,r,t)) =
     m_capacity_exog(i,v,r,t)$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
           INV.l(i,v,r,tt) + INV_REFURB.l(i,v,r,tt)$[refurbtech(i)$Sw_Refurb]} ;

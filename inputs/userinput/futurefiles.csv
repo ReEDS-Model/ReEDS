@@ -25,7 +25,7 @@ cap_cspns.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 cap_existing_hydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 cap_existing_psh.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 cap_hyd_ccseason_adj.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-cap_limit.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+queue_limit.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 cap_penalty.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 capnonrsc_energy.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 capnonrsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
@@ -146,6 +146,7 @@ exog_cap_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_cap_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 exog_cap_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 exog_geohydro_allkm_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+exog_onlineyear.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_upv_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_wind_ofs_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 exog_wind_ons_rsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

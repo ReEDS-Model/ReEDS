@@ -81,7 +81,7 @@ state_cap_start_yr,2014,"--year-- state co2 cap start year"
 storage_eff_psh,0.8,"--fraction-- round-trip efficiency of PSH"
 storage_vom_min,0.01,--2004$/MWh-- minimum VOM for storage technologies (included to avoid degeneracy with VRE curtailment)
 szn_adj_gas_winter,0.054,"--fraction-- seasonal adjustment for gas prices. calculated based on natural gas futures prices -- see documentation"
-this_year,2025,"--year-- the year it actually is in real life (CE)"
+this_year,2026,"--year-- the year it actually is in real life (CE)"
 topfuelbinwidth,2,"top fuel bin width"
 tranloss_permile_ac,0.00010,"--fraction per mile-- AC transmission losses for regional trade"
 tranloss_permile_dc,0.00005,"--fraction per mile-- DC transmission losses for regional trade"
