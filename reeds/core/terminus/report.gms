@@ -923,6 +923,11 @@ stor_energy_cap(i,v,r,t)$[tmodel_new(t)$valcap(i,v,r,t)] =
 * add PSH energy capacity to cap_energy_ivrt
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$psh(i)] = CAP.l(i,v,r,t) * storage_duration(i) ;
 
+* energy capacity added this solve year. Declared in report_params.csv but never assigned, so
+* the csv shipped empty; without it a new build's duration can only be backed out by differencing
+* cap_energy_ivrt, which retirements and energy added to existing power capacity both corrupt.
+cap_energy_new_out(i,v,r,t)$[valinv(i,v,r,t)$battery(i)] = INV_ENERGY.l(i,v,r,t) ;
+
 * battery storage duration
 storage_duration_out(i,v,r,t)$[valcap(i,v,r,t)$battery(i)$CAP.l(i,v,r,t)] = 
         CAP_ENERGY.l(i,v,r,t) / CAP.l(i,v,r,t) ;
