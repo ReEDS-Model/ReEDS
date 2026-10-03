@@ -853,6 +853,173 @@ def plot_capacity_credit(df, output_path):
     return fig, cc
 
 
+def new_build_duration(run_dir, prefix='battery'):
+    """Duration in hours of each region's new storage build, per year: INV_ENERGY over INV.
+
+    Both come from standard outputs - cap_energy_new_out is INV_ENERGY.l and cap_new_ivrt is
+    INV.l/ilr, which is INV.l for battery. Differencing cap_energy_ivrt instead would be wrong:
+    energy capacity retires, and the model can add energy to existing power capacity or power to
+    existing energy capacity, since INV and INV_ENERGY are independent. In 2038 that difference
+    reads 2.4 h against the true 3.7 h.
+
+    cap_energy_new_out was declared in report_params.csv but never assigned until 2026-10, so a
+    run reported before then ships it empty and this returns nothing.
+    """
+    out = os.path.join(run_dir, 'outputs')
+    cols = ['i', 'v', 'r', 't']
+    mwh = pd.read_csv(os.path.join(out, 'cap_energy_new_out.csv'), names=cols + ['mwh'], header=0)
+    if mwh.empty:
+        print(f'cap_energy_new_out is empty in {run_dir}; re-run report.gms to populate it.')
+        return pd.DataFrame(columns=cols + ['mw', 'mwh', 'dur'])
+    mw = pd.read_csv(os.path.join(out, 'cap_new_ivrt.csv'), names=cols + ['mw'], header=0)
+    m = mw[mw['i'].str.startswith(prefix)].merge(
+        mwh[mwh['i'].str.startswith(prefix)], on=cols, how='inner')
+    #Builds of a megawatt or less are numerical dust whose ratio is meaningless and unbounded.
+    m = m[m['mw'] > 1].copy()
+    m['dur'] = m['mwh'] / m['mw']
+    return m
+
+
+def weighted_quantile(values, weights, qs):
+    """Quantiles of `values` weighted by `weights`, by interpolating the weighted CDF."""
+    order = np.argsort(values)
+    v, w = np.asarray(values)[order], np.asarray(weights)[order]
+    c = np.cumsum(w) / w.sum()
+    return [float(np.interp(q, c, v)) for q in qs]
+
+
+def plot_new_build_duration(run_dir, output_path, prefix='battery', min_gw=1.0):
+    """Distribution of new-build storage duration by model year, with the mean connected.
+
+    Quantiles and mean are capacity-weighted, so a region that built a gigawatt counts for more
+    than one that built ten megawatts; an unweighted box would be dominated by the many small
+    regional builds. Box width is proportional to the square root of the capacity built that year,
+    so a wide box is a year whose distribution describes a lot of capacity, subject to a floor
+    that keeps the thinnest box readable.
+
+    Years building less than min_gw are dropped: before 2020 the fleet grows by a few megawatts a
+    year and the distribution is one or two sites.
+    """
+    d = new_build_duration(run_dir, prefix)
+    if d.empty:
+        return None, d
+    rows, stats, widths = [], [], []
+    for y in sorted(d['t'].unique()):
+        s = d[d['t'] == y]
+        if s['mw'].sum() / 1000 < min_gw:
+            continue
+        q = weighted_quantile(s['dur'], s['mw'], [0.1, 0.25, 0.5, 0.75, 0.9])
+        mean = float(np.average(s['dur'], weights=s['mw']))
+        gw = s['mw'].sum() / 1000
+        stats.append(dict(label=str(int(y)), whislo=q[0], q1=q[1], med=q[2], q3=q[3], whishi=q[4],
+                          fliers=[]))
+        widths.append(gw ** 0.5)
+        rows.append(dict(year=int(y), gw=gw, p10=q[0], p25=q[1], median=q[2], p75=q[3], p90=q[4],
+                         mean=mean, n_regions=len(s)))
+    if not rows:
+        return None, pd.DataFrame()
+    tab = pd.DataFrame(rows)
+    widths = 0.26 + 0.46 * np.array(widths) / max(widths)
+    fig, ax = plt.subplots(figsize=(8.0, 4.4))
+    ax.bxp(stats, widths=widths, showfliers=False, patch_artist=True,
+           boxprops=dict(facecolor='#CFE4EE', edgecolor='#2A6F8E', lw=0.9),
+           medianprops=dict(color='#14455C', lw=1.4),
+           whiskerprops=dict(color='#2A6F8E', lw=0.9), capprops=dict(color='#2A6F8E', lw=0.9))
+    ax.plot(range(1, len(tab) + 1), tab['mean'], color='#C0392B', marker='o', ms=4, lw=1.6,
+            zorder=5, label='capacity-weighted mean')
+    ax.set_xlabel('Model year')
+    ax.set_ylabel('Duration of new builds (hours)')
+    ax.set_ylim(bottom=0)
+    ax.grid(axis='y', alpha=0.25, lw=0.6)
+    ax.legend(loc='upper left', fontsize=8, frameon=False)
+    for lab in ax.get_xticklabels():
+        lab.set_rotation(60)
+        lab.set_ha('right')
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, tab
+
+
+def battery_stress_arbitrage(run_dir, prefix='battery'):
+    """Per year, how the storage fleet earns its reserve-margin value inside the stress periods.
+
+    A battery's net energy over a stress day is zero or slightly negative - it discharges only
+    what it charged, less round-trip losses - so none of its capacity value is firm energy. All of
+    it is the price spread between the hours it discharges in and the hours it charges in. This
+    splits the fleet credit into the gross value of discharge and the cost of charging, and
+    reports the two capacity-weighted prices whose ratio drives it.
+
+    gen_h_stress for storage is already net of charging, so a negative entry is a charging hour.
+    """
+    out = os.path.join(run_dir, 'outputs')
+    gen = pd.read_csv(os.path.join(out, 'gen_h_stress.csv'),
+                      names=['i', 'r', 'h', 't', 'gen'], header=0)
+    gen = gen[gen['i'].str.startswith(prefix)].groupby(['r', 'h', 't'], as_index=False)['gen'].sum()
+    rq = pd.read_csv(os.path.join(out, 'reqt_price.csv'),
+                     names=['req', 'na', 'r', 'h', 't', 'price'], header=0)
+    hourly = rq.loc[rq['req'] == 'res_marg', ['r', 'h', 't', 'price']]
+    ann = rq.loc[rq['req'] == 'res_marg_ann', ['r', 't', 'price']].rename(columns={'price': 'ann'})
+    cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=['i', 'v', 'r', 't', 'mw'], header=0)
+    cap = cap[cap['i'].str.startswith(prefix)].groupby(['r', 't'], as_index=False)['mw'].sum()
+    m = gen.merge(hourly, on=['r', 'h', 't']).merge(cap, on=['r', 't']).merge(ann, on=['r', 't'])
+    m = m[(m['mw'] > 0) & (m['ann'] > 0)]
+    rows = []
+    for y, d in m.groupby('t'):
+        firm = (d.drop_duplicates(['r', 't'])['mw'] * d.drop_duplicates(['r', 't'])['ann']).sum()
+        up, dn = d[d['gen'] > 0], d[d['gen'] < 0]
+        if firm <= 0 or up.empty or dn.empty:
+            continue
+        rows.append(dict(
+            year=int(y),
+            gross=float((up['gen'] * up['price']).sum() / firm),
+            charge_cost=float((dn['gen'] * dn['price']).sum() / firm),
+            net=float((d['gen'] * d['price']).sum() / firm),
+            price_discharge=float(np.average(up['price'], weights=up['gen'])),
+            price_charge=float(np.average(dn['price'], weights=-dn['gen'])),
+            gw=float(d.drop_duplicates(['r', 't'])['mw'].sum() / 1000)))
+    return pd.DataFrame(rows)
+
+
+def plot_battery_stress_arbitrage(run_dir, output_path, prefix='battery', start_year=2026):
+    """Two panels: the prices storage buys and sells at inside the stress periods, and the credit
+    those prices produce.
+
+    Years before start_year are dropped: the fleet is a few gigawatts then and the ratios are
+    dominated by a handful of region-hours.
+    """
+    d = battery_stress_arbitrage(run_dir, prefix)
+    if d.empty:
+        return None, d
+    d = d[d['year'] >= start_year].sort_values('year')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.4, 4.3))
+    ax1.fill_between(d['year'], d['price_charge'], d['price_discharge'],
+                     color='#CFE4EE', alpha=0.8, lw=0)
+    ax1.plot(d['year'], d['price_discharge'], color='#C0392B', marker='o', ms=4, lw=1.6,
+             label='discharge-weighted')
+    ax1.plot(d['year'], d['price_charge'], color='#2A6F8E', marker='o', ms=4, lw=1.6,
+             label='charge-weighted')
+    ax1.set_yscale('log')
+    ax1.set_ylabel(f'Stress-hour reserve-margin price ({dollar_year}$/MWh)')
+    ax1.set_xlabel('Model year')
+    ax1.set_title('Prices storage buys and sells at', fontsize=10, loc='left')
+    ax1.legend(loc='lower right', fontsize=8, frameon=False)
+    ax1.grid(alpha=0.25, lw=0.6)
+
+    ax2.bar(d['year'], d['gross'], width=1.5, color='#8FC4D8', label='gross value of discharge')
+    ax2.bar(d['year'], d['charge_cost'], width=1.5, color='#E6A4A0', label='cost of charging')
+    ax2.plot(d['year'], d['net'], color='#14455C', marker='o', ms=4, lw=1.8,
+             label='net capacity credit')
+    ax2.axhline(0, color=cost_color, lw=0.8)
+    ax2.set_xlabel('Model year')
+    ax2.set_ylabel('Share of fully-firm capacity value')
+    ax2.set_title('What those prices leave', fontsize=10, loc='left')
+    ax2.legend(loc='upper right', fontsize=8, frameon=False)
+    ax2.grid(axis='y', alpha=0.25, lw=0.6)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, d
+
+
 def apply_post_curtailment(df, valcostfac_core_path):
     """Put VRE value and cost per MWh generated, matching the dispatched basis of the other techs.
 
@@ -1370,6 +1537,29 @@ def make_figs(valcostfac_core_path, output_dir=None):
         except Exception as e:
             print(f'Capacity-credit figure skipped ({type(e).__name__}: {e}).')
             cc = pd.DataFrame()
+        #Storage-specific figures, read from the run that forces storage. Both describe the
+        #battery fleet rather than the value/cost plane, so they are not driven by df.
+        dur_tab, arb_tab = pd.DataFrame(), pd.DataFrame()
+        try:
+            from reeds_vs_rev import tech_run_dirs, scenarios_path
+            stor_dirs = tech_run_dirs(df_vcf, scenarios_path)
+            for tech in vcf_separate_techs:
+                if tech not in stor_dirs:
+                    continue
+                prefix = avail_basis_prefix.get(tech, tech.lower())
+                fig_dur, dur_tab = plot_new_build_duration(
+                    stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_duration.png'),
+                    prefix=prefix)
+                if fig_dur is not None:
+                    plt.close(fig_dur)
+                fig_arb, arb_tab = plot_battery_stress_arbitrage(
+                    stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_arbitrage.png'),
+                    prefix=prefix)
+                if fig_arb is not None:
+                    plt.close(fig_arb)
+                break
+        except Exception as e:
+            print(f'Storage duration/arbitrage figures skipped ({type(e).__name__}: {e}).')
         plt.close(fig_vcf_lin)
         plt.close(fig_vcf_pow)
         plt.close(fig_vcf_pow_sync)
@@ -1386,6 +1576,8 @@ def make_figs(valcostfac_core_path, output_dir=None):
         os.path.join(output_dir, 'plcoe_pitch_vcf_scales.csv'), index=False)
     decomp.to_csv(os.path.join(output_dir, 'plcoe_pitch_vcf_decomposition.csv'), index=False)
     cc.to_csv(os.path.join(output_dir, 'plcoe_pitch_capacity_credit.csv'), index=False)
+    dur_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_duration.csv'), index=False)
+    arb_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_arbitrage.csv'), index=False)
     return df
 
 

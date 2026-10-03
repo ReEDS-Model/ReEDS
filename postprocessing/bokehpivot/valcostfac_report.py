@@ -429,8 +429,38 @@ def build_html(output_dir, core_path):
                       'curve against the data it is drawn over is negative, so the shaded band here '
                       'does not describe the cost-factor data.', order)
 
+    dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 7,
+                     'Duration of new storage builds by model year.',
+                     'Duration is the energy capacity a build adds divided by the power capacity '
+                     'it adds, <span class="eq">INV_ENERGY / INV</span>, read from '
+                     'cap_energy_new_out and cap_new_ivrt. One box per model year over the '
+                     'regional builds of that year. Boxes and the connected mean are '
+                     'capacity-weighted, so a region adding a gigawatt counts for more than one '
+                     'adding ten megawatts, and box width is proportional to the square root of '
+                     'the capacity built that year. Whiskers are the weighted 10th and 90th '
+                     'percentiles. Years adding less than a gigawatt are omitted. Power and energy '
+                     'are separate decision variables in ReEDS, so a build can add energy to '
+                     'existing power capacity or the reverse; differencing cumulative energy '
+                     'capacity instead would mix those cases together with retirements.', order)
+    dur_df = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_duration.csv')
+    dur_rows = []
+    if not dur_df.empty:
+        for _, r in dur_df[dur_df['year'].isin(table_years)].iterrows():
+            dur_rows.append(
+                f'<tr><td class="t">{int(r["year"])}</td>'
+                f'<td class="num">{_num(r["gw"], "{:.1f}")}</td>'
+                f'<td class="num">{int(r["n_regions"])}</td>'
+                f'<td class="num">{_num(r["p25"])}</td>'
+                f'<td class="num">{_num(r["median"])}</td>'
+                f'<td class="num">{_num(r["p75"])}</td>'
+                f'<td class="num">{_num(r["mean"])}</td></tr>')
+    dur_table = table(
+        'New storage duration at the headline years, capacity-weighted, hours',
+        [('Year', False), ('Built, GW', True), ('Regions', True), ('p25', True),
+         ('Median', True), ('p75', True), ('Mean', True)], dur_rows)
+
     # ---- 02c gas against the national gas supply curve ----
-    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 7,
+    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 8,
                           'Fuel cost a new Gas-CC would face under the national gas supply curve.',
                           'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
                           'reference, converted at the new-build heat rate. Labels give the burn '
@@ -438,7 +468,7 @@ def build_html(output_dir, core_path):
                           'curve is applied: the census-division term is omitted because re-siting '
                           'would partly avoid it, while the national one can only be avoided by '
                           'building less gas.', order)
-    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 8,
+    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 9,
                      'Value factor and value&#8211;cost factor for Gas-CC, static against '
                      'supply-curve gas.',
                      'The construction of the figure in section 02, drawn by the same function, '
@@ -490,7 +520,7 @@ def build_html(output_dir, core_path):
         gas_rows)
 
     # ---- 02d capacity credit ----
-    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 9,
+    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 10,
                     'Capacity credit of new builds against market share.',
                     'For each year&rsquo;s new builds, the reserve-margin value they earned divided '
                     'by what the same capacity would have earned in the same regions had it been '
@@ -524,8 +554,37 @@ def build_html(output_dir, core_path):
         'share in small type beside it',
         [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
 
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 11,
+                     'How storage earns its reserve-margin value inside the stress periods.',
+                     'Left: the capacity-weighted stress-hour reserve-margin price in the hours '
+                     'the storage fleet discharges and in the hours it charges, on a log scale, '
+                     'with the span between them shaded. Right: the same years split into the '
+                     'gross value of discharge and the cost of charging, whose sum is the net '
+                     'capacity credit plotted in the figure above. gen_h_stress is already net of '
+                     'charging for storage, so a negative entry is a charging hour. Net energy '
+                     'over a stress period is zero or slightly negative for storage &mdash; it '
+                     'discharges only what it charged, less round-trip losses &mdash; so the whole '
+                     'of the capacity credit is the spread between these two prices.', order)
+    arb_df = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_arbitrage.csv')
+    arb_rows = []
+    for _, r in arb_df.iterrows():
+        arb_rows.append(
+            f'<tr><td class="t">{int(r["year"])}</td>'
+            f'<td class="num">{_num(r["gw"], "{:.0f}")}</td>'
+            f'<td class="num">{_num(r["price_discharge"], "{:,.0f}")}</td>'
+            f'<td class="num">{_num(r["price_charge"], "{:,.0f}")}</td>'
+            f'<td class="num">{_num(r["gross"], "{:.3f}")}</td>'
+            f'<td class="num">{_num(r["charge_cost"], "{:.3f}")}</td>'
+            f'<td class="num">{_num(r["net"], "{:.3f}")}</td></tr>')
+    arb_table = table(
+        f'Storage stress-period arbitrage by model year. Prices are {dollar_year}$/MWh; the last '
+        'three columns are shares of fully-firm capacity value and the first two of them sum to '
+        'the third',
+        [('Year', False), ('Fleet GW', True), ('Discharge price', True), ('Charge price', True),
+         ('Gross', True), ('Charging cost', True), ('Net credit', True)], arb_rows)
+
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 10,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 12,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -542,7 +601,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 11
+    map_figs, n = '', 13
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -732,7 +791,7 @@ def build_html(output_dir, core_path):
      'factor exceeds one at low market share and its market share stops near 15%, so a shared pair '
      'of axis ranges spent most of its span on a corner of the plane that only storage occupies. '
      'The construction is unchanged; only the axes are its own. Storage remains in the fits table '
-     'above, which has no axis to distort.</p></div>', stor_fig)}
+     'above, which has no axis to distort.</p></div>' '</p><p>The second figure reports the duration of the builds themselves, which the model chooses freely: power and energy capacity are separate investment variables, so duration is an outcome rather than an assumption.</p></div>', stor_fig, dur_fig, dur_table)}
 
 {sec('02c', 'Gas-CC against the national natural gas supply curve',
      '<div class="col"><p>The runs hold natural gas prices static, which removes the cost-escalation '
@@ -751,7 +810,8 @@ def build_html(output_dir, core_path):
      'only defined under the stress-period reserve margin '
      '(<span class="eq">GSw_PRM_CapCredit=0</span>); under the capacity-credit formulation ReEDS '
      'does not write val_resmarg for non-VRE and the section is skipped.</p></div>',
-     cc_fig, cc_table)}
+     cc_fig, cc_table,
+     '<div class="col"><p>The second figure takes storage apart, because its credit is built differently from the others: a battery delivers no net energy over a stress period, so what it earns there is entirely the price spread between the hours it discharges in and the hours it charges in.</p></div>', arb_fig, arb_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '
