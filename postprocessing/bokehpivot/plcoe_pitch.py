@@ -32,6 +32,8 @@ vcf_available_basis = True #Write a third VCF figure putting EVERY tech per MWh 
 avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-cc',
                       'Coal': 'coal', 'Nuclear': 'nuclear', 'Battery': 'battery'} #Report tech -> raw tech prefix in the run outputs, for the available-energy basis. Techs absent here keep their default basis.
 avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
+cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is also drawn in every scenario in the scenarios file, not only in the run that forces them, to separate a tech's own saturation from the system around it. Names as in valcostfac_core.csv; each needs an entry in avail_basis_prefix.
+cc_scenario_min_new_gw = 1.0 #In the all-scenario capacity-credit figure, drop a year where the tech added less than this many GW. In the thermal-forced runs storage adds a few hundred MW in some years, and the credit of so little capacity swings between 0.75 and 0.98 on which one or two regions happened to build.
 vcf_separate_techs = ['Battery'] #Techs drawn in their own figure rather than alongside the rest. Storage sits in a different part of the plane - value factor above 1, market share topping out near 15% - so sharing a figure with it stretches every other panel's axes to accommodate one corner. These techs are dropped from the main VCF figures and written to plcoe_pitch_VCF_power_storage.png instead; they stay in the fits table, which has no axis to distort. Empty list to keep everything in one figure.
 vcf_use_full_range = True #Read the VCF figures' data from valcostfac.csv rather than valcostfac_core.csv, which report_switches' gen_frac_max truncates at 0.65 market share. That cap is scoped to the intermediary "lim" plots and badly distorts these figures: it removes 4 coal points, 7 gas-CC, 6 nuclear and 1 wind, and with them most of the dispatchable techs' escalation. Filtered, nuclear's k difference reads -0.00 and gas-CC's 0.56 on an R2-0.24 fit; over the full range they are 0.08 (R2 0.77) and 0.05 (R2 0.86). Only the VCF figures can use it - the _adj figures need value_cost_factor_adj and cost_factor_adj, which run_report_valcostfac.py derives after the cap and writes only to valcostfac_core.csv.
 show_cost_factor = True #On the VCF figures, also plot the cost factor as context alongside value factor and value-cost factor.
@@ -792,6 +794,21 @@ def new_build_capacity_credit(run_dir, prefix):
     return (nat['val_resmarg'] / nat['firm_value']).rename('capacity_credit')
 
 
+def cumulative_capacity_gw(run_dir, prefix):
+    """Installed national capacity of a tech by year, GW, from cap_ivrt."""
+    cap = pd.read_csv(os.path.join(run_dir, 'outputs', 'cap_ivrt.csv'),
+                      names=['i', 'v', 'r', 't', 'mw'], header=0)
+    return cap[cap['i'].str.startswith(prefix)].groupby('t')['mw'].sum() / 1000
+
+
+def new_build_gw(run_dir, prefix):
+    """Capacity of each year's new builds, GW, from valnew - the MW the capacity credit is taken over."""
+    val = pd.read_csv(os.path.join(run_dir, 'outputs', 'valnew.csv'),
+                      names=['metric', 'i', 'r', 't', 'val'], header=0)
+    sel = val[(val['metric'] == 'MW') & val['i'].str.startswith(prefix)]
+    return sel.groupby('t')['val'].sum() / 1000
+
+
 def capacity_credit_frame(df):
     """Capacity credit per (tech, year), joined to the market share the rest of the report plots.
 
@@ -812,9 +829,7 @@ def capacity_credit_frame(df):
         if credit.empty:
             continue
         #Cumulative national capacity of the tech in its own forcing run, the alternative x axis.
-        cap = pd.read_csv(os.path.join(run_dirs[tech], 'outputs', 'cap_ivrt.csv'),
-                          names=['i', 'v', 'r', 't', 'mw'], header=0)
-        cap_gw = cap[cap['i'].str.startswith(prefix)].groupby('t')['mw'].sum() / 1000
+        cap_gw = cumulative_capacity_gw(run_dirs[tech], prefix)
         sub = df.loc[df['tech'] == tech, ['tech', 'year', 'gen_frac']].drop_duplicates()
         sub = sub.assign(capacity_credit=sub['year'].map(credit),
                          cap_gw=sub['year'].map(cap_gw))
@@ -871,6 +886,118 @@ def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
     fig.savefig(output_path, dpi=200)
     return fig, cc
 
+
+def capacity_credit_by_scenario(techs=None):
+    """New-build capacity credit of each tech in cc_scenario_techs, in every scenario of the report.
+
+    The capacity-credit figures above read each tech from the run that forces it, so a tech's
+    credit there is a function of its own deployment. Here the same quantity - computed by
+    new_build_capacity_credit, so on the same ratio-of-sums basis - comes from every run, which
+    shows how much of a tech's credit is set by what else the system builds. Scenarios are labelled
+    by the tech they force, from core_tech_scen.csv; one not listed there is the reference.
+    """
+    from reeds_vs_rev import scenarios_path
+    techs = cc_scenario_techs if techs is None else techs
+    scen = pd.read_csv(scenarios_path)
+    forced = pd.read_csv(os.path.join(this_dir, 'core_tech_scen.csv')).set_index('scenario')['tech']
+    rows = []
+    for tech in techs:
+        prefix = avail_basis_prefix.get(tech)
+        if prefix is None:
+            continue
+        for _, sc in scen.iterrows():
+            try:
+                credit = new_build_capacity_credit(sc['path'], prefix)
+                built = new_build_gw(sc['path'], prefix)
+                cap = cumulative_capacity_gw(sc['path'], prefix)
+            except FileNotFoundError as e:
+                print(f'capacity credit unavailable for {tech} in {sc["name"]} ({e.filename}); skipped.')
+                continue
+            if credit.empty:
+                continue
+            d = pd.DataFrame({'year': credit.index.astype(int), 'capacity_credit': credit.to_numpy()})
+            d['new_gw'] = d['year'].map(built)
+            d['cap_gw'] = d['year'].map(cap)
+            d = d[(d['new_gw'] >= cc_scenario_min_new_gw) & (d['year'] >= start_year)]
+            rows.append(d.assign(tech=tech, scenario=sc['name'],
+                                 forced_tech=forced.get(sc['name'], None)))
+    if not rows:
+        return pd.DataFrame(columns=['tech', 'scenario', 'forced_tech', 'year', 'new_gw',
+                                     'cap_gw', 'capacity_credit'])
+    return pd.concat(rows, ignore_index=True)[
+        ['tech', 'scenario', 'forced_tech', 'year', 'new_gw', 'cap_gw', 'capacity_credit']]
+
+
+def plot_capacity_credit_by_scenario(output_path, cc=None):
+    """One row per tech, every scenario as a line: against model year on the left and against that
+    tech's own installed capacity on the right.
+
+    The right column is the diagnostic. If a tech's credit depended only on how much of it is
+    installed, every scenario would fall on one curve there; where the lines separate, something
+    else the scenario builds is setting the credit.
+
+    Each scenario takes the colour of the tech it forces, matching every other figure in the report,
+    and the reference is a dashed grey. Those colours are inherited rather than chosen for this
+    figure, and grey against battery pink falls below the colour-vision separation a line chart wants
+    on colour alone (OKLab delta E 6.6 under deuteranopia), so every scenario also has its own
+    marker and the reference its own dash.
+    """
+    cc = capacity_credit_by_scenario() if cc is None else cc
+    if cc.empty:
+        return None, cc
+    from reeds_vs_rev import scenarios_path
+    order = list(pd.read_csv(scenarios_path)['name'])
+    style_map = load_style_colors(tech_style_path)
+    markers = ['o', 's', '^', 'D', 'v', 'P', 'X', '*']
+
+    def look(scen):
+        ft = cc.loc[cc['scenario'] == scen, 'forced_tech'].iloc[0]
+        if ft is None or pd.isna(ft):
+            return dict(color='#8C8C8C', ls=(0, (5, 2.5)), label='Reference (no forcing)')
+        return dict(color=style_map.get(normalize_tech_name(ft), '#555555'), ls='-',
+                    label=f'{display_tech(ft)} forced')
+
+    techs = [t for t in cc_scenario_techs if t in set(cc['tech'])]
+    fig, axes = plt.subplots(len(techs), 2, figsize=(10.4, 3.7 * len(techs)), squeeze=False)
+    handles = {}
+    for row, tech in enumerate(techs):
+        for col, x in enumerate(['year', 'cap_gw']):
+            ax = axes[row][col]
+            for k, scen in enumerate(order):
+                d = cc[(cc['tech'] == tech) & (cc['scenario'] == scen)].sort_values('year')
+                if d.empty:
+                    continue
+                #Break the line where years were dropped for building under cc_scenario_min_new_gw,
+                #so a segment never implies a path through years with no data. Solve years are two
+                #apart over the plotted range.
+                gap = d['year'].diff() > 2
+                if gap.any():
+                    blanks = d[gap].assign(capacity_credit=np.nan, year=d.loc[gap, 'year'] - 1)
+                    d = pd.concat([d, blanks]).sort_values('year')
+                st = look(scen)
+                ln, = ax.plot(d[x], d['capacity_credit'], color=st['color'], ls=st['ls'], lw=1.6,
+                              marker=markers[k % len(markers)], ms=5, mec='white', mew=0.6,
+                              label=st['label'])
+                handles.setdefault(scen, ln)
+            ax.axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
+            ax.set_ylim(0, 1.05)
+            ax.grid(alpha=0.25, lw=0.6)
+            if x == 'cap_gw':
+                ax.set_xscale('log')
+                _log_ticks(ax, axis='x', steps=(1, 2, 5))
+                ax.set_xlabel(f'Installed {display_tech(tech)} capacity (GW)')
+            else:
+                ax.set_xlabel('Model year')
+                ax.set_ylabel('Capacity credit of new builds')
+            ax.set_title(f'{display_tech(tech)}' + (' vs model year' if x == 'year'
+                                                     else ' vs its own installed capacity'),
+                         fontsize=10, loc='left')
+    fig.legend([handles[s] for s in order if s in handles],
+               [look(s)['label'] for s in order if s in handles],
+               loc='lower center', ncol=4, fontsize=8, frameon=False, bbox_to_anchor=(0.5, 0.0))
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.savefig(output_path, dpi=200)
+    return fig, cc
 
 def new_build_duration(run_dir, prefix='battery'):
     """Duration in hours of each region's new storage build, per year: INV_ENERGY over INV.
@@ -1097,17 +1224,18 @@ def load_full_range(valcostfac_core_path, core):
     return out
 
 
-def _log_ticks(ax):
-    """Label a log axis at 1-2-3-5 per decade in plain decimals.
+def _log_ticks(ax, axis='y', steps=(1, 2, 3, 5)):
+    """Label a log axis at the given steps per decade in plain decimals.
 
     Decades alone leave only one or two labelled ticks over the range these figures span.
     """
-    lo_lim, hi_lim = ax.get_ylim()
-    nice = [d * 10.0 ** e for e in range(-4, 2) for d in (1, 2, 3, 5)]
+    lo_lim, hi_lim = ax.get_ylim() if axis == 'y' else ax.get_xlim()
+    nice = [d * 10.0 ** e for e in range(-4, 6) for d in steps]
     ticks = [t for t in nice if lo_lim <= t <= hi_lim]
-    ax.set_yticks(ticks)
-    ax.set_yticklabels([f'{t:g}' for t in ticks])
-    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    target = ax.yaxis if axis == 'y' else ax.xaxis
+    (ax.set_yticks if axis == 'y' else ax.set_xticks)(ticks)
+    (ax.set_yticklabels if axis == 'y' else ax.set_xticklabels)([f'{t:g}' for t in ticks])
+    target.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
 
 def vcf_panel_techs(df, techs=None):
@@ -1559,6 +1687,13 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 x='cap_gw', cc=cc)
             if fig_cc_cap is not None:
                 plt.close(fig_cc_cap)
+            #Selected techs' credit in every scenario, not only their own forcing run.
+            fig_cc_sc, cc_sc = plot_capacity_credit_by_scenario(
+                os.path.join(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png'))
+            if fig_cc_sc is not None:
+                plt.close(fig_cc_sc)
+                cc_sc.to_csv(os.path.join(output_dir, 'plcoe_pitch_capacity_credit_scenarios.csv'),
+                             index=False)
         except Exception as e:
             print(f'Capacity-credit figure skipped ({type(e).__name__}: {e}).')
             cc = pd.DataFrame()

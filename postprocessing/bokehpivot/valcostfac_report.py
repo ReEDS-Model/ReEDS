@@ -543,6 +543,40 @@ def build_html(output_dir, core_path):
                         'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
                         'same share of generation; against capacity the resource-limited '
                         'technologies fall along visibly separate paths rather than overlapping.', order)
+    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 12,
+                       'Capacity credit of new storage and UPV in every scenario.',
+                       'The capacity credit above, computed the same way, for new builds of '
+                       'storage and UPV in each run rather than only in the run that forces them. '
+                       'Rows are the technology; the left column is against model year and the '
+                       'right against that technology&rsquo;s own installed national capacity in '
+                       'the run, on a log scale. Each scenario takes the colour of the technology '
+                       'it forces and has its own marker; the reference run, which forces nothing, '
+                       'is dashed grey. A year in which the run added under a gigawatt of the '
+                       'technology is left out, since the credit of a few hundred megawatts '
+                       'depends on which one or two regions happened to build, and lines break '
+                       'across the omitted years. If a technology&rsquo;s credit depended only on '
+                       'how much of it is installed, every scenario would fall on one curve in '
+                       'the right column.', order)
+    cc_sc = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit_scenarios.csv')
+    cc_sc_rows, cc_sc_cols = [], []
+    if not cc_sc.empty:
+        #The csv is written in scenarios-file order, so its own first-appearance order is that order
+        #and the report needs no path to the scenarios file.
+        sc_order = list(cc_sc['scenario'].drop_duplicates())
+        cc_sc_cols = [(t, y) for t in [t for t in ('Battery', 'UPV') if t in set(cc_sc['tech'])]
+                      for y in table_years]
+        lookup = cc_sc.set_index(['scenario', 'tech', 'year'])['capacity_credit']
+        for sc in sc_order:
+            ft = cc_sc.loc[cc_sc['scenario'] == sc, 'forced_tech'].iloc[0]
+            label = 'Reference (no forcing)' if pd.isna(ft) else f'{display_tech(ft)} forced'
+            cells = ''.join(f'<td class="num">{_num(lookup.get((sc, t, y), np.nan), "{:.2f}")}</td>'
+                            for t, y in cc_sc_cols)
+            cc_sc_rows.append(f'<tr><td class="t">{label}</td>{cells}</tr>')
+    cc_sc_table = table(
+        'Capacity credit of new storage and UPV by scenario at the headline years. A dash is a '
+        'year in which the run added under a gigawatt of that technology',
+        [('Scenario', False)] + [(f'{display_tech(t)} {y}', True) for t, y in cc_sc_cols],
+        cc_sc_rows)
     cc_df = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit.csv')
     cc_rows, cc_years = [], []
     if not cc_df.empty:
@@ -563,7 +597,7 @@ def build_html(output_dir, core_path):
         'share in small type beside it',
         [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
 
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 12,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 13,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the capacity-weighted stress-hour reserve-margin price in the hours '
                      'the storage fleet discharges and in the hours it charges, on a log scale, '
@@ -593,7 +627,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Net credit', True)], arb_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 13,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 14,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -610,7 +644,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 14
+    map_figs, n = '', 15
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -819,8 +853,8 @@ def build_html(output_dir, core_path):
      'only defined under the stress-period reserve margin '
      '(<span class="eq">GSw_PRM_CapCredit=0</span>); under the capacity-credit formulation ReEDS '
      'does not write val_resmarg for non-VRE and the section is skipped.</p></div>',
-     cc_fig, cc_table, cc_cap_fig,
-     '<div class="col"><p>The second figure takes storage apart, because its credit is built differently from the others: a battery delivers no net energy over a stress period, so what it earns there is entirely the price spread between the hours it discharges in and the hours it charges in.</p></div>', arb_fig, arb_table)}
+     cc_fig, cc_table, cc_cap_fig, cc_sc_fig, cc_sc_table,
+     '<div class="col"><p>The figure below takes storage apart, because its credit is built differently from the others: a battery delivers no net energy over a stress period, so what it earns there is entirely the price spread between the hours it discharges in and the hours it charges in.</p></div>', arb_fig, arb_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '
