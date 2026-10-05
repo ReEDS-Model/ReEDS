@@ -319,37 +319,35 @@ def prepend_historical_hourly_state_load(
 
     return state_load_hourly
 
-def apply_load_growth_factors_to_historical_state_load(
+def scale_historical_state_load_to_baseline_year(
     historical_state_load_hourly: pd.DataFrame,
     historical_state_load_annual: pd.DataFrame,
-    inputs_case: str,
-    solveyears: list[int] | None = None
+    inputs_case: str
 ) -> pd.DataFrame:
     """
-    Multiply hourly historical load profiles (scaled to match historical
-    annual totals for a baseline year) by annual load growth factors to
-    create projected load profiles for each model year.
-    
+    Scale hourly historical state load profiles to match historical annual
+    totals for the load multiplier baseline year. Load growth from the
+    baseline year is applied later, at model-region (BA) resolution, by
+    apply_ba_load_growth().
+
     Args:
         historical_state_load_hourly: Hourly historical state load
             profiles in MWh.
         historical_state_load_annual: Annual state loads in MWh
             for historical years.
         inputs_case: Path to the inputs case directory.
-        solveyears: Optional list of model years to filter load
-            multipliers down to.
 
     Returns:
-        pd.DataFrame
+        pd.DataFrame: datetime-indexed hourly state load (columns = states)
+            scaled to the load multiplier baseline year.
     """
-    # Read annual state multipliers representing projected load growth
-    # from a baseline year
+    # Read annual multipliers only to recover the baseline year
     load_multiplier = pd.read_csv(
         os.path.join(inputs_case, 'load_multiplier.csv')
     )
+    load_multiplier_baseline_year = load_multiplier['year'].min()
     # Scale the historical load profiles to match annual totals
     # for the baseline year
-    load_multiplier_baseline_year = load_multiplier['year'].min()
     historical_state_load_hourly = (
         scale_historical_hourly_state_load_to_model_year(
             historical_state_load_hourly,
@@ -357,49 +355,120 @@ def apply_load_growth_factors_to_historical_state_load(
             load_multiplier_baseline_year
         )
     )
-    # Subset load multipliers for solve years only 
+    return historical_state_load_hourly
+
+def apply_ba_load_growth(
+    regional_load_hourly: pd.DataFrame,
+    inputs_case: str,
+    hierarchy: pd.DataFrame,
+    solveyears: list[int] | None = None
+) -> pd.DataFrame:
+    """
+    Multiply baseline-year hourly model-region (BA) load profiles by annual
+    load growth factors to create projected load profiles for each model
+    year.
+
+    Growth is applied at BA resolution so that multipliers which vary within
+    a state (e.g. a MISO BA following a different trajectory than the rest of
+    its state) are honored. For backward compatibility, a state-keyed
+    load_multiplier.csv is expanded to its BAs via the hierarchy; because
+    state load is allocated to BAs linearly, applying a uniform state
+    multiplier to each of the state's BAs reproduces the previous
+    state-level result exactly.
+
+    Args:
+        regional_load_hourly: datetime-indexed hourly BA load profiles
+            (columns = model regions), scaled to the load multiplier
+            baseline year.
+        inputs_case: Path to the inputs case directory.
+        hierarchy: Model region hierarchy (index = BA 'r', includes 'st').
+        solveyears: Optional list of model years to filter load
+            multipliers down to.
+
+    Returns:
+        pd.DataFrame: (year, datetime)-indexed hourly BA load profiles.
+    """
+    # Read annual region multipliers representing projected load growth
+    # from the baseline year
+    load_multiplier = pd.read_csv(
+        os.path.join(inputs_case, 'load_multiplier.csv')
+    )
+    # Subset load multipliers for solve years only
     if solveyears is not None:
         load_multiplier = (
             load_multiplier[load_multiplier['year'].isin(solveyears)]
             [['year', 'r', 'multiplier']]
         )
-    # Reformat hourly load profiles to merge with load multipliers
-    historical_state_load_hourly.reset_index(drop=False, inplace=True)
-    historical_state_load_hourly = pd.melt(
-        historical_state_load_hourly,
+    else:
+        load_multiplier = load_multiplier[['year', 'r', 'multiplier']]
+
+    # Detect whether load_multiplier is keyed by model region (BA) or by
+    # state. State-keyed files are expanded to every BA in the state so that
+    # growth can be applied uniformly at BA resolution (numerically identical
+    # to the previous state-level application); BA-keyed files are used as-is.
+    multiplier_regions = set(load_multiplier['r'].unique())
+    ba_regions = set(hierarchy.index)
+    state_regions = set(hierarchy['st'].unique())
+    if multiplier_regions <= ba_regions:
+        pass  # already keyed by model region
+    elif multiplier_regions <= state_regions:
+        ba_to_state = (
+            hierarchy['st'].rename('st').rename_axis('r').reset_index()
+        )
+        load_multiplier = (
+            load_multiplier.rename(columns={'r': 'st'})
+            .merge(ba_to_state, on='st', how='inner')
+            [['year', 'r', 'multiplier']]
+        )
+    else:
+        unrecognized = sorted(
+            multiplier_regions - ba_regions - state_regions
+        )[:10]
+        raise ValueError(
+            "load_multiplier.csv 'r' values are neither a subset of model "
+            "regions nor of states. Unrecognized regions (first few): "
+            f"{unrecognized}"
+        )
+
+    # Reformat hourly BA load profiles to merge with load multipliers
+    regional_load_hourly = regional_load_hourly.reset_index(drop=False)
+    regional_load_hourly = pd.melt(
+        regional_load_hourly,
         id_vars=['datetime'],
         var_name='r',
         value_name='load'
     )
     # Merge load multipliers into hourly load profiles
-    state_load_hourly = historical_state_load_hourly.merge(
+    regional_load_hourly = regional_load_hourly.merge(
         load_multiplier,
         on=['r'],
         how='outer'
     )
-    state_load_hourly.sort_values(
+    regional_load_hourly.sort_values(
         by=['r', 'year'],
         ascending=True,
         inplace=True
     )
-    state_load_hourly['load'] *= state_load_hourly['multiplier']
-    state_load_hourly = state_load_hourly[['year', 'datetime', 'r', 'load']]
+    regional_load_hourly['load'] *= regional_load_hourly['multiplier']
+    regional_load_hourly = regional_load_hourly[
+        ['year', 'datetime', 'r', 'load']
+    ]
     # Reformat hourly load profiles for GAMS
-    state_load_hourly = state_load_hourly.pivot_table(
+    regional_load_hourly = regional_load_hourly.pivot_table(
         index=['year', 'datetime'], columns='r', values='load')
     # Convert 'year' index to integers
-    state_load_hourly.index = (
-        state_load_hourly.index
+    regional_load_hourly.index = (
+        regional_load_hourly.index
         .set_levels(
             [
-                state_load_hourly.index.levels[0].astype(int),
-                state_load_hourly.index.levels[1]
+                regional_load_hourly.index.levels[0].astype(int),
+                regional_load_hourly.index.levels[1]
             ],
             level=['year', 'datetime']
         )
     )
-    
-    return state_load_hourly
+
+    return regional_load_hourly
 
 def downselect_to_model_years(
     load_hourly: pd.DataFrame,
@@ -656,11 +725,10 @@ def main(reeds_path, inputs_case):
             )
         case 'historic':
             state_load_hourly = (
-                apply_load_growth_factors_to_historical_state_load(
+                scale_historical_state_load_to_baseline_year(
                     state_load_hourly,
                     historical_state_load_annual,
-                    inputs_case,
-                    solveyears
+                    inputs_case
                 )
             )
         case _:
@@ -679,6 +747,20 @@ def main(reeds_path, inputs_case):
         inputs_case,
         sw.GSw_LoadAllocationMethod
     )
+
+    # For the 'historic' profile, load growth is applied here, at
+    # model-region (BA) resolution, after the baseline-year state load has
+    # been allocated to BAs. This lets BA-level load multipliers (e.g. a MISO
+    # BA on a different trajectory than the rest of its state) be honored; a
+    # state-keyed load_multiplier.csv is expanded to BAs and reproduces the
+    # previous state-level result exactly.
+    if sw.GSw_LoadProfiles == 'historic':
+        regional_load_hourly = apply_ba_load_growth(
+            regional_load_hourly,
+            inputs_case,
+            hierarchy,
+            solveyears
+        )
 
     #%%%#########################################
     #    -- Performing Load Modifications --    #
