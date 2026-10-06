@@ -1,6 +1,8 @@
 # %% Imports
 import os
+import shutil
 import subprocess
+import sys
 import argparse
 import json
 from glob import glob
@@ -9,6 +11,7 @@ import pandas as pd
 from pathlib import Path
 
 ## Local imports
+sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 from reeds.input_processing import hourly_repperiods
 from reeds.input_processing import hourly_writetimeseries
@@ -16,7 +19,7 @@ from reeds.core.terminus.report_dump import write_dfdict
 
 
 # %% Inferred inputs
-reeds_path = os.path.dirname(__file__)
+reeds_path = Path(__file__).parent.parent
 
 # %% Default inputs
 switch_mods_default = {
@@ -166,6 +169,7 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         kwargs: Passed to hourly_reppreiods.main()
     """
     # %% Switch to run folder
+    casepath = os.path.abspath(casepath)
     os.chdir(casepath)
 
     # %% Get the run settings
@@ -232,6 +236,12 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
     else:
         _iteration = iteration
         restartfile = os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i{_iteration}.g00")
+
+    ## 2_temporal_params.gms reads stress{stress_year}/prm.csv even with no stress periods
+    prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i{_iteration}', 'prm.csv')
+    if not os.path.isfile(prm_src):
+        prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i0', 'prm.csv')
+    shutil.copy(prm_src, os.path.join(stresspath, 'prm.csv'))
 
     cmd_gams = solvestring_pcm(
         batch_case=batch_case,
@@ -374,7 +384,7 @@ if __name__ == '__main__':
         main(casepath=casepath, t=t, switch_mods=switch_mods, label=label, overwrite=overwrite)
     else:
         command_string = (
-            f"python run_pcm.py {casepath} "
+            f"python {str(os.path.abspath(__file__))} {casepath} "
             f"--year={t} "
             f"--iteration={iteration} "
             f"--switch_mods='{json.dumps(switch_mods)}' "
