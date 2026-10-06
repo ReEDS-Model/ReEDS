@@ -597,18 +597,34 @@ def build_html(output_dir, core_path):
         'share in small type beside it',
         [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
 
+    arb_df = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_arbitrage.csv')
+    #Block length as the run had it, so the caption follows a change of stress resolution.
+    blk = (f'{arb_df["block_hours"].iloc[0]:g}'
+           if not arb_df.empty and 'block_hours' in arb_df else 'GSw_HourlyChunkLengthStress')
     arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 13,
                      'How storage earns its reserve-margin value inside the stress periods.',
-                     'Left: the capacity-weighted stress-hour reserve-margin price in the hours '
-                     'the storage fleet discharges and in the hours it charges, on a log scale, '
+                     'Left: the reserve-margin price of each stress block, weighted by the '
+                     'storage fleet&rsquo;s discharge and by its charging, on a log scale. ReEDS '
+                     'reports these prices per MW per block, since the blocks carry no weight in '
+                     f'the annual objective; each block is {blk} hours long '
+                     f'(GSw_HourlyChunkLengthStress), so a MW held through it is {blk} MWh, and the '
+                     'price per MW divided by the block length is the value of a MWh delivered in '
+                     'that block. The price levels depend on the block length: re-cutting the stress '
+                     'periods holds this per-MWh price roughly fixed where a long stretch of blocks '
+                     'binds, but not where one peak block carries most of the day&rsquo;s value, '
+                     'which then keeps its price per MW instead. The ratio of the two prices and '
+                     'the credit shares at right do not carry the unit. '
                      'with the span between them shaded. Right: the same years split into the '
                      'gross value of discharge and the cost of charging, whose sum is the net '
-                     'capacity credit plotted in the figure above. gen_h_stress is already net of '
+                     'capacity credit of the whole storage fleet in every region. The figures above '
+                     'are each year&rsquo;s new builds instead; for storage the two differ only in '
+                     'which regions count, because every battery past the initial fleet shares one '
+                     'vintage and valnew credits a new build with that vintage&rsquo;s dispatch '
+                     'pro-rated by INV/CAP. gen_h_stress is already net of '
                      'charging for storage, so a negative entry is a charging hour. Net energy '
                      'over a stress period is zero or slightly negative for storage &mdash; it '
                      'discharges only what it charged, less round-trip losses &mdash; so the whole '
                      'of the capacity credit is the spread between these two prices.', order)
-    arb_df = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_arbitrage.csv')
     arb_rows = []
     for _, r in arb_df.iterrows():
         arb_rows.append(
@@ -620,11 +636,12 @@ def build_html(output_dir, core_path):
             f'<td class="num">{_num(r["charge_cost"], "{:.3f}")}</td>'
             f'<td class="num">{_num(r["net"], "{:.3f}")}</td></tr>')
     arb_table = table(
-        f'Storage stress-period arbitrage by model year. Prices are {dollar_year}$/MWh; the last '
+        f'Storage stress-period arbitrage by model year. Prices are {dollar_year}$/MWh delivered in '
+        'a stress block; the last '
         'three columns are shares of fully-firm capacity value and the first two of them sum to '
         'the third',
         [('Year', False), ('Fleet GW', True), ('Discharge price', True), ('Charge price', True),
-         ('Gross', True), ('Charging cost', True), ('Net credit', True)], arb_rows)
+         ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 03 log decomposition ----
     fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 14,

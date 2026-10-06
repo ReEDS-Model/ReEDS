@@ -46,6 +46,8 @@ lcoe_base_path = os.path.join(this_dir, 'LCOE_base.csv')
 deflator_path = os.path.join(this_dir, os.pardir, os.pardir, 'inputs', 'financials', 'deflator.csv')
 deflator = pd.read_csv(deflator_path, index_col='*Dollar.Year')['Deflator']
 lcoe_usd_mult = deflator.loc[lcoe_base_dollar_year] / deflator.loc[dollar_year] #Matches run_report_valcostfac.py's conversion of the same file.
+reeds_native_dollar_year = 2004 #Dollar year of ReEDS output csvs as written by report_dump.py; bokehpivot's reports inflate from it.
+reeds_usd_mult = deflator.loc[reeds_native_dollar_year] / deflator.loc[dollar_year] #For $ values read straight from a run's outputs folder rather than from report.xlsx.
 usd_label = f'{dollar_year}$/MWh'
 #run_report_valcostfac.py's import chain calls reeds.plots.plotparams(), which globally sets bold
 #x-large axis labels and larger ticks. Rendering under matplotlib defaults keeps these figures
@@ -958,6 +960,8 @@ def plot_capacity_credit_by_scenario(output_path, cc=None):
                     label=f'{display_tech(ft)} forced')
 
     techs = [t for t in cc_scenario_techs if t in set(cc['tech'])]
+    year_step = (cc.sort_values('year').groupby(['tech', 'scenario'])['year'].diff()
+                 .dropna().mode().iloc[0])
     fig, axes = plt.subplots(len(techs), 2, figsize=(10.4, 3.7 * len(techs)), squeeze=False)
     handles = {}
     for row, tech in enumerate(techs):
@@ -968,9 +972,10 @@ def plot_capacity_credit_by_scenario(output_path, cc=None):
                 if d.empty:
                     continue
                 #Break the line where years were dropped for building under cc_scenario_min_new_gw,
-                #so a segment never implies a path through years with no data. Solve years are two
-                #apart over the plotted range.
-                gap = d['year'].diff() > 2
+                #so a segment never implies a path through years with no data. The solve-year step
+                #is read from the data - the most common spacing across every series - rather than
+                #assumed.
+                gap = d['year'].diff() > year_step
                 if gap.any():
                     blanks = d[gap].assign(capacity_credit=np.nan, year=d.loc[gap, 'year'] - 1)
                     d = pd.concat([d, blanks]).sort_values('year')
@@ -1086,6 +1091,36 @@ def plot_new_build_duration(run_dir, output_path, prefix='battery', min_gw=1.0):
     return fig, tab
 
 
+def stress_block_hours(run_dir, stress_h):
+    """Length in hours of one stress block in this run.
+
+    Taken from GSw_HourlyChunkLengthStress and checked against the spacing of the stress
+    timeslice labels themselves (sy2009d173h003, ...h006 for three-hour blocks), so a run at a
+    different resolution is converted correctly and a disagreement between the two is reported
+    rather than silently used. Falls back to the label spacing when the switch is absent.
+    """
+    #Labels repeat across regions and years; de-duplicate first or the spacing reads as zero.
+    hrs = (pd.Series(stress_h).astype(str).drop_duplicates()
+           .str.extract(r'^(.*d\d+)h(\d+)$').dropna())
+    from_labels = None
+    if not hrs.empty:
+        hrs[1] = hrs[1].astype(int)
+        steps = hrs.sort_values([0, 1]).groupby(0)[1].diff().dropna()
+        if not steps.empty:
+            from_labels = float(steps.mode().iloc[0])
+    sw_path = os.path.join(run_dir, 'inputs_case', 'switches.csv')
+    from_switch = None
+    if os.path.exists(sw_path):
+        sw = pd.read_csv(sw_path, header=None, index_col=0)[1]
+        if 'GSw_HourlyChunkLengthStress' in sw.index:
+            from_switch = float(sw['GSw_HourlyChunkLengthStress'])
+    if from_switch is None and from_labels is None:
+        raise ValueError(f'cannot determine the stress block length for {run_dir}')
+    if from_switch is not None and from_labels is not None and from_switch != from_labels:
+        print(f'{os.path.basename(run_dir)}: GSw_HourlyChunkLengthStress is {from_switch:g} h but '
+              f'the stress timeslices are {from_labels:g} h apart; using the switch.')
+    return from_switch if from_switch is not None else from_labels
+
 def battery_stress_arbitrage(run_dir, prefix='battery'):
     """Per year, how the storage fleet earns its reserve-margin value inside the stress periods.
 
@@ -1096,6 +1131,14 @@ def battery_stress_arbitrage(run_dir, prefix='battery'):
     reports the two capacity-weighted prices whose ratio drives it.
 
     gen_h_stress for storage is already net of charging, so a negative entry is a charging hour.
+
+    The prices are reported per MWh delivered in a stress block. reqt_price('res_marg') is $/MW per
+    block per year - the dual of the block's supply-demand balance, which binds on MW - and
+    report.gms declines to call it $/MWh because the blocks carry no weight in the annual
+    objective. They do have a real length, GSw_HourlyChunkLengthStress hours, and a MW held
+    through the block is that many MWh, so dividing by it gives the value of one MWh delivered in
+    that block. Prices are read in ReEDS' native 2004$ and converted to dollar_year. The credit
+    shares are ratios and need neither conversion.
     """
     out = os.path.join(run_dir, 'outputs')
     gen = pd.read_csv(os.path.join(out, 'gen_h_stress.csv'),
@@ -1109,6 +1152,8 @@ def battery_stress_arbitrage(run_dir, prefix='battery'):
     cap = cap[cap['i'].str.startswith(prefix)].groupby(['r', 't'], as_index=False)['mw'].sum()
     m = gen.merge(hourly, on=['r', 'h', 't']).merge(cap, on=['r', 't']).merge(ann, on=['r', 't'])
     m = m[(m['mw'] > 0) & (m['ann'] > 0)]
+    block_hours = stress_block_hours(run_dir, hourly['h'])
+    to_usd_mwh = reeds_usd_mult / block_hours
     rows = []
     for y, d in m.groupby('t'):
         firm = (d.drop_duplicates(['r', 't'])['mw'] * d.drop_duplicates(['r', 't'])['ann']).sum()
@@ -1120,9 +1165,10 @@ def battery_stress_arbitrage(run_dir, prefix='battery'):
             gross=float((up['gen'] * up['price']).sum() / firm),
             charge_cost=float((dn['gen'] * dn['price']).sum() / firm),
             net=float((d['gen'] * d['price']).sum() / firm),
-            price_discharge=float(np.average(up['price'], weights=up['gen'])),
-            price_charge=float(np.average(dn['price'], weights=-dn['gen'])),
-            gw=float(d.drop_duplicates(['r', 't'])['mw'].sum() / 1000)))
+            price_discharge=float(np.average(up['price'], weights=up['gen']) * to_usd_mwh),
+            price_charge=float(np.average(dn['price'], weights=-dn['gen']) * to_usd_mwh),
+            gw=float(d.drop_duplicates(['r', 't'])['mw'].sum() / 1000),
+            block_hours=block_hours))
     return pd.DataFrame(rows)
 
 
@@ -1145,7 +1191,7 @@ def plot_battery_stress_arbitrage(run_dir, output_path, prefix='battery', start_
     ax1.plot(d['year'], d['price_charge'], color='#2A6F8E', marker='o', ms=4, lw=1.6,
              label='charge-weighted')
     ax1.set_yscale('log')
-    ax1.set_ylabel(f'Stress-hour reserve-margin price ({dollar_year}$/MWh)')
+    ax1.set_ylabel(f'Stress-block reserve-margin price ({dollar_year}$/MWh)')
     ax1.set_xlabel('Model year')
     ax1.set_title('Prices storage buys and sells at', fontsize=10, loc='left')
     ax1.legend(loc='lower right', fontsize=8, frameon=False)
