@@ -42,6 +42,122 @@ WINDOFS_FIXED_CLASSES = list(range(5))
 WINDOFS_FLOATING_CLASSES = list(range(6,11))
 ONLINEYEAR_COLUMNS = ['i', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW']
 
+# Only keep neccessary columns from unitdata to work with
+# And rename column names for easier processing
+COLNAMES = {
+    'capexog_rsc': (
+        ['tech','r','RetireYear','StartYear','sc_point_gid','summer_power_capacity_MW'],
+        ['tech','region','year','onlineyear','sc_point_gid','MW']
+    ),
+    'capnonrsc': (
+        ['tech','coolingwatertech','r','ctt','wst','summer_power_capacity_MW'],
+        ['i','coolingwatertech','r','ctt','wst','value']
+    ),
+    'capnonrsc_energy': (
+        ['tech','r','energy_capacity_MWh'],
+        ['i','r','value']
+    ),
+    'prescribed_nonRSC': (
+        ['StartYear','tech','vin','r','coolingwatertech','ctt','wst','summer_power_capacity_MW'],
+        ['t','i','v','r','coolingwatertech','ctt','wst','value']
+    ),
+    'prescribed_nonRSC_energy': (
+        ['StartYear','tech','vin','r','coolingwatertech','ctt','wst','energy_capacity_MWh'],
+        ['t','i','v','r','coolingwatertech','ctt','wst','value']
+    ),
+    'prescribed_RSC': (
+        ['StartYear','tech','vin','r','summer_power_capacity_MW'],
+        ['t','i','v','r','value']
+    ),
+    'rsc': (
+        ['tech','r','v','ctt','wst','summer_power_capacity_MW'],
+        ['i','r','v','ctt','wst','value']
+    ),
+    'rsc_wsc': (
+        ['r','tech','summer_power_capacity_MW'],
+        ['r','i','value']
+    ),
+    'prsc_csp': (
+        ['StartYear','r','tech','ctt','wst','summer_power_capacity_MW'],
+        ['t','r','i','ctt','wst','value']
+    ),
+    'prsc_geo': (
+        ['StartYear','r','tech','summer_power_capacity_MW'],
+        ['t','r','i','value']
+    ),
+    'retirements': (
+        ['tech','v','r','RetireYear','StartYear','coolingwatertech','ctt','wst','type','summer_power_capacity_MW'],
+        ['i','v','r','t','tt','coolingwatertech','ctt','wst','type','value']
+    ),
+    'retirements_energy': (
+        ['tech','v','r','RetireYear','StartYear','type','energy_capacity_MWh'],
+        ['r','i','v','t','tt','type','value']
+    ),
+    'windret': (
+        ['r','tech','RetireYear','summer_power_capacity_MW'],
+        ['r','i','t','value']
+    ),
+    'georet': (
+        ['r','tech','RetireYear','summer_power_capacity_MW'],
+        ['r','i','t','value']
+    ),
+}
+
+TECH = {
+    'capnonrsc': [
+        'battery_li', 'biopower', 'coal-igcc', 'coal-new',
+        'coaloldscr','coalolduns','gas-cc', 'gas-ct',
+        'lfill-gas','nuclear', 'o-g-s', 'pumped-hydro'
+    ],
+    'capnonrsc_energy': [
+        'battery_li'
+    ],
+    'prescribed_nonRSC': [
+        'battery_li', 'biopower', 'coal-igcc', 'coal-new',
+        'coaloldscr', 'coalolduns', 'gas-cc', 'gas-ct',
+        'hydED', 'hydEND', 'hydUD', 'hydUND', 'hydND', 'hydNPND',
+        'lfill-gas', 'nuclear', 'o-g-s', 'pumped-hydro'
+    ],
+    'prescribed_nonRSC_energy': [
+        'battery_li',
+    ],
+    'storage'  : ['battery_li', 'pumped-hydro'
+    ],
+    'rsc_pv_all': ['upv','pvb','pvb_pv','csp-ns'],
+    'rsc_upv': ['upv','pvb'],
+    'rsc_w': ['wind-ons','wind-ofs'],
+    'rsc_csp': ['csp-ns'],
+    'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
+                'geohydro_allkm','egs_allkm'],
+    'prsc_csp': ['csp-ns','csp-ws'],
+    'prsc_geo': ['geohydro_allkm','egs_allkm'],
+    'retirements': [
+        'coalolduns', 'o-g-s', 'hydED', 'hydEND', 'gas-ct', 'lfill-gas',
+        'coaloldscr', 'biopower', 'gas-cc', 'coal-new',
+        'battery_li','nuclear', 'pumped-hydro', 'coal-igcc'
+    ],
+    'retirements_energy': [
+        'battery_li'
+    ],
+    'windret': ['wind-ons'],
+    'georet': ['geohydro_allkm','egs_allkm'],
+    # This is not all technologies that do not having cooling, but technologies
+    # that are (or could be) in the plant database.
+    'no_cooling': [
+        'upv', 'pvb', 'gas-ct', 'geohydro_allkm','egs_allkm',
+        'battery_li', 'pumped-hydro', 'pumped-hydro-flex',
+        'hydUD', 'hydUND', 'hydD', 'hydND', 'hydSD', 'hydSND', 'hydNPD',
+        'hydNPND', 'hydED', 'hydEND', 'wind-ons', 'wind-ofs',
+    ],
+}
+
+quartershorten = {'spring':'spri', 'summer':'summ', 'fall':'fall', 'winter':'wint'}
+
+hotcold_months = {
+    'NOV':'cold', 'DEC':'cold', 'JAN':'cold', 'FEB':'cold',
+    'JUN':'hot',  'JUL':'hot',  'AUG':'hot'
+}
+
 #%% ===========================================================================
 ### --- FUNCTIONS ---
 ### ===========================================================================
@@ -57,12 +173,11 @@ def create_rsc_wsc(gendb,TECH,startyear):
 
     return rsc_wsc
 
-def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
+
+def create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, sw, startyear):
     # Mappings to resource class are based on the resource quality of the technology as it comes from reV
     # Establish resource classification inputs for technologies (UPV, wind-ons, wind-ofs)
     # from supply curves
-
-
     rsc_class = {}
     rsc_class["upv"] = get_class_cf_bounds(reeds_path, tech='upv')
     rsc_class["wind-ons"]  = get_class_cf_bounds(reeds_path, tech='wind-ons')
@@ -84,15 +199,17 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
     )
 
     # Check if any rsc_wsc tech class in unitdata does not match with a resource class
-    missing_resource_class(gendb,rsc_class)
+    missing_resource_class(gdb_use_cap_exog, rsc_class)
 
     cap_exog = {}
     for tech in TECH['rsc_wsc']:
         print(tech)
         # Filter active plants
-        cap_exog[tech]= gendb.loc[(gendb['tech']==tech) &
-                                  (gendb['StartYear'] < startyear)  &
-                                  (gendb['RetireYear'] > startyear)].copy()
+        cap_exog[tech]= gdb_use_cap_exog.loc[
+            (gdb_use_cap_exog['tech']==tech)
+            & (gdb_use_cap_exog['StartYear'] < startyear)
+            & (gdb_use_cap_exog['RetireYear'] > startyear)
+        ].copy()
         if len(cap_exog[tech]) > 0:
             # Assigning each geothermal unit in unit database to a class based on
             # groups' temperatures
@@ -166,12 +283,12 @@ def assign_class(cf, tech, df_class):
         row = df_class[cf == df_class[f'min_reV_{value}']]
 
     if len(row) == 1:
-        return row.iloc[0]['class']
+        return row['class'].iloc[0]
     # If a offshore wind cf matches with both fixed and floating
     # resources, assign a fixed resource
     elif (len(row) > 1) & (tech == 'wind-ofs'):
         row = row[row['subtech']=='fixed']
-        return row.iloc[0]['class']
+        return row['class'].iloc[0]
     else:
         # If a unit's capacity factor/mean temp does not fall between any two max and min values
         # specified in the classificalion file, it is unclassified and gives an error
@@ -288,137 +405,11 @@ def process_ivt(years, inputs_case):
     return ivt_df
 
 
-# Only keep neccessary columns from unitdata to work with
-# And rename column names for easier processing
-COLNAMES = {
-        'capexog_rsc': (
-            ['tech','r','RetireYear','StartYear','sc_point_gid','summer_power_capacity_MW'],
-            ['tech','region','year','onlineyear','sc_point_gid','MW']
-        ),
-        'capnonrsc': (
-            ['tech','coolingwatertech','r','ctt','wst','summer_power_capacity_MW'],
-            ['i','coolingwatertech','r','ctt','wst','value']
-        ),
-        'capnonrsc_energy': (
-            ['tech','r','energy_capacity_MWh'],
-            ['i','r','value']
-        ),
-        'prescribed_nonRSC': (
-            ['StartYear','tech','vin','r','coolingwatertech','ctt','wst','summer_power_capacity_MW'],
-            ['t','i','v','r','coolingwatertech','ctt','wst','value']
-        ),
-        'prescribed_nonRSC_energy': (
-            ['StartYear','tech','vin','r','coolingwatertech','ctt','wst','energy_capacity_MWh'],
-            ['t','i','v','r','coolingwatertech','ctt','wst','value']
-        ),
-        'prescribed_RSC': (
-            ['StartYear','tech','vin','r','summer_power_capacity_MW'],
-            ['t','i','v','r','value']
-        ),
-        'rsc': (
-            ['tech','r','v','ctt','wst','summer_power_capacity_MW'],
-            ['i','r','v','ctt','wst','value']
-        ),
-        'rsc_wsc': (
-            ['r','tech','summer_power_capacity_MW'],
-            ['r','i','value']
-        ),
-        'prsc_csp': (
-            ['StartYear','r','tech','ctt','wst','summer_power_capacity_MW'],
-            ['t','r','i','ctt','wst','value']
-        ),
-        'prsc_geo': (
-            ['StartYear','r','tech','summer_power_capacity_MW'],
-            ['t','r','i','value']
-        ),
-        'retirements': (
-            ['tech','v','r','RetireYear','StartYear','coolingwatertech','ctt','wst','type','summer_power_capacity_MW'],
-            ['i','v','r','t','tt','coolingwatertech','ctt','wst','type','value']
-        ),
-        'retirements_energy': (
-            ['tech','v','r','RetireYear','StartYear','type','energy_capacity_MWh'],
-            ['r','i','v','t','tt','type','value']
-        ),
-        'windret': (
-            ['r','tech','RetireYear','summer_power_capacity_MW'],
-            ['r','i','t','value']
-        ),
-        'georet': (
-            ['r','tech','RetireYear','summer_power_capacity_MW'],
-            ['r','i','t','value']
-        ),
-    }
-#%% ===========================================================================
-### --- SUPPLEMENTAL DATA ---
-### ===========================================================================
-
-#########################
-### STATIC DICTIONARY ###
-TECH = {
-    'capnonrsc': [
-        'battery_li', 'biopower', 'coal-igcc', 'coal-new',
-        'coaloldscr','coalolduns','gas-cc', 'gas-ct',
-        'lfill-gas','nuclear', 'o-g-s', 'pumped-hydro'
-    ],
-    'capnonrsc_energy': [
-        'battery_li'
-    ],
-    'prescribed_nonRSC': [
-        'battery_li', 'biopower', 'coal-igcc', 'coal-new',
-        'coaloldscr', 'coalolduns', 'gas-cc', 'gas-ct',
-        'hydED', 'hydEND', 'hydUD', 'hydUND', 'hydND', 'hydNPND',
-        'lfill-gas', 'nuclear', 'o-g-s', 'pumped-hydro'
-    ],
-    'prescribed_nonRSC_energy': [
-        'battery_li',
-    ],
-    'storage'  : ['battery_li', 'pumped-hydro'
-    ],
-    'rsc_pv_all': ['upv','pvb','pvb_pv','csp-ns'],
-    'rsc_upv': ['upv','pvb'],
-    'rsc_w': ['wind-ons','wind-ofs'],
-    'rsc_csp': ['csp-ns'],
-    'rsc_wsc': ['upv','pvb','csp-ns','csp-ws','wind-ons','wind-ofs',
-                'geohydro_allkm','egs_allkm'],
-    'prsc_csp': ['csp-ns','csp-ws'],
-    'prsc_geo': ['geohydro_allkm','egs_allkm'],
-    'retirements': [
-        'coalolduns', 'o-g-s', 'hydED', 'hydEND', 'gas-ct', 'lfill-gas',
-        'coaloldscr', 'biopower', 'gas-cc', 'coal-new',
-        'battery_li','nuclear', 'pumped-hydro', 'coal-igcc'
-    ],
-    'retirements_energy': [
-        'battery_li'
-    ],
-    'windret': ['wind-ons'],
-    'georet': ['geohydro_allkm','egs_allkm'],
-    # This is not all technologies that do not having cooling, but technologies
-    # that are (or could be) in the plant database.
-    'no_cooling': [
-        'upv', 'pvb', 'gas-ct', 'geohydro_allkm','egs_allkm',
-        'battery_li', 'pumped-hydro', 'pumped-hydro-flex',
-        'hydUD', 'hydUND', 'hydD', 'hydND', 'hydSD', 'hydSND', 'hydNPD',
-        'hydNPND', 'hydED', 'hydEND', 'wind-ons', 'wind-ofs',
-    ],
-}
-
-
-
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
 
 def main(reeds_path, inputs_case):
-
-    #########################
-    ### SUPPLEMENTAL DATA ###
-
-    quartershorten = {'spring':'spri','summer':'summ','fall':'fall','winter':'wint'}
-
-    hotcold_months = {'NOV':'cold', 'DEC':'cold', 'JAN':'cold', 'FEB':'cold',
-                    'JUN':'hot',  'JUL':'hot',  'AUG':'hot'
-                    }
-
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
     GSw_WaterMain = int(sw.GSw_WaterMain)
@@ -433,11 +424,6 @@ def main(reeds_path, inputs_case):
     ).columns.astype(int).values.tolist()
 
     regions = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
-
-    ####################
-    ### DICTIONARIES ###
-
-
 
     #%%
     print('Importing generator database:')
@@ -712,8 +698,9 @@ def main(reeds_path, inputs_case):
     #    -- RSC Exogenous Capacity --    #
     ######################################
 
-    (cap_exog, rsc_class) = create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, TECH, COLNAMES, sw, startyear)
-
+    cap_exog, rsc_class = create_exog_rsc(
+        reeds_path, inputs_case, gdb_use_cap_exog, sw, startyear,
+    )
 
     #%%####################################
     #    -- RSC Prescribed Capacity --    #
@@ -1144,7 +1131,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM0_MonteCarlo_Random_MC0001','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM1_MonteCarlo_Random_MC0001','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
