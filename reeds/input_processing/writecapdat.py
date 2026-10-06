@@ -31,6 +31,7 @@ import os
 import sys
 import pandas as pd
 from pathlib import Path
+from typing import Literal
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 
@@ -63,17 +64,16 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
 
 
     rsc_class = {}
-    rsc_class["upv"] = get_class_cf_bounds(reeds_path, tech='upv',
-                                           access_case=sw.GSw_SitingUPV, subtech='')
-    rsc_class["wind-ons"]  = get_class_cf_bounds(reeds_path, tech='wind-ons',
-                                                 access_case=sw.GSw_SitingWindOns, subtech='')
+    rsc_class["upv"] = get_class_cf_bounds(reeds_path, tech='upv')
+    rsc_class["wind-ons"]  = get_class_cf_bounds(reeds_path, tech='wind-ons')
 
     # for offshore wind, specify 'fixed' or 'floating' tech
     wind_ofs_subtech_list = ['fixed','floating']
     wind_ofs_class_all = []
     for wind_ofs_subtech in wind_ofs_subtech_list:
-        wind_ofs_class_subtech = get_class_cf_bounds(reeds_path, tech='wind-ofs',
-                                                     access_case=sw.GSw_SitingWindOfs,subtech=wind_ofs_subtech)
+        wind_ofs_class_subtech = get_class_cf_bounds(
+            reeds_path, tech='wind-ofs', subtech=wind_ofs_subtech,
+        )
         wind_ofs_class_all.append(wind_ofs_class_subtech)
     rsc_class["wind-ofs"] = pd.concat(wind_ofs_class_all, ignore_index=True)
 
@@ -122,44 +122,38 @@ def create_exog_rsc(reeds_path,inputs_case,gendb,TECH,COLNAMES,sw,startyear):
 
     return cap_exog, rsc_class
 
-def get_class_cf_bounds(reeds_path, tech, access_case, subtech):
+
+def get_class_cf_bounds(reeds_path, tech, subtech:None|Literal['fixed','floating']=None):
     """Establish class cut offs based on capacity factors"""
-    class_def_name = 'reV_cf_ac'
+    dfsc = pd.read_csv(Path(inputs_case, f'supplycurve_{tech}.csv'))
 
-    # Load the supply curve raw file produced by reV
-    df = pd.read_csv(os.path.join(
-        reeds_path,'inputs','supply_curve',
-        'supplycurve_'+tech+'-'+access_case+'.csv'))
-
-    # Aggregate min/max by class and attach access_case
+    # Aggregate min/max by class
     if tech == 'wind-ofs':
-        df['subtech'] = 'fixed'
-        df.loc[df['class'].isin(WINDOFS_FLOATING_CLASSES),'subtech'] = 'floating'
-        df_sub = df[df['subtech']==subtech]
+        dfsc['subtech'] = 'fixed'
+        dfsc.loc[dfsc['class'].isin(WINDOFS_FLOATING_CLASSES),'subtech'] = 'floating'
+        df_sub = dfsc[dfsc['subtech']==subtech]
         summary_df = df_sub.groupby('class')['cf'].agg(['min', 'max']).reset_index()
         summary_df['subtech'] = subtech
-        summary_df['access_case'] = access_case
-        summary_df.columns = ['class', f'min_{class_def_name}',
-                              f'max_{class_def_name}', 'subtech', 'access_case']
+        summary_df.columns = ['class', 'min_reV_cf_ac', 'max_reV_cf_ac', 'subtech']
     else:
-        summary_df = df.groupby('class')['cf'].agg(['min', 'max']).reset_index()
-        summary_df['access_case'] = access_case
-        summary_df.columns = ['class', f'min_{class_def_name}',
-                               f'max_{class_def_name}', 'access_case']
+        summary_df = dfsc.groupby('class')['cf'].agg(['min', 'max']).reset_index()
+        summary_df.columns = ['class', 'min_reV_cf_ac', 'max_reV_cf_ac']
 
     # Pin each class's min CF to the max CF of the previous class to avoid gaps
-    summary_df = summary_df.sort_values(by=['class',f'min_{class_def_name}'])
+    summary_df = summary_df.sort_values(by=['class','min_reV_cf_ac'])
     for c in summary_df['class'].unique().tolist():
         if c > min(summary_df['class'].unique().tolist()):
             summary_df.loc[
-                summary_df['class']==c,f'min_{class_def_name}'
-                ] = summary_df.loc[summary_df['class']==c-1][f'max_{class_def_name}'].iloc[0]
+                summary_df['class']==c,
+                'min_reV_cf_ac'
+            ] = summary_df.loc[summary_df['class']==c-1]['max_reV_cf_ac'].iloc[0]
 
     # Round values to 4 decimal places
-    summary_df[f'min_{class_def_name}'] = summary_df[f'min_{class_def_name}'].round(4)
-    summary_df[f'max_{class_def_name}'] = summary_df[f'max_{class_def_name}'].round(4)
+    summary_df['min_reV_cf_ac'] = summary_df['min_reV_cf_ac'].round(4)
+    summary_df['max_reV_cf_ac'] = summary_df['max_reV_cf_ac'].round(4)
 
     return summary_df
+
 
 # Assign each wind, solar and geothermal unit in unit database to a class
 def assign_class(cf, tech, df_class):
@@ -1150,7 +1144,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260804_inputsM0_Simple','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM0_MonteCarlo_Random_MC0001','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
