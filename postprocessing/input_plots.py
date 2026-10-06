@@ -106,6 +106,7 @@ def plot_profile(
     ax=None,
     figsize=(6,4),
     yscale_zero=True,
+    label=None,
 ):
     """
     Plot daily electricity demand over all weather years.
@@ -173,7 +174,7 @@ def plot_profile(
         dfprofile.plot(ax=ax, lw=0.1, color=color)
     ax.fill_between(
         dfday['mean'].index, dfday['max'], dfday['min'],
-        lw=0, alpha=0.25, color=color,
+        lw=0, alpha=0.25, color=color, label=label,
     )
     ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax.set_ylabel(ylabel)
@@ -1181,7 +1182,7 @@ if __name__ == '__main__':
         def saveit(savename):
             outpath = os.path.join(savepath, savename.lower().replace(' ', '-') + f'.{suffix}')
             plt.savefig(outpath)
-            print(os.path.basename(outpath))
+            print(outpath)
             if interactive:
                 plt.show()
 

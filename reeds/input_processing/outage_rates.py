@@ -27,8 +27,8 @@ during_quarters = ['spring', 'fall']
 max_extrapolated_outage_forced = 0.4
 ## assume temperature-dependent outage rates for ng-fuel-cell to be the same as for combined_cycle plants
 primemover2techgroup = {
-    'combined_cycle': ['GAS_CC', 'FUEL_CELL'],
-    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION'],
+    'combined_cycle': ['GAS_CC', 'NG_FUEL_CELL'],
+    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION','H2_FUEL_CELL'],
     'diesel': ['OGS'],
     'hydro_and_psh': ['HYDRO', 'PSH'],
     'nuclear': ['NUCLEAR'],

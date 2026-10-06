@@ -53,7 +53,7 @@ parser.add_argument(
     '--skipbp', '-p', action='store_true',
     help='flag to prevent bokehpivot report from being generated')
 parser.add_argument(
-    '--bpreport', '-r', type=str, default='standard_report_reduced',
+    '--bpreport', '-r', type=str, default='standard_report_expanded',
     help='which bokehpivot report to generate')
 parser.add_argument(
     '--gdxdiff', '-g', action='store_true',
@@ -141,6 +141,8 @@ central_health = {'cr':'ACS', 'model':'EASIUR'}
 reeds_dollaryear = 2004
 output_dollaryear = DEFAULT_DOLLAR_YEAR
 startyear_notes = DEFAULT_PV_YEAR
+# npv_cost_sheet = 'Present Value of System Cost'
+npv_cost_sheet = 'NPV of System Cost 2026-2034'
 
 colors_social = {
     'CO2': plt.cm.tab20b(4),
@@ -192,7 +194,8 @@ plotdiffvals = [
     'Transmission (PRM) (GW-mi)',
     'Bulk System Electricity Pric',
     'National Average Electricity',
-    'Present Value of System Cost',
+    # 'Present Value of System Cost',
+    npv_cost_sheet,
     'Runtime (hours)',
     'Runtime by year (hours)',
 ]
@@ -231,8 +234,14 @@ def plot_bars_abs_stacked(
                 if np.around(val, 0) == 0:
                     continue
                 _ax.annotate(
-                    f'{val:.0f}', (x, val - _ypad), ha='center', va='top',
-                    color='k', size=fontsize,
+                    # f'{val:.0f}', (x, val - _ypad), ha='center', va='top',
+                    # color='k', size=fontsize,
+                    f'{val:.0f}',
+                    (x, val - (0 if row == 0 else _ypad)),
+                    ha='center',
+                    va=('bottom' if row == 0 else 'top'),
+                    color='k',
+                    size=fontsize,
                     path_effects=[pe.withStroke(linewidth=2.0, foreground='w', alpha=0.7)],
                 )
     ## Legend info
@@ -393,7 +402,7 @@ costcat_rename = {
 dictin_npv = {}
 for case in tqdm(cases, desc='NPV of system cost'):
     dictin_npv[case] = (
-        reeds.io.read_report(cases[case], 'Present Value of System Cost', val2sheet[case])
+        reeds.io.read_report(cases[case], npv_cost_sheet, val2sheet[case])
         .set_index('cost_cat')['Discounted Cost (Bil $)']
     )
     dictin_npv[case].index = pd.Series(dictin_npv[case].index).replace(costcat_rename)
@@ -1098,9 +1107,13 @@ try:
         ### Labels
         for x, case in enumerate(cases):
             labels = (dfcumsum.loc[case] - dfplot.loc[case]/2).rename('middle').to_frame()
-            labels['ylabel'] = plots.optimize_label_positions(
-                ydata=labels.middle.values, mindistance=mindistance, ypad=0,
-            )
+            try:
+                labels['ylabel'] = plots.optimize_label_positions(
+                    ydata=labels.middle.values, mindistance=mindistance, ypad=0,
+                )
+            except Exception as err:
+                print(err)
+                labels['ylabel'] = labels.middle.values
             labels['yval'] = labels.index.map(dfplot.loc[case])
             for i, row in labels.iterrows():
                 ## Draw the line
@@ -1155,10 +1168,11 @@ except Exception:
 
 #%%### Hodgepodge: Final capacity, final generation, final transmission, NPV
 try:
-    width = max(11, len(cases)*1.3)
+    width = max(13.33, len(cases)*1.6)
+    _ncols = 5
     plt.close()
     f,ax = plt.subplots(
-        2, 4, figsize=(width, SLIDE_HEIGHT), sharex=True,
+        2, _ncols, figsize=(width, SLIDE_HEIGHT), sharex=True,
         sharey=('col' if (sharey is True) else False),
     )
     handles = {}
@@ -1229,8 +1243,23 @@ try:
         label=(False if lesslabels else True),
     )
 
+    ### Runtime
+    col = 4
+    ax[0,col].set_ylabel('Runtime [hours]', y=-0.075)
+    dfplot = pd.concat(
+        {case: dictin_runtime[case].groupby('process').processtime.sum() for case in cases},
+        axis=1).T.fillna(0)
+    dfplot = dfplot[[c for c in output_formatting['time_colors'].index if c in dfplot]].copy()
+
+    handles['Runtime'] = plot_bars_abs_stacked(
+        dfplot=dfplot, basecase=basemap,
+        colors=output_formatting['time_colors'],
+        ax=ax, col=col, net=False,
+        label=(False if lesslabels else True),
+    )
+
     ### Formatting
-    for col in range(4):
+    for col in range(_ncols):
         ax[1,col].set_xticks(range(len(cases)))
         ax[1,col].set_xticklabels(cases.keys(), rotation=90)
         ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
@@ -1240,13 +1269,13 @@ try:
     plt.draw()
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
-        'Capacity, Generation, Transmission, NPV', prs=prs, width=width)
+        'Capacity, Generation, Transmission, NPV, Runtime', prs=prs, width=width)
     if interactive:
         plt.show()
 
     ### Add legends as separate figure below the slide
     plt.close()
-    f,ax = plt.subplots(1, 4, figsize=(11, 0.1))
+    f,ax = plt.subplots(1, _ncols, figsize=(11, 0.1))
     for col, datum in enumerate(handles):
         leg = ax[col].legend(
             handles=handles[datum][::-1], loc='upper center', bbox_to_anchor=(0.5,1.0),
@@ -2530,6 +2559,7 @@ for figname, width, height in [
     ## Include both versions for backwards compatibility
     ('plot_stressperiod_evolution-sum-transgrp', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}-w{weatheryear}', SLIDE_WIDTH, None),
+    ('plot_stress_cf-interconnect-stress_top10_price', SLIDE_WIDTH, None),
 ] + [
     (
         f"plot_techmix-transreg-{lastyear}-{units}-{reedsplots.stress_metrics_shorten(metrics)}",

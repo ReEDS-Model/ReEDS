@@ -127,11 +127,6 @@ def agg_supplycurve(
 def main(
     reeds_path, inputs_case, write=True, **kwargs
 ):
-    # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260609_envM0_Pacific','inputs_case')
-    # write = True
-    # kwargs = {}
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
@@ -175,7 +170,7 @@ def main(
     deflate = dollaryear.map(deflator).rename('Deflator')
 
     #%% Load the existing RSC capacity (PV plants, wind, and CSP)
-    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
+    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv")).rename(columns={'*r':'r'})
 
     # Group CSP tech
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'
@@ -299,8 +294,10 @@ def main(
 
     if write:
         ## Exogenous wind capacity
-        dfwindexog = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
-        dfwindexog.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
+        exog_wind_ons_rsc = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
+        exog_wind_ons_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
+        exog_wind_ofs_rsc = get_exog_cap(inputs_case, tech='wind-ofs', dfsc=wind['ofs'])
+        exog_wind_ofs_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"))
 
     # %%###############
     #    -- PV --    #
@@ -339,8 +336,8 @@ def main(
 
     if write:    
         ## Exogenous UPV capacity
-        dfupvexog = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
-        dfupvexog.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
+        exog_upv_rsc = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
+        exog_upv_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
 
     ### Normalize formatting
     upv = upv.reset_index()
@@ -557,8 +554,8 @@ def main(
 
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
-                dfgeohydroexog = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
-                dfgeohydroexog.round(3).to_csv(
+                exog_geohydro_rsc = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
+                exog_geohydro_rsc.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
 
@@ -1094,6 +1091,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    #write = True
+    #kwargs = {}
 
     #%% Set up logger
     log = reeds.log.makelog(

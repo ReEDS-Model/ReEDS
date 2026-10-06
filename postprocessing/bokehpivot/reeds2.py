@@ -23,9 +23,9 @@ rb_globs = {'output_subdir':'/outputs/', 'test_file':['cap.csv','outputs.h5'], '
 this_dir_path = os.path.dirname(os.path.realpath(__file__))
 df_deflator = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs/financials/deflator.csv')), index_col=0)
 coststreams = ['eq_gasaccounting_regional','eq_gasaccounting_national','eq_bioused','eq_gasused','eq_objfn_inv','eq_objfn_op']
-vf_valstreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min']
-# valuestreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_national_gen','eq_annual_cap','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min','eq_emit_accounting','eq_mingen_lb','eq_mingen_ub','eq_rps_ofswind']
-energy_valstreams = ['eq_supply_demand_balance','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min']
+vf_valstreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_storage_in_max','eq_storage_in_min']
+# valuestreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_national_gen','eq_annual_cap','eq_storage_in_max','eq_storage_in_min','eq_emit_accounting','eq_mingen_lb','eq_mingen_ub','eq_rps_ofswind']
+energy_valstreams = ['eq_supply_demand_balance','eq_storage_in_max','eq_storage_in_min']
 cc_techs = ['Hydropower','Onshore Wind','Offshore Wind','CSP','UPV','Pumped-Hydro','Pumped-Hydro-Flex','Battery']
 battery_techs=['Battery']
 h2_techs = ['SMR', 'SMR-CCS', 'Electrolyzer']
@@ -2308,6 +2308,7 @@ results_meta = collections.OrderedDict((
         'presets': collections.OrderedDict((
             ('Total Discounted',{'x':'scenario','y':'Discounted Cost (Bil $)','series':'cost_cat','chart_type':'Bar'}),
             ('Discounted through 2050',{'x':'scenario','y':'Discounted Cost (Bil $)','series':'cost_cat','chart_type':'Bar', 'filter': {'year': {'start':DEFAULT_PV_YEAR, 'end':2050}}}),
+            ('Discounted through 2034',{'x':'scenario','y':'Discounted Cost (Bil $)','series':'cost_cat','chart_type':'Bar', 'filter': {'year': {'start':2026, 'end':2034}}}),
             (f'{DEFAULT_PV_YEAR}-end Discounted',{'x':'scenario','y':'Discounted Cost (Bil $)','series':'cost_cat','chart_type':'Bar', 'filter': {'year': {'start':DEFAULT_PV_YEAR}}}),
             ('Discounted by Year',{'x':'year','y':'Discounted Cost (Bil $)','series':'cost_cat','explode':'scenario','chart_type':'Bar', 'bar_width':'1.75'}),
             ('Total Undiscounted',{'x':'scenario','y':'Cost (Bil $)','series':'cost_cat','chart_type':'Bar'}),

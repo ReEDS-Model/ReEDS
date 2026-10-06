@@ -2,7 +2,7 @@
 ignore,1,,,,,,,,,,,
 endyear,,2032,2032,2032,2032,,,,,2032,2032,2032
 GSw_Region,,interconnect/texas,interconnect/texas,interconnect/texas,interconnect/texas,,,,,st/ND,st/NY.VT,interconnect/texas
-GSw_ZoneSet,,,,,,,z69,z54,z54,z3109,PJMcounty,z3109
+GSw_ZoneSet,,,,,,,z70,z54,z54,z3109,PJMcounty,z3109
 GSw_GasCurve,,2,2,2,2,,,,,2,2,2
 GSw_HourlyType,,,wek,year,,,,,,,,
 GSw_OpRes,,,,0,,,,,0,,,

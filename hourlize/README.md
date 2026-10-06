@@ -79,6 +79,7 @@ By default hourlize will copy the required files in your ReEDS repository (`copy
 
 Note that hourlize copies to only one of the shared locations (either the HPC or nrelnas01, depending on where you are running it), so even with `copy_to_shared=True` you'll want to sync up the two shared folders. When starting from the HPC, be sure to open up permissions to the supply curve outputs you've just created (e.g., `chmod -R 777 UPV/2023_06_06_Update`). Then, from your local computer, use WinSCP or rsync to copy the files from Kestrel to nrelnas01:
 
+
 ```bash
 rsync -aPu [username]@kestrel.nlr.gov://projects/shared-projects-reeds/reeds/Supply_Curve_Data/UPV/2023_11_02_LandCover /Volumes/ReEDS/Supply_Curve_Data/UPV
 ```
@@ -168,8 +169,6 @@ The main inputs to hourlize are reV outputs for a given reV scenario:
 By default, the outputs will be dumped to a subdirectory named `results` within `hourlize/out/[casename]`. In addition, with `copy_to_reeds` set to true (as is default), we'll copy the results to the ReEDS repo containing this hourlize directory, and with`copy_to_shared` set to true (not default), we'll copy to the shared drive (see Shared Drive Locations below).
 
 * `supplycurve_{tech}.csv`: A supply curve with rows for each site and columns for region, class, available capacity, and costs. E.g. see `inputs/supply_curve/wind-ons_supply_curve-reference_ba.csv` (within ReEDS repo)
-* `{tech}_exog_cap.csv`: Exogenous (built pre-2010) capacity with columns for region, site and year. This is not capacity builds in each year, but rather cumulative capacity of each existing site over time. E.g. see `inputs/capacity_exogenous/wind-ons_exog_cap_reference_ba.csv` (within ReEDS repo)
-* `{tech}_prescribed_builds.csv`: Capacity prescribed builds (2010 - present) with columns for region, year, capacity. This is the installed capacity in each year rather than cumulative capacity over time. E.g. see `inputs/capacity_exogenous/wind-ons_prescribed_builds_reference_ba.csv` (within ReEDS repo)
 * `{tech}_.h5`: Hourly capacity factor profiles for each region/class. See `inputs/profiles_cf/cf_wind-ons_reference_ba.h5` within the ReEDS repository as an example. These files include datasets with column names (class|region) and an index with datetime and timezone information.
 
 ### Shared Drive Locations
@@ -182,7 +181,6 @@ The `resource.py` script follows the following logic (in order of execution):
 
 1. `get_supply_curve_and_preprocess()`
     * The supply curve is filtered if necessary, based on `filter_cols`.
-    * Existing and planned sites from a generator database (`existing_sites`) are assigned to supply curve points for exogenous and prescribed capacity outputs respectively.
     * If we have minimum capacity thresholds for the supply curve points, these are applied to further filter the supply curve.
 1. `add_classes()`
     * A 'class' column is added to the supply curve and filled with the associated class. Classes can be based on statically defined conditions for columns in the supply curve (`class_path`). Otherwise (or layered on top of static class definitions), dynamic classes can be assigned (`class_bin`=true) using a binning method (`class_bin_method`, e.g. "kmeans"), a number of bins (`class_bin_num`), and the supply curve column to bin (`class_bin_col`). The binning logic itself is in `reeds.inputs.get_bin()`. The current default classes for onshore wind and utility-scale PV are based on national k-means clustering of average annual capacity factor (where higher class number corresponds with higher annual CF). Offshore wind, by contrast, uses statically defined classes from `hourlize/inputs/resource/wind-ofs_resource_classes.csv`.
@@ -190,7 +188,7 @@ The `resource.py` script follows the following logic (in order of execution):
     * A column of overall supply curve costs is added to the supply curve (`supply_curve_cost_per_mw`), as well as certain components of that cost (e.g. `trans_adder_per_mw` and `capital_adder_per_mw`). Logic for these costs depends on `tech`, and the value of `cost_out` in config (e.g. `combined_eos_trans` for onshore wind).
     * A column of overall supply curve costs is added to the supply curve (`supply_curve_cost_per_mw`), as well as certain components of that cost (e.g. `trans_adder_per_mw` and `capital_adder_per_mw`). Logic for these costs depends on `tech`, and the value of `cost_out` in config (e.g. `combined_eos_trans` for onshore wind).
 1. `save_sc_outputs()`
-    * Supply curve outputs are saved (`supplycurve_{tech}.csv`) as well as exogenous capacity (`{tech}_exog_cap.csv`), which is built pre-2010, and prescribed builds (`{tech}_prescribed_builds.csv`), which are built between 2010 and present day.
+    * Supply curve outputs are saved (`supplycurve_{tech}.csv`).
 1. `process_cf_profiles()`
     * The hourly generation profiles are gathered and applicable conversions (AC-to-DC, scaling) are applied. The processed profiles are saved to a `{tech}.h5` file. This method makes use of the same h5 format specified in the `get_site_cf_hourly` function used by `recf.py` in ReEDS.
 1. `copy_outputs()`
@@ -230,14 +228,12 @@ This section provides some descriptions and typical values for the settings in t
 | copy_to_shared  | Copy hourlize outputs to the shared drive |  False |
 | driver  | 'H5FD_CORE', None. H5FD_CORE will load the h5 into memory for better perforamnce, but None must be used for low-memory machines. |  'H5FD_CORE' |
 | dtype  | data type used to save hourly profiles |  np.uint16 |
-| existing_sites  | None or path to file with existing capacity |  '{reeds_path}/inputs/capacity_exogenous/ReEDS_generator_database_final_EIA-NEMS.csv' |
 | gather_method  |  'list', 'slice', 'smart'. This setting will take a slice of profile ids from the min to max, rather than using a list of ids, for improved performance when ids are close together for each group. |  'smart' |
 | hourly_out_years  | e.g. [2012] for just 2012 or a list of year [2011, 2012, 2013] | [2007, 2008, 2009, 2010, 2011, 2012, 2013], |
 | inputfiles | list of files to copy over to hourlize input folder | ["reg_map_file", "class_path"] |
 | profile_id_col  | Unique identifier for reV supply curve and profiles |  'sc_point_gid' |
 | resource_source_timezone  | UTC would be 0, Eastern standard time would be -5 | 0 |
 | scale_factor  | Factor by which capacity factor values are scaled up when writing hourly profiles. | 1e4 |
-| start_year  | The start year of the model, for existing capacity purposes. | 2010 |
 | state_abbrev  | Path to file with state abbreviations  | '{hourlize_path}/inputs/resource/state_abbrev.csv' |
 |   subsetvars | list of columns in the rev_paths file to use to select the appropriate rev_path   | ['tech', 'access_case'] |
 | subtract_exog  | Indicate whether to remove exogenous (pre-start_year) capacity from the supply curve [default False] |  False |

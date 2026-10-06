@@ -16,6 +16,6 @@
     "upv_type": null,
     "geo_run_supply_curve_aggregation": true,
     "geo_aggregation_method": "lowest_lcoe",
-    "process_profiles": false,
-    "existing_sites": null
+    "process_profiles": false
 }
+
