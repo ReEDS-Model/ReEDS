@@ -1099,7 +1099,42 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     return temperatures
 
 
-def get_site_cf_hourly(tech, year, case=None, **kwargs):
+def get_siting_switchval(tech:Literal['upv','wind-ons','wind-ofs'], case=None, **kwargs) -> str:
+    """
+    Get the siting scenario to use for the specified tech.
+    If not using Monte Carlo sampling, simply reads from the case switches.
+    If using Monte Carlo sampling, returns the most permissive scenario used in the distribution
+    of siting scenarios for the specified technology (e.g., if the distribution includes
+    'open' and 'limited', it returns 'open').
+    """
+    sw = reeds.io.get_switches(case, **kwargs)
+    switchname = {
+        'upv': 'GSw_SitingUPV',
+        'wind-ons': 'GSw_SitingWindOns',
+        'wind-ofs': 'GSw_SitingWindOfs',
+    }[tech]
+    options_openest_first = ['open', 'reference', 'limited']
+    if not int(sw['MCS_runs']):
+        return sw[switchname]
+    else:
+        mc_inputs = reeds.input_processing.mcs_sampler.load_mcs_dist(case)
+        keep = mc_inputs.assignments_list.map(lambda x: any([switchname in entry for entry in x]))
+        ## Siting should only be specified in one entry
+        assert keep.sum() <= 1
+        if keep.sum() == 0:
+            return sw[switchname]
+        dist = mc_inputs.loc[keep].squeeze(0)
+        siting_scenarios = {
+            key: val for entry in dist.assignments_list for key, val in entry.items()
+        }[switchname]
+        ## Keep the openest scenario (which is first in the list)
+        for scen in options_openest_first:
+            if scen in siting_scenarios:
+                print(f'MCS: Using {scen}-access profiles for {tech}')
+                return scen
+
+
+def get_site_cf_hourly(tech:Literal['upv','wind-ons','wind-ofs'], year, case=None, **kwargs):
     """
     Get hourly site-level capacity factor profiles for the given tech and year
     in UTC. Note that "distpv" is not a valid input to the "tech" parameter for
@@ -1115,30 +1150,12 @@ def get_site_cf_hourly(tech, year, case=None, **kwargs):
     precedence. If {case} is None and a keyword argument is not provided
     for a switch, the default switch values specified in cases.csv are used.
     """
-    sw = reeds.io.get_switches(case, **kwargs)
-    match tech:
-        case 'upv':
-            fname = f'cf_upv_{sw.GSw_SitingUPV}'
-        case 'wind-ons':
-            fname = f'cf_wind-ons_{sw.GSw_SitingWindOns}'
-        case 'wind-ofs':
-            fname = f'cf_wind-ofs_{sw.GSw_SitingWindOfs}'
-        case None:
-            raise ValueError(
-                "A technology must be provided if no case is "
-                "provided or if inputs_case/recf.h5 does not exist."
-            )
-        case _:
-            raise NotImplementedError(
-                f"The provided tech '{tech}' does not have CF profiles."
-            )
+    access = get_siting_switchval(tech=tech, case=case, **kwargs)
+    fname = f'cf_{tech}_{access}.h5'
+    h5path = Path(reeds_path, 'inputs', 'profiles_cf', fname)
+    if not h5path.is_file():
+        raise FileNotFoundError(h5path)
 
-    h5path = os.path.join(
-        reeds_path,
-        'inputs',
-        'profiles_cf',
-        f'{fname}.h5'
-    )
     with h5py.File(h5path, 'r') as f:
         time_index = pd.to_datetime(
             pd.Series(f[f'time_index_{year}'][:])

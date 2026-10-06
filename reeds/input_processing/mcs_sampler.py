@@ -486,8 +486,27 @@ def general_mcs_dist_validation(reeds_path: str, mcs_dist_path: str, sw: pd.Seri
                         f"{sample_group['dist']} for {sample_group['name']} requires "
                         f"{assignment_rule} entries for each switch assignment."
                     )
-    
-            
+
+
+def load_mcs_dist(case) -> pd.DataFrame:
+    """
+    Load the full set of possible Monte Carlo distributions,
+    downselect to the ones used in the specified case,
+    and return them as a dataframe.
+    """
+    mcs_dist_path = Path(reeds.io.standardize_case(case), 'inputs_case', 'mcs_distributions.yaml')
+    with open(mcs_dist_path, 'r') as f:
+        data = yaml.safe_load(f)
+        all_options = pd.DataFrame(data)
+
+    sw = reeds.io.get_switches(case)
+    mcs_dist_groups = sw['MCS_dist_groups'].split('.')
+
+    keep = all_options.loc[all_options['name'].isin(mcs_dist_groups)].reset_index(drop=True)
+
+    return keep
+
+
 def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFrame, dict]:
     """
     Obtain the instructions to sample the distributions for each switch 
@@ -503,17 +522,7 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
     """
     print('Reading the input distribution information for Monte Carlo sampling')
 
-    # Read yaml file with the input distribution information.
-    mcs_dist_path = os.path.join(inputs_case, 'mcs_distributions.yaml')
-    with open(mcs_dist_path, 'r') as f:
-        data = yaml.safe_load(f)
-        df_input_dist = pd.DataFrame(data)
-
-    sw = reeds.io.get_switches(inputs_case)
-    mcs_dist_groups = sw['MCS_dist_groups'].split('.')
-
-    # Ignore all cases not in mcs_dist_groups
-    df_input_dist = df_input_dist[df_input_dist['name'].isin(mcs_dist_groups)].reset_index(drop=True)
+    df_input_dist = load_mcs_dist(inputs_case)
 
     # Expand df_input_dist with new information to facilitate the Monte Carlo sampling process.
     # Sample ID here is used to uniquely identify each sample-process.
