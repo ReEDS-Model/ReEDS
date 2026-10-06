@@ -470,6 +470,154 @@ def apply_ba_load_growth(
 
     return regional_load_hourly
 
+def apply_miso_peak_reshape(
+    regional_load_hourly: pd.DataFrame,
+    inputs_case: str,
+) -> pd.DataFrame:
+    """
+    Reshape MISO BA hourly load to match the MISO LTLF coincident load factor
+    per subregion, preserving each BA's annual energy.
+
+    MISO LTLF projects an improving load factor (peak grows more slowly than
+    energy), but flat annual load growth freezes the historical hourly shape,
+    so ReEDS keeps a constant (too low) load factor and overshoots the LTLF
+    coincident peak. This applies an energy-preserving affine pivot around
+    each BA's annual mean:
+
+        L'(h) = mean_BA + alpha_sub * (L(h) - mean_BA)
+
+    The same alpha_sub is applied to every MISO BA in a subregion, so the
+    subregion coincident peak pivots by alpha while each BA's annual energy is
+    preserved exactly (the hourly deviations from the mean sum to zero):
+
+        alpha_sub = (1/LF_target_sub - 1) / (1/LF_current_sub - 1)
+
+    LF_target_sub is the LTLF coincident load factor (peak_load_factor.csv,
+    staged by copy_files). LF_current_sub is measured per model year from the
+    grown hourly shape at the MISO-footprint coincident peak hour, averaged
+    over weather years, matching the MISO LTLF coincident-peak definition
+    (each subregion's demand at the hour the full MISO footprint peaks).
+
+    Only MISO BAs listed in peak_load_factor.csv are reshaped; all other
+    regions and any model year without a target pass through unchanged. If the
+    targets file is absent (non-MISO-LTLF runs) load is returned as-is.
+
+    Args:
+        regional_load_hourly: (year, datetime)-indexed hourly BA load profiles.
+        inputs_case: Path to the inputs case directory.
+
+    Returns:
+        pd.DataFrame: reshaped (year, datetime)-indexed hourly BA load profiles.
+    """
+    targets_path = os.path.join(inputs_case, 'peak_load_factor.csv')
+    if not os.path.exists(targets_path):
+        return regional_load_hourly
+
+    targets = pd.read_csv(targets_path)
+    required_cols = {'r', 'subregion', 'year', 'target_lf'}
+    if not required_cols.issubset(targets.columns):
+        raise ValueError(
+            "peak_load_factor.csv is missing columns "
+            f"{sorted(required_cols - set(targets.columns))}"
+        )
+    targets = targets.dropna(subset=['target_lf'])
+    ba_to_sub = dict(zip(targets['r'], targets['subregion']))
+    target_lf_lookup = {
+        (int(y), s): lf
+        for y, s, lf in zip(
+            targets['year'], targets['subregion'], targets['target_lf']
+        )
+    }
+    miso_bas_all = sorted(set(targets['r']))
+    subregions = sorted(set(targets['subregion']))
+
+    print('Applying MISO LTLF peak / load-factor reshape')
+    model_years = regional_load_hourly.index.get_level_values('year').unique()
+    reshaped = {}
+    for model_year in model_years:
+        load_my = regional_load_hourly.xs(model_year, level='year').copy()
+        bas_present = [b for b in miso_bas_all if b in load_my.columns]
+        year_targets = {
+            s: target_lf_lookup.get((int(model_year), s)) for s in subregions
+        }
+        has_target = any(
+            lf is not None and not np.isnan(lf) for lf in year_targets.values()
+        )
+        if not bas_present or not has_target:
+            reshaped[model_year] = load_my
+            continue
+
+        # Weather year of each hour (datetime index of this model year).
+        dt_index = load_my.index
+        if not isinstance(dt_index, pd.DatetimeIndex):
+            dt_index = pd.to_datetime(dt_index)
+        wy_arr = np.asarray(dt_index.year)
+
+        # MISO-footprint coincident peak hour position per weather year.
+        miso_hourly = load_my[bas_present].sum(axis=1).to_numpy()
+        peak_pos = np.array([
+            positions[np.argmax(miso_hourly[positions])]
+            for positions in (
+                np.where(wy_arr == u)[0] for u in np.unique(wy_arr)
+            )
+        ])
+
+        # Per-subregion compression factor alpha.
+        sub_alpha = {}
+        for s in subregions:
+            lf_target = year_targets[s]
+            if lf_target is None or np.isnan(lf_target) or lf_target <= 0:
+                continue
+            sub_bas = [b for b in bas_present if ba_to_sub[b] == s]
+            if not sub_bas:
+                continue
+            sub_hourly = load_my[sub_bas].sum(axis=1)
+            mean_load = sub_hourly.mean()
+            coincident_peak = sub_hourly.to_numpy()[peak_pos].mean()
+            # Degenerate / already-flat shapes: skip (leave load unchanged).
+            if mean_load <= 0 or coincident_peak <= mean_load:
+                continue
+            lf_current = mean_load / coincident_peak
+            denom = (1.0 / lf_current) - 1.0
+            if denom <= 0:
+                continue
+            alpha = ((1.0 / lf_target) - 1.0) / denom
+            sub_alpha[s] = alpha
+            print(f"  {model_year} {s}: LF_current={lf_current:.3f} "
+                  f"LF_target={lf_target:.3f} alpha={alpha:.3f}")
+            if alpha > 1.0:
+                print(f"  [warn] {model_year} {s}: alpha>1 (LTLF peakier than "
+                      f"ReEDS); expanding peak.")
+
+        # Energy-preserving affine pivot per BA about its annual mean.
+        for b in bas_present:
+            alpha = sub_alpha.get(ba_to_sub[b])
+            if alpha is None:
+                continue
+            mean_ba = load_my[b].mean()
+            load_my[b] = mean_ba + alpha * (load_my[b] - mean_ba)
+
+        # Diagnostic: confirm the MISO-footprint peak hour is unchanged (the
+        # per-subregion alphas can in principle shift the coincident hour).
+        if sub_alpha:
+            miso_after = load_my[bas_present].sum(axis=1).to_numpy()
+            moved = sum(
+                int(positions[np.argmax(miso_after[positions])]
+                    != peak_pos[i])
+                for i, positions in enumerate(
+                    np.where(wy_arr == u)[0] for u in np.unique(wy_arr)
+                )
+            )
+            if moved:
+                print(f"  [warn] {model_year}: MISO coincident peak hour "
+                      f"shifted for {moved} weather year(s) after reshape.")
+
+        reshaped[model_year] = load_my
+
+    out = pd.concat(reshaped, names=['year'])
+    out = out.reorder_levels(['year', 'datetime']).sort_index()
+    return out[regional_load_hourly.columns]
+
 def downselect_to_model_years(
     load_hourly: pd.DataFrame,
     model_years: list[int]
@@ -477,7 +625,7 @@ def downselect_to_model_years(
     """
     Retrieve the subset of hourly load profiles corresponding
     to the given model years.
-    
+
     Args:
         load_hourly: Hourly load profiles.
         model_years: List of model years used to filter load_hourly.
@@ -760,6 +908,12 @@ def main(reeds_path, inputs_case):
             inputs_case,
             hierarchy,
             solveyears
+        )
+        # Reshape MISO BA hourly load to the LTLF coincident load factor
+        # (energy-preserving). No-op when peak_load_factor.csv is absent.
+        regional_load_hourly = apply_miso_peak_reshape(
+            regional_load_hourly,
+            inputs_case,
         )
 
     #%%%#########################################

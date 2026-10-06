@@ -134,6 +134,7 @@ interconnection_queues.csv,inputs/capacity_exogenous/interconnection_queues.csv,
 jtype.csv,inputs/sets/jtype.csv,1,ignore,ignore,,,,,,,,set,jtype,job types used in model (construction and om),
 lcclike.csv,inputs/sets/lcclike.csv,1,ignore,ignore,,,,,0,,,set,lcclike,transmission capacity types where lines are bundled with AC/DC converters,
 load_multiplier.csv,inputs/load/demand_{demandscen}.csv,1,ignore,ignore,,,,,0,,,,,,
+peak_load_factor.csv,inputs/load/peaklf_{demandscen}.csv,'MISOLTLF' in sw.demandscen,ignore,ignore,,,,,0,,,,,,MISO LTLF per-BA coincident load-factor targets; reshapes hourly load to the LTLF peak (see hourly_load.apply_miso_peak_reshape)
 loadsite_annual.csv,inputs/load/loadsite_{GSw_LoadSiteTrajectory}.csv,float(sw.GSw_LoadSiteCF) > 0,ignore,ignore,*loadsitereg,t,,,0,,,,,,
 maxage.csv,inputs/plant_characteristics/maxage.csv,1,ignore,ignore,,,,,0,,,,,,
 maxdailycf.csv,inputs/plant_characteristics/maxdailycf.csv,int(sw.GSw_MaxDailyCF) != 0,ignore,ignore,,,,,0,,,parameter,maxdailycf_input,--fraction-- maximum daily capacity factor for a technology,
