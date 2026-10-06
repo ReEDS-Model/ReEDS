@@ -1091,35 +1091,15 @@ def plot_new_build_duration(run_dir, output_path, prefix='battery', min_gw=1.0):
     return fig, tab
 
 
-def stress_block_hours(run_dir, stress_h):
-    """Length in hours of one stress block in this run.
+def stress_block_hours(run_dir):
+    """Length in hours of one stress block in this run, from its GSw_HourlyChunkLengthStress.
 
-    Taken from GSw_HourlyChunkLengthStress and checked against the spacing of the stress
-    timeslice labels themselves (sy2009d173h003, ...h006 for three-hour blocks), so a run at a
-    different resolution is converted correctly and a disagreement between the two is reported
-    rather than silently used. Falls back to the label spacing when the switch is absent.
+    hourly_writetimeseries.py builds the stress timeslices from this same switch, so it is the
+    block length by construction.
     """
-    #Labels repeat across regions and years; de-duplicate first or the spacing reads as zero.
-    hrs = (pd.Series(stress_h).astype(str).drop_duplicates()
-           .str.extract(r'^(.*d\d+)h(\d+)$').dropna())
-    from_labels = None
-    if not hrs.empty:
-        hrs[1] = hrs[1].astype(int)
-        steps = hrs.sort_values([0, 1]).groupby(0)[1].diff().dropna()
-        if not steps.empty:
-            from_labels = float(steps.mode().iloc[0])
-    sw_path = os.path.join(run_dir, 'inputs_case', 'switches.csv')
-    from_switch = None
-    if os.path.exists(sw_path):
-        sw = pd.read_csv(sw_path, header=None, index_col=0)[1]
-        if 'GSw_HourlyChunkLengthStress' in sw.index:
-            from_switch = float(sw['GSw_HourlyChunkLengthStress'])
-    if from_switch is None and from_labels is None:
-        raise ValueError(f'cannot determine the stress block length for {run_dir}')
-    if from_switch is not None and from_labels is not None and from_switch != from_labels:
-        print(f'{os.path.basename(run_dir)}: GSw_HourlyChunkLengthStress is {from_switch:g} h but '
-              f'the stress timeslices are {from_labels:g} h apart; using the switch.')
-    return from_switch if from_switch is not None else from_labels
+    sw = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'switches.csv'), header=None, index_col=0)[1]
+    return float(sw['GSw_HourlyChunkLengthStress'])
+
 
 def battery_stress_arbitrage(run_dir, prefix='battery'):
     """Per year, how the storage fleet earns its reserve-margin value inside the stress periods.
@@ -1152,7 +1132,7 @@ def battery_stress_arbitrage(run_dir, prefix='battery'):
     cap = cap[cap['i'].str.startswith(prefix)].groupby(['r', 't'], as_index=False)['mw'].sum()
     m = gen.merge(hourly, on=['r', 'h', 't']).merge(cap, on=['r', 't']).merge(ann, on=['r', 't'])
     m = m[(m['mw'] > 0) & (m['ann'] > 0)]
-    block_hours = stress_block_hours(run_dir, hourly['h'])
+    block_hours = stress_block_hours(run_dir)
     to_usd_mwh = reeds_usd_mult / block_hours
     rows = []
     for y, d in m.groupby('t'):
