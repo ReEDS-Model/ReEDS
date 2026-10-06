@@ -116,6 +116,16 @@ outcols = {
 _diff = len(outcols) - dfland.shape[1]
 assert _diff == 0, len(_diff)
 
+# drop ac suffix for cost columns
+cost_cols = {
+    'cost_spur_usd_per_mw_ac': 'cost_spur_usd_per_mw',
+    'cost_poi_usd_per_mw_ac': 'cost_poi_usd_per_mw',
+    'cost_reinforcement_usd_per_mw_ac': 'cost_reinforcement_usd_per_mw',
+    'cost_total_trans_usd_per_mw_ac': 'cost_total_trans_usd_per_mw'
+}
+dfland = dfland.rename(columns=cost_cols)
+
+# subset to outcols 
 dfland = dfland[list(outcols.keys())].astype(outcols)
 
 #%% Write it
