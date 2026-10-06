@@ -86,12 +86,15 @@ volume of output. A change the human doesn't understand is not finished.
 ### 2.2 Keep documentation in sync with code
 The repo treats documentation as part of the change, not an afterthought. When
 your change touches model behavior, switches, inputs, or outputs, update the
-relevant file(s) under [`docs/source/`](docs/source):
+relevant file(s) under [`docs/source/`](docs/source), subject to this exception:
 
-- [`docs/source/model_documentation.md`](docs/source/model_documentation.md) —
-  high-level description of default model behavior. Use admonition blocks for
-  developer-only details (switch names, parameter names, file paths in
-  backticks).
+**Exception:** AI assistants must not create or edit
+`docs/source/model_documentation.md`, including generating replacement text
+for it. If a code change means that document should be updated, identify the
+relevant topics or changes in the handoff for a human to write.
+Continue updating other relevant documentation as required. This restriction
+takes precedence over any general instruction to keep documentation in sync.
+
 - [`docs/source/user_guide.md`](docs/source/user_guide.md) — user/developer
   description of switches and input files.
 - [`docs/source/faq.md`](docs/source/faq.md) — limitations, caveats, known
@@ -320,8 +323,9 @@ A short checklist to apply to every non-trivial change:
 1. **Search for switch interactions.** Grep for any `GSw_*` or `Sw_*` name
    that appears in the file you're editing. Note any switch-gated branches in
    your summary to the user.
-2. **Update file registrations (§2.3 item 3) and docs (§2.2) in the same
-   change**, not as a follow-up.
+2. **Update file registrations (§2.3 item 3) and applicable docs (§2.2) in
+  the same change**, not as a follow-up. For `model_documentation.md`, follow
+  the exception in §2.2.
 3. **Branch and PR hygiene.**
    - Start branches from `main`, not from another feature branch, unless
      the user names an integration branch to build on and target.
