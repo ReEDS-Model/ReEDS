@@ -30,7 +30,7 @@ GSw_WaterUse,,,,,,,,,,,,,,,,,,,1,,,,,,,,,,,,,
 resource_adequacy_years,,,,,,,2011_2012_2013_2021_2022_2023,,,,,,,,,,,,,,,2011_2012_2013_2021_2022_2023,,,,,,,,,,
 GSw_HourlyClusterAlgorithm,,,,,,,,,,,,,,,,,,,,user,user,,,,,,,,,,,
 MCS_runs,,,,,,,,,,,,,,,,,,,,2,2,,,,,,,,,,,
-MCS_dist_groups,,,,,,,,,,,,,,,,,,,,upv.onswind.ofswind.battery.nuclear.load_st.wind_solar_siting_st,upv_tri.nuclear_tri.ng_fuel_price_tri.load_country_unif,,,,,,,,,,,
+MCS_dist_groups,,,,,,,,,,,,,,,,,,,,upv.onswind.ofswind.battery.nuclear.load_st.wind_solar_siting_st,upv_tri.nuclear_tri.ng_fuel_price_tri.load_country_unif.siting_country_discrete_flat,,,,,,,,,,,
 MCS_lhs,,,,,,,,,,,,,,,,,,,,,1,,,,,,,,,,,
 GSw_PRM_StressIterateMax,,,,,,,,0,,,,,,,,0,0,,,1,1,,,,,,,,,,,
 GSw_ReducedResource,,,,,,,1,,,,,,,,,,,,,,,1,,,,,,,,,,
@@ -64,4 +64,4 @@ pras_existing_unit_size,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0
 pras_scheduled_outage,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0
 pras_unitsize_source,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,r2x
 pras_vre_combine,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1
-pras_samples,10,,,,,10,10,10,,,,,,,,,,,,,,,,10,10,,,,,,,
+pras_samples,,,,,,10,10,10,,,,,,,,,,,,,,,,10,10,,,,,,,

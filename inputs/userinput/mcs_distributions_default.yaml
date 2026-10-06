@@ -325,6 +325,15 @@
   dist_params: [1, 1]
   weight_r: st
 
+- name: siting_country_discrete_flat
+  assignments_list:
+    - GSw_SitingUPV: [limited, reference, open]
+    - GSw_SitingWindOfs: [limited, reference, open]
+    - GSw_SitingWindOns: [limited, reference, open]
+  dist: discrete
+  dist_params: [1, 1, 1]
+  weight_r: country
+
 
 ### ---------------------------------------------------###
 ### --- Miscellaneous distributions
