@@ -141,7 +141,8 @@ cost_cols = {
     'cost_spur_usd_per_mw_ac': 'cost_spur_usd_per_mw',
     'cost_poi_usd_per_mw_ac': 'cost_poi_usd_per_mw',
     'cost_reinforcement_usd_per_mw_ac': 'cost_reinforcement_usd_per_mw',
-    'cost_total_trans_usd_per_mw_ac': 'cost_total_trans_usd_per_mw'
+    'cost_total_trans_usd_per_mw_ac': 'cost_total_trans_usd_per_mw',
+    'cost_export_usd_per_mw_ac': 'cost_export_usd_per_mw'
 }
 dfland = dfland.rename(columns=cost_cols)
 
@@ -222,6 +223,14 @@ columns_different = [
 columns_meshed = {'Zone_ReEDS':'ba'}
 
 #%% Make combined dataframe
+for offshoretype in ['radial', 'meshed']:
+    cost_cols_sub = {
+        k: v for k, v in cost_cols.items()
+        if v not in dictin[f'offshore_{offshoretype}'].columns
+    }
+    dictin[f'offshore_{offshoretype}'] = dictin[f'offshore_{offshoretype}'].rename(columns=cost_cols_sub)
+    check_negative_values(dictin[f'offshore_{offshoretype}'], cost_cols)
+
 dfwrite = dictin['offshore_radial'][columns_same].copy()
 for col in columns_different:
     for offshoretype in ['radial', 'meshed']:
