@@ -8,6 +8,26 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
 
+def check_negative_values(df, cost_cols):
+    neg_vals_all = {}
+    for cc in cost_cols.values():
+        if cc in df.columns:
+            try:
+                neg_vals = sum(df[cc] < 0)
+            except:
+                breakpoint()
+            if neg_vals:
+                neg_vals_all[cc] = neg_vals
+
+    if neg_vals_all:
+        message = "\n".join(
+            f"{cc} -> {count}" for cc, count in neg_vals_all.items()
+        )
+        raise ValueError(
+            f"The following cost columns have negative values:\n{message}"
+            "Check reV data to confirm these."
+        ) 
+
 #%%### Fixed inputs
 if reeds.io.hpc:
     remotepath = '/kfs2/shared-projects/reeds'
@@ -127,6 +147,10 @@ dfland = dfland.rename(columns=cost_cols)
 
 # subset to outcols 
 dfland = dfland[list(outcols.keys())].astype(outcols)
+
+# check for negative values
+check_negative_values(dfland, cost_cols)
+
 
 #%% Write it
 drop = ['trans_gid', 'trans_type']
