@@ -1507,6 +1507,82 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_a
     return fig, pd.DataFrame(scales)
 
 
+def plot_all_tech_factors(df, output_path, form='power', techs=None):
+    """Value factor, cost factor and value-cost factor against market share, every tech on each panel.
+
+    The same numbers as the per-tech VCF figure: the value factor as it is, and the value-cost and
+    cost factors with LCOE base scaled by that tech's s from vcf_matched_scale: VCF times s and CF
+    divided by s, so scaled VCF = VF / scaled CF still holds point by point. The cost factor is
+    drawn directly rather than as 1/CF, so it rises where the other two fall.
+
+    Colours follow the report's tech colours; each tech also has its own marker and a label at its
+    last point, since the UPV yellow and wind cyan are low-contrast on white. Storage is left out
+    with vcf_separate_techs, as in the per-tech figures.
+    """
+    techs = vcf_panel_techs(df, techs)
+    colors = build_color_map(techs)
+    markers = ['o', 's', '^', 'D', 'v', 'P', 'X']
+    panels = [('value_factor', 'Value factor'),
+              ('cost_factor', 'Cost factor, LCOE base scaled'),
+              ('value_cost_factor', 'Value-cost factor, LCOE base scaled')]
+    rows = []
+    for tech in techs:
+        matched = vcf_matched_scale(df, tech, form)
+        if matched is None:
+            continue
+        sc = matched[0]
+        d = df[df['tech'] == tech].dropna(subset=['gen_frac', 'value_factor', 'value_cost_factor',
+                                                  'cost_factor']).sort_values('gen_frac')
+        rows.append(pd.DataFrame({'tech': tech, 'year': d['year'].to_numpy(),
+                                  'gen_frac': d['gen_frac'].to_numpy(),
+                                  'value_factor': d['value_factor'].to_numpy(),
+                                  'cost_factor': d['cost_factor'].to_numpy() / sc,
+                                  'value_cost_factor': d['value_cost_factor'].to_numpy() * sc,
+                                  'lcoe_base_scale': sc}))
+    if not rows:
+        return None, pd.DataFrame()
+    data = pd.concat(rows, ignore_index=True)
+    plotted = list(data['tech'].unique())
+    fig, axes = plt.subplots(1, 3, figsize=(14.0, 4.6))
+    panel_ends = []
+    for ax, (col, title) in zip(axes, panels):
+        ends = []
+        for k, tech in enumerate(plotted):
+            d = data[data['tech'] == tech]
+            ax.plot(d['gen_frac'] * 100, d[col], color=colors[tech], lw=1.6,
+                    marker=markers[k % len(markers)], ms=5, mec='white', mew=0.6,
+                    label=display_tech(tech))
+            ends.append([d[col].iloc[-1], d['gen_frac'].iloc[-1] * 100, display_tech(tech)])
+        ax.set_title(title, fontsize=10, loc='left')
+        panel_ends.append((ax, ends))
+        ax.set_xlabel('Market share (% of generation)')
+        ax.grid(alpha=0.25, lw=0.6)
+        ax.set_xlim(0, data['gen_frac'].max() * 100 * 1.16)
+    #VF and VCF share one y range, so the gap between the two panels reads as the cost factor.
+    hi = max(data['value_factor'].max(), data['value_cost_factor'].max()) * 1.05
+    for ax in (axes[0], axes[2]):
+        ax.set_ylim(0, hi)
+    axes[1].set_ylim(bottom=min(0.9, data['cost_factor'].min() * 0.95))
+    axes[1].axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
+    #Label each line at its last point, nudging labels apart vertically where lines end close
+    #together (Coal and Gas-CC finish within a few hundredths of each other). Done after the limits
+    #are set, since the minimum gap is a fraction of the axis height.
+    for ax, ends in panel_ends:
+        lo, hi_y = ax.get_ylim()
+        gap = 0.045 * (hi_y - lo)
+        ends.sort(key=lambda e: e[0])
+        placed = []
+        for y, x, label in ends:
+            y_lab = y if not placed else max(y, placed[-1] + gap)
+            placed.append(y_lab)
+            ax.annotate(label, (x, y), xytext=(x + 1.2, y_lab), textcoords='data', fontsize=7,
+                        va='center', color='0.25')
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=len(plotted), fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.savefig(output_path, dpi=200)
+    return fig, data
+
 def vcf_log_decomposition(df, tech, form='power'):
     """Exact split of the log decline in value-cost factor into a value part and a cost part.
 
@@ -1662,6 +1738,12 @@ def make_figs(valcostfac_core_path, output_dir=None):
         fig_vcf_pow_sync, _ = plot_vre_vcf(
             df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_power_synced.png'), form='power',
             sync_axes=True)
+        #All techs on one set of axes per factor, from the same scaled series as the figure above.
+        fig_all, all_tab = plot_all_tech_factors(
+            df_vcf, os.path.join(output_dir, 'plcoe_pitch_all_tech_factors.png'), form='power')
+        if fig_all is not None:
+            plt.close(fig_all)
+            all_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_all_tech_factors.csv'), index=False)
         #Sensitivity: VRE per MWh generated rather than per MWh that could have been, so every
         #tech is on the dispatched basis. VCF is identical; only the value/cost split moves.
         scales_post = pd.DataFrame()

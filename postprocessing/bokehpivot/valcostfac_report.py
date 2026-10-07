@@ -417,9 +417,25 @@ def build_html(output_dir, core_path):
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
     # ---- 02b storage, held out of the shared-axes figure ----
-    stor_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 6,
+    # ---- 02a every technology on shared axes ----
+    all_fig = figure(output_dir, 'plcoe_pitch_all_tech_factors.png', 6,
+                     'Value factor, cost factor and value&#8211;cost factor, all technologies.',
+                     'The series of the first figure in section 02, on its default energy basis '
+                     'rather than the post-curtailment or available-energy ones, with one panel per '
+                     'factor and every technology on it, drawn as points joined in order of market '
+                     'share. The value factor is as computed; the cost and value&#8211;cost factors '
+                     'use each technology&rsquo;s LCOE base scaled as in that figure, so that its '
+                     'power fits of VF and VCF '
+                     'share an intercept at zero market share. Scaled VCF equals VF divided by '
+                     'scaled CF at every point. The cost factor is drawn directly rather than as '
+                     'its reciprocal. The value-factor and value&#8211;cost-factor panels share a y '
+                     'range; the dotted line in the middle panel is a cost factor of one. Storage is '
+                     'left out, as in the figures above.', order)
+
+    stor_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 7,
                       'Value factor and value&#8211;cost factor for storage.',
-                      'The same construction as the figure above, drawn by the same function, for '
+                      'The same construction as the first figure in section 02, drawn by the same '
+                      'function, for '
                       'the technologies held out of it. Storage occupies a different part of the '
                       'plane &mdash; value factor above one at low market share, and a market share '
                       'that stops near 15% &mdash; so sharing a pair of axis ranges with it '
@@ -429,7 +445,7 @@ def build_html(output_dir, core_path):
                       'curve against the data it is drawn over is negative, so the shaded band here '
                       'does not describe the cost-factor data.', order)
 
-    dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 7,
+    dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 8,
                      'Duration of new storage builds by model year.',
                      'Duration is the energy capacity a build adds divided by the power capacity '
                      'it adds, <span class="eq">INV_ENERGY / INV</span>, read from '
@@ -460,7 +476,7 @@ def build_html(output_dir, core_path):
          ('Median', True), ('p75', True), ('Mean', True)], dur_rows)
 
     # ---- 02c gas against the national gas supply curve ----
-    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 8,
+    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 9,
                           'Fuel cost a new Gas-CC would face under the national gas supply curve.',
                           'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
                           'reference, converted at the new-build heat rate. Labels give the burn '
@@ -468,7 +484,7 @@ def build_html(output_dir, core_path):
                           'curve is applied: the census-division term is omitted because re-siting '
                           'would partly avoid it, while the national one can only be avoided by '
                           'building less gas.', order)
-    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 9,
+    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 10,
                      'Value factor and value&#8211;cost factor for Gas-CC, static against '
                      'supply-curve gas.',
                      'The construction of the figure in section 02, drawn by the same function, '
@@ -520,7 +536,7 @@ def build_html(output_dir, core_path):
         gas_rows)
 
     # ---- 02d capacity credit ----
-    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 10,
+    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 11,
                     'Capacity credit of new builds against market share.',
                     'For each year&rsquo;s new builds, the reserve-margin value they earned divided '
                     'by what the same capacity would have earned in the same regions had it been '
@@ -534,7 +550,7 @@ def build_html(output_dir, core_path):
                     'every level. Because those prices are concentrated in a few hours, this sits '
                     'below an hour-counting ELCC for resource-limited technologies. Storage is net '
                     'of charging, so its credit is a round-trip-net quantity.', order)
-    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 11,
+    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 12,
                         'The same capacity credits against cumulative installed capacity.',
                         'Identical data to the figure above on a different x axis: the cumulative '
                         'national capacity of that technology in its own forcing run, on a log '
@@ -543,7 +559,7 @@ def build_html(output_dir, core_path):
                         'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
                         'same share of generation; against capacity the resource-limited '
                         'technologies fall along visibly separate paths rather than overlapping.', order)
-    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 12,
+    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 13,
                        'Capacity credit of new storage and UPV in every scenario.',
                        'The capacity credit above, computed the same way, for new builds of '
                        'storage and UPV in each run rather than only in the run that forces them. '
@@ -601,7 +617,7 @@ def build_html(output_dir, core_path):
     #Block length as the run had it, so the caption follows a change of stress resolution.
     blk = (f'{arb_df["block_hours"].iloc[0]:g}'
            if not arb_df.empty and 'block_hours' in arb_df else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 13,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 14,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the reserve-margin price of each stress block, weighted by the '
                      'storage fleet&rsquo;s discharge and by its charging, on a log scale. ReEDS '
@@ -644,7 +660,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 14,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 15,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -661,7 +677,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 15
+    map_figs, n = '', 16
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -845,6 +861,11 @@ def build_html(output_dir, core_path):
      'exponent difference is the band width in the table below. Technologies whose data does not '
      'approach zero market share have that intercept extrapolated rather than measured, and the '
      'figure marks them.</p></div>', fig2, fit_table, decline_table, fig2b, fig2c)}
+
+{sec('02a', 'All technologies on shared axes',
+     '<div class="col"><p>The same scaled series as section 02, regrouped by factor rather than by '
+     'technology, so each technology can be read against the others at the same market '
+     'share.</p></div>', all_fig)}
 
 {sec('02b', 'Storage value factor and value&#8211;cost factor',
      '<div class="col"><p>Storage is drawn apart from the other technologies because its value '
