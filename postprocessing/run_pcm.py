@@ -30,6 +30,8 @@ switch_mods_default = {
     'GSw_HourlyChunkLengthStress': 1,
     'GSw_HourlyChunkAggMethod': 1,
     'GSw_PRM_CapCredit': 0,
+    'GSw_H2': 0,
+    'GSw_H2_PTC': 0
 }
 
 
@@ -237,11 +239,11 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         _iteration = iteration
         restartfile = os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i{_iteration}.g00")
 
-    ## 2_temporal_params.gms reads stress{stress_year}/prm.csv even with no stress periods
-    prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i{_iteration}', 'prm.csv')
-    if not os.path.isfile(prm_src):
-        prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i0', 'prm.csv')
-    shutil.copy(prm_src, os.path.join(stresspath, 'prm.csv'))
+    # ## 2_temporal_params.gms reads stress{stress_year}/prm.csv even with no stress periods
+    # prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i{_iteration}', 'prm.csv')
+    # if not os.path.isfile(prm_src):
+    #     prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i0', 'prm.csv')
+    # shutil.copy(prm_src, os.path.join(stresspath, 'prm.csv'))
 
     cmd_gams = solvestring_pcm(
         batch_case=batch_case,
