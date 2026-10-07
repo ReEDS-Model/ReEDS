@@ -2119,6 +2119,12 @@ valinv(i,v,r,t)$[valcap(i,v,r,t)$ivt(i,v,t)] = yes ;
 * Do not allow investments in regions where that technology is banned, expect for prescribed builds
 valinv(i,v,r,t)$[tech_banned(i,r)$(not prescribed_build(i,v,r,t))] = no ;
 
+* Disallow new (non-prescribed) solar investment after Sw_SolarInvBanYear
+valinv(i,v,r,t)$[Sw_SolarInvBanYear
+                $(upv(i) or pvb(i) or csp(i))
+                $(yeart(t) > Sw_SolarInvBanYear)
+                $(not prescribed_build(i,v,r,t))] = no ;
+
 *remove non-prescribed numeraire technologies that remain in valcap
 valinv(i,newv,r,t)$[i_numeraire(i)$Sw_WaterMain$(not prescribed_build(i,newv,r,t))] = no ;
 
@@ -4212,7 +4218,7 @@ co2_emit_rate_r(r,t) = 0 ;
 co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t) = 0 ;
 
 * ===========================================================================
-* Regional emissions rate limit (currently unused)
+* Regional emissions rate limit
 * ===========================================================================
 
 set emit_rate_con(e,r,t) "set to enable or disable emissions rate limits by pollutant and region" ;

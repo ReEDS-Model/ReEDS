@@ -768,7 +768,11 @@ def write_emit_rate_ref(sw, inputs_case, reeds_path):
     src = os.path.join(
         reeds_path, 'inputs', 'emission_constraints', 'emit_rate_ref.csv'
     )
+    # Write an empty file if GSw_EmitRateLimit=0
     if not os.path.exists(src):
+        pd.DataFrame(columns=['*Dim1', 'Val']).to_csv(
+            os.path.join(inputs_case, 'emit_rate_ref.csv'), index=False
+        )
         return
 
     raw = pd.read_csv(src)
