@@ -258,12 +258,14 @@ def get_class_cf_bounds(reeds_path, tech, subtech:None|Literal['fixed','floating
 
     # Pin each class's min CF to the max CF of the previous class to avoid gaps
     summary_df = summary_df.sort_values(by=['class','min_reV_cf_ac'])
-    for c in summary_df['class'].unique().tolist():
-        if c > min(summary_df['class'].unique().tolist()):
+    classes = summary_df['class'].unique().tolist()
+    for i, c in enumerate(classes):
+        if c > min(classes):
             summary_df.loc[
-                summary_df['class']==c,
-                'min_reV_cf_ac'
-            ] = summary_df.loc[summary_df['class']==c-1]['max_reV_cf_ac'].iloc[0]
+                summary_df['class'] == c, 'min_reV_cf_ac'
+            ] = summary_df.loc[
+                summary_df['class'] == classes[i-1], 'max_reV_cf_ac'
+            ].squeeze()
 
     # Round values to 4 decimal places
     summary_df['min_reV_cf_ac'] = summary_df['min_reV_cf_ac'].round(4)
@@ -1131,7 +1133,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM1_MonteCarlo_Random_MC0001','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM0_github_Pacific','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
