@@ -1068,8 +1068,28 @@ valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=0)$valnew('MW',i,r,t)] =
     * reqt_price_sys('res_marg','na',allh,t)} * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=1)$vre(i)$valnew('MW',i,r,t)] =
     sum{ccseason, m_cc_mar(i,r,ccseason,t) * valnew('MW',i,r,t) * reqt_price_sys('res_marg','na',ccseason,t)} ;
-* Note: val_resmarg and val_resmarg_sys are missing for the capacity credit formulation for non-VRE.
-* These would need cap_firm() but with vintage...
+* Non-VRE for the CapCredit formulation: firm capacity of the vintages invested this year, by the
+* same terms cap_firm and eq_reserve_margin use, scaled by inv_cap_ratio like the stress-period
+* branch above. CSP and hybrid storage are left out: their capacity credit mixes m_cc_mar on INV with
+* binned storage and is not covered here.
+parameter cap_firm_new_ivrt(i,v,r,ccseason,t) "--MW-- firm capacity of vintages invested in t, CapCredit formulation" ;
+cap_firm_new_ivrt(i,v,r,ccseason,t)
+    $[Sw_PRM_CapCredit$tmodel_new(t)$valinv(i,v,r,t)$(not vre(i))$(not csp(i))$(not storage_hybrid(i))$(not consume(i))] =
+*conventional capacity, with its seasonal capacity adjustment
+    + [CAP.l(i,v,r,t) * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))]$[(not hydro(i))$(not storage(i))]
+*dispatchable hydro
+    + [CAP.l(i,v,r,t) * cap_hyd_ccseason_adj(i,ccseason,r) * (1 + hydro_capcredit_delta(i,t))]$hydro_d(i)
+*non-dispatchable hydro
+    + sum{h$h_ccseason_prm(h,ccseason), GEN.l(i,v,r,h,t) }$hydro_nd(i)
+*standalone storage and hydro with added pumps, by duration bin
+    + sum{sdbin, CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) }$[storage_standalone(i) or hyd_add_pump(i)] ;
+
+valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=1)$(not vre(i))$valnew('MW',i,r,t)] =
+    sum{(v,ccseason), cap_firm_new_ivrt(i,v,r,ccseason,t) * reqt_price('res_marg','na',r,ccseason,t)}
+    * valnew('inv_cap_ratio',i,r,t) ;
+valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=1)$(not vre(i))$valnew('MW',i,r,t)] =
+    sum{(v,ccseason), cap_firm_new_ivrt(i,v,r,ccseason,t) * reqt_price_sys('res_marg','na',ccseason,t)}
+    * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_resmarg','benchmark',r,t)$[(Sw_PRM_CapCredit=0)$tmodel_new(t)] =
     sum{allh$h_stress_t(allh,t), reqt_price('res_marg','na',r,allh,t) * reqt_quant('res_marg','na',r,allh,t)} ;
 valnew('val_resmarg','benchmark','sys',t)$[(Sw_PRM_CapCredit=0)$tmodel_new(t)] =
