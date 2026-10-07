@@ -233,17 +233,22 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         restartfile = batch_case
         _iteration = 0
     elif iteration == 'last':
-        restartfile = sorted(glob(os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i*")))[-1]
+        ## Sort numerically so i10 comes after i9
+        restartfile = sorted(
+            glob(os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i*.g00")),
+            key=lambda x: int(x[: -len('.g00')].split('i')[-1]),
+        )[-1]
         _iteration = int(restartfile[: -len('.g00')].split('i')[-1])
     else:
         _iteration = iteration
         restartfile = os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i{_iteration}.g00")
 
-    # ## 2_temporal_params.gms reads stress{stress_year}/prm.csv even with no stress periods
-    # prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i{_iteration}', 'prm.csv')
-    # if not os.path.isfile(prm_src):
-    #     prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i0', 'prm.csv')
-    # shutil.copy(prm_src, os.path.join(stresspath, 'prm.csv'))
+    ## 2_temporal_params.gms reads stress{stress_year}/prm.csv even with no stress periods,
+    ## so use the PRM from the stress folder that the restart solve (_t, _iteration) used
+    prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i{_iteration}', 'prm.csv')
+    if not os.path.isfile(prm_src):
+        raise FileNotFoundError(f'PRM file for {_t}i{_iteration} not found: {prm_src}')
+    shutil.copy(prm_src, os.path.join(stresspath, 'prm.csv'))
 
     cmd_gams = solvestring_pcm(
         batch_case=batch_case,
