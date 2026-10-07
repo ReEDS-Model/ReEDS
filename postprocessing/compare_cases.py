@@ -41,7 +41,7 @@ parser.add_argument(
     '--titleshorten', '-s', type=str, default='',
     help='characters to cut from start of case name (only used if no casenames)')
 parser.add_argument(
-    '--startyear', '-t', type=int, default=2020,
+    '--startyear', '-t', type=int, default=2026,
     help='First year to show')
 parser.add_argument(
     '--sharey', '-y', action='store_true',
@@ -200,6 +200,20 @@ plotdiffvals = [
 onlytechs = None
 
 #%%### Functions
+def set_year_ticks(_ax, ystart=None, yend=None):
+    """Choose year tick spacing based on the plotted span"""
+    ystart = startyear if ystart is None else ystart
+    yend = lastyear if yend is None else yend
+    span = yend - ystart
+    if span > 30:
+        major, minor = 10, 5
+    elif span > 15:
+        major, minor = 5, 1
+    else:
+        major, minor = 2, 1
+    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(major))
+    _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(minor))
+
 def plot_bars_abs_stacked(
         dfplot, basecase, colors, ax, col=0,
         net=True, label=True, ypad=0.02, fontsize=9,
@@ -839,8 +853,7 @@ try:
                 annotation_clip=False,
             )
         ### Formatting
-        ax[techcoords[tech]].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5 if lastyear>2040 else 1))
-        ax[techcoords[tech]].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10 if lastyear>2040 else 5))
+        set_year_ticks(ax[techcoords[tech]])
         ax[techcoords[tech]].annotate(
             tech.replace(' ','\n'),
             (0.05,1.0), va='top', ha='left',
@@ -960,7 +973,9 @@ else:
                 sharex=True, sharey=sharey, dpi=None,
             )
             ax[0,0].set_ylabel(data['label'], y=-0.075)
-            ax[0,0].set_xlim(2017.5, lastyear+2.5)
+            ax[0,0].set_xlim(
+                startyear - yearstep[basecase]/2 - 0.5,
+                lastyear + yearstep[basecase]/2 + 0.5)
             ax[1,0].annotate(
                 f'Diff\nfrom\n{basecase}', (0.03,0.03), xycoords='axes fraction',
                 fontsize='x-large', weight='bold')
@@ -970,6 +985,7 @@ else:
                 if case not in data['data']:
                     continue
                 dfplot = data['data'][case].pivot(index='year', columns=data['columns'], values=data['values'])
+                dfplot = dfplot.loc[dfplot.index.astype(int) >= startyear]
                 dfplot = (
                     dfplot[[c for c in data['colors'].index if (( c in dfplot.columns) & (c not in (all_removals)))]]
                     .round(3).replace(0,np.nan)
@@ -983,6 +999,7 @@ else:
                 ax[0,col].set_title(
                     (case if nowrap else plots.wraptext(case, width=plotwidth*0.9, fontsize=14)),
                     fontsize=14, weight='bold', x=0, ha='left', pad=8,)
+                set_year_ticks(ax[0,col])
                 ax[0,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
                 ax[0,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
 
@@ -1004,13 +1021,13 @@ else:
 
             ###### Difference
             for col, case in enumerate(cases):
-                ax[1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-                ax[1,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
+                set_year_ticks(ax[1,col])
                 ax[1,col].axhline(0,c='k',ls='--',lw=0.75)
 
                 if (case not in data['data']) or (case == basecase):
                     continue
                 dfplot = data['data'][case].pivot(index='year', columns=data['columns'], values=data['values'])
+                dfplot = dfplot.loc[dfplot.index.astype(int) >= startyear]
                 dfplot = (
                     dfplot
                     .round(3).replace(0,np.nan)
@@ -1570,8 +1587,7 @@ try:
     plots.despine(ax)
     plt.draw()
     for col in [0,1] + ([2] if len(dictin_neue) else []):
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+        set_year_ticks(ax[col])
     ### Save it
     slide = reeds.report_utils.add_to_pptx('Cost, Reliability', prs=prs, width=width)
     if interactive:
@@ -1607,8 +1623,7 @@ try:
         _ax.set_title(region, weight='bold')
         _ax.axhline(neue_threshold, c='C7', ls='--', lw=0.75)
     _ax.set_ylim(0,ymax)
-    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    set_year_ticks(_ax)
     ax[labelcoords['label']].set_ylabel('NEUE [ppm]', x=0, va='bottom')
     ax[labelcoords['legend']].legend(
         loc='upper left', bbox_to_anchor=(1,1), frameon=False, fontsize='large',
@@ -1698,8 +1713,7 @@ try:
     plots.despine(ax)
     plt.draw()
     for col in range(4):
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+        set_year_ticks(ax[col])
     ### Save it
     slide = reeds.report_utils.add_to_pptx('Emissions', prs=prs, width=width)
     if interactive:
@@ -1832,8 +1846,7 @@ try:
     plots.despine(ax)
     plt.draw()
     for col in range(len(dfplot)):
-        ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-        ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+        set_year_ticks(ax[col])
         plots.shorten_years(ax[col])
     ### Save it
     slide = reeds.report_utils.add_to_pptx('Generation Share', prs=prs)
@@ -2080,8 +2093,7 @@ try:
         plots.despine(ax)
         plt.draw()
         for col in [0]:
-            ax[col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-            ax[col].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+            set_year_ticks(ax[col])
         ### Save it
         slide = reeds.report_utils.add_to_pptx(
             'Interzonal Transmission' if interzonal_only else 'Transmission (all types)',
