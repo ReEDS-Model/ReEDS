@@ -212,6 +212,8 @@ def plot_bars_abs_stacked(
         colors = colors.squeeze()
 
     ## Absolute and difference
+    ## Treat missing entries as zero so that (x - NaN) doesn't drop elements from the diff
+    dfplot = dfplot.fillna(0)
     if isinstance(basecase, str):
         dfdiff = dfplot - dfplot.loc[basecase]
     elif isinstance(basecase, list):
@@ -1191,6 +1193,8 @@ try:
         dfplot = (
             dfplot[[c for c in output_formatting['bokeh_tech_colors'].index if c in dfplot]]
             .round(3).replace(0,np.nan).dropna(axis=1, how='all')
+            ## Restore zeros so case differences aren't NaN when a tech is absent in one case
+            .fillna(0)
         )
         handles[datum] = plot_bars_abs_stacked(
             dfplot=dfplot, basecase=basemap,

@@ -99,15 +99,18 @@ def add_textbox(
 #%% ===========================================================================
 ### --- Tools to get cases
 ### ===========================================================================
-def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
+def parse_caselist(caselist, casenames, basecase_in, titleshorten=0, min_cases=2):
     use_table_casenames = False
     use_table_colors = False
     use_table_bases = False
     _caselist = caselist.copy()
     _casenames = casenames
     if len(_caselist) == 1:
+        ## If it's a single finished case folder, use it directly
+        if os.path.isfile(os.path.join(_caselist[0].rstrip('/\\'), 'outputs', 'outputs.h5')):
+            caselist = [_caselist[0].rstrip('/\\')]
         ## If it's a .csv, read the cases to compare
-        if _caselist[0].endswith('.csv'):
+        elif _caselist[0].endswith('.csv'):
             dfcase = pd.read_csv(_caselist[0], header=None, comment='#', quoting=3)
             ## First check it's a simple csv with one case per row
             if dfcase.shape[1] == 1:
@@ -146,8 +149,8 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
         else:
             caselist = sorted(glob(_caselist[0]+'*'))
             ## If no titleshorten is provided, use the provided prefix
-            if not titleshorten:
-                titleshorten = len(os.path.basename(_caselist))
+            if (not titleshorten) and (len(caselist) > 1):
+                titleshorten = len(os.path.basename(_caselist[0]))
     else:
         caselist = _caselist
 
@@ -176,9 +179,12 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
 
     cases = dict(zip(casenames, caselist))
 
-    # check to ensure there are at least two cases
-    if len(cases) <= 1: 
-        err = f"There are less than two cases being compared: {', '.join(cases.values())}"
+    # check to ensure there are enough cases
+    if len(cases) < min_cases:
+        err = (
+            f"There are fewer than {min_cases} cases being compared: "
+            f"{', '.join(cases.values())}"
+        )
         raise ValueError(err)
 
     ### Get the base cases
