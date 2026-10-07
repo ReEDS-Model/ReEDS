@@ -54,7 +54,7 @@ def setup_linked_cases(df_cases, case):
 
     # define path to and read the FINITO check_inputs function
     finito_check_inputs_path = os.path.join(
-        df_cases[case]['FINITO_dir'], 'input_processing', 'processing')
+        df_cases[case]['FINITO_dir'], 'input_processing')
     sys.path.append(finito_check_inputs_path)
     from check_inputs import check_inputs
 
@@ -136,7 +136,7 @@ def setup_finito(casedir, caseSwitches, BatchName):
     #%% (GSw_Trade_PriceResponse > 0) If doing a price-responsive trade run, retrieve the reference exports/imports prices
     if int(caseSwitches['GSw_Trade_PriceResponse']) > 0:
         initialize_price_response_path = (
-            casedir_finito / 'input_processing' / 'processing' / 'initialize_price_response.py'
+            casedir_finito / 'input_processing' / 'initialize_price_response.py'
         )
         subprocess.run(
             [
@@ -153,7 +153,7 @@ def setup_finito(casedir, caseSwitches, BatchName):
     # Call FINITO copy_files.py file before starting the runs
     copy_files_run = subprocess.run(
         [
-            'python', str(finito_dir / 'input_processing' / 'processing' / 'copy_files.py'),
+            'python', str(finito_dir / 'input_processing' / 'copy_files.py'),
             '-c', str(casedir_finito),
             '-d', str(inputs_case_finito),
             '--link',
@@ -172,7 +172,7 @@ def setup_finito(casedir, caseSwitches, BatchName):
     ## Populate sets for each linked run using autopop_set.py
     subprocess.run(
         [
-            'python', str(finito_dir / 'input_processing' / 'processing' / 'autopop_set.py'),
+            'python', str(finito_dir / 'input_processing' / 'autopop_set.py'),
             '-c', str(casedir_finito),
             '-d', str(inputs_case_finito),
             '--link',
@@ -183,7 +183,7 @@ def setup_finito(casedir, caseSwitches, BatchName):
     ## Call read_mecs_heat.py to generate heat/nonheat/feedstock ratios for FINITO Rest of Industry (ROI)
     mecs_sectors = [s for s in caseSwitches['focus_sectors'].split('.') if s]
     read_mecs_path = (
-        finito_dir / 'input_processing' / 'processing' / 'mecs' / 'read_mecs_heat.py'
+        finito_dir / 'input_processing' / 'read_mecs_heat.py'
     )
     subprocess.run(
         ['python', str(read_mecs_path), '-s', *mecs_sectors, '-d', str(inputs_case_finito)],
