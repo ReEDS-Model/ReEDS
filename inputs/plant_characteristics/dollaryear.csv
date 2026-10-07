@@ -40,6 +40,9 @@ geo_ATB_2023_moderate,2020
 geo_ATB_2024_advanced,2021
 geo_ATB_2024_conservative,2021
 geo_ATB_2024_moderate,2021
+geo_ATB_2025_advanced,2023
+geo_ATB_2025_conservative,2023
+geo_ATB_2025_moderate,2023
 h2-combustion_ATB_2023,2021
 h2-combustion_ATB_2024,2022
 nuclear_ATB_2024_advanced,2022
