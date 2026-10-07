@@ -269,87 +269,35 @@ def calibrate_hourly_state_load_to_historical_annuals(
 
     return state_load_hourly
 
-def prepend_historical_hourly_state_load(
-    state_load_hourly: pd.DataFrame,
-    historical_state_load_hourly: pd.DataFrame,
-    historical_state_load_annual: pd.DataFrame
-) -> pd.DataFrame:
-    """
-    Create hourly state load profiles for historical model years and
-    prepend them to state_load_hourly.
-    
-    Args:
-        state_load_hourly: Hourly state load profiles in MWh.
-        historical_state_load_hourly: Hourly historical state load profiles
-            in MWh.
-        historical_state_load_annual: Annual historical state loads in MWh.
-
-    Returns:
-        pd.DataFrame
-    """
-    historical_load_dict = {}
-    
-    # For historical model years with no projected load profiles, create load
-    # profiles for each model year by scaling the historical load profiles to
-    # match annual totals for the model year
-    min_historical_model_year = historical_state_load_annual['year'].min()
-    min_projected_model_year = (
-        state_load_hourly.index.get_level_values('year').min()
-    )
-    for model_year in range(
-        min_historical_model_year, min_projected_model_year
-    ):
-        historical_state_load_hourly_scaled = (
-            scale_historical_hourly_state_load_to_model_year(
-                historical_state_load_hourly,
-                historical_state_load_annual,
-                model_year
-            )
-        )
-        historical_load_dict[model_year] = historical_state_load_hourly_scaled
-
-    historical_state_load_hourly = pd.concat(
-        historical_load_dict,
-        names=('year',)
-    )
-    state_load_hourly = pd.concat([
-        historical_state_load_hourly,
-        state_load_hourly
-    ])
-
-    return state_load_hourly
-
-def apply_load_growth_factors_to_historical_state_load(
+def scale_historical_state_load_to_baseline_year(
     historical_state_load_hourly: pd.DataFrame,
     historical_state_load_annual: pd.DataFrame,
-    inputs_case: str,
-    solveyears: list[int] | None = None
+    inputs_case: str
 ) -> pd.DataFrame:
     """
-    Multiply hourly historical load profiles (scaled to match historical
-    annual totals for a baseline year) by annual load growth factors to
-    create projected load profiles for each model year.
-    
+    Scale hourly historical state load profiles to match historical annual
+    totals for the load multiplier baseline year. Load growth from the
+    baseline year is applied later, at model-region (BA) resolution, by
+    apply_ba_load_growth().
+
     Args:
         historical_state_load_hourly: Hourly historical state load
             profiles in MWh.
         historical_state_load_annual: Annual state loads in MWh
             for historical years.
         inputs_case: Path to the inputs case directory.
-        solveyears: Optional list of model years to filter load
-            multipliers down to.
 
     Returns:
-        pd.DataFrame
+        pd.DataFrame: datetime-indexed hourly state load (columns = states)
+            scaled to the load multiplier baseline year.
     """
-    # Read annual state multipliers representing projected load growth
-    # from a baseline year
+    # Read annual multipliers only to recover the baseline year
     load_multiplier = pd.read_csv(
         os.path.join(inputs_case, 'load_multiplier.csv')
     )
+    load_multiplier_baseline_year = load_multiplier['year'].min()
     # Scale the historical load profiles to match annual totals
     # for the baseline year
-    load_multiplier_baseline_year = load_multiplier['year'].min()
     historical_state_load_hourly = (
         scale_historical_hourly_state_load_to_model_year(
             historical_state_load_hourly,
@@ -357,49 +305,276 @@ def apply_load_growth_factors_to_historical_state_load(
             load_multiplier_baseline_year
         )
     )
-    # Subset load multipliers for solve years only 
+    return historical_state_load_hourly
+
+def apply_ba_load_growth(
+    regional_load_hourly: pd.DataFrame,
+    inputs_case: str,
+    hierarchy: pd.DataFrame,
+    solveyears: list[int] | None = None
+) -> pd.DataFrame:
+    """
+    Multiply baseline-year hourly model-region (BA) load profiles by annual
+    load growth factors to create projected load profiles for each model
+    year.
+
+    Growth is applied at BA resolution so that multipliers which vary within
+    a state (e.g. a MISO BA following a different trajectory than the rest of
+    its state) are honored. For backward compatibility, a state-keyed
+    load_multiplier.csv is expanded to its BAs via the hierarchy; because
+    state load is allocated to BAs linearly, applying a uniform state
+    multiplier to each of the state's BAs reproduces the previous
+    state-level result exactly.
+
+    Args:
+        regional_load_hourly: datetime-indexed hourly BA load profiles
+            (columns = model regions), scaled to the load multiplier
+            baseline year.
+        inputs_case: Path to the inputs case directory.
+        hierarchy: Model region hierarchy (index = BA 'r', includes 'st').
+        solveyears: Optional list of model years to filter load
+            multipliers down to.
+
+    Returns:
+        pd.DataFrame: (year, datetime)-indexed hourly BA load profiles.
+    """
+    # Read annual region multipliers representing projected load growth
+    # from the baseline year
+    load_multiplier = pd.read_csv(
+        os.path.join(inputs_case, 'load_multiplier.csv')
+    )
+    # Subset load multipliers for solve years only
     if solveyears is not None:
         load_multiplier = (
             load_multiplier[load_multiplier['year'].isin(solveyears)]
             [['year', 'r', 'multiplier']]
         )
-    # Reformat hourly load profiles to merge with load multipliers
-    historical_state_load_hourly.reset_index(drop=False, inplace=True)
-    historical_state_load_hourly = pd.melt(
-        historical_state_load_hourly,
+    else:
+        load_multiplier = load_multiplier[['year', 'r', 'multiplier']]
+
+    # Detect whether load_multiplier is keyed by model region (BA) or by
+    # state. State-keyed files are expanded to every BA in the state so that
+    # growth can be applied uniformly at BA resolution (numerically identical
+    # to the previous state-level application); BA-keyed files are used as-is.
+    multiplier_regions = set(load_multiplier['r'].unique())
+    ba_regions = set(hierarchy.index)
+    state_regions = set(hierarchy['st'].unique())
+    if ba_regions <= multiplier_regions:
+        # BA-keyed: keep only BAs in this run
+        dropped = len(multiplier_regions - ba_regions)
+        if dropped:
+            print(f'load_multiplier.csv: dropping {dropped} regions '
+                  'outside the model footprint')
+        load_multiplier = load_multiplier.loc[
+            load_multiplier['r'].isin(ba_regions)
+        ]
+    elif state_regions <= multiplier_regions:
+        # State-keyed: expand each state's multiplier to its BAs
+        # (inner merge drops states outside the model footprint)
+        ba_to_state = (
+            hierarchy['st'].rename('st').rename_axis('r').reset_index()
+        )
+        load_multiplier = (
+            load_multiplier.rename(columns={'r': 'st'})
+            .merge(ba_to_state, on='st', how='inner')
+            [['year', 'r', 'multiplier']]
+        )
+    else:
+        missing_ba = sorted(ba_regions - multiplier_regions)[:10]
+        missing_st = sorted(state_regions - multiplier_regions)[:10]
+        raise ValueError(
+            "load_multiplier.csv does not cover all model regions. "
+            f"Missing BAs (first few): {missing_ba}; "
+            f"missing states (first few): {missing_st}"
+        )
+
+    # Reformat hourly BA load profiles to merge with load multipliers
+    regional_load_hourly = regional_load_hourly.reset_index(drop=False)
+    regional_load_hourly = pd.melt(
+        regional_load_hourly,
         id_vars=['datetime'],
         var_name='r',
         value_name='load'
     )
     # Merge load multipliers into hourly load profiles
-    state_load_hourly = historical_state_load_hourly.merge(
+    regional_load_hourly = regional_load_hourly.merge(
         load_multiplier,
         on=['r'],
         how='outer'
     )
-    state_load_hourly.sort_values(
+    regional_load_hourly.sort_values(
         by=['r', 'year'],
         ascending=True,
         inplace=True
     )
-    state_load_hourly['load'] *= state_load_hourly['multiplier']
-    state_load_hourly = state_load_hourly[['year', 'datetime', 'r', 'load']]
+    regional_load_hourly['load'] *= regional_load_hourly['multiplier']
+    regional_load_hourly = regional_load_hourly[
+        ['year', 'datetime', 'r', 'load']
+    ]
     # Reformat hourly load profiles for GAMS
-    state_load_hourly = state_load_hourly.pivot_table(
+    regional_load_hourly = regional_load_hourly.pivot_table(
         index=['year', 'datetime'], columns='r', values='load')
     # Convert 'year' index to integers
-    state_load_hourly.index = (
-        state_load_hourly.index
+    regional_load_hourly.index = (
+        regional_load_hourly.index
         .set_levels(
             [
-                state_load_hourly.index.levels[0].astype(int),
-                state_load_hourly.index.levels[1]
+                regional_load_hourly.index.levels[0].astype(int),
+                regional_load_hourly.index.levels[1]
             ],
             level=['year', 'datetime']
         )
     )
-    
-    return state_load_hourly
+
+    return regional_load_hourly
+
+def apply_miso_peak_reshape(
+    regional_load_hourly: pd.DataFrame,
+    inputs_case: str,
+) -> pd.DataFrame:
+    """
+    Reshape MISO BA hourly load to match the MISO LTLF coincident load factor
+    per subregion, preserving each BA's annual energy.
+
+    MISO LTLF projects an improving load factor (peak grows more slowly than
+    energy), but flat annual load growth freezes the historical hourly shape,
+    so ReEDS keeps a constant (too low) load factor and overshoots the LTLF
+    coincident peak. This applies an energy-preserving affine pivot around
+    each BA's annual mean:
+
+        L'(h) = mean_BA + alpha_sub * (L(h) - mean_BA)
+
+    The same alpha_sub is applied to every MISO BA in a subregion, so the
+    subregion coincident peak pivots by alpha while each BA's annual energy is
+    preserved exactly (the hourly deviations from the mean sum to zero):
+
+        alpha_sub = (1/LF_target_sub - 1) / (1/LF_current_sub - 1)
+
+    LF_target_sub is the LTLF coincident load factor (peak_load_factor.csv,
+    staged by copy_files). LF_current_sub is measured per model year from the
+    grown hourly shape at the MISO-footprint coincident peak hour, averaged
+    over weather years, matching the MISO LTLF coincident-peak definition
+    (each subregion's demand at the hour the full MISO footprint peaks).
+
+    Only MISO BAs listed in peak_load_factor.csv are reshaped; all other
+    regions and any model year without a target pass through unchanged. If the
+    targets file is absent (non-MISO-LTLF runs) load is returned as-is.
+
+    Args:
+        regional_load_hourly: (year, datetime)-indexed hourly BA load profiles.
+        inputs_case: Path to the inputs case directory.
+
+    Returns:
+        pd.DataFrame: reshaped (year, datetime)-indexed hourly BA load profiles.
+    """
+    targets_path = os.path.join(inputs_case, 'peak_load_factor.csv')
+    if not os.path.exists(targets_path):
+        return regional_load_hourly
+
+    targets = pd.read_csv(targets_path)
+    required_cols = {'r', 'subregion', 'year', 'target_lf'}
+    if not required_cols.issubset(targets.columns):
+        raise ValueError(
+            "peak_load_factor.csv is missing columns "
+            f"{sorted(required_cols - set(targets.columns))}"
+        )
+    targets = targets.dropna(subset=['target_lf'])
+    ba_to_sub = dict(zip(targets['r'], targets['subregion']))
+    target_lf_lookup = {
+        (int(y), s): lf
+        for y, s, lf in zip(
+            targets['year'], targets['subregion'], targets['target_lf']
+        )
+    }
+    miso_bas_all = sorted(set(targets['r']))
+    subregions = sorted(set(targets['subregion']))
+
+    print('Applying MISO LTLF peak / load-factor reshape')
+    model_years = regional_load_hourly.index.get_level_values('year').unique()
+    reshaped = {}
+    for model_year in model_years:
+        load_my = regional_load_hourly.xs(model_year, level='year').copy()
+        bas_present = [b for b in miso_bas_all if b in load_my.columns]
+        year_targets = {
+            s: target_lf_lookup.get((int(model_year), s)) for s in subregions
+        }
+        has_target = any(
+            lf is not None and not np.isnan(lf) for lf in year_targets.values()
+        )
+        if not bas_present or not has_target:
+            reshaped[model_year] = load_my
+            continue
+
+        # Weather year of each hour (datetime index of this model year).
+        dt_index = load_my.index
+        if not isinstance(dt_index, pd.DatetimeIndex):
+            dt_index = pd.to_datetime(dt_index)
+        wy_arr = np.asarray(dt_index.year)
+
+        # MISO-footprint coincident peak hour position per weather year.
+        miso_hourly = load_my[bas_present].sum(axis=1).to_numpy()
+        peak_pos = np.array([
+            positions[np.argmax(miso_hourly[positions])]
+            for positions in (
+                np.where(wy_arr == u)[0] for u in np.unique(wy_arr)
+            )
+        ])
+
+        # Per-subregion compression factor alpha.
+        sub_alpha = {}
+        for s in subregions:
+            lf_target = year_targets[s]
+            if lf_target is None or np.isnan(lf_target) or lf_target <= 0:
+                continue
+            sub_bas = [b for b in bas_present if ba_to_sub[b] == s]
+            if not sub_bas:
+                continue
+            sub_hourly = load_my[sub_bas].sum(axis=1)
+            mean_load = sub_hourly.mean()
+            coincident_peak = sub_hourly.to_numpy()[peak_pos].mean()
+            # Degenerate / already-flat shapes: skip (leave load unchanged).
+            if mean_load <= 0 or coincident_peak <= mean_load:
+                continue
+            lf_current = mean_load / coincident_peak
+            denom = (1.0 / lf_current) - 1.0
+            if denom <= 0:
+                continue
+            alpha = ((1.0 / lf_target) - 1.0) / denom
+            sub_alpha[s] = alpha
+            print(f"  {model_year} {s}: LF_current={lf_current:.3f} "
+                  f"LF_target={lf_target:.3f} alpha={alpha:.3f}")
+            if alpha > 1.0:
+                print(f"  [warn] {model_year} {s}: alpha>1 (LTLF peakier than "
+                      f"ReEDS); expanding peak.")
+
+        # Energy-preserving affine pivot per BA about its annual mean.
+        for b in bas_present:
+            alpha = sub_alpha.get(ba_to_sub[b])
+            if alpha is None:
+                continue
+            mean_ba = load_my[b].mean()
+            load_my[b] = mean_ba + alpha * (load_my[b] - mean_ba)
+
+        # Diagnostic: confirm the MISO-footprint peak hour is unchanged (the
+        # per-subregion alphas can in principle shift the coincident hour).
+        if sub_alpha:
+            miso_after = load_my[bas_present].sum(axis=1).to_numpy()
+            moved = sum(
+                int(positions[np.argmax(miso_after[positions])]
+                    != peak_pos[i])
+                for i, positions in enumerate(
+                    np.where(wy_arr == u)[0] for u in np.unique(wy_arr)
+                )
+            )
+            if moved:
+                print(f"  [warn] {model_year}: MISO coincident peak hour "
+                      f"shifted for {moved} weather year(s) after reshape.")
+
+        reshaped[model_year] = load_my
+
+    out = pd.concat(reshaped, names=['year'])
+    out = out.reorder_levels(['year', 'datetime']).sort_index()
+    return out[regional_load_hourly.columns]
 
 def downselect_to_model_years(
     load_hourly: pd.DataFrame,
@@ -408,7 +583,7 @@ def downselect_to_model_years(
     """
     Retrieve the subset of hourly load profiles corresponding
     to the given model years.
-    
+
     Args:
         load_hourly: Hourly load profiles.
         model_years: List of model years used to filter load_hourly.
