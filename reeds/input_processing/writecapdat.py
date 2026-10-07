@@ -270,7 +270,7 @@ def create_exog_rsc(inputs_case, gdb_use_cap_exog, sw, startyear):
                 lambda x: assign_class(x, tech_class_cutoffs[usetech])
             )
             cap_exog[tech]["tech"] = (
-                'upv' if usetech == 'upv' else cap_exog[tech]["tech"].astype(str)
+                ('upv' if usetech == 'upv' else cap_exog[tech]["tech"].astype(str))
                 + "_" + cap_exog[tech]["class"].astype(str)
             )
 
@@ -686,7 +686,7 @@ def main(inputs_case):
     # Rename generic geothermal tech category to geohydro_allkm_1
     geoexist['i'] = 'geohydro_allkm_1'
 
-    ######################################
+    #%%###################################
     #    -- RSC Exogenous Capacity --    #
     ######################################
 
