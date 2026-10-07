@@ -38,8 +38,10 @@ import reeds
 
 #%%#################
 ### FIXED INPUTS ###
-WINDOFS_FIXED_CLASSES = list(range(5))
-WINDOFS_FLOATING_CLASSES = list(range(6,11))
+WINDOFS_CLASS_TYPE = {
+    **{i: 'fixed' for i in range(1,6)},
+    **{i: 'floating' for i in range(6,11)},
+}
 ONLINEYEAR_COLUMNS = ['i', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW']
 
 # Only keep neccessary columns from unitdata to work with
@@ -174,36 +176,89 @@ def create_rsc_wsc(gendb,TECH,startyear):
     return rsc_wsc
 
 
-def create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, sw, startyear):
-    # Mappings to resource class are based on the resource quality of the technology as it comes from reV
-    # Establish resource classification inputs for technologies (UPV, wind-ons, wind-ofs)
-    # from supply curves
-    rsc_class = {}
-    rsc_class["upv"] = get_class_cf_bounds(reeds_path, tech='upv')
-    rsc_class["wind-ons"]  = get_class_cf_bounds(reeds_path, tech='wind-ons')
+def get_class_cf_min(
+    inputs_case,
+    tech:Literal['upv','wind-ons','wind-ofs'],
+    subtech:None|Literal['fixed','floating']=None,
+) -> pd.DataFrame:
+    """
+    Establish class cut offs based on capacity factors.
+    Because the max of one class is the min of the next class, we only need the min.
+    """
+    ## Get the supply curve for this run
+    dfsc = pd.read_csv(Path(inputs_case, f'supplycurve_{tech}.csv'))
 
-    # for offshore wind, specify 'fixed' or 'floating' tech
-    wind_ofs_subtech_list = ['fixed','floating']
-    wind_ofs_class_all = []
-    for wind_ofs_subtech in wind_ofs_subtech_list:
-        wind_ofs_class_subtech = get_class_cf_bounds(
-            reeds_path, tech='wind-ofs', subtech=wind_ofs_subtech,
-        )
-        wind_ofs_class_all.append(wind_ofs_class_subtech)
-    rsc_class["wind-ofs"] = pd.concat(wind_ofs_class_all, ignore_index=True)
+    ## Downselect offshore wind to fixed or floating
+    if tech == 'wind-ofs':
+        dfsc['subtech'] = dfsc['class'].map(WINDOFS_CLASS_TYPE)
+        dfsc = dfsc.loc[dfsc['subtech'] == subtech]
+    
+    class_cf_min = dfsc.groupby('class')['cf'].min()
+    return class_cf_min
 
-    # Read resource classification inputs for geothermal
-    rsc_class["geohydro_allkm"] = (
-        pd.read_csv(os.path.join(inputs_case, 'classification_geothermal.csv'))
-        .query(f"access_case == '{sw.GSw_SitingGeo}'")
+
+def get_class_cf_min_alltechs(inputs_case) -> dict:
+    """
+    Generate a dictionary of dataframes for supply-curve-based generation technologies
+    indicating the CF (or temperature for geothermal) range for each resource class
+
+    Returns:
+        dict:
+            keys are ['upv', 'wind-ons', 'wind-ofs', 'geohydro_allkm']
+            values are dataframes mapping from a resource class to a CF range
+    """
+    sw = reeds.io.get_switches(inputs_case)
+    tech_class_cutoffs = {}
+    for tech in ['upv', 'wind-ons']:
+        tech_class_cutoffs[tech] = get_class_cf_min(inputs_case, tech)
+
+    ## Offshore wind is separated into fixed and floating subtechs
+    for subtech in ['fixed', 'floating']:
+        tech_class_cutoffs['wind-ofs', subtech] = get_class_cf_min(inputs_case, 'wind-ofs', subtech)
+
+    ## Geothermal is hardcoded, and the classes are ordered in the opposite direction
+    ## from wind/solar (the lowest geo class is the highest temperature, while the
+    ## lowest wind/solar class is the lowest CF)
+    fpath_geo = Path(inputs_case, 'classification_geothermal.csv')
+    tech_class_cutoffs["geohydro_allkm"] = (
+        pd.read_csv(fpath_geo, index_col='access_case')
+        .loc[sw.GSw_SitingGeo]
+        .set_index('class').min_reV_mean_temp.sort_values(ascending=True)
     )
 
-    # Check if any rsc_wsc tech class in unitdata does not match with a resource class
-    missing_resource_class(gdb_use_cap_exog, rsc_class)
+    return tech_class_cutoffs
+
+
+def assign_class(cf:float, tech_class_cutoff:pd.Series):
+    """Assign a resource class based on a capacity factor"""
+    ## Work down from the highest-CF class and keep the first match
+    for resource_class, value in tech_class_cutoff.iloc[::-1].items():
+        if cf >= value:
+            return resource_class
+    ## Only end up here if the provided cf is outside the range of the lookup table
+    err = f'cf={cf} is not in the provided tech_class_cutoff table:\n{tech_class_cutoff}'
+    raise ValueError(err)
+
+
+def create_exog_rsc(inputs_case, gdb_use_cap_exog, sw, startyear):
+    tech_class_cutoffs = get_class_cf_min_alltechs(inputs_case)
+    colname = {
+        'geohydro_allkm':'reV_mean_resource_temp',
+        'egs_allkm':'reV_mean_resource_temp',
+    }
+    colname_default = 'reV_capacity_factor_ac'
 
     cap_exog = {}
     for tech in TECH['rsc_wsc']:
-        print(tech)
+        ## All solar techs use UPV classes; all exogenous offshore wind is fixed (not floating)
+        match tech:
+            case _ if tech in TECH['rsc_pv_all']:
+                usetech = 'upv'
+            case 'wind-ofs':
+                usetech = ('wind-ofs', 'fixed')
+            case _:
+                usetech = tech
+        print(tech, usetech)
         # Filter active plants
         cap_exog[tech]= gdb_use_cap_exog.loc[
             (gdb_use_cap_exog['tech']==tech)
@@ -211,25 +266,13 @@ def create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, sw, startyear):
             & (gdb_use_cap_exog['RetireYear'] > startyear)
         ].copy()
         if len(cap_exog[tech]) > 0:
-            # Assigning each geothermal unit in unit database to a class based on
-            # groups' temperatures
-            if tech in ['geohydro_allkm','egs_allkm']:
-                cap_exog[tech]["class"] = cap_exog[tech]["reV_mean_resource_temp"].apply(
-                        lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_exog[tech]["tech"] = (cap_exog[tech]["tech"].astype(str) + "_" +
-                                    cap_exog[tech]["class"].astype(str))
-            # Assigning each solar, wind unit in unit database to a class based on
-            # groups' minimum and maximum capacity factors
-            elif tech in TECH['rsc_pv_all']:
-                cap_exog[tech]["class"] = cap_exog[tech]["reV_capacity_factor_ac"].apply(
-                        lambda x: assign_class(x, tech, rsc_class['upv']))
-                cap_exog[tech]["tech"] = ('upv' + "_" +
-                                    cap_exog[tech]["class"].astype(str))
-            else:
-                cap_exog[tech]["class"] = cap_exog[tech]["reV_capacity_factor_ac"].apply(
-                        lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_exog[tech]["tech"] = (cap_exog[tech]["tech"].astype(str) + "_" +
-                                    cap_exog[tech]["class"].astype(str))
+            cap_exog[tech]["class"] = cap_exog[tech][colname.get(tech,colname_default)].apply(
+                lambda x: assign_class(x, tech_class_cutoffs[usetech])
+            )
+            cap_exog[tech]["tech"] = (
+                'upv' if usetech == 'upv' else cap_exog[tech]["tech"].astype(str)
+                + "_" + cap_exog[tech]["class"].astype(str)
+            )
 
         cap_exog[tech] = cap_exog[tech][COLNAMES['capexog_rsc'][0]]
         cap_exog[tech].columns = COLNAMES['capexog_rsc'][1]
@@ -237,65 +280,8 @@ def create_exog_rsc(reeds_path, inputs_case, gdb_use_cap_exog, sw, startyear):
             cap_exog[tech] = pd.concat([expand_exog_cap(row, startyear) for _, row in cap_exog[tech].iterrows()],
                                        ignore_index=True)
 
-    return cap_exog, rsc_class
+    return cap_exog
 
-
-def get_class_cf_bounds(reeds_path, tech, subtech:None|Literal['fixed','floating']=None):
-    """Establish class cut offs based on capacity factors"""
-    dfsc = pd.read_csv(Path(inputs_case, f'supplycurve_{tech}.csv'))
-
-    # Aggregate min/max by class
-    if tech == 'wind-ofs':
-        dfsc['subtech'] = 'fixed'
-        dfsc.loc[dfsc['class'].isin(WINDOFS_FLOATING_CLASSES),'subtech'] = 'floating'
-        df_sub = dfsc[dfsc['subtech']==subtech]
-        summary_df = df_sub.groupby('class')['cf'].agg(['min', 'max']).reset_index()
-        summary_df['subtech'] = subtech
-        summary_df.columns = ['class', 'min_reV_cf_ac', 'max_reV_cf_ac', 'subtech']
-    else:
-        summary_df = dfsc.groupby('class')['cf'].agg(['min', 'max']).reset_index()
-        summary_df.columns = ['class', 'min_reV_cf_ac', 'max_reV_cf_ac']
-
-    # Pin each class's min CF to the max CF of the previous class to avoid gaps
-    summary_df = summary_df.sort_values(by=['class','min_reV_cf_ac'])
-    classes = summary_df['class'].unique().tolist()
-    for i, c in enumerate(classes):
-        if c > min(classes):
-            summary_df.loc[
-                summary_df['class'] == c, 'min_reV_cf_ac'
-            ] = summary_df.loc[
-                summary_df['class'] == classes[i-1], 'max_reV_cf_ac'
-            ].squeeze()
-
-    # Round values to 4 decimal places
-    summary_df['min_reV_cf_ac'] = summary_df['min_reV_cf_ac'].round(4)
-    summary_df['max_reV_cf_ac'] = summary_df['max_reV_cf_ac'].round(4)
-
-    return summary_df
-
-
-# Assign each wind, solar and geothermal unit in unit database to a class
-def assign_class(cf, tech, df_class):
-    # Each unit is assigned to the class associated with the min and max performance
-    # its mean performance falls between
-    value = 'mean_temp' if tech in ['geohydro_allkm', 'egs_allkm'] else 'cf_ac'
-    row = df_class[(df_class[f'min_reV_{value}'] < cf) & (cf <= df_class[f'max_reV_{value}'])]
-    # Handle min cutoff point
-    if cf == df_class[f'min_reV_{value}'].min():
-        row = df_class[cf == df_class[f'min_reV_{value}']]
-
-    if len(row) == 1:
-        return row['class'].iloc[0]
-    # If a offshore wind cf matches with both fixed and floating
-    # resources, assign a fixed resource
-    elif (len(row) > 1) & (tech == 'wind-ofs'):
-        row = row[row['subtech']=='fixed']
-        return row['class'].iloc[0]
-    else:
-        # If a unit's capacity factor/mean temp does not fall between any two max and min values
-        # specified in the classificalion file, it is unclassified and gives an error
-        raise ValueError('Unclassified ' + tech + ' technology with cf= ' + str(cf) +
-                         ', check capacity factor/mean temperature values in unitdata.csv and classification files.')
 
 # Expand each row into multiple rows (startyear → retirement_year)
 def expand_exog_cap(row, start_year):
@@ -361,31 +347,35 @@ def get_capacity_weighted_onlineyear(df, start_year, end_year):
 
     return pd.concat(output, ignore_index=True)
 
-# Assign each calendar year to its appropriate modeledyear
-# (For example: capacity that comes online in 2016 will
-# show up in modeled year 2020)
+
 def assign_modeledyear(x,years_list):
+    """
+    Assign each calendar year to its appropriate modeledyear
+    (For example: capacity that comes online in 2016 will
+    show up in modeled year 2020)
+    """
     for m in years_list:
         if x <= m:
             return m
     return None
 
-# Check if there are any rsc techs in unitdata without resource classes
-def missing_resource_class(gendb,rsc_class):
+
+def missing_resource_class(gdb_use_cap_exog, tech_class_cutoffs):
+    """Check if there are any rsc techs in unitdata without resource classes"""
     # Find the tech classes in unitdata that need to be matched to resource classes
-    matched_techs = [i for i in gendb['tech'].unique().tolist() if i in TECH['rsc_wsc']]
+    matched_techs = [i for i in gdb_use_cap_exog['tech'].unique() if i in TECH['rsc_wsc']]
     # Do not count csp-ns as it is matched to upv resources
     matched_techs = [i for i in matched_techs if i not in TECH['rsc_csp'] ]
     # Find tech classes in unitdata that are without assigned resource classes
-    missing_techs = list(set(matched_techs) - set(rsc_class))
+    missing_techs = list(set(matched_techs) - set(tech_class_cutoffs))
     if len(missing_techs) > 0:
-        raise ValueError(f'{missing_techs} are in unitdata but not matched with any resource classes. Exiting program.')
+        raise ValueError(f'{missing_techs} are in unitdata but not matched with any resource classes')
     else:
         print('All rsc/geothermal tech classes in unitdata are matched with available resource classes.')
 
 
 def process_ivt(years, inputs_case):
-
+    """For vintages between model years, use the vintage of the next modeled year"""
     ivt_df= pd.read_csv(os.path.join(inputs_case,'ivt.csv'))
     ### modify set of technology name as lower case and convert all columns except the first to string
     ivt_df.iloc[:, 0] = ivt_df.iloc[:, 0].str.lower()
@@ -411,7 +401,7 @@ def process_ivt(years, inputs_case):
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
 
-def main(reeds_path, inputs_case):
+def main(inputs_case):
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
     GSw_WaterMain = int(sw.GSw_WaterMain)
@@ -700,56 +690,50 @@ def main(reeds_path, inputs_case):
     #    -- RSC Exogenous Capacity --    #
     ######################################
 
-    cap_exog, rsc_class = create_exog_rsc(
-        reeds_path, inputs_case, gdb_use_cap_exog, sw, startyear,
-    )
+    tech_class_cutoffs = get_class_cf_min_alltechs(inputs_case)
+    cap_exog = create_exog_rsc(inputs_case, gdb_use_cap_exog, sw, startyear)
 
     #%%####################################
     #    -- RSC Prescribed Capacity --    #
     #######################################
 
     print('Gathering RSC Prescribed Capacity...')
+    colnames = {
+        'geohydro_allkm':'reV_mean_resource_temp',
+        'egs_allkm':'reV_mean_resource_temp',
+    }
+    colname_default = 'reV_capacity_factor_ac'
     cap_pres = {}
     for tech in TECH['rsc_wsc']:
+        match tech:
+            case _ if tech in TECH['rsc_upv'] + TECH['prsc_csp']:
+                usetech = 'upv'
+            case 'wind-ofs':
+                usetech = ('wind-ofs', 'fixed')
+            case _:
+                usetech = tech
+        print(tech, usetech)
+        colname = colnames.get(tech,colname_default)
+
         cap_pres[tech]= gdb_use.loc[(gdb_use['tech']==tech) &
                     (gdb_use['StartYear'] >= startyear) &
                     (gdb_use['StartYear'] <= endyear)
                     ].copy()
         mask = ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
         if len(cap_pres[tech]) != 0:
-            # DUPV, PVB and UPV values are collected at the same time here:
-            if tech in TECH['rsc_upv']:
-                print(tech)
-                cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
-                        lambda x: assign_class(x, tech, rsc_class['upv']))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
-            # Load in wind builds:
-            elif tech in TECH['rsc_w']:
-                print(tech)
-                cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
-                        lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
-            # Add prescribed csp builds:
-            #   Note: Since csp is affected by GSw_WaterMain, it must be dealt with separate
-            #         from the other RSC tech (dupv, upv, wind, etc)
-            elif tech in TECH['prsc_csp']:
-                print(tech)
-                cap_pres[tech]["class"] = cap_pres[tech]["reV_capacity_factor_ac"].apply(
-                        lambda x: assign_class(x, tech, rsc_class['upv']))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
-                if GSw_WaterMain == 1:
-                     cap_pres[tech]["tech"] = np.where( cap_pres[tech]["tech"]=='csp-ws',
-                                          cap_pres[tech]["tech"]+'_'+cap_pres[tech]['ctt']+'_'+cap_pres[tech]['wst'],
-                                         'csp-ws')
-            # Load in geo builds:
-            elif tech in TECH['prsc_geo']:
-                cap_pres[tech]["class"] = cap_pres[tech]["reV_mean_resource_temp"].apply(
-                        lambda x: assign_class(x, tech, rsc_class[tech]))
-                cap_pres[tech]["tech"] = (cap_pres[tech]["tech"].astype(str) + "_" +
-                                    cap_pres[tech]["class"].astype(str))
+            cap_pres[tech]["class"] = cap_pres[tech][colname].apply(
+                lambda x: assign_class(x, tech_class_cutoffs[usetech])
+            )
+            cap_pres[tech]["tech"] = (
+                cap_pres[tech]["tech"].astype(str) + "_" + cap_pres[tech]["class"].astype(str)
+            )
+            ## CSP is the only RSC tech with water cooling
+            if (tech in TECH['prsc_csp']) and (GSw_WaterMain == 1):
+                cap_pres[tech]["tech"] = np.where(
+                    cap_pres[tech]["tech"]=='csp-ws',
+                    cap_pres[tech]["tech"]+'_'+cap_pres[tech]['ctt']+'_'+cap_pres[tech]['wst'],
+                    'csp-ws'
+                )
             # assign vintages based on start year of the unit
             ivt_df_mask = (ivt_df[mask]                                   # filter rows
                             .iloc[:, 1:]                                  # drop first technology column
@@ -1132,8 +1116,7 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM0_github_Pacific','inputs_case')
+    # inputs_case = os.path.join(reeds.io.reeds_path,'runs','v20261006_mcM0_github_MA_county_CC','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(
@@ -1143,7 +1126,7 @@ if __name__ == '__main__':
     print('Starting writecapdat.py')
 
     #%% Run procedure
-    files_out = main(reeds_path, inputs_case)
+    files_out = main(inputs_case)
 
     #%% Write outputs
     print('Writing out capacity data')
