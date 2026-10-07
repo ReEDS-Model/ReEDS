@@ -781,6 +781,17 @@ tg_i("csp",i)$[(csp1(i) or csp2(i) or csp3(i) or csp4(i))$Sw_WaterMain] = yes ;
 
 storage_interday(i)$(Sw_InterDayLinkage = 0) = no ;
 
+*add dispatch derate for standalone_storage in stress periods
+parameter stress_derate(i) "--fraction-- derate applied to generation during stress periods" ;
+
+stress_derate(i) = 0 ;
+stress_derate(i)$storage_standalone(i) = Sw_StorDerateScalar ;
+* do not derate anything the model cannot build/operate
+stress_derate(i)$ban(i) = 0 ;
+
+abort$[(Sw_StorDerateScalar < 0) or (Sw_StorDerateScalar > 1)]
+    "GSw_StorDerateScalar must be between 0 and 1" ;
+
 $onempty
 * Water requirement if all filling takes place in 1 year and minimum reservoir level is 15% of max volume
 table water_req_psh(r,rscbin) "--Mgal/MW/yr-- required water for PSH during construction to fill reservoir"
