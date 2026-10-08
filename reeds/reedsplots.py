@@ -6258,12 +6258,18 @@ def label_region_value(
     column, 
     opt_single_decimal=True, 
     fmt='{:.0f}', 
-    text_kwargs={'ha':'center', 'va':'center', 'color':'k', 'fontsize':8},
-    pe_kwargs={'linewidth':1.5, 'foreground':'w', 'alpha':0.7}
+    text_kwargs:None|dict=None,
+    pe_kwargs:None|dict=None,
 ):
     """pe_kwargs are passed to patheffects.withStroke()"""
-    text_kwargs = {**{'ha':'center', 'va':'center', 'color':'k', 'fontsize':8}, **text_kwargs}
-    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':0.7}, **pe_kwargs}
+    text_kwargs = {
+        'ha':'center', 'va':'center', 'color':'k', 'fontsize':8,
+        **(text_kwargs if isinstance(text_kwargs, dict) else {})
+    }
+    pe_kwargs = {
+        'linewidth':1.5, 'foreground':'w', 'alpha':0.7,
+        **(pe_kwargs if isinstance(pe_kwargs, dict) else {})
+    }
     text_artists = []
     for r, row in df.iterrows():
         value = row.get(column, np.nan)
