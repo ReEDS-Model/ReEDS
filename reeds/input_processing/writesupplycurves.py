@@ -95,10 +95,7 @@ def agg_supplycurve(
 ):
     """
     """
-    psh = (
-            True if ('psh' in os.path.basename(scpath)) or (scpath == 'psh')
-            else False
-        )
+    psh = bool('psh' in os.path.basename(scpath) or scpath == 'psh')
     if psh:
         print('Assembling PSH supply curve')
     ### Get inputs
@@ -123,8 +120,8 @@ def agg_supplycurve(
     ### Define the aggregation settings
     ## Cost and distance are weighted averages, with capacity as the weighting factor
     aggs = {'capacity': 'sum', 'sc_point_gid': list}
-    index_cols = ['region', 'class', 'bin'] if not psh else ['region','bin']
-    groupby_cols = ['region','class'] if not psh else ['region']
+    index_cols = ['region', 'bin'] if psh else ['region', 'class', 'bin']
+    groupby_cols = ['region'] if psh else ['region', 'class']
     aggs = {
         col: aggs.get(col, wm(dfin)) for col in dfin
         if col not in index_cols
@@ -784,7 +781,7 @@ def main(
     cost data to construct site-level PSH supply curves.
     '''
     if int(sw["GSw_Storage"]):
-        pshin, psh = agg_supplycurve(
+        _, psh = agg_supplycurve(
             scpath = os.path.join(inputs_case, 'supplycurve_psh.csv'),
             inputs_case=inputs_case,
             numbins_tech=numbins['psh'],

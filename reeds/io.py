@@ -9,7 +9,6 @@ import inspect
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-from geopandas import GeoDataFrame
 from pathlib import Path
 from typing import Literal
 from pandas.api.types import is_float_dtype
@@ -1538,15 +1537,8 @@ def assemble_supplycurve(
     if scfile is None:
         offshore = False
     else:
-        offshore = (
-            True if ('wind-ofs' in os.path.basename(scfile)) or (scfile == 'offshore')
-            else False
-        )
-        psh = (
-            True if ('psh' in os.path.basename(scfile)) or (scfile == 'psh')
-            else False
-        )
-    ### Get interconnection cost
+        offshore = bool('wind-ofs' in os.path.basename(scfile) or scfile == 'offshore')
+        psh = bool('psh' in os.path.basename(scfile) or scfile == 'psh')
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
@@ -1574,16 +1566,16 @@ def assemble_supplycurve(
 
     ### Combine
     dfout = dfin.copy()
-    if not psh:
-        dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
-    elif psh:
+    if psh:
         # PSH supply curves need to be mapped to nearest sc_point_gid using lat/lon of lower reservoir
         geometry_psh = [Point(xy) for xy in zip(dfout['low_reservoir_longitude'], dfout['low_reservoir_latitude'])]
-        gdf_psh = GeoDataFrame(dfout, crs='EPSG:5070', geometry=geometry_psh)
+        gdf_psh = gpd.GeoDataFrame(dfout, crs='EPSG:5070', geometry=geometry_psh)
         geometry_ic = [Point(xy) for xy in zip(interconnection_cost['longitude'], interconnection_cost['latitude'])]
-        gdf_ic = GeoDataFrame(interconnection_cost.reset_index(), crs='EPSG:5070', geometry=geometry_ic)
+        gdf_ic = gpd.GeoDataFrame(interconnection_cost.reset_index(), crs='EPSG:5070', geometry=geometry_ic)
         gdf_psh_ic = gpd.sjoin_nearest(gdf_psh, gdf_ic, how='left')
         dfout = pd.DataFrame(gdf_psh_ic).drop(columns=['geometry','index_right'])
+    else:
+        dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
     dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:
