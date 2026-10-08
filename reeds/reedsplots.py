@@ -1375,8 +1375,10 @@ def map_net_imports(
             legend=False,
             vmin=-vmax[year], vmax=vmax[year],
         )
-        label_region_value(df, ax=ax[coords[year]], column='net_import', 
-                            opt_single_decimal=False, fmt = '{:.0f}', text_kwargs={'fontsize':5})
+        label_region_value(
+            df, ax=ax[coords[year]], column='net_import', 
+            opt_single_decimal=False, text_kwargs={'fontsize':5},
+        )
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
