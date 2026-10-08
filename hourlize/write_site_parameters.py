@@ -11,11 +11,8 @@ import reeds
 def check_negative_values(df, cost_cols):
     neg_vals_all = {}
     for cc in cost_cols.values():
-        if cc in df.columns:
-            try:
-                neg_vals = sum(df[cc] < 0)
-            except:
-                breakpoint()
+        if cc in df.columns:    
+            neg_vals = sum(df[cc] < 0)
             if neg_vals:
                 neg_vals_all[cc] = neg_vals
 
@@ -24,7 +21,7 @@ def check_negative_values(df, cost_cols):
             f"{cc} -> {count}" for cc, count in neg_vals_all.items()
         )
         raise ValueError(
-            f"The following cost columns have negative values:\n{message}"
+            f"The following cost columns have negative values:\n{message}\n"
             "Check reV data to confirm these."
         ) 
 
