@@ -1522,7 +1522,7 @@ def write_batch_script(
         ### Run dispatch mode if desired
         if int(caseSwitches['pcm']):
             OPATH.writelines(
-                f"\npython {Path('reeds','postprocessing','run_pcm.py')} {casedir} -b\n\n"
+                f"\npython {Path(reeds_path,'postprocessing','run_pcm.py')} {casedir} -b\n\n"
             )
 
 

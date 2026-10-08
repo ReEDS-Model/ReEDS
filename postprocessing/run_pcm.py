@@ -1,6 +1,8 @@
 # %% Imports
 import os
+import shutil
 import subprocess
+import sys
 import argparse
 import json
 from glob import glob
@@ -9,6 +11,7 @@ import pandas as pd
 from pathlib import Path
 
 ## Local imports
+sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 from reeds.input_processing import hourly_repperiods
 from reeds.input_processing import hourly_writetimeseries
@@ -16,7 +19,7 @@ from reeds.core.terminus.report_dump import write_dfdict
 
 
 # %% Inferred inputs
-reeds_path = os.path.dirname(__file__)
+reeds_path = Path(__file__).parent.parent
 
 # %% Default inputs
 switch_mods_default = {
@@ -27,6 +30,8 @@ switch_mods_default = {
     'GSw_HourlyChunkLengthStress': 1,
     'GSw_HourlyChunkAggMethod': 1,
     'GSw_PRM_CapCredit': 0,
+    'GSw_H2': 0,
+    'GSw_H2_PTC': 0
 }
 
 
@@ -166,6 +171,7 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         kwargs: Passed to hourly_reppreiods.main()
     """
     # %% Switch to run folder
+    casepath = os.path.abspath(casepath)
     os.chdir(casepath)
 
     # %% Get the run settings
@@ -227,11 +233,22 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         restartfile = batch_case
         _iteration = 0
     elif iteration == 'last':
-        restartfile = sorted(glob(os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i*")))[-1]
+        ## Sort numerically so i10 comes after i9
+        restartfile = sorted(
+            glob(os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i*.g00")),
+            key=lambda x: int(x[: -len('.g00')].split('i')[-1]),
+        )[-1]
         _iteration = int(restartfile[: -len('.g00')].split('i')[-1])
     else:
         _iteration = iteration
         restartfile = os.path.join(casepath, 'g00files', f"{batch_case}_{_t}i{_iteration}.g00")
+
+    ## 2_temporal_params.gms reads stress{stress_year}/prm.csv even with no stress periods,
+    ## so use the PRM from the stress folder that the restart solve (_t, _iteration) used
+    prm_src = os.path.join(casepath, 'inputs_case', f'stress{_t}i{_iteration}', 'prm.csv')
+    if not os.path.isfile(prm_src):
+        raise FileNotFoundError(f'PRM file for {_t}i{_iteration} not found: {prm_src}')
+    shutil.copy(prm_src, os.path.join(stresspath, 'prm.csv'))
 
     cmd_gams = solvestring_pcm(
         batch_case=batch_case,
@@ -374,7 +391,7 @@ if __name__ == '__main__':
         main(casepath=casepath, t=t, switch_mods=switch_mods, label=label, overwrite=overwrite)
     else:
         command_string = (
-            f"python run_pcm.py {casepath} "
+            f"python {str(os.path.abspath(__file__))} {casepath} "
             f"--year={t} "
             f"--iteration={iteration} "
             f"--switch_mods='{json.dumps(switch_mods)}' "
