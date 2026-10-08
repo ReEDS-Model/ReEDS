@@ -159,7 +159,7 @@ def calculate_class_region_cf_hourly(
     sw = reeds.io.get_switches(inputs_case)
     # Get supply curve information
     df_sc = reeds.io.assemble_supplycurve(
-        os.path.join(inputs_case, f'supplycurve_{tech}.csv'),
+        os.path.join(inputs_case, f'supplycurve_init_{tech}.csv'),
         case=os.path.dirname(inputs_case),
         agg=True,
     )

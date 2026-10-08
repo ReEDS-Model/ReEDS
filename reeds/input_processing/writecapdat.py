@@ -186,7 +186,7 @@ def get_class_cf_min(
     Because the max of one class is the min of the next class, we only need the min.
     """
     ## Get the supply curve for this run
-    dfsc = pd.read_csv(Path(inputs_case, f'supplycurve_{tech}.csv'))
+    dfsc = pd.read_csv(Path(inputs_case, f'supplycurve_init_{tech}.csv'))
 
     ## Downselect offshore wind to fixed or floating
     if tech == 'wind-ofs':

@@ -441,7 +441,7 @@ def get_bin(
         bin_ser = bin_ser.rank(method='dense')
         df[bin_out_col] = bin_ser.values
         # we need the same index ordering for apply to work
-        df = df.reindex(index=orig_index)
+        df = df.reindex(index=orig_index).drop(columns='cum_cap')
     df[bin_out_col] = df[bin_out_col].astype(int)
     return df
 

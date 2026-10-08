@@ -49,9 +49,9 @@ class MCSConstants:
 
     ### --- Files that require special treatment
     SUPPLY_CURVE_FILES = [
-        "supplycurve_upv.csv",
-        "supplycurve_wind-ofs.csv",
-        "supplycurve_wind-ons.csv",
+        "supplycurve_init_upv.csv",
+        "supplycurve_init_wind-ofs.csv",
+        "supplycurve_init_wind-ons.csv",
     ]
 
     ### --- Switch-File(s) combinations hardcoded in copy_files.py
