@@ -736,7 +736,7 @@ For additional information on using Hourlize, you can watch the training video: 
 
 ## ReEDS-FINITO 
 
-The Fuels and Industry Integrated Optimization Model (FINITO) provides a representation of the U.S. energy system with a bottom-up, technology-rich representation of the industrial sector. 
+The Fuels and Industry Integrated Optimization Model (FINITO) provides a representation of the U.S. energy system with a bottom-up, technology-rich representation of certain energy-intensive industrial subsectors. 
 ReEDS and FINITO can be linked to provide integrated modeling of the power sector with economy-wide energy supply and demand dynamics.
 When linked, ReEDS and FINITO are formulated as a single optimization problem.
 
@@ -771,14 +771,14 @@ To avoid double-counting, in a linked run the estimated 'reference' electricity 
 **Fuel supply curves**
 - When linked, ReEDS defers to FINITO for representation of hydrocarbon and biomass supply curves for solve years with FINITO activated. This representation supersedes any settings specified by fuel price switches in ReEDS (e.g., `ngscen`, `GSw_GasCurve`).
 - Consumption of fuel equivalents in ReEDS is accounted for in FINITO by the `USE_FE_REEDS` variable.
-- The activation of the ReEDS supply curves is controlled by the `tfuel` set, which is populated for any years using the ReEDS version. In a standalone run `tfuel` will include all solve years; in a linked run it will only includes t < `FINITO_first_year`. 
+- The activation of the FINITO supply curves is controlled by the `tfinito_all` set, which is populated for any years running with FINITO. In a standalone ReEDS run `tfinito_all` will not include any solve years; in a linked run it will include all t >= `FINITO_first_year`. Any years not in `tfinito_all` use the ReEDS supply curve representation.
 - When linked, the output reporting in `report.gms` utilizes the FINITO marginals for calculating prices on the relevant quantities.
 - The fuel supply curves can be adjusted by scenario by the `GSw_supply_scen` in FINITO, which includes scenarios from the AEO (e.g., Reference, HOG, LOG).
 - Setting `GSw_DetailedNG=1` in FINITO enables explicit representation of natural gas production and interstate pipeline transport. 
-- Projections for non-power sector demand are scenario based and can be toggled using `GSw_demand_scen`.
+- Projections for transportation and buildings sector demand are scenario based and can be toggled using `GSw_demand_scen`. Scenarios derived from both AEO and EER data are supported.
 
 **Hydrogen**
-- WHen linked FINITO defers to ReEDS for the representation of the production and transport of hydrogen. 
+- When linked, FINITO defers to ReEDS for the representation of the production and transport of hydrogen. 
 - FINITO focus sector hydrogen demand from future conversion to hydrogen processes is tracked in ReEDS by `USE_H2_FINITO`. 
 - Note that when linked, FINITO does not represent existing industrial hydrogen demand; to account for this demand, when linked `GSw_H2_Demand_Case` should be set to `FINITO`.
 

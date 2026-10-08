@@ -45,11 +45,6 @@ def check_FINITO_switch_compatability(sw):
             "ReEDS-FINITO runs are only compatible with GSw_GasPriceAdjMethod = 0 "
             f"(current setting = {sw['GSw_GasPriceAdjMethod']})"
         )
-    if int(sw['GSw_GasCurve']) != 2:
-        raise ValueError(
-            "ReEDS-FINITO runs are only compatible with GSw_GasCurve = 2 "
-            f"(current setting = {sw['GSw_GasCurve']})"
-        )
     
     ## H2 settings
     if int(sw['GSw_H2']) == 0:
