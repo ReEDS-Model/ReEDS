@@ -988,7 +988,7 @@ def plot_diff_maps(
         .rename(columns={valcol: f'{valcol}_base'})
     )
     dfcomp_selected = (
-        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year), ['r', valcol]]
+        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year)]
         .groupby('r', as_index=False)[valcol].sum()
         .rename(columns={valcol: f'{valcol}_comp'})
     )
