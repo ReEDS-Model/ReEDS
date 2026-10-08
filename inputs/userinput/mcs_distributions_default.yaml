@@ -217,6 +217,13 @@
 ### ---------------------------------------------------###
 ### --- Distributions for load
 ### ---------------------------------------------------###
+- name: load_flat_country
+  assignments_list: 
+    - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_100by2050]
+  dist: dirichlet
+  dist_params: [1, 1]
+  weight_r: country
+
 - name: load_tri_country
   assignments_list: 
     - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_IRAlow, EER2025_100by2050]
@@ -276,6 +283,15 @@
 # These distributions sample multiple technologies together with shared correlation
 - name: wind_siting_country
   assignments_list:
+    - GSw_SitingWindOfs: [limited, reference]
+    - GSw_SitingWindOns: [limited, reference]
+  dist: dirichlet
+  dist_params: [1, 1]
+  weight_r: country
+
+- name: siting_lowmid_country
+  assignments_list:
+    - GSw_SitingUPV: [limited, reference]
     - GSw_SitingWindOfs: [limited, reference]
     - GSw_SitingWindOns: [limited, reference]
   dist: dirichlet

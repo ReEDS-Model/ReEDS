@@ -7,7 +7,6 @@ This module performs the Monte Carlo sampling for ReEDS.
 ### --- IMPORTS ---
 ### ===========================================================================
 import argparse
-import copy
 import datetime
 import numpy as np
 import os
@@ -39,8 +38,14 @@ class MCSConstants:
 
     ### --- Fixed columns that should not be modified in most cases
     OTHER_INDICES = ['columns', 'p', '*p'] # 'p' is used in h2_exog_cap.csv
-    NONMODIFIABLE_FINANCIAL_COLUMNS = ['debt_fraction', 'tax_rate']
-    FIXED_COLUMN_NAMES = YEAR_SYNONYMS + TECH_DESCRIPTOR + OTHER_INDICES + NONMODIFIABLE_FINANCIAL_COLUMNS + REGION_SYNONYMS
+    OTHER_FIXED_COLUMNS = ['debt_fraction', 'tax_rate', 'class', 'cf']
+    FIXED_COLUMN_NAMES = (
+        YEAR_SYNONYMS
+        + TECH_DESCRIPTOR
+        + OTHER_INDICES
+        + OTHER_FIXED_COLUMNS
+        + REGION_SYNONYMS
+    )
 
     ### --- Files that require special treatment
     SUPPLY_CURVE_FILES = [
@@ -716,14 +721,15 @@ class WeightCalculator:
         unique_sample_levels = self.hierarchy_file[self.sample_hierarchy_lvl].unique()
         single_r_weight = len(unique_sample_levels) == 1
 
-        # Group files that require special treatment
-        except_files = MCSConstants.SUPPLY_CURVE_FILES
-
         # Return an error if you have multiple weight assignments but the mcs_distributions.yaml object is
         # pointing to a set of switches that have no region columns
         # e.g. asking for a region-based sampling for swicthes.csv, or plantchar type files.
-        if not single_r_weight and not columns_in_hierarchy and not generic_region_columns and ( 
-            file_name not in except_files):
+        if (
+            (not single_r_weight)
+            and (not columns_in_hierarchy)
+            and (not generic_region_columns)
+            and (file_name not in MCSConstants.SUPPLY_CURVE_FILES)
+        ):
             raise ValueError(
                 f"Invalid sampling configuration for file: {file_name}\n"
                 f"Switch: {sw_name}\n"
@@ -885,18 +891,17 @@ class WeightCalculator:
         # Dictionary to store computed weights for the modifiable columns
         # file index -> pd.DataFrame
         dict_df_weights = {}
+        base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case)
+        siting_scenarios = {
+            key: val for entry in self.sample_group.assignments_list
+            for key, val in entry.items()
+        }[sw_name]
+        base_scenario_index = siting_scenarios.index(base_scenario)
+        dfbase = dist_files[base_scenario_index].set_index('sc_point_gid')
 
-        # Create a new column with the class|region combination (like in the CF file)
-        dist_files_copy = [copy.deepcopy(df) for df in dist_files] 
-
-        for df in dist_files_copy:
-            df["old c|r"] = (
-                df["class"].astype(int).astype(str) + "|" + df["region"].astype(str)
-            )
-
-        for f, df in enumerate(dist_files_copy):
+        for f, df in enumerate(dist_files):
             # Initial skeleton of the weights DataFrame
-            w_df_tmp = df[["region", "sc_point_gid", "old c|r"]]
+            w_df_tmp = df[["region", "sc_point_gid"]].copy()
 
             # Create a mapping from each unique region to its corresponding weight
             region_to_weight = {
@@ -918,7 +923,7 @@ class WeightCalculator:
             w_df_tmp = w_df_tmp.join(modifiable_df)
 
             # Store in dictionary
-            dict_df_weights[f] = w_df_tmp.drop(columns=["old c|r"])
+            dict_df_weights[f] = w_df_tmp
 
         # Normalize the weights to sum to 1
         # Divide the weights by the sum of the weights across all files
@@ -927,6 +932,10 @@ class WeightCalculator:
 
         for f in range(len(dist_files)):
             dict_df_weights[f][modifiable_columns] /= sum_weights
+            ## Inherit everything but capacity from the base scenario
+            for col in ['class','cf','capital_adder_per_mw']:
+                dict_df_weights[f][col] = 1 if f == base_scenario_index else 0
+                dist_files[f][col] = dist_files[f].sc_point_gid.map(dfbase[col])
 
         return dict_df_weights
 
@@ -1043,10 +1052,12 @@ class MCS_Sampler:
                 )
                 raise ValueError(error_msg)
 
-        exceptions_mult_col = {
-            **{file: ["class"] + list(general_mult_columns) for file in MCSConstants.SUPPLY_CURVE_FILES},
-        }
-        modifiable_columns = exceptions_mult_col.get(file_name, list(general_mult_columns))
+        ## Supply curve files are special; capacity is sampled, but all other parameters
+        ## use values from the most-permissive scenario (the same as hourly profiles)
+        if file_name in MCSConstants.SUPPLY_CURVE_FILES:
+            modifiable_columns = ['capacity']
+        else:
+            modifiable_columns = list(general_mult_columns)
 
         ### ===========================================================================
         ### --- Map for the number of decimals in each column we will change
@@ -1120,9 +1131,10 @@ class MCS_Sampler:
         # Convert class to integer
         samples_sw["class"] = samples_sw["class"].astype(int)
 
-        # Remove samples with no capacity
-        samples_sw = samples_sw[samples_sw["capacity"] > 0]
-        
+        ## Remove samples with no capacity or class
+        ## (meaning they are not in the access scenario used for hourly profiles)
+        samples_sw = samples_sw.loc[(samples_sw["capacity"] > 0) & (samples_sw['class'] > 0)].copy()
+
         return samples_sw
 
     def _apply_weights_general(
@@ -1794,7 +1806,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # ---- Settings for testing ----
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260904_mcM0_MonteCarlo_Random_MC0001','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261008_mcM0_MC_tri_country_MC0001','inputs_case')
     # n_samples = 1
     # seed = 0
 

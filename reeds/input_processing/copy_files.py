@@ -419,6 +419,11 @@ def subset_to_valid_regions(
             case=os.path.dirname(os.path.normpath(inputs_case)),
             agg=agg,
         ).reset_index()
+        keepcols = [i for i in df if i in [
+            'sc_point_gid', 'class', 'capacity', 'capital_adder_per_mw',
+            'cf', 'mean_resource_temp', 'region',
+        ]]
+        df = df[keepcols].copy()
     elif filename == 'techs_banned.csv':
         df, nuclear_ban_regions = read_banned_tech_file(
             full_path,

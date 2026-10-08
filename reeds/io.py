@@ -1099,7 +1099,12 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     return temperatures
 
 
-def get_siting_switchval(tech:Literal['upv','wind-ons','wind-ofs'], case=None, **kwargs) -> str:
+def get_siting_switchval(
+    tech:None|Literal['upv','wind-ons','wind-ofs']=None,
+    switchname:None|Literal['GSw_SitingUPV','GSw_SitingWindOns','GSw_SitingWindOfs']=None,
+    case=None,
+    **kwargs
+) -> str:
     """
     Get the siting scenario to use for the specified tech.
     If not using Monte Carlo sampling, simply reads from the case switches.
@@ -1108,11 +1113,12 @@ def get_siting_switchval(tech:Literal['upv','wind-ons','wind-ofs'], case=None, *
     'open' and 'limited', it returns 'open').
     """
     sw = reeds.io.get_switches(case, **kwargs)
-    switchname = {
-        'upv': 'GSw_SitingUPV',
-        'wind-ons': 'GSw_SitingWindOns',
-        'wind-ofs': 'GSw_SitingWindOfs',
-    }[tech]
+    if switchname is None:
+        switchname = {
+            'upv': 'GSw_SitingUPV',
+            'wind-ons': 'GSw_SitingWindOns',
+            'wind-ofs': 'GSw_SitingWindOfs',
+        }[tech]
     options_openest_first = ['open', 'reference', 'limited']
     if not int(sw['MCS_runs']):
         return sw[switchname]
@@ -1130,7 +1136,7 @@ def get_siting_switchval(tech:Literal['upv','wind-ons','wind-ofs'], case=None, *
         ## Keep the openest scenario (which is first in the list)
         for scen in options_openest_first:
             if scen in siting_scenarios:
-                print(f'MCS: Using {scen}-access profiles for {tech}')
+                print(f'MCS: Using {scen}-access profiles for {switchname}')
                 return scen
 
 
