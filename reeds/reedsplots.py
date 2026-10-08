@@ -983,7 +983,7 @@ def plot_diff_maps(
 
     ### Aggregate selected technologies to one value per region for the target year
     dfbase_selected = (
-        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year), ['r', valcol]]
+        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year)]
         .groupby('r', as_index=False)[valcol].sum()
         .rename(columns={valcol: f'{valcol}_base'})
     )
