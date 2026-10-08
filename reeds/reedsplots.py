@@ -6174,9 +6174,8 @@ def map_outage_days(
                 df=dfplot,
                 ax=_ax,
                 column='outage_pct',
-                fmt="{:.0f}",
                 text_kwargs={'fontsize': fontsize},
-                pe_kwargs={'linewidth': 1.4, 'foreground': 'w', 'alpha': 0.7},
+                pe_kwargs={'linewidth': 1.4},
             )
         _ax.axis('off')
         ## Formatting
