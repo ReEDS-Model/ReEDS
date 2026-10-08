@@ -6,9 +6,12 @@ from typing import Literal
 
 
 #%% Helper functions
-def get_gams_results(case):
+def get_gams_results(case, symbol=None):
     print('Loading results.gdx')
-    dictin = gdxpds.to_dataframes(Path(case, 'outputs', 'results.gdx'))
+    if isinstance(symbol, str):
+        dictin = {symbol: gdxpds.to_dataframe(Path(case, 'outputs', 'results.gdx'), symbol)}
+    else:
+        dictin = gdxpds.to_dataframes(Path(case, 'outputs', 'results.gdx'))
     ## Set indices as multiindex
     valcols = ['Value','Level','Marginal','Lower','Upper','Scale']
     for key, df in dictin.items():
