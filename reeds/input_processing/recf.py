@@ -159,7 +159,7 @@ def calculate_class_region_cf_hourly(
     sw = reeds.io.get_switches(inputs_case)
     # Get supply curve information
     df_sc = reeds.io.assemble_supplycurve(
-        os.path.join(inputs_case, f'supplycurve_{tech}.csv'),
+        os.path.join(inputs_case, f'supplycurve_init_{tech}.csv'),
         case=os.path.dirname(inputs_case),
         agg=True,
     )
@@ -189,8 +189,23 @@ def calculate_class_region_cf_hourly(
                 year=year,
                 case=inputs_case,
             )
-        # Downselect to relevant sites
-        weather_year_site_cf_hourly = weather_year_site_cf_hourly[df_sc.index]
+        # Downselect to relevant sites.
+        # For scenarios not using Monte Carlo, we require an exact match to make
+        # sure our datasets stay in sync.
+        # For Monte Carlo scenarios, we allow for missing values, because the
+        # limited scenario contains sites not in reference/open, but we only use profiles
+        # from the most-open scenario in the distribution.
+        if not int(sw['MCS_runs']):
+            weather_year_site_cf_hourly = weather_year_site_cf_hourly[df_sc.index]
+        else:
+            keep_sites = [i for i in weather_year_site_cf_hourly if i in df_sc.index]
+            if len(keep_sites) != len(df_sc):
+                dropped = [i for i in df_sc.index if i not in keep_sites]
+                print(
+                    f'MCS: Dropped {len(dropped)} {tech} sites: '
+                    + ', '.join([str(i) for i in dropped])
+                )
+            weather_year_site_cf_hourly = weather_year_site_cf_hourly[keep_sites]
         # Calculate the capacity-weighted average CF for each class-region pair
         weather_year_class_region_cf_hourly = (
             weather_year_site_cf_hourly.mul(df_sc['capacity'])
@@ -582,7 +597,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260804_inputsM0_MARICTNYNJPAOH_Offshore','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM1_MonteCarlo_Random_MC0001','inputs_case')
     
     log = reeds.log.makelog(
         scriptname=__file__,
