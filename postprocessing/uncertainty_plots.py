@@ -23,7 +23,10 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import FuncFormatter
 from pptx.util import Inches
 import io
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError as err:
+    raise ImportError(f'{err}\nInstall using:\n    conda install -c conda-forge seaborn=0.13')
 
 # Local Imports
 reeds_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

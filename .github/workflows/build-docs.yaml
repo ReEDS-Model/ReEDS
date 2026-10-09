@@ -26,14 +26,14 @@ jobs:
     permissions:
       contents: write # Required for peaceiris/actions-gh-pages publish to gh-pages.
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: 
           fetch-depth: 1
           lfs: true
           persist-credentials: false
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with: 
           python-version: "3.12"
 
@@ -43,16 +43,12 @@ jobs:
           pip install \
             pandas \
             argparse \
-            sphinx==7.2.6 \
+            sphinx==8.2.3 \
             setuptools==80.9.0 \
-            myst-parser==2.0.0 \
-            sphinx_rtd_theme==2.0.0 \
-            sphinxcontrib-bibtex==2.6.2 \
-            sphinx_design==0.6.1
-
-      - name: Set variables for internal github repo
-        run: |
-          echo "BASE_URL=https://github.com/ReEDS-Model/ReEDS" >> "$GITHUB_ENV"
+            myst-parser==5.1.0 \
+            sphinx_rtd_theme==3.1.0 \
+            sphinxcontrib-bibtex==2.7.0 \
+            sphinx_design==0.7.0
 
       - name: Build Sphinx documentation
         env: 

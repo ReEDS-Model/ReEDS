@@ -54,7 +54,6 @@ static_presets = [
     {'name': 'Total mortality through 2050 (lives)', 'result': 'Health Damages from Emissions', 'preset': 'Total mortality through 2050'},
     {'name': 'System cost + health damages: ACS ($/MWh)', 'result': 'Total Social Costs', 'preset': 'System cost + health damages: ACS CR'},
     {'name': 'System cost + health damages: H6C ($/MWh)', 'result': 'Total Social Costs', 'preset': 'System cost + health damages: H6C CR'},
-    {'name': 'NEUE (ppm)', 'result': 'Resource adequacy', 'preset': 'Normalized expected unserved energy [%]'},
     {'name': 'Runtime (hours)', 'result': 'Runtime', 'preset': 'Stacked Bars'},
     {'name': 'Runtime by year (hours)', 'result': 'Runtime', 'preset': 'Stacked Bars by Year'},
 ]

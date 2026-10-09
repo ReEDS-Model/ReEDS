@@ -579,11 +579,7 @@ function process_hydro(
                         :value,
                     ] * row.MW_sum)[1]
             catch e
-                if isa(e, BoundsError)
-                    @error "$(row.r),$(row.i),$(e)"
-                else
-                    error()
-                end
+                @error "$(row.r),$(row.i),$(e)"
             end
         end
 
@@ -876,7 +872,7 @@ function disagg_existing_capacity(
     tech_ba_year_existing = DataFrames.subset(
         unitdata,
         :tech => DataFrames.ByRow(==(tech)),
-        :reeds_ba => DataFrames.ByRow(==(pca)),
+        :r => DataFrames.ByRow(==(pca)),
         :RetireYear => DataFrames.ByRow(>(year)),
         :StartYear => DataFrames.ByRow(<=(year)),
     )

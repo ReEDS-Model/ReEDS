@@ -16,6 +16,7 @@ import os
 import pandas as pd
 import shutil
 import site
+import copy_rev_folders
 from collections import OrderedDict
 from types import SimpleNamespace
 from glob import glob
@@ -54,15 +55,24 @@ def copy_rev_jsons(outpath, rev_path):
 ### --- SUPPLY CURVE PROCESSING ---
 ### ===========================================================================
 
-def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path):
+def aggregate_supply_curves_by_lowest_lcoe(rev_cases_path, rev_sc_file_path, atb_scenario=None):
     """Only used for geothermal"""
-    raw_sc_files = os.path.join(rev_cases_path, "raw_supply_curves")
+    # get reV supply curves at different depths
+    sc_files = glob(os.path.join(rev_cases_path, "**", "*.csv"), recursive=True)
+    # if ATB scenario is specified, subset to only those files
+    if atb_scenario is not None:
+        sc_files = [path for path in sc_files if atb_scenario in os.path.basename(path)]
 
-    sc_list = []
-    for _, _, files in os.walk(raw_sc_files):
-        for file in files:
-            sc_list.append(pd.read_csv(os.path.join(raw_sc_files, file)))
-    
+    # raise error if no files are identified
+    if len(sc_files) == 0:
+        raise FileNotFoundError(
+            f"No geothermal supply curve CSVs found under {rev_cases_path}"
+            + (f" for atb_scenario='{atb_scenario}'" if atb_scenario is not None else "")
+        )
+    else:
+        print(f"Loading the following files:\n{'\n'.join([os.path.basename(f) for f in sc_files])}")
+        sc_list = [pd.read_csv(path) for path in sorted(sc_files)]
+
     df_sc_agg = pd.concat(sc_list)
     df_sc_lowest_lcoe = (
         df_sc_agg.sort_values(["lcoe_all_in_usd_per_mwh", "lcoe_site_usd_per_mwh"], ascending=True)
@@ -324,7 +334,7 @@ def add_ilr(tech, df, reeds_path, casename):
 
 def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize_path, outpath,
                                     reg_map_file, min_cap, capacity_col,
-                                    existing_sites, state_abbrev, start_year, casename,
+                                    state_abbrev, casename,
                                     filter_cols={}, profile_id_col="sc_point_gid",
                                     offshore_meshed=False):
     """processes reV supply curve file; output is a dataframe with a row for each supply curve point
@@ -345,12 +355,8 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
         capacity threshold for filtering out sites
     capacity_col
         column in supply curve file to use for 'capacity'
-    existing_sites
-        path to existing sites file
     state_abbrev
         path to state abbreviation file
-    start_year
-        start year to use for existing sites
     filter_cols, optional
         dictionary identifying columns to filter as well as filtering condition, by default {}
     profile_id_col, optional
@@ -406,98 +412,9 @@ def get_supply_curve_and_preprocess(tech, original_sc_file, reeds_path, hourlize
     ## Offshore zones have ba in FIPS column, so fall back to FIPS value if not in county2zone
     df['ba'] = df.FIPS.map(lambda x: county2zone.get(x,x))
 
-    ## process existing sites
-    if existing_sites is not None:
-        print('Assigning existing sites...')
-        #Read in existing sites and filter
-        df_exist = pd.read_csv(existing_sites, low_memory=False)
-        ## Assign BA based on county
-        df_exist['reeds_ba'] = df_exist.FIPS.str.strip('p').map(county2zone)
-        assert df_exist.reeds_ba.isnull().sum() == 0, f'Unmatched counties in {existing_sites}'
-        ## If meshed, assign existing offshore wind to offshore zones
-        if (tech == 'wind-ofs') and (offshore_meshed):
-            df_exist = reeds.spatial.assign_to_offshore_zones(df_exist)
-
-        df_exist = df_exist[
-            ['tech','TSTATE','reeds_ba','Unique ID',
-            'T_LONG','T_LAT','summer_power_capacity_MW','StartYear','RetireYear']
-        ].rename(columns={
-            'TSTATE':'STATE', 'T_LAT':'LAT', 'T_LONG':'LONG', 'summer_power_capacity_MW':'cap', 'reeds_ba':'pca',
-            'Unique ID':'UID', 'StartYear':'Commercial.Online.Year',
-        }).copy()
-        df_exist = df_exist[(df_exist['tech'].str.lower().str.contains(tech.lower())) & (df_exist['RetireYear'] > start_year)].reset_index(drop=True)
-        if (df_exist['LONG'] > 0).any():
-            err = (
-                f'Some longitudes in {existing_sites} are positive; '
-                'for the contiguous US they should all be negative'
-            )
-            raise ValueError(err)
-        df_exist.sort_values('cap', ascending=False, inplace=True)
-
-        #Map the state codes of df_exist to the state names in df
-        df_cp = df.copy()
-        df_st = pd.read_csv(state_abbrev, low_memory=False)
-        dict_st = dict(zip(df_st['ST'], df_st['State']))
-        df_exist['STATE'] = df_exist['STATE'].map(dict_st)
-        df_cp = df_cp[[profile_id_col, 'STATE','latitude','longitude','capacity']].copy()
-        df_cp['existing_capacity'] = 0.0
-        df_cp['existing_uid'] = 0
-        df_cp['online_year'] = 0
-        df_cp['retire_year'] = 0
-        df_cp_out = pd.DataFrame()
-
-        #Restrict matching to within the same state
-        print("{:<18} {:>} MW".format("Total", round(df_exist.cap.sum())))
-        print("{:<18} {:>}".format("-------", "-------"))
-        for st in df_exist['STATE'].unique():
-            df_exist_st = df_exist[df_exist['STATE'] == st].copy()
-            print("{:<18} {:>} MW".format(st, round(df_exist_st.cap.sum())))
-            df_cp_st = df_cp[df_cp['STATE'] == st].copy()
-            for i_exist, r_exist in df_exist_st.iterrows():
-                #Current way to deal with lats and longs that don't exist
-                if r_exist['LONG'] == 0:
-                    continue
-                #Assume each lat is ~69 miles and each long is ~53 miles
-                # TODO FIXME: If this calculation matters, use meters from equal-area projection
-                # (fixed lat/lon-to-miles is inaccurate over areas as large as the USA)
-                df_cp_st['mi_sq'] =  ((df_cp_st['latitude'] - r_exist['LAT'])*69)**2 + ((df_cp_st['longitude'] - r_exist['LONG'])*53)**2
-                #Sort by closest
-                df_cp_st.sort_values(['mi_sq'], inplace=True)
-                #Step through the available sites and fill up the closest ones until we are done with this existing capacity
-                exist_cap_remain = r_exist['cap']
-                for i_avail, r_avail in df_cp_st.iterrows():
-                    avail_cap = df_cp_st.at[i_avail, 'capacity']
-                    # TODO: handle missing UIDs
-                    try:
-                        df_cp_st.at[i_avail, 'existing_uid'] = r_exist['UID']
-                    except Exception:
-                        df_cp_st.at[i_avail, 'existing_uid'] = 0
-                    df_cp_st.at[i_avail, 'online_year'] = r_exist['Commercial.Online.Year']
-                    df_cp_st.at[i_avail, 'retire_year'] = r_exist['RetireYear']
-                    if exist_cap_remain <= avail_cap:
-                        df_cp_st.at[i_avail, 'existing_capacity'] = exist_cap_remain
-                        exist_cap_remain = 0
-                        break
-                    else:
-                        df_cp_st.at[i_avail, 'existing_capacity'] = avail_cap
-                        exist_cap_remain = exist_cap_remain - avail_cap
-                if exist_cap_remain > 0:
-                    print('WARNING: Existing site shortfall: ' + str(exist_cap_remain))
-                #Build output and take the available sites with existing capacity out of consideration for the next exisiting site
-                df_cp_out_add = df_cp_st[df_cp_st['existing_capacity'] > 0].copy()
-                df_cp_out = pd.concat([df_cp_out, df_cp_out_add], sort=False).reset_index(drop=True)
-                df_cp_st = df_cp_st[df_cp_st['existing_capacity'] == 0].copy()
-        df_cp_out['exist_mi_diff'] = df_cp_out['mi_sq']**0.5
-        df_cp_out = df_cp_out[[profile_id_col, 'existing_capacity', 'existing_uid', 'online_year', 'retire_year', 'exist_mi_diff']].copy()
-        df = pd.merge(left=df, right=df_cp_out, how='left', on=profile_id_col, sort=False)
-        df[['existing_capacity','existing_uid','online_year','retire_year','exist_mi_diff']] = df[['existing_capacity','existing_uid','online_year','retire_year','exist_mi_diff']].fillna(0)
-        df[['existing_uid','online_year','retire_year']] = df[['existing_uid','online_year','retire_year']].astype(int)
-    else:
-        df['existing_capacity'] = 0.0
-
     if min_cap > 0:
-        #Remove sites with less than minimum capacity threshold, but keep sites that have existing capacity
-        df = df[(df['capacity'] >= min_cap) | (df['existing_capacity'] > 0)].copy()
+        #Remove sites with less than minimum capacity threshold
+        df = df[df['capacity'] >= min_cap].copy()
 
     print('Done reading supply curve inputs and filtering: '+ str(datetime.datetime.now() - startTime))
     return df
@@ -514,9 +431,9 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
     startTime = datetime.datetime.now()
     #Create class column.
     if class_path is None:
-        df_sc['class'] = '1'
+        df_sc['class'] = 1
     else:
-        df_sc['class'] = 'NA' #Initialize to NA to make sure we have full coverage of classes here.
+        df_sc['class'] = pd.Series(pd.NA, index=df_sc.index, dtype='Int64')
         df_class = pd.read_csv(class_path, index_col='class')
         #Now loop through classes (rows in df_class). Classes may have multiple defining criteria (columns in df_class),
         #so we loop through columns to build the selection criteria for each class, building up a 'mask' of criteria for each class.
@@ -536,7 +453,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                     #No pipe symbol means we do a simple match.
                     mask = mask & (df_sc[col] == val)
             #Finally, apply the mask that has been built for this class.
-            df_sc.loc[mask, 'class'] = cname
+            df_sc.loc[mask, 'class'] = int(cname)
     # Add dynamic, region-specific class bins based on class_bin_method
     if class_bin:
         #In this case, class names in class_path must be numbered, starting at 1
@@ -553,7 +470,7 @@ def add_classes(df_sc, class_path, class_bin, class_bin_col, class_bin_method, c
                 bin_num=class_bin_num,
                 bin_method=class_bin_method,
             )
-            .reset_index(drop=True)
+            .reset_index()
         )
         df_sc['class'] = (df_sc['class_orig'] - 1) * class_bin_num + df_sc['class_bin']
     print('Done adding classes: '+ str(datetime.datetime.now() - startTime))
@@ -643,7 +560,13 @@ def read_cf_file(
     ## Change hourly profile column names from simple index to
     ## associated id specified by profile_id_col (usually sc_point_gid)
     dfall.columns = dfall.columns.map(df_meta[profile_id_col])
+    
     ## Add time index
+    # first decode from bytes
+    if df_index.dtype.kind == "S":
+        df_index = df_index.str.decode("utf-8").str.rstrip("\x00")
+    # now save as datetime and add as index
+    df_index = pd.to_datetime(df_index, errors="raise")
     dfall = dfall.set_index(df_index)
     
     return dfall
@@ -698,7 +621,7 @@ def process_cf_profiles(
         df_prof_out = df_prof_out * scale_factor
 
         ### Convert dtype
-        if 'int' in dtype and scale_factor < 100:
+        if np.issubdtype(dtype, np.integer) and scale_factor < 100:
             raise ValueError(
                 "scale_factor must be greater than 100 when converting "
                 "CF values to ints. Update scale_factor or dtype."
@@ -758,11 +681,8 @@ def convert_upv_ac_profiles_to_dc(df_prof, df_sc):
 
 def save_sc_outputs(
     df_sc,
-    existing_sites,
-    start_year,
     outpath,
     tech,
-    subtract_exog,
     profile_id_col,
     decimals,
 ):
@@ -774,54 +694,23 @@ def save_sc_outputs(
     df_sc = df_sc.copy()
     # save copy of pre-processed reV supply curve
     df_sc.to_csv(os.path.join(outpath, 'results', tech + '_supply_curve_raw.csv'), index=False)
-    #Round now to prevent infeasibility in model because existing (pre-2010 + prescribed) capacity is slightly higher than supply curve capacity
-    df_sc[['capacity','existing_capacity']] = df_sc[['capacity','existing_capacity']].round(decimals)
-    if existing_sites:
-        # bincol = ['sc_point_gid'] if exog_bin else []
-        df_exist = df_sc[df_sc['existing_capacity'] > 0].copy()
-        #Exogenous (pre-start-year) capacity output
-        df_exog = df_exist[df_exist['online_year'] < start_year].copy()
-        # Aggregate existing capacity to (i,rs,t)
-        if not df_exog.empty:
-            df_exog = df_exog[[profile_id_col, 'class','retire_year','existing_capacity']].copy()
-            max_exog_ret_year = df_exog['retire_year'].max()
-            ret_year_ls = list(range(start_year,max_exog_ret_year + 1))
-            df_exog = df_exog.pivot_table(index=[profile_id_col,'class'], columns='retire_year', values='existing_capacity')
-            # Make a column for every year until the largest retirement year
-            df_exog = df_exog.reindex(columns=ret_year_ls).fillna(method='bfill', axis='columns')
-            df_exog = pd.melt(
-                df_exog.reset_index(), id_vars= [profile_id_col,'class'],
-                value_vars=ret_year_ls, var_name='year', value_name='capacity')
-            df_exog = df_exog[df_exog['capacity'].notnull()].copy()
-            if(tech == 'egs' or tech == 'geohydro'):
-                df_exog['tech'] = tech + '_allkm_' + df_exog['class'].astype(str)
-            else:
-                df_exog['tech'] = tech + '_' + df_exog['class'].astype(str)
-            df_exog = df_exog[[profile_id_col,'tech','year','capacity']].copy()
-            df_exog = df_exog.groupby(['tech','year',profile_id_col], sort=False, as_index=False).sum()
-            df_exog = df_exog.sort_values(['year',profile_id_col]).round(decimals)
-            df_exog.to_csv(os.path.join(outpath, 'results', tech + '_exog_cap.csv'), index=False)
-        #Prescribed capacity output
-        if tech in ['wind-ons', 'wind-ofs']:
-            df_pre = df_exist[df_exist['online_year'] >= start_year].copy()
-            if not df_pre.empty:
-                df_pre = df_pre[[profile_id_col,'online_year','existing_capacity']].copy()
-                df_pre = df_pre.rename(columns={'online_year':'year', 'existing_capacity':'capacity'})
-                df_pre = df_pre.groupby([profile_id_col,'year'], sort=False, as_index =False).sum()
-                df_pre['capacity'] =  df_pre['capacity'].round(decimals)
-                df_pre = df_pre.sort_values(['year',profile_id_col])
-                df_pre.to_csv(os.path.join(outpath, 'results', tech + '_prescribed_builds.csv'), index=False)
-        #Reduce supply curve based on exogenous (pre-start-year) capacity
-        if subtract_exog:
-            criteria = (df_sc['online_year'] > 0) & (df_sc['online_year'] < start_year)
-            df_sc.loc[criteria, 'capacity'] = (
-                df_sc.loc[criteria, 'capacity'] - df_sc.loc[criteria, 'existing_capacity'])
+    df_sc['capacity'] = df_sc['capacity'].round(decimals)
 
+    cols_out = [profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', 'cf']
+    # for EGS identify the resource based on mean temperature
+    if tech == 'egs':
+        rescol = 'mean_resource_temp'
+        # convert mean temperature to int
+        df_sc[rescol] = df_sc[rescol].round().astype(int)
+        cols_out += [rescol]
+        
+    # include capacity factor
     cfcol = 'capacity_factor_ac' if 'capacity_factor_ac' in df_sc else 'mean_cf'
+    df_sc[cfcol] = df_sc[cfcol].round(decimals+2)
+    df_sc = df_sc.rename(columns={cfcol:'cf'})
     df_sc_out = (
-        df_sc[[profile_id_col, 'class', 'capacity', 'capital_adder_per_mw', cfcol]]
+        df_sc[cols_out]
         .sort_values(profile_id_col)
-        .rename(columns={cfcol:'cf'})
         .round({'capacity':decimals, 'capital_adder_per_mw':decimals, 'cf':decimals+2})
     )
     df_sc_out.to_csv(
@@ -865,27 +754,6 @@ def copy_outputs(
             os.path.join(inputspath, 'supply_curve', f'supplycurve_{tech}-{access_case}.csv')
         )
 
-        #Prescribed builds and exogenous capacity (if they exist)
-        try:
-            shutil.copy2(
-                os.path.join(resultspath, f'{tech}_prescribed_builds.csv'),
-                os.path.join(
-                    inputspath, 'capacity_exogenous',
-                    f'prescribed_builds_{techlabel}_{access_case}.csv',
-                )
-            )
-        except Exception:
-            print('WARNING: No prescribed builds')
-
-        try:
-            df = pd.read_csv(os.path.join(resultspath,f'{tech}_exog_cap.csv'))
-            df.rename(columns={df.columns[0]: '*'+str(df.columns[0])}, inplace=True)
-            df.to_csv(
-                os.path.join(inputspath,'capacity_exogenous',f'exog_cap_{tech}_{access_case}.csv'),
-                index=False
-            )
-        except Exception:
-            print('WARNING: No exogenous capacity')
 
         ## Metadata
         # rev configs
@@ -946,16 +814,24 @@ if __name__== '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c', type=str, default='', help='path to config file for this run')
     parser.add_argument('--nolog', '-n', default=False, action='store_true', help='turn off logging for debugging')
+    parser.add_argument('--copy_from_rev', '-r', action='store_true', 
+        help='Copy original reV folders to Supply_Curve_Data; if data exists will update.'
+    )
 
     args = parser.parse_args()
     configpath = args.config
     nolog = args.nolog
+    copy_from_rev = args.copy_from_rev
     startTime = datetime.datetime.now()
 
     #%% load config information
     with open(configpath, "r") as f:
         config = json.load(f, object_pairs_hook=OrderedDict)
     cf = SimpleNamespace(**config)
+
+    #%% copy reV folders
+    if copy_from_rev:
+        copy_rev_folders.main(cf.rev_paths_file, [cf.tech])
 
     #%% look for upv output type (AC or DC)
     if cf.tech == "upv":
@@ -985,6 +861,7 @@ if __name__== '__main__':
                 aggregate_supply_curves_by_lowest_lcoe(
                     rev_cases_path=cf.rev_path,
                     rev_sc_file_path=cf.original_sc_file,
+                    atb_scenario=cf.atb_scenario
                 )
             else:
                 raise NotImplementedError(
@@ -1001,9 +878,7 @@ if __name__== '__main__':
         reg_map_file=cf.reg_map_file,
         min_cap=cf.min_cap,
         capacity_col=cf.capacity_col,
-        existing_sites=cf.existing_sites,
         state_abbrev=cf.state_abbrev,
-        start_year=cf.start_year,
         casename=cf.casename,
         filter_cols=cf.filter_cols,
         profile_id_col=cf.profile_id_col,
@@ -1021,11 +896,8 @@ if __name__== '__main__':
     #%% Save the supply curve
     df_sc_out = save_sc_outputs(
         df_sc=df_sc,
-        existing_sites=cf.existing_sites,
-        start_year=cf.start_year,
         outpath=cf.outpath,
         tech=cf.tech,
-        subtract_exog=cf.subtract_exog,
         profile_id_col=cf.profile_id_col,
         decimals=2,
     )

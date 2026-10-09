@@ -30,8 +30,6 @@ reeds_path = reeds.io.reeds_path
 numbins_other = 5
 ### Rounding precision
 decimals = 7
-### spur_cutoff [$/MW]: Cutoff for spur line costs; clip cost for sites with larger costs
-spur_cutoff = 1e7
 
 # %% ===========================================================================
 ### --- FUNCTIONS ---
@@ -52,33 +50,44 @@ def wm(df):
     return _wm
 
 
-def get_exog_cap(inputs_case, tech, dfsc):
-    """Get exogenous capacity by class, region, rscbin, and year"""
+def get_exog_outputs(inputs_case, tech, dfsc):
+    """Get existing capacity and its average build year by resource class."""
     dfexog = (
         pd.read_csv(os.path.join(inputs_case, f'exog_cap_{tech}.csv'))
         .merge(
             dfsc.explode('sc_point_gid').reset_index()[['sc_point_gid','bin']],
             on='sc_point_gid',
         )
-        .rename(columns={'capacity':'MW'})
     )
+
+    ## Capacity by resource bin
     dfexog['rscbin'] = dfexog['bin'].map('bin{}'.format)
-    dfexog = dfexog.groupby(['*tech', 'region', 'rscbin', 'year']).MW.sum()
-    return dfexog
+    capacity = (
+        dfexog.groupby(['*tech', 'region', 'rscbin', 'year'])
+        .MW.sum()
+    )
+
+    ## Average build year
+    dfexog['MW_onlineyear'] = dfexog.MW * dfexog.onlineyear
+    dfsums = dfexog.groupby(['*tech', 'region', 'year'])[['MW', 'MW_onlineyear']].sum()
+    onlineyear = (
+        (dfsums.MW_onlineyear / dfsums.MW)
+        .dropna()
+        .rename('onlineyear')
+        .reset_index()
+    )
+    onlineyear['v'] = 'init-1'
+    onlineyear = onlineyear.set_index(['*tech', 'v', 'region', 'year']).onlineyear
+    return capacity, onlineyear
 
 
 def agg_supplycurve(
     scpath,
     inputs_case,
     numbins_tech,
-    agglevel,
     bin_method='equal_cap_cut',
     bin_col='supply_curve_cost_per_mw',
-    spur_cutoff=1e7, 
-    agglevel_variables=None,
     deflate=None,
-    sw=None,
-    write=False,
 ):
     """
     """
@@ -112,13 +121,11 @@ def agg_supplycurve(
             dfin
             .groupby(['region','class'], sort=False, group_keys=True)
             .apply(reeds.inputs.get_bin, numbins_tech, bin_method, bin_col)
-            .reset_index(drop=True)
+            .reset_index(level=['region','class'])
             .sort_values('sc_point_gid')
         )
     ### Aggregate it
     dfout = dfin.groupby(index_cols).agg(aggs)
-    ### Clip negative costs and costs above cutoff
-    dfout.supply_curve_cost_per_mw = dfout.supply_curve_cost_per_mw.clip(lower=0, upper=spur_cutoff)
 
     return dfin, dfout
 
@@ -131,19 +138,12 @@ def agg_supplycurve(
 def main(
     reeds_path, inputs_case, write=True, **kwargs
 ):
-    # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # inputs_case = os.path.join(reeds_path,'runs','v20251209_scM0_Pacific','inputs_case')
-    # write = True
-    # kwargs = {}
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
     ### Overwrite switches with keyword arguments
     for kw, arg in kwargs.items():
         sw[kw] = arg
-    endyear = int(sw.endyear)
-    startyear = int(sw.startyear)
     geohydrosupplycurve = sw.geohydrosupplycurve
     egssupplycurve = sw.egssupplycurve
     egsnearfieldsupplycurve = sw.egsnearfieldsupplycurve
@@ -156,10 +156,6 @@ def main(
         "geohydro": int(sw.numbins_geohydro_allkm),
         "egs": int(sw.numbins_egs_allkm),
     }
-
-    # Use agglevel_variables function to obtain spatial resolution variables 
-    agglevel_variables  = reeds.spatial.get_agglevel_variables(reeds_path, inputs_case)
-    agglevel = agglevel_variables['agglevel']
 
     val_r_all = pd.read_csv(
         os.path.join(inputs_case,'val_r_all.csv'), header=None).squeeze(1).tolist()
@@ -185,7 +181,7 @@ def main(
     deflate = dollaryear.map(deflator).rename('Deflator')
 
     #%% Load the existing RSC capacity (PV plants, wind, and CSP)
-    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv"))
+    rsc_wsc = pd.read_csv(os.path.join(inputs_case, "rsc_wsc.csv")).rename(columns={'*r':'r'})
 
     # Group CSP tech
     rsc_wsc.loc[rsc_wsc['i']=='csp-ws', 'i'] = 'csp'
@@ -208,6 +204,7 @@ def main(
     alloutcap_list = []
     alloutcost_list = []
     spurout_list = []
+    exog_onlineyear_list = []
 
     # %%#################
     #    -- Wind --    #
@@ -222,12 +219,10 @@ def main(
     for s in wind_types:
         windin[s], wind[s] = agg_supplycurve(
             scpath=os.path.join(inputs_case,f'supplycurve_wind-{s}.csv'),
-            inputs_case=inputs_case, 
-            agglevel=agglevel,
-            numbins_tech=numbins[f'wind-{s}'], spur_cutoff=spur_cutoff,
-            agglevel_variables=agglevel_variables, deflate=deflate,
-            sw=sw, write=write
-            )
+            inputs_case=inputs_case,
+            numbins_tech=numbins[f'wind-{s}'],
+            deflate=deflate,
+        )
         
         cost_components = (
             wind[s][["cost_total_trans_usd_per_mw", "capital_adder_per_mw"]]
@@ -309,9 +304,15 @@ def main(
     alloutcap_list.append(windcap)
 
     if write:
-        ## Exogenous wind capacity
-        dfwindexog = get_exog_cap(inputs_case, tech='wind-ons', dfsc=wind['ons'])
-        dfwindexog.round(3).to_csv(os.path.join(inputs_case, "exog_wind_ons_rsc.csv"))
+        ## Exogenous wind capacity and build year
+        for s in wind_types:
+            exog_wind_rsc, exog_onlineyear = get_exog_outputs(
+                inputs_case, tech=f'wind-{s}', dfsc=wind[s]
+            )
+            exog_wind_rsc.round(3).to_csv(
+                os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv")
+            )
+            exog_onlineyear_list.append(exog_onlineyear)
 
     # %%###############
     #    -- PV --    #
@@ -320,11 +321,9 @@ def main(
     upvin, upv = agg_supplycurve(
         scpath=os.path.join(inputs_case, 'supplycurve_upv.csv'),
         inputs_case=inputs_case,
-        agglevel=agglevel,
-        numbins_tech=numbins['upv'], spur_cutoff=spur_cutoff,
-        agglevel_variables=agglevel_variables, deflate=deflate,
-        sw=sw, write=write
-        )
+        numbins_tech=numbins['upv'],
+        deflate=deflate,
+    )
 
     # Similar to wind, save the trans vs cap components and then concatenate them below just
     # before outputting rsc_combined.csv
@@ -351,8 +350,11 @@ def main(
 
     if write:    
         ## Exogenous UPV capacity
-        dfupvexog = get_exog_cap(inputs_case, tech='upv', dfsc=upv)
-        dfupvexog.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
+        exog_upv_rsc, exog_onlineyear = get_exog_outputs(
+            inputs_case, tech='upv', dfsc=upv
+        )
+        exog_upv_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
+        exog_onlineyear_list.append(exog_onlineyear)
 
     ### Normalize formatting
     upv = upv.reset_index()
@@ -398,13 +400,11 @@ def main(
     ###################
 
     if int(sw["GSw_CSP"]):
-        cspin, csp = agg_supplycurve(
+        _, csp = agg_supplycurve(
             scpath=os.path.join(inputs_case, 'supplycurve_csp.csv'),
             inputs_case=inputs_case,
-            agglevel=agglevel,
-            numbins_tech=numbins['csp'], spur_cutoff=spur_cutoff,
-            agglevel_variables=agglevel_variables, deflate=deflate,
-            sw=sw, write=False
+            numbins_tech=numbins['csp'],
+            deflate=deflate,
         )
 
         ### Normalize formatting
@@ -480,11 +480,11 @@ def main(
             geoin[s], geo[s] = agg_supplycurve(
                 scpath=os.path.join(
                     inputs_case,
-                    f'supplycurve_{s}.csv'),
-                numbins_tech=numbins[s], inputs_case=inputs_case,
-                agglevel=agglevel,
-                spur_cutoff=spur_cutoff,agglevel_variables=agglevel_variables, deflate=deflate,
-                sw=sw, write=False
+                    f'supplycurve_{s}.csv'
+                ),
+                numbins_tech=numbins[s],
+                inputs_case=inputs_case,
+                deflate=deflate
             )
             spurout_list.append(
                 geo[s]
@@ -569,10 +569,29 @@ def main(
 
             if use_geohydro_rev_sc:
                 ## Exogenous geohydro capacity
-                dfgeohydroexog = get_exog_cap(inputs_case, tech='geohydro', dfsc=geo['geohydro'])
-                dfgeohydroexog.round(3).to_csv(
+                exog_geohydro_rsc, exog_onlineyear = get_exog_outputs(
+                    inputs_case, tech='geohydro', dfsc=geo['geohydro']
+                )
+                exog_geohydro_rsc.round(3).to_csv(
                     os.path.join(inputs_case, "exog_geohydro_allkm_rsc.csv")
                 )
+                exog_onlineyear_list.append(exog_onlineyear)
+
+    if write:
+        ## Add resource-class build years and replace less-detailed entries.
+        onlineyear_path = os.path.join(inputs_case, "exog_onlineyear.csv")
+        exog_onlineyear = pd.concat([
+            pd.read_csv(onlineyear_path)
+            .set_index(['*i', 'v', 'r', 't']).onlineyear,
+            *exog_onlineyear_list,
+        ])
+        exog_onlineyear.index = exog_onlineyear.index.set_names(
+            ['*i', 'v', 'r', 't']
+        )
+        exog_onlineyear = exog_onlineyear[
+            ~exog_onlineyear.index.duplicated(keep='last')
+        ].sort_index()
+        exog_onlineyear.round(2).to_csv(onlineyear_path)
 
     # %% Get supply-curve data for postprocessing
     spurcols = [
@@ -1106,6 +1125,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
+
+    # #%% Settings for testing
+    #reeds_path = reeds.io.reeds_path
+    #inputs_case = os.path.join(reeds_path,'runs','test_CA','inputs_case')
+    #write = True
+    #kwargs = {}
 
     #%% Set up logger
     log = reeds.log.makelog(

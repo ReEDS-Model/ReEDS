@@ -264,7 +264,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
         dfmap[key]['centroid_y'] = dfmap[key].centroid.y
 
     ### Get the CF data over all years, take the mean over weather years
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf = recf.loc[recf.index.year.isin(GSw_HourlyWeatherYears)].mean()
 
     ### Get the hourly data
@@ -316,8 +316,8 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
                 )
             dfdiffs[col]['cf_diff'] = dfdiffs[col].cf_rep - dfdiffs[col].cf_actual
 
-        ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-        cfmap.geometry = cfmap.buffer(11530/2, cap_style='square')
+        ## Convert from points to polygons
+        cfmap = reeds.spatial.site2poly_buffer(cfmap)
 
         ### Plot the difference map
         nrows, ncols, coords = plots.get_coordinates([
@@ -426,9 +426,6 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     load_mean = load_raw.loc[
         load_raw.index.map(lambda x: x.year in GSw_HourlyWeatherYears)
     ].mean() / 1000
-    ## load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
-    scalars = reeds.io.get_scalars(inputs_case)
-    load_mean *= (1 - scalars['distloss'])
     ### Get the representative data, take the mean for the cluster year
     load_allyear = (
         pd.read_csv(os.path.join(inputs_case, periodtype, 'load_allyear.csv')).rename(columns={'*r':'r'})
@@ -551,7 +548,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
 def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
     def get_profiles(regions, year):
         """Assemble 8760 profiles from original and representative days"""
-        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='H',inclusive='left')[:8760]
+        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='h',inclusive='left')[:8760]
         props = profiles.columns.get_level_values('property').unique()
         ### Original profiles
         dforig = {}
