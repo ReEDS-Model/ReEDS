@@ -7,6 +7,7 @@ import datetime
 import argparse
 import h5py
 from pathlib import Path
+import cmocean
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 reeds_path = reeds.io.reeds_path
@@ -19,6 +20,7 @@ tz_in = 'UTC'
 tz_out = 'Etc/GMT+6'
 temp_min = -50
 temp_max = 60
+cmap = cmocean.cm.tempo
 ## Only use during_quarters for techs without a monthly scheduled outage rate
 during_quarters = ['spring', 'fall']
 ## Cap the extrapolation of forced outage rates at high/low temperatures to 0.4 because
@@ -27,8 +29,8 @@ during_quarters = ['spring', 'fall']
 max_extrapolated_outage_forced = 0.4
 ## assume temperature-dependent outage rates for ng-fuel-cell to be the same as for combined_cycle plants
 primemover2techgroup = {
-    'combined_cycle': ['GAS_CC', 'FUEL_CELL'],
-    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION'],
+    'combined_cycle': ['GAS_CC', 'NG_FUEL_CELL'],
+    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION','H2_FUEL_CELL'],
     'diesel': ['OGS'],
     'hydro_and_psh': ['HYDRO', 'PSH'],
     'nuclear': ['NUCLEAR'],
@@ -383,7 +385,7 @@ def plot_outage_forced(
 
         plt.close()
         f, ax = reeds.plots.map_years_months(
-            dfzones=dfzones, dfdata=dfdata, aggfunc=aggfunc,
+            dfzones=dfzones, dfdata=dfdata, cmap=cmap, aggfunc=aggfunc,
             title=f"Monthly {aggfunc}\nforced outage rate,\n{nicelabels.get(pm,pm)} [%]",
         )
         plt.savefig(os.path.join(figpath, f'FOR_monthly-{aggfunc}-{pm}.png'))

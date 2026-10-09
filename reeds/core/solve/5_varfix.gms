@@ -27,7 +27,7 @@ OP_LOADSITE.fx(r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_
 CAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)] = CAP.l(i,v,r,tfix) ;
 CAP_ENERGY.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$battery(i)] = CAP_ENERGY.l(i,v,r,tfix) ;
 CAP_ABOVE_LIM.fx(tg,r,tfix)$[(yeart(tfix)>=model_builds_start_yr)
-                                $(sum{(tgg,rr), cap_limit(tgg,rr,tfix)})
+                                $(sum{(tgg,rr), queue_limit(tgg,rr,tfix)})
                                 $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,tfix)}] = CAP_ABOVE_LIM.l(tg,r,tfix) ;
 CAP_SDBIN.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$(storage(i) or hyd_add_pump(i))$(not csp(i))$Sw_PRM_CapCredit] = CAP_SDBIN.l(i,v,r,ccseason,sdbin,tfix) ;
 CAP_SDBIN_ENERGY.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$battery(i)$Sw_PRM_CapCredit] = CAP_SDBIN_ENERGY.l(i,v,r,ccseason,sdbin,tfix) ;
@@ -48,7 +48,6 @@ EXTRA_PRESCRIP_ENERGY.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,t
 GEN.fx(i,v,r,h,tfix)$valgen(i,v,r,tfix) = GEN.l(i,v,r,h,tfix) ;
 GEN_PLANT.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_PLANT.l(i,v,r,h,tfix) ;
 GEN_STORAGE.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_STORAGE.l(i,v,r,h,tfix) ;
-CURT.fx(r,h,tfix)$Sw_CurtMarket = CURT.l(r,h,tfix) ;
 MINGEN.fx(r,szn,tfix)$Sw_Mingen = MINGEN.l(r,szn,tfix) ;
 STORAGE_IN.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$(storage_standalone(i) or hyd_add_pump(i))] = STORAGE_IN.l(i,v,r,h,tfix) ;
 STORAGE_IN_PLANT.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_PLANT.l(i,v,r,h,tfix) ;
