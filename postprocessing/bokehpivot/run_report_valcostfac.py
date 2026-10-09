@@ -45,7 +45,7 @@ rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.stat
 #configuration and plotting behind a given report stay recorded alongside the report itself.
 shutil.copy2(os.path.realpath(__file__), output_dir)
 for fname in ['report_switches.py', 'plcoe_pitch.py', 'reeds_vs_rev.py', 'lvoe_vs_lcoe.py',
-              'spatial_value.py', 'valcostfac_report.py']:
+              'spatial_value.py', 'valcostfac_report.py', 'battery_report.py']:
     shutil.copy2(f'{bokehpivot_dir}/{fname}', output_dir)
 
 #CUSTOM POSTPROCESSING
@@ -464,6 +464,15 @@ try:
     valcostfac_report.make_report(f'{output_dir}/valcostfac_core.csv')
 except Exception as e:
     msg = f'WARNING: html report skipped ({type(e).__name__}: {e}). Everything else is complete.'
+    print(msg)
+    with open(out_txt, 'a') as f:
+        print(msg, file=f)
+#The storage figures, on their own page beside it. Same inputs and the same guard.
+import battery_report
+try:
+    battery_report.make_report(f'{output_dir}/valcostfac_core.csv')
+except Exception as e:
+    msg = f'WARNING: battery report skipped ({type(e).__name__}: {e}). Everything else is complete.'
     print(msg)
     with open(out_txt, 'a') as f:
         print(msg, file=f)

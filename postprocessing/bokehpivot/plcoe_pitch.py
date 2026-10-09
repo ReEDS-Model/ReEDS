@@ -33,6 +33,7 @@ avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-c
                       'Coal': 'coal', 'Nuclear': 'nuclear', 'Battery': 'battery'} #Report tech -> raw tech prefix in the run outputs, for the available-energy basis. Techs absent here keep their default basis.
 avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
 cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is also drawn in every scenario in the scenarios file, not only in the run that forces them, to separate a tech's own saturation from the system around it. Names as in valcostfac_core.csv; each needs an entry in avail_basis_prefix.
+regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
 cc_scenario_min_new_gw = 1.0 #In the all-scenario capacity-credit figure, drop a year where the tech added less than this many GW. In the thermal-forced runs storage adds a few hundred MW in some years, and the credit of so little capacity swings between 0.75 and 0.98 on which one or two regions happened to build.
 vcf_separate_techs = ['Battery'] #Techs drawn in their own figure rather than alongside the rest. Storage sits in a different part of the plane - value factor above 1, market share topping out near 15% - so sharing a figure with it stretches every other panel's axes to accommodate one corner. These techs are dropped from the main VCF figures and written to plcoe_pitch_VCF_power_storage.png instead; they stay in the fits table, which has no axis to distort. Empty list to keep everything in one figure.
 vcf_use_full_range = True #Read the VCF figures' data from valcostfac.csv rather than valcostfac_core.csv, which report_switches' gen_frac_max truncates at 0.65 market share. That cap is scoped to the intermediary "lim" plots and badly distorts these figures: it removes 4 coal points, 7 gas-CC, 6 nuclear and 1 wind, and with them most of the dispatchable techs' escalation. Filtered, nuclear's k difference reads -0.00 and gas-CC's 0.56 on an R2-0.24 fit; over the full range they are 0.08 (R2 0.77) and 0.05 (R2 0.86). Only the VCF figures can use it - the _adj figures need value_cost_factor_adj and cost_factor_adj, which run_report_valcostfac.py derives after the cap and writes only to valcostfac_core.csv.
@@ -850,8 +851,8 @@ def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
     curves. Cumulative capacity answers a different question - how much of a technology the system
     can absorb before firmness stops being rewarded - and separates techs that market share puts
     on top of each other, since a gigawatt of storage and a gigawatt of wind are nowhere near the
-    same share of generation. It runs on a log axis because the techs span twenty gigawatts to
-    three terawatts.
+    same share of generation. The axis is linear, so the techs that stay small (storage tops out
+    near 640 GW) sit in the left part of it beside wind and UPV's terawatts.
 
     One axes rather than panels: six monotone curves separate cleanly, and the point is the
     contrast between the dispatchable techs' flat lines and the resource-limited techs' collapse.
@@ -874,10 +875,8 @@ def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
     if x == 'gen_frac':
         ax.set_xlabel('Market share (% of generation)')
     else:
-        ax.set_xscale('log')
         ax.set_xlabel('Cumulative national capacity (GW)')
-        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f'{v:g}'))
-        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        ax.set_xlim(left=0)
     ax.set_ylabel('Capacity credit of new builds')
     ax.set_ylim(bottom=0)
     ax.grid(alpha=0.25, lw=0.6)
@@ -988,8 +987,7 @@ def plot_capacity_credit_by_scenario(output_path, cc=None):
             ax.set_ylim(0, 1.05)
             ax.grid(alpha=0.25, lw=0.6)
             if x == 'cap_gw':
-                ax.set_xscale('log')
-                _log_ticks(ax, axis='x', steps=(1, 2, 5))
+                ax.set_xlim(left=0)
                 ax.set_xlabel(f'Installed {display_tech(tech)} capacity (GW)')
             else:
                 ax.set_xlabel('Model year')
@@ -1090,6 +1088,169 @@ def plot_new_build_duration(run_dir, output_path, prefix='battery', min_gw=1.0):
     fig.savefig(output_path, dpi=200)
     return fig, tab
 
+
+def plot_vf_components(df, output_path, tech='Battery'):
+    """A tech's value factor split into its energy and capacity components, against market share.
+
+    vf_comp_energy and vf_comp_resmarg are each stream's value per MWh over the benchmark price, so
+    they sum to the value factor exactly and stack. Read from the same full-range results as the
+    VCF figures. If either component goes negative - storage energy value can, since charging is
+    netted against discharge - the stack would mislead, so the components are drawn as lines
+    instead.
+    """
+    d = df[df['tech'] == tech].dropna(subset=['gen_frac', 'vf_comp_energy', 'vf_comp_resmarg'])
+    d = d.sort_values('gen_frac')
+    if d.empty:
+        return None, d
+    x = d['gen_frac'].to_numpy() * 100
+    e, c = d['vf_comp_energy'].to_numpy(), d['vf_comp_resmarg'].to_numpy()
+    fig, ax = plt.subplots(figsize=(7.2, 4.4))
+    energy_color, capacity_color = '#2A6F8E', '#C0392B'
+    if (e >= 0).all() and (c >= 0).all():
+        ax.fill_between(x, 0, e, color=energy_color, alpha=0.55, lw=0, label='energy')
+        ax.fill_between(x, e, e + c, color=capacity_color, alpha=0.45, lw=0, label='capacity (reserve margin)')
+    else:
+        ax.plot(x, e, color=energy_color, lw=1.6, label='energy')
+        ax.plot(x, c, color=capacity_color, lw=1.6, label='capacity (reserve margin)')
+        ax.axhline(0, color=cost_color, lw=0.8)
+    ax.plot(x, d['value_factor'], color='0.15', lw=1.4, marker='o', ms=4, label='value factor (total)')
+    ax.axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
+    ax.set_xlabel('Market share (% of generation)')
+    ax.set_ylabel('Value factor')
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=min(0, float(np.nanmin(np.r_[e, c]))))
+    ax.grid(alpha=0.25, lw=0.6)
+    ax.legend(loc='upper right', fontsize=8, frameon=False)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, d[['year', 'gen_frac', 'value_factor', 'vf_comp_energy', 'vf_comp_resmarg']]
+
+
+def regional_capacity_credit(run_dir, prefix='battery'):
+    """Each region's new-build capacity credit by year, with the tech's regional penetration.
+
+    The credit is new_build_capacity_credit's ratio within a single region:
+    val_resmarg / (MW * res_marg_ann). Penetration is installed power over the region's peak load,
+    taken as the highest stress-period load in load_stress - the stress periods are chosen at the
+    peaks - so regions of different size are comparable. For storage, whose vintage is shared by
+    every build, the regional new-build credit is the region's fleet credit pro-rated.
+    """
+    out = os.path.join(run_dir, 'outputs')
+    val = pd.read_csv(os.path.join(out, 'valnew.csv'), names=['metric', 'i', 'r', 't', 'val'], header=0)
+    price = pd.read_csv(os.path.join(out, 'reqt_price.csv'),
+                        names=['req', 'na', 'r', 'h', 't', 'price'], header=0)
+    ann = price.loc[price['req'] == 'res_marg_ann', ['r', 't', 'price']]
+    sel = val[val['i'].str.startswith(prefix) & val['metric'].isin(['MW', 'val_resmarg'])]
+    m = sel.pivot_table(index=['r', 't'], columns='metric', values='val', aggfunc='sum').reset_index()
+    m = m.merge(ann, on=['r', 't'], how='left')
+    m = m[(m['MW'] > 0) & (m['price'] > 0)].copy()
+    m['val_resmarg'] = m.get('val_resmarg', 0)
+    m['val_resmarg'] = m['val_resmarg'].fillna(0)
+    m['firm_value'] = m['MW'] * m['price']
+    m['capacity_credit'] = m['val_resmarg'] / m['firm_value']
+    cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=['i', 'v', 'r', 't', 'mw'], header=0)
+    cap = cap[cap['i'].str.startswith(prefix)].groupby(['r', 't'])['mw'].sum().rename('cap_mw')
+    load = pd.read_csv(os.path.join(out, 'load_stress.csv'), names=['r', 'h', 't', 'mw'], header=0)
+    peak = load.groupby(['r', 't'])['mw'].max().rename('peak_mw')
+    m = m.join(cap, on=['r', 't']).join(peak, on=['r', 't'])
+    m['penetration'] = m['cap_mw'] / m['peak_mw']
+    return m.rename(columns={'t': 'year', 'MW': 'new_mw', 'price': 'res_marg_ann'})[
+        ['r', 'year', 'new_mw', 'cap_mw', 'peak_mw', 'penetration', 'val_resmarg', 'firm_value',
+         'capacity_credit']]
+
+
+def grouped_capacity_credit(run_dir, prefix='battery', level=None):
+    """New-build capacity credit and penetration by a coarser region, from the zone-level frame.
+
+    The credit is the ratio of sums over the group's zones that built that year, the same rule as
+    the national figure. Penetration is the group's installed capacity (MW, every zone) over its
+    coincident peak: zone stress-period loads are summed block by block and the highest block
+    taken, since adding each zone's own peak would overstate a peak the zones do not share.
+    The national row uses the same construction over every zone.
+    """
+    level = regional_cc_level if level is None else level
+    out = os.path.join(run_dir, 'outputs')
+    hier = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'hierarchy.csv'))
+    hier = hier.rename(columns={hier.columns[0]: 'r'}).set_index('r')[level]
+    zones = regional_capacity_credit(run_dir, prefix)
+    zones['grp'] = zones['r'].map(hier)
+    cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=['i', 'v', 'r', 't', 'mw'], header=0)
+    cap = cap[cap['i'].str.startswith(prefix)]
+    load = pd.read_csv(os.path.join(out, 'load_stress.csv'), names=['r', 'h', 't', 'mw'], header=0)
+    rows = []
+    for name, zone_map in [('grp', hier), ('national', pd.Series('National', index=hier.index))]:
+        cg = cap.assign(grp=cap['r'].map(zone_map)).groupby(['grp', 't'])['mw'].sum()
+        peak = (load.assign(grp=load['r'].map(zone_map)).groupby(['grp', 'h', 't'])['mw'].sum()
+                .groupby(['grp', 't']).max())
+        z = zones.assign(grp=zones['r'].map(zone_map))
+        g = z.groupby(['grp', 'year']).agg(new_mw=('new_mw', 'sum'), val=('val_resmarg', 'sum'),
+                                           firm=('firm_value', 'sum')).reset_index()
+        g['capacity_credit'] = g['val'] / g['firm']
+        g['cap_mw'] = [cg.get((a, b), np.nan) for a, b in zip(g['grp'], g['year'])]
+        g['peak_mw'] = [peak.get((a, b), np.nan) for a, b in zip(g['grp'], g['year'])]
+        rows.append(g)
+    g = pd.concat(rows, ignore_index=True)
+    g['penetration'] = g['cap_mw'] / g['peak_mw']
+    g = g[g['year'] >= start_year]
+    return g.rename(columns={'grp': level})[[level, 'year', 'new_mw', 'cap_mw', 'peak_mw',
+                                             'penetration', 'capacity_credit']]
+
+
+def plot_grouped_capacity_credit(run_dir, output_path, prefix='battery', level=None):
+    """Capacity credit against penetration, one small panel per region, national line in each.
+
+    Small multiples rather than one line per region on shared axes: eleven lines are more than
+    colour alone can keep apart. Every panel has the same axes so they compare directly. Every
+    region-year that built anything is drawn, joined in model-year order, and the line breaks only
+    across years with no build. A small build can stand for one zone of several, since the ratio
+    covers only the zones that built; a minimum-build cutoff was tried and dropped, because the
+    same composition effect appears at any build size. The national curve, built the same way over
+    every zone, is the grey line behind each.
+    """
+    level = regional_cc_level if level is None else level
+    g = grouped_capacity_credit(run_dir, prefix, level)
+    if g.empty:
+        return None, g
+    nat = g[g[level] == 'National'].sort_values('year')
+    reg = g[(g[level] != 'National') & (g['new_mw'] > 0)]
+    names = sorted(reg[level].unique())
+    ncol = 4
+    nrow = int(np.ceil(len(names) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(11.5, 2.75 * nrow), sharex=True, sharey=True,
+                             squeeze=False)
+    x_hi = max(reg['penetration'].max(), nat['penetration'].max()) * 100 * 1.04
+    steps = g['year'].drop_duplicates().sort_values().diff().dropna()
+    step = steps.mode().iloc[0] if not steps.empty else 2
+    for ax, name in zip(axes.flat, names):
+        d = reg[reg[level] == name].sort_values('year')
+        gap = d['year'].diff() > step
+        if gap.any():
+            d = pd.concat([d, d[gap].assign(capacity_credit=np.nan, year=d.loc[gap, 'year'] - 1)])
+            d = d.sort_values('year')
+        ax.plot(nat['penetration'] * 100, nat['capacity_credit'], color='0.72', lw=1.4, zorder=2)
+        ax.plot(d['penetration'] * 100, d['capacity_credit'], color='#2A6F8E', lw=1.6, marker='o',
+                ms=3.5, mec='white', mew=0.5, zorder=3)
+        ax.set_title(name, fontsize=9, loc='left')
+        ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+        ax.grid(alpha=0.25, lw=0.6)
+    for ax in list(axes.flat)[len(names):]:
+        ax.set_visible(False)
+    axes.flat[0].set_xlim(0, x_hi)
+    axes.flat[0].set_ylim(0, 1.05)
+    for ax in axes[:, 0]:
+        ax.set_ylabel('Capacity credit')
+    for c in range(ncol):
+        col = [axes[r][c] for r in range(nrow) if axes[r][c].get_visible()]
+        if col:
+            col[-1].set_xlabel('Installed capacity (MW) as %\nof peak load (MW)')
+            col[-1].tick_params(labelbottom=True)
+    handles = [matplotlib.lines.Line2D([], [], color='#2A6F8E', lw=1.6, marker='o', ms=3.5),
+               matplotlib.lines.Line2D([], [], color='0.72', lw=1.4)]
+    fig.legend(handles, ['region', 'national'], loc='lower right', fontsize=8, frameon=False,
+               bbox_to_anchor=(0.98, 0.04))
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, g
 
 def stress_block_hours(run_dir):
     """Length in hours of one stress block in this run, from its GSw_HourlyChunkLengthStress.
@@ -1250,18 +1411,17 @@ def load_full_range(valcostfac_core_path, core):
     return out
 
 
-def _log_ticks(ax, axis='y', steps=(1, 2, 3, 5)):
-    """Label a log axis at the given steps per decade in plain decimals.
+def _log_ticks(ax):
+    """Label a log axis at 1-2-3-5 per decade in plain decimals.
 
     Decades alone leave only one or two labelled ticks over the range these figures span.
     """
-    lo_lim, hi_lim = ax.get_ylim() if axis == 'y' else ax.get_xlim()
-    nice = [d * 10.0 ** e for e in range(-4, 6) for d in steps]
+    lo_lim, hi_lim = ax.get_ylim()
+    nice = [d * 10.0 ** e for e in range(-4, 2) for d in (1, 2, 3, 5)]
     ticks = [t for t in nice if lo_lim <= t <= hi_lim]
-    target = ax.yaxis if axis == 'y' else ax.xaxis
-    (ax.set_yticks if axis == 'y' else ax.set_xticks)(ticks)
-    (ax.set_yticklabels if axis == 'y' else ax.set_xticklabels)([f'{t:g}' for t in ticks])
-    target.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.set_yticks(ticks)
+    ax.set_yticklabels([f'{t:g}' for t in ticks])
+    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
 
 def vcf_panel_techs(df, techs=None):
@@ -1825,6 +1985,20 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     prefix=prefix)
                 if fig_arb is not None:
                     plt.close(fig_arb)
+                fig_reg, reg_tab = plot_grouped_capacity_credit(
+                    stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_regional_cc.png'),
+                    prefix=prefix)
+                if fig_reg is not None:
+                    plt.close(fig_reg)
+                    reg_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_regional_cc.csv'),
+                                   index=False)
+                fig_comp, comp_tab = plot_vf_components(
+                    df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_vf_components.png'),
+                    tech=tech)
+                if fig_comp is not None:
+                    plt.close(fig_comp)
+                    comp_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_vf_components.csv'),
+                                    index=False)
                 break
         except Exception as e:
             print(f'Storage duration/arbitrage figures skipped ({type(e).__name__}: {e}).')

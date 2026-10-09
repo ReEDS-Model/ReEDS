@@ -23,8 +23,7 @@ import os
 import numpy as np
 import pandas as pd
 from plcoe_pitch import (display_tech, load_full_range, vcf_matched_scale, vcf_panel_techs,
-                         _fit_form, r2_y, load_style_colors, tech_style_path, normalize_tech_name,
-                         years as table_years)
+                         _fit_form, r2_y, load_style_colors, tech_style_path, normalize_tech_name)
 from report_switches import dollar_year
 
 # User inputs
@@ -416,7 +415,6 @@ def build_html(output_dir, core_path):
          ('k<sub>VCF</sub> &minus; k<sub>VF</sub>', True), ('R&sup2; of VF fit', True),
          ('Market share', True), ('Cost factor', True), ('n', True)], fit_rows)
 
-    # ---- 02b storage, held out of the shared-axes figure ----
     # ---- 02a every technology on shared axes ----
     all_fig = figure(output_dir, 'plcoe_pitch_all_tech_factors.png', 6,
                      'Value factor, cost factor and value&#8211;cost factor, all technologies.',
@@ -432,51 +430,8 @@ def build_html(output_dir, core_path):
                      'range; the dotted line in the middle panel is a cost factor of one. Storage is '
                      'left out, as in the figures above.', order)
 
-    stor_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 7,
-                      'Value factor and value&#8211;cost factor for storage.',
-                      'The same construction as the first figure in section 02, drawn by the same '
-                      'function, for '
-                      'the technologies held out of it. Storage occupies a different part of the '
-                      'plane &mdash; value factor above one at low market share, and a market share '
-                      'that stops near 15% &mdash; so sharing a pair of axis ranges with it '
-                      'compresses every other panel. The grey series is the reciprocal of the cost '
-                      'factor and the dotted grey curve is the ratio the two fits imply; for '
-                      'storage those two part company completely, and the R&sup2; of the implied '
-                      'curve against the data it is drawn over is negative, so the shaded band here '
-                      'does not describe the cost-factor data.', order)
-
-    dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 8,
-                     'Duration of new storage builds by model year.',
-                     'Duration is the energy capacity a build adds divided by the power capacity '
-                     'it adds, <span class="eq">INV_ENERGY / INV</span>, read from '
-                     'cap_energy_new_out and cap_new_ivrt. One box per model year over the '
-                     'regional builds of that year. Boxes and the connected mean are '
-                     'capacity-weighted, so a region adding a gigawatt counts for more than one '
-                     'adding ten megawatts, and box width is proportional to the square root of '
-                     'the capacity built that year. Whiskers are the weighted 10th and 90th '
-                     'percentiles. Years adding less than a gigawatt are omitted. Power and energy '
-                     'are separate decision variables in ReEDS, so a build can add energy to '
-                     'existing power capacity or the reverse; differencing cumulative energy '
-                     'capacity instead would mix those cases together with retirements.', order)
-    dur_df = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_duration.csv')
-    dur_rows = []
-    if not dur_df.empty:
-        for _, r in dur_df[dur_df['year'].isin(table_years)].iterrows():
-            dur_rows.append(
-                f'<tr><td class="t">{int(r["year"])}</td>'
-                f'<td class="num">{_num(r["gw"], "{:.1f}")}</td>'
-                f'<td class="num">{int(r["n_regions"])}</td>'
-                f'<td class="num">{_num(r["p25"])}</td>'
-                f'<td class="num">{_num(r["median"])}</td>'
-                f'<td class="num">{_num(r["p75"])}</td>'
-                f'<td class="num">{_num(r["mean"])}</td></tr>')
-    dur_table = table(
-        'New storage duration at the headline years, capacity-weighted, hours',
-        [('Year', False), ('Built, GW', True), ('Regions', True), ('p25', True),
-         ('Median', True), ('p75', True), ('Mean', True)], dur_rows)
-
-    # ---- 02c gas against the national gas supply curve ----
-    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 9,
+    # ---- 02b gas against the national gas supply curve ----
+    gas_fuel_fig = figure(output_dir, 'gas_supply_curve_fuel.png', 7,
                           'Fuel cost a new Gas-CC would face under the national gas supply curve.',
                           'nat_beta times the run&rsquo;s electric-sector gas burn above the AEO '
                           'reference, converted at the new-build heat rate. Labels give the burn '
@@ -484,7 +439,7 @@ def build_html(output_dir, core_path):
                           'curve is applied: the census-division term is omitted because re-siting '
                           'would partly avoid it, while the national one can only be avoided by '
                           'building less gas.', order)
-    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 10,
+    gas_fig = figure(output_dir, 'gas_supply_curve_vcf.png', 8,
                      'Value factor and value&#8211;cost factor for Gas-CC, static against '
                      'supply-curve gas.',
                      'The construction of the figure in section 02, drawn by the same function, '
@@ -535,132 +490,8 @@ def build_html(output_dir, core_path):
          ('Cost factor, corrected', True), ('VCF, static', True), ('VCF, corrected', True)],
         gas_rows)
 
-    # ---- 02d capacity credit ----
-    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 11,
-                    'Capacity credit of new builds against market share.',
-                    'For each year&rsquo;s new builds, the reserve-margin value they earned divided '
-                    'by what the same capacity would have earned in the same regions had it been '
-                    'available in every stress hour: '
-                    '<span class="eq">&Sigma;<sub>r</sub> val_resmarg / '
-                    '&Sigma;<sub>r</sub> MW &middot; res_marg_ann</span>, where res_marg_ann is the '
-                    'sum of a region&rsquo;s stress-hour reserve-margin prices. Both sums run over '
-                    'regions before the division, matching how the regional quantity is itself '
-                    'built: report.gms forms val_resmarg as a sum over stress hours of firm '
-                    'contribution times that hour&rsquo;s price, so the number is price-weighted at '
-                    'every level. Because those prices are concentrated in a few hours, this sits '
-                    'below an hour-counting ELCC for resource-limited technologies. Storage is net '
-                    'of charging, so its credit is a round-trip-net quantity.', order)
-    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 12,
-                        'The same capacity credits against cumulative installed capacity.',
-                        'Identical data to the figure above on a different x axis: the cumulative '
-                        'national capacity of that technology in its own forcing run, on a log '
-                        'scale because the technologies span twenty gigawatts to three terawatts. '
-                        'Market share and installed capacity order the technologies differently, '
-                        'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
-                        'same share of generation; against capacity the resource-limited '
-                        'technologies fall along visibly separate paths rather than overlapping.', order)
-    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 13,
-                       'Capacity credit of new storage and UPV in every scenario.',
-                       'The capacity credit above, computed the same way, for new builds of '
-                       'storage and UPV in each run rather than only in the run that forces them. '
-                       'Rows are the technology; the left column is against model year and the '
-                       'right against that technology&rsquo;s own installed national capacity in '
-                       'the run, on a log scale. Each scenario takes the colour of the technology '
-                       'it forces and has its own marker; the reference run, which forces nothing, '
-                       'is dashed grey. A year in which the run added under a gigawatt of the '
-                       'technology is left out, since the credit of a few hundred megawatts '
-                       'depends on which one or two regions happened to build, and lines break '
-                       'across the omitted years. If a technology&rsquo;s credit depended only on '
-                       'how much of it is installed, every scenario would fall on one curve in '
-                       'the right column.', order)
-    cc_sc = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit_scenarios.csv')
-    cc_sc_rows, cc_sc_cols = [], []
-    if not cc_sc.empty:
-        #The csv is written in scenarios-file order, so its own first-appearance order is that order
-        #and the report needs no path to the scenarios file.
-        sc_order = list(cc_sc['scenario'].drop_duplicates())
-        cc_sc_cols = [(t, y) for t in [t for t in ('Battery', 'UPV') if t in set(cc_sc['tech'])]
-                      for y in table_years]
-        lookup = cc_sc.set_index(['scenario', 'tech', 'year'])['capacity_credit']
-        for sc in sc_order:
-            ft = cc_sc.loc[cc_sc['scenario'] == sc, 'forced_tech'].iloc[0]
-            label = 'Reference (no forcing)' if pd.isna(ft) else f'{display_tech(ft)} forced'
-            cells = ''.join(f'<td class="num">{_num(lookup.get((sc, t, y), np.nan), "{:.2f}")}</td>'
-                            for t, y in cc_sc_cols)
-            cc_sc_rows.append(f'<tr><td class="t">{label}</td>{cells}</tr>')
-    cc_sc_table = table(
-        'Capacity credit of new storage and UPV by scenario at the headline years. A dash is a '
-        'year in which the run added under a gigawatt of that technology',
-        [('Scenario', False)] + [(f'{display_tech(t)} {y}', True) for t, y in cc_sc_cols],
-        cc_sc_rows)
-    cc_df = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit.csv')
-    cc_rows, cc_years = [], []
-    if not cc_df.empty:
-        #The figure carries the whole trajectory; the table gives anchor values at the
-        #report's headline years, since one column per model year runs to thirteen.
-        cc_years = [y for y in table_years if y in set(cc_df['year'])]
-        wide = cc_df.pivot_table(index='tech', columns='year', values='capacity_credit')
-        share = cc_df.pivot_table(index='tech', columns='year', values='gen_frac')
-        for tech in wide.index:
-            cells = ''.join(
-                f'<td class="num">{_num(wide.loc[tech, y], "{:.3f}")}'
-                + (f'<span class="sub"> {share.loc[tech, y]:.0%}</span>'
-                   if pd.notna(share.loc[tech, y]) else '') + '</td>'
-                for y in cc_years)
-            cc_rows.append(f'<tr>{tech_cell(tech)}{cells}</tr>')
-    cc_table = table(
-        'Capacity credit of each year&rsquo;s new builds, with that technology&rsquo;s market '
-        'share in small type beside it',
-        [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
-
-    arb_df = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_arbitrage.csv')
-    #Block length as the run had it, so the caption follows a change of stress resolution.
-    blk = (f'{arb_df["block_hours"].iloc[0]:g}'
-           if not arb_df.empty and 'block_hours' in arb_df else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 14,
-                     'How storage earns its reserve-margin value inside the stress periods.',
-                     'Left: the reserve-margin price of each stress block, weighted by the '
-                     'storage fleet&rsquo;s discharge and by its charging, on a log scale. ReEDS '
-                     'reports these prices per MW per block, since the blocks carry no weight in '
-                     f'the annual objective; each block is {blk} hours long '
-                     f'(GSw_HourlyChunkLengthStress), so a MW held through it is {blk} MWh, and the '
-                     'price per MW divided by the block length is the value of a MWh delivered in '
-                     'that block. The price levels depend on the block length: re-cutting the stress '
-                     'periods holds this per-MWh price roughly fixed where a long stretch of blocks '
-                     'binds, but not where one peak block carries most of the day&rsquo;s value, '
-                     'which then keeps its price per MW instead. The ratio of the two prices and '
-                     'the credit shares at right do not carry the unit. '
-                     'with the span between them shaded. Right: the same years split into the '
-                     'gross value of discharge and the cost of charging, whose sum is the net '
-                     'capacity credit of the whole storage fleet in every region. The figures above '
-                     'are each year&rsquo;s new builds instead; for storage the two differ only in '
-                     'which regions count, because every battery past the initial fleet shares one '
-                     'vintage and valnew credits a new build with that vintage&rsquo;s dispatch '
-                     'pro-rated by INV/CAP. gen_h_stress is already net of '
-                     'charging for storage, so a negative entry is a charging hour. Net energy '
-                     'over a stress period is zero or slightly negative for storage &mdash; it '
-                     'discharges only what it charged, less round-trip losses &mdash; so the whole '
-                     'of the capacity credit is the spread between these two prices.', order)
-    arb_rows = []
-    for _, r in arb_df.iterrows():
-        arb_rows.append(
-            f'<tr><td class="t">{int(r["year"])}</td>'
-            f'<td class="num">{_num(r["gw"], "{:.0f}")}</td>'
-            f'<td class="num">{_num(r["price_discharge"], "{:,.0f}")}</td>'
-            f'<td class="num">{_num(r["price_charge"], "{:,.0f}")}</td>'
-            f'<td class="num">{_num(r["gross"], "{:.3f}")}</td>'
-            f'<td class="num">{_num(r["charge_cost"], "{:.3f}")}</td>'
-            f'<td class="num">{_num(r["net"], "{:.3f}")}</td></tr>')
-    arb_table = table(
-        f'Storage stress-period arbitrage by model year. Prices are {dollar_year}$/MWh delivered in '
-        'a stress block; the last '
-        'three columns are shares of fully-firm capacity value and the first two of them sum to '
-        'the third',
-        [('Year', False), ('Fleet GW', True), ('Discharge price', True), ('Charge price', True),
-         ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
-
     # ---- 03 log decomposition ----
-    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 15,
+    fig3 = figure(output_dir, 'plcoe_pitch_VRE_VCF_decomposition.png', 9,
                   'Log decline in value&#8211;cost factor, split into value and cost parts.',
                   'Bar height is &minus;ln(VCF) at that market share, the total log decline. The '
                   'two segments are &minus;ln(VF) and &minus;ln(1/CF), which sum to it exactly. '
@@ -677,7 +508,7 @@ def build_html(output_dir, core_path):
          ('Cost share', True)], share_rows)
 
     # ---- 04 maps ----
-    map_figs, n = '', 16
+    map_figs, n = '', 10
     for tech in vre:
         slug = display_tech(tech).lower().replace(' ', '-')
         block = figure(
@@ -865,16 +696,10 @@ def build_html(output_dir, core_path):
 {sec('02a', 'All technologies on shared axes',
      '<div class="col"><p>The same scaled series as section 02, regrouped by factor rather than by '
      'technology, so each technology can be read against the others at the same market '
-     'share.</p></div>', all_fig)}
+     'share. Storage is left out here; it has its own page, battery_report.html, alongside this '
+     'one, which also carries the capacity credit of every technology.</p></div>', all_fig)}
 
-{sec('02b', 'Storage value factor and value&#8211;cost factor',
-     '<div class="col"><p>Storage is drawn apart from the other technologies because its value '
-     'factor exceeds one at low market share and its market share stops near 15%, so a shared pair '
-     'of axis ranges spent most of its span on a corner of the plane that only storage occupies. '
-     'The construction is unchanged; only the axes are its own. Storage remains in the fits table '
-     'above, which has no axis to distort.</p></div>' '</p><p>The second figure reports the duration of the builds themselves, which the model chooses freely: power and energy capacity are separate investment variables, so duration is an outcome rather than an assumption.</p></div>', stor_fig, dur_fig, dur_table)}
-
-{sec('02c', 'Gas-CC against the national natural gas supply curve',
+{sec('02b', 'Gas-CC against the national natural gas supply curve',
      '<div class="col"><p>The runs hold natural gas prices static, which removes the cost-escalation '
      'channel a gas plant has through its own fuel: burning more gas raises its price. This section '
      'adds the national term of the model&rsquo;s default gas supply curve to the solved run. The '
@@ -882,17 +707,6 @@ def build_html(output_dir, core_path):
      'on the cost side - a re-solve would build less gas - while the linear coefficient is '
      'extrapolated well beyond the quantities it was calibrated on, which pushes the other way. '
      'Neither figure nor table is a model result.</p></div>', gas_fuel_fig, gas_fig, gas_decline_table, gas_table)}
-
-{sec('02d', 'Capacity credit of new builds',
-     '<div class="col"><p>The reserve-margin component of value per MW, expressed as a share of '
-     'what a perfectly firm MW earns in the same place and year. It is the part of the value '
-     'factor that firmness accounts for, so it is plotted against the same market-share axis as '
-     'the curves above. The quantity is read from each technology&rsquo;s own forcing run and is '
-     'only defined under the stress-period reserve margin '
-     '(<span class="eq">GSw_PRM_CapCredit=0</span>); under the capacity-credit formulation ReEDS '
-     'does not write val_resmarg for non-VRE and the section is skipped.</p></div>',
-     cc_fig, cc_table, cc_cap_fig, cc_sc_fig, cc_sc_table,
-     '<div class="col"><p>The figure below takes storage apart, because its credit is built differently from the others: a battery delivers no net energy over a stress period, so what it earns there is entirely the price spread between the hours it discharges in and the hours it charges in.</p></div>', arb_fig, arb_table)}
 
 {sec('03', 'Log decomposition of the value&#8211;cost factor decline',
      '<div class="col"><p>Value&#8211;cost factor is the product of value factor and the reciprocal '
