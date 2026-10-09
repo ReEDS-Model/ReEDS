@@ -1201,10 +1201,9 @@ def write_miscellaneous_files(
     queue_limit = pd.read_csv(
         os.path.join(reeds_path,'inputs','capacity_exogenous','interconnection_queues.csv'))
     # Only keep the next GSw_QueueConstraintYears
-    keepyears = [
-        i for i in queue_limit.set_index(['r','tg']).columns
-        if int(i) < scalars.this_year + int(sw.GSw_QueueConstraintYears)
-    ]
+    keepyears = list(
+        queue_limit.set_index(['r','tg']).columns[:int(sw.GSw_QueueConstraintYears)]
+    )
     if len(keepyears):
         print(f"Applying interconnection queue cap in {','.join(keepyears)}")
     queue_limit = queue_limit[['r','tg']+keepyears].copy()
