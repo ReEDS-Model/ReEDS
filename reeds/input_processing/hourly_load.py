@@ -409,18 +409,9 @@ def apply_ba_load_growth(
     multiplier_regions = set(load_multiplier['r'].unique())
     ba_regions = set(hierarchy.index)
     state_regions = set(hierarchy['st'].unique())
-    if ba_regions <= multiplier_regions:
-        # BA-keyed: keep only BAs in this run
-        dropped = len(multiplier_regions - ba_regions)
-        if dropped:
-            print(f'load_multiplier.csv: dropping {dropped} regions '
-                  'outside the model footprint')
-        load_multiplier = load_multiplier.loc[
-            load_multiplier['r'].isin(ba_regions)
-        ]
-    elif state_regions <= multiplier_regions:
-        # State-keyed: expand each state's multiplier to its BAs
-        # (inner merge drops states outside the model footprint)
+    if multiplier_regions <= ba_regions:
+        pass  # already keyed by model region
+    elif multiplier_regions <= state_regions:
         ba_to_state = (
             hierarchy['st'].rename('st').rename_axis('r').reset_index()
         )
@@ -430,12 +421,13 @@ def apply_ba_load_growth(
             [['year', 'r', 'multiplier']]
         )
     else:
-        missing_ba = sorted(ba_regions - multiplier_regions)[:10]
-        missing_st = sorted(state_regions - multiplier_regions)[:10]
+        unrecognized = sorted(
+            multiplier_regions - ba_regions - state_regions
+        )[:10]
         raise ValueError(
-            "load_multiplier.csv does not cover all model regions. "
-            f"Missing BAs (first few): {missing_ba}; "
-            f"missing states (first few): {missing_st}"
+            "load_multiplier.csv 'r' values are neither a subset of model "
+            "regions nor of states. Unrecognized regions (first few): "
+            f"{unrecognized}"
         )
 
     # Reformat hourly BA load profiles to merge with load multipliers

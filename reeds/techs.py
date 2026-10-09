@@ -31,6 +31,18 @@ def expand_star(techs):
     return expanded
 
 
+def split_class(i):
+    '''
+    Split a resource-class-bearing tech name into (base, class), e.g.,
+    'upv_5' -> ('upv', 5), 'csp2_5' -> ('csp2', 5).
+    Techs with no numeric class suffix (e.g. 'distpv') return (i, None).
+    '''
+    match = re.search(r'^(.+)_(\d+)$', i)
+    if match is None:
+        return i, None
+    return match.group(1), int(match.group(2))
+
+
 def expand_GAMS_tech_groups(df, col='i'):
     '''
     GAMS has a convention for expanding rows (e.g. upv_1*upv_10 is expanded to upv_1, upv_2,..., upv_10)

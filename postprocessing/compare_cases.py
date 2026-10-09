@@ -630,13 +630,12 @@ if detailed:
         dictin_load_stress[case].GW /= 1e3
 
     ### Peak load (for capacity credit)
-    distloss = 0.05
     dictin_peak_ccseason = {}
     for case in tqdm(cases, desc='peak_ccseason'):
         dictin_peak_ccseason[case] = pd.read_csv(
             os.path.join(cases[case],'inputs_case','peak_ccseason.csv'),
         ).rename(columns={'*r':'r', 'MW':'GW'})
-        dictin_peak_ccseason[case].GW /= (1e3 * (1 - distloss))
+        dictin_peak_ccseason[case].GW /= 1e3
 
     ### Capacity credit PRMTRADE
     dictin_prmtrade = {}
