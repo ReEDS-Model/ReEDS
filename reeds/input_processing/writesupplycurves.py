@@ -87,15 +87,20 @@ def agg_supplycurve(
     numbins_tech,
     bin_method='equal_cap_cut',
     bin_col='supply_curve_cost_per_mw',
+    psh_cutoff=4e6,
     deflate=None,
 ):
     """
     """
+    psh = bool('psh' in os.path.basename(scpath) or scpath == 'psh')
+    if psh:
+        print('Assembling PSH supply curve')
     ### Get inputs
     dfin = reeds.io.assemble_supplycurve(
         scfile=scpath,
         case=os.path.dirname(os.path.normpath(inputs_case)),
-    ).reset_index().drop(columns=['FIPS','cf'], errors='ignore')
+        skip_if_complete=True,
+    ).reset_index().drop(columns=['FIPS','cf','index'], errors='ignore')
     ## Convert dollar year and recalculate total cost
     transcost_cols = [c for c in dfin if 'cost' in c]
     dfin.loc[:, transcost_cols] *= deflate['interconnection']
@@ -104,10 +109,16 @@ def agg_supplycurve(
     dfin['supply_curve_cost_per_mw'] = dfin[
         ['capital_adder_per_mw', 'cost_total_trans_usd_per_mw']
     ].sum(axis=1)
+    
+    if psh:
+        ### Remove costs above psh_cutoff [in 2004$]
+        dfin = dfin.loc[dfin['supply_curve_cost_per_mw']<=psh_cutoff].copy()
+    
     ### Define the aggregation settings
     ## Cost and distance are weighted averages, with capacity as the weighting factor
     aggs = {'capacity': 'sum', 'sc_point_gid': list}
-    index_cols = ['region', 'class', 'bin']
+    index_cols = ['region', 'bin'] if psh else ['region', 'class', 'bin']
+    groupby_cols = ['region'] if psh else ['region', 'class']
     aggs = {
         col: aggs.get(col, wm(dfin)) for col in dfin
         if col not in index_cols
@@ -119,9 +130,9 @@ def agg_supplycurve(
     else: 
         dfin = (
             dfin
-            .groupby(['region','class'], sort=False, group_keys=True)
+            .groupby(groupby_cols, sort=False, group_keys=True)
             .apply(reeds.inputs.get_bin, numbins_tech, bin_method, bin_col)
-            .reset_index(level=['region','class'])
+            .reset_index(level=groupby_cols)
             .sort_values('sc_point_gid')
         )
     ### Aggregate it
@@ -155,6 +166,7 @@ def main(
         "csp": int(sw.numbins_csp),
         "geohydro": int(sw.numbins_geohydro_allkm),
         "egs": int(sw.numbins_egs_allkm),
+        "psh": int(sw.numbins_psh),
     }
 
     val_r_all = pd.read_csv(
@@ -754,31 +766,46 @@ def main(
     #    -- Pumped Storage Hydropower --    #
     #########################################
 
+    '''
+    Similar to wind and PV, we want to read in site-level (lat/long) supply curve data, 
+    map these sites to their nearest-distance reV GIDs, then use the reV sites' interconnection
+    cost data to construct site-level PSH supply curves.
+    '''
     if int(sw["GSw_Storage"]):
-        # Input processing currently assumes that cost data in CSV file is in 2004$
-        psh_cap = pd.read_csv(os.path.join(inputs_case, "psh_supply_curves_capacity.csv"))
-        psh_cost = pd.read_csv(os.path.join(inputs_case, "psh_supply_curves_cost.csv"))
-        psh_durs = pd.read_csv(
-            os.path.join(inputs_case, "psh_supply_curves_duration.csv"), header=0
+        _, psh = agg_supplycurve(
+            scpath = os.path.join(inputs_case, 'supplycurve_psh.csv'),
+            inputs_case=inputs_case,
+            numbins_tech=numbins['psh'],
+            bin_method='equal_cap_cut',
+            bin_col='supply_curve_cost_per_mw',
+            psh_cutoff=4e6,
+            deflate=deflate,
         )
-
-        psh_cap = pd.melt(psh_cap, id_vars=["r"])
-        psh_cost = pd.melt(psh_cost, id_vars=["r"])
-
-        # Convert dollar year
-        psh_cost[psh_cost.select_dtypes(include=["number"]).columns] *= deflate["PSHcostn"]
-
-        psh_cap["var"] = "cap"
-        psh_cost["var"] = "cost"
-
-        psh_out = pd.concat([psh_cap, psh_cost]).fillna(0)
-        psh_out["tech"] = "pumped-hydro"
-        psh_out["variable"] = psh_out.variable.map(lambda x: x.replace("pshclass", "bin"))
-        psh_out = psh_out[hyddat.columns].copy()
+        # Normalize formatting
+        psh = psh.reset_index()
+        psh['bin'] = 'bin' + psh['bin'].astype(str)
+        # Isolate only supply curve capacity and cost
+        dict_capcost_col = {'cap':'capacity','cost':'supply_curve_cost_per_mw'}
+        psh_out = pd.concat(
+            {
+                c: psh.pivot(
+                    columns='bin', values=dict_capcost_col[c], index=['region']
+                ).fillna(0)
+                .assign(tech='pumped-hydro',var=c)
+                .reset_index() 
+                for c in dict_capcost_col
+            }
+        )
+        # Pivot with bins in long format and append to output dataframe
+        psh_out = pd.melt(psh_out, id_vars=['region','tech','var'])
+        psh_out.rename(columns={'region':'r','bin':'variable'}, inplace=True)
         allout_list.append(psh_out)
 
         if write:
             # Select storage duration correponding to the supply curve
+            psh_durs = pd.read_csv(
+                os.path.join(inputs_case, "psh_supply_curves_duration.csv"), header=0
+            )
             psh_dur_out = psh_durs[psh_durs["pshsupplycurve"] == pshsupplycurve]["duration"]
             psh_dur_out.to_csv(
                 os.path.join(inputs_case, "psh_sc_duration.csv"), index=False, header=False

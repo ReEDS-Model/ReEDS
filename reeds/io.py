@@ -12,6 +12,7 @@ import geopandas as gpd
 from pathlib import Path
 from typing import Literal
 from pandas.api.types import is_float_dtype
+from shapely.geometry import Point
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
@@ -1536,11 +1537,8 @@ def assemble_supplycurve(
     if scfile is None:
         offshore = False
     else:
-        offshore = (
-            True if ('wind-ofs' in os.path.basename(scfile)) or (scfile == 'offshore')
-            else False
-        )
-    ### Get interconnection cost
+        offshore = bool('wind-ofs' in os.path.basename(scfile) or scfile == 'offshore')
+        psh = bool('psh' in os.path.basename(scfile) or scfile == 'psh')
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
@@ -1550,20 +1548,34 @@ def assemble_supplycurve(
         return interconnection_cost
 
     ### Get supply curve
-    dfin = floatify(pd.read_csv(scfile, index_col='sc_point_gid'))
+    dfin = floatify(pd.read_csv(scfile))
+    if 'sc_point_gid' in dfin.columns:
+        dfin = dfin.set_index('sc_point_gid')
     ## If derived columns are already in file, it's already been assembled, so stop here
     if 'supply_curve_cost_per_mw' in dfin:
         ## Rebuild it if not aggregating
         if skip_if_complete:
             return dfin
         else:
-            dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
+            if psh:
+                dfin = dfin[['capacity', 'capital_adder_per_mw']].copy()
+            else:
+                dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
     county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
     ### Combine
     dfout = dfin.copy()
-    dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
+    if psh:
+        # PSH supply curves need to be mapped to nearest sc_point_gid using lat/lon of lower reservoir
+        geometry_psh = [Point(xy) for xy in zip(dfout['low_reservoir_longitude'], dfout['low_reservoir_latitude'])]
+        gdf_psh = gpd.GeoDataFrame(dfout, crs='EPSG:5070', geometry=geometry_psh)
+        geometry_ic = [Point(xy) for xy in zip(interconnection_cost['longitude'], interconnection_cost['latitude'])]
+        gdf_ic = gpd.GeoDataFrame(interconnection_cost.reset_index(), crs='EPSG:5070', geometry=geometry_ic)
+        gdf_psh_ic = gpd.sjoin_nearest(gdf_psh, gdf_ic, how='left')
+        dfout = pd.DataFrame(gdf_psh_ic).drop(columns=['geometry','index_right'])
+    else:
+        dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
     dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:
