@@ -2719,6 +2719,7 @@ def map_capacity_techs(
         ncols=4,
         vmax='shared',
         cmap=cmocean.cm.rain,
+        label_regions=True,
     ):
     """
     techs: list of technologies to plot, or 'aggregation' to plot all aggregated technologies
@@ -2772,7 +2773,8 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
-        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(dfplot, ax=ax[coords[tech]], column='GW', text_kwargs={'fontsize':5})
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -4431,7 +4433,7 @@ def map_neue(
 def map_h2_capacity(
         case, year=2050, wscale_h2=10, figheight=6, pipescale=0.1,
         legend_kwds={'shrink':0.6, 'pad':0, 'orientation':'horizontal', 'aspect':12},
-        cmap=cmocean.cm.rain,
+        cmap=cmocean.cm.rain, label_regions=True,
     ):
     """
     H2 turbines, production (Electrolyzer/SMR), pipelines, and storage
@@ -4517,19 +4519,22 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
-        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', text_kwargs={'fontsize':5})
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
-        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', text_kwargs={'fontsize':5})
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
-        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', text_kwargs={'fontsize':5})
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
