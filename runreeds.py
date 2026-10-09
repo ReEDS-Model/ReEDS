@@ -10,11 +10,9 @@ import threading
 import time
 import shutil
 import csv
-import importlib
 import numpy as np
 import pandas as pd
 import subprocess
-import re
 from datetime import datetime
 import argparse
 from pathlib import Path
@@ -214,337 +212,6 @@ def check_cases_format(df_cases):
         )
         raise ValueError(err)
 
-
-def check_compatibility(sw):
-    if int(sw['startyear']) != 2010:
-        raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
-
-    if int(sw['GSw_SkipRAyear']) <= int(sw['startyear']):
-            raise ValueError(f"GSw_SkipRAyear = {sw['GSw_SkipRAyear']} but must be > {sw['startyear']}")
-
-    if (sw['GSw_HourlyType'] in ['year']) and int(sw['GSw_InterDayLinkage']):
-        raise ValueError(
-            "GSw_HourlyType cannot be 'year' when GSw_InterDayLinkage is enabled. "
-            f"Current values: GSw_HourlyType={sw['GSw_HourlyType']}, GSw_InterDayLinkage={sw['GSw_InterDayLinkage']}"
-        )
-
-    if 24 % (int(sw['GSw_HourlyWindowOverlap']) * int(sw['GSw_HourlyChunkLengthRep'])):
-        raise ValueError(
-            ('24 must be divisible by GSw_HourlyWindowOverlap * GSw_HourlyChunkLengthRep:'
-            '\nGSw_HourlyWindowOverlap = {}\nGSw_HourlyChunkLengthRep = {}'.format(
-                sw['GSw_HourlyWindowOverlap'], sw['GSw_HourlyChunkLengthRep'])))
-
-    if int(sw['GSw_HourlyWindow']) <= int(sw['GSw_HourlyWindowOverlap']):
-        raise ValueError(
-            ('GSw_HourlyWindow must be greater than GSw_HourlyWindowOverlap:'
-            '\nGSw_HourlyWindow = {}\nGSw_HourlyWindowOverlap = {}'.format(
-                sw['GSw_HourlyWindow'], sw['GSw_HourlyWindowOverlap'])))
-
-    if ((sw['GSw_HourlyClusterAlgorithm'] not in ['hierarchical','optimized','kmeans','kmedoids'])
-        and ('user' not in sw['GSw_HourlyClusterAlgorithm'])
-    ):
-        if sw['GSw_HourlyClusterAlgorithm'].startswith('hierarchical'):
-            args = sw['GSw_HourlyClusterAlgorithm'].split('_')
-            assert len(args) == 3
-            ## https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html
-            assert args[1] in ['euclidean','l1','l2','manhattan','cosine']
-            assert args[2] in ['ward', 'complete', 'average', 'single']
-            if args[2] == 'ward':
-                assert args[1] == 'euclidean'
-        elif sw['GSw_HourlyClusterAlgorithm'].startswith('kmedoids'):
-            args = sw['GSw_HourlyClusterAlgorithm'].split('_')
-            assert len(args) == 3
-            assert args[1] in ['euclidean','l1','l2','manhattan','cosine']
-            assert args[2] in ['heuristic','k-medoids++','random','build']
-        else:
-            raise ValueError(
-                "GSw_HourlyClusterAlgorithm must be set to 'hierarchical', 'optimized', "
-                "'kmeans', or 'kmedoids', or must "
-                "contain the substring 'user' and match a scenario in "
-                "inputs/temporal/period_szn_user.csv"
-            )
-
-    if ((sw['GSw_PRM_StressModel'].lower() not in ['pras'])
-        and ('user' not in sw['GSw_PRM_StressModel'])):
-        raise ValueError(
-            "GSw_PRM_StressModel must be set to 'pras' or must "
-            "contain the substring 'user' and match a scenario at "
-            "inputs/temporal/stressperiods_{GSw_PRM_StressModel}.csv"
-        )
-
-    if (int(sw['GSw_H2_PTC']) == 1) and (int(sw['GSw_H2']) != 2):
-        raise ValueError(
-            'When running with the H2 PTC enabled, GSw_H2 should be set to 2.\n'
-            f"GSw_H2_PTC={sw['GSw_H2_PTC']}, GSw_H2={sw['GSw_H2']}"
-        )
-
-    if int(sw['GSw_H2_SMR']) == 0 and sw['GSw_H2_Demand_Case'] in ['BAU', 'Aggressive', 'Decarb_with_BAU']:
-        raise ValueError(
-            f"GSw_H2_SMR is set to 0, but GSw_H2_Demand_Case is set to '{sw['GSw_H2_Demand_Case']}', which requires SMR set to 1.\n"
-            "When GSw_H2_SMR is 0, GSw_H2_Demand_Case must be one of: 'none', 'Decarb', or 'LTS'."
-        )
-
-    if ('usa' not in sw['GSw_Region'].lower()) and (int(sw['GSw_GasCurve']) != 2):
-        raise ValueError(
-            'Should use GSw_GasCurve=2 (fixed prices) when running sub-nationally\n'
-            f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
-        )
-
-    if (int(sw['MCS_runs']) > 1 and int(sw['GSw_MGA_RV_runs']) > 1):
-        raise ValueError(
-            'Running Monte Carlo analysis (MCS_runs > 1) and random vector \n'
-            'MGA sampling (GSw_MGA_RV_runs > 1) simultaneously is not yet supported.'
-        )
-        
-    reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
-
-    ### Parsed string switches
-    ## Automatic inputs
-    reeds_path = os.path.dirname(__file__)
-    hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
-
-    ### Check that the stress metrics specified in GSw_PRM_StressThresholdMetrics
-    ### are allowed and have well-formed GSw_PRM_StressThreshold{metric} entries
-    ra_switches = {
-        i.lower(): f'GSw_PRM_StressThreshold{i}'
-        for i in ['Depth', 'Duration', 'LOLD', 'LOLE', 'LOLH', 'NEUE']
-    }
-    used_metrics = [i.lower() for i in sw['GSw_PRM_StressThresholdMetrics'].split('/')]
-    allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
-
-    for metric in used_metrics:
-        if metric not in ra_switches:
-            raise NotImplementedError(f"GSw_PRM_StressThresholdMetrics = {metric} is not supported")
-
-        for threshold in sw[ra_switches[metric]].split('/'):
-            ## Example: GSw_PRM_StressThresholdNEUE = 'transgrp_1'
-            (hierarchy_level, stress_value) = threshold.split('_')
-            if hierarchy_level not in allowed_levels:
-                raise ValueError(
-                    f"{ra_switches[metric]}: level={hierarchy_level} but must be in:\n"
-                    + '\n'.join(allowed_levels)
-                )
-            if not (float(stress_value) >= 0):
-                raise ValueError(
-                    f"stress value in {ra_switches[metric]} must be a positive number "
-                    f"but '{stress_value}' was provided"
-                )
-
-    ### GSw_PRM_UpdateMethod 1-3 (static or PRAS-informed PRM update) is computed from the
-    ### NEUE-based shortfall, so it requires NEUE to be an active stress metric
-    if int(sw['GSw_PRM_UpdateMethod']) in [1, 2, 3] and 'neue' not in used_metrics:
-        raise ValueError(
-            f"GSw_PRM_UpdateMethod={sw['GSw_PRM_UpdateMethod']} requires 'NEUE' to be included "
-            f"in GSw_PRM_StressThresholdMetrics (={sw['GSw_PRM_StressThresholdMetrics']}), "
-            "since PRM updates are computed from the NEUE-based shortfall."
-        )
-
-    if sw['GSw_PRM_StressStorageCutoff'].lower() not in ['off','0','false']:
-        metric, value = sw['GSw_PRM_StressStorageCutoff'].split('_')
-        if metric.lower()[:3] not in ['eue', 'cap', 'abs']:
-            raise ValueError(
-                "The first argument of GSw_PRM_StressStorageCutoff must be in "
-                f"['eue', 'cap', 'abs'] but {metric} was provided"
-            )
-        try:
-            float(value)
-        except ValueError:
-            raise ValueError(
-                "The second argument of GSw_PRM_StressStorageCutoff must be a number "
-                f"but {value} was provided"
-            )
-        if (metric.lower()[:3] == 'abs') and (int(value) != 1):
-            raise NotImplementedError(
-                "GSw_PRM_StressStorageCutoff: only abs_1 is implemented for abs but "
-                f"{metric}_{value} was provided"
-            )
-
-    for keyval in sw['GSw_PRM_NetImportLimitScen'].split('/'):
-        err = (
-            "GSw_PRM_NetImportLimitScen accepts inputs in the format "
-            "{year1}_{'hist' or float}/{year2}_{float}/{year3}_{float} "
-            "or a single value given as {year1}_{'hist' or float}. Examples are "
-            "2024_hist/2035_40, 2025_20/2032_40, 2024_hist, 2025_20/2032_40/2050_60. "
-            f"You entered {sw['GSw_PRM_NetImportLimitScen']}."
-        )
-        year, limit = keyval.split('_')
-        try:
-            int(year)
-        except ValueError:
-            raise ValueError(err)
-        if limit not in ['hist', 'histmax']:
-            try:
-                float(limit)
-            except ValueError:
-                raise ValueError(err)
-
-    if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
-        raise ValueError(
-            "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
-            "and GSw_PRM_StressIterateMax>0 is not supported.\n"
-            "To iteratively update the PRM, set GSw_PRM_UpdateMethod to an integer between 1-3:"
-            "\n1: static update set by GSw_PRM_UpdateFraction; "
-            "\n2: dynamic update informed by PRAS; "
-            "\n3: dynamic update but only after all new stress periods have been added"
-        )
-
-    for bir in sw['GSw_PVB_BIR'].split('_'):
-        if not (float(bir) >= 0):
-            raise ValueError("Fix GSw_PVB_BIR")
-
-    for ilr in sw['GSw_PVB_ILR'].split('_'):
-        if not (float(ilr) >= 0):
-            raise ValueError("Fix GSw_PVB_ILR")
-
-    for pvbtype in sw['GSw_PVB_Types'].split('_'):
-        if not (1 <= int(pvbtype) <= 3):
-            raise ValueError("Fix GSw_PVB_Types")
-
-    try:
-        prm = float(sw['GSw_PRM_scenario'])
-        if prm >= 1:
-            raise Exception(
-                f"GSw_PRM_scenario={sw['GSw_PRM_scenario']} but should be formatted as a "
-                "fraction, not a percent"
-            )
-    except ValueError:
-        pass
-
-    scalars = reeds.io.get_scalars()
-    ilr_upv = scalars['ilr_utility'] * 100
-
-    if (
-        int(sw['GSw_PVB'])
-        and not all([np.isclose(float(ilr), ilr_upv) for ilr in sw['GSw_PVB_ILR'].split('_')])
-    ):
-        raise ValueError(
-            f"GSw_PVB_ILR = {sw['GSw_PVB_ILR']} but all entries must be {int(ilr_upv)}"
-        )
-
-    allowed_years = list(range(2007,2014)) + list(range(2016,2024))
-    allowed_years_string = ','.join([str(year) for year in allowed_years])
-
-    resource_adequacy_years = [int(y) for y in sw['resource_adequacy_years'].split('_')]
-    for year in resource_adequacy_years:
-        if year not in allowed_years:
-            raise ValueError(
-                f"resource_adequacy_years must be in {allowed_years_string} but is "
-                f"{sw['resource_adequacy_years']}"
-            )
-
-    for year in sw['GSw_HourlyWeatherYears'].split('_'):
-        if int(year) not in allowed_years:
-            raise ValueError(
-                f"GSw_HourlyWeatherYears must be in {allowed_years_string} but is "
-                f"{sw['GSw_HourlyWeatherYears']}"
-            )
-
-        if int(year) not in resource_adequacy_years:
-            raise ValueError(
-                "GSw_HourlyWeatherYears must be a subset of resource_adequacy_years but "
-                f"GSw_HourlyWeatherYears={sw['GSw_HourlyWeatherYears']} and "
-                f"resource_adequacy_years={sw['resource_adequacy_years']}"
-            )
-
-    solveyears = reeds.inputs.parse_yearset(sw['yearset'])
-    if int(sw['endyear']) not in solveyears:
-        err = f"`endyear` = {sw['endyear']} but must be in `yearset`: {sw['yearset']}"
-        raise ValueError(err)
-
-    # Add a row for each county
-    county2zone = reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet'], as_map=False)
-    county2zone['county'] = 'p' + county2zone.FIPS
-    # Add county info to hierarchy
-    hierarchy = hierarchy.merge(county2zone.drop(columns=['FIPS','state']), on='r')
-
-    # Make sure specified regions are allowed for the specified hierarchy level
-    region_groups = sw['GSw_Region'].split('//') if '//' in sw['GSw_Region'] else [sw['GSw_Region']]
-    for group in region_groups:
-        level, regions = group.split('/')
-        if level not in hierarchy:
-            err = (
-                f"The specified hierarchy level '{level}' does not exist in the hierarchy file."
-                f"\nUpdate GSw_Region={sw['GSw_Region']} to specify a valid level."
-            )
-            raise ValueError(err)
-        invalid_regions = [
-            region for region in regions.split('.')
-            if region.lower() not in hierarchy[level].str.lower().values
-        ]
-        if invalid_regions:
-            err = f"GSw_Region: {', '.join(invalid_regions)} need to be in {hierarchy[level].unique()}"
-            raise Exception(err)
-
-    ### Compatible switch combinations
-    if sw['GSw_LoadProfiles'] == 'historic':
-        if ('demand_' + sw['demandscen'] +'.csv') not in os.listdir(os.path.join(reeds_path, 'inputs','load')) :
-            raise ValueError("The demand file specified by the demandscen switch is not in the inputs/load folder")
-
-    if (
-        re.match(r'(\/|[a-zA-Z]:[\\\/]).+$', sw['GSw_LoadProfiles'])
-        and not Path(sw['GSw_LoadProfiles']).is_file()
-    ):
-        err = f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} but the specified file does not exist"
-        raise FileNotFoundError(err)
-
-    if sw['GSw_LoadProfiles'].startswith('EER2023'):
-        allowed_ra_years = range(2007,2014)
-        if not all([y in allowed_ra_years for y in resource_adequacy_years]):
-            err = (
-                f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} only supports resource_adequacy_years="
-                f"{list(allowed_ra_years)} but {resource_adequacy_years} was supplied"
-            )
-            raise ValueError(err)
-
-    if (sw['GSw_MGA_Objective'] not in ['capacity', 'generation']) and int(sw['GSw_MGA_RV_runs']) > 0:
-        raise NotImplementedError(
-            f"GSw_MGA_Objective='{sw['GSw_MGA_Objective']}' is not yet supported for MGA random vector sampling."
-        )
-
-    ### Dependent model availability
-    if (
-        ((int(sw['pras']) == 2) or int(sw['GSw_PRM_StressIterateMax']))
-        and (not os.path.isfile(os.path.join(reeds_path, 'Manifest.toml')))
-    ):
-        err = (
-            "Manifest.toml does not exist. "
-            "Please set up julia by following the instructions at "
-            "https://reeds-model.github.io/ReEDS/setup.html#reeds2pras-julia-and-stress-periods-setup"
-        )
-        raise Exception(err)
-
-    ### Land use and reeds_to_rev
-    if (int(sw['land_use_analysis'])) and (not int(sw['reeds_to_rev'])):
-        raise ValueError(
-            "'reeds_to_rev' must be enable for land_use analysis to run."
-        )
-
-    disallowed_characters = ['~', '|', '*']
-    invalid_switches = [
-        key for key, val in sw.items()
-        if any([char in val for char in disallowed_characters])
-    ]
-    if len(invalid_switches) > 0:
-        raise ValueError(
-            "The following switches have values with disallowed characters "
-            f"({', '.join(disallowed_characters)}): {', '.join(invalid_switches)}"
-        )
-
-    ### Contents of user-specified files
-    reeds.checks.check_switches(sw)
-
-    ### Uncommonly used packages
-    if sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kmedoids'):
-        if importlib.util.find_spec("sklearn_extra") is None:
-            err = (
-                "The scikit-learn-extra package is required for GSw_HourlyClusterAlgorithm="
-                f"{sw['GSw_HourlyClusterAlgorithm']} but is not available in your conda "
-                "environment. Please install it by running:\n"
-                "    pip install 'scikit-learn-extra>=0.2.0,<0.3.0'"
-                "\nor:\n"
-                "    conda install -c conda-forge scikit-learn-extra=0.2"
-            )
-            raise ModuleNotFoundError(err)
 
 # function to stop the model after input processing
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
@@ -778,7 +445,7 @@ def setup_window(
 
 def setupEnvironment(
         BatchName=False, cases_suffix=False, single='', simult_runs=0,
-        forcelocal=0, skip_checks=False,
+        forcelocal=0, force=0,
         debug=False, debugnode=False, cases_per_node=1,
         dryrun=False,
     ):
@@ -788,7 +455,7 @@ def setupEnvironment(
     # WORKERS = 1
     # forcelocal = 0
     # single = ''
-    # skip_checks = False
+    # force = 0
     # debug = False
     # dryrun = True
 
@@ -848,7 +515,7 @@ def setupEnvironment(
             quit()
 
     #%% Check whether the ReEDS conda environment is activated
-    if (not skip_checks) and (
+    if (force < 3) and (
         ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
         or (not pd.__version__.startswith('3'))
     ):
@@ -872,7 +539,7 @@ def setupEnvironment(
     df_cases = reeds.inputs.parse_cases(
         cases_filename=cases_filename,
         single=single,
-        skip_checks=skip_checks,
+        force=(force>=2),
     )
     ## Propagate debug setting
     if debug:
@@ -887,7 +554,7 @@ def setupEnvironment(
     #%% Stop now if any switches are incompatible
     check_cases_format(df_cases)
     for sw in caseSwitches:
-        check_compatibility(sw)
+        reeds.checks.check_switches(sw, force=force)
     if dryrun:
         quit()
 
@@ -951,7 +618,7 @@ def setupEnvironment(
         quit()
 
     #%% User warnings
-    if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and not skip_checks:
+    if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and (force < 2):
         print(
             '\nWARNING: At least one case uses cleanup_level ≥ 1, which removes files '
             'used by R2X.\nIf you plan to run R2X, do not proceed; set cleanup_level '
@@ -1759,7 +1426,7 @@ def launch_single_case_run(
 
 def main(
         BatchName='', cases_suffix='', single='', simult_runs=0,
-        forcelocal=False, skip_checks=False,
+        forcelocal=False, force=0,
         debug=False, debugnode=False, cases_per_node=1,
         dryrun=False,
     ):
@@ -1797,7 +1464,7 @@ def main(
     envVar = setupEnvironment(
         BatchName=BatchName, cases_suffix=cases_suffix,
         single=single, simult_runs=simult_runs,
-        forcelocal=forcelocal, skip_checks=skip_checks,
+        forcelocal=forcelocal, force=force,
         debug=debug, debugnode=debugnode, cases_per_node=cases_per_node,
         dryrun=dryrun,
     )
@@ -1832,8 +1499,6 @@ if __name__ == '__main__':
                         help='Number of simultaneous runs. If negative, run all simultaneously.')
     parser.add_argument('--forcelocal', '-l', action='store_true',
                         help='Force model to run locally instead of submitting a slurm job')
-    parser.add_argument('--skip_checks', '-f', action="store_true",
-                        help="Force run, skipping checks on conda environment and switches")
     parser.add_argument('--debug', '-d', action='count', default=0,
                         help="Run in debug mode (same behavior as debug switch in cases.csv)")
     parser.add_argument('--debugnode', '-n', action="store_true",
@@ -1843,12 +1508,21 @@ if __name__ == '__main__':
                             "If not provided, the user will be prompted to specify it.")
     parser.add_argument('--dryrun', '-t', action='store_true',
                         help="Check inputs but don't start runs")
+    parser.add_argument(
+        '--force', '-f', action='count', default=0,
+        help=(
+            'Force run, skipping the following checks: '
+            '≥1: Enough representative periods for analysis; '
+            '≥2: Switches within allowed values; '
+            '≥3: Conda environment activated'
+        ),
+    )
 
     args = parser.parse_args()
 
     main(
         BatchName=args.BatchName, cases_suffix=args.cases_suffix, single=args.single,
-        simult_runs=args.simult_runs, forcelocal=args.forcelocal, skip_checks=args.skip_checks,
+        simult_runs=args.simult_runs, forcelocal=args.forcelocal, force=args.force,
         debug=args.debug, debugnode=args.debugnode, cases_per_node=args.cases_per_node,
         dryrun=args.dryrun,
     )
