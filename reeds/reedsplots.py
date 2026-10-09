@@ -1377,7 +1377,7 @@ def map_net_imports(
         )
         label_region_value(
             df, ax=ax[coords[year]], column='net_import', 
-            opt_single_decimal=False, text_kwargs={'fontsize':5},
+            fmt='{:.0f}', text_kwargs={'fontsize':5},
         )
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
@@ -6262,8 +6262,7 @@ def label_region_value(
     df, 
     ax, 
     column, 
-    opt_single_decimal=True, 
-    fmt='{:.0f}', 
+    fmt='{auto}', 
     text_kwargs:None|dict=None,
     pe_kwargs:None|dict=None,
 ):
@@ -6282,9 +6281,9 @@ def label_region_value(
         if isinstance(value, (int, float, complex)):
             if not np.isfinite(value):
                 continue
-            if opt_single_decimal:
-                decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
-                fmt = f"{{:.{decimals}f}}"
+            if '{auto}' in fmt:  
+                            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1  
+                            fmt = fmt.replace('{auto}', f"{{:.{decimals}f}}")  
         text_artists.append(
             ax.annotate(
                 (fmt.format(value) if not isinstance(value, str) else value),
@@ -6621,8 +6620,7 @@ def map_stressors(
         )
         label_region_value(
             df=dflevel, ax=ax[1,0], column='load_rank',
-            opt_single_decimal=False, fmt='{:.0f}%',
-            pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,0].set_title('Demand', y=0.9)
         plots.addcolorbarhist(
@@ -6637,8 +6635,7 @@ def map_stressors(
             )
             label_region_value(
                 df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
-                opt_single_decimal=False, fmt='{:.0f}%',
-                pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+                fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
             plots.addcolorbarhist(
@@ -6652,8 +6649,7 @@ def map_stressors(
         )
         label_region_value(
             df=dflevel, ax=ax[1,3], column='temperature_rank',
-            opt_single_decimal=False, fmt='{:.0f}%',
-            pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,3].set_title('Temperature', y=0.9)
         plots.addcolorbarhist(
@@ -6671,7 +6667,7 @@ def map_stressors(
             dflevel[f'outage_{tech}'] = outage_region.loc[(y,m,d), tech]
             label_region_value(
                 df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
-                opt_single_decimal=False, fmt='{:.0f}%',
+                fmt='{:.0%}',
                 pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[2,col].set_title(label, y=0.9)
