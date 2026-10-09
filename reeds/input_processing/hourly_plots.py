@@ -352,7 +352,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
             dfdiffs[level].plot(
                 ax=ax[coords[level]], column='cf_diff', cmap=cmaps['cf_diff'],
                 vmin=vm[tech]['cf_diff'][0], vmax=vm[tech]['cf_diff'][1], 
-                lw=0, legend=False, missing_kwds={"color": "lightgrey"},
+                lw=0, legend=False, missing_kwds={"color": "white"},
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
             dfmap[level]['cf_diff_pct'] = (dfdiffs[level].cf_diff * 100).values
