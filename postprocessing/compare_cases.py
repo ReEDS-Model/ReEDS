@@ -162,7 +162,7 @@ if args.map:
         'Battery/PSH': ['Battery', 'Pumped-Hydro', 'Pumped-Hydro-Flex'],
         'Biopower': ['Biopower', 'BECCS'],
         'Coal': ['Coal'],
-        'Demand Response': ['DR Shed','EVMC_Shape','EVMC_Storage'],
+        'Demand Response': ['DR Shed','DR Shape','DR Shift'],
         'Fossil+CCS': ['Coal-CCS-Flex', 'Coal-CCS', 'Coal-CCS_Upgrade','Gas-CCS',
             'Gas-CC-CCS', 'Gas-CC-CCS-Flex', 'Gas-CC-CCS_Upgrade'],
         'Geothermal': ['Geothermal'],
