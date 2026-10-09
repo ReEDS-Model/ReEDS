@@ -24,7 +24,7 @@
     "offshore_meshed": false,
     "process_profiles": true,
     "profile_id_col": "sc_point_gid",
-    "reg_map_file": "{reeds_path}/inputs/county2zone.csv",
+    "reg_map_file": "{reeds_path}/inputs/zones/z134/county2zone.csv",
     "rev_paths_file": "{reeds_path}/inputs/supply_curve/rev_paths.csv",
     "scale_factor": 1e4,
     "start_year": 2010,
@@ -56,7 +56,7 @@
       "2045": 1,
       "2050": 1
     },
-    "scenarios": ["CENTRAL_ADJ"],
+    "scenarios": ["REFERENCE_ADJ"],
     "sector_config_file": "{hourlize_path}/inputs/load/sector_config.json",
     "weather_years": [2009,2010,2011,2012,2013,2016,2017,2018,2019,2020]
   }
