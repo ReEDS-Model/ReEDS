@@ -269,6 +269,56 @@ def calibrate_hourly_state_load_to_historical_annuals(
 
     return state_load_hourly
 
+def prepend_historical_hourly_state_load(
+    state_load_hourly: pd.DataFrame,
+    historical_state_load_hourly: pd.DataFrame,
+    historical_state_load_annual: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Create hourly state load profiles for historical model years and
+    prepend them to state_load_hourly.
+    
+    Args:
+        state_load_hourly: Hourly state load profiles in MWh.
+        historical_state_load_hourly: Hourly historical state load profiles
+            in MWh.
+        historical_state_load_annual: Annual historical state loads in MWh.
+
+    Returns:
+        pd.DataFrame
+    """
+    historical_load_dict = {}
+    
+    # For historical model years with no projected load profiles, create load
+    # profiles for each model year by scaling the historical load profiles to
+    # match annual totals for the model year
+    min_historical_model_year = historical_state_load_annual['year'].min()
+    min_projected_model_year = (
+        state_load_hourly.index.get_level_values('year').min()
+    )
+    for model_year in range(
+        min_historical_model_year, min_projected_model_year
+    ):
+        historical_state_load_hourly_scaled = (
+            scale_historical_hourly_state_load_to_model_year(
+                historical_state_load_hourly,
+                historical_state_load_annual,
+                model_year
+            )
+        )
+        historical_load_dict[model_year] = historical_state_load_hourly_scaled
+
+    historical_state_load_hourly = pd.concat(
+        historical_load_dict,
+        names=('year',)
+    )
+    state_load_hourly = pd.concat([
+        historical_state_load_hourly,
+        state_load_hourly
+    ])
+
+    return state_load_hourly
+
 def scale_historical_state_load_to_baseline_year(
     historical_state_load_hourly: pd.DataFrame,
     historical_state_load_annual: pd.DataFrame,
@@ -831,11 +881,10 @@ def main(reeds_path, inputs_case):
             )
         case 'historic':
             state_load_hourly = (
-                apply_load_growth_factors_to_historical_state_load(
+                scale_historical_state_load_to_baseline_year(
                     state_load_hourly,
                     historical_state_load_annual,
-                    inputs_case,
-                    solveyears
+                    inputs_case
                 )
             )
         case _:
@@ -854,6 +903,26 @@ def main(reeds_path, inputs_case):
         inputs_case,
         sw.GSw_LoadAllocationMethod
     )
+
+    # For the 'historic' profile, load growth is applied here, at
+    # model-region (BA) resolution, after the baseline-year state load has
+    # been allocated to BAs. This lets BA-level load multipliers (e.g. a MISO
+    # BA on a different trajectory than the rest of its state) be honored; a
+    # state-keyed load_multiplier.csv is expanded to BAs and reproduces the
+    # previous state-level result exactly.
+    if sw.GSw_LoadProfiles == 'historic':
+        regional_load_hourly = apply_ba_load_growth(
+            regional_load_hourly,
+            inputs_case,
+            hierarchy,
+            solveyears
+        )
+        # Reshape MISO BA hourly load to the LTLF coincident load factor
+        # (energy-preserving). No-op when peak_load_factor.csv is absent.
+        regional_load_hourly = apply_miso_peak_reshape(
+            regional_load_hourly,
+            inputs_case,
+        )
 
     #%%%#########################################
     #    -- Performing Load Modifications --    #
