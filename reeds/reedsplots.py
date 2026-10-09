@@ -3037,8 +3037,49 @@ def get_gen_capacity(case, year=2050, level='r', units='GW'):
 
     return dfcap
 
+def get_gen_capacity_all(case, datatype, level='r', units='GW'):
+    """Get zonal generation capacity from a ReEDS run.
+    
+    Args:
+        case: Path to a single ReEDS run folder
+        datatype: key of outputs.h5 ('cap' or 'gen_ann')
+        level: spatial level from hierarchy.csv to aggregate data up to
+        units: user-specified magnitude to scale data up to
+    
+    Returns:
+        pd.DataFrame with index=(zones,myear) and columns=techs
+    """
+    ### Check inputs
+    assert units in ['MW','GW','TW','MWh','GWh','TWh']
 
-def get_trans_capacity(case, year=2050, level='r', units='GW'):
+    ### Get data
+    hierarchy = reeds.io.get_hierarchy(case)
+
+    output_formatting = reeds.io.get_plot_formatting()
+    bokehcolors = output_formatting['bokeh_tech_colors']
+
+    datatype2valname = {'cap':'MW', 'gen':'MWh'}
+    df_in = reeds.io.read_output(case, datatype, valname='MW')
+    df_in.i = simplify_techs(df_in.i)
+    df = (df_in
+             .groupby(['i','r','t']).MW.sum().unstack('i')
+             )
+    if units not in ['MW','MWh']:
+        df *= {'GW':1e-3, 'TW':1e-6, 'GWh':1e-3, 'TWh':1e-6}[units]
+    df = (
+        df[[c for c in bokehcolors.index if c in df]]
+        .drop('Electrolyzer', axis=1, errors='ignore')
+    ).copy()
+    ## Aggregate if necessary
+    if level != 'r':
+        df.reset_index(inplace=True)
+        df['r'] = df['r'].map(hierarchy[level])
+        df = df.groupby(['r','t']).sum()
+        
+
+    return df
+
+def get_trans_capacity(case, year=2050, level='r', units='GW', dfmap=None):
     """Get zonal transmission capacity from a ReEDS run.
     Returns:
         Geodataframe with index=interfaces and geometry=linestrings
@@ -3048,12 +3089,12 @@ def get_trans_capacity(case, year=2050, level='r', units='GW'):
 
     ### Get data
     hierarchy = reeds.io.get_hierarchy(case)
-    dfmap = reeds.io.get_dfmap(case)
-
-    for r in zone_label_offset:
-        if r in dfmap[level].index:
-            dfmap[level].loc[r, 'centroid_x'] += zone_label_offset[r][0]
-            dfmap[level].loc[r, 'centroid_y'] += zone_label_offset[r][1]
+    if dfmap is None:
+        dfmap = reeds.io.get_dfmap(case)
+        for r in zone_label_offset:
+            if r in dfmap[level].index:
+                dfmap[level].loc[r, 'centroid_x'] += zone_label_offset[r][0]
+                dfmap[level].loc[r, 'centroid_y'] += zone_label_offset[r][1]
 
     tran_out = reeds.io.read_output(case, 'tran_out', valname='MW')
     transmap = tran_out.loc[
@@ -3065,37 +3106,47 @@ def get_trans_capacity(case, year=2050, level='r', units='GW'):
     if level != 'r':
         transmap.r = transmap.r.map(hierarchy[level])
         transmap.rr = transmap.rr.map(hierarchy[level])
-        for i, row in transmap.iterrows():
-            if row.r > row.rr:
-                transmap.loc[i,['r','rr']] = transmap.loc[i,['rr','r']].values
+        swap = transmap.r.to_numpy() > transmap.rr.to_numpy()
+        transmap.loc[swap, ['r', 'rr']] = transmap.loc[swap, ['rr', 'r']].to_numpy()
         transmap = transmap.loc[
             transmap.r != transmap.rr
         ].groupby(['r','rr','trtype'], as_index=False)[units].sum()
     transmap.index = (transmap.r + '|' + transmap.rr).rename('interface')
     ## Add geographic data to the line capacity
     key = dfmap[level][['centroid_x','centroid_y']]
-    for col in ['r','rr']:
-        for i in ['x','y']:
-            transmap[f'{col}_{i}'] = transmap.apply(
-                lambda row: key.loc[row[col]]['centroid_'+i], axis=1)
+    transmap = transmap.join(
+        key.rename(columns={'centroid_x':'r_x', 'centroid_y':'r_y'}),
+        on='r',
+    ).join(
+        key.rename(columns={'centroid_x':'rr_x', 'centroid_y':'rr_y'}),
+        on='rr',
+    )
 
     ## Convert the line capacity dataframe to a geodataframe with linestrings
-    transmap['geometry'] = transmap.apply(
-        lambda row: shapely.geometry.LineString([(row.r_x, row.r_y), (row.rr_x, row.rr_y)]),
-        axis=1
+    line_coords = np.stack(
+        [
+            transmap[['r_x', 'r_y']].to_numpy(),
+            transmap[['rr_x', 'rr_y']].to_numpy(),
+        ],
+        axis=1,
     )
-    transmap = gpd.GeoDataFrame(transmap).set_crs('ESRI:102008')
+    try:
+        geometry = shapely.linestrings(line_coords)
+    except AttributeError:
+        geometry = [shapely.geometry.LineString(points) for points in line_coords]
+    transmap = gpd.GeoDataFrame(transmap, geometry=geometry, crs='ESRI:102008')
 
     return transmap
 
 
 def map_zone_capacity(
-        case, year=2050, level='r',
+        case, casediff=None, year=2050, level='r', dfmap=None,
         valscale=3e3, width=7e4,
         center=True, linealpha=0.6,
         scale=10, sideplots=True, legend=True,
         f=None, ax=None,
-        drawstates=True, drawinterconnects=True,
+        drawstates=True, drawinterconnects=True, drawtransgrps=True,
+        drawregions=[],
     ):
     """
     Inputs
@@ -3113,16 +3164,20 @@ def map_zone_capacity(
     bokehcolors = output_formatting['bokeh_tech_colors'].squeeze(1)
     transcolors = output_formatting['trtype_colors']
 
-    dfmap = reeds.io.get_dfmap(case)
-    for r in zone_label_offset:
-        if r in dfmap[level].index:
-            dfmap[level].loc[r, 'centroid_x'] += zone_label_offset[r][0]
-            dfmap[level].loc[r, 'centroid_y'] += zone_label_offset[r][1]
+    if dfmap is None:
+        print('  - Getting spatial hierarchy mapping file...')
+        dfmap = reeds.io.get_dfmap(case)
+        for r in zone_label_offset:
+            if r in dfmap[level].index:
+                dfmap[level].loc[r, 'centroid_x'] += zone_label_offset[r][0]
+                dfmap[level].loc[r, 'centroid_y'] += zone_label_offset[r][1]
+    else:
+        print('  - Using dfmap from previous run...')
 
     ###### Case inputs
     dfcap = get_gen_capacity(case=case, year=year, level=level, units='GW')
 
-    transmap = get_trans_capacity(case=case, year=year, level=level, units='GW')
+    transmap = get_trans_capacity(case=case, year=year, level='r', units='GW', dfmap=dfmap)
     ## Buffer the lines into polygons
     transmap['geometry'] = transmap.apply(
         lambda row: row.geometry.buffer(row.GW*valscale/2), axis=1)
@@ -3134,12 +3189,17 @@ def map_zone_capacity(
     ### Background
     if level == 'r':
         dfmap[level].plot(ax=ax, facecolor='none', edgecolor='0.8', lw=0.2)
-    else:
-        dfmap[level].plot(ax=ax, facecolor='none', edgecolor='0.3', lw=0.4)
+    # else:
+    #     dfmap[level].plot(ax=ax, facecolor='none', edgecolor='0.3', lw=3)
+    if len(drawregions):
+        for reg in drawregions:
+            dfmap[reg].plot(ax=ax, facecolor='none', edgecolor='0.8', lw=0.3)
     if drawstates:
-        dfmap['st'].plot(ax=ax, facecolor='none', edgecolor='0.7', lw=0.4)
+        dfmap['st'].plot(ax=ax, facecolor='none', edgecolor='0.6', lw=0.75)
     if drawinterconnects:
         dfmap['interconnect'].plot(ax=ax, facecolor='none', edgecolor='k', lw=1)
+    if drawtransgrps:
+        dfmap['transgrp'].plot(ax=ax, facecolor='none', edgecolor='0.3', lw=2.5)
 
     ### Plot transmission capacity
     for trtype in ['AC','B2B','LCC','VSC']:
@@ -3152,6 +3212,7 @@ def map_zone_capacity(
     plots.plot_region_bars(
         dfzones=dfmap[level], dfdata=dfcap, colors=bokehcolors,
         ax=ax, valscale=valscale, width=width, center=center,
+        basescen = case.split('_')[-1]
         # zeroline={'c':'k', 'ls':':', 'lw':'0.5'},
     )
 
@@ -3299,8 +3360,287 @@ def map_zone_capacity(
                 handletextpad=0.3, handlelength=0.7, columnspacing=0.5,
             )
 
-    return f, ax, eax
+    return f, ax, eax, dfmap
 
+def map_zone_capacity_diff(
+        case, casediff=None, level='r', dfmap=None,
+        valscale=3e3, width=7e4,
+        center=True, linealpha=0.6,
+        scale=10, sideplots=True, legend=True,
+        f=None, ax=None,
+        drawstates=True, drawinterconnects=True, drawtransgrps=True,
+        drawregions=[],
+    ):
+    """
+    Inputs
+    ------
+    scale: [float] scalebar size in GW; if zero, don't plot scalebar
+    sideplots: Nationwide tranmsission, emissions, generation, and generation capacity
+    """
+    ###### Shared inputs
+    sw = reeds.io.get_switches(case)
+    years = pd.read_csv(
+        os.path.join(case,'inputs_case','modeledyears.csv')).columns.astype(int).values
+    yearstep = years[-1] - years[-2]
+
+    output_formatting = reeds.io.get_plot_formatting()
+    bokehcolors = output_formatting['bokeh_tech_colors'].squeeze(1)
+    transcolors = output_formatting['trtype_colors']
+
+    if dfmap is None:
+        print('Getting spatial hierarchy mapping file...')
+        dfmap = reeds.io.get_dfmap(case)
+        for r in zone_label_offset:
+            if r in dfmap[level].index:
+                dfmap[level].loc[r, 'centroid_x'] += zone_label_offset[r][0]
+                dfmap[level].loc[r, 'centroid_y'] += zone_label_offset[r][1]
+    else:
+        print('Using dfmap from previous run...')
+        
+    ###### Case inputs
+    print('Getting generation capacity...')
+    dfcap = get_gen_capacity_all(case=case, datatype='cap', level=level, units='GW').fillna(0)
+    ## If second case is provided, calculate diff
+    if casediff is not None:
+        print(' - Calculating capacity diff')
+        dfcapdiff = get_gen_capacity_all(case=casediff, datatype='cap', level=level, units='GW').fillna(0)
+        dfcap = dfcapdiff - dfcap
+        # Filter for only years >= 2020
+        dfcap = dfcap.loc[dfcap.index.get_level_values('t') >= 2020]
+        
+    print('Getting transmission capacity...')
+    transmap = get_trans_capacity(case=case, year=2050, level=level, units='GW', dfmap=dfmap).fillna(0)
+    ## If second case is provided, calculate diff
+    if casediff is not None:
+        print(' - Calculating transmission diff')
+        transmapdiff = get_trans_capacity(case=casediff, year=2050, level='r', units='GW', dfmap=dfmap).fillna(0)
+        # transmap['geometry'] = transmap.apply(
+        #     lambda row: row.geometry.buffer(row.GW*valscale/2), axis=1)
+        transmap = transmap.reset_index().merge(transmapdiff.reset_index()[['interface','trtype','GW']],on=['interface','trtype'],suffixes=('_base','_diff'))
+        transmap['GW'] = transmap['GW_diff'] - transmap['GW_base']
+        transmap = transmap.drop(columns=['GW_base','GW_diff']).set_index('interface')
+    ## Buffer the lines into polygons
+    transmap['geometry'] = transmap.apply(
+        lambda row: row.geometry.buffer(abs(row.GW)*valscale/2), axis=1)
+    
+    ###### Plot it
+    print('Plotting')
+    if (f is None) and (ax is None):
+        plt.close()
+        f,ax = plt.subplots(figsize=(12, 9))
+        
+    ### Background
+    print(' - Plotting background map...')
+    if level == 'r':
+        dfmap[level].plot(ax=ax, facecolor='none', edgecolor='0.8', lw=0.2)
+    # else:
+    #     dfmap[level].plot(ax=ax, facecolor='none', edgecolor='0.3', lw=3)
+    if len(drawregions):
+        for reg in drawregions:
+            dfmap[reg].plot(ax=ax, facecolor='none', edgecolor='0.8', lw=0.3)
+    if drawstates:
+        dfmap['st'].plot(ax=ax, facecolor='none', edgecolor='0.6', lw=0.75)
+    if drawinterconnects:
+        dfmap['interconnect'].plot(ax=ax, facecolor='none', edgecolor='k', lw=1)
+    if drawtransgrps:
+        dfmap['transgrp'].plot(ax=ax, facecolor='none', edgecolor='0.3', lw=2.5)
+
+    ### Plot transmission capacity (negative values first, then positive values)
+    print(' - Plotting transmission lines...')
+    # Separate plotting into positive and negative diffs
+    transmap_pos = transmap[(transmap['GW']>0)]
+    transmap_neg = transmap[(transmap['GW']<0)]
+    for trtype in ['AC','B2B','LCC','VSC']:
+        if trtype in transmap_neg.trtype.unique():
+            dissolved = transmap_neg.loc[transmap_neg.trtype==trtype].dissolve()
+            dissolved.plot(ax=ax, facecolor=transcolors[trtype], edgecolor='black', hatch='xxxxx', alpha=linealpha*0.8)
+        if trtype in transmap_pos.trtype.unique():
+            dissolved = transmap_pos.loc[transmap_pos.trtype==trtype].dissolve()
+            dissolved.plot(ax=ax, facecolor=transcolors[trtype], edgecolor='none', alpha=linealpha)
+
+    ### Plot generation capacity
+    print(' - Plotting region bars...')
+    basescen = case.split('_')[-1]
+    diffscen = None
+    if casediff is not None:
+        diffscen = casediff.split('_')[-1]
+    plots.plot_region_bars(
+        dfzones=dfmap[level], dfdata=dfcap, colors=bokehcolors,
+        ax=ax, valscale=valscale, width=width, center=center,
+        zeroline={'c':'k', 'ls':':', 'lw':'1'},
+        basescen=basescen, diffscen=diffscen
+    )
+
+    ### Formatting
+    print(' - Formatting...')
+    ax.axis('off')
+    if scale:
+        ax.bar(
+            x=[-1.8e6], height=[valscale * scale], bottom=[-1.05e6], width=3.0e5,
+            align='center', color='k',
+        )
+        ax.annotate(
+            f'{scale:.0f} GW', (-1.8e6, -1.1e6), fontsize=12,
+            ha='center', va='top', weight='bold')
+
+    ###### Side plots
+    eax = None
+    if sideplots:
+        ###### Extra data
+        dfgen_in = get_gen_capacity_all(case=case, datatype='gen_ann', level='country', units='TWh').fillna(0)
+        if casediff is not None:
+            dfgendiff_in = get_gen_capacity_all(case=casediff, datatype='gen_ann', level='country', units='TWh').fillna(0)
+            dfgen_in = dfgendiff_in - dfgen_in
+        dfgen = dfgen_in.reset_index(level=0,drop=True).rename_axis('year',axis=0).rename_axis('tech',axis=1)
+
+        dfcap_nat = get_gen_capacity_all(case=case, datatype='cap', level='country', units='GW').fillna(0)
+        if casediff is not None:
+            dfcapdiff_nat = get_gen_capacity_all(case=casediff, datatype='cap', level='country', units='GW').fillna(0)
+            dfcap_nat = dfcapdiff_nat - dfcap_nat
+        dfcapacity = dfcap_nat.reset_index(level=0,drop=True).rename_axis('year',axis=0).rename_axis('tech',axis=1)
+
+        emit_nat_tech = reeds.io.read_output(case, 'emit_nat_tech', valname='ton')
+        if int(sw.get('GSw_Upstream', 0)):
+            emit_nat_tech = emit_nat_tech.groupby(['e','i','t']).ton.sum()
+        else:
+            emit_nat_tech = (
+                emit_nat_tech
+                .set_index(['etype','e','i','t'])
+                .drop(['precombustion', 'upstream'], level='etype', errors='ignore')
+                .groupby(['e','i','t']).ton.sum()
+            )
+        if casediff is not None:
+            emit_nat_tech_diff = reeds.io.read_output(casediff, 'emit_nat_tech', valname='ton')
+            if int(sw.get('GSw_Upstream', 0)):
+                emit_nat_tech_diff = emit_nat_tech_diff.groupby(['e','i','t']).ton.sum()
+            else:
+                emit_nat_tech_diff = (
+                    emit_nat_tech_diff
+                    .set_index(['etype','e','i','t'])
+                    .drop(['precombustion', 'upstream'], level='etype', errors='ignore')
+                    .groupby(['e','i','t']).ton.sum()
+                )
+            emit_nat_tech = emit_nat_tech_diff - emit_nat_tech
+
+        dfin_trans = reeds.io.read_report(case, 'Transmission (GW-mi)')
+        if casediff is not None:
+            dfin_trans_diff = reeds.io.read_report(casediff, 'Transmission (GW-mi)')
+            dfin_trans = (dfin_trans_diff.set_index(['trtype','year']) - dfin_trans.set_index(['trtype','year'])).reset_index()
+
+        ###### Make the side plots
+        alltechs = set()
+        axbounds = {
+            ## left, bottom, width, height
+            'Trans [TW-mi]': [0.92, 0.62, 0.1, 0.17],
+            'CO2 [MMT]': [0.92, 0.41, 0.1, 0.17],
+            'Cap [GW]': [0.83, 0.2, 0.1, 0.17],
+            'Gen [TWh]': [1.0, 0.2, 0.1, 0.17],
+        }
+        axylim = {
+            'Trans [TW-mi]': (-11,50),
+            'CO2 [MMT]': (-100000,100000),
+            'Cap [GW]': (-250,500),
+            'Gen [TWh]': (-750,700),
+        }
+        eax = {}
+        for a in axbounds:
+            eax[a] = f.add_axes(axbounds[a])
+            eax[a].set_ylabel(a)
+            plots.despine(eax[a])
+            eax[a].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
+            eax[a].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+            eax[a].set_xlim(2020-yearstep/2, 2050+yearstep/2)
+            eax[a].set_ylim(axylim[a])
+        ### Side plot of generation capacity over time
+        dfcapacity = (
+            dfcapacity[[c for c in bokehcolors.index if c in dfcapacity]]
+            .round(3).replace(0,np.nan)
+            .dropna(axis=1, how='all')
+            .drop('Electrolyzer', axis=1, errors='ignore')
+            .loc[2020:]
+        )
+        alltechs.update(dfcapacity.columns)
+        plots.stackbar(
+            df=dfcapacity, ax=eax['Cap [GW]'],
+            colors=bokehcolors, width=yearstep*0.9, net=True,
+            markerfacecolor=(1,1,1,0.8), markersize=2.5)
+
+        ### Side plot of generation over time
+        dfgen = (
+            dfgen[[c for c in bokehcolors.index if c in dfgen]]
+            .round(3).replace(0,np.nan)
+            .dropna(axis=1, how='all')
+            .loc[2020:]
+        )
+        alltechs.update(dfgen.columns)
+        plots.stackbar(
+            df=dfgen, ax=eax['Gen [TWh]'],
+            colors=bokehcolors, width=yearstep*0.9, net=True,
+            markerfacecolor=(1,1,1,0.8), markersize=2.5)
+        eax['Gen [TWh]'].axhline(0, c='k', ls=':', lw=0.75)
+
+        ### Side plot of transmission capacity over time
+        dftrans = dfin_trans.pivot(
+            index='year', columns='trtype', values='Amount (GW-mi)') / 1e3
+        dftrans = (
+            dftrans[[c for c in transcolors.index if c in dftrans]]
+            .round(3).replace(0,np.nan)
+            .dropna(axis=1, how='all')
+            .loc[2020:]
+        )
+        plots.stackbar(
+            df=dftrans, ax=eax['Trans [TW-mi]'],
+            colors=transcolors, width=yearstep*0.9, net=False)
+
+        ### Side plot of emissions over time
+        dfco2 = (
+            emit_nat_tech['CO2']
+            .unstack('i') / 1e3
+        )
+        dfco2.columns = simplify_techs(dfco2.columns)
+        dfco2 = dfco2.T.groupby(level='i').sum().T
+        dfco2 = (
+            dfco2[[c for c in bokehcolors.index if c in dfco2]]
+            .round(3).replace(0,np.nan)
+            .dropna(axis=1, how='all').fillna(0)
+            .loc[2020:]
+        )
+        plots.stackbar(
+            df=dfco2, ax=eax['CO2 [MMT]'],
+            colors=bokehcolors, width=yearstep*0.9, net=True,
+            markerfacecolor=(1,1,1,0.8), markersize=2.5)
+        eax['CO2 [MMT]'].axhline(0, c='k', ls=':', lw=0.75)
+
+        plt.draw()
+        for a in eax:
+            plots.shorten_years(eax[a])
+
+        ### Legend
+        if legend:
+            ### Generation
+            handles = [
+                mpl.patches.Patch(facecolor=bokehcolors[i], edgecolor='none', label=i)
+                for i in bokehcolors.index if i in alltechs
+            ]
+            leg_gen = ax.legend(
+                handles=handles[::-1], loc='lower left', fontsize=6.5, frameon=False,
+                bbox_to_anchor=(1.16,0.332),
+                handletextpad=0.3, handlelength=0.7, columnspacing=0.5,
+            )
+            ## Draw it
+            ax.add_artist(leg_gen)
+            ### Transmission
+            handles = [
+                mpl.patches.Patch(facecolor=transcolors[i], edgecolor='none', label=i)
+                for i in transcolors.index if i in dftrans
+            ]
+            _leg_trans = ax.legend(
+                handles=handles[::-1], loc='upper left', fontsize=6.5, frameon=False,
+                bbox_to_anchor=(1.16,0.92),
+                handletextpad=0.3, handlelength=0.7, columnspacing=0.5,
+            )
+
+    return f, ax, eax, dfmap
 
 def plot_retire_add(
         case, yearstart=2020, width=0.25, peak=True,

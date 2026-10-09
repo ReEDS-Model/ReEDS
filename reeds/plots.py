@@ -1853,7 +1853,7 @@ def stackbar(df, ax, colors, width=1, net=True, align='center', bottom=0, x0=0, 
         poscols = [c for c in row.index if c not in negcols]
         dfneg = row[negcols]
         dfpos = row[poscols]
-        x = index if isinstance(index, (int,float,pd.Timestamp)) else i
+        x = index
         if isinstance(x, pd.Timestamp) and isinstance(x0, (int, float, str)):
             x0 = pd.Timedelta(x0)
         ### Positive
@@ -1864,6 +1864,7 @@ def stackbar(df, ax, colors, width=1, net=True, align='center', bottom=0, x0=0, 
                 bottom=bottom,
                 color=[colors[c] for c in dfpos.index][::-1],
                 width=width, align=align,
+                # zorder=10
             )
         ### Negative
         if len(dfneg):
@@ -1873,6 +1874,7 @@ def stackbar(df, ax, colors, width=1, net=True, align='center', bottom=0, x0=0, 
                 bottom=bottom,
                 color=[colors[c] for c in dfneg.index][::-1],
                 width=width, align=align,
+                # zorder=10
             )
         ### Net
         if net:
@@ -2069,7 +2071,7 @@ def waterfall_span(
 def plot_region_bars(
         dfzones, dfdata, colors, ax=None,
         valscale=3e3, width=5e4, center=False,
-        zeroline=None,
+        zeroline=None,basescen=None,diffscen=None
     ):
     """
     Inputs
@@ -2087,22 +2089,37 @@ def plot_region_bars(
     for r in dfzones.index:
         if r not in dfdata.index:
             continue
+        # print(f'   - {r}',end='')
         ### Get coordinates
         x0, bottom = dfzones.loc[r, ['centroid_x', 'centroid_y']]
         ### Scale it
-        df = dfdata.loc[r].to_frame().T * valscale
-        df.index = [x0]
+        # df = dfdata.loc[r].to_frame().T * valscale
+        df = dfdata.loc[r] * valscale
+        if isinstance(df,pd.Series):
+            df = df.to_frame().T
+        # df.index = [x0]
+        x_axes = [x0] * len(df.index) + width * np.arange(len(df.index))
         if center:
-            bottom -= df.sum().sum()/2
+            x_axes = x_axes - width*(len(x_axes)//2)
+        df.index = x_axes
+        dfpos = df.where(df>0).fillna(0).copy()
+        dfneg = df.where(df<0).fillna(0).copy()
+        # if center:
+        #     bottom -= df.sum().sum()/2
         ### Plot it
         stackbar(
             df=df, ax=ax, colors=colors, width=width, net=False, bottom=bottom,
         )
         if isinstance(zeroline, dict):
             ax.plot(
-                [x0-width/2, x0+width/2], [bottom]*2,
-                **zeroline,
+                [x_axes[0], x_axes[-1]], [bottom]*2,
+                **zeroline, zorder=11
             )
+    # Plot axes
+    if diffscen is not None:
+        ax.set_title(f'{diffscen} diff from {basescen}', fontsize=20)
+    else:
+        ax.set_title(f'{basescen}', fontsize=20)
 
 
 def map_years_months(

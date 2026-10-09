@@ -83,7 +83,7 @@ MAP_BOUNDARY_WIDTH = 0.1
 MAP_LINE_WIDTH = 2
 RANGE_OPACITY_MULT = 0.3
 RANGE_GLYPH_MAP = {'Line': 'Area', 'Dot': 'Bar', 'Dot-Line': 'Area'}
-NCOLS_DEFAULT = 4
+NCOLS_DEFAULT = 5
 
 #List of widgets that use columns as their selectors
 WDG_COL = ['x', 'y', 'x_group', 'series', 'explode', 'explode_group']
