@@ -37,7 +37,7 @@ def submit_job(
     jobname = f'PRAS-{os.path.basename(case)}-{samples}'
     ## Get the SLURM boilerplate
     commands_header, commands_sbatch, commands_other = [], [], []
-    with open(os.path.join(reeds_path,'srun_template.sh'), 'r') as f:
+    with open(os.path.join(reeds_path,'reeds','hpc','srun_template.sh'), 'r') as f:
         for line in f:
             if line.strip().startswith('#!'):
                 commands_header.append(line.strip())
@@ -99,14 +99,11 @@ def main(
     Run prep_data, ReEDS2PRAS, and PRAS as necessary.
     If running PRAS, append the number of samples to the filename.
     """
-    ### Import Augur scripts
     if repo:
         site.addsitedir(reeds_path)
     else:
         site.addsitedir(case)
-    import Augur
     import reeds
-    import ReEDS_Augur.prep_data as prep_data
 
     ### Get the switches, overwriting values as necessary
     sw = reeds.io.get_switches(case)
@@ -134,7 +131,7 @@ def main(
     print(f'Running PRAS for {t}i{iteration}')
 
     ### Check if prep_data.py outputs exist; if not, run it
-    augur_data = os.path.join(case,'ReEDS_Augur','augur_data')
+    reeds_data = os.path.join(case,'handoff','reeds_data')
     files_expected = [
         f'cap_converter_{t}.csv',
         f'energy_cap_{t}.csv',
@@ -144,13 +141,13 @@ def main(
         f'pras_vre_gen_{t}.h5',
     ]
     if (
-        any([not os.path.isfile(os.path.join(augur_data,f)) for f in files_expected])
+        any([not os.path.isfile(os.path.join(reeds_data,f)) for f in files_expected])
         or overwrite
     ):
-        augur_csv, augur_h5 = prep_data.main(t, case)
+        reeds_csv, reeds_h5 = reeds.resource_adequacy.prep_data.main(t, case)
 
     ### Run ReEDS2PRAS
-    Augur.run_pras(
+    reeds.resource_adequacy.ra_calcs.run_pras(
         case,
         t,
         iteration=iteration,
@@ -173,7 +170,7 @@ if __name__ == '__main__':
     import argparse
     description = """Run prep_data, ReEDS2PRAS, and PRAS as necessary.
     Example usage on the HPC:
-    `case=/projects/reedsweto/github/ReEDS-2.0/runs/v20230524_ntpH0_Pacific`
+    `case=/projects/reedsweto/github/ReEDS/runs/v20230524_ntpH0_Pacific`
     `for s in 100 1000; do python postprocessing/run_reeds2pras.py $case -s $s -r; done`
     """
     parser = argparse.ArgumentParser(
@@ -189,7 +186,7 @@ if __name__ == '__main__':
     parser.add_argument('--samples', '-s', type=int, default=0,
                         help='PRAS samples to run')
     parser.add_argument('--repo', '-r', action='store_true',
-                        help=('Import Augur scripts from local repo '
+                        help=('Import RA scripts from local repo '
                               '(instead of from the case being rerun)'))
     parser.add_argument('--local', '-l', action='store_true',
                         help='Run locally (not as SLURM job)')
@@ -207,7 +204,7 @@ if __name__ == '__main__':
                         help="Write hourly unit availability by sample from PRAS")
     parser.add_argument('--switch_mods', '-m', type=json.loads, default=json.dumps({}),
                         help=('Dictionary-formated string of switch arguments for '
-                        'Augur.run_pras(). Use single quotes outside the dictionary and '
+                        'ra_calcs.run_pras(). Use single quotes outside the dictionary and '
                         'double quotes for keys, as in:\n'
                         '`-s \'{"pras_seed":0}\'`'))
 
@@ -229,7 +226,7 @@ if __name__ == '__main__':
     switch_mods = args.switch_mods
 
     # #%% Inputs for testing
-    # case = '/Users/pbrown/github2/ReEDS-2.0/runs/v20230605_ntpM1_Pacific'
+    # case = '/Users/pbrown/github2/ReEDS/runs/v20230605_ntpM1_Pacific'
     # year = 2026
     # iteration = None
     # samples = 0

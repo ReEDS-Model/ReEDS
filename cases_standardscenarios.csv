@@ -44,6 +44,6 @@ GSw_TransHurdleLevel2,Region whose hurdle rate rate2 is applied to (defined in c
 GSw_TransHurdleRate,Turn on / off hurdle rate,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 GSw_TransInvMaxLongTerm,[TW-mile/year] maximum transmission capacity investment per year IN/AFTER firstyear_trans_longterm (constraint is OFF if set to 0 meaning unlimited trans investment; annual max since 2009 is ~3.64),0,,,,,,,,,,,,,,1.07,,,,,,,,,,,,,,,,,,,,,,,,1.07,,,,,,,,,,,,,,,,,,,,,,,,,,1.07,,,,,,,,
 GSw_TransRestrict,hierarchy level within which to allow new transmission lines,country,,,,,,,,,,,,,,transreg,,,,,,,,,,,,,,,,,,,,,,,,transreg,,,,,,,,,,,,,,,,,,,,,,,,,,transreg,,,,,,,,
-GSw_TransScen,"Select Transmission Scenario [default, LCC_all, LCC_SeamsD3_certain, etc]",default,,,,,,,,,,,,,VSC_all,,,,,,,,,,,,,,,,,,,,,,,,VSC_all,,,,,,,,,,,,,,,,,,,,,,,,,,VSC_all,,,,,,,,,
+GSw_TransScen,"Select Transmission Scenario [default, LCC_all, LCC_SeamsD3_certain, etc]",default,,,,,,,,,,,,,NTP_MT,,,,,,,,,,,,,,,,,,,,,,,,NTP_MT,,,,,,,,,,,,,,,,,,,,,,,,,,NTP_MT,,,,,,,,,
 GSw_UpgradeCost_Mult,CCS upgrade cost scenario: 0=mid 1=adv 2=con,0,,,,,,,,,,,2,1,,,,,,,,,,,,,,,,,,,,,,,2,1,,,,,,,,,,,,,,,,,,,,,,,,,2,1,,,,,,,,,,
 GSw_Upgrades,Turn on/off upgrades,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0

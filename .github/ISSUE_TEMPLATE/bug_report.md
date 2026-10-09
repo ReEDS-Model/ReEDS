@@ -1,5 +1,3 @@
-
-
 ---
 name: Bug / Tech Debt
 about: Report a bug, or track a TODO, cleanup task, deferred maintenance item, or nice-to-have improvement

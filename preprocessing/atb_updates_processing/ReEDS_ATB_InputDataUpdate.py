@@ -5,11 +5,11 @@
 """
 How to use this script.
 
-1. Copy the latest ATB csv (flattened version)- currently located here //nrelnas01/reeds/ReEDS_ATB_InputDataUpdate into your folder ~/ReEDS-2.0/input_processing/atb_updates_processing/input_files
+1. Copy the latest ATB csv (flattened version)- currently located here //nrelnas01/reeds/ReEDS_ATB_InputDataUpdate into your folder ~/ReEDS/input_processing/atb_updates_processing/input_files
 
-2. Copy the latest 20YY_CSP_occ_vs_tes_duration_formatted csv (flattened version) currently located here //nrelnas01/reeds/ReEDS_ATB_InputDataUpdate into your folder ~/ReEDS-2.0/input_processing/atb_updates_processing/input_files
+2. Copy the latest 20YY_CSP_occ_vs_tes_duration_formatted csv (flattened version) currently located here //nrelnas01/reeds/ReEDS_ATB_InputDataUpdate into your folder ~/ReEDS/input_processing/atb_updates_processing/input_files
 
-3. Copy the historic data csvs (previous year) from ~ReEDS-2.0/inputs/plant_characteristics into the ~/ReEDS-2.0/input_processing/atb_updates_processing/input_files
+3. Copy the historic data csvs (previous year) from ~ReEDS/inputs/plant_characteristics into the ~/ReEDS/input_processing/atb_updates_processing/input_files
     For example if this is ATB 2022 updates to ReEDS the previous year historic data would the 2021 historic data csvs, and the necessary files would be (year will change!)
     1. battery_ATB_2021_moderate.csv
     2. conv_ATB_2021.csv
@@ -29,9 +29,9 @@ How to use this script.
    uncomment the final `#run_updates()` call in the script and then run the entire script.  
    If it is successful, you will get a successful completion message as an output. 
 
-7. Copy the formatted ReEDS input csvs to the *~/ReEDS-2.0/inputs/plant_characteristics* folder.  
+7. Copy the formatted ReEDS input csvs to the *~/ReEDS/inputs/plant_characteristics* folder.  
 
-8. Add appropriate formatted ReEDS input csv file names to the *~/ReEDS-2.0/inputs/plant_characteristics/dollaryear.csv* file.  
+8. Add appropriate formatted ReEDS input csv file names to the *~/ReEDS/inputs/plant_characteristics/dollaryear.csv* file.  
 """
 
 import pandas as pd
@@ -945,7 +945,7 @@ def run_updates():
         None
     """
 
-    successful_completion_message = "ReEDS ATB Input Updates complete! \n Be sure to 1) copy the formatted csvs to the ~/ReEDS-2.0/inputs/plant_characteristics folder, \n and 2) Add appropriate formatted ReEDS input csv file names to the ~/ReEDS-2.0/inputs/plant_characteristics/dollaryear.csv file."
+    successful_completion_message = "ReEDS ATB Input Updates complete! \n Be sure to 1) copy the formatted csvs to the ~/ReEDS/inputs/plant_characteristics folder, \n and 2) Add appropriate formatted ReEDS input csv file names to the ~/ReEDS/inputs/plant_characteristics/dollaryear.csv file."
 
     #run necessary setup and retrieve variables needed for for updates
     input_dir, output_dir, df_atb, atb_year, atb_first_year, atb_last_year, dollar_yr_conv, crpyears, case, atb_filters, atb_scenarios = updates_setup()

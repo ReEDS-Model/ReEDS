@@ -1,0 +1,58 @@
+# Rules for validating MCS distribution specifications.
+# Each top-level key is a valid distribution name.
+# These rules are loaded by general_mcs_dist_validation() in mcs_sampler.py
+# and checked against every distribution group in the user's mcs_distributions_*.yaml file.
+#
+# Fields:
+#   required_keys:
+#     List of keys that must be present in the distribution group entry
+#     (e.g. ['name', 'assignments_list', 'dist', 'dist_params', 'weight_r']).
+#
+#   multiplicative:
+#     true  — distribution applies a scalar multiplier to a single reference value.
+#     false — distribution blends across multiple reference files/values.
+#
+#   num_assignments:
+#     Fixed int — groups with this distribution must have exactly this many swith assignments;
+#                 for multiplicative this defines the number of required dist_params.
+#     "match_dist_params" — the number of assignments per switch must equal len(dist_params).
+#
+#   sampling_methods:
+#     List of compatible sampling methods (e.g. ['random', 'lhs']).
+#     Validated against the MCS_lhs switch setting.
+
+dirichlet:
+  required_keys: ['name', 'assignments_list', 'dist', 'dist_params', 'weight_r']
+  multiplicative: false
+  num_assignments: "match_dist_params"
+  sampling_methods: ['random']
+
+discrete:
+  required_keys: ['name', 'assignments_list', 'dist', 'dist_params', 'weight_r']
+  multiplicative: false
+  num_assignments: "match_dist_params"
+  sampling_methods: ['random', 'lhs']
+
+uniform:
+  required_keys: ['name', 'assignments_list', 'dist', 'weight_r']
+  multiplicative: false
+  num_assignments: 2
+  sampling_methods: ['lhs']
+
+triangular:
+  required_keys: ['name', 'assignments_list', 'dist', 'weight_r']
+  multiplicative: false
+  num_assignments: 3
+  sampling_methods: ['lhs']
+
+uniform_multiplier:
+  required_keys: ['name', 'assignments_list', 'dist', 'dist_params', 'weight_r']
+  multiplicative: true
+  num_assignments: 2
+  sampling_methods: ['random', 'lhs']
+
+triangular_multiplier:
+  required_keys: ['name', 'assignments_list', 'dist', 'dist_params', 'weight_r']
+  multiplicative: true
+  num_assignments: 3
+  sampling_methods: ['random', 'lhs']

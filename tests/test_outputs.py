@@ -6,30 +6,30 @@ import reeds
 
 def test_output_files(casepath):
     outputs_folder = os.path.join(casepath, 'outputs')
-    e_report_params_path = os.path.join(casepath, 'e_report_params.csv')
+    report_params_path = os.path.join(casepath, 'reeds', 'core', 'terminus', 'report_params.csv')
     lastyear = reeds.io.get_years(casepath)[-1]
 
-    # each parameter in e_report_params.csv should be associated with an output csv file
-    e_report_params = pd.read_csv(e_report_params_path, comment='#')
-    e_report_params['fpath'] = e_report_params.param.map(lambda x: x.split('(')[0])
+    # each parameter in report_params.csv should be associated with an output csv file
+    report_params = pd.read_csv(report_params_path, comment='#')
+    report_params['fpath'] = report_params.param.map(lambda x: x.split('(')[0])
     # rename outputs as specified by output_rename column
-    rename = e_report_params.loc[
-        ~e_report_params.output_rename.isnull()
+    rename = report_params.loc[
+        ~report_params.output_rename.isnull()
     ].set_index('fpath').output_rename.to_dict()
-    e_report_params['fpath'] = e_report_params['fpath'].replace(rename) + '.csv'
+    report_params['fpath'] = report_params['fpath'].replace(rename) + '.csv'
 
     # Include additional files in outputs folder that should be generated for each run
     expected_plots = [
         # Static plots (single_case_plots.py)
         os.path.join('figures', i) + '.png' for i in [
             'bars_retirements_additions',
-            'inputs_repdays',
+            'inputs_cfmap-upv',
             f'plot_dispatch-weightwidth-{lastyear}',
         ]
     ]
 
     expected_files = (
-        e_report_params.fpath.tolist()
+        report_params.fpath.tolist()
         + [
             # Standard bokeh outputs (postprocessing/bokehpivot)
             os.path.join('reeds-report', 'report.html'),

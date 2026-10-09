@@ -4,7 +4,7 @@
 ### Shared settings are applied to all cases.
 ### Any settings not specified use the defaults from cases.csv.
 shared:
-  yearset: 2010_2015_2020_2025_2030_2035_2040_2045_2050
+  yearset: 2010..2050..5
 
 ##################
 ### Dimensions ###

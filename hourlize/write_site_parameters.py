@@ -8,6 +8,23 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
 
+def check_negative_values(df, cost_cols):
+    neg_vals_all = {}
+    for cc in cost_cols.values():
+        if cc in df.columns:    
+            neg_vals = sum(df[cc] < 0)
+            if neg_vals:
+                neg_vals_all[cc] = neg_vals
+
+    if neg_vals_all:
+        message = "\n".join(
+            f"{cc} -> {count}" for cc, count in neg_vals_all.items()
+        )
+        raise ValueError(
+            f"The following cost columns have negative values:\n{message}\n"
+            "Check reV data to confirm these."
+        ) 
+
 #%%### Fixed inputs
 if reeds.io.hpc:
     remotepath = '/kfs2/shared-projects/reeds'
@@ -24,10 +41,6 @@ if reeds.io.hpc:
         'offshore_radial': os.path.join(
             '/projects', 'rev', 'projects', 'weto', 'fy25', 'standard_scenarios', 'osw',
             'rev', 'aggregation', 'open', 'open_supply-curve_post_proc.csv',
-        ),
-        'esri_102008': os.path.join(
-            '/projects', 'rev', 'data', 'layers', 'north_america', 'conus', 'vectors',
-            'rev_grids', 'rev_grid_conus_template_128.csv'
         ),
         'interzonal': os.path.join(
             '/projects', 'rev', 'data', 'transmission', 'north_america', 'conus', 'fy25',
@@ -70,71 +83,7 @@ dfcounties = reeds.io.get_countymap().to_crs(crs)[['FIPS','STATE','geometry']]
 inflatable = reeds.io.get_inflatable()
 
 
-#%%### Procedure 1: Create sitemap.h5 from full raster and supply-curve sites ######
-#%% Get the full raster from Gabe Zuckerman 20250819
-dfraster = pd.read_csv(
-    filepaths['esri_102008'],
-    comment='#',
-    index_col='sc_point_gid',
-).drop(columns=['Unnamed: 0'], errors='ignore')
-
-## Geohydro has some weird off-grid sites so leave them out
-techs = ['upv', 'wind-ons', 'egs']
-#%% Get all sc_point_gid's included in all supply curves
-rev_paths = pd.read_csv(
-    os.path.join(reeds.io.reeds_path, 'inputs', 'supply_curve', 'rev_paths.csv')
-)
-rev_paths = rev_paths.loc[rev_paths.tech.isin(techs)].copy()
-dictin_sc = {}
-for i, row in tqdm(rev_paths.iterrows(), total=len(rev_paths)):
-    dictin_sc[row.tech, row.access_case] = pd.read_csv(
-        os.path.join(
-            remotepath,
-            'Supply_Curve_Data',
-            row.sc_path,
-            'reV',
-            row.original_sc_file,
-        ),
-        usecols=['sc_point_gid','latitude','longitude']
-    )
-sites = sorted(pd.concat(dictin_sc).sc_point_gid.unique())
-#%% Keep those points from the raster and match them to the nearest county
-sitemap = (
-    reeds.plots.df2gdf(dfraster.loc[sites], crs=crs)
-    .sjoin_nearest(dfcounties, how='left')
-    .drop(columns=['index_right', 'geometry', 'STATE'], errors='ignore')
-)
-## Make sure it worked
-if len(sitemap) != len(sites):
-    err = f"Mismatched lengths after county match: {len(sites)} before, {len(sitemap)} after"
-    raise IndexError(err)
-#%% Write it
-dfwrite = sitemap.astype({'latitude':np.float32, 'longitude':np.float32}).copy()
-## Make sure no missing values
-assert (dfwrite.isnull().sum() == 0).all()
-## Make sure int32 is ok for the index
-assert dfwrite.index.max() <= 2**31-1
-dfwrite.index = dfwrite.index.astype(np.int32)
-outpath = os.path.join(reeds.io.reeds_path, 'inputs', 'supply_curve', 'sitemap.h5')
-if os.path.exists(outpath):
-    os.remove(outpath)
-reeds.io.write_to_h5(
-    dfwrite.reset_index(),
-    'data',
-    outpath,
-    attrs={'index':'sc_point_gid', 'crs':crs_old},
-)
-#%% Make sure it worked
-assert (dfwrite == reeds.io.read_h5_groups(outpath)).all().all()
-#%% Take a look
-dfplot = reeds.plots.df2gdf(dfwrite, crs=crs_old)
-dfplot.plot(figsize=(14,11), lw=0, marker='s', markersize=1.5)
-m = dfplot.explore(color='red')
-m.save(os.path.expanduser('~/Desktop/sitemap.html'))
-
-
-
-#%%### Procedure 2: Format interconnection costs into .h5 files used in ReEDS ######
+#%%### Procedure: Format interconnection costs into .h5 files used in ReEDS ######
 #%% Get data
 dictin = {
     key: pd.read_csv(filepaths[key], index_col='sc_point_gid')
@@ -184,7 +133,22 @@ outcols = {
 _diff = len(outcols) - dfland.shape[1]
 assert _diff == 0, len(_diff)
 
+# drop ac suffix for cost columns
+cost_cols = {
+    'cost_spur_usd_per_mw_ac': 'cost_spur_usd_per_mw',
+    'cost_poi_usd_per_mw_ac': 'cost_poi_usd_per_mw',
+    'cost_reinforcement_usd_per_mw_ac': 'cost_reinforcement_usd_per_mw',
+    'cost_total_trans_usd_per_mw_ac': 'cost_total_trans_usd_per_mw',
+    'cost_export_usd_per_mw_ac': 'cost_export_usd_per_mw'
+}
+dfland = dfland.rename(columns=cost_cols)
+
+# subset to outcols 
 dfland = dfland[list(outcols.keys())].astype(outcols)
+
+# check for negative values
+check_negative_values(dfland, cost_cols)
+
 
 #%% Write it
 drop = ['trans_gid', 'trans_type']
@@ -256,6 +220,14 @@ columns_different = [
 columns_meshed = {'Zone_ReEDS':'ba'}
 
 #%% Make combined dataframe
+for offshoretype in ['radial', 'meshed']:
+    cost_cols_sub = {
+        k: v for k, v in cost_cols.items()
+        if v not in dictin[f'offshore_{offshoretype}'].columns
+    }
+    dictin[f'offshore_{offshoretype}'] = dictin[f'offshore_{offshoretype}'].rename(columns=cost_cols_sub)
+    check_negative_values(dictin[f'offshore_{offshoretype}'], cost_cols)
+
 dfwrite = dictin['offshore_radial'][columns_same].copy()
 for col in columns_different:
     for offshoretype in ['radial', 'meshed']:

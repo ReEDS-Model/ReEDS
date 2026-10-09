@@ -289,7 +289,7 @@ cfwind = pd.read_csv(
 timeindex = pd.concat([
     pd.Series(
         index=pd.date_range(
-            f'{y}-01-01 00:00', f'{y+1}-01-01 00:00', freq='H', inclusive='left')[:8760],
+            f'{y}-01-01 00:00', f'{y+1}-01-01 00:00', freq='h', inclusive='left')[:8760],
         dtype=float)
     for y in range(2007,2014)
 ]).index
@@ -304,9 +304,7 @@ sitemap = pd.read_csv(
 sitemap['profile'] = sitemap.i.map(lambda x: x.split('_')[1]) + '|' + sitemap.r
 sitemap['tech'] = sitemap.i.map(lambda x: x.split('_')[0])
 ### Get list of valid regions and subset to those regions
-val_r = pd.read_csv(
-    os.path.join(inp['case'],'inputs_case','val_r.csv')
-).columns.values
+val_r = reeds.io.read_input(inp['case'], 'r').squeeze(1).values
 sitemap = sitemap.loc[sitemap.r.isin(val_r)].copy()
 ### Make lookup and a single-level column version to write out
 profilemap = sitemap.pivot(columns='tech',index='x',values=['profile','i','r']).dropna()

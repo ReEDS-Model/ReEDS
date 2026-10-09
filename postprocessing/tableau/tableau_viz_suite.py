@@ -2,43 +2,29 @@
 import os
 import sys
 import pandas as pd
-import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib import patheffects as pe
 import geopandas as gpd
-from glob import glob
-import traceback
-import gdxpds
-import cmocean
 from tqdm import tqdm
 import time
 import datetime
 from lxml import etree as ET
 import shutil
+from pathlib import Path
 pd.options.display.max_rows = 20
 pd.options.display.max_columns = 200
 
 import warnings
 warnings.filterwarnings("ignore")
-## trying to get rid of the Fiona messages whenever I read in the .gpkg file
-import logging
-# Set the logging level for Fiona to WARNING or ERROR
-logging.getLogger("fiona").setLevel(logging.WARNING)
-logging.disable(logging.CRITICAL)
 
 ### Local imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import reeds
 from reeds import plots
 plots.plotparams()
-from reeds import reedsplots
 
-## read in bokeh functionality
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..','postprocessing/bokehpivot')))
-import reeds2
 
 #%%### GENERAL FUNCTIONS
+def is_county_resolution(case):
+    return len(reeds.io.get_county_zones(case)) == len(reeds.io.get_hierarchy(case))
 
 # produce Scenarios.csv
 def create_scenarios_csv(output_dir,cases):
@@ -77,7 +63,7 @@ def create_scenarios_csv(output_dir,cases):
             # Assign a Load Profile
             try:
                 df.loc[df['machine_readable_scenario_name'] == scenario, 'Demand'] = sw.GSw_LoadProfiles
-            except:
+            except Exception:
                 df.loc[df['machine_readable_scenario_name'] == scenario, 'Demand'] = sw.GSw_EFS1_AllYearLoad
             
             # Assign a Policy
@@ -107,7 +93,6 @@ def create_scenarios_csv(output_dir,cases):
 def produce_hierarchy_file(output_dir,basecase):
     
     hierarchy = reeds.io.get_hierarchy(cases[basecase])
-    sw = reeds.io.get_switches(cases[basecase])
 
     # hierarchy.csv has machine readable names - convert them to values from level_map
     for col in hierarchy.columns:
@@ -116,29 +101,23 @@ def produce_hierarchy_file(output_dir,basecase):
 
     # clean up region names, ex. turn 'NorthernGrid_West' to 'NorthernGrid West', replace all instances of '_' with ' ' in the entire dataframe
     hierarchy = hierarchy.replace('_',' ',regex=True)
+    hierarchy = hierarchy.reset_index(names=['Region'])
 
-    if sw.GSw_RegionResolution == "county" or sw.GSw_RegionResolution == "mixed":
-        # county2zone has the county FIPS to ReEDS BA mapping
-        county2zone = pd.read_csv(os.path.join(reeds_path, 'inputs', 'county2zone.csv'), dtype={'FIPS':str},)
-        county2zone['Region'] = 'p' + county2zone.FIPS
-        # Add BA info to hierarchy
-        hierarchy = hierarchy.merge(county2zone.drop(columns=['state']), left_on='r', right_on='Region')
-        # move the FIPS column to be the first column in the df
-        hierarchy = hierarchy[['Region'] + [col for col in hierarchy.columns if col != 'Region']]
-        # export
-        hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
-    elif sw.GSw_RegionResolution == 'aggreg' or sw.GSw_RegionResolution == 'ba':
-        # add columns to match the county-level hierarchy.csv format
-        hierarchy = hierarchy.reset_index()
-        hierarchy['ba'] = hierarchy['r']
-        hierarchy = hierarchy.rename(columns={'r':'Region'})
+    if is_county_resolution(cases[basecase]):
+        county2zone_z134 = (
+            reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
+            .drop(columns=['state'])
+            .rename(columns={'r': 'ba'})
+        )
+        county2zone_z134['Region'] = 'p' + county2zone_z134['FIPS']
+        hierarchy = hierarchy.merge(county2zone_z134, on='Region')
+    else:
+        hierarchy['ba'] = hierarchy['Region']
         hierarchy['FIPS'] = '' # add a blank FIPS column so that the hierarchy.csv has the same columns as when using county-level runs
         hierarchy['county_name'] = '' # add a blank county_name column so that the hierarchy.csv has the same columns as when using county-level runs
-        # then hierarchy.csv is already ready to export 
-        hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
-    else:
-        print('All levels must be either county or ba now, all aggregation will be done via a hierarchy mapping.')
-        pass
+
+    # then hierarchy.csv is already ready to export
+    hierarchy.to_csv(os.path.join(output_dir,'shapefiles','hierarchy.csv'),index=False)
     
     return
 
@@ -148,17 +127,14 @@ def produce_shapefiles():
     try:
         for x in ['US_PCA']:
             os.mkdir(os.path.join(output_dir,'shapefiles',x))
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles',x,f'{x}.shp')
             # read in the source file and check its columns
-            x_cols = gpd.read_file(src_file).columns.tolist()
-
             dst_file  = os.path.join(output_dir,'shapefiles',x,f'{x}.shp')
             # Read the shapefile
-            gdf = reeds.io.get_zonemap(cases[basecase])
+            gdf = reeds.io.get_zonemap(GSw_ZoneSet='z134')
             # rename for join in Tableau
             # Column names we need: ['OBJECTID_1', 'rb', 'st', 'rto', 'interconne', 'country', 'custreg', 'geometry']
             # ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg',  'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
-            gdf = gdf.reset_index()[['index', 'geometry', 'st', 'interconnect', 'country']].rename(columns={'index':'rb', 'interconnect':'interconne'})
+            gdf = gdf.reset_index()[['r', 'geometry', 'st', 'interconnect', 'country']].rename(columns={'r':'rb', 'interconnect':'interconne'})
             
             # fill in blank columns needed for Tableau join if they are not in the gdf but are in US_PCA shapefile``
             for x in ['OBJECTID_1','custreg','rto']:
@@ -175,51 +151,52 @@ def produce_transmission_endpoints():
     os.mkdir(os.path.join(output_dir,'shapefiles','transmission_endpoints'))
     
     try:
-        if dictin_sw[basecase].GSw_RegionResolution == "county" or dictin_sw[basecase].GSw_RegionResolution == "mixed":
-            
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles','US_COUNTY_2022','US_COUNTY_2022.shp')
-            dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
+        dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
 
-            # Read the shapefile
-            gdf = gpd.read_file(src_file)
-
-            # Compute centroids
-            gdf['geometry'] = gdf.geometry.centroid
-
-            # add 'BA' column to this shapefile, needed for the Tableau join
-            # county2zone has the county FIPS to ReEDS BA mapping, must be the mapping from the ReEDS repo not inputs_case (which does not have all regions if not running nationally)
-            county2zone = pd.read_csv(os.path.join(reeds_path,'inputs','county2zone.csv'), dtype={'FIPS':str},index_col='FIPS').squeeze(1)
-
-            gdf['BA'] = gdf['FIPS'].map(lambda x: county2zone['ba'][x])
-
-            # rename for join in Tableau
-            gdf = gdf.rename(columns={'rb':'Region'})
-
-            # Export to shapefile
-            gdf.to_file(dst_file)
+        if is_county_resolution(cases[basecase]):
+            # Get z3109 (all CONUS counties) zone map and
+            # select transmission endpoints ('x' and 'y' columns)
+            gdf = reeds.io.get_zonemap(GSw_ZoneSet='z3109')
+            gdf['geometry'] = gpd.points_from_xy(gdf['x'], gdf['y'])
+            gdf = (
+                gdf.reset_index()
+                .rename(columns={'r': 'Region'})
+                [['Region', 'geometry']]
+            )
+            # Get county map (for county attributes) and merge with zonemap
+            countymap = (
+                reeds.io.get_countymap()
+                .reset_index()
+                .rename(columns={'rb': 'Region'})
+                [['Region', 'FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP']]
+                .assign(COUNTRY='USA')
+            )
+            gdf = gdf.merge(countymap, on='Region')
+            # Map counties to legacy zones (z134 zoneset)
+            county2zone_z134 = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=True)
+            gdf['BA'] = gdf['FIPS'].map(county2zone_z134)
         else:
-            src_file  = os.path.join(reeds_path,'inputs','shapefiles','transmission_endpoints','transmission_endpoints.shp')
-            dst_file  = os.path.join(output_dir,'shapefiles','transmission_endpoints','transmission_endpoints.shp')
-
-            gdf = reeds.io.get_zonemap(cases[basecase]).reset_index().rename(columns={'index':'Region',
-                                                                                    'country':'COUNTRY',
-                                                                                    'st':'STATE',})
+            # Get z134 (legacy ReEDS BAs) zone map
+            gdf = (
+                reeds.io.get_zonemap(GSw_ZoneSet='z134')
+                .reset_index()
+                .rename(columns={'r':'Region', 'country':'COUNTRY','st':'STATE',})
+            )
             # columns we have: ['geometry', 'node_longitude', 'node_latitude', 'x', 'y', 'offshore', 'centroid_x', 'centroid_y', 'km2', 'aggreg', 'nercr', 'transreg', 'transgrp', 'cendiv', 'st', 'interconnect', 'country', 'usda_region', 'h2ptcreg', 'hurdlereg'],
             # columns we need: ['Region', 'FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY', 'BA', 'geometry']
             gdf['geometry'] = gpd.points_from_xy(gdf['x'], gdf['y'])
             gdf['BA'] = gdf['Region']
-
             # only keep columns needed for Tableau join
             keep_cols = ['Region','STATE','COUNTRY','BA','geometry']
             gdf = gdf[keep_cols]
 
-            # add blank columns (ideally these would be populated correctly or removed but they are not used in the merge)
-            for col in ['FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY']:
-                # if that column is not in the gdf, add it as a blank column
-                if col not in gdf.columns:
-                    gdf[col] = ''
+        # add blank columns (ideally these would be populated correctly or removed but they are not used in the merge)
+        for col in ['FIPS', 'NAME', 'NAMELSAD', 'COUNTYFP', 'STATE', 'STCODE', 'STATEFP', 'COUNTRY']:
+            # if that column is not in the gdf, add it as a blank column
+            if col not in gdf.columns:
+                gdf[col] = ''
 
-            gdf.to_file(dst_file)
+        gdf.to_file(dst_file)
     except Exception as error:
         print(error)
 
@@ -251,7 +228,7 @@ def add_custom_palette(file_path, palette_name, color_list, overwrite):
     Adds a custom color palette to a Tableau Preferences.tps file.
     """
     # If the Prefences.tps file has not already been created, create a new one with a basic structure
-    file_path = os.path.join(output_dir, f'Preferences.tps')
+    file_path = os.path.join(output_dir, 'Preferences.tps')
     if not os.path.exists(file_path):
         root = ET.Element('workbook')
         tree = ET.ElementTree(root)
@@ -315,26 +292,17 @@ def reformat(df,case,metric,years):
                 df['Transmission Planning Subregion End'] = df['Transmission Planning Subregion End'].str.replace("_"," ") # turn NorthernGrid_West to 'NorthernGrid West'
                 df['Transmission Planning Subregion Begin'] = df['Transmission Planning Subregion Begin'].str.replace("_"," ")
 
-        if sw.GSw_RegionResolution == "county":
-            # the 'r' column already has the 'p41003' format
-            df = df.rename(columns={'r':'County'})
-            # add a column with the FIPS code (remove the 'p' prefix and turn the value into a integer from the CountyName column)
-            df['FIPS'] = df['County'].str.replace('p','').astype(int)
-
-            # now need to aggregate up to BA level, county2zone has the county FIPS to ReEDS BA mapping
-            county2zone = pd.read_csv(os.path.join(cases[case], 'inputs_case', 'county2zone.csv'), dtype={'FIPS':int},index_col='FIPS').squeeze(1)
-
-            # aggregate up to BA level using the hierarchy mapping
-            df['BA'] = df['FIPS'].map(lambda x: county2zone['ba'][x])
-            del df['FIPS']
-        elif sw.GSw_RegionResolution == 'aggreg' or sw.GSw_RegionResolution == 'ba':
+        if is_county_resolution(cases[case]):
+            df = df.rename(columns={'r': 'County'})
+            county2zone_z134 = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=True)
+            county2zone_z134.index = 'p' + county2zone_z134.index
+            df['BA'] = df['County'].map(county2zone_z134)
+        else:
             # the 'r' column already has the 'p4' BA format
             df = df.rename(columns={'r':'BA'})
             # make the county column blank as it will not be used when we are using BA-level runs
+            # (required due to legacy downstream handling of counties)
             df['County']=''
-        else:
-            print('All levels must be either county or ba now, all aggregation will be done via a hierarchy mapping.')
-            pass
 
         # add a column named 'Metric' which helps in the Tableau union
         df.loc[:,'Metric'] = metric
@@ -437,7 +405,7 @@ def calc_peakload(
     ).rename(columns=int)
 
     dictout = {}
-    level_map = reeds.output_calc.get_level_map(case)
+    level_map = reeds.results.get_level_map()
     for level in levels:
         df_level = df.loc[level,years].stack().rename_axis(['r','t']).rename('Value').reset_index().astype({'t':int}).set_index(['r','t']).squeeze().reset_index()
         df_level['Spatial Resolution'] = level_map[level]
@@ -446,7 +414,7 @@ def calc_peakload(
     df = pd.concat(dictout.values(), axis=0, ignore_index=True) 
 
     # # convert MW to GW for national data
-    df = reeds2.scale_column(df,**{'scale_factor': 1e-3, 'column':'Value'})
+    df = reeds.results.scale_column(df,**{'scale_factor': 1e-3, 'column':'Value'})
 
     return df
 
@@ -497,7 +465,7 @@ def calc_transmission_map(case,level='transgrp'):
     trans_total_new = pd.concat([trans_total_new, tran_new], axis=0)
 
     # convert MW to GW
-    trans_total_new = reeds2.scale_column(trans_total_new,**{'scale_factor': 1e-3, 'column':'Value'})   
+    trans_total_new = reeds.results.scale_column(trans_total_new,**{'scale_factor': 1e-3, 'column':'Value'})   
 
     return trans_total_new
     
@@ -511,7 +479,7 @@ def export(dictin,output_dir):
         try:
             df = pd.concat(dictin_data.values(), axis=0, ignore_index=True)
             df.to_csv(os.path.join(output_dir,'data',f'{metric}.csv'),index=False)
-        except Exception as error:
+        except Exception:
             print(f'{metric} is empty, not printing this to csv.')
             # create a blank df to export so that the csv still gets created and Tableau does not break when trying to read in the data
             df_blank = pd.DataFrame(columns=['Metric','Scenario','County','BA','Year','Value'])
@@ -530,10 +498,10 @@ if __name__ == '__main__':
         description='Create the necessary csv files for Tableau to ingest and visualize from ReEDS outputs')
     parser.add_argument(
         '--reeds_path', default=os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')), 
-        help='ReEDS-2.0 directory')
+        help='ReEDS directory')
     parser.add_argument(
         '--tableau_path', default=os.path.expanduser('~\Documents\My Tableau Repository'), 
-        help='ReEDS-2.0 directory')    
+        help='ReEDS directory')    
     parser.add_argument(
         'caselist', type=str, nargs='+',
         help=('space-delimited list of cases to plot, OR shared casename prefix, '
@@ -551,7 +519,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--levels', 
         nargs="+",     # '+' means one or more arguments
-        default=['r'], # this can be 'ba','county','aggreg', depending on the run
+        default=['r'],
         help="Spatial resolution for results")
     parser.add_argument(
         '--trans_level', type=str, default='transgrp',
@@ -581,9 +549,9 @@ if __name__ == '__main__':
 
     #%%### Inputs for debugging
     # reeds_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-    # caselist = r'C:\Users\ahamilto\Documents\GitHub\ReEDS-2.0\postprocessing\example.csv'
+    # caselist = r'C:\Users\ahamilto\Documents\GitHub\ReEDS\postprocessing\example.csv'
     # years = list(range(2025-2050))
-    # python tableau_viz_suite.py C:\Users\ahamilto\Documents\GitHub\ReEDS-2.0\postprocessing\example.csv --reeds_path C:\Users\ahamilto\Documents\GitHub\ReEDS-2.0
+    # python tableau_viz_suite.py C:\Users\ahamilto\Documents\GitHub\ReEDS\postprocessing\example.csv --reeds_path C:\Users\ahamilto\Documents\GitHub\ReEDS
     
     #%%###os globals
     this_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -599,7 +567,7 @@ if __name__ == '__main__':
     os.mkdir(os.path.join(output_dir,'shapefiles'))
 
     # copy this script, the inputs cases .csv file (if applicable) to the output directory
-    shutil.copy2(os.path.join(this_dir_path, f'tableau_viz_suite.py'), os.path.join(output_dir))
+    shutil.copy2(os.path.join(this_dir_path, 'tableau_viz_suite.py'), os.path.join(output_dir))
     shutil.copy2(caselist[0], os.path.join(output_dir))
 
     #%%### formatting
@@ -622,7 +590,7 @@ if __name__ == '__main__':
     create_scenarios_csv(output_dir,cases)
 
     # Grab clean display names for the levels
-    level_map = reeds.output_calc.get_level_map(cases[basecase])
+    level_map = reeds.results.get_level_map()
 
     # import some key inputs from ReEDS
     dictin_sw = {case: reeds.io.get_switches(cases[case]) for case in cases}
@@ -650,7 +618,7 @@ if __name__ == '__main__':
     dictin_cap = {}
     metric = 'Capacity (GW)'
     for case in tqdm(cases, desc=metric):
-        dictin_cap[case] = reeds.output_calc.calc_cap(cases[case])
+        dictin_cap[case] = reeds.results.calc_cap(cases[case])
         dictin_cap[case] = reformat(dictin_cap[case],case,metric,years[case])
     dictin_cap = set_zero_values(dictin_cap)
     dictin[metric] = dictin_cap
@@ -659,7 +627,7 @@ if __name__ == '__main__':
     dictin_gen = {}
     metric = 'Generation (TWh)'
     for case in tqdm(cases, desc=metric):
-        dictin_gen[case] = reeds.output_calc.calc_gen(cases[case])
+        dictin_gen[case] = reeds.results.calc_gen(cases[case])
         dictin_gen[case] = reformat(dictin_gen[case],case,metric,years[case])
     dictin_gen = set_zero_values(dictin_gen)
     dictin[metric] = dictin_gen
@@ -668,7 +636,7 @@ if __name__ == '__main__':
     dictin_emissions = {}
     metric = 'Emissions (million metric tonnes)'
     for case in tqdm(cases, desc=metric):
-        dictin_emissions[case] = reeds.output_calc.calc_emissions(cases[case])
+        dictin_emissions[case] = reeds.results.calc_emissions(cases[case])
         dictin_emissions[case] = dictin_emissions[case].loc[dictin_emissions[case]['e'] != 'H2'] # remove hydrogen emissions from the dataframe
         dictin_emissions[case] = reformat(dictin_emissions[case],case,metric,years[case])
     dictin[metric] = dictin_emissions
@@ -685,7 +653,7 @@ if __name__ == '__main__':
     dictin_annualload = {}
     metric = 'Annual End-Use Electricity Demand (TWh)'
     for case in tqdm(cases, desc=metric):
-        dictin_annualload[case] = reeds.output_calc.calc_annualload(cases[case],dictin_scalars[case]) 
+        dictin_annualload[case] = reeds.results.calc_annualload(cases[case],dictin_scalars[case]) 
         dictin_annualload[case] = reformat(dictin_annualload[case],case,metric,years[case])
     dictin[metric] = dictin_annualload
 
@@ -693,7 +661,7 @@ if __name__ == '__main__':
     dictin_systemcost = {}
     metric = 'System Cost (billion $)'
     for case in tqdm(cases, desc=metric):
-        dictin_systemcost[case] = reeds.output_calc.calc_systemcost(cases[case],group_r=False,drop_zeros=False).rename(columns={'year':'t','Discounted Cost (Bil $)':'Value'})
+        dictin_systemcost[case] = reeds.results.calc_systemcost(cases[case],group_r=False,drop_zeros=False).rename(columns={'year':'t','Discounted Cost (Bil $)':'Value'})
         del dictin_systemcost[case]['Cost (Bil $)']
         dictin_systemcost[case].cost_cat = dictin_systemcost[case].cost_cat.map(lambda x: output_formatting['cost_cat_map'].get(x,x))
         dictin_systemcost[case] = reformat(dictin_systemcost[case],case,metric,years[case])
@@ -723,7 +691,7 @@ if __name__ == '__main__':
     metric = 'Transmission Capacity (TW-miles)'
     for case in tqdm(cases, desc=metric):
         # pull the total installed transmission capacity from ReEDS outputs
-        dictin_trans_total[case], _ = reeds.output_calc.calc_transmission_capacity(cases[case],levels=['transgrp'])
+        dictin_trans_total[case], _ = reeds.results.calc_transmission_capacity(cases[case],levels=['transgrp'])
         tran_total = dictin_trans_total[case]
         tran_total['Measure'] = 'Total installed'
         # make one df with the new capacity 
@@ -746,7 +714,7 @@ if __name__ == '__main__':
     dictin_h2prod = {}
     metric = 'Hydrogen Production (million metric tonnes)'
     for case in tqdm(cases, desc=metric):
-        dictin_h2prod[case] = reeds.output_calc.calc_h2prod(cases[case])
+        dictin_h2prod[case] = reeds.results.calc_h2prod(cases[case])
         dictin_h2prod[case] = reformat(dictin_h2prod[case],case,metric,years[case])
     dictin[metric] = dictin_h2prod
 
@@ -754,7 +722,7 @@ if __name__ == '__main__':
     dictin_sited_load = {}
     metric = 'Load Site Capacity (MW)'
     for case in tqdm(cases, desc=metric):
-        dictin_sited_load[case] = reeds.output_calc.calc_sited_load(cases[case])
+        dictin_sited_load[case] = reeds.results.calc_sited_load(cases[case])
         dictin_sited_load[case] = reformat(dictin_sited_load[case],case,metric,years[case])
     dictin[metric] = dictin_sited_load
 

@@ -3,12 +3,12 @@ Author: pbrown 20201230
 * Purpose: Calculate yearly PTC and ITC expenditures
 * Usage notes
     * To use this script, direct `reeds_path` and `runpath` under "USER INPUTS" to the
-    desired ReEDS-2.0 and {batch}_{case} run directories
-    * Outputs are saved to ReEDS-2.0/runs/{batch}_{case}/outputs/
+    desired ReEDS and {batch}_{case} run directories
+    * Outputs are saved to ReEDS/runs/{batch}_{case}/outputs/
     * To use for outputs generated before PR #527 (2cec69214baddf817b276a89e3f4072ab76cf2c9),
-    add the following lines to the start of e_report.gms and re-run (otherwise geothermal
+    add the following lines to the start of report.gms and re-run (otherwise geothermal
     won't be included)
-    e_report.gms and e_report_dump.py:
+    report.gms and report_dump.py:
     cost_cap_fin_mult_noITC(i,r,t)$geo(i) = cost_cap_fin_mult_noITC("geothermal",r,t)
     cost_cap_fin_mult_no_credits(i,r,t)$geo(i) = cost_cap_fin_mult_no_credits("geothermal",r,t)
 * Caveats
@@ -28,8 +28,8 @@ pd.options.display.max_rows = 10
 ###################
 #%% USER INPUTS ###
 
-### Direct these paths to the desired ReEDS-2.0 and {batch}_{case} run directories
-reeds_path = os.path.expanduser(os.path.join('~','Projects','Retail','ReEDS-2.0',''))
+### Direct these paths to the desired ReEDS and {batch}_{case} run directories
+reeds_path = os.path.expanduser(os.path.join('~','Projects','Retail','ReEDS',''))
 runpath = os.path.join(reeds_path,'runs','v20201203_retail_Mid_ITCPTC','')
 ### Inflation adjustments
 input_dollar_year = 2004

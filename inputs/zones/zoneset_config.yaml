@@ -1,0 +1,14 @@
+drop_single_county_reinforcement_cost:
+- z3109
+- PJMcounty
+- UTcounty
+- z2972
+drop_interfaces_missing_cost:
+- z3109
+- PJMcounty
+- UTcounty
+reeds2pras_unitsize_unconstrain_counties:
+- z3109
+- PJMcounty
+- UTcounty
+- z2972

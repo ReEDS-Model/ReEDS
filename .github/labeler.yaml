@@ -1,0 +1,73 @@
+dependencies:
+  - head-branch:
+      - '^dependabot/.+'
+  - changed-files:
+      - any-glob-to-any-file:
+          - "environment.yml"
+          - "pyproject.toml"
+          - "requirements*.txt"
+          - "Project.toml"
+          - "Manifest.toml"
+          - ".github/dependabot.yml"
+          - "instantiate.jl"
+
+github_actions:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/actions/**"
+          - ".github/scripts/**"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "**/*.md"
+          - "CITATION.cff"
+
+release:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "CHANGELOG.md"
+          - "README.md"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+          - "hourlize/tests/**"
+          - "reeds2pras/test/**"
+          - "**/test_*.py"
+          - "**/*_test.py"
+
+model_changes:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "reeds/**"
+          - "runreeds.py"
+
+data_changes:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "inputs/**"
+          - "hourlize/inputs/**"
+          - "postprocessing/**/inputs/**"
+          - "**/*.csv"
+          - "**/*.h5"
+
+hourlize:
+  - changed-files:
+      - any-glob-to-any-file: "hourlize/**"
+
+postprocessing:
+  - changed-files:
+      - any-glob-to-any-file: "postprocessing/**"
+
+reeds2pras:
+  - changed-files:
+      - any-glob-to-any-file: "reeds2pras/**"
+
+switches:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "cases.csv"

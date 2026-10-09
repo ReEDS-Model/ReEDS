@@ -21,8 +21,8 @@ reValue has two main purposes:
      - **res_marg_style**: *max_net_load_2012* is the only currently supported option, and assigns reserve margin prices equally to the peak net load hours. *max_load_price*, the other option, would assign reserve margin prices to the associated timeslice with max load prices, but this option only works on older versions of ReEDS.
      - **netload_num_hrs**: When **res_marg_style** = *max_net_load_2012*, this allows the user to specify the number of max net load hours to assign the reserve margin prices (default in ReEDS is 20, but the default here is 50 so that technologies don't randomly align with peak net load hours as often). Higher **netload_num_hrs** mean lower reserve margin prices in each hour, such that total value of firm capacity stays constant.
      - **netload_time_style**: When **res_marg_style** = *max_net_load_2012*, This allows the user to keep reserve margin prices at the hour level (**netload_time_style**=*hour*), or to assign prices to the entire timeslice(s) containing the hour(s) (**netload_time_style**=*timeslice*).
- 3. Run activated scenarios with `python reValue.py` (from the reeds2 conda environment).
- 4. Gather price and value metric outputs from output folder at *ReEDS-2.0/postprocessing/reValue/outputs_[timestamp]*. Here are the main outputs:
+ 3. Run activated scenarios with `python reValue.py` (from the `reeds` conda environment).
+ 4. Gather price and value metric outputs from output folder at *ReEDS/postprocessing/reValue/outputs_[timestamp]*. Here are the main outputs:
      - **reValue_out.csv**: This file contains the various value metrics:
          - *LVOE*: Value per unit energy
          - *LVOE_load*: Value per unit energy (load, or energy requirement, component. For *load* technology, this includes influence on operating reserves, state rps, and all model requirements that are linked to the LOAD variable)
@@ -38,4 +38,3 @@ reValue has two main purposes:
          - *VF_spatial*: Spatial component of value factor
          - *VF_interaction*: Spatio-temporal interaction, where *VF=VF_temporal\*VF_spatial\*VF_interaction*
      - **prices.csv**: This file contains prices for each ReEDS run and model year considered. The *type* column reflects total price by hour, *tot*, as well as the breakdown by service.
-

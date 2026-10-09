@@ -1,7 +1,9 @@
 ### Imports
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import matplotlib as mpl
+from typing import Literal
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import patheffects as pe
@@ -96,7 +98,6 @@ def plot_diff(
     """
     """
     ### Shared inputs
-    sw = reeds.io.get_switches(casebase)
     ycol = {
         'Error Check': 'Value',
         'Generation (TWh)': 'Generation (TWh)',
@@ -114,7 +115,6 @@ def plot_diff(
         'Present Value of System Cost': 'Discounted Cost (Bil $)',
         'Runtime (hours)': 'processtime',
         'Runtime by year (hours)': 'processtime',
-        'NEUE (ppm)': 'neue',
     }
     xcol = {
         'Error Check': 'dummy',
@@ -133,7 +133,6 @@ def plot_diff(
         'Present Value of System Cost': 'dummy',
         'Runtime (hours)': 'dummy',
         'Runtime by year (hours)': 'year',
-        'NEUE (ppm)': 'year',
     }
     width = {
         'Error Check': 20,
@@ -152,7 +151,6 @@ def plot_diff(
         'Present Value of System Cost': 20,
         'Runtime (hours)': 20,
         'Runtime by year (hours)': 2.9,
-        'NEUE (ppm)': 2.9,
     }
     colorcol = {
         'Error Check': 'dummy',
@@ -171,7 +169,6 @@ def plot_diff(
         'Present Value of System Cost': 'cost_cat',
         'Runtime (hours)': 'process',
         'Runtime by year (hours)': 'process',
-        'NEUE (ppm)': 'dummy',
     }
     fixcol = {
         'Error Check': {'type':'z'},
@@ -190,7 +187,6 @@ def plot_diff(
         'Present Value of System Cost': {},
         'Runtime (hours)': {},
         'Runtime by year (hours)': {},
-        'NEUE (ppm)': {},
     }
     ylabel = {
         'Error Check': 'System cost error [fraction]',
@@ -209,7 +205,6 @@ def plot_diff(
         'Present Value of System Cost': '[$Billion]',
         'Runtime (hours)': 'Runtime [hours]',
         'Runtime by year (hours)': 'Runtime [hours]',
-        'NEUE (ppm)': 'NEUE [ppm]',
     }
     scaler = {
         'Error Check': 1,
@@ -228,26 +223,6 @@ def plot_diff(
         'Present Value of System Cost': 1,
         'Runtime (hours)': 1,
         'Runtime by year (hours)': 1,
-        'NEUE (ppm)': 1,
-    }
-    outputs_unit_converstion = {
-        'Error Check': 1,
-        'Generation (TWh)': 1,
-        'Capacity (GW)': 1,
-        'New Annual Capacity (GW)': 1,
-        'Annual Retirements (GW)': 1,
-        'Final Gen by timeslice (GW)': 1,
-        'Firm Capacity (GW)': 1,
-        'Curtailment Rate': 1,
-        'Transmission (GW-mi)': 0.001,
-        'Transmission (PRM) (GW-mi)': 0.001,
-        'Bulk System Electricity Pric': 1,
-        'National Average Electricity': 1,
-        '2022-2050 Present Value of S': 1,
-        'Present Value of System Cost': 1,
-        'Runtime (hours)': 1,
-        'Runtime by year (hours)': 1,
-        'NEUE (ppm)': 1,
     }
 
     output_formatting = reeds.io.get_plot_formatting()
@@ -267,12 +242,12 @@ def plot_diff(
         output_formatting['tech_color'] = colors
 
     ### Parse the sheet name
-    val2sheet = reeds.io.get_report_sheetmap(casebase)
-    sheet = val2sheet[val]
+    val2sheet = {case: reeds.io.get_report_sheetmap(case) for case in [casebase, casecomp]}
 
     ### Load the data
-    dfbase = reeds.io.read_report(casebase, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
-    dfbase[ycol[val]]*=outputs_unit_converstion[val]
+    dfbase = reeds.io.read_report(
+        casebase, val2sheet[casebase][val], val2sheet[casebase]
+    ).rename(columns={'trtype':'type','i':'tech'})
     if 'tech' in dfbase.columns:
         dfbase.tech = simplify_techs(dfbase.tech, display_level = simple_techs)
         dfbase = (
@@ -290,8 +265,9 @@ def plot_diff(
             fixval = fixcol[val][col]
         dfbase = dfbase.loc[dfbase[col] == fixval].copy()
 
-    dfcomp = reeds.io.read_report(casecomp, sheet, val2sheet).rename(columns={'trtype':'type','i':'tech'})
-    dfcomp[ycol[val]]*=outputs_unit_converstion[val]
+    dfcomp = reeds.io.read_report(
+        casecomp, val2sheet[casecomp][val], val2sheet[casecomp]
+    ).rename(columns={'trtype':'type','i':'tech'})
     if 'tech' in dfcomp.columns:
         dfcomp.tech = simplify_techs(dfcomp.tech, display_level = simple_techs)
         dfcomp = (
@@ -483,11 +459,6 @@ def plot_diff(
     ## axes 0 and 1 use the same y limits
     ymax = max(ax[0].get_ylim()[1], ax[1].get_ylim()[1])
     ymin = min(ax[0].get_ylim()[0], ax[1].get_ylim()[0])
-    if val == 'NEUE (ppm)':
-        neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
-        ymax = max(ymax, 10, neue_threshold*1.05)
-        ax[0].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
-        ax[1].axhline(neue_threshold, c='C7', ls='--', lw=0.75)
     for col in range(2):
         ax[col].set_ylim(ymin,ymax)
     ## axis 2 uses the same y limits as 0 and 1; axis 3 uses its own limits
@@ -938,10 +909,13 @@ def plot_trans_onecase(
     return f, ax, dfplot
 
 
-def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
-                 plot='diff', f=None, ax=None, cmap=plt.cm.Blues,
-                 zmax=None, zlim=None,
-                 legend_kwds=None, plot_kwds=None,):
+def plot_diff_maps(
+    val, i_plot, titles, year, casebase, casecomp,
+    level:Literal['r','st']='r',
+    plot='diff', f=None, ax=None, cmap=plt.cm.Blues,
+    zmax=None, zlim=None,
+    legend_kwds=None, plot_kwds=None,
+):
     """
     Inputs
     ------
@@ -981,12 +955,18 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
 
     ### Get the maps
     dfmap = reeds.io.get_dfmap(casecomp)
-    dfba = dfmap['r']
+    dfba = dfmap[level]
     dfstates = dfmap['st']
 
     ### Load the data, sum over hours
     dfbase = reeds.io.read_output(casebase, val, valname=valcol)
     dfcomp = reeds.io.read_output(casecomp, val, valname=valcol)
+
+    if level != 'r':
+        hierarchy_base = reeds.io.get_hierarchy(casebase)
+        hierarchy_comp = reeds.io.get_hierarchy(casecomp)
+        dfbase.r = dfbase.r.map(hierarchy_base[level])
+        dfcomp.r = dfcomp.r.map(hierarchy_comp[level])
 
     ### Simplify the i names
     dfbase.i = simplify_techs(dfbase.i)
@@ -1001,6 +981,31 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
     dfbase[valcol] *= unitscaler
     dfcomp[valcol] *= unitscaler
 
+    ### Aggregate selected technologies to one value per region for the target year
+    dfbase_selected = (
+        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year)]
+        .groupby('r', as_index=False)[valcol].sum()
+        .rename(columns={valcol: f'{valcol}_base'})
+    )
+    dfcomp_selected = (
+        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year)]
+        .groupby('r', as_index=False)[valcol].sum()
+        .rename(columns={valcol: f'{valcol}_comp'})
+    )
+    dfdiff_selected = (
+        dfbase_selected
+        .merge(dfcomp_selected, on='r', how='outer')
+        .fillna(0)
+    )
+    dfdiff_selected[f'{valcol}_diff'] = (
+        dfdiff_selected[f'{valcol}_comp'] - dfdiff_selected[f'{valcol}_base']
+    )
+    dfdiff_selected[f'{valcol}_pctdiff'] = np.where(
+        dfdiff_selected[f'{valcol}_base'] != 0,
+        dfdiff_selected[f'{valcol}_diff'] / dfdiff_selected[f'{valcol}_base'] * 100,
+        np.nan,
+    )
+
     ### Start the plot
     # plt.close()
     if (f is None) and (ax is None):
@@ -1008,52 +1013,41 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
     else:
         pass
 
-    ###### Calculate the diff
-    dfdiff = dfbase.merge(
-        dfcomp, on=['i','r','t'], how='outer', suffixes=('_base','_comp')).fillna(0)
-    if plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
-        ### Percent difference
-        dfdiff['{}_diff'.format(valcol)] = (
-            (dfdiff['{}_comp'.format(valcol)] - dfdiff['{}_base'.format(valcol)])
-            / dfdiff['{}_base'.format(valcol)] * 100
-        ).replace(np.inf,np.nan)
-    elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
-        ### Difference
-        dfdiff['{}_diff'.format(valcol)] = (
-            dfdiff['{}_comp'.format(valcol)] - dfdiff['{}_base'.format(valcol)])
-
     if zmax is None:
         zmax = max(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),valcol+'_base'].max(),
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),valcol+'_comp'].max(),
+            dfdiff_selected[f'{valcol}_base'].max(),
+            dfdiff_selected[f'{valcol}_comp'].max(),
         )
 
     ###### Plot the base
     if plot == 'base':
         dfplot = dfba.merge(
-            dfbase.loc[(dfbase.i.isin(titles))&(dfbase.t==year),['r',valcol]],
+            dfdiff_selected[['r', f'{valcol}_base']],
             left_index=True, right_on='r', how='left'
-        ).fillna(0).reset_index(drop=True)
+        ).fillna(0).reset_index(drop=True).rename(columns={f'{valcol}_base': valcol})
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
+        label_region_value(dfplot, ax=ax, column=valcol, text_kwargs={'fontsize':5})
 
     ###### Plot the comp
     elif plot == 'comp':
         dfplot = dfba.merge(
-            dfcomp.loc[(dfcomp.i.isin(titles))&(dfcomp.t==year),['r',valcol]],
+            dfdiff_selected[['r', f'{valcol}_comp']],
             left_index=True, right_on='r', how='left'
-        ).fillna(0).reset_index(drop=True)
+        ).fillna(0).reset_index(drop=True).rename(columns={f'{valcol}_comp': valcol})
 
         dfplot.plot(ax=ax, column=valcol, cmap=cmap, legend=True,
                     legend_kwds=legend_kwds, vmax=zmax)
+
+        label_region_value(dfplot, ax=ax, column=valcol, text_kwargs={'fontsize':5})
 
     ###### Plot the pct diff
     elif plot in ['diff','pctdiff','pct_diff','diffpct','diff_pct','pct']:
         legend_kwds['label'] = '{} {} {}\n[% diff]'.format(valcol,i_plot,year)
 
         dfplot = dfba.merge(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),['r',valcol+'_diff']],
+            dfdiff_selected[['r', f'{valcol}_pctdiff']],
             left_index=True, right_on='r', how='left'
         ).reset_index(drop=True)
 
@@ -1066,13 +1060,14 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
 
         dfplot.plot(ax=ax, column=valcol+'_pctdiff', cmap=cmap, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
+        label_region_value(dfplot, ax=ax, column=valcol+'_pctdiff', text_kwargs={'fontsize':5})
 
     ###### Plot the absolute diff
     elif plot in ['absdiff', 'abs_diff', 'diffabs', 'diff_abs']:
         legend_kwds['label'] = '{} diff {} [{}]'.format(valcol,i_plot,units)
 
         dfplot = dfba.merge(
-            dfdiff.loc[(dfdiff.i.isin(titles))&(dfdiff.t==year),['r',valcol+'_diff']],
+            dfdiff_selected[['r', f'{valcol}_diff']],
             left_index=True, right_on='r', how='left'
         ).reset_index(drop=True)
 
@@ -1085,9 +1080,11 @@ def plot_diff_maps(val, i_plot, titles, year, casebase, casecomp,
 
         dfplot.plot(ax=ax, column=valcol+'_diff', cmap=plt.cm.RdBu_r, legend=True,
                     vmin=-zlim, vmax=+zlim, legend_kwds=legend_kwds)
+        label_region_value(dfplot, ax=ax, column=valcol+'_diff', text_kwargs={'fontsize':5})
 
     ### Finish and return
     # ax.set_title(title, y=0.95)
+    dfba.plot(ax=ax, edgecolor='k', facecolor='none', lw=0.1)
     dfstates.plot(ax=ax, edgecolor='k', facecolor='none', lw=0.25)
     ax.axis('off')
 
@@ -1239,9 +1236,7 @@ def plot_transmission_utilization(
             dftrans['trans_flow_power'].loc[dftrans['trans_flow_power'].Value < 0, ['rr','r']].values
         )
         dftrans['trans_flow_power'].Value = dftrans['trans_flow_power'].Value.abs()
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     ### Combine all transmission types
     for data in ['trans_flow_power','trans_cap']:
         dftrans[data]['trtype'] = 'all'
@@ -1380,6 +1375,10 @@ def map_net_imports(
             legend=False,
             vmin=-vmax[year], vmax=vmax[year],
         )
+        label_region_value(
+            df, ax=ax[coords[year]], column='net_import', 
+            fmt='{:.0f}', text_kwargs={'fontsize':5},
+        )
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -1450,12 +1449,13 @@ def plot_max_imports(
         flow[level] = flow.r.map(r2agg)
         flow[levell] = flow.rr.map(r2agg)
 
-        tranloss = pd.read_csv(
-            os.path.join(c,'inputs_case','tranloss.csv')
-        ).rename(columns={'*r':'r'}).set_index(['r','rr','trtype']).squeeze(1)
+        tranloss = (
+            reeds.io.read_input(c, 'tranloss')
+            .rename(columns={'*r':'r'}).set_index(['r','rr','trtype']).squeeze(1)
+        )
 
         peakload = (
-            pd.read_csv(os.path.join(c,'inputs_case','peakload.csv'))
+            reeds.io.read_input(c, 'peakload')
             .set_index(['level','region']).loc[level].stack()
             .rename_axis(['r','t']).rename('MW')
             .reset_index().astype({'t':int}).set_index(['r','t']).squeeze()
@@ -1464,9 +1464,10 @@ def plot_max_imports(
         if _draw_limit:
             ## Fraction
             try:
-                firm_import_limit = pd.read_csv(
-                    os.path.join(c, 'inputs_case', 'firm_import_limit.csv')
-                ).rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze()
+                firm_import_limit = (
+                    reeds.io.read_input(c, 'firm_import_limit')
+                    .rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze(1)
+                )
             except FileNotFoundError:
                 print("firm_import_limit.csv not found, so it won't be plotted")
                 _draw_limit = False
@@ -1618,8 +1619,8 @@ def plot_vresites_transmission(
                 lambda row: shapely.geometry.Point(row.longitude, row.latitude),
                 axis=1)
             cap[tech] = gpd.GeoDataFrame(cap[tech]).set_crs('EPSG:4326').to_crs(crs)
-            ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-            cap[tech]['geometry'] = cap[tech].buffer(11530/2, cap_style='square')
+            ## Convert from points to polygons
+            cap[tech] = reeds.spatial.site2poly_buffer(cap[tech])
 
         except FileNotFoundError as err:
             print(err)
@@ -1736,19 +1737,8 @@ def plot_prmtrade(
     dfba = dfmap['r']
     dfstates = dfmap['st']
     ## Downselect to modeled regions
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     dfba = dfba.loc[val_r].copy()
-
-    if sw.get('GSw_RegionResolution', 'ba') != 'county':
-        endpoints = (
-            gpd.read_file(os.path.join(reeds_path,'inputs','shapefiles','transmission_endpoints'))
-            .set_index('ba_str'))
-        endpoints['x'] = endpoints.centroid.x
-        endpoints['y'] = endpoints.centroid.y
-        dfba['x'] = dfba.index.map(endpoints.x)
-        dfba['y'] = dfba.index.map(endpoints.y)
 
     ### Get scaling and layout
     _vmax = dfplot.MW.abs().max() if vmax in [None, 0, 0.] else vmax
@@ -1825,9 +1815,7 @@ def plot_average_flow(
     dfmap = reeds.io.get_dfmap(case)
     dfba = dfmap['r']
     dfstates = dfmap['st']
-    val_r = pd.read_csv(
-        os.path.join(case,'inputs_case','val_r.csv'), header=None,
-    ).squeeze(1).values.tolist()
+    val_r = reeds.io.read_input(case, 'r').squeeze(1).tolist()
     if extent.lower() not in ['usa','full','nation','us','country','all']:
         dfba = dfba.loc[val_r]
 
@@ -2034,7 +2022,7 @@ def plot_interreg_transfer_cap_ratio(
     """Plot interregional transfer capability / peak demand over time"""
     ### Inputs for debugging
     # case = (
-    #     '/Users/pbrown/github2/ReEDS-2.0/runs/'
+    #     '/Users/pbrown/github2/ReEDS/runs/'
     #     'v20240212_transopM0_WECC_CPNP_GP1_TFY2035_PTL2035_TRc_MITCg0p3')
     # casenames = 'base'
     # level = 'transreg'; tstart=2020;
@@ -2731,6 +2719,7 @@ def map_capacity_techs(
         ncols=4,
         vmax='shared',
         cmap=cmocean.cm.rain,
+        label_regions=True,
     ):
     """
     techs: list of technologies to plot, or 'aggregation' to plot all aggregated technologies
@@ -2784,6 +2773,8 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
+        if label_regions:
+            label_region_value(dfplot, ax=ax[coords[tech]], column='GW', text_kwargs={'fontsize':5})
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -3077,7 +3068,7 @@ def get_gen_capacity(case, year=2050, level='r', units='GW'):
     ## Aggregate if necessary
     if level != 'r':
         dfcap.index = dfcap.index.map(hierarchy[level])
-        dfcap = dfcap.groupby(axis=0, level='r').sum()
+        dfcap = dfcap.groupby(level='r').sum()
 
     return dfcap
 
@@ -3301,7 +3292,7 @@ def map_zone_capacity(
             .unstack('i') / 1e3
         )
         dfco2.columns = simplify_techs(dfco2.columns)
-        dfco2 = dfco2.groupby(axis=1, level='i').sum()
+        dfco2 = dfco2.T.groupby(level='i').sum().T
         dfco2 = (
             dfco2[[c for c in bokehcolors.index if c in dfco2]]
             .round(3).replace(0,np.nan)
@@ -3574,10 +3565,21 @@ def map_hybrid_pv_wind(
 def plot_dispatch_yearbymonth(
         case, t=2050, plottype='gen', periodtype='rep',
         techs=None, region=None,
-        f=None, ax=None, figsize=(12,6), highlight_rep_periods=1,
+        figsize=(12,6), highlight_rep_periods=1,
     ):
     """
     Full year dispatch for final year with rep days mapped to actual days
+
+    Usage:
+        ```python
+        plot_generator = plot_dispatch_yearbymonth(case)
+        while True:
+            try:
+                f, ax, df = next(plot_generator)
+            except StopIteration:
+                break
+        ```
+
     Inputs
     ------
     techs: None to plot all techs, or list of subset techs, or single tech string
@@ -3689,46 +3691,51 @@ def plot_dispatch_yearbymonth(
         period_szn['repnum'] = period_szn.rep_period.map(repnum)
 
     ### Plot it
-    plt.close()
-    f, ax = plots.plotyearbymonth(
-        dfplot,
-        colors=[
-            tech_color[i.replace('_pos','').replace('_neg','').replace('_off','')]
-            for i in dfplot],
-        lwforline=0, f=f, ax=ax, figsize=figsize)
+    weatheryears = [int(i) for i in sw.GSw_HourlyWeatherYears.split('_')]
+    for weatheryear in weatheryears:
+        _dfplot = dfplot.loc[str(weatheryear)]
 
-    if highlight_rep_periods:
-        width = pd.Timedelta('5D') if sw['GSw_HourlyType'] == 'wek' else pd.Timedelta('1D')
-        ylim = ax[0].get_ylim()
-        for i, row in period_szn.iterrows():
-            plottime = pd.Timestamp(2001, 1, row.timestamp.day)
-            if row.rep:
-                ## Draw an outline
-                box = mpl.patches.Rectangle(
-                    xy=(plottime, ylim[0]),
-                    width=width, height=(ylim[1]-ylim[0]),
-                    lw=0.75, edgecolor='k', facecolor='none', ls=':',
-                    clip_on=False, zorder=2e6
-                )
-            else:
-                ## Wash out the dispatch
-                box = mpl.patches.Rectangle(
-                    xy=(plottime, ylim[0]),
-                    width=width, height=(ylim[1]-ylim[0]),
-                    lw=0.75, edgecolor='none', facecolor='w', alpha=0.4,
-                    clip_on=False, zorder=1e6
-                )
-            ax[row.timestamp.month-1].add_patch(box)
-            ## Note the rep period
-            ax[row.timestamp.month-1].annotate(
-                row.repnum,
-                (plottime+pd.Timedelta('30m'), ylim[1]*0.95),
-                va='top', size=5, zorder=1e7,
-                color=('k' if row.rep else 'C7'),
-                weight=('normal' if row.rep else 'normal'),
-            )
+        plt.close()
+        f, ax = plots.plotyearbymonth(
+            _dfplot,
+            colors=[
+                tech_color[i.replace('_pos','').replace('_neg','').replace('_off','')]
+                for i in _dfplot],
+            lwforline=0, figsize=figsize)
 
-    return f, ax, dfplot
+        if highlight_rep_periods:
+            _period_szn = period_szn.loc[period_szn.year==weatheryear]
+            width = pd.Timedelta('5D') if sw['GSw_HourlyType'] == 'wek' else pd.Timedelta('1D')
+            ylim = ax[0].get_ylim()
+            for i, row in _period_szn.iterrows():
+                plottime = pd.Timestamp(2001, 1, row.timestamp.day)
+                if row.rep:
+                    ## Draw an outline
+                    box = mpl.patches.Rectangle(
+                        xy=(plottime, ylim[0]),
+                        width=width, height=(ylim[1]-ylim[0]),
+                        lw=0.75, edgecolor='k', facecolor='none', ls=':',
+                        clip_on=False, zorder=2e6
+                    )
+                else:
+                    ## Wash out the dispatch
+                    box = mpl.patches.Rectangle(
+                        xy=(plottime, ylim[0]),
+                        width=width, height=(ylim[1]-ylim[0]),
+                        lw=0.75, edgecolor='none', facecolor='w', alpha=0.4,
+                        clip_on=False, zorder=1e6
+                    )
+                ax[row.timestamp.month-1].add_patch(box)
+                ## Note the rep period
+                ax[row.timestamp.month-1].annotate(
+                    row.repnum,
+                    (plottime+pd.Timedelta('30m'), ylim[1]*0.95),
+                    va='top', size=5, zorder=1e7,
+                    color=('k' if row.rep else 'C7'),
+                    weight=('normal' if row.rep else 'normal'),
+                )
+
+        yield f, ax, _dfplot, weatheryear
 
 
 def plot_dispatch_weightwidth(
@@ -3840,7 +3847,7 @@ def plot_interday_soc(
         data.rename(columns={'Level_x': 'interday_level', 'Level_y': 'net_day_change', 'Value': 'partition'}, inplace=True)
 
         # Fill missing values
-        data['interday_level'] = data['interday_level'].fillna(method='ffill').fillna(0)
+        data['interday_level'] = data['interday_level'].ffill().fillna(0)
         data['net_day_change'] = data['net_day_change'].fillna(0)
 
         # Sort by time to ensure proper ordering
@@ -4038,19 +4045,19 @@ def plot_stressperiod_days(case, repcolor='k', sharey=False, figsize=(10,5)):
     period_days = 5 if sw['GSw_HourlyType'] == 'wek' else 1
     yplot = 2012
     timeindex = pd.date_range(
-        f'{yplot}-01-01', f'{yplot+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
+        f'{yplot}-01-01', f'{yplot+1}-01-01', freq='h', tz='Etc/GMT+6')[:8760]
     ### Get rep periods
     szn_rep = pd.read_csv(
         os.path.join(case, 'inputs_case', 'rep', 'period_szn.csv')
     ).rep_period.sort_values()
     rep_starts = [reeds.timeseries.h2timestamp(d+'h01') for d in szn_rep]
     rep_hours = np.ravel([
-        pd.date_range(h, h+pd.Timedelta(f'{period_days}D'), freq='H', inclusive='left')
+        pd.date_range(h, h+pd.Timedelta(f'{period_days}D'), freq='h', inclusive='left')
         for h in rep_starts
     ])
     dfrep = pd.Series(
         index=timeindex,
-        data=timeindex.map(lambda x: x.isin(rep_hours)).astype(int),
+        data=timeindex.isin(rep_hours).astype(int),
     )
     ### Want a dict of dataframes with 8760 index, columns for 'rep' + RA years,
     ### and keys for solve years
@@ -4085,12 +4092,12 @@ def plot_stressperiod_days(case, repcolor='k', sharey=False, figsize=(10,5)):
             ]
             yearhours = np.ravel([
                 pd.date_range(
-                    h, h+pd.Timedelta(f'{period_days}D'), freq='H', inclusive='left')
+                    h, h+pd.Timedelta(f'{period_days}D'), freq='h', inclusive='left')
                 for h in yearstarts_aligned
             ])
             dictout[y] = pd.Series(
                 index=timeindex,
-                data=timeindex.map(lambda x: x.isin(yearhours)).astype(int),
+                data=timeindex.isin(yearhours).astype(int),
             )
         dfplot[t] = pd.concat(dictout, axis=1)
 
@@ -4131,30 +4138,46 @@ def plot_stressperiod_days(case, repcolor='k', sharey=False, figsize=(10,5)):
 
 
 def plot_stressperiod_evolution(
-        case, level=None, metric=None, threshold=None,
+        case,
+        metric:Literal['neue','depth','duration','lolh','lole','lold']='neue',
         figsize=None, scale_widths=False,
     ):
-    """Plot NEUE by year and stress period iteration"""
+    """
+    Plot RA metric by year and stress period iteration.
+    RA metric thresholds are included in the plot even if they are not applied.
+    Only the first /-delimited level_threshold pair is used.
+    """
+    from reeds.resource_adequacy import stress_periods
+    ### Fixed inputs
+    ylabel = {
+        'neue': 'NEUE [ppm]',
+        'lolh': 'LOLH [event-hours/year]',
+        'lole': 'LOLE [events/year]',
+        'lold': 'LOLD [event-days/year]',
+        'duration': 'Duration [hours]',
+        'depth': 'Depth [% of peak]',
+    }
+    scale = {'depth':100}
     ### Parse inputs
     sw = reeds.io.get_switches(case)
-    _level, _threshold, _, _metric = sw['GSw_PRM_StressThreshold'].split('/')[0].split('_')
-    level = _level if level is None else level
-    threshold = float(_threshold) if threshold is None else threshold
-    metric = _metric if metric is None else metric
-    ### Load NEUE results
-    infiles = sorted(glob(os.path.join(case,'outputs','neue_*.csv')))
-    dictin_neue = {
-        tuple([int(x) for x in os.path.basename(f)[len('neue_'):-len('.csv')].split('i')]):
+    switch = stress_periods.RA_SWITCHES[metric.lower()]
+    switch_metric = stress_periods.SWITCH_METRIC[metric.lower()]
+    level, threshold = sw[switch].split('/')[0].split('_')
+    threshold = float(threshold) * scale.get(metric, 1)
+    ### Load RA results
+    infiles = sorted(glob(os.path.join(case,'outputs','ra_metrics_*.csv')))
+    dictin_ra = {
+        tuple([int(x) for x in os.path.basename(f)[len('ra_metrics_'):-len('.csv')].split('i')]):
         pd.read_csv(f, index_col=['level','metric','region'])
         for f in infiles
     }
     ## Reshape to (year,iteration) x (region)
     dfplot = (
-        pd.concat(dictin_neue, names=['year','iteration'])
+        pd.concat(dictin_ra, names=['year','iteration'])
         .xs(level,0,'level')
-        .xs(metric,0,'metric')
-        .NEUE_ppm.unstack('region')
-    )
+        .xs(switch_metric,0,'metric')
+        .squeeze(1).unstack('region')
+    ) * scale.get(metric, 1)
     ### Load stress periods for labels
     dfstress = get_stressperiods(case)
     ### Plot setup
@@ -4207,25 +4230,33 @@ def plot_stressperiod_evolution(
         loc='upper left', bbox_to_anchor=(1,1), frameon=False,
         handletextpad=0.3, handlelength=0.7,
     )
-    ax[0].set_ylabel('NEUE [ppm]')
-    ax[0].set_ylim(0)
+    ax[0].set_ylabel(ylabel[metric])
+    ax[0].set_ylim(0, min(ax[0].get_ylim()[1], threshold*50))
     plots.despine(ax)
 
     return f,ax
 
 
-def plot_neue_bylevel(
-        case, tmin=2023,
-        levels=['country','interconnect','transreg','transgrp'],
-        metrics=['sum','max'],
-        onlydata=False,
-    ):
+def plot_ra_metrics_bylevel(
+    case, tmin=2026,
+    levels=['country','interconnect','transreg','transgrp'],
+    metrics=[
+        'neue',
+        'lolh',
+        'lole',
+        'lold',
+        'duration',
+        'depth',
+    ],
+    onlydata=False,
+):
     """Plot regional NEUE over time"""
+    from reeds.resource_adequacy import stress_periods
     ### Get final iterations
     year2iteration = (
         pd.DataFrame([
-            os.path.basename(i).strip('neue_.csv').split('i')
-            for i in sorted(glob(os.path.join(case, 'outputs', 'neue_*.csv')))
+            os.path.basename(i).strip('ra_metrics.csv').split('i')
+            for i in sorted(glob(os.path.join(case, 'outputs', 'ra_metrics_*.csv')))
         ], columns=['year','iteration']).astype(int)
         .drop_duplicates(subset='year', keep='last')
         .set_index('year').iteration
@@ -4234,57 +4265,70 @@ def plot_neue_bylevel(
     ### Get NEUE
     sw = reeds.io.get_switches(case)
     sw['casedir'] = case
-    dictin_neue = {}
+    ra_metrics = {}
     for t, iteration in year2iteration.items():
         try:
-            dictin_neue[t] = (
-                reeds.io.read_output(case, f'neue_{t}i{iteration}.csv')
+            ra_metrics[t] = (
+                reeds.io.read_output(case, f'ra_metrics_{t}i{iteration}.csv')
                 .set_index(['level','metric','region']).squeeze(1)
             )
         except FileNotFoundError:
-            dictin_neue[t] = (
-                reeds.io.read_output(case, f'neue_{t}i{iteration-1}.csv')
+            ra_metrics[t] = (
+                reeds.io.read_output(case, f'ra_metrics_{t}i{iteration-1}.csv')
                 .set_index(['level','metric','region']).squeeze(1)
             )
-    dfin_neue = pd.concat(dictin_neue, axis=0, names=['year']).unstack('year')
-    dfin_neue = dfin_neue[[c for c in dfin_neue if int(c) >= 2025]].copy()
+    dfin_ra = pd.concat(ra_metrics, axis=0, names=['year']).unstack('year')
+    dfin_ra = dfin_ra[[c for c in dfin_ra if int(c) >= tmin]].copy()
     if onlydata:
-        return dfin_neue
+        return dfin_ra
     ### Plot settings
     ncols = len(levels)
     nrows = len(metrics)
     colors = {
         level: plots.rainbowmapper(
-            dfin_neue.xs(level,0,'level').reset_index().region.unique())
+            dfin_ra.xs(level,0,'level').reset_index().region.unique())
         for level in levels
     }
-    norm = {'sum':1, 'max':1e-4}
-    ylabel = {'sum': 'Sum of NEUE [ppm]', 'max':'Max NEUE [%]'}
-    thresholds = {
-        i.split('_')[0]: float(i.split('_')[1])
-        for i in sw.GSw_PRM_StressThreshold.split('/')
+    ylabel = {
+        'neue': 'NEUE\n[ppm]',
+        'lolh': 'LOLH\n[event-hours/year]',
+        'lole': 'LOLE\n[events/year]',
+        'lold': 'LOLD\n[event-days/year]',
+        'duration': 'Duration\n[hours]',
+        'depth': 'Depth\n[% of peak]',
     }
+    scale = {'depth':100}
     ### Plot it
     plt.close()
     f,ax = plt.subplots(
-        nrows, ncols, figsize=(2*ncols, 3*nrows),
+        nrows, ncols, figsize=(2*ncols, 1.5*nrows),
         sharex=True, sharey='row',
     )
     for row, metric in enumerate(metrics):
+        switch = stress_periods.RA_SWITCHES[metric.lower()]
+        switch_metric = stress_periods.SWITCH_METRIC[metric.lower()]
+        thresholds = {
+            i.split('_')[0]: float(i.split('_')[1])
+            for i in sw[switch].split('/')
+        }
         for col, level in enumerate(levels):
             for region, c in colors[level].items():
                 ax[row,col].plot(
-                    dfin_neue.columns,
-                    dfin_neue.loc[(level,metric,region)].values * norm[metric],
+                    dfin_ra.columns,
+                    dfin_ra.loc[(level,switch_metric,region)].values * scale.get(metric,1),
                     c=c, label=region, marker='o', markersize=2,
                 )
+            if (
+                (level in thresholds)
+                and (metric in sw.GSw_PRM_StressThresholdMetrics.lower().split('/'))
+                and (not int(sw.GSw_PRM_CapCredit))
+            ):
+                ax[row,col].axhline(thresholds[level] * scale.get(metric,1), c='k', ls=':', lw=0.75)
         ## Formatting
-        ax[row,0].set_ylabel(ylabel[metric])
+        ax[row,0].set_ylabel(ylabel.get(metric, metric), ha='right', va='center', rotation=0)
     ## Formatting
     for col, level in enumerate(levels):
         ax[0,col].set_title(level)
-        if (level in thresholds) and (not int(sw.GSw_PRM_CapCredit)):
-            ax[0,col].axhline(thresholds[level], c='k', ls=':', lw=0.75)
         leg = ax[0,col].legend(
             loc='upper left', frameon=False, fontsize=8,
             handletextpad=0.3, handlelength=0.7, columnspacing=0.5, labelspacing=0.2,
@@ -4299,11 +4343,11 @@ def plot_neue_bylevel(
     ax[0,0].set_ylim(0, min(ax[0,0].get_ylim()[1], 1000))
     plots.despine(ax)
 
-    return f, ax, dfin_neue
+    return f, ax, dfin_ra
 
 
 def map_neue(
-        case, year=2050, iteration='last', samples=None, metric='sum',
+        case, year=2050, iteration='last', samples=None,
         vmax=10., cmap=cmocean.cm.rain, label=True,
         over_vmax_mapcolor=None,
         over_threshold_textcolor='C3',
@@ -4312,7 +4356,6 @@ def map_neue(
     """
     """
     ### Parse inputs
-    assert metric in ['sum','max']
     cm = cmap.copy()
     if over_vmax_mapcolor:
         cm.set_over(over_vmax_mapcolor)
@@ -4323,11 +4366,11 @@ def map_neue(
             case=case, year=year, samples=samples)
     else:
         _iteration = iteration
-    neue = reeds.io.read_output(case, f'neue_{year}i{_iteration}.csv')
-    neue = neue.loc[neue.metric==metric].set_index(['level','region']).NEUE_ppm
+    ra_metrics = reeds.io.read_output(case, f'ra_metrics_{year}i{_iteration}.csv')
+    neue = ra_metrics.loc[ra_metrics.metric=='neue_ppm'].set_index(['level','region']).value
     sw = reeds.io.get_switches(case)
-    neue_threshold = float(sw.GSw_PRM_StressThreshold.split('_')[1])
-    neue_threshold_level = sw.GSw_PRM_StressThreshold.split('_')[0]
+    neue_threshold = float(sw.GSw_PRM_StressThresholdNEUE.split('_')[1])
+    neue_threshold_level = sw.GSw_PRM_StressThresholdNEUE.split('_')[0]
 
     ### Set up plot
     levels = ['interconnect','nercr','transreg','transgrp','st','r']
@@ -4354,6 +4397,7 @@ def map_neue(
         ## Labels
         # decimals = (0 if df.NEUE_ppm.max() >= 10 else 1)
         decimals = (0 if level in ['st','r'] else 1)
+        # label_region_value can't handle conditional formating, so keep as-is
         for r, row in df.sort_values('NEUE_ppm').iterrows():
             if highlight_over_threshold:
                 over_threshold = row.NEUE_ppm > neue_threshold
@@ -4389,7 +4433,7 @@ def map_neue(
 def map_h2_capacity(
         case, year=2050, wscale_h2=10, figheight=6, pipescale=0.1,
         legend_kwds={'shrink':0.6, 'pad':0, 'orientation':'horizontal', 'aspect':12},
-        cmap=cmocean.cm.rain,
+        cmap=cmocean.cm.rain, label_regions=True,
     ):
     """
     H2 turbines, production (Electrolyzer/SMR), pipelines, and storage
@@ -4475,16 +4519,22 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
+        if label_regions:
+            label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', text_kwargs={'fontsize':5})
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
+        if label_regions:
+            label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', text_kwargs={'fontsize':5})
     ### Storage
     if not cap_storage.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
+        if label_regions:
+            label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', text_kwargs={'fontsize':5})
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
@@ -4627,9 +4677,9 @@ def plot_h2_timeseries(
         fontsize=12,
     )
     ### Scales
-    ymax = (dfchunk.groupby(axis=1, level='datum').sum()
+    ymax = (dfchunk.T.groupby(level='datum').sum().T
             [['production','stor_discharge']].sum(axis=1).max()) * 24
-    ymin = (dfchunk.groupby(axis=1, level='datum').sum()
+    ymin = (dfchunk.T.groupby(level='datum').sum().T
             [['usage','stor_charge']].sum(axis=1).min()) * 24
     scalerows = [v for k,v in rows.items() if 'level' not in k]
     for row in scalerows:
@@ -4857,7 +4907,7 @@ def map_period_dispatch(
             if regions_sorted.index(r2) < regions_sorted.index(r1):
                 dftrans[interface] *= -1
                 dftrans = dftrans.rename(columns={interface:f'{r2}|{r1}'})
-        dftrans = dftrans.groupby(axis=1, level='interface').sum()
+        dftrans = dftrans.T.groupby(level='interface').sum().T
     else:
         dftrans = pd.DataFrame()
 
@@ -4989,14 +5039,27 @@ def map_period_dispatch(
     return f, ax, out
 
 
+def make_dayofyear_colormap(startfrom=200, fmt='%-m/%-d'):
+    """
+    Map day of year to a value in [0-1] that can be used to look up a color from a cyclic colormap
+    """
+    days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
+    monthdays = days_of_year.strftime(fmt)
+    colorvals = (
+        list(np.linspace(0,1,len(monthdays))[startfrom:])
+        + list(np.linspace(0,1,len(monthdays))[:startfrom])
+    )
+    monthday2val = dict(zip(monthdays, colorvals))
+    return monthday2val
+
+
 def plot_seed_stressperiods(
-    case, cmap=cmocean.cm.phase, startfrom=200,
+    case, cmap=cmocean.cm.phase,
     alpha=0.7, fontsize=5, pealpha=0.8, pelinewidth=1.5,
 ):
     """
     """
-    sys.path.append(os.path.join(reeds.io.reeds_path, 'input_processing'))
-    import hourly_repperiods
+    from reeds.input_processing import hourly_repperiods
 
     sw = reeds.io.get_switches(case)
     hierarchy = reeds.io.get_hierarchy(case)
@@ -5018,7 +5081,9 @@ def plot_seed_stressperiods(
         dictin_seed[year]['monthday'] = dictin_seed[year].timestamp.map(lambda x: x.strftime('%m-%d'))
 
     days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
-    monthdays = days_of_year.strftime('%m-%d')
+    fmt = '%m-%d'
+    monthdays = days_of_year.strftime(fmt)
+    monthday2val = make_dayofyear_colormap(fmt=fmt)
 
     ### Recalculate peak load days since we dropped duplicates above
     load_allyears = hourly_repperiods.get_load(
@@ -5040,26 +5105,6 @@ def plot_seed_stressperiods(
             level=sw['GSw_PRM_StressSeedLoadLevel'])
         for y in years
     }
-
-    ### Put cold colors in winter
-    colorvals = (
-        list(np.linspace(0,1,len(monthdays))[startfrom:])
-        + list(np.linspace(0,1,len(monthdays))[:startfrom])
-    )
-    monthday2val = dict(zip(monthdays, colorvals))
-
-    # ### Test it
-    # step = 5
-    # plt.close()
-    # f,ax = plt.subplots(figsize=(12,3))
-    # for x, monthday in enumerate(monthdays[::step]):
-    #     color = cmap(monthday2val[monthday])
-    #     ax.plot([x], [0], color=color, marker='o')
-    #     ax.annotate(monthday, (x, 0.015), rotation=90, ha='center', va='center', color=color)
-    # ax.set_title(startfrom)
-    # plots.despine(ax)
-    # plt.show()
-
 
     ### Plot it
     ncols = 3
@@ -5094,12 +5139,13 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
-        for i, _row in df.iterrows():
-            ax[row,col].annotate(
-                _row.date, (_row.centroid_x, _row.centroid_y),
-                ha='center', va='center', color='k', fontsize=fontsize,
-                path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
-            )
+        label_region_value(
+            df,
+            ax=ax[row,col],
+            column='val',
+            text_kwargs={'fontsize': fontsize},
+            pe_kwargs={'linewidth': pelinewidth, 'foreground': 'w', 'alpha': pealpha},
+        )
 
 
     ### Max load
@@ -5130,12 +5176,13 @@ def plot_seed_stressperiods(
             ax=ax[row,col], column='val', edgecolor='none', lw=0, cmap=cmap, alpha=alpha,
             vmin=0, vmax=1,
         )
-        for i, _row in df.iterrows():
-            ax[row,col].annotate(
-                _row.date, (_row.centroid_x, _row.centroid_y),
-                ha='center', va='center', color='k', fontsize=fontsize,
-                path_effects=[pe.withStroke(linewidth=pelinewidth, foreground='w', alpha=pealpha)],
-            )
+        label_region_value(
+            df,
+            ax=ax[row,col],
+            column='date',
+            text_kwargs={'fontsize': fontsize},
+            pe_kwargs={'linewidth': pelinewidth, 'foreground': 'w', 'alpha': pealpha},
+        )
 
     ### Colorbar
     row, col = 0, 0
@@ -5156,36 +5203,41 @@ def plot_seed_stressperiods(
     return f, ax
 
 
-def plot_repdays(case, cmap=cmocean.cm.phase, alpha=0.7, startfrom=200):
+def plot_repdays(case=None, year=None, actualday2repday=None, cmap=cmocean.cm.phase, alpha=0.7):
     """Plot representative days in (12month)x(monthdays) format"""
     ### Setup
     months = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ]
-    ### Get color map
-    days_of_year = pd.date_range('2004-01-01','2004-12-31',freq='D')
-    monthdays = days_of_year.strftime('%m/%d')
-    colorvals = (
-        list(np.linspace(0,1,len(monthdays))[startfrom:])
-        + list(np.linspace(0,1,len(monthdays))[:startfrom])
-    )
-    monthday2val = dict(zip(monthdays, colorvals))
 
     ### Data
-    sw = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'switches.csv'), header=None, index_col=0
-    ).squeeze(1)
+    sw = reeds.io.get_switches(case)
+    stylestring = '%-m/%-d' if os.name == 'posix' else '%#m/%#d'
+    monthday2val = make_dayofyear_colormap(fmt=stylestring)
+    va = 'center'
+    ytext = 0.5
+    if len(sw.GSw_HourlyWeatherYears.split('_')) > 1:
+        stylestring += '/\n%Y'
+        va = 'top'
+        ytext = 0.9
 
-    hmap_myr = pd.read_csv(
-        os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv'),
-        index_col='*timestamp', parse_dates=True,
-    )
+    if actualday2repday is None:
+        hmap_myr = pd.read_csv(
+            os.path.join(case, 'inputs_case', 'rep', 'hmap_myr.csv'),
+            index_col='*timestamp', parse_dates=True,
+        )
+        hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
+        hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
 
-    hmap_myr['timestamp_rep'] = hmap_myr.h.map(reeds.timeseries.h2timestamp)
-    hmap_myr['repday'] = hmap_myr.season.map(reeds.timeseries.h2timestamp)
+        if year is None:
+            year = int(sw.GSw_HourlyWeatherYears.split('_')[0])
 
-    actualday2repday = hmap_myr.drop_duplicates('yearperiod', keep='first').timestamp_rep
+        actualday2repday = (
+            hmap_myr.loc[str(year)]
+            .drop_duplicates(['year','yearperiod'], keep='first')
+            .timestamp_rep
+        )
     repdaycounts = actualday2repday.value_counts()
 
     ### Plot it
@@ -5205,17 +5257,17 @@ def plot_repdays(case, cmap=cmocean.cm.phase, alpha=0.7, startfrom=200):
         row = actualday.month - 1
         xstart = actualday.day - 1
         xend = xstart + (5 if sw.GSw_HourlyType == 'wek' else 1)
-        monthday = repday.strftime('%m/%d')
+        monthday = repday.strftime(stylestring).split('/\n')[0]
         ## Background color
         ax[row].axvspan(xstart, xend, color=cmap(monthday2val[monthday]), alpha=alpha, lw=0)
         ## Date
         ax[row].annotate(
-            repday.strftime('%-m/%-d' if os.name == 'posix' else '%#m/%#d'),
-            (xstart+0.5, 0.5), ha='center', va='center', fontsize=8,
-            path_effects=[pe.withStroke(linewidth=2.1, foreground='w', alpha=1)],
+            repday.strftime(stylestring),
+            (xstart+0.5, ytext), ha='center', va=va, fontsize=8,
+            path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.8)],
         )
         ## Box
-        if (actualday.month == repday.month) and (actualday.day == repday.day):
+        if (actualday.year, actualday.month, actualday.day) == (repday.year, repday.month, repday.day):
             ax[row].axvspan(xstart, xend, facecolor='none', edgecolor='k', zorder=1e6, clip_on=False)
             ax[row].annotate(
                 f'×{repdaycounts[repday]}', (xend-0.03, 0.05), ha='right', fontsize=7,
@@ -5286,6 +5338,14 @@ def separate_charge_discharge(df):
     df.loc[df.i.isin(storage_techs), 'i'] += '|discharge'
 
 
+def check_metric(metric):
+    allowed = (
+        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
+    )
+    if not re.match(allowed, metric):
+        raise ValueError(f"metric={metric} must match {allowed}")
+
+
 def get_cap_rep_stress_mix(
     case,
     years=None,
@@ -5304,12 +5364,8 @@ def get_cap_rep_stress_mix(
     order='fuel_storage_vre',
 ):
     ### Check inputs
-    allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
-    )
     for key in metrics:
-        if not re.match(allowed, key):
-            raise ValueError(f"{key} in metrics must match {allowed}")
+        check_metric(key)
 
     ### Parse inputs
     allyears = pd.read_csv(
@@ -5683,11 +5739,7 @@ def plot_stress_mix(
     moreticks=False,
 ):
     ### Parse inputs
-    allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
-    )
-    if not re.match(allowed, metric):
-        raise ValueError(f"metric={metric} must match {allowed}")
+    check_metric(metric)
     ## Replace 'max' with 'top1' since they're handled the same
     metric = metric.replace('max','top1').replace('min','bottom1')
 
@@ -5777,23 +5829,114 @@ def plot_stress_mix(
     return f, ax, dfout
 
 
+def plot_stress_cf(
+    case:str|Path,
+    level='transreg',
+    metric='stress_top10_netload',
+    include_rep=True,
+    figwidth=1.2,
+    figheight=1.2,
+):
+    """
+    Plot stress dispatch over capacity, in the style of a capacity credit.
+    Rows are hierarchy levels, columns are techs, x axis is years.
+    """
+    ### Check inputs
+    check_metric(metric)
+    ### Get all the data
+    dfstress = get_cap_rep_stress_mix(
+        case, level=level, metrics=['cap', 'rep_mean', metric], order=None,
+    )
+    ## Drop some techs
+    plot_settings = reeds.io.get_plot_formatting()
+    tech_map = plot_settings['tech_map']
+    tech_color = plot_settings['tech_color'].color
+    droptechs = ['beccs', 'canad', 'bio', 'o-g-s', 'lfill', 'csp', 'distpv']
+    droplabels = []
+    for _tech in droptechs:
+        droplabels.extend(tech_map.loc[tech_map.index.str.lower().str.contains(_tech)].tolist())
+    droplabels = sorted(set(droplabels))
+    ## For storage techs, drop charge and keep discharge (relabeling as tech name)
+    storage_techs = sorted(set([i.split('|')[0] for i in dfstress['rep_mean'].index if '|' in i]))
+    drop = [f'{i}|charge' for i in storage_techs]
+    rename = {f'{i}|discharge':i for i in storage_techs}
+    for key in [metric, 'rep_mean', 'cap']:
+        dfstress[key] = dfstress[key].rename(rename).drop(drop+droplabels, errors='ignore')
+    ## Get the "capacity credit"
+    techs = dfstress['cap'].index.tolist()
+    capcredit = (dfstress[metric] / dfstress['cap']).reindex(techs) * 100
+    repfraction = (dfstress['rep_mean'] / dfstress['cap']).reindex(techs) * 100
+    ### Set up plot
+    dfmap = reeds.io.get_dfmap(case)
+    regions = dfmap[level].bounds.minx.sort_values().index
+    nrows, ncols, coords = layout_subplots(row_list=regions, col_list=techs)
+    metriclabel = stress_mix_label(case, metric).split(': ')[1]
+    sw = reeds.io.get_switches(case)
+    yearmin = int(sw.GSw_StartMarkets)
+    yearmax = int(sw.endyear)
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(figwidth*ncols, figheight*nrows),
+        sharex=True, sharey=True,
+    )
+    for _row, region in enumerate(regions):
+        for _col, tech in enumerate(techs):
+            _ax = ax[coords[region,tech]]
+            capcredit.loc[tech].loc[:,region].plot(
+                ax=_ax, ls='-', color=tech_color[tech], label='stress')
+            if include_rep:
+                repfraction.loc[tech].loc[:,region].plot(
+                    ax=_ax, ls=':', color=tech_color[tech], label='rep')
+            ## Formatting
+            if region == regions[0]:
+                _ax.set_title(tech.replace(' ','\n'), weight='bold')
+                if tech == techs[0]:
+                    _ax.legend(
+                        loc='center left', frameon=False,
+                        handletextpad=0.3, handlelength=1.5,
+                    )
+            if tech == techs[0]:
+                _ax.annotate(
+                    region, (0,0), xycoords='axes fraction',
+                    xytext=(3,3), textcoords='offset points',
+                    fontsize='large', weight='bold', va='bottom', ha='left',
+                )
+                if region == regions[-1]:
+                    _ax.set_ylabel('Dispatch / Capacity [%]', y=0, ha='left')
+                    _ax.annotate(
+                        f'Stress fraction shown: {metriclabel}',
+                        (0,0), xycoords='axes fraction',
+                        xytext=(0,-30), textcoords='offset points',
+                        fontsize='x-large', weight='normal', va='top', ha='left',
+                        annotation_clip=False,
+                    )
+            _ax.set_xlabel(None)
+    ## Formatting
+    _ax.set_ylim(0, 100)
+    _ax.set_xlim(yearmin, yearmax)
+    _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
+    _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
+    reeds.plots.despine(ax)
+    plt.draw()
+    try:
+        plots.shorten_years(_ax, start_shortening_in=yearmin+1)
+    except ValueError:
+        _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(5))
+        _ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(1))
+    return f, ax, {'stress': capcredit, 'rep': repfraction}
+
+
 def plot_capacity_offline(
         case, year=2050, level='transgrp',
         capwidth='5D', tempcolor='C7', temp_front=True,
         drawgrid=True, plot_for=False,
     ):
     """Plot capacity offline and temperature for rep and stress periods"""
-    ### Get temperatures
-    temperatures = reeds.io.get_temperatures(case)
 
-    ## Aggregate if necessary
+    ### Get switches
     sw = reeds.io.get_switches(case)
-
-    if sw['GSw_RegionResolution'] == 'aggreg':
-        r2aggreg = pd.read_csv(
-            os.path.join(case, 'inputs_case', 'hierarchy_original.csv')
-        ).rename(columns={'ba':'r'}).set_index('r').aggreg
-        temperatures = temperatures.rename(columns=r2aggreg)
 
     hierarchy = reeds.io.get_hierarchy(case)
     r2level = hierarchy[level]
@@ -5802,19 +5945,26 @@ def plot_capacity_offline(
     bokehcolors.drop(['Electrolyzer','SMR','SMR-CCS','Canadian Imports','Remove','Dropped'], errors='ignore', inplace = True)
     bokehcolors = bokehcolors.squeeze(1)
 
+    ### Get temperatures for model zones
+    temperatures = reeds.io.get_temperatures(case)
+    temperatures_r = (
+        pd.concat({r: temperatures[st] for r, st in hierarchy['st'].items()}, axis=1)
+        .rename_axis('r', axis=1)
+    )
+
     dftemp = pd.concat({
         which: (
-            temperatures.rename(columns=hierarchy[level]).T.groupby(level='r').agg(which)
+            temperatures_r.rename(columns=hierarchy[level]).T.groupby(level='r').agg(which)
             .T.groupby([
-                temperatures.index.year,
-                temperatures.index.month,
-                temperatures.index.day,
+                temperatures_r.index.year,
+                temperatures_r.index.month,
+                temperatures_r.index.day,
             ]).agg(which)
         )
         for which in ['min', 'max']
     }, axis=1)
     dftemp.index = pd.to_datetime(
-        temperatures.index.strftime('%Y-%m-%d').drop_duplicates())
+        temperatures_r.index.strftime('%Y-%m-%d').drop_duplicates())
     ## Include all weather years so we don't interpolate the gap
     dftemp = dftemp.reindex(pd.date_range(dftemp.index[0], dftemp.index[-1], freq='D'))
 
@@ -6028,14 +6178,13 @@ def map_outage_days(
         dfplot.plot(ax=_ax, column='outage_pct', cmap=cmap, vmin=vmin, vmax=vmax)
         ## Data values
         if fontsize:
-            for r, row in dfplot.sort_values('outage_pct').iterrows():
-                _ax.annotate(
-                    f"{row.outage_pct:.0f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k',
-                    fontsize=fontsize,
-                    path_effects=[pe.withStroke(linewidth=1.4, foreground='w', alpha=0.7)],
-                )
+            label_region_value(
+                df=dfplot,
+                ax=_ax,
+                column='outage_pct',
+                text_kwargs={'fontsize': fontsize},
+                pe_kwargs={'linewidth': 1.4},
+            )
         _ax.axis('off')
         ## Formatting
         if date == dates[0]:
@@ -6074,7 +6223,7 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     if recf is None:
         ## Get CF
         recf = reeds.io.read_file(
-            os.path.join(case, 'inputs_case', 'recf.h5'), parse_timestamps=True,
+            os.path.join(case, 'inputs_case', 'recf.h5'),
         )
     if not isinstance(recf.columns, pd.core.indexes.multi.MultiIndex):
         recf.columns = pd.MultiIndex.from_tuples(
@@ -6102,27 +6251,59 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     dfsc['i'] = tech + '_' + dfsc['class'].astype(str)
     sitemap = reeds.io.get_sitemap(offshore=(True if tech == 'wind-ofs' else False))
     dfsc['geometry'] = dfsc.index.map(sitemap.geometry)
-    dfsc = gpd.GeoDataFrame(dfsc).to_crs(crs)
+    dfsc = gpd.GeoDataFrame(dfsc, geometry='geometry', crs=sitemap.crs)
+    dfsc = dfsc.to_crs(crs)
     dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
 
     ## Convert to polygons
-    dfsc['geometry'] = dfsc.buffer(11530/2, cap_style='square')
+    dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     return dfsc
 
 
-def label_region_value(df, ax, column, fmt='{:.2f}', color='k', fontsize=8, **kwargs):
-    """kwargs are passed to patheffects.withStroke()"""
-    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':1}, **kwargs}
+def label_region_value(
+    df, 
+    ax, 
+    column, 
+    fmt='{auto}', 
+    text_kwargs:None|dict=None,
+    pe_kwargs:None|dict=None,
+):
+    """pe_kwargs are passed to patheffects.withStroke()"""
+    text_kwargs = {
+        'ha':'center', 'va':'center', 'color':'k', 'fontsize':8,
+        **(text_kwargs if isinstance(text_kwargs, dict) else {})
+    }
+    pe_kwargs = {
+        'linewidth':1.5, 'foreground':'w', 'alpha':0.7,
+        **(pe_kwargs if isinstance(pe_kwargs, dict) else {})
+    }
+    text_artists = []
     for r, row in df.iterrows():
-        ax.annotate(
-            fmt.format(row[column]),
-            (row.geometry.centroid.x, row.geometry.centroid.y),
-            ha='center', va='center', fontsize=fontsize,
-            color=color,
-            path_effects=[pe.withStroke(**pe_kwargs)],
-            zorder=1e9,
+        value = row.get(column, np.nan)
+        if isinstance(value, (int, float, complex)):
+            if not np.isfinite(value):
+                continue
+            if '{auto}' in fmt:  
+                            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1  
+                            fmt = fmt.replace('{auto}', f"{{:.{decimals}f}}")  
+        text_artists.append(
+            ax.annotate(
+                (fmt.format(value) if not isinstance(value, str) else value),
+                (row.geometry.centroid.x, row.geometry.centroid.y),
+                **text_kwargs,
+                path_effects=[pe.withStroke(**pe_kwargs)],
+                zorder=1e9,
+            )
         )
+    try:
+        from adjustText import adjust_text
+    except ImportError:
+        return
+
+    adjust_text(text_artists, ax=ax,
+                avoid_self=False, ensure_inside_axes=True,
+            )
 
 
 def map_stressors(
@@ -6162,7 +6343,7 @@ def map_stressors(
     """
     ### Plot setup
     cmaps = {
-        'load': cmocean.cm.rain,
+        'load': cmocean.cm.tempo,
         # 'load': plt.cm.turbo,
         # 'wind-ons': cmocean.cm.ice_r,
         'wind-ons': cmocean.cm.ice,
@@ -6199,7 +6380,8 @@ def map_stressors(
         dfmap[k] = v.to_crs(crs)
 
     ### Derived inputs
-    criterion = sw.GSw_PRM_StressThreshold.split('/')[0]
+    _first_metric = sw.GSw_PRM_StressThresholdMetrics.split('/')[0].upper()
+    criterion = sw[f'GSw_PRM_StressThreshold{_first_metric}']
     level = criterion.split('_')[0]
     regions = hierarchy[level].unique()
     region2rs = {
@@ -6210,30 +6392,28 @@ def map_stressors(
     dflevel = dfmap[level].copy()
 
     ### Get the data
-    augur_files = {
-        'vre_gen': os.path.join(case, 'ReEDS_Augur', 'augur_data', f'pras_vre_gen_{t}.h5'),
-        'load': os.path.join(case, 'ReEDS_Augur', 'augur_data', f'pras_load_{t}.h5'),
+    ra_files = {
+        'vre_gen': os.path.join(case, 'handoff', 'reeds_data', f'pras_vre_gen_{t}.h5'),
+        'load': os.path.join(case, 'handoff', 'reeds_data', f'pras_load_{t}.h5'),
     }
-    if any([not os.path.exists(fpath) for fpath in augur_files.values()]):
-        import ReEDS_Augur.prep_data as prep_data
-        prep_data.main(t, case, iteration)
+    if any([not os.path.exists(fpath) for fpath in ra_files.values()]):
+        reeds.resource_adequacy.prep_data.main(t, case, iteration)
 
-    vre_gen = reeds.io.read_file(augur_files['vre_gen'], parse_timestamps=True)
+    vre_gen = reeds.io.read_file(ra_files['vre_gen'])
     vre_gen.columns = pd.MultiIndex.from_tuples(
         vre_gen.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
 
-    load = reeds.io.read_file(augur_files['load'], parse_timestamps=True)
-
     recf = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'recf.h5'),
-        parse_timestamps=True,
     )
     recf.columns = pd.MultiIndex.from_tuples(
         recf.columns.map(lambda x: tuple(x.split('|'))),
         names=['i','r'],
     )
+
+    load = reeds.io.read_file(ra_files['load']).tz_convert(recf.index.tz)
 
     temperatures = reeds.io.get_temperatures(case)
     hierarchy = reeds.io.get_hierarchy(case)
@@ -6273,7 +6453,7 @@ def map_stressors(
     vre_gen_region = {
         (tech, region):
         (
-            vre_gen[tech][region2rs[region]].sum(axis=1)
+            vre_gen[tech].reindex(region2rs[region], axis=1).fillna(0.).sum(axis=1)
             .groupby([vre_gen.index.year, vre_gen.index.month, vre_gen.index.day])
             .sum()
             .sort_values()
@@ -6310,23 +6490,23 @@ def map_stressors(
 
     outage_region = outage_daily.copy()
     outage_region.columns = outage_daily.columns.map(lambda x: (x[0], hierarchy[level][x[1]]))
-    outage_region = outage_region.groupby(['i','r'], axis=1).mean()
+    outage_region = outage_region.T.groupby(['i','r']).mean().T
 
     ### Set up the plot
     nrows, ncols = 3, 4
     vmin = {
         'load': (pd.concat(load_region, axis=1).min() / pd.concat(load_region, axis=1).max()).min(),
-        'wind-ons': 0,
-        'upv': 0,
+        'wind-ons': 0.,
+        'upv': 0.,
         'temperature': reeds.units.c2f(-20),
-        'outage': 0,
+        'outage': 0.,
     }
     vmax = {
-        'load': 1,
+        'load': 1.,
         'wind-ons': 0.8,
         'upv': 0.5,
         'temperature': reeds.units.c2f(40),
-        'outage': 40,
+        'outage': 40.,
     }
 
     ### Get the days to run
@@ -6442,8 +6622,8 @@ def map_stressors(
             ax=ax[1,0], column='load_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
         )
         label_region_value(
-            df=dflevel, ax=ax[1,0], column='load_rank', fmt='{:.0f}%',
-            linewidth=2.0, alpha=0.8,
+            df=dflevel, ax=ax[1,0], column='load_rank',
+            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,0].set_title('Demand', y=0.9)
         plots.addcolorbarhist(
@@ -6457,8 +6637,8 @@ def map_stressors(
                 ax=ax[1,col], column=f'{tech}_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
             )
             label_region_value(
-                df=dflevel, ax=ax[1,col], column=f'{tech}_rank', fmt='{:.0f}%',
-                linewidth=2.0, alpha=0.8,
+                df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
+                fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
             plots.addcolorbarhist(
@@ -6471,8 +6651,8 @@ def map_stressors(
             ax=ax[1,3], column='temperature_rank', cmap=cmaps['rank'], vmin=0, vmax=100,
         )
         label_region_value(
-            df=dflevel, ax=ax[1,3], column='temperature_rank', fmt='{:.0f}%',
-            linewidth=2.0, alpha=0.8,
+            df=dflevel, ax=ax[1,3], column='temperature_rank',
+            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,3].set_title('Temperature', y=0.9)
         plots.addcolorbarhist(
@@ -6489,8 +6669,9 @@ def map_stressors(
             )
             dflevel[f'outage_{tech}'] = outage_region.loc[(y,m,d), tech]
             label_region_value(
-                df=dflevel, ax=ax[2,col], column=f'outage_{tech}', fmt='{:.0f}%',
-                linewidth=2.0, alpha=0.8,
+                df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
+                fmt='{:.0%}',
+                pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[2,col].set_title(label, y=0.9)
             plots.addcolorbarhist(
@@ -6529,6 +6710,107 @@ def map_stressors(
         ## Keep the data for debugging
         dfout = {'dfba':dfba, 'dflevel':dflevel}
         yield f, ax, dfout, plotlabel
+
+
+def plot_eue_events(
+    case, year=None, level='transgrp',
+    xval:Literal['timesteps','mean','max','sum']='timesteps',
+    yval:Literal['timesteps','mean','max','sum']='mean',
+    scale=1, alpha=0.9,
+    showhull=True,
+):
+    """
+    Plot event metrics against each other for all regions in specified level (columns)
+    and for each iteration in specified year (rows)
+    """
+    sw = reeds.io.get_switches(case)
+    dflevel = reeds.io.get_dfmap(case)[level]
+    regions = dflevel.bounds.minx.sort_values().index
+    year = int(sw.endyear) if not year else year
+    iterations = get_stressperiods(case).loc[year].index.get_level_values('iteration').unique()
+    units = {'timesteps':'hours', 'mean':'%', 'max':'%', 'sum':'MWh'}
+    if showhull:
+        import scipy.spatial
+    ## Get load if we need it for normalization
+    peakload = (
+        pd.read_csv(Path(case,'inputs_case','peakload.csv'), index_col=['level','region'])
+        .loc[level][str(year)]
+    )
+    ## Get thresholds
+    thresholds = {}
+    if level in sw.GSw_PRM_StressThresholdDuration:
+        thresholds['timesteps'] = int(sw.GSw_PRM_StressThresholdDuration.split('/')[0].split('_')[-1])
+    if level in sw.GSw_PRM_StressThresholdDepth:
+        thresholds['max'] = float(sw.GSw_PRM_StressThresholdDepth.split('/')[0].split('_')[-1]) * 100
+    ## Plot it
+    nrows, ncols, coords = layout_subplots(
+        row_list=iterations, col_list=regions,
+        oneaxis=('columns' if len(regions) > 1 else 'rows'),
+    )
+    dictout = {}
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(scale*ncols, scale*nrows),
+        sharex=True, sharey=True,
+    )
+    for iteration in iterations:
+        ## Get events
+        fpath = Path(case, 'outputs', f'eue_events_{year}i{iteration}.csv')
+        events = pd.read_csv(fpath, index_col=['level','region','number'])
+        if events.empty:
+            continue
+        events = events.loc[level]
+        events['mean'] = events['sum'] / events['timesteps']
+        dictout[iteration] = events
+        ## Plot for each region and iteration
+        for region in regions:
+            _ax = ax[coords[iteration, region]] if nrows + ncols > 2 else ax
+            if region in events.index.get_level_values('region'):
+                points = {'x':events.loc[region][xval], 'y':events.loc[region][yval]}
+                if xval in ['max', 'mean']:
+                    points['x'] = points['x'] / peakload[region] * 100
+                if yval in ['max', 'mean']:
+                    points['y'] = points['y'] / peakload[region] * 100
+                _ax.plot(
+                    points['x'], points['y'], lw=0, alpha=alpha,
+                    marker='o', markersize=3, markeredgewidth=0, color='C3',
+                )
+                if showhull and len(points['x']) >= 3:
+                    dfpoints = pd.DataFrame(points)
+                    try:
+                        hull = scipy.spatial.ConvexHull(dfpoints)
+                        dfhull = dfpoints.loc[hull.vertices]
+                        _ax.fill(dfhull.x, dfhull.y, color='C3', lw=0, alpha=0.3, zorder=-1)
+                    except Exception as err:
+                        print(err)
+            ## Formatting
+            if iteration == 0:
+                _ax.set_title(region.replace('_','\n'), weight='bold')
+            if region == regions[0]:
+                _ax.annotate(
+                    f'{year}i{iteration}',
+                    (0, 1), xycoords='axes fraction',
+                    xytext=(3,-3), textcoords='offset points',
+                    ha='left', va='top', fontsize=12,
+                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.8)],
+                )
+                if iteration == max(iterations):
+                    _ax.set_ylabel(f'EUE {yval} [{units[yval]}]', y=0, ha='left')
+                    _ax.set_xlabel(f'EUE {xval} [{units[xval]}]', x=0, ha='left')
+    ## Formatting (stop here if there are no events)
+    if not len(dictout):
+        return f, ax, dictout
+    _ax.set_xlim(0, _ax.get_xlim()[1])
+    _ax.set_ylim(0, _ax.get_ylim()[1])
+    for iteration in iterations:
+        for region in regions:
+            _ax = ax[coords[iteration, region]] if nrows + ncols > 2 else ax
+            if xval in thresholds:
+                _ax.axvline(thresholds[xval], c='k', ls=':', lw=0.75)
+            if yval in thresholds:
+                _ax.axhline(thresholds[yval], c='k', ls=':', lw=0.75)
+    reeds.plots.despine(ax)
+    return f, ax, dictout
 
 
 def layout_subplots(row_list, col_list, oneaxis='columns'):
@@ -6642,8 +6924,8 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     ### Get final iterations
     year2iteration = (
         pd.DataFrame([
-            os.path.basename(i).strip('neue_.csv').split('i')
-            for i in sorted(glob(os.path.join(case, 'outputs', 'neue_*.csv')))
+            os.path.basename(i).strip('ra_metrics.csv').split('i')
+            for i in sorted(glob(os.path.join(case, 'outputs', 'ra_metrics_*.csv')))
         ], columns=['year','iteration']).astype(int)
         .drop_duplicates(subset='year', keep='last')
         .set_index('year').iteration
@@ -6661,7 +6943,8 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
 
     ### Plot it
     nrows, ncols, coords = plots.get_coordinates(year2iteration.index, aspect=1.8)
-    level = sw.GSw_PRM_StressThreshold.split('_')[0]
+    _first_metric = sw.GSw_PRM_StressThresholdMetrics.split('/')[0].upper()
+    level = sw[f'GSw_PRM_StressThreshold{_first_metric}'].split('_')[0]
     plt.close()
     f,ax = plt.subplots(
         nrows, ncols, figsize=(ncols*scale, nrows*scale*0.8), sharex=True, sharey=True,
@@ -6696,3 +6979,168 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     plots.trim_subplots(ax, nrows, ncols, len(coords))
 
     return f, ax, prm_final
+
+
+def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
+    """Map capacity in interconnection queues"""
+    ### Get inputs
+    if case is None:
+        fpath = Path(
+            reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+            'interconnection_queues.csv',
+        )
+        dfqueue = (
+            pd.read_csv(fpath).set_index(['tg','r']).stack()
+            .rename_axis(['tg','r','t']).rename('GW') / 1e3
+        ).reset_index().astype({'t':int})
+        dfqueue.r = dfqueue.r.str.replace('p','')
+        dfqueue = dfqueue.set_index(['tg','r','t']).squeeze(1)
+        dfzones = reeds.spatial.get_map('county', 'tiger')
+        dfstates = reeds.spatial.get_map('state', 'census')
+        years = sorted(set(dfqueue.index.get_level_values('t')))
+    else:
+        dfqueue = (
+            reeds.io.read_input(case, 'queue_limit')
+            .rename(columns={'allt':'t','Value':'GW'}).astype({'t':int})
+            .set_index(['tg','r','t']).GW / 1e3
+        )
+        dfmap = reeds.io.get_dfmap(case)
+        dfzones = dfmap['r']
+        modelyears = reeds.io.read_input(case, 'tmodel_new').squeeze(1).tolist()
+        years = [y for y in modelyears if y in dfqueue.index.get_level_values('t')]
+    ### Drop zeros since GAMS doesn't see them; stop here if the queue is turned off
+    dfqueue = dfqueue.replace(0,np.nan).dropna().loc[:,:,years]
+    if not len(dfqueue):
+        return None, None, dfqueue
+    ### Set up plot
+    tgs = dfqueue.groupby('tg').sum().sort_values(ascending=False).index.values
+    nrows, ncols, coords = layout_subplots(row_list=years, col_list=tgs)
+    bounds = dfzones.dissolve().bounds.squeeze(0)
+    yscale = (bounds.maxy - bounds.miny) / (bounds.maxx - bounds.minx)
+    if vmax in ['shared', 'same', 'all']:
+        _vmax = dict(zip(coords.keys(), [dfqueue.max()]*len(coords)))
+    elif isinstance(vmax, (float, int)):
+        _vmax = dict(zip(coords.keys(), [vmax]*len(coords)))
+    else:
+        _vmax = dfqueue.groupby(['t','tg']).max()
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*figscale, nrows*figscale*yscale),
+        sharex=True, sharey=True, gridspec_kw={'wspace':-0.1, 'hspace':0.5},
+    )
+    for tg in tgs:
+        for t in years:
+            _ax = ax[coords[t,tg]]
+            dfplot = dfzones.copy()
+            dfplot['GW'] = dfqueue.loc[tg,:,t]
+            if dfplot.GW.count():
+                dfplot.plot(ax=_ax, column='GW', cmap=cmap, vmin=0, vmax=_vmax[t,tg])
+                reeds.plots.addcolorbarhist(
+                    f, _ax, dfplot.GW, vmin=0, vmax=_vmax[t,tg], cmap=cmap,
+                    orientation='horizontal', cbarbottom=-0.15, cbarheight=0.8,
+                    histratio=1, nbins=51, cbarwidth=0.1,
+                )
+            if len(dfzones) < 300:
+                dfzones.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            else:
+                dfstates.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            _ax.axis('off')
+            ## Formatting
+            if t == years[0]:
+                _ax.annotate(
+                    tg, (0.5,1), xycoords='axes fraction',
+                    ha='center', weight='bold', fontsize=12,
+                )
+            if tg == tgs[0]:
+                _ax.annotate(
+                    f'{t}\n[GW]', (0,0.5), xycoords='axes fraction',
+                    ha='right', va='center', weight='bold', fontsize=12,
+                )
+    return f, ax, dfqueue
+
+
+def validate_regional_capacity(
+    case,
+    mapmethod:Literal['FIPS','latlon']='county',
+    scale:float=1.2,
+    sharey=False,
+):
+    """Compare regional capacity from EIA-NEMS to ReEDS results for last historical year"""
+    ### Settings
+    plot_settings = reeds.io.get_plot_formatting()
+    tech_color = plot_settings['tech_color'].squeeze(1)
+    unitspath = Path(
+        reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+        'ReEDS_generator_database_final_EIA-NEMS.csv',
+    )
+    ### Get run capacity and last historical year
+    hierarchy = reeds.io.get_hierarchy(case)
+    dfmap = reeds.io.get_dfmap(case)
+    crs = dfmap['r'].crs
+    county2zone = reeds.io.get_county2zone(case)
+    sw = reeds.io.get_switches(case)
+    years = reeds.inputs.parse_yearset(sw.yearset)
+    scalars = reeds.io.get_scalars(case)
+    plotyear = max([y for y in years if y <= int(scalars.this_year)])
+    cap = reeds.io.read_output(case, 'cap')
+    cap = cap.loc[~cap.i.isin(['can-imports'])].copy()
+    cap.i = simplify_techs(cap.i)
+    cap_year = cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+    ### Get EIA-NEMS capacity and formatting
+    dfunits = reeds.plots.df2gdf(pd.read_csv(unitspath), lat='T_LAT', lon='T_LONG').to_crs(crs)
+    ## Clean up old techs
+    dfunits.tech = dfunits.tech.replace({'dupv':'upv'})
+    dfunits.tech = simplify_techs(dfunits.tech)
+    dfunits.FIPS = dfunits.FIPS.str.strip('p')
+    ## Map to zones
+    if mapmethod == 'FIPS':
+        dfunits['r'] = dfunits.FIPS.map(county2zone)
+    elif mapmethod == 'latlon':
+        dfunits = (
+            dfunits.sjoin(dfmap['r'][['geometry']], how='left')
+            .rename(columns={'index_right':'r'})
+        )
+    dfunits_year = dfunits.loc[
+        (dfunits.StartYear <= plotyear)
+        & (dfunits.RetireYear > plotyear)
+    ].copy()
+    ### Plot setup
+    rs = sorted(hierarchy.index)
+    nrows, ncols, coords = reeds.plots.get_coordinates(rs, aspect=1.3)
+    order = tech_color.index.tolist()
+    dictout = {}
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(scale*ncols, scale*nrows), sharex=True, sharey=sharey,
+        gridspec_kw={'wspace':0.5, 'hspace':0.5},
+    )
+    for r in rs:
+        _ax = ax[coords[r]]
+        _ax.set_title(r.replace('_','.'), y=0.95, fontsize=11)
+        dfplot = pd.concat({
+            'NEMS': dfunits_year.loc[dfunits_year.r==r].groupby('tech').summer_power_capacity_MW.sum(),
+            'ReEDS': cap_year[r],
+        ## Convert from MW to GW
+        }, axis=1).dropna(how='all').T / 1e3
+        keep = [i for i in order if i in dfplot]
+        if len(keep) != dfplot.shape[1]:
+            _missing = [i for i in dfplot if i not in keep]
+            print(dfplot)
+            raise ValueError(f"Dropped these techs: {_missing}")
+        dfplot = dfplot[keep]
+        reeds.plots.stackbar(
+            df=dfplot, ax=_ax, colors=tech_color, net=False, width=0.8,
+        )
+        dictout[r] = dfplot
+        ## Formatting
+        row, col = coords[r]
+        if row == nrows - 1:
+            ax[row,col].set_xticks(range(len(dfplot)))
+            ax[row,col].set_xticklabels(dfplot.index, rotation=90)
+    ## Formatting
+    ax[-1,0].set_ylabel(f'{plotyear} capacity [GW]', y=0, ha='left')
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(rs))
+    reeds.plots.despine(ax)
+    return f, ax, dictout

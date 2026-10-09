@@ -39,6 +39,10 @@ def makelog(scriptname, logpath):
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[logging.FileHandler(logpath, mode='a'), sh, eh],
     )
+    ### Route warnings.warn() through the logging system at WARNING level.
+    ### Without this they reach the sys.stderr redirect below and get logged as ERROR.
+    logging.captureWarnings(True)
+
     log = logging.getLogger(__name__)
     sys.stdout = StreamToLogger(log, logging.INFO)
     sys.stderr = StreamToLogger(log, logging.ERROR)
@@ -68,7 +72,7 @@ def toc(tic, year, process, path=''):
 def get_solve_times(path=''):
     """Get all solve times, disaggregated by GAMS/barrier/crossover/remainder.
     Disaggregation only works when using CPLEX as the solver."""
-    # path = '/Users/pbrown/github/ReEDS-2.0/runs/v20240111_stressM0_stress_WECC_crossover'
+    # path = '/Users/pbrown/github/ReEDS/runs/v20240111_stressM0_stress_WECC_crossover'
     lengths = {
         'gams': {},
         'barrier': {},
@@ -103,7 +107,7 @@ def get_solve_times(path=''):
                 process = line[len('--- Job ') : line.index(' Stop ')]
                 x = f'--- Job {process} Stop '
                 y = ' elapsed '
-                label = process if process != 'd_solveoneyear.gms' else stress_year
+                label = process if process != '3_solve_oneyear.gms' else stress_year
                 lengths['total'][label] = pd.Timedelta(line[line.index(y) + len(y) :])
                 times['stop'][label] = pd.Timestamp(line[len(x) : line.index(y)])
                 times['start'][label] = times['stop'][label] - lengths['total'][label]
@@ -164,7 +168,7 @@ def write_last_solve_time(path=''):
         scriptname = lasttime.name
         year = 0
     else:
-        scriptname = 'd_solveoneyear.gms'
+        scriptname = '3_solve_oneyear.gms'
         year = int(lasttime.name.split('i')[0])
     towrite = {
         'gams': scriptname,
@@ -173,7 +177,7 @@ def write_last_solve_time(path=''):
         'remainder': 'solver/remainder',
     }
     with open(os.path.join(path, 'meta.csv'), 'a') as METAFILE:
-        if (scriptname == 'd_solveoneyear.gms') and all([i in lasttime for i in towrite]):
+        if (scriptname == '3_solve_oneyear.gms') and all([i in lasttime for i in towrite]):
             for i, process in enumerate(towrite):
                 METAFILE.writelines(
                     '{},{},{},{},{}\n'.format(

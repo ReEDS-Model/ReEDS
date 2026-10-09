@@ -1,0 +1,61 @@
+name: Setup ReEDS Environment
+description: Setup cached micromamba Python and/or Julia environment for ReEDS CI.
+
+inputs:
+  setup-python:
+    description: Setup micromamba environment from environment.yml.
+    required: false
+    default: "true"
+  setup-julia:
+    description: Setup Julia toolchain.
+    required: false
+    default: "true"
+  julia-version:
+    description: Julia version to install.
+    required: false
+    default: "1.12.1"
+  instantiate-julia:
+    description: Run julia --project=. instantiate.jl.
+    required: false
+    default: "true"
+
+outputs:
+  mamba-env-path:
+    description: Micromamba environment path.
+    value: ${{ steps.mamba.outputs.environment-path }}
+  julia-bindir:
+    description: Julia binary directory.
+    value: ${{ steps.setup-julia.outputs.julia-bindir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup micromamba env
+      if: ${{ fromJSON(inputs.setup-python) }}
+      id: mamba
+      uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2
+      with:
+        environment-file: environment.yml
+        cache-environment: true
+        post-cleanup: "all"
+        cache-environment-key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
+
+    - name: Restore Julia cache
+      if: ${{ fromJSON(inputs.setup-julia) }}
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+      with:
+        path: ~/.julia
+        key: julia-${{ runner.os }}-${{ hashFiles('Project.toml') }}
+        restore-keys: julia-${{ runner.os }}-
+
+    - name: Setup Julia
+      if: ${{ fromJSON(inputs.setup-julia) }}
+      id: setup-julia
+      uses: julia-actions/setup-julia@5c9647d97b78a5debe5164e9eec09d653d29bd71 # v2
+      with:
+        version: ${{ inputs.julia-version }}
+
+    - name: Instantiate Julia project
+      if: ${{ fromJSON(inputs.setup-julia) && fromJSON(inputs.instantiate-julia) }}
+      shell: bash -le {0}
+      run: julia --project=. instantiate.jl
