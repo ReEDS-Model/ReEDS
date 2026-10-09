@@ -3409,7 +3409,7 @@ def map_zone_capacity_diff(
         dfcap = dfcap.loc[dfcap.index.get_level_values('t') >= 2020]
         
     print('Getting transmission capacity...')
-    transmap = get_trans_capacity(case=case, year=2050, level=level, units='GW', dfmap=dfmap).fillna(0)
+    transmap = get_trans_capacity(case=case, year=2050, level='r', units='GW', dfmap=dfmap).fillna(0)
     ## If second case is provided, calculate diff
     if casediff is not None:
         print(' - Calculating transmission diff')
