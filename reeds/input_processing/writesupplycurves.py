@@ -778,7 +778,6 @@ def main(
             numbins_tech=numbins['psh'],
             bin_method='equal_cap_cut',
             bin_col='supply_curve_cost_per_mw',
-            spur_cutoff=1e7,
             psh_cutoff=4e6,
             deflate=deflate,
         )
