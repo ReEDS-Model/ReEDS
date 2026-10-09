@@ -450,6 +450,7 @@ def main(
         'CENTRAL': f'w{weather_years[0]}{esm}-central',
         'CENTRAL_ADJ': f'w{weather_years[0]}{esm}-central_adj',
         'REFERENCE': f'w{weather_years[0]}{esm}-reference',
+        'REFERENCE_ADJ': f'w{weather_years[0]}{esm}-reference_adj',
         'BASELINE': f'w{weather_years[0]}{esm}-baseline',
     }
     valid_scenarios = list(scenario_outfile_prefix_map.keys())

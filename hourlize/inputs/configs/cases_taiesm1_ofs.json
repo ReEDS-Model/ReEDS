@@ -1,0 +1,38 @@
+{
+    "wind-ofs_w2000taiesm1": {
+        "tech": "wind-ofs", 
+        "access_case": "taiesm12000",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2000,2010))}"
+    },
+    "wind-ofs_w2010taiesm1": {
+        "tech": "wind-ofs", 
+        "access_case": "taiesm12010",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2010,2020))}"
+    },
+    "wind-ofs_w2020taiesm1": {
+        "tech": "wind-ofs", 
+        "access_case": "taiesm12020",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2020,2030))}"
+    },
+    "wind-ofs_w2030taiesm1": {
+        "tech": "wind-ofs", 
+        "access_case": "taiesm12030",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2030,2040))}"
+    },
+    "wind-ofs_w2040taiesm1": {
+        "tech": "wind-ofs", 
+        "access_case": "taiesm12040",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2040,2050))}"
+    },
+    "wind-ofs_w2050taiesm1": {
+        "tech": "wind-ofs", 
+        "access_case": "taiesm12050",
+        "classbin_base": "wtk_hrrr",
+        "hourly_out_years": "{eval_list(range(2050,2060))}"
+    }
+}

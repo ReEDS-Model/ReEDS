@@ -24,7 +24,7 @@
     "offshore_meshed": false,
     "process_profiles": true,
     "profile_id_col": "sc_point_gid",
-    "reg_map_file": "{reeds_path}/inputs/county2zone.csv",
+    "reg_map_file": "{reeds_path}/inputs/zones/z134/county2zone.csv",
     "rev_paths_file": "{reeds_path}/inputs/supply_curve/rev_paths.csv",
     "scale_factor": 1e4,
     "start_year": 2010,
