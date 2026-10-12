@@ -160,10 +160,11 @@ set vc_stream "cost and value streams" /
   cost_fuel         "fuel, hours * heat_rate * fuel_price * GEN (fixed-price fuels only)"
   cost_total        "sum of cost streams"
   val_load          "energy value at rep hours, GEN * marginal of eq_supply_demand_balance"
-  val_resmarg       "reserve-margin value at stress hours, same equation"
+  val_resmarg       "reserve-margin value: at stress hours on the same equation (GSw_PRM_CapCredit=0), or firm capacity * marginal of eq_reserve_margin (=1)"
   val_rsc           "resource rent, INV_RSC * marginal of eq_rsc_INVlim. NOT added to val_total: see residual"
   val_csapr         "NOx-cap rent, h_weight_csapr*hours*emit_rate(NOX)*GEN * marginal of eq_CSAPR_Assurance. Also a rent: see residual"
   val_prescribed    "prescription rent, INV * marginal of eq_forceprescription_power; negative when a mandated plant does not earn its cost. Rent side"
+  val_sdbin         "storage duration-bin value, -cc_storage * CAP_SDBIN * marginal of eq_sdbin_power_limit (GSw_PRM_CapCredit=1 only); nets val_resmarg down to what the storage adds"
   val_curt          "curtailment-balance value, (m_cf*CAP - GEN) * marginal of eq_curt_gen_balance"
   val_opres         "operating-reserve requirement induced, -orperc*GEN * marginal of eq_OpRes_requirement"
   val_mincf         "minimum-CF credit, (sum_h hours*GEN - H*minCF*CAP) * marginal of eq_min_cf"
@@ -253,6 +254,34 @@ valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(Sw_PRM_CapCredit=0)] =
     sum{(v,allh)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_stress_t(allh,t)],
         vc_ratio(i,v,r,t) * (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$storage_standalone(i))
         * eq_supply_demand_balance.m(r,allh,t) } ;
+
+* Capacity-credit formulation: the reserve margin is eq_reserve_margin(r,ccseason,t), and each
+* tech enters it with the coefficient eq_reserve_margin gives it - the same terms report.gms uses
+* for valnew. New VRE enters on INV through m_cc_mar, so it needs no pro-rating; conventional and
+* storage capacity enter on CAP, pro-rated by vc_ratio like every CAP stream here.
+valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_PRM_CapCredit$(not vre(i))] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,ccseason)$vc_new(i,v,r,t),
+        vc_ratio(i,v,r,t) * eq_reserve_margin.m(r,ccseason,t) * (
+            [CAP.l(i,v,r,t) * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))]
+                $[(not hydro(i))$(not storage(i))]
+          + sum{sdbin, cc_storage(i,sdbin) * CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) }
+                $[storage_standalone(i) or hyd_add_pump(i)] ) } ;
+valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_PRM_CapCredit$vre(i)] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,ccseason)$vc_new(i,v,r,t),
+        m_cc_mar(i,r,ccseason,t) * INV.l(i,v,r,t) * eq_reserve_margin.m(r,ccseason,t) } ;
+
+* Credited storage MW are a share of a regional pool capped by sdbin_size, set by the capacity
+* credit script. Once the bins bind, the share val_resmarg credits is more than the new storage adds
+* to the reserve margin, and the dual of eq_sdbin_power_limit is the difference. It enters as a
+* negative value, matching report.gms, which nets it from valnew's val_resmarg.
+valcost('val_sdbin',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_PRM_CapCredit
+                           $(storage_standalone(i) or hyd_add_pump(i))] =
+    -1 * (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,ccseason,sdbin,ccreg)$[vc_new(i,v,r,t)$r_ccreg(r,ccreg)],
+        vc_ratio(i,v,r,t) * cc_storage(i,sdbin) * CAP_SDBIN.l(i,v,r,ccseason,sdbin,t)
+        * eq_sdbin_power_limit.m(ccreg,ccseason,sdbin,t) } ;
 
 valcost('val_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
@@ -351,7 +380,8 @@ valcost('val_prescribed',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_ForcePrescription] =
 valcost('val_total',i,r,t) =
     valcost('val_load',i,r,t) + valcost('val_resmarg',i,r,t)
   + valcost('val_curt',i,r,t) + valcost('val_opres',i,r,t)
-  + valcost('val_mincf',i,r,t) + valcost('val_ramp',i,r,t) ;
+  + valcost('val_mincf',i,r,t) + valcost('val_ramp',i,r,t)
+  + valcost('val_sdbin',i,r,t) ;
 
 valcost('residual',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     valcost('val_total',i,r,t) - valcost('cost_total',i,r,t)

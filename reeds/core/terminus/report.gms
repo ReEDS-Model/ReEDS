@@ -1090,6 +1090,27 @@ valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=1)$(not vre(i))$valnew('MW',i,r,t
 valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=1)$(not vre(i))$valnew('MW',i,r,t)] =
     sum{(v,ccseason), cap_firm_new_ivrt(i,v,r,ccseason,t) * reqt_price_sys('res_marg','na',ccseason,t)}
     * valnew('inv_cap_ratio',i,r,t) ;
+* Credited storage MW are a share of a regional pool capped by sdbin_size. Once the bins bind, that
+* share is more than the new storage adds to the reserve margin, and the dual of
+* eq_sdbin_power_limit is the difference, so it is netted from storage's reserve-margin value.
+* The system version uses the sdbin_size-weighted average of the dual across ccregs.
+parameter sdbin_price(ccreg,ccseason,sdbin,t) "--$/MW-yr-- marginal of eq_sdbin_power_limit"
+          sdbin_price_sys(ccseason,sdbin,t)   "--$/MW-yr-- sdbin_size-weighted average of sdbin_price" ;
+sdbin_price(ccreg,ccseason,sdbin,t)$[Sw_PRM_CapCredit$tmodel_new(t)] =
+    eq_sdbin_power_limit.m(ccreg,ccseason,sdbin,t) * (1 / cost_scale) * (1 / pvf_onm(t)) ;
+sdbin_price_sys(ccseason,sdbin,t)$[Sw_PRM_CapCredit$tmodel_new(t)$sum{ccreg, sdbin_size(ccreg,ccseason,sdbin,t)}] =
+    sum{ccreg, sdbin_price(ccreg,ccseason,sdbin,t) * sdbin_size(ccreg,ccseason,sdbin,t)}
+    / sum{ccreg, sdbin_size(ccreg,ccseason,sdbin,t)} ;
+valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=1)$(storage_standalone(i) or hyd_add_pump(i))$valnew('MW',i,r,t)] =
+    valnew('val_resmarg',i,r,t)
+    - sum{(v,ccseason,sdbin,ccreg)$[valinv(i,v,r,t)$r_ccreg(r,ccreg)],
+        CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) * sdbin_price(ccreg,ccseason,sdbin,t) }
+    * valnew('inv_cap_ratio',i,r,t) ;
+valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=1)$(storage_standalone(i) or hyd_add_pump(i))$valnew('MW',i,r,t)] =
+    valnew('val_resmarg_sys',i,r,t)
+    - sum{(v,ccseason,sdbin)$valinv(i,v,r,t),
+        CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) * sdbin_price_sys(ccseason,sdbin,t) }
+    * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_resmarg','benchmark',r,t)$[(Sw_PRM_CapCredit=0)$tmodel_new(t)] =
     sum{allh$h_stress_t(allh,t), reqt_price('res_marg','na',r,allh,t) * reqt_quant('res_marg','na',r,allh,t)} ;
 valnew('val_resmarg','benchmark','sys',t)$[(Sw_PRM_CapCredit=0)$tmodel_new(t)] =
