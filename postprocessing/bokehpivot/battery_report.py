@@ -268,6 +268,49 @@ def build_html(output_dir, core_path):
         [('Year', False), ('Fleet GW', True), ('Discharge price', True), ('Charge price', True),
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
+    # ---- 07 reserve-margin formulation ----
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 9,
+                      'Storage under the two reserve-margin formulations.',
+                      'The storage forcing case run twice: with the stress-period reserve margin, '
+                      'the default and the basis of every other figure here, and with the '
+                      'capacity-credit formulation (<span class="eq">GSw_PRM_CapCredit=1</span>), '
+                      'which credits storage by duration bin against a fixed planning reserve margin '
+                      'rather than by its dispatch in stress periods. Value factor, cost factor and '
+                      'value&#8211;cost factor are as computed, without the LCOE-base scaling of '
+                      'Fig 1, which is fitted per run; capacity credit is as in section 04. The '
+                      'value&#8211;cost factor is LCOE base times the forcing multiplier over the '
+                      'benchmark price and carries no value term, so the two runs can differ in it '
+                      'only through the benchmark price; the formulation moves the split between '
+                      'value factor and cost factor. Under the capacity-credit formulation, credited '
+                      'storage MW are a share of a regional pool capped by the duration-bin sizes '
+                      'from the capacity credit script, so storage&rsquo;s reserve-margin value is '
+                      'taken net of the dual of the bin limit '
+                      '(<span class="eq">eq_sdbin_power_limit</span>): what new storage adds to the '
+                      'reserve margin rather than its share of the pool. The two runs are not held to '
+                      'the same reliability standard: one meets an unserved-energy threshold, the '
+                      'other a planning reserve margin.', order)
+    form = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_formulation.csv')
+    form_rows = []
+    if not form.empty:
+        for y in [y for y in table_years if y in set(form['year'])]:
+            for lab in form['formulation'].drop_duplicates():
+                r = form[(form['year'] == y) & (form['formulation'] == lab)]
+                if r.empty:
+                    continue
+                r = r.iloc[0]
+                form_rows.append(
+                    f'<tr><td class="t">{int(y)}</td><td class="t">{lab}</td>'
+                    f'<td class="num">{_num(r["gen_frac"], "{:.1%}")}</td>'
+                    f'<td class="num">{_num(r["value_factor"])}</td>'
+                    f'<td class="num">{_num(r["vf_comp_resmarg"])}</td>'
+                    f'<td class="num">{_num(r["cost_factor"])}</td>'
+                    f'<td class="num">{_num(r["value_cost_factor"], "{:.3f}")}</td>'
+                    f'<td class="num">{_num(r["capacity_credit"])}</td></tr>')
+    form_table = table('Storage under the two reserve-margin formulations at the headline years',
+                       [('Year', False), ('Formulation', False), ('Market share', True),
+                        ('VF', True), ('VF, capacity part', True), ('CF', True), ('VCF', True),
+                        ('Capacity credit', True)], form_rows)
+
     fell_back = any(isinstance(o, tuple) for o in order)
     if vr.embed_figures and not fell_back:
         packaging = (f'Figures are embedded at up to {vr.embed_max_width}px wide; the full-size pngs '
@@ -318,8 +361,8 @@ def build_html(output_dir, core_path):
      'in the main report. Each technology is read from its own forcing run. Under the '
      'capacity-credit formulation of the reserve margin '
      '(<span class="eq">GSw_PRM_CapCredit=1</span>) the reserve-margin value comes from seasonal '
-     'firm capacity rather than stress-period dispatch, and CSP and hybrid PV-battery are not '
-     'covered.</p></div>',
+     'firm capacity rather than stress-period dispatch, net of the duration-bin dual for storage, '
+     'and CSP and hybrid PV-battery are not covered.</p></div>',
      cc_fig, cc_table, cc_cap_fig, cc_sc_fig, cc_sc_table)}
 
 {sec('05', 'Capacity credit by region', reg_fig, reg_table)}
@@ -329,6 +372,10 @@ def build_html(output_dir, core_path):
      'technologies&rsquo;: a battery delivers no net energy over a stress period, so what it earns '
      'there is entirely the price spread between the blocks it discharges in and the blocks it '
      'charges in.</p></div>', arb_fig, arb_table)}
+
+{sec('07', 'Reserve-margin formulation',
+     '<div class="col"><p>A sensitivity on how ReEDS represents resource adequacy, which sets most '
+     'of what storage is credited for.</p></div>', form_fig, form_table)}
 
 <section style="border-bottom:none">
   <footer>Generated by <code>battery_report.py</code> from the figures and tables in this

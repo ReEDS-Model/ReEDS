@@ -33,6 +33,7 @@ avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-c
                       'Coal': 'coal', 'Nuclear': 'nuclear', 'Battery': 'battery'} #Report tech -> raw tech prefix in the run outputs, for the available-energy basis. Techs absent here keep their default basis.
 avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
 cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is also drawn in every scenario in the scenarios file, not only in the run that forces them, to separate a tech's own saturation from the system around it. Names as in valcostfac_core.csv; each needs an entry in avail_basis_prefix.
+storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
 regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
 cc_scenario_min_new_gw = 1.0 #In the all-scenario capacity-credit figure, drop a year where the tech added less than this many GW. In the thermal-forced runs storage adds a few hundred MW in some years, and the credit of so little capacity swings between 0.75 and 0.98 on which one or two regions happened to build.
 vcf_separate_techs = ['Battery'] #Techs drawn in their own figure rather than alongside the rest. Storage sits in a different part of the plane - value factor above 1, market share topping out near 15% - so sharing a figure with it stretches every other panel's axes to accommodate one corner. These techs are dropped from the main VCF figures and written to plcoe_pitch_VCF_power_storage.png instead; they stay in the fits table, which has no axis to distort. Empty list to keep everything in one figure.
@@ -907,6 +908,8 @@ def capacity_credit_by_scenario(techs=None):
         if prefix is None:
             continue
         for _, sc in scen.iterrows():
+            if sc['name'] == storage_formulation_scenario:
+                continue  #a formulation sensitivity, compared in its own figure
             try:
                 credit = new_build_capacity_credit(sc['path'], prefix)
                 built = new_build_gw(sc['path'], prefix)
@@ -1252,6 +1255,59 @@ def plot_grouped_capacity_credit(run_dir, output_path, prefix='battery', level=N
     fig.savefig(output_path, dpi=200)
     return fig, g
 
+def plot_storage_formulation(valcostfac_core_path, output_path, tech='Battery'):
+    """Storage under the two reserve-margin formulations: value factor, cost factor, value-cost
+    factor and capacity credit against market share.
+
+    Both series are read from valcostfac.csv, unscaled - no LCOE-base matching, since that scaling
+    is fitted per run and would differ between the two. The core storage run uses stress periods;
+    storage_formulation_scenario reruns it with the capacity-credit formulation. Capacity credit is
+    new_build_capacity_credit on each run. VCF is LCOE base times the forcing multiplier over the
+    benchmark price, with no value term, so it can only differ between the two through the
+    benchmark price; the formulation moves the split between value and cost factor.
+    """
+    full_path = os.path.join(os.path.dirname(os.path.abspath(valcostfac_core_path)), 'valcostfac.csv')
+    if not os.path.exists(full_path):
+        return None, pd.DataFrame()
+    full = pd.read_csv(full_path)
+    core = pd.read_csv(valcostfac_core_path)
+    base = core.loc[core['tech'] == tech, 'scenario']
+    if base.empty or storage_formulation_scenario not in set(full['scenario']):
+        return None, pd.DataFrame()
+    from reeds_vs_rev import scenarios_path
+    paths = pd.read_csv(scenarios_path).set_index('name')['path']
+    prefix = avail_basis_prefix.get(tech, tech.lower())
+    series = [(base.iloc[0], 'Stress periods (default)', '#2A6F8E', 'o', '-'),
+              (storage_formulation_scenario, 'Capacity-credit formulation', '#C0392B', 's', '--')]
+    rows = []
+    for scen, label, *_ in series:
+        d = full[(full['tech'] == tech) & (full['scenario'] == scen) & (full['year'] >= start_year)]
+        d = d[['year', 'gen_frac', 'value_factor', 'vf_comp_energy', 'vf_comp_resmarg', 'cost_factor',
+               'value_cost_factor']].copy()
+        cc = new_build_capacity_credit(paths[scen], prefix) if scen in paths.index else pd.Series(dtype=float)
+        d['capacity_credit'] = d['year'].map(cc)
+        rows.append(d.assign(scenario=scen, formulation=label))
+    data = pd.concat(rows, ignore_index=True).sort_values(['formulation', 'gen_frac'])
+    panels = [('value_factor', 'Value factor'), ('cost_factor', 'Cost factor'),
+              ('value_cost_factor', 'Value-cost factor'), ('capacity_credit', 'Capacity credit')]
+    fig, axes = plt.subplots(1, 4, figsize=(15.0, 4.0))
+    for ax, (col, title) in zip(axes, panels):
+        for scen, label, color, marker, ls in series:
+            d = data[data['scenario'] == scen].dropna(subset=[col])
+            ax.plot(d['gen_frac'] * 100, d[col], color=color, ls=ls, lw=1.6, marker=marker, ms=4,
+                    mec='white', mew=0.5, label=label)
+        ax.set_title(title, fontsize=10, loc='left')
+        ax.set_xlabel('Market share (% of generation)')
+        ax.set_xlim(left=0)
+        ax.set_ylim(bottom=0)
+        ax.grid(alpha=0.25, lw=0.6)
+        ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=2, fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.savefig(output_path, dpi=200)
+    return fig, data
+
 def stress_block_hours(run_dir):
     """Length in hours of one stress block in this run, from its GSw_HourlyChunkLengthStress.
 
@@ -1468,6 +1524,9 @@ def plot_vre_vcf(df, output_path, form='linear', techs=None, log_y=False, sync_a
     ratios, the band's thickness is exactly ln(cost factor), and the value and cost gaps stack to the
     VCF gap, so the split can be measured off the page at any market share."""
     techs = vcf_panel_techs(df, techs)
+    if not techs:
+        #A result set with no eligible tech - storage alone, say - has nothing to draw here.
+        return None, pd.DataFrame()
     colors = build_color_map(techs)
     predict, equation = _fit_form(form)
     label = 'linear' if form == 'linear' else 'power (NLS)'
@@ -1992,6 +2051,13 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_reg)
                     reg_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_regional_cc.csv'),
                                    index=False)
+                fig_form, form_tab = plot_storage_formulation(
+                    valcostfac_core_path,
+                    os.path.join(output_dir, 'plcoe_pitch_storage_formulation.png'), tech=tech)
+                if fig_form is not None:
+                    plt.close(fig_form)
+                    form_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_formulation.csv'),
+                                    index=False)
                 fig_comp, comp_tab = plot_vf_components(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_vf_components.png'),
                     tech=tech)

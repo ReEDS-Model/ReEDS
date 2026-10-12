@@ -1,7 +1,9 @@
 name,path
-ref,/data/shared/projects/mmowers/ReEDS/runs/vcf4_ref
-upv,/data/shared/projects/mmowers/ReEDS/runs/vcf4_upv
-onswind,/data/shared/projects/mmowers/ReEDS/runs/vcf4_onswind
-gas,/data/shared/projects/mmowers/ReEDS/runs/vcf4_gas
-nuclear,/data/shared/projects/mmowers/ReEDS/runs/vcf4_nuclear
-coal,/data/shared/projects/mmowers/ReEDS/runs/vcf4_coal
+ref,/data/shared/projects/mmowers/ReEDS/runs/vcf5_ref
+upv,/data/shared/projects/mmowers/ReEDS/runs/vcf5_upv
+onswind,/data/shared/projects/mmowers/ReEDS/runs/vcf5_onswind
+gas,/data/shared/projects/mmowers/ReEDS/runs/vcf5b_gas
+nuclear,/data/shared/projects/mmowers/ReEDS/runs/vcf5b_nuclear
+coal,/data/shared/projects/mmowers/ReEDS/runs/vcf5b_coal
+battery,/data/shared/projects/mmowers/ReEDS/runs/vcf5_battery
+battery_cc,/data/shared/projects/mmowers/ReEDS/runs/vcf5_battery_cc
