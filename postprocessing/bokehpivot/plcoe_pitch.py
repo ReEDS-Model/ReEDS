@@ -1308,6 +1308,39 @@ def plot_storage_formulation(valcostfac_core_path, output_path, tech='Battery'):
     fig.savefig(output_path, dpi=200)
     return fig, data
 
+def plot_vcf_unfitted(df, output_path, tech='Battery'):
+    """Value factor, value-cost factor and 1/(cost factor) against market share for one tech, as
+    points joined by lines - the series of the VCF figure, with no fits, band or LCOE-base scaling.
+
+    The scaling in plot_vre_vcf matches the two fits' intercepts, so without fits there is nothing
+    to match and every series is as computed. Styled like that figure so the two read together.
+    """
+    d = df[df['tech'] == tech].dropna(
+        subset=['gen_frac', 'value_factor', 'value_cost_factor']).sort_values('gen_frac')
+    if d.empty:
+        return None, pd.DataFrame()
+    color = build_color_map([tech])[tech]
+    x = d['gen_frac'].to_numpy()
+    fig, ax = plt.subplots(figsize=(6.8, 5.2))
+    ax.plot(x, d['value_factor'], color=color, linestyle='-', marker='o', markersize=5,
+            linewidth=1.8, label='value factor', zorder=4)
+    ax.plot(x, d['value_cost_factor'], color=color, linestyle='--', marker='s', markersize=5,
+            linewidth=1.8, alpha=0.85, label='value-cost factor', zorder=4)
+    ax.plot(x, d['inv_cost_factor'], color=cost_color, linestyle='-.', marker='^', markersize=4.5,
+            linewidth=1.3, alpha=0.85, label='1/(cost factor)', zorder=3)
+    ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.set_xlabel('Market share (generation fraction)')
+    ax.set_ylabel('Value factor / value-cost factor')
+    ax.set_title(display_tech(tech))
+    ax.grid(True, linestyle='--', alpha=0.6)
+    ax.legend(loc='upper right', fontsize=9)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, d[['year', 'gen_frac', 'value_factor', 'value_cost_factor', 'inv_cost_factor']]
+
+
 def stress_block_hours(run_dir):
     """Length in hours of one stress block in this run, from its GSw_HourlyChunkLengthStress.
 
@@ -2058,6 +2091,13 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_form)
                     form_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_formulation.csv'),
                                     index=False)
+                fig_unfit, unfit_tab = plot_vcf_unfitted(
+                    df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.png'),
+                    tech=tech)
+                if fig_unfit is not None:
+                    plt.close(fig_unfit)
+                    unfit_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.csv'),
+                                     index=False)
                 fig_comp, comp_tab = plot_vf_components(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_vf_components.png'),
                     tech=tech)

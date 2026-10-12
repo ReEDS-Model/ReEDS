@@ -39,7 +39,14 @@ def build_html(output_dir, core_path):
     tech_cell = lambda t: f'<td class="t">{_swatch(t, colors)}{display_tech(t)}</td>'
 
     # ---- 01 value factor and value-cost factor ----
-    vcf_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 1,
+    vcf_unfit_fig = figure(output_dir, 'plcoe_pitch_VCF_storage_unfitted.png', 1,
+                           'Value factor and value&#8211;cost factor for storage, without fits.',
+                           'The series of Fig 2 as points joined in order of market share, with no '
+                           'fits, no shaded band and no LCOE-base scaling: value factor, '
+                           'value&#8211;cost factor and the reciprocal of the cost factor, each as '
+                           'computed. The gap between the value-factor and value&#8211;cost-factor '
+                           'lines is the cost side read directly from the data.', order)
+    vcf_fig = figure(output_dir, 'plcoe_pitch_VCF_power_storage.png', 2,
                      'Value factor and value&#8211;cost factor for storage.',
                      'The construction of the headline value&#8211;cost factor figure in the main '
                      'report, drawn by the same function: power fits of value factor and '
@@ -53,7 +60,7 @@ def build_html(output_dir, core_path):
                      'not describe the cost-factor data.', order)
 
     # ---- 02 value factor by component ----
-    comp_fig = figure(output_dir, 'plcoe_pitch_storage_vf_components.png', 2,
+    comp_fig = figure(output_dir, 'plcoe_pitch_storage_vf_components.png', 3,
                       'Value factor split into energy and capacity components.',
                       'Each component is that value stream per MWh divided by the benchmark price, '
                       'so the two sum to the value factor exactly at every point, and they are '
@@ -74,7 +81,7 @@ def build_html(output_dir, core_path):
                         ('Capacity', True), ('Value factor', True)], comp_rows)
 
     # ---- 03 duration ----
-    dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 3,
+    dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 4,
                      'Duration of new storage builds by model year.',
                      'Duration is the energy capacity a build adds divided by the power capacity '
                      'it adds, <span class="eq">INV_ENERGY / INV</span>, read from '
@@ -104,7 +111,7 @@ def build_html(output_dir, core_path):
          ('Median', True), ('p75', True), ('Mean', True)], dur_rows)
 
     # ---- 04 capacity credit of new builds, every technology ----
-    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 4,
+    cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 5,
                     'Capacity credit of new builds against market share.',
                     'For each year&rsquo;s new builds, the reserve-margin value they earned divided '
                     'by what the same capacity would have earned in the same regions had it been '
@@ -118,7 +125,7 @@ def build_html(output_dir, core_path):
                     'every level. Because those prices are concentrated in a few hours, this sits '
                     'below an hour-counting ELCC for resource-limited technologies. Storage is net '
                     'of charging, so its credit is a round-trip-net quantity.', order)
-    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 5,
+    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 6,
                         'The same capacity credits against cumulative installed capacity.',
                         'Identical data to the figure above on a different x axis: the cumulative '
                         'national capacity of that technology in its own forcing run. '
@@ -126,7 +133,7 @@ def build_html(output_dir, core_path):
                         'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
                         'same share of generation; against capacity the resource-limited '
                         'technologies fall along visibly separate paths rather than overlapping.', order)
-    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 6,
+    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 7,
                        'Capacity credit of new storage and UPV in every scenario.',
                        'The capacity credit above, computed the same way, for new builds of '
                        'storage and UPV in each run rather than only in the run that forces them. '
@@ -185,7 +192,7 @@ def build_html(output_dir, core_path):
     level = [c for c in reg.columns if c not in ('year', 'new_mw', 'cap_mw', 'peak_mw',
                                                  'penetration', 'capacity_credit')]
     level = level[0] if level else 'region'
-    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 7,
+    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 8,
                      'Capacity credit of new storage by transmission region.',
                      f'One panel per {level} region, each on the same axes. The blue line is the '
                      'region&rsquo;s new-build capacity credit, the ratio of sums over its zones that '
@@ -228,7 +235,7 @@ def build_html(output_dir, core_path):
     #Block length as the run had it, so the caption follows a change of stress resolution.
     blk = (f'{arb["block_hours"].iloc[0]:g}'
            if not arb.empty and 'block_hours' in arb else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 8,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 9,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the reserve-margin price of each stress block, weighted by the '
                      'storage fleet&rsquo;s discharge and by its charging, on a log scale with the '
@@ -269,7 +276,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 07 reserve-margin formulation ----
-    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 9,
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 10,
                       'Storage under the two reserve-margin formulations.',
                       'The storage forcing case run twice: with the stress-period reserve margin, '
                       'the default and the basis of every other figure here, and with the '
@@ -277,7 +284,7 @@ def build_html(output_dir, core_path):
                       'which credits storage by duration bin against a fixed planning reserve margin '
                       'rather than by its dispatch in stress periods. Value factor, cost factor and '
                       'value&#8211;cost factor are as computed, without the LCOE-base scaling of '
-                      'Fig 1, which is fitted per run; capacity credit is as in section 04. The '
+                      'Fig 2, which is fitted per run; capacity credit is as in section 04. The '
                       'value&#8211;cost factor is LCOE base times the forcing multiplier over the '
                       'benchmark price and carries no value term, so the two runs can differ in it '
                       'only through the benchmark price; the formulation moves the split between '
@@ -344,7 +351,7 @@ def build_html(output_dir, core_path):
     <span>{dollar_year}$</span></div>
 </header>
 
-{sec('01', 'Value factor and value&#8211;cost factor', vcf_fig)}
+{sec('01', 'Value factor and value&#8211;cost factor', vcf_unfit_fig, vcf_fig)}
 
 {sec('02', 'Value factor by component', comp_fig, comp_table)}
 
