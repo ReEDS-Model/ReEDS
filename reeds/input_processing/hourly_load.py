@@ -652,10 +652,13 @@ def splice_with_historical_demand(state_load_hourly, sw, weather_years, solveyea
         splice_load,
         weather_years
     )
-    # downselect to model years
+    
+    # downselect to model years, but don't add spliced load before this_year
+    scalars = reeds.io.get_scalars()
+    future_years = [y for y in solveyears if y >= int(scalars.this_year)]
     splice_load = downselect_to_model_years(
         splice_load,
-        solveyears
+        future_years
     )
 
     # align indices, filling any missing years 
