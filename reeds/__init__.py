@@ -18,3 +18,5 @@ from . import spatial as spatial
 from . import techs as techs
 from . import timeseries as timeseries
 from . import units as units
+
+from .objects import ReEDScase as ReEDScase
