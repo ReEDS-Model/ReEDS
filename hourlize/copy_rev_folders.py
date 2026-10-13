@@ -8,13 +8,11 @@ Usage:
     python copy_rev_folders.py
     python copy_rev_folders.py --tech wind-ons upv
     python copy_rev_folders.py --sc_path ONSHORE/2025_08_31_NewSites
-    python copy_rev_folders.py --overwrite   # skip overwrite prompts
 """
 import argparse
 import os
 import subprocess
 import time
-
 import pandas as pd
 
 
@@ -24,8 +22,18 @@ DEFAULT_CSV = os.path.join(
     '..', 'inputs', 'supply_curve', 'rev_paths.csv',
 )
 
+def get_dest_folder(rev_path):
+    if isinstance(rev_path, pd.DataFrame):
+        rev_path['dst'] = [
+            os.path.join(DEST_BASE, row['sc_path'], 'reV', row['rev_case'])
+            for _, row in rev_path.iterrows()
+        ]
+        return rev_path
+    else:
+        dst = os.path.join(DEST_BASE, rev_path['sc_path'], 'reV', rev_path['rev_case'])
+        return dst
 
-def main(rev_paths_csv, techs=None, sc_paths=None, overwrite=False):
+def main(rev_paths_csv, techs=None, sc_paths=None):
     t0 = time.perf_counter()
     # load rev paths file
     df = pd.read_csv(rev_paths_csv)
@@ -57,21 +65,11 @@ def main(rev_paths_csv, techs=None, sc_paths=None, overwrite=False):
             print(f'[SKIP] {label}: source does not exist: {src}')
             continue
 
-        dst = os.path.join(DEST_BASE, row['sc_path'], 'reV', row['rev_case'])
+        dst = get_dest_folder(row)
 
         print(f'\n[{label}]')
         print(f'  src: {src}')
         print(f'  dst: {dst}')
-
-        # check if folder exists and follow overwrite procedure
-        if os.path.exists(dst):
-            if overwrite:
-                print('  Destination exists — overwriting (--overwrite).')
-            else:
-                answer = input('  Destination already exists. Overwrite? [y/N] ').strip().lower()
-                if answer != 'y':
-                    print('  Skipped.')
-                    continue
 
         # copy folder using rysnc
         os.makedirs(dst, exist_ok=True)
@@ -104,10 +102,6 @@ if __name__ == '__main__':
         '--sc_paths', nargs='+', metavar='SC_PATH',
         help='Filter by one or more sc_paths. E.g. --sc_path ONSHORE/2025_08_31_NewSites',
     )
-    parser.add_argument(
-        '--overwrite', '-o', action='store_true',
-        help='Force overwrite of existing destinations without prompting',
-    )
     args = parser.parse_args()
 
-    main(args.csv, args.techs, args.sc_paths, args.overwrite)
+    main(args.csv, args.techs, args.sc_paths)
