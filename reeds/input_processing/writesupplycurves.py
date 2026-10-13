@@ -82,17 +82,47 @@ def get_exog_outputs(inputs_case, tech, dfsc):
 
 
 def agg_supplycurve(
-    scpath,
-    inputs_case,
-    numbins_tech,
-    bin_method='equal_cap_cut',
-    bin_col='supply_curve_cost_per_mw',
-    psh_cutoff=4e6,
-    deflate=None,
-):
+    scpath: str,
+    inputs_case: str,
+    numbins_tech: int,
+    bin_method: str = 'equal_cap_cut',
+    bin_col: str = 'supply_curve_cost_per_mw',
+    psh_cutoff: int = 4e6,
+    deflate: float | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
+    Supply curve assembly script:
+    - Assembles supply curve (add interconnection costs)
+    - Converts and recalculates costs in 2004$
+    - (PSH only) Clips costs at specified cutoff cost (in 2004$)
+    - Assign and aggregate supply curve bins 
+
+    Parameters
+    ----------
+        scpath
+            Path to supply curve file
+        inputs_case
+            Path to inputs case
+        numbins_tech
+            Number of supply curve bins for a given technology
+        bin_method
+            Binning method used for supply curve bin assignment
+        bin_col
+            Column for which the bin_method is applied for supply curve bin assignment
+        psh_cutoff
+            Upper limit cost (in 2004$) retained for PSH supply curves
+        deflate
+            Multiplier used to deflate supply curve costs from one dollaryear to another
+
+    Returns
+    -------
+        pd.DataFrame
+            Non-aggregated, binned supply curve capacity and cosst
+        pd.DataFrame
+            Aggregated, binned supply curve capacity and cosst
+    
     """
-    psh = bool('psh' in os.path.basename(scpath) or scpath == 'psh')
+    psh = bool('psh' in os.path.basename(scpath))
     if psh:
         print('Assembling PSH supply curve')
     ### Get inputs

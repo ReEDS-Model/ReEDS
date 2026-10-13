@@ -1538,7 +1538,7 @@ def assemble_supplycurve(
         offshore = False
     else:
         offshore = bool('wind-ofs' in os.path.basename(scfile) or scfile == 'offshore')
-        psh = bool('psh' in os.path.basename(scfile) or scfile == 'psh')
+        psh = bool('psh' in os.path.basename(scfile))
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
