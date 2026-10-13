@@ -274,7 +274,7 @@ set
   evmc_storage(i)      "ev flexibility as direct load control",
   evmc_shape(i)        "ev flexibility as adoptable change to load from response to pricing",
   fossil(i)            "fossil technologies"
-  fuel_cell(i)         "fuel cell technologies",
+  ng_fuel_cell(i)      "natural gas fuel cell technologies",
   gas_cc_ccs(i)        "techs that are gas combined cycle and have CCS",
   gas_cc(i)            "techs that are gas combined cycle",
   gas_ct(i)            "techs that are gas combustion turbine",
@@ -288,9 +288,11 @@ set
   geo_egs_allkm(i)     "egs (covering deep egs depths of all km) technologies",
   geo_egs_nf(i)        "egs (near-field) technologies",
   h2_combustion(i)     "h2-ct and h2-cc technologies",
-  h2_cc(i)             "h2-cc technologies"
+  h2_cc(i)             "h2-cc technologies",
   h2_ct(i)             "h2-ct technologies",
   h2(i)                "hydrogen-producing technologies",
+  h2_fuel_cell(i)      "H2 fuel cell technologies",
+  h2_gen(i)            "hydrogen-consuming generation technologies (h2-ct, h2-cc, h2 fuel cell)",
   hyd_add_pump(i)      "hydro techs with an added pump",
   hydro_d(i)           "dispatchable hydro technologies",
   hydro_nd(i)          "non-dispatchable hydro technologies",
@@ -517,8 +519,12 @@ if(Sw_H2Combustionupgrade = 0,
   ban(i)$[i_subsets(i,'h2_combustion')$upgrade(i)] = yes ;
 ) ;
 
-if(Sw_FuelCell = 0,
-  ban(i)$i_subsets(i,'fuel_cell') = yes ;
+if(Sw_GasFuelCell = 0,
+  ban('ng-fuel-cell') = yes ;
+) ;
+
+if(Sw_H2FuelCell = 0,
+  ban('h2-fuel-cell') = yes ;
 ) ;
 
 if(Sw_LfillGas = 0,
@@ -734,7 +740,7 @@ evmc(i)$(not ban(i))                = yes$i_subsets(i,'evmc') ;
 evmc_storage(i)$(not ban(i))        = yes$i_subsets(i,'evmc_storage') ;
 evmc_shape(i)$(not ban(i))          = yes$i_subsets(i,'evmc_shape') ;
 fossil(i)$(not ban(i))              = yes$i_subsets(i,'fossil') ;
-fuel_cell(i)$(not ban(i))           = yes$i_subsets(i,'fuel_cell') ;
+ng_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'ng_fuel_cell') ;
 gas_cc_ccs(i)$(not ban(i))          = yes$i_subsets(i,'gas_cc_ccs') ;
 gas_cc(i)$(not ban(i))              = yes$i_subsets(i,'gas_cc') ;
 gas_ct(i)$(not ban(i))              = yes$i_subsets(i,'gas_ct') ;
@@ -751,6 +757,8 @@ h2_combustion(i)$(not ban(i))       = yes$i_subsets(i,'h2_combustion') ;
 h2_cc(i)$(not ban(i))               = yes$i_subsets(i,'h2_cc') ;
 h2_ct(i)$(not ban(i))               = yes$i_subsets(i,'h2_ct') ;
 h2(i)$(not ban(i))                  = yes$i_subsets(i,'h2') ;
+h2_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'h2_fuel_cell') ;
+h2_gen(i)$(not ban(i))              = yes$i_subsets(i,'h2_gen') ;
 hydro_d(i)$(not ban(i))             = yes$i_subsets(i,'hydro_d') ;
 hydro_nd(i)$(not ban(i))            = yes$i_subsets(i,'hydro_nd') ;
 hydro(i)$(not ban(i))               = yes$i_subsets(i,'hydro') ;
@@ -796,7 +804,7 @@ tg_i('coal',i)$coal(i) = yes ;
 tg_i('nuclear',i)$nuclear(i) = yes ;
 tg_i('battery',i)$battery(i) = yes ;
 tg_i('hydro',i)$hydro(i) = yes ;
-tg_i('h2',i)$h2_combustion(i) = yes ;
+tg_i('h2',i)$h2_gen(i) = yes ;
 tg_i('geothermal',i)$geo(i) = yes ;
 tg_i('biomass',i)$bio(i) = yes ;
 tg_i('pumped-hydro',i)$psh(i) = yes ;
@@ -1854,7 +1862,7 @@ scalar h2_demand_start  "--year-- first year that h2 demand should be modeled"
 ;
 
 * Identify the first year that hydrogen generation technologies are allowed
-h2_gen_firstyear = smin{i$[h2_combustion(i)$(not ban(i))], firstyear(i) } ;
+h2_gen_firstyear = smin{i$[h2_gen(i)$(not ban(i))], firstyear(i) } ;
 
 * Set h2_demand_start to the first year that there is data
 * in h2_exogenous_demand
@@ -5625,7 +5633,7 @@ valret(i,v)$[(Sw_Retire=2)$initv(v)$(not noretire(i))
 *All new and existing nuclear, coal, gas, and hydrogen are retirable if Sw_Retire = 3
 *Existing plants have to meet the min_retire_age before retiring
 valret(i,v)$[((Sw_Retire=3) or (Sw_Retire=5))$(not noretire(i))
-            $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_combustion(i) or h2(i))] = yes ;
+            $(coal(i) or gas(i) or nuclear(i) or ogs(i) or h2_gen(i) or h2(i))] = yes ;
 
 *new and existings plants of any technology can be retired if Sw_Retire = 4
 valret(i,v)$[(Sw_Retire=4)$(not noretire(i))] = yes ;

@@ -3563,7 +3563,7 @@ eq_h2_demand(p,t)$[(sameas(p,"H2"))$tmodel(t)$(yeart(t)>=h2_demand_start)$(Sw_H2
 
 * assuming here that h2 production and use in H2_COMBUSTION can be temporally asynchronous
 * that is, the hydrogen does not need to produced in the same hour it is consumed by h2-ct/cc's
-    + sum{(i,v,r,h)$[valgen(i,v,r,t)$h2_combustion(i)$h_rep(h)],
+    + sum{(i,v,r,h)$[valgen(i,v,r,t)$h2_gen(i)$h_rep(h)],
             GEN(i,v,r,h,t) * hours(h) * h2_combustion_intensity * heat_rate(i,v,r,t)
     }
 ;
@@ -3594,7 +3594,7 @@ eq_h2_demand_regional(r,h,t)
 
 * region-specific H2 consumption from H2-CT/CCs
 * [MW] * [metric ton/MMBtu] * [MMBtu/MWh] = [metric tons/hour]
-    + sum{(i,v)$[valgen(i,v,r,t)$h2_combustion(i)],
+    + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
             GEN(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)
        }
 ;
@@ -3685,7 +3685,7 @@ eq_h2_min_storage_cap(r,t)$[tmodel(t)$(Sw_H2=2)$Sw_H2_MinStorHours$(not Sw_PCM)]
     =g=
 
 * [MW] * [MMBtu/MWh] * [metric tons/MMBtu] * [hours] = [metric tons]
-    sum{(i,v)$[h2_combustion(i)$valcap(i,v,r,t)],
+    sum{(i,v)$[h2_gen(i)$valcap(i,v,r,t)],
         CAP(i,v,r,t) * heat_rate(i,v,r,t) * h2_combustion_intensity * Sw_H2_MinStorHours
     }
 ;

@@ -156,12 +156,12 @@ fuel_price_filt(i,r)$cap_exist_ir(i,r) = sum{t$tcur(t), fuel_price(i,r,t) } ;
 h2_usage_regional(r,h,t)$tcur(t) =
     hours(h) * ( 
         h2_exogenous_demand_regional(r,'h2',h,t)
-        + sum{(i,v)$[valgen(i,v,r,t)$h2_combustion(i)],
+        + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
             GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
     )
 ;
 
-fuel_price_filt(i,r)$[Sw_H2$h2_combustion(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
+fuel_price_filt(i,r)$[Sw_H2$h2_gen(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
     sum{t$tcur(t),
         (1 / cost_scale) * (1 / pvf_onm(t)) * h2_combustion_intensity * (
             eq_h2_demand.m('h2',t)$[Sw_H2=1]
