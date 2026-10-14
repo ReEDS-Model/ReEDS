@@ -806,6 +806,15 @@ def cumulative_capacity_gw(run_dir, prefix):
     return cap[cap['i'].str.startswith(prefix)].groupby('t')['mw'].sum() / 1000
 
 
+def national_peak_gw(run_dir):
+    """National coincident peak load by year, GW: zone stress-period loads (LOAD, before any
+    planning reserve margin) summed block by block and the highest block taken, as the national row
+    of grouped_capacity_credit builds it."""
+    load = pd.read_csv(os.path.join(run_dir, 'outputs', 'load_stress.csv'),
+                       names=['r', 'h', 't', 'mw'], header=0)
+    return load.groupby(['h', 't'])['mw'].sum().groupby('t').max() / 1000
+
+
 def new_build_gw(run_dir, prefix):
     """Capacity of each year's new builds, GW, from valnew - the MW the capacity credit is taken over."""
     val = pd.read_csv(os.path.join(run_dir, 'outputs', 'valnew.csv'),
@@ -833,28 +842,33 @@ def capacity_credit_frame(df):
             continue
         if credit.empty:
             continue
-        #Cumulative national capacity of the tech in its own forcing run, the alternative x axis.
+        #Cumulative national capacity of the tech in its own forcing run, and that capacity over
+        #the run's national peak load, the alternative x axis.
         cap_gw = cumulative_capacity_gw(run_dirs[tech], prefix)
+        cap_peak = cap_gw / national_peak_gw(run_dirs[tech])
         sub = df.loc[df['tech'] == tech, ['tech', 'year', 'gen_frac']].drop_duplicates()
         sub = sub.assign(capacity_credit=sub['year'].map(credit),
-                         cap_gw=sub['year'].map(cap_gw))
+                         cap_gw=sub['year'].map(cap_gw), cap_peak=sub['year'].map(cap_peak))
         rows.append(sub.dropna(subset=['capacity_credit']))
     if not rows:
-        return pd.DataFrame(columns=['tech', 'year', 'gen_frac', 'cap_gw', 'capacity_credit'])
+        return pd.DataFrame(columns=['tech', 'year', 'gen_frac', 'cap_gw', 'cap_peak',
+                                     'capacity_credit'])
     return pd.concat(rows, ignore_index=True).sort_values(['tech', 'year'])
 
 
 def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
-    """Capacity credit against market share or against cumulative capacity, every tech on one
-    pair of axes.
+    """Capacity credit against market share or against installed capacity as a share of peak
+    load, every tech on one pair of axes.
 
     Market share matches the rest of the report: the decline in capacity credit is one of the
     mechanisms behind the value-factor decline, so it reads against the same x as the value-factor
-    curves. Cumulative capacity answers a different question - how much of a technology the system
-    can absorb before firmness stops being rewarded - and separates techs that market share puts
-    on top of each other, since a gigawatt of storage and a gigawatt of wind are nowhere near the
-    same share of generation. The axis is linear, so the techs that stay small (storage tops out
-    near 640 GW) sit in the left part of it beside wind and UPV's terawatts.
+    curves. Installed capacity over peak load answers a different question - how much of a
+    technology the system can absorb before firmness stops being rewarded - and separates techs
+    that market share puts on top of each other, since a gigawatt of storage and a gigawatt of wind
+    are nowhere near the same share of generation. Dividing by the run's national peak load
+    (national_peak_gw) puts every run on the scale of its own system and matches the regional
+    capacity-credit figure's axis. The axis is linear, so storage (which tops out near 50%) sits in
+    the left part of it beside wind and UPV at 220-260%.
 
     One axes rather than panels: six monotone curves separate cleanly, and the point is the
     contrast between the dispatchable techs' flat lines and the resource-limited techs' collapse.
@@ -868,7 +882,7 @@ def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
     order = sorted(cc['tech'].unique(), key=lambda t: -cc.loc[cc['tech'] == t, 'capacity_credit'].mean())
     for tech in order:
         d = cc[cc['tech'] == tech].dropna(subset=[x]).sort_values(x)
-        xs = d[x] * 100 if x == 'gen_frac' else d[x]
+        xs = d[x] * 100 if x in ('gen_frac', 'cap_peak') else d[x]
         ax.plot(xs, d['capacity_credit'], marker='o', ms=4, lw=1.6,
                 color=colors[tech], label=display_tech(tech))
     ax.axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
@@ -877,7 +891,8 @@ def plot_capacity_credit(df, output_path, x='gen_frac', cc=None):
     if x == 'gen_frac':
         ax.set_xlabel('Market share (% of generation)')
     else:
-        ax.set_xlabel('Cumulative national capacity (GW)')
+        ax.set_xlabel('Installed capacity as % of peak load' if x == 'cap_peak'
+                      else 'Cumulative national capacity (GW)')
         ax.set_xlim(left=0)
     ax.set_ylabel('Capacity credit of new builds')
     ax.set_ylim(bottom=0)
@@ -915,6 +930,7 @@ def capacity_credit_by_scenario(techs=None):
                 credit = new_build_capacity_credit(sc['path'], prefix)
                 built = new_build_gw(sc['path'], prefix)
                 cap = cumulative_capacity_gw(sc['path'], prefix)
+                peak = national_peak_gw(sc['path'])
             except FileNotFoundError as e:
                 print(f'capacity credit unavailable for {tech} in {sc["name"]} ({e.filename}); skipped.')
                 continue
@@ -923,21 +939,23 @@ def capacity_credit_by_scenario(techs=None):
             d = pd.DataFrame({'year': credit.index.astype(int), 'capacity_credit': credit.to_numpy()})
             d['new_gw'] = d['year'].map(built)
             d['cap_gw'] = d['year'].map(cap)
+            d['cap_peak'] = d['year'].map(cap / peak)
             d = d[(d['new_gw'] >= cc_scenario_min_new_gw) & (d['year'] >= start_year)]
             rows.append(d.assign(tech=tech, scenario=sc['name'],
                                  forced_tech=forced.get(sc['name'], None)))
     if not rows:
         return pd.DataFrame(columns=['tech', 'scenario', 'forced_tech', 'year', 'new_gw',
-                                     'cap_gw', 'capacity_credit'])
+                                     'cap_gw', 'cap_peak', 'capacity_credit'])
     return pd.concat(rows, ignore_index=True)[
-        ['tech', 'scenario', 'forced_tech', 'year', 'new_gw', 'cap_gw', 'capacity_credit']]
+        ['tech', 'scenario', 'forced_tech', 'year', 'new_gw', 'cap_gw', 'cap_peak',
+         'capacity_credit']]
 
 
 def plot_capacity_credit_by_scenario(output_path, cc=None):
-    """One row per tech, every scenario as a line: against model year on the left and against that
-    tech's own installed capacity on the right.
+    """One row per tech, every scenario as a line: against model year, against that tech's own
+    installed capacity, and against that capacity as a share of the run's peak load.
 
-    The right column is the diagnostic. If a tech's credit depended only on how much of it is
+    The capacity columns are the diagnostic. If a tech's credit depended only on how much of it is
     installed, every scenario would fall on one curve there; where the lines separate, something
     else the scenario builds is setting the credit.
 
@@ -965,10 +983,10 @@ def plot_capacity_credit_by_scenario(output_path, cc=None):
     techs = [t for t in cc_scenario_techs if t in set(cc['tech'])]
     year_step = (cc.sort_values('year').groupby(['tech', 'scenario'])['year'].diff()
                  .dropna().mode().iloc[0])
-    fig, axes = plt.subplots(len(techs), 2, figsize=(10.4, 3.7 * len(techs)), squeeze=False)
+    fig, axes = plt.subplots(len(techs), 3, figsize=(15, 3.7 * len(techs)), squeeze=False)
     handles = {}
     for row, tech in enumerate(techs):
-        for col, x in enumerate(['year', 'cap_gw']):
+        for col, x in enumerate(['year', 'cap_gw', 'cap_peak']):
             ax = axes[row][col]
             for k, scen in enumerate(order):
                 d = cc[(cc['tech'] == tech) & (cc['scenario'] == scen)].sort_values('year')
@@ -983,21 +1001,25 @@ def plot_capacity_credit_by_scenario(output_path, cc=None):
                     blanks = d[gap].assign(capacity_credit=np.nan, year=d.loc[gap, 'year'] - 1)
                     d = pd.concat([d, blanks]).sort_values('year')
                 st = look(scen)
-                ln, = ax.plot(d[x], d['capacity_credit'], color=st['color'], ls=st['ls'], lw=1.6,
+                ln, = ax.plot(d[x] * (100 if x == 'cap_peak' else 1), d['capacity_credit'], color=st['color'], ls=st['ls'], lw=1.6,
                               marker=markers[k % len(markers)], ms=5, mec='white', mew=0.6,
                               label=st['label'])
                 handles.setdefault(scen, ln)
             ax.axhline(1.0, color=cost_color, lw=0.9, ls=':', zorder=0)
             ax.set_ylim(0, 1.05)
             ax.grid(alpha=0.25, lw=0.6)
-            if x == 'cap_gw':
+            if x == 'cap_peak':
+                ax.set_xlim(left=0)
+                ax.set_xlabel(f'Installed {display_tech(tech)} capacity as % of peak load')
+            elif x == 'cap_gw':
                 ax.set_xlim(left=0)
                 ax.set_xlabel(f'Installed {display_tech(tech)} capacity (GW)')
             else:
                 ax.set_xlabel('Model year')
                 ax.set_ylabel('Capacity credit of new builds')
-            ax.set_title(f'{display_tech(tech)}' + (' vs model year' if x == 'year'
-                                                     else ' vs its own installed capacity'),
+            ax.set_title(display_tech(tech) + {'year': ' vs model year',
+                                               'cap_gw': ' vs its own installed capacity',
+                                               'cap_peak': ' vs its capacity over peak load'}[x],
                          fontsize=10, loc='left')
     fig.legend([handles[s] for s in order if s in handles],
                [look(s)['label'] for s in order if s in handles],
@@ -2253,10 +2275,15 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 df_vcf, os.path.join(output_dir, 'plcoe_pitch_capacity_credit.png'))
             if fig_cc is not None:
                 plt.close(fig_cc)
-            #Same data, against installed capacity instead of market share.
+            #Same data, against installed capacity, and against it as a share of peak load.
+            fig_cc_gw, _ = plot_capacity_credit(
+                df_vcf, os.path.join(output_dir, 'plcoe_pitch_capacity_credit_gw.png'),
+                x='cap_gw', cc=cc)
+            if fig_cc_gw is not None:
+                plt.close(fig_cc_gw)
             fig_cc_cap, _ = plot_capacity_credit(
                 df_vcf, os.path.join(output_dir, 'plcoe_pitch_capacity_credit_cap.png'),
-                x='cap_gw', cc=cc)
+                x='cap_peak', cc=cc)
             if fig_cc_cap is not None:
                 plt.close(fig_cc_cap)
             #Selected techs' credit in every scenario, not only their own forcing run.

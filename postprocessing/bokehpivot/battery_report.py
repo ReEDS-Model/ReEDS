@@ -125,28 +125,38 @@ def build_html(output_dir, core_path):
                     'every level. Because those prices are concentrated in a few hours, this sits '
                     'below an hour-counting ELCC for resource-limited technologies. Storage is net '
                     'of charging, so its credit is a round-trip-net quantity.', order)
-    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 6,
-                        'The same capacity credits against cumulative installed capacity.',
-                        'Identical data to the figure above on a different x axis: the cumulative '
-                        'national capacity of that technology in its own forcing run. '
-                        'Market share and installed capacity order the technologies differently, '
-                        'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
-                        'same share of generation; against capacity the resource-limited '
-                        'technologies fall along visibly separate paths rather than overlapping.', order)
-    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 7,
+    cc_gw_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_gw.png', 6,
+                       'The same capacity credits against cumulative installed capacity.',
+                       'Identical data to Fig 5 on a different x axis: the cumulative '
+                       'national capacity of that technology in its own forcing run. '
+                       'Market share and installed capacity order the technologies differently, '
+                       'since a gigawatt of storage and a gigawatt of wind are nowhere near the '
+                       'same share of generation; against capacity the resource-limited '
+                       'technologies fall along visibly separate paths rather than overlapping.', order)
+    cc_cap_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_cap.png', 7,
+                        'The same capacity credits against installed capacity as a share of peak '
+                        'load.',
+                        'Fig 6 with each run&rsquo;s capacity divided by that run&rsquo;s national '
+                        'peak load, the highest stress-period block of the summed zone loads before '
+                        'any planning reserve margin, as in Fig 13. This puts every run on the '
+                        'scale of its own system and matches the axis of the regional capacity '
+                        'credits in Fig 13.', order)
+    cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 8,
                        'Capacity credit of new storage and UPV in every scenario.',
                        'The capacity credit above, computed the same way, for new builds of '
                        'storage and UPV in each run rather than only in the run that forces them. '
-                       'Rows are the technology; the left column is against model year and the '
-                       'right against that technology&rsquo;s own installed national capacity in '
-                       'the run. Each scenario takes the colour of the technology '
-                       'it forces and has its own marker; the reference run, which forces nothing, '
+                       'Rows are the technology; the columns are against model year, against '
+                       'that technology&rsquo;s own installed national capacity in the run as in '
+                       'Fig 6, and against that capacity as a share of the run&rsquo;s peak load '
+                       'as in Fig 7. Each '
+                       'scenario takes the colour of the technology it forces and has its own '
+                       'marker; the reference run, which forces nothing, '
                        'is dashed grey. A year in which the run added under a gigawatt of the '
                        'technology is left out, since the credit of a few hundred megawatts '
                        'depends on which one or two regions happened to build, and lines break '
                        'across the omitted years. If a technology&rsquo;s credit depended only on '
                        'how much of it is installed, every scenario would fall on one curve in '
-                       'the right column.', order)
+                       'the capacity columns.', order)
     cc_sc = read_csv_or_empty(output_dir, 'plcoe_pitch_capacity_credit_scenarios.csv')
     cc_sc_rows, cc_sc_cols = [], []
     if not cc_sc.empty:
@@ -188,7 +198,7 @@ def build_html(output_dir, core_path):
         [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
 
     # ---- 05 by transmission region ----
-    reg_vf_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf.png', 8,
+    reg_vf_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf.png', 9,
                         'Value factor of new storage by transmission region.',
                         'One panel per region, each on the same axes. The blue line is the '
                         'region&rsquo;s new-build value factor, value per MWh summed over its zones '
@@ -197,40 +207,40 @@ def build_html(output_dir, core_path):
                         'against the national market share of storage in that year, so every '
                         'region&rsquo;s points sit at the same x positions as the national curve. A '
                         'line breaks across years with no build.', order)
-    reg_grid_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vcf.png', 9,
+    reg_grid_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vcf.png', 10,
                           'Value factor, cost factor and value&#8211;cost factor of new storage '
                           'by transmission region.',
                           'Every region on one panel, with the national curve in black. Value '
-                          'factor is as in Fig 8. Value&#8211;cost factor is national: LCOE base, '
+                          'factor is as in Fig 9. Value&#8211;cost factor is national: LCOE base, '
                           'the forcing multiplier and the benchmark price do not vary by region, so '
                           'each region takes the national value in the years it built, and a '
                           'region&rsquo;s cost factor is its value factor divided by that national '
                           'value&#8211;cost factor. Top row: against national market share, as in '
-                          'Fig 8. Bottom row: against the region&rsquo;s own market share, its '
+                          'Fig 9. Bottom row: against the region&rsquo;s own market share, its '
                           'storage discharge over its total generation excluding storage, the '
                           'national definition applied to the region. Points are joined in order '
                           'of market share.', order)
     reg_comp_nat_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf_components_national.png',
-                              10, 'Energy and capacity components of new-storage value factor by '
+                              11, 'Energy and capacity components of new-storage value factor by '
                               'transmission region, against national market share.',
                               'The split of Fig 3 for each region: value from energy and from the '
                               'reserve margin, each per MWh over the national benchmark price, '
-                              'stacked so the top edge is the region&rsquo;s value factor of Fig 8. '
+                              'stacked so the top edge is the region&rsquo;s value factor of Fig 9. '
                               'The grey line is the national value factor. Points are joined in '
                               'order of market share, so the areas run across years in which the '
                               'region built nothing.', order)
     reg_comp_reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf_components_regional.png',
-                              11, 'Energy and capacity components of new-storage value factor by '
+                              12, 'Energy and capacity components of new-storage value factor by '
                               'transmission region, against regional market share.',
-                              'Fig 10 against the region&rsquo;s own market share, as in the bottom '
-                              'row of Fig 9. The grey national value factor is against national '
+                              'Fig 11 against the region&rsquo;s own market share, as in the bottom '
+                              'row of Fig 10. The grey national value factor is against national '
                               'market share.', order)
 
     reg = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_regional_cc.csv')
     level = [c for c in reg.columns if c not in ('year', 'new_mw', 'cap_mw', 'peak_mw',
                                                  'penetration', 'capacity_credit')]
     level = level[0] if level else 'region'
-    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 12,
+    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 13,
                      'Capacity credit of new storage by transmission region.',
                      f'One panel per {level} region, each on the same axes. The blue line is the '
                      'region&rsquo;s new-build capacity credit, the ratio of sums over its zones that '
@@ -273,7 +283,7 @@ def build_html(output_dir, core_path):
     #Block length as the run had it, so the caption follows a change of stress resolution.
     blk = (f'{arb["block_hours"].iloc[0]:g}'
            if not arb.empty and 'block_hours' in arb else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 13,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 14,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the reserve-margin price of each stress block, weighted by the '
                      'storage fleet&rsquo;s discharge and by its charging, on a log scale with the '
@@ -314,7 +324,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 07 reserve-margin formulation ----
-    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 14,
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 15,
                       'Storage under the two reserve-margin formulations.',
                       'The storage forcing case run twice: with the stress-period reserve margin, '
                       'the default and the basis of every other figure here, and with the '
@@ -408,7 +418,7 @@ def build_html(output_dir, core_path):
      '(<span class="eq">GSw_PRM_CapCredit=1</span>) the reserve-margin value comes from seasonal '
      'firm capacity rather than stress-period dispatch, net of the duration-bin dual for storage, '
      'and CSP and hybrid PV-battery are not covered.</p></div>',
-     cc_fig, cc_table, cc_cap_fig, cc_sc_fig, cc_sc_table)}
+     cc_fig, cc_table, cc_gw_fig, cc_cap_fig, cc_sc_fig, cc_sc_table)}
 
 {sec('05', 'By transmission region', reg_vf_fig, reg_grid_fig, reg_comp_nat_fig, reg_comp_reg_fig, reg_fig, reg_table)}
 
