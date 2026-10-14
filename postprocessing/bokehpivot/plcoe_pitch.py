@@ -807,9 +807,10 @@ def cumulative_capacity_gw(run_dir, prefix):
 
 
 def national_peak_gw(run_dir):
-    """National coincident peak load by year, GW: zone stress-period loads (LOAD, before any
-    planning reserve margin) summed block by block and the highest block taken, as the national row
-    of grouped_capacity_credit builds it."""
+    """National coincident peak load by year, GW: zone stress-period loads (LOAD, whose exogenous
+    part ReEDS scales up by 1 + prm in stress hours, so the peak includes the planning reserve
+    margin) summed block by block and the highest block taken, as the national row of
+    grouped_capacity_credit builds it."""
     load = pd.read_csv(os.path.join(run_dir, 'outputs', 'load_stress.csv'),
                        names=['r', 'h', 't', 'mw'], header=0)
     return load.groupby(['h', 't'])['mw'].sum().groupby('t').max() / 1000
@@ -1158,7 +1159,8 @@ def regional_capacity_credit(run_dir, prefix='battery'):
     The credit is new_build_capacity_credit's ratio within a single region:
     val_resmarg / (MW * res_marg_ann). Penetration is installed power over the region's peak load,
     taken as the highest stress-period load in load_stress - the stress periods are chosen at the
-    peaks - so regions of different size are comparable. For storage, whose vintage is shared by
+    peaks - so regions of different size are comparable. Stress-period load includes the planning
+    reserve margin, which ReEDS applies to exogenous load in stress hours. For storage, whose vintage is shared by
     every build, the regional new-build credit is the region's fleet credit pro-rated.
     """
     out = os.path.join(run_dir, 'outputs')

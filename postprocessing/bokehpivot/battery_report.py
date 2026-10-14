@@ -137,9 +137,10 @@ def build_html(output_dir, core_path):
                         'The same capacity credits against installed capacity as a share of peak '
                         'load.',
                         'Fig 6 with each run&rsquo;s capacity divided by that run&rsquo;s national '
-                        'peak load, the highest stress-period block of the summed zone loads before '
-                        'any planning reserve margin, as in Fig 13. This puts every run on the '
-                        'scale of its own system and matches the axis of the regional capacity '
+                        'peak load, the highest stress-period block of the summed zone loads, as in '
+                        'Fig 13. ReEDS scales exogenous stress-period load up by the planning reserve '
+                        'margin (12% in these runs), so this peak includes it. This puts every run on '
+                        'the scale of its own system and matches the axis of the regional capacity '
                         'credits in Fig 13.', order)
     cc_sc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit_scenarios.png', 8,
                        'Capacity credit of new storage and UPV in every scenario.',
@@ -246,7 +247,9 @@ def build_html(output_dir, core_path):
                      'region&rsquo;s new-build capacity credit, the ratio of sums over its zones that '
                      'built that year as in section 04, against its installed storage capacity (MW) '
                      'as a share of its peak load (MW); the peak is coincident, the highest '
-                     'stress-period block of the summed zone loads. Every region-year that built '
+                     'stress-period block of the summed zone loads, which includes the planning '
+                     'reserve margin ReEDS scales exogenous stress-period load up by (12% in these '
+                     'runs). Every region-year that built '
                      'anything is drawn, joined in model-year order, so a line doubles back where '
                      'retirements cut installed capacity and breaks only across years with no build. '
                      'The grey line is the national curve built the same way. Every battery after the '
