@@ -210,12 +210,27 @@ def build_html(output_dir, core_path):
                           'storage discharge over its total generation excluding storage, the '
                           'national definition applied to the region. Points are joined in order '
                           'of market share.', order)
+    reg_comp_nat_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf_components_national.png',
+                              10, 'Energy and capacity components of new-storage value factor by '
+                              'transmission region, against national market share.',
+                              'The split of Fig 3 for each region: value from energy and from the '
+                              'reserve margin, each per MWh over the national benchmark price, '
+                              'stacked so the top edge is the region&rsquo;s value factor of Fig 8. '
+                              'The grey line is the national value factor. Points are joined in '
+                              'order of market share, so the areas run across years in which the '
+                              'region built nothing.', order)
+    reg_comp_reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf_components_regional.png',
+                              11, 'Energy and capacity components of new-storage value factor by '
+                              'transmission region, against regional market share.',
+                              'Fig 10 against the region&rsquo;s own market share, as in the bottom '
+                              'row of Fig 9. The grey national value factor is against national '
+                              'market share.', order)
 
     reg = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_regional_cc.csv')
     level = [c for c in reg.columns if c not in ('year', 'new_mw', 'cap_mw', 'peak_mw',
                                                  'penetration', 'capacity_credit')]
     level = level[0] if level else 'region'
-    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 10,
+    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 12,
                      'Capacity credit of new storage by transmission region.',
                      f'One panel per {level} region, each on the same axes. The blue line is the '
                      'region&rsquo;s new-build capacity credit, the ratio of sums over its zones that '
@@ -258,7 +273,7 @@ def build_html(output_dir, core_path):
     #Block length as the run had it, so the caption follows a change of stress resolution.
     blk = (f'{arb["block_hours"].iloc[0]:g}'
            if not arb.empty and 'block_hours' in arb else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 11,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 13,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the reserve-margin price of each stress block, weighted by the '
                      'storage fleet&rsquo;s discharge and by its charging, on a log scale with the '
@@ -299,7 +314,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 07 reserve-margin formulation ----
-    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 12,
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 14,
                       'Storage under the two reserve-margin formulations.',
                       'The storage forcing case run twice: with the stress-period reserve margin, '
                       'the default and the basis of every other figure here, and with the '
@@ -395,7 +410,7 @@ def build_html(output_dir, core_path):
      'and CSP and hybrid PV-battery are not covered.</p></div>',
      cc_fig, cc_table, cc_cap_fig, cc_sc_fig, cc_sc_table)}
 
-{sec('05', 'By transmission region', reg_vf_fig, reg_grid_fig, reg_fig, reg_table)}
+{sec('05', 'By transmission region', reg_vf_fig, reg_grid_fig, reg_comp_nat_fig, reg_comp_reg_fig, reg_fig, reg_table)}
 
 {sec('06', 'Capacity credit inside the stress periods',
      '<div class="col"><p>Storage&rsquo;s capacity credit is built differently from the other '

@@ -1275,16 +1275,21 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
              / bench[bench['output'] == 'MWh'].set_index('t')['value'])
     v = v[v['i'].str.startswith(prefix) & (v['r'] != 'sys')]
     z = v.pivot_table(index=['r', 't'], columns='output', values='value', aggfunc='sum').fillna(0)
-    z = pd.DataFrame({'val': z[[c for c in streams if c in z]].sum(axis=1), 'mwh': z['MWh'],
-                      'new_mw': z['MW']}).reset_index()
+    z = pd.DataFrame({'val': z[[c for c in streams if c in z]].sum(axis=1),
+                      'val_energy': z.get('val_load', 0), 'val_capacity': z.get('val_resmarg', 0),
+                      'mwh': z['MWh'], 'new_mw': z['MW']}).reset_index()
     rows = []
     for zone_map in [hier, pd.Series('National', index=hier.index)]:
-        g = (z.assign(grp=z['r'].map(zone_map)).groupby(['grp', 't'])[['val', 'mwh', 'new_mw']]
+        g = (z.assign(grp=z['r'].map(zone_map))
+             .groupby(['grp', 't'])[['val', 'val_energy', 'val_capacity', 'mwh', 'new_mw']]
              .sum().reset_index())
         rows.append(g)
     g = pd.concat(rows, ignore_index=True)
     g = g[g['mwh'] > 0]
     g['value_factor'] = g['val'] / g['mwh'] / g['t'].map(bench)
+    #Energy and capacity components as vf_comp_energy and vf_comp_resmarg are built nationally.
+    g['vf_comp_energy'] = g['val_energy'] / g['mwh'] / g['t'].map(bench)
+    g['vf_comp_resmarg'] = g['val_capacity'] / g['mwh'] / g['t'].map(bench)
     #Regional market share on the share_basis='gen' definition: gross generation (discharge for
     #storage, as gen_ivrt reports it) over the group's total generation excluding storage. The
     #national row reproduces gen_frac in valcostfac_core.
@@ -1298,7 +1303,8 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
         shares.append(ga[ga['i'].str.startswith(prefix)].groupby(['grp', 't'])['gen'].sum() / tot)
     g = g.join(pd.concat(shares).rename('gen_frac_reg'), on=['grp', 't'])
     g = g.rename(columns={'grp': level, 't': 'year'})
-    return g[g['year'] >= start_year][[level, 'year', 'new_mw', 'value_factor', 'gen_frac_reg']]
+    return g[g['year'] >= start_year][[level, 'year', 'new_mw', 'value_factor', 'vf_comp_energy',
+                                       'vf_comp_resmarg', 'gen_frac_reg']]
 
 
 def plot_grouped_value_factor(run_dir, valcostfac_core_path, output_path, tech='Battery',
@@ -1355,6 +1361,60 @@ def plot_grouped_value_factor(run_dir, valcostfac_core_path, output_path, tech='
                matplotlib.lines.Line2D([], [], color='0.72', lw=1.4)]
     fig.legend(handles, ['region', 'national'], loc='lower right', fontsize=8, frameon=False,
                bbox_to_anchor=(0.98, 0.04))
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, g
+
+
+def plot_grouped_vf_components(run_dir, valcostfac_core_path, output_path, tech='Battery',
+                               prefix='battery', level=None, x='gen_frac'):
+    """Each region's new-build value factor split into energy and capacity components, stacked as
+    in plot_vf_components, one small panel per region with the national value factor in grey.
+
+    x is 'gen_frac' (national market share of the year) or 'gen_frac_reg' (the region's own market
+    share; the national curve then sits on national share). Points are joined in order of x.
+    """
+    level = regional_cc_level if level is None else level
+    g = grouped_value_factor(run_dir, prefix, level)
+    core = pd.read_csv(valcostfac_core_path)
+    g['gen_frac'] = g['year'].map(core[core['tech'] == tech].set_index('year')['gen_frac'])
+    g = g.dropna(subset=['gen_frac', x])
+    if g.empty:
+        return None, g
+    nat = g[g[level] == 'National'].sort_values(x)
+    names = sorted(n for n in g[level].unique() if n != 'National')
+    ncol = 4
+    nrow = int(np.ceil(len(names) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(11.5, 2.75 * nrow), sharex=True, sharey=True,
+                             squeeze=False)
+    energy_color, capacity_color = '#2A6F8E', '#C0392B'
+    for ax, name in zip(axes.flat, names):
+        d = g[g[level] == name].sort_values(x)
+        xs, e, c = d[x] * 100, d['vf_comp_energy'], d['vf_comp_resmarg']
+        ax.fill_between(xs, 0, e, color=energy_color, alpha=0.55, lw=0)
+        ax.fill_between(xs, e, e + c, color=capacity_color, alpha=0.45, lw=0)
+        ax.plot(nat[x] * 100, nat['value_factor'], color='0.45', lw=1.3, zorder=3)
+        ax.set_title(name, fontsize=9, loc='left')
+        ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+        ax.grid(alpha=0.25, lw=0.6)
+    for ax in list(axes.flat)[len(names):]:
+        ax.set_visible(False)
+    axes.flat[0].set_xlim(0, g[x].max() * 100 * 1.02)
+    axes.flat[0].set_ylim(bottom=0)
+    for ax in axes[:, 0]:
+        ax.set_ylabel('Value factor')
+    xlabel = ('National market share\n(% of generation)' if x == 'gen_frac'
+              else 'Regional market share\n(% of regional generation)')
+    for c in range(ncol):
+        col = [axes[r][c] for r in range(nrow) if axes[r][c].get_visible()]
+        if col:
+            col[-1].set_xlabel(xlabel)
+            col[-1].tick_params(labelbottom=True)
+    handles = [matplotlib.patches.Patch(color=energy_color, alpha=0.55),
+               matplotlib.patches.Patch(color=capacity_color, alpha=0.45),
+               matplotlib.lines.Line2D([], [], color='0.45', lw=1.3)]
+    fig.legend(handles, ['energy', 'capacity (reserve margin)', 'national value factor'],
+               loc='lower right', fontsize=8, frameon=False, bbox_to_anchor=(0.98, 0.04))
     fig.tight_layout()
     fig.savefig(output_path, dpi=200)
     return fig, g
@@ -2252,6 +2312,14 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_rgrid)
                     rgrid_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_regional_vcf.csv'),
                                      index=False)
+                for x, suffix in [('gen_frac', 'national'), ('gen_frac_reg', 'regional')]:
+                    fig_rcomp, _ = plot_grouped_vf_components(
+                        stor_dirs[tech], valcostfac_core_path,
+                        os.path.join(output_dir,
+                                     f'plcoe_pitch_storage_regional_vf_components_{suffix}.png'),
+                        tech=tech, prefix=prefix, x=x)
+                    if fig_rcomp is not None:
+                        plt.close(fig_rcomp)
                 fig_form, form_tab = plot_storage_formulation(
                     valcostfac_core_path,
                     os.path.join(output_dir, 'plcoe_pitch_storage_formulation.png'), tech=tech)
