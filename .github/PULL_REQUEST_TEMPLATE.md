@@ -110,7 +110,7 @@ Include additional illustrative plots describing input data, methods, testing, a
 
 <!-- Technologies -->
 <!-- - [ ] Batteries: @wesleyjcole -->
-<!-- - [ ] EV managed charging (EVMC): @Max-Vanatta -->
+<!-- - [ ] Demand Response (DR): @louisaserpe -->
 <!-- - [ ] Fossil, CCS, or DAC: @mbrown1 -->
 <!-- - [ ] Geothermal: @shashwatsharma24 -->
 <!-- - [ ] Hydropower or PSH: @stuartcohen8 -->

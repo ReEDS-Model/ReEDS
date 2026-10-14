@@ -42,8 +42,8 @@ Solar,#FFC903,o
 CAES,#FF4741,"(6,1,0)"
 Battery,#FF4A88,"(4,1,0)"
 DR Shed,#B9CBF5,o
-EVMC_Storage,#a55194,o
-EVMC_Shape,#ce6dbd,o
+DR Shift,#B9CBF5,o
+DR Shape,#B9CBF5,o
 DR,#B9CBF5,o
 Storage-H2,#FF7FBB,"(6,1,0)"
 Pumped-Hydro,#CC0079,"(8,1,0)"
