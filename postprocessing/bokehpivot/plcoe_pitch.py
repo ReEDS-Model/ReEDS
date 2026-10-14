@@ -1314,6 +1314,9 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
     #Energy and capacity components as vf_comp_energy and vf_comp_resmarg are built nationally.
     g['vf_comp_energy'] = g['val_energy'] / g['mwh'] / g['t'].map(bench)
     g['vf_comp_resmarg'] = g['val_capacity'] / g['mwh'] / g['t'].map(bench)
+    #Levelized value of energy ($/MWh) and of capacity ($/kW-yr), in dollar_year.
+    g['lvoe'] = g['val'] / g['mwh'] * reeds_usd_mult
+    g['lvoc'] = g['val'] / g['new_mw'] / 1000 * reeds_usd_mult
     #Regional market share on the share_basis='gen' definition: gross generation (discharge for
     #storage, as gen_ivrt reports it) over the group's total generation excluding storage. The
     #national row reproduces gen_frac in valcostfac_core.
@@ -1328,7 +1331,7 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
     g = g.join(pd.concat(shares).rename('gen_frac_reg'), on=['grp', 't'])
     g = g.rename(columns={'grp': level, 't': 'year'})
     return g[g['year'] >= start_year][[level, 'year', 'new_mw', 'value_factor', 'vf_comp_energy',
-                                       'vf_comp_resmarg', 'gen_frac_reg']]
+                                       'vf_comp_resmarg', 'lvoe', 'lvoc', 'gen_frac_reg']]
 
 
 def plot_grouped_value_factor(run_dir, valcostfac_core_path, output_path, tech='Battery',
@@ -1440,6 +1443,40 @@ def plot_grouped_vf_components(run_dir, valcostfac_core_path, output_path, tech=
     fig.legend(handles, ['energy', 'capacity (reserve margin)', 'national value factor'],
                loc='lower right', fontsize=8, frameon=False, bbox_to_anchor=(0.98, 0.04))
     fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, g
+
+
+def plot_grouped_lvoe_lvoc(run_dir, output_path, prefix='battery', level=None):
+    """Levelized value of energy ($/MWh) and of capacity ($/kW-yr) of new builds by model year,
+    every region on one panel with the national value in black. Lines break across years in which
+    a region built nothing.
+    """
+    level = regional_cc_level if level is None else level
+    g = grouped_value_factor(run_dir, prefix, level)
+    if g.empty:
+        return None, g
+    years = sorted(g['year'].unique())
+    names = sorted(n for n in g[level].unique() if n != 'National')
+    colors = plt.get_cmap('tab20').colors
+    cols = [('lvoe', f'Levelized value of energy ({dollar_year}$/MWh)'),
+            ('lvoc', f'Levelized value of capacity ({dollar_year}$/kW-yr)')]
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.2))
+    for (y, ylabel), ax in zip(cols, axes):
+        for n, name in enumerate(names + ['National']):
+            d = g[g[level] == name].set_index('year').reindex(years)
+            if name == 'National':
+                ax.plot(years, d[y], color='black', lw=2.6, marker='o', ms=4, label=name)
+            else:
+                ax.plot(years, d[y], color=colors[2 * (n % 10) + n // 10], lw=1.3, marker='o',
+                        ms=3, label=name)
+        ax.set_ylim(bottom=0)
+        ax.grid(alpha=0.25, lw=0.6)
+        ax.set_xlabel('Model year')
+        ax.set_ylabel(ylabel)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=6, fontsize=9, frameon=False)
+    fig.tight_layout(rect=(0, 0.1, 1, 1))
     fig.savefig(output_path, dpi=200)
     return fig, g
 
@@ -2341,6 +2378,11 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_rgrid)
                     rgrid_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_regional_vcf.csv'),
                                      index=False)
+                fig_rlv, _ = plot_grouped_lvoe_lvoc(
+                    stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_regional_lvoe_lvoc.png'),
+                    prefix=prefix)
+                if fig_rlv is not None:
+                    plt.close(fig_rlv)
                 for x, suffix in [('gen_frac', 'national'), ('gen_frac_reg', 'regional')]:
                     fig_rcomp, _ = plot_grouped_vf_components(
                         stor_dirs[tech], valcostfac_core_path,
