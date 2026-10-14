@@ -99,18 +99,22 @@ def build_html(output_dir, core_path):
 
     # ---- 03 duration ----
     dur_fig = figure(output_dir, 'plcoe_pitch_storage_duration.png', 6,
-                     'Duration of new storage builds by model year.',
-                     'Duration is the energy capacity a build adds divided by the power capacity '
-                     'it adds, <span class="eq">INV_ENERGY / INV</span>, read from '
-                     'cap_energy_new_out and cap_new_ivrt. One box per model year over the '
-                     'regional builds of that year. Boxes and the connected mean are '
-                     'capacity-weighted, so a region adding a gigawatt counts for more than one '
-                     'adding ten megawatts, and box width is proportional to the square root of '
-                     'the capacity built that year. Whiskers are the weighted 10th and 90th '
-                     'percentiles. Years adding less than a gigawatt are omitted. Power and energy '
-                     'are separate decision variables in ReEDS, so a build can add energy to '
-                     'existing power capacity or the reverse; differencing cumulative energy '
-                     'capacity instead would mix those cases together with retirements.', order)
+                     'Duration of the installed storage fleet by model year.',
+                     'Each zone&rsquo;s fleet duration is its installed energy capacity divided by its '
+                     'installed power capacity, summed over vintages (cap_energy_ivrt over cap_ivrt). '
+                     'One box per model year over the zones; boxes and the red mean are weighted by '
+                     'installed power capacity, and box width is proportional to the square root of '
+                     'the installed capacity. Whiskers are the weighted 10th and 90th percentiles, '
+                     'taken over the megawatts installed rather than interpolated between zones. '
+                     'Years with less than a gigawatt installed are omitted. Every battery after the '
+                     'initial fleet is one vintage whose dispatch valnew pro-rates to new builds, so '
+                     'this is the duration behind the value and capacity credit figures. The dashed '
+                     'line is the capacity-weighted mean of each year&rsquo;s new investment, '
+                     '<span class="eq">INV_ENERGY / INV</span> (cap_energy_new_out over '
+                     'cap_new_ivrt), which the fleet trails. Its zone distribution is not drawn: '
+                     'power and energy are separate decision variables, so a zone&rsquo;s investment '
+                     'can be mostly energy added to existing power capacity, and its ratio is then '
+                     'not a battery design.', order)
     dur = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_duration.csv')
     dur_rows = []
     for _, r in dur[dur['year'].isin(table_years)].iterrows() if not dur.empty else []:
@@ -121,11 +125,13 @@ def build_html(output_dir, core_path):
             f'<td class="num">{_num(r["p25"])}</td>'
             f'<td class="num">{_num(r["median"])}</td>'
             f'<td class="num">{_num(r["p75"])}</td>'
-            f'<td class="num">{_num(r["mean"])}</td></tr>')
+            f'<td class="num">{_num(r["mean"])}</td>'
+            f'<td class="num">{_num(r.get("new_mean", np.nan))}</td></tr>')
     dur_table = table(
-        'New storage duration at the headline years, capacity-weighted, hours',
-        [('Year', False), ('Built, GW', True), ('Regions', True), ('p25', True),
-         ('Median', True), ('p75', True), ('Mean', True)], dur_rows)
+        'Storage fleet duration at the headline years, capacity-weighted, hours, with the mean '
+        'of that year&rsquo;s new builds',
+        [('Year', False), ('Installed, GW', True), ('Zones', True), ('p25', True),
+         ('Median', True), ('p75', True), ('Mean', True), ('New-build mean', True)], dur_rows)
 
     # ---- 04 capacity credit of new builds, every technology ----
     cc_fig = figure(output_dir, 'plcoe_pitch_capacity_credit.png', 7,
@@ -306,12 +312,23 @@ def build_html(output_dir, core_path):
                       'year in which the region built nothing',
                       [('Region', False)] + [(str(int(y)), True) for y in reg_years], reg_rows)
 
+    rdur_fig = figure(output_dir, 'plcoe_pitch_storage_regional_duration.png', 17,
+                      'Duration of the installed storage fleet by transmission region.',
+                      'Fig 6 repeated for each region over its own zones: boxes are the '
+                      'capacity-weighted 10th, 25th, 50th, 75th and 90th percentiles of zone fleet '
+                      'duration in that model year, the red line is the capacity-weighted mean, and '
+                      'the grey line is the national fleet mean of Fig 6. Box width is proportional '
+                      'to the square root of the region&rsquo;s installed capacity. Region-years '
+                      'with less than 100 MW installed are omitted. A region with one or two zones '
+                      'has a box that collapses to a line.',
+                      order)
+
     # ---- 06 stress-period arbitrage ----
     arb = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_arbitrage.csv')
     #Block length as the run had it, so the caption follows a change of stress resolution.
     blk = (f'{arb["block_hours"].iloc[0]:g}'
            if not arb.empty and 'block_hours' in arb else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 17,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 18,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the reserve-margin price of each stress block, weighted by the '
                      'storage fleet&rsquo;s discharge and by its charging, on a log scale with the '
@@ -352,7 +369,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 07 reserve-margin formulation ----
-    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 18,
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 19,
                       'Storage under the two reserve-margin formulations.',
                       'The storage forcing case run twice: with the stress-period reserve margin, '
                       'the default and the basis of every other figure here, and with the '
@@ -431,7 +448,7 @@ def build_html(output_dir, core_path):
 
 {sec('02', 'Value factor by component', comp_fig, comp_table)}
 
-{sec('03', 'Duration of new builds',
+{sec('03', 'Duration',
      '<div class="col"><p>Power and energy capacity are separate investment variables, so the '
      'duration of what is built is an outcome of the model rather than an assumption.</p></div>',
      dur_fig, dur_table)}
@@ -448,7 +465,7 @@ def build_html(output_dir, core_path):
      'and CSP and hybrid PV-battery are not covered.</p></div>',
      cc_fig, cc_table, cc_gw_fig, cc_cap_fig, cc_sc_fig, cc_sc_table)}
 
-{sec('05', 'By transmission region', reg_vf_fig, reg_grid_fig, reg_comp_nat_fig, reg_comp_reg_fig, reg_lv_fig, reg_fig, reg_table)}
+{sec('05', 'By transmission region', reg_vf_fig, reg_grid_fig, reg_comp_nat_fig, reg_comp_reg_fig, reg_lv_fig, reg_fig, reg_table, rdur_fig)}
 
 {sec('06', 'Capacity credit inside the stress periods',
      '<div class="col"><p>Storage&rsquo;s capacity credit is built differently from the other '

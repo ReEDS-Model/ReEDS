@@ -1059,61 +1059,157 @@ def new_build_duration(run_dir, prefix='battery'):
     return m
 
 
+def fleet_duration(run_dir, prefix='battery'):
+    """Duration in hours of each zone's installed storage fleet, per year: energy capacity over
+    power capacity, both summed over vintages (cap_energy_ivrt over cap_ivrt). Unlike the ratio of
+    a year's investments, this is unaffected by the model adding energy to power capacity it
+    already has, and it is the duration of the pooled vintage whose dispatch valnew pro-rates to
+    new builds."""
+    out = os.path.join(run_dir, 'outputs')
+    cols = ['i', 'v', 'r', 't']
+    mw = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=cols + ['mw'], header=0)
+    mwh = pd.read_csv(os.path.join(out, 'cap_energy_ivrt.csv'), names=cols + ['mwh'], header=0)
+    mw = mw[mw['i'].str.startswith(prefix)].groupby(['r', 't'])['mw'].sum()
+    mwh = mwh[mwh['i'].str.startswith(prefix)].groupby(['r', 't'])['mwh'].sum()
+    m = pd.concat([mw, mwh], axis=1).fillna(0).reset_index()
+    m = m[m['mw'] > 1].copy()
+    m['dur'] = m['mwh'] / m['mw']
+    return m
+
+
 def weighted_quantile(values, weights, qs):
-    """Quantiles of `values` weighted by `weights`, by interpolating the weighted CDF."""
+    """Quantiles of `values` weighted by `weights`, read off the weighted CDF as a step function:
+    the q quantile is the value at which the cumulative weight first reaches q, so with MW weights
+    it is the duration of the q-th megawatt built. Interpolating between values instead invents
+    durations no build has, and with two builds of very different size lets the small one stretch
+    the quantiles across the whole gap between them."""
     order = np.argsort(values)
     v, w = np.asarray(values)[order], np.asarray(weights)[order]
     c = np.cumsum(w) / w.sum()
-    return [float(np.interp(q, c, v)) for q in qs]
+    return [float(v[min(np.searchsorted(c, q), len(v) - 1)]) for q in qs]
 
 
-def plot_new_build_duration(run_dir, output_path, prefix='battery', min_gw=1.0):
-    """Distribution of new-build storage duration by model year, with the mean connected.
+duration_box_style = dict(
+    boxprops=dict(facecolor='#CFE4EE', edgecolor='#2A6F8E', lw=0.9),
+    medianprops=dict(color='#14455C', lw=1.4),
+    whiskerprops=dict(color='#2A6F8E', lw=0.9), capprops=dict(color='#2A6F8E', lw=0.9))
 
-    Quantiles and mean are capacity-weighted, so a region that built a gigawatt counts for more
-    than one that built ten megawatts; an unweighted box would be dominated by the many small
-    regional builds. Box width is proportional to the square root of the capacity built that year,
-    so a wide box is a year whose distribution describes a lot of capacity, subject to a floor
-    that keeps the thinnest box readable.
 
-    Years building less than min_gw are dropped: before 2020 the fleet grows by a few megawatts a
-    year and the distribution is one or two sites.
-    """
-    d = new_build_duration(run_dir, prefix)
-    if d.empty:
-        return None, d
-    rows, stats, widths = [], [], []
-    for y in sorted(d['t'].unique()):
-        s = d[d['t'] == y]
-        if s['mw'].sum() / 1000 < min_gw:
+def duration_stats(d, min_gw):
+    """Capacity-weighted duration quantiles and mean per model year over the zone builds in d,
+    for years building at least min_gw."""
+    rows = []
+    for y, s in d.groupby('t'):
+        gw = s['mw'].sum() / 1000
+        if gw < min_gw:
             continue
         q = weighted_quantile(s['dur'], s['mw'], [0.1, 0.25, 0.5, 0.75, 0.9])
-        mean = float(np.average(s['dur'], weights=s['mw']))
-        gw = s['mw'].sum() / 1000
-        stats.append(dict(label=str(int(y)), whislo=q[0], q1=q[1], med=q[2], q3=q[3], whishi=q[4],
-                          fliers=[]))
-        widths.append(gw ** 0.5)
         rows.append(dict(year=int(y), gw=gw, p10=q[0], p25=q[1], median=q[2], p75=q[3], p90=q[4],
-                         mean=mean, n_regions=len(s)))
-    if not rows:
-        return None, pd.DataFrame()
-    tab = pd.DataFrame(rows)
-    widths = 0.26 + 0.46 * np.array(widths) / max(widths)
+                         mean=float(np.average(s['dur'], weights=s['mw'])), n_regions=len(s)))
+    return pd.DataFrame(rows)
+
+
+def duration_boxes(tab):
+    """matplotlib bxp stats from duration_stats rows."""
+    return [dict(label=str(r.year), whislo=r.p10, q1=r.p25, med=r.median, q3=r.p75, whishi=r.p90,
+                 fliers=[]) for r in tab.itertuples()]
+
+
+def plot_storage_duration(run_dir, output_path, prefix='battery', min_gw=1.0):
+    """Distribution of installed storage fleet duration across zones by model year, with the
+    capacity-weighted mean connected and the capacity-weighted mean of that year's new builds
+    alongside.
+
+    Quantiles and means are weighted by power capacity, so a zone with a gigawatt counts for more
+    than one with ten megawatts. Box width is proportional to the square root of installed
+    capacity, subject to a floor that keeps the thinnest box readable. The fleet lags what the
+    model is choosing to build, which the new-build line shows; its zone distribution is left out,
+    since a zone-year's investment can be mostly energy added to existing power capacity, and its
+    ratio then is not a battery design.
+
+    Years with less than min_gw installed are dropped: before 2020 the fleet is a few sites.
+    """
+    tab = duration_stats(fleet_duration(run_dir, prefix), min_gw)
+    if tab.empty:
+        return None, tab
+    new = new_build_duration(run_dir, prefix)
+    if not new.empty:
+        new = duration_stats(new, min_gw)
+        tab = tab.merge(new[['year', 'gw', 'mean']].rename(columns={'gw': 'new_gw', 'mean': 'new_mean'}),
+                        on='year', how='left')
+    widths = 0.26 + 0.46 * np.sqrt(tab['gw']) / np.sqrt(tab['gw']).max()
     fig, ax = plt.subplots(figsize=(8.0, 4.4))
-    ax.bxp(stats, widths=widths, showfliers=False, patch_artist=True,
-           boxprops=dict(facecolor='#CFE4EE', edgecolor='#2A6F8E', lw=0.9),
-           medianprops=dict(color='#14455C', lw=1.4),
-           whiskerprops=dict(color='#2A6F8E', lw=0.9), capprops=dict(color='#2A6F8E', lw=0.9))
-    ax.plot(range(1, len(tab) + 1), tab['mean'], color='#C0392B', marker='o', ms=4, lw=1.6,
-            zorder=5, label='capacity-weighted mean')
+    ax.bxp(duration_boxes(tab), widths=widths, showfliers=False, patch_artist=True, **duration_box_style)
+    pos = np.arange(1, len(tab) + 1)
+    ax.plot(pos, tab['mean'], color='#C0392B', marker='o', ms=4, lw=1.6, zorder=5,
+            label='fleet, capacity-weighted mean')
+    if 'new_mean' in tab:
+        ax.plot(pos, tab['new_mean'], color='0.35', marker='s', ms=3.5, lw=1.2, ls='--', zorder=4,
+                label='new builds that year, capacity-weighted mean')
     ax.set_xlabel('Model year')
-    ax.set_ylabel('Duration of new builds (hours)')
+    ax.set_ylabel('Storage duration (hours)')
     ax.set_ylim(bottom=0)
     ax.grid(axis='y', alpha=0.25, lw=0.6)
     ax.legend(loc='upper left', fontsize=8, frameon=False)
     for lab in ax.get_xticklabels():
         lab.set_rotation(60)
         lab.set_ha('right')
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, tab
+
+
+def plot_grouped_duration(run_dir, output_path, prefix='battery', level=None, min_gw=0.1):
+    """Installed storage fleet duration by model year, one small panel per region - the national
+    figure's boxes repeated over each region's zones, with the national fleet mean in grey behind
+    each.
+
+    Boxes sit at their model year on a shared axis so the panels line up, and their width scales
+    with the square root of the region's installed capacity, against the largest region-year. A
+    region with one or two zones has a box that collapses to a line. Region-years with less than
+    min_gw installed are dropped.
+    """
+    level = regional_cc_level if level is None else level
+    d = fleet_duration(run_dir, prefix)
+    if d.empty:
+        return None, d
+    hier = pd.read_csv(os.path.join(run_dir, 'inputs_case', 'hierarchy.csv'))
+    hier = hier.rename(columns={hier.columns[0]: 'r'}).set_index('r')[level]
+    d[level] = d['r'].map(hier)
+    nat = duration_stats(d, 1.0)
+    tab = pd.concat([duration_stats(s, min_gw).assign(**{level: g}) for g, s in d.groupby(level)]
+                    + [nat.assign(**{level: 'National'})], ignore_index=True)
+    reg = tab[tab[level] != 'National']
+    names = sorted(reg[level].unique())
+    ncol = 4
+    nrow = int(np.ceil(len(names) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(11.5, 2.75 * nrow), sharex=True, sharey=True,
+                             squeeze=False)
+    gw_max = np.sqrt(reg['gw']).max()
+    for ax, name in zip(axes.flat, names):
+        r = reg[reg[level] == name].sort_values('year')
+        ax.plot(nat['year'], nat['mean'], color='0.72', lw=1.4, zorder=2)
+        ax.bxp(duration_boxes(r), positions=r['year'], widths=0.4 + 1.2 * np.sqrt(r['gw']) / gw_max,
+               showfliers=False, patch_artist=True, manage_ticks=False, **duration_box_style)
+        ax.plot(r['year'], r['mean'], color='#C0392B', marker='o', ms=3, lw=1.2, zorder=5)
+        ax.set_title(name, fontsize=9, loc='left')
+        ax.grid(axis='y', alpha=0.25, lw=0.6)
+    for ax in list(axes.flat)[len(names):]:
+        ax.axis('off')
+    axes.flat[0].set_xlim(reg['year'].min() - 2, reg['year'].max() + 2)
+    axes.flat[0].set_ylim(bottom=0)
+    for ax in axes[:, 0]:
+        ax.set_ylabel('Duration (hours)')
+    for c in range(ncol):
+        col = [axes[r][c] for r in range(nrow) if axes[r][c].axison]
+        if col:
+            col[-1].set_xlabel('Model year')
+            col[-1].tick_params(labelbottom=True)
+    handles = [matplotlib.patches.Patch(facecolor='#CFE4EE', edgecolor='#2A6F8E'),
+               matplotlib.lines.Line2D([], [], color='#C0392B', lw=1.2, marker='o', ms=3),
+               matplotlib.lines.Line2D([], [], color='0.72', lw=1.4)]
+    axes.flat[-1].legend(handles, ['region, weighted p10-p25-\nmedian-p75-p90', 'region, weighted mean',
+                                   'national, weighted mean'], loc='center', fontsize=8, frameon=False)
     fig.tight_layout()
     fig.savefig(output_path, dpi=200)
     return fig, tab
@@ -2392,7 +2488,7 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 if tech not in stor_dirs:
                     continue
                 prefix = avail_basis_prefix.get(tech, tech.lower())
-                fig_dur, dur_tab = plot_new_build_duration(
+                fig_dur, dur_tab = plot_storage_duration(
                     stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_duration.png'),
                     prefix=prefix)
                 if fig_dur is not None:
@@ -2402,6 +2498,13 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     prefix=prefix)
                 if fig_arb is not None:
                     plt.close(fig_arb)
+                fig_rdur, rdur_tab = plot_grouped_duration(
+                    stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_regional_duration.png'),
+                    prefix=prefix)
+                if fig_rdur is not None:
+                    plt.close(fig_rdur)
+                    rdur_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_regional_duration.csv'),
+                                    index=False)
                 fig_reg, reg_tab = plot_grouped_capacity_credit(
                     stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_regional_cc.png'),
                     prefix=prefix)
