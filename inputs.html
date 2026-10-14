@@ -1200,7 +1200,7 @@ So if the set <code class="docutils literal notranslate"><span class="pre">food<
 <h2>Storage Input Files<a class="headerlink" href="#storage-input-files" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">cap_existing_psh.csv</span></code>: County-wide PSH operational capacity [MW/MWh], pump capacity, and max energy, based on plant-level data from <a class="reference external" href="https://www.hydropower.org/hydropower-pumped-storage-tool">https://www.hydropower.org/hydropower-pumped-storage-tool</a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_durations.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_durations.csv</span></code>: PSH storage duration corresponding to each PSH supply curve, used to define the storage duration of new PSH capacity as well as existing PSH capacity if not explicitly defined.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">storage_duration.csv</span></code>:</p></li>
 </ul>
 <p><a id='inputssupply_curve'></a></p>
@@ -1220,6 +1220,13 @@ So if the set <code class="docutils literal notranslate"><span class="pre">food<
 <li><p>Site-level CSP supply curve costs are copied from the site-level supply curve costs for utility-scale photovoltaics (UPV). The mapping code is available on the <a class="reference external" href="https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/csp">ReEDS input-processing repo</a>.</p></li>
 </ul>
 </li>
+<li><p>Each PSH supply curve filename is formatted as: <code class="docutils literal notranslate"><span class="pre">supplycurve_psh-{exclusion_scenario}{PSH_storage_duration}hr.csv</span></code>, with the 3 exclusion scenarios defined by the following exclusion layers:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">open</span></code>: census urbanized and global human settlement layer (GHSL) developed areas, existing waterbodies, permanent, or intermittent streams and 100yr flood plains, PAD-US prtected areas, conservation easements, areas of critical environmental concern, state and local protected areas, glaciers national land cover database (NLCD) permanent snow/ice and wetland ecosystmens, and airports/airstrips/helipads</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reference</span></code>: all open exclusions [plus] ephemeral streams, critical habitat for endangered species, railway, pipelines, and major roads with 30m buffer, and National Wetlands Inventory (including small, localized riparian environments aroud rivers, streams, and lakes)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">limited</span></code>: all reference exclusions [plus] agricultural easements, farm trust conservation land, and nationally important agricultural land, mature forests on federal lands, <strong>all</strong> building footprints, and Census and BIA-defined “tribal areas” (reservations and off-reservation trust land)</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bio_supplycurve.csv</span></code>: Regional biomass supply and costs by resource class</p>
 <ul>
 <li><p>Dollar year: 2015</p></li>
@@ -1233,42 +1240,23 @@ So if the set <code class="docutils literal notranslate"><span class="pre">food<
 <li><p><code class="docutils literal notranslate"><span class="pre">hydcost.csv</span></code>:</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">interconnection_land.h5</span></code>:</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">interconnection_offshore.h5</span></code>:</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_*.csv</span></code>: Pumped storage hydropower supply curve capacity as used in 2025 Annual Technology Baseline. Citation: <a class="reference external" href="https://www.nlr.gov/gis/psh-supply-curves">https://www.nlr.gov/gis/psh-supply-curves</a></p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_ref_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and reference exclusions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_wEph_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and allowing sites on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_wExist_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_10hr_wExist_wEph_apr2025.csv</span></code>: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_ref_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and reference exclusions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_wEph_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and allowing sites on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_wExist_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and allowing sites using existing reservoirs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_12hr_wExist_wEph_apr2025.csv</span></code>: supply curve capacity assuming 12 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_ref_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and reference exclusions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_wEph_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and allowing sites on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_wExist_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_capacity_8hr_wExist_wEph_apr2025.csv</span></code>: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
-</ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_*.csv</span></code>: Pumped storage hydropower supply curve cost as used in 2025 Annual Technology Baseline. Citation: <a class="reference external" href="https://www.nlr.gov/gis/psh-supply-curves">https://www.nlr.gov/gis/psh-supply-curves</a></p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_ref_apr2025.csv</span></code>: assuming 10 hour duration and reference exclusions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_wEph_apr2025.csv</span></code>: assuming 10 hour duration and allowing sites on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_wExist_apr2025.csv</span></code>: assuming 10 hour duration and allowing sites using existing reservoirs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_10hr_wExist_wEph_apr2025.csv</span></code>: assuming 10 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_ref_apr2025.csv</span></code>: assuming 12 hour duration and reference exclusions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_wEph_apr2025.csv</span></code>: assuming 12 hour duration and allowing sites on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_wExist_apr2025.csv</span></code>: assuming 12 hour duration and allowing sites using existing reservoirs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_12hr_wExist_wEph_apr2025.csv</span></code>: assuming 12 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_ref_apr2025.csv</span></code>: assuming 8 hour duration and reference exclusions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_wEph_apr2025.csv</span></code>: assuming 8 hour duration and allowing sites on ephemeral streams</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_wExist_apr2025.csv</span></code>: assuming 8 hour duration and allowing sites using existing reservoirs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PSH_supply_curves_cost_8hr_wExist_wEph_apr2025.csv</span></code>: assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams</p></li>
-</ul>
-</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rev_paths.csv</span></code>:</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sc_point_gid_old2new.csv</span></code>:</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sitemap.h5</span></code>:</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_egs-reference.csv</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-*.csv</span></code>: Pumped storage hydropower supply curve. Citation: <a class="reference external" href="https://www.nlr.gov/gis/psh-supply-curves">https://www.nlr.gov/gis/psh-supply-curves</a></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-8hr_limited.csv</span></code>: assuming 8 hour duration for the limited siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-8hr_open.csv</span></code>: assuming 8 hour duration for the open siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-8hr_reference.csv</span></code>: assuming 8 hour duration for the reference siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-10hr_limited.csv</span></code>: assuming 10 hour duration for the limited siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-10hr_open.csv</span></code>: assuming 10 hour duration for the open siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-10hr_reference.csv</span></code>: assuming 10 hour duration for the reference siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-12hr_limited.csv</span></code>: assuming 12 hour duration for the limited siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-12hr_open.csv</span></code>: assuming 12 hour duration for the open siting scenario</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_psh-12hr_reference.csv</span></code>: assuming 12 hour duration for the reference siting scenario</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_upv-*.csv:</span></code>: UPV supply curve from reV. Capacity numbers are in MW_DC and cost numbers are in $/MW_AC. Citation: <a class="reference external" href="https://docs.nlr.gov/docs/fy25osti/91900.pdf">https://docs.nlr.gov/docs/fy25osti/91900.pdf</a></p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">supplycurve_upv-limited.csv</span></code>: limited siting scenario</p></li>
@@ -1639,7 +1627,7 @@ Turned on for some zone sets with single-county zones that have no high-voltage 
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on October 09, 2026.
+      <span class="lastupdated">Last updated on October 14, 2026.
       </span></p>
   </div>
 
