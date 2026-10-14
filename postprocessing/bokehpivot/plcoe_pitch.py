@@ -97,6 +97,9 @@ def prep_data(valcostfac_core_path):
 
     for year in years:
         df[f'plcoe_{year}'] = df[f'lcoe_base_orig_{year}'] * df['cost_value_factor']
+    #Same-year PLCOE: each row's own unforced LCOE base. Since cost_value_factor is the benchmark
+    #price over the forced LCOE base, this equals benchmark price / force_mult.
+    df['plcoe'] = df['lcoe_base_orig'] * df['cost_value_factor']
 
     return df, df_lcoe
 
@@ -1581,6 +1584,49 @@ def plot_storage_formulation(valcostfac_core_path, output_path, tech='Battery'):
     fig.savefig(output_path, dpi=200)
     return fig, data
 
+def plot_lcoe_vcf(df, output_path, tech='Battery', x='year'):
+    """LCOE base, same-year PLCOE and marginal LCOE ($/MWh, left axis) with value-cost factor and
+    value factor (right axis), against model year or market share.
+
+    Marginal LCOE is LVOE / force_mult: LVOE equals the forced, cost-reduced LCOE of the marginal
+    build, so dividing out the multiplier gives its LCOE as if forcing were a constraint rather than
+    a cost reduction. Over LCOE base it is the cost factor. PLCOE is the unforced LCOE base times
+    cost factor over value factor, i.e. LCOE base over VCF.
+    """
+    d = df[df['tech'] == tech].dropna(subset=[x, 'lcoe_base_orig', 'plcoe', 'lvoe', 'force_mult',
+                                              'value_cost_factor', 'value_factor']).sort_values(x).copy()
+    if d.empty:
+        return None, d
+    d['lcoe_marg'] = d['lvoe'] / d['force_mult']
+    color = build_color_map([tech])[tech]
+    xs = d[x] * 100 if x == 'gen_frac' else d[x]
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+    ax.plot(xs, d['lcoe_base_orig'], color=cost_color, lw=1.8, marker='o', ms=4, label='LCOE base')
+    ax.plot(xs, d['lcoe_marg'], color=cost_color, lw=1.4, alpha=0.35, label='LCOE (marginal)')
+    ax.plot(xs, d['plcoe'], color=color, lw=2.2, marker='o', ms=4, label='PLCOE')
+    ax.set_ylabel(f'{dollar_year}$/MWh')
+    ax.set_ylim(bottom=0)
+    ax2 = ax.twinx()
+    factor_color = '#2A6F8E'
+    ax2.plot(xs, d['value_cost_factor'], color=factor_color, lw=1.6, ls='--', marker='s', ms=4,
+             label='Value-cost factor (right axis)')
+    ax2.plot(xs, d['value_factor'], color=factor_color, lw=1.4, alpha=0.35,
+             label='Value factor (right axis)')
+    ax2.set_ylabel('Value-cost factor, value factor')
+    ax2.set_ylim(bottom=0)
+    ax.set_xlabel('Model year' if x == 'year' else 'Market share (% of generation)')
+    if x == 'gen_frac':
+        ax.set_xlim(left=0)
+    ax.grid(alpha=0.25, lw=0.6)
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, loc='upper center', fontsize=8, frameon=False)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200)
+    return fig, d[['year', 'gen_frac', 'lcoe_base_orig', 'plcoe', 'lvoe', 'force_mult', 'lcoe_marg',
+                   'value_cost_factor', 'value_factor']]
+
+
 def plot_vcf_unfitted(df, output_path, tech='Battery'):
     """Value factor, value-cost factor and 1/(cost factor) against market share for one tech, as
     points joined by lines - the series of the VCF figure, with no fits, band or LCOE-base scaling.
@@ -1770,6 +1816,7 @@ def load_full_range(valcostfac_core_path, core):
     out['cost_value_factor'] = 1 / out['value_cost_factor']
     out['inv_value_factor'] = 1 / out['value_factor']
     out['inv_cost_factor'] = 1 / out['cost_factor']
+    out['plcoe'] = out['lcoe_base_orig'] * out['cost_value_factor']
     return out
 
 
@@ -2398,6 +2445,15 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_form)
                     form_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_formulation.csv'),
                                     index=False)
+                for x, suffix in [('year', 'year'), ('gen_frac', 'share')]:
+                    fig_lv, lv_tab = plot_lcoe_vcf(
+                        df_vcf, os.path.join(output_dir, f'plcoe_pitch_storage_lcoe_vcf_{suffix}.png'),
+                        tech=tech, x=x)
+                    if fig_lv is not None:
+                        plt.close(fig_lv)
+                if fig_lv is not None:
+                    lv_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_lcoe_vcf.csv'),
+                                  index=False)
                 fig_unfit, unfit_tab = plot_vcf_unfitted(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.png'),
                     tech=tech)
