@@ -94,7 +94,7 @@ def agg_supplycurve(
     Supply curve assembly script:
     - Assembles supply curve (add interconnection costs)
     - Converts and recalculates costs in 2004$
-    - (PSH only) Clips costs at specified cutoff cost (in 2004$)
+    - (PSH only) Clips costs at specified cutoff cost per MW (in 2004$/MW)
     - Assign and aggregate supply curve bins 
 
     Parameters
@@ -110,7 +110,7 @@ def agg_supplycurve(
         bin_col
             Column for which the bin_method is applied for supply curve bin assignment
         psh_cutoff
-            Upper limit cost (in 2004$) retained for PSH supply curves
+            Upper limit cost per MW (in 2004$/MW) retained for PSH supply curves
         deflate
             Multiplier used to deflate supply curve costs from one dollaryear to another
 
@@ -141,7 +141,7 @@ def agg_supplycurve(
     ].sum(axis=1)
     
     if psh:
-        ### Remove costs above psh_cutoff [in 2004$]
+        ### Remove costs above psh_cutoff [in 2004$/MW]
         dfin = dfin.loc[dfin['supply_curve_cost_per_mw']<=psh_cutoff].copy()
     
     ### Define the aggregation settings
