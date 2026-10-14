@@ -187,12 +187,35 @@ def build_html(output_dir, core_path):
         'share in small type beside it',
         [('Technology', False)] + [(str(int(y)), True) for y in cc_years], cc_rows)
 
-    # ---- 05 regional capacity credit ----
+    # ---- 05 by transmission region ----
+    reg_vf_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vf.png', 8,
+                        'Value factor of new storage by transmission region.',
+                        'One panel per region, each on the same axes. The blue line is the '
+                        'region&rsquo;s new-build value factor, value per MWh summed over its zones '
+                        'that built that year, over the national benchmark price, as the national '
+                        'value factor is built; the grey line is the national value factor. Both are '
+                        'against the national market share of storage in that year, so every '
+                        'region&rsquo;s points sit at the same x positions as the national curve. A '
+                        'line breaks across years with no build.', order)
+    reg_grid_fig = figure(output_dir, 'plcoe_pitch_storage_regional_vcf.png', 9,
+                          'Value factor, cost factor and value&#8211;cost factor of new storage '
+                          'by transmission region.',
+                          'Every region on one panel, with the national curve in black. Value '
+                          'factor is as in Fig 8. Value&#8211;cost factor is national: LCOE base, '
+                          'the forcing multiplier and the benchmark price do not vary by region, so '
+                          'each region takes the national value in the years it built, and a '
+                          'region&rsquo;s cost factor is its value factor divided by that national '
+                          'value&#8211;cost factor. Top row: against national market share, as in '
+                          'Fig 8. Bottom row: against the region&rsquo;s own market share, its '
+                          'storage discharge over its total generation excluding storage, the '
+                          'national definition applied to the region. Points are joined in order '
+                          'of market share.', order)
+
     reg = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_regional_cc.csv')
     level = [c for c in reg.columns if c not in ('year', 'new_mw', 'cap_mw', 'peak_mw',
                                                  'penetration', 'capacity_credit')]
     level = level[0] if level else 'region'
-    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 8,
+    reg_fig = figure(output_dir, 'plcoe_pitch_storage_regional_cc.png', 10,
                      'Capacity credit of new storage by transmission region.',
                      f'One panel per {level} region, each on the same axes. The blue line is the '
                      'region&rsquo;s new-build capacity credit, the ratio of sums over its zones that '
@@ -235,7 +258,7 @@ def build_html(output_dir, core_path):
     #Block length as the run had it, so the caption follows a change of stress resolution.
     blk = (f'{arb["block_hours"].iloc[0]:g}'
            if not arb.empty and 'block_hours' in arb else 'GSw_HourlyChunkLengthStress')
-    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 9,
+    arb_fig = figure(output_dir, 'plcoe_pitch_storage_arbitrage.png', 11,
                      'How storage earns its reserve-margin value inside the stress periods.',
                      'Left: the reserve-margin price of each stress block, weighted by the '
                      'storage fleet&rsquo;s discharge and by its charging, on a log scale with the '
@@ -276,7 +299,7 @@ def build_html(output_dir, core_path):
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
     # ---- 07 reserve-margin formulation ----
-    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 10,
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 12,
                       'Storage under the two reserve-margin formulations.',
                       'The storage forcing case run twice: with the stress-period reserve margin, '
                       'the default and the basis of every other figure here, and with the '
@@ -372,7 +395,7 @@ def build_html(output_dir, core_path):
      'and CSP and hybrid PV-battery are not covered.</p></div>',
      cc_fig, cc_table, cc_cap_fig, cc_sc_fig, cc_sc_table)}
 
-{sec('05', 'Capacity credit by region', reg_fig, reg_table)}
+{sec('05', 'By transmission region', reg_vf_fig, reg_grid_fig, reg_fig, reg_table)}
 
 {sec('06', 'Capacity credit inside the stress periods',
      '<div class="col"><p>Storage&rsquo;s capacity credit is built differently from the other '
