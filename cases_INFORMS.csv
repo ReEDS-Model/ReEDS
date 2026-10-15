@@ -1,0 +1,18 @@
+,Default Value,ref_diurnal,ref_interday,open8hr_hiPSloB_diurnal,open8hr_hiPSloB_interday,open8hr_hiP_wGasMult_diurnal,open8hr_hiP_wGasMult_interday,open8hr_hiPSloB_wGasMult_diurnal,open8hr_hiPSloB_wGasMult_interday
+ignore,1,,,0,0,0,0,0,0
+GSw_Region,country/USA,,,,,,,,
+endyear,2050,,,,,,,,
+yearset,,,,,,,,,
+GSw_ZoneSet,z90,,,,,,,,
+GSw_GasCurve,1,,,,,,,,
+GSw_LoadProfiles,EER2023_IRAlow,,,,,,,,
+ngscen,AEO_2026_baseline,,,,,,,,
+GSw_TechCostAdjust,none,,,,,ATB_2025,ATB_2025,ATB_2025,ATB_2025
+plantchar_battery,battery_ATB_2025_moderate,,,battery_ATB_2025_conservative,battery_ATB_2025_conservative,,,battery_ATB_2025_conservative,battery_ATB_2025_conservative
+plantchar_upv,upv_ATB_2025_moderate,,,upv_ATB_2025_advanced,upv_ATB_2025_advanced,,,upv_ATB_2025_advanced,upv_ATB_2025_advanced
+plantchar_hydro,hydro_ATB_2019_mid,,,hydro_ATB_2019_20by2030-30by2050,hydro_ATB_2019_20by2030-30by2050,hydro_ATB_2019_20by2030-30by2050,hydro_ATB_2019_20by2030-30by2050,hydro_ATB_2019_20by2030-30by2050,hydro_ATB_2019_20by2030-30by2050
+pshsupplycurve,8hr_reference,,,,,,,,
+resource_adequacy_years,2007_2008_2009_2010_2011_2012_2013,,,,,,,,
+GSw_HydroPSHDurData,1,,,,,,,,
+GSw_HourlyType,,,day,,day,,day,,day
+GSw_InterDayLinkage,0,,1,,1,,1,,1
