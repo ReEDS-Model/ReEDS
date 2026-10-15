@@ -1,59 +1,42 @@
-# AGENTS.md — Guidance for AI Coding Assistants
+# AGENTS.md
 
-This file gives AI coding tools (Claude, ChatGPT, GitHub Copilot, Cursor, Codex,
-etc.) the context and operating rules they need to make safe, high-quality
-contributions to the ReEDS repository. Human contributors should also feel free
-to read it.
+This file gives LLM-based coding tools the context and operating rules they need to make contributions to the ReEDS repository. 
+Human contributors should also feel free to read it.
 
 If anything in this file conflicts with
-[`docs/source/developer_best_practices.md`](docs/source/developer_best_practices.md)
-or with explicit user instructions, the developer best practices document and
-the user win.
+[`docs/source/developer_best_practices.md`](docs/source/developer_best_practices.md) or with explicit user instructions, the developer best practices document and the user win.
 
 **This file is meant to grow.** If you discover a recurring gotcha, a useful
 workflow, a switch interaction that's easy to miss, or any other piece of
 guidance that would have saved time on a previous task, it belongs here.
 Humans may add it directly; AI tools should propose the addition to the
-human rather than editing this file unprompted. Keep additions concise and
-verify them against the current repo.
+human rather than editing this file unprompted. 
+Keep additions concise and verify them against the current repo.
 
 ---
 
 ## 1. What ReEDS is (and why it matters for AI assistants)
 
-ReEDS (Regional Energy Deployment System) is the National Laboratory of the
-Rockies (NLR) long-term capacity-expansion and dispatch model for the U.S.
-electricity system. It is:
+ReEDS (Regional Energy Deployment System) is a long-term capacity-expansion and dispatch model for the U.S. electricity system. 
+It is:
 
-- **Large.** Hundreds of input files, hundreds of switches in `cases.csv`, and
-  many GAMS, Python, and Julia files that interact through a multi-stage
-  pipeline.
-- **Mixed-language.** GAMS (`*.gms`) defines the optimization model and
-  requires a commercial license (CPLEX or compatible); Python 3.11 drives
-  preprocessing, orchestration, and postprocessing; Julia 1.12.1
-  (`reeds/resource_adequacy/reeds2pras/`) handles resource-adequacy stress-period analysis.
-- **Production research software.** Results are used in published studies and
-  by external stakeholders. Silent changes to defaults or to widely-used
-  switches can invalidate analyses.
+- **Large.** Hundreds of input files, hundreds of switches in `cases.csv`, and many GAMS, Python, and    Julia files that interact through a multi-stage pipeline.
+- **Mixed-language.** GAMS (`*.gms`) defines the optimization model and requires a commercial license (CPLEX or compatible); Python drives preprocessing, orchestration, and postprocessing; Julia (`reeds/resource_adequacy/reeds2pras/`) handles resource-adequacy stress-period analysis. See `environment.yaml` for current versions.
+- **Production research software.** Results are used in published studies and by external stakeholders. Silent changes to defaults or to widely-used switches can invalidate analyses.
 
-Small, local-looking changes can have non-obvious downstream effects
-across switches, scenarios, and postprocessing scripts.
+Small, local-looking changes can have non-obvious downstream effects across switches, scenarios, and postprocessing scripts.
 
 ---
 
 ## 2. Core operating principles
 
 ### 2.0 The human drives; the AI assists
-The human contributor decides what changes, approves the approach, and is
-accountable for every line merged — they must be able to explain and defend
-it in review. Optimize for the human's understanding, not for speed or
-volume of output. A change the human doesn't understand is not finished.
+The human contributor decides what changes, approves the approach, and is accountable for every line merged — they must be able to explain and defend it in review. 
+Optimize for the human's understanding, not for speed or volume of output. 
+A change the human doesn't understand is not finished.
 
 - **Plan before editing.** For any non-trivial change, propose the approach,
-  the files you expect to touch, the alternatives you considered, and the
-  expected effect on the default case — then wait for approval. Changes to
-  the model formulation (equations, the objective, sets that gate variable
-  or equation generation) always need a plan first, however small.
+  the files you expect to touch, the alternatives you considered, and the expected effect on the default case — then wait for approval. Changes to the model formulation (equations, the objective, sets that gate variable or equation generation) always need a plan first, however small.
 - **Surface decisions; don't make them silently.** When you choose between
   reasonable options (where logic lives, how to handle an edge case, whether
   to add a switch), name the choice and the alternative you rejected.
@@ -122,7 +105,7 @@ in §2.3 item 3 and update the relevant input-folder README.
 Citations live in [`docs/source/references.bib`](docs/source/references.bib)
 (Better BibTeX format, managed via the ReEDS Zotero library — see
 `developer_best_practices.md` §"Adding Citations in the Documentation"). Do
-not hand-edit `.bib` entries unless the user explicitly asks.
+not hand-edit `.bib` entries.
 
 [`docs/sources.csv`](docs/sources.csv) is scoped to sourced files **outside**
 `inputs/` (e.g., under `hourlize/`, `postprocessing/`, `preprocessing/`,
@@ -130,7 +113,7 @@ not hand-edit `.bib` entries unless the user explicitly asks.
 files.
 Input-file documentation belongs in the per-folder READMEs above instead.
 
-### 2.3 Avoid unintended consequences
+### 2.3 Check downstream implications of every change
 ReEDS has many switches in [`cases.csv`](cases.csv) that gate large blocks of
 behavior. A change that looks isolated in one `.gms` or `.py` file may
 silently affect:
@@ -160,8 +143,7 @@ silently affect:
 - Postprocessing reports that depend on parameter names, units, or
   CSV column headers.
 
-Before handing a non-trivial change back to the human, mentally (and where
-reasonable, actually) check:
+Before handing a non-trivial change back to the human actually check:
 
 1. **Switch coverage.** Does the change behave correctly for every documented
    value of every switch it touches? In particular: `GSw_Region`,
@@ -330,17 +312,12 @@ A short checklist to apply to every non-trivial change:
    - Start branches from `main`, not from another feature branch, unless
      the user names an integration branch to build on and target.
    - Keep PRs small and single-topic.
-   - Make the PR **title** descriptive and complete — it is reused verbatim
-     in the release-notes summary for each ReEDS version.
-4. **Disclose AI usage — required.** The PR template has a section
-   ("Did you use LLM tools (chatbot or copilot) in the preparation of this
-   PR? If so, describe how") that must be filled in. The PR author is
-   accountable for every change regardless of how it was generated (§2.0).
-5. **Keep git and GitHub actions with the human.** Do not commit, push,
+   - PR title and contents should not be modified.
+4. **Keep git and GitHub actions with the human.** Do not commit, push,
    open PRs or issues, or post comments or reviews on the repo (including
    via `gh` or `/code-review --comment`). Edit files in the working tree
    and report everything in the chat session for the human to act on.
-6. **Never** force-push, rewrite published history, modify CI secrets, or
+5. **Never** force-push, rewrite published history, modify CI secrets, or
    run destructive `git` commands without explicit instruction.
 
 ---
