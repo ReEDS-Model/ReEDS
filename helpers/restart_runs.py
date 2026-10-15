@@ -4,6 +4,7 @@ import sys
 import shutil
 import subprocess
 import argparse
+import re
 from glob import glob
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -53,20 +54,26 @@ reeds_path = reeds.io.reeds_path
 #%% Get all runs
 dictruns = get_run_status(reeds_path, batch_name)
 
-runs_unfinished = dictruns['running'] + dictruns['failed']
+runs_finished = dictruns['finished']
 runs_failed = dictruns['failed']
 runs_running = dictruns['running']
+runs_unfinished = dictruns['running'] + dictruns['failed']
 
 ### Take a look
-print('unfinished:', len(runs_unfinished))
+print('finished:', len(runs_finished))
 print('running:', len(runs_running))
 print('failed:', len(runs_failed))
 
+if include_finished:
+    runs_restart = runs_failed + runs_finished
+else:
+    runs_restart = runs_failed
+
 #%% Double check
 if not force:
-    for i in runs_failed:
+    for i in runs_restart:
         print(os.path.basename(i))
-    print(f'Restarting the {len(runs_failed)} runs listed above.')
+    print(f'Restarting the {len(runs_restart)} runs listed above.')
     confirm_local = str(input('Proceed? [y]/n: ') or 'y')
     if confirm_local not in ['y','Y','yes','Yes','YES']:
         quit()
@@ -83,7 +90,7 @@ else:
     writelines_srun = list()
 
 #%%### Loop through runs, figure out when they failed, and restart
-for case in runs_failed:
+for case in runs_restart:
     casename = os.path.basename(case)
 
     #%% Copy the solver settings file if desired
@@ -95,7 +102,14 @@ for case in runs_failed:
 
     #%% Copy additional files if desired
     for f in more_copyfiles:
-        shutil.copy(f, Path(case, f))
+        if f.lower().startswith('finito'):
+            # if file starts with 'finito' append the finito directory
+            sw = reeds.io.get_switches(case)
+            if int(sw.GSw_FINITO_Link):
+                f_copy = re.sub("^finito/", "" , f, flags=re.IGNORECASE)
+                shutil.copy(Path(sw.FINITO_dir,f_copy), Path(case,f))
+        else:
+            shutil.copy(f, Path(case, f))
     if copy_reeds:
         shutil.copytree(Path(reeds_path, 'reeds'), Path(case, 'reeds'), dirs_exist_ok=True)
 
@@ -146,7 +160,7 @@ for case in runs_failed:
 
 # Check if we are going to run this in parallel or not
 hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
-if hpc and len(runs_failed) > 1:
+if hpc and len(runs_restart) > 1:
     # On HPC with multiple cases 
     cases_per_node = int(input('Number of simultaneous runs per node [integer]: '))
 else:
@@ -155,7 +169,7 @@ else:
 if hpc and (cases_per_node > 1):
     # Write the slurm scripts for parallel runs and 
     # submit them to the HPC
-    casenames = [os.path.basename(p).split(batch_name + "_", 1)[-1] for p in runs_failed]
+    casenames = [os.path.basename(p).split(batch_name + "_", 1)[-1] for p in runs_restart]
     submit_slurm_parallel_jobs(
         reeds_path=reeds_path,
         BatchName=batch_name,
@@ -165,7 +179,7 @@ if hpc and (cases_per_node > 1):
 
 else:
     # Run each case individually
-    for case in runs_failed:
+    for case in runs_restart:
         casename = os.path.basename(case)
         callfile = os.path.join(case, f'call_{casename}.sh')
         sbatchfile = os.path.join(case, f'{casename}.sh')
