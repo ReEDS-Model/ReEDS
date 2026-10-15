@@ -5,6 +5,11 @@
   - `battery_ATB_2024_conservative.csv`:
   - `battery_ATB_2024_moderate.csv`:
 
+- `battery_ATB_2025_*.csv`:
+  - `battery_ATB_2025_advanced.csv`:
+  - `battery_ATB_2025_conservative.csv`:
+  - `battery_ATB_2025_moderate.csv`:
+
 - `beccs_BVRE_2021_*.csv`:
   - `beccs_BVRE_2021_high.csv`:
   - `beccs_BVRE_2021_low.csv`:
@@ -16,6 +21,8 @@
 
 - `biopower_ATB_2024_moderate.csv`:
 
+- `biopower_ATB_2025_moderate.csv`:
+
 - `ccsflex_ATB_2020_*.csv`:
   - `ccsflex_ATB_2020_cost.csv`:
   - `ccsflex_ATB_2020_perf.csv`:
@@ -25,7 +32,14 @@
   - `coal-ccs_ATB_2024_conservative.csv`:
   - `coal-ccs_ATB_2024_moderate.csv`:
 
+- `coal-ccs_ATB_2025_*.csv`:
+  - `coal-ccs_ATB_2025_advanced.csv`:
+  - `coal-ccs_ATB_2025_conservative.csv`:
+  - `coal-ccs_ATB_2025_moderate.csv`:
+
 - `coal_ATB_2024_moderate.csv`:
+
+- `coal_ATB_2025_moderate.csv`:
 
 - `cost_opres_*.csv`:
   - `cost_opres_default.csv`:
@@ -40,6 +54,11 @@
   - `csp_ATB_2024_advanced.csv`:
   - `csp_ATB_2024_conservative.csv`:
   - `csp_ATB_2024_moderate.csv`:
+
+- `csp_ATB_2025_*.csv`:
+  - `csp_ATB_2025_advanced.csv`:
+  - `csp_ATB_2025_conservative.csv`:
+  - `csp_ATB_2025_moderate.csv`:
 
 - `csp_SunShot2030.csv`: CSP costs from the SunShot2030 cost scenario
 
@@ -58,12 +77,23 @@
   - `fuelcell_ATB_2024_advanced.csv`:
   - `fuelcell_ATB_2024_moderate.csv`:
 
+- `fuelcell_ATB_2025_*.csv`:
+  - `fuelcell_ATB_2025_advanced.csv`:
+  - `fuelcell_ATB_2025_moderate.csv`:
+
 - `gas-ccs_ATB_2024_*.csv`:
   - `gas-ccs_ATB_2024_advanced.csv`:
   - `gas-ccs_ATB_2024_conservative.csv`:
   - `gas-ccs_ATB_2024_moderate.csv`:
 
+- `gas-ccs_ATB_2025_*.csv`:
+  - `gas-ccs_ATB_2025_advanced.csv`:
+  - `gas-ccs_ATB_2025_conservative.csv`:
+  - `gas-ccs_ATB_2025_moderate.csv`:
+
 - `gas_ATB_2024_moderate.csv`:
+
+- `gas_ATB_2025_moderate.csv`:
 
 - `geo_ATB_2023_*.csv`:
   - `geo_ATB_2023_advanced.csv`:
@@ -107,10 +137,20 @@
   - `nuclear-smr_ATB_2024_conservative.csv`:
   - `nuclear-smr_ATB_2024_moderate.csv`:
 
+- `nuclear-smr_ATB_2025_*.csv`:
+  - `nuclear-smr_ATB_2025_advanced.csv`:
+  - `nuclear-smr_ATB_2025_conservative.csv`:
+  - `nuclear-smr_ATB_2025_moderate.csv`:
+
 - `nuclear_ATB_2024_*.csv`:
   - `nuclear_ATB_2024_advanced.csv`:
   - `nuclear_ATB_2024_conservative.csv`:
   - `nuclear_ATB_2024_moderate.csv`:
+
+- `nuclear_ATB_2025_*.csv`:
+  - `nuclear_ATB_2025_advanced.csv`:
+  - `nuclear_ATB_2025_conservative.csv`:
+  - `nuclear_ATB_2025_moderate.csv`:
 
 - `ofs-wind_ATB_2023_*.csv`:
   - `ofs-wind_ATB_2023_advanced.csv`: 2023 advanced ofs-wind capital, fixed O&M, var O&M costs and rsc_mult (SC cost reduction mult) by class and year
@@ -124,6 +164,11 @@
   - `ofs-wind_ATB_2024_moderate.csv`: 2024 moderate ofs-wind capital, fixed O&M, var O&M costs and rsc_mult (SC cost reduction mult) by class and year
   - `ofs-wind_ATB_2024_moderate_noFloating.csv`: 2024 moderate_noFloating ofs-wind capital (5x floating capital cost), fixed O&M, var O&M costs and rsc_mult (SC cost reduction mult) by class and year
 
+- `ofs-wind_ATB_2025_*.csv`:
+  - `ofs-wind_ATB_2025_advanced.csv`: 2025 advanced ofs-wind capital, fixed O&M, var O&M costs and rsc_mult (SC cost reduction mult) by class and year
+  - `ofs-wind_ATB_2025_conservative.csv`: 2025 conservative ofs-wind capital, fixed O&M, var O&M costs and rsc_mult (SC cost reduction mult) by class and year
+  - `ofs-wind_ATB_2025_moderate.csv`: 2025 moderate ofs-wind capital, fixed O&M, var O&M costs and rsc_mult (SC cost reduction mult) by class and year
+
 - `ons-wind_ATB_2023_*.csv`:
   - `ons-wind_ATB_2023_advanced.csv`: Advanced cost and performance inputs from the 2023 Annual Technology Baseline for land-based wind
   - `ons-wind_ATB_2023_conservative.csv`: Conservative cost and performance inputs from the 2023 Annual Technology Baseline for land-based wind
@@ -133,6 +178,11 @@
   - `ons-wind_ATB_2024_advanced.csv`: Advanced cost and performance inputs from the 2024 Annual Technology Baseline for land-based wind
   - `ons-wind_ATB_2024_conservative.csv`: Conservative cost and performance inputs from the 2024 Annual Technology Baseline for land-based wind
   - `ons-wind_ATB_2024_moderate.csv`: Moderate cost and performance inputs from the 2024 Annual Technology Baseline for land-based wind
+
+- `ons-wind_ATB_2025_*.csv`:
+  - `ons-wind_ATB_2025_advanced.csv`: Advanced cost and performance inputs from the 2025 Annual Technology Baseline for land-based wind
+  - `ons-wind_ATB_2025_conservative.csv`: Conservative cost and performance inputs from the 2025 Annual Technology Baseline for land-based wind
+  - `ons-wind_ATB_2025_moderate.csv`: Moderate cost and performance inputs from the 2025 Annual Technology Baseline for land-based wind
 
 - `other_plantchar.csv`:
 
@@ -172,5 +222,10 @@
   - `upv_ATB_2024_advanced.csv`:
   - `upv_ATB_2024_conservative.csv`:
   - `upv_ATB_2024_moderate.csv`:
+
+- `upv_ATB_2025_*.csv`:
+  - `upv_ATB_2025_advanced.csv`:
+  - `upv_ATB_2025_conservative.csv`:
+  - `upv_ATB_2025_moderate.csv`:
 
 - `years_until_endogenous.csv`:
