@@ -57,6 +57,14 @@ def deflate_func(data,case):
         data['fom_energy'] *= deflate
     return data
 
+def get_capcost_mult(i, years):
+    """Capital cost multiplier for tech i, defaulting to 1 for unadjusted techs/years"""
+    return (
+        capcost_mult
+        .reindex(pd.MultiIndex.from_product([[i], years], names=['i','t']))
+        .droplevel('i').fillna(1)
+    )
+    
 #%% ===========================================================================
 ### --- PROCEDURE ---
 ### ===========================================================================
@@ -73,6 +81,35 @@ dollaryear = dollaryear.merge(deflator,on="Dollar.Year",how="left")
 
 #%% Get ILR_ATB from scalars
 scalars = reeds.io.get_scalars(inputs_case)
+
+#%%##########################################
+#    -- Capital Cost Adjustments --    #
+##############################################
+
+# Fractional adjustments to overnight capital costs, specified by tech group
+# (a column of tech-subset-table.csv) and year
+if sw.GSw_TechCostAdjust == 'none':
+    capcost_mult = pd.Series(
+        dtype=float, index=pd.MultiIndex.from_arrays([[],[]], names=['i','t']))
+else:
+    tech_groups = reeds.techs.expand_GAMS_tech_groups(
+        reeds.techs.get_tech_subset_table(inputs_case).reset_index()
+    )
+    cost_adjust = pd.read_csv(os.path.join(inputs_case,'tech_cost_adjustments.csv'))
+    cost_adjust['tech_group'] = cost_adjust['tech_group'].str.upper()
+    missing_groups = set(cost_adjust.tech_group) - set(tech_groups.tech_group)
+    if missing_groups:
+        raise ValueError(
+            'tech_cost_adjustments groups missing from tech-subset-table.csv: '
+            f'{sorted(missing_groups)}')
+    capcost_mult = (
+        cost_adjust.merge(tech_groups, on='tech_group')
+        .set_index(['i','t'])['cost_delta_frac'] + 1
+    )
+    if capcost_mult.index.duplicated().any():
+        raise ValueError(
+            'tech_cost_adjustments assigns multiple adjustments to '
+            f'{sorted(set(capcost_mult.index[capcost_mult.index.duplicated()]))}')
 
 #%%###############
 #    -- PV --    #
