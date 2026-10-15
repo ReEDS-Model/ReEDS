@@ -1,0 +1,57 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010..2050..5
+  resource_adequacy_years: '2007_2008_2009_2010_2011_2012_2013'
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  demand:
+    EER2023-IRAlow:
+      GSw_LoadProfiles: EER2023_IRAlow
+    EER2025-IRAlow:
+      GSw_LoadProfiles: EER2025_IRAlow
+  capitalcost-nonPSH:
+    refSB: {}
+    hiSloB:
+      plantchar_battery: battery_ATB_2024_conservative
+      plantchar_upv: upv_ATB_2024_advanced
+  capitalcost-PSH:
+    refPSH: {}
+    30pctPSH:
+      plantchar_hydro: hydro_ATB_2019_20by2030-30by2050
+    50pctPSH:
+      plantchar_hydro: hydro_ATB_2019_25by2030-50by2050
+  pshsupplycurve:
+    lim8hr:
+      pshsupplycurve: limited8hr
+    ref8hr:
+      pshsupplycurve: reference8hr
+    open8hr:
+      pshsupplycurve: open8hr
+    lim10hr:
+      pshsupplycurve: limited10hr
+    ref10hr:
+      pshsupplycurve: reference10hr
+    open10hr:
+      pshsupplycurve: open10hr
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+casegroups:
+  ## ((All load scenarios) × (all non-PSH capital cost scenarios) x (all PSH capital cost scenarios) x (all pshsupplycurves))
+  - [[], [], [], [lim10hr,ref10hr,open10hr]]
+  - [[EER2023-IRAlow], [refSB], [refPSH], [lim8hr,ref8hr,open8hr]]
+  - [[EER2023-IRAlow], [hiSloB], [50pctPSH], [lim8hr,ref8hr,open8hr]]

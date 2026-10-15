@@ -1,0 +1,49 @@
+### For use with casemaker.py.
+##############
+### Shared ###
+### Shared settings are applied to all cases.
+### Any settings not specified use the defaults from cases.csv.
+shared:
+  yearset: 2010..2050..5
+  resource_adequacy_years: '2007_2008_2009_2010_2011_2012_2013'
+
+##################
+### Dimensions ###
+### Scenario names are formatted as '{dimension1}_{dimension2}_{etc}',
+### so to avoid ambiguity, avoid the use of underscores (_) in dimension elements.
+### To use the default settings from cases.csv, provide an empty dictionary: {}.
+dimensions:
+  demand:
+    EER2023-IRAlow:
+      GSw_LoadProfiles: EER2023_IRAlow
+    EER2025-IRAlow:
+      GSw_LoadProfiles: EER2025_IRAlow
+    EER2025-100by2050: 
+      GSw_LoadProfiles: EER2025_100by2050
+  capitalcost-nonPSH:
+    refSB: {}
+    hiSB:
+      plantchar_battery: battery_ATB_2024_advanced
+      plantchar_upv: upv_ATB_2024_advanced
+  capitalcost-PSH:
+    refPSH: {}
+    hiPSH:
+      plantchar_hydro: hydro_ATB_2019_20by2030-30by2050
+  pshsupplycurve:
+    lim10hr:
+      pshsupplycurve: limited10hr
+    ref10hr:
+      pshsupplycurve: reference10hr
+    open10hr:
+      pshsupplycurve: open10hr
+##################
+### Casegroups ###
+### Entries must follow the same order as dimensions; i.e., if the dimensions are
+### [policy, demand, sensitivity], the casegroup entries must be in that order.
+### If an empty list is given, expand to all the options in that dimension;
+### otherwise, use only the listed elements.
+### Single elements can be provided as a length-1 list or as a string.
+### Duplicates will be filtered out in casemaker.py.
+casegroups:
+  ## ((All load scenarios) × (all non-PSH capital cost scenarios) x (all PSH capital cost scenarios) x (all 10hr pshsupplycurves))
+  - [[], [], [], []]
