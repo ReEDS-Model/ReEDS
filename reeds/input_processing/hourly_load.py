@@ -494,9 +494,12 @@ def apply_miso_peak_reshape(
 
     LF_target_sub is the LTLF coincident load factor (peak_load_factor.csv,
     staged by copy_files). LF_current_sub is measured per model year from the
-    grown hourly shape at the MISO-footprint coincident peak hour, averaged
-    over weather years, matching the MISO LTLF coincident-peak definition
-    (each subregion's demand at the hour the full MISO footprint peaks).
+    grown hourly shape at the single hour where the full MISO footprint hits
+    its maximum across all weather years (the global-maximum MISO-wide
+    coincident peak hour), matching the MISO LTLF Annual_Coincident_Peak_MW
+    (a design / extreme peak, not an average-weather-year peak). Each
+    subregion's coincident peak is its demand at that one hour, so the affine
+    pivot sets the maximum MISO-wide coincident peak to the LTLF peak.
 
     Only MISO BAs listed in peak_load_factor.csv are reshaped; all other
     regions and any model year without a target pass through unchanged. If the
@@ -561,6 +564,9 @@ def apply_miso_peak_reshape(
                 np.where(wy_arr == u)[0] for u in np.unique(wy_arr)
             )
         ])
+        # Single hour of the global-maximum MISO-wide coincident peak across
+        # all weather years (the weather year whose footprint peak is largest).
+        global_peak_pos = int(peak_pos[np.argmax(miso_hourly[peak_pos])])
 
         # Per-subregion compression factor alpha.
         sub_alpha = {}
@@ -573,7 +579,10 @@ def apply_miso_peak_reshape(
                 continue
             sub_hourly = load_my[sub_bas].sum(axis=1)
             mean_load = sub_hourly.mean()
-            coincident_peak = sub_hourly.to_numpy()[peak_pos].mean()
+            # Subregion's demand at the single global-maximum MISO-wide
+            # coincident peak hour, matching the LTLF Annual_Coincident_Peak_MW
+            # design-peak basis.
+            coincident_peak = sub_hourly.to_numpy()[global_peak_pos]
             # Degenerate / already-flat shapes: skip (leave load unchanged).
             if mean_load <= 0 or coincident_peak <= mean_load:
                 continue
