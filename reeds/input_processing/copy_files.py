@@ -414,11 +414,7 @@ def subset_to_valid_regions(
     full_path = full_path.format(**sw)
     ## Filename conditions
     if filename.startswith('supplycurve'):
-        df = reeds.io.assemble_supplycurve(
-            full_path,
-            case=os.path.dirname(os.path.normpath(inputs_case)),
-            agg=agg,
-        ).reset_index()
+        df = reeds.io.get_supplycurve(full_path, case=inputs_case)
     elif filename == 'techs_banned.csv':
         df, nuclear_ban_regions = read_banned_tech_file(
             full_path,

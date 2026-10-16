@@ -39,12 +39,8 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
 
         df_sub = df[df.tech.isin(tech_sub)]
         # Read supply curves
-        if tech == 'geohydro':
-            # Use egs supply curve for geohydro for now
-            geo_tech = 'egs'
-            supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+geo_tech+'.csv'))
-        else:
-            supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+tech+'.csv'))
+        usetech = 'egs' if tech == 'geohydro' else tech
+        supply_curve = pd.read_csv(Path(inputs_case, f'supplycurve_init_{usetech}.csv'))
 
         # Only consider the sc_point_gids that are in supply curves
         # (to avoid unmatched units later)

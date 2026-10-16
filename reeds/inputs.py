@@ -272,12 +272,12 @@ def parse_cases(
                         "This may result in inconsistent representative days across MCS runs.\n\n"
                         "To ensure consistency, we strongly recommend setting "
                         "`GSw_HourlyClusterAlgorithm = user` in your switch configuration.\n"
-                        "Do you want to proceed with the current setup?"
                     )
-                    user_input = input("Type 'yes' to proceed, or 'no' to exit: ").strip().lower()
-                    if user_input not in ['yes', 'y']:
-                        print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
-                        quit()
+                    if not skip_checks:
+                        user_input = input("Do you want to proceed with the current setup? y/[n]")
+                        if user_input.strip().lower() not in ['yes', 'y']:
+                            print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
+                            quit()
                     warned_about_cluster_alg = True
                     print()
 
@@ -441,7 +441,7 @@ def get_bin(
         bin_ser = bin_ser.rank(method='dense')
         df[bin_out_col] = bin_ser.values
         # we need the same index ordering for apply to work
-        df = df.reindex(index=orig_index)
+        df = df.reindex(index=orig_index).drop(columns='cum_cap')
     df[bin_out_col] = df[bin_out_col].astype(int)
     return df
 
