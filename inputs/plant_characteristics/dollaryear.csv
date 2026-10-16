@@ -49,6 +49,8 @@ gas-ccs_ATB_2025_conservative,2023
 gas-ccs_ATB_2025_moderate,2023
 fuelcell_ATB_2024_advanced,2022
 fuelcell_ATB_2024_moderate,2022
+fuelcell_ATB_2025_advanced,2023
+fuelcell_ATB_2025_moderate,2023
 geo_ATB_2023_advanced,2020
 geo_ATB_2023_conservative,2020
 geo_ATB_2023_moderate,2020
