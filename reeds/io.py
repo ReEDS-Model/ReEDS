@@ -1530,13 +1530,13 @@ def floatify(df:pd.DataFrame, col_label:str='cost') -> pd.DataFrame:
 
 def get_supplycurve(scpath, case=None, crs='EPSG:5070', zonecol='region'):
     """Load a supply curve file and map sc_point_gid's to model zones"""
-    psh = ('psh' in str(Path(scpath)))
+    fname = Path(scpath).stem
     ## Get supply curve, reV sites, and zone map
-    sitemap = get_sitemap(standardize_case(case), crs=crs)
+    sitemap = get_sitemap(standardize_case(case), offshore=('wind-ofs' in fname), crs=crs)
     dfsc = pd.read_csv(scpath)
     county2zone = get_county2zone(standardize_case(case))
     ## Map PSH lower reservoirs to nearest sc_point_gid
-    if psh:
+    if 'psh' in fname:
         dfsc = reeds.plots.df2gdf(
             dfsc, crs=crs, lat='low_reservoir_latitude', lon='low_reservoir_longitude',
         )
