@@ -1528,6 +1528,25 @@ def floatify(df:pd.DataFrame, col_label:str='cost') -> pd.DataFrame:
     return dfout
 
 
+def get_supplycurve(scpath, case=None, crs='EPSG:5070', zonecol='region'):
+    """Load a supply curve file and map sc_point_gid's to model zones"""
+    psh = ('psh' in str(Path(scpath)))
+    ## Get supply curve, reV sites, and zone map
+    sitemap = get_sitemap(standardize_case(case), crs=crs)
+    dfsc = pd.read_csv(scpath)
+    county2zone = get_county2zone(standardize_case(case))
+    ## Map PSH lower reservoirs to nearest sc_point_gid
+    if psh:
+        dfsc = reeds.plots.df2gdf(
+            dfsc, crs=crs, lat='low_reservoir_latitude', lon='low_reservoir_longitude',
+        )
+        dfsc = dfsc.sjoin_nearest(sitemap[['geometry']], how='left').drop(columns=['geometry'])
+    ## Assign sc_point_gid's to counties and counties to zones
+    dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
+    ## Drop regions outside this run's study area
+    return dfsc.dropna(subset=zonecol)
+
+
 def assemble_supplycurve(
     scfile=None,
     case=None,
@@ -1559,11 +1578,8 @@ def assemble_supplycurve(
     if scfile is None:
         offshore = False
     else:
-        offshore = (
-            True if ('wind-ofs' in os.path.basename(scfile)) or (scfile == 'offshore')
-            else False
-        )
-    ### Get interconnection cost
+        offshore = bool('wind-ofs' in os.path.basename(scfile) or scfile == 'offshore')
+        psh = bool('psh' in os.path.basename(scfile))
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
@@ -1573,14 +1589,19 @@ def assemble_supplycurve(
         return interconnection_cost
 
     ### Get supply curve
-    dfin = floatify(pd.read_csv(scfile, index_col='sc_point_gid'))
+    dfin = floatify(pd.read_csv(scfile))
+    if 'sc_point_gid' in dfin.columns:
+        dfin = dfin.set_index('sc_point_gid')
     ## If derived columns are already in file, it's already been assembled, so stop here
     if 'supply_curve_cost_per_mw' in dfin:
         ## Rebuild it if not aggregating
         if skip_if_complete:
             return dfin
         else:
-            dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
+            if psh:
+                dfin = dfin[['capacity', 'capital_adder_per_mw']].copy()
+            else:
+                dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
     county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
