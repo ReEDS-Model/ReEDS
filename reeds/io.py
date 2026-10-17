@@ -1535,14 +1535,19 @@ def get_supplycurve(scpath, case=None, crs='EPSG:5070', zonecol='region'):
     sitemap = get_sitemap(standardize_case(case), offshore=('wind-ofs' in fname), crs=crs)
     dfsc = pd.read_csv(scpath)
     county2zone = get_county2zone(standardize_case(case))
+    sw = get_switches(case)
     ## Map PSH lower reservoirs to nearest sc_point_gid
     if 'psh' in fname:
         dfsc = reeds.plots.df2gdf(
             dfsc, crs=crs, lat='low_reservoir_latitude', lon='low_reservoir_longitude',
         )
         dfsc = dfsc.sjoin_nearest(sitemap[['geometry']], how='left').drop(columns=['geometry'])
-    ## Assign sc_point_gid's to counties and counties to zones
-    dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
+    ## Offshore zones are not user-adjustable and always use th same sc_point_gid's
+    if ('wind-ofs' in fname) and int(sw.GSw_OffshoreZones):
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.ba)
+    else:
+        ## Assign sc_point_gid's to counties and counties to zones
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
     ## Drop regions outside this run's study area
     return dfsc.dropna(subset=zonecol)
 
