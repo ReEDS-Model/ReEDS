@@ -313,6 +313,10 @@ def main(
                 os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv")
             )
             exog_onlineyear_list.append(exog_onlineyear)
+        if "ofs" not in wind_types:
+            pd.DataFrame(columns=["*tech", "region", "rscbin", "year", "MW"]).to_csv(
+                os.path.join(inputs_case, "exog_wind_ofs_rsc.csv"), index=False
+            )
 
     # %%###############
     #    -- PV --    #

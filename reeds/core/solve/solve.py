@@ -111,7 +111,7 @@ def main(casepath, t, overwrite=False):
             ## Check if resource adequacy calculations finished
             and os.path.isfile(
                 os.path.join(
-                    sw.casedir, 'handoff', 'reeds_data', f'ccdata_{t}.gdx'))
+                    sw.casedir, 'handoff', 'reeds_data', f'ccdata_{t}.h5'))
         ):
             print(f'Already ran {t}i{iteration} so continuing to next iteration')
             continue

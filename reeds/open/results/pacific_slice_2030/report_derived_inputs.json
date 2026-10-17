@@ -1,0 +1,952 @@
+{
+  "year": 2030,
+  "size": {
+    "variables": {
+      "LOAD": 704,
+      "GEN": 49016,
+      "CAP": 557,
+      "CAP_ENERGY": 8,
+      "INV": 245,
+      "INV_ENERGY": 8,
+      "STORAGE_IN": 1848,
+      "STORAGE_LEVEL": 1848,
+      "FLOW": 2288,
+      "CAPTRAN_ENERGY": 26,
+      "CAPTRAN_PRM": 26,
+      "EMIT": 64,
+      "INV_RSC": 1649
+    },
+    "constraints": {
+      "eq_rsc_INVlim": 1649,
+      "eq_loadcon": 704,
+      "eq_supply_demand_balance": 704,
+      "eq_capacity_limit": 41976,
+      "eq_capacity_limit_nd": 5192,
+      "eq_cap_init_noret": 154,
+      "eq_cap_new_noret": 403,
+      "eq_cap_energy_new_noret": 8,
+      "eq_rsc_inv_account": 194,
+      "eq_storage_capacity": 1848,
+      "eq_storage_duration": 1848,
+      "eq_storage_level": 1848,
+      "eq_CAPTRAN_ENERGY": 26,
+      "eq_CAPTRAN_PRM": 26,
+      "eq_transmission_limit": 2288,
+      "eq_emit_accounting": 64,
+      "eq_annual_cap": 1
+    }
+  },
+  "objective_rows_off_domain": {
+    "slice_objinv_INV": 0,
+    "slice_objinv_INV_ENERGY": 0,
+    "slice_objinv_INV_RSC": 25,
+    "slice_objop_GEN": 0,
+    "slice_objop_CAP": 0,
+    "slice_objop_INV": 0,
+    "slice_objop_CAP_ENERGY": 0,
+    "slice_objop_CAPTRAN_ENERGY": 0,
+    "slice_objop_FLOW": 0,
+    "slice_objop_EMIT": 0
+  },
+  "inputs": "derived from inputs.h5",
+  "contract_tables": {
+    "tmodel": {
+      "name": "contract:tmodel",
+      "mine": 1,
+      "gams": 1,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "tfix": {
+      "name": "contract:tfix",
+      "mine": 4,
+      "gams": 4,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "h": {
+      "name": "contract:h",
+      "mine": 88,
+      "gams": 88,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "h_rep": {
+      "name": "contract:h_rep",
+      "mine": 56,
+      "gams": 56,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "h_stress": {
+      "name": "contract:h_stress",
+      "mine": 32,
+      "gams": 32,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "nexth": {
+      "name": "contract:nexth",
+      "mine": 88,
+      "gams": 88,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "r": {
+      "name": "contract:r",
+      "mine": 8,
+      "gams": 8,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "land": {
+      "name": "contract:land",
+      "mine": 8,
+      "gams": 8,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "valcap": {
+      "name": "contract:valcap",
+      "mine": 557,
+      "gams": 557,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "valgen": {
+      "name": "contract:valgen",
+      "mine": 557,
+      "gams": 557,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "valinv": {
+      "name": "contract:valinv",
+      "mine": 245,
+      "gams": 245,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "initv": {
+      "name": "contract:initv",
+      "mine": 8,
+      "gams": 8,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "newv": {
+      "name": "contract:newv",
+      "mine": 33,
+      "gams": 33,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "inv_cond": {
+      "name": "contract:inv_cond",
+      "mine": 440,
+      "gams": 440,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "retiretech": {
+      "name": "contract:retiretech",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "storage": {
+      "name": "contract:storage",
+      "mine": 46,
+      "gams": 46,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "storage_standalone": {
+      "name": "contract:storage_standalone",
+      "mine": 2,
+      "gams": 2,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "storage_hybrid": {
+      "name": "contract:storage_hybrid",
+      "mine": 44,
+      "gams": 44,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "storage_interday": {
+      "name": "contract:storage_interday",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "evmc_storage": {
+      "name": "contract:evmc_storage",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "csp": {
+      "name": "contract:csp",
+      "mine": 44,
+      "gams": 44,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "nondispatch": {
+      "name": "contract:nondispatch",
+      "mine": 6,
+      "gams": 6,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "spur_techs": {
+      "name": "contract:spur_techs",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "battery": {
+      "name": "contract:battery",
+      "mine": 1,
+      "gams": 1,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "upgrade": {
+      "name": "contract:upgrade",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "rsc_i": {
+      "name": "contract:rsc_i",
+      "mine": 93,
+      "gams": 93,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "upv": {
+      "name": "contract:upv",
+      "mine": 9,
+      "gams": 9,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "wind": {
+      "name": "contract:wind",
+      "mine": 10,
+      "gams": 10,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "distpv": {
+      "name": "contract:distpv",
+      "mine": 1,
+      "gams": 1,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "vre": {
+      "name": "contract:vre",
+      "mine": 20,
+      "gams": 20,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "psh": {
+      "name": "contract:psh",
+      "mine": 1,
+      "gams": 1,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "ilr": {
+      "name": "contract:ilr",
+      "mine": 60,
+      "gams": 60,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "m_rscfeas": {
+      "name": "contract:m_rscfeas",
+      "mine": 1675,
+      "gams": 1675,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "m_rsc_con": {
+      "name": "contract:m_rsc_con",
+      "mine": 194,
+      "gams": 194,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "rsc_agg": {
+      "name": "contract:rsc_agg",
+      "mine": 126,
+      "gams": 126,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "routes": {
+      "name": "contract:routes",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "routes_prm": {
+      "name": "contract:routes_prm",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "routes_inv": {
+      "name": "contract:routes_inv",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "etype": {
+      "name": "contract:etype",
+      "mine": 2,
+      "gams": 2,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "emit_modeled": {
+      "name": "contract:emit_modeled",
+      "mine": 32,
+      "gams": 32,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "emit_capped": {
+      "name": "contract:emit_capped",
+      "mine": 1,
+      "gams": 1,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "pass": true
+    },
+    "load_exog_static": {
+      "name": "contract:load_exog_static",
+      "mine": 704,
+      "gams": 704,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.2112742010520165e-16,
+      "pass": true
+    },
+    "tranloss": {
+      "name": "contract:tranloss",
+      "mine": 48,
+      "gams": 48,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 6.938893903907228e-18,
+      "pass": true
+    },
+    "slice_cap_coef": {
+      "name": "contract:slice_cap_coef",
+      "mine": 43635,
+      "gams": 43635,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.6653345369377348e-15,
+      "pass": true
+    },
+    "slice_stor_cap_coef": {
+      "name": "contract:slice_stor_cap_coef",
+      "mine": 1848,
+      "gams": 1848,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "slice_dur_coef": {
+      "name": "contract:slice_dur_coef",
+      "mine": 21,
+      "gams": 21,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "storage_eff": {
+      "name": "contract:storage_eff",
+      "mine": 46,
+      "gams": 46,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "hours_daily": {
+      "name": "contract:hours_daily",
+      "mine": 88,
+      "gams": 88,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "hours": {
+      "name": "contract:hours",
+      "mine": 88,
+      "gams": 88,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "m_capacity_exog": {
+      "name": "contract:m_capacity_exog",
+      "mine": 154,
+      "gams": 154,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.2093990539804113e-16,
+      "pass": true
+    },
+    "degrade_init": {
+      "name": "contract:degrade_init",
+      "mine": 186,
+      "gams": 186,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "m_capacity_exog_energy": {
+      "name": "contract:m_capacity_exog_energy",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "degrade_new": {
+      "name": "contract:degrade_new",
+      "mine": 39312,
+      "gams": 39312,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "slice_prescr_ret": {
+      "name": "contract:slice_prescr_ret",
+      "mine": 20,
+      "gams": 20,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "slice_prescr_ret_energy": {
+      "name": "contract:slice_prescr_ret_energy",
+      "mine": 7,
+      "gams": 7,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "slice_rsc_cap": {
+      "name": "contract:slice_rsc_cap",
+      "mine": 1674,
+      "gams": 1674,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "slice_rsc_cost": {
+      "name": "contract:slice_rsc_cost",
+      "mine": 1641,
+      "gams": 1641,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.2194435303735451e-16,
+      "pass": true
+    },
+    "resourcescaler": {
+      "name": "contract:resourcescaler",
+      "mine": 112,
+      "gams": 112,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "trancap_init_energy": {
+      "name": "contract:trancap_init_energy",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "trancap_init_prm": {
+      "name": "contract:trancap_init_prm",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "trans_cap_delta": {
+      "name": "contract:trans_cap_delta",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "emit_rate": {
+      "name": "contract:emit_rate",
+      "mine": 1448,
+      "gams": 1448,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.117410160552808e-16,
+      "pass": true
+    },
+    "gwp": {
+      "name": "contract:gwp",
+      "mine": 4,
+      "gams": 4,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "emit_cap": {
+      "name": "contract:emit_cap",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "pvf_capital": {
+      "name": "contract:pvf_capital",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "pvf_onm": {
+      "name": "contract:pvf_onm",
+      "mine": 6,
+      "gams": 6,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.2031898985136074e-16,
+      "pass": true
+    },
+    "cost_cap_fin_mult": {
+      "name": "contract:cost_cap_fin_mult",
+      "mine": 245,
+      "gams": 245,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.6136962567226114e-16,
+      "pass": true
+    },
+    "cost_cap": {
+      "name": "contract:cost_cap",
+      "mine": 163,
+      "gams": 163,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "cost_cap_energy": {
+      "name": "contract:cost_cap_energy",
+      "mine": 1,
+      "gams": 1,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "rsc_fin_mult": {
+      "name": "contract:rsc_fin_mult",
+      "mine": 229,
+      "gams": 229,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "cost_vom": {
+      "name": "contract:cost_vom",
+      "mine": 284,
+      "gams": 284,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.755293319565465e-16,
+      "pass": true
+    },
+    "cost_fom": {
+      "name": "contract:cost_fom",
+      "mine": 549,
+      "gams": 549,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.0423626012439022e-16,
+      "pass": true
+    },
+    "cost_fom_energy": {
+      "name": "contract:cost_fom_energy",
+      "mine": 8,
+      "gams": 8,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "heat_rate": {
+      "name": "contract:heat_rate",
+      "mine": 193,
+      "gams": 193,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.895791717609659e-16,
+      "pass": true
+    },
+    "fuel_price": {
+      "name": "contract:fuel_price",
+      "mine": 248,
+      "gams": 248,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.2733740784231188e-16,
+      "pass": true
+    },
+    "slice_objinv_INV": {
+      "name": "contract:slice_objinv_INV",
+      "mine": 197,
+      "gams": 197,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.519533114283456e-16,
+      "pass": true
+    },
+    "slice_objinv_INV_ENERGY": {
+      "name": "contract:slice_objinv_INV_ENERGY",
+      "mine": 8,
+      "gams": 8,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.9972426209099156e-16,
+      "pass": true
+    },
+    "slice_objinv_INV_RSC": {
+      "name": "contract:slice_objinv_INV_RSC",
+      "mine": 1629,
+      "gams": 1629,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.7116486047099366e-16,
+      "pass": true
+    },
+    "slice_objop_GEN": {
+      "name": "contract:slice_objop_GEN",
+      "mine": 27808,
+      "gams": 27808,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 4.414637715755217e-16,
+      "pass": true
+    },
+    "slice_objop_CAP": {
+      "name": "contract:slice_objop_CAP",
+      "mine": 549,
+      "gams": 549,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 2.0423626012439022e-16,
+      "pass": true
+    },
+    "slice_objop_INV": {
+      "name": "contract:slice_objop_INV",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "slice_objop_CAP_ENERGY": {
+      "name": "contract:slice_objop_CAP_ENERGY",
+      "mine": 8,
+      "gams": 8,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "slice_objop_CAPTRAN_ENERGY": {
+      "name": "contract:slice_objop_CAPTRAN_ENERGY",
+      "mine": 26,
+      "gams": 26,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 1.3645105201042228e-16,
+      "pass": true
+    },
+    "slice_objop_FLOW": {
+      "name": "contract:slice_objop_FLOW",
+      "mine": 2288,
+      "gams": 2288,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "slice_objop_EMIT": {
+      "name": "contract:slice_objop_EMIT",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "state_INV": {
+      "name": "contract:state_INV",
+      "mine": 193,
+      "gams": 193,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "state_INV_ENERGY": {
+      "name": "contract:state_INV_ENERGY",
+      "mine": 19,
+      "gams": 19,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "state_INV_RSC": {
+      "name": "contract:state_INV_RSC",
+      "mine": 139,
+      "gams": 139,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    },
+    "state_INVTRAN": {
+      "name": "contract:state_INVTRAN",
+      "mine": 0,
+      "gams": 0,
+      "only_mine": 0,
+      "only_gams": 0,
+      "value_mismatches": 0,
+      "max_rel_diff": 0.0,
+      "pass": true
+    }
+  },
+  "gate1_matrix": {
+    "rows_python": 58933,
+    "rows_gams": 58933,
+    "cols_python": 58287,
+    "cols_gams": 58287,
+    "rows_only_python": [],
+    "n_rows_only_python": 0,
+    "rows_only_gams": [],
+    "n_rows_only_gams": 0,
+    "cols_only_python": [],
+    "n_cols_only_python": 0,
+    "cols_only_gams": [],
+    "n_cols_only_gams": 0,
+    "nonzeros_python": 218541,
+    "nonzeros_gams": 218541,
+    "coefficient_mismatches": 0,
+    "max_coefficient_rel_diff": 2.1094237467877974e-15,
+    "row_bound_mismatches": 0,
+    "col_bound_mismatches": 0,
+    "objective_mismatches": 0,
+    "max_objective_rel_diff": 4.714366762475842e-15,
+    "pass": true
+  },
+  "gate2_objective": {
+    "python": 141230654065.9919,
+    "gams": 141230654065.99222,
+    "rel_diff": 2.160832457147737e-15,
+    "status": "TerminationStatusCode.OPTIMAL",
+    "solve_s": 12.374262299999828,
+    "pass": true
+  },
+  "gate3_gams_primal": {
+    "max_scaled_row_violation": 1.862645149230957e-09,
+    "max_scaled_bound_violation": 0.0,
+    "objective_at_gams_point": 141230654065.99167,
+    "worst_rows": {},
+    "pass": true,
+    "gams_levels_without_python_column": 70775,
+    "gams_rows_without_python_row": 126085,
+    "objective_rel_diff": 3.889498422865927e-15
+  },
+  "gate4_kkt": {
+    "max_stationarity_violation": 2.3283064365386963e-10,
+    "max_dual_sign_or_complementarity_violation": 1.4551915228366852e-11,
+    "worst_columns": {},
+    "worst_rows": {},
+    "pass": true
+  }
+}

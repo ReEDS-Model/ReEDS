@@ -25,7 +25,7 @@ The files used by PRAS are:
 #%% General imports
 import os
 import re
-import gdxpds
+from reeds.open.handoff import read_handoff_h5
 import pandas as pd
 import numpy as np
 ### Local imports
@@ -109,8 +109,7 @@ def main(t, casedir, iteration=0):
     # casedir = os.path.join(reeds_path,'runs','v20260417_reorgM0_Pacific')
 
     #%%### Get inputs from ReEDS
-    gdx_file = os.path.join(casedir,'handoff','reeds_data',f'reeds_data_{t}.gdx')
-    gdxreeds = gdxpds.to_dataframes(gdx_file)
+    gdxreeds = read_handoff_h5(os.path.join(casedir,'handoff','reeds_data',f'reeds_data_{t}.h5'))
     ### Use indices as multiindex
     for key in gdxreeds:
         # try:

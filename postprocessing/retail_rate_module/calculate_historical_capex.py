@@ -47,18 +47,17 @@ def get_historical_units(inputs_case):
 
 def read_from_inputs_gdx(case, key) -> pd.DataFrame:
     """
-    Read the provided key from inputs.gdx, with backwards compatibility
-    for older gdxpds versions (which return a dictionary instead of a dataframe).
+    Read the provided key from inputs_derived.h5, which holds the model
+    parameters that used to be read from inputs.gdx.
 
     Args:
         case: filepath to ReEDS run folder OR to inputs_case
-        key: name of parameter in inputs.gdx file
+        key: name of the parameter
     """
-    fpath = os.path.join(reeds.io.standardize_case(case), 'inputs_case', 'inputs.gdx')
-    df = gdxpds.to_dataframe(fpath, key)
-    if isinstance(df, dict):
-        df = df[key]
-    return df
+    fpath = os.path.join(reeds.io.standardize_case(case), 'inputs_case', 'inputs_derived.h5')
+    if not os.path.isfile(fpath):
+        raise FileNotFoundError(f"{fpath} is missing; it is written by reeds/open/report_case.py")
+    return reeds.io.read_h5(fpath, key)
 
 
 def get_earliest_cap_costs(inputs_case):

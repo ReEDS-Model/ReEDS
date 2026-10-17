@@ -1,0 +1,10 @@
+# Tested with Python 3.12 and 3.13 (last full run: 3.13.16). Pins are the versions every result was produced with.
+polars>=1.30          # tested 1.44.2
+numpy                 # tested 2.5.3
+pandas                # tested 3.0.5   (report.py, outputs.h5 writer)
+h5py                  # tested 3.16.0  (ReEDS-layout outputs.h5)
+pyoframe==1.9.1
+pyoptinterface>=0.6   # tested 0.6.1   (pyoframe's solver layer)
+highspy==1.15.1       # HiGHS; solvers.load_highs() points pyoptinterface at this wheel's library
+pyomo==6.10.1         # second implementation, used for the cross-check and KKT gates
+pytest                # tests/

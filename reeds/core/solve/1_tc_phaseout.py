@@ -14,7 +14,7 @@ Based on the Inflation Reduction Act of 2022
 ###########
 #%% IMPORTS
 import argparse
-import gdxpds
+from reeds.open.handoff import read_handoff_h5, write_handoff_h5
 import pandas as pd
 import numpy as np
 import os
@@ -123,9 +123,9 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
         most_recent_year = max(yearset[yearset<year])
 
         # Read in the latest emit data
-        gdx_filename = os.path.join(
-            tc_file_dir, 'emit_for_tc_phaseout_calc_%s.gdx' % most_recent_year)
-        emit_nat = gdxpds.to_dataframes(gdx_filename)['emit_nat_tc']
+        h5_filename = os.path.join(
+            tc_file_dir, 'emit_for_tc_phaseout_calc_%s.h5' % most_recent_year)
+        emit_nat = read_handoff_h5(h5_filename)['emit_nat_tc']
         if '*' in emit_nat.columns:
             emit_nat.rename(columns={'*':'t'}, inplace=True)
         emit_nat['t'] = emit_nat['t'].astype(int)
@@ -204,8 +204,8 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
     tc_phaseout_mult['tc_phaseout_mult'] = np.round(tc_phaseout_mult['tc_phaseout_mult'], 3)
     tc_phaseout_mult['t'] = year
 
-    data = {'tc_phaseout_mult_t':tc_phaseout_mult[['i', 't', 'tc_phaseout_mult']]}
-    gdxpds.to_gdx(data, os.path.join(tc_file_dir, f'tc_phaseout_mult_{year}.gdx'))
+    data = {'tc_phaseout_mult_t': tc_phaseout_mult[['i', 't', 'tc_phaseout_mult']].rename(columns={'tc_phaseout_mult': 'Value'})}
+    write_handoff_h5(data, os.path.join(tc_file_dir, f'tc_phaseout_mult_{year}.h5'))
 
 
 #############

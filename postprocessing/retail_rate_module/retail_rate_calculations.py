@@ -1636,9 +1636,9 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
         ptc_values['ptc_grossup_value'] *= (1 - ptc_values['ptc_tax_equity_penalty'])
         
     # Read in tax credit phaseout adjustment
-    gdx_filename = os.path.join(
-        run_dir, 'outputs', 'tc_phaseout_data', 'tc_phaseout_mult_%s.gdx' % last_year)
-    tc_phaseout_mult = gdxpds.to_dataframes(gdx_filename)['tc_phaseout_mult_t']
+    h5_filename = os.path.join(
+        run_dir, 'outputs', 'tc_phaseout_data', 'tc_phaseout_mult_%s.h5' % last_year)
+    tc_phaseout_mult = reeds.io.read_h5(h5_filename, 'tc_phaseout_mult_t')
     # if '*' in emit_nat.columns: emit_nat.rename(columns={'*':'t'}, inplace=True)
     tc_phaseout_mult['t'] = tc_phaseout_mult['t'].astype(int)
     tc_phaseout_mult = tc_phaseout_mult.set_index('t').rename(columns={'Value':'tc_phaseout_mult'})

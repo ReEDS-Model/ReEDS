@@ -19,14 +19,16 @@ from datetime import datetime
 import argparse
 from pathlib import Path
 
-# Assert core programs are accessible
 CORE_PROGRAMS = ["gams"]
-if not all(shutil.which(program) for program in CORE_PROGRAMS):
-    msg = (
-        "Programs needed to run reeds not accessible on the environment. "
-        f"Check that all the {CORE_PROGRAMS=} are accessible on the PATH."
-    )
-    raise ImportError(msg)
+
+
+def check_core_programs():
+    if not all(shutil.which(program) for program in CORE_PROGRAMS):
+        msg = (
+            "Programs needed to run reeds not accessible on the environment. "
+            f"Check that all the {CORE_PROGRAMS=} are accessible on the PATH."
+        )
+        raise ImportError(msg)
 
 #%% Constants
 LINUXORMAC = True if os.name == 'posix' else False
@@ -603,6 +605,19 @@ def setup_sequential_year(
         )
 
 
+def setup_sequential_open(solveyears, casedir, reeds_path, OPATH, logger, builder):
+    for cur_year in solveyears:
+        big_comment(f'Year: {cur_year}', OPATH)
+        OPATH.writelines(
+            f"python {os.path.join(casedir, 'reeds', 'open', 'run_case.py')} {casedir} {cur_year} --builder {builder}\n"
+        )
+        OPATH.writelines(writescripterrorcheck(f"run_case.py_{cur_year}"))
+        OPATH.writelines(f'python {logger} --year={cur_year}\n')
+        OPATH.writelines(
+            f"python {Path('reeds','resource_adequacy','diagnostic_plots.py')} "
+            f"--reeds_path={reeds_path} --casedir={casedir} --t={cur_year} &\n")
+
+
 def setup_sequential(
         caseSwitches, reeds_path, hpc,
         solveyears, casedir, batch_case, toLogGamsString, OPATH, logger,
@@ -1113,6 +1128,9 @@ def write_batch_script(
     case,
 ):
     inputs_case = os.path.join(casedir,"inputs_case")
+    open_model = int(caseSwitches['GSw_OpenModel'])
+    if not open_model:
+        check_core_programs()
 
     if os.path.exists(os.path.join(reeds_path, 'runs', batch_case)):
         print('Caution, case ' + batch_case + ' already exists in runs \n')
@@ -1314,8 +1332,7 @@ def write_batch_script(
             'outage_rates',
             'forecast',
             'hourly_repperiods',
-            'h5_to_gdx',
-        ]:
+        ] + ([] if open_model else ['h5_to_gdx']):
             OPATH.writelines(f"echo {'-'*12+'-'*len(s)}\n")
             OPATH.writelines(f"echo 'starting {s}.py'\n")
             OPATH.writelines(f"echo {'-'*12+'-'*len(s)}\n")
@@ -1335,22 +1352,28 @@ def write_batch_script(
         if int(caseSwitches['input_processing_only']) == 1:
             stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches)
 
-        big_comment('Compile model', OPATH)
+        if not open_model:
+            big_comment('Compile model', OPATH)
 
-        OPATH.writelines(
-            f"\ngams {Path('reeds','core','setup','a_createmodel.gms')} "
-            + "gdxcompress=1 xs="+os.path.join("g00files",batch_case)
-            + (' license=gamslice.txt' if hpc else '')
-            + " o="+os.path.join("lstfiles","1_Inputs.lst") + options + " " + toLogGamsString + '\n')
-        OPATH.writelines(f'python {logger}\n')
-        restartfile = batch_case
-        OPATH.writelines(writeerrorcheck(os.path.join('g00files', restartfile + '.g*')))
-        OPATH.writelines(writescripterrorcheck(s)+'\n')
+            OPATH.writelines(
+                f"\ngams {Path('reeds','core','setup','a_createmodel.gms')} "
+                + "gdxcompress=1 xs="+os.path.join("g00files",batch_case)
+                + (' license=gamslice.txt' if hpc else '')
+                + " o="+os.path.join("lstfiles","1_Inputs.lst") + options + " " + toLogGamsString + '\n')
+            OPATH.writelines(f'python {logger}\n')
+            restartfile = batch_case
+            OPATH.writelines(writeerrorcheck(os.path.join('g00files', restartfile + '.g*')))
+            OPATH.writelines(writescripterrorcheck(s)+'\n')
 
         ################################
         #    -- CORE MODEL SETUP --    #
         ################################
-        if caseSwitches['timetype'] == 'seq':
+        if open_model and caseSwitches['timetype'] != 'seq':
+            raise NotImplementedError(
+                f"GSw_OpenModel=1 supports timetype=seq only, not {caseSwitches['timetype']}")
+        if open_model:
+            setup_sequential_open(solveyears, casedir, reeds_path, OPATH, logger, caseSwitches['GSw_OpenBuilder'])
+        elif caseSwitches['timetype'] == 'seq':
             setup_sequential(
                 caseSwitches, reeds_path, hpc,
                 solveyears, casedir, batch_case, toLogGamsString, OPATH, logger,
@@ -1371,10 +1394,16 @@ def write_batch_script(
         #################################
         #create reporting files
         big_comment('Output processing', OPATH)
-        if not LINUXORMAC:
+        if open_model:
+            comment('GSw_OpenModel=1: outputs are written by the Python reporter instead of report.gms and report_dump.py', OPATH)
+            OPATH.writelines(f"python {os.path.join(casedir, 'reeds', 'open', 'report_case.py')} {casedir}\n")
+            OPATH.writelines(writescripterrorcheck('report_case.py'))
+        elif not LINUXORMAC:
             OPATH.writelines("setlocal enabledelayedexpansion\n")
         ### If not iterating, run for iteration 0
-        if not int(caseSwitches['GSw_PRM_StressIterateMax']):
+        if open_model:
+            pass
+        elif not int(caseSwitches['GSw_PRM_StressIterateMax']):
             OPATH.writelines(
                 f"r={os.path.join('g00files', f'{batch_case}_{max(solveyears)}i0')}\n"
                 if LINUXORMAC else
@@ -1390,24 +1419,25 @@ def write_batch_script(
                 f'(\'python {fpath} {batch_case} {max(solveyears)}\')'
                 f' do set "r=%%i"\n'
             )
-        OPATH.writelines(
-            f"gams {Path('reeds','core','terminus','report.gms')}"
-            + f" o={os.path.join('lstfiles',f'report_{batch_case}.lst')}"
-            + (' license=gamslice.txt' if hpc else '')
-            + (' r=$r' if LINUXORMAC else ' r=!r!')
-            + ' gdxcompress=1'
-            + toLogGamsString
-            + f"--fname={batch_case}"
-            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
-        )
-        OPATH.writelines(writescripterrorcheck("report.gms"))
-        if not LINUXORMAC:
-            OPATH.writelines("endlocal\n")
-        OPATH.writelines(f'python {logger}\n')
-        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
-        OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+        if not open_model:
+            OPATH.writelines(
+                f"gams {Path('reeds','core','terminus','report.gms')}"
+                + f" o={os.path.join('lstfiles',f'report_{batch_case}.lst')}"
+                + (' license=gamslice.txt' if hpc else '')
+                + (' r=$r' if LINUXORMAC else ' r=!r!')
+                + ' gdxcompress=1'
+                + toLogGamsString
+                + f"--fname={batch_case}"
+                + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
+            )
+            OPATH.writelines(writescripterrorcheck("report.gms"))
+            if not LINUXORMAC:
+                OPATH.writelines("endlocal\n")
+            OPATH.writelines(f'python {logger}\n')
+            OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
+            OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
 
-        if int(caseSwitches['diagnose']):
+        if int(caseSwitches['diagnose']) and not open_model:
              OPATH.writelines(
                 "python"
                 + f" {os.path.join(reeds_path,'postprocessing','diagnose','diagnose_process.py')}"
@@ -1446,7 +1476,7 @@ def write_batch_script(
             ]:
                 comment(line, datadumper)
             datadumper.writelines(command_write)
-        if int(caseSwitches['dump_alldata']) or int(caseSwitches['debug']):
+        if (int(caseSwitches['dump_alldata']) or int(caseSwitches['debug'])) and not open_model:
             OPATH.writelines(command + (' r=$r' if LINUXORMAC else ' r=!r!') + '\n')
 
         ## ReEDS_to_rev processing

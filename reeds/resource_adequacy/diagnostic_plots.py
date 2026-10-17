@@ -1,7 +1,6 @@
 #%%### Imports
 import os
 import sys
-import gdxpds
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
@@ -16,6 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 from reeds import reedsplots
 from reeds import plots
+from reeds.open.handoff import read_handoff_h5
 
 plots.plotparams()
 
@@ -57,8 +57,8 @@ def get_inputs(sw):
     )
     h_dt_szn['d'] = h_dt_szn.datetime.dt.strftime('sy%Yd%j')
 
-    gdxreeds = gdxpds.to_dataframes(
-        os.path.join(sw['casedir'],'handoff','reeds_data',f'reeds_data_{sw["t"]}.gdx'))
+    gdxreeds = read_handoff_h5(
+        os.path.join(sw['casedir'],'handoff','reeds_data',f'reeds_data_{sw["t"]}.h5'))
 
     techs = gdxreeds['i_subsets'].pivot(columns='i_subtech',index='i',values='Value')
     h2dac = techs['CONSUME'].dropna().index
@@ -1068,8 +1068,8 @@ def plot_cc_mar(sw, dfs):
 
     if not int(sw['GSw_PRM_CapCredit']):
         raise KeyError('No capacity credit values to plot')
-    cc_results = gdxpds.to_dataframes(os.path.join(
-        sw['casedir'], 'handoff', 'reeds_data', f"ccdata_{sw['t']}.gdx"
+    cc_results = read_handoff_h5(os.path.join(
+        sw['casedir'], 'handoff', 'reeds_data', f"ccdata_{sw['t']}.h5"
     ))
 
     dfplot = cc_results[param].drop('t',axis=1).copy()

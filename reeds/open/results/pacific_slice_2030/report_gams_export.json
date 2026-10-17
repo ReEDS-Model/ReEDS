@@ -1,0 +1,101 @@
+{
+  "year": 2030,
+  "size": {
+    "variables": {
+      "LOAD": 704,
+      "GEN": 49016,
+      "CAP": 557,
+      "CAP_ENERGY": 8,
+      "INV": 245,
+      "INV_ENERGY": 8,
+      "STORAGE_IN": 1848,
+      "STORAGE_LEVEL": 1848,
+      "FLOW": 2288,
+      "CAPTRAN_ENERGY": 26,
+      "CAPTRAN_PRM": 26,
+      "EMIT": 64,
+      "INV_RSC": 1649
+    },
+    "constraints": {
+      "eq_rsc_INVlim": 1649,
+      "eq_loadcon": 704,
+      "eq_supply_demand_balance": 704,
+      "eq_capacity_limit": 41976,
+      "eq_capacity_limit_nd": 5192,
+      "eq_cap_init_noret": 154,
+      "eq_cap_new_noret": 403,
+      "eq_cap_energy_new_noret": 8,
+      "eq_rsc_inv_account": 194,
+      "eq_storage_capacity": 1848,
+      "eq_storage_duration": 1848,
+      "eq_storage_level": 1848,
+      "eq_CAPTRAN_ENERGY": 26,
+      "eq_CAPTRAN_PRM": 26,
+      "eq_transmission_limit": 2288,
+      "eq_emit_accounting": 64,
+      "eq_annual_cap": 1
+    }
+  },
+  "objective_rows_off_domain": {
+    "slice_objinv_INV": 0,
+    "slice_objinv_INV_ENERGY": 0,
+    "slice_objinv_INV_RSC": 25,
+    "slice_objop_GEN": 0,
+    "slice_objop_CAP": 0,
+    "slice_objop_INV": 0,
+    "slice_objop_CAP_ENERGY": 0,
+    "slice_objop_CAPTRAN_ENERGY": 0,
+    "slice_objop_FLOW": 0,
+    "slice_objop_EMIT": 0
+  },
+  "inputs": "GAMS export",
+  "contract_tables": null,
+  "gate1_matrix": {
+    "rows_python": 58933,
+    "rows_gams": 58933,
+    "cols_python": 58287,
+    "cols_gams": 58287,
+    "rows_only_python": [],
+    "n_rows_only_python": 0,
+    "rows_only_gams": [],
+    "n_rows_only_gams": 0,
+    "cols_only_python": [],
+    "n_cols_only_python": 0,
+    "cols_only_gams": [],
+    "n_cols_only_gams": 0,
+    "nonzeros_python": 218541,
+    "nonzeros_gams": 218541,
+    "coefficient_mismatches": 0,
+    "max_coefficient_rel_diff": 4.440892098500626e-16,
+    "row_bound_mismatches": 0,
+    "col_bound_mismatches": 0,
+    "objective_mismatches": 0,
+    "max_objective_rel_diff": 4.714366762475842e-15,
+    "pass": true
+  },
+  "gate2_objective": {
+    "python": 141230654065.99188,
+    "gams": 141230654065.99222,
+    "rel_diff": 2.3769157028625107e-15,
+    "status": "TerminationStatusCode.OPTIMAL",
+    "solve_s": 12.325536899996223,
+    "pass": true
+  },
+  "gate3_gams_primal": {
+    "max_scaled_row_violation": 1.862645149230957e-09,
+    "max_scaled_bound_violation": 0.0,
+    "objective_at_gams_point": 141230654065.9917,
+    "worst_rows": {},
+    "pass": true,
+    "gams_levels_without_python_column": 70775,
+    "gams_rows_without_python_row": 126085,
+    "objective_rel_diff": 3.673415177151153e-15
+  },
+  "gate4_kkt": {
+    "max_stationarity_violation": 2.3283064365386963e-10,
+    "max_dual_sign_or_complementarity_violation": 1.4551915228366852e-11,
+    "worst_columns": {},
+    "worst_rows": {},
+    "pass": true
+  }
+}

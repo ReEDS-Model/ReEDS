@@ -1,6 +1,6 @@
 #%% IMPORTS
 import os
-import gdxpds
+from reeds.open.handoff import read_handoff_h5
 import numpy as np
 import pandas as pd
 import reeds
@@ -123,7 +123,7 @@ def reeds_cc(t, tnext, casedir):
     reeds_data = os.path.join(casedir, 'handoff', 'reeds_data')
     cap = pd.read_csv(os.path.join(reeds_data, f'max_cap_{t}.csv'))
 
-    gdx = gdxpds.to_dataframes(os.path.join(reeds_data, f'reeds_data_{t}.gdx'))
+    gdx = read_handoff_h5(os.path.join(reeds_data, f'reeds_data_{t}.h5'))
     techs = gdx['i_subsets'].pivot(columns='i_subtech',index='i',values='Value')
     techs.columns = techs.columns.str.lower()
     r = gdx['rfeas']

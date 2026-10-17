@@ -4,7 +4,7 @@ import os
 import sys
 import subprocess
 import datetime
-import gdxpds
+from reeds.open.handoff import write_handoff_h5
 import pandas as pd
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -174,20 +174,7 @@ def main(t, tnext, casedir, iteration=0):
         reeds.resource_adequacy.stress_periods.main(sw=sw, t=t, iteration=iteration)
     reeds.log.toc(tic=tic, year=t, process='ra/stress_periods.py')
 
-    #%% Write gdx file explicitly to ensure that all entries
-    ### (even empty dataframes) are written as parameters, not sets
-    with gdxpds.gdx.GdxFile() as gdx:
-        for key in cc_results:
-            gdx.append(
-                gdxpds.gdx.GdxSymbol(
-                    key, gdxpds.gdx.GamsDataType.Parameter,
-                    dims=cc_results[key].columns[:-1].tolist(),
-                )
-            )
-            gdx[-1].dataframe = cc_results[key]
-        gdx.write(
-            os.path.join('handoff', 'reeds_data', f'ccdata_{t}.gdx')
-        )
+    write_handoff_h5(cc_results, os.path.join(casedir, 'handoff', 'reeds_data', f'ccdata_{t}.h5'))
 
     # #%% Uncomment to run diagnostic_plots
     # ### (typically run from call_{}.sh script for parallelization)

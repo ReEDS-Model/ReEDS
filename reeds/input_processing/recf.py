@@ -369,6 +369,8 @@ def main(reeds_path, inputs_case):
             resource_adequacy_years
         )
         df_windofs.columns = ['wind-ofs_' + col for col in df_windofs]
+    else:
+        df_windofs = pd.DataFrame(index=df_windons.index)
 
     ### UPV
     df_upv = calculate_class_region_cf_hourly(
@@ -388,7 +390,7 @@ def main(reeds_path, inputs_case):
     ### CSP
     # If CSP is turned off, create an empty dataframe with the same index as df_upv to concat
     if int(sw['GSw_CSP']) == 0:
-        cspcf = pd.DataFrame(index=df_upv.index)
+        cspcf = pd.DataFrame(index=df_upv.index, columns=pd.Index([], dtype=str))
     else:
         cspcf = reeds.io.read_file(
             os.path.join(inputs_case, 'recf_csp.h5'),
