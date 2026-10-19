@@ -8,6 +8,23 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
 
+def check_negative_values(df, cost_cols):
+    neg_vals_all = {}
+    for cc in cost_cols.values():
+        if cc in df.columns:    
+            neg_vals = sum(df[cc] < 0)
+            if neg_vals:
+                neg_vals_all[cc] = neg_vals
+
+    if neg_vals_all:
+        message = "\n".join(
+            f"{cc} -> {count}" for cc, count in neg_vals_all.items()
+        )
+        raise ValueError(
+            f"The following cost columns have negative values:\n{message}\n"
+            "Check reV data to confirm these."
+        ) 
+
 #%%### Fixed inputs
 if reeds.io.hpc:
     remotepath = '/kfs2/shared-projects/reeds'
@@ -24,10 +41,6 @@ if reeds.io.hpc:
         'offshore_radial': os.path.join(
             '/projects', 'rev', 'projects', 'weto', 'fy25', 'standard_scenarios', 'osw',
             'rev', 'aggregation', 'open', 'open_supply-curve_post_proc.csv',
-        ),
-        'esri_102008': os.path.join(
-            '/projects', 'rev', 'data', 'layers', 'north_america', 'conus', 'vectors',
-            'rev_grids', 'rev_grid_conus_template_128.csv'
         ),
         'interzonal': os.path.join(
             '/projects', 'rev', 'data', 'transmission', 'north_america', 'conus', 'fy25',
@@ -120,7 +133,22 @@ outcols = {
 _diff = len(outcols) - dfland.shape[1]
 assert _diff == 0, len(_diff)
 
+# drop ac suffix for cost columns
+cost_cols = {
+    'cost_spur_usd_per_mw_ac': 'cost_spur_usd_per_mw',
+    'cost_poi_usd_per_mw_ac': 'cost_poi_usd_per_mw',
+    'cost_reinforcement_usd_per_mw_ac': 'cost_reinforcement_usd_per_mw',
+    'cost_total_trans_usd_per_mw_ac': 'cost_total_trans_usd_per_mw',
+    'cost_export_usd_per_mw_ac': 'cost_export_usd_per_mw'
+}
+dfland = dfland.rename(columns=cost_cols)
+
+# subset to outcols 
 dfland = dfland[list(outcols.keys())].astype(outcols)
+
+# check for negative values
+check_negative_values(dfland, cost_cols)
+
 
 #%% Write it
 drop = ['trans_gid', 'trans_type']
@@ -192,6 +220,14 @@ columns_different = [
 columns_meshed = {'Zone_ReEDS':'ba'}
 
 #%% Make combined dataframe
+for offshoretype in ['radial', 'meshed']:
+    cost_cols_sub = {
+        k: v for k, v in cost_cols.items()
+        if v not in dictin[f'offshore_{offshoretype}'].columns
+    }
+    dictin[f'offshore_{offshoretype}'] = dictin[f'offshore_{offshoretype}'].rename(columns=cost_cols_sub)
+    check_negative_values(dictin[f'offshore_{offshoretype}'], cost_cols)
+
 dfwrite = dictin['offshore_radial'][columns_same].copy()
 for col in columns_different:
     for offshoretype in ['radial', 'meshed']:
