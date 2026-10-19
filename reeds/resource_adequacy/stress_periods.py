@@ -331,7 +331,7 @@ def get_longest_events(
     dates = []
     for i, row in eue_events.iterrows():
         dates.append(
-            pd.Series(index=pd.date_range(row.start, row.end, freq='H'), data=1)
+            pd.Series(index=pd.date_range(row.start, row.end, freq='h'), data=1)
             .resample('D').count()
         )
     if len(dates):
