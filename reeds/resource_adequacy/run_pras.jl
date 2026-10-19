@@ -187,7 +187,10 @@ function run_pras(pras_system_path::String, args::Dict)
     if args["write_energy"] == 1
         resultspec["energy"] = PRAS.StorageEnergy()
     end
-    if args["write_shortfall_samples"] == 1 || args["write_shortfall_samples_totals"] == 1
+    ## Hourly per-sample shortfall (region x hour x sample) is memory-heavy, so only
+    ## request it when the hourly samples are written. Per-sample totals (used for CVaR)
+    ## come from the regular Shortfall result (PRAS >= 0.9).
+    if args["write_shortfall_samples"] == 1
         resultspec["short_samples"] = PRAS.ShortfallSamples()
     end
     if args["write_availability_samples"] == 1
@@ -330,14 +333,17 @@ function run_pras(pras_system_path::String, args::Dict)
 
     ### Per-sample total shortfall by region over the full PRAS time period, needed for CVaR
     if args["write_shortfall_samples_totals"] == 1
-        sf = results["short_samples"]
+        ## Read the per-sample totals (MWh) from the regular Shortfall result (PRAS >= 0.9).
+        sf = results["short"]
         ## Use filtered system regions to avoid DC converter pseudo-regions without load.
+        region_names = sf.regions.names
         totalsfile = replace(outfile, ".h5"=>"-shortfall_totals_by_sample.h5")
         HDF5.h5open(totalsfile, "w") do f
             f["sample", compress=4] = collect(1:args["samples"])
-            f["USA", compress=4] = Float64.(sf[])
+            f["USA", compress=4] = Float64.(sf.shortfall_samples)
             for r in regions
-                f["$r", compress=4] = Float64.(sf[r])
+                i_r = findfirst(==(r), region_names)
+                f["$r", compress=4] = Float64.(sf.shortfall_region_samples[i_r, :])
             end
         end
         @info("Wrote PRAS shortfall totals by sample to $(totalsfile)")
