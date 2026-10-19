@@ -239,34 +239,20 @@ for level in dfmap:
                 np.array([row.geometry.centroid.x, row.geometry.centroid.y])
                 + np.array(offset.get(level, {}).get(r, (0,0)))
             )
-            if level == 'r':
-                # adds region-colored label for r
-                text_artists.append(
-                    ax.annotate(
-                        r,
-                        (x, y),
-                        ha='center', va='center', weight='bold',
-                        size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
-                        color=colors[r], zorder=1e11, alpha=1,
-                        path_effects=(
-                        [pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
+            ## Shade the r labels with the zone color
+            for i, (_color, _alpha) in enumerate([('k', 1), (colors[r], 0.6)]):
+                if i == 1 and level != 'r':
+                    continue
+                text_artists.append(ax.annotate(
+                    (r if level == 'r' else r.replace('_','\n')),
+                    (x, y),
+                    ha='center', va='center', weight='bold',
+                    size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
+                    color=_color, zorder=1e11+i, alpha=_alpha,
+                    path_effects=(
+                        [pe.withStroke(linewidth=1.5, foreground='w', alpha=(1 if i == 0 else 0))]
                     ),
-                    )
-                )
-            else:
-                # adds black label for other levels
-                text_artists.append(
-                    ax.annotate(
-                        (r if level == 'r' else r.replace('_','\n')),
-                        (x, y),
-                        ha='center', va='center', weight='bold',
-                        size={'r':7, 'hurdlereg':7, 'st':10}.get(level,11),
-                        color='k', zorder=1e11, alpha=1,
-                        path_effects=(
-                            [pe.withStroke(linewidth=1.5, foreground='w', alpha=1)]
-                        ),
-                    )
-                )
+                ))
     adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
 
     text_artists = []

@@ -126,6 +126,18 @@ try:
 except Exception:
     print(traceback.format_exc())
 
+try:
+    if int(sw.GSw_QueueConstraintYears):
+        f, ax, df = reedsplots.map_queue(case=case)
+        savename = 'validate_queue.png'
+        if write:
+            plt.savefig(os.path.join(savepath, savename))
+        if interactive:
+            plt.show()
+        plt.close()
+        print(savename)
+except Exception:
+    print(traceback.format_exc())
 
 #%% Transmission line map with disaggregated transmission types
 ### Plot both total capacity (subtract_baseyear=None) and new (subtract_baseyear=2020)
@@ -277,6 +289,9 @@ for vmax in ['each', 'shared']:
     try:
         f,ax = reedsplots.map_capacity_techs(
             case, year=year, ncols=ncols, vmax=vmax, cmap=cmap,
+            label_regions = (
+                True if len(reeds.inputs.parse_regions(case))<=100 else False
+                ),
         )
         savename = f'map_capacity-{year}-{vmax}.png'
         if write:
@@ -505,7 +520,11 @@ try:
     if int(sw.GSw_H2):
         plt.close()
         f,ax = reedsplots.map_h2_capacity(
-            case=case, year=year, cmap=cmap, wscale_h2=wscale_h2)
+            case=case, year=year, cmap=cmap, wscale_h2=wscale_h2,
+            label_regions = (
+                True if len(reeds.inputs.parse_regions(case))<=100 else False
+                ),
+        )
         savename = f'map_h2_capacity-{sw.endyear}.png'
         if write:
             plt.savefig(os.path.join(savepath, savename))

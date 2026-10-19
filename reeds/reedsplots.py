@@ -983,12 +983,12 @@ def plot_diff_maps(
 
     ### Aggregate selected technologies to one value per region for the target year
     dfbase_selected = (
-        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year), ['r', valcol]]
+        dfbase.loc[(dfbase.i.isin(titles)) & (dfbase.t == year)]
         .groupby('r', as_index=False)[valcol].sum()
         .rename(columns={valcol: f'{valcol}_base'})
     )
     dfcomp_selected = (
-        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year), ['r', valcol]]
+        dfcomp.loc[(dfcomp.i.isin(titles)) & (dfcomp.t == year)]
         .groupby('r', as_index=False)[valcol].sum()
         .rename(columns={valcol: f'{valcol}_comp'})
     )
@@ -1375,8 +1375,10 @@ def map_net_imports(
             legend=False,
             vmin=-vmax[year], vmax=vmax[year],
         )
-        label_region_value(df, ax=ax[coords[year]], column='net_import', 
-                            opt_single_decimal=False, fmt = '{:.0f}', text_kwargs={'fontsize':5})
+        label_region_value(
+            df, ax=ax[coords[year]], column='net_import', 
+            fmt='{:.0f}', text_kwargs={'fontsize':5},
+        )
         ## Formatting
         ax[coords[year]].set_title(year, y=0.9)
         if vlim != 'shared':
@@ -1617,8 +1619,8 @@ def plot_vresites_transmission(
                 lambda row: shapely.geometry.Point(row.longitude, row.latitude),
                 axis=1)
             cap[tech] = gpd.GeoDataFrame(cap[tech]).set_crs('EPSG:4326').to_crs(crs)
-            ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-            cap[tech]['geometry'] = cap[tech].buffer(11530/2, cap_style='square')
+            ## Convert from points to polygons
+            cap[tech] = reeds.spatial.site2poly_buffer(cap[tech])
 
         except FileNotFoundError as err:
             print(err)
@@ -2717,6 +2719,7 @@ def map_capacity_techs(
         ncols=4,
         vmax='shared',
         cmap=cmocean.cm.rain,
+        label_regions=True,
     ):
     """
     techs: list of technologies to plot, or 'aggregation' to plot all aggregated technologies
@@ -2770,7 +2773,8 @@ def map_capacity_techs(
                 'label': '{} [GW]'.format(tech),
             }
         )
-        label_region_value(dfplot, ax=ax[coords[tech]], column='GW', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(dfplot, ax=ax[coords[tech]], column='GW', text_kwargs={'fontsize':5})
         ax[coords[tech]].axis('off')
     ax[0,0].set_title(
         '{} ({})'.format(os.path.basename(case), year),
@@ -4429,7 +4433,7 @@ def map_neue(
 def map_h2_capacity(
         case, year=2050, wscale_h2=10, figheight=6, pipescale=0.1,
         legend_kwds={'shrink':0.6, 'pad':0, 'orientation':'horizontal', 'aspect':12},
-        cmap=cmocean.cm.rain,
+        cmap=cmocean.cm.rain, label_regions=True,
     ):
     """
     H2 turbines, production (Electrolyzer/SMR), pipelines, and storage
@@ -4515,19 +4519,22 @@ def map_h2_capacity(
         cap_h2turbine.plot(
             ax=ax[0,0], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Turbines [kT/day]'}})
-        label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(cap_h2turbine, ax=ax[0,0], column='kTperday', text_kwargs={'fontsize':5})
     ### Electrolyzers
     if not cap_h2prod.empty:
         cap_h2prod.plot(
             ax=ax[0,1], column='kTperday', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Production [kT/day]'}})
-        label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(cap_h2prod, ax=ax[0,1], column='kTperday', text_kwargs={'fontsize':5})
     ### Storage
     if not cap_h2prod.empty:
         cap_storage.plot(
             ax=ax[1,0], column='h2_storage', cmap=cmap, lw=0, vmin=0,
             legend=True, legend_kwds={**legend_kwds, **{'label':'Storage [kT]'}})
-        label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', text_kwargs={'fontsize':5})
+        if label_regions:
+            label_region_value(cap_storage, ax=ax[1,0], column='h2_storage', text_kwargs={'fontsize':5})
     ### Pipelines
     if not h2_trans_cap.empty:
         for i,row in h2_trans_cap.iterrows():
@@ -6172,9 +6179,8 @@ def map_outage_days(
                 df=dfplot,
                 ax=_ax,
                 column='outage_pct',
-                fmt="{:.0f}",
                 text_kwargs={'fontsize': fontsize},
-                pe_kwargs={'linewidth': 1.4, 'foreground': 'w', 'alpha': 0.7},
+                pe_kwargs={'linewidth': 1.4},
             )
         _ax.axis('off')
         ## Formatting
@@ -6247,7 +6253,7 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
     dfsc['cf'] = dfsc[['i','r']].merge(cf.rename('cf'), on=['i','r'], how='left').cf.values
 
     ## Convert to polygons
-    dfsc['geometry'] = dfsc.buffer(11530/2, cap_style='square')
+    dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     return dfsc
 
@@ -6256,23 +6262,28 @@ def label_region_value(
     df, 
     ax, 
     column, 
-    opt_single_decimal=True, 
-    fmt='{:.0f}', 
-    text_kwargs={'ha':'center', 'va':'center', 'color':'k', 'fontsize':8},
-    pe_kwargs={'linewidth':1.5, 'foreground':'w', 'alpha':0.7}
+    fmt='{auto}', 
+    text_kwargs:None|dict=None,
+    pe_kwargs:None|dict=None,
 ):
     """pe_kwargs are passed to patheffects.withStroke()"""
-    text_kwargs = {**{'ha':'center', 'va':'center', 'color':'k', 'fontsize':8}, **text_kwargs}
-    pe_kwargs = {**{'linewidth':1.5, 'foreground':'w', 'alpha':0.7}, **pe_kwargs}
+    text_kwargs = {
+        'ha':'center', 'va':'center', 'color':'k', 'fontsize':8,
+        **(text_kwargs if isinstance(text_kwargs, dict) else {})
+    }
+    pe_kwargs = {
+        'linewidth':1.5, 'foreground':'w', 'alpha':0.7,
+        **(pe_kwargs if isinstance(pe_kwargs, dict) else {})
+    }
     text_artists = []
     for r, row in df.iterrows():
         value = row.get(column, np.nan)
         if isinstance(value, (int, float, complex)):
             if not np.isfinite(value):
                 continue
-            if opt_single_decimal:
-                decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
-                fmt = f"{{:.{decimals}f}}"
+            if '{auto}' in fmt:  
+                            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1  
+                            fmt = fmt.replace('{auto}', f"{{:.{decimals}f}}")  
         text_artists.append(
             ax.annotate(
                 (fmt.format(value) if not isinstance(value, str) else value),
@@ -6609,8 +6620,7 @@ def map_stressors(
         )
         label_region_value(
             df=dflevel, ax=ax[1,0], column='load_rank',
-            opt_single_decimal=False, fmt='{:.0f}%',
-            pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,0].set_title('Demand', y=0.9)
         plots.addcolorbarhist(
@@ -6625,8 +6635,7 @@ def map_stressors(
             )
             label_region_value(
                 df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
-                opt_single_decimal=False, fmt='{:.0f}%',
-                pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+                fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
             plots.addcolorbarhist(
@@ -6640,8 +6649,7 @@ def map_stressors(
         )
         label_region_value(
             df=dflevel, ax=ax[1,3], column='temperature_rank',
-            opt_single_decimal=False, fmt='{:.0f}%',
-            pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,3].set_title('Temperature', y=0.9)
         plots.addcolorbarhist(
@@ -6659,7 +6667,7 @@ def map_stressors(
             dflevel[f'outage_{tech}'] = outage_region.loc[(y,m,d), tech]
             label_region_value(
                 df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
-                opt_single_decimal=False, fmt='{:.0f}%',
+                fmt='{:.0%}',
                 pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[2,col].set_title(label, y=0.9)
@@ -6968,6 +6976,85 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     plots.trim_subplots(ax, nrows, ncols, len(coords))
 
     return f, ax, prm_final
+
+
+def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
+    """Map capacity in interconnection queues"""
+    ### Get inputs
+    if case is None:
+        fpath = Path(
+            reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
+            'interconnection_queues.csv',
+        )
+        dfqueue = (
+            pd.read_csv(fpath).set_index(['tg','r']).stack()
+            .rename_axis(['tg','r','t']).rename('GW') / 1e3
+        ).reset_index().astype({'t':int})
+        dfqueue.r = dfqueue.r.str.replace('p','')
+        dfqueue = dfqueue.set_index(['tg','r','t']).squeeze(1)
+        dfzones = reeds.spatial.get_map('county', 'tiger')
+        dfstates = reeds.spatial.get_map('state', 'census')
+        years = sorted(set(dfqueue.index.get_level_values('t')))
+    else:
+        dfqueue = (
+            reeds.io.read_input(case, 'queue_limit')
+            .rename(columns={'allt':'t','Value':'GW'}).astype({'t':int})
+            .set_index(['tg','r','t']).GW / 1e3
+        )
+        dfmap = reeds.io.get_dfmap(case)
+        dfzones = dfmap['r']
+        modelyears = reeds.io.read_input(case, 'tmodel_new').squeeze(1).tolist()
+        years = [y for y in modelyears if y in dfqueue.index.get_level_values('t')]
+    ### Drop zeros since GAMS doesn't see them; stop here if the queue is turned off
+    dfqueue = dfqueue.replace(0,np.nan).dropna().loc[:,:,years]
+    if not len(dfqueue):
+        return None, None, dfqueue
+    ### Set up plot
+    tgs = dfqueue.groupby('tg').sum().sort_values(ascending=False).index.values
+    nrows, ncols, coords = layout_subplots(row_list=years, col_list=tgs)
+    bounds = dfzones.dissolve().bounds.squeeze(0)
+    yscale = (bounds.maxy - bounds.miny) / (bounds.maxx - bounds.minx)
+    if vmax in ['shared', 'same', 'all']:
+        _vmax = dict(zip(coords.keys(), [dfqueue.max()]*len(coords)))
+    elif isinstance(vmax, (float, int)):
+        _vmax = dict(zip(coords.keys(), [vmax]*len(coords)))
+    else:
+        _vmax = dfqueue.groupby(['t','tg']).max()
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*figscale, nrows*figscale*yscale),
+        sharex=True, sharey=True, gridspec_kw={'wspace':-0.1, 'hspace':0.5},
+    )
+    for tg in tgs:
+        for t in years:
+            _ax = ax[coords[t,tg]]
+            dfplot = dfzones.copy()
+            dfplot['GW'] = dfqueue.loc[tg,:,t]
+            if dfplot.GW.count():
+                dfplot.plot(ax=_ax, column='GW', cmap=cmap, vmin=0, vmax=_vmax[t,tg])
+                reeds.plots.addcolorbarhist(
+                    f, _ax, dfplot.GW, vmin=0, vmax=_vmax[t,tg], cmap=cmap,
+                    orientation='horizontal', cbarbottom=-0.15, cbarheight=0.8,
+                    histratio=1, nbins=51, cbarwidth=0.1,
+                )
+            if len(dfzones) < 300:
+                dfzones.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            else:
+                dfstates.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+            _ax.axis('off')
+            ## Formatting
+            if t == years[0]:
+                _ax.annotate(
+                    tg, (0.5,1), xycoords='axes fraction',
+                    ha='center', weight='bold', fontsize=12,
+                )
+            if tg == tgs[0]:
+                _ax.annotate(
+                    f'{t}\n[GW]', (0,0.5), xycoords='axes fraction',
+                    ha='right', va='center', weight='bold', fontsize=12,
+                )
+    return f, ax, dfqueue
 
 
 def validate_regional_capacity(

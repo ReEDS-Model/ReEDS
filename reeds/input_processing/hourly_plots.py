@@ -317,8 +317,8 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
                 )
             dfdiffs[col]['cf_diff'] = dfdiffs[col].cf_rep - dfdiffs[col].cf_actual
 
-        ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-        cfmap.geometry = cfmap.buffer(11530/2, cap_style='square')
+        ## Convert from points to polygons
+        cfmap = reeds.spatial.site2poly_buffer(cfmap)
 
         ### Plot the difference map
         nrows, ncols, coords = plots.get_coordinates([
@@ -352,7 +352,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
             dfdiffs[level].plot(
                 ax=ax[coords[level]], column='cf_diff', cmap=cmaps['cf_diff'],
                 vmin=vm[tech]['cf_diff'][0], vmax=vm[tech]['cf_diff'][1], 
-                lw=0, legend=False, missing_kwds={"color": "lightgrey"},
+                lw=0, legend=False, missing_kwds={"color": "white"},
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
             dfmap[level]['cf_diff_pct'] = (dfdiffs[level].cf_diff * 100).values
