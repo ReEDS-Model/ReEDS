@@ -1,4 +1,4 @@
-,Default Value,CurrentPolicy_Midcase,AdminPriority_Midcase,CurrentPolicy_Midcase_GrowthPenalty_2,AdminPriority_Midcase_GrowthPenalty,CurrentPolicy_Midcase_noAdjust,AdminPriority_Midcase_noAdjust,CurrentPolicy_Midcase_TransExpansion2030,AdminPriority_Midcase_TransExpansion2030
+,Default Value,CurrentPolicy_Midcase,AdminPriority_Midcase,CurrentPolicy_Midcase_GrowthPenalty,AdminPriority_Midcase_GrowthPenalty,CurrentPolicy_Midcase_noAdjust,AdminPriority_Midcase_noAdjust,CurrentPolicy_Midcase_TransExpansion2030,AdminPriority_Midcase_TransExpansion2030
 ignore,0,1,1,0,1,1,1,1,1
 coalscen,AEO_2026_baseline,,,,,,,,
 demandscen,AEO_2026_baseline,,,,,,,,
