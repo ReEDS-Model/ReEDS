@@ -21,7 +21,6 @@ reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if 'runs' in reeds_path.split(os.path.sep):
     reeds_path = reeds_path[: reeds_path.index(os.sep + 'runs' + os.sep)]
 
-hpc = reeds.slurm.check_slurm()
 
 #   ########  ########    ###    ########
 #   ##     ## ##         ## ##   ##     ##
