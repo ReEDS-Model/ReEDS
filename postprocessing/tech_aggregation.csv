@@ -78,3 +78,4 @@ gas-cc_,Gas-CC,Gas,Thermal,Gas-CC
 gas-cc-ccs_mod_,Gas-CC-CCS,Gas-CCS,Thermal,Gas-CC-CCS
 gas-cc-ccs_max_,Gas-CC-CCS,Gas-CCS,Thermal,Gas-CC-CCS
 nuclear_,Nuclear,Nuclear,Thermal,Nuclear
+lost_load,Lost Load,Lost Load,DR,Lost Load

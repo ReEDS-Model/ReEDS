@@ -535,6 +535,13 @@ def pre_gen_w_load(dfs, **kw):
     df['Gen Uncurt Frac of Load Plus All Losses'] = df['Gen Uncurt (TWh)'] / (df['load'] + df['storage'] + df['trans'] + df['curt'])
     return df
 
+def pre_gen_with_lost_load(dfs, **kw):
+    df_lost = dfs['lost_load'].copy()
+    df_lost['tech'] = 'lost_load'
+    df_lost = df_lost[dfs['gen'].columns].astype(dfs['gen'].dtypes.to_dict())
+    df =pd.concat([dfs['gen'], df_lost], ignore_index=True)
+    return df
+
 def pre_valnew(df, **kw):
     #Remove unused columns
     df = df[~df['output'].isin(['inv_cap_ratio'])].copy()
@@ -1617,6 +1624,24 @@ results_meta = collections.OrderedDict((
         }
     ),
 
+    ('Generation National with Lost Load (TWh)',
+        {'sources': [
+            {'name': 'gen', 'file': 'gen_ann_nat', 'columns': ['tech', 'year', 'Generation (TWh)']},
+            {'name': 'lost_load', 'file': 'lost_load_nat', 'columns': ['year', 'Generation (TWh)']},
+        ],
+        'preprocess': [
+            {'func': pre_gen_with_lost_load, 'args': {}},
+            {'func': scale_column, 'args': {'scale_factor': 1e-6, 'column':'Generation (TWh)'}},
+        ],
+        'index': ['tech', 'year'],
+        'presets': collections.OrderedDict((
+            ('Stacked Area',{'x':'year', 'y':'Generation (TWh)', 'series':'tech', 'explode':'scenario', 'chart_type':'Area'}),
+            ('Stacked Bars',{'x':'year', 'y':'Generation (TWh)', 'series':'tech', 'explode':'scenario', 'chart_type':'Bar', 'bar_width':'1.75'}),
+            ('Explode By Tech',{'x':'year', 'y':'Generation (TWh)', 'series':'scenario', 'explode':'tech', 'chart_type':'Line'}),
+        )),
+        }
+    ),
+
     ('Generation National with Uncurt and Load (TWh)',
         {'sources': [
             {'name': 'gen', 'file': 'gen_ivrt', 'columns': ['tech', 'vintage', 'rb', 'year', 'Gen (TWh)']},
@@ -1657,6 +1682,25 @@ results_meta = collections.OrderedDict((
             ('Explode By Tech',{'x':'year', 'y':'Generation (TWh)', 'series':'scenario', 'explode':'tech', 'chart_type':'Line'}),
             ('PCA Map Final by Tech',{'x':'rb', 'y':'Generation (TWh)', 'explode':'scenario', 'explode_group':'tech', 'chart_type':'Area Map', 'filter': {'year':'last'}}),
             ('State Map Final by Tech',{'x':'st', 'y':'Generation (TWh)', 'explode':'scenario', 'explode_group':'tech', 'chart_type':'Area Map', 'filter': {'year':'last'}}),
+        )),
+        }
+    ),
+
+    ('Generation BA with Lost Load (TWh)',
+        {'sources': [
+            {'name': 'gen', 'file': 'gen_ann', 'columns': ['tech', 'rb', 'year', 'Generation (TWh)']},
+            {'name': 'lost_load', 'file': 'lost_load_ann', 'columns': ['rb', 'year', 'Generation (TWh)']},
+        ],
+        'preprocess': [
+            {'func': pre_gen_with_lost_load, 'args': {}},
+            {'func': scale_column, 'args': {'scale_factor': 1e-6, 'column':'Generation (TWh)'}},
+        ],
+        'index': ['tech', 'rb', 'year'],
+        'presets': collections.OrderedDict((
+            ('Stacked Area',{'x':'year', 'y':'Generation (TWh)', 'series':'tech', 'explode':'scenario', 'chart_type':'Area'}),
+            ('Stacked Bars',{'x':'year', 'y':'Generation (TWh)', 'series':'tech', 'explode':'scenario', 'chart_type':'Bar', 'bar_width':'1.75'}),
+            ('Stacked Bars by State',{'x':'year', 'y':'Generation (TWh)', 'series':'tech', 'explode':'scenario', 'explode_group':'st', 'chart_type':'Bar', 'bar_width':'1.75', 'sync_axes':'No'}),
+            ('BA Gen Final',{'x':'rb', 'y':'Generation (TWh)', 'series':'tech', 'explode':'scenario', 'chart_type':'Bar', 'bar_width':'0.99', 'width':'1000', 'filter': {'year':'last'}}),
         )),
         }
     ),
@@ -1900,6 +1944,23 @@ results_meta = collections.OrderedDict((
         {'file':'gen_h',
         'columns': ['tech', 'rb', 'timeslice', 'year', 'Generation (GW)'],
         'preprocess': [
+            {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Generation (GW)'}},
+            {'func': sort_timeslices, 'args': {}},
+        ],
+        'presets': collections.OrderedDict((
+            ('Stacked Bars Final',{'x':'timeslice', 'y':'Generation (GW)', 'series':'tech', 'explode':'scenario', 'chart_type':'Bar', 'filter': {'year':'last'}}),
+            ('Stacked Bars Final by State',{'x':'timeslice', 'y':'Generation (GW)', 'series':'tech', 'explode':'scenario', 'explode_group':'st', 'chart_type':'Bar', 'sync_axes':'No', 'filter': {'year':'last'}}),
+        )),
+        }
+    ),
+
+    ('Gen by timeslice regional with Lost Load (GW)',
+        {'sources': [
+            {'name': 'gen', 'file': 'gen_h', 'columns': ['tech', 'rb', 'timeslice', 'year', 'Generation (GW)']},
+            {'name': 'lost_load', 'file': 'lost_load_h', 'columns': ['rb', 'timeslice', 'year', 'Generation (GW)']},
+        ],
+        'preprocess': [
+            {'func': pre_gen_with_lost_load, 'args': {}},
             {'func': scale_column, 'args': {'scale_factor': .001, 'column':'Generation (GW)'}},
             {'func': sort_timeslices, 'args': {}},
         ],

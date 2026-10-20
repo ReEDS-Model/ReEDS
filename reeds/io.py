@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import copy
 import datetime
 import h5py
 import ctypes
@@ -328,12 +329,25 @@ def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwarg
     return dfba
 
 
+_dfmap_cache = {}
+
+
+def preload_dfmaps(cases):
+    for case in cases:
+        _dfmap_cache[os.path.abspath(str(case))] = get_dfmap(case)
+
+
 def get_dfmap(case=None, levels=None, exclude_water_areas=True, **kwargs):
     """
     Get dictionary of maps at all spatial hierarchy levels.
     Non-default switch settings (GSw_ZoneSet in particular) can be provided as keyword arguments;
     if not provided, settings are taken from the provided case path.
     """
+    if case is not None and levels is None and exclude_water_areas and not kwargs:
+        cache_key = os.path.abspath(str(case))
+        if cache_key in _dfmap_cache:
+            return copy.deepcopy(_dfmap_cache[cache_key])
+
     hierarchy = (
         get_hierarchy(case, original=True, **kwargs)
         .drop(

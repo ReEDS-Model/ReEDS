@@ -696,6 +696,10 @@ stor_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)] = STORAGE_LEVEL.l(i,v,r,h,t) 
 stor_interday_level(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL.l(i,v,r,allszn,t) ;
 stor_interday_dispatch(i,v,r,h,t)$[valgen(i,v,r,t)$storage_interday(i)] = STORAGE_INTERDAY_DISPATCH.l(i,v,r,h,t) ;
 
+lost_load_h(r,allh,t)$[Sw_QueueConstraint] = LL.l(r,allh,t) ;
+lost_load_ann(r,t)$tmodel_new(t) = sum{h, lost_load_h(r,h,t) * hours(h) } ;
+lost_load_nat(t)$tmodel_new(t) = sum{(r,h), lost_load_h(r,h,t) * hours(h) } ;
+
 *=====================================================================
 * WATER ACCOUNTING, CAPACITY, NEW CAPACITY, AND RETIRED CAPACITY
 *=====================================================================

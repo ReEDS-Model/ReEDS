@@ -646,6 +646,7 @@ if detailed:
 
 #%%### Plots ######
 ### Set up powerpoint file
+reeds.io.preload_dfmaps(cases.values())
 prs = reeds.report_utils.init_pptx()
 
 #%%### System cost error

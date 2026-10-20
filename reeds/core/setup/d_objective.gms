@@ -307,6 +307,10 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(r,h)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)],
                     (DROPPED(r,h,t) + EXCESS(r,h,t) ) * hours(h) * cost_dropped_load }
 
+* --- penalty for lost load  ---
+                  + sum{(r,h), cost_dropped_load * LL(r,h,t) * hours(h) }$[Sw_QueueConstraint]
+                  + sum{(r,h)$h_stress(h), Sw_LLStressPrice * LL(r,h,t) }$[Sw_QueueConstraint]
+
 * --- costs from producing products (for now DAC and/or H2)---
               + sum{(p,i,v,r,h)$[(h2(i) or dac(i))$valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],
                     hours(h) * cost_prod(i,v,r,t) * PRODUCE(p,i,v,r,h,t) }$Sw_Prod

@@ -44,6 +44,7 @@ positive variables
 * The units for all of the operational variables are average MW or MWh/time-slice hours
 * generation and storage variables
   GEN(i,v,r,allh,t)                      "--MW-- electricity generation (post-curtailment) in hour h"
+  LL(r,allh,t)                          "--$/MWh-- value of lost load in hour h"
   GEN_PLANT(i,v,r,allh,t)                "--MW-- average plant generation from hybrid generation/storage technologies in hour h"
   GEN_STORAGE(i,v,r,allh,t)              "--MW-- average generation from hybrid storage technologies in hour h"
   STORAGE_IN_PLANT(i,v,r,allh,t)         "--MW-- hybrid plant storage charging in hour h that is charging from a coupled technology"
@@ -173,6 +174,7 @@ EQUATION
  eq_growthlimit_absolute(tg,t)            "--MW-- absolute growth limit on technologies"
 
 eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit based on interconnection queues"  
+*eq_interconnection_queues_hard(tg,r,t)    "--MW-- hard capacity deployment limit based on interconnection queues" 
 
 * storage capacity credit supply curves
  eq_cap_sdbin_balance(i,v,r,ccseason,t)             "--MW-- total binned storage power capacity must be greater than total storage capacity"
@@ -1373,7 +1375,16 @@ eq_interconnection_queues(tg,r,t)
 
 * the capacity limit from the interconnection queue data
 * (with CAP_ABOVE_LIM as a slack variable to address infeasibilities)
-    queue_limit(tg,r,t) + CAP_ABOVE_LIM(tg,r,t)
+    queue_limit(tg,r,t) 
+    
+    + CAP_ABOVE_LIM(tg,r,t)$(not Sw_QueueConstraint)
+
+* add prescribed builds to this if applicable
+    + sum{(i,newv,tt)$[valinv(i,newv,r,tt)$tg_i(tg,i)
+                       $(yeart(tt)>=interconnection_start)
+                       $(yeart(tt)<=yeart(t))
+                       $(tmodel(tt) or tfix(tt))],
+          prescribed_build(i,newv,r,tt) }$Sw_QueueConstraint
 
     =g=
 
@@ -1423,6 +1434,9 @@ eq_supply_demand_balance(r,h,t)$tmodel(t)..
 * [plus] dropped/excess load ONLY if before Sw_StartMarkets
     + DROPPED(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
     - EXCESS(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+
+* [plus] lost load
+    + LL(r,h,t)$[Sw_QueueConstraint]
 
     =e=
 

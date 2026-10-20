@@ -252,7 +252,30 @@ ReEDSmodel.optfile = %GSw_gopt% ;
 OPTION savepoint = 1 ;
 $endif.valstr
 
+$ifthenI.dualfb %solver% == cplex
+$onecho > cplex.op9
+threads 8
+lpmethod 2
+scaind 1
+aggind 5
+eprhs 1e-5
+epopt 1e-6
+iis 1
+$offecho
+$endif.dualfb
+
 solve ReEDSmodel minimizing z using lp ;
+
+$ifthenI.dualfb2 %solver% == cplex
+$if not declared fallback_log file fallback_log / '' / ;
+if (ReEDSmodel.modelStat > 1,
+    put_utility fallback_log 'log' / '*** Solve returned modelStat ' ReEDSmodel.modelStat:0:0 ' - re-solving with dual simplex (cplex.op9)' ;
+    ReEDSmodel.optfile = 9 ;
+    solve ReEDSmodel minimizing z using lp ;
+    ReEDSmodel.optfile = %GSw_gopt% ;
+) ;
+$endif.dualfb2
+
 tsolved(t)$tmodel(t) = yes ;
 
 * record objective function values right after solve
