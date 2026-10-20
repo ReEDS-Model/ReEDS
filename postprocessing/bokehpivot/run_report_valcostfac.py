@@ -111,7 +111,14 @@ df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='bench_price')
 df_bench = df_bench.rename(columns={'val_tot':'benchmark_price'})
 df_bench['benchmark_price'] = df_bench['benchmark_price'] * report_usd_mult
 df = df.merge(df_bench, on=['scenario','year'], how='left')
-df['lvoe'] = df['value_factor'] * df['benchmark_price']
+#Value factor is total value over total MWh, over the benchmark price. The 'vf' sheet is instead the
+#MWh-weighted mean of zonal value factors, which drops the value of any zone whose new build has no
+#MWh (storage that only serves the reserve margin): its zonal value factor is infinite at zero weight.
+#The two agree whenever every zone generates.
+df_lvoe = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe').rename(columns={'val_tot':'lvoe'})
+df_lvoe['lvoe'] = df_lvoe['lvoe'] * report_usd_mult
+df = df.merge(df_lvoe, on=['scenario','tech','year'], how='left')
+df['value_factor'] = df['lvoe'] / df['benchmark_price']
 
 print('Merge with LVOE components')
 df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_energy').rename(columns={'val_load':'lvoe_energy'})
