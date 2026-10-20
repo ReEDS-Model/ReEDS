@@ -101,8 +101,11 @@ df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatia
 df = df.merge(df_vf_spatial, on=['scenario','tech','year'], how='left')
 df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal').rename(columns={'vf_temporal_num':'vf_temporal'})
 df = df.merge(df_vf_temporal, on=['scenario','tech','year'], how='left')
-df_vf_interaction = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_interaction')
-df = df.merge(df_vf_interaction, on=['scenario','tech','year'], how='left')
+#Interaction is the residual, so value factor = spatial * temporal * interaction exactly. Value factor,
+#temporal and spatial are national ratios of sums, which makes interaction one too: (value at local
+#prices / value at system prices) over (the tech's MWh at local / national load-weighted prices). The
+#'vf_interaction' sheet, an MWh-weighted mean of zonal ratios of ratios, does not multiply back.
+df['vf_interaction'] = df['value_factor'] / (df['vf_spatial'] * df['vf_temporal'])
 df['vf_temporal_local'] = df['vf_temporal'] * df['vf_interaction']
 df['vf_spatial_simultaneous'] = df['vf_spatial'] * df['vf_interaction']
 
