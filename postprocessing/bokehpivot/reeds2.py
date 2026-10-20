@@ -572,6 +572,14 @@ def pre_valnew(df, **kw):
     df['vf_load'] = (df['val_load']/df['mwh']) / (df['val_load_bench_sys']/df['mwh_bench_sys'])
     df['vf_resmarg'] = (df['val_resmarg']/df['mwh']) / (df['val_resmarg_bench_sys']/df['mwh_bench_sys'])
     df['vf_resmarg_permw'] = (df['val_resmarg']/df['mw']) / (df['val_resmarg_bench_sys']/df['mw_bench_sys'])
+    #Numerators for the national value factors as a ratio of sums: value over the national benchmark
+    #price, i.e. the MWh that value would buy at that price. The presets divide their sum by summed mwh.
+    #An mwh-weighted mean of the zonal value factors above gives the same answer except where mwh is
+    #zero (storage serving only the reserve margin), whose value it drops.
+    df['vf_num'] = df['val_tot'] / (df['val_tot_bench_sys']/df['mwh_bench_sys'])
+    df['vf_temporal_num'] = df['val_tot_sys'] / (df['val_tot_bench_sys']/df['mwh_bench_sys'])
+    df['vf_load_num'] = df['val_load'] / (df['val_load_bench_sys']/df['mwh_bench_sys'])
+    df['vf_resmarg_num'] = df['val_resmarg'] / (df['val_resmarg_bench_sys']/df['mwh_bench_sys'])
     return df
 
 def pre_val_streams(dfs, **kw):
@@ -2433,18 +2441,18 @@ results_meta = collections.OrderedDict((
         ],
         'presets': collections.OrderedDict((
             #Total value factor by year, with separate charts for each tech and scenarios as different lines
-            ('VF by Year', {'x':'year','y':'vf','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF by Year', {'x':'year','y':'vf_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Total value factor by year, with separate charts for each scenario and techs as different lines
-            ('VF by Year Explode Scenario', {'x':'year','y':'vf','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'tech','explode':'scenario','chart_type':'Dot-Line', 'sync_axes':'No', 'y_min':'0','y_max':'2'}),
+            ('VF by Year Explode Scenario', {'x':'year','y':'vf_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'tech','explode':'scenario','chart_type':'Dot-Line', 'sync_axes':'No', 'y_min':'0','y_max':'2'}),
             #Value factor of energy alone, that is, energy value per MWh of a tech compared to that of the benchmark
-            ('VF Energy by Year', {'x':'year','y':'vf_load','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF Energy by Year', {'x':'year','y':'vf_load_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Value factor of firm capacity alone, that is, capacity value per MWh of a tech compared to that of the benchmark
-            ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Value factor of firm capacity alone, that is, capacity value per MW of a tech compared to that of the benchmark
             ('VF Firm Capacity per MW by Year', {'x':'year','y':'vf_resmarg_permw','y_b':'mw','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Temporal, spatial, and interaction value factors
             ('VF Spatial by Year', {'x':'year','y':'vf_spatial','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
-            ('VF Temporal by Year', {'x':'year','y':'vf_temporal','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF Temporal by Year', {'x':'year','y':'vf_temporal_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('VF Interaction by Year', {'x':'year','y':'vf_interaction','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('VF Spatial Simultaneous by Year', {'x':'year','y':'vf_spatial_simult','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('VF Temporal Local by Year', {'x':'year','y':'vf_temporal_local','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),

@@ -581,7 +581,7 @@ def plot_maps_byyear(data, tech, output_path):
     nat = {}
     for t, x in panel[panel['t'].isin(years)].groupby('t'):
         nat[t] = {
-            'vf': np.average(x['vf_nat'].fillna(0), weights=x['gen'].fillna(0)),
+            'vf': x['fleet_rev'].sum() / x['gen'].sum() / x['price_nat'].iloc[0],
             'gw': x['new_mw'].sum() / 1000,
             'cum_gw': x['cap_gw'].sum(),
             'share': x['gen_act'].sum() / x['gen_tot'].sum(),

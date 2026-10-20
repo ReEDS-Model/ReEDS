@@ -86,20 +86,20 @@ df_core = pd.read_csv(f'{bokehpivot_dir}/core_tech_scen.csv')
 
 print('Read in value factors')
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
-df = df.rename(columns={'vf': 'value_factor'})
+df = df.rename(columns={'vf_num': 'value_factor'})
 df = df[df['tech'].isin(df_forcetech_map['tech'])].copy()
 df = df[df['year']>=start_year].copy() #First endogenous year (also without prescribed builds).
 
 print('Merge with vf components')
-df_vf_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_energy').rename(columns={'vf_load':'vf_energy'})
+df_vf_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_energy').rename(columns={'vf_load_num':'vf_energy'})
 df = df.merge(df_vf_energy, on=['scenario','tech','year'], how='left')
-df_vf_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg')
+df_vf_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg').rename(columns={'vf_resmarg_num':'vf_resmarg'})
 df = df.merge(df_vf_resmarg, on=['scenario','tech','year'], how='left')
 df_vf_resmarg_permw = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg_permw')
 df = df.merge(df_vf_resmarg_permw, on=['scenario','tech','year'], how='left')
 df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatial')
 df = df.merge(df_vf_spatial, on=['scenario','tech','year'], how='left')
-df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal')
+df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal').rename(columns={'vf_temporal_num':'vf_temporal'})
 df = df.merge(df_vf_temporal, on=['scenario','tech','year'], how='left')
 df_vf_interaction = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_interaction')
 df = df.merge(df_vf_interaction, on=['scenario','tech','year'], how='left')
@@ -111,14 +111,7 @@ df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='bench_price')
 df_bench = df_bench.rename(columns={'val_tot':'benchmark_price'})
 df_bench['benchmark_price'] = df_bench['benchmark_price'] * report_usd_mult
 df = df.merge(df_bench, on=['scenario','year'], how='left')
-#Value factor is total value over total MWh, over the benchmark price. The 'vf' sheet is instead the
-#MWh-weighted mean of zonal value factors, which drops the value of any zone whose new build has no
-#MWh (storage that only serves the reserve margin): its zonal value factor is infinite at zero weight.
-#The two agree whenever every zone generates.
-df_lvoe = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe').rename(columns={'val_tot':'lvoe'})
-df_lvoe['lvoe'] = df_lvoe['lvoe'] * report_usd_mult
-df = df.merge(df_lvoe, on=['scenario','tech','year'], how='left')
-df['value_factor'] = df['lvoe'] / df['benchmark_price']
+df['lvoe'] = df['value_factor'] * df['benchmark_price']
 
 print('Merge with LVOE components')
 df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_energy').rename(columns={'val_load':'lvoe_energy'})
