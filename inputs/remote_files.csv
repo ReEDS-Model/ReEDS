@@ -9,6 +9,7 @@ cf_wind-ofs_reference.h5,profiles_cf,https://zenodo.org/records/{record_id}/file
 cf_wind-ons_limited.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18827074,98224a18db567e039f3ef888191147f3
 cf_wind-ons_open.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18827074,71e38392191caccf77899470aa30b5e6
 cf_wind-ons_reference.h5,profiles_cf,https://zenodo.org/records/{record_id}/files/{filename},18827074,6dc1ae67fc4bbe6d522b160139df5ced
+demand_ELF.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},draft,e89772f3aab1ef0d1c3bb7c551e8da01
 demand_EER2023_100by2050.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18423998,5c869537b22e8c20744dcd8d92e3c47e
 demand_EER2023_Baseline_AEO2022.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18423998,b20a6a69a73856ce67141dbf7c61bd1d
 demand_EER2023_IRAlow.h5,profiles_demand,https://zenodo.org/records/{record_id}/files/{filename},18423998,8a7c3eebeb2bf68db5c6c2659e04b99d

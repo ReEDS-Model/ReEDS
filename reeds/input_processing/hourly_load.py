@@ -623,10 +623,26 @@ def main(reeds_path, inputs_case):
     historical_state_load_annual = reeds.io.get_historical_state_load_annual()
 
     match sw.GSw_LoadProfiles:
-        case _ if (
-            sw.GSw_LoadProfiles.startswith('EER')
-            or Path(sw.GSw_LoadProfiles).is_file()
-        ):
+        case 'historic':
+            state_load_hourly = (
+                apply_load_growth_factors_to_historical_state_load(
+                    state_load_hourly,
+                    historical_state_load_annual,
+                    inputs_case,
+                    solveyears
+                )
+            )
+        case _ if sw.GSw_LoadProfiles.startswith('EFS'):
+            state_load_hourly = downselect_to_model_years(
+                state_load_hourly,
+                solveyears
+            )
+            if len(state_load_hourly.unstack('year')) == 8760:
+                state_load_hourly = duplicate_weather_years(
+                    state_load_hourly,
+                    weather_years
+                )
+        case _:
             endyear = int(sw.endyear)
             state_load_hourly = interpolate_missing_model_years(
                 state_load_hourly,
@@ -654,25 +670,6 @@ def main(reeds_path, inputs_case):
                 state_load_hourly,
                 solveyears
             )
-        case 'historic':
-            state_load_hourly = (
-                apply_load_growth_factors_to_historical_state_load(
-                    state_load_hourly,
-                    historical_state_load_annual,
-                    inputs_case,
-                    solveyears
-                )
-            )
-        case _:
-            state_load_hourly = downselect_to_model_years(
-                state_load_hourly,
-                solveyears
-            )
-            if len(state_load_hourly.unstack('year')) == 8760:
-                state_load_hourly = duplicate_weather_years(
-                    state_load_hourly,
-                    weather_years
-                )
 
     regional_load_hourly = reaggregate_to_model_regions(
         state_load_hourly,
