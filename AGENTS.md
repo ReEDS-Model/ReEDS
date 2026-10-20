@@ -21,7 +21,7 @@ ReEDS (Regional Energy Deployment System) is a long-term capacity-expansion and 
 It is:
 
 - **Large.** Hundreds of input files, hundreds of switches in `cases.csv`, and many GAMS, Python, and    Julia files that interact through a multi-stage pipeline.
-- **Mixed-language.** GAMS (`*.gms`) defines the optimization model and requires a commercial license (CPLEX or compatible); Python drives preprocessing, orchestration, and postprocessing; Julia (`reeds/resource_adequacy/reeds2pras/`) handles resource-adequacy stress-period analysis. See `environment.yaml` for current versions.
+- **Mixed-language.** GAMS (`*.gms`) defines the optimization model and requires a commercial license (CPLEX or compatible); Python drives preprocessing, orchestration, and postprocessing; Julia (`reeds/resource_adequacy/reeds2pras/`) handles resource-adequacy stress-period analysis. See `environment.yml` for current versions.
 - **Production research software.** Results are used in published studies and by external stakeholders. Silent changes to defaults or to widely-used switches can invalidate analyses.
 
 Small, local-looking changes can have non-obvious downstream effects across switches, scenarios, and postprocessing scripts.
@@ -103,10 +103,10 @@ Before handing a non-trivial change back to the human actually check:
 
 2. **Default case neutrality.** If the change is *not expected to alter results for the default case* (for example, a rename, a reformat, or new code that only runs when an off-by-default switch is turned on), say so explicitly so the reviewer knows that the comparison report should show no differences.
 
-3. **`reeds/input_processing/runfiles.csv` consistency.** If you add, remove, or rename a CSV file that is read by GAMS, update `reeds/input_processing/runfiles.csv`. Pay attention to `aggfunc`/`disaggfunc`, `region_col`, `fix_cols`, `i_col`, `wide`, `header`, `key`, `post_copy`, `GAMStype`, `GAMSname`, and `required_if` columns. A wrong `required_if` expression silently breaks switch-gated runs (the file is not copied into `inputs_case/` and GAMS later fails loading it). 
+3. **`reeds/input_processing/runfiles.csv` consistency.** If you add, remove, or rename a CSV file that is read by GAMS, update `reeds/input_processing/runfiles.csv`. Pay attention all columns, as incorrectly filled out values can cause silent failures in switch-gated runs. 
    1. Scalar parameters live in [`inputs/scalars.csv`](inputs/scalars.csv); add new scalars there rather than hard-coding values. New files that get copied to `inputs_case/` also need an entry in [`inputs/userinput/futurefiles.csv`](inputs/userinput/futurefiles.csv), which tells [`reeds/input_processing/forecast.py`](reeds/input_processing/forecast.py) how to project the file forward in time — forecast.py will print a loud warning if a file is missing from it.
 
-4. **Units and dollar year.** Costs read into `b_inputs.gms` must already be in 2004$. Use `inputs/financials/deflator.csv` (do not hard-code conversions). Add unit suffixes to new column names (e.g., `capcost_usd.per.kw`).
+4. **Units and dollar year.** Costs read into `b_inputs.gms` must already be in the correct dollar year (as specified by the `dollar_year` switch in `cases.csv`). Use `inputs/financials/deflator.csv` (do not hard-code conversions). Add unit suffixes to new column names (e.g., `capcost_usd_per_kw`).
 
 5. **Tests.** Run `pytest` from the repo root. The suite in [`tests/`](tests) is a smoke test (input checks, h5 read sanity), not a model-correctness test. All CI workflows must pass before a PR merges.
 
@@ -118,7 +118,7 @@ The map of change → recommended testing:
 
 - **Any change that affects default-case outputs** (even if the change is correct and intentional — e.g., a solver swap that produces a different but equally valid solution): run `USA_defaults` from `cases_test.csv` and produce a comparison report with `postprocessing/compare_cases.py`. `USA_defaults` is the primary analysis case; understanding how any change affects its outputs is required before opening a PR. Be able to explain changes in capacity, generation, transmission, bulk system price, system cost, and runtime.
 
-AI tools generally cannot run these full scenarios themselves. **State clearly which tier of testing the change requires** so the human contributor can run it before opening a PR. To catch errors earlier, see [§6 “Fast inner loop”](#6-fast-inner-loop-iterating-on-a-single-step-from-call_).
+AI tools generally cannot run these full scenarios themselves. **State clearly which tier of testing the change requires** so the human contributor can run it before opening a PR. Refer to the [testing guidelines](docs/source/developer_best_practices.md#testing-guidelines) for more information. To catch errors earlier, see [§6 “Fast inner loop”](#6-fast-inner-loop-iterating-on-a-single-step-from-call_).
 
 ### 2.4 Ask the human when something is unclear
 Stop and ask when:
@@ -126,8 +126,6 @@ Stop and ask when:
 - The intent of a switch, parameter, or set is ambiguous.
 
 - The same value or behavior could plausibly be controlled in more than one place and you can't tell which is canonical.
-
-- A change would alter default-case results, even slightly, and the user did not say that was the goal.
 
 - You would need to add a dependency, change `environment.yml` / `Project.toml`, modify CI, or touch large data files.
 
@@ -139,31 +137,16 @@ When asking, present 2–3 concrete options and your recommendation rather than
 an open-ended question.
 
 ---
+## 3. Non-obvious repo landmarks
 
-## 3. Repository map (the parts you'll touch most often)
-
-| Path | Purpose |
-| --- | --- |
-| [`runreeds.py`](runreeds.py) | Top-level launcher; reads `cases_{suffix}.csv` and creates a `runs/{batch}_{case}/` directory per case. Interactive by default — see §7 for non-interactive flags. |
-| [`cases.csv`](cases.csv), `cases_*.csv` | Switch definitions and scenario specifications. The first columns describe each switch; remaining columns are scenarios. |
-| [`reeds/input_processing/runfiles.csv`](reeds/input_processing/runfiles.csv) | Declares every input/output CSV the run pipeline knows about, including how to aggregate/disaggregate spatially and how it maps to GAMS. |
-| [`inputs/scalars.csv`](inputs/scalars.csv) | Central registry of GAMS scalar parameters and their default values. |
-| [`reeds/core/`](reeds/core) | All GAMS model code, organized into `setup/`, `solve/`, `solve_pcm/`, and `terminus/` subdirectories. |
-| [`reeds/core/setup/b_inputs.gms`](reeds/core/setup/b_inputs.gms) | Loads inputs from `inputs_case/` into GAMS sets/parameters. |
-| [`reeds/core/setup/a_createmodel.gms`](reeds/core/setup/a_createmodel.gms) | Entry point that `$include`s `b_inputs.gms`, `c_model.gms`, `d_objective.gms`, and `e_solveprep.gms` to compile the model. Re-run this line from `call_*` to surface compilation errors quickly without doing a solve. |
-| [`reeds/core/setup/c_model.gms`](reeds/core/setup/c_model.gms), [`reeds/core/setup/d_objective.gms`](reeds/core/setup/d_objective.gms) | Variables, equations, and objective of the optimization model. |
-| [`reeds/core/setup/e_solveprep.gms`](reeds/core/setup/e_solveprep.gms) | Pre-solve data preparation; also `$include`d by `a_createmodel.gms`. |
-| [`reeds/core/solve/`](reeds/core/solve) | Sequential / intertemporal / window solve loop, orchestrated by `solve.py`. |
-| [`reeds/core/solve_pcm/`](reeds/core/solve_pcm) | Production-cost (PCM) dispatch mode, launched by [`postprocessing/run_pcm.py`](postprocessing/run_pcm.py). |
-| [`reeds/core/terminus/`](reeds/core/terminus) | Reporting (`report.gms`, `report_dump.py`, `report_params.csv`); see §2.3. |
-| [`reeds/resource_adequacy/`](reeds/resource_adequacy) | Capacity credit and curtailment between solve years (see §2.3); includes `reeds2pras/` (Julia). |
-| [`reeds/input_processing/`](reeds/input_processing) | Python preprocessing — load, hourly clustering, supply curves, financials, copying input files into `inputs_case/`, etc. |
-| [`hourlize/`](hourlize) | Hourly load/resource preprocessing pipeline (often run upstream and committed as data). |
-| [`postprocessing/`](postprocessing) | Reports, plots, comparison tools (`compare_cases.py`, BokehPivot, retail-rate module, R2X runner, etc.). |
-| [`inputs/`](inputs) | All input data, organized by topic. |
-| [`tests/`](tests) | Lightweight `pytest` suite (see §2.3 item 5). |
-| [`reeds/`](reeds) | Importable Python package of shared utilities (`financials`, `inputs`, `io`, `spatial`, `techs`, `timeseries`, etc.) plus all core model code. New shared helpers belong here, not duplicated across scripts. |
-| [`reeds/hpc/`](reeds/hpc) | HPC (SLURM) and AWS launch templates. HPC vs local execution paths can differ; verify behavior on the target environment. |
+- [`runreeds.py`](runreeds.py): Top-level launcher; reads `cases_{suffix}.csv` and creates a `runs/{batch}_{case}/` directory per case. Interactive by default — see §7 for non-interactive flags.
+- [`cases.csv`](cases.csv), `cases_*.csv`: Switch definitions and scenario specifications. The first columns describe each switch; remaining columns are scenarios. 
+- [`reeds/input_processing/runfiles.csv`](reeds/input_processing/runfiles.csv): Declares every input/output CSV the run pipeline knows about, including how to aggregate/disaggregate spatially and how it maps to GAMS.
+- [`inputs/scalars.csv`](inputs/scalars.csv): Central registry of GAMS scalar parameters and their default values.
+- [`reeds/core/setup/a_createmodel.gms`](reeds/core/setup/a_createmodel.gms): Entry point that builds the model. Re-run this line from `call_*` to surface compilation errors quickly without doing a solve.
+- `reeds/`: Importable Python package of shared utilities plus all core model code. New shared helpers belong here, not duplicated across scripts.
+- [`reeds/hpc/`](reeds/hpc): HPC (SLURM) and AWS launch templates. HPC vs local execution paths can differ; verify behavior on the target environment.
+- [`hourlize/`](hourlize): Hourly load/resource preprocessing pipeline (often run upstream and uploaded to Zenodo).
 
 A typical run produces `runs/{batch}_{case}/` containing `inputs_case/`,`g00files/` (GAMS work files), `lstfiles/`, `gdxfiles/`, and `outputs/`.
 
@@ -172,8 +155,8 @@ A typical run produces `runs/{batch}_{case}/` containing `inputs_case/`,`g00file
 ## 4. Coding conventions (summary — read `developer_best_practices.md` for the full set)
 
 ### Python
-- Target Python 3.11; follow PEP 8.
-- Use `os.path.join` for paths; do not change the working directory in preprocessing scripts; prefer absolute paths.
+- Target the Python version specified in [`environment.yml`](environment.yml); follow PEP 8.
+- Use `Path` from `pathlib` for any new code instead of `os.path.join` for paths; do not change the working directory in preprocessing scripts; prefer absolute paths.
 - Run `ruff check` (linter only — do **not** auto-format existing files).
 - Files ≥10 MB should be `.h5`, not `.csv`.
 - Column headers should use the ReEDS set names where practical (e.g., `r`, `i`, `h`, `t`, `v`).
@@ -204,6 +187,7 @@ A typical run produces `runs/{batch}_{case}/` containing `inputs_case/`,`g00file
 
 ### Comments
 - Keep comments short — one line where practical.
+  - Comments should describe "why" rather than "what"/"how" 
 - When editing a comment, rewrite it to describe current behavior, not the edit that produced it.
 - Unless otherwise necessary, do not cross-reference other switches, equations, or files by name inside a comment.
 - Don't restate in a description string what the symbol's own domain already implies
@@ -211,7 +195,6 @@ A typical run produces `runs/{batch}_{case}/` containing `inputs_case/`,`g00file
 ### Inputs
 - Input CSVs read by `b_inputs.gms` should have the **same name** as the GAMS parameter that reads them.
 - New CSVs written into `inputs_case/` must be registered in `runfiles.csv` and `futurefiles.csv` (§2.3 item 3).
-- Add a comment in `reeds/core/setup/b_inputs.gms` noting the upstream script when a file is generated by preprocessing (e.g., `* Written by writecapdat.py`).
 - Dollar year and unit suffixes: see §2.3 item 4.
 
 ---
@@ -231,7 +214,7 @@ A short checklist to apply to every non-trivial change:
 
 4. **Keep git and GitHub actions with the human.** Do not commit, push, open PRs or issues, or post comments or reviews on the repo (including via `gh` or `/code-review --comment`). Edit files in the working tree and report everything in the chat session for the human to act on.
 
-5. **Never** force-push, rewrite published history, modify CI secrets, or run destructive `git` commands without explicit instruction.
+5. **Never** force-push, rewrite published history, modify CI secrets, or run destructive `git` commands.
 
 ---
 
