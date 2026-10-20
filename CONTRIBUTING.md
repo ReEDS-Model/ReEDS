@@ -17,7 +17,7 @@ Contributors are responsible for understanding and verifying every change they m
 * **DON'T** use AI to write PR descriptions.
 * **DON'T** use AI-generated text in `model_documentation.md`. All text there must be original. *See below for permitted AI uses in this file*.
 * **DO** disclose AI use in the PR template's LLM section, including *how* you verified any LLM-generated content.
-* **DO** include verification for PRs with meaningful AI contributions so the reviewer can confirm correctness without rederiving the change themselves.
+* **DO** include verification for PRs with meaningful AI contributions so the reviewer can confirm correctness without rederiving the change themselves. Scale your testing to the size of the change (see the [testing guidelines](docs/source/developer_best_practices.md#testing-guidelines)).
 * **DO** make sure any AI-assisted comments or docstrings read naturally and don't carry an "AI voice."
 
 > [!NOTE]
