@@ -845,6 +845,7 @@ def validate_zoneset(GSw_ZoneSet):
             'z3109',
             'UTcounty',
             'PJMcounty',
+            'WIcounty',
         ]
         for GSw_ZoneSet in GSw_ZoneSets:
             print(GSw_ZoneSet)
