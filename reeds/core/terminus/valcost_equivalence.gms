@@ -59,29 +59,28 @@
 * hours silently undercounts, and by an amount that grows the further the year
 * is from the restart.
 *
-* Storage: the streams here are right but the identity does NOT close for it,
-* and the reason is worth knowing before trusting this file on any multi-year
-* vintage. Dumping the 2050 matrix and reading every column a battery enters
+* Storage. Dumping the 2050 matrix and reading every column a battery enters
 * (dump_jacobian.gms, jacobian_column.py) gives seven variables and, besides the
-* objective, only rows internal to the plant - eq_storage_level,
-* eq_storage_capacity, eq_storage_duration, eq_battery_minduration and the two
-* capacity-accounting rows all pair the plant's own variables. There is no
-* resource limit, no mandate (GSw_BatteryMandate=0) and no capacity-credit row
-* (GSw_PRM_CapCredit=0 routes storage's firm capacity through stress-hour GEN).
-* So a battery should show revenue = cost with no rent term. It does not: the
-* median build is exact but only a quarter are within 1%, and the error tracks
-* build size - a 4.9 GW build closes to the dollar, a 1.8 MW one is off 4x.
+* objective and the load and reserve rows, only rows internal to the plant -
+* eq_storage_level, eq_storage_capacity, eq_storage_duration,
+* eq_battery_minduration and the two capacity-accounting rows. Battery's vintage
+* spans many solve years, so CAP is mostly earlier years' investment, but that is
+* not itself a problem: at an LP optimum the vintage's operating rent is exactly
+* CAP x (marginal value of a MW) + CAP_ENERGY x (marginal value of a MWh), by
+* complementary slackness, so the average equals the margin. What pro-rating on
+* INV/CAP alone gets wrong is the energy: it credits the new build with
+* INV*CAP_ENERGY/CAP of energy capacity when it bought INV_ENERGY, and INV_ENERGY
+* moves independently of INV (a zone can add energy to power it already has).
+* Until 2026-10 that left only a quarter of battery builds within 1%, with the
+* error tracking build size. The correction at vc_energy_gap below adds the
+* energy-capacity marginal times that gap, and with it, and battery operating
+* reserves counted, every non-prescribed battery build closes to 1e-6 under both
+* reserve-margin formulations. valnew in report.gms keeps INV/CAP alone: applying
+* the correction there moved value per MWh by orders of magnitude in zones whose
+* new build was nearly all power or nearly all energy, so it lives here only.
 *
-* The cause is the pro-rating above, not a missing stream. Battery's vintage
-* spans many solve years, so CAP is mostly earlier years' investment, and
-* INV/CAP attributes the vintage's AVERAGE value to this year's marginal MW.
-* For a single-year vintage (wind, PV, coal) the ratio is 1 and the question
-* does not arise; for nuclear the per-MW value barely moves across the vintage
-* so it is close; for storage it moves a lot, and INV_ENERGY moves independently
-* of INV, so the average is the wrong number for the margin.
-*
-* The exact test for storage is the LP's own optimality condition on the
-* investment variables, which needs no pro-rating:
+* The LP's optimality condition on the investment variables is a second, more
+* direct check:
 *     crf * cost_cap_fin_mult * cost_cap        = eq_cap_new_noret.m
 *     crf * cost_cap_fin_mult * cost_cap_energy = eq_cap_energy_new_noret.m
 * both scaled by (1/cost_scale)(1/pvf_onm). Checked on 2042 builds those close
@@ -147,6 +146,18 @@ parameter vc_ratio_energy(i,v,r,t) "INV_ENERGY/CAP_ENERGY of the new vintage" ;
 vc_ratio_energy(i,v,r,t)$[vc_new(i,v,r,t)$CAP_ENERGY.l(i,v,r,t)] =
     INV_ENERGY.l(i,v,r,t) / CAP_ENERGY.l(i,v,r,t) ;
 
+* Pro-rating a battery's value streams on INV/CAP alone credits the new build with energy capacity
+* at the vintage's duration, INV*CAP_ENERGY/CAP, when it bought INV_ENERGY. The vintage's rent in a
+* group of hours is exactly CAP*lambda_P + CAP_ENERGY*lambda_E, where lambda_P and lambda_E are the
+* summed marginals of the operating rows CAP and CAP_ENERGY enter in those hours (complementary
+* slackness), so the new build's share is INV*lambda_P + INV_ENERGY*lambda_E: the INV/CAP share
+* plus lambda_E times this gap. For a battery CAP_ENERGY enters one operating row,
+* eq_storage_duration, at every rep and stress hour, plus eq_cap_sdbin_energy_balance under the
+* capacity credit formulation, so lambda_E is read off those and lambda_P never has to be listed.
+parameter vc_energy_gap(i,v,r,t) "INV_ENERGY - INV*CAP_ENERGY/CAP of the new vintage, MWh" ;
+vc_energy_gap(i,v,r,t)$[vc_new(i,v,r,t)$battery(i)] =
+    INV_ENERGY.l(i,v,r,t) - vc_ratio(i,v,r,t) * CAP_ENERGY.l(i,v,r,t) ;
+
 scalar vc_dual "dual scaling, 1/(cost_scale*pvf_onm), applied per year below" ;
 
 set vc_stream "cost and value streams" /
@@ -158,19 +169,21 @@ set vc_stream "cost and value streams" /
   cost_transfom     "fixed O&M on supply-curve transmission, m_rsc_dat(cost_trans) * trans_fom_frac * CAP_RSC"
   cost_vom          "variable O&M on the new vintage's GEN"
   cost_fuel         "fuel, hours * heat_rate * fuel_price * GEN (fixed-price fuels only)"
+  cost_opres        "operating-reserve cost, hours * cost_opres * OPRES"
   cost_total        "sum of cost streams"
   val_load          "energy value at rep hours, GEN * marginal of eq_supply_demand_balance"
   val_resmarg       "reserve-margin value: at stress hours on the same equation (GSw_PRM_CapCredit=0), or firm capacity * marginal of eq_reserve_margin (=1)"
   val_rsc           "resource rent, INV_RSC * marginal of eq_rsc_INVlim. NOT added to val_total: see residual"
   val_csapr         "NOx-cap rent, h_weight_csapr*hours*emit_rate(NOX)*GEN * marginal of eq_CSAPR_Assurance. Also a rent: see residual"
   val_prescribed    "prescription rent, INV * marginal of eq_forceprescription_power; negative when a mandated plant does not earn its cost. Rent side"
+  val_minduration   "battery minimum-duration rent, (minbatteryduration*INV - INV_ENERGY) * marginal of eq_battery_minduration. Rent side: see residual"
   val_sdbin         "storage duration-bin value, -cc_storage * CAP_SDBIN * marginal of eq_sdbin_power_limit (GSw_PRM_CapCredit=1 only); nets val_resmarg down to what the storage adds"
   val_curt          "curtailment-balance value, (m_cf*CAP - GEN) * marginal of eq_curt_gen_balance"
-  val_opres         "operating-reserve requirement induced, -orperc*GEN * marginal of eq_OpRes_requirement"
+  val_opres         "operating reserves provided, OPRES * marginal of eq_OpRes_requirement; for wind and PV the requirement induced, -orperc*GEN (or CAP), so negative"
   val_mincf         "minimum-CF credit, (sum_h hours*GEN - H*minCF*CAP) * marginal of eq_min_cf"
   val_ramp          "start-cost share, -(GEN(hh)-GEN(h)) * marginal of eq_ramping"
   val_total         "sum of value streams"
-  residual          "val_total - cost_total - val_rsc - val_csapr - val_prescribed; zero if every stream is accounted for"
+  residual          "val_total - cost_total - val_rsc - val_csapr - val_prescribed - val_minduration; zero if every stream is accounted for"
   inv_mw            "INV level, MW"
   prescribed_mw     "prescribed capacity for this tech's pcat in this region-year, MW. Nonzero marks a mandated build: filter these out of any zero-profit statistic"
   gen_mwh           "GEN summed over rep hours, MWh (curtailed)"
@@ -229,10 +242,16 @@ valcost('cost_fuel',i,r,t)$sum{v, vc_new(i,v,r,t)} =
                $((not gas(i)) or (Sw_GasCurve = 2))],
         hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t) } ;
 
+valcost('cost_opres',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_OpRes] =
+    sum{(v,ortype,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$cost_opres(i,ortype,t)$reserve_frac(i,ortype)
+                      $opres_model(ortype)$opres_h(h)],
+        hours(h) * cost_opres(i,ortype,t) * vc_ratio(i,v,r,t) * OPRES.l(ortype,i,v,r,h,t) } ;
+
 valcost('cost_total',i,r,t) =
     valcost('cost_capex',i,r,t) + valcost('cost_rsc',i,r,t)
   + valcost('cost_fom',i,r,t)   + valcost('cost_transfom',i,r,t)
   + valcost('cost_vom',i,r,t)   + valcost('cost_fuel',i,r,t)
+  + valcost('cost_opres',i,r,t)
   + valcost('cost_capex_energy',i,r,t) + valcost('cost_fom_energy',i,r,t) ;
 
 * ---- value side: level x coefficient x marginal, per external constraint ----
@@ -248,6 +267,15 @@ valcost('val_load',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     sum{(v,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))],
         vc_ratio(i,v,r,t) * (GEN.l(i,v,r,h,t) - STORAGE_IN.l(i,v,r,h,t)$storage_standalone(i))
         * eq_supply_demand_balance.m(r,h,t) } ;
+
+* Battery energy-capacity correction at rep hours, as explained at vc_energy_gap. Operating reserves
+* also draw on the stored energy (eq_storage_opres), but battery val_opres is negligible, so the
+* whole rep-hour correction goes on val_load.
+valcost('val_load',i,r,t)$[sum{v, vc_new(i,v,r,t)}$battery(i)] =
+    valcost('val_load',i,r,t)
+  + (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,h)$[vc_new(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))],
+        vc_energy_gap(i,v,r,t) * eq_storage_duration.m(i,v,r,h,t) } ;
 
 valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(Sw_PRM_CapCredit=0)] =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
@@ -283,6 +311,22 @@ valcost('val_sdbin',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_PRM_CapCredit
         vc_ratio(i,v,r,t) * cc_storage(i,sdbin) * CAP_SDBIN.l(i,v,r,ccseason,sdbin,t)
         * eq_sdbin_power_limit.m(ccreg,ccseason,sdbin,t) } ;
 
+* Battery energy-capacity correction for the reserve margin: stress hours of eq_storage_duration, or
+* the duration-bin energy backing under the capacity credit formulation.
+valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$battery(i)] =
+    valcost('val_resmarg',i,r,t)
+  + (1 / cost_scale) * (1 / pvf_onm(t)) * sum{v$vc_new(i,v,r,t), vc_energy_gap(i,v,r,t) * (
+        sum{allh$h_stress_t(allh,t), eq_storage_duration.m(i,v,r,allh,t) }$(Sw_PRM_CapCredit=0)
+      + sum{ccseason, eq_cap_sdbin_energy_balance.m(i,v,r,ccseason,t) }$Sw_PRM_CapCredit ) } ;
+
+* eq_battery_minduration (CAP_ENERGY >= minbatteryduration * CAP) is internal to the vintage, but
+* where it binds its dual moves value between power and energy capacity, and the new build's share
+* of that differs from the vintage's when its duration does. A rent, so on the rent side.
+valcost('val_minduration',i,r,t)$[sum{v, vc_new(i,v,r,t)}$battery(i)] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{v$vc_new(i,v,r,t),
+        (minbatteryduration * INV.l(i,v,r,t) - INV_ENERGY.l(i,v,r,t)) * eq_battery_minduration.m(i,v,r,t) } ;
+
 valcost('val_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,rscbin)$[vc_new(i,v,r,t)$m_rscfeas(r,i,rscbin)],
@@ -304,6 +348,12 @@ valcost('val_curt',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(vre(i) or storage_hybrid(i))
         ( m_cf(i,v,r,h,t) * vc_ratio(i,v,r,t) * CAP.l(i,v,r,t)
         - vc_ratio(i,v,r,t) * GEN.l(i,v,r,h,t)$valgen(i,v,r,t) )
         * eq_curt_gen_balance.m(r,h,t) } ;
+
+* eq_OpRes_requirement: reserves a plant provides count toward the requirement one for one.
+valcost('val_opres',i,r,t)$[sum{v, vc_new(i,v,r,t)}$Sw_OpRes$(not wind(i))$(not pv(i))$(not pvb(i))] =
+    (1 / cost_scale) * (1 / pvf_onm(t)) *
+    sum{(v,ortype,h)$[vc_new(i,v,r,t)$valgen(i,v,r,t)$reserve_frac(i,ortype)$opres_model(ortype)$opres_h(h)],
+        vc_ratio(i,v,r,t) * OPRES.l(ortype,i,v,r,h,t) * eq_OpRes_requirement.m(ortype,r,h,t) } ;
 
 * eq_OpRes_requirement: wind GEN raises the requirement by orperc(or_wind), PV
 * CAP/ilr by orperc(or_pv) in daylight. A requirement the plant creates, so it
@@ -385,7 +435,8 @@ valcost('val_total',i,r,t) =
 
 valcost('residual',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     valcost('val_total',i,r,t) - valcost('cost_total',i,r,t)
-  - valcost('val_rsc',i,r,t) - valcost('val_csapr',i,r,t) - valcost('val_prescribed',i,r,t) ;
+  - valcost('val_rsc',i,r,t) - valcost('val_csapr',i,r,t) - valcost('val_prescribed',i,r,t)
+  - valcost('val_minduration',i,r,t) ;
 
 * ---- quantities, for whatever normalisation the reader wants ----
 valcost('inv_mw',i,r,t)$sum{v, vc_new(i,v,r,t)} = sum{v$vc_new(i,v,r,t), INV.l(i,v,r,t) } ;
