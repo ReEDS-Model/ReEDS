@@ -33,6 +33,36 @@ def check_GSw_LoadSiteReg(sw):
         raise ValueError(err)
 
 
+def check_GSw_StateRPS_StressLevel(sw):
+    """
+    GSw_StateRPS_Stress=2 weights a state's stress-period RPS/CES by only
+    the state's seeded peak-load stress period(s), which are only ever identified
+    when GSw_PRM_CapCredit=0, GSw_PRM_StressSeedLoadLevel is enabled, and stress
+    periods aren't user-defined (GSw_PRM_StressModel doesn't start with 'user').
+    Otherwise there's no load-peak stress period for GSw_StateRPS_Stress=2 to
+    weight against.
+    """
+    if int(sw['GSw_StateRPS_Stress']) != 2:
+        return
+    if int(sw['GSw_PRM_CapCredit']):
+        raise ValueError(
+            "GSw_StateRPS_Stress=2 requires GSw_PRM_CapCredit=0 (the stress-period "
+            "PRM formulation) since load-peak stress periods are only seeded in that case."
+        )
+    if 'user' in sw['GSw_PRM_StressModel']:
+        raise ValueError(
+            "GSw_StateRPS_Stress=2 is not supported with user-defined stress periods."
+        )
+    level = sw['GSw_PRM_StressSeedLoadLevel']
+    if level.lower() in ['false', 'none']:
+        raise ValueError(
+            "GSw_StateRPS_Stress=2 requires GSw_PRM_StressSeedLoadLevel to be set to a "
+            f"hierarchy level (it is currently set to {level}) so that a peak-load stress "
+            "period exists to weight against."
+        )
+
+
 def check_switches(sw):
     """Run all the checks"""
     check_GSw_LoadSiteReg(sw)
+    check_GSw_StateRPS_StressLevel(sw)
