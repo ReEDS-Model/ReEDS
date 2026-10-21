@@ -1287,8 +1287,8 @@ def write_batch_script(
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
-            'process_unitdata',
             'mcs_sampler',
+            'process_unitdata',
             'climateprep',            
             'hydcf',
             'h2_storage',
