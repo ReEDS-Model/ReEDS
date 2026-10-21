@@ -3558,7 +3558,8 @@ eq_h2_demand(p,t)$[(sameas(p,"H2"))$tmodel(t)$(yeart(t)>=h2_demand_start)$(Sw_H2
             GEN(i,v,r,h,t) * hours(h) * h2_combustion_intensity * heat_rate(i,v,r,t)
     }
 
-* hydrogen demand from industry when linked with FINITO: demand [MMBtu/yr] * conversion [metric tons-H2/MMBtu-H2]
+* hydrogen demand from industry when linked with FINITO: 
+* hours per timeslice [hour] * demand [MMBtu-H2/hour] * [metric tons-H2/MMBtu-H2] = [metric tons H2]
 $ifthene.linked_h2_nat Sw_FINITO_Link==1
     + [sum{(r,h)$h_rep(h), hours(h) * USE_H2_FINITO(r,h,t) * h2_metric_tons_per_mmbtu }]$tfinito(t)
 $endif.linked_h2_nat
