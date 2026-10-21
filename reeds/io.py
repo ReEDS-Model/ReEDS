@@ -22,7 +22,6 @@ reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if 'runs' in reeds_path.split(os.path.sep):
     reeds_path = reeds_path[: reeds_path.index(os.sep + 'runs' + os.sep)]
 
-hpc = True if ('NREL_CLUSTER' in os.environ) else False
 
 #   ########  ########    ###    ########
 #   ##     ## ##         ## ##   ##     ##
@@ -770,7 +769,7 @@ def get_switches(case=None, **kwargs):
     threads = get_param_value(fpath_opt, "threads", dtype=int)
     sw['threads'] = threads
     ## Determine whether run is on HPC
-    sw['hpc'] = True if int(os.environ.get('REEDS_USE_SLURM', 0)) else False
+    sw['hpc'] = reeds.slurm.check_slurm()
     ## Add the run location
     sw['casedir'] = case
     sw['reeds_path'] = reeds_path if case is None else os.path.dirname(os.path.dirname(case))
