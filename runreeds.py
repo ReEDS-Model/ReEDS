@@ -1282,13 +1282,12 @@ def write_batch_script(
             comment('Set up nodal environment for run', OPATH)
             OPATH.writelines(". $HOME/.bashrc \n")
             OPATH.writelines("module purge \n")
-            OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
             OPATH.writelines("module load anaconda3 \n")
             OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
             OPATH.writelines("module load gams \n")
             OPATH.writelines("module load julia/1.12.1 \n")
             OPATH.writelines("conda activate reeds \n")
-            OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
+            OPATH.writelines('\n\n')
 
         #%% Write the input_processing script calls
         big_comment('Input processing', OPATH)
