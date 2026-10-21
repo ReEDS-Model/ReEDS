@@ -838,14 +838,8 @@ def setupEnvironment(
     ### If on NLR HPC but NOT submitting slurm job, ask for confirmation
     if reeds.slurm.get_cluster() and (not hpc):
         print(
-            "It looks like you're running on the NLR HPC but the REEDS_USE_SLURM environment "
-            "variable is not set to 1, meaning the model will run locally rather than being "
-            "submitted as a slurm job. Are you sure you want to run locally? "
-            "If not:\n"
-            "  Add `export REEDS_USE_SLURM=1` to your ~/.bashrc file\n"
-            "  Run `source ~/.bashrc`\n"
-            "  Run `conda activate reeds` to reactivate the environment\n"
-            "  Rerun this script"
+            "It looks like you're running on the HPC login node instead of submitting a "
+            "slurm job. Are you sure you want to run locally (not recommended)?"
         )
         confirm_local = str(input('Run job locally? y/[n]: ') or 'n')
         if confirm_local not in ['y','Y','yes','Yes','YES']:

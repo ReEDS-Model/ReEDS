@@ -22,8 +22,5 @@ def check_slurm(forcelocal=False):
     if forcelocal:
         hpc = False
     else:
-        if os.environ.get('REEDS_USE_SLURM') and get_cluster():
-            hpc = True
-        else:
-            hpc = False
+        hpc = True if get_cluster() else False
     return hpc
