@@ -1344,6 +1344,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         .assign(h=cf_out.h.map(chunkmap))
         .groupby(['i','c','r','h'], as_index=False)
         .agg(aggmethod, *args)
+        [['i','c','r','h','cf']]
     )
 
     load_long = (
