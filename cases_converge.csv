@@ -1,16 +1,17 @@
-,Default Value,CONM_test,CONM_WECC_SPP,CONM_WECC_SPP_1hr_startcost,WECC_z54_1hr_startcost,CONM_WECC_SPP_1hr_startcost_statelpf,WECC_z54_1hr_startcost_st40,USA_z54_1hr_startcost_statelpf_2040,USA_z54_1hr_statelpf_2040,USA_default,USA_highgas,USA_highload,USA_highgas_highload,USA_advgeo
-ignore,1,0,0,0,0,0,0,0,0,0,0,0,0,0
-GSw_Region,,st/CO.NM,interconnect/western//transreg/SPP,interconnect/western//transreg/SPP,interconnect/western,interconnect/western//transreg/SPP,interconnect/western,,,,,,,
-endyear,,2035,,,,,,2040,2040,,,,,
-GSw_ZoneSet,,,,,z54,,z54,z54,z54,,,,,
-GSw_GasCurve,,2,2,2,2,2,2,,,,,,,
-GSw_LoadProfiles,,,,,,,,,,,,EER2025_100by2050,EER2025_100by2050,
-GSw_HourlyChunkLengthRep,,,,1,1,1,1,1,1,,,,,
-GSw_HourlyChunkLengthStress,,,,1,1,1,1,1,1,,,,,
-GSw_StartCost,,,,5,5,5,5,5,,,,,,
-GSw_LoadAllocationMethod,,,,,,state_lpf,,state_lpf,state_lpf,,,,,
-GSw_HourlyClusterRegionLevel,,,,,,,st,,,,,,,
-GSw_HourlyNumClusters,,,,,,,40,,,,,,,
-ngscen,,,,,,,,,,,AEO_2026_LOG,,AEO_2026_LOG,
-plantchar_geo,,,,,,,,,,,,,,geo_ATB_2024_advanced
-geodiscov,,,,,,,,,,,,,,TI
+,Default Value,CONM_test,CONM_WECC_SPP,CONM_WECC_SPP_1hr_startcost,WECC_z54_1hr_startcost,CONM_WECC_SPP_1hr_startcost_statelpf,WECC_z54_1hr_startcost_st40,USA_z54_1hr_startcost_statelpf_2040,USA_z54_1hr_statelpf_2040,USA_default,USA_highgas,USA_highload,USA_highgas_highload,USA_advgeo,USA_highgas_highload_advgeo
+ignore,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+GSw_Region,,st/CO.NM,interconnect/western//transreg/SPP,interconnect/western//transreg/SPP,interconnect/western,interconnect/western//transreg/SPP,interconnect/western,,,,,,,,
+endyear,,2035,,,,,,2040,2040,,,,,,
+GSw_ZoneSet,,,,,z54,,z54,z54,z54,,,,,,
+GSw_GasCurve,,2,2,2,2,2,2,,,,,,,,
+GSw_LoadProfiles,,,,,,,,,,,,EER2025_100by2050,EER2025_100by2050,,EER2025_100by2050
+GSw_HourlyChunkLengthRep,,,,1,1,1,1,1,1,,,,,,
+GSw_HourlyChunkLengthStress,,,,1,1,1,1,1,1,,,,,,
+GSw_StartCost,,,,5,5,5,5,5,,,,,,,
+GSw_LoadAllocationMethod,,,,,,state_lpf,,state_lpf,state_lpf,,,,,,
+GSw_HourlyClusterRegionLevel,,,,,,,st,,,,,,,,
+GSw_HourlyNumClusters,,,,,,,40,,,,,,,,
+ngscen,,,,,,,,,,,AEO_2026_LOG,,AEO_2026_LOG,,AEO_2026_LOG
+plantchar_geo,,,,,,,,,,,,,,geo_ATB_2024_advanced,geo_ATB_2024_advanced
+geodiscov,,,,,,,,,,,,,,TI,TI
+GSw_Geothermal,,,,,,,,,,,,,,2,2
