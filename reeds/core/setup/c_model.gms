@@ -262,8 +262,8 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_co2_capture(r,allh,t)                    "--metric tons per hour-- accounting of CO2 captured from DAC and CCS technologies"
  eq_co2_injection_limit(cs,allh,t)           "--metric tons per hour-- limit on CO2 injection for each carbon site as a rate"
  eq_co2_sink(r,allh,t)                       "--metric tons per hour-- co2 stored or used must exceed co2 captured plus net trade"
- eq_co2_transport_caplimit(r,rr,allh,t)      "--metric tons-- limit on interregional co2 trade"
- eq_co2_spurline_caplimit(r,cs,allh,t)       "--metric tons-- limit on transport of CO2 from BA to carbon storage site"
+ eq_co2_transport_caplimit(r,rr,allh,t)      "--metric tons per hour-- limit on interregional co2 trade"
+ eq_co2_spurline_caplimit(r,cs,allh,t)       "--metric tons per hour-- limit on transport of CO2 from BA to carbon storage site"
  eq_co2_cumul_limit(cs,t)                    "--metric tons-- cumulative total stored in a reservor cannot exceed capacity"
 
 * transmission equations
