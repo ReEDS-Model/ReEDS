@@ -48,6 +48,7 @@
 
 - `reg_cap_cost_diff_default.csv`: Region-specific differences for capital cost of all resources
   - Add 1 to produce a multiplier
+  - The `GEO` column uses the mean reported geothermal location variation by state from [EIA Table 1-11](https://www.eia.gov/analysis/studies/powerplants/capitalcost/pdf/capital_cost_AEO2025.pdf) (2023 USD), converted to a difference from 1.0: California 0.172, Idaho 0.020, Nevada 0.100, Oregon 0.090, and Washington 0.080. These values are applied uniformly to counties within each state; states with no reported location variation use 0.000. This is a temporary regional default until geothermal cost multipliers are ingested from reV.
 
 - `retire_penalty.csv`: 
 
