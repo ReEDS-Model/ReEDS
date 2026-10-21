@@ -3840,9 +3840,9 @@ eq_co2_capture(r,h,t)
 * capture from DAC
     + sum{(i,v)$[dac(i)$valcap(i,v,r,t)$i_p(i,"DAC")], PRODUCE("DAC",i,v,r,h,t) }$Sw_DAC
 
-* capture from industry when linked with FINITO [metric_tons-CO2/hr]: 
+* capture from industry when linked with FINITO [metric_tons per hour]: 
 $ifthene.linked_co2_capture Sw_FINITO_Link==1
-    + [CAPTURE_CO2EM(r,h,t) / co2_scale]$[tfinito(t)]
+    + CAPTURE_CO2EM(r,h,t)$[tfinito(t)]
 $endif.linked_co2_capture
 ;
 
@@ -3883,9 +3883,8 @@ eq_co2_spurline_caplimit(r,cs,h,t)
 
     CO2_STORED(r,cs,h,t)
 * (ReEDS-FINITO) extraction of CO2 [metric tons per hour] 
-* calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * use [scaled_metric_tons-CO2/yr] 
 $ifthene.linked_co2_spurline_caplimit Sw_FINITO_Link==1
-    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[tfinito(t)]
+    + EXTRACT_CO2_CS(cs,r,h,t)$[tfinito(t)]
 $endif.linked_co2_spurline_caplimit
 ;
 
@@ -3913,7 +3912,7 @@ eq_co2_sink(r,h,t)
 
 * (ReEDS-FINITO) extraction - use of CO2 [metric tons per hour] 
 $ifthene.linked_co2_sink Sw_FINITO_Link==1
-    + (1 / co2_scale) * [ sum{cs$[csfeas(cs)$r_cs(r,cs)], 
+    + [ sum{cs$[csfeas(cs)$r_cs(r,cs)], 
 *       extraction from all cs sites in r 
         + EXTRACT_CO2_CS(cs,r,h,t)}
 *       total use of CO2, equivalent to supply 
@@ -3942,7 +3941,7 @@ eq_co2_injection_limit(cs,h,t)
 
 * (ReEDS-FINITO) extraction of CO2 for use [metric tons per hour] 
 $ifthene.linked_co2_injection_limit Sw_FINITO_Link==1
-    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[tfinito(t)]
+    + sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[tfinito(t)]
 $endif.linked_co2_injection_limit
 ;
 
