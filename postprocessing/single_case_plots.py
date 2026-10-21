@@ -970,7 +970,7 @@ except Exception:
     print(traceback.format_exc())
 
 
-#%% DR Shiftresource plots
+#%% DR Shift resource plots
 try: 
     if int(sw.GSw_DRShift) == 1:
         dr_plots = reedsplots.dr_shift_resource_compare(
