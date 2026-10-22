@@ -1235,6 +1235,12 @@ def write_miscellaneous_files(
             overwrite=True,
         )
 
+    ## Scenario names used for stochastic optimization
+    s = pd.Series(reeds.stochastic.get_scenarios(inputs_case))
+    reeds.io.write_to_inputs_h5(
+        s, 's', inputs_case, gamstype='set', comment='scenario name (for stochastic optimization)',
+    )
+
     ## Unit sizes for ReEDS2PRAS
     fpath_out = os.path.join(inputs_case, 'unitsize.csv')
     if sw['pras_unitsize_source'] == 'atb':
