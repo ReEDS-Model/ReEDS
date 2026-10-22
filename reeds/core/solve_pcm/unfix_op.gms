@@ -9,12 +9,12 @@ EXCESS.lo(r,h,t_unfix)$[(yeart(t_unfix)<Sw_StartMarkets) or (Sw_PCM=1)] = 0 ;
 EXCESS.up(r,h,t_unfix)$[(yeart(t_unfix)<Sw_StartMarkets) or (Sw_PCM=1)] = +inf ;
 
 * generation and storage
-GEN.lo(i,v,r,h,t_unfix)$valgen(i,v,r,t_unfix) = 0 ;
-GEN.up(i,v,r,h,t_unfix)$valgen(i,v,r,t_unfix) = +inf ;
-GEN_PLANT.lo(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = 0 ;
-GEN_PLANT.up(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = +inf ;
-GEN_STORAGE.lo(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = 0 ;
-GEN_STORAGE.up(i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = +inf ;
+GEN.lo(s,i,v,r,h,t_unfix)$valgen(i,v,r,t_unfix) = 0 ;
+GEN.up(s,i,v,r,h,t_unfix)$valgen(i,v,r,t_unfix) = +inf ;
+GEN_PLANT.lo(s,i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = 0 ;
+GEN_PLANT.up(s,i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = +inf ;
+GEN_STORAGE.lo(s,i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = 0 ;
+GEN_STORAGE.up(s,i,v,r,h,t_unfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,t_unfix)$Sw_HybridPlant] = +inf ;
 MINGEN.lo(r,szn,t_unfix)$Sw_Mingen = 0 ;
 MINGEN.up(r,szn,t_unfix)$Sw_Mingen = +inf ;
 STORAGE_IN.lo(i,v,r,h,t_unfix)$[valgen(i,v,r,t_unfix)$(storage_standalone(i) or hyd_add_pump(i))] = 0 ;
@@ -53,14 +53,14 @@ OPRES.lo(ortype,i,v,r,h,t_unfix)$[Sw_OpRes$valgen(i,v,r,t_unfix)$reserve_frac(i,
 OPRES.up(ortype,i,v,r,h,t_unfix)$[Sw_OpRes$valgen(i,v,r,t_unfix)$reserve_frac(i,ortype)$opres_h(h)] = +inf ;
 
 * variable fuel amounts
-GASUSED.lo(cendiv,gb,h,t_unfix)$[(Sw_GasCurve=0)$h_rep(h)] = 0 ;
-GASUSED.up(cendiv,gb,h,t_unfix)$[(Sw_GasCurve=0)$h_rep(h)] = +inf ;
-VGASBINQ_NATIONAL.lo(fuelbin,t_unfix)$[Sw_GasCurve=1] = 0 ;
-VGASBINQ_NATIONAL.up(fuelbin,t_unfix)$[Sw_GasCurve=1] = +inf ;
-VGASBINQ_REGIONAL.lo(fuelbin,cendiv,t_unfix)$[Sw_GasCurve=1] = 0 ;
-VGASBINQ_REGIONAL.up(fuelbin,cendiv,t_unfix)$[Sw_GasCurve=1] = +inf ;
-BIOUSED.lo(bioclass,r,t_unfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t_unfix) }] = 0 ;
-BIOUSED.up(bioclass,r,t_unfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t_unfix) }] = +inf ;
+GASUSED.lo(s,cendiv,gb,h,t_unfix)$[(Sw_GasCurve=0)$h_rep(h)] = 0 ;
+GASUSED.up(s,cendiv,gb,h,t_unfix)$[(Sw_GasCurve=0)$h_rep(h)] = +inf ;
+VGASBINQ_NATIONAL.lo(s,fuelbin,t_unfix)$[Sw_GasCurve=1] = 0 ;
+VGASBINQ_NATIONAL.up(s,fuelbin,t_unfix)$[Sw_GasCurve=1] = +inf ;
+VGASBINQ_REGIONAL.lo(s,fuelbin,cendiv,t_unfix)$[Sw_GasCurve=1] = 0 ;
+VGASBINQ_REGIONAL.up(s,fuelbin,cendiv,t_unfix)$[Sw_GasCurve=1] = +inf ;
+BIOUSED.lo(s,bioclass,r,t_unfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t_unfix) }] = 0 ;
+BIOUSED.up(s,bioclass,r,t_unfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t_unfix) }] = +inf ;
 
 * RECS
 RECS.lo(RPSCat,i,st,ast,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,t_unfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = 0 ;

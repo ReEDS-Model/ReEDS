@@ -47,43 +47,43 @@ EXTRA_PRESCRIP_ENERGY.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,t
 * generation and storage variables
 GEN.fx(s,i,v,r,h,tfix)$valgen(i,v,r,tfix) = GEN.l(s,i,v,r,h,tfix) ;
 GEN_PLANT.fx(s,i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_PLANT.l(s,i,v,r,h,tfix) ;
-GEN_STORAGE.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_STORAGE.l(i,v,r,h,tfix) ;
-MINGEN.fx(r,szn,tfix)$Sw_Mingen = MINGEN.l(r,szn,tfix) ;
-STORAGE_IN.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$(storage_standalone(i) or hyd_add_pump(i))] = STORAGE_IN.l(i,v,r,h,tfix) ;
-STORAGE_IN_PLANT.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_PLANT.l(i,v,r,h,tfix) ;
-STORAGE_IN_GRID.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_GRID.l(i,v,r,h,tfix) ;
-STORAGE_LEVEL.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage(i)$(not storage_interday(i))] = STORAGE_LEVEL.l(i,v,r,h,tfix) ;
-STORAGE_INTERDAY_LEVEL.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL.l(i,v,r,allszn,tfix) ;
-STORAGE_INTERDAY_DISPATCH.fx(i,v,r,allh,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_DISPATCH.l(i,v,r,allh,tfix) ;
-STORAGE_INTERDAY_LEVEL_MAX_DAY.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL_MAX_DAY.l(i,v,r,allszn,tfix) ;
-STORAGE_INTERDAY_LEVEL_MIN_DAY.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL_MIN_DAY.l(i,v,r,allszn,tfix) ;
+GEN_STORAGE.fx(s,i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_STORAGE.l(s,i,v,r,h,tfix) ;
+MINGEN.fx(s,r,szn,tfix)$Sw_Mingen = MINGEN.l(s,r,szn,tfix) ;
+STORAGE_IN.fx(s,i,v,r,h,tfix)$[valgen(i,v,r,tfix)$(storage_standalone(i) or hyd_add_pump(i))] = STORAGE_IN.l(s,i,v,r,h,tfix) ;
+STORAGE_IN_PLANT.fx(s,i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_PLANT.l(s,i,v,r,h,tfix) ;
+STORAGE_IN_GRID.fx(s,i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_GRID.l(s,i,v,r,h,tfix) ;
+STORAGE_LEVEL.fx(s,i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage(i)$(not storage_interday(i))] = STORAGE_LEVEL.l(s,i,v,r,h,tfix) ;
+STORAGE_INTERDAY_LEVEL.fx(s,i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL.l(s,i,v,r,allszn,tfix) ;
+STORAGE_INTERDAY_DISPATCH.fx(s,i,v,r,allh,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_DISPATCH.l(s,i,v,r,allh,tfix) ;
+STORAGE_INTERDAY_LEVEL_MAX_DAY.fx(s,i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL_MAX_DAY.l(s,i,v,r,allszn,tfix) ;
+STORAGE_INTERDAY_LEVEL_MIN_DAY.fx(s,i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL_MIN_DAY.l(s,i,v,r,allszn,tfix) ;
 AVAIL_SITE.fx(x,h,tfix)$[Sw_SpurScen$xfeas(x)] = AVAIL_SITE.l(x,h,tfix) ;
-RAMPUP.fx(i,r,h,hh,tfix)$[Sw_StartCost$startcost(i)$numhours_nexth(h,hh)$valgen_irt(i,r,tfix)] = RAMPUP.l(i,r,h,hh,tfix) ;
+RAMPUP.fx(s,i,r,h,hh,tfix)$[Sw_StartCost$startcost(i)$numhours_nexth(h,hh)$valgen_irt(i,r,tfix)] = RAMPUP.l(s,i,r,h,hh,tfix) ;
 
 * flexible CCS variables
-CCSFLEX_POW.fx(i,v,r,h,tfix)$[ccsflex(i)$valgen(i,v,r,tfix)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)] = CCSFLEX_POW.l(i,v,r,h,tfix) ;
-CCSFLEX_POWREQ.fx(i,v,r,h,tfix)$[ccsflex_sto(i)$valgen(i,v,r,tfix)$Sw_CCSFLEX_STO] = CCSFLEX_POWREQ.l(i,v,r,h,tfix) ;
-CCSFLEX_STO_STORAGE_LEVEL.fx(i,v,r,h,tfix)$[ccsflex_sto(i)$valgen(i,v,r,tfix)$Sw_CCSFLEX_STO] = CCSFLEX_STO_STORAGE_LEVEL.l(i,v,r,h,tfix) ;
+CCSFLEX_POW.fx(s,i,v,r,h,tfix)$[ccsflex(i)$valgen(i,v,r,tfix)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)] = CCSFLEX_POW.l(s,i,v,r,h,tfix) ;
+CCSFLEX_POWREQ.fx(s,i,v,r,h,tfix)$[ccsflex_sto(i)$valgen(i,v,r,tfix)$Sw_CCSFLEX_STO] = CCSFLEX_POWREQ.l(s,i,v,r,h,tfix) ;
+CCSFLEX_STO_STORAGE_LEVEL.fx(s,i,v,r,h,tfix)$[ccsflex_sto(i)$valgen(i,v,r,tfix)$Sw_CCSFLEX_STO] = CCSFLEX_STO_STORAGE_LEVEL.l(s,i,v,r,h,tfix) ;
 CCSFLEX_STO_STORAGE_CAP.fx(i,v,r,tfix)$[ccsflex_sto(i)$valcap(i,v,r,tfix)$Sw_CCSFLEX_STO] = CCSFLEX_STO_STORAGE_CAP.l(i,v,r,tfix) ;
 
 * trade variables
-FLOW.fx(r,rr,h,tfix,trtype)$routes(r,rr,trtype,tfix) = FLOW.l(r,rr,h,tfix,trtype) ;
-OPRES_FLOW.fx(ortype,r,rr,h,tfix)$[Sw_OpRes$opres_model(ortype)$opres_routes(r,rr,tfix)$opres_h(h)] = OPRES_FLOW.l(ortype,r,rr,h,tfix) ;
-PRMTRADE.fx(r,rr,trtype,ccseason,tfix)$[routes(r,rr,trtype,tfix)$routes_prm(r,rr)] = PRMTRADE.l(r,rr,trtype,ccseason,tfix) ;
+FLOW.fx(s,r,rr,h,tfix,trtype)$routes(r,rr,trtype,tfix) = FLOW.l(s,r,rr,h,tfix,trtype) ;
+OPRES_FLOW.fx(s,ortype,r,rr,h,tfix)$[Sw_OpRes$opres_model(ortype)$opres_routes(r,rr,tfix)$opres_h(h)] = OPRES_FLOW.l(s,ortype,r,rr,h,tfix) ;
+PRMTRADE.fx(s,r,rr,trtype,ccseason,tfix)$[routes(r,rr,trtype,tfix)$routes_prm(r,rr)] = PRMTRADE.l(s,r,rr,trtype,ccseason,tfix) ;
 
 * operating reserve variables
-OPRES.fx(ortype,i,v,r,h,tfix)$[Sw_OpRes$valgen(i,v,r,tfix)$reserve_frac(i,ortype)$opres_h(h)] = OPRES.l(ortype,i,v,r,h,tfix) ;
+OPRES.fx(s,ortype,i,v,r,h,tfix)$[Sw_OpRes$valgen(i,v,r,tfix)$reserve_frac(i,ortype)$opres_h(h)] = OPRES.l(s,ortype,i,v,r,h,tfix) ;
 
 * variable fuel amounts
-GASUSED.fx(cendiv,gb,h,tfix)$[(Sw_GasCurve=0)$h_rep(h)] = GASUSED.l(cendiv,gb,h,tfix) ;
-VGASBINQ_NATIONAL.fx(fuelbin,tfix)$[Sw_GasCurve=1] = VGASBINQ_NATIONAL.l(fuelbin,tfix) ;
-VGASBINQ_REGIONAL.fx(fuelbin,cendiv,tfix)$[Sw_GasCurve=1] = VGASBINQ_REGIONAL.l(fuelbin,cendiv,tfix) ;
-BIOUSED.fx(bioclass,r,tfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,tfix) }] = BIOUSED.l(bioclass,r,tfix) ;
+GASUSED.fx(s,cendiv,gb,h,tfix)$[(Sw_GasCurve=0)$h_rep(h)] = GASUSED.l(s,cendiv,gb,h,tfix) ;
+VGASBINQ_NATIONAL.fx(s,fuelbin,tfix)$[Sw_GasCurve=1] = VGASBINQ_NATIONAL.l(s,fuelbin,tfix) ;
+VGASBINQ_REGIONAL.fx(s,fuelbin,cendiv,tfix)$[Sw_GasCurve=1] = VGASBINQ_REGIONAL.l(s,fuelbin,cendiv,tfix) ;
+BIOUSED.fx(s,bioclass,r,tfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,tfix) }] = BIOUSED.l(s,bioclass,r,tfix) ;
 
 * RECS variables
 RECS.fx(RPSCat,i,st,ast,tfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,tfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = RECS.l(RPSCat,i,st,ast,tfix) ;
 ACP_Purchases.fx(RPSCat,st,tfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = ACP_Purchases.l(RPSCat,st,tfix) ;
-EMIT.fx(etype,e,r,tfix)$emit_modeled(e,r,tfix) = EMIT.l(etype,e,r,tfix) ;
+EMIT.fx(s,etype,e,r,tfix)$emit_modeled(e,r,tfix) = EMIT.l(s,etype,e,r,tfix) ;
 
 * transmission variables
 CAPTRAN_ENERGY.fx(r,rr,trtype,tfix)$routes(r,rr,trtype,tfix) = CAPTRAN_ENERGY.l(r,rr,trtype,tfix) ;
@@ -106,7 +106,7 @@ WAT.fx(i,v,w,r,h,tfix)$[i_water(i)$valgen(i,v,r,tfix)$Sw_WaterMain] = WAT.l(i,v,
 WATER_CAPACITY_LIMIT_SLACK.fx(wst,r,tfix)$[Sw_WaterMain$Sw_WaterCapacity] = WATER_CAPACITY_LIMIT_SLACK.l(wst,r,tfix) ;
 
 *H2 and DAC production variables
-PRODUCE.fx(p,i,v,r,h,tfix)$[consume(i)$i_p(i,p)$valcap(i,v,r,tfix)$h_rep(h)$Sw_Prod] = PRODUCE.l(p,i,v,r,h,tfix) ;
+PRODUCE.fx(s,p,i,v,r,h,tfix)$[consume(i)$i_p(i,p)$valcap(i,v,r,tfix)$h_rep(h)$Sw_Prod] = PRODUCE.l(s,p,i,v,r,h,tfix) ;
 H2_FLOW.fx(r,rr,h,tfix)$[h2_routes(r,rr)$(Sw_H2 = 2)] = H2_FLOW.l(r,rr,h,tfix) ;
 H2_TRANSPORT_INV.fx(r,rr,tfix)$[h2_routes(r,rr)$(Sw_H2 = 2)] = H2_TRANSPORT_INV.l(r,rr,tfix) ;
 H2_STOR_INV.fx(h2_stor,r,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_INV.l(h2_stor,r,tfix) ;
@@ -117,8 +117,8 @@ H2_STOR_LEVEL.fx(h2_stor,r,actualszn,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)$(
 H2_STOR_LEVEL_SZN.fx(h2_stor,r,actualszn,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)$(Sw_H2_StorTimestep=1)] = H2_STOR_LEVEL_SZN.l(h2_stor,r,actualszn,tfix) ;
 
 *CO2-related variables
-CO2_CAPTURED.fx(r,h,tfix)$Sw_CO2_Detail = CO2_CAPTURED.l(r,h,tfix) ;
-CO2_STORED.fx(r,cs,h,tfix)$[Sw_CO2_Detail$r_cs(r,cs)] = CO2_STORED.l(r,cs,h,tfix) ;
-CO2_FLOW.fx(r,rr,h,tfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = CO2_FLOW.l(r,rr,h,tfix) ;
+CO2_CAPTURED.fx(s,r,h,tfix)$Sw_CO2_Detail = CO2_CAPTURED.l(s,r,h,tfix) ;
+CO2_STORED.fx(s,r,cs,h,tfix)$[Sw_CO2_Detail$r_cs(r,cs)] = CO2_STORED.l(s,r,cs,h,tfix) ;
+CO2_FLOW.fx(s,r,rr,h,tfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = CO2_FLOW.l(s,r,rr,h,tfix) ;
 CO2_TRANSPORT_INV.fx(r,rr,tfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = CO2_TRANSPORT_INV.l(r,rr,tfix) ;
 CO2_SPURLINE_INV.fx(r,cs,tfix)$[Sw_CO2_Detail$r_cs(r,cs)] = CO2_SPURLINE_INV.l(r,cs,tfix) ;

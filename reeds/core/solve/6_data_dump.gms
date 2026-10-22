@@ -174,8 +174,8 @@ fuel_price_filt(i,r)$[Sw_H2$h2_gen(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_sta
 ;
 
 * for regions that consumed biomass, use the cost of the last supply curve bin consumed
-repbioprice_filt(r)$[sum{(t, bioclass), bioused.l(bioclass,r,t) }] =
-    sum{t$tcur(t), smax{bioclass$[bioused.l(bioclass,r,t)],
+repbioprice_filt(r)$[sum{(t, bioclass), bioused.l(s,bioclass,r,t) }] =
+    sum{t$tcur(t), smax{bioclass$[bioused.l(s,bioclass,r,t)],
       sum{usda_region$r_usda(r, usda_region), biosupply(usda_region,bioclass,"price")} } + bio_transport_cost } ;
 
 * for regions with no biomass, assign biomass price as the cost of the cheapest available supply curve bin for that region
@@ -183,7 +183,7 @@ repbioprice_filt(r)$[sum{(t, bioclass), bioused.l(bioclass,r,t) }] =
 repbioprice_filt(r)$[(repbioprice_filt(r) <= 0)] = rep_bio_price_unused(r) ;
 
 repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tcur(t)] =
-    sum{(gb,h), GASUSED.l(cendiv,gb,h,t) * hours(h) } ;
+    sum{(gb,h), GASUSED.l(s,cendiv,gb,h,t) * hours(h) } ;
 
 repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
@@ -269,7 +269,7 @@ ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 *============================
 
 prod_filt(i,v,r,h)$[sum{t$tcur(t), valcap(i,v,r,t)}$consume(i)$hours(h)] =
-                sum{(p,t)$[i_p(i,p)$tcur(t)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) } ;
+                sum{(p,t)$[i_p(i,p)$tcur(t)], PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) } ;
 
 *============================
 * Get ReEDS emissions prices [$/metric ton]

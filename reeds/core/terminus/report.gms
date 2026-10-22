@@ -369,7 +369,7 @@ reqt_quant('load','na',r,h,t)$tmodel_new(t) =
     hours(h) * (
         LOAD.l(r,h,t)
         - sum{(p,i,v)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)$Sw_Prod],
-              PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
+              PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
     ) ;
 
 * Capacity credit formulation
@@ -400,11 +400,11 @@ reqt_quant('oper_res',ortype,r,h,t)$tmodel_new(t) =
 reqt_quant('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
     sum{(st,h)$r_st_rps(r,st), RecPerc(RPSCat,st,t) * hours(h) *(
         ( (LOAD.l(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
-        - sum{v$valgen("distpv",v,r,t), GEN.l("distpv",v,r,h,t) }) * (1.0 - distloss)
+        - sum{v$valgen("distpv",v,r,t), GEN.l(s,"distpv",v,r,h,t) }) * (1.0 - distloss)
         )$(RecStyle(st,RPSCat)=0)
 
       + ( LOAD.l(r,h,t) - can_exports_h(r,h,t)$[Sw_Canada=1]
-        - sum{v$valgen("distpv",v,r,t), GEN.l("distpv",v,r,h,t) }
+        - sum{v$valgen("distpv",v,r,t), GEN.l(s,"distpv",v,r,h,t) }
         )$(RecStyle(st,RPSCat)=1)
 
       + ( sum{(i,v)$[valgen(i,v,r,t)$(not storage_standalone(i))], GEN.l(s,i,v,r,h,t)
@@ -419,13 +419,13 @@ reqt_quant('nat_gen','na',r,'ann',t)$tmodel_new(t) =
 * if Sw_GenMandate = 1, then apply the fraction to the bus bar load
     (
     sum{h, LOAD.l(r,h,t) * hours(h) }
-    + sum{(rr,h,trtype)$routes(rr,r,trtype,t), (tranloss(rr,r,trtype) * FLOW.l(rr,r,h,t,trtype) * hours(h)) }
+    + sum{(rr,h,trtype)$routes(rr,r,trtype,t), (tranloss(rr,r,trtype) * FLOW.l(s,rr,r,h,t,trtype) * hours(h)) }
     )$[Sw_GenMandate = 1]
 
 * if Sw_GenMandate = 2, then apply the fraction to the end use load
     + (sum{h,
         hours(h) *
-        ( (LOAD.l(r,h,t) - can_exports_h(r,h,t)) * (1.0 - distloss) - sum{v$valgen("distpv",v,r,t), GEN.l("distpv",v,r,h,t) })
+        ( (LOAD.l(r,h,t) - can_exports_h(r,h,t)) * (1.0 - distloss) - sum{v$valgen("distpv",v,r,t), GEN.l(s,"distpv",v,r,h,t) })
        })$[Sw_GenMandate = 2]
     ) ;
 reqt_quant('annual_cap',e,r,'ann',t)$tmodel_new(t) = emit_cap(e,t) * load_frac_rt(r,t) ;
@@ -494,7 +494,7 @@ state_cap_and_trade_quant(st,t)$tmodel_new(t) =
     state_cap(st,t) ;
 
 tran_hurdle_cost_ann(r,rr,trtype,t)$[tmodel_new(t)$routes(r,rr,trtype,t)$cost_hurdle(r,rr,t)] =
-    sum{h, hours(h) * cost_hurdle(r,rr,t) * FLOW.l(r,rr,h,t,trtype) } ;
+    sum{h, hours(h) * cost_hurdle(r,rr,t) * FLOW.l(s,r,rr,h,t,trtype) } ;
 
 *========================================
 * RPS, CES, AND TAX CREDIT OUTPUTS
@@ -509,21 +509,21 @@ ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t)
 *========================================
 
 * The marginal biomass fuel price is derived from the linear program constraint marginals
-* Case 1: the resource of a biomass class is NOT exhausted, i.e., BIOUSED.l(bioclass) < biosupply(bioclass)
+* Case 1: the resource of a biomass class is NOT exhausted, i.e., BIOUSED.l(s,bioclass) < biosupply(bioclass)
 *    Marginal Biomass Price = eq_bioused.m
-* Case 2: the resource of one or more biomass classes ARE exhausted, i.e., BIOUSED.l(bioclass) = biosupply(bioclass)
+* Case 2: the resource of one or more biomass classes ARE exhausted, i.e., BIOUSED.l(s,bioclass) = biosupply(bioclass)
 *    Marginal Biomass Price = maximum difference between eq_bioused.m and eq_biousedlimit.m(bioclass) across all biomass classes in a region
 
-repbioprice(r,t)$tmodel_new(t) = max{0, smax{bioclass$BIOUSED.l(bioclass,r,t), eq_bioused.m(r,t) -
+repbioprice(r,t)$tmodel_new(t) = max{0, smax{bioclass$BIOUSED.l(s,bioclass,r,t), eq_bioused.m(r,t) -
                                               sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(bioclass,usda_region,t) } } } / pvf_onm(t) ;
 
 * quantity of biomass used (convert from mmBTU to dry tons using biomass energy content)
-bioused_out(bioclass,r,t)$tmodel_new(t) = BIOUSED.l(bioclass,r,t) / bio_energy_content ;
+bioused_out(bioclass,r,t)$tmodel_new(t) = BIOUSED.l(s,bioclass,r,t) / bio_energy_content ;
 bioused_usda(bioclass,usda_region,t)$tmodel_new(t) = sum{r$r_usda(r,usda_region), bioused_out(bioclass,r,t) } ;
 
 * 1e9 converts from MMBtu to Quads
 repgasquant_gb(cendiv,gb,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
-    sum{h, GASUSED.l(cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
+    sum{h, GASUSED.l(s,cendiv,gb,h,t) * hours(h) } * gas_scale/ 1e9 ;
 
 repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)] =
     sum{gb, repgasquant_gb(cendiv,gb,t) };
@@ -532,18 +532,18 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tmodel_new(t)] =
     ( sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(s,i,v,r,h,t)}
     + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$r_cendiv(r,cendiv)],
-          hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE.l("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
+          hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE.l(s,"DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
     + sum{(p,i,v,r,h)$[r_cendiv(r,cendiv)$valcap(i,v,r,t)$smr(i)],
-          hours(h) * smr_methane_rate * PRODUCE.l(p,i,v,r,h,t) }$Sw_H2
+          hours(h) * smr_methane_rate * PRODUCE.l(s,p,i,v,r,h,t) }$Sw_H2
     ) / 1e9 ;
 
 repgasquant_irt(i,r,t)$tmodel_new(t) =
     ( sum{(v,h)$[valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(s,i,v,r,h,t)  }
     + sum{(v,h)$[valcap("dac_gas",v,r,t)],
-          hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE.l("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
+          hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE.l(s,"DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
     + sum{(p,v,h)$[valcap(i,v,r,t)$smr(i)],
-          hours(h) * smr_methane_rate * PRODUCE.l(p,i,v,r,h,t) }$Sw_H2
+          hours(h) * smr_methane_rate * PRODUCE.l(s,p,i,v,r,h,t) }$Sw_H2
     ) / 1e9 ;
 
 repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
@@ -553,7 +553,7 @@ repgasquant_nat(t)$tmodel_new(t) = sum{cendiv, repgasquant(cendiv,t) } ;
 repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)] =
     smax{gb$[repgasquant_gb(cendiv,gb,t)],
         gasprice(cendiv,gb,t)
-        * sum{h, gasprice_adj_cendiv(cendiv,h) * GASUSED.l(cendiv,gb,h,t) * hours(h) / (repgasquant_gb(cendiv,gb,t) * 1e9) }
+        * sum{h, gasprice_adj_cendiv(cendiv,h) * GASUSED.l(s,cendiv,gb,h,t) * hours(h) / (repgasquant_gb(cendiv,gb,t) * 1e9) }
     } ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)] =
@@ -570,7 +570,7 @@ repgasprice_r(r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)] =
 
               + smax((fuelbin,cendiv)$[VGASBINQ_REGIONAL.l(fuelbin,cendiv,t)$r_cendiv(r,cendiv)], gasbinp_regional(fuelbin,cendiv,t) )
 
-              + smax(fuelbin$VGASBINQ_NATIONAL.l(fuelbin,t), gasbinp_national(fuelbin,t) )
+              + smax(fuelbin$VGASBINQ_NATIONAL.l(s,fuelbin,t), gasbinp_national(fuelbin,t) )
               ) ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$repgasquant(cendiv,t)] =
@@ -599,11 +599,11 @@ gascost_cendiv(cendiv,t)$tmodel_new(t) =
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *cost of natural gas for Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{gb, sum{h,hours(h) * GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) } * gasprice(cendiv,gb,t)
+              + sum{gb, sum{h,hours(h) * GASUSED.l(s,cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) } * gasprice(cendiv,gb,t)
                    }$[Sw_GasCurve = 0]
 
 *cost of natural gas for Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
-              + sum{(h,gb), hours(h) * GASUSED.l(cendiv,gb,h,t)
+              + sum{(h,gb), hours(h) * GASUSED.l(s,cendiv,gb,h,t)
                    * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
                    }$[Sw_GasCurve = 3]
 *cost of natural gas for Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
@@ -616,7 +616,7 @@ gascost_cendiv(cendiv,t)$tmodel_new(t) =
                    gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL.l(fuelbin,cendiv,t) }
 
               + sum{(fuelbin),
-                   gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL.l(fuelbin,t) } * gasshare_cendiv(cendiv,t)
+                   gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL.l(s,fuelbin,t) } * gasshare_cendiv(cendiv,t)
 
               )$[Sw_GasCurve = 1];
 
@@ -648,7 +648,7 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 * less storage charging
   - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]}
 * less load from hydrogen production
-  - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
+  - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
@@ -670,7 +670,7 @@ gen_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
       - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)] }
 * less load from hydrogen production
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)],
-        PRODUCE.l(p,i,v,r,allh,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
+        PRODUCE.l(s,p,i,v,r,allh,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
 gen_h_stress_nat(i,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = sum{r, gen_h_stress(i,r,allh,t) } ;
 
@@ -743,7 +743,7 @@ watret_ann_out(i,v,r,t)$watret_ivrt(i,v,r,t) = watret_ivrt(i,v,r,t) / (yeart(t) 
 *=========================
 
 opres_supply_h(ortype,i,r,h,t)$[tmodel_new(t)$reserve_frac(i,ortype)] =
-      sum{v, OPRES.l(ortype,i,v,r,h,t) } ;
+      sum{v, OPRES.l(s,ortype,i,v,r,h,t) } ;
 
 
 opres_supply(ortype,i,r,t)$[tmodel_new(t)$reserve_frac(i,ortype)] =
@@ -768,7 +768,7 @@ curt_h(r,h,t)$tmodel_new(t) =
     - sum{(i,v)$[valgen(i,v,r,t)$vre(i)], GEN.l(s,i,v,r,h,t) }
     - sum{(i,v)$[valgen(i,v,r,t)$storage_hybrid(i)$(not csp(i))], GEN_PLANT.l(s,i,v,r,h,t) }$Sw_HybridPlant
     - sum{(ortype,i,v)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)$vre(i)],
-          OPRES.l(ortype,i,v,r,h,t) }
+          OPRES.l(s,ortype,i,v,r,h,t) }
 ;
 
 curt_ann(r,t)$tmodel_new(t) = sum{h, curt_h(r,h,t) * hours(h) } ;
@@ -779,7 +779,7 @@ curt_tech(i,r,t)$[tmodel_new(t)$vre(i)] =
     - sum{(v,h)$valgen(i,v,r,t),
           GEN.l(s,i,v,r,h,t) * hours(h) }
     - sum{(ortype,v,h)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)],
-          OPRES.l(ortype,i,v,r,h,t) * hours(h) }
+          OPRES.l(s,ortype,i,v,r,h,t) * hours(h) }
 ;
 
 curt_rate_tech(i,r,t)$[tmodel_new(t)$vre(i)$(gen_ann(i,r,t) + curt_tech(i,r,t))] =
@@ -797,7 +797,7 @@ losses_ann('storage',t)$tmodel_new(t) = sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_s
 
 losses_ann('trans',t)$tmodel_new(t) =
   sum{(rr,r,h,trtype)$routes(rr,r,trtype,t),
-      (tranloss(rr,r,trtype) * FLOW.l(rr,r,h,t,trtype) * hours(h)) 
+      (tranloss(rr,r,trtype) * FLOW.l(s,rr,r,h,t,trtype) * hours(h)) 
       + ((CONVERSION.l(r,h,"AC","VSC",t) + CONVERSION.l(r,h,"VSC","AC",t))* (1 - converter_efficiency_vsc) * hours(h))$[val_converter(r,t)$Sw_VSC]
       } ;
 
@@ -806,7 +806,7 @@ losses_ann('curt',t)$tmodel_new(t) =  sum{r, curt_ann(r,t) } ;
 losses_ann('load',t)$tmodel_new(t) = sum{(r,h), LOAD.l(r,h,t) * hours(h) }  ;
 
 losses_tran_h(rr,r,h,trtype,t)$[routes(r,rr,trtype,t)$tmodel_new(t)]
-    = tranloss(rr,r,trtype) * FLOW.l(rr,r,h,t,trtype) 
+    = tranloss(rr,r,trtype) * FLOW.l(s,rr,r,h,t,trtype) 
     + ((CONVERSION.l(r,h,"AC","VSC",t) + CONVERSION.l(r,h,"VSC","AC",t))* (1 - converter_efficiency_vsc))$[val_converter(r,t)$Sw_VSC] ;
 
 *=========================
@@ -995,7 +995,7 @@ revenue('res_marg',i,r,t)$[valgen_irt(i,r,t)$(Sw_PRM_CapCredit=0)] = sum{allh$h_
   gen_h_stress(i,r,allh,t) * reqt_price('res_marg','na',r,allh,t) } ;
 
 revenue('oper_res',i,r,t)$valgen_irt(i,r,t) = sum{(ortype,v,h)$valgen(i,v,r,t),
-  OPRES.l(ortype,i,v,r,h,t) * hours(h) * reqt_price('oper_res',ortype,r,h,t) } ;
+  OPRES.l(s,ortype,i,v,r,h,t) * hours(h) * reqt_price('oper_res',ortype,r,h,t) } ;
 
 revenue('rps',i,r,t)$valgen_irt(i,r,t) =
   sum{(v,h,RPSCat)$[valgen(i,v,r,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
@@ -1094,7 +1094,7 @@ valnew('val_resmarg','benchmark','sys',t)$[(Sw_PRM_CapCredit=1)$tmodel_new(t)] =
     sum{(r,ccseason), reqt_price('res_marg','na',r,ccseason,t) * reqt_quant('res_marg','na',r,ccseason,t)} ;
 
 valnew('val_opres',i,r,t)$[(not (wind(i) or pv(i) or pvb(i)))$valnew('MW',i,r,t)] = sum{(ortype,v,h)$valinv(i,v,r,t),
-  OPRES.l(ortype,i,v,r,h,t) * hours(h) * reqt_price('oper_res',ortype,r,h,t) } * valnew('inv_cap_ratio',i,r,t) ;
+  OPRES.l(s,ortype,i,v,r,h,t) * hours(h) * reqt_price('oper_res',ortype,r,h,t) } * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_opres',i,r,t)$[wind(i)$valnew('MW',i,r,t)] =
     -1 * sum{(ortype,v,h)$[Sw_OpRes$opres_model(ortype)$opres_h(h)$valinv(i,v,r,t)],
     orperc(ortype,"or_wind") * GEN.l(s,i,v,r,h,t) * hours(h) * reqt_price('oper_res',ortype,r,h,t) }
@@ -1104,7 +1104,7 @@ valnew('val_opres',i,r,t)$[(pv(i) or pvb(i))$valnew('MW',i,r,t)] =
     orperc(ortype,"or_pv") * CAP.l(i,v,r,t) / ilr(i) * hours(h) * reqt_price('oper_res',ortype,r,h,t) }
     * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_opres_sys',i,r,t)$[(not (wind(i) or pv(i) or pvb(i)))$valnew('MW',i,r,t)] = sum{(ortype,v,h)$valinv(i,v,r,t),
-  OPRES.l(ortype,i,v,r,h,t) * hours(h) * reqt_price_sys('oper_res',ortype,h,t) } * valnew('inv_cap_ratio',i,r,t) ;
+  OPRES.l(s,ortype,i,v,r,h,t) * hours(h) * reqt_price_sys('oper_res',ortype,h,t) } * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_opres_sys',i,r,t)$[wind(i)$valnew('MW',i,r,t)] =
     -1 * sum{(ortype,v,h)$[Sw_OpRes$opres_model(ortype)$opres_h(h)$valinv(i,v,r,t)],
     orperc(ortype,"or_wind") * GEN.l(s,i,v,r,h,t) * hours(h) * reqt_price_sys('oper_res',ortype,h,t) }
@@ -1151,7 +1151,7 @@ emit_r(etype,e,r,t)$tmodel_new(t) =
 * The "production" of negative CO2 emissions via DAC is also included here
     + sum{(p,i,v,h)$[valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],
           hours(h) * prod_emit_rate(etype,e,i,t)
-          * PRODUCE.l(p,i,v,r,h,t)
+          * PRODUCE.l(s,p,i,v,r,h,t)
          }
 
 *[minus] co2 reduce from flexible CCS capture
@@ -1177,14 +1177,14 @@ emit_irt(etype,e,i,r,t)$[tmodel_new(t)$(not sameas(e,"CO2"))$valgen_irt(i,r,t)] 
 * Production-related emissions by tech and region
 emit_irt(etype,e,i,r,t)$[tmodel_new(t)$(not sameas(e,"CO2"))$sum{p, i_p(i,p)}] =
          sum{(p,v,h)$i_p(i,p),
-         hours(h) * prod_emit_rate(etype,e,i,t) * PRODUCE.l(p,i,v,r,h,t) } ;
+         hours(h) * prod_emit_rate(etype,e,i,t) * PRODUCE.l(s,p,i,v,r,h,t) } ;
 * CO2 generation emissions by tech and region
 emit_irt(etype,"CO2",i,r,t)$[tmodel_new(t)$valgen_irt(i,r,t)] = sum{(v,h)$[valgen(i,v,r,t)],
          hours(h) * emit_rate(etype,"CO2",i,v,r,t) * GEN.l(s,i,v,r,h,t) } ;
 * CO2 production-related emissions by tech and region
 emit_irt(etype,"CO2",i,r,t)$[tmodel_new(t)$sum{p, i_p(i,p)}] =
          sum{(p,v,h)$i_p(i,p),
-         hours(h) * prod_emit_rate(etype,"CO2",i,t) * PRODUCE.l(p,i,v,r,h,t) } ;
+         hours(h) * prod_emit_rate(etype,"CO2",i,t) * PRODUCE.l(s,p,i,v,r,h,t) } ;
 * Apply global warming potential to include other GHGs in CO2(e)
 emit_irt(etype,"CO2e",i,r,t)$tmodel_new(t) = sum{e,emit_irt(etype,e,i,r,t) * gwp(e)} ;
 
@@ -1200,10 +1200,10 @@ emit_captured_irt(i,r,t)$tmodel_new(t) =
 
 emit_captured_irt("smr_ccs",r,t)$tmodel_new(t) =
   sum{(v,h,p)$[valcap("smr_ccs",v,r,t)$i_p("smr_ccs",p)], smr_capture_rate * hours(h)
-    * smr_co2_intensity * PRODUCE.l(p,"smr_ccs",v,r,h,t) } ;
+    * smr_co2_intensity * PRODUCE.l(s,p,"smr_ccs",v,r,h,t) } ;
 
 emit_captured_irt(i,r,t)$[tmodel_new(t)$dac(i)] =
-  sum{(v,h,p)$[dac(i)$valcap(i,v,r,t)$i_p(i,p)], hours(h) * PRODUCE.l(p,i,v,r,h,t)} ;
+  sum{(v,h,p)$[dac(i)$valcap(i,v,r,t)$i_p(i,p)], hours(h) * PRODUCE.l(s,p,i,v,r,h,t)} ;
 
 emit_captured_nat(i,t)$tmodel_new(t) = sum{r, emit_captured_irt(i,r,t) } ;
 
@@ -1345,7 +1345,7 @@ systemcost_techba("op_vom_costs",i,r,t)$tmodel_new(t)  =
 
 * include production costs from production technologies
               + sum{(p,v,h)$[(h2(i) or dac(i))$valcap(i,v,r,t)$i_p(i,p)],
-                    hours(h) * cost_prod(i,v,r,t) * PRODUCE.l(p,i,v,r,h,t) }$Sw_Prod
+                    hours(h) * cost_prod(i,v,r,t) * PRODUCE.l(s,p,i,v,r,h,t) }$Sw_Prod
 ;
 
 systemcost_techba("op_consume_vom",i,r,t)$[tmodel_new(t)$consume(i)] = systemcost_techba("op_vom_costs",i,r,t)$tmodel_new(t) ;
@@ -1369,7 +1369,7 @@ systemcost_techba("op_fom_costs",i,r,t)$[tmodel_new(t)$consume(i)] = 0 ;
 systemcost_techba("op_operating_reserve_costs",i,r,t)$tmodel_new(t)  =
 *operating reserve costs
               + sum{(v,h,ortype)$[valgen(i,v,r,t)$cost_opres(i,ortype,t)],
-                   hours(h) * cost_opres(i,ortype,t) * OpRes.l(ortype,i,v,r,h,t) }
+                   hours(h) * cost_opres(i,ortype,t) * OPRES.l(s,ortype,i,v,r,h,t) }
 ;
 
 systemcost_techba("op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
@@ -1388,7 +1388,7 @@ systemcost_techba("op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
               + sum{cendiv$r_cendiv(r,cendiv), gascost_cendiv(cendiv,t) * gasshare_techba(i,r,cendiv,t) }
 
 *cost biofuel consumption by the tech in the BA
-              + bioshare_techba(i,r,t) * sum{bioclass, BIOUSED.l(bioclass,r,t) *
+              + bioshare_techba(i,r,t) * sum{bioclass, BIOUSED.l(s,bioclass,r,t) *
                         (sum{usda_region$r_usda(r,usda_region), biosupply(usda_region, bioclass, "price") } + bio_transport_cost) }
 
 ;
@@ -1402,7 +1402,7 @@ systemcost_techba("op_emissions_taxes",i,r,t)$tmodel_new(t)  =
 systemcost_techba("op_h2_fuel_costs",i,r,t)$tmodel_new(t)  =
 * H2 production costs 
               sum{(v,h,p)$[h2(i)$valcap(i,v,r,t)],
-                  hours(h) * h2_fuel_cost(i,v,r,t) * PRODUCE.l(p,i,v,r,h,t) }
+                  hours(h) * h2_fuel_cost(i,v,r,t) * PRODUCE.l(s,p,i,v,r,h,t) }
 ;
 
 systemcost_techba("op_h2combustion_fuel_costs",i,r,t)$[tmodel_new(t)$h2_gen(i)$Sw_H2]  =
@@ -1424,7 +1424,7 @@ systemcost_techba("op_h2combustion_fuel_costs",i,r,t)$[tmodel_new(t)$h2_gen(i)$S
 systemcost_techba("op_h2_vom",i,r,t)$tmodel_new(t)  =
 * vom costs from H2 production
               sum{(v,h,p)$[h2(i)$valcap(i,v,r,t)],
-                  hours(h) * h2_vom(i,t) * PRODUCE.l(p,i,v,r,h,t) }
+                  hours(h) * h2_vom(i,t) * PRODUCE.l(s,p,i,v,r,h,t) }
 ;
 
 * transport and storage cost of captured CO2
@@ -1437,7 +1437,7 @@ systemcost_techba("op_co2_incentive_negative",i,r,t)$tmodel_new(t) =
                               (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * capture_rate("CO2",i,v,r,t) * GEN.l(s,i,v,r,h,t)}
 
               - sum{(p,v,h)$[dac(i)$valcap(i,v,r,t)],
-                              (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * PRODUCE.l(p,i,v,r,h,t)}
+                              (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * PRODUCE.l(s,p,i,v,r,h,t)}
 ;
 
 * PTC for generation
@@ -1450,7 +1450,7 @@ systemcost_techba('op_ptc_payments_negative',i,r,t)$tmodel_new(t) =
 * Note: all electrolyzers which produce H2 are assuming to be receiving hydrogen production credits during eligible years  
 systemcost_techba('op_h2_ptc_payments_negative','electrolyzer',r,t)$[tmodel_new(t)] =
       - (sum{(p,v,h)$[valcap("electrolyzer",v,r,t)$(sameas(p,"H2"))$h2_ptc("electrolyzer",v,r,t)$h_rep(h)],
-          hours(h) * PRODUCE.l(p,"electrolyzer",v,r,h,t) *
+          hours(h) * PRODUCE.l(s,p,"electrolyzer",v,r,h,t) *
             (crf(t) / crf_h2_incentive(t)) * h2_ptc("electrolyzer",v,r,t) * 1e3} )
             $[Sw_H2_PTC$Sw_H2$h2_ptc_years(t)$(yeart(t) >= h2_demand_start)]
 ;
@@ -1458,7 +1458,7 @@ systemcost_techba('op_h2_ptc_payments_negative','electrolyzer',r,t)$[tmodel_new(
 * Startup/ramping costs
 systemcost_techba('op_startcost',i,r,t)$[tmodel_new(t)$Sw_StartCost$startcost(i)] =
     sum{(h,hh)$[numhours_nexth(h,hh)$valgen_irt(i,r,t)],
-        startcost(i) * numhours_nexth(h,hh) * RAMPUP.l(i,r,h,hh,t) }
+        startcost(i) * numhours_nexth(h,hh) * RAMPUP.l(s,i,r,h,hh,t) }
 ;
 
 
@@ -1582,7 +1582,7 @@ systemcost_ba("inv_h2_storage",r,t)$[tmodel_new(t)$(Sw_H2 = 2)] =
 *===============
 
 systemcost_ba("op_co2_storage",r,t)$[tmodel_new(t)$Sw_CO2_Detail] =
-              + sum{(h,cs)$r_cs(r,cs), hours(h) * CO2_STORED.l(r,cs,h,t) * cost_co2_stor_bec(cs) }
+              + sum{(h,cs)$r_cs(r,cs), hours(h) * CO2_STORED.l(s,r,cs,h,t) * cost_co2_stor_bec(cs) }
 ;
 
 * here following same logic of transmission pipelines
@@ -1618,7 +1618,7 @@ systemcost_ba("op_h2_transport",r,t)$[tmodel_new(t)$(Sw_H2 = 2)] =
 systemcost_ba("op_h2_transport_intrareg",r,t)$[tmodel_new(t)$Sw_H2] = 
 * H2 transport and storage intra-regional investment costs
     sum{(i,v,h)$[valcap(i,v,r,t)$newv(v)$i_p(i,"H2")], 
-        hours(h) * PRODUCE.l("H2",i,v,r,h,t) * (Sw_H2_IntraReg_Transport * 1e3) }
+        hours(h) * PRODUCE.l(s,"H2",i,v,r,h,t) * (Sw_H2_IntraReg_Transport * 1e3) }
 ;
 
 systemcost_ba("op_h2_storage",r,t)$[tmodel_new(t)$(Sw_H2 = 2)] = 
@@ -1645,7 +1645,7 @@ systemcost_ba("op_co2_incentive_negative",r,t)$tmodel_new(t)  =
                               (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * capture_rate("CO2",i,v,r,t) * GEN.l(s,i,v,r,h,t)}
 
               - sum{(i,p,v,h)$[dac(i)$valcap(i,v,r,t)],
-                              (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * PRODUCE.l(p,i,v,r,h,t)}
+                              (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * PRODUCE.l(s,p,i,v,r,h,t)}
 ;
 
 
@@ -1713,7 +1713,7 @@ error_check('z') = (
         + pvf_onm(t) * sum{(r,h), (DROPPED.l(r,h,t) + EXCESS.l(r,h,t)) * hours(h) * cost_dropped_load }
 * Retail adder for electricity consuming technologies
         + pvf_onm(t) * sum{(p,i,v,r,h)$[valcap(i,v,r,t)$i_p(i,p)$h_rep(h)$Sw_RetailAdder$Sw_Prod],
-              hours(h) * Sw_RetailAdder * PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
+              hours(h) * Sw_RetailAdder * PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
 * Account for difference in fixed O&M between model (CAP.l(i,v,r,t))
 * and outputs (cap_ivrt(i,v,r,t) * ilr(i)) for techs with more than one newv
         + pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$((not one_newv(i)) or retiretech(i,v,r,t))],
@@ -1776,7 +1776,7 @@ error_check("gen") = sum{(i,v,r,allh,t)$[not valgen(i,v,r,t)], GEN.l(s,i,v,r,all
 error_gen(i,v,r,allh,t)$[not valgen(i,v,r,t)] = GEN.l(s,i,v,r,allh,t) ;
 error_check("cap") = sum{(i,v,r,t)$[not valcap(i,v,r,t)], CAP.l(i,v,r,t) } ;
 error_check("RPS") = sum{(RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(RPSCat,i,st,ast,t) } ;
-error_check("OpRes") = sum{(ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(ortype,i,v,r,h,t) } ;
+error_check("OpRes") = sum{(ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(s,ortype,i,v,r,h,t) } ;
 error_check("m_rsc_dat") = sum{(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap"), m_rsc_dat_init(r,i,rscbin) - m_rsc_dat(r,i,rscbin,"cap") } ;
 
 * Check to make sure there's no dropped/excess load in or after Sw_StartMarkets
@@ -1794,13 +1794,13 @@ import_h_rep(r,h,t)
     $[tmodel_new(t)] =
 * Imports with losses
     sum{(rr,trtype)$routes(rr,r,trtype,t),
-        FLOW.l(rr,r,h,t,trtype) * (1 - tranloss(rr,r,trtype)) }
+        FLOW.l(s,rr,r,h,t,trtype) * (1 - tranloss(rr,r,trtype)) }
 ;
 
 export_h_rep(r,h,t)
     $[tmodel_new(t)] =
 * Exports
-    sum{(rr,trtype)$routes(r,rr,trtype,t), FLOW.l(r,rr,h,t,trtype) }
+    sum{(rr,trtype)$routes(r,rr,trtype,t), FLOW.l(s,r,rr,h,t,trtype) }
 ;
 
 import_ann_rep(r,t)$[tmodel_new(t)] = sum{h, import_h_rep(r,h,t) * hours(h) } ;
@@ -1811,18 +1811,18 @@ net_import_h_rep(r,h,t)
     $[tmodel_new(t)] =
 * Imports with losses
     sum{(rr,trtype)$routes(rr,r,trtype,t),
-        FLOW.l(rr,r,h,t,trtype) * (1 - tranloss(rr,r,trtype)) }
+        FLOW.l(s,rr,r,h,t,trtype) * (1 - tranloss(rr,r,trtype)) }
 * Exports
-    - sum{(rr,trtype)$routes(r,rr,trtype,t), FLOW.l(r,rr,h,t,trtype) }
+    - sum{(rr,trtype)$routes(r,rr,trtype,t), FLOW.l(s,r,rr,h,t,trtype) }
 ;
 
 net_import_h_stress(r,allh,t)
     $[tmodel_new(t)$h_stress_t(allh,t)] =
 * Imports with losses
     sum{(rr,trtype)$routes(rr,r,trtype,t),
-        FLOW.l(rr,r,allh,t,trtype) * (1 - tranloss(rr,r,trtype)) }
+        FLOW.l(s,rr,r,allh,t,trtype) * (1 - tranloss(rr,r,trtype)) }
 * Exports
-    - sum{(rr,trtype)$routes(r,rr,trtype,t), FLOW.l(r,rr,allh,t,trtype) }
+    - sum{(rr,trtype)$routes(r,rr,trtype,t), FLOW.l(s,r,rr,allh,t,trtype) }
 ;
 
 net_import_ann_rep(r,t)
@@ -1845,11 +1845,11 @@ poi_capacity(r,t)$tmodel_new(t) =
 *==========================
 
 expenditure_flow('load',r,rr,t)$[tmodel_new(t)$sum{trtype, routes(r,rr,trtype,t) }] =
-  sum{h, hours(h) * reqt_price('load','na',r,h,t) * sum{trtype, FLOW.l(r,rr,h,t,trtype) } } ;
+  sum{h, hours(h) * reqt_price('load','na',r,h,t) * sum{trtype, FLOW.l(s,r,rr,h,t,trtype) } } ;
 expenditure_flow('res_marg_ann',r,rr,t)$[tmodel_new(t)$Sw_PRM_CapCredit$sum{trtype, routes(r,rr,trtype,t) }] =
   sum{ccseason, reqt_price('res_marg','na',r,ccseason,t) * sum{trtype, captrade(r,rr,trtype,ccseason,t) } } ;
 expenditure_flow('res_marg_ann',r,rr,t)$[tmodel_new(t)$(Sw_PRM_CapCredit=0)$routes_prm(r,rr)] =
-  sum{allh$h_stress_t(allh,t), reqt_price('res_marg','na',r,allh,t) * sum{trtype, FLOW.l(r,rr,allh,t,trtype) } } ;
+  sum{allh$h_stress_t(allh,t), reqt_price('res_marg','na',r,allh,t) * sum{trtype, FLOW.l(s,r,rr,allh,t,trtype) } } ;
 expenditure_flow('oper_res',r,rr,t)$[tmodel_new(t)$sum{trtype, routes(r,rr,trtype,t) }] =
   sum{(h,ortype), hours(h) * reqt_price('oper_res',ortype,r,h,t) * OPRES_FLOW.l(ortype,r,rr,h,t) } ;
 *unlike for the three services above, use the destination price rather than the sending price for calculating RPS expenditure flows
@@ -1883,7 +1883,7 @@ loadsite_op(r,h,t)$[(Sw_LoadSiteCF=1)$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 * "--MW-- additional load from production activities"
 prod_load(i,r,h,t)$[tmodel_new(t)$Sw_Prod$consume(i)] =
   sum{(p,v)$[valcap(i,v,r,t)$i_p(i,p)],
-      PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) } ;
+      PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) } ;
 
 * "--MWh/year-- additional load from production activities"
 prod_load_ann(i,r,t)$[tmodel_new(t)$Sw_Prod] =
@@ -1896,7 +1896,7 @@ prod_cap(i,v,r,t)$[consume(i)$valcap(i,v,r,t)$Sw_Prod] =
 
 *"--metric tons/hour-- production activities by technology, BA, and timeslice"
 prod_produce(i,r,h,t)$[valcap_irt(i,r,t)$Sw_Prod$consume(i)$tmodel_new(t)] =
-  sum{(p,v)$[i_p(i,p)$valcap(i,v,r,t)], PRODUCE.l(p,i,v,r,h,t) } ;
+  sum{(p,v)$[i_p(i,p)$valcap(i,v,r,t)], PRODUCE.l(s,p,i,v,r,h,t) } ;
 
 *"--metric tons/year-- annual production by technology and BA"
 prod_produce_ann(i,r,t)$[consume(i)$tmodel_new(t)$Sw_Prod] =
@@ -1929,7 +1929,7 @@ prod_syscosts(sys_costs,i,r,t)$[tmodel_new(t)$consume(i)$Sw_Prod] =
 
 prod_SMR_emit(e,r,t)$tmodel_new(t) =
   sum{(p,i,v,h)$[valcap(i,v,r,t)$smr(i)$i_p(i,p)],
-      prod_emit_rate("process",e,i,t) * hours(h) * PRODUCE.l(p,i,v,r,h,t) } ;
+      prod_emit_rate("process",e,i,t) * hours(h) * PRODUCE.l(s,p,i,v,r,h,t) } ;
 
 * calculate exogenous H2 supply and H2-CT/CC consumption
 h2_demand_by_sector("cross-sector",t) = sum{p, h2_exogenous_demand(p,t) } ;
@@ -1975,7 +1975,7 @@ h2_ptc_marginal_region_hour(h2ptcreg,h,t)$[tmodel_new(t)$Sw_H2_PTC] =
 
 load_cat("end_use",r,t)$tmodel_new(t) = sum{h, hours(h) * load_exog(r,h,t) * (1.0 - distloss) } ;
 load_cat("dist_loss",r,t)$tmodel_new(t)  = sum{h, hours(h) * load_exog(r,h,t) * distloss } ;
-load_cat("trans_loss",r,t)$tmodel_new(t) = sum{(rr,h,trtype)$routes(r,rr,trtype,t), (tranloss(r,rr,trtype) * FLOW.l(r,rr,h,t,trtype) * hours(h)) } ;
+load_cat("trans_loss",r,t)$tmodel_new(t) = sum{(rr,h,trtype)$routes(r,rr,trtype,t), (tranloss(r,rr,trtype) * FLOW.l(s,r,rr,h,t,trtype) * hours(h)) } ;
 load_cat("stor_charge",r,t)$tmodel_new(t) = sum{(i,v), stor_inout(i,v,r,t,"in") } ;
 load_cat("h2_prod",r,t)$tmodel_new(t) = sum{i$h2(i), prod_load_ann(i,r,t) } ;
 load_cat("h2_network",r,t)$tmodel_new(t) = 
