@@ -159,7 +159,7 @@ for case in runs_restart:
             f.writelines(line + '\n')
 
 # Check if we are going to run this in parallel or not
-hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
+hpc = reeds.slurm.check_slurm()
 if hpc and len(runs_restart) > 1:
     # On HPC with multiple cases 
     cases_per_node = int(input('Number of simultaneous runs per node [integer]: '))
