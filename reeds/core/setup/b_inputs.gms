@@ -946,7 +946,8 @@ set tmodel(t) "years to include in the model",
     tfix(t) "years to fix variables over when summing over previous years",
     tprev(t,tt) "previous modeled tt from year t",
     stfeas(st) "states to include in the model",
-    tsolved(t) "years that have solved" ;
+    tsolved(t) "years that have solved",
+    tfinito_all(t) "years to run with linkage to FINITO" ;
 
 *following parameters get re-defined when the solve years have been declared
 parameter mindiff(t) "minimum difference between t and all other tt that are in tmodel(t)" ;
@@ -959,7 +960,7 @@ tfix(t) = no ;
 stfeas(st) = no ;
 tprev(t,tt) = no ;
 tsolved(t) = no ;
-
+tfinito_all(t) = no ;
 
 *==============================
 * Year specification
@@ -973,6 +974,7 @@ tlast(t)$[ord(t) = smax{tt$tmodel_new(tt), ord(tt) }] = yes ;
 tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(tt.val<t.val)] = yes ;
 mindiff(t)$tmodel_new(t) = smin{tt$tprev(t,tt), t.val-tt.val} ;
 tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(t.val-tt.val<>mindiff(t))] = no ;
+
 
 * In order to fill all necessary dimensions of upgrade techs parameters, we require
 * Sw_UpgradeYear in ban(i) to be a modeled year and thus we compute as either
