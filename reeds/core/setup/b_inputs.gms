@@ -4168,8 +4168,8 @@ prod_emit_rate("process",e,i,t)
 
 parameter
     emit_rate(etype,eall,i,v,r,t) "--metric tons per MWh-- emissions rate"
-    emit_r_tc(r,t)  "--metric tons-- CO2 emissions, regional"
-    emit_nat_tc(t)  "--metric tons-- CO2 emissions, national"
+    emit_r_tc(s,r,t)  "--metric tons-- CO2 emissions, regional"
+    emit_nat_tc(s,t)  "--metric tons-- CO2 emissions, national"
 ;
 
 emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,e)$valcap(i,v,r,t)]
@@ -4216,11 +4216,11 @@ capture_rate(e,i,v,r,t)$[upgrade(i)$capture_rate_fuel(i,e)] = round(heat_rate(i,
 
 * Regional emissions rate
 parameter
-    co2_emit_rate_r(r,t) "--metric tons per MWh-- CO2 emissions rate by ReEDS region, for use in state carbon caps"
-    co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t) "--metric tons per MWh-- CO2 regional emissions rate, for use in state carbon caps"
+    co2_emit_rate_r(s,r,t) "--metric tons per MWh-- CO2 emissions rate by ReEDS region, for use in state carbon caps"
+    co2_emit_rate_regional(s,%GSw_StateCO2ImportLevel%,t) "--metric tons per MWh-- CO2 regional emissions rate, for use in state carbon caps"
 ;
-co2_emit_rate_r(r,t) = 0 ;
-co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t) = 0 ;
+co2_emit_rate_r(s,r,t) = 0 ;
+co2_emit_rate_regional(s,%GSw_StateCO2ImportLevel%,t) = 0 ;
 
 * ===========================================================================
 * Regional emissions rate limit (currently unused)

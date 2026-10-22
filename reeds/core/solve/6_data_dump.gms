@@ -56,9 +56,9 @@ energy_price(r,allh)               "--2004$/MWh-- energy price from the previous
 flex_load_opt(r,allh)              "--MW-- model results for optimizing flexible load"
 flex_load(r,allh)                  "--MW-- total exogenously defined flexible load"
 fuel_price_filt(i,r)               "--$/mmBTU-- fuel prices filtered for the previous solve year and existing capacity"
-gen_h_stress_filt(i,r,allh,t)      "--MW-- generation by stress timeslice with charge and production load as negative generation"
+gen_h_stress_filt(s,i,r,allh,t)      "--MW-- generation by stress timeslice with charge and production load as negative generation"
 heat_rate_filt(i,v,r)              "--MMBtu/MWh-- heat rate"
-h2_usage_regional(r,allh,t)        "--metric tons-- H2 usage by region"
+h2_usage_regional(s,r,allh,t)        "--metric tons-- H2 usage by region"
 inv_cond_filt(i,v,t)               "--set-- vintage-year mapping for investments by technology"
 inv_ivrt(i,v,r,t)                  "--MW-- investments in power generation capacity"
 inv_energy_ivrt(i,v,r,t)           "--MWh-- investments in energy generation capacity"
@@ -138,7 +138,7 @@ ret(i,v,r)$valcap_ivr(i,v,r) = sum{t, ret_ivrt(i,v,r,t) } ;
 
 cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{t$tnext(t), m_capacity_exog(i,v,r,t) } ;
 
-gen_h_stress_filt(i,r,allh,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
+gen_h_stress_filt(s,i,r,allh,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   sum{v$valgen(i,v,r,t), GEN.l(s,i,v,r,allh,t)}
 ;
 *============================
@@ -153,7 +153,7 @@ fuel_price_filt(i,r)$cap_exist_ir(i,r) = sum{t$tcur(t), fuel_price(i,r,t) } ;
 * always be a positive value here since if an H2-CT/CC is built it consumes hydrogen 
 * the equation from which we extract the marginal depends on whether
 * we have the national (Sw_H2 = 1) or regional (Sw_H2 = 2) constraint
-h2_usage_regional(r,h,t)$tcur(t) =
+h2_usage_regional(s,r,h,t)$tcur(t) =
     hours(h) * ( 
         h2_exogenous_demand_regional(r,'h2',h,t)
         + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
@@ -164,11 +164,11 @@ h2_usage_regional(r,h,t)$tcur(t) =
 fuel_price_filt(i,r)$[Sw_H2$h2_gen(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
     sum{t$tcur(t),
         (1 / cost_scale) * (1 / pvf_onm(t)) * h2_combustion_intensity * (
-            eq_h2_demand.m('h2',t)$[Sw_H2=1]
+            eq_h2_demand.m(s,'h2',t)$[Sw_H2=1]
 * regional demand is now by hour, so calculate annual price as the weighted average of demand across hours
-            + (sum{h, eq_h2_demand_regional.m(r,h,t) / hours(h) * h2_usage_regional(r,h,t) }
-               / sum{h, h2_usage_regional(r,h,t) }
-            )$[(Sw_H2=2)$(sum{h, h2_usage_regional(r,h,t) })]
+            + (sum{h, eq_h2_demand_regional.m(s,r,h,t) / hours(h) * h2_usage_regional(s,r,h,t) }
+               / sum{h, h2_usage_regional(s,r,h,t) }
+            )$[(Sw_H2=2)$(sum{h, h2_usage_regional(s,r,h,t) })]
         )
     }
 ;

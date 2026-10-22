@@ -14,14 +14,14 @@ if(Sw_RemoveSmallNumbers = 1,
 );
     
 *load variable
-LOAD.fx(r,h,tfix) = LOAD.l(r,h,tfix) ;
+LOAD.fx(s,r,h,tfix) = LOAD.l(s,r,h,tfix) ;
 FLEX.fx(flex_type,r,h,tfix)$Sw_EFS_flex  = FLEX.l(flex_type,r,h,tfix) ;
 *     PEAK_FLEX.fx(r,ccseason,tfix)$Sw_EFS_flex = PEAK_FLEX.l(r,ccseason,tfix) ;
 DROPPED.fx(r,h,tfix)$[(yeart(tfix)<Sw_StartMarkets)] = DROPPED.l(r,h,tfix) ;
 EXCESS.fx(r,h,tfix)$[(yeart(tfix)<Sw_StartMarkets)] = EXCESS.l(r,h,tfix) ;
 CAP_LOADSITE.fx(r,tfix)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,tfix) ;
 INV_LOADSITE.fx(r,tfix)$[Sw_LoadSiteCF$val_loadsite(r)] = INV_LOADSITE.l(r,tfix) ;
-OP_LOADSITE.fx(r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_LOADSITE.l(r,h,tfix) ;
+OP_LOADSITE.fx(s,r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_LOADSITE.l(s,r,h,tfix) ;
 
 * capacity and investment variables
 CAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)] = CAP.l(i,v,r,tfix) ;
@@ -93,8 +93,8 @@ INVTRAN.fx(r,rr,trtype,tfix)$routes_inv(r,rr,trtype,tfix) = INVTRAN.l(r,rr,trtyp
 INVTRAN_AC.fx(r,rr,tscbin,tfix)$routes_inv(r,rr,"AC",tfix) = INVTRAN_AC.l(r,rr,tscbin,tfix) ;
 INV_CONVERTER.fx(r,tfix)$val_converter(r,tfix) = INV_CONVERTER.l(r,tfix) ;
 CAP_CONVERTER.fx(r,tfix)$val_converter(r,tfix) = CAP_CONVERTER.l(r,tfix) ;
-CONVERSION.fx(r,h,intype,outtype,tfix)$Sw_VSC = CONVERSION.l(r,h,intype,outtype,tfix) ;
-CONVERSION_PRM.fx(r,ccseason,intype,outtype,tfix)$Sw_VSC = CONVERSION_PRM.l(r,ccseason,intype,outtype,tfix) ;
+CONVERSION.fx(s,r,h,intype,outtype,tfix)$Sw_VSC = CONVERSION.l(s,r,h,intype,outtype,tfix) ;
+CONVERSION_PRM.fx(s,r,ccseason,intype,outtype,tfix)$Sw_VSC = CONVERSION_PRM.l(s,r,ccseason,intype,outtype,tfix) ;
 CAP_SPUR.fx(x,tfix)$[Sw_SpurScen$xfeas(x)] = CAP_SPUR.l(x,tfix) ;
 INV_SPUR.fx(x,tfix)$[Sw_SpurScen$xfeas(x)] = INV_SPUR.l(x,tfix) ;
 INV_POI.fx(r,tfix)$Sw_TransIntraCost = INV_POI.l(r,tfix) ;
@@ -102,19 +102,19 @@ TRAN_CAPEX_BINS.fx(r,rr,tscbin,tfix)$[routes_inv(r,rr,"AC",tfix)$tsc_binwidth(r,
 
 * water climate variables
 WATCAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$Sw_WaterMain$Sw_WaterCapacity] = WATCAP.l(i,v,r,tfix) ;
-WAT.fx(i,v,w,r,h,tfix)$[i_water(i)$valgen(i,v,r,tfix)$Sw_WaterMain] = WAT.l(i,v,w,r,h,tfix) ;
+WAT.fx(s,i,v,w,r,h,tfix)$[i_water(i)$valgen(i,v,r,tfix)$Sw_WaterMain] = WAT.l(s,i,v,w,r,h,tfix) ;
 WATER_CAPACITY_LIMIT_SLACK.fx(wst,r,tfix)$[Sw_WaterMain$Sw_WaterCapacity] = WATER_CAPACITY_LIMIT_SLACK.l(wst,r,tfix) ;
 
 *H2 and DAC production variables
 PRODUCE.fx(s,p,i,v,r,h,tfix)$[consume(i)$i_p(i,p)$valcap(i,v,r,tfix)$h_rep(h)$Sw_Prod] = PRODUCE.l(s,p,i,v,r,h,tfix) ;
-H2_FLOW.fx(r,rr,h,tfix)$[h2_routes(r,rr)$(Sw_H2 = 2)] = H2_FLOW.l(r,rr,h,tfix) ;
+H2_FLOW.fx(s,r,rr,h,tfix)$[h2_routes(r,rr)$(Sw_H2 = 2)] = H2_FLOW.l(s,r,rr,h,tfix) ;
 H2_TRANSPORT_INV.fx(r,rr,tfix)$[h2_routes(r,rr)$(Sw_H2 = 2)] = H2_TRANSPORT_INV.l(r,rr,tfix) ;
 H2_STOR_INV.fx(h2_stor,r,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_INV.l(h2_stor,r,tfix) ;
 H2_STOR_CAP.fx(h2_stor,r,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_CAP.l(h2_stor,r,tfix) ;
-H2_STOR_IN.fx(h2_stor,r,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_IN.l(h2_stor,r,h,tfix) ;
-H2_STOR_OUT.fx(h2_stor,r,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_OUT.l(h2_stor,r,h,tfix) ;
-H2_STOR_LEVEL.fx(h2_stor,r,actualszn,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)$(Sw_H2_StorTimestep=2)] = H2_STOR_LEVEL.l(h2_stor,r,actualszn,h,tfix) ;
-H2_STOR_LEVEL_SZN.fx(h2_stor,r,actualszn,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)$(Sw_H2_StorTimestep=1)] = H2_STOR_LEVEL_SZN.l(h2_stor,r,actualszn,tfix) ;
+H2_STOR_IN.fx(s,h2_stor,r,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_IN.l(s,h2_stor,r,h,tfix) ;
+H2_STOR_OUT.fx(s,h2_stor,r,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)] = H2_STOR_OUT.l(s,h2_stor,r,h,tfix) ;
+H2_STOR_LEVEL.fx(s,h2_stor,r,actualszn,h,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)$(Sw_H2_StorTimestep=2)] = H2_STOR_LEVEL.l(s,h2_stor,r,actualszn,h,tfix) ;
+H2_STOR_LEVEL_SZN.fx(s,h2_stor,r,actualszn,tfix)$[(h2_stor_r(h2_stor,r))$(Sw_H2=2)$(Sw_H2_StorTimestep=1)] = H2_STOR_LEVEL_SZN.l(s,h2_stor,r,actualszn,tfix) ;
 
 *CO2-related variables
 CO2_CAPTURED.fx(s,r,h,tfix)$Sw_CO2_Detail = CO2_CAPTURED.l(s,r,h,tfix) ;

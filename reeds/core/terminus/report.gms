@@ -798,7 +798,7 @@ losses_ann('storage',t)$tmodel_new(t) = sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_s
 losses_ann('trans',t)$tmodel_new(t) =
   sum{(rr,r,h,trtype)$routes(rr,r,trtype,t),
       (tranloss(rr,r,trtype) * FLOW.l(s,rr,r,h,t,trtype) * hours(h)) 
-      + ((CONVERSION.l(r,h,"AC","VSC",t) + CONVERSION.l(r,h,"VSC","AC",t))* (1 - converter_efficiency_vsc) * hours(h))$[val_converter(r,t)$Sw_VSC]
+      + ((CONVERSION.l(s,r,h,"AC","VSC",t) + CONVERSION.l(s,r,h,"VSC","AC",t))* (1 - converter_efficiency_vsc) * hours(h))$[val_converter(r,t)$Sw_VSC]
       } ;
 
 losses_ann('curt',t)$tmodel_new(t) =  sum{r, curt_ann(r,t) } ;
@@ -807,7 +807,7 @@ losses_ann('load',t)$tmodel_new(t) = sum{(r,h), LOAD.l(r,h,t) * hours(h) }  ;
 
 losses_tran_h(rr,r,h,trtype,t)$[routes(r,rr,trtype,t)$tmodel_new(t)]
     = tranloss(rr,r,trtype) * FLOW.l(s,rr,r,h,t,trtype) 
-    + ((CONVERSION.l(r,h,"AC","VSC",t) + CONVERSION.l(r,h,"VSC","AC",t))* (1 - converter_efficiency_vsc))$[val_converter(r,t)$Sw_VSC] ;
+    + ((CONVERSION.l(s,r,h,"AC","VSC",t) + CONVERSION.l(s,r,h,"VSC","AC",t))* (1 - converter_efficiency_vsc))$[val_converter(r,t)$Sw_VSC] ;
 
 *=========================
 * CAPACITY
@@ -1144,7 +1144,7 @@ emit_r(etype,e,r,t)$tmodel_new(t) =
     sum{(i,v,h)$[valgen(i,v,r,t)$h_rep(h)],
         hours(h) * emit_rate(etype,e,i,v,r,t)
         * (GEN.l(s,i,v,r,h,t)
-           + CCSFLEX_POW.l(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
+           + CCSFLEX_POW.l(s,i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
        }
 
 * Plus emissions produced via production activities (SMR, SMR-CCS, DAC)
@@ -1159,11 +1159,11 @@ emit_r(etype,e,r,t)$tmodel_new(t) =
 
 * Flexible CCS - bypass
     - (sum{(i,v,h)$[valgen(i,v,r,t)$ccsflex_byp(i)$h_rep(h)],
-        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POW.l(i,v,r,h,t) })$[sameas(e,"co2")]$Sw_CCSFLEX_BYP
+        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POW.l(s,i,v,r,h,t) })$[sameas(e,"co2")]$Sw_CCSFLEX_BYP
 
 * Flexible CCS - storage
     - (sum{(i,v,h)$[valgen(i,v,r,t)$ccsflex_sto(i)$h_rep(h)],
-        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POWREQ.l(i,v,r,h,t) })$[sameas(e,"co2")]$Sw_CCSFLEX_STO
+        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POWREQ.l(s,i,v,r,h,t) })$[sameas(e,"co2")]$Sw_CCSFLEX_STO
 ; 
 
 * Apply global warming potential to include CH4 and N2O in CO2(e)
@@ -1192,7 +1192,7 @@ emit_nat_tech(etype,eall,i,t) = sum{r, emit_irt(etype,eall,i,r,t)} ;
 
 emit_weighted(etype,eall) = sum{t$tmodel(t), emit_nat(etype,eall,t) * pvf_onm(t) } ;
 
-emit_rate_regional(r,t)$tmodel_new(t) = co2_emit_rate_r(r,t) ;
+emit_rate_regional(r,t)$tmodel_new(t) = co2_emit_rate_r(s,r,t) ;
 
 * captured CO2 emissions from CCS and DAC
 emit_captured_irt(i,r,t)$tmodel_new(t) =
@@ -1411,12 +1411,12 @@ systemcost_techba("op_h2combustion_fuel_costs",i,r,t)$[tmodel_new(t)$h2_gen(i)$S
 * when using national demand, calculate total annual demand and multiply by national average price
 * [MW] * [hours] * [MMBTU/MWh] * [metric tons/MMBTU] * [$/metric ton] = [$]
               * ( (sum{(v,h), GEN.l(s,i,v,r,h,t) * hours(h) * heat_rate(i,v,r,t) * h2_combustion_intensity  } 
-                    *  eq_h2_demand.m("H2",t) 
+                    *  eq_h2_demand.m(s,"H2",t) 
                   )$[Sw_H2 = 1]
 * when using regional demand by hour, apply price to each hour and then sum total costs
 * [MW] * [hours] * [MMBTU/MWh] * [metric tons/MMBTU] * [$/[metric tons/hour]] / [hours] = [$]
                 + (sum{(v,h), GEN.l(s,i,v,r,h,t) * hours(h) * heat_rate(i,v,r,t) * h2_combustion_intensity 
-                    *  eq_h2_demand_regional.m(r,h,t) / hours(h) }
+                    *  eq_h2_demand_regional.m(s,r,h,t) / hours(h) }
                   )$[Sw_H2 = 2] 
                 )
 ;
@@ -1907,10 +1907,10 @@ prod_produce_ann(i,r,t)$[consume(i)$tmodel_new(t)$Sw_Prod] =
 prod_h2_price(p,t)$[tmodel_new(t)$Sw_H2$sameas(p,"H2")] =
   (1 / cost_scale) * (1 / pvf_onm(t))
 * price when using national demand
-    * ( eq_h2_demand.m(p,t)$[Sw_H2=1] 
+    * ( eq_h2_demand.m(s,p,t)$[Sw_H2=1] 
 * price when using regional demand; varies by hour and region, so calculate annual price as the weighted average of demand
 * divide by hours to get from $/[metric tons/hour] to $/metric ton
-        + ( sum{(h,r), eq_h2_demand_regional.m(r,h,t) / hours(h) * h2_usage_regional(r,h,t) } 
+        + ( sum{(h,r), eq_h2_demand_regional.m(s,r,h,t) / hours(h) * h2_usage_regional(r,h,t) } 
             / sum{(h,r), h2_usage_regional(r,h,t) }
           )$[(Sw_H2=2)$(sum{(h,r), h2_usage_regional(r,h,t) })]
       )        
@@ -1942,7 +1942,7 @@ h2_demand_by_sector("electricity",t) = sum{(i,v,r,h)$[valgen(i,v,r,t)$h2_gen(i)]
 * [($·hour)/metric ton] / [hour] / [1000 kg/metric ton] = [$/kg]
 h2_price_h(r,h,t)$tmodel_new(t) =
     (1 / cost_scale) * (1 / pvf_onm(t))
-    * eq_h2_demand_regional.m(r,h,t)
+    * eq_h2_demand_regional.m(s,r,h,t)
     / hours(h) / 1000
 ;
 

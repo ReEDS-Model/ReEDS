@@ -49,7 +49,7 @@ positive variables
   STORAGE_IN_PLANT(s,i,v,r,allh,t)         "--MW-- hybrid plant storage charging in hour h that is charging from a coupled technology"
   STORAGE_IN_GRID(s,i,v,r,allh,t)          "--MW-- hybrid plant storage charging in hour h that is charging from the grid"
   AVAIL_SITE(x,allh,t)                   "--MW-- available generation from all resources at reV site x"
-  MINGEN(r,allszn,t)                     "--MW-- minimum generation level in each season"
+  MINGEN(s,r,allszn,t)                     "--MW-- minimum generation level in each season"
   STORAGE_IN(s,i,v,r,allh,t)               "--MW-- storage charging in hour h that is charging from a given source technology; not used for CSP-TES"
   STORAGE_LEVEL(s,i,v,r,allh,t)            "--MWh-- storage level in hour h"
   STORAGE_INTERDAY_LEVEL(s,i,v,r,allszn,t) "--MWh-- storage level at hour 0 of the partition"
@@ -57,7 +57,7 @@ positive variables
 
 * flexible CCS variables
   CCSFLEX_POW(s,i,v,r,allh,t)                "--avg MW-- average power consumed for CCS system"
-  CCSFLEX_POWREQ(i,v,r,allh,t)             "--avg MW-- average power requirement for CCS system"
+  CCSFLEX_POWREQ(s,i,v,r,allh,t)             "--avg MW-- average power requirement for CCS system"
   CCSFLEX_STO_STORAGE_LEVEL(s,i,v,r,allh,t)  "--varies-- level of process storage (e.g., chemical solvent) in the CCS system"
   CCSFLEX_STO_STORAGE_CAP(i,v,r,t)         "--varies-- capacity of process storage (e.g., chemical solvent) in the CCS system"
 
@@ -1288,7 +1288,7 @@ eq_mingen_lb(s,r,h,szn,t)$[h_szn(h,szn)$(yeart(t)>=this_year)
                         $tmodel(t)$Sw_Mingen]..
 
 *minimum generation level in a season
-    MINGEN(r,szn,t)
+    MINGEN(s,r,szn,t)
 
     =g=
 
@@ -1307,7 +1307,7 @@ eq_mingen_ub(s,r,h,szn,t)$[h_szn(h,szn)$(yeart(t)>=this_year)
     =g=
 
 *must be greater than the minimum generation level
-    MINGEN(r,szn,t)
+    MINGEN(s,r,szn,t)
 ;
 
 * ---------------------------------------------------------------------------
@@ -2395,7 +2395,7 @@ eq_emit_accounting(s,etype,e,r,t)$[emit_modeled(e,r,t)$tmodel(t)]..
 
 * Flexible CCS - storage
     - (sum{(i,v,h)$[valgen(i,v,r,t)$ccsflex_sto(i)$h_rep(h)],
-        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POWREQ(i,v,r,h,t) }) $[sameas(e,"co2")]$Sw_CCSFLEX_STO
+        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POWREQ(s,i,v,r,h,t) }) $[sameas(e,"co2")]$Sw_CCSFLEX_STO
 ;
 
 * ---------------------------------------------------------------------------
@@ -2433,7 +2433,7 @@ eq_state_cap(s,st,t)
 * set emissions intensity of imports to zero.
           $(not ((Sw_AnnualCap>0) and not emit_cap("CO2",t) and not emit_cap("CO2e",t)))],
           hours(h) * FLOW(s,rr,r,h,t,trtype)
-          * sum{tt$tprev(t,tt), co2_emit_rate_r(rr,tt) }
+          * sum{tt$tprev(t,tt), co2_emit_rate_r(s,rr,tt) }
     }
 ;
 
@@ -3921,7 +3921,7 @@ eq_ccsflex_sto_ccsenergy_limit_szn(s,i,v,r,szn,t)$[tmodel(t)$valgen(i,v,r,t)$ccs
 * ---------------------------------------------------------------------------
 
 eq_ccsflex_sto_ccsenergy_balance(s,i,v,r,szn,t)$[valgen(i,v,r,t)$ccsflex_sto(i)$tmodel(t)$szn_rep(szn)$Sw_CCSFLEX_STO$(Sw_CCSFLEX_STO_LEVEL=0)]..
-  sum{h$h_szn(h,szn), hours(h) * CCSFLEX_POWREQ (i,v,r,h,t) } =e= sum{h$h_szn(h,szn), hours(h) * CCSFLEX_POW(s,i,v,r,h,t) } ;
+  sum{h$h_szn(h,szn), hours(h) * CCSFLEX_POWREQ(s,i,v,r,h,t) } =e= sum{h$h_szn(h,szn), hours(h) * CCSFLEX_POW(s,i,v,r,h,t) } ;
 ;
 
 * ---------------------------------------------------------------------------
@@ -3938,7 +3938,7 @@ eq_ccsflex_sto_storage_level(s,i,v,r,h,t)$[valgen(i,v,r,t)$ccsflex_sto(i)$tmodel
     CCSFLEX_STO_STORAGE_LEVEL(s,i,v,r,h,t)
 
 *[plus] storage charging
-    + ccsflex_sto_storage_eff(i,t) * hours_daily(h) * CCSFLEX_POWREQ(i,v,r,h,t)
+    + ccsflex_sto_storage_eff(i,t) * hours_daily(h) * CCSFLEX_POWREQ(s,i,v,r,h,t)
 
 *[minus] storage discharge
 *exclude hybrid PV+battery because GEN refers to output from both the PV and the battery
