@@ -50,20 +50,20 @@ Include additional illustrative plots describing input data, methods, testing, a
   - postprocessing_tools.md: User/developer-facing description of scripts in postprocessing folder
   - README.md files: User/developer facing description of individual input folders
   -->
+- [ ] If switches have been added or modified in `cases.csv`, allowed values are specified in the "Choices" column or checked in `reeds/checks.py`
 - If input data added/modified:
   - [ ] Dollar year recorded and converted to 2004$ for GAMS
   - [ ] Timeseries are in Central Time
   - [ ] Units are specified
   - [ ] Preprocessing steps have been documented and committed to [ReEDS_Input_Processing](https://github.com/ReEDS-Model/ReEDS_Input_Processing)
   - [ ] New large data files handled with .h5 instead of .csv
+  - [ ] New .csv data files are rounded to a reasonable number of decimal places (≤2 for costs and capacity, ≤6 for lat/lon)
   - [ ] If new parameters are added to `d_objective.gms`, they are included in `objective_function_params.yaml` for completeness checking
   - [ ] If spatially resolved inputs are modified, the following visualizations for each file are included in the PR description (time-averaged if the inputs are time-resolved):
     - [ ] Map of absolute values before
     - [ ] Map of absolute values after
     - [ ] Map of differences: (after - before) or (after / before)
-  - If entries are added/removed/changed in the EIA-NEMS unit database:
-    - [ ] Changes have been committed to [ReEDS_Input_Processing](https://github.com/ReEDS-Model/ReEDS_Input_Processing)
-    - [ ] `hourlize/resource.py` was rerun to regenerate the existing/prescribed VRE capacity data
+  - [ ] If entries are added/removed/changed in the EIA-NEMS unit database, associated changes have been committed to [ReEDS_Input_Processing](https://github.com/ReEDS-Model/ReEDS_Input_Processing)
 - [ ] Code formatting standardized <!-- Coding conventions: https://reeds-model.github.io/ReEDS/developer_best_practices.html#coding-standards-and-conventions -->
 - [ ] Reusable functions used where possible instead of copy/pasted code
 
