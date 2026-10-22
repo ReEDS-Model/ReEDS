@@ -38,7 +38,7 @@ eq_MGA_Objective$Sw_MGA..
         $[tmodel(t)
         $valgen(i,v,r,t)
         $%GSw_MGA_SubObjective%(i)],
-        GEN(i,v,r,h,t) * hours(h)
+        GEN(s,i,v,r,h,t) * hours(h)
         * sum{i_subtech$i_subsets(i,i_subtech), mga_weights(r,i_subtech)}
     }
 ;
@@ -110,7 +110,7 @@ eq_MGA_Objective$Sw_MGA..
           $[tmodel(t)
           $valgen(i,v,r,t)],
 *         [MW] * [.] * [MWh/MW] * [job-years/MWh] = [job-years]
-          GEN(i,v,r,h,t) * pvf_onm(t) * hours(h) * employment_factor_plant(i,"vom")
+          GEN(s,i,v,r,h,t) * pvf_onm(t) * hours(h) * employment_factor_plant(i,"vom")
     }
 * Power plant construction employment    
     + sum{(i,v,r,t)

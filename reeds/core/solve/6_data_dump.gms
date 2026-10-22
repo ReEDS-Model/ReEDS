@@ -139,7 +139,7 @@ ret(i,v,r)$valcap_ivr(i,v,r) = sum{t, ret_ivrt(i,v,r,t) } ;
 cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{t$tnext(t), m_capacity_exog(i,v,r,t) } ;
 
 gen_h_stress_filt(i,r,allh,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
-  sum{v$valgen(i,v,r,t), GEN.l(i,v,r,allh,t)}
+  sum{v$valgen(i,v,r,t), GEN.l(s,i,v,r,allh,t)}
 ;
 *============================
 * Fuel prices
@@ -157,7 +157,7 @@ h2_usage_regional(r,h,t)$tcur(t) =
     hours(h) * ( 
         h2_exogenous_demand_regional(r,'h2',h,t)
         + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
-            GEN.l(i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
+            GEN.l(s,i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
     )
 ;
 
@@ -187,7 +187,7 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tcur(t)] =
 
 repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)
+          hours(h) * heat_rate(i,v,r,t) * GEN.l(s,i,v,r,h,t)
        } ;
 
 *============================

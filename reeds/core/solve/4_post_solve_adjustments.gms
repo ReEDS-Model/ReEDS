@@ -75,7 +75,7 @@ emit_r_tc(r,t)$tmodel_new(t) =
 * Emissions from generation
     sum{(i,v,h)$[valgen(i,v,r,t)$h_rep(h)],
         hours(h) * emit_rate("process","CO2",i,v,r,t)
-        * (GEN.l(i,v,r,h,t)
+        * (GEN.l(s,i,v,r,h,t)
            + CCSFLEX_POW.l(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
        }
 
@@ -106,9 +106,9 @@ emit_nat_tc(t)$tmodel_new(t) = sum{r, emit_r_tc(r,t) } ;
 $ifthen.stateco2 %GSw_StateCO2ImportLevel% == 'r'
     co2_emit_rate_r(r,t)$tmodel(t) = (
         emit_r_tc(r,t)
-        / sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(i,v,r,h,t) }
+        / sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(s,i,v,r,h,t) }
 * Avoid division-by-zero errors
-    )$sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(i,v,r,h,t) } ;
+    )$sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(s,i,v,r,h,t) } ;
 $else.stateco2
 * sum emissions and generation within the region
     co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t)$tmodel(t) = (
@@ -116,11 +116,11 @@ $else.stateco2
             emit_r_tc(rr,t) }
         / sum{(i,v,rr,h)$[valgen(i,v,rr,t)
                         $r_%GSw_StateCO2ImportLevel%(rr,%GSw_StateCO2ImportLevel%)],
-              hours(h) * GEN.l(i,v,rr,h,t) }
+              hours(h) * GEN.l(s,i,v,rr,h,t) }
 * Avoid division-by-zero errors
     )$sum{(i,v,rr,h)$[valgen(i,v,rr,t)
                     $r_%GSw_StateCO2ImportLevel%(rr,%GSw_StateCO2ImportLevel%)],
-          hours(h) * GEN.l(i,v,rr,h,t) }
+          hours(h) * GEN.l(s,i,v,rr,h,t) }
     ;
 * broadcast the regional emissions rate to each r in the region
     co2_emit_rate_r(r,t)$tmodel(t) =

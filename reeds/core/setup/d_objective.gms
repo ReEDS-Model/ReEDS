@@ -157,11 +157,11 @@ eq_Objfn_op(t)$tmodel(t)..
 * --- variable O&M costs---
 * all technologies except hybrid plant and DAC
               sum{(i,v,r,h)$[valgen(i,v,r,t)$cost_vom(i,v,r,t)$(not storage_hybrid(i)$(not csp(i)))],
-                   hours(h) * cost_vom(i,v,r,t) * GEN(i,v,r,h,t) }
+                   hours(h) * cost_vom(i,v,r,t) * GEN(s,i,v,r,h,t) }
 
 * hybrid plant (plant)
             + sum{(i,v,r,h)$[valgen(i,v,r,t)$cost_vom_pvb_p(i,v,r,t)$storage_hybrid(i)$(not csp(i))],
-                   hours(h) * cost_vom_pvb_p(i,v,r,t) * GEN_PLANT(i,v,r,h,t) }$Sw_HybridPlant
+                   hours(h) * cost_vom_pvb_p(i,v,r,t) * GEN_PLANT(s,i,v,r,h,t) }$Sw_HybridPlant
 
 * hybrid plant (Battery)
             + sum{(i,v,r,h)$[valgen(i,v,r,t)$cost_vom_pvb_b(i,v,r,t)$storage_hybrid(i)$(not csp(i))],
@@ -227,7 +227,7 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(i,v,r,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
                              $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(s,i,v,r,h,t) }
 
 * --- startup/ramping costs
               + sum{(i,r,h,hh)$[Sw_StartCost$startcost(i)$numhours_nexth(h,hh)$valgen_irt(i,r,t)],
@@ -237,13 +237,13 @@ eq_Objfn_op(t)$tmodel(t)..
 * cofire bio consumption already accounted for in accounting of BIOUSED
               + sum{(i,v,r,h)$[valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
                    (1-bio_cofire_perc) * hours(h) * heat_rate(i,v,r,t)
-                   * fuel_price("coal-new",r,t) * GEN(i,v,r,h,t) }
+                   * fuel_price("coal-new",r,t) * GEN(s,i,v,r,h,t) }
 
 * --- cost of natural gas---
 *Sw_GasCurve = 2 (static natural gas prices)
 *first - gas consumed for electricity generation
               + sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - gas consumed by gas-powered DAC
               + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
@@ -263,7 +263,7 @@ eq_Objfn_op(t)$tmodel(t)..
 *first - anticipated costs of gas consumption given last year's amount
               + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)],
                    gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
-                   hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
+                   hours(h) * heat_rate(i,v,r,t) * GEN(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin,cendiv),
@@ -288,7 +288,7 @@ eq_Objfn_op(t)$tmodel(t)..
 
 * --cost of CO2 transport and storage from CCS--
               + sum{(i,v,r,h)$[valgen(i,v,r,t)],
-                              hours(h) * capture_rate("CO2",i,v,r,t) * GEN(i,v,r,h,t) * Sw_CO2_Storage }$[not Sw_CO2_Detail]
+                              hours(h) * capture_rate("CO2",i,v,r,t) * GEN(s,i,v,r,h,t) * Sw_CO2_Storage }$[not Sw_CO2_Detail]
 
 * --cost of CO2 transport and storage from SMR CCS--
               + sum{(p,v,r,h)$[i_p("smr_ccs",p)$valcap("smr_ccs",v,r,t)],
@@ -345,7 +345,7 @@ eq_Objfn_op(t)$tmodel(t)..
 * --- Tax credit for CO2 stored ---
 * note conversion to 12-year CRF given length of CO2 captured incentive payments
               - sum{(i,v,r,h)$[valgen(i,v,r,t)$co2_captured_incentive(i,v,r,t)],
-                              (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * capture_rate("CO2",i,v,r,t) * GEN(i,v,r,h,t)}
+                              (crf(t) / crf_co2_incentive(t)) * co2_captured_incentive(i,v,r,t) * hours(h) * capture_rate("CO2",i,v,r,t) * GEN(s,i,v,r,h,t)}
 
 * --- Tax credit for CO2 stored for DAC ---
               - sum{(p,i,v,r,h)$[dac(i)$valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],
@@ -354,7 +354,7 @@ eq_Objfn_op(t)$tmodel(t)..
 * --- PTC value for electric power generation ---
               - sum{(i,v,r,h)$[valgen(i,v,r,t)$ptc_value_scaled(i,v,t)],
                     hours(h) * ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) * 
-                    (GEN(i,v,r,h,t) - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[pvb(i)$Sw_PVB])
+                    (GEN(s,i,v,r,h,t) - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[pvb(i)$Sw_PVB])
                    }
 
 * --- PTC value for hydrogen production ---

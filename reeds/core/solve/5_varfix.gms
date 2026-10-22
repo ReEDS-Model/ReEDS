@@ -45,8 +45,8 @@ EXTRA_PRESCRIP.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,tfix)] =
 EXTRA_PRESCRIP_ENERGY.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,tfix)] = EXTRA_PRESCRIP_ENERGY.l(i,v,r,tfix) ;
 
 * generation and storage variables
-GEN.fx(i,v,r,h,tfix)$valgen(i,v,r,tfix) = GEN.l(i,v,r,h,tfix) ;
-GEN_PLANT.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_PLANT.l(i,v,r,h,tfix) ;
+GEN.fx(s,i,v,r,h,tfix)$valgen(i,v,r,tfix) = GEN.l(s,i,v,r,h,tfix) ;
+GEN_PLANT.fx(s,i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_PLANT.l(s,i,v,r,h,tfix) ;
 GEN_STORAGE.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_STORAGE.l(i,v,r,h,tfix) ;
 MINGEN.fx(r,szn,tfix)$Sw_Mingen = MINGEN.l(r,szn,tfix) ;
 STORAGE_IN.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$(storage_standalone(i) or hyd_add_pump(i))] = STORAGE_IN.l(i,v,r,h,tfix) ;
