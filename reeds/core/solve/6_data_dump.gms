@@ -50,25 +50,19 @@ cost_cap_fin_mult_filt(i,r,t)      "--unitless-- capital cost financial multipli
 cost_vom_filt(i,v,r)               "--$/MWh-- VO&M costs filtered for the previous solve year and existing capacity"
 ctt_i_ii_filt(i,ii)                "--set-- set linking watercooling techs i to numeraire techs ii filtered for existing watercooling techs"
 ctt_i_ii_psh(i,ii)                 "--set-- set linking PSH techs with water i to numeraire techs ii filtered for valid capacity techs"
-emissions_price(e,r)               "--2004$/metric ton-- combined emissions taxes and marginal prices for emissions caps"
 emit_rate_filt(e,i,v,r)            "--metric tons/MWh-- emission rate for the previous solve year"
-energy_price(r,allh)               "--2004$/MWh-- energy price from the previous solve year"
 flex_load_opt(r,allh)              "--MW-- model results for optimizing flexible load"
 flex_load(r,allh)                  "--MW-- total exogenously defined flexible load"
-fuel_price_filt(i,r)               "--$/mmBTU-- fuel prices filtered for the previous solve year and existing capacity"
 gen_h_stress_filt(s,i,r,allh,t)      "--MW-- generation by stress timeslice with charge and production load as negative generation"
 heat_rate_filt(i,v,r)              "--MMBtu/MWh-- heat rate"
-h2_usage_regional(s,r,allh,t)        "--metric tons-- H2 usage by region"
 inv_cond_filt(i,v,t)               "--set-- vintage-year mapping for investments by technology"
 inv_ivrt(i,v,r,t)                  "--MW-- investments in power generation capacity"
 inv_energy_ivrt(i,v,r,t)           "--MWh-- investments in energy generation capacity"
 m_cf_filt(i,v,r,allh)              "--fraction-- capacity factor used in the model"
 m_cf_szn_filt(i,v,r,allszn)        "--fraction-- modelled capacity factors filtered for hydro resources to set seasonal energy constraints"
 minloadfrac_filt(r,i,allszn)       "--fraction-- modelled mingen fraction filtered for hydro resources to set mingen constraints"
-prod_filt(i,v,r,allh)              "--MW-- power consumed for PRODUCE.l"
+prod_filt(s,i,v,r,allh)              "--MW-- power consumed for PRODUCE.l"
 ra_cap_loadsite(r,t)               "--MW-- capacity of flexibly sited load"
-repbioprice_filt(r)                "--2004$/MWh-- marginal price for biofuel in region where biofuel was used"
-repgasquant(cendiv,t)              "--mmBTU-- NG fuel usage in ReEDS - used to determine NG price"
 ret_ivrt(i,v,r,t)                  "--MW-- retirements of generation capacity"
 ret(i,v,r)                         "--MW-- retirements of generation capacity"
 rsc_dat_filt(i,r,sc_cat,rscbin)    "--$/MW-- capital costs filtered for pumped-hydro so arbitrage value doesn't exceed capital costs"
@@ -141,54 +135,6 @@ cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{t$tnext(t), m_cap
 gen_h_stress_filt(s,i,r,allh,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   sum{v$valgen(i,v,r,t), GEN.l(s,i,v,r,allh,t)}
 ;
-*============================
-* Fuel prices
-*============================
-
-fuel_price_filt(i,r)$cap_exist_ir(i,r) = sum{t$tcur(t), fuel_price(i,r,t) } ;
-
-* populate the fuel price for H2-CT/CC techs as the marginal off the
-* hydrogen demand constraint (in $/[metric tons/hour]) divided by hours and 
-* times h2_combustion_intensity (metric tons / mmbtu) to get $ / mmbtu -- note there should
-* always be a positive value here since if an H2-CT/CC is built it consumes hydrogen 
-* the equation from which we extract the marginal depends on whether
-* we have the national (Sw_H2 = 1) or regional (Sw_H2 = 2) constraint
-h2_usage_regional(s,r,h,t)$tcur(t) =
-    hours(h) * ( 
-        h2_exogenous_demand_regional(r,'h2',h,t)
-        + sum{(i,v)$[valgen(i,v,r,t)$h2_gen(i)],
-            GEN.l(s,i,v,r,h,t) * h2_combustion_intensity * heat_rate(i,v,r,t)}
-    )
-;
-
-fuel_price_filt(i,r)$[Sw_H2$h2_gen(i)$(sum{t$tcur(t),yeart(t) } >= h2_demand_start)$cap_exist_ir(i,r)] = 
-    sum{t$tcur(t),
-        (1 / cost_scale) * (1 / pvf_onm(t)) * h2_combustion_intensity * (
-            eq_h2_demand.m(s,'h2',t)$[Sw_H2=1]
-* regional demand is now by hour, so calculate annual price as the weighted average of demand across hours
-            + (sum{h, eq_h2_demand_regional.m(s,r,h,t) / hours(h) * h2_usage_regional(s,r,h,t) }
-               / sum{h, h2_usage_regional(s,r,h,t) }
-            )$[(Sw_H2=2)$(sum{h, h2_usage_regional(s,r,h,t) })]
-        )
-    }
-;
-
-* for regions that consumed biomass, use the cost of the last supply curve bin consumed
-repbioprice_filt(r)$[sum{(t, bioclass), bioused.l(s,bioclass,r,t) }] =
-    sum{t$tcur(t), smax{bioclass$[bioused.l(s,bioclass,r,t)],
-      sum{usda_region$r_usda(r, usda_region), biosupply(usda_region,bioclass,"price")} } + bio_transport_cost } ;
-
-* for regions with no biomass, assign biomass price as the cost of the cheapest available supply curve bin for that region
-* also safeguard against outlying values (for some reason smax sometimes returns -INF for regions w/o biomass consumption)
-repbioprice_filt(r)$[(repbioprice_filt(r) <= 0)] = rep_bio_price_unused(r) ;
-
-repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tcur(t)] =
-    sum{(gb,h), GASUSED.l(s,cendiv,gb,h,t) * hours(h) } ;
-
-repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
-    sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h) * heat_rate(i,v,r,t) * GEN.l(s,i,v,r,h,t)
-       } ;
 
 *============================
 * Filter necessary input data
@@ -268,38 +214,8 @@ ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 * Extra consumption data
 *============================
 
-prod_filt(i,v,r,h)$[sum{t$tcur(t), valcap(i,v,r,t)}$consume(i)$hours(h)] =
+prod_filt(s,i,v,r,h)$[sum{t$tcur(t), valcap(i,v,r,t)}$consume(i)$hours(h)] =
                 sum{(p,t)$[i_p(i,p)$tcur(t)], PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) } ;
-
-*============================
-* Get ReEDS emissions prices [$/metric ton]
-*============================
-* NOT included: eq_emit_rate_limit (disabled by default), eq_CSAPR_Budget, eq_CSAPR_Assurance
-emissions_price(e,r) =
-    (1 / cost_scale)
-    * sum{t$tcur(t),
-        (1 / pvf_onm(t)) * eq_annual_cap.m(e,t)
-        + emit_tax(e,r,t)
-    } ;
-
-* Add marginal prices from CO2-specific constraints
-emissions_price("CO2",r) =
-    emissions_price("CO2",r)
-    + (1 / cost_scale)
-        * sum{t$tcur(t),
-            (1 / pvf_onm(t)) * [
-                eq_RGGI_cap.m(t)$RGGI_R(r)
-                + sum{st$r_st(r,st), eq_state_cap.m(st,t) }
-            ]
-        } ;
-
-*===================================
-* Get ReEDS energy prices ($/MWh)
-*===================================
-
-energy_price(r,h)$hours(h) =
-    sum{t$tcur(t),
-        (1 / cost_scale) * (1 / pvf_onm(t)) * eq_supply_demand_balance.m(r,h,t) / hours(h) } ;
 
 *=======================================
 * Unload all relevant data to a gdx file
@@ -329,12 +245,9 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     ctt_i_ii_filt
     ctt_i_ii_psh
     degrade_annual
-    emissions_price
     emit_rate_filt
-    energy_price
     flex_load
     flex_load_opt
-    fuel_price_filt
     fuel2tech
     gen_h_stress_filt
     geo
@@ -366,7 +279,6 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     rfeas
     r_cendiv
     ra_cap_loadsite
-    repbioprice_filt
     ret
     ret_ivrt
     routes_filt
