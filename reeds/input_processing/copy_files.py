@@ -1235,10 +1235,15 @@ def write_miscellaneous_files(
             overwrite=True,
         )
 
-    ## Scenario names used for stochastic optimization
+    ## Scenario names and probabilities (only used for stochastic optimization)
     s = pd.Series(reeds.stochastic.get_scenarios(inputs_case))
     reeds.io.write_to_inputs_h5(
         s, 's', inputs_case, gamstype='set', comment='scenario name (for stochastic optimization)',
+    )
+    scenario_probability = pd.Series(reeds.stochastic.get_probabilities(inputs_case)).rename_axis('s')
+    reeds.io.write_to_inputs_h5(
+        scenario_probability, 'scenario_probability', inputs_case, gamstype='parameter',
+        comment='scenario probability (for stochastic optimization)',
     )
 
     ## Unit sizes for ReEDS2PRAS

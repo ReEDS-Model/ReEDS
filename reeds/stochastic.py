@@ -5,6 +5,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 import reeds  
 
 
+NON_STOCHASTIC_NAME = '1'
+
+
 def is_stochastic(case=None) -> bool:
     """
     If the switches in the provided case specify a path to a stochastic config file,
@@ -94,7 +97,7 @@ def get_config(case) -> dict:
 def get_scenarios(case) -> list:
     """Return list of stochastic scenarios used in case"""
     if not is_stochastic(case):
-        scenarios = ['1']
+        scenarios = [NON_STOCHASTIC_NAME]
     else:
         config = get_config(case)
         scenarios = list(config['scenario_probability'].keys())
@@ -103,8 +106,11 @@ def get_scenarios(case) -> list:
 
 def get_probabilities(case) -> dict:
     """Weight scenario probabilities to sum to 1"""
-    config = get_config(case)
-    probs_in = config['scenario_probability']
-    total_prob = sum(probs_in.values())
-    probs_out = {key: val / total_prob for key, val in probs_in.items()}
+    if is_stochastic(case):
+        config = get_config(case)
+        probs_in = config['scenario_probability']
+        total_prob = sum(probs_in.values())
+        probs_out = {key: val / total_prob for key, val in probs_in.items()}
+    else:
+        probs_out = {NON_STOCHASTIC_NAME: 1}
     return probs_out
