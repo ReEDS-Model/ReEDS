@@ -213,7 +213,7 @@ def check_cases_format(df_cases):
             + '\n'.join(f'"{i}"' for i in spaces)
         )
         raise ValueError(err)
-
+    
 
 def check_compatibility(sw):
     if int(sw['startyear']) != 2010:
@@ -377,7 +377,7 @@ def check_compatibility(sw):
                 float(limit)
             except ValueError:
                 raise ValueError(err)
-
+    
     if int(sw['GSw_PRM_UpdateMethod']) == 0 and int(sw['GSw_PRM_CapCredit']) == 1 and int(sw['GSw_PRM_StressIterateMax']) > 0:
         raise ValueError(
             "The combination of GSw_PRM_UpdateMethod=0, GSw_PRM_CapCredit=1, "
