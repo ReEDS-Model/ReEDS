@@ -3202,11 +3202,9 @@ eq_storage_in_cap(i,v,r,h,t)$[(storage_standalone(i) or hyd_add_pump(i))$valgen(
                               $tmodel(t)$(storinmaxfrac(i,v,r) < 1)]..
 
 *[plus] maximum storage input capacity as a fraction of output capacity and accounting for availability
-* for DR Shifting this adjust for time-varying availability of charging (add back deferred EV load)
     avail(i,r,h) * storinmaxfrac(i,v,r)
     * CAP(i,v,r,t)
     * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
-    * (1$(not dr_shift(i)) + dr_shift_charge_frac(i,r,h,t)$dr_shift(i))
 
     =g=
 

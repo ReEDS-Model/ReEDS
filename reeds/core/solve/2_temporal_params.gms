@@ -717,12 +717,14 @@ $onlisting
 $offempty
 
 $onempty
+
 * DR shift adoption
 parameter dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be discharged (deferred charging) in each timeslice h"
 /
 $offlisting
 $ondelim
 $include inputs_case%ds%%temporal_inputs%%ds%dr_shift_discharge.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shift_discharge.csv
 $offdelim
 $onlisting
 / ;
@@ -734,6 +736,7 @@ parameter dr_shift_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted 
 $offlisting
 $ondelim
 $include inputs_case%ds%%temporal_inputs%%ds%dr_shift_charge.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shift_charge.csv
 $offdelim
 $onlisting
 / ;
@@ -745,6 +748,7 @@ parameter dr_shift_energy_hours(i,r,allh,allt) "--hours-- Allowable DR shift dev
 $offlisting
 $ondelim
 $include inputs_case%ds%%temporal_inputs%%ds%dr_shift_profile_energy.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shift_profile_energy.csv
 $offdelim
 $onlisting
 / ;
