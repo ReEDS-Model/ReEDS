@@ -20,10 +20,10 @@
 
 - `dollaryear.csv`: Dollar year for DAC costs
 
-- `h2_demand_county_share.csv`: The fraction of national hydrogen demand in that year that corresponds to each county
+- `h2_demand_county_share.csv`: The fraction [fraction] of national hydrogen demand in that year that corresponds to each county
   - Demand estimates come from [https://data.openei.org/submissions/5655](https://data.openei.org/submissions/5655)
   - 2021 demand shares correspond to the "Reference" scenario with light-duty vehicles / biofuels / methanol demand removed and 2050 shares correspond to the "Low Cost Electrolysis" scenario
 
-- `h2_exogenous_demand.csv`: Exogenous hydrogen demand by industries other than the power sector per year
+- `h2_exogenous_demand.csv`: Exogenous hydrogen demand [metric tons/yr] by industries other than the power sector
 
 - `h2_transport_and_storage_costs.csv`: Transport and storage costs of hydrogen per year (in $2004)
