@@ -137,7 +137,8 @@ def setup_linked_FINITO_cases(df_cases, case):
 
     #%% Check for incompatibility of FINITO switches
     model_sectors = df_cases_finito['Default Value']['focus_sectors'].split('.')
-    check_inputs(case=case, df_case=df_cases_combine, model_sectors=model_sectors)
+    model_cf_pathways = df_cases['Default Value']['cf_sectors'].split('.')
+        check_inputs(case = case, df_case = df_cases[case], model_sectors=model_sectors, cf_pathways=model_cf_pathways)
 
     return df_cases_combine
 
