@@ -4202,10 +4202,10 @@ emit_rate("process",e,i,v,r,t)
 emit_rate("process","H2",i,v,r,t)$[upgrade(i)] = sum{ii$upgrade_to(i,ii), emit_rate("process","H2",ii,v,r,t) } ;
 
 * CO2(e) emissions rate (used in postprocessing only)
-emit_rate(etype,"CO2e",i,v,r,t)$[Sw_AnnualCap=2]
+emit_rate(etype,"CO2e",i,v,r,t)$[not Sw_GWPH2]
   = round(sum{e, emit_rate(etype,e,i,v,r,t) * gwp(e)$[(not sameas(e, "H2"))]},10) ;
 
-emit_rate(etype,"CO2e",i,v,r,t)$[Sw_AnnualCap<>2]
+emit_rate(etype,"CO2e",i,v,r,t)$[Sw_GWPH2]
   = round(sum{e, emit_rate(etype,e,i,v,r,t) * gwp(e)},10) ;
 
 * calculate emissions capture rates (same logic as emissions calc above)

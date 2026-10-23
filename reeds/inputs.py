@@ -992,9 +992,10 @@ def get_emit_capped(case:str|Path|None=None, **kwargs) -> pd.Series:
             case 1:
                 df = pd.Series(index=['CO2'])
             case 2:
-                df = pd.Series(index=[i for i in gwp.index if i.upper() != 'H2'])
-            case 3:
-                df = pd.Series(index=gwp.index)
+                if int(sw.GSw_GWPH2):
+                    df = pd.Series(index=gwp.index)
+                else:
+                    df = pd.Series(index=[i for i in gwp.index if i.upper() != 'H2'])
         emit_cappeds[scen] = df
 
     emit_capped = pd.concat(emit_cappeds, names=('s','e')).reset_index()[['s','e']]
