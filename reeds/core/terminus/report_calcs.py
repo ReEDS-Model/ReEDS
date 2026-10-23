@@ -19,8 +19,6 @@ def get_gams_results(case):
 
 
 def get_flow(df, direction:Literal['forward','reverse']='forward', value='Level'):
-    r_indices = ['r', 'rr']
-    other_indices = [i for i in df.index.names if i not in r_indices]
     if direction == 'forward':
         mask = df.index.get_level_values('r') < df.index.get_level_values('rr')
         if isinstance(df, pd.Series):
@@ -33,17 +31,19 @@ def get_flow(df, direction:Literal['forward','reverse']='forward', value='Level'
             _out = df.loc[mask]
         elif isinstance(df, pd.DataFrame):
             _out = df.loc[mask, value]
-        out = _out.rename_axis(['rr', 'r'] + other_indices).reorder_levels(r_indices + other_indices)
+        index_order = df.index.names
+        reverse = {'r':'rr', 'rr':'r'}
+        reverse_indices = [reverse.get(i,i) for i in index_order]
+        out = _out.rename_axis(reverse_indices).reorder_levels(index_order)
     return out
 
 
 def combine_forward_reverse(df, agg:Literal['net','simult']='net', value='Level'):
     """Combine forward (r < rr) and reverse (r > rr) into one +/- series"""
-    r_indices = ['r', 'rr']
-    other_indices = [i for i in df.index.names if i not in r_indices]
+    index_order = df.index.names
     forward = get_flow(df, 'forward')
     reverse = (-1 if agg == 'net' else 1) * get_flow(df, 'reverse')
-    return pd.concat([forward, reverse]).groupby(r_indices + other_indices).sum()
+    return pd.concat([forward, reverse]).groupby(index_order).sum()
 
 
 #%% Results calculations
@@ -58,33 +58,33 @@ def calc_iq(g):
 def calc_co2_stor(g):
     """CO2 capture, transport, and storage"""
     dfs = {}
-    ## (r,h,t)
+    ## (s,r,h,t)
     dfs['CO2_CAPTURED_out'] = g['CO2_CAPTURED'].Level
-    ## (r,t)
+    ## (s,r,t)
     dfs['CO2_CAPTURED_out_ann'] = (g['CO2_CAPTURED'].Level * g['hours']).groupby(['r','t']).sum()
-    ## (r,cs,h,t)
+    ## (s,r,cs,h,t)
     dfs['CO2_STORED_out'] = g['CO2_STORED'].Level
-    ## (r,cs,t)
+    ## (s,r,cs,t)
     dfs['CO2_STORED_out_ann'] = (g['CO2_STORED'].Level * g['hours']).groupby(['r','cs','t']).sum()
     ## (r,rr,t)
     dfs['CO2_TRANSPORT_INV_out'] = g['CO2_TRANSPORT_INV'].Level
     ## (r,cs,t)
     dfs['CO2_SPURLINE_INV_out'] = g['CO2_SPURLINE_INV'].Level
-    ## (r,rr,h,t)
+    ## (s,r,rr,h,t)
     dfs['CO2_FLOW_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='simult')
-    ## (r,rr,t)
+    ## (s,r,rr,t)
     dfs['CO2_FLOW_out_ann'] = (dfs['CO2_FLOW_out'] * g['hours']).groupby(['r','rr','t']).sum()
-    ## (r,rr,h,t)
+    ## (s,r,rr,h,t)
     dfs['CO2_FLOW_pos_out'] = get_flow(g['CO2_FLOW'], 'forward')
-    ## (r,rr,t)
+    ## (s,r,rr,t)
     dfs['CO2_FLOW_pos_out_ann'] = (dfs['CO2_FLOW_pos_out'] * g['hours']).groupby(['r','rr','t']).sum()
-    ## (r,rr,h,t)
+    ## (s,r,rr,h,t)
     dfs['CO2_FLOW_neg_out'] = -get_flow(g['CO2_FLOW'], 'reverse')
-    ## (r,rr,t)
+    ## (s,r,rr,t)
     dfs['CO2_FLOW_neg_out_ann'] = (dfs['CO2_FLOW_neg_out'] * g['hours']).groupby(['r','rr','t']).sum()
-    ## (r,rr,h,t)
+    ## (s,r,rr,h,t)
     dfs['CO2_FLOW_net_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='net')
-    ## (r,rr,t)
+    ## (s,r,rr,t)
     dfs['CO2_FLOW_net_out_ann'] = (dfs['CO2_FLOW_net_out'] * g['hours']).groupby(['r','rr','t']).sum()
     return dfs
 
@@ -112,36 +112,36 @@ def calc_transmission(g):
     dfs['tran_prm_mi_out'] = (dfs['tran_prm_out'] * g['distance']).groupby(['trtype','t']).sum()
     ## (r,t)
     dfs['cap_converter_out'] = g['CAP_CONVERTER'].Level
-    ## (r,rr,h,trtype,t)       (r,rr,allh,t,trtype)
-    dfs['tran_flow_all_rep'] = g['FLOW'].Level.loc[:,:,g['h_rep'].index]
-    ## (r,rr,allh,trtype,t)
+    ## (s,r,rr,h,trtype,t)     (s,r,rr,allh,t,trtype)
+    dfs['tran_flow_all_rep'] = g['FLOW'].Level.loc[:,:,:,g['h_rep'].index]
+    ## (s,r,rr,allh,trtype,t)
     dfs['tran_flow_all_stress'] = (
         g['FLOW'].Level.reset_index()
         .merge(g['h_stress_t'], on=['allh','t'])
-        .set_index(['r','rr','allh','trtype','t']).Level
+        .set_index(['s','r','rr','allh','trtype','t']).Level
     )
-    ## (r,rr,h,trtype,t)   (r,rr,allh,t,trtype)
-    dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'], agg='net').loc[:,:,g['h_rep'].index]
-    ## (r,rr,allh,trtype,t)
+    ## (s,r,rr,h,trtype,t)                         (s,r,rr,allh,t,trtype)
+    dfs['tran_flow_rep'] = combine_forward_reverse(g['FLOW'], agg='net').loc[:,:,:,g['h_rep'].index]
+    ## (s,r,rr,allh,trtype,t)
     dfs['tran_flow_stress'] = (
         combine_forward_reverse(g['FLOW']).reset_index()
         .merge(g['h_stress_t'], on=['allh','t'])
-        .set_index(['r','rr','allh','trtype','t']).Level
+        .set_index(['s','r','rr','allh','trtype','t']).Level
     )
-    ## (r,rr,trtype,t)
-    dfs['tran_flow_rep_ann'] = (dfs['tran_flow_rep'] * g['hours']).groupby(['r','rr','trtype','t']).sum()
-    ## (r,rr,h,trtype,t)
+    ## (s,r,rr,trtype,t)
+    dfs['tran_flow_rep_ann'] = (dfs['tran_flow_rep'] * g['hours']).groupby(['s','r','rr','trtype','t']).sum()
+    ## (s,r,rr,h,trtype,t)
     dfs['tran_util_h_rep'] = dfs['tran_flow_all_rep'] / dfs['tran_cap_energy']
-    ## (r,rr,allh,trtype,t)
+    ## (s,r,rr,allh,trtype,t)
     dfs['tran_util_h_stress'] = dfs['tran_flow_all_stress'] / dfs['tran_cap_prm']
-    ## (r,rr,trtype,t)
+    ## (s,r,rr,trtype,t)
     dfs['tran_util_ann_rep'] = (
-        (dfs['tran_flow_all_rep'] * g['hours'] / dfs['tran_cap_energy']).groupby(['r','rr','trtype','t']).sum()
+        (dfs['tran_flow_all_rep'] * g['hours'] / dfs['tran_cap_energy']).groupby(['s','r','rr','trtype','t']).sum()
         / g['hours'].loc[g['h_rep'].index].sum()
     )
-    ## (r,rr,trtype,t)
+    ## (s,r,rr,trtype,t)
     dfs['tran_util_ann_stress'] = (
-        (dfs['tran_flow_all_stress'] * g['hours_t'] / dfs['tran_cap_prm']).groupby(['r','rr','trtype','t']).sum()
+        (dfs['tran_flow_all_stress'] * g['hours_t'] / dfs['tran_cap_prm']).groupby(['s','r','rr','trtype','t']).sum()
         / g['hours_t'].loc[g['h_stress_t'].index].groupby('t').sum()
     )
     return dfs

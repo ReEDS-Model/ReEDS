@@ -241,9 +241,9 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     write_xlsx = args.xlsx
 
     # #%% Inputs for debugging
-    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20260805_reportM2_Pacific')
+    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20261022_stochasticM1_Pacific')
     # write_csv = True
-    # write_xlsx = True
+    # write_xlsx = False
 
     #%% Set up logger
     reeds_path = os.path.abspath(os.path.dirname(__file__))
@@ -276,6 +276,11 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         **report_calcs.main(case),
     }
     print("Finished loading outputs gdx")
+
+    ## If not using stochastic optimization, there will only be a single s index,
+    ## so drop it to simplify downstream processing.
+    if not reeds.stochastic.is_stochastic(case):
+        dict_out = {key: df.drop(columns='s', errors='ignore') for key, df in dict_out.items()}
 
     write_dfdict(
         dfdict=dict_out,
