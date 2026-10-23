@@ -428,7 +428,7 @@ reqt_quant(s,'nat_gen','na',r,'ann',t)$tmodel_new(t) =
         ( (LOAD.l(s,r,h,t) - can_exports_h(r,h,t)) * (1.0 - distloss) - sum{v$valgen("distpv",v,r,t), GEN.l(s,"distpv",v,r,h,t) })
        })$[Sw_GenMandate = 2]
     ) ;
-reqt_quant(s,'annual_cap',e,r,'ann',t)$tmodel_new(t) = emit_cap(e,t) * load_frac_rt(s,r,t) ;
+reqt_quant(s,'annual_cap',e,r,'ann',t)$tmodel_new(t) = emit_cap(s,e,t) * load_frac_rt(s,r,t) ;
 
 *We keep quantity of eq_loadcon in MW
 reqt_quant(s,'eq_loadcon','na',r,allh,t)$[tmodel_new(t)$h_t(allh,t)] = LOAD.l(s,r,allh,t) ;

@@ -124,7 +124,7 @@ dr_shed_hourly.h5,.h5,0,None,year,datetime,1,keepindex,constant,None,None,new,
 dr_types.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 e.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 eall.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-emit_cap.csv,.csv,0,None,allt,None,0,0,constant,0,None,"constant, linear, or saturate?",constant
+emit_cap.csv,.csv,0,None,allt,"s,eall",0,0,constant,0,None,"constant, linear, or saturate?",constant
 emit_rate.csv,.csv,0,None,t,"etype,e,i,v,r",0,0,constant,0,None,done,constant
 emitrate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 employment_factor_plant.csv,.csv,1,ignore,9999,None,9999,0,constant,0,None,,

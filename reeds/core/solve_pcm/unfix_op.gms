@@ -101,8 +101,8 @@ CO2_FLOW.lo(s,r,rr,h,t_unfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = 0 ;
 CO2_FLOW.up(s,r,rr,h,t_unfix)$[Sw_CO2_Detail$co2_routes(r,rr)] = +inf ;
 
 * Positive/negative variables
-EMIT.lo(s,etype,e,r,t_unfix)$emit_modeled(e,r,t_unfix) = -inf ;
-EMIT.up(s,etype,e,r,t_unfix)$emit_modeled(e,r,t_unfix) = +inf ;
+EMIT.lo(s,etype,e,r,t_unfix)$emit_modeled(s,e,r,t_unfix) = -inf ;
+EMIT.up(s,etype,e,r,t_unfix)$emit_modeled(s,e,r,t_unfix) = +inf ;
 STORAGE_INTERDAY_DISPATCH.lo(s,i,v,r,h,t_unfix)$[storage_interday(i)$valgen(i,v,r,t_unfix)] = -inf ;
 STORAGE_INTERDAY_DISPATCH.up(s,i,v,r,h,t_unfix)$[storage_interday(i)$valgen(i,v,r,t_unfix)] = +inf ;
 STORAGE_INTERDAY_LEVEL_MAX_DAY.lo(s,i,v,r,allszn,t_unfix)$[storage_interday(i)$valgen(i,v,r,t_unfix)] = -inf ;

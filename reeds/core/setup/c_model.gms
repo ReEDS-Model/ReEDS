@@ -2367,7 +2367,7 @@ eq_offshore_no_backflow(s,r,rr,trtype,h,t)
 
 * Because EMIT is only evaluated for emit_modeled, the full emissions need to be
 * calculated in report.gms rather than relying on the EMIT variable
-eq_emit_accounting(s,etype,e,r,t)$[emit_modeled(e,r,t)$tmodel(t)]..
+eq_emit_accounting(s,etype,e,r,t)$[emit_modeled(s,e,r,t)$tmodel(t)]..
 
     EMIT(s,etype,e,r,t)
 
@@ -2431,7 +2431,7 @@ eq_state_cap(s,st,t)
           $h_rep(h)
 * If there is a national zero-carbon cap in the present year,
 * set emissions intensity of imports to zero.
-          $(not ((Sw_AnnualCap>0) and not emit_cap("CO2",t) and not emit_cap("CO2e",t)))],
+          $(not ((Sw_AnnualCap>0) and not emit_cap(s,"CO2",t) and not emit_cap(s,"CO2e",t)))],
           hours(h) * FLOW(s,rr,r,h,t,trtype)
           * sum{tt$tprev(t,tt), co2_emit_rate_r(s,rr,tt) }
     }
@@ -2490,29 +2490,29 @@ eq_emit_rate_limit(s,e,r,t)$[emit_rate_con(e,r,t)$tmodel(t)]..
 * ---------------------------------------------------------------------------
 * This equation enforces emission caps for both the CO2 (Sw_AnnualCap = 1) 
 * and CO2e emission (Sw_AnnualCap =2 or Sw_AnnualCap =3) scenarios 
-eq_annual_cap(s,eall,t)$[sum{tt, emit_cap(eall,tt) }$tmodel(t)$(Sw_AnnualCap>0)]..
+eq_annual_cap(s,eall,t)$[sum{tt, emit_cap(s,eall,tt) }$tmodel(t)$(Sw_AnnualCap>0)]..
 
 * exogenous CO2 cap (Sw_AnnualCap = 1) or CO2e cap (Sw_AnnualCap > 1)
-    emit_cap(eall,t)
+    emit_cap(s,eall,t)
 
     =g=
 
 * must exceed annual endogenous emissions by CO2 pollutant (when Sw_AnnualCap=1) or CO2e pollutants (CO2, CH4, NO2 pollutants when Sw_AnnualCap=2 and additional H2 leakage when Sw_AnnualCap=3)
-    sum{(e,r)$emit_capped(e), (EMIT(s,"process",e,r,t) + EMIT(s,"upstream",e,r,t)$Sw_Upstream) * gwp(e) }    
+    sum{(e,r)$emit_capped(s,e), (EMIT(s,"process",e,r,t) + EMIT(s,"upstream",e,r,t)$Sw_Upstream) * gwp(e) }
 ;
 
 * ---------------------------------------------------------------------------
 
-eq_bankborrowcap(s,e)$[Sw_BankBorrowCap$sum{t, emit_cap(e,t) }]..
+eq_bankborrowcap(s,e)$[Sw_BankBorrowCap$sum{t, emit_cap(s,e,t) }]..
 
 *weighted exogenous emissions
-    sum{t$[tmodel(t)$emit_cap(e,t)],
-        yearweight(t) * emit_cap(e,t) }
+    sum{t$[tmodel(t)$emit_cap(s,e,t)],
+        yearweight(t) * emit_cap(s,e,t) }
 
     =g=
 
 * must exceed weighted endogenous emissions
-    sum{(r,t)$[tmodel(t)$emit_cap(e,t)],
+    sum{(r,t)$[tmodel(t)$emit_cap(s,e,t)],
         yearweight(t) * (EMIT(s,"process",e,r,t) + EMIT(s,"upstream",e,r,t)$Sw_Upstream)}
 ;
 

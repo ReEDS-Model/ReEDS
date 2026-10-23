@@ -83,7 +83,7 @@ BIOUSED.fx(s,bioclass,r,tfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,tfi
 * RECS variables
 RECS.fx(RPSCat,i,st,ast,tfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,tfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = RECS.l(RPSCat,i,st,ast,tfix) ;
 ACP_Purchases.fx(RPSCat,st,tfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = ACP_Purchases.l(RPSCat,st,tfix) ;
-EMIT.fx(s,etype,e,r,tfix)$emit_modeled(e,r,tfix) = EMIT.l(s,etype,e,r,tfix) ;
+EMIT.fx(s,etype,e,r,tfix)$emit_modeled(s,e,r,tfix) = EMIT.l(s,etype,e,r,tfix) ;
 
 * transmission variables
 CAPTRAN_ENERGY.fx(r,rr,trtype,tfix)$routes(r,rr,trtype,tfix) = CAPTRAN_ENERGY.l(r,rr,trtype,tfix) ;

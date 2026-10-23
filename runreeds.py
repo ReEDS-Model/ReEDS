@@ -295,7 +295,10 @@ def check_compatibility(sw):
             'Running Monte Carlo analysis (MCS_runs > 1) and random vector \n'
             'MGA sampling (GSw_MGA_RV_runs > 1) simultaneously is not yet supported.'
         )
-        
+
+    if sw['GSw_Stochastic'] != '0':
+        reeds.stochastic.validate_config(sw['GSw_Stochastic'])
+
     reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
 
     ### Parsed string switches

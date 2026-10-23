@@ -4985,43 +4985,37 @@ emit_tax("CO2",r,t) = co2_tax(t) ;
 
 * All emissions are included in reported, but not all emissions need to be modeled
 * This set captures only the emissions that need to be included in the model
-set emit_modeled(e,r,t) "set of emissions that are necessary to include in the model" ;
+set emit_modeled(s,e,r,t) "set of emissions that are necessary to include in the model" ;
 
 * CO2 for RGGI regions and years
-emit_modeled("CO2",r,t)$[
+emit_modeled(s,"CO2",r,t)$[
   (yeart(t)>=RGGI_start_yr)
   $RGGI_r(r)
   $Sw_RGGI] = yes ;
 
 * CO2 for state cap regions and years
-emit_modeled("CO2",r,t)$[
+emit_modeled(s,"CO2",r,t)$[
   (yeart(t)>=state_cap_start_yr)
   $sum{(tt,st)$r_st(r,st), state_cap(st,tt) }
   $Sw_StateCap] = yes ;
 
 * Emissions with an emission rate limit constraint
-emit_modeled(e,r,t)$emit_rate_con(e,r,t) = yes ;
+emit_modeled(s,e,r,t)$emit_rate_con(e,r,t) = yes ;
 
 * Model all emissions with global warming potential
-emit_modeled(e,r,t)$gwp(e) = yes ;
+emit_modeled(s,e,r,t)$gwp(e) = yes ;
 
 * Emissions associated with bankbarrowcap
-emit_modeled(e,r,t)$[
+emit_modeled(s,e,r,t)$[
   Sw_BankBorrowCap
-  $sum{tt, emit_cap(e,tt) }] = yes ;
+  $sum{tt, emit_cap(s,e,tt) }] = yes ;
 
 * Emissions subject to an emissions tax
-emit_modeled(e,r,t)$emit_tax(e,r,t) = yes ;
+emit_modeled(s,e,r,t)$emit_tax(e,r,t) = yes ;
 
 * Remove years not modeled
-emit_modeled(e,r,t)$[not tmodel_new(t)] = no ;
+emit_modeled(s,e,r,t)$[not tmodel_new(t)] = no ;
 
-* Set of emissions that are being capped
-set emit_capped(e) "set of emissions that are included in emission cap depending on Sw_AnnualCap setting" ;
-emit_capped(e)$[Sw_AnnualCap=0] = no ;
-emit_capped("CO2")$[Sw_AnnualCap=1] = yes ;
-emit_capped(e)$[gwp(e)$(not sameas(e, "H2"))$(Sw_AnnualCap=2)] = yes ;
-emit_capped(e)$[gwp(e)$(Sw_AnnualCap=3)] = yes ;
 
 *====================================
 * --- Endogenous Retirements ---
