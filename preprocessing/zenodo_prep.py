@@ -11,6 +11,7 @@ import cmocean
 import hashlib
 import argparse
 import requests
+import shutil
 import subprocess
 import pandas as pd
 import geopandas as gpd
@@ -21,9 +22,6 @@ sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 
 
-#%% Constants
-baseurl = 'https://zenodo.org/api'
-tokenfile = Path('~/.zenodo').expanduser()
 
 INFILES = [
     ## tech, access, resolution, special
@@ -52,13 +50,6 @@ INFILES = [
     ('wind-ofs', 'reference', 'ba', 'meshed'),
     ('wind-ofs', 'open', 'ba', 'meshed'),
 ]
-
-### Derived constants
-with open(tokenfile, 'r') as f:
-    ACCESS_TOKEN = f.read().split()[-1]
-
-headers = {'Authorization': f'Bearer {ACCESS_TOKEN}'}
-
 
 #%% Functions
 ### Supply curve
@@ -649,13 +640,52 @@ def main(savepath, localpath):
     #%% Verify the checksums
     compare_checksums(localpath)
 
+
+def prep_upload_folder(savepath, techs, cf_record):
+    
+    # settings
+    access_cases = ['reference', 'open', 'limited']
+    reedspath = Path(__file__).parent.parent
+
+    # loop over techs to process
+    for tech in techs:
+        # make folder
+        savepath_tech = Path(savepath, tech)
+        savepath_tech.mkdir(exist_ok=True)
+        print(f'Saving {tech} files to {savepath_tech}')
+
+        for access in access_cases:
+            # save supply curve with reduced columns
+            pd.read_csv(
+                reedspath / 'inputs' / 'supply_curve' / f'supplycurve_{tech}-{access}.csv',
+                usecols=['sc_point_gid', 'capacity', 'cf']
+            ).to_csv(
+                savepath_tech / f'sc_{tech}_{access}.csv',
+                index=False
+            )
+            # copy profiles
+            shutil.copy2(
+                reedspath / 'inputs' / 'remote' / f'cf_{tech}_{access}_{cf_record}.h5', 
+                savepath_tech / f'cf_{tech}_{access}.h5',
+            )
+            print(f'...{access} complete.')
+        
+        # copy sitemap
+        print('Saving sitemap')
+        sitemap = reeds.io.get_sitemap(offshore=(tech == 'wind-ofs'), geo=False)
+        sitemap_file = f'sitemap{"_offshore" if tech == 'wind-ofs' else ""}.csv'
+        sitemap[['latitude', 'longitude']].to_csv(savepath_tech / sitemap_file, index=True)
+
+    print('Done')
+        
+
 #%%
 if __name__ == '__main__':
     #%% Argument inputs
     parser = argparse.ArgumentParser(
         description=(
             'Zenodo: Create zonal supply curves, plot average CF and demand, '
-            'and verify checksums'
+            'and verify checksums. Also supports gathering files for upload.'
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -664,16 +694,44 @@ if __name__ == '__main__':
         help='path to working directory for plots and supply curves',
     )
     parser.add_argument(
-        'localpath', type=str,
+        '--localpath', '-l', type=str,
         help='path to local directory of files to upload to Zenodo',
     )
+    parser.add_argument(
+        '--prep_upload', '-p', default=False, action='store_true',
+        help='Run pre_upload_folder utility'
+    )
+    parser.add_argument(
+        '--techs', '-t', nargs='+', default=['wind-ofs', 'wind-ons', 'upv'],
+        help='Option to subset to process only select techs'
+    )
+    parser.add_argument(
+        '--cf_record', '-r', type=int, default=None,
+        help='Record to use for copying cf files when running prep_upload_folder'
+    )
+
     args = parser.parse_args()
     savepath = args.savepath
     localpath = args.localpath
+    prep_upload = args.prep_upload
+    techs = args.techs
+    cf_record = args.cf_record
 
     # #%% Inputs for testing
     # savepath = Path('~/Projects/ReEDS/zenodo/20260203_test').expanduser()
     # localpath = Path('~/Projects/ReEDS/zenodo/20260128').expanduser()
 
     #%% Run it
-    main(savepath, localpath)
+    if prep_upload:
+        prep_upload_folder(savepath, techs, cf_record)
+    else:
+        #%% Constants
+        baseurl = 'https://zenodo.org/api'
+        tokenfile = Path('~/.zenodo').expanduser()
+
+        ### Derived constants
+        with open(tokenfile, 'r') as f:
+            ACCESS_TOKEN = f.read().split()[-1]
+        headers = {'Authorization': f'Bearer {ACCESS_TOKEN}'}
+
+        main(savepath, localpath)
