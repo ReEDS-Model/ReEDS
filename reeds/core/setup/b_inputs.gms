@@ -4969,24 +4969,14 @@ rep_bio_price_unused(r)$[sum{usda_region, 1$r_usda(r,usda_region) }] =
 * Emissions cap and tax
 *======================
 
-parameter emit_cap(eall,t)    "--metric tons per year-- annual CO2 emissions cap",
-          yearweight(t)       "--unitless-- weights applied to each solve year for the banking and borrowing cap - updated in e_solveprep.gms",
+parameter yearweight(t)       "--unitless-- weights applied to each solve year for the banking and borrowing cap - updated in e_solveprep.gms",
           emit_tax(e,r,t)     "--$ per metric ton-- tax applied to emissions" ;
 
-emit_cap(e,t) = 0 ;
 emit_tax(e,r,t) = 0 ;
 
 yearweight(t) = 0 ;
 yearweight(t)$tmodel_new(t) = sum{tt$tprev(tt,t), yeart(tt) } - yeart(t) ;
 yearweight(t)$tlast(t) = 1 + smax{yearafter, yearafter.val } ;
-
-if(Sw_AnnualCap = 1,
-    emit_cap("CO2",t) = co2_cap(t) ;
-) ;
-
-if(Sw_AnnualCap > 1,
-    emit_cap("CO2e",t) = co2_cap(t) ;
-) ;
 
 * set the carbon tax based on switch arguments
 if(Sw_CarbTax = 1,

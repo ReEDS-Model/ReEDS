@@ -943,6 +943,25 @@ def write_miscellaneous_files(
         optfile = reeds.io.get_optfile(case, GSw_gopt=sw.GSw_gopt_mga)
         shutil.copy(Path(reeds_path, 'reeds', 'solver', optfile), case)
 
+    ### Model years
+    solveyears = reeds.inputs.parse_yearset(sw['yearset'])
+    if int(sw['startyear']) not in solveyears:
+        solveyears.append(int(sw['startyear']))
+        solveyears = sorted(solveyears)
+    solveyears = [y for y in solveyears if (y >= int(sw['startyear'])) and (y <= int(sw['endyear']))]
+    pd.DataFrame(columns=solveyears).to_csv(
+        os.path.join(inputs_case,'modeledyears.csv'), index=False)
+    reeds.io.write_to_inputs_h5(
+        pd.Series(solveyears, name='allt'), 'tmodel_new', inputs_case, gamstype='set',
+        comment='years to run the model',
+    )
+
+    t = pd.Series(range(int(sw.startyear), int(sw.endyear)+1), name='allt')
+    reeds.io.write_to_inputs_h5(
+        pd.Series(t, name='allt'), 't', inputs_case, gamstype='set',
+        comment='full set of years',
+    )
+
     ### Parsed switches
     pd.DataFrame(
         {'*pvb_type': [f'pvb{i}' for i in sw['GSw_PVB_Types'].split('_')],
@@ -1052,38 +1071,11 @@ def write_miscellaneous_files(
         comment='--metric ton CO2-equivalents-- global warming potential',
     )
 
-    # Calculate CO2 cap based on GSw_Region chosen (national or sub-national regions)
-    # Read in national co2 cap
-    co2_cap = (
-        pd.read_csv(
-            os.path.join(reeds_path, 'inputs', 'emission_constraints', 'co2_cap.csv'),
-            index_col='t',
-        )
-        .loc[sw['GSw_AnnualCapScen']]
-        .rename_axis('allt')
-        .rename('tonne_per_year')
-    )
-
-    # Read in 2022 CO2 emission share by county calculated from 2022 eGrid emission data:
-    em_share = pd.read_csv(
-        os.path.join(
-            reeds_path,'inputs','emission_constraints','county_co2_share_egrid_2022.csv'),
-        index_col=0)
-
-    # Merge emission share by county with the counties in GSw_Region and calculate emission share of GSw_Region
-    region_em_share = (
-        em_share.reindex(county2zone.index)
-        .fillna(0)
-        ['share']
-        .sum()
-    )
-
-    # Apply the emission share to national cap to get the emission cap trajectory of GSw_Region
-    co2_cap *= region_em_share
+    emit_cap = reeds.inputs.get_emit_cap(reeds.io.standardize_case(inputs_case))
 
     reeds.io.write_to_inputs_h5(
-        co2_cap, 'co2_cap', inputs_case, gamstype='parameter',
-        comment='--metric tons-- CO2 emissions cap used when Sw_AnnualCap is on',
+        emit_cap, 'emit_cap', inputs_case, gamstype='parameter',
+        units='metric tons per year', comment='Annual CO2 or CO2e emissions cap',
     )
 
     # CO2 tax
@@ -1093,24 +1085,6 @@ def write_miscellaneous_files(
     reeds.io.write_to_inputs_h5(
         co2_tax, 'co2_tax', inputs_case, gamstype='parameter',
         comment='--$/metric ton-- CO2 tax used when Sw_CarbTax is on',
-    )
-
-    solveyears = reeds.inputs.parse_yearset(sw['yearset'])
-    if int(sw['startyear']) not in solveyears:
-        solveyears.append(int(sw['startyear']))
-        solveyears = sorted(solveyears)
-    solveyears = [y for y in solveyears if (y >= int(sw['startyear'])) and (y <= int(sw['endyear']))]
-    pd.DataFrame(columns=solveyears).to_csv(
-        os.path.join(inputs_case,'modeledyears.csv'), index=False)
-    reeds.io.write_to_inputs_h5(
-        pd.Series(solveyears, name='allt'), 'tmodel_new', inputs_case, gamstype='set',
-        comment='years to run the model',
-    )
-
-    t = pd.Series(range(int(sw.startyear), int(sw.endyear)+1), name='allt')
-    reeds.io.write_to_inputs_h5(
-        pd.Series(t, name='allt'), 't', inputs_case, gamstype='set',
-        comment='full set of years',
     )
 
     gen_mandate_trajectory = pd.read_csv(

@@ -915,3 +915,52 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
+
+
+def get_emit_cap(case:str|Path|None=None, **kwargs) -> pd.Series:
+    """Load and process CO2/CO2e emissions cap trajectory [metric tons/year]"""
+    sw = reeds.io.get_switches(case, **kwargs)
+    county2zone = reeds.io.get_county2zone(case=case, **kwargs)
+    allyears = reeds.inputs.parse_yearset(sw.yearset)
+    years = [y for y in allyears if y <= int(sw.endyear)]
+    # Calculate CO2 cap based on GSw_Region chosen (national or sub-national regions)
+    # Read in national co2 cap
+    co2_cap = (
+        pd.read_csv(
+            Path(reeds.io.reeds_path, 'inputs', 'emission_constraints', 'co2_cap.csv'),
+            index_col='t',
+        )
+        .loc[sw['GSw_AnnualCapScen']]
+        .rename_axis('t').rename('Value')
+    )
+    co2_cap.index = co2_cap.index.astype(int)
+    co2_cap = co2_cap.reindex(years).ffill()
+
+    # Read in 2022 CO2 emission share by county calculated from 2022 eGrid emission data:
+    em_share = pd.read_csv(
+        Path(reeds.io.reeds_path,'inputs','emission_constraints','county_co2_share_egrid_2022.csv'),
+        index_col=0,
+    )
+    em_share.index = em_share.index.str.strip('p')
+
+    # Merge emission share by county with the counties in GSw_Region and calculate emission share of GSw_Region
+    region_em_share = (
+        em_share.reindex(county2zone.index)
+        .fillna(0)
+        ['share']
+        .sum()
+    )
+
+    # Apply the emission share to national cap to get the emission cap trajectory of GSw_Region
+    co2_cap *= region_em_share
+
+    ## Parse switches controlling emissions limits
+    emit_cap = co2_cap.reset_index()
+    if int(sw.GSw_AnnualCap) == 1:
+        emit_cap['eall'] = 'CO2'
+    elif int(sw.GSw_AnnualCap) > 1:
+        emit_cap['eall'] = 'CO2e'
+    else:
+        emit_cap = pd.DataFrame(columns=['eall','t','Value'])
+
+    return emit_cap.set_index(['eall','t']).Value
