@@ -2431,7 +2431,7 @@ eq_state_cap(s,st,t)
           $h_rep(h)
 * If there is a national zero-carbon cap in the present year,
 * set emissions intensity of imports to zero.
-          $(not ((Sw_AnnualCap>0) and not emit_cap(s,"CO2",t) and not emit_cap(s,"CO2e",t)))],
+          $(not (sum{e, emit_capped(s,e)} and not emit_cap(s,"CO2",t) and not emit_cap(s,"CO2e",t)))],
           hours(h) * FLOW(s,rr,r,h,t,trtype)
           * sum{tt$tprev(t,tt), co2_emit_rate_r(s,rr,tt) }
     }
@@ -2488,16 +2488,18 @@ eq_emit_rate_limit(s,e,r,t)$[emit_rate_con(e,r,t)$tmodel(t)]..
 ;
 
 * ---------------------------------------------------------------------------
-* This equation enforces emission caps for both the CO2 (Sw_AnnualCap = 1) 
-* and CO2e emission (Sw_AnnualCap =2 or Sw_AnnualCap =3) scenarios 
-eq_annual_cap(s,eall,t)$[sum{tt, emit_cap(s,eall,tt) }$tmodel(t)$(Sw_AnnualCap>0)]..
+* National annual emissions cap for CO2 or CO2e
+eq_annual_cap(s,eall,t)
+    $[sum{tt, emit_cap(s,eall,tt)}
+    $tmodel(t)
+    $sum{e, emit_capped(s,e)}]..
 
-* exogenous CO2 cap (Sw_AnnualCap = 1) or CO2e cap (Sw_AnnualCap > 1)
+* Annual cap
     emit_cap(s,eall,t)
 
     =g=
 
-* must exceed annual endogenous emissions by CO2 pollutant (when Sw_AnnualCap=1) or CO2e pollutants (CO2, CH4, NO2 pollutants when Sw_AnnualCap=2 and additional H2 leakage when Sw_AnnualCap=3)
+* Must exceed annual emissions
     sum{(e,r)$emit_capped(s,e), (EMIT(s,"process",e,r,t) + EMIT(s,"upstream",e,r,t)$Sw_Upstream) * gwp(e) }
 ;
 
@@ -2520,16 +2522,17 @@ eq_bankborrowcap(s,e)$[Sw_BankBorrowCap$sum{t, emit_cap(s,e,t) }]..
 
 eq_cdr_cap(s,t)
     $[tmodel(t)
-    $(Sw_AnnualCap>0)
+    $sum{e, emit_capped(s,e)}
     $Sw_NoFossilOffsetCDR]..
 
 *** GHG emissions from fossil CCS...
-* CO2 emissions from fossil CCS...
-    + sum{(i,v,r,h)$[valgen(i,v,r,t)$ccs(i)$(not beccs(i))$h_rep(h)$(Sw_AnnualCap<2)],
-            hours(h) * GEN(s,i,v,r,h,t) * (emit_rate("process","CO2",i,v,r,t) + emit_rate("upstream","CO2",i,v,r,t)$Sw_Upstream) }
-* GHG emissions * global warming potential
-    + sum{(i,v,r,h)$[valgen(i,v,r,t)$ccs(i)$(not beccs(i))$h_rep(h)$(Sw_AnnualCap>=2)],
-        hours(h) * GEN(s,i,v,r,h,t) * sum{e, (emit_rate("process",e,i,v,r,t) + emit_rate("upstream",e,i,v,r,t)$Sw_Upstream) * gwp(e) } }      
+    + sum{(i,v,r,h,e)$[valgen(i,v,r,t)$ccs(i)$(not beccs(i))$h_rep(h)$emit_capped(s,e)],
+        hours(h) * GEN(s,i,v,r,h,t) * gwp(e) * (
+            emit_rate("process",e,i,v,r,t)
+            + emit_rate("upstream",e,i,v,r,t)$Sw_Upstream
+        )
+    }
+
     =g=
 
 *** ...must be greater than emissions offset by CDR (negative emissions so negative signs here)
