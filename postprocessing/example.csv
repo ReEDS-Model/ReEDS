@@ -11,4 +11,11 @@ casepath,casename,color
 # /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1)
 # /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
 # /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
+### Glob paths (for use with mcplots.py)
+# ~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_MC_flat_state_MC*,Flat state,plt.cm.tab20(0)
+# ~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_MC_flat_state_IRA*,+ TC,C2
+# ~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_MC_flat_state_CAA0*,– EL,C1
+# ~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_MC_flat_country*,Flat country,plt.cm.tab20(6)
+# ~/Projects/Uncertainty/runs/20250829/v20250911_mcK0_MC_tri_state*,Tri state,plt.cm.tab20(1)
+# ~/Projects/Uncertainty/runs/20250829/v20250922_mcK0_MC_tri_country*,Tri country,plt.cm.tab20(7)
 ### Add your cases below (don't commit them) or create a new csv file with the same format

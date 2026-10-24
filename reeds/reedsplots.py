@@ -7077,3 +7077,22 @@ def validate_regional_capacity(
     reeds.plots.trim_subplots(ax, nrows, ncols, len(rs))
     reeds.plots.despine(ax)
     return f, ax, dictout
+
+
+def get_state_subplots(layout:Literal['alphabetical','r6c11']='r6c11') -> pd.DataFrame:
+    """
+    Generate a mapping from state abbreviations to (row, col) according to the specified layout:
+        alphabetical: Sort states alphabetically from top left to bottom right
+        r6c11: Sort states pseudo-geographically in 6 rows and 11 columns
+    """
+    state_subplots = (
+        pd.read_csv(
+            os.path.join(reeds.io.reeds_path, 'postprocessing', 'plots', 'state_subplots.csv'),
+            index_col=[0,1], header=0,
+        )
+        .loc[layout]
+        .stack().rename_axis(['row','col']).rename('state').reset_index().set_index('state')
+        .astype({'row':int, 'col':int})
+    )
+    state_subplots['ax'] = state_subplots[['row','col']].apply(lambda row: tuple(row), axis=1)
+    return state_subplots

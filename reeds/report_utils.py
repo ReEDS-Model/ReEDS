@@ -5,6 +5,7 @@ import io
 import numpy as np
 from glob import glob
 import pandas as pd
+from pathlib import Path
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -229,3 +230,90 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
         )
 
     return cases, colors, basecase, basemap
+
+
+def parse_caseglobs(
+    caseglobs:list,
+    casenames=None,
+    basecase_in=None,
+    titleshorten=0,
+    keep_incomplete=True,
+):
+    """
+    Inputs for testing:
+        caseglobs = ['/Users/pbrown/github/ReEDS/runs/v20261017_mcM1_MonteCarlo_Random_MC*']
+        casenames = None
+        basecase_in = None
+        titleshorten = 0
+    """
+    use_table_casenames = False
+    use_table_colors = False
+    if len(caseglobs) == 1:
+        ## If it's a .csv, read the cases to compare
+        if Path(caseglobs[0]).suffix == '.csv':
+            dfcase = pd.read_csv(Path(caseglobs[0]).expanduser(), header=None, comment='#', quoting=3)
+            ## First check it's a simple csv with one case per row
+            if dfcase.shape[1] == 1:
+                caseglobs = dfcase[0].tolist()
+            ## Then check if it's a csv with [casepath,casename] in the header
+            elif (
+                ('casepath' in dfcase.loc[0].tolist())
+                and ('casename' in dfcase.loc[0].tolist())
+            ):
+                dfcase = dfcase.T.set_index(0).T
+                caseglobs = dfcase.casepath.tolist()
+                use_table_casenames = True
+                if 'color' in dfcase:
+                    if not dfcase.color.isnull().any():
+                        use_table_colors = True
+        ## Otherwise look for all runs starting with the provided string
+        else:
+            caseglobs = caseglobs
+    else:
+        caseglobs = caseglobs
+
+    ## Expand the globs
+    casepaths = {}
+    for caseglob in caseglobs:
+        ## Remove cases that haven't finished yet
+        casepaths[caseglob] = [
+            i for i in sorted(glob(str(Path(caseglob).expanduser())))
+            if (os.path.isfile(os.path.join(i,'outputs','outputs.h5')) or keep_incomplete)
+        ]
+
+    ## Get the casenames
+    if use_table_casenames:
+        casenames = [c.replace('\\n','\n') for c in dfcase.casename.tolist()]
+    else:
+        if isinstance(casenames, str):
+            casenames = casenames.split(',')
+        elif casenames is None:
+            casenames = [Path(c).stem[titleshorten:].replace('*','') for c in casepaths]
+
+    if len(caseglobs) != len(casenames):
+        err = (
+            f"len(caseglobs) = {len(caseglobs)} but len(casenames) = {len(casenames)}\n\n"
+            'caseglobs:\n' + '\n'.join(caseglobs) + '\n\n'
+            'casenames:\n' + '\n'.join(casenames) + '\n'
+        )
+        raise ValueError(err)
+
+    nicelabels = dict(zip(casepaths.keys(), casenames))
+
+    ## Get the colors
+    if use_table_colors:
+        colors = dict(zip(dfcase.casename, dfcase.color))
+        for k, v in colors.items():
+            if v.startswith('plt.cm.') or v.startswith('cmocean.cm.'):
+                colors[k] = eval(v)
+    else:
+        colors = reeds.plots.rainbowmapper(casepaths.keys())
+
+    ## Take a look
+    print('Analyzing the following groups of samples:')
+    maxlength = max([len(i) for i in casepaths])
+    maxlabel = max([len(v) for k,v in nicelabels.items()])
+    for key, val in casepaths.items():
+        print(f'{key:<{maxlength}} | {nicelabels[key]:<{maxlabel}} | {len(val)} samples')
+
+    return casepaths, nicelabels, colors

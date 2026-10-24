@@ -2306,3 +2306,32 @@ def wraptext(text, width, fontsize=14):
     outlist = [text[i*numchars:(i+1)*numchars] for i in range(numlines)]
     out = '\n'.join(outlist)
     return out
+
+
+def hist_last(
+    ax, df, color='k', bins=None, xpad=0, xscale=5, alpha=1,
+    percentiles=[],
+):
+    """Plot a vertical histogram for the last value"""
+    x = df.index[-1] + xpad
+    hist_val, hist_y = np.histogram(df.iloc[-1].values, bins=bins)
+    height = hist_y[1] - hist_y[0]
+
+    ax.barh(
+        y=hist_y[:-1], width=(hist_val / max(hist_val) * xscale),
+        height=height, align='edge',
+        left=x, color=color,
+    )
+    ## Plot designated percentiles
+    if len(percentiles):
+        assert all([0 <= i <= 1 for i in percentiles]), "Percentiles must be ≥0 and ≤1"
+        describe = df.iloc[-1].describe(percentiles=percentiles)
+        labels = [f'{i*100:.0f}%' for i in percentiles]
+        assert all([i in describe.index for i in labels]), "Too many decimals in percentiles"
+        for label in labels:
+            ## Markers
+            ax.plot(
+                [x], [describe[label]],
+                marker='o', markerfacecolor='none', markeredgecolor='k',
+                markeredgewidth=0.5, markersize=3,
+            )

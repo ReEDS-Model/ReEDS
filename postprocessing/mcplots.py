@@ -9,324 +9,108 @@ import os
 import sys
 import shapely
 import cmocean
+import argparse
 import numpy as np
 import pandas as pd
-from glob import glob
 import geopandas as gpd
+from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patheffects as pe
 from tqdm import tqdm
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 
 reeds.plots.plotparams()
-plt.rcParams['figure.dpi'] = 300
 
-#%% Inputs
-if sys.platform == 'darwin':
-    projpath = os.path.expanduser('~/Projects/Uncertainty')
-    runspath = os.path.join(projpath, 'runs', '20250829')
-else:
-    projpath = '/projects/uncertainty'
-    runspath = os.path.join(reeds.io.reeds_path, 'runs')
-# runspath = os.path.join(projpath, 'MCS_24DEC', 'All')
-## 20250812
-# case_central = os.path.join(runspath, 'v20250811_mcM0_Central')
-# caseprefix = 'v20250812_mcK0_MC_tri_state'
-# caseprefix = 'v20250812_mcK0_MC_flat_country'
-# caseprefix = 'v20250812_mcK0_MC_flat_state'
-# caseprefix = 'v20250812_mcK0_MC_tri_country'
-## 20250829
-case_central = os.path.join(runspath, 'v20250829_mcK0_Central')
-caseprefixes = [
-     # v messed up because it's shared across all
-    'v20250829_mcK0_MC_flat_state_MC',
-    'v20250829_mcK0_MC_flat_state_IRA',
-    'v20250829_mcK0_MC_flat_state_CAA0',
-    'v20250829_mcK0_MC_flat_country',
-    'v20250911_mcK0_MC_tri_state',
-    'v20250922_mcK0_MC_tri_country',
-    # 'v20250905_mcK0_MC_flat_state_RepUnfixed',
-    'v20251014_mcK0_MC_flat_state_SitingDemand',
-]
-caseprefix_colors = {
-    'v20250829_mcK0_MC_flat_state_MC': plt.cm.tab20(0),
-    'v20250829_mcK0_MC_flat_state_IRA': 'C2',
-    'v20250829_mcK0_MC_flat_state_CAA0': 'C1',
-    'v20250829_mcK0_MC_flat_country': plt.cm.tab20(6),
-    'v20250911_mcK0_MC_tri_state': plt.cm.tab20(1),
-    'v20250905_mcK0_MC_flat_state_RepUnfixed': 'C8',
-    'v20250922_mcK0_MC_tri_country': plt.cm.tab20(7),
-    'v20251014_mcK0_MC_flat_state_SitingDemand': 'C9',
-}
-nicelabels = {
-    'v20250829_mcK0_MC_flat_state_MC': 'Flat state',
-    'v20250829_mcK0_MC_flat_state_IRA': '+ TC',
-    'v20250829_mcK0_MC_flat_state_CAA0': '– EL',
-    'v20250829_mcK0_MC_flat_country': 'Flat country',
-    'v20250911_mcK0_MC_tri_state': 'Tri state',
-    'v20250905_mcK0_MC_flat_state_RepUnfixed': 'RepUnfixed',
-    'v20250922_mcK0_MC_tri_country': 'Tri country',
-    'v20251014_mcK0_MC_flat_state_SitingDemand': 'SitingDemand',
-}
-
-savepath = os.path.join(projpath,'figures','20250829')
-os.makedirs(savepath, exist_ok=True)
-
-#%% Tax credit phaseout year
-phaseout_year = pd.read_csv(
-    os.path.join(runspath, 'phaseout_year.csv'),
-    header=None, index_col=0,
-).rename_axis('case').rename(columns={1:'year'})
-phaseout_year['caseprefix'] = phaseout_year.index.map(lambda x: x.rsplit('_', 1)[0])
-phaseout_year['sample'] = (
-    phaseout_year.index.map(lambda x: x.rsplit('_', 1)[1].strip('MCentral').lstrip('0'))
-)
-phaseout_year['sample'] = phaseout_year['sample'].replace('','0').astype(int)
-phaseout_year = phaseout_year.set_index(['caseprefix','sample']).year.replace(0,2100)
 
 #%% Fixed inputs
-renametechs = {
-    'h2-cc_upgrade':'h2-cc',
-    'h2-ct_upgrade':'h2-ct',
-    'gas-cc-ccs_mod_upgrade':'gas-cc-ccs_mod',
-    'coal-ccs_mod_upgrade':'coal-ccs_mod',
-}
+keep_incomplete = False
 
-techmap = {
-    **{f'upv_{i}':'PV' for i in range(20)},
-    **{'distpv':'PV'},
-    **{f'wind-ons_{i}':'Wind' for i in range(20)},
-    **{f'wind-ofs_{i}':'Offshore wind' for i in range(20)},
-    **dict(zip(['nuclear','nuclear-smr'], ['Nuclear']*20)),
-    **dict(zip(
-        ['gas-cc_h2-cc','gas-ct_h2-ct','h2-cc','h2-ct',],
-        ['H2 turbine']*20)),
-    **{'battery_li':'Storage', 'pumped-hydro':'Storage'},
-    # **dict(zip(
-    #     ['coal-igcc', 'coaloldscr', 'coalolduns', 'gas-cc', 'gas-ct', 'coal-new', 'o-g-s',],
-    #     ['Fossil']*20)),
-    **dict(zip(
-        ['coal-igcc', 'coaloldscr', 'coalolduns', 'coal-new'],
-        ['Coal']*20)),
-    **dict(zip(
-        ['gas-cc', 'gas-ct', 'o-g-s'],
-        ['Gas']*20)),
-    # **dict(zip(
-    #     [
-    #         'gas-cc_gas-cc-ccs_mod',
-    #         'gas-cc_gas-cc-ccs_max',
-    #         'gas-cc-ccs_mod',
-    #         'gas-cc-ccs_max',
-    #         'gas-cc_gas-cc-ccs_mod',
-    #         'coal-igcc_coal-ccs_mod',
-    #         'coal-new_coal-ccs_mod',
-    #         'coaloldscr_coal-ccs_mod',
-    #         'coalolduns_coal-ccs_mod',
-    #         'cofirenew_coal-ccs_mod',
-    #         'cofireold_coal-ccs_mod',
-    #         'gas-cc_gas-cc-ccs_max',
-    #         'coal-igcc_coal-ccs_max',
-    #         'coal-new_coal-ccs_max',
-    #         'coaloldscr_coal-ccs_max',
-    #         'coalolduns_coal-ccs_max',
-    #         'cofirenew_coal-ccs_max',
-    #         'cofireold_coal-ccs_max',
-    #         'coal-ccs_mod',
-    #     ],
-    #     ['Fossil+CCS']*50)),
-    **dict(zip(
-        [
-            'coal-igcc_coal-ccs_mod',
-            'coal-new_coal-ccs_mod',
-            'coaloldscr_coal-ccs_mod',
-            'coalolduns_coal-ccs_mod',
-            'cofirenew_coal-ccs_mod',
-            'cofireold_coal-ccs_mod',
-            'coal-igcc_coal-ccs_max',
-            'coal-new_coal-ccs_max',
-            'coaloldscr_coal-ccs_max',
-            'coalolduns_coal-ccs_max',
-            'cofirenew_coal-ccs_max',
-            'cofireold_coal-ccs_max',
-            'coal-ccs_mod',
-        ],
-        ['Coal+CCS']*50)),
-    **dict(zip(
-        [
-            'gas-cc_gas-cc-ccs_mod',
-            'gas-cc_gas-cc-ccs_max',
-            'gas-cc-ccs_mod',
-            'gas-cc-ccs_max',
-            'gas-cc_gas-cc-ccs_mod',
-            'gas-cc_gas-cc-ccs_max',
-        ],
-        ['Gas+CCS']*50)),
-    **dict(zip(['dac'], ['CO2 removal']*20)),
-    **{f'egs_nearfield_{i}':'Geothermal' for i in range(20)},
-    **{f'geohydro_allkm_{i}':'Geothermal' for i in range(20)},
-    **{f'csp{i+1}_{j}':'CSP' for i in range(4) for j in range(20)},
-    **{'csp-ns':'CSP'},
-    **dict(zip(['hyded','hydend','hydnd','hydnpnd','hydud','hydund'], ['Hydro']*20)),
-    **dict(zip(['biopower', 'lfill-gas', 'beccs_mod', 'beccs_max'], ['Bio']*20)),
-}
+
+#%% Argument inputs
+parser = argparse.ArgumentParser(
+    description='Compare groups of Monte Carlo samples',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+parser.add_argument(
+    'caselist', type=str, nargs='+',
+    help=(
+        'space-delimited list of cases to plot, OR csv file of cases (both with glob '
+        'controls included). The first case is treated as the base case '
+        'unless a different one is provided via the --basecase/-b argument.'
+    ))
+parser.add_argument(
+    '--casenames', '-n', type=str, default='',
+    help='comma-delimited list of shorter case names to use in plots')
+parser.add_argument(
+    '--titleshorten', '-s', type=str, default='',
+    help='characters to cut from start of case name (only used if no casenames)')
+parser.add_argument(
+    '--basepath', '-b', type=str, default='',
+    help='Substring of case path to use as default (if empty, uses first case in list)')
+
+# #%% Inputs for testing
+# caselist = [str(Path(reeds.io.reeds_path,'postprocessing','example.csv'))]
+# casenames = ''
+# titleshorten = ''
+# basepath = str(Path('~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_Central').expanduser())
+
+#%% Parse inputs
+args = parser.parse_args()
+caselist = args.caselist
+casenames = args.casenames
+try:
+    titleshorten = int(args.titleshorten)
+except ValueError:
+    titleshorten = len(args.titleshorten)
+if args.basepath == '':
+    basepath = None
+else:
+    basepath = args.basepath
+    if not Path(basepath).is_dir():
+        print(f'{basepath=} does not exist; using first sample instead')
+        basepath = None
+
+
+#%%### Procedure
+#%% Parse arguments
+casepaths, nicelabels, colors = reeds.report_utils.parse_caseglobs(
+    caselist,
+    casenames,
+    basepath,
+    titleshorten,
+    keep_incomplete=keep_incomplete,
+)
+
+#%%
+if basepath is not None:
+    savepath = Path(basepath, 'outputs', 'comparisons')
+else:
+    ## Put it in the first sample if no basepath is specified
+    firstcase = casepaths[list(casepaths.keys())[0]][0]
+    savepath = Path(firstcase, 'outputs', 'comparisons')
+savepath.mkdir(parents=True, exist_ok=True)
+
 
 #%% Colors
-bokehcostcolors = pd.read_csv(
-    os.path.join(
-        reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','cost_cat_style.csv'),
-    index_col='order').squeeze(1)
-bokehcostcolors = bokehcostcolors.loc[~bokehcostcolors.index.duplicated()]
-
-colors_time = pd.read_csv(
-    os.path.join(
-        reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','process_style.csv'),
-    index_col='order',
-).squeeze(1)
-
-bokehcolors = pd.read_csv(
-    os.path.join(reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','tech_style.csv'),
-    index_col='order').squeeze(1)
-
-tech_map = pd.read_csv(
-    os.path.join(reeds.io.reeds_path,'postprocessing','bokehpivot','in','reeds2','tech_map.csv'),
-    index_col='raw').squeeze(1)
-    
-bokehcolors = pd.concat([
-    bokehcolors.loc['smr':'electrolyzer'],
-    pd.Series('#D55E00', index=['dac'], name='color'),
-    bokehcolors.loc[:'Canada'],
-])
-
-bokehcolors['canada'] = bokehcolors['Canada']
-
-techcolors = {
-    'gas-cc_gas-cc-ccs':bokehcolors['gas-cc-ccs_mod'],
-    'cofire':bokehcolors['biopower'],
-    'gas-cc':'#5E1688',
-    'gas-cc-ccs':'#9467BD',
-}
-for i in bokehcolors.index:
-    if i in techcolors:
-        pass
-    elif i in bokehcolors.index:
-        techcolors[i] = bokehcolors[i]
-    else:
-        raise Exception(i)
-
-techcolors = {i: techcolors[i] for i in bokehcolors.index}
-
-aggcolors = {
-    'Hydro': techcolors['hydro'],
-    'Geothermal': techcolors['geothermal'],
-
-    'Bio':techcolors['biopower'],
-
-    'Nuclear':'C3',
-
-    'Coal':plt.cm.binary(1.0),
-    'Gas':plt.cm.tab20(8),
-    'Coal+CCS':'C7',
-    'Gas+CCS':plt.cm.tab20(9),
-
-    'H2 turbine':techcolors['h2-ct'],
-
-    'Wind':techcolors['wind-ons'],
-    'Offshore wind':techcolors['wind-ofs'],
-
-    'CSP':techcolors['csp'],
-    'PV':techcolors['upv'],
-
-    'Storage':techcolors['battery_li'],
-}
-
-plotcolors = {
-    'PV': 'C1',
-    'Wind': 'C0',
-    'Battery': 'C6',
-    'Storage': 'C6',
-    'Fossil': 'C4',
-    'Nuclear': 'C3',
-    'Geothermal': 'C5',
-    'Hydro': 'C9',
-    'Gas': 'C4',
-    'Coal': '0.3',
-    'Coal+CCS': '#666666',
-    'Gas+CCS': '#9467BD',
-}
-
-#%% State subplots
-state_subplot_layout = 'r6c11'
-state_subplots = (
-    pd.read_csv(
-        os.path.join(reeds.io.reeds_path, 'postprocessing', 'plots', 'state_subplots.csv'),
-        index_col=[0,1], header=0,
-    )
-    .loc[state_subplot_layout]
-    .stack().rename_axis(['row','col']).rename('state').reset_index().set_index('state')
-    .astype({'row':int, 'col':int})
-)
-state_subplots['ax'] = state_subplots[['row','col']].apply(lambda row: tuple(row), axis=1)
-
-
-#%%### Functions
-def hist_last(
-    ax, df, color='k', bins=None, xpad=0, xscale=5, alpha=1,
-    percentiles=[],
-):
-    """Plot a vertical histogram for the last value"""
-    x = df.index[-1] + xpad
-    hist_val, hist_y = np.histogram(df.iloc[-1].values, bins=bins)
-    height = hist_y[1] - hist_y[0]
-
-    ax.barh(
-        y=hist_y[:-1], width=(hist_val / max(hist_val) * xscale),
-        height=height, align='edge',
-        left=x, color=color,
-    )
-    ## Plot designated percentiles
-    if len(percentiles):
-        assert all([0 <= i <= 1 for i in percentiles]), "Percentiles must be ≥0 and ≤1"
-        describe = df.iloc[-1].describe(percentiles=percentiles)
-        labels = [f'{i*100:.0f}%' for i in percentiles]
-        assert all([i in describe.index for i in labels]), "Too many decimals in percentiles"
-        for label in labels:
-            ## Markers
-            ax.plot(
-                [x], [describe[label]],
-                marker='o', markerfacecolor='none', markeredgecolor='k',
-                markeredgewidth=0.5, markersize=3,
-            )
-            ## Lines
-            # ax.plot(
-            #     [x, x+xscale],
-            #     [describe[label]]*2,
-            #     color='k', lw=0.5,
-            # )
-
-    # ax.hist(
-    #     df.iloc[-1].values, bins=bins, color=color,
-    #     bottom=x, density=True,
-    #     orientation='horizontal',
-    # )
+plot_settings = reeds.io.get_plot_formatting()
+colors_tech = plot_settings['tech_color']
 
 
 #%% Cases
-casepaths = {
-    caseprefix: sorted(glob(os.path.join(runspath, caseprefix+'*')))
-    for caseprefix in caseprefixes
-}
-cases = pd.DataFrame(casepaths)
+# cases = pd.DataFrame(casepaths)
+## Allow for different numbers of samples across cases
+cases = pd.concat({k: pd.Series(v) for k,v in casepaths.items()}, axis=1)
 cases.columns = cases.columns.rename('caseprefix')
-cases = cases.stack().rename('path').reset_index(level='caseprefix')
+cases = cases.stack().rename('path').dropna().reset_index(level='caseprefix')
 cases['number'] = cases.path.map(lambda x: int(x.split('_')[-1].strip('MC')))
 ## Add central case
-if case_central is not None:
+if basepath is not None:
     cases = pd.concat([
         cases,
-        pd.DataFrame({'caseprefix':'central', 'path':case_central, 'number':0}, index=[0])
+        pd.DataFrame({'caseprefix':'central', 'path':basepath, 'number':0}, index=[0])
     ])
 cases = cases.set_index(['caseprefix','number']).sort_index()
 samples = [i for i in cases.index.get_level_values('number').unique() if i != 0]
@@ -334,35 +118,18 @@ samples = [i for i in cases.index.get_level_values('number').unique() if i != 0]
 
 #%% Shared inputs
 basecase = cases.iloc[0].name
-basepath = cases.iloc[0].path
-sw = reeds.io.get_switches(case_central)
+sw = reeds.io.get_switches(basepath)
 inflatable = reeds.io.get_inflatable()
 dollaryear_reeds = 2004
 dollaryear_output = 2024
 inflator = inflatable[dollaryear_reeds, dollaryear_output]
-hierarchy = reeds.io.get_hierarchy(case_central)
+hierarchy = reeds.io.get_hierarchy(basepath)
 hierarchy['r'] = hierarchy.index
-dfmap = reeds.io.get_dfmap(case_central)
+dfmap = reeds.io.get_dfmap(basepath)
 
-discountrate_scghg = 0.02
-scghg = pd.read_csv(
-    os.path.join(reeds.io.reeds_path, 'postprocessing', 'plots', 'scghg_annual.csv'),
-    comment='#', thousands=','
-).rename(columns={
-    'gas':'e',
-    'emission.year':'t',
-    '2.5% Ramsey':'2020_2.5%',
-    '2.0% Ramsey':'2020_2.0%',
-    '1.5% Ramsey':'2020_1.5%',
-}).set_index(['e','t'])
-scghg_central = (
-    scghg[f'2020_{discountrate_scghg*100:.1f}%'].unstack('e')
-    * inflatable[2020, dollaryear_output]
-)
-# scco2_pindyck = 291 * inflatable[2019, dollaryear_output]
-# scco2_pindyck = 291
 scco2_pindyck = 290
 
+### Historical emissions
 try:
     ### EIA emissions https://www.eia.gov/totalenergy/data/monthly/
     ## https://www.eia.gov/totalenergy/data/browser/csv.php?tbl=T11.06
@@ -381,6 +148,9 @@ try:
     baseline_emissions = baseline_elec.loc[baseline_elec.month==13,['year','Value']].set_index('year').Value
 except Exception as err:
     print(err)
+
+### State subplots
+state_subplots = reeds.reedsplots.get_state_subplots()
 
 
 #%%### Inputs
@@ -457,7 +227,7 @@ color = 'C7'
 alpha = 0.5
 bins = 21
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_demand if c == caseprefix])
     dfplot = pd.concat({
         sample: (
@@ -488,7 +258,7 @@ for caseprefix in caseprefixes:
             lw=0.5, color='k', alpha=0.25,
         )
         ## Histogram
-        hist_last(
+        reeds.plots.hist_last(
             _ax, df, color=color, bins=bins, alpha=alpha,
             xpad=1, xscale=4,
         )
@@ -509,7 +279,7 @@ for caseprefix in caseprefixes:
 
 
 #%% Fuel price
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_gasprice if c == caseprefix])
     df = pd.concat(
         {
@@ -533,7 +303,7 @@ for caseprefix in caseprefixes:
         lw=0.5, color='k', alpha=0.25,
     )
     ## Histogram
-    hist_last(
+    reeds.plots.hist_last(
         ax, df, color=color, bins=bins, alpha=alpha,
         xpad=1, xscale=4,
     )
@@ -560,7 +330,7 @@ labels = {
 ncols = len(labels)
 bins = 31
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_cost if c == caseprefix])
     dfplot = pd.concat(
         {
@@ -582,7 +352,7 @@ for caseprefix in caseprefixes:
         ## Background
         _ax.fill_between(
             df.index, df.max(axis=1), df.min(axis=1),
-            color=plotcolors[tech], alpha=alpha, lw=0,
+            color=colors_tech[tech], alpha=alpha, lw=0,
         )
         ## Lines
         df.plot(
@@ -590,12 +360,12 @@ for caseprefix in caseprefixes:
             lw=0.5, color='k', alpha=0.1,
         )
         ## Histogram
-        hist_last(
-            _ax, df, color=plotcolors[tech], bins=bins, alpha=alpha,
+        reeds.plots.hist_last(
+            _ax, df, color=colors_tech[tech], bins=bins, alpha=alpha,
             xpad=1, xscale=4,
         )
         ## Formatting
-        _ax.set_title(tech, color=plotcolors[tech], weight='bold')
+        _ax.set_title(tech, color=colors_tech[tech], weight='bold')
         _ax.set_xlabel(None)
 
     ax[0].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
@@ -615,7 +385,7 @@ for caseprefix in caseprefixes:
 
 #%% Supply curves
 techs = ['upv', 'wind-ons']
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_sc if c == caseprefix])
     dfplot = pd.concat(
         {
@@ -635,58 +405,6 @@ for caseprefix in caseprefixes:
     bounds = dfmap['country'].bounds.squeeze(0)
     xspan = bounds.maxx - bounds.minx
     yspan = bounds.maxy - bounds.miny
-
-    # #%% Test it
-    # geom = dfmap['country'].geometry.simplify(10000)
-    # centroid = geom.squeeze().centroid
-    # x = centroid.x
-    # y = centroid.y
-
-    # plt.close()
-    # f,ax = plt.subplots(figsize=(ncols*scale, nrows*scale*0.7))
-    # for sample in coords:
-    #     row, col = coords[sample]
-    #     df = dfmap['country'].copy()
-    #     df.geometry = geom.map(
-    #         lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
-    #     )
-    #     df.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.5)
-    #     ax.annotate(
-    #         sample,
-    #         (x + xspan * col, y - yspan * row),
-    #         ha='center', va='center',
-    #     )
-    # ax.axis('off')
-    # plt.show()
-
-
-
-    # #%% Plot absolute value
-    # tech = 'upv'
-    # import cmocean
-    # cmap = cmocean.cm.rain
-
-    # geom = dfmap['r'].geometry.simplify(1000)
-    # vmin = dfplot.loc[tech, samples].min().min()
-    # vmin = 0
-    # vmax = dfplot.loc[tech, samples].max().max()
-
-    # plt.close()
-    # f,ax = plt.subplots(figsize=(ncols*scale, nrows*scale*0.7))
-    # for sample in tqdm(coords):
-    #     row, col = coords[sample]
-    #     df = dfplot.loc[tech, [sample, 'geometry']].copy().rename(columns={sample:'val'})
-    #     df.geometry = geom.map(
-    #         lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
-    #     )
-    #     df.plot(ax=ax, column='val', cmap=cmap, vmin=vmin, vmax=vmax)
-    #     # ax.annotate(
-    #     #     sample,
-    #     #     (x + xspan * col, y - yspan * row),
-    #     #     ha='center', va='center',
-    #     # )
-    # ax.axis('off')
-    # plt.show()
 
     ### Plot relative difference
     cmap = plt.cm.RdBu_r
@@ -749,8 +467,7 @@ for case, row in tqdm(cases.iterrows(), desc='output capacity', total=len(cases)
         # print(f'Missing {case}')
         continue
     ## Simplify techs
-    dictin_cap_r[case].i = dictin_cap_r[case].i.map(lambda x: renametechs.get(x,x))
-    dictin_cap_r[case].i = dictin_cap_r[case].i.str.lower().map(lambda x: techmap.get(x,x))
+    dictin_cap_r[case].i = reeds.reedsplots.simplify_techs(dictin_cap_r[case].i)
     dictin_cap_r[case] = dictin_cap_r[case].groupby(['i','r','t'], as_index=False).MW.sum()
 
 dictin_trans_r = {}
@@ -777,8 +494,7 @@ for case, row in tqdm(cases.iterrows(), desc='output generation', total=len(case
         # print(f'Missing {case}')
         continue
     ## Simplify techs
-    dictin_gen_r[case].i = dictin_gen_r[case].i.map(lambda x: renametechs.get(x,x))
-    dictin_gen_r[case].i = dictin_gen_r[case].i.str.lower().map(lambda x: techmap.get(x,x))
+    dictin_gen_r[case].i = reeds.reedsplots.simplify_techs(dictin_gen_r[case].i)
     dictin_gen_r[case] = dictin_gen_r[case].groupby(['i','r','t']).TWh.sum() / 1e6
 
 val2sheet = reeds.io.get_report_sheetmap(basepath)
@@ -850,25 +566,6 @@ for case, row in tqdm(cases.iterrows(), desc='health damages', total=len(cases))
     except FileNotFoundError as _err:
         continue
 
-# dictin_neue = {}
-# dictin_neue_all = {}
-# for case, row in tqdm(cases.iterrows(), desc='output neue', total=len(cases)):
-#     infiles = sorted(glob(os.path.join(row.path,'outputs','neue_*.csv')))
-#     if not len(infiles):
-#         continue
-#     df = {}
-#     for f in infiles:
-#         y, i = [int(s) for s in os.path.basename(f).strip('neue_.csv').split('i')]
-#         df[y,i] = pd.read_csv(f, index_col=['level', 'metric', 'region']).squeeze(1)
-#     dictin_neue_all[case] = pd.concat(df, names=('t', 'iteration'))
-#     indices = ['t', 'level', 'metric', 'region']
-#     dictin_neue[case] = (
-#         dictin_neue_all[case]
-#         .reset_index()
-#         .drop_duplicates(subset=indices, keep='last').drop(columns='iteration')
-#         .set_index(indices).squeeze(1)
-#     )
-
 # print(sorted(pd.concat(dictin_cap_r).i.unique()))
 # print(sorted(pd.concat(dictin_gen_r).i.unique()))
 
@@ -877,29 +574,10 @@ years = sorted(dictin_cap_r[list(dictin_cap_r.keys())[0]].t.unique())
 
 
 
-# #%% Write them for use off kestrel
-# writepath = '/projects/uncertainty/pbrown/github/ReEDS-2.0/runs/'
-
-# for df, label in [
-#     (dictin_demand, 'demand'),
-#     (dictin_gasprice, 'gasprice'),
-#     (dictin_cap_cost, 'cap_cost'),
-#     (dictin_sc, 'sc'),
-#     (dictin_cap_r, 'cap_r'),
-#     (dictin_trans_r, 'trans_r'),
-#     (dictin_gen_r, 'gen_r'),
-#     (dictin_scoe, 'scoe'),
-#     (dictin_npv, 'npv'),
-#     (dictin_emissions, 'emissions'),
-# ]:
-#     print(label)
-#     dfwrite = pd.concat(df, names=('caseprefix','sample'))
-#     dfwrite.to_csv(os.path.join(writepath, f'{label}.csv.gz'))
-
 
 #%% Total number of samples
 df = {}
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     df[nicelabels.get(caseprefix,caseprefix)] = len(caseprefix_samples)
 df = pd.Series(df).sort_index()
@@ -936,7 +614,7 @@ techs = [
 ]
 nrows = len(techs) + 1
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     dfplot = {}
     for region in regions:
@@ -1000,7 +678,7 @@ for caseprefix in caseprefixes:
             ## Background
             ax[row,col].fill_between(
                 df.index, df.max(axis=1), df.min(axis=1),
-                color=plotcolors[tech], alpha=alpha, lw=0,
+                color=colors_tech[tech], alpha=alpha, lw=0,
             )
             ## Lines
             df.plot(
@@ -1008,8 +686,8 @@ for caseprefix in caseprefixes:
                 lw=0.5, color='k', alpha=0.25,
             )
             ## Histogram
-            hist_last(
-                ax[row,col], df, color=plotcolors[tech], bins=bins[tech], alpha=alpha,
+            reeds.plots.hist_last(
+                ax[row,col], df, color=colors_tech[tech], bins=bins[tech], alpha=alpha,
                 xpad=1, xscale=4,
             )
     ## Formatting
@@ -1037,9 +715,9 @@ for caseprefix in caseprefixes:
     plt.show()
 
 
-#%% National capacity for all caseprefixes
+#%% National capacity for all caselist
 dictplot = {}
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -1053,24 +731,6 @@ for caseprefix in caseprefixes:
     }, axis=1)
 
 dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
-## Get the tech order
-## 20251210: all scenarios
-## Gas              790.096802
-## PV               782.138733
-## Wind             511.272705
-## Nuclear          114.899582
-## Storage           96.090576
-## Hydro             86.468788
-## Coal+CCS          60.208210
-## Offshore wind     58.482082
-## Gas+CCS           28.044708
-## Coal              26.295513
-## Geothermal         9.307634
-## can-imports        8.800426
-## Bio                4.995197
-## H2 turbine         2.825879
-## electrolyzer       0.620173
-## CSP                0.040323
 
 ### Plot it
 tstart = 2020
@@ -1143,7 +803,7 @@ for col, tech in enumerate(techs):
         ## Background
         _ax.fill_between(
             df.index, df.max(axis=1), df.min(axis=1),
-            color=caseprefix_colors[caseprefix], alpha=alpha, lw=0,
+            color=colors[caseprefix], alpha=alpha, lw=0,
             label=(
                 f'{plotlabels.get(caseprefix,caseprefix)}'
                 # f' ({df.shape[1]})'
@@ -1153,7 +813,7 @@ for col, tech in enumerate(techs):
         # for agg in ['min', 'max']:
         #     _ax.plot(
         #         df.index, df.agg(agg, axis=1), lw=0.5,
-        #         color=caseprefix_colors[caseprefix],
+        #         color=colors[caseprefix],
         #         label='_nolabel',
         #     )
 
@@ -1161,13 +821,13 @@ for col, tech in enumerate(techs):
         # df.plot(ax=_ax, legend=False, lw=0.5, color='k', alpha=0.25)
         for s in df:
             _ax.plot(
-                df.index, df[s].values, color=caseprefix_colors[caseprefix],
+                df.index, df[s].values, color=colors[caseprefix],
                 lw=0.5, alpha=0.25, label='_nolabel',
             )
 
         ## Histogram
-        hist_last(
-            _ax, df, color=caseprefix_colors[caseprefix], bins=bins, alpha=1,
+        reeds.plots.hist_last(
+            _ax, df, color=colors[caseprefix], bins=bins, alpha=1,
             xpad=1+((xscale+0.5)*i), xscale=xscale,
             # percentiles=[0.5],
             # percentiles=[0.05, 0.5, 0.95],
@@ -1182,7 +842,7 @@ ax[0].xaxis.set_minor_locator(mpl.ticker.FixedLocator(list(range(2020,2051,5))))
 ## Legend
 handles = [
     mpl.patches.Patch(
-        facecolor=caseprefix_colors[caseprefix], edgecolor='none',
+        facecolor=colors[caseprefix], edgecolor='none',
         label=plotlabels.get(caseprefix,caseprefix)
     )
     for caseprefix in plotcaseprefixes
@@ -1234,12 +894,12 @@ dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv').replace('_
 dfwrite
 
 
-#%% National capacity for all caseprefixes: just histogram
+#%% National capacity for all caselist: just histogram
 t = 2050
 tstart = 2020
 
 dictplot = {}
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -1261,25 +921,6 @@ dfstart = (
     .groupby('i').MW.sum()
     .rename('GW') / 1e3
 )
-
-## Get the tech order
-## 20260116: 6 scenarios
-## Gas              790.096802
-## PV               782.138733
-## Wind             511.272705
-## Nuclear          114.899582
-## Storage           96.090576
-## Hydro             86.468788
-## Coal+CCS          60.208210
-## Offshore wind     58.482082
-## Gas+CCS           28.044708
-## Coal              26.295513
-## Geothermal         9.307634
-## can-imports        8.800426
-## Bio                4.995197
-## H2 turbine         2.825879
-## electrolyzer       0.620173
-## CSP                0.040323
 
 ### Plot it
 techs = [
@@ -1356,7 +997,7 @@ for col, tech in enumerate(techs):
             height=height,
             align='edge',
             left=x,
-            color=caseprefix_colors[caseprefix],
+            color=colors[caseprefix],
         )
     ## Starting capacity
     ax[col].axhline(dfstart.get(tech,0), c='k', ls='--', lw=0.75)
@@ -1366,7 +1007,7 @@ for col, tech in enumerate(techs):
         [plotlabels.get(caseprefix,caseprefix) for caseprefix in plotcaseprefixes],
         rotation=90, weight='bold',
     )
-    colors = [caseprefix_colors[c] for c in plotcaseprefixes]
+    colors = [colors[c] for c in plotcaseprefixes]
     for x, xtick in enumerate(ax[col].get_xticklabels()):
         xtick.set_color(colors[x])
 
@@ -1379,7 +1020,7 @@ ax[0].set_xlim(-0.15, len(plotcaseprefixes))
 # ## Legend
 # handles = [
 #     mpl.patches.Patch(
-#         facecolor=caseprefix_colors[caseprefix], edgecolor='none',
+#         facecolor=colors[caseprefix], edgecolor='none',
 #         label=plotlabels.get(caseprefix,caseprefix)
 #     )
 #     for caseprefix in plotcaseprefixes
@@ -1414,7 +1055,7 @@ difftype, vlim = 'absolute', 10
 units = 'GW' if difftype == 'absolute' else '%'
 
 for tech in techs:
-    for caseprefix in caseprefixes:
+    for caseprefix in caselist:
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
         dfplot = pd.concat(
             {
@@ -1520,7 +1161,7 @@ for sortby in [
     'Coal',
     ['Gas+CCS', 'Coal+CCS'],
 ]:
-    for caseprefix in caseprefixes:
+    for caseprefix in caselist:
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
         dfin = pd.concat(
             {
@@ -1532,9 +1173,9 @@ for sortby in [
             axis=1,
         ).fillna(0)
 
-        missing = [i for i in dfin.index if i not in aggcolors]
+        missing = [i for i in dfin.index if i not in colors_tech]
         print(f"missing colors: {', '.join(missing)}")
-        dfplot = dfin.reindex(list(aggcolors.keys())).fillna(0).T.reset_index(drop=True)
+        dfplot = dfin.reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
         ## Get the order
         if sortby is None:
             order = dfplot.index
@@ -1552,11 +1193,11 @@ for sortby in [
         ## Plot it
         plt.close()
         f,ax = plt.subplots(figsize=(scale*len(caseprefix_samples), 3.75))
-        reeds.plots.stackbar(df=dfplot, ax=ax, colors=aggcolors, width=barwidth, net=False)
+        reeds.plots.stackbar(df=dfplot, ax=ax, colors=colors_tech, width=barwidth, net=False)
         ## Legend
         handles = [
-            mpl.patches.Patch(facecolor=aggcolors[i], edgecolor='none', label=i)
-            for i in aggcolors if i in dfplot
+            mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
+            for i in colors_tech if i in dfplot
         ]
         leg = ax.legend(
             handles=handles[::-1],
@@ -1588,7 +1229,7 @@ ncols = state_subplots['col'].max() + 1
 states = sorted(state_subplots.index.tolist())
 scale = 1.2
 barwidth = 1.0
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
     dfin = pd.concat(
         {
@@ -1603,7 +1244,7 @@ for caseprefix in caseprefixes:
         axis=1,
     ).fillna(0)
 
-    missing = [i for i in dfin.index.get_level_values('i').unique() if i not in aggcolors]
+    missing = [i for i in dfin.index.get_level_values('i').unique() if i not in colors_tech]
     print(f"missing colors: {', '.join(missing)}")
 
     ## Plot it
@@ -1617,9 +1258,9 @@ for caseprefix in caseprefixes:
     # for state in list(set(np.random.choice(states, 10))):
     for state in states:
         _ax = ax[state_subplots.loc[state,'ax']]
-        dfplot = dfin.loc[state].reindex(list(aggcolors.keys())).fillna(0).T.reset_index(drop=True)
+        dfplot = dfin.loc[state].reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
         dfplot = dfplot.reset_index(drop=True).copy()
-        reeds.plots.stackbar(df=dfplot, ax=_ax, colors=aggcolors, width=barwidth, net=False)
+        reeds.plots.stackbar(df=dfplot, ax=_ax, colors=colors_tech, width=barwidth, net=False)
         ## Formatting
         _ax.annotate(
             state,
@@ -1636,8 +1277,8 @@ for caseprefix in caseprefixes:
                 ax[row,col].axis('off')
     ## Legend
     handles = [
-        mpl.patches.Patch(facecolor=aggcolors[i], edgecolor='none', label=i)
-        for i in aggcolors if i in dfplot
+        mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
+        for i in colors_tech if i in dfplot
     ]
     leg = ax[-1,-1].legend(
         handles=handles[::-1],
@@ -1702,7 +1343,7 @@ for sortby in [
     'gasprice',
     'demand',
 ]:
-    for caseprefix in caseprefixes:
+    for caseprefix in caselist:
         ## Capacity
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
         dfcap_in = pd.concat(
@@ -1715,9 +1356,9 @@ for sortby in [
             axis=1,
         ).fillna(0)
 
-        missing = [i for i in dfcap_in.index if i not in aggcolors]
+        missing = [i for i in dfcap_in.index if i not in colors_tech]
         print(f"missing colors: {', '.join(missing)}")
-        dfcap = dfcap_in.reindex(list(aggcolors.keys())).fillna(0).T
+        dfcap = dfcap_in.reindex(list(colors_tech.keys())).fillna(0).T
         ## Get the order
         if sortby is None:
             order = dfcap.index
@@ -1760,11 +1401,11 @@ for sortby in [
         )
         ### Capacity
         _ax = ax[0]
-        reeds.plots.stackbar(df=dfcap, ax=_ax, colors=aggcolors, width=barwidth, net=False)
+        reeds.plots.stackbar(df=dfcap, ax=_ax, colors=colors_tech, width=barwidth, net=False)
         ## Legend
         handles = [
-            mpl.patches.Patch(facecolor=aggcolors[i], edgecolor='none', label=i)
-            for i in aggcolors if i in dfcap
+            mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
+            for i in colors_tech if i in dfcap
         ]
         leg = _ax.legend(
             handles=handles[::-1],
@@ -1848,7 +1489,7 @@ regions = dfmap[level].loc[hierarchy[level].unique()].bounds.minx.sort_values().
 ncols = nrows = len(regions)
 
 for tech in techs:
-    for caseprefix in caseprefixes:
+    for caseprefix in caselist:
         caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
         dfplot = pd.concat(
             {
@@ -1889,7 +1530,7 @@ for tech in techs:
                     ax[row,col].hist(
                         x=dfplot.loc[region_y].values,
                         bins=bins,
-                        color=caseprefix_colors[caseprefix],
+                        color=colors[caseprefix],
                     )
                     # reeds.plots.despine(ax[row,col], left=False)
                     ax[row,col].set_yticks([])
@@ -1899,7 +1540,7 @@ for tech in techs:
                         dfplot.loc[region_x].values,
                         dfplot.loc[region_y].values,
                         lw=0, marker='o', alpha=0.2, markeredgewidth=0,
-                        color=caseprefix_colors[caseprefix],
+                        color=colors[caseprefix],
                     )
                     ax[row,col].set_ylim(0,ymax)
                     # ax[row,col].yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
@@ -1937,7 +1578,7 @@ if not zoom:
     ymax = pd.concat(dictin_cap_cost).xs(t,0,'t')[cost_tech].max()
     xmax = pd.concat(dictin_gasprice).xs(t,0,'t').mean(axis=1).max()
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfsize = pd.Series(
@@ -2180,7 +1821,7 @@ zoom = False
 ncols = len(x_datums)
 nrows = len(cost_techs)
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfsize = pd.Series(
@@ -2344,7 +1985,7 @@ norm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
 ncols = len(x_datums) + len(cost_techs)
 nrows = len(cap_techs)
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfcap = pd.Series(
@@ -2535,8 +2176,8 @@ figscale = 1.3
 nrows = len(ycols)
 ncols = len(xcols)
 
-# for caseprefix in caseprefixes[3:4]:
-for caseprefix in caseprefixes:
+# for caseprefix in caselist[3:4]:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfcap = pd.Series(
@@ -2736,7 +2377,7 @@ nrows = len(ycols)
 ncols = len(xcols)
 
 # for caseprefix in ['v20250829_mcK0_MC_flat_country']:
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfcap = pd.Series(
@@ -2926,7 +2567,7 @@ xlabel = (
 
 # for caseprefix in ['v20251014_mcK0_MC_flat_state_SitingDemand']:
 for caseprefix in ['v20250829_mcK0_MC_flat_state_MC']:
-# for caseprefix in caseprefixes:
+# for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     savename = (
         f"out_cap-scatter-x_{xaxis}-y_{yaxis+(('_'+tech_cap) if yaxis == 'capcost' else '')}-"
@@ -3164,7 +2805,7 @@ xlabel = axislabels.get(xaxis,xaxis)
 
 # for caseprefix in ['v20251014_mcK0_MC_flat_state_SitingDemand']:
 # for caseprefix in ['v20250829_mcK0_MC_flat_state_MC']:
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     savename = (
         f"out_pvfrac-scatter-x_{xaxis}-y_{yaxis+(('_'+tech_cap) if yaxis == 'capcost' else '')}-"
@@ -3357,7 +2998,7 @@ vmin = min([dictin_gasprice[key].mean(axis=1).loc[t] for key in dictin_gasprice]
 vmax = max([dictin_gasprice[key].mean(axis=1).loc[t] for key in dictin_gasprice])
 cmap = plt.cm.turbo
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
 
     ## Capacity
@@ -3437,7 +3078,7 @@ levels = ['st', 'country']
 rs = hierarchy.index.values
 bins = 41
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     for level in levels:
         regions = sorted(hierarchy[level].unique())
@@ -3512,7 +3153,7 @@ for tech in [
     ## Set up plot
     plt.close()
     f,ax = plt.subplots(1, ncols, figsize=(8, 2.5), sharey=True)
-    for caseprefix in caseprefixes:
+    for caseprefix in caselist:
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
         for col, level in enumerate(levels):
             _ax = ax[col]
@@ -3554,7 +3195,7 @@ for tech in [
             _ax.plot(
                 range(1, len(dfplot)+1), dfplot.values,
                 marker='o', markersize=5, markeredgewidth=0,
-                color=caseprefix_colors[caseprefix],
+                color=colors[caseprefix],
                 label=f"{nicelabels.get(caseprefix,caseprefix)} (n = {len(caseprefix_samples)})",
             )
             _ax.annotate(
@@ -3602,7 +3243,7 @@ xscale = 2
 percentiles = [0.025, 0.05, 0.1, 0.25, 0.75, 0.9, 0.95, 0.975]
 decimals = -1
 
-# plotcaseprefixes = caseprefixes
+# plotcaseprefixes = caselist
 # plotlabels = nicelabels
 
 plotcaseprefixes = [
@@ -3625,7 +3266,7 @@ plotlabels = {
 
 #%% SCOE
 dictplot = {}
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_scoe if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -3646,14 +3287,14 @@ for i, caseprefix in enumerate(plotcaseprefixes):
     ## Fill between max and min
     ax.fill_between(
         df.index, df.max(axis=1), df.min(axis=1),
-        color=caseprefix_colors[caseprefix], alpha=alpha, lw=0,
+        color=colors[caseprefix], alpha=alpha, lw=0,
         label=f'{plotlabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
     )
     ## Max and min lines
     for agg in ['min', 'max']:
         ax.plot(
             df.index, df.agg(agg, axis=1), lw=0.5,
-            color=caseprefix_colors[caseprefix],
+            color=colors[caseprefix],
             label='_nolabel',
         )
     ## Lines
@@ -3662,8 +3303,8 @@ for i, caseprefix in enumerate(plotcaseprefixes):
     #     lw=0.5, color='k', alpha=0.25,
     # )
     ## Histogram
-    hist_last(
-        ax, df, color=caseprefix_colors[caseprefix], bins=bins, alpha=alpha,
+    reeds.plots.hist_last(
+        ax, df, color=colors[caseprefix], bins=bins, alpha=alpha,
         xpad=1+((xscale+0.5)*i), xscale=xscale,
     )
 ## Legend
@@ -3691,7 +3332,7 @@ plt.show()
 
 #%% NPV
 dictplot = {}
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_npv if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -3726,7 +3367,7 @@ for x, caseprefix in enumerate(plotcaseprefixes):
         height=height,
         align='edge',
         left=x,
-        color=caseprefix_colors[caseprefix],
+        color=colors[caseprefix],
         label=f'{plotlabels.get(caseprefix,caseprefix)} ({len(df)})',
     )
     ## Values
@@ -3754,7 +3395,7 @@ ax.set_xticklabels(
     rotation=45, rotation_mode='anchor', ha='right',
 )
 for xtick, caseprefix in zip(ax.get_xticklabels(), plotcaseprefixes):
-    xtick.set_color(caseprefix_colors[caseprefix])
+    xtick.set_color(colors[caseprefix])
 ax.set_ylabel('Net present value of system\ncost through 2050 [$B]')
 ax.set_ylim(0)
 ax.set_xlim(-0.1, len(plotcaseprefixes))
@@ -3845,7 +3486,7 @@ for col, costtype in enumerate(costtypes):
     df = df[plotcaseprefixes].rename(columns=plotlabels)
     reeds.plots.plotquarthist(
         ax=ax[col], dfplot=df,
-        histcolor={plotlabels[k]:v for k,v in caseprefix_colors.items()},
+        histcolor={plotlabels[k]:v for k,v in colors.items()},
         hist_range=(0., ymax), number_of_bins=number_of_bins,
         pad=0.04, alpha=1, density=True,
     )
@@ -3860,7 +3501,7 @@ for col, costtype in enumerate(costtypes):
     #         height=height,
     #         align='edge',
     #         left=x,
-    #         color=caseprefix_colors[caseprefix],
+    #         color=colors[caseprefix],
     #         label=f'{plotlabels.get(caseprefix,caseprefix)} ({len(df)})',
     #     )
     ## Formatting
@@ -3876,7 +3517,7 @@ for col, costtype in enumerate(costtypes):
     )
     ax[col].set_xlim(-0.1, len(plotcaseprefixes))
     for xtick, caseprefix in zip(ax[col].get_xticklabels(), plotcaseprefixes):
-        xtick.set_color(caseprefix_colors[caseprefix])
+        xtick.set_color(colors[caseprefix])
 ax[0].set_ylabel(f'Net present value of costs,\n{pv_year}–{lastyear} [$billion]')
 ax[0].set_ylim(0)
 ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(4000))
@@ -3917,7 +3558,7 @@ dfwrite
 etype = 'process'
 pollutant = 'CO2'
 dictplot = {}
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_emissions if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -3938,33 +3579,33 @@ for i, caseprefix in enumerate(plotcaseprefixes):
     ## Fill between max and min
     ax.fill_between(
         df.index, df.max(axis=1), df.min(axis=1),
-        color=caseprefix_colors[caseprefix], alpha=0.2, lw=0,
+        color=colors[caseprefix], alpha=0.2, lw=0,
         label=f'{plotlabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
     )
     ## Max and min lines
     # for agg in ['min', 'max']:
     #     ax.plot(
     #         df.index, df.agg(agg, axis=1), lw=0.5,
-    #         color=caseprefix_colors[caseprefix],
+    #         color=colors[caseprefix],
     #         label='_nolabel',
     #     )
     ## Lines
     # df.plot(ax=ax, legend=False, lw=0.5, color='k', alpha=0.25)
     for s in df:
         ax.plot(
-            df.index, df[s].values, color=caseprefix_colors[caseprefix],
+            df.index, df[s].values, color=colors[caseprefix],
             lw=0.5, alpha=0.25,
             label='_nolabel',
         )
     ## Histogram
-    hist_last(
-        ax, df, color=caseprefix_colors[caseprefix], bins=bins, alpha=alpha,
+    reeds.plots.hist_last(
+        ax, df, color=colors[caseprefix], bins=bins, alpha=alpha,
         xpad=1+((xscale+0.5)*i), xscale=xscale,
     )
 ## Legend
 handles = [
     mpl.patches.Patch(
-        facecolor=caseprefix_colors[caseprefix], edgecolor='none',
+        facecolor=colors[caseprefix], edgecolor='none',
         label=plotlabels.get(caseprefix,caseprefix)
     )
     for caseprefix in plotcaseprefixes
@@ -4024,8 +3665,6 @@ dfwrite
 
 #%% Print distribution of phaseout years
 ira = 'v20250829_mcK0_MC_flat_state_IRA'
-print(phaseout_year[ira].value_counts())
-print(dfplot[ira].shape[1])
 
 
 #%% Emissions difference
@@ -4070,7 +3709,6 @@ phaseout_color = 'C3'
 plt.close()
 f,ax = plt.subplots(2, 1, figsize=(4.25, 5.75), sharex=True, gridspec_kw={'hspace':0.1})
 for i, caseprefix in enumerate(caseprefix_compare):
-    phaseout = phaseout_year[caseprefix]
     for row, plottype in [(0, 'annual'), (1, 'cumulative')]:
         _ax = ax[row]
         df = dfplot[caseprefix].reindex(years).fillna(0).reindex(range(2020,2051)).interpolate('linear')
@@ -4079,18 +3717,19 @@ for i, caseprefix in enumerate(caseprefix_compare):
         ## Fill between max and min
         _ax.fill_between(
             df.index, df.max(axis=1), df.min(axis=1),
-            color=caseprefix_colors[caseprefix], alpha=0.4, lw=0,
+            color=colors[caseprefix], alpha=0.4, lw=0,
             label=f'{plotlabels.get(caseprefix,caseprefix)}',
         )
         # ## Max and min lines
         # for agg in ['min', 'max']:
         #     _ax.plot(
         #         df.index, df.agg(agg, axis=1), lw=0.5,
-        #         color=caseprefix_colors[caseprefix],
+        #         color=colors[caseprefix],
         #         label='_nolabel',
         #     )
         ## Lines
         for s in df:
+            phaseout = reeds.io.get_phaseout_year(caseprefix[s])
             if phaseout_color and ('IRA' in caseprefix):
             # if phaseout_color:
                 before = df.loc[:phaseout[s]]
@@ -4106,8 +3745,8 @@ for i, caseprefix in enumerate(caseprefix_compare):
                     lw=0.7, color='k', alpha=0.3,
                 )
         ## Histogram
-        hist_last(
-            _ax, df, color=caseprefix_colors[caseprefix], bins=numbins, alpha=alpha,
+        reeds.plots.hist_last(
+            _ax, df, color=colors[caseprefix], bins=numbins, alpha=alpha,
             xpad=0.5, xscale=xscale,
         )
 ## Formatting
@@ -4125,7 +3764,7 @@ for row, plottype in [(0, 'annual'), (1, 'cumulative')]:
 # )
 handles = [
     mpl.patches.Patch(
-        facecolor=caseprefix_colors[caseprefix], edgecolor='none',
+        facecolor=colors[caseprefix], edgecolor='none',
         label=plotlabels.get(caseprefix,caseprefix)
     )
     for caseprefix in caseprefix_compare
@@ -4161,90 +3800,6 @@ plt.show()
 )
 
 
-#%%
-#%% NEUE (all regions in specified level combined)
-# for level in ['country', 'transgrp']:
-#     dictplot = {}
-#     for caseprefix in caseprefixes:
-#         caseprefix_samples = sorted([s for (c,s) in dictin_emissions if c == caseprefix])
-#         # print(f'{caseprefix}: {(len(caseprefix_samples))}')
-#         dictplot[caseprefix] = pd.concat({
-#             sample: (
-#                 dictin_neue[caseprefix,sample]
-#                 .xs(level,0,'level')
-#                 .xs('sum',0,'metric')
-#                 # .reset_index(level='region', drop=True)
-#                 .loc[2025:]
-#             )
-#             for sample in caseprefix_samples
-#         }, axis=1)
-
-#     dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample')).unstack('region')
-
-#     ymax = dfplot.max().max()
-#     bins = np.linspace(ymin, ymax, numbins)
-
-#     ### Plot it
-#     plt.close()
-#     f,ax = plt.subplots(figsize=(5, 3.75))
-#     for i, caseprefix in enumerate(plotcaseprefixes):
-#         df = dfplot[caseprefix].stack('region')
-#         ## Fill between max and min
-#         ax.fill_between(
-#             df.index.get_level_values('t').drop_duplicates(),
-#             df.max(axis=1).groupby('t').max(),
-#             df.min(axis=1).groupby('t').min(),
-#             color=caseprefix_colors[caseprefix], alpha=0.1, lw=0,
-#             label=f'{plotlabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
-#         )
-#         # ## Max and min lines
-#         # for agg in ['min', 'max']:
-#         #     ax.plot(
-#         #         df.index.get_level_values('t').drop_duplicates(),
-#         #         df.agg(agg, axis=1).groupby('t').agg(agg),
-#         #         lw=0.5, color=caseprefix_colors[caseprefix],
-#         #         label='_nolabel',
-#         #     )
-#         # Lines
-#         _df = df.unstack('region')
-#         for c in _df:
-#             ax.plot(
-#                 _df.index, _df[c],
-#                 color=caseprefix_colors[caseprefix],
-#                 lw=0.2, alpha=0.2,
-#                 label='_nolabel',
-#             )
-#         ## Histogram
-#         hist_last(
-#             ax,
-#             df.reset_index('region', drop=True),
-#             color=caseprefix_colors[caseprefix],
-#             bins=bins,
-#             alpha=alpha,
-#             xpad=1+((xscale+0.5)*i), xscale=xscale,
-#         )
-#     ## Legend
-#     ax.legend(
-#         frameon=False, loc='upper left', bbox_to_anchor=(0,1),
-#         fontsize='x-large',
-#         handletextpad=0.3, handlelength=0.7,
-#     )
-#     ## Formatting
-#     ax.set_xlim(tstart)
-#     ax.set_ylabel(f'NEUE, {level} [ppm]')
-#     ax.set_ylim(0)
-#     ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-#     ax.set_xticks([2020,2030,2040,2050])
-#     reeds.plots.despine(ax)
-#     plt.draw()
-#     reeds.plots.shorten_years(ax)
-#     savename = (
-#         f"out_neue-line_{level}-"
-#         f"{','.join([plotlabels.get(c,c).title().replace(' ','') for c in plotcaseprefixes])}.png"
-#     )
-#     print(savename)
-#     plt.savefig(os.path.join(savepath, savename))
-#     plt.show()
 
 
 #%%### Transmission ######
@@ -4257,7 +3812,7 @@ nrows = 2
 regioncolors = [plt.cm.PiYG(0.1), plt.cm.PiYG(0.9)]
 regioncolors = ['C0', 'C1']
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
     dfplot = pd.concat(
         {sample: dictin_trans_r[caseprefix,sample] for sample in caseprefix_samples},
@@ -4306,7 +3861,7 @@ for caseprefix in caseprefixes:
             lw=0.5, color='k', alpha=0.25,
         )
         ## Histogram
-        hist_last(
+        reeds.plots.hist_last(
             ax[row,col], df, color=color, bins=bins, alpha=alpha,
             xpad=1, xscale=4,
         )
@@ -4334,7 +3889,7 @@ for caseprefix in caseprefixes:
     plt.show()
 
 
-#%% Regional transmission additions for all caseprefixes
+#%% Regional transmission additions for all caselist
 level = 'transreg'
 binstep = 1
 alpha = 0.5
@@ -4344,7 +3899,7 @@ regioncolors = ['k', '0.7']
 year = 2050
 year_baseline = 2020
 
-# plotcaseprefixes = caseprefixes
+# plotcaseprefixes = caselist
 # plotlabels = nicelabels
 
 plotcaseprefixes = [
@@ -4439,7 +3994,7 @@ for col, interface in enumerate(interfaces):
             height=height,
             align='edge',
             left=x,
-            color=caseprefix_colors[caseprefix],
+            color=colors[caseprefix],
         )
 ## Formatting
 ax[1,0].set_ylabel(f'Interface capacity\nadded through {year} [GW]')
@@ -4480,7 +4035,7 @@ dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv')))
 dfwrite
 
 
-#%% Final regional transmission capacity for all caseprefixes
+#%% Final regional transmission capacity for all caselist
 level = 'transreg'
 binstep = 1
 alpha = 0.5
@@ -4490,7 +4045,7 @@ regioncolors = ['k', '0.7']
 year = 2050
 year_baseline = 2020
 
-# plotcaseprefixes = caseprefixes
+# plotcaseprefixes = caselist
 # plotlabels = nicelabels
 
 # plotcaseprefixes = [
@@ -4607,7 +4162,7 @@ for col, interface in enumerate(interfaces):
             height=height,
             align='edge',
             left=x,
-            color=caseprefix_colors[caseprefix],
+            color=colors[caseprefix],
         )
     ax[row,col].axhline(baseline[interface], c='k', ls='--', lw=0.75)
 ## Formatting
@@ -4630,9 +4185,9 @@ for col, interface in enumerate(interfaces):
         [plotlabels.get(caseprefix,caseprefix) for caseprefix in plotcaseprefixes],
         rotation=90, weight='bold',
     )
-    colors = [caseprefix_colors[c] for c in plotcaseprefixes]
+    _colors = [colors[c] for c in plotcaseprefixes]
     for x, xtick in enumerate(ax[1,col].get_xticklabels()):
-        xtick.set_color(colors[x])
+        xtick.set_color(_colors[x])
 
 savename = (
     f'out_trans-{level}-{year}-'
@@ -4667,7 +4222,7 @@ year = 2050
 year_baseline = 2020
 scale = 1.75
 
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
     dfplot = pd.concat(
         {
@@ -4719,7 +4274,7 @@ for caseprefix in caseprefixes:
                 ax[row,col].hist(
                     x=dfplot.loc[interface_y].values,
                     bins=bins,
-                    color=caseprefix_colors[caseprefix],
+                    color=colors[caseprefix],
                 )
                 # reeds.plots.despine(ax[row,col], left=False)
                 ax[row,col].set_yticks([])
@@ -4729,7 +4284,7 @@ for caseprefix in caseprefixes:
                     dfplot.loc[interface_x].values,
                     dfplot.loc[interface_y].values,
                     lw=0, marker='o', alpha=0.2, markeredgewidth=0,
-                    color=caseprefix_colors[caseprefix],
+                    color=colors[caseprefix],
                 )
                 ax[row,col].set_ylim(0,ymax)
                 ax[row,col].yaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
@@ -4759,7 +4314,7 @@ for caseprefix in caseprefixes:
 #%% Transmission additions: All samples on one map, shaded lines (for percentiles or overlapping?)
 year = 2050
 year_baseline = 2020
-for caseprefix in caseprefixes:
+for caseprefix in caselist:
     caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
     dfplot = pd.concat(
         {
