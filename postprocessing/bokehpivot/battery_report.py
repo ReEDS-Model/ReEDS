@@ -389,30 +389,52 @@ def build_html(output_dir, core_path):
                       'reserve margin rather than its share of the pool. The two runs are not held to '
                       'the same reliability standard: one meets an unserved-energy threshold, the '
                       'other a planning reserve margin.', order)
-    form = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_formulation.csv')
-    form_rows = []
-    if not form.empty:
-        for y in [y for y in table_years if y in set(form['year'])]:
-            for lab in form['formulation'].drop_duplicates():
-                r = form[(form['year'] == y) & (form['formulation'] == lab)]
-                if r.empty:
-                    continue
-                r = r.iloc[0]
-                form_rows.append(
-                    f'<tr><td class="t">{int(y)}</td><td class="t">{lab}</td>'
-                    f'<td class="num">{_num(r["gen_frac"], "{:.1%}")}</td>'
-                    f'<td class="num">{_num(r["value_factor"])}</td>'
-                    f'<td class="num">{_num(r["vf_comp_resmarg"])}</td>'
-                    f'<td class="num">{_num(r["cost_factor"])}</td>'
-                    f'<td class="num">{_num(r["value_cost_factor"], "{:.3f}")}</td>'
-                    f'<td class="num">{_num(r["capacity_credit"])}</td></tr>')
-    form_table = table('Storage under the two reserve-margin formulations at the headline years',
-                       [('Year', False), ('Formulation', False), ('Market share', True),
-                        ('VF', True), ('VF, capacity part', True), ('CF', True), ('VCF', True),
-                        ('Capacity credit', True)], form_rows)
+    def sens_table(csv_name, caption, variant_header):
+        """Headline-year table of a storage sensitivity figure: one row per year and run."""
+        sens = read_csv_or_empty(output_dir, csv_name)
+        rows = []
+        if not sens.empty:
+            for y in [y for y in table_years if y in set(sens['year'])]:
+                for lab in sens['variant'].drop_duplicates():
+                    r = sens[(sens['year'] == y) & (sens['variant'] == lab)]
+                    if r.empty:
+                        continue
+                    r = r.iloc[0]
+                    rows.append(
+                        f'<tr><td class="t">{int(y)}</td><td class="t">{lab}</td>'
+                        f'<td class="num">{_num(r["gen_frac"], "{:.1%}")}</td>'
+                        f'<td class="num">{_num(r["value_factor"])}</td>'
+                        f'<td class="num">{_num(r["vf_comp_resmarg"])}</td>'
+                        f'<td class="num">{_num(r["cost_factor"])}</td>'
+                        f'<td class="num">{_num(r["value_cost_factor"], "{:.3f}")}</td>'
+                        f'<td class="num">{_num(r["capacity_credit"])}</td></tr>')
+        return table(caption,
+                     [('Year', False), (variant_header, False), ('Market share', True),
+                      ('VF', True), ('VF, capacity part', True), ('CF', True), ('VCF', True),
+                      ('Capacity credit', True)], rows)
 
-    # ---- 08 per kW ----
-    pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 20,
+    form_table = sens_table('plcoe_pitch_storage_formulation.csv',
+                            'Storage under the two reserve-margin formulations at the headline years',
+                            'Formulation')
+
+    # ---- 08 gas-CC start costs ----
+    sc_fig = figure(output_dir, 'plcoe_pitch_storage_startcost.png', 20,
+                    'Storage with and without start costs on gas combined cycle.',
+                    'The storage forcing case run twice: with start costs on coal, gas-CC and CCS '
+                    '(<span class="eq">GSw_StartCost=4</span>), the default and the basis of every '
+                    'other figure here, and with them on coal and CCS only '
+                    '(<span class="eq">GSw_StartCost=3</span>). Nothing else differs between the '
+                    'two runs. Value factor, cost factor and value&#8211;cost factor are as '
+                    'computed, per MWh of discharge, without the LCOE-base scaling of Fig 4; '
+                    'capacity credit is as in section 04. As in Fig 19, the value&#8211;cost factor '
+                    'carries no value term, so the two runs can differ in it only through the '
+                    'benchmark price.', order)
+    sc_table = sens_table('plcoe_pitch_storage_startcost.csv',
+                          'Storage with and without gas-CC start costs at the headline years',
+                          'Start costs')
+
+    # ---- 09 per kW ----
+    pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 21,
                     'Value factor, cost factor and value&#8211;cost factor per MWh and per kW.',
                     'Per MWh is as in the figures above: value per MWh of discharge over the '
                     'benchmark price, value over load MWh. Per kW divides value by new power '
@@ -507,7 +529,11 @@ def build_html(output_dir, core_path):
      '<div class="col"><p>A sensitivity on how ReEDS represents resource adequacy, which sets most '
      'of what storage is credited for.</p></div>', form_fig, form_table)}
 
-{sec('08', 'Per kW', pk_fig, pk_table)}
+{sec('08', 'Gas-CC start costs',
+     '<div class="col"><p>A sensitivity on the unit-commitment costs of gas combined cycle, which '
+     'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_table)}
+
+{sec('09', 'Per kW', pk_fig, pk_table)}
 
 <section style="border-bottom:none">
   <footer>Generated by <code>battery_report.py</code> from the figures and tables in this
