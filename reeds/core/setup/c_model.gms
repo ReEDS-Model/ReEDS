@@ -1366,13 +1366,14 @@ eq_dhyd_dispatch(i,v,r,szn,t)
 * Limit near-term capacity deployments by tech and region based on interconnection queues
 eq_interconnection_queues(tg,r,t)
     $[tmodel(t)$(yeart(t)>=model_builds_start_yr)
-    $(sum{(tgg,rr), cap_limit(tgg,rr,t)})
+    $(sum{(tgg,rr), queue_limit(tgg,rr,t)})
     $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,t)}
+    $Sw_QueueConstraintYears
     $(not Sw_PCM)]..
 
 * the capacity limit from the interconnection queue data
 * (with CAP_ABOVE_LIM as a slack variable to address infeasibilities)
-    cap_limit(tg,r,t) + CAP_ABOVE_LIM(tg,r,t)
+    queue_limit(tg,r,t) + CAP_ABOVE_LIM(tg,r,t)
 
     =g=
 
@@ -1957,6 +1958,7 @@ eq_CAPTRAN_PRM(r,rr,trtype,t)
 eq_prescribed_transmission(r,rr,trtype,t)
     $[routes_inv(r,rr,trtype,t)
     $tmodel(t)$(yeart(t)<firstyear_trans_nearterm)
+    $sum{tt$(yeart(tt)<=yeart(t)), trancap_fut(r,rr,"possible",trtype,tt)}
     $(not Sw_PCM)]..
 
 *all available transmission capacity expansion that is 'possible'

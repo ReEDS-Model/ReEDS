@@ -27,7 +27,7 @@ can_imports_quarter_frac.csv,inputs/canada_imports/can_imports_quarter_frac.csv,
 cangrowth.csv,inputs/load/cangrowth.csv,int(sw.GSw_Canada) != 0,ignore,ignore,st,,,1,0,,,,,,
 cap_existing_hydro.csv,inputs/hydro/cap_existing_hydro.csv,1,ignore,ignore,,t,,0,0,,,,,,
 cap_existing_psh.csv,inputs/storage/cap_existing_psh.csv,(int(sw.GSw_Storage) != 0) and ((int(sw.GSw_HydroPSHDurData) == 1) or (sw.GSw_HydroStorInMaxFrac == 'data')),sum,ignore,r,"*i,v",,0,0,,,,,,
-cap_penalty.csv,inputs/financials/cap_penalty.csv,1,ignore,ignore,,tg,,,0,,,,,,
+cap_penalty.csv,inputs/financials/cap_penalty.csv,1,ignore,ignore,,tg,,,0,,,parameter,,--$/MW-- cost penalty for capacity deployment above queue_limit,
 cappayments_ba.csv,inputs/capacity_exogenous/cappayments_ba.csv,1,ignore,ignore,,*r,,0,0,,,,,,not done but not used
 captype.csv,inputs/sets/captype.csv,1,ignore,ignore,,,,,,,,set,captype,capacity types ( existing and prescribed),
 ccs_link.csv,inputs/emission_constraints/ccs_link.csv,1,ignore,ignore,,,,,0,,,,,,
@@ -202,8 +202,6 @@ plantchar_pvb.csv,inputs/plant_characteristics/pvb_{pvbscen}.csv,int(sw.GSw_PVB)
 plantchar_upgrades.csv,inputs/upgrades/{upgradescen}.csv,sw.upgradescen != 'default',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_upv.csv,inputs/plant_characteristics/{plantchar_upv}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 psh_supply_curves_duration.csv,inputs/storage/PSH_supply_curves_durations.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,1,,,,
-psh_supply_curves_capacity.csv,inputs/supply_curve/PSH_supply_curves_capacity_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,sum,geosize,r,wide,,1,0,,,,,,
-psh_supply_curves_cost.csv,inputs/supply_curve/PSH_supply_curves_cost_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,mean,uniform,r,wide,,1,0,,,,,,
 pvb_agg.csv,inputs/sets/pvb_agg.csv,1,ignore,ignore,,,,,0,,,set,pvb_agg,crosswalk between hybrid pv+battery configurations and technology options,
 pvb_config.csv,inputs/sets/pvb_config.csv,1,ignore,ignore,,,,,,,,set,pvb_config,set of hybrid pv+battery configurations,
 ramprate.csv,inputs/plant_characteristics/ramprate.csv,int(sw.GSw_OpRes) != 0,ignore,ignore,,,,,0,,,,,,
@@ -224,6 +222,7 @@ storage_mandates.csv,inputs/state_policies/storage_mandates.csv,int(sw.GSw_Batte
 stressperiods_user.csv,inputs/temporal/stressperiods_{GSw_PRM_StressModel}.csv,sw.GSw_PRM_StressModel == 'user*',ignore,ignore,,,,,,,,,,,
 supply_chain_adjust.csv,inputs/financials/supply_chain_adjust.csv,1,ignore,ignore,,,,,0,,,,,,
 supplycurve_egs.csv,inputs/supply_curve/supplycurve_egs-reference.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
+supplycurve_psh.csv,inputs/supply_curve/supplycurve_psh-{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
 supplycurve_upv.csv,inputs/supply_curve/supplycurve_upv-{GSw_SitingUPV}.csv,1,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
 supplycurve_wind-ofs.csv,inputs/supply_curve/supplycurve_wind-ofs-{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
 supplycurve_wind-ons.csv,inputs/supply_curve/supplycurve_wind-ons-{GSw_SitingWindOns}.csv,1,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
