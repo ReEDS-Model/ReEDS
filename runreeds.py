@@ -1400,6 +1400,10 @@ def write_batch_script(
         OPATH.writelines(f'python {logger}\n')
         OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
         OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+        ## Also write the full scenario results if using stochastic optimization
+        if caseSwitches['GSw_Stochastic'] != '0':
+            OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -s\n")
+            OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
 
         if int(caseSwitches['diagnose']):
              OPATH.writelines(

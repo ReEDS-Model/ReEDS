@@ -153,7 +153,7 @@ def write_dfdict(
     ## Always write the h5
     dfdict_to_h5(
         dfdict=dfdict,
-        filepath=os.path.join(outputs_path, 'outputs.h5'),
+        filepath=Path(outputs_path.parent, outputs_path.stem + '.h5'),
         overwrite=overwrite,
         symbol_list=symbol_list,
         rename=rename,
@@ -163,14 +163,14 @@ def write_dfdict(
     if write_csv:
         dfdict_to_csv(
             dfdict=dfdict,
-            filepath=outputs_path,
+            filepath=outputs_path.parent,
             symbol_list=symbol_list,
             rename=rename,
         )
     if write_xlsx:
         dfdict_to_excel(
             dfdict=dfdict,
-            filepath=os.path.join(outputs_path, 'outputs.xlsx'),
+            filepath=Path(outputs_path.parent, outputs_path.stem + '.xlsx'),
             overwrite=overwrite,
             symbol_list=symbol_list,
             rename=rename,
@@ -234,16 +234,19 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     parser.add_argument("case", help="ReEDS scenario name")
     parser.add_argument('--csv', '-c', action='store_true', help='write csv files')
     parser.add_argument('--xlsx', '-x', action='store_true', help='write xlsx file')
+    parser.add_argument('--stochastic', '-s', action='store_true', help='keep s index')
 
     args = parser.parse_args()
     case = args.case
     write_csv = args.csv
     write_xlsx = args.xlsx
+    stochastic = args.stochastic
 
     # #%% Inputs for debugging
-    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20261022_stochasticM1_Pacific')
+    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20261023_stochasticM2_Stochastic')
     # write_csv = True
     # write_xlsx = False
+    # stochastic = False
 
     #%% Set up logger
     reeds_path = os.path.abspath(os.path.dirname(__file__))
@@ -252,7 +255,10 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     print("Starting report_dump.py")
 
     # %%### Parse inputs and get switches
-    outputs_path = os.path.join(case, "outputs")
+    if stochastic:
+        outputs_path = Path(case, 'outputs', 'outputs_stochastic.h5')
+    else:
+        outputs_path = Path(case, 'outputs', 'outputs.h5')
 
     ### Get switches
     sw = reeds.io.get_switches(case)
@@ -271,8 +277,8 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     # %%### Write results for each gdx file
     ### outputs gdx
     print("Loading outputs gdx")
-    dict_out = {
-        **gdxpds.to_dataframes(Path(outputs_path, f"rep_{os.path.basename(case)}.gdx")),
+    dictin = {
+        **gdxpds.to_dataframes(Path(case, 'outputs', f"rep_{os.path.basename(case)}.gdx")),
         **report_calcs.main(case),
     }
     print("Finished loading outputs gdx")
@@ -280,10 +286,26 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     ## If not using stochastic optimization, there will only be a single s index,
     ## so drop it to simplify downstream processing.
     if not reeds.stochastic.is_stochastic(case):
-        dict_out = {key: df.drop(columns='s', errors='ignore') for key, df in dict_out.items()}
+        dictout = {key: df.drop(columns='s', errors='ignore') for key, df in dictin.items()}
+    ## If we're using stochastic optimization but dropping the s index, take the
+    ## probability-weighted average over scenarios
+    elif not stochastic:
+        prob = reeds.io.read_input(case, 'scenario_probability').set_index('s').squeeze(1)
+        dictout = {}
+        for key, df in dictin.items():
+            reeds.io.make_columns_unique(df)
+            if 's' in df:
+                index = [c for c in df if c.lower() not in ['value','val']]
+                keep_index = [c for c in index if c != 's']
+                dfout = df.set_index(index).squeeze(1)
+                dictout[key] = (dfout * prob).groupby(keep_index).sum().reset_index()
+            else:
+                dictout[key] = df
+    else:
+        dictout = dictin
 
     write_dfdict(
-        dfdict=dict_out,
+        dfdict=dictout,
         outputs_path=outputs_path,
         write_csv=write_csv,
         write_xlsx=write_xlsx,
@@ -296,7 +318,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     if int(sw.GSw_calc_powfrac):
         print("Loading powerfrac gdx")
         dict_powerfrac = gdxpds.to_dataframes(
-            os.path.join(outputs_path, f"rep_powerfrac_{os.path.basename(case)}.gdx")
+            os.path.join(case, 'outputs', f"rep_powerfrac_{os.path.basename(case)}.gdx")
         )
         print("Finished loading powerfrac gdx")
 
@@ -308,7 +330,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
 
     #%% Special handling of particular outputs
-    postprocess_outputs(case, outputs_path=outputs_path)
+    postprocess_outputs(case)
 
 
     #%% All done
