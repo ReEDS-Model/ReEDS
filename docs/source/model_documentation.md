@@ -2841,7 +2841,7 @@ The emission output files will include both upstream and process emissions regar
 - If setting `GSw_AnnualCap = 0` (model default): There are no emission caps for both CO<sub>2 and CO<sub>2</sub>e.
 - If setting `GSw_AnnualCap = 1`: Only CO<sub>2</sub> emission is capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv` (can be both upstream + process or just process depending on `GSw_Upstream` setting).
 - If setting `GSw_AnnualCap = 2`: CO<sub>2</sub>e emission is capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv` (can be both upstream + process or just combustion depending on `GSw_Upstream` setting).
-- If setting `GSw_AnnualCap = 3`: H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv`.
+  - If `GSw_GWPH2 = 1`, H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv`.
 ```
 
 ### SO<sub>2</sub> and NO<sub>x</sub>
