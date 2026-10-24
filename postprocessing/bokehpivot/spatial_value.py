@@ -35,6 +35,7 @@ and inflates the 2050 rise by an order of magnitude.
 
 Run this file on the reeds2 conda environment.
 '''
+import contextlib
 import os
 import sys
 import numpy as np
@@ -81,6 +82,23 @@ def zone_map(run_dir):
         import reeds
         _dfmap_cache[run_dir] = reeds.io.get_dfmap(run_dir)
     return _dfmap_cache[run_dir]
+
+
+@contextlib.contextmanager
+def no_redraw():
+    """Stop geopandas redrawing the whole figure after every .plot() call.
+
+    GeoDataFrame.plot ends with plt.draw(), which on a non-interactive backend (Agg, as when there is
+    no DISPLAY) renders the full figure every time, so a grid of map panels costs quadratically in
+    the number of plot calls: the by-year figure took 18 minutes rather than under one. savefig draws
+    the figure once anyway.
+    """
+    draw = plt.draw
+    plt.draw = lambda: None
+    try:
+        yield
+    finally:
+        plt.draw = draw
 
 
 def _read(run_dir, fname, cols):
@@ -418,6 +436,7 @@ def _pick_years(panel, years):
     return [int(have[np.argmin(np.abs(have - y))]) for y in years]
 
 
+@no_redraw()
 def plot_maps(data, tech, output_path):
     """Figure A: value factor and penetration, mapped for two years.
 
@@ -501,6 +520,7 @@ def plot_maps(data, tech, output_path):
     return fig
 
 
+@no_redraw()
 def plot_maps_byyear(data, tech, output_path):
     """Figure A2: every plotted model year as a column, seven metrics as rows.
 
