@@ -1680,6 +1680,42 @@ def plot_storage_formulation(valcostfac_core_path, output_path, tech='Battery'):
     fig.savefig(output_path, dpi=200)
     return fig, data
 
+def plot_storage_perkw(df, output_path, tech='Battery'):
+    """Storage value factor, cost factor and value-cost factor per MWh and per kW, against market
+    share.
+
+    Per MWh divides value by discharge and the benchmark by load MWh; per kW divides value by new
+    power capacity and the benchmark by the reserve-margin requirement MW. The per-kW LCOE base is the
+    per-MWh one at a capacity factor of 4/24, so the two value-cost factors differ only by the ratio of
+    those hours to load MWh per requirement MW.
+    """
+    cols = ['value_factor', 'cost_factor', 'value_cost_factor']
+    perkw = [c + '_perkw' for c in cols]
+    if not set(perkw) <= set(df.columns):
+        return None, pd.DataFrame()
+    d = df[df['tech'] == tech].dropna(subset=['gen_frac'] + cols + perkw).sort_values('gen_frac')
+    if d.empty:
+        return None, d
+    panels = [('value_factor', 'Value factor'), ('cost_factor', 'Cost factor'),
+              ('value_cost_factor', 'Value-cost factor')]
+    series = [('', 'Per MWh', '#2A6F8E', 'o', '-'), ('_perkw', 'Per kW', '#C0392B', 's', '--')]
+    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.0))
+    for ax, (col, title) in zip(axes, panels):
+        for suffix, label, color, marker, ls in series:
+            ax.plot(d['gen_frac'] * 100, d[col + suffix], color=color, ls=ls, lw=1.6, marker=marker,
+                    ms=4, mec='white', mew=0.5, label=label)
+        ax.set_title(title, fontsize=10, loc='left')
+        ax.set_xlabel('Market share (% of generation)')
+        ax.set_xlim(left=0)
+        ax.set_ylim(bottom=0)
+        ax.grid(alpha=0.25, lw=0.6)
+        ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=2, fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.savefig(output_path, dpi=200)
+    return fig, d[['year', 'gen_frac'] + cols + perkw + ['benchmark_price', 'benchmark_price_perkw']]
+
 def plot_lcoe_vcf(df, output_path, tech='Battery', x='year'):
     """LCOE base, same-year PLCOE and marginal LCOE ($/MWh, left axis) with value-cost factor and
     value factor (right axis), against model year or market share.
@@ -2564,6 +2600,12 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_unfit)
                     unfit_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.csv'),
                                      index=False)
+                fig_pk, pk_tab = plot_storage_perkw(
+                    df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_perkw.png'), tech=tech)
+                if fig_pk is not None:
+                    plt.close(fig_pk)
+                    pk_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_perkw.csv'),
+                                  index=False)
                 fig_comp, comp_tab = plot_vf_components(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_vf_components.png'),
                     tech=tech)

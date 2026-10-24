@@ -101,6 +101,8 @@ df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatia
 df = df.merge(df_vf_spatial, on=['scenario','tech','year'], how='left')
 df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal').rename(columns={'vf_temporal_num':'vf_temporal'})
 df = df.merge(df_vf_temporal, on=['scenario','tech','year'], how='left')
+df_vf_permw = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_permw').rename(columns={'vf_permw_num':'value_factor_perkw'})
+df = df.merge(df_vf_permw, on=['scenario','tech','year'], how='left')
 #Interaction is the residual, so value factor = spatial * temporal * interaction exactly. Value factor,
 #temporal and spatial are national ratios of sums, which makes interaction one too: (value at local
 #prices / value at system prices) over (the tech's MWh at local / national load-weighted prices). The
@@ -115,6 +117,12 @@ df_bench = df_bench.rename(columns={'val_tot':'benchmark_price'})
 df_bench['benchmark_price'] = df_bench['benchmark_price'] * report_usd_mult
 df = df.merge(df_bench, on=['scenario','year'], how='left')
 df['lvoe'] = df['value_factor'] * df['benchmark_price']
+#Per-kW benchmark: benchmark value per MW of reserve-margin requirement, in $/kW-yr.
+df_bench_permw = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='bench_price_permw')
+df_bench_permw = df_bench_permw.rename(columns={'val_tot':'benchmark_price_perkw'})
+df_bench_permw['benchmark_price_perkw'] = df_bench_permw['benchmark_price_perkw'] * report_usd_mult / 1000
+df = df.merge(df_bench_permw, on=['scenario','year'], how='left')
+df['lvoe_perkw'] = df['value_factor_perkw'] * df['benchmark_price_perkw']
 
 print('Merge with LVOE components')
 df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_energy').rename(columns={'val_load':'lvoe_energy'})
@@ -173,6 +181,13 @@ df['relative_cost_ratio'] = (df['lvoe'] / df['force_mult']) / df['benchmark_pric
 df['net_cost'] = df['relative_cost'] + df['integration_cost']
 df['BCR'] = df['lvoe'] / (df['lvoe'] / df['force_mult'])
 df['value_cost_adder'] = df['lcoe_adder'] + df['integration_cost']
+#Per-kW cost and value-cost factors, for storage only: its LCOE_base.csv entry is a four-hour battery
+#cycling once a day, so a capacity factor of 4/24 converts it to $/kW-yr. The other techs have no
+#per-kW base cost.
+stor_base_cf = 4/24
+df.loc[df['tech'].isin(stor_report_techs), 'lcoe_base_perkw'] = df['lcoe_base'] * stor_base_cf * 8760 / 1000
+df['cost_factor_perkw'] = df['lvoe_perkw'] / df['lcoe_base_perkw']
+df['value_cost_factor_perkw'] = df['lcoe_base_perkw'] / df['benchmark_price_perkw']
 
 print('Merge with generation')
 df_gen = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen')
@@ -226,6 +241,9 @@ plots = [
     {'x':'gen_frac','y':'value_cost_factor'},
     {'x':'gen_frac','y':'cost_value_factor'},
     {'x':'gen_frac','y':'cost_factor'},
+    {'x':'gen_frac','y':'value_factor_perkw'},
+    {'x':'gen_frac','y':'cost_factor_perkw'},
+    {'x':'gen_frac','y':'value_cost_factor_perkw'},
     {'x':'gen_frac','y':'vf_energy'},
     {'x':'gen_frac','y':'vf_resmarg'},
     {'x':'gen_frac','y':'vf_resmarg_permw'},
@@ -325,7 +343,8 @@ for plot in plots + plots_core:
     else:
         df_plt = df_plot
         lim_str = ''
-    if df_plt[plot['y']].isna().all():
+    df_plt = df_plt[df_plt[plot['y']].notna()] #Per-kW cost factors exist for storage only.
+    if df_plt.empty:
         print(f'Skipping plot {plot["y"]}-vs-{plot["x"]}{lim_str}: no non-NaN data.')
         continue
     fig = px.scatter(df_plt, x=plot['x'], y=plot['y'], color='tech scenario',

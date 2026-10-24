@@ -580,6 +580,9 @@ def pre_valnew(df, **kw):
     df['vf_temporal_num'] = df['val_tot_sys'] / (df['val_tot_bench_sys']/df['mwh_bench_sys'])
     df['vf_load_num'] = df['val_load'] / (df['val_load_bench_sys']/df['mwh_bench_sys'])
     df['vf_resmarg_num'] = df['val_resmarg'] / (df['val_resmarg_bench_sys']/df['mwh_bench_sys'])
+    #Per-MW counterpart: value over the national benchmark per MW of reserve-margin requirement. Its
+    #preset divides the sum by summed mw, so a build that adds energy capacity but no power keeps its value.
+    df['vf_permw_num'] = df['val_tot'] / (df['val_tot_bench_sys']/df['mw_bench_sys'])
     return df
 
 def pre_val_streams(dfs, **kw):
@@ -2450,6 +2453,7 @@ results_meta = collections.OrderedDict((
             ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Value factor of firm capacity alone, that is, capacity value per MW of a tech compared to that of the benchmark
             ('VF Firm Capacity per MW by Year', {'x':'year','y':'vf_resmarg_permw','y_b':'mw','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF per MW by Year', {'x':'year','y':'vf_permw_num','y_b':'mw','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Temporal, spatial, and interaction value factors
             ('VF Spatial by Year', {'x':'year','y':'vf_spatial','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('VF Temporal by Year', {'x':'year','y':'vf_temporal_num','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
@@ -2463,6 +2467,7 @@ results_meta = collections.OrderedDict((
             ('LVOE Operating Reserves by Year', {'x':'year','y':'val_opres','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('LVOE State RPS by Year', {'x':'year','y':'val_rps','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('Benchmark Price by Year', {'x':'year','y':'val_tot','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','chart_type':'Dot-Line', 'sync_axes':'No', 'filter': {'tech':['benchmark']}}),
+            ('Benchmark Price per MW by Year', {'x':'year','y':'val_tot','y_b':'mw','y_agg':'sum(a)/sum(b)','series':'scenario','chart_type':'Dot-Line', 'sync_axes':'No', 'filter': {'tech':['benchmark']}}),
         )),
         }
     ),
