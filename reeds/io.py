@@ -440,7 +440,7 @@ def read_h5(h5path:str|Path, key:str) -> pd.DataFrame:
 
 def read_input(
     case:str|Path,
-    name:str,
+    name:str|tuple,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -451,14 +451,20 @@ def read_input(
 
     Args:
         case (str or Path): Absolute path to a ReEDS case
-        name (str): Name of the ReEDS parameter or {case}/inputs_case/{name}.csv
+        name (str or tuple): Name of the ReEDS parameter or {case}/inputs_case/{name}.csv.
+            If a tuple is provided, the elements before the last element indicate folders.
+            So ('rep', 'numhours') would read from {case}/inputs_case/rep/numhours.csv.
 
     Returns:
         pd.DataFrame
     """
-    key = Path(name).stem
     h5path = Path(reeds.io.standardize_case(case), 'inputs_case', 'inputs.h5')
-    csvpath = Path(h5path.parent, f'{key}.csv')
+    if isinstance(name, str):
+        key = Path(name).stem
+        csvpath = Path(h5path.parent, f'{key}.csv')
+    else:
+        key = Path(name[-1]).stem
+        csvpath = Path(h5path.parent, *name[:-1], f'{key}.csv')
     if h5path.is_file():
         try:
             df = read_h5(h5path, key)

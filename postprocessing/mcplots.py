@@ -29,6 +29,70 @@ reeds.plots.plotparams()
 keep_incomplete = False
 
 
+#%% Plotting functions
+def plot_demand_lines(
+    plotcases:list,
+    level='st',
+    ncols=8,
+    tstart=2020,
+    figsize=(11,6),
+    color='C7',
+    alpha=0.5,
+    bins=21,
+):
+    """Lines with vertical histograms at the end for each region in level [TWh]"""
+    hierarchy = plotcases[0].hierarchy
+    r2region = hierarchy[level]
+    regions = sorted(hierarchy[level].unique())
+    nrows, ncols, coords = reeds.plots.get_coordinates(regions, ncols=ncols)
+    dfplot = pd.concat({
+        i: (
+            case.demand_rt
+            .rename(r2region, axis=0, level='r')
+            .groupby(['r','t']).sum()
+        )
+        for i, case in enumerate(plotcases)
+    }, axis=1).loc[:, tstart:, :]
+
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=figsize, sharex=True,
+        gridspec_kw={'wspace':0.5},
+    )
+    for r in tqdm(regions):
+        _ax = ax[coords[r]]
+        df = dfplot.loc[r]
+        ## Background
+        _ax.fill_between(
+            df.index, df.max(axis=1), df.min(axis=1),
+            color=color, alpha=alpha, lw=0,
+        )
+        ## Lines
+        df.plot(
+            ax=_ax, legend=False,
+            lw=0.5, color='k', alpha=0.25,
+        )
+        ## Histogram
+        reeds.plots.hist_last(
+            _ax, df, color=color, bins=bins, alpha=alpha,
+            xpad=1, xscale=4,
+        )
+        ## Formatting
+        _ax.annotate(
+            r, (0.05, 0.05), xycoords='axes fraction', va='bottom', weight='bold',
+        )
+        _ax.set_xlabel(None)
+        _ax.set_ylim(0)
+    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    ax[-1,0].set_ylabel('Electricity demand [TWh]', y=0, va='bottom', ha='left')
+    reeds.plots.despine(ax)
+    plt.draw()
+    reeds.plots.shorten_years(_ax)
+    return f, ax, dfplot
+
+
 #%% Argument inputs
 parser = argparse.ArgumentParser(
     description='Compare groups of Monte Carlo samples',
@@ -37,7 +101,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     'caselist', type=str, nargs='+',
     help=(
-        'space-delimited list of cases to plot, OR csv file of cases (both with glob '
+        'space-delimited list of dfcases to plot, OR csv file of dfcases (both with glob '
         'controls included). The first case is treated as the base case '
         'unless a different one is provided via the --basecase/-b argument.'
     ))
@@ -100,24 +164,32 @@ colors_tech = plot_settings['tech_color']
 
 
 #%% Cases
-# cases = pd.DataFrame(casepaths)
-## Allow for different numbers of samples across cases
-cases = pd.concat({k: pd.Series(v) for k,v in casepaths.items()}, axis=1)
-cases.columns = cases.columns.rename('caseprefix')
-cases = cases.stack().rename('path').dropna().reset_index(level='caseprefix')
-cases['number'] = cases.path.map(lambda x: int(x.split('_')[-1].strip('MC')))
+# dfcases = pd.DataFrame(casepaths)
+## Allow for different numbers of samples across dfcases
+dfcases = pd.concat({k: pd.Series(v) for k,v in casepaths.items()}, axis=1)
+dfcases.columns = dfcases.columns.rename('caseprefix')
+dfcases = dfcases.stack().rename('path').dropna().reset_index(level='caseprefix')
+dfcases['number'] = dfcases.path.map(lambda x: int(x.split('_')[-1].strip('MC')))
 ## Add central case
 if basepath is not None:
-    cases = pd.concat([
-        cases,
+    dfcases = pd.concat([
+        dfcases,
         pd.DataFrame({'caseprefix':'central', 'path':basepath, 'number':0}, index=[0])
     ])
-cases = cases.set_index(['caseprefix','number']).sort_index()
-samples = [i for i in cases.index.get_level_values('number').unique() if i != 0]
+dfcases = dfcases.set_index(['caseprefix','number']).sort_index()
+samples = [i for i in dfcases.index.get_level_values('number').unique() if i != 0]
+## Instantiate the data containers
+# dfcases['object'] = dfcases.path.map(lambda x: reeds.objects.ReEDScase(x))
+# dfcases['object'] = [reeds.objects.ReEDScase(x) for x in dfcases.path]
+# case
+cases = {
+    key: [reeds.objects.ReEDScase(x) for x in caselist]
+    for key, caselist in casepaths.items()
+}
 
 
 #%% Shared inputs
-basecase = cases.iloc[0].name
+basecase = dfcases.iloc[0].name
 sw = reeds.io.get_switches(basepath)
 inflatable = reeds.io.get_inflatable()
 dollaryear_reeds = 2004
@@ -154,27 +226,27 @@ state_subplots = reeds.reedsplots.get_state_subplots()
 
 
 #%%### Inputs
-#%% Electricity demand
-dictin_demand = {}
-for case, row in tqdm(cases.iterrows(), desc='demand', total=len(cases)):
-    try:
-        # dictin_demand[case] = reeds.io.read_file(os.path.join(row.path, 'inputs_case', 'load.h5'))
-        # dictin_demand[case] = reeds.io.read_h5py_file(os.path.join(row.path, 'inputs_case', 'load.h5'))
-        numhours = pd.read_csv(
-            os.path.join(row.path, 'inputs_case', 'rep', 'numhours.csv')
-        ).rename(columns={'*h':'h'}).set_index('h').numhours
-        dictin_demand[case] = pd.read_csv(
-            os.path.join(row.path, 'inputs_case', 'rep', 'load_allyear.csv')
-        ).rename(columns={'*r':'r'})
-        dictin_demand[case].MW = dictin_demand[case].MW * dictin_demand[case].h.map(numhours)
-        dictin_demand[case] = dictin_demand[case].groupby(['r','t']).MW.sum().rename('TWh') / 1e6
-    except FileNotFoundError as err:
-        print(err)
-        continue
+# #%% Electricity demand
+# dictin_demand = {}
+# for case, row in tqdm(dfcases.iterrows(), desc='demand', total=len(dfcases)):
+#     try:
+#         numhours = (
+#             reeds.io.read_input(row.path, ('rep', 'numhours'))
+#             .rename(columns={'*h':'h'}).set_index('h').squeeze(1)
+#         )
+#         dictin_demand[case] = (
+#             reeds.io.read_input(row.path, ('rep', 'load_allyear'))
+#             .rename(columns={'*r':'r'})
+#         )
+#         dictin_demand[case].MW = dictin_demand[case].MW * dictin_demand[case].h.map(numhours)
+#         dictin_demand[case] = dictin_demand[case].groupby(['r','t']).MW.sum().rename('TWh') / 1e6
+#     except FileNotFoundError as err:
+#         print(err)
+#         continue
 
 #%% Fuel price
 dictin_gasprice = {}
-for case, row in tqdm(cases.iterrows(), desc='gasprice', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='gasprice', total=len(dfcases)):
     try:
         dictin_gasprice[case] = pd.read_csv(
             os.path.join(row.path, 'inputs_case', 'fprice.csv')
@@ -185,7 +257,7 @@ for case, row in tqdm(cases.iterrows(), desc='gasprice', total=len(cases)):
 
 #%% Tech cost (wind, solar, batteries)
 dictin_cap_cost = {}
-for case, row in tqdm(cases.iterrows(), desc='cap_cost', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='cap_cost', total=len(dfcases)):
     try:
         dictin_cap_cost[case] = pd.read_csv(
             os.path.join(row.path, 'inputs_case', 'plantcharout.csv'),
@@ -198,7 +270,7 @@ for case, row in tqdm(cases.iterrows(), desc='cap_cost', total=len(cases)):
 
 #%% Siting availability
 dictin_sc = {}
-for case, row in tqdm(cases.iterrows(), desc='supplycurve', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='supplycurve', total=len(dfcases)):
     try:
         dictin_sc[case] = (
             pd.read_csv(os.path.join(row.path, 'inputs_case', 'rsc_combined.csv'))
@@ -215,71 +287,16 @@ for case, row in tqdm(cases.iterrows(), desc='supplycurve', total=len(cases)):
 
 #%%### Inputs plots
 #%% Demand
-tstart = 2020
-level = 'st'
-ncols = 8
-# regions = dfmap[level].loc[hierarchy[level].unique()].bounds.minx.sort_values().index
-regions = sorted(hierarchy[level].unique())
-nrows, ncols, coords = reeds.plots.get_coordinates(regions, ncols=ncols)
-figsize = (ncols*1.4, nrows)
-r2region = hierarchy[level]
-color = 'C7'
-alpha = 0.5
-bins = 21
-
-for caseprefix in caselist:
-    caseprefix_samples = sorted([s for (c,s) in dictin_demand if c == caseprefix])
-    dfplot = pd.concat({
-        sample: (
-            dictin_demand[caseprefix,sample]
-            .rename(r2region, axis=0, level='r')
-            .groupby(['r','t']).sum()
-        )
-        for sample in caseprefix_samples
-    }, axis=1).loc[:, tstart:, :]
-
-    ### Plot it
-    plt.close()
-    f,ax = plt.subplots(
-        nrows, ncols, figsize=figsize, sharex=True,
-        gridspec_kw={'wspace':0.5},
-    )
-    for r in tqdm(regions):
-        _ax = ax[coords[r]]
-        df = dfplot.loc[r]
-        ## Background
-        _ax.fill_between(
-            df.index, df.max(axis=1), df.min(axis=1),
-            color=color, alpha=alpha, lw=0,
-        )
-        ## Lines
-        df.plot(
-            ax=_ax, legend=False,
-            lw=0.5, color='k', alpha=0.25,
-        )
-        ## Histogram
-        reeds.plots.hist_last(
-            _ax, df, color=color, bins=bins, alpha=alpha,
-            xpad=1, xscale=4,
-        )
-        ## Formatting
-        _ax.annotate(
-            r, (0.05, 0.05), xycoords='axes fraction', va='bottom', weight='bold',
-        )
-        _ax.set_xlabel(None)
-        _ax.set_ylim(0)
-    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ax[-1,0].set_ylabel('Electricity demand [TWh]', y=0, va='bottom', ha='left')
-    reeds.plots.despine(ax)
-    plt.draw()
-    reeds.plots.shorten_years(_ax)
-    plt.savefig(os.path.join(savepath, f'demand-{caseprefix}.png'))
+for caseprefix in casepaths:
+    f, ax, dfplot = plot_demand_lines(cases[caseprefix])
+    savepath = Path(savepath, f'demand-{nicelabels[caseprefix]}.png')
+    plt.savefig(savepath)
     plt.show()
+    print(savepath)
 
 
 #%% Fuel price
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_gasprice if c == caseprefix])
     df = pd.concat(
         {
@@ -330,7 +347,7 @@ labels = {
 ncols = len(labels)
 bins = 31
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_cost if c == caseprefix])
     dfplot = pd.concat(
         {
@@ -385,7 +402,7 @@ for caseprefix in caselist:
 
 #%% Supply curves
 techs = ['upv', 'wind-ons']
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_sc if c == caseprefix])
     dfplot = pd.concat(
         {
@@ -459,7 +476,7 @@ for caseprefix in caselist:
 #%%
 #%% Results
 dictin_cap_r = {}
-for case, row in tqdm(cases.iterrows(), desc='output capacity', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='output capacity', total=len(dfcases)):
     ### Generation capacity
     try:
         dictin_cap_r[case] = reeds.io.read_output(row.path, 'cap', valname='MW')
@@ -471,7 +488,7 @@ for case, row in tqdm(cases.iterrows(), desc='output capacity', total=len(cases)
     dictin_cap_r[case] = dictin_cap_r[case].groupby(['i','r','t'], as_index=False).MW.sum()
 
 dictin_trans_r = {}
-for case, row in tqdm(cases.iterrows(), desc='output transmission', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='output transmission', total=len(dfcases)):
     ### Transmission capacity
     try:
         dictin_trans_r[case] = reeds.io.read_output(row.path, 'tran_out', valname='MW')
@@ -486,7 +503,7 @@ for case, row in tqdm(cases.iterrows(), desc='output transmission', total=len(ca
         ).astype(int)
 
 dictin_gen_r = {}
-for case, row in tqdm(cases.iterrows(), desc='output generation', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='output generation', total=len(dfcases)):
     ### Generation
     try:
         dictin_gen_r[case] = reeds.io.read_output(row.path, 'gen_ann', valname='TWh')
@@ -499,7 +516,7 @@ for case, row in tqdm(cases.iterrows(), desc='output generation', total=len(case
 
 val2sheet = reeds.io.get_report_sheetmap(basepath)
 dictin_scoe = {}
-for case, row in tqdm(cases.iterrows(), desc='output scoe', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='output scoe', total=len(dfcases)):
     try:
         dictin_scoe[case] = (
             reeds.io.read_report(row.path, 'National Average Electricity', val2sheet)
@@ -510,7 +527,7 @@ for case, row in tqdm(cases.iterrows(), desc='output scoe', total=len(cases)):
         continue
 
 dictin_npv = {}
-for case, row in tqdm(cases.iterrows(), desc='output npv', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='output npv', total=len(dfcases)):
     try:
         dictin_npv[case] = (
             reeds.io.read_report(row.path, 'Present Value of System Cost', val2sheet)
@@ -521,7 +538,7 @@ for case, row in tqdm(cases.iterrows(), desc='output npv', total=len(cases)):
         continue
 
 dictin_emissions = {}
-for case, row in tqdm(cases.iterrows(), desc='output emissions', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='output emissions', total=len(dfcases)):
     try:
         dictin_emissions[case] = (
             reeds.io.read_output(row.path, 'emit_nat', valname='ton')
@@ -540,7 +557,7 @@ central_health = {'cr':'ACS', 'model':'EASIUR'}
 dictin_health = {}
 dictin_health_central = {}
 dictin_health_central_mort = {}
-for case, row in tqdm(cases.iterrows(), desc='health damages', total=len(cases)):
+for case, row in tqdm(dfcases.iterrows(), desc='health damages', total=len(dfcases)):
     try:
         dictin_health[case] = (
             reeds.io.read_output(row.path, 'health_damages_caused_r.csv')
@@ -577,7 +594,7 @@ years = sorted(dictin_cap_r[list(dictin_cap_r.keys())[0]].t.unique())
 
 #%% Total number of samples
 df = {}
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     df[nicelabels.get(caseprefix,caseprefix)] = len(caseprefix_samples)
 df = pd.Series(df).sort_index()
@@ -614,7 +631,7 @@ techs = [
 ]
 nrows = len(techs) + 1
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     dfplot = {}
     for region in regions:
@@ -715,9 +732,9 @@ for caseprefix in caselist:
     plt.show()
 
 
-#%% National capacity for all caselist
+#%% National capacity for all scenarios
 dictplot = {}
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -894,12 +911,12 @@ dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv').replace('_
 dfwrite
 
 
-#%% National capacity for all caselist: just histogram
+#%% National capacity for all scenarios: just histogram
 t = 2050
 tstart = 2020
 
 dictplot = {}
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -1055,7 +1072,7 @@ difftype, vlim = 'absolute', 10
 units = 'GW' if difftype == 'absolute' else '%'
 
 for tech in techs:
-    for caseprefix in caselist:
+    for caseprefix in casepaths:
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
         dfplot = pd.concat(
             {
@@ -1161,7 +1178,7 @@ for sortby in [
     'Coal',
     ['Gas+CCS', 'Coal+CCS'],
 ]:
-    for caseprefix in caselist:
+    for caseprefix in casepaths:
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
         dfin = pd.concat(
             {
@@ -1229,7 +1246,7 @@ ncols = state_subplots['col'].max() + 1
 states = sorted(state_subplots.index.tolist())
 scale = 1.2
 barwidth = 1.0
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
     dfin = pd.concat(
         {
@@ -1343,7 +1360,7 @@ for sortby in [
     'gasprice',
     'demand',
 ]:
-    for caseprefix in caselist:
+    for caseprefix in casepaths:
         ## Capacity
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
         dfcap_in = pd.concat(
@@ -1489,7 +1506,7 @@ regions = dfmap[level].loc[hierarchy[level].unique()].bounds.minx.sort_values().
 ncols = nrows = len(regions)
 
 for tech in techs:
-    for caseprefix in caselist:
+    for caseprefix in casepaths:
         caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
         dfplot = pd.concat(
             {
@@ -1578,7 +1595,7 @@ if not zoom:
     ymax = pd.concat(dictin_cap_cost).xs(t,0,'t')[cost_tech].max()
     xmax = pd.concat(dictin_gasprice).xs(t,0,'t').mean(axis=1).max()
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfsize = pd.Series(
@@ -1821,7 +1838,7 @@ zoom = False
 ncols = len(x_datums)
 nrows = len(cost_techs)
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfsize = pd.Series(
@@ -1985,7 +2002,7 @@ norm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
 ncols = len(x_datums) + len(cost_techs)
 nrows = len(cap_techs)
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfcap = pd.Series(
@@ -2176,8 +2193,8 @@ figscale = 1.3
 nrows = len(ycols)
 ncols = len(xcols)
 
-# for caseprefix in caselist[3:4]:
-for caseprefix in caselist:
+# for caseprefix in casepaths[3:4]:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfcap = pd.Series(
@@ -2377,7 +2394,7 @@ nrows = len(ycols)
 ncols = len(xcols)
 
 # for caseprefix in ['v20250829_mcK0_MC_flat_country']:
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     ## Marker size
     dfcap = pd.Series(
@@ -2567,7 +2584,7 @@ xlabel = (
 
 # for caseprefix in ['v20251014_mcK0_MC_flat_state_SitingDemand']:
 for caseprefix in ['v20250829_mcK0_MC_flat_state_MC']:
-# for caseprefix in caselist:
+# for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     savename = (
         f"out_cap-scatter-x_{xaxis}-y_{yaxis+(('_'+tech_cap) if yaxis == 'capcost' else '')}-"
@@ -2805,7 +2822,7 @@ xlabel = axislabels.get(xaxis,xaxis)
 
 # for caseprefix in ['v20251014_mcK0_MC_flat_state_SitingDemand']:
 # for caseprefix in ['v20250829_mcK0_MC_flat_state_MC']:
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     savename = (
         f"out_pvfrac-scatter-x_{xaxis}-y_{yaxis+(('_'+tech_cap) if yaxis == 'capcost' else '')}-"
@@ -2998,7 +3015,7 @@ vmin = min([dictin_gasprice[key].mean(axis=1).loc[t] for key in dictin_gasprice]
 vmax = max([dictin_gasprice[key].mean(axis=1).loc[t] for key in dictin_gasprice])
 cmap = plt.cm.turbo
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
 
     ## Capacity
@@ -3078,7 +3095,7 @@ levels = ['st', 'country']
 rs = hierarchy.index.values
 bins = 41
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
     for level in levels:
         regions = sorted(hierarchy[level].unique())
@@ -3153,7 +3170,7 @@ for tech in [
     ## Set up plot
     plt.close()
     f,ax = plt.subplots(1, ncols, figsize=(8, 2.5), sharey=True)
-    for caseprefix in caselist:
+    for caseprefix in casepaths:
         caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
         for col, level in enumerate(levels):
             _ax = ax[col]
@@ -3243,7 +3260,7 @@ xscale = 2
 percentiles = [0.025, 0.05, 0.1, 0.25, 0.75, 0.9, 0.95, 0.975]
 decimals = -1
 
-# plotcaseprefixes = caselist
+# plotcaseprefixes = list(casepaths.keys())
 # plotlabels = nicelabels
 
 plotcaseprefixes = [
@@ -3266,7 +3283,7 @@ plotlabels = {
 
 #%% SCOE
 dictplot = {}
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_scoe if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -3332,7 +3349,7 @@ plt.show()
 
 #%% NPV
 dictplot = {}
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_npv if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -3558,7 +3575,7 @@ dfwrite
 etype = 'process'
 pollutant = 'CO2'
 dictplot = {}
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_emissions if c == caseprefix])
     # print(f'{caseprefix}: {(len(caseprefix_samples))}')
     dictplot[caseprefix] = pd.concat({
@@ -3812,7 +3829,7 @@ nrows = 2
 regioncolors = [plt.cm.PiYG(0.1), plt.cm.PiYG(0.9)]
 regioncolors = ['C0', 'C1']
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
     dfplot = pd.concat(
         {sample: dictin_trans_r[caseprefix,sample] for sample in caseprefix_samples},
@@ -3889,7 +3906,7 @@ for caseprefix in caselist:
     plt.show()
 
 
-#%% Regional transmission additions for all caselist
+#%% Regional transmission additions for all scenarios
 level = 'transreg'
 binstep = 1
 alpha = 0.5
@@ -3899,7 +3916,7 @@ regioncolors = ['k', '0.7']
 year = 2050
 year_baseline = 2020
 
-# plotcaseprefixes = caselist
+# plotcaseprefixes = list(casepaths.keys())
 # plotlabels = nicelabels
 
 plotcaseprefixes = [
@@ -4035,7 +4052,7 @@ dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv')))
 dfwrite
 
 
-#%% Final regional transmission capacity for all caselist
+#%% Final regional transmission capacity for all scenarios
 level = 'transreg'
 binstep = 1
 alpha = 0.5
@@ -4045,7 +4062,7 @@ regioncolors = ['k', '0.7']
 year = 2050
 year_baseline = 2020
 
-# plotcaseprefixes = caselist
+# plotcaseprefixes = list(casepaths.keys())
 # plotlabels = nicelabels
 
 # plotcaseprefixes = [
@@ -4222,7 +4239,7 @@ year = 2050
 year_baseline = 2020
 scale = 1.75
 
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
     dfplot = pd.concat(
         {
@@ -4314,7 +4331,7 @@ for caseprefix in caselist:
 #%% Transmission additions: All samples on one map, shaded lines (for percentiles or overlapping?)
 year = 2050
 year_baseline = 2020
-for caseprefix in caselist:
+for caseprefix in casepaths:
     caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
     dfplot = pd.concat(
         {

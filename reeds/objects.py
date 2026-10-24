@@ -6,6 +6,22 @@ sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 
 
+#%% Specially processed inputs
+def get_demand_rt(case):
+    """Get exogenous electricity demand by region and year [TWh]"""
+    numhours = (
+        reeds.io.read_input(case, ('rep', 'numhours'))
+        .rename(columns={'*h':'h'}).set_index('h').squeeze(1)
+    )
+    df = (
+        reeds.io.read_input(case, ('rep', 'load_allyear'))
+        .rename(columns={'*r':'r'})
+    )
+    df.MW = df.MW * df.h.map(numhours)
+    df = df.groupby(['r','t']).MW.sum().rename('TWh') / 1e6
+    return df
+
+
 #%% Results container
 SPECIAL = {
     'sw': reeds.io.get_switches,
@@ -13,6 +29,7 @@ SPECIAL = {
     'dfmap': reeds.io.get_dfmap,
     'county2zone': reeds.io.get_county2zone,
     'inflatable': reeds.io.get_inflatable,
+    'demand_rt': get_demand_rt,
 }
 
 class ReEDScase:
@@ -75,7 +92,6 @@ class ReEDScase:
             return copy.deepcopy(self)
         else:
             return copy.copy(self)
-
 
 
 # #%% Test
