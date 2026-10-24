@@ -389,8 +389,9 @@ def build_html(output_dir, core_path):
                       'reserve margin rather than its share of the pool. The two runs are not held to '
                       'the same reliability standard: one meets an unserved-energy threshold, the '
                       'other a planning reserve margin.', order)
-    def sens_table(csv_name, caption, variant_header):
-        """Headline-year table of a storage sensitivity figure: one row per year and run."""
+    def sens_table(csv_name, caption, variant_header, perkw=False):
+        """Headline-year table of a storage sensitivity figure: one row per year and run. perkw
+        swaps in the per-kW factors, and capacity share of peak load for market share."""
         sens = read_csv_or_empty(output_dir, csv_name)
         rows = []
         if not sens.empty:
@@ -400,18 +401,25 @@ def build_html(output_dir, core_path):
                     if r.empty:
                         continue
                     r = r.iloc[0]
-                    rows.append(
-                        f'<tr><td class="t">{int(y)}</td><td class="t">{lab}</td>'
-                        f'<td class="num">{_num(r["gen_frac"], "{:.1%}")}</td>'
-                        f'<td class="num">{_num(r["value_factor"])}</td>'
-                        f'<td class="num">{_num(r["vf_comp_resmarg"])}</td>'
-                        f'<td class="num">{_num(r["cost_factor"])}</td>'
-                        f'<td class="num">{_num(r["value_cost_factor"], "{:.3f}")}</td>'
-                        f'<td class="num">{_num(r["capacity_credit"])}</td></tr>')
-        return table(caption,
-                     [('Year', False), (variant_header, False), ('Market share', True),
-                      ('VF', True), ('VF, capacity part', True), ('CF', True), ('VCF', True),
-                      ('Capacity credit', True)], rows)
+                    if perkw:
+                        cells = [_num(r['cap_peak'], '{:.1%}'), _num(r['value_factor_perkw']),
+                                 _num(r['cost_factor_perkw']),
+                                 _num(r['value_cost_factor_perkw'], '{:.3f}')]
+                    else:
+                        cells = [_num(r['gen_frac'], '{:.1%}'), _num(r['value_factor']),
+                                 _num(r['vf_comp_resmarg']), _num(r['cost_factor']),
+                                 _num(r['value_cost_factor'], '{:.3f}')]
+                    cells.append(_num(r['capacity_credit']))
+                    rows.append(f'<tr><td class="t">{int(y)}</td><td class="t">{lab}</td>'
+                                + ''.join(f'<td class="num">{c}</td>' for c in cells) + '</tr>')
+        if perkw:
+            heads = [('Capacity share of peak', True), ('VF per kW', True), ('CF per kW', True),
+                     ('VCF per kW', True)]
+        else:
+            heads = [('Market share', True), ('VF', True), ('VF, capacity part', True),
+                     ('CF', True), ('VCF', True)]
+        return table(caption, [('Year', False), (variant_header, False)] + heads
+                     + [('Capacity credit', True)], rows)
 
     form_table = sens_table('plcoe_pitch_storage_formulation.csv',
                             'Storage under the two reserve-margin formulations at the headline years',
@@ -433,8 +441,20 @@ def build_html(output_dir, core_path):
                           'Storage with and without gas-CC start costs at the headline years',
                           'Start costs')
 
-    # ---- 09 per kW ----
-    pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 21,
+    # ---- 09 gas-CC start costs, per kW ----
+    sck_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_perkw.png', 21,
+                     'Storage with and without start costs on gas combined cycle, per kW.',
+                     'The two runs of Fig 20 with the per-kW value factor, cost factor and '
+                     'value&#8211;cost factor of section 10 in place of the per-MWh ones, against '
+                     'installed storage capacity as a share of peak load (as in section 04) rather '
+                     'than market share, since market share is discharge. Capacity credit is as in '
+                     'Fig 20.', order)
+    sck_table = sens_table('plcoe_pitch_storage_startcost_perkw.csv',
+                           'Storage with and without gas-CC start costs, per kW, at the headline years',
+                           'Start costs', perkw=True)
+
+    # ---- 10 per kW ----
+    pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 22,
                     'Value factor, cost factor and value&#8211;cost factor per MWh and per kW.',
                     'Per MWh is as in the figures above: value per MWh of discharge over the '
                     'benchmark price, value over load MWh. Per kW divides value by new power '
@@ -533,7 +553,9 @@ def build_html(output_dir, core_path):
      '<div class="col"><p>A sensitivity on the unit-commitment costs of gas combined cycle, which '
      'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_table)}
 
-{sec('09', 'Per kW', pk_fig, pk_table)}
+{sec('09', 'Gas-CC start costs, per kW', sck_fig, sck_table)}
+
+{sec('10', 'Per kW', pk_fig, pk_table)}
 
 <section style="border-bottom:none">
   <footer>Generated by <code>battery_report.py</code> from the figures and tables in this
