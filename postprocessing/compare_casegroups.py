@@ -29,70 +29,6 @@ reeds.plots.plotparams()
 keep_incomplete = False
 
 
-#%% Plotting functions
-def plot_demand_lines(
-    plotcases:list,
-    level='st',
-    ncols=8,
-    tstart=2020,
-    figsize=(11,6),
-    color='C7',
-    alpha=0.5,
-    bins=21,
-):
-    """Lines with vertical histograms at the end for each region in level [TWh]"""
-    hierarchy = plotcases[0].hierarchy
-    r2region = hierarchy[level]
-    regions = sorted(hierarchy[level].unique())
-    nrows, ncols, coords = reeds.plots.get_coordinates(regions, ncols=ncols)
-    dfplot = pd.concat({
-        i: (
-            case.demand_rt
-            .rename(r2region, axis=0, level='r')
-            .groupby(['r','t']).sum()
-        )
-        for i, case in enumerate(plotcases)
-    }, axis=1).loc[:, tstart:, :]
-
-    ### Plot it
-    plt.close()
-    f,ax = plt.subplots(
-        nrows, ncols, figsize=figsize, sharex=True,
-        gridspec_kw={'wspace':0.5},
-    )
-    for r in tqdm(regions):
-        _ax = ax[coords[r]]
-        df = dfplot.loc[r]
-        ## Background
-        _ax.fill_between(
-            df.index, df.max(axis=1), df.min(axis=1),
-            color=color, alpha=alpha, lw=0,
-        )
-        ## Lines
-        df.plot(
-            ax=_ax, legend=False,
-            lw=0.5, color='k', alpha=0.25,
-        )
-        ## Histogram
-        reeds.plots.hist_last(
-            _ax, df, color=color, bins=bins, alpha=alpha,
-            xpad=1, xscale=4,
-        )
-        ## Formatting
-        _ax.annotate(
-            r, (0.05, 0.05), xycoords='axes fraction', va='bottom', weight='bold',
-        )
-        _ax.set_xlabel(None)
-        _ax.set_ylim(0)
-    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ax[-1,0].set_ylabel('Electricity demand [TWh]', y=0, va='bottom', ha='left')
-    reeds.plots.despine(ax)
-    plt.draw()
-    reeds.plots.shorten_years(_ax)
-    return f, ax, dfplot
-
-
 #%% Argument inputs
 parser = argparse.ArgumentParser(
     description='Compare groups of Monte Carlo samples',
@@ -226,24 +162,6 @@ state_subplots = reeds.reedsplots.get_state_subplots()
 
 
 #%%### Inputs
-# #%% Electricity demand
-# dictin_demand = {}
-# for case, row in tqdm(dfcases.iterrows(), desc='demand', total=len(dfcases)):
-#     try:
-#         numhours = (
-#             reeds.io.read_input(row.path, ('rep', 'numhours'))
-#             .rename(columns={'*h':'h'}).set_index('h').squeeze(1)
-#         )
-#         dictin_demand[case] = (
-#             reeds.io.read_input(row.path, ('rep', 'load_allyear'))
-#             .rename(columns={'*r':'r'})
-#         )
-#         dictin_demand[case].MW = dictin_demand[case].MW * dictin_demand[case].h.map(numhours)
-#         dictin_demand[case] = dictin_demand[case].groupby(['r','t']).MW.sum().rename('TWh') / 1e6
-#     except FileNotFoundError as err:
-#         print(err)
-#         continue
-
 #%% Fuel price
 dictin_gasprice = {}
 for case, row in tqdm(dfcases.iterrows(), desc='gasprice', total=len(dfcases)):
@@ -288,7 +206,7 @@ for case, row in tqdm(dfcases.iterrows(), desc='supplycurve', total=len(dfcases)
 #%%### Inputs plots
 #%% Demand
 for caseprefix in casepaths:
-    f, ax, dfplot = plot_demand_lines(cases[caseprefix])
+    f, ax, dfplot = reeds.mcplots.plot_demand_lines(cases[caseprefix])
     savepath = Path(savepath, f'demand-{nicelabels[caseprefix]}.png')
     plt.savefig(savepath)
     plt.show()

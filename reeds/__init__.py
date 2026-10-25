@@ -8,6 +8,7 @@ from . import financials as financials
 from . import inputs as inputs
 from . import io as io
 from . import log as log
+from . import mcplots as mcplots
 from . import plots as plots
 from . import prasplots as prasplots
 from . import reedsplots as reedsplots
