@@ -32,6 +32,7 @@ report_name = 'valcostfac_report.html' #Written into output_dir.
 embed_figures = True #Embed each figure as a downscaled data URI, making the page self-contained and portable. False references the pngs by relative filename, which keeps the file small and the figures at full resolution but ties the page to this directory. Embedding needs Pillow; without it the report falls back to references and says so.
 embed_max_width = 2600 #Pixels. Figures wider than this are downscaled before embedding; narrower ones are left alone. The by-year maps are the widest at about 4900px, and 2600 keeps their per-year panels legible.
 decline_shares = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6] #Market shares tabulated in the cost-escalation decline table under the VCF figure.
+figure_px_per_inch = 96 #CSS pixels per inch of matplotlib figure. Each figure is shown no wider than its saved width in inches times this, so text renders at its point size and a single-panel chart is not stretched to the full column; wider figures still fill the column. None to stretch every figure to the column.
 embed_quality = 82 #JPEG quality for embedded figures. These are line charts and choropleths, where 82 is visually clean and roughly a fifth the size of the equivalent png.
 report_title = 'Value-Cost Factor Figures' #Page title and headline.
 vre_techs = ['Onshore Wind', 'UPV'] #Techs with per-tech map figures and rows in the suppression table. Names as they appear in valcostfac_core.csv, before display_tech.
@@ -196,6 +197,9 @@ section{padding-block:3.2rem;border-bottom:1px solid var(--rule-soft);}
 figure{margin:2rem 0 0;}
 figure img{display:block;width:100%;max-width:100%;height:auto;border:1px solid var(--rule);
   background:#fff;border-radius:2px;}
+.figrow{display:flex;gap:.8rem;align-items:flex-start;}
+.figrow img{min-width:0;}
+@media (max-width:700px){.figrow{flex-direction:column;}.figrow img{flex:none!important;}}
 figcaption{display:grid;grid-template-columns:auto 1fr;gap:.55rem 1rem;margin-top:.8rem;
   font-size:.87rem;line-height:1.5;color:var(--muted);align-items:baseline;}
 .fignum{font-size:.7rem;letter-spacing:.08em;color:var(--accent);text-transform:uppercase;
@@ -246,20 +250,45 @@ def embed_source(path):
     return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()
 
 
+def display_width(path):
+    """The CSS width at which a png's text renders at its point size, or None if Pillow or the png's dpi
+    is unavailable."""
+    if figure_px_per_inch is None:
+        return None
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    with Image.open(path) as im:
+        dpi = im.info.get('dpi')
+        return round(im.width / dpi[0] * figure_px_per_inch) if dpi else None
+
+
 def figure(output_dir, filename, num, title, body, order):
     """One figure block, or nothing if that png was not produced.
 
-    body describes what the figure plots - axes, marks, construction - and stops there.
+    body describes what the figure plots - axes, marks, construction - and stops there. A list of
+    filenames puts those pngs side by side as panels of one figure, each sized in proportion to its
+    own width; missing ones are dropped.
     """
-    path = os.path.join(output_dir, filename)
-    if not os.path.exists(path):
+    filenames = [f for f in ([filename] if isinstance(filename, str) else filename)
+                 if os.path.exists(os.path.join(output_dir, f))]
+    if not filenames:
         return ''
-    src = embed_source(path) if embed_figures else None
-    if embed_figures and src is None:
-        order.append(('fallback', filename))
-    src = src or filename
-    order.append(filename)
-    return (f'<figure><img src="{src}" alt="{title}">'
+    imgs = []
+    for f in filenames:
+        path = os.path.join(output_dir, f)
+        src = embed_source(path) if embed_figures else None
+        if embed_figures and src is None:
+            order.append(('fallback', f))
+        src = src or f
+        order.append(f)
+        width = display_width(path)
+        style = (f'max-width:{width}px;' if width else '') + (
+            f'flex:{width or 1} 1 0;' if len(filenames) > 1 else '')
+        imgs.append(f'<img src="{src}" alt="{title}"' + (f' style="{style}"' if style else '') + '>')
+    img_html = imgs[0] if len(imgs) == 1 else f'<div class="figrow">{"".join(imgs)}</div>'
+    return (f'<figure>{img_html}'
             f'<figcaption><span class="fignum">Fig {num}</span>'
             f'<span><b>{title}</b> {body}</span></figcaption></figure>')
 
