@@ -70,7 +70,7 @@ class ReEDScase:
                 self.outputs[name] = value
                 setattr(self, name, value)
             ## Then inputs
-            except KeyError:
+            except (KeyError, FileNotFoundError):
                 try:
                     value = reeds.io.read_input(self.casepath, name=name)
                     self.inputs[name] = value

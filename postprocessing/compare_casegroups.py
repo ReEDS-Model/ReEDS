@@ -27,6 +27,7 @@ reeds.plots.plotparams()
 
 #%% Fixed inputs
 keep_incomplete = False
+interactive = False
 
 
 #%% Argument inputs
@@ -50,17 +51,24 @@ parser.add_argument(
 parser.add_argument(
     '--basepath', '-b', type=str, default='',
     help='Substring of case path to use as default (if empty, uses first case in list)')
+parser.add_argument(
+    '--write', '-w', choices=['pdf', 'png', 'ppt', 'pptx'], default='png',
+    help='Output format (png or pptx)')
+
 
 # #%% Inputs for testing
 # caselist = [str(Path(reeds.io.reeds_path,'postprocessing','example.csv'))]
 # casenames = ''
 # titleshorten = ''
 # basepath = str(Path('~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_Central').expanduser())
+# write = 'png'
+# interactive = True
 
 #%% Parse inputs
 args = parser.parse_args()
 caselist = args.caselist
 casenames = args.casenames
+write = args.write.strip('.')
 try:
     titleshorten = int(args.titleshorten)
 except ValueError:
@@ -84,14 +92,32 @@ casepaths, nicelabels, colors = reeds.report_utils.parse_caseglobs(
     keep_incomplete=keep_incomplete,
 )
 
-#%%
+#%% Create output container
 if basepath is not None:
     savepath = Path(basepath, 'outputs', 'comparisons')
 else:
     ## Put it in the first sample if no basepath is specified
     firstcase = casepaths[list(casepaths.keys())[0]][0]
     savepath = Path(firstcase, 'outputs', 'comparisons')
-savepath.mkdir(parents=True, exist_ok=True)
+
+if write in ['pdf', 'png']:
+    savepath.mkdir(parents=True, exist_ok=True)
+
+    def saveit(savename):
+        outpath = Path(savepath, savename.replace(' ', '') + f'.{write}')
+        plt.savefig(outpath)
+        print(outpath)
+        if interactive:
+            plt.show()
+
+elif write in ['ppt', 'pptx']:
+    label = ','.join(nicelabels.values()).replace(' ','')
+    outpath = os.path.join(savepath, f'comparegroup-{label}.pptx')
+    prs = reeds.report_utils.init_pptx()
+    def saveit(savename, **kwargs):
+        reeds.report_utils.add_to_pptx(savename, prs=prs, **kwargs)
+        if interactive:
+            plt.show()
 
 
 #%% Colors
@@ -162,16 +188,6 @@ state_subplots = reeds.reedsplots.get_state_subplots()
 
 
 #%%### Inputs
-#%% Fuel price
-dictin_gasprice = {}
-for case, row in tqdm(dfcases.iterrows(), desc='gasprice', total=len(dfcases)):
-    try:
-        dictin_gasprice[case] = pd.read_csv(
-            os.path.join(row.path, 'inputs_case', 'fprice.csv')
-        ).pivot(index='t', columns='r', values='naturalgas')
-    except FileNotFoundError as err:
-        print(err)
-        continue
 
 #%% Tech cost (wind, solar, batteries)
 dictin_cap_cost = {}
@@ -207,49 +223,25 @@ for case, row in tqdm(dfcases.iterrows(), desc='supplycurve', total=len(dfcases)
 #%% Demand
 for caseprefix in casepaths:
     f, ax, dfplot = reeds.mcplots.plot_demand_lines(cases[caseprefix])
-    savepath = Path(savepath, f'demand-{nicelabels[caseprefix]}.png')
-    plt.savefig(savepath)
-    plt.show()
-    print(savepath)
+    savename = f'demand-{nicelabels[caseprefix]}'
+    saveit(savename)
 
 
 #%% Fuel price
 for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_gasprice if c == caseprefix])
-    df = pd.concat(
-        {
-            sample: dictin_gasprice[caseprefix,sample].mean(axis=1)
-            for sample in caseprefix_samples
-        },
-        axis=1,
-    ).loc[tstart:]
+    f, ax, dfplot = reeds.mcplots.plot_fuelprice_lines(cases[caseprefix])
+    savename = f'gasprice-{nicelabels[caseprefix]}'
+    saveit(savename)
 
-    ### Plot it
-    plt.close()
-    f,ax = plt.subplots(figsize=(2, 3.75))
-    ## Background
-    ax.fill_between(
-        df.index, df.max(axis=1), df.min(axis=1),
-        color=color, alpha=alpha, lw=0,
-    )
-    ## Lines
-    df.plot(
-        ax=ax, legend=False,
-        lw=0.5, color='k', alpha=0.25,
-    )
-    ## Histogram
-    reeds.plots.hist_last(
-        ax, df, color=color, bins=bins, alpha=alpha,
-        xpad=1, xscale=4,
-    )
-    ## Formatting
-    ax.set_ylim(0)
-    ax.set_ylabel('Gas price [$/MMBtu]')
-    ax.set_xlabel(None)
-    ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
-    reeds.plots.despine(ax)
-    plt.savefig(os.path.join(savepath, f'gasprice-{caseprefix}.png'))
-    plt.show()
+
+
+
+
+
+
+
+
+
 
 
 #%% Capital cost
