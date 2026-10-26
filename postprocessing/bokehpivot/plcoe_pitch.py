@@ -5,6 +5,7 @@ calls make_figs() so the figures land in the report's output_dir alongside valco
 standalone (editing valcostfac_core_path below) to re-render the figures without rebuilding the report.
 '''
 import os
+import re
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -48,6 +49,7 @@ show_cost_factor_fit = True #Draw the cost-factor curve implied by the VF and VC
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
+tech_map_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_map.csv')
 lcoe_base_path = os.path.join(this_dir, 'LCOE_base.csv')
 deflator_path = os.path.join(this_dir, os.pardir, os.pardir, 'inputs', 'financials', 'deflator.csv')
 deflator = pd.read_csv(deflator_path, index_col='*Dollar.Year')['Deflator']
@@ -1732,6 +1734,61 @@ def plot_storage_perkw(df, output_path, tech='Battery'):
     fig.savefig(output_path, dpi=200)
     return fig, d[['year', 'gen_frac'] + cols + perkw + ['benchmark_price', 'benchmark_price_perkw']]
 
+def national_by_tech(run_dir, file, scale):
+    """A run's national outputs file (i, t, Value) by bokehpivot display tech and year, scaled, with
+    techs in tech_style.csv order. Raw techs are lowercased and mapped through tech_map.csv as
+    bokehpivot does: * is a wildcard and the first match wins; unmatched techs keep their raw name and
+    go last."""
+    df = pd.read_csv(os.path.join(run_dir, 'outputs', f'{file}.csv'))
+    tmap = pd.read_csv(tech_map_path)
+    patterns = [(re.compile('^' + raw.replace('*', '.*') + '$'), disp)
+                for raw, disp in zip(tmap['raw'], tmap['display'])]
+    lookup = {raw: next((disp for pat, disp in patterns if pat.match(raw)), raw)
+              for raw in df['i'].str.lower().unique()}
+    df['tech'] = df['i'].str.lower().map(lookup)
+    p = df.pivot_table(index='t', columns='tech', values='Value', aggfunc='sum').fillna(0) * scale
+    p = p.loc[:, (p != 0).any()]
+    order = pd.read_csv(tech_style_path)['order'].tolist()
+    return p[[t for t in order if t in p.columns] + [t for t in p.columns if t not in order]]
+
+def plot_national_mix(run_dir, output_path):
+    """National generation (TWh) and capacity (GW) by tech for one run, as stacked areas in
+    bokehpivot's tech order and colors: the first tech at the bottom, unstyled techs in hot pink as
+    bokehpivot draws them. Negative values, the net generation of storage, stack downward from zero
+    separately, as in bokehpivot's stacked charts."""
+    colors = {t: c for t, c in pd.read_csv(tech_style_path)[['order', 'color']].values}
+    gen = national_by_tech(run_dir, 'gen_ann_nat', 1e-6)
+    cap = national_by_tech(run_dir, 'cap_nat', 1e-3)
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.2))
+    handles = {}
+    for ax, p, title, ylabel in [(axes[0], gen, 'Generation', 'TWh'), (axes[1], cap, 'Capacity', 'GW')]:
+        x = p.index.to_numpy()
+        for part in (p.clip(lower=0), p.clip(upper=0)):
+            base = np.zeros(len(x))
+            for tech in part.columns:
+                if not part[tech].any():
+                    continue
+                top = base + part[tech].to_numpy()
+                handles[tech] = ax.fill_between(x, base, top, color=colors.get(tech, '#ff69b4'), lw=0,
+                                                label=tech)
+                base = top
+        ax.axhline(0, color='0.2', lw=0.6)
+        if (p >= 0).all().all():
+            ax.set_ylim(bottom=0)
+        ax.set_title(title, fontsize=10, loc='left')
+        ax.set_ylabel(ylabel)
+        ax.set_xlabel('Model year')
+        ax.set_xlim(x.min(), x.max())
+        ax.grid(alpha=0.25, lw=0.6)
+    techs = [t for t in list(gen.columns) + list(cap.columns) if t in handles]
+    techs = list(dict.fromkeys(techs))[::-1]
+    fig.legend([handles[t] for t in techs], [display_tech(t) for t in techs], loc='center left',
+               bbox_to_anchor=(0.86, 0.5), fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0, 0.86, 1))
+    fig.savefig(output_path, dpi=200)
+    tab = pd.concat([gen.stack().rename('twh'), cap.stack().rename('gw')], axis=1)
+    return fig, tab.rename_axis(['year', 'tech']).reset_index()
+
 def storage_cap_peak(scenario, tech='Battery'):
     """Installed capacity of tech as a share of national peak load by year, in one run of the scenarios
     file. Empty if the run is not listed there."""
@@ -2685,6 +2742,11 @@ def make_figs(valcostfac_core_path, output_dir=None):
                         plt.close(fig_sens)
                         sens_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
                                         index=False)
+                fig_mix, mix_tab = plot_national_mix(
+                    stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_national_mix.png'))
+                plt.close(fig_mix)
+                mix_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_national_mix.csv'),
+                               index=False)
                 for plot_fn, name in [(plot_storage_dollars, 'dollars'),
                                       (plot_storage_factors, 'factors')]:
                     fig_st, st_tab = plot_fn(
