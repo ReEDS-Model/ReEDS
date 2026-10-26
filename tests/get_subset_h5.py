@@ -32,7 +32,7 @@ counties = [
 ]
 
 # series of paths to updated county h5 files
-hpc = True if ('NREL_CLUSTER' in os.environ) else False
+hpc = reeds.slurm.check_slurm()
 if hpc:
     remotepath = '/kfs2/shared-projects/reeds' #kestrel
 else:

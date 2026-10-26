@@ -10,7 +10,7 @@
     "trans_table": [
         "/projects/rev/data/transmission/north_america/conus/fy25/nrel_build/build/final/all_transmission_reinforced_128.csv"
     ],
-    "sc_points": "PIPELINE",
+    "sc_points": "./wind_limited_bespoke.h5",
     "sc_capacity_col": "capacity_ac_mw",
     "simple": true,
     "sort_on": "lcoe_all_in_usd_per_mwh",

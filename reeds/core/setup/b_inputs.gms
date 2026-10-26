@@ -1416,9 +1416,6 @@ $onlisting
 
 **rsc_dat adjustments (see additional adjustments to m_rsc_dat further below)
 
-*need to adjust units for pumped hydro costs from $ / KW to $ / MW
-rsc_dat("pumped-hydro",r,"cost",rscbin) = rsc_dat("pumped-hydro",r,"cost",rscbin) * 1000 ;
-
 *need to adjust units for hydro costs from $ / KW to $ / MW
 rsc_dat(i,r,"cost",rscbin)$hydro(i) = rsc_dat(i,r,"cost",rscbin) * 1000 ;
 
@@ -1863,28 +1860,6 @@ prescription_check(i,newv,r,t)$[prescribed_build(i,newv,r,t)
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
 m_rscfeas(r,i,"bin1")$[sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
 
-*==========================================================
-*--- Interconnection queues (Capacity deployment limit) ---
-*==========================================================
-$onempty
-table cap_limit(tg,r,allt) "--MW-- capacity deployment limit by region and technology based on interconnection queues"
-$offlisting
-$ondelim
-$include inputs_case%ds%cap_limit.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-
-parameter cap_penalty(tg) "--per MW-- cost penalty for capacity deployment above cap limit"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cap_penalty.csv
-$offdelim
-$onlisting
-/ ;
 
 *=============================================
 * -- Explicit spur-line capacity (if used) --
