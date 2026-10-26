@@ -18,7 +18,8 @@ import pandas as pd
 import valcostfac_report as vr
 from valcostfac_report import CSS, figure, table, read_csv_or_empty, _num, _swatch
 from plcoe_pitch import (years as table_years, display_tech, load_style_colors, tech_style_path,
-                         normalize_tech_name, storage_dollar_ymax)
+                         normalize_tech_name, storage_dollar_ymax,
+                         storage_dollar_ymax_perkw)
 from report_switches import dollar_year
 
 # User inputs
@@ -39,34 +40,34 @@ def build_html(output_dir, core_path):
     tech_cell = lambda t: f'<td class="t">{_swatch(t, colors)}{display_tech(t)}</td>'
 
     # ---- 01 value factor and value-cost factor ----
-    lcoe_fig = figure(output_dir, 'plcoe_pitch_storage_lcoe_vcf.png', 1,
-                      'LCOE base, PLCOE, marginal LCOE, value&#8211;cost factor and value factor for '
-                      'storage, by model year and by market share.',
-                      'Left axis, in $/MWh: LCOE base, the unforced ATB cost; PLCOE, LCOE base times '
-                      'cost factor over value factor, which is LCOE base over value&#8211;cost '
-                      'factor; and, faint, the marginal LCOE. On the margin the LVOE of new builds '
-                      'equals their LCOE after the forcing cost reduction, so marginal LCOE is LVOE '
-                      'divided by the forcing multiplier: the LCOE if forcing were a constraint rather '
-                      'than a cost reduction. Over LCOE base it is the cost factor. Right axis: '
-                      'value&#8211;cost factor and, faint, value factor. Because value&#8211;cost '
-                      'factor is the forced LCOE base over the benchmark price, PLCOE here equals the '
-                      'benchmark price divided by the forcing multiplier. The left panel is against '
-                      'model year; the right panel is against market share, storage discharge as a '
-                      'share of total generation excluding storage. The left axes are capped at '
-                      f'${storage_dollar_ymax}/MWh, and lines above it run off the top.', order)
-    dol_fig = figure(output_dir, 'plcoe_pitch_storage_dollars.png', 2,
-                     'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage by model '
-                     'year, per MWh and per kW.',
-                     'LCOE base, marginal LCOE and PLCOE are as in Fig 1. Left panel, in $/MWh: LVOE '
-                     'is value per MWh of discharge, and the benchmark price (Pb) is the benchmark '
-                     'value per MWh of load. Right panel, in $/kW-yr, per kW of new power capacity: '
-                     'LCOE base is the per-MWh one at a capacity factor of 4/24, a four-hour battery '
-                     'cycling once a day; LVOE is value per kW-yr; and the benchmark price is the '
-                     'benchmark value over the reserve-margin requirement MW, as in section 10. In '
-                     'both, marginal LCOE is LVOE divided by the forcing multiplier and PLCOE is Pb '
-                     'divided by it, so PLCOE/Pb = marginal LCOE/LVOE. The y axes are capped at '
-                     f'${storage_dollar_ymax}/MWh and, converted at 4/24, '
-                     f'${storage_dollar_ymax * 1.46:.0f}/kW-yr; lines above run off the top.', order)
+    dol_fig = figure(output_dir, 'plcoe_pitch_storage_dollars.png', 1,
+                     'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage, per MWh '
+                     'and per kW, by model year and by share.',
+                     'Top row, in $/MWh: LCOE base, the unforced ATB cost; LVOE, value per MWh of '
+                     'discharge; and the benchmark price (Pb), the benchmark value per MWh of load. '
+                     'Bottom row, in $/kW-yr, per kW of new power capacity: LCOE base at a capacity '
+                     'factor of 4/24, a four-hour battery cycling once a day; LVOE, value per kW-yr; '
+                     'and the benchmark price, the benchmark value over the reserve-margin requirement '
+                     'MW, as in section 10. On the margin the LVOE of new builds equals their LCOE '
+                     'after the forcing cost reduction, so marginal LCOE is LVOE divided by the forcing '
+                     'multiplier: the LCOE if forcing were a constraint rather than a cost reduction. '
+                     'PLCOE, LCOE base over value&#8211;cost factor, is Pb divided by the same '
+                     'multiplier, so PLCOE/Pb = marginal LCOE/LVOE. Left column against model year. '
+                     'Right column against market share, storage discharge as a share of total '
+                     'generation excluding storage, for per MWh, and against installed storage '
+                     'capacity as a share of national peak load, as in section 04, for per kW. The y '
+                     f'axes are capped at ${storage_dollar_ymax}/MWh and '
+                     f'${storage_dollar_ymax_perkw}/kW-yr; lines above run off the top.', order)
+    fac_fig = figure(output_dir, 'plcoe_pitch_storage_factors.png', 2,
+                     'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost ratio '
+                     'for storage, per MWh and per kW, by model year and by share.',
+                     'The ratios of the quantities in Fig 1, in the same layout. Value factor is LVOE '
+                     'over the benchmark price; value&#8211;cost factor is LCOE base times the forcing '
+                     'multiplier over the benchmark price; cost factor is LVOE over LCOE base times the '
+                     'forcing multiplier, so value&#8211;cost factor = value factor/cost factor. The '
+                     'per-kW versions take the per-kW LVOE, LCOE base and benchmark price of Fig 1. '
+                     'Benefit&#8211;cost ratio is LVOE over marginal LCOE, which is the forcing '
+                     'multiplier on either basis. The dotted line is 1.', order)
     vcf_fig = figure(output_dir, ['plcoe_pitch_VCF_storage_unfitted.png',
                                   'plcoe_pitch_VCF_power_storage.png'], 3,
                      'Value factor and value&#8211;cost factor for storage, without and with fits.',
@@ -474,7 +475,7 @@ def build_html(output_dir, core_path):
                     'per-kW LCOE base is LCOE base at a capacity factor of 4/24, a four-hour battery '
                     'cycling once a day, so the per-kW value&#8211;cost factor is the per-MWh one '
                     'times those 1,460 hours over load MWh per requirement MW. Same run and market '
-                    'share as the right panel of Fig 1.', order)
+                    'share as the top-right panel of Fig 1.', order)
     pk = read_csv_or_empty(output_dir, 'plcoe_pitch_storage_perkw.csv')
     pk_rows = []
     for _, r in pk[pk['year'].isin(table_years)].iterrows() if not pk.empty else []:
@@ -527,7 +528,7 @@ def build_html(output_dir, core_path):
     <span>{dollar_year}$</span></div>
 </header>
 
-{sec('01', 'PLCOE, value factor and value&#8211;cost factor', lcoe_fig, dol_fig, vcf_fig)}
+{sec('01', 'PLCOE, value factor and value&#8211;cost factor', dol_fig, fac_fig, vcf_fig)}
 
 {sec('02', 'Value factor by component', comp_fig, comp_table)}
 

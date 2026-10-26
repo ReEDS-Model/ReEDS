@@ -19,7 +19,8 @@ from report_switches import (dollar_year, lcoe_base_dollar_year, start_year,
 valcostfac_core_path = '/data/shared/projects/mmowers/ReEDS/postprocessing/bokehpivot/out/reeds_report/valcostfac_core.csv' #Only used when running this file standalone; run_report_valcostfac.py passes its own path.
 years = [2030, 2040, 2050]
 max_plcoe = 200
-storage_dollar_ymax = 300 #Upper y limit ($/MWh) on the storage figures whose PLCOE and marginal LCOE divide by the forcing multiplier, which falls to 0.05 by 2050 and takes PLCOE past $800/MWh. Lines above it run off the top. The per-kW figure takes the same cap converted at a capacity factor of 4/24. None for no cap.
+storage_dollar_ymax = 300 #Upper y limit ($/MWh) on the storage $/MWh panels, whose PLCOE and marginal LCOE divide by the forcing multiplier, which falls to 0.05 by 2050 and takes PLCOE past $800/MWh. Lines above it run off the top. None for no cap.
+storage_dollar_ymax_perkw = 600 #The same for the $/kW-yr panels.
 max_cost_value_factor = 5
 inv_value_factor_ylim = (0.8, 3)
 cost_factor_ylim = (0.8, 3)
@@ -1731,99 +1732,124 @@ def plot_storage_perkw(df, output_path, tech='Battery'):
     fig.savefig(output_path, dpi=200)
     return fig, d[['year', 'gen_frac'] + cols + perkw + ['benchmark_price', 'benchmark_price_perkw']]
 
-def plot_storage_dollars(df, output_path, tech='Battery'):
-    """LCOE base, marginal LCOE, LVOE, benchmark price and same-year PLCOE for storage by model year,
-    in $/MWh (left panel) and in $/kW-yr against the per-MW benchmark (right panel).
+def storage_cap_peak(scenario, tech='Battery'):
+    """Installed capacity of tech as a share of national peak load by year, in one run of the scenarios
+    file. Empty if the run is not listed there."""
+    from reeds_vs_rev import scenarios_path
+    paths = pd.read_csv(scenarios_path).set_index('name')['path']
+    if scenario not in paths.index:
+        return pd.Series(dtype=float)
+    run = paths[scenario]
+    return cumulative_capacity_gw(run, avail_basis_prefix.get(tech, tech.lower())) / national_peak_gw(run)
 
-    Marginal LCOE is LVOE / force_mult and PLCOE is the unforced LCOE base times benchmark price over
-    the forced LCOE base, as in plot_lcoe_vcf. The per-kW LCOE base is the per-MWh one at a capacity
+def plot_storage_grid(tabs, lines, ylabels, ymaxes, output_path):
+    """A 2x2 grid of the same lines: per MWh (top) and per kW (bottom), against model year (left) and
+    against share (right) - market share for per MWh, installed capacity as a share of peak load for
+    per kW.
+
+    tabs maps 'Per MWh' and 'Per kW' to frames with year, share and one column per entry of lines,
+    which are (column, label, plot kwargs). ylabels and ymaxes are per row; a ymax of None leaves
+    the top free.
+    """
+    share_labels = {'Per MWh': 'Market share (% of generation)',
+                    'Per kW': 'Installed capacity (% of peak load)'}
+    fig, axes = plt.subplots(2, 2, figsize=(12.8, 9.0))
+    for row, (basis, t) in zip(axes, tabs.items()):
+        for ax, x in zip(row, ['year', 'share']):
+            dx = t.dropna(subset=[x]).sort_values(x)
+            xs = dx[x] * 100 if x == 'share' else dx[x]
+            for col, label, kw in lines:
+                ax.plot(xs, dx[col], label=label, **kw)
+            ax.set_title(f'{basis}, by {"model year" if x == "year" else "share"}', fontsize=10,
+                         loc='left')
+            ax.set_xlabel('Model year' if x == 'year' else share_labels[basis])
+            ax.set_ylabel(ylabels[basis])
+            ax.set_ylim(0, ymaxes[basis])
+            if x == 'share':
+                ax.set_xlim(left=0)
+            ax.grid(alpha=0.25, lw=0.6)
+    fig.legend(*axes[0][0].get_legend_handles_labels(), loc='lower center', ncol=len(lines),
+               fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.savefig(output_path, dpi=200)
+    return fig
+
+def storage_rows(df, tech):
+    """The tech's rows of df by year, with cap_peak from its run. None if it has none."""
+    d = df[df['tech'] == tech].sort_values('year').copy()
+    if d.empty:
+        return None
+    d['cap_peak'] = d['year'].map(storage_cap_peak(d['scenario'].iloc[0], tech))
+    return d
+
+def plot_storage_dollars(df, output_path, tech='Battery'):
+    """LCOE base, marginal LCOE, LVOE, benchmark price and same-year PLCOE for storage, per MWh and
+    per kW-yr against the per-MW benchmark, on plot_storage_grid.
+
+    Marginal LCOE is LVOE / force_mult: LVOE equals the forced, cost-reduced LCOE of the marginal
+    build, so dividing out the multiplier gives its LCOE as if forcing were a constraint rather than a
+    cost reduction. PLCOE is the unforced LCOE base times benchmark price over the forced LCOE base,
+    which is the benchmark price / force_mult. The per-kW LCOE base is the per-MWh one at a capacity
     factor of 4/24.
     """
     need = ['lcoe_base_orig', 'lcoe_base', 'force_mult', 'lvoe', 'benchmark_price', 'lvoe_perkw',
             'benchmark_price_perkw']
-    if not set(need) <= set(df.columns):
+    d = storage_rows(df, tech) if set(need) <= set(df.columns) else None
+    if d is None:
         return None, pd.DataFrame()
-    d = df[df['tech'] == tech].dropna(subset=need).sort_values('year')
-    if d.empty:
-        return None, d
-    color = build_color_map([tech])[tech]
-    value_color = '#2A6F8E'
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
-    tabs = []
-    for ax, sfx, to_kw, title, unit in [
-            (axes[0], '', 1, 'Per MWh', '$/MWh'),
-            (axes[1], '_perkw', 4 / 24 * 8760 / 1000, 'Per kW', '$/kW-yr')]:
-        t = pd.DataFrame({
-            'basis': title,
+    d = d.dropna(subset=need)
+    tabs = {}
+    for basis, sfx, share, to_kw in [('Per MWh', '', 'gen_frac', 1),
+                                     ('Per kW', '_perkw', 'cap_peak', 4 / 24 * 8760 / 1000)]:
+        tabs[basis] = pd.DataFrame({
+            'basis': basis,
             'year': d['year'],
+            'share': d[share],
             'lcoe_base': d['lcoe_base_orig'] * to_kw,
             'lcoe_marg': d['lvoe' + sfx] / d['force_mult'],
             'lvoe': d['lvoe' + sfx],
             'benchmark_price': d['benchmark_price' + sfx],
             'plcoe': d['lcoe_base_orig'] / d['lcoe_base'] * d['benchmark_price' + sfx],
             'force_mult': d['force_mult']})
-        tabs.append(t)
-        ax.plot(t['year'], t['lcoe_base'], color=cost_color, lw=1.8, marker='o', ms=4, label='LCOE base')
-        ax.plot(t['year'], t['lcoe_marg'], color=cost_color, lw=1.4, alpha=0.35, label='LCOE (marginal)')
-        ax.plot(t['year'], t['lvoe'], color=value_color, lw=1.8, marker='s', ms=4, label='LVOE')
-        ax.plot(t['year'], t['benchmark_price'], color=value_color, lw=1.6, ls='--',
-                label='Benchmark price (Pb)')
-        ax.plot(t['year'], t['plcoe'], color=color, lw=2.2, marker='o', ms=4, label='PLCOE')
-        ax.set_title(title, fontsize=10, loc='left')
-        ax.set_ylabel(f'{dollar_year}{unit}')
-        ax.set_ylim(0, storage_dollar_ymax * to_kw if storage_dollar_ymax else None)
-        ax.set_xlabel('Model year')
-        ax.grid(alpha=0.25, lw=0.6)
-    fig.legend(*axes[0].get_legend_handles_labels(), loc='lower center', ncol=5, fontsize=8,
-               frameon=False)
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
-    fig.savefig(output_path, dpi=200)
-    return fig, pd.concat(tabs)
+    value_color = '#2A6F8E'
+    lines = [('lcoe_base', 'LCOE base', dict(color=cost_color, lw=1.8, marker='o', ms=4)),
+             ('lcoe_marg', 'LCOE (marginal)', dict(color=cost_color, lw=1.4, alpha=0.35)),
+             ('lvoe', 'LVOE', dict(color=value_color, lw=1.8, marker='s', ms=4)),
+             ('benchmark_price', 'Benchmark price (Pb)', dict(color=value_color, lw=1.6, ls='--')),
+             ('plcoe', 'PLCOE', dict(color=build_color_map([tech])[tech], lw=2.2, marker='o', ms=4))]
+    fig = plot_storage_grid(tabs, lines,
+                            {'Per MWh': f'{dollar_year}$/MWh', 'Per kW': f'{dollar_year}$/kW-yr'},
+                            {'Per MWh': storage_dollar_ymax, 'Per kW': storage_dollar_ymax_perkw},
+                            output_path)
+    return fig, pd.concat(tabs.values())
 
-def plot_lcoe_vcf(df, output_path, tech='Battery'):
-    """LCOE base, same-year PLCOE and marginal LCOE ($/MWh, left axis) with value-cost factor and
-    value factor (right axis), against model year (left panel) and market share (right panel).
-
-    Marginal LCOE is LVOE / force_mult: LVOE equals the forced, cost-reduced LCOE of the marginal
-    build, so dividing out the multiplier gives its LCOE as if forcing were a constraint rather than
-    a cost reduction. Over LCOE base it is the cost factor. PLCOE is the unforced LCOE base times
-    cost factor over value factor, i.e. LCOE base over VCF.
+def plot_storage_factors(df, output_path, tech='Battery'):
+    """Value factor, value-cost factor, cost factor and benefit-cost ratio for storage, per MWh and per
+    kW, on plot_storage_grid. The benefit-cost ratio is LVOE over marginal LCOE, which is force_mult
+    on either basis.
     """
-    d = df[df['tech'] == tech].dropna(subset=['year', 'gen_frac', 'lcoe_base_orig', 'plcoe', 'lvoe',
-                                              'force_mult', 'value_cost_factor', 'value_factor']).copy()
-    if d.empty:
-        return None, d
-    d['lcoe_marg'] = d['lvoe'] / d['force_mult']
+    cols = ['value_factor', 'value_cost_factor', 'cost_factor']
+    need = cols + [c + '_perkw' for c in cols] + ['BCR']
+    d = storage_rows(df, tech) if set(need) <= set(df.columns) else None
+    if d is None:
+        return None, pd.DataFrame()
+    d = d.dropna(subset=need)
+    tabs = {}
+    for basis, sfx, share in [('Per MWh', '', 'gen_frac'), ('Per kW', '_perkw', 'cap_peak')]:
+        tabs[basis] = pd.DataFrame({'basis': basis, 'year': d['year'], 'share': d[share],
+                                    **{c: d[c + sfx] for c in cols}, 'BCR': d['BCR']})
     color = build_color_map([tech])[tech]
-    factor_color = '#2A6F8E'
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
-    for ax, x, title in [(axes[0], 'year', 'By model year'), (axes[1], 'gen_frac', 'By market share')]:
-        dx = d.sort_values(x)
-        xs = dx[x] * 100 if x == 'gen_frac' else dx[x]
-        ax.plot(xs, dx['lcoe_base_orig'], color=cost_color, lw=1.8, marker='o', ms=4, label='LCOE base')
-        ax.plot(xs, dx['lcoe_marg'], color=cost_color, lw=1.4, alpha=0.35, label='LCOE (marginal)')
-        ax.plot(xs, dx['plcoe'], color=color, lw=2.2, marker='o', ms=4, label='PLCOE')
-        ax.set_ylabel(f'{dollar_year}$/MWh')
-        ax.set_ylim(0, storage_dollar_ymax)
-        ax2 = ax.twinx()
-        ax2.plot(xs, dx['value_cost_factor'], color=factor_color, lw=1.6, ls='--', marker='s', ms=4,
-                 label='Value-cost factor (right axis)')
-        ax2.plot(xs, dx['value_factor'], color=factor_color, lw=1.4, alpha=0.35,
-                 label='Value factor (right axis)')
-        ax2.set_ylabel('Value-cost factor, value factor')
-        ax2.set_ylim(bottom=0)
-        ax.set_title(title, fontsize=10, loc='left')
-        ax.set_xlabel('Model year' if x == 'year' else 'Market share (% of generation)')
-        if x == 'gen_frac':
-            ax.set_xlim(left=0)
-        ax.grid(alpha=0.25, lw=0.6)
-    h1, l1 = axes[0].get_legend_handles_labels()
-    h2, l2 = ax2.get_legend_handles_labels()
-    fig.legend(h1 + h2, l1 + l2, loc='lower center', ncol=5, fontsize=8, frameon=False)
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    lines = [('value_factor', 'Value factor', dict(color=color, lw=1.8, marker='o', ms=4)),
+             ('value_cost_factor', 'Value-cost factor', dict(color=color, lw=1.8, ls='--', marker='s',
+                                                             ms=4)),
+             ('cost_factor', 'Cost factor', dict(color=cost_color, lw=1.6, ls='-.', marker='^', ms=4)),
+             ('BCR', 'Benefit-cost ratio', dict(color=cost_color, lw=1.4, alpha=0.45))]
+    fig = plot_storage_grid(tabs, lines, {'Per MWh': 'Factor', 'Per kW': 'Factor'},
+                            {'Per MWh': None, 'Per kW': None}, output_path)
+    for ax in fig.axes:
+        ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
     fig.savefig(output_path, dpi=200)
-    return fig, d.sort_values('year')[['year', 'gen_frac', 'lcoe_base_orig', 'plcoe', 'lvoe', 'force_mult',
-                                       'lcoe_marg', 'value_cost_factor', 'value_factor']]
+    return fig, pd.concat(tabs.values())
 
 
 def plot_vcf_unfitted(df, output_path, tech='Battery'):
@@ -2659,18 +2685,14 @@ def make_figs(valcostfac_core_path, output_dir=None):
                         plt.close(fig_sens)
                         sens_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
                                         index=False)
-                fig_lv, lv_tab = plot_lcoe_vcf(
-                    df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_lcoe_vcf.png'), tech=tech)
-                if fig_lv is not None:
-                    plt.close(fig_lv)
-                    lv_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_lcoe_vcf.csv'),
-                                  index=False)
-                fig_dol, dol_tab = plot_storage_dollars(
-                    df_vcf, os.path.join(output_dir, 'plcoe_pitch_storage_dollars.png'), tech=tech)
-                if fig_dol is not None:
-                    plt.close(fig_dol)
-                    dol_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_dollars.csv'),
-                                   index=False)
+                for plot_fn, name in [(plot_storage_dollars, 'dollars'),
+                                      (plot_storage_factors, 'factors')]:
+                    fig_st, st_tab = plot_fn(
+                        df_vcf, os.path.join(output_dir, f'plcoe_pitch_storage_{name}.png'), tech=tech)
+                    if fig_st is not None:
+                        plt.close(fig_st)
+                        st_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
+                                      index=False)
                 fig_unfit, unfit_tab = plot_vcf_unfitted(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.png'),
                     tech=tech)
