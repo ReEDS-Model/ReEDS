@@ -14,6 +14,7 @@ import cmocean
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
+from reeds import reedsplots
 from reeds import plots
 
 plots.plotparams()
@@ -23,7 +24,7 @@ plots.plotparams()
 dpi = None
 interactive = False
 savefig = True
-
+cmap = cmocean.cm.tempo
 
 #%%### Functions
 def delete_temporary_files(sw):
@@ -426,18 +427,22 @@ def map_dropped_load(sw, dfs, level='r'):
             ### Background
             dfba.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.2)
             ### Data
-            dfplot.plot(ax=ax, column='val', cmap=cmocean.cm.rain)
-            for r, row in dfplot.iterrows():
-                if row.val > 0:
-                    ax.annotate(
-                        f'{row.val:,.0f} {units[metric,agg][0]}',
-                        (row.centroid_x, row.centroid_y),
-                        color='r', ha='center', va='top', fontsize=6, weight='bold')
+            dfplot.plot(ax=ax, column='val', cmap=cmap)
+            reedsplots.label_region_value(
+                dfplot, 
+                ax=ax, 
+                column='val', 
+                fmt=f'{{:,.0f}} {units[metric,agg][0]}',
+                text_kwargs={'color':'r', 'ha':'center', 'va':'top', 'fontsize':6, 'weight':'bold'}
+                )
             ### Formatting
             if level in ['r','rb','ba']:
-                for r, row in dfba.iterrows():
-                    ax.annotate(r, (row.centroid_x, row.centroid_y),
-                                ha='center', va='bottom', fontsize=6, color='C7')
+                reedsplots.label_region_value(
+                    dfba,
+                    ax=ax,
+                    column=dfba.index,
+                    text_kwargs={'ha':'center', 'va':'bottom', 'fontsize':6, 'color':'C7'}
+                )
             ax.axis('off')
             if savefig:
                 plt.savefig(os.path.join(sw['savepath'],savename))
@@ -987,10 +992,10 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
     plottechs = failsum.loc[failsum != 0].index.get_level_values('i').unique()
 
     for tech in plottechs:
-        savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','')}-{sw['t']}"
+        savename = f"hourly_failure_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
         plt.close()
         f, ax = plots.map_years_months(
-            dfzones=dfzones, dfdata=failrate[tech],
+            dfzones=dfzones, dfdata=failrate[tech], cmap=cmap,
             title=f"Monthly {aggfunc}\nhourly failure rate,\n{tech} [%]",
         )
         ## Save it
@@ -1008,10 +1013,10 @@ def map_pras_failure_rate(sw, dfs, aggfunc='mean', repair=False):
         )
         repairrate.index = dfs['pras_system']['genrepairrate'].index
         for tech in plottechs:
-            savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','')}-{sw['t']}"
+            savename = f"hourly_repair_rate-year,month-{aggfunc}-{tech.replace('-','').replace('/','')}-{sw['t']}"
             plt.close()
             f, ax = plots.map_years_months(
-                dfzones=dfzones, dfdata=repairrate[tech],
+                dfzones=dfzones, dfdata=repairrate[tech], cmap=cmap,
                 title=f"Monthly {aggfunc}\nhourly repair rate,\n{tech} [%]",
             )
             ## Save it
@@ -1043,6 +1048,7 @@ def map_outagerate_new_stressperiods(sw, dfs):
             dates=dates,
             outage_type=outage_type,
             aggfunc=aggfunc,
+            cmap=cmap,
             vmax=vmax[outage_type],
         )
         ## Save it

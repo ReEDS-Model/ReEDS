@@ -369,7 +369,7 @@ def main(reeds_path, batch_name, folder_name_suffix, runlist, keywords, local, d
         combine_case = cases.loc[cases.scenario == scen].copy()
         combine_case.to_csv(os.path.join(output_path, 'cases_combined.csv'), index=False)
         # check if run should be submitted to HPC or run directly
-        hpc = True if ('NREL_CLUSTER' in os.environ) else False
+        hpc = reeds.slurm.check_slurm()
         if hpc and local:
             print(
                 "Note: you are on the HPC but are running locally on your current node. "
