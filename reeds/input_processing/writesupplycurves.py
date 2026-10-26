@@ -886,14 +886,6 @@ def main(
         def process_dr_state_level(dr_type, disagg_data, state2r):
             """
             Process state-level DR data and disaggregate to region-level.
-            
-            Parameters:
-            - dr_type: 'dr_shed', 'dr_shape', or 'dr_shift'
-            - disagg_data: disaggregation data with state-to-region mapping
-            - state2r: dictionary mapping states to regions
-            
-            Returns:
-            - dr_dat: processed dataframe with regional DR data
             """
             # Calculate state-to-region aggregation/disaggregation factors
             state_region_factors = (
@@ -968,6 +960,8 @@ def main(
                         scalar_df[r] = scalar_ba
                     dr_capacity_scalar_reg[st] = pd.concat(scalar_df)
                 dr_capacity_scalar_reg = pd.concat(dr_capacity_scalar_reg.values(), ignore_index=True)
+            else:
+                dr_capacity_scalar_reg = pd.DataFrame(columns=dr_capacity_scalar_state.columns)
             
             return dr_dat,dr_capacity_scalar_reg
 

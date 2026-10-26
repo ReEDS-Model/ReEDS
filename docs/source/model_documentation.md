@@ -43,7 +43,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | dGen | Distributed Generation Market Demand model |
 | DNI | direct normal insolation |
 | DOE | U.S. Department of Energy |
-| DR | demand response
+| DR | demand response |
 | DSIRE | Database of State Incentives for Renewables and Efficiency |
 | EAC | energy attribute credit |
 | EGS | enhanced geothermal system |

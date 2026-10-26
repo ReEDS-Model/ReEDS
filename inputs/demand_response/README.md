@@ -6,7 +6,7 @@
 - **`inputs/supply_curve/dr_shed_cost_{dr_shedscen}.csv`**: Supply curve cost [$/MW]. Represents the installation cost for the DR-enabling technology (program implementation or procurement costs are not included) in 2020 dollars.
 - **`inputs/plant_characteristics/dr_shed_capcost_scalars_{dr_shedscen}.csv`**: Supply curve populated with 2030 cost data, scaled in the model to reflect additional years through 2050.
 - **`inputs/supply_curve/dr_shed_cap_{dr_shedscen}.csv`**: Supply curve capacity [MW], populated with maximum technical potential in 2030 for each ReEDS zone from the hourly shed data.
-- **`inputs/demand_response/dr_shed_capacity_scalar_{dr_shedscen}.csv`**: Supply curve populated with 2030 capacity data, scaled in the model to reflect additional years through 2050.
+- **`inputs/demand_response/dr_shed_cap_scalar_{dr_shedscen}.csv`**: Supply curve populated with 2030 capacity data, scaled in the model to reflect additional years through 2050.
 - **`inputs/plant_characteristics/dr_shed_vom_{dr_shedscen}.csv`**: Variable operation and maintenance costs for the DR Shed resource [$/MWh].
 - **`inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}.csv`**: Fixed operation and maintenance costs for the DR Shed resource [$/MWh].
 - **`inputs/demand_response/dr_shed_avail_scalar.csv`**: Scalar representing the response rate of the resource by decrementing availability. Set to 1 by default.
@@ -15,7 +15,7 @@
 ### DR Shape Input Files
 
 - **`dr_shape_decrease_profile_{dr_shapescen}.h5`**: Hourly time series of fractions representing the amount of “generation” (load that can be delayed).
-- **`dr_shape_increase_profile_{dr_shapescen}.h5`**: Hourly time series of fractions representing the amount of added load in a later hour (deferred).
+- **`dr_shape_increase_profile_{dr_shapescen}.h5`**: Hourly time series of fractions representing the amount of added load in a later hour (payback).
 - **`inputs/supply_curve/dr_shape_cost_{dr_shapescen}.csv`**: Supply curve cost [$/MW]. Assumed to be 0 in the demonstration data.
 - **`inputs/supply_curve/dr_shape_cap_{dr_shapescen}.csv`**: Supply curve capacity [MW], populated with maximum technical potential in 2030 for each state from the hourly shape data.
 - **`inputs/plant_characteristics/dr_shape_cost_scalars_{dr_shapescen}.csv`**: Supply curve populated with 2030 cost data, scaled in the model to reflect additional years through 2050.

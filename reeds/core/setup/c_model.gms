@@ -2997,10 +2997,11 @@ eq_biousedlimit(bioclass,usda_region,t)$tmodel(t)..
 * ---------------------------------------------------------------------------
 
 *storage use cannot exceed capacity
-*this constraint does not apply to DR Shift, CSP+TES or hydro pump upgrades
+*this constraint does not apply to CSP+TES or hydro pump upgrades
 eq_storage_capacity(i,v,r,h,t)
     $[valgen(i,v,r,t)
-    $(storage_standalone(i)
+    $(storage_standalone(i)$(not dr_shift(i))
+        or dr_shift(i)$[dr_shift_charge_frac(i,r,h,t)$dr_shift_discharge_frac(i,r,h,t)]
         or storage_hybrid(i)$(not csp(i)))
     $tmodel(t)]..
 
@@ -3012,14 +3013,18 @@ eq_storage_capacity(i,v,r,h,t)
     =g=
 
 * [plus] Generation from storage, excluding hybrid+storage 
+* scale by time-varying discharge fraction for "generation" from dr shift (CAP*discharge fraction = GEN)
     GEN(i,v,r,h,t)$(not storage_hybrid(i)$(not csp(i)))
+        / (1$(not dr_shift(i)) + dr_shift_discharge_frac(i,r,h,t)$dr_shift(i))
 
 * [plus] Generation from battery of hybrid+storage
     + GEN_STORAGE(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
 
 * [plus] Storage charging
 * excludes hybrid plant+storage 
+* scale by time-varying charge fraction for "payback" from dr shift (CAP*charge fraction = STORAGE_IN)
     + STORAGE_IN(i,v,r,h,t)$(not storage_hybrid(i)$(not csp(i)))
+        / (1$(not dr_shift(i)) + dr_shift_charge_frac(i,r,h,t)$dr_shift(i))
 * hybrid+storage plant: plant generation
     + STORAGE_IN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$dayhours(h)$Sw_HybridPlant]
 * hybrid+storage plant: Grid generation
