@@ -1,6 +1,7 @@
 ## Power Sector Employment Data
 ### Data input options
-- `employment_factor_plant_jedi.csv`: Employment factor data for power plants of different technologies, taken from the JEDI/WIRED model.
+- `employment_factor_plant_jedi.csv`: Employment factors for power plants by technology and job type, from the JEDI/WIRED model
+  - `construction` and `fom` are in job-years per MW; `vom` is in job-years per MWh
 Sources for employment data of individual technologies in JEDI/WIRED are shown in the table below.
 
 | Technology              | Source                                                              |
