@@ -37,6 +37,7 @@ avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-c
 avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
 cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is also drawn in every scenario in the scenarios file, not only in the run that forces them, to separate a tech's own saturation from the system around it. Names as in valcostfac_core.csv; each needs an entry in avail_basis_prefix.
 storage_startcost_scenario = 'battery_sc3' #Scenario in the scenarios file that reruns the storage forcing case without gas-CC start costs (GSw_StartCost=3 rather than 4). A sensitivity like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and drawn against the core storage run in its own comparison figure, skipped if absent.
+storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Storage is built there without forcing, and the storage dollar and factor grids are also drawn for it. Skipped if absent.
 storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
 storage_share_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
 regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
@@ -2747,14 +2748,29 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 plt.close(fig_mix)
                 mix_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_national_mix.csv'),
                                index=False)
-                for plot_fn, name in [(plot_storage_dollars, 'dollars'),
-                                      (plot_storage_factors, 'factors')]:
-                    fig_st, st_tab = plot_fn(
-                        df_vcf, os.path.join(output_dir, f'plcoe_pitch_storage_{name}.png'), tech=tech)
-                    if fig_st is not None:
-                        plt.close(fig_st)
-                        st_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
-                                      index=False)
+                #The same two grids for the run without gas-CC start costs and the PV forcing run,
+                #from valcostfac.csv as in plot_storage_sensitivity.
+                runs = [('', df_vcf)]
+                full_path = os.path.join(output_dir, 'valcostfac.csv')
+                if os.path.exists(full_path):
+                    full = pd.read_csv(full_path)
+                    for run_tag, scen in [('startcost_', storage_startcost_scenario),
+                                          ('pv_', storage_pv_scenario)]:
+                        d_run = full[(full['tech'] == tech) & (full['year'] >= start_year)
+                                     & (full['scenario'] == scen)]
+                        if not d_run.empty:
+                            runs.append((run_tag, d_run))
+                for run_tag, d_run in runs:
+                    for plot_fn, name in [(plot_storage_dollars, 'dollars'),
+                                          (plot_storage_factors, 'factors')]:
+                        fig_st, st_tab = plot_fn(
+                            d_run, os.path.join(output_dir, f'plcoe_pitch_storage_{run_tag}{name}.png'),
+                            tech=tech)
+                        if fig_st is not None:
+                            plt.close(fig_st)
+                            st_tab.to_csv(
+                                os.path.join(output_dir, f'plcoe_pitch_storage_{run_tag}{name}.csv'),
+                                index=False)
                 fig_unfit, unfit_tab = plot_vcf_unfitted(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.png'),
                     tech=tech)
