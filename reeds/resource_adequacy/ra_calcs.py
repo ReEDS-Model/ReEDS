@@ -24,6 +24,7 @@ def run_pras(
         write_surplus=False,
         write_energy=False,
         write_shortfall_samples=False,
+        write_shortfall_samples_totals=True,
         write_availability_samples=False,
         **kwargs,
     ):
@@ -68,6 +69,7 @@ def run_pras(
         f"--write_surplus={int(write_surplus)}",
         f"--write_energy={int(write_energy)}",
         f"--write_shortfall_samples={int(write_shortfall_samples)}",
+        f"--write_shortfall_samples_totals={int(write_shortfall_samples_totals)}",
         f"--write_availability_samples={int(write_availability_samples)}",
         f"--iteration={iteration}",
         f"--samples={sw['pras_samples']}",

@@ -70,7 +70,12 @@ function parse_commandline()
             default = 0
             required = false
         "--write_shortfall_samples"
-            help = "Write the sample-level shortfall"
+            help = "Write per-sample hourly shortfall by region"
+            arg_type = Int
+            default = 0
+            required = false
+        "--write_shortfall_samples_totals"
+            help = "Write per-sample total shortfall by region over the full PRAS time period"
             arg_type = Int
             default = 0
             required = false
@@ -182,6 +187,9 @@ function run_pras(pras_system_path::String, args::Dict)
     if args["write_energy"] == 1
         resultspec["energy"] = PRAS.StorageEnergy()
     end
+    ## Hourly per-sample shortfall (region x hour x sample) is memory-heavy, so only
+    ## request it when the hourly samples are written. Per-sample totals (used for CVaR)
+    ## come from the regular Shortfall result (PRAS >= 0.9).
     if args["write_shortfall_samples"] == 1
         resultspec["short_samples"] = PRAS.ShortfallSamples()
     end
@@ -327,6 +335,24 @@ function run_pras(pras_system_path::String, args::Dict)
         @info("Wrote PRAS shortfall by sample to $(shortfile)")
     end
 
+    ### Per-sample total shortfall by region over the full PRAS time period, needed for CVaR
+    if args["write_shortfall_samples_totals"] == 1
+        ## Read the per-sample totals (MWh) from the regular Shortfall result (PRAS >= 0.9).
+        sf = results["short"]
+        ## Use filtered system regions to avoid DC converter pseudo-regions without load.
+        region_names = sf.regions.names
+        totalsfile = replace(outfile, ".h5"=>"-shortfall_totals_by_sample.h5")
+        HDF5.h5open(totalsfile, "w") do f
+            f["sample", compress=4] = collect(1:args["samples"])
+            f["USA", compress=4] = Float64.(sf.shortfall_samples)
+            for r in regions
+                i_r = findfirst(==(r), region_names)
+                f["$r", compress=4] = Float64.(sf.shortfall_region_samples[i_r, :])
+            end
+        end
+        @info("Wrote PRAS shortfall totals by sample to $(totalsfile)")
+    end
+
     ### Sample-level generator and storage availability
     if args["write_availability_samples"] == 1
         dictavail = Dict(s => DF.DataFrame() for s = 1:args["samples"])
@@ -458,6 +484,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
     #     "write_surplus" => 0,
     #     "write_energy" => 0,
     #     "write_shortfall_samples" => 1,
+    #     "write_shortfall_samples_totals" => 1,
     #     "write_availability_samples" => 0,
     #     "overwrite" => 1,
     #     "debug" => 0,
