@@ -574,12 +574,13 @@ def get_stress_periods(case, sw, t, iteration):
         for i,row in stressperiods_this_iteration.iterrows()
     ]
     covered_hours = [i for sublist in covered_hours for i in sublist]
+
+    ### Check all stress criteria; for regions that fail, add new stress periods
     _failed = {}
     _high_stress_periods = {}
     _shoulder_periods = {}
 
     stress_metrics = [i.lower() for i in sw.GSw_PRM_StressThresholdMetrics.split('/')]
-
     for stress_metric in stress_metrics:
         switch = RA_SWITCHES[stress_metric]
         for criterion in sw[switch].split('/'):

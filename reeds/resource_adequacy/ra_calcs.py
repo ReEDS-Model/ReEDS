@@ -162,7 +162,6 @@ def main(t, tnext, casedir, iteration=0):
             write_energy=True,
             write_shortfall_samples=(True if int(sw.GSw_PRM_UpdateMethod) > 1 else False),
         )
-
         if result.returncode:
             raise Exception(
                 f"run_pras.jl returned code {result.returncode}. Check gamslog.txt for error trace."

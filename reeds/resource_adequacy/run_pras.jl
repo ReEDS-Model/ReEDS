@@ -293,7 +293,6 @@ function run_pras(pras_system_path::String, args::Dict)
         end
         @info("Wrote PRAS surplus to $(surplusfile)")
     end
-
     ### Storage energy
     if args["write_energy"] == 1
         dfenergy = DF.DataFrame()
@@ -311,20 +310,25 @@ function run_pras(pras_system_path::String, args::Dict)
         @info("Wrote PRAS storage energy to $(energyfile)")
     end
 
-    ### Per-sample hourly shortfall by region
+    ### Sample-level shortfall
     if args["write_shortfall_samples"] == 1
-        sf = results["short_samples"]
-        ## Use filtered system regions to avoid DC converter pseudo-regions without load.
-        region_names = sf.regions.names
-        idx = [findfirst(==(r), region_names) for r in regions]
-
+        dictshort = Dict(s => DF.DataFrame() for s = 1:args["samples"])
+        for s in range(1, args["samples"])
+            dictshort[s] = DF.DataFrame(
+                transpose(getindex.(results["short_samples"][:, :], s)),
+                sys.regions.names
+            )
+            # subset to regions (filter out DC regions) 
+            dictshort[s] = dictshort[s][:,findall(regions .∈ Ref(sys.regions.names))]
+        end
+        ## Write it
         shortfile = replace(outfile, ".h5"=>"-shortfall_samples.h5")
         HDF5.h5open(shortfile, "w") do f
-            for s in 1:args["samples"]
+            ## Create a group for each sample. Within each group, write an array for each region.
+            for s in range(1, args["samples"])
                 HDF5.create_group(f, "$s")
-                for (r, i_r) in zip(regions, idx)
-                    arr = Float64.(sf.shortfall[i_r, :, s])
-                    f["$s"]["$r", compress=4] = arr
+                for column in DF._names(dictshort[s])
+                    f["$s"]["$column", compress=4] = convert(Array, dictshort[s][!, column])
                 end
             end
         end
