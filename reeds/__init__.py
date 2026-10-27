@@ -5,6 +5,7 @@ from . import resource_adequacy as resource_adequacy
 
 from . import checks as checks
 from . import financials as financials
+from . import finito as finito
 from . import inputs as inputs
 from . import io as io
 from . import log as log
