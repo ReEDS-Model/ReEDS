@@ -58,7 +58,7 @@ def build_html(output_dir, core_path):
                      'Bottom row, in $/kW-yr, per kW of new power capacity: LCOE base at a capacity '
                      'factor of 4/24, a four-hour battery cycling once a day; LVOE, value per kW-yr; '
                      'and the benchmark price, the benchmark value over the reserve-margin requirement '
-                     'MW, as in section 10. On the margin the LVOE of new builds equals their LCOE '
+                     'MW, as in section 08. On the margin the LVOE of new builds equals their LCOE '
                      'after the forcing cost reduction, so marginal LCOE is LVOE divided by the forcing '
                      'multiplier: the LCOE if forcing were a constraint rather than a cost reduction. '
                      'PLCOE, LCOE base over value&#8211;cost factor, is Pb divided by the same '
@@ -388,103 +388,8 @@ def build_html(output_dir, core_path):
         [('Year', False), ('Fleet GW', True), ('Discharge price', True), ('Charge price', True),
          ('Gross', True), ('Charging cost', True), ('Fleet net credit', True)], arb_rows)
 
-    # ---- 08 reserve-margin formulation ----
-    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 19,
-                      'Storage under the two reserve-margin formulations.',
-                      'The storage forcing case run twice: with the stress-period reserve margin, '
-                      'the default and the basis of every other figure here, and with the '
-                      'capacity-credit formulation (<span class="eq">GSw_PRM_CapCredit=1</span>), '
-                      'which credits storage by duration bin against a fixed planning reserve margin '
-                      'rather than by its dispatch in stress periods. Value factor, cost factor and '
-                      'value&#8211;cost factor are as computed, without the LCOE-base scaling of '
-                      'the right panel of Fig 4, which is fitted per run; capacity credit is as in '
-                      'section 05. The '
-                      'value&#8211;cost factor is LCOE base times the forcing multiplier over the '
-                      'benchmark price and carries no value term, so the two runs can differ in it '
-                      'only through the benchmark price; the formulation moves the split between '
-                      'value factor and cost factor. Under the capacity-credit formulation, credited '
-                      'storage MW are a share of a regional pool capped by the duration-bin sizes '
-                      'from the capacity credit script, so storage&rsquo;s reserve-margin value is '
-                      'taken net of the dual of the bin limit '
-                      '(<span class="eq">eq_sdbin_power_limit</span>): what new storage adds to the '
-                      'reserve margin rather than its share of the pool. The two runs are not held to '
-                      'the same reliability standard: one meets an unserved-energy threshold, the '
-                      'other a planning reserve margin.', order)
-    def sens_table(csv_name, caption, variant_header, perkw=False):
-        """Headline-year table of a storage sensitivity figure: one row per year and run. perkw
-        swaps in the per-kW factors, and capacity share of peak load for market share."""
-        sens = read_csv_or_empty(output_dir, csv_name)
-        rows = []
-        if not sens.empty:
-            for y in [y for y in table_years if y in set(sens['year'])]:
-                for lab in sens['variant'].drop_duplicates():
-                    r = sens[(sens['year'] == y) & (sens['variant'] == lab)]
-                    if r.empty:
-                        continue
-                    r = r.iloc[0]
-                    if perkw:
-                        cells = [_num(r['cap_peak'], '{:.1%}'), _num(r['value_factor_perkw']),
-                                 _num(r['cost_factor_perkw']),
-                                 _num(r['value_cost_factor_perkw'], '{:.3f}')]
-                    else:
-                        cells = [_num(r['gen_frac'], '{:.1%}'), _num(r['value_factor']),
-                                 _num(r['vf_comp_resmarg']), _num(r['cost_factor']),
-                                 _num(r['value_cost_factor'], '{:.3f}')]
-                    cells.append(_num(r['capacity_credit']))
-                    rows.append(f'<tr><td class="t">{int(y)}</td><td class="t">{lab}</td>'
-                                + ''.join(f'<td class="num">{c}</td>' for c in cells) + '</tr>')
-        if perkw:
-            heads = [('Capacity share of peak', True), ('VF per kW', True), ('CF per kW', True),
-                     ('VCF per kW', True)]
-        else:
-            heads = [('Market share', True), ('VF', True), ('VF, capacity part', True),
-                     ('CF', True), ('VCF', True)]
-        return table(caption, [('Year', False), (variant_header, False)] + heads
-                     + [('Capacity credit', True)], rows)
-
-    form_table = sens_table('plcoe_pitch_storage_formulation.csv',
-                            'Storage under the two reserve-margin formulations at the headline years',
-                            'Formulation')
-
-    # ---- 09 gas-CC start costs ----
-    sc_fig = figure(output_dir, 'plcoe_pitch_storage_startcost.png', 20,
-                    'Storage with and without start costs on gas combined cycle.',
-                    'The storage forcing case run twice: with start costs on coal, gas-CC and CCS '
-                    '(<span class="eq">GSw_StartCost=4</span>), the default and the basis of every '
-                    'other figure here, and with them on coal and CCS only '
-                    '(<span class="eq">GSw_StartCost=3</span>). Nothing else differs between the '
-                    'two runs. Value factor, cost factor and value&#8211;cost factor are as '
-                    'computed, per MWh of discharge, without the LCOE-base scaling in the right '
-                    'panel of Fig 4; capacity credit is as in section 05. As in Fig 19, the '
-                    'value&#8211;cost factor '
-                    'carries no value term, so the two runs can differ in it only through the '
-                    'benchmark price.', order)
-    sc_table = sens_table('plcoe_pitch_storage_startcost.csv',
-                          'Storage with and without gas-CC start costs at the headline years',
-                          'Start costs')
-    sck_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_perkw.png', 21,
-                     'Storage with and without start costs on gas combined cycle, per kW.',
-                     'The two runs of Fig 20 with the per-kW value factor, cost factor and '
-                     'value&#8211;cost factor of section 10 in place of the per-MWh ones, against '
-                     'installed storage capacity as a share of peak load (as in section 05) rather '
-                     'than market share, since market share is discharge. Capacity credit is as in '
-                     'Fig 20.', order)
-    sck_table = sens_table('plcoe_pitch_storage_startcost_perkw.csv',
-                           'Storage with and without gas-CC start costs, per kW, at the headline years',
-                           'Start costs', perkw=True)
-    sc_dol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_dollars.png', 22,
-                        'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
-                        'without gas-CC start costs.',
-                        'Fig 2 for the run without gas-CC start costs, with the same quantities, '
-                        'layout and axis caps.', order)
-    sc_fac_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_factors.png', 23,
-                        'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost '
-                        'ratio for storage without gas-CC start costs.',
-                        'Fig 3 for the run without gas-CC start costs, with the same quantities and '
-                        'layout.', order)
-
-    # ---- 10 factors per MWh and per kW ----
-    pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 24,
+    # ---- 08 factors per MWh and per kW ----
+    pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 19,
                     'Value factor, cost factor and value&#8211;cost factor per MWh and per kW.',
                     'Per MWh is as in the figures above: value per MWh of discharge over the '
                     'benchmark price, value over load MWh. Per kW divides value by new power '
@@ -513,20 +418,98 @@ def build_html(output_dir, core_path):
                       ('VCF per MWh', True), ('VCF per kW', True),
                       ('Benchmark ($/kW-yr)', True)], pk_rows)
 
+    # ---- 09 reserve-margin formulation ----
+    form_fig = figure(output_dir, 'plcoe_pitch_storage_formulation.png', 20,
+                      'Storage under the two reserve-margin formulations.',
+                      'The storage forcing case run twice: with the stress-period reserve margin, '
+                      'the default and the basis of every other figure here, and with the '
+                      'capacity-credit formulation (<span class="eq">GSw_PRM_CapCredit=1</span>), '
+                      'which credits storage by duration bin against a fixed planning reserve '
+                      'margin rather than by its dispatch in stress periods. Value factor, cost '
+                      'factor and value&#8211;cost factor are as computed, without the LCOE-base '
+                      'scaling of the right panel of Fig 4, which is fitted per run; capacity '
+                      'credit is as in section 05. The top row is per MWh against market share; '
+                      'the bottom row is the per-kW value factor, cost factor and value&#8211;cost'
+                      ' factor of section 08 against installed storage capacity as a share of peak'
+                      ' load (as in section 05), since market share is discharge. The '
+                      'capacity-credit formulation run has no stress periods, so its capacity is '
+                      'taken as a share of the default run&rsquo;s peak load; the two runs have '
+                      'the same load inputs. The value&#8211;cost factor is LCOE base times the '
+                      'forcing multiplier over the benchmark price and carries no value term, so '
+                      'the two runs can differ in it only through the benchmark price; the '
+                      'formulation moves the split between value factor and cost factor. Under the'
+                      ' capacity-credit formulation, credited storage MW are a share of a regional'
+                      ' pool capped by the duration-bin sizes from the capacity credit script, so '
+                      'storage&rsquo;s reserve-margin value is taken net of the dual of the bin '
+                      'limit (<span class="eq">eq_sdbin_power_limit</span>): what new storage adds'
+                      ' to the reserve margin rather than its share of the pool. The two runs are '
+                      'not held to the same reliability standard: one meets an unserved-energy '
+                      'threshold, the other a planning reserve margin.', order)
+    form_dol_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_dollars.png', 21,
+                          'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
+                          'under the capacity-credit formulation.',
+                          'Fig 2 for storage under the capacity-credit formulation, with the same '
+                          'quantities, layout and axis caps. The per-kW share axis uses the '
+                          'default run&rsquo;s peak load, as in Fig 20.', order)
+    form_fac_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_factors.png', 22,
+                          'Value factor, value&#8211;cost factor, cost factor and '
+                          'benefit&#8211;cost ratio for storage under the capacity-credit '
+                          'formulation.',
+                          'Fig 3 for storage under the capacity-credit formulation, with the same '
+                          'quantities and layout.', order)
+
+    # ---- 10 gas-CC start costs ----
+    sc_fig = figure(output_dir, 'plcoe_pitch_storage_startcost.png', 23,
+                    'Storage with and without start costs on gas combined cycle.',
+                    'The storage forcing case run twice: with start costs on coal, gas-CC and CCS '
+                    '(<span class="eq">GSw_StartCost=4</span>), the default and the basis of every'
+                    ' other figure here, and with them on coal and CCS only (<span '
+                    'class="eq">GSw_StartCost=3</span>). Nothing else differs between the two '
+                    'runs. Value factor, cost factor and value&#8211;cost factor are as computed, '
+                    'without the LCOE-base scaling in the right panel of Fig 4; capacity credit is'
+                    ' as in section 05. The top row is per MWh against market share; the bottom '
+                    'row is the per-kW value factor, cost factor and value&#8211;cost factor of '
+                    'section 08 against installed storage capacity as a share of peak load (as in '
+                    'section 05), since market share is discharge. As in Fig 20, the '
+                    'value&#8211;cost factor carries no value term, so the two runs can differ in '
+                    'it only through the benchmark price.', order)
+    sc_dol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_dollars.png', 24,
+                        'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
+                        'without gas-CC start costs.',
+                        'Fig 2 for storage without gas-CC start costs, with the same quantities, '
+                        'layout and axis caps.', order)
+    sc_fac_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_factors.png', 25,
+                        'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost'
+                        ' ratio for storage without gas-CC start costs.',
+                        'Fig 3 for storage without gas-CC start costs, with the same quantities '
+                        'and layout.', order)
+
     # ---- 11 PV forcing case ----
-    pv_dol_fig = figure(output_dir, 'plcoe_pitch_storage_pv_dollars.png', 25,
+    pv_fig = figure(output_dir, 'plcoe_pitch_storage_pv.png', 26,
+                    'Storage in the storage forcing run and in the PV forcing run.',
+                    'Storage in the run that forces it, the basis of every other figure here, '
+                    'against storage as built without forcing in the run that forces PV. Value '
+                    'factor, cost factor and value&#8211;cost factor are as computed, without the '
+                    'LCOE-base scaling in the right panel of Fig 4; capacity credit is as in '
+                    'section 05. The top row is per MWh against market share; the bottom row is '
+                    'the per-kW value factor, cost factor and value&#8211;cost factor of section '
+                    '08 against installed storage capacity as a share of peak load (as in section '
+                    '05), since market share is discharge. Storage is not forced in the PV forcing'
+                    ' run, so its forcing multiplier is 1 and its value&#8211;cost factor is LCOE '
+                    'base over the benchmark price.', order)
+    pv_dol_fig = figure(output_dir, 'plcoe_pitch_storage_pv_dollars.png', 27,
                         'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage in '
-                        'the run that forces PV.',
-                        'Fig 2 for storage in the PV forcing run, with the same quantities, layout and '
-                        'axis caps. Storage is not forced there, so the forcing multiplier is 1: '
-                        'marginal LCOE equals LVOE and PLCOE equals the benchmark price, and each pair '
-                        'is drawn on top of the other.', order)
-    pv_fac_fig = figure(output_dir, 'plcoe_pitch_storage_pv_factors.png', 26,
-                        'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost '
-                        'ratio for storage in the run that forces PV.',
-                        'Fig 3 for storage in the PV forcing run, with the same quantities and layout. '
-                        'With a forcing multiplier of 1 the benefit&#8211;cost ratio is 1 throughout.',
-                        order)
+                        'the PV forcing run.',
+                        'Fig 2 for storage in the PV forcing run, with the same quantities, layout'
+                        ' and axis caps. Storage is not forced there, so the forcing multiplier is'
+                        ' 1: marginal LCOE equals LVOE and PLCOE equals the benchmark price, and '
+                        'each pair is drawn on top of the other.', order)
+    pv_fac_fig = figure(output_dir, 'plcoe_pitch_storage_pv_factors.png', 28,
+                        'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost'
+                        ' ratio for storage in the PV forcing run.',
+                        'Fig 3 for storage in the PV forcing run, with the same quantities and '
+                        'layout. With a forcing multiplier of 1 the benefit&#8211;cost ratio is 1 '
+                        'throughout.', order)
 
     fell_back = any(isinstance(o, tuple) for o in order)
     if vr.embed_figures and not fell_back:
@@ -592,20 +575,20 @@ def build_html(output_dir, core_path):
      'there is entirely the price spread between the blocks it discharges in and the blocks it '
      'charges in.</p></div>', arb_fig, arb_table)}
 
-{sec('08', 'Reserve-margin formulation',
+{sec('08', 'Factors per MWh and per kW', pk_fig, pk_table)}
+
+{sec('09', 'Reserve-margin formulation',
      '<div class="col"><p>A sensitivity on how ReEDS represents resource adequacy, which sets most '
-     'of what storage is credited for.</p></div>', form_fig, form_table)}
+     'of what storage is credited for.</p></div>', form_fig, form_dol_fig, form_fac_fig)}
 
-{sec('09', 'Gas-CC start costs',
+{sec('10', 'Gas-CC start costs',
      '<div class="col"><p>A sensitivity on the unit-commitment costs of gas combined cycle, which '
-     'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_table,
-     sck_fig, sck_table, sc_dol_fig, sc_fac_fig)}
-
-{sec('10', 'Factors per MWh and per kW', pk_fig, pk_table)}
+     'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_dol_fig,
+     sc_fac_fig)}
 
 {sec('11', 'PV forcing case',
      '<div class="col"><p>Storage as built, without forcing, in the run that forces PV.</p></div>',
-     pv_dol_fig, pv_fac_fig)}
+     pv_fig, pv_dol_fig, pv_fac_fig)}
 
 <section style="border-bottom:none">
   <footer>Generated by <code>battery_report.py</code> from the figures and tables in this

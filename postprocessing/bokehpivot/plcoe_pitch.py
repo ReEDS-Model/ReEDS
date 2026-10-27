@@ -37,7 +37,7 @@ avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-c
 avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
 cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is also drawn in every scenario in the scenarios file, not only in the run that forces them, to separate a tech's own saturation from the system around it. Names as in valcostfac_core.csv; each needs an entry in avail_basis_prefix.
 storage_startcost_scenario = 'battery_sc3' #Scenario in the scenarios file that reruns the storage forcing case without gas-CC start costs (GSw_StartCost=3 rather than 4). A sensitivity like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and drawn against the core storage run in its own comparison figure, skipped if absent.
-storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Storage is built there without forcing, and the storage dollar and factor grids are also drawn for it. Skipped if absent.
+storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Storage is built there without forcing, and it is drawn against the core storage run in its own comparison figure, with the storage dollar and factor grids also drawn for it. Skipped if absent.
 storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
 storage_share_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
 regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
@@ -1634,19 +1634,16 @@ def plot_grouped_vcf_grid(run_dir, valcostfac_core_path, output_path, tech='Batt
 
 
 def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label, base_label,
-                             tech='Battery', perkw=False, x='gen_frac'):
-    """The core storage run (drawn as base_label) against a sensitivity rerun of it (scenario,
-    drawn as label): value factor, cost factor, value-cost factor and capacity credit against
-    market share (x='gen_frac') or installed capacity as a share of peak load (x='cap_peak').
-
-    perkw draws the per-kW value, cost and value-cost factors instead of the per-MWh ones. Their
-    natural axis is cap_peak: market share is discharge, which is what the per-kW versions leave out.
+                             tech='Battery'):
+    """The core storage run (drawn as base_label) against another run (scenario, drawn as label):
+    value factor, cost factor, value-cost factor and capacity credit. The top row is per MWh against
+    market share; the bottom row is per kW against installed capacity as a share of peak load, the
+    natural axis there since market share is discharge, which the per-kW versions leave out.
 
     Both series are read from valcostfac.csv, unscaled - no LCOE-base matching, since that scaling
     is fitted per run and would differ between the two. Capacity credit is
     new_build_capacity_credit on each run. VCF is LCOE base times the forcing multiplier over the
-    benchmark price, with no value term, so it can only differ between the two through the
-    benchmark price; the sensitivity moves the split between value and cost factor.
+    benchmark price, with no value term.
     """
     full_path = os.path.join(os.path.dirname(os.path.abspath(valcostfac_core_path)), 'valcostfac.csv')
     if not os.path.exists(full_path):
@@ -1667,35 +1664,34 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
         d = d[['year', 'gen_frac', 'value_factor', 'vf_comp_energy', 'vf_comp_resmarg', 'cost_factor',
                'value_cost_factor', 'value_factor_perkw', 'cost_factor_perkw',
                'value_cost_factor_perkw']].copy()
-        if scen in paths.index:
-            cc = new_build_capacity_credit(paths[scen], prefix)
-            cap_peak = cumulative_capacity_gw(paths[scen], prefix) / national_peak_gw(paths[scen])
-        else:
-            cc = cap_peak = pd.Series(dtype=float)
+        cc = (new_build_capacity_credit(paths[scen], prefix) if scen in paths.index
+              else pd.Series(dtype=float))
         d['capacity_credit'] = d['year'].map(cc)
-        d['cap_peak'] = d['year'].map(cap_peak)
+        d['cap_peak'] = d['year'].map(storage_cap_peak(scen, tech, peak_scenario=base.iloc[0]))
         rows.append(d.assign(scenario=scen, variant=label))
-    data = pd.concat(rows, ignore_index=True).sort_values(['variant', x])
-    sfx, unit = ('_perkw', ' per kW') if perkw else ('', '')
-    panels = [('value_factor' + sfx, 'Value factor' + unit), ('cost_factor' + sfx, 'Cost factor' + unit),
-              ('value_cost_factor' + sfx, 'Value-cost factor' + unit),
-              ('capacity_credit', 'Capacity credit')]
-    fig, axes = plt.subplots(1, 4, figsize=(15.0, 4.0))
-    for ax, (col, title) in zip(axes, panels):
-        for scen, label, color, marker, ls in series:
-            d = data[data['scenario'] == scen].dropna(subset=[col, x])
-            ax.plot(d[x] * 100, d[col], color=color, ls=ls, lw=1.6, marker=marker, ms=4,
-                    mec='white', mew=0.5, label=label)
-        ax.set_title(title, fontsize=10, loc='left')
-        ax.set_xlabel('Market share (% of generation)' if x == 'gen_frac' else
-                      f'Installed {display_tech(tech)} capacity as % of peak load')
-        ax.set_xlim(left=0)
-        ax.set_ylim(bottom=0)
-        ax.grid(alpha=0.25, lw=0.6)
-        ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
-    handles, labels = axes[0].get_legend_handles_labels()
+    data = pd.concat(rows, ignore_index=True).sort_values(['variant', 'year'])
+    fig, axes = plt.subplots(2, 4, figsize=(15.0, 7.6))
+    for row, (sfx, basis, x, xlabel) in zip(axes, [
+            ('', 'per MWh', 'gen_frac', 'Market share (% of generation)'),
+            ('_perkw', 'per kW', 'cap_peak', 'Installed capacity (% of peak load)')]):
+        panels = [('value_factor' + sfx, f'Value factor, {basis}'),
+                  ('cost_factor' + sfx, f'Cost factor, {basis}'),
+                  ('value_cost_factor' + sfx, f'Value-cost factor, {basis}'),
+                  ('capacity_credit', 'Capacity credit')]
+        for ax, (col, title) in zip(row, panels):
+            for scen, label, color, marker, ls in series:
+                d = data[data['scenario'] == scen].dropna(subset=[col, x]).sort_values(x)
+                ax.plot(d[x] * 100, d[col], color=color, ls=ls, lw=1.6, marker=marker, ms=4,
+                        mec='white', mew=0.5, label=label)
+            ax.set_title(title, fontsize=10, loc='left')
+            ax.set_xlabel(xlabel)
+            ax.set_xlim(left=0)
+            ax.set_ylim(bottom=0)
+            ax.grid(alpha=0.25, lw=0.6)
+            ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+    handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', ncol=2, fontsize=8, frameon=False)
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig.savefig(output_path, dpi=200)
     return fig, data
 
@@ -1790,15 +1786,20 @@ def plot_national_mix(run_dir, output_path):
     tab = pd.concat([gen.stack().rename('twh'), cap.stack().rename('gw')], axis=1)
     return fig, tab.rename_axis(['year', 'tech']).reset_index()
 
-def storage_cap_peak(scenario, tech='Battery'):
+def storage_cap_peak(scenario, tech='Battery', peak_scenario=None):
     """Installed capacity of tech as a share of national peak load by year, in one run of the scenarios
-    file. Empty if the run is not listed there."""
+    file. Empty if the run is not listed there. A run without stress periods (the capacity-credit
+    formulation of the reserve margin) has no stress-period peak, so peak_scenario's is used: the
+    default run of the same case, which has the same load inputs."""
     from reeds_vs_rev import scenarios_path
     paths = pd.read_csv(scenarios_path).set_index('name')['path']
     if scenario not in paths.index:
         return pd.Series(dtype=float)
     run = paths[scenario]
-    return cumulative_capacity_gw(run, avail_basis_prefix.get(tech, tech.lower())) / national_peak_gw(run)
+    peak = national_peak_gw(run)
+    if peak.empty and peak_scenario in paths.index:
+        peak = national_peak_gw(paths[peak_scenario])
+    return cumulative_capacity_gw(run, avail_basis_prefix.get(tech, tech.lower())) / peak
 
 def plot_storage_grid(tabs, lines, ylabels, ymaxes, output_path):
     """A 2x2 grid of the same lines: per MWh (top) and per kW (bottom), against model year (left) and
@@ -1832,15 +1833,16 @@ def plot_storage_grid(tabs, lines, ylabels, ymaxes, output_path):
     fig.savefig(output_path, dpi=200)
     return fig
 
-def storage_rows(df, tech):
-    """The tech's rows of df by year, with cap_peak from its run. None if it has none."""
+def storage_rows(df, tech, peak_scenario=None):
+    """The tech's rows of df by year, with cap_peak from its run, as in storage_cap_peak. None if it
+    has none."""
     d = df[df['tech'] == tech].sort_values('year').copy()
     if d.empty:
         return None
-    d['cap_peak'] = d['year'].map(storage_cap_peak(d['scenario'].iloc[0], tech))
+    d['cap_peak'] = d['year'].map(storage_cap_peak(d['scenario'].iloc[0], tech, peak_scenario))
     return d
 
-def plot_storage_dollars(df, output_path, tech='Battery'):
+def plot_storage_dollars(df, output_path, tech='Battery', peak_scenario=None):
     """LCOE base, marginal LCOE, LVOE, benchmark price and same-year PLCOE for storage, per MWh and
     per kW-yr against the per-MW benchmark, on plot_storage_grid.
 
@@ -1848,11 +1850,11 @@ def plot_storage_dollars(df, output_path, tech='Battery'):
     build, so dividing out the multiplier gives its LCOE as if forcing were a constraint rather than a
     cost reduction. PLCOE is the unforced LCOE base times benchmark price over the forced LCOE base,
     which is the benchmark price / force_mult. The per-kW LCOE base is the per-MWh one at a capacity
-    factor of 4/24.
+    factor of 4/24. peak_scenario is as in storage_cap_peak.
     """
     need = ['lcoe_base_orig', 'lcoe_base', 'force_mult', 'lvoe', 'benchmark_price', 'lvoe_perkw',
             'benchmark_price_perkw']
-    d = storage_rows(df, tech) if set(need) <= set(df.columns) else None
+    d = storage_rows(df, tech, peak_scenario) if set(need) <= set(df.columns) else None
     if d is None:
         return None, pd.DataFrame()
     d = d.dropna(subset=need)
@@ -1881,14 +1883,14 @@ def plot_storage_dollars(df, output_path, tech='Battery'):
                             output_path)
     return fig, pd.concat(tabs.values())
 
-def plot_storage_factors(df, output_path, tech='Battery'):
+def plot_storage_factors(df, output_path, tech='Battery', peak_scenario=None):
     """Value factor, value-cost factor, cost factor and benefit-cost ratio for storage, per MWh and per
     kW, on plot_storage_grid. The benefit-cost ratio is LVOE over marginal LCOE, which is force_mult
-    on either basis.
+    on either basis. peak_scenario is as in storage_cap_peak.
     """
     cols = ['value_factor', 'value_cost_factor', 'cost_factor']
     need = cols + [c + '_perkw' for c in cols] + ['BCR']
-    d = storage_rows(df, tech) if set(need) <= set(df.columns) else None
+    d = storage_rows(df, tech, peak_scenario) if set(need) <= set(df.columns) else None
     if d is None:
         return None, pd.DataFrame()
     d = d.dropna(subset=need)
@@ -2728,17 +2730,17 @@ def make_figs(valcostfac_core_path, output_dir=None):
                         tech=tech, prefix=prefix, x=x)
                     if fig_rcomp is not None:
                         plt.close(fig_rcomp)
-                for sens, label, base_label, name, perkw, x in [
+                for sens, label, base_label, name in [
                         (storage_formulation_scenario, 'Capacity-credit formulation',
-                         'Stress periods (default)', 'formulation', False, 'gen_frac'),
+                         'Stress periods (default)', 'formulation'),
                         (storage_startcost_scenario, 'No gas-CC start costs',
-                         'Gas-CC start costs (default)', 'startcost', False, 'gen_frac'),
-                        (storage_startcost_scenario, 'No gas-CC start costs',
-                         'Gas-CC start costs (default)', 'startcost_perkw', True, 'cap_peak')]:
+                         'Gas-CC start costs (default)', 'startcost'),
+                        (storage_pv_scenario, 'PV forcing run, storage not forced',
+                         'Storage forcing run (default)', 'pv')]:
                     fig_sens, sens_tab = plot_storage_sensitivity(
                         valcostfac_core_path,
                         os.path.join(output_dir, f'plcoe_pitch_storage_{name}.png'), sens, label,
-                        base_label, tech=tech, perkw=perkw, x=x)
+                        base_label, tech=tech)
                     if fig_sens is not None:
                         plt.close(fig_sens)
                         sens_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
@@ -2748,13 +2750,15 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 plt.close(fig_mix)
                 mix_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_national_mix.csv'),
                                index=False)
-                #The same two grids for the run without gas-CC start costs and the PV forcing run,
-                #from valcostfac.csv as in plot_storage_sensitivity.
+                #The same two grids for each of those runs, from valcostfac.csv as in
+                #plot_storage_sensitivity.
                 runs = [('', df_vcf)]
+                stor_scen = df_vcf.loc[df_vcf['tech'] == tech, 'scenario'].iloc[0]
                 full_path = os.path.join(output_dir, 'valcostfac.csv')
                 if os.path.exists(full_path):
                     full = pd.read_csv(full_path)
-                    for run_tag, scen in [('startcost_', storage_startcost_scenario),
+                    for run_tag, scen in [('formulation_', storage_formulation_scenario),
+                                          ('startcost_', storage_startcost_scenario),
                                           ('pv_', storage_pv_scenario)]:
                         d_run = full[(full['tech'] == tech) & (full['year'] >= start_year)
                                      & (full['scenario'] == scen)]
@@ -2765,7 +2769,7 @@ def make_figs(valcostfac_core_path, output_dir=None):
                                           (plot_storage_factors, 'factors')]:
                         fig_st, st_tab = plot_fn(
                             d_run, os.path.join(output_dir, f'plcoe_pitch_storage_{run_tag}{name}.png'),
-                            tech=tech)
+                            tech=tech, peak_scenario=stor_scen)
                         if fig_st is not None:
                             plt.close(fig_st)
                             st_tab.to_csv(
