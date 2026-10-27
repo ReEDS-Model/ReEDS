@@ -56,6 +56,8 @@ cost_cap:
   - hydro
   - psh
   - dr_shed
+  - dr_shift
+  - dr_shape
 cost_cap_fin_mult:
   indexsets:
   - valinv

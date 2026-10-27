@@ -1422,7 +1422,8 @@ def plotyearbymonth(dfs, plotcols=None, colors=None,
         ax[0].set_ylim(0, 1)
     else:
         pass
-        # ax[0].set_ylim(0,dfs[plotcols].max())
+        # ax[0].set_ylim(0,dfs[plotcols].max())   
+
 
     return f, ax
 
