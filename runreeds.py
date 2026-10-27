@@ -145,8 +145,8 @@ def get_ivt_numclass(reeds_path, casedir, caseSwitches):
 def get_rev_paths(revswitches):
     # Expand on reV path based on where this run is happening
     # when running on the HPC this links to the shared-projects folder
-    hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
-    if os.environ.get('NREL_CLUSTER') == 'kestrel':
+    hpc = reeds.slurm.check_slurm()
+    if reeds.slurm.get_cluster() == 'kestrel':
         hpc_path = '/kfs2/shared-projects/reeds/Supply_Curve_Data'
     else:
         hpc_path = '/shared-projects/reeds/Supply_Curve_Data'
@@ -500,15 +500,13 @@ def setupEnvironment(
         cases_suffix = str(input('Case Suffix: '))
 
     #%% Check whether to submit slurm jobs (if on HPC) or run locally
-    hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
-    hpc = False if forcelocal else hpc
+    hpc = reeds.slurm.check_slurm(forcelocal=forcelocal)
 
     ### If on NLR HPC but NOT submitting slurm job, ask for confirmation
-    if ('NREL_CLUSTER' in os.environ) and (not hpc):
+    if reeds.slurm.get_cluster() and (not hpc):
         print(
-            "It looks like you're running on the NLR HPC but the REEDS_USE_SLURM environment "
-            "variable is not set to 1, meaning the model will run locally rather than being "
-            "submitted as a slurm job. Are you sure you want to run locally?"
+            "It looks like you're running on the HPC login node instead of submitting a "
+            "slurm job. Are you sure you want to run locally (not recommended)?"
         )
         confirm_local = str(input('Run job locally? y/[n]: ') or 'n')
         if confirm_local not in ['y','Y','yes','Yes','YES']:
@@ -945,19 +943,11 @@ def write_batch_script(
             comment('Set up nodal environment for run', OPATH)
             OPATH.writelines(". $HOME/.bashrc \n")
             OPATH.writelines("module purge \n")
-
-            if os.environ.get('NREL_CLUSTER') == 'kestrel':
-                OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
-                OPATH.writelines("module load anaconda3 \n")
-                OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
-                OPATH.writelines("module load gams \n")
-                OPATH.writelines("module load julia/1.12.1 \n")
-            else:
-                OPATH.writelines("module load conda \n")
-                OPATH.writelines("module load gams \n")
-
+            OPATH.writelines("module load anaconda3 \n")
+            OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
+            OPATH.writelines("module load gams \n")
             OPATH.writelines("conda activate reeds \n")
-            OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
+            OPATH.writelines('\n\n')
 
         #%% Write the input_processing script calls
         big_comment('Input processing', OPATH)
