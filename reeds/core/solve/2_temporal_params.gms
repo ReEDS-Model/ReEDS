@@ -471,7 +471,7 @@ h2_exogenous_demand_regional(r,p,h,t)$[tmodel_new(t)$h2_share(r,t)]
 * -- Capacity factor --
 *=============================================
 
-* Written by cfgather.py, overwritten by hourly_writetimeseries.py
+* Written by hourly_writetimeseries.py
 parameter cf_in(i,c,r,allh) "--fraction-- capacity factors for renewable technologies"
 /
 $offlisting
@@ -542,9 +542,6 @@ m_cf(i,c,v,r,h,t)$[i_c(i,c)$cf_tech(i)$valcap(i,v,r,t)$cf_rsc(i,c,v,r,h,t)$cf_ad
 
 * can remove capacity factors for new vintages that have not been introduced yet
 m_cf(i,c,newv,r,h,t)$[not sum{tt$(yeart(tt) <= yeart(t)), ivt(i,newv,tt ) }$valcap(i,newv,r,t)$m_cf(i,c,newv,r,h,t)] = 0 ;
-
-* distpv capacity factor is divided by (1.0 - distloss) to provide a busbar equivalent capacity factor
-m_cf(i,c,v,r,h,t)$[distpv(i)$valcap(i,v,r,t)] = m_cf(i,c,v,r,h,t) / (1.0 - distloss) ;
 
 * doing this before calculating m_cf_szn to make sure
 * m_cf_szn does not get populated with very small values
@@ -778,7 +775,7 @@ $onlisting
 $offempty
 
 * Written by hourly_writetimeseries.py
-parameter load_allyear(r,allh,allt) "--MW-- end-use load by region, timeslice, and year"
+parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"
 / 
 $offlisting
 $ondelim
@@ -787,9 +784,8 @@ $include inputs_case%ds%stress%stress_year%%ds%load_allyear.csv
 $offdelim
 $onlisting
 / ;
-* Dividing by (1-distloss) converts end-use load to busbar load
 load_exog(r,allh,t) = 0 ;
-load_exog(r,h,t) = load_allyear(r,h,t) / (1.0 - distloss) ;
+load_exog(r,h,t) = load_allyear(r,h,t) ;
 
 parameter prm_year(r) "--fraction-- planning reserve margin for the current solve year"
 / 
@@ -852,7 +848,7 @@ peak_static_frac(r,ccseason,t) = 1 - sum{(flex_type,h)$h_ccseason_prm(h,ccseason
 
 
 * Written by hourly_writetimeseries.py
-parameter peak_ccseason(r,ccseason,allt) "--MW-- end-use peak demand by region, season, year"
+parameter peak_ccseason(r,ccseason,allt) "--MW-- busbar peak demand by region, season, year"
 /
 $offlisting
 $ondelim
@@ -860,8 +856,7 @@ $include inputs_case%ds%%temporal_inputs%%ds%peak_ccseason.csv
 $offdelim
 $onlisting
 / ;
-*Dividing by (1-distloss) converts end-use load to busbar load
-peakdem_static_ccseason(r,ccseason,t) = peak_ccseason(r,ccseason,t) * peak_static_frac(r,ccseason,t) / (1.0 - distloss) ;
+peakdem_static_ccseason(r,ccseason,t) = peak_ccseason(r,ccseason,t) * peak_static_frac(r,ccseason,t) ;
 
 
 $onempty
@@ -876,7 +871,7 @@ $onlisting
 $offempty
 
 peakdem_static_h(r,allh,t) = 0 ;
-peakdem_static_h(r,h,t) = peak_h(r,h,t) * (1 - sum{flex_type, flex_demand_frac(flex_type,r,h,t) }) / (1.0 - distloss) ;
+peakdem_static_h(r,h,t) = peak_h(r,h,t) * (1 - sum{flex_type, flex_demand_frac(flex_type,r,h,t) }) ;
 
 
 *=============================================
