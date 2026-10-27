@@ -23,9 +23,9 @@ rb_globs = {'output_subdir':'/outputs/', 'test_file':['cap.csv','outputs.h5'], '
 this_dir_path = os.path.dirname(os.path.realpath(__file__))
 df_deflator = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs/financials/deflator.csv')), index_col=0)
 coststreams = ['eq_gasaccounting_regional','eq_gasaccounting_national','eq_bioused','eq_gasused','eq_objfn_inv','eq_objfn_op']
-vf_valstreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min']
-# valuestreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_national_gen','eq_annual_cap','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min','eq_emit_accounting','eq_mingen_lb','eq_mingen_ub','eq_rps_ofswind']
-energy_valstreams = ['eq_supply_demand_balance','eq_curt_gen_balance','eq_curtailment','eq_storage_in_max','eq_storage_in_min']
+vf_valstreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_storage_in_max','eq_storage_in_min']
+# valuestreams = ['eq_supply_demand_balance','eq_reserve_margin','eq_opres_requirement','eq_rec_requirement','eq_national_gen','eq_annual_cap','eq_storage_in_max','eq_storage_in_min','eq_emit_accounting','eq_mingen_lb','eq_mingen_ub','eq_rps_ofswind']
+energy_valstreams = ['eq_supply_demand_balance','eq_storage_in_max','eq_storage_in_min']
 cc_techs = ['Hydropower','Onshore Wind','Offshore Wind','CSP','UPV','Pumped-Hydro','Pumped-Hydro-Flex','Battery']
 battery_techs=['Battery']
 h2_techs = ['SMR', 'SMR-CCS', 'Electrolyzer']
@@ -1104,6 +1104,27 @@ def pre_runtime(dictin, **kw):
 
     return df
 
+def cumulative_capacity(dfs, **kw):
+    df = dfs['cap'].copy()
+    myears = [int(x) for x in dfs['modelyears'].columns.tolist()] 
+    # Scale capacity to GW
+    df[kw['cumulated_col']] *= kw['scale_factor']
+    df = df.set_index(kw['index'])
+    other_levels = [x for x in df.index.names if x != 'year']
+    if other_levels:
+        other_vals = df.index.droplevel('year').unique()
+        new_idx = pd.MultiIndex.from_product(
+            [*[other_vals.get_level_values(lvl).unique() for lvl in other_levels], myears],
+            names=other_levels + ['year']
+        )
+    else:
+        new_idx = pd.Index(myears, name='year')
+    df = df.reindex(new_idx, fill_value=0).reset_index()
+    # Calculate cumulative capacity
+    df[f'Cumulative {kw['cumulated_col']}'] = df.groupby(kw['group_cols'])[kw['cumulated_col']].cumsum()
+    
+    return df
+
 def net_co2(dfs, **kw):
     co2 = dfs['emit'].copy()
     co2 = co2[co2['e']=='CO2e']
@@ -1500,6 +1521,33 @@ results_meta = collections.OrderedDict((
             ('Explode By Tech',{'x':'year', 'y':'Capacity (GW)', 'series':'scenario', 'explode':'tech', 'chart_type':'Line'}),
             ('PCA Map Final by Tech',{'x':'rb', 'y':'Capacity (GW)', 'explode':'scenario', 'explode_group':'tech', 'chart_type':'Area Map', 'filter': {'year':'last'}}),
             ('State Map Final by Tech',{'x':'st', 'y':'Capacity (GW)', 'explode':'scenario', 'explode_group':'tech', 'chart_type':'Area Map', 'filter': {'year':'last'}}),
+        )),
+        }
+    ),
+
+    ('New Capacity BA (GW)',
+        {'sources': [
+            {'name':'cap', 'file':'cap_new_out', 'columns': ['tech', 'rb', 'year', 'Capacity (GW)']},
+            {'name':'modelyears', 'file':'../inputs_case/modeledyears.csv'},
+        ],
+        'preprocess': [
+            {'func': cumulative_capacity, 'args': {'scale_factor': .001, 'index': ['tech','rb','year'], 'group_cols': ['tech','rb'], 'cumulated_col':'Capacity (GW)'}}
+        ],
+        'index': ['tech', 'rb', 'year'],
+        'presets': collections.OrderedDict((
+            ('Stacked Area',{'x':'year', 'y':'Capacity (GW)', 'series':'tech', 'explode':'scenario', 'chart_type':'Area'}),
+            ('Stacked Bars',{'x':'year', 'y':'Capacity (GW)', 'series':'tech', 'explode':'scenario', 'chart_type':'Bar', 'bar_width':'1.75'}),
+            ('Stacked Bars Cumulative',{'x':'year', 'y':'Cumulative Capacity (GW)', 'series':'tech', 'explode':'scenario', 'chart_type':'Bar', 'bar_width':'1.75'}),
+            ('Stacked Bars by State',{'x':'year', 'y':'Capacity (GW)', 'series':'tech', 'explode':'scenario', 'explode_group':'st', 'chart_type':'Bar', 'bar_width':'1.75', 'sync_axes':'No'}),
+            ('Explode By Tech',{'x':'year', 'y':'Capacity (GW)', 'series':'scenario', 'explode':'tech', 'chart_type':'Line'}),
+            ('PCA Map Final by Tech',{'x':'rb', 'y':'Capacity (GW)', 'explode':'scenario', 'explode_group':'tech', 'chart_type':'Area Map', 'filter': {'year':'last'}}),
+            ('State Map Final by Tech',{'x':'st', 'y':'Capacity (GW)', 'explode':'scenario', 'explode_group':'tech', 'chart_type':'Area Map', 'filter': {'year':'last'}}),
+            ('State Map 2025-2050 Cumulative',{'x':'st', 'y':'Cumulative Capacity (GW)', 'explode':'scenario', 'explode_group':'year', 'chart_type':'Area Map', 
+                                                  'filter':{'year':['2025','2050']},
+                                                  'adv_op':'Difference', 'adv_col':'year', 'adv_col_base':'2025',
+                                                  'plot_title':' '
+                                                }
+            )
         )),
         }
     ),
