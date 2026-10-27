@@ -11,9 +11,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import reeds
 
 
-ISLAND_EXCEPTIONS = ['TX', 'ERCOT', 'TX_ERCOT']
-
-
 def check_compatibility(sw):
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
@@ -460,10 +457,14 @@ def check_islands(sw, force=0):
         }
     """
     zones = reeds.inputs.parse_regions(**sw)
+    ## We include AC and B2B but skip long-distance HVDC lines because they are stored as
+    ## lat/lon pairs and their assignment to zones takes longer than we want for this test
     itls = reeds.inputs.get_itls(GSw_ZoneSet=sw['GSw_ZoneSet'])
-    dfitl = itls.loc[(itls.r.isin(zones)) & (itls.rr.isin(zones))].copy()
-    not_islands = dfitl[['r','rr']].stack().unique().tolist()
-    islands = [r for r in zones if r not in not_islands + ISLAND_EXCEPTIONS]
+    b2b = reeds.inputs.get_b2b(GSw_ZoneSet=sw['GSw_ZoneSet'])
+    dflinks = pd.concat([itls, b2b])
+    dflinks = dflinks.loc[(dflinks.r.isin(zones)) & (dflinks.rr.isin(zones))].copy()
+    not_islands = dflinks[['r','rr']].stack().unique().tolist()
+    islands = [r for r in zones if r not in not_islands]
 
     if (len(zones) == 1) and int(sw['pras']):
         err = (
