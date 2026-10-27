@@ -448,7 +448,10 @@ def main(
     scenario_outfile_prefix_map = {
         'IRA cons': 'EER2025_IRAlow',
         'central': 'EER2025_100by2050',
-        'baseline': 'EER2025_Baseline_AEO2023'
+        'baseline': 'EER2025_Baseline_AEO2023',
+        'IRA cons high data center': 'EER2025_IRAlow_highDC',
+        'central high data center': 'EER2025_100by2050_highDC',
+        'baseline high data center': 'EER2025_Baseline_AEO2023_highDC',
     }
     valid_scenarios = list(scenario_outfile_prefix_map.keys())
     state_name_code_map = get_state_name_code_map(reeds_path)
