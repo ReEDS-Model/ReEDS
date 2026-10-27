@@ -60,7 +60,7 @@ parser.add_argument(
 # caselist = [str(Path(reeds.io.reeds_path,'postprocessing','example.csv'))]
 # casenames = ''
 # titleshorten = ''
-# basepath = str(Path('~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_Central').expanduser())
+# basepath = None
 # write = 'png'
 # interactive = True
 
@@ -97,8 +97,10 @@ if basepath is not None:
     savepath = Path(basepath, 'outputs', 'comparisons')
 else:
     ## Put it in the first sample if no basepath is specified
-    firstcase = casepaths[list(casepaths.keys())[0]][0]
-    savepath = Path(firstcase, 'outputs', 'comparisons')
+    basepath = casepaths[list(casepaths.keys())[0]][0]
+    savepath = Path(basepath, 'outputs', 'comparisons')
+
+print(f'Saving results to {savepath}')
 
 if write in ['pdf', 'png']:
     savepath.mkdir(parents=True, exist_ok=True)
@@ -221,7 +223,7 @@ techs = ['upv', 'wind-ons']
 for caseprefix in casepaths:
     for tech in techs:
         f, ax, dfplot = reeds.mcplots.map_supplycurve_diff(
-            cases[caseprefix], casebase=casebase, dfmap=dfmap,
+            cases[caseprefix], casebase=casebase, tech=tech, dfmap=dfmap,
         )
         savename = f"supplycurve-{tech.replace('-','')}-{nicelabels[caseprefix]}"
         saveit(savename)
