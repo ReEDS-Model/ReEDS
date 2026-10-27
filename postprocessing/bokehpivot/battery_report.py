@@ -58,7 +58,7 @@ def build_html(output_dir, core_path):
                      'Bottom row, in $/kW-yr, per kW of new power capacity: LCOE base at a capacity '
                      'factor of 4/24, a four-hour battery cycling once a day; LVOE, value per kW-yr; '
                      'and the benchmark price, the benchmark value over the reserve-margin requirement '
-                     'MW, as in section 11. On the margin the LVOE of new builds equals their LCOE '
+                     'MW, as in section 10. On the margin the LVOE of new builds equals their LCOE '
                      'after the forcing cost reduction, so marginal LCOE is LVOE divided by the forcing '
                      'multiplier: the LCOE if forcing were a constraint rather than a cost reduction. '
                      'PLCOE, LCOE base over value&#8211;cost factor, is Pb divided by the same '
@@ -462,30 +462,28 @@ def build_html(output_dir, core_path):
     sc_table = sens_table('plcoe_pitch_storage_startcost.csv',
                           'Storage with and without gas-CC start costs at the headline years',
                           'Start costs')
-    sc_dol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_dollars.png', 21,
-                        'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
-                        'without gas-CC start costs.',
-                        'Fig 2 for the run without gas-CC start costs, with the same quantities, '
-                        'layout and axis caps.', order)
-    sc_fac_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_factors.png', 22,
-                        'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost '
-                        'ratio for storage without gas-CC start costs.',
-                        'Fig 3 for the run without gas-CC start costs, with the same quantities and '
-                        'layout.', order)
-
-    # ---- 10 gas-CC start costs, per kW ----
-    sck_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_perkw.png', 23,
+    sck_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_perkw.png', 21,
                      'Storage with and without start costs on gas combined cycle, per kW.',
                      'The two runs of Fig 20 with the per-kW value factor, cost factor and '
-                     'value&#8211;cost factor of section 11 in place of the per-MWh ones, against '
+                     'value&#8211;cost factor of section 10 in place of the per-MWh ones, against '
                      'installed storage capacity as a share of peak load (as in section 05) rather '
                      'than market share, since market share is discharge. Capacity credit is as in '
                      'Fig 20.', order)
     sck_table = sens_table('plcoe_pitch_storage_startcost_perkw.csv',
                            'Storage with and without gas-CC start costs, per kW, at the headline years',
                            'Start costs', perkw=True)
+    sc_dol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_dollars.png', 22,
+                        'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
+                        'without gas-CC start costs.',
+                        'Fig 2 for the run without gas-CC start costs, with the same quantities, '
+                        'layout and axis caps.', order)
+    sc_fac_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_factors.png', 23,
+                        'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost '
+                        'ratio for storage without gas-CC start costs.',
+                        'Fig 3 for the run without gas-CC start costs, with the same quantities and '
+                        'layout.', order)
 
-    # ---- 11 per kW ----
+    # ---- 10 factors per MWh and per kW ----
     pk_fig = figure(output_dir, 'plcoe_pitch_storage_perkw.png', 24,
                     'Value factor, cost factor and value&#8211;cost factor per MWh and per kW.',
                     'Per MWh is as in the figures above: value per MWh of discharge over the '
@@ -515,7 +513,7 @@ def build_html(output_dir, core_path):
                       ('VCF per MWh', True), ('VCF per kW', True),
                       ('Benchmark ($/kW-yr)', True)], pk_rows)
 
-    # ---- 12 PV forcing case ----
+    # ---- 11 PV forcing case ----
     pv_dol_fig = figure(output_dir, 'plcoe_pitch_storage_pv_dollars.png', 25,
                         'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage in '
                         'the run that forces PV.',
@@ -601,13 +599,11 @@ def build_html(output_dir, core_path):
 {sec('09', 'Gas-CC start costs',
      '<div class="col"><p>A sensitivity on the unit-commitment costs of gas combined cycle, which '
      'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_table,
-     sc_dol_fig, sc_fac_fig)}
+     sck_fig, sck_table, sc_dol_fig, sc_fac_fig)}
 
-{sec('10', 'Gas-CC start costs, per kW', sck_fig, sck_table)}
+{sec('10', 'Factors per MWh and per kW', pk_fig, pk_table)}
 
-{sec('11', 'Per kW', pk_fig, pk_table)}
-
-{sec('12', 'PV forcing case',
+{sec('11', 'PV forcing case',
      '<div class="col"><p>Storage as built, without forcing, in the run that forces PV.</p></div>',
      pv_dol_fig, pv_fac_fig)}
 
