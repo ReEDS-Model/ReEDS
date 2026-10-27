@@ -16,7 +16,7 @@
 
 - `cost_hurdle_intra.csv`: Hurdle rate for transmission flows [\$/MWh] between ReEDS spatial hierarchy levels.
 
-- `dollaryear.scv`: U.S. dollar year for cost-related input files
+- `dollaryear.csv`: U.S. dollar year for cost-related input files
 
 - `hvdc_existing.csv`: Power capacity and start/end locations of [high-voltage direct current (HVDC) lines](https://en.wikipedia.org/wiki/List_of_HVDC_projects#North_America) in the USA.
 These lines are mapped to ReEDS zone interfaces during input processing.
@@ -58,6 +58,13 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
 
 - `newlinks_offshore_backbone.csv`: Candidate connections between offshore zones
   - Similarly formatted files for candidate connections between offshore and coastal land-based zones are found at `inputs/zones/{GSw_ZoneSet}/newlinks_offshore_radial.csv`
+
+- `reinforcement_upgrade_cost_z90.csv`: Cumulative interconnection / network-reinforcement cost curve per ReEDS zone from the [TSC](https://github.nrel.gov/ReEDS/TSC) model (nodal network data as described by [Brown et al.](https://arxiv.org/abs/2308.03612)). One cumulative supply-curve point per row:
+    - `region`: ReEDS zone (must match the zone set's `hierarchy.csv`)
+    - `capacity_GW`: cumulative POI capacity [GW]; the row with zero cumulative cost marks the zone's existing (free) capacity
+    - `cum_cost_$`: cumulative reinforcement cost [USD2024]
+    - `slope_$/kW`: marginal cost from the previous point [USD2024/kW] (informational)
+  - When `GSw_RegIntraCurve = 1`, `reeds/input_processing/transmission.py` builds the curve from this file — one bin per raw segment, no re-segmentation.
 
 - `transmission_cost_ac_500kv_z134.h5`: Example file illustrating the required format when using the transmission upgrade supply curve ([TSC](https://github.nrel.gov/ReEDS/TSC)) method for `GSw_ZoneSet = z134`
   - The full method is not yet supported; when implemented, it will only be supported for a limited number of `GSw_ZoneSet` definitions

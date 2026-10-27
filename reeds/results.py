@@ -582,18 +582,16 @@ def calc_reinforcement_spur_capacity_miles(case):
         .sort_values(by=['r', 'trtype', 'year'])
     )
 
-    sw = reeds.io.get_switches(case)
-    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
-        'drop_single_county_reinforcement_cost'
-    ):
+    scope = reeds.io.get_reinforcement_drop_scope(case)
+    is_reinforcement = tech_trans_out.trtype == 'reinforcement'
+    if scope == 'all':
+        tech_trans_out = tech_trans_out.loc[~is_reinforcement]
+    elif scope == 'single_county':
         # Set reinforcement distance to zero for county level regions
         county_regions = reeds.io.get_county_zones(case)
-        tech_trans_out = tech_trans_out.loc[  
-            ~(  
-                tech_trans_out.r.isin(county_regions)
-                & (tech_trans_out.trtype == 'reinforcement')  
-            )  
-        ]    
+        tech_trans_out = tech_trans_out.loc[
+            ~(is_reinforcement & tech_trans_out.r.isin(county_regions))
+        ]
 
     return tech_trans_out
 
