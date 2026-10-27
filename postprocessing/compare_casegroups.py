@@ -148,6 +148,7 @@ cases = {
     key: [reeds.objects.ReEDScase(x) for x in caselist]
     for key, caselist in casepaths.items()
 }
+casebase = reeds.objects.ReEDScase(basepath)
 
 
 #%% Shared inputs
@@ -187,39 +188,8 @@ except Exception as err:
 state_subplots = reeds.reedsplots.get_state_subplots()
 
 
-#%%### Inputs
 
-#%% Tech cost (wind, solar, batteries)
-dictin_cap_cost = {}
-for case, row in tqdm(dfcases.iterrows(), desc='cap_cost', total=len(dfcases)):
-    try:
-        dictin_cap_cost[case] = pd.read_csv(
-            os.path.join(row.path, 'inputs_case', 'plantcharout.csv'),
-            index_col=['variable','*i','t'],
-        ).loc['capcost'].value.unstack('*i').rename_axis('i', axis=1) * inflator / 1e3
-        dictin_cap_cost[case].columns = dictin_cap_cost[case].columns.str.lower()
-    except FileNotFoundError as err:
-        print(err)
-        continue
-
-#%% Siting availability
-dictin_sc = {}
-for case, row in tqdm(dfcases.iterrows(), desc='supplycurve', total=len(dfcases)):
-    try:
-        dictin_sc[case] = (
-            pd.read_csv(os.path.join(row.path, 'inputs_case', 'rsc_combined.csv'))
-            .rename(columns={'*i':'i'}).set_index('sc_cat').loc['cap']
-            .groupby(['i','r']).value.sum()
-            / 1e3
-        ).reset_index()
-        dictin_sc[case]['i'] = dictin_sc[case]['i'].str.strip('_0123456789')
-        dictin_sc[case] = dictin_sc[case].groupby(['i','r']).value.sum()
-    except FileNotFoundError as err:
-        print(err)
-        continue
-
-
-#%%### Inputs plots
+###### Inputs plots
 #%% Demand
 for caseprefix in casepaths:
     f, ax, dfplot = reeds.mcplots.plot_demand_lines(cases[caseprefix])
@@ -234,144 +204,27 @@ for caseprefix in casepaths:
     saveit(savename)
 
 
-
-
-
-
-
-
-
-
-
-
 #%% Capital cost
 labels = {
-    'upv_3': 'PV',
+    'upv_3': 'UPV',
     'wind-ons_3': 'Wind',
     'battery_li': 'Battery',
-    # 'nuclear': 'Nuclear',
-    # 'Gas-CC',
-    # 'Geothermal',
-    # 'Hydro',
 }
-ncols = len(labels)
-bins = 31
-
 for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_cap_cost if c == caseprefix])
-    dfplot = pd.concat(
-        {
-            sample: (
-                dictin_cap_cost[caseprefix,sample][list(labels.keys())]
-                .rename(columns=labels)
-            )
-            for sample in caseprefix_samples
-        },
-        axis=1, names=['s','i'],
-    ).reorder_levels(['i','s'], axis=1).loc[tstart:]
-
-    ### Plot it
-    plt.close()
-    f,ax = plt.subplots(1, ncols, sharex=True, sharey=True, figsize=(2*ncols, 3.75))
-    for col, tech in enumerate(labels.values()):
-        _ax = ax[col]
-        df = dfplot[tech]
-        ## Background
-        _ax.fill_between(
-            df.index, df.max(axis=1), df.min(axis=1),
-            color=colors_tech[tech], alpha=alpha, lw=0,
-        )
-        ## Lines
-        df.plot(
-            ax=_ax, legend=False,
-            lw=0.5, color='k', alpha=0.1,
-        )
-        ## Histogram
-        reeds.plots.hist_last(
-            _ax, df, color=colors_tech[tech], bins=bins, alpha=alpha,
-            xpad=1, xscale=4,
-        )
-        ## Formatting
-        _ax.set_title(tech, color=colors_tech[tech], weight='bold')
-        _ax.set_xlabel(None)
-
-    ax[0].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
-    ax[0].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ax[0].set_ylabel('Capex cost [$/kW]')
-    ax[0].set_ylim(0)
-    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(500))
-    ax[0].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(5))
-    reeds.plots.despine(ax)
-    plt.draw()
-    reeds.plots.shorten_years(ax[0])
-    plt.savefig(
-        os.path.join(savepath, f"capcost-{','.join(list(labels.values()))}-{caseprefix}.png")
-    )
-    plt.show()
+    f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix])
+    savename = f"capcost-{','.join(list(labels.values()))}-{nicelabels[caseprefix]}"
+    saveit(savename)
 
 
-#%% Supply curves
+#%% Supply curves (SLOW)
 techs = ['upv', 'wind-ons']
 for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_sc if c == caseprefix])
-    dfplot = pd.concat(
-        {
-            sample: dictin_sc[caseprefix,sample]
-            for sample in caseprefix_samples
-        },
-        axis=1,
-    ).loc[techs]
-    dfplot['geometry'] = dfplot.index.get_level_values('r').map(dfmap['r'].geometry)
-    dfplot = gpd.GeoDataFrame(dfplot, crs=dfmap['r'].crs)
-
-    ### Get coordinates
-    nrows, ncols, coords = reeds.plots.get_coordinates(samples, aspect=1.2)
-    print(nrows, ncols)
-    scale = 1
-
-    bounds = dfmap['country'].bounds.squeeze(0)
-    xspan = bounds.maxx - bounds.minx
-    yspan = bounds.maxy - bounds.miny
-
-    ### Plot relative difference
-    cmap = plt.cm.RdBu_r
-    dfstates = dfmap['st'].copy()
-    dfstates.geometry = dfstates.simplify(1000)
-
     for tech in techs:
-        central = dictin_sc['central',0].loc[tech].rename('val')
-        geom = dfmap['r'].geometry.simplify(1000)
-        # vmin = dfplot.loc[tech, samples].min().min()
-        # vmin = 0
-        # vmax = dfplot.loc[tech, samples].max().max()
-        vmin, vmax = -100, 100
-
-        plt.close()
-        f,ax = plt.subplots(figsize=(ncols*scale, nrows*scale*0.8))
-        for sample in tqdm(samples):
-            row, col = coords[sample]
-            ## Data
-            df = dfplot.loc[tech, [sample, 'geometry']].rename(columns={sample:'val'}).copy()
-            df.val = (df.val / central - 1) * 100
-            df.geometry = geom.map(
-                lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
-            )
-            df.plot(ax=ax, column='val', cmap=cmap, vmin=vmin, vmax=vmax)
-            ## States
-            _dfstates = dfstates.copy()
-            _dfstates.geometry = _dfstates.geometry.map(
-                lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
-            )
-            _dfstates.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.1)
-            # ax.annotate(
-            #     sample,
-            #     (x + xspan * col, y - yspan * row),
-            #     ha='center', va='center',
-            # )
-        ax.set_title(f'{tech} availability relative to central case')
-        ax.axis('off')
-        plt.savefig(os.path.join(savepath, f"supplycurve-{tech.replace('-','')}-{caseprefix}.png"))
-        plt.show()
+        f, ax, dfplot = reeds.mcplots.map_supplycurve_diff(
+            cases[caseprefix], casebase=casebase, dfmap=dfmap,
+        )
+        savename = f"supplycurve-{tech.replace('-','')}-{nicelabels[caseprefix]}"
+        saveit(savename)
 
 
 
@@ -382,8 +235,6 @@ for caseprefix in casepaths:
 
 
 
-#%%
-#%%
 #%% Results
 dictin_cap_r = {}
 for case, row in tqdm(dfcases.iterrows(), desc='output capacity', total=len(dfcases)):

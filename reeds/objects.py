@@ -4,6 +4,15 @@ import copy
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
+sys.path.append(Path(reeds.io.reeds_path, 'postprocessing', 'bokehpivot'))
+from defaults import DEFAULT_DOLLAR_YEAR
+
+
+#%% Fixed inputs
+inflatable = reeds.io.get_inflatable()
+dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+dollaryear_output = DEFAULT_DOLLAR_YEAR
+inflator = inflatable[dollaryear_reeds, dollaryear_output]
 
 
 #%% Specially processed inputs
@@ -22,6 +31,32 @@ def get_demand_rt(case):
     return df
 
 
+def get_capcost(case):
+    """Get capital cost by technology and year [$/kW]"""
+    df = (
+        reeds.io.read_input(case, 'plantcharout')
+        .set_index(['variable','*i','t'])
+        .loc['capcost'].value.unstack('*i').rename_axis('i', axis=1)
+        * inflator
+        / 1e3
+    )
+    df.columns = df.columns.str.lower()
+    return df
+
+
+def get_supplycurve(case):
+    """Get supply curve used in the optimization [GW]"""
+    df = (
+        reeds.io.read_input(case, 'rsc_combined')
+        .rename(columns={'*i':'i'}).set_index('sc_cat').loc['cap']
+        .groupby(['i','r']).value.sum()
+        / 1e3
+    ).reset_index()
+    df['i'] = df['i'].str.strip('_0123456789')
+    df = df.groupby(['i','r']).value.sum()
+    return df
+
+
 #%% Results container
 SPECIAL = {
     'sw': reeds.io.get_switches,
@@ -30,6 +65,8 @@ SPECIAL = {
     'county2zone': reeds.io.get_county2zone,
     'inflatable': reeds.io.get_inflatable,
     'demand_rt': get_demand_rt,
+    'capcost': get_capcost,
+    'supplycurve': get_supplycurve,
 }
 
 class ReEDScase:
