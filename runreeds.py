@@ -1284,7 +1284,6 @@ def write_batch_script(
             OPATH.writelines("module load anaconda3 \n")
             OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
             OPATH.writelines("module load gams \n")
-            OPATH.writelines("module load julia/1.12.1 \n")
             OPATH.writelines("conda activate reeds \n")
             OPATH.writelines('\n\n')
 

@@ -57,7 +57,7 @@ for case in case_list:
 
                 # load environments 
                 SPATH.writelines("\nmodule purge\n")
-                SPATH.writelines("module load conda\n")
+                SPATH.writelines("module load anaconda3\n")
                 SPATH.writelines("conda activate reeds\n")
                 SPATH.writelines("module load gams\n\n\n")
 

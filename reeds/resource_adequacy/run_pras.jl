@@ -421,6 +421,7 @@ function main(args::Dict)
     setup_logger(pras_system_path, args)
     @info "Julia version: $(VERSION)"
     @info "Julia executable: $(joinpath(Sys.BINDIR, "julia"))"
+    @info "PRAS version: $(pkgversion(PRAS))"
     @info "Running ReEDS2PRAS with the following inputs:"
     for (arg, val) in args
         @info "$arg  =>  $val"
