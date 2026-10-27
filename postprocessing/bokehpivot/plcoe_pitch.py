@@ -1634,11 +1634,13 @@ def plot_grouped_vcf_grid(run_dir, valcostfac_core_path, output_path, tech='Batt
 
 
 def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label, base_label,
-                             tech='Battery'):
+                             tech='Battery', dollars=False):
     """The core storage run (drawn as base_label) against another run (scenario, drawn as label):
-    value factor, cost factor, value-cost factor and capacity credit. The top row is per MWh against
-    market share; the bottom row is per kW against installed capacity as a share of peak load, the
-    natural axis there since market share is discharge, which the per-kW versions leave out.
+    value factor, cost factor, value-cost factor and capacity credit, or with dollars, marginal LCOE,
+    LVOE, benchmark price and PLCOE as in plot_storage_dollars, with its axis caps. The top row is
+    per MWh against market share; the bottom row is per kW against installed capacity as a share of
+    peak load, the natural axis there since market share is discharge, which the per-kW versions
+    leave out.
 
     Both series are read from valcostfac.csv, unscaled - no LCOE-base matching, since that scaling
     is fitted per run and would differ between the two. Capacity credit is
@@ -1663,7 +1665,11 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
         d = full[(full['tech'] == tech) & (full['scenario'] == scen) & (full['year'] >= start_year)]
         d = d[['year', 'gen_frac', 'value_factor', 'vf_comp_energy', 'vf_comp_resmarg', 'cost_factor',
                'value_cost_factor', 'value_factor_perkw', 'cost_factor_perkw',
-               'value_cost_factor_perkw']].copy()
+               'value_cost_factor_perkw', 'lvoe', 'lvoe_perkw', 'benchmark_price',
+               'benchmark_price_perkw', 'force_mult', 'lcoe_base', 'lcoe_base_orig']].copy()
+        for sfx in ['', '_perkw']:
+            d['lcoe_marg' + sfx] = d['lvoe' + sfx] / d['force_mult']
+            d['plcoe' + sfx] = d['lcoe_base_orig'] / d['lcoe_base'] * d['benchmark_price' + sfx]
         cc = (new_build_capacity_credit(paths[scen], prefix) if scen in paths.index
               else pd.Series(dtype=float))
         d['capacity_credit'] = d['year'].map(cc)
@@ -1671,13 +1677,21 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
         rows.append(d.assign(scenario=scen, variant=label))
     data = pd.concat(rows, ignore_index=True).sort_values(['variant', 'year'])
     fig, axes = plt.subplots(2, 4, figsize=(15.0, 7.6))
-    for row, (sfx, basis, x, xlabel) in zip(axes, [
-            ('', 'per MWh', 'gen_frac', 'Market share (% of generation)'),
-            ('_perkw', 'per kW', 'cap_peak', 'Installed capacity (% of peak load)')]):
-        panels = [('value_factor' + sfx, f'Value factor, {basis}'),
-                  ('cost_factor' + sfx, f'Cost factor, {basis}'),
-                  ('value_cost_factor' + sfx, f'Value-cost factor, {basis}'),
-                  ('capacity_credit', 'Capacity credit')]
+    for row, (sfx, basis, x, xlabel, unit, ymax) in zip(axes, [
+            ('', 'per MWh', 'gen_frac', 'Market share (% of generation)', f'{dollar_year}$/MWh',
+             storage_dollar_ymax),
+            ('_perkw', 'per kW', 'cap_peak', 'Installed capacity (% of peak load)',
+             f'{dollar_year}$/kW-yr', storage_dollar_ymax_perkw)]):
+        if dollars:
+            panels = [('lcoe_marg' + sfx, f'Marginal LCOE, {basis}'), ('lvoe' + sfx, f'LVOE, {basis}'),
+                      ('benchmark_price' + sfx, f'Benchmark price (Pb), {basis}'),
+                      ('plcoe' + sfx, f'PLCOE, {basis}')]
+            row[0].set_ylabel(unit)
+        else:
+            panels = [('value_factor' + sfx, f'Value factor, {basis}'),
+                      ('cost_factor' + sfx, f'Cost factor, {basis}'),
+                      ('value_cost_factor' + sfx, f'Value-cost factor, {basis}'),
+                      ('capacity_credit', 'Capacity credit')]
         for ax, (col, title) in zip(row, panels):
             for scen, label, color, marker, ls in series:
                 d = data[data['scenario'] == scen].dropna(subset=[col, x]).sort_values(x)
@@ -1686,9 +1700,12 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
             ax.set_title(title, fontsize=10, loc='left')
             ax.set_xlabel(xlabel)
             ax.set_xlim(left=0)
-            ax.set_ylim(bottom=0)
             ax.grid(alpha=0.25, lw=0.6)
-            ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
+            if dollars:
+                ax.set_ylim(0, ymax)
+            else:
+                ax.set_ylim(bottom=0)
+                ax.axhline(1.0, color=cost_color, lw=0.8, ls=':', zorder=0)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', ncol=2, fontsize=8, frameon=False)
     fig.tight_layout(rect=(0, 0.04, 1, 1))
@@ -2737,14 +2754,16 @@ def make_figs(valcostfac_core_path, output_dir=None):
                          'Gas-CC start costs (default)', 'startcost'),
                         (storage_pv_scenario, 'PV forcing run, storage not forced',
                          'Storage forcing run (default)', 'pv')]:
-                    fig_sens, sens_tab = plot_storage_sensitivity(
-                        valcostfac_core_path,
-                        os.path.join(output_dir, f'plcoe_pitch_storage_{name}.png'), sens, label,
-                        base_label, tech=tech)
-                    if fig_sens is not None:
-                        plt.close(fig_sens)
-                        sens_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
-                                        index=False)
+                    for dollars, sfx in [(False, ''), (True, '_compare_dollars')]:
+                        fig_sens, sens_tab = plot_storage_sensitivity(
+                            valcostfac_core_path,
+                            os.path.join(output_dir, f'plcoe_pitch_storage_{name}{sfx}.png'), sens,
+                            label, base_label, tech=tech, dollars=dollars)
+                        if fig_sens is not None:
+                            plt.close(fig_sens)
+                            sens_tab.to_csv(
+                                os.path.join(output_dir, f'plcoe_pitch_storage_{name}{sfx}.csv'),
+                                index=False)
                 fig_mix, mix_tab = plot_national_mix(
                     stor_dirs[tech], os.path.join(output_dir, 'plcoe_pitch_storage_national_mix.png'))
                 plt.close(fig_mix)

@@ -445,13 +445,22 @@ def build_html(output_dir, core_path):
                       ' to the reserve margin rather than its share of the pool. The two runs are '
                       'not held to the same reliability standard: one meets an unserved-energy '
                       'threshold, the other a planning reserve margin.', order)
-    form_dol_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_dollars.png', 21,
+    form_cdol_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_compare_dollars.png', 21,
+                           'Marginal LCOE, LVOE, benchmark price and PLCOE for storage under the '
+                           'stress-period reserve margin and under the capacity-credit '
+                           'formulation.',
+                           'The two runs of Fig 20 in the same layout, with the dollar quantities '
+                           'of Fig 2 in place of the factors: marginal LCOE, LVOE, benchmark price'
+                           ' and PLCOE, per MWh against market share in the top row and per kW-yr '
+                           'against installed capacity as a share of peak load in the bottom row, '
+                           'with the axis caps of Fig 2.', order)
+    form_dol_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_dollars.png', 22,
                           'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
                           'under the capacity-credit formulation.',
                           'Fig 2 for storage under the capacity-credit formulation, with the same '
                           'quantities, layout and axis caps. The per-kW share axis uses the '
                           'default run&rsquo;s peak load, as in Fig 20.', order)
-    form_fac_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_factors.png', 22,
+    form_fac_fig = figure(output_dir, 'plcoe_pitch_storage_formulation_factors.png', 23,
                           'Value factor, value&#8211;cost factor, cost factor and '
                           'benefit&#8211;cost ratio for storage under the capacity-credit '
                           'formulation.',
@@ -459,7 +468,7 @@ def build_html(output_dir, core_path):
                           'quantities and layout.', order)
 
     # ---- 10 gas-CC start costs ----
-    sc_fig = figure(output_dir, 'plcoe_pitch_storage_startcost.png', 23,
+    sc_fig = figure(output_dir, 'plcoe_pitch_storage_startcost.png', 24,
                     'Storage with and without start costs on gas combined cycle.',
                     'The storage forcing case run twice: with start costs on coal, gas-CC and CCS '
                     '(<span class="eq">GSw_StartCost=4</span>), the default and the basis of every'
@@ -473,19 +482,27 @@ def build_html(output_dir, core_path):
                     'section 05), since market share is discharge. As in Fig 20, the '
                     'value&#8211;cost factor carries no value term, so the two runs can differ in '
                     'it only through the benchmark price.', order)
-    sc_dol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_dollars.png', 24,
+    sc_cdol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_compare_dollars.png', 25,
+                         'Marginal LCOE, LVOE, benchmark price and PLCOE for storage with gas-CC '
+                         'start costs and without them.',
+                         'The two runs of Fig 24 in the same layout, with the dollar quantities of'
+                         ' Fig 2 in place of the factors: marginal LCOE, LVOE, benchmark price and'
+                         ' PLCOE, per MWh against market share in the top row and per kW-yr '
+                         'against installed capacity as a share of peak load in the bottom row, '
+                         'with the axis caps of Fig 2.', order)
+    sc_dol_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_dollars.png', 26,
                         'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage '
                         'without gas-CC start costs.',
                         'Fig 2 for storage without gas-CC start costs, with the same quantities, '
                         'layout and axis caps.', order)
-    sc_fac_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_factors.png', 25,
+    sc_fac_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_factors.png', 27,
                         'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost'
                         ' ratio for storage without gas-CC start costs.',
                         'Fig 3 for storage without gas-CC start costs, with the same quantities '
                         'and layout.', order)
 
     # ---- 11 PV forcing case ----
-    pv_fig = figure(output_dir, 'plcoe_pitch_storage_pv.png', 26,
+    pv_fig = figure(output_dir, 'plcoe_pitch_storage_pv.png', 28,
                     'Storage in the storage forcing run and in the PV forcing run.',
                     'Storage in the run that forces it, the basis of every other figure here, '
                     'against storage as built without forcing in the run that forces PV. Value '
@@ -497,14 +514,24 @@ def build_html(output_dir, core_path):
                     '05), since market share is discharge. Storage is not forced in the PV forcing'
                     ' run, so its forcing multiplier is 1 and its value&#8211;cost factor is LCOE '
                     'base over the benchmark price.', order)
-    pv_dol_fig = figure(output_dir, 'plcoe_pitch_storage_pv_dollars.png', 27,
+    pv_cdol_fig = figure(output_dir, 'plcoe_pitch_storage_pv_compare_dollars.png', 29,
+                         'Marginal LCOE, LVOE, benchmark price and PLCOE for storage in the '
+                         'storage forcing run and in the PV forcing run.',
+                         'The two runs of Fig 28 in the same layout, with the dollar quantities of'
+                         ' Fig 2 in place of the factors: marginal LCOE, LVOE, benchmark price and'
+                         ' PLCOE, per MWh against market share in the top row and per kW-yr '
+                         'against installed capacity as a share of peak load in the bottom row, '
+                         'with the axis caps of Fig 2. Storage is not forced in the PV forcing '
+                         'run, so there its marginal LCOE equals its LVOE and its PLCOE equals the'
+                         ' benchmark price.', order)
+    pv_dol_fig = figure(output_dir, 'plcoe_pitch_storage_pv_dollars.png', 30,
                         'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage in '
                         'the PV forcing run.',
                         'Fig 2 for storage in the PV forcing run, with the same quantities, layout'
                         ' and axis caps. Storage is not forced there, so the forcing multiplier is'
                         ' 1: marginal LCOE equals LVOE and PLCOE equals the benchmark price, and '
                         'each pair is drawn on top of the other.', order)
-    pv_fac_fig = figure(output_dir, 'plcoe_pitch_storage_pv_factors.png', 28,
+    pv_fac_fig = figure(output_dir, 'plcoe_pitch_storage_pv_factors.png', 31,
                         'Value factor, value&#8211;cost factor, cost factor and benefit&#8211;cost'
                         ' ratio for storage in the PV forcing run.',
                         'Fig 3 for storage in the PV forcing run, with the same quantities and '
@@ -579,16 +606,16 @@ def build_html(output_dir, core_path):
 
 {sec('09', 'Reserve-margin formulation',
      '<div class="col"><p>A sensitivity on how ReEDS represents resource adequacy, which sets most '
-     'of what storage is credited for.</p></div>', form_fig, form_dol_fig, form_fac_fig)}
+     'of what storage is credited for.</p></div>', form_fig, form_cdol_fig, form_dol_fig, form_fac_fig)}
 
 {sec('10', 'Gas-CC start costs',
      '<div class="col"><p>A sensitivity on the unit-commitment costs of gas combined cycle, which '
-     'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_dol_fig,
+     'shape the price swings storage is dispatched against.</p></div>', sc_fig, sc_cdol_fig, sc_dol_fig,
      sc_fac_fig)}
 
 {sec('11', 'PV forcing case',
      '<div class="col"><p>Storage as built, without forcing, in the run that forces PV.</p></div>',
-     pv_fig, pv_dol_fig, pv_fac_fig)}
+     pv_fig, pv_cdol_fig, pv_dol_fig, pv_fac_fig)}
 
 <section style="border-bottom:none">
   <footer>Generated by <code>battery_report.py</code> from the figures and tables in this
