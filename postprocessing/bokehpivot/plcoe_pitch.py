@@ -1634,13 +1634,13 @@ def plot_grouped_vcf_grid(run_dir, valcostfac_core_path, output_path, tech='Batt
 
 
 def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label, base_label,
-                             tech='Battery', dollars=False):
-    """The core storage run (drawn as base_label) against another run (scenario, drawn as label):
-    value factor, cost factor, value-cost factor and capacity credit, or with dollars, marginal LCOE,
-    LVOE, benchmark price and PLCOE as in plot_storage_dollars, with its axis caps. The top row is
-    per MWh against market share; the bottom row is per kW against installed capacity as a share of
+                             tech='Battery', perkw=False):
+    """The core storage run (drawn as base_label) against another run (scenario, drawn as label),
+    per MWh against market share, or with perkw, per kW against installed capacity as a share of
     peak load, the natural axis there since market share is discharge, which the per-kW versions
-    leave out.
+    leave out. The top row is value factor, cost factor, value-cost factor and capacity credit; the
+    bottom row is LVOE, marginal LCOE, PLCOE and benchmark price as in plot_storage_dollars, with its
+    axis caps. Only the first column is a ratio pair: value factor is LVOE over the benchmark price.
 
     Both series are read from valcostfac.csv, unscaled - no LCOE-base matching, since that scaling
     is fitted per run and would differ between the two. Capacity credit is
@@ -1676,22 +1676,22 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
         d['cap_peak'] = d['year'].map(storage_cap_peak(scen, tech, peak_scenario=base.iloc[0]))
         rows.append(d.assign(scenario=scen, variant=label))
     data = pd.concat(rows, ignore_index=True).sort_values(['variant', 'year'])
+    if perkw:
+        sfx, basis, x, xlabel = '_perkw', 'per kW', 'cap_peak', 'Installed capacity (% of peak load)'
+        unit, ymax = f'{dollar_year}$/kW-yr', storage_dollar_ymax_perkw
+    else:
+        sfx, basis, x, xlabel = '', 'per MWh', 'gen_frac', 'Market share (% of generation)'
+        unit, ymax = f'{dollar_year}$/MWh', storage_dollar_ymax
+    rows_panels = [[('value_factor' + sfx, f'Value factor, {basis}'),
+                    ('cost_factor' + sfx, f'Cost factor, {basis}'),
+                    ('value_cost_factor' + sfx, f'Value-cost factor, {basis}'),
+                    ('capacity_credit', 'Capacity credit')],
+                   [('lvoe' + sfx, f'LVOE, {basis}'), ('lcoe_marg' + sfx, f'Marginal LCOE, {basis}'),
+                    ('plcoe' + sfx, f'PLCOE, {basis}'),
+                    ('benchmark_price' + sfx, f'Benchmark price (Pb), {basis}')]]
     fig, axes = plt.subplots(2, 4, figsize=(15.0, 7.6))
-    for row, (sfx, basis, x, xlabel, unit, ymax) in zip(axes, [
-            ('', 'per MWh', 'gen_frac', 'Market share (% of generation)', f'{dollar_year}$/MWh',
-             storage_dollar_ymax),
-            ('_perkw', 'per kW', 'cap_peak', 'Installed capacity (% of peak load)',
-             f'{dollar_year}$/kW-yr', storage_dollar_ymax_perkw)]):
-        if dollars:
-            panels = [('lcoe_marg' + sfx, f'Marginal LCOE, {basis}'), ('lvoe' + sfx, f'LVOE, {basis}'),
-                      ('benchmark_price' + sfx, f'Benchmark price (Pb), {basis}'),
-                      ('plcoe' + sfx, f'PLCOE, {basis}')]
-            row[0].set_ylabel(unit)
-        else:
-            panels = [('value_factor' + sfx, f'Value factor, {basis}'),
-                      ('cost_factor' + sfx, f'Cost factor, {basis}'),
-                      ('value_cost_factor' + sfx, f'Value-cost factor, {basis}'),
-                      ('capacity_credit', 'Capacity credit')]
+    axes[1, 0].set_ylabel(unit)
+    for r, (row, panels) in enumerate(zip(axes, rows_panels)):
         for ax, (col, title) in zip(row, panels):
             for scen, label, color, marker, ls in series:
                 d = data[data['scenario'] == scen].dropna(subset=[col, x]).sort_values(x)
@@ -1701,7 +1701,7 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
             ax.set_xlabel(xlabel)
             ax.set_xlim(left=0)
             ax.grid(alpha=0.25, lw=0.6)
-            if dollars:
+            if r == 1:
                 ax.set_ylim(0, ymax)
             else:
                 ax.set_ylim(bottom=0)
@@ -2754,11 +2754,11 @@ def make_figs(valcostfac_core_path, output_dir=None):
                          'Gas-CC start costs (default)', 'startcost'),
                         (storage_pv_scenario, 'PV forcing run, storage not forced',
                          'Storage forcing run (default)', 'pv')]:
-                    for dollars, sfx in [(False, ''), (True, '_compare_dollars')]:
+                    for perkw, sfx in [(False, '_permwh'), (True, '_perkw')]:
                         fig_sens, sens_tab = plot_storage_sensitivity(
                             valcostfac_core_path,
                             os.path.join(output_dir, f'plcoe_pitch_storage_{name}{sfx}.png'), sens,
-                            label, base_label, tech=tech, dollars=dollars)
+                            label, base_label, tech=tech, perkw=perkw)
                         if fig_sens is not None:
                             plt.close(fig_sens)
                             sens_tab.to_csv(
