@@ -1152,7 +1152,9 @@ def write_batch_script(
         ### Remove unnecessary files from case folder
         OPATH.writelines(
             f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
-            f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
+            f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}"
+            f"{' --keepra' if int(caseSwitches['keep_resource_adequacy_files']) else ''}"
+            "\n"
         )
 
         ### Run R2X if using debug mode
