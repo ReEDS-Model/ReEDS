@@ -2385,12 +2385,12 @@ hydro_capcredit_delta(i,t)$hydro_d(i) =
 *         --- RPS data ---
 *====================================
 
-set RPSCat_i(RPSCat,i,st)       "mapping between rps category and technologies for each state",
+set RPSCat_i(RPSCat,i,st)           "mapping between rps category and technologies for each state",
     RecMap(i,RPSCat,st,ast,htype,t) "Mapping set for technologies to RPS categories and indicates if credits can be sent from st to ast",
-    RecStates(RPSCat,st,t)    "states that can generate RECS for their own or other states' requirements",
-    RecTrade(RPSCat,st,ast,t) "mapping set between states that can trade RECs with each other (from st to ast)",
-    RecTech(RPSCat,i,st,t)    "set to indicate which technologies and classes can contribute to a state's RPSCat",
-    r_st_rps(r,st)            "mapping of eligible regions to each state for RPS/CES purposes" ;
+    RecStates(RPSCat,st,t)          "states that can generate RECS for their own or other states' requirements",
+    RecTrade(RPSCat,st,ast,t)       "mapping set between states that can trade RECs with each other (from st to ast)",
+    RecTech(RPSCat,i,st,t)          "set to indicate which technologies and classes can contribute to a state's RPSCat",
+    r_st_rps(r,st)                  "mapping of eligible regions to each state for RPS/CES purposes" ;
 
 Parameter RecPerc(RPSCat,st,htype,t) "--fraction-- fraction of total generation for each state that must be met by RECs for each category"
           RPSTechMult(RPSCat,i,st) "--fraction-- fraction of generation from each technology that counts towards the requirement for each category"

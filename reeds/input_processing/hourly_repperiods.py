@@ -520,7 +520,7 @@ def main(
     ## down to the member states. Only 'load'/'peak-containing' rows are relevant --
     ## min-VRE seed periods are not considered. Built from stressperiods_load rather
     ## than stressperiods_write (above), since the latter is deduplicated on
-    ## (year, yperiod) and would drop regions whose peak day coincides with another 
+    ## (year, yperiod) and would drop regions whose peak day coincides with another
     ## region's.
     ces_peakday_write = pd.concat(
         {y: pd.DataFrame(
