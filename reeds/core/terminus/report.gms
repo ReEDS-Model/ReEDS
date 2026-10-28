@@ -418,7 +418,7 @@ reqt_quant('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
     )} ;
 
 reqt_quant('state_rps_stress',RPSCat,r,'ann',t)$tmodel_new(t) =
-    sum{(st,allh)$[r_st_rps(r,st)$h_htype(allh,"stress")], RecPerc(RPSCat,st,"stress",t) * rps_hours(allh,st,"stress") *(
+    sum{(st,allh)$[r_st_rps(r,st)$h_stress_t(allh,t)], RecPerc(RPSCat,st,"stress",t) * rps_hours_t(allh,st,"stress",t) *(
         ( (LOAD.l(r,allh,t) - can_exports_h(r,allh,t)$[Sw_Canada=1]
         - sum{v$valgen("distpv",v,r,t), GEN.l("distpv",v,r,allh,t) }) * (1.0 - distloss)
         )$(RecStyle(st,RPSCat)=0)
@@ -1026,7 +1026,7 @@ revenue('rps',i,r,t)$valgen_irt(i,r,t) =
   sum{(v,h,RPSCat)$[valgen(i,v,r,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
       GEN.l(i,v,r,h,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * hours(h) * reqt_price('state_rps',RPSCat,r,'ann',t) }
 + sum{(v,allh,RPSCat)$[valgen(i,v,r,t)$h_stress_t(allh,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
-      GEN.l(i,v,r,allh,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * reqt_price('state_rps_stress',RPSCat,r,'ann',t) } ;
+      GEN.l(i,v,r,allh,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) * rps_hours_t(allh,st,"stress",t) } * reqt_price('state_rps_stress',RPSCat,r,'ann',t) } ;
 
 revenue_nat(rev_cat,i,t)$tmodel_new(t) = sum{r, revenue(rev_cat,i,r,t) } ;
 
@@ -1149,13 +1149,13 @@ valnew('val_rps',i,r,t)$valnew('MW',i,r,t) =
   ( sum{(v,h,RPSCat)$[valinv(i,v,r,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
       GEN.l(i,v,r,h,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * hours(h) * reqt_price('state_rps',RPSCat,r,'ann',t) }
   + sum{(v,allh,RPSCat)$[valinv(i,v,r,t)$h_stress_t(allh,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
-      GEN.l(i,v,r,allh,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * reqt_price('state_rps_stress',RPSCat,r,'ann',t) }
+      GEN.l(i,v,r,allh,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) * rps_hours_t(allh,st,"stress",t) } * reqt_price('state_rps_stress',RPSCat,r,'ann',t) }
   ) * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_rps_sys',i,r,t)$valnew('MW',i,r,t) =
   ( sum{(v,h,RPSCat)$[valinv(i,v,r,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
       GEN.l(i,v,r,h,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * hours(h) * reqt_price_sys('state_rps',RPSCat,'ann',t) }
   + sum{(v,allh,RPSCat)$[valinv(i,v,r,t)$h_stress_t(allh,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
-      GEN.l(i,v,r,allh,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * reqt_price_sys('state_rps_stress',RPSCat,'ann',t) }
+      GEN.l(i,v,r,allh,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) * rps_hours_t(allh,st,"stress",t) } * reqt_price_sys('state_rps_stress',RPSCat,'ann',t) }
   ) * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_rps','benchmark',r,t)$tmodel_new(t) =
     sum{RPSCat, reqt_price('state_rps',RPSCat,r,'ann',t) * reqt_quant('state_rps',RPSCat,r,'ann',t)

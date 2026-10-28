@@ -5467,6 +5467,7 @@ Parameter
     hours(allh)                            "--hours-- number of hours in each time block"
     hours_t(allh,t)                        "--hours-- number of hours in each time block by model year"
     rps_hours(allh,st,htype)               "--hours-- number of hours for weighting state RPS/CES requirements"
+    rps_hours_t(allh,st,htype,t)           "--hours-- number of hours for weighting state RPS/CES requirements by model year"
     numdays(allszn)                        "--days-- number of days for each season"
     numpartitions(allszn)                  "--days-- number of partitions for each season in timeseries"
     hours_daily(allh)                      "--hours-- number of hours represented by time-slice 'h' during one day"
