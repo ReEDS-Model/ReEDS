@@ -438,11 +438,11 @@ This approach should therefore be used with caution.
 
 ## State RPS/CES stress-period requirement
 
-By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over representative periods only. `GSw_StateRPS_Stress` adds a parallel requirement over stress periods, reusing the same compliance target:
+By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over representative periods only. `GSw_StateRPS_Stress` adds a parallel requirement over stress periods, reusing the same compliance target. Settings `1` and `2` require `GSw_PRM_CapCredit=0`, since stress periods are modeled only with the stress-period PRM formulation:
 
 - `0` (default): off.
 - `1`: weight all modeled stress hours equally.
-- `2`: weight only each state's own peak-load stress period(s) — the seeded peak-load period(s) that the state's regions belong to (a state spanning multiple `GSw_PRM_StressSeedLoadLevel` groups gets the union of all of them). Requires `GSw_PRM_CapCredit=0` and `GSw_PRM_StressSeedLoadLevel` to be enabled.
+- `2`: weight only each state's own peak-load stress period(s) — the seeded peak-load period(s) that the state's regions belong to (a state spanning multiple `GSw_PRM_StressSeedLoadLevel` groups gets the union of all of them). Also requires `GSw_PRM_StressSeedLoadLevel` to be enabled and is not supported with user-defined stress periods (`GSw_PRM_StressModel=user...`).
 
 
 ## Monte Carlo Sampling (MCS)
