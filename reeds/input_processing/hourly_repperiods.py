@@ -518,22 +518,34 @@ def main(
 
     ## Expand load-peak stress periods from their seed-level grouping (e.g. transgrp)
     ## down to the member states. Only 'load'/'peak-containing' rows are relevant --
-    ## min-VRE seed periods are not considered.
-    ces_peakday_write = stressperiods_write.loc[
-        (stressperiods_write.property == 'load') & (stressperiods_write.reason == 'peak-containing')
-    ].reset_index()
+    ## min-VRE seed periods are not considered. Built from stressperiods_load rather
+    ## than stressperiods_write (above), since the latter is deduplicated on
+    ## (year, yperiod) and would drop regions whose peak day coincides with another 
+    ## region's.
+    ces_peakday_write = pd.concat(
+        {y: pd.DataFrame(
+            sorted(stressperiods_load[y]),
+            columns=['region','reason','year','yperiod'])
+         for y in modelyears},
+        axis=0, names=['modelyear','index'],
+    ).reset_index(level='index', drop=True)
     if len(ces_peakday_write):
         level = sw['GSw_PRM_StressSeedLoadLevel']
         region2st = (
             hierarchy.reset_index()[['st', level]]
             .drop_duplicates().rename(columns={level: 'region'})
         )
+        ces_peakday_write['szn'] = (
+            'sy' + ces_peakday_write.year.astype(str)
+            + ('d' if sw.GSw_HourlyType=='year' else sw.GSw_HourlyType[0])
+            + ces_peakday_write.yperiod.map('{:>03}'.format)
+        )
         ces_peakday_write = (
-            ces_peakday_write.merge(region2st, on='region', how='inner')
+            ces_peakday_write.reset_index()
+            .merge(region2st, on='region', how='inner')
             [['modelyear', 'st', 'szn']].drop_duplicates()
             .set_index('modelyear')
         )
-        ces_peakday_write['szn'] = 's' + ces_peakday_write['szn']
     else:
         ces_peakday_write = pd.DataFrame(columns=['st', 'szn']).rename_axis('modelyear')
 
@@ -688,7 +700,7 @@ def main(
                     os.path.join(inputs_case, f'stress{t}i0', 'ces_peakday_st.csv'),
                     index=False, header=False)
             else:
-                ces_peakday_write.loc[[t]][['st','szn']].to_csv(
+                ces_peakday_write.loc[ces_peakday_write.index == t, ['st','szn']].to_csv(
                     os.path.join(inputs_case, f'stress{t}i0', 'ces_peakday_st.csv'),
                     index=False, header=False)
             if stress_period_szn.empty:
