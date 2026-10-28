@@ -1,5 +1,6 @@
 #%% Imports
 import argparse
+import os
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -677,6 +678,110 @@ def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac)
         print(missing)
         raise ValueError(f'Missing non-AC transmission costs for {len(missing)} routes')
 
+def regional_lic_bins(g, deflator, upper_cost, min_bin_mw=1):
+    g = g.sort_values('capacity_GW')
+    anchor = g['cum_cost_$'].abs().idxmin()
+    anchor_gw = g.loc[anchor, 'capacity_GW']
+    above = g.loc[g['capacity_GW'] >= anchor_gw].sort_values('capacity_GW')
+    cap_gw = above['capacity_GW'].to_numpy(dtype=float)
+    cum_cost = above['cum_cost_$'].to_numpy(dtype=float)
+    width_gw = np.diff(cap_gw)
+    d_cost = np.diff(cum_cost)
+    keep = width_gw > 0
+    width_gw = width_gw[keep]
+    d_cost = d_cost[keep]
+
+    anchor_mw = anchor_gw * 1000.0
+
+    if len(width_gw) == 0:
+        return anchor_mw, []
+
+    marg = np.clip(d_cost / (width_gw * 1e6), 0.0, None) * deflator
+    width_mw = width_gw * 1000.0
+    within = marg < upper_cost
+    order = np.argsort(marg[within], kind='mergesort')
+    widths = width_mw[within][order]
+    costs = marg[within][order]
+
+    remaining = 0
+    for i in range(len(widths)):
+        if remaining <= 0:
+            break
+        take = min(remaining, widths[i])
+        widths[i] -= take
+        remaining -= take
+
+    return anchor_mw, [(w, c) for w, c in zip(widths, costs) if w >= min_bin_mw]
+
+
+def get_lic_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
+    """
+    Build the load interconnection supply curve for inputs.h5 as the licbin
+    set and the cost_lic_bin ($/MW) and cap_lic_bin (MW) parameters.
+    """
+    sw = reeds.io.get_switches(case)
+    reeds_path = reeds.io.reeds_path
+    valid_regions = {'r': reeds.io.read_input(case, 'r').squeeze(1).tolist()}
+
+    ## Build the zonal curve from the cumulative interconnection data
+    costfile = 'load_interconnection_cost.csv'
+    raw_poi = os.path.join(reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, costfile)
+    if not os.path.exists(raw_poi):
+        raise FileNotFoundError(
+            'The regional load interconnection curve requires '
+            f'{raw_poi}, which was not found.')
+    input_dollar_year = 2024 # update from hardcoded value
+    inflatable = reeds.io.get_inflatable()
+    poi_deflator = inflatable[int(input_dollar_year), int(sw.dollar_year)]
+    upper_cost = 1000. # update from hardcoded value
+
+    hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+    zonehash = pd.read_csv(
+        os.path.join(reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
+        index_col='r')[hashfunc]
+    hash2zone = pd.Series(zonehash.index.values, index=zonehash.values)
+
+    raw = pd.read_csv(raw_poi)
+    raw['r'] = raw['region'].map(hash2zone)
+    ## Validate coverage against the raw data
+    missing = sorted(set(valid_regions['r']) - set(raw['r'].dropna().unique()))
+    if missing:
+        raise ValueError(
+            f'Missing load interconnection curve for {len(missing)} of '
+            f'{len(valid_regions["r"])} model regions in {costfile} '
+            f'(GSw_ZoneSet={sw.GSw_ZoneSet}): {missing}')
+
+    rows = []
+    for region, g in raw.loc[raw['r'].isin(valid_regions['r'])].groupby('r', sort=True):
+        free_mw, bins = regional_lic_bins(
+            g, poi_deflator, upper_cost, min_bin_mw)
+        k = 0
+        if free_mw >= min_bin_mw:
+            k += 1
+            rows.append((region, f'bin{k}', 'cost', free_bin_cost))
+            rows.append((region, f'bin{k}', 'cap', round(free_mw, 1)))
+        for width_mw, cost_kw in bins:
+            k += 1
+            rows.append((region, f'bin{k}', 'cost', round(float(cost_kw), 2)))
+            rows.append((region, f'bin{k}', 'cap', round(float(width_mw), 1)))
+    reg = pd.DataFrame(rows, columns=['r', 'licbin', 'sc_cat', 'value'])
+    reg = pd.concat([reg, pd.DataFrame({
+        'r': sorted(valid_regions['r']), 'licbin': 'bin_upper', 'sc_cat': 'cost',
+        'value': upper_cost})], ignore_index=True)
+    
+    cost = reg.loc[reg['sc_cat'] == 'cost', ['r', 'licbin', 'value']].copy()
+    cost['value'] = cost['value'].astype(float) * 1000.0
+    cap = reg.loc[reg['sc_cat'] == 'cap', ['r', 'licbin', 'value']].copy()
+    
+    def _binkey(b):
+        return (1, 0) if b == 'bin_upper' else (0, int(str(b).replace('bin', '')))
+    licbins = sorted(reg['licbin'].unique(), key=_binkey)
+    
+    return {
+        'licbin': pd.Series(licbins),
+        'cost_lic_bin': cost,
+        'cap_lic_bin': cap,
+    }
 
 #%% Main function
 def main(case):
@@ -751,6 +856,10 @@ def main(case):
     ## Write transmission_cost_ac for R2X
     outputs['transmission_cost_ac'] = transmission_cost_ac
 
+    ### load interconnection cost supply curve
+    for key, df in get_lic_supply_curve(case).items():
+        outputs[key] = df
+
     ### Pipelines
     outputs['pipeline_cost_mult'] = get_pipeline_cost_mult(
         case,
@@ -789,18 +898,21 @@ def main(case):
         'val_cs': False,
         'tscbin': False,
     }
-    sets = ['tscbin', 'routes_adjacent', 'r_cs', 'cs']
+    sets = ['tscbin', 'licbin', 'routes_adjacent', 'r_cs', 'cs']
     ## Write some copies for r2x (would be better to avoid by adding compatibility with inputs.h5)
     csvs = ['trancap_init_energy']
     units_comment = {
+        'cap_lic_bin': ('MW', 'incremental capacity width available in each load interconnection bin (no row = unlimited)'),
         'co2_injection_limit': ('metric tons/hr', 'co2 site injection rate upper bound'),
         'co2_storage_limit': ('metric tons', 'total cumulative storage capacity per carbon storage site'),
         'cost_co2_stor_bec': ('$/metric ton', 'breakeven cost for storing carbon - CF determined by GSw_CO2_BEC'),
         'cost_hurdle_rate1': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp1'),
         'cost_hurdle_rate2': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp2'),
+        'cost_lic_bin': ('$/MW', 'cost for each load interconnection bin'),
         'cs': ('', 'CO2 storage sites'),
         'distance': ('miles', 'distance between BAs by line type'),
         'firm_import_limit': ('fraction', 'limit on net firm imports into NERC regions'),
+        'licbin': ('', 'POI / load interconnection supply curve bins'),
         'pipeline_cost_mult': ('fraction', 'cost multiplier for H2 pipelines (will be added to 1)'),
         'r_cs_distance': ('miles', 'Euclidean distance between BA transmission endpoints and storage formations'),
         'r_cs': ('', 'mapping from BA to carbon storage sites'),

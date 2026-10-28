@@ -18,8 +18,8 @@ positive variables
 *   PEAK_FLEX(r,ccseason,t)          "--MW-- peak busbar load adjustment based on load flexibility"
   DROPPED(r,allh,t)               "--MW-- dropped load (only allowed before Sw_StartMarkets)"
   EXCESS(r,allh,t)                "--MW-- excess load (only allowed before Sw_StartMarkets)"
-  CAP_LOADSITE(r,t)               "--MW-- capacity of flexibly sited load"
-  INV_LOADSITE(r,t)               "--MW-- capacity of flexibly sited load installed in model year"
+  CAP_LOADSITE(r,licbin,t)        "--MW-- capacity of flexibly sited load"
+  INV_LOADSITE(r,licbin,t)        "--MW-- capacity of flexibly sited load installed in model year"
   OP_LOADSITE(r,allh,t)           "--MW-- operations of flexibly sited load"
 
 * capacity and investment variables
@@ -142,8 +142,9 @@ EQUATION
  eq_load_flex1(flex_type,r,allh,t)       "--MWh-- exogenously-specified flexible demand (load_exog_flex) must be served by flexible load (FLEX)"
  eq_load_flex2(flex_type,r,allh,t)       "--MWh-- flexible load (FLEX) can't exceed exogenously-specified flexible demand (load_exog_flex)"
 *  eq_load_flex_peak(r,allh,ccseason,t)    "--MWh-- adjust peak demand as needed based on the load flexibility (FLEX)"
- eq_loadsite_inv(r,t)                   "--MW-- CAP_LOADSITE accumulates INV_LOADSITE"
+ eq_loadsite_inv(r,licbin,t)            "--MW-- CAP_LOADSITE accumulates INV_LOADSITE"
  eq_loadsite_cap(r,allh,t)              "--MW-- Realized load from optimally sited load must be less than optimally sited load capacity"
+ eq_loadsite_binlim(r,licbin,t)         "--MW-- Realized load from optimally sited load must not exceed the load interconnection bin limit"
  eq_loadsite_op(r,t)                    "--MW-- Realized load from optimally sited load must sum to Sw_LoadSiteCF"
  eq_loadsite_siting(loadsitereg,t)      "--MW-- Optimally sited load capacity must sum to loadsite_annual"
 
@@ -393,7 +394,7 @@ eq_loadcon(r,h,t)$tmodel(t)..
 * - CAP_LOADSITE is used when Sw_LoadSiteCF = 1 because OP_LOADSITE = CAP_LOADSITE
 *   (the effect is the same but avoiding the h-indexed OP_LOADSITE reduces solve time)
     + OP_LOADSITE(r,h,t)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)]
-    + CAP_LOADSITE(r,t)$[(Sw_LoadSiteCF=1)$val_loadsite(r)]
+    + sum{licbin, CAP_LOADSITE(r,licbin,t)}$[(Sw_LoadSiteCF=1)$val_loadsite(r)]
 ;
 
 * ---------------------------------------------------------------------------
@@ -401,35 +402,55 @@ eq_loadcon(r,h,t)$tmodel(t)..
 *======================================
 * --- LOAD FLEXIBILITY CONSTRAINTS ---
 *======================================
-* CAP_LOADSITE accumulates INV_LOADSITE
-eq_loadsite_inv(r,t)
+* Capacity accounting for endogenously sited load: CAP_LOADSITE accumulates INV_LOADSITE
+eq_loadsite_inv(r,licbin,t)
     $[tmodel(t)
     $Sw_LoadSiteCF
     $val_loadsite(r)
+    $lic_bin_feas(r,licbin)
     $(not Sw_PCM)]..
 
-    CAP_LOADSITE(r,t)
+    CAP_LOADSITE(r,licbin,t)
 
     =e=
 
     + sum{(tt)$[(yeart(tt) <= yeart(t))$(tmodel(tt) or tfix(tt))],
-          INV_LOADSITE(r,tt) }
+          INV_LOADSITE(r,licbin,tt) }
 ;
 
 * ---------------------------------------------------------------------------
 * Realized load from optimally sited load must be less than optimally sited load capacity
+* across all load interconnection bins (licbin)
 eq_loadsite_cap(r,h,t)
     $[tmodel(t)
     $Sw_LoadSiteCF
     $(Sw_LoadSiteCF<1)
     $val_loadsite(r)]..
 
-    CAP_LOADSITE(r,t)
+    sum{licbin, CAP_LOADSITE(r,licbin,t) }
 
     =g=
 
     OP_LOADSITE(r,h,t)
 ;
+
+* ---------------------------------------------------------------------------
+* Optimally sited load must be less than or equal to the load interconnection bin limit
+eq_loadsite_binlim(r,licbin,t)
+    $[tmodel(t)
+    $lic_bin_feas(r,licbin)
+    $(not Sw_PCM)]..
+
+* consumed load interconnection bin capacity must be greater than or equal to ...
+    cap_lic_bin(r,licbin)
+
+    =g=
+
+* the invested capacity in that bin up to and including the present year
+    sum{tt$[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))], INV_LOADSITE(r,licbin,tt) }
+;
+
+* ---------------------------------------------------------------------------
 
 * ---------------------------------------------------------------------------
 * Realized load from optimally sited load must sum to Sw_LoadSiteCF
@@ -443,7 +464,7 @@ eq_loadsite_op(r,t)
 
     =g=
 
-    CAP_LOADSITE(r,t) * sum{h, hours(h) } * Sw_LoadSiteCF
+    sum{licbin, CAP_LOADSITE(r,licbin,t) } * sum{h, hours(h) } * Sw_LoadSiteCF
 ;
 
 * ---------------------------------------------------------------------------
@@ -453,7 +474,7 @@ eq_loadsite_siting(loadsitereg,t)
     $Sw_LoadSiteCF
     $(not Sw_PCM)]..
 
-    sum{r$[r_loadsitereg(r,loadsitereg)$val_loadsite(r)], CAP_LOADSITE(r,t) }
+    sum{(licbin,r)$[r_loadsitereg(r,loadsitereg)$val_loadsite(r)], CAP_LOADSITE(r,licbin,t)}
 
     =e=
 

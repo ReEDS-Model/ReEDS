@@ -73,6 +73,10 @@ eq_ObjFn_inv(t)$tmodel(t)..
                   + sum{r$Sw_TransIntraCost,
                         trans_cost_cap_fin_mult(t) * Sw_TransIntraCost * 1000 * INV_POI(r,t) }
 
+* --- cost of intra-zone network reinforcement for load siting based on supply curve
+                  + sum{(r,licbin)$lic_bin_feas(r,licbin),
+                        trans_cost_cap_fin_mult(t) * cost_lic_bin(r,licbin) * INV_LOADSITE(r,licbin,t) }
+
 * --- cost of water access---
                   + [ (8760/1E6) * sum{ (i,v,w,r)$[i_w(i,w)$valinv(i,v,r,t)], sum{wst$i_wst(i,wst),
                                      m_watsc_dat(wst,"cost",r,t) } * water_rate(i,w) *

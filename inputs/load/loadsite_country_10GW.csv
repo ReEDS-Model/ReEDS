@@ -1,0 +1,14 @@
+# Other region hierarchy levels (st; transreg; transgrp; interconnect; etc) can be used
+# in the first column; they should match the level in the file title: loadsite_{level}_{name}.csv.
+# Values for multiple states/transgrps/etc. in a given year should be added in long format.
+*loadsitereg,t,MW
+USA,2026,1000
+USA,2027,2000
+USA,2028,3000
+USA,2029,4000
+USA,2030,5000
+USA,2031,6000
+USA,2032,7000
+USA,2033,8000
+USA,2034,9000
+USA,2035,10000

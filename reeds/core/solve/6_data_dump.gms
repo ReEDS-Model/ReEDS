@@ -262,7 +262,7 @@ flex_load(r,h) = sum{(flex_type,t)$tcur(t), load_exog_flex(flex_type,r,h,t) } ;
 
 flex_load_opt(r,h) = sum{(flex_type,t)$tcur(t), FLEX.l(flex_type,r,h,t) } ;
 
-ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
+ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = sum{licbin, CAP_LOADSITE.l(r,licbin,t) } ;
 
 *============================
 * Extra consumption data

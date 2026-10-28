@@ -300,6 +300,8 @@ hyd_add_pump('hydED_pumped-hydro-flex') = yes ;
 set rscbin "Resource supply curves bins" /bin1*bin%numbins%/,
     rscfeas(i,r,rscbin) "feasibility set for technologies that have resource supply curves" ;
 
+set lic_bin_feas(r,licbin) "feasibility set for load interconnection bins";
+
 parameter yeart(t) "numeric value for year",
           year(allt) "numeric year value for allt" ;
 
@@ -1107,6 +1109,9 @@ stfeas(st)$[sum{r$r_st(r,st), 1 }] = yes ;
 *==========================
 * -- existing capacity --
 *==========================
+
+* A load interconnection bin is feasible if it has a non-zero cost
+lic_bin_feas(r,licbin)$cost_lic_bin(r,licbin) = yes ;
 
 *created by reeds/input_processing/writecapdat.py
 $onempty
