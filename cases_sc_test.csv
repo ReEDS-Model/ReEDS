@@ -1,7 +1,7 @@
-,Default Value,test_10GW
-ignore,1,0
-GSw_Region,r/NC_PJM.VA_E.VA_W.WV,
-endyear,2035,
-GSw_GasCurve,2,
-GSw_LoadSiteCF,1,
-GSw_LoadSiteTrajectory,country_10GW,
+,Default Value,test_10GW,test_20GW,test_50GW
+ignore,1,,0,0
+GSw_Region,r/NC_PJM.VA_E.VA_W.WV,,,
+endyear,2035,,,
+GSw_GasCurve,2,,,
+GSw_LoadSiteCF,1,,,
+GSw_LoadSiteTrajectory,country_10GW,,country_20GW,country_50GW
