@@ -1504,7 +1504,7 @@ if __name__ == '__main__':
         '--force', '-f', action='count', default=0,
         help=(
             'Force run, skipping the following checks: '
-            '≥1: Enough representative periods for analysis; '
+            '≥1: Enough representative periods for analysis and no islanded zones; '
             '≥2: Switches within allowed values; '
             '≥3: Conda environment activated'
         ),
