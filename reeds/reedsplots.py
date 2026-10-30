@@ -2736,7 +2736,8 @@ def map_capacity_techs(
     if techs == 'aggregation':
         techs = dfcap.i.unique().tolist()
         techs.sort()
-        techs.remove('Remove')
+        if 'Remove' in techs:
+            techs.remove('Remove')
     ### Get the vmax
     if vmax == 'shared':
         _vmax = dfcap.loc[
