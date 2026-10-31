@@ -1733,7 +1733,7 @@ def main_mga_rv(
     sampling_regions = hierarchy_val_r[sw['GSw_MGA_RV_region']].unique()
 
     ## objective (assumes sw.GSw_MGA_Objective in ['capacity', 'generation'] based on 
-    ## check in runreeds.check_compatibility()
+    ## check in reeds.checks.check_compatibility()
     ## if the subobjective is an aggregated category, break it up into leaf-level subcategories
     ## derived from tech-subset-table.csv; otherwise just use the subobjective as the group
     subsets = get_mga_rv_subsets(reeds_path, sw.GSw_MGA_SubObjective)
