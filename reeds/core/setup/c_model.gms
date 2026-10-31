@@ -313,6 +313,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_storage_opres(i,v,r,allh,t)                   "--MWh-- there must be sufficient energy in the storage to be able to provide operating reserves"
  eq_storage_thermalres(i,v,r,allh,t)              "--MW-- thermal storage contribution to operating reserves is store_in only"
  eq_battery_minduration(i,v,r,t)                  "--MWh-- when power capacity is built, energy capacity should have a minimum capacity"
+ eq_battery_maxduration(i,v,r,t)                  "--MWh-- energy capacity invested since interconnection_start cannot exceed the maximum duration in interconnection-queue-constrained years"
 
 * hybrid plant equations
  eq_plant_total_gen(i,v,r,allh,t)           "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
@@ -3204,6 +3205,29 @@ eq_battery_minduration(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$battery(i)]..
     =g=
 
     minbatteryduration * CAP(i,v,r,t)
+;
+
+* ---------------------------------------------------------------------------
+* for batteries
+* energy capacity invested since the start of the interconnection queue data cannot
+* exceed the maximum duration times the power capacity invested over the same years;
+* only applied in the years with the interconnection queue constraint, since the
+* queue limit only caps power capacity and would otherwise be circumvented by
+* building more energy capacity on top of the limited power capacity
+eq_battery_maxduration(i,v,r,t)
+    $[valcap(i,v,r,t)$tmodel(t)$newv(v)$battery(i)
+    $(sum{(tgg,rr), queue_limit(tgg,rr,t)})
+    $Sw_QueueConstraintYears
+    $(not Sw_PCM)]..
+
+    maxbatteryduration
+    * sum{tt$[valinv(i,v,r,tt)$(yeart(tt)>=interconnection_start)$(tmodel(tt) or tfix(tt))],
+          INV(i,v,r,tt) }
+
+    =g=
+
+    sum{tt$[valinv(i,v,r,tt)$(yeart(tt)>=interconnection_start)$(tmodel(tt) or tfix(tt))],
+        INV_ENERGY(i,v,r,tt) }
 ;
 
 * ---------------------------------------------------------------------------
