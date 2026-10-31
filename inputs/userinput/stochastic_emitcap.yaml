@@ -1,0 +1,11 @@
+scenario_probability:
+  current: 1
+  decarb: 1
+
+scenario_switches:
+  current:
+    GSw_AnnualCap: 1
+    GSw_AnnualCapScen: none
+  decarb:
+    GSw_AnnualCap: 2
+    GSw_AnnualCapScen: start2030_90pct2040_100pct2045

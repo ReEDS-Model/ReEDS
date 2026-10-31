@@ -258,7 +258,7 @@ tsolved(t)$tmodel(t) = yes ;
 * record objective function values right after solve
 z_rep(t)$tmodel(t) = Z.l ;
 z_rep_inv(t)$tmodel(t) = Z_inv.l(t) ;
-z_rep_op(t)$tmodel(t) = Z_op.l(t) ;
+z_rep_op(s,t)$tmodel(t) = Z_op.l(s,t) ;
 
 
 * ---------------------------------

@@ -132,6 +132,14 @@ def calc_tc_phaseout_mult(year, case, use_historical=use_historical):
         emit_nat = emit_nat.set_index('t').rename(columns={'Value':'emit_nat'})
         emit_nat['emit_nat'] = emit_nat['emit_nat'].astype(float)
 
+        # Take the weighted sum over stochastic scenario probabilities
+        scenario_probability = pd.Series(reeds.stochastic.get_probabilities(case)).rename_axis('s')
+        emit_nat = (
+            (emit_nat.s.map(scenario_probability) * emit_nat.emit_nat)
+            .groupby('t').sum()
+            .rename('emit_nat').to_frame()
+        )
+
         # Interpolate the emissions and calc the fraction of the reference year's emissions
         df = pd.DataFrame(index=np.arange(startyear, max(yearset), 1))
         df['emit_nat'] = emit_nat

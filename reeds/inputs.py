@@ -915,3 +915,88 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
+
+
+def get_emit_cap(case:str|Path|None=None, **kwargs) -> pd.Series:
+    """
+    Load and process CO2/CO2e emissions cap trajectory [metric tons/year].
+
+    Returns:
+        pd.Series (parameter)
+            index = [s, eall, allt]
+            values = metric tons per year
+    """
+    ### Get shared scenario settings
+    sw_shared = reeds.io.get_switches(case, **kwargs)
+    county2zone = reeds.io.get_county2zone(case=case, **kwargs)
+    allyears = reeds.inputs.parse_yearset(sw_shared.yearset)
+    years = [y for y in allyears if y <= int(sw_shared.endyear)]
+    ### Get shared data from repo
+    co2path = Path(reeds.io.reeds_path, 'inputs', 'emission_constraints', 'co2_cap.csv')
+    co2_caps = pd.read_csv(co2path, index_col='t')
+    ## 2022 CO2 emission share by county calculated from 2022 eGrid emission data
+    fpath = Path(reeds.io.reeds_path,'inputs','emission_constraints','county_co2_share_egrid_2022.csv')
+    em_share = pd.read_csv(fpath, index_col=0).squeeze(1)
+    em_share.index = em_share.index.str.strip('p')
+    # Merge county emission share with modeled counties and calculate emission share of GSw_Region
+    region_em_share = em_share.reindex(county2zone.index).sum()
+
+    ### Get stochastic scenario settings
+    sw_scen = reeds.stochastic.get_switches(case)
+    emit_caps = {}
+    for scen, sw in sw_scen.items():
+        # Calculate CO2 cap based on GSw_Region chosen (national or sub-national regions)
+        # Read in national co2 cap
+        co2_cap = (
+            co2_caps
+            .loc[sw['GSw_AnnualCapScen']]
+            .rename_axis('allt').rename('Value')
+        )
+        co2_cap.index = co2_cap.index.astype(int)
+        ## Forecasting is handled in forecast.py
+        co2_cap = co2_cap.reindex(years).dropna()
+
+        # Apply the emission share to national cap to get the emission cap trajectory of GSw_Region
+        co2_cap *= region_em_share
+
+        ## Parse switches controlling emissions limits
+        df = co2_cap.reset_index()
+        if int(sw.GSw_AnnualCap) == 1:
+            df['eall'] = 'CO2'
+        elif int(sw.GSw_AnnualCap) > 1:
+            df['eall'] = 'CO2e'
+        else:
+            df = pd.DataFrame(columns=['eall','allt','Value'])
+
+        emit_caps[scen] = df.set_index(['eall','allt'])
+
+    emit_cap = pd.concat(emit_caps, names=('s')).squeeze(1)
+    return emit_cap
+
+
+def get_emit_capped(case:str|Path|None=None, **kwargs) -> pd.Series:
+    """
+    Get list of capped pollutants by scenario and emissions type
+
+    Returns:
+        pd.Series (set)
+            index = [s, e]
+    """
+    sw_scen = reeds.stochastic.get_switches(case)
+    gwp = reeds.io.read_input(case, 'gwp').set_index('e').squeeze(1)
+    emit_cappeds = {}
+    for scen, sw in sw_scen.items():
+        match int(sw.GSw_AnnualCap):
+            case 0:
+                df = pd.Series()
+            case 1:
+                df = pd.Series(index=['CO2'])
+            case 2:
+                if int(sw.GSw_GWPH2):
+                    df = pd.Series(index=gwp.index)
+                else:
+                    df = pd.Series(index=[i for i in gwp.index if i.upper() != 'H2'])
+        emit_cappeds[scen] = df
+
+    emit_capped = pd.concat(emit_cappeds, names=('s','e')).reset_index()[['s','e']]
+    return emit_capped
