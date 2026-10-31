@@ -131,7 +131,7 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
 def parse_cases(
     cases_filename:str='cases_test.csv',
     single:str='',
-    skip_checks:bool=False,
+    force:int=0,
 ) -> pd.DataFrame:
     """
     Read a ReEDS cases file, look up empty switch values from "Default Value" or cases.csv,
@@ -140,7 +140,7 @@ def parse_cases(
     Args:
         cases_filename (str): 'cases_{something}.csv' or 'cases.csv'
         single (str): If not '', specifies a single column to keep from cases_filename
-        skip_checks (bool): Skip case validation (not recommended)
+        force (bool): Skip case validation (not recommended)
 
     Returns:
         pd.DataFrame
@@ -198,7 +198,7 @@ def parse_cases(
 
         # Check to make sure the switch setting is valid
         for i, val in dfcases[case].items():
-            if skip_checks:
+            if force:
                 continue
             # check that the switch isn't duplicated
             if isinstance(choices[i], pd.Series) and len(choices[i]) > 1:
