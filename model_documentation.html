@@ -3032,8 +3032,9 @@ if any regions do not meet the specified threshold,
 the days with highest EUE in the failing regions are added as “dynamic” stress periods (<a class="reference internal" href="#figure-ra-flowcharts"><span class="std std-numref">Fig. 56</span></a>)
 and another ReEDS-PRAS iteration is performed.
 This process is illustrated graphically in <a class="reference internal" href="#figure-ra-iteration-example"><span class="std std-numref">Fig. 59</span></a>.
-Once all regions meet the reliability threshold (or once a user-specified maximum number of iterations is reached),
+Once all regions meet the reliability threshold,
 the simulation progresses to the next model year, and the process begins again (<a class="reference internal" href="#figure-reeds-pras"><span class="std std-numref">Fig. 16</span></a>).
+If the reliability threshold is not met after the user-defined maximum number of iterations, the simulation is halted.
 The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss of load expectation of 0.1 days/year in many regions <span class="bibtex-citation" id="id197">[<a class="reference internal" href="#id1066" title="EPRI. Metrics and Criteria: Insights from Case Studies and Recommendations and Considerations for Future Practice. Technical Report, EPRI, July 2024. URL: https://www.epri.com/research/products/000000003002030638.">EPRI, 2024</a>]</span>.</p>
 <figure class="align-default" id="figure-ra-iteration-example">
 <img alt="_images/ra-iteration-example.png" src="_images/ra-iteration-example.png" />
@@ -3074,7 +3075,7 @@ The syntax for these switches is described in the “Description” column of <c
 <li><p>Control the iteration between ReEDS and PRAS</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThreshold</span></code> (default <code class="docutils literal notranslate"><span class="pre">transgrp_1_EUE_sum</span></code>): Regional RA threshold for stress period iteration</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressIterateMax</span></code> (default 5): Max number of times to iterate on a particular solve year</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressIterateMax</span></code> (default 5): Max number of times to iterate on a particular solve year before halting the run</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressIncrement</span></code> (default 2): How many stress periods to add per region per iteration</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressStorageCutoff</span></code> (default <code class="docutils literal notranslate"><span class="pre">EUE_0.1</span></code>): How to select “shoulder” stress periods for interday storage</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressModel</span></code> (default <code class="docutils literal notranslate"><span class="pre">pras</span></code>): Interface for specifying fixed user-defined stress periods; when set to <code class="docutils literal notranslate"><span class="pre">pras</span></code>, stress periods are identified dynamically</p></li>
@@ -6491,7 +6492,7 @@ Prescribed retirements are power plant retirements that are forced into the mode
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on October 27, 2026.
+      <span class="lastupdated">Last updated on October 31, 2026.
       </span></p>
   </div>
 
