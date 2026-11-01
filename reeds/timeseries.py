@@ -21,7 +21,7 @@ def get_timeindex(
             pd.date_range(
                 f'{y}-01-01',
                 f'{y + 1}-01-01',
-                freq='H',
+                freq='h',
                 inclusive='left',
                 tz=tz,
             )[:8760]
@@ -95,7 +95,7 @@ def timeslice_to_timestamp(case, param):
                     f'{y}-01-01',
                     f'{y + 1}-01-01',
                     inclusive='left',
-                    freq='H',
+                    freq='h',
                     tz='Etc/GMT+6',
                 )[:8760]
             )
@@ -176,7 +176,7 @@ def make_timestamps(sw):
     timestamps.index = np.ravel([
         pd.date_range(
             f'{y}-01-01', f'{y+1}-01-01',
-            freq='H', inclusive='left', tz='Etc/GMT+6',
+            freq='h', inclusive='left', tz='Etc/GMT+6',
         )[:8760]
         for y in weather_years
     ])

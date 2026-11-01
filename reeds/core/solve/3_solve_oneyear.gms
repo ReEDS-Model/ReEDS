@@ -42,10 +42,13 @@ $ifthene.post_startyear %cur_year%>%startyear%
 * infeasible or result in very tiny number (order 1e-16) in the matrix
 rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)] = 
 
-*capacity indicated by the resource supply curve (with undiscovered geo available
-*at the "discovered" amount and hydro upgrade availability adjusted over time)
-    m_rsc_dat(r,i,rscbin,"cap") * (
-        1$[not geo_hydro(i)] + geo_discovery(i,r,t)$geo_hydro(i))
+*capacity indicated by the resource supply curve net of first-year exogenous capacity
+*(with resource availability and hydro upgrade availability adjusted over time)
+    ( m_rsc_dat(r,i,rscbin,"cap")
+      - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
+             capacity_exog_rsc(ii,v,r,rscbin,tt) } )
+        * (1$[not rsc_capacity_scalar_i(i)]
+           + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 *minus the cumulative invested capacity in that region/class/bin...
 *Note that yeart(tt) is stricly < here, while it is <= in eq_rsc_INVlim. That is because
@@ -53,9 +56,6 @@ rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_
 *values from prior solve years.
     - sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))$rsc_agg(i,ii)],
          INV_RSC.l(ii,v,r,rscbin,tt) * resourcescaler(ii) }
-*minus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
-    - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
 ;
 
 
@@ -147,6 +147,7 @@ $loaddcr cc_old_load = cc_old
 $loaddcr cc_mar_load = cc_mar
 $loaddcr cc_evmc_load = cc_evmc
 $loaddcr sdbin_size_load = sdbin_size
+$loaddcr mean_forced_outage_rate_load = mean_forced_outage_rate
 $gdxin
 
 *Note: these values are rounded before they are written to the gdx file, so no need to round them here
@@ -181,6 +182,7 @@ cc_old(i,r,ccseason,t)$[tload(t)$pvb(i)$sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)}
     min{ cc_old(i,r,ccseason,t) / sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)}, 1 / ilr(i) - bcr(i) }
     * sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)};
 
+mean_forced_outage_rate(i,r,ccseason,t)$tload(t) = mean_forced_outage_rate_load(i,r,ccseason,t) ;
 $endif.tcheck
 
 
@@ -266,6 +268,7 @@ $ifthene.mga %GSw_MGA_CostDelta%>0
 $ifthene.mga1 %cur_year%>=%GSw_StartMarkets%
 *## Activate MGA mode
 Sw_MGA = 1 ;
+ReEDSmodel.optfile = %GSw_gopt_mga%  ;
 solve ReEDSmodel %GSw_MGA_Direction%imizing MGA_OBJ using lp ;
 *## Deactivate MGA mode
 Sw_MGA = 0 ;

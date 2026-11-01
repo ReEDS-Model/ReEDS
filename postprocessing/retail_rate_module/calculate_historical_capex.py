@@ -13,10 +13,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import reeds
 
 def get_historical_units(inputs_case):
-    # Read generator database and map units to the model regions for this run
-    r_county = pd.read_csv(os.path.join(inputs_case, 'r_county.csv'))
+    # Read generator database
     gendb = pd.read_csv(os.path.join(inputs_case, 'unitdata.csv'), low_memory=False)
-    gendb = gendb.merge(r_county, left_on='FIPS', right_on='county', how='left')
 
     # Select units existing before or during the model start year
     sw = reeds.io.get_switches(inputs_case)
@@ -46,20 +44,29 @@ def get_historical_units(inputs_case):
 
     return init_cap
 
+
+def read_from_inputs_gdx(case, key) -> pd.DataFrame:
+    """
+    Read the provided key from inputs.gdx, with backwards compatibility
+    for older gdxpds versions (which return a dictionary instead of a dataframe).
+
+    Args:
+        case: filepath to ReEDS run folder OR to inputs_case
+        key: name of parameter in inputs.gdx file
+    """
+    fpath = os.path.join(reeds.io.standardize_case(case), 'inputs_case', 'inputs.gdx')
+    df = gdxpds.to_dataframe(fpath, key)
+    if isinstance(df, dict):
+        df = df[key]
+    return df
+
+
 def get_earliest_cap_costs(inputs_case):
     # Read national capital costs and get
     # the earliest values for each tech
-    cost_cap = gdxpds.to_dataframe(
-        os.path.join(inputs_case, 'inputs.gdx'),
-        'cost_cap',
-        old_interface=False
-    )
+    cost_cap = read_from_inputs_gdx(inputs_case, 'cost_cap')
     cost_cap.i = cost_cap.i.str.lower()
-    cost_cap_energy = gdxpds.to_dataframe(
-        os.path.join(inputs_case, 'inputs.gdx'),
-        'cost_cap_energy',
-        old_interface=False
-    )
+    cost_cap_energy = read_from_inputs_gdx(inputs_case, 'cost_cap_energy')
     cost_cap_energy.i = cost_cap_energy.i.str.lower()
     cost_cap = (
         pd.concat([cost_cap, cost_cap_energy])
@@ -76,11 +83,7 @@ def get_earliest_cap_costs(inputs_case):
 
     # Read regional capital cost multipliers and
     # get the earliest values for each tech and region
-    cost_cap_mult = gdxpds.to_dataframe(
-        os.path.join(inputs_case, 'inputs.gdx'),
-        'cost_cap_fin_mult_out',
-        old_interface=False
-    )
+    cost_cap_mult = read_from_inputs_gdx(inputs_case, 'cost_cap_fin_mult_out')
     cost_cap_mult.i = cost_cap_mult.i.str.lower()
     cost_cap_mult['t'] = cost_cap_mult['t'].astype(int)
     cost_cap_mult = cost_cap_mult.rename(
@@ -106,16 +109,12 @@ def get_earliest_cap_costs(inputs_case):
     # Read capital costs for technologies whose capital costs
     # are included in their supply curves and attach them
     # to the dataframe of all capital costs
-    rsc_dat = gdxpds.to_dataframe(
-        os.path.join(inputs_case, 'inputs.gdx'),
-        'rsc_dat',
-        old_interface=False
-    )
+    rsc_dat = read_from_inputs_gdx(inputs_case, 'rsc_dat')
     rsc_dat.i = rsc_dat.i.str.lower()
     cost_cap_rsc = (
         rsc_dat.loc[~rsc_dat.i.isin(cost_cap_earliest['i'])]
         .pivot_table(
-            values='sc_cat',
+            values='Value',
             columns='sc_cat',
             index=['r', 'i', 'rscbin']
         )

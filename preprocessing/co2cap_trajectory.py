@@ -116,7 +116,7 @@ dfwrite.columns = dfwrite.columns.astype(int)
 dfwrite = (
     dfwrite.T
     .merge((dfout*1e6), left_index=True, right_index=True, how='left')
-    .interpolate('bfill')
+    .bfill()
     .round(0).fillna(0).astype(int)
 ).T
 dfwrite.index = dfwrite.index.rename('t')
@@ -222,7 +222,7 @@ dfwrite.columns = dfwrite.columns.astype(int)
 dfwrite = (
     dfwrite.T
     .merge((caps*1e6), left_index=True, right_index=True, how='left')
-    .interpolate('bfill')
+    .bfill()
     .round(0).fillna(0).astype(int)
 ).T
 dfwrite.index = dfwrite.index.rename('t')

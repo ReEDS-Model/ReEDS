@@ -28,6 +28,7 @@ ForceStartYear,2024,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ForceStartLevel,1,,,,,,,,,,,,,,,,,,,,,,,,,0.5,0.5,,,,,,0.75,0.75,0.6,0.6,0.7,0.7,0.6,0.6,0.6,,,,
 ForceEndLevel,0.05,,,,,,,,0.5,,,,,,,,,,0.5,,,,,,,,,,,,,,,,,,,,,,,,,,
 ForceTech,onswind,battery,,,,,upv,upv,upv,upv,upv,upv,upv,upv_bat,upv,upv,onswind,onswind,onswind,onswind,onswind,onswind,onswind,onswind,onswind,ofswind,ofswind,vre,vre,gas_cc_noccs,gas_cc_noccs,gas_cc_noccs,gas_cc_ccs,gas_cc_ccs,nuclear,nuclear,coal_new,coal_new,geo,geo,geo,battery,battery,upv,battery
+GSw_QueueConstraintYears,0,,3,3,3,3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 plantchar_battery,battery_ATB_2024_moderate,,,,,,,,,,,battery_ATB_2024_conservative,battery_ATB_2024_advanced,,,,,,,,,battery_ATB_2024_conservative,battery_ATB_2024_advanced,,,,,,,,,,,,,,,,,,,,,,
 GSw_CarbTax,0,,,,1,,,,,,,,,,1,,,,,,,,,1,,,,,,,,,,,,,,,,,,,,,
 GSw_Geothermal,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,2,2,2,,,,

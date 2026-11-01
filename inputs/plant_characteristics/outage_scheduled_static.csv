@@ -14,6 +14,7 @@ Gas-CC-CCS-F2,0.1
 Gas-CC-CCS-F3,0.1
 H2-CT,0.07
 H2-CC,0.1
+h2-fuel-cell,0.07
 ng-fuel-cell,0.08
 CoalOldScr,0.12
 CoalOldUns,0.12

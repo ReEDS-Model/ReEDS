@@ -189,7 +189,7 @@ def gas_quantities(run_dir):
         heat, on=['i', 'v', 'r', 't'])
     burn = (gas.mwh * gas.hr).groupby(gas.t).sum() / 1e9
 
-    new = gen[(gen.i == gas_prefix) & gen.v.str.startswith('new')].merge(
+    new = gen[(gen.i.str.lower() == gas_prefix) & gen.v.str.startswith('new')].merge(
         heat, on=['i', 'v', 'r', 't'])
     hr_new = new.groupby('t').apply(
         lambda d: np.average(d.hr, weights=d.mwh.clip(lower=1e-9)))

@@ -7,6 +7,7 @@ import datetime
 import argparse
 import h5py
 from pathlib import Path
+import cmocean
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
 reeds_path = reeds.io.reeds_path
@@ -19,6 +20,7 @@ tz_in = 'UTC'
 tz_out = 'Etc/GMT+6'
 temp_min = -50
 temp_max = 60
+cmap = cmocean.cm.tempo
 ## Only use during_quarters for techs without a monthly scheduled outage rate
 during_quarters = ['spring', 'fall']
 ## Cap the extrapolation of forced outage rates at high/low temperatures to 0.4 because
@@ -27,8 +29,8 @@ during_quarters = ['spring', 'fall']
 max_extrapolated_outage_forced = 0.4
 ## assume temperature-dependent outage rates for ng-fuel-cell to be the same as for combined_cycle plants
 primemover2techgroup = {
-    'combined_cycle': ['GAS_CC', 'FUEL_CELL'],
-    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION'],
+    'combined_cycle': ['GAS_CC', 'NG_FUEL_CELL'],
+    'combustion_turbine': ['GAS_CT', 'H2_COMBUSTION','H2_FUEL_CELL'],
     'diesel': ['OGS'],
     'hydro_and_psh': ['HYDRO', 'PSH'],
     'nuclear': ['NUCLEAR'],
@@ -218,10 +220,7 @@ def calc_outage_forced(
     ### Derived inputs
     sw = reeds.io.get_switches(inputs_case)
     hierarchy = reeds.io.get_hierarchy(reeds.io.standardize_case(inputs_case))
-    val_ba = (
-        pd.read_csv(os.path.join(inputs_case, 'val_ba.csv'), header=None)
-        .squeeze(1).values
-    )
+    val_r = reeds.io.read_input(inputs_case, 'r').squeeze(1).values
     ## Static forced outage rates (for filling empties)
     outage_forced_static = pd.read_csv(
         os.path.join(inputs_case, 'outage_forced_static.csv'),
@@ -243,7 +242,7 @@ def calc_outage_forced(
     if sw.GSw_OutageScen.lower() == 'static':
         ### Fill static data for all techs and modeled regions
         df = pd.concat(
-            {r: outage_forced_static for r in val_ba},
+            {r: outage_forced_static for r in val_r},
             axis=0,
             names=('r','i'),
         ).reorder_levels(['i','r']).sort_index()
@@ -265,7 +264,10 @@ def calc_outage_forced(
 
         ### Get temperature-dependent outage rate by prime mover and state
         forcedoutage_pm = pd.concat(
-            {pm: temperatures.replace(fits_forcedoutage[pm]) for pm in fits_forcedoutage},
+            {
+                pm: temperatures.replace({col: fits_forcedoutage[pm] for col in temperatures})
+                for pm in fits_forcedoutage
+            },
             axis=1, names=('prime_mover',),
         ).astype(np.float32)
 
@@ -383,7 +385,7 @@ def plot_outage_forced(
 
         plt.close()
         f, ax = reeds.plots.map_years_months(
-            dfzones=dfzones, dfdata=dfdata, aggfunc=aggfunc,
+            dfzones=dfzones, dfdata=dfdata, cmap=cmap, aggfunc=aggfunc,
             title=f"Monthly {aggfunc}\nforced outage rate,\n{nicelabels.get(pm,pm)} [%]",
         )
         plt.savefig(os.path.join(figpath, f'FOR_monthly-{aggfunc}-{pm}.png'))
@@ -485,8 +487,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
 
     # #%% Settings for testing
-    # reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260113_temperatureM1_Everything', 'inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path, 'runs', 'v20260611_envM0_Pacific', 'inputs_case')
     # interactive = True
     # debug = 1
 

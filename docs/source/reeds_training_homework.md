@@ -22,7 +22,7 @@ orphan: true
 
 6. Open VS Code
    - Open the folder where your repo is located (File -> Open Folder -> navigate to ReEDS folder)
-   - Open a new terminal and activate the reeds2 environment
+   - Open a new terminal and activate the `reeds` environment
 
 7. Start a new run
    - `python runreeds.py`
@@ -71,7 +71,7 @@ Create an informal slide deck with the following results:
 
 6. Open VS Code
    - Open the folder where your repo is located (File -> Open Folder -> navigate to ReEDS folder)
-   - Open a new terminal and activate the reeds2 environment
+   - Open a new terminal and activate the `reeds` environment
 
 7. Start a new run
    - `python runreeds.py`

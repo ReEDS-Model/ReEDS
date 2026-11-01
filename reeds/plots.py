@@ -53,6 +53,7 @@ def plotparams():
     plt.rcParams['ytick.labelsize'] = 'large'
     plt.rcParams['xtick.top'] = True
     plt.rcParams['ytick.right'] = True
+    plt.rcParams['figure.dpi'] = 300
     plt.rcParams['savefig.dpi'] = 300
     plt.rcParams['savefig.bbox'] = 'tight'
     # plt.rcParams['figure.figsize'] = 6.4, 4.8 # 1.33, matplotlib default
@@ -113,7 +114,13 @@ def df2gdf(dfin, crs='ESRI:102008', lat=None, lon=None):
 
 
 ### Sequential color dict
-def rainbowmapper(iterable, colormap=None, explicitcolors=False, categorical=False):
+def rainbowmapper(
+    iterable,
+    colormap=None,
+    explicitcolors=False,
+    categorical=False,
+    cmap_large=plt.cm.turbo,
+):
     categoricalrainbow = [
         plt.cm.tab20(i) for i in [10,11,6,7,2,3,12,13,16,17,4,5,18,19,0,1,8,9,14,15,]
     ]
@@ -147,7 +154,7 @@ def rainbowmapper(iterable, colormap=None, explicitcolors=False, categorical=Fal
     elif categorical:
         colors = categoricalrainbow * (len(iterable)//20 + 1)
     else:
-        colors=[plt.cm.rainbow(i) for i in np.linspace(0,1,len(iterable))]
+        colors = [cmap_large(i) for i in np.linspace(0,1,len(iterable))]
     out = dict(zip(iterable, colors))
     if explicitcolors:
         explicit = {

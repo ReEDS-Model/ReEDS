@@ -43,10 +43,7 @@ retail_rate_module/inputs/EIA861/*
 postprocessing/retail_rate_module/inputs/EIA861/*
 
 # Large files from remote sources
-inputs/profiles_cf
-inputs/profiles_demand
-inputs/profiles_dr
-inputs/profiles_temperature
+inputs/profiles*
 inputs/remote
 inputs/shapefiles/cache
 

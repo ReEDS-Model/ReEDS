@@ -151,7 +151,7 @@ def get_df_jacobian(jacobian_file, var_list=None, con_list=None):
             coeff (float): Coefficient of the variable in the constraint or objective.
     '''
     start = datetime.now()
-    df_A = gdxpds.to_dataframe(jacobian_file, 'A', old_interface=False)
+    df_A = gdxpds.to_dataframe(jacobian_file, 'A')
     for x in ['j','i']:
         #For i (equation) and j (variable) sets, I need to dump to csv to get the Text column, ugh
         x_file =  jacobian_file.replace('.gdx',f'_{x}.csv')

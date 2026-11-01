@@ -682,7 +682,7 @@ def new_build_curtailment(run_dir, prefix):
     gu = pd.read_csv(os.path.join(out, 'gen_ivrt_uncurt.csv'), names=cols + ['gu'], header=0)
     nv = pd.read_csv(os.path.join(out, 'cap_new_ivrt.csv'), names=cols + ['mw'], header=0)
     keys = nv[nv['mw'] > 0][cols].drop_duplicates()
-    keys = keys[keys['i'].str.startswith(prefix)]
+    keys = keys[keys['i'].str.lower().str.startswith(prefix)]
     m = keys.merge(gc, on=cols, how='left').merge(gu, on=cols, how='left')
     nat = m.groupby('t')[['gc', 'gu']].sum()
     return (1 - nat['gc'] / nat['gu']).rename('curtailment')
@@ -705,7 +705,7 @@ def new_build_available_ratio(run_dir, prefix, resource_basis):
     gen = pd.read_csv(os.path.join(out, 'gen_ivrt.csv'), names=cols + ['gen'], header=0)
     nv = pd.read_csv(os.path.join(out, 'cap_new_ivrt.csv'), names=cols + ['mw'], header=0)
     keys = nv[nv['mw'] > 0][cols].drop_duplicates()
-    keys = keys[keys['i'].str.startswith(prefix)]
+    keys = keys[keys['i'].str.lower().str.startswith(prefix)]
     if keys.empty:
         return pd.Series(dtype=float)
     m = keys.merge(gen, on=cols, how='left')
@@ -792,7 +792,7 @@ def new_build_capacity_credit(run_dir, prefix):
     if ann.empty:
         print(f'No res_marg_ann in {run_dir}; capacity credit needs GSw_PRM_CapCredit=0.')
         return pd.Series(dtype=float)
-    sel = val[val['i'].str.startswith(prefix) & val['metric'].isin(['MW', 'val_resmarg'])]
+    sel = val[val['i'].str.lower().str.startswith(prefix) & val['metric'].isin(['MW', 'val_resmarg'])]
     wide = sel.pivot_table(index=['i', 'r', 't'], columns='metric', values='val').reset_index()
     if 'val_resmarg' not in wide or 'MW' not in wide:
         return pd.Series(dtype=float)
@@ -812,7 +812,7 @@ def cumulative_capacity_gw(run_dir, prefix):
     """Installed national capacity of a tech by year, GW, from cap_ivrt."""
     cap = pd.read_csv(os.path.join(run_dir, 'outputs', 'cap_ivrt.csv'),
                       names=['i', 'v', 'r', 't', 'mw'], header=0)
-    return cap[cap['i'].str.startswith(prefix)].groupby('t')['mw'].sum() / 1000
+    return cap[cap['i'].str.lower().str.startswith(prefix)].groupby('t')['mw'].sum() / 1000
 
 
 def national_peak_gw(run_dir):
@@ -829,7 +829,7 @@ def new_build_gw(run_dir, prefix):
     """Capacity of each year's new builds, GW, from valnew - the MW the capacity credit is taken over."""
     val = pd.read_csv(os.path.join(run_dir, 'outputs', 'valnew.csv'),
                       names=['metric', 'i', 'r', 't', 'val'], header=0)
-    sel = val[(val['metric'] == 'MW') & val['i'].str.startswith(prefix)]
+    sel = val[(val['metric'] == 'MW') & val['i'].str.lower().str.startswith(prefix)]
     return sel.groupby('t')['val'].sum() / 1000
 
 
@@ -1057,8 +1057,8 @@ def new_build_duration(run_dir, prefix='battery'):
         print(f'cap_energy_new_out is empty in {run_dir}; re-run report.gms to populate it.')
         return pd.DataFrame(columns=cols + ['mw', 'mwh', 'dur'])
     mw = pd.read_csv(os.path.join(out, 'cap_new_ivrt.csv'), names=cols + ['mw'], header=0)
-    m = mw[mw['i'].str.startswith(prefix)].merge(
-        mwh[mwh['i'].str.startswith(prefix)], on=cols, how='inner')
+    m = mw[mw['i'].str.lower().str.startswith(prefix)].merge(
+        mwh[mwh['i'].str.lower().str.startswith(prefix)], on=cols, how='inner')
     #Builds of a megawatt or less are numerical dust whose ratio is meaningless and unbounded.
     m = m[m['mw'] > 1].copy()
     m['dur'] = m['mwh'] / m['mw']
@@ -1075,8 +1075,8 @@ def fleet_duration(run_dir, prefix='battery'):
     cols = ['i', 'v', 'r', 't']
     mw = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=cols + ['mw'], header=0)
     mwh = pd.read_csv(os.path.join(out, 'cap_energy_ivrt.csv'), names=cols + ['mwh'], header=0)
-    mw = mw[mw['i'].str.startswith(prefix)].groupby(['r', 't'])['mw'].sum()
-    mwh = mwh[mwh['i'].str.startswith(prefix)].groupby(['r', 't'])['mwh'].sum()
+    mw = mw[mw['i'].str.lower().str.startswith(prefix)].groupby(['r', 't'])['mw'].sum()
+    mwh = mwh[mwh['i'].str.lower().str.startswith(prefix)].groupby(['r', 't'])['mwh'].sum()
     m = pd.concat([mw, mwh], axis=1).fillna(0).reset_index()
     m = m[m['mw'] > 1].copy()
     m['dur'] = m['mwh'] / m['mw']
@@ -1273,7 +1273,7 @@ def regional_capacity_credit(run_dir, prefix='battery'):
     price = pd.read_csv(os.path.join(out, 'reqt_price.csv'),
                         names=['req', 'na', 'r', 'h', 't', 'price'], header=0)
     ann = price.loc[price['req'] == 'res_marg_ann', ['r', 't', 'price']]
-    sel = val[val['i'].str.startswith(prefix) & val['metric'].isin(['MW', 'val_resmarg'])]
+    sel = val[val['i'].str.lower().str.startswith(prefix) & val['metric'].isin(['MW', 'val_resmarg'])]
     m = sel.pivot_table(index=['r', 't'], columns='metric', values='val', aggfunc='sum').reset_index()
     m = m.merge(ann, on=['r', 't'], how='left')
     m = m[(m['MW'] > 0) & (m['price'] > 0)].copy()
@@ -1282,7 +1282,7 @@ def regional_capacity_credit(run_dir, prefix='battery'):
     m['firm_value'] = m['MW'] * m['price']
     m['capacity_credit'] = m['val_resmarg'] / m['firm_value']
     cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=['i', 'v', 'r', 't', 'mw'], header=0)
-    cap = cap[cap['i'].str.startswith(prefix)].groupby(['r', 't'])['mw'].sum().rename('cap_mw')
+    cap = cap[cap['i'].str.lower().str.startswith(prefix)].groupby(['r', 't'])['mw'].sum().rename('cap_mw')
     load = pd.read_csv(os.path.join(out, 'load_stress.csv'), names=['r', 'h', 't', 'mw'], header=0)
     peak = load.groupby(['r', 't'])['mw'].max().rename('peak_mw')
     m = m.join(cap, on=['r', 't']).join(peak, on=['r', 't'])
@@ -1308,7 +1308,7 @@ def grouped_capacity_credit(run_dir, prefix='battery', level=None):
     zones = regional_capacity_credit(run_dir, prefix)
     zones['grp'] = zones['r'].map(hier)
     cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=['i', 'v', 'r', 't', 'mw'], header=0)
-    cap = cap[cap['i'].str.startswith(prefix)]
+    cap = cap[cap['i'].str.lower().str.startswith(prefix)]
     load = pd.read_csv(os.path.join(out, 'load_stress.csv'), names=['r', 'h', 't', 'mw'], header=0)
     rows = []
     for name, zone_map in [('grp', hier), ('national', pd.Series('National', index=hier.index))]:
@@ -1402,7 +1402,7 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
     bench = v[(v['i'] == 'benchmark') & (v['r'] == 'sys')]
     bench = (bench[bench['output'].isin(streams)].groupby('t')['value'].sum()
              / bench[bench['output'] == 'MWh'].set_index('t')['value'])
-    v = v[v['i'].str.startswith(prefix) & (v['r'] != 'sys')]
+    v = v[v['i'].str.lower().str.startswith(prefix) & (v['r'] != 'sys')]
     z = v.pivot_table(index=['r', 't'], columns='output', values='value', aggfunc='sum').fillna(0)
     z = pd.DataFrame({'val': z[[c for c in streams if c in z]].sum(axis=1),
                       'val_energy': z.get('val_load', 0), 'val_capacity': z.get('val_resmarg', 0),
@@ -1432,7 +1432,7 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
         ga['grp'] = ga['r'].map(zone_map)
         tot = (ga[~ga['i'].str.lower().str.startswith(storage_share_prefixes)]
                .groupby(['grp', 't'])['gen'].sum())
-        shares.append(ga[ga['i'].str.startswith(prefix)].groupby(['grp', 't'])['gen'].sum() / tot)
+        shares.append(ga[ga['i'].str.lower().str.startswith(prefix)].groupby(['grp', 't'])['gen'].sum() / tot)
     g = g.join(pd.concat(shares).rename('gen_frac_reg'), on=['grp', 't'])
     g = g.rename(columns={'grp': level, 't': 'year'})
     return g[g['year'] >= start_year][[level, 'year', 'new_mw', 'value_factor', 'vf_comp_energy',
@@ -1994,13 +1994,13 @@ def battery_stress_arbitrage(run_dir, prefix='battery'):
     out = os.path.join(run_dir, 'outputs')
     gen = pd.read_csv(os.path.join(out, 'gen_h_stress.csv'),
                       names=['i', 'r', 'h', 't', 'gen'], header=0)
-    gen = gen[gen['i'].str.startswith(prefix)].groupby(['r', 'h', 't'], as_index=False)['gen'].sum()
+    gen = gen[gen['i'].str.lower().str.startswith(prefix)].groupby(['r', 'h', 't'], as_index=False)['gen'].sum()
     rq = pd.read_csv(os.path.join(out, 'reqt_price.csv'),
                      names=['req', 'na', 'r', 'h', 't', 'price'], header=0)
     hourly = rq.loc[rq['req'] == 'res_marg', ['r', 'h', 't', 'price']]
     ann = rq.loc[rq['req'] == 'res_marg_ann', ['r', 't', 'price']].rename(columns={'price': 'ann'})
     cap = pd.read_csv(os.path.join(out, 'cap_ivrt.csv'), names=['i', 'v', 'r', 't', 'mw'], header=0)
-    cap = cap[cap['i'].str.startswith(prefix)].groupby(['r', 't'], as_index=False)['mw'].sum()
+    cap = cap[cap['i'].str.lower().str.startswith(prefix)].groupby(['r', 't'], as_index=False)['mw'].sum()
     m = gen.merge(hourly, on=['r', 'h', 't']).merge(cap, on=['r', 't']).merge(ann, on=['r', 't'])
     m = m[(m['mw'] > 0) & (m['ann'] > 0)]
     block_hours = stress_block_hours(run_dir)

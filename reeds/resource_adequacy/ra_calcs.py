@@ -99,11 +99,11 @@ def run_pras(
 def main(t, tnext, casedir, iteration=0):
 
     # #%% To debug, uncomment these lines and update the run path
-    # t = 2020
-    # tnext = 2023
+    # t = 2030
+    # tnext = 2035
     # reeds_path = reeds.io.reeds_path
     # casedir = os.path.join(
-    #     reeds_path,'runs','v20260417_reorgM1_Pacific')
+    #     reeds_path,'runs','v20260624_raM0_MultiMetricRA')
     # iteration = 0
     # assert tnext >= t
     # os.chdir(casedir)
@@ -138,6 +138,7 @@ def main(t, tnext, casedir, iteration=0):
             'cc_old': pd.DataFrame(columns=['i','r','ccreg','szn','t','Value']),
             'cc_evmc': pd.DataFrame(columns=['i','r','szn','t','Value']),
             'sdbin_size': pd.DataFrame(columns=['ccreg','szn','bin','t','Value']),
+            'mean_forced_outage_rate': pd.DataFrame(columns=['i','r','ccseason','t','Value']),
         }
 
     reeds.log.toc(tic=tic, year=t, process='ra/capacity_credit.py')
@@ -165,7 +166,6 @@ def main(t, tnext, casedir, iteration=0):
             )
 
     #%% Identify stress periods
-    print('identifying new stress periods...')
     tic = datetime.datetime.now()
     if (
         ('user' not in sw['GSw_PRM_StressModel'].lower())
@@ -191,11 +191,9 @@ def main(t, tnext, casedir, iteration=0):
 
     # #%% Uncomment to run diagnostic_plots
     # ### (typically run from call_{}.sh script for parallelization)
-    # try:
-    #     reeds.resource_adequacy.diagnostic_plots.main(sw)
-    # except Exception as err:
-    #     print('diagnostic_plots.py failed with the following exception:')
-    #     print(err)
+    # from reeds.resource_adequacy import diagnostic_plots
+    # sw['iteration'] = iteration
+    # diagnostic_plots.main(sw)
 
 
 #%% Procedure

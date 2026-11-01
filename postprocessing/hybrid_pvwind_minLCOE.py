@@ -289,7 +289,7 @@ cfwind = pd.read_csv(
 timeindex = pd.concat([
     pd.Series(
         index=pd.date_range(
-            f'{y}-01-01 00:00', f'{y+1}-01-01 00:00', freq='H', inclusive='left')[:8760],
+            f'{y}-01-01 00:00', f'{y+1}-01-01 00:00', freq='h', inclusive='left')[:8760],
         dtype=float)
     for y in range(2007,2014)
 ]).index

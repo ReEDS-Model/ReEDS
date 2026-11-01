@@ -83,8 +83,6 @@ if __name__== '__main__':
     args = parser.parse_args()
     rev_paths_files = args.rev_paths
     techs = args.techs
-    # only summarize ba supply curves for now
-    resolution = {'GSw_RegionResolution': 'ba'}
 
     ## set paths
     hourlize_path = os.path.dirname(os.path.realpath(__file__))
@@ -105,7 +103,7 @@ if __name__== '__main__':
             sys.exit(1)
         else:
             rev_path = pd.read_csv(rp)
-            rev_path = runreeds.get_rev_paths(rev_path, resolution)
+            rev_path = runreeds.get_rev_paths(rev_path)
             # subset to base name for sc_path
             rev_path['sc_folder'] = rev_path['sc_path'].apply(lambda row: os.path.basename(row))
             # subset to relevant columns and techs
