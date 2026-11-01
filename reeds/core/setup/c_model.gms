@@ -313,6 +313,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_storage_opres(i,v,r,allh,t)                   "--MWh-- there must be sufficient energy in the storage to be able to provide operating reserves"
  eq_storage_thermalres(i,v,r,allh,t)              "--MW-- thermal storage contribution to operating reserves is store_in only"
  eq_battery_minduration(i,v,r,t)                  "--MWh-- when power capacity is built, energy capacity should have a minimum capacity"
+ eq_battery_fixedduration(i,v,r,t)                "--MWh-- new battery builds have a fixed duration of Sw_BatteryDuration hours (if nonzero)"
 
 * hybrid plant equations
  eq_plant_total_gen(i,v,r,allh,t)           "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
@@ -3204,6 +3205,20 @@ eq_battery_minduration(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$battery(i)]..
     =g=
 
     minbatteryduration * CAP(i,v,r,t)
+;
+
+* ---------------------------------------------------------------------------
+* for batteries, when Sw_BatteryDuration is nonzero, each year's new energy capacity
+* is that many hours of its new power capacity. Prescribed builds keep their own
+* energy (eq_forceprescription_energy), so they are excluded.
+eq_battery_fixedduration(i,v,r,t)$[valinv(i,v,r,t)$tmodel(t)$newv(v)$battery(i)
+                                   $Sw_BatteryDuration$(not force_prescribe(i,v,r,t))]..
+
+    INV_ENERGY(i,v,r,t)
+
+    =e=
+
+    Sw_BatteryDuration * INV(i,v,r,t)
 ;
 
 * ---------------------------------------------------------------------------

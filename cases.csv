@@ -80,6 +80,7 @@ GSw_AnnualCap,CO2/CO2e emission cap. Turn off cap (0) or turn on CO2 only cap (1
 GSw_AnnualCapScen,Scenario for CO2 cap pathway (see inputs\emission_constraints\co2_cap.csv),N/A,default,
 GSw_AVG_iter,Select method for choosing which iterations are used for CC/curt calculations,0; 1,1,
 GSw_BankBorrowCap,Turn on/off CO2 cap with banking and borrowing,0; 1,0,
+GSw_BatteryDuration,"Fixed duration in hours for new battery_li builds (energy capacity = duration * power capacity); 0 lets the model choose duration freely (subject to minbatteryduration)",^[0-9]+$,0,
 GSw_BatteryMandate,Turn on/off battery mandate constraint,0; 1,1,
 GSw_BECCS,Turn on/off BECCS technology,0; 1,1,
 GSw_BinOM,Turn on/off binned FOM and VOM for each historical binned vintage,0; 1,1,

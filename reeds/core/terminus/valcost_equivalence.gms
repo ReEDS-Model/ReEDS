@@ -329,6 +329,9 @@ valcost('val_minduration',i,r,t)$[sum{v, vc_new(i,v,r,t)}$battery(i)] =
     sum{v$vc_new(i,v,r,t),
         (minbatteryduration * INV.l(i,v,r,t) - INV_ENERGY.l(i,v,r,t)) * eq_battery_minduration.m(i,v,r,t) } ;
 
+* eq_battery_fixedduration (INV_ENERGY = Sw_BatteryDuration * INV) needs no stream: it binds the
+* build itself, so its dual enters as (INV_ENERGY - Sw_BatteryDuration * INV) * marginal = 0.
+
 valcost('val_rsc',i,r,t)$sum{v, vc_new(i,v,r,t)} =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
     sum{(v,rscbin)$[vc_new(i,v,r,t)$m_rscfeas(r,i,rscbin)],
