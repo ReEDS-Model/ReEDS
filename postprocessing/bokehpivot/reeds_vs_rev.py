@@ -156,8 +156,8 @@ def prep_data(valcostfac_core_path=valcostfac_core_path, scenarios_path=scenario
                          names=['i', 'v', 'r', 't', 'gen'], header=0)
         ga = pd.read_csv(os.path.join(run_dir, 'outputs', 'gen_ann_nat.csv'),
                          names=['i', 't', 'gen'], header=0)
-        pre = gu[gu['i'].str.startswith(prefix)].groupby('t')['gen'].sum() / 1e6
-        post = ga[ga['i'].str.startswith(prefix)].groupby('t')['gen'].sum() / 1e6
+        pre = gu[gu['i'].str.lower().str.startswith(prefix)].groupby('t')['gen'].sum() / 1e6
+        post = ga[ga['i'].str.lower().str.startswith(prefix)].groupby('t')['gen'].sum() / 1e6
         r['gen_pre_twh'] = r['year'].map(pre)
         r['gen_post_twh'] = r['year'].map(post)
         r['curtailment'] = 1 - r['gen_post_twh'] / r['gen_pre_twh']

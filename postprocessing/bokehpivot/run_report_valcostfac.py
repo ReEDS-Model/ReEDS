@@ -158,7 +158,7 @@ df_force = df_scens.merge(df_forcetech_map, on='forcetech', how='left')
 df_force = df_force.rename(columns={'name':'scenario'})[['tech','scenario','y0','y1','m0','m1']].copy()
 df_force['frc'] = 1
 df = df.merge(df_force, on=['tech','scenario'], how='left')
-df['force_mult'] = 1 #Initialized to 1.
+df['force_mult'] = 1.0 #Initialized to 1.
 mult_cond = (df['y0']<=df['year'])&(df['y1']>=df['year'])
 df.loc[mult_cond, 'force_mult'] = df['m0'] + (df['year']-df['y0'])*(df['m1']-df['m0'])/(df['y1']-df['y0'])
 df = df.drop(columns=['y0','y1','m0','m1']).copy()

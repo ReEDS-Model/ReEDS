@@ -1399,7 +1399,7 @@ def grouped_value_factor(run_dir, prefix='battery', level=None):
     v = pd.read_csv(os.path.join(run_dir, 'outputs', 'valnew.csv'),
                     names=['output', 'i', 'r', 't', 'value'], header=0)
     streams = ['val_load', 'val_resmarg', 'val_opres', 'val_rps']
-    bench = v[(v['i'] == 'benchmark') & (v['r'] == 'sys')]
+    bench = v[(v['i'].str.lower() == 'benchmark') & (v['r'] == 'sys')]
     bench = (bench[bench['output'].isin(streams)].groupby('t')['value'].sum()
              / bench[bench['output'] == 'MWh'].set_index('t')['value'])
     v = v[v['i'].str.lower().str.startswith(prefix) & (v['r'] != 'sys')]
@@ -2110,7 +2110,7 @@ def load_full_range(valcostfac_core_path, core):
         return core
     full = pd.read_csv(full_path)
     scen = core.groupby('tech')['scenario'].first()
-    keep = [t in scen.index and sc == scen[t] for t, sc in zip(full['tech'], full['scenario'])]
+    keep = full['tech'].map(scen).eq(full['scenario'])
     out = full[keep & (full['core'] == 1) & (full['year'] >= start_year)].copy()
     #Derived columns the figures read. The _adj family is deliberately absent: it is normalised
     #against the conventional techs' means computed after the cap, so it exists only in the core

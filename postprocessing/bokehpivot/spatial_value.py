@@ -91,14 +91,18 @@ def no_redraw():
     GeoDataFrame.plot ends with plt.draw(), which on a non-interactive backend (Agg, as when there is
     no DISPLAY) renders the full figure every time, so a grid of map panels costs quadratically in
     the number of plot calls: the by-year figure took 18 minutes rather than under one. savefig draws
-    the figure once anyway.
+    the figure once anyway. geopandas 1.2 calls ax.figure.canvas.draw_idle() instead, which on Agg
+    also renders the full figure, so both are stubbed.
     """
     draw = plt.draw
+    draw_idle = matplotlib.backend_bases.FigureCanvasBase.draw_idle
     plt.draw = lambda: None
+    matplotlib.backend_bases.FigureCanvasBase.draw_idle = lambda self, *args, **kwargs: None
     try:
         yield
     finally:
         plt.draw = draw
+        matplotlib.backend_bases.FigureCanvasBase.draw_idle = draw_idle
 
 
 def _read(run_dir, fname, cols):
@@ -113,7 +117,7 @@ def load_regional(run_dir, prefix):
     price level relative to national, and penetration as uncurtailed generation over regional load.
     """
     rev = _read(run_dir, 'revenue.csv', ['cat', 'i', 'r', 't', 'val'])
-    rev = rev[rev['i'].str.startswith(prefix) & rev['cat'].isin(rev_cats)]
+    rev = rev[rev['i'].str.lower().str.startswith(prefix) & rev['cat'].isin(rev_cats)]
     fleet_rev = rev.groupby(['r', 't'])['val'].sum().rename('fleet_rev')
     #Energy-only revenue is kept separate so the price-suppression channel can be read without the
     #reserve-margin term, which is stress-hour generation valued at stress prices and moves with
@@ -123,7 +127,7 @@ def load_regional(run_dir, prefix):
     #gen_ivrt_uncurt is the denominator revenue_en itself uses for VRE, so value is per uncurtailed
     #MWh - the same basis as LVOE in valcostfac_core.
     gen = _read(run_dir, 'gen_ivrt_uncurt.csv', ['i', 'v', 'r', 't', 'gen'])
-    gen = gen[gen['i'].str.startswith(prefix)].groupby(['r', 't'])['gen'].sum().rename('gen')
+    gen = gen[gen['i'].str.lower().str.startswith(prefix)].groupby(['r', 't'])['gen'].sum().rename('gen')
 
     #Regional market share on a generation basis, mirroring share_basis='gen' in report_switches:
     #actual generation of this tech over total regional generation excluding storage. This is the
@@ -132,7 +136,7 @@ def load_regional(run_dir, prefix):
     ga = _read(run_dir, 'gen_ann.csv', ['i', 'r', 't', 'gen'])
     gen_tot = (ga[~ga['i'].str.lower().str.startswith(storage_prefixes)]
                .groupby(['r', 't'])['gen'].sum().rename('gen_tot'))
-    gen_act = (ga[ga['i'].str.startswith(prefix)]
+    gen_act = (ga[ga['i'].str.lower().str.startswith(prefix)]
                .groupby(['r', 't'])['gen'].sum().rename('gen_act'))
 
     #Cumulative installed capacity, the denominator-free measure of deployment. Regional market
@@ -140,12 +144,12 @@ def load_regional(run_dir, prefix):
     #do with this tech - over 2026-2050 that denominator ranges from 0.06x (NY_NYCLI) to 6.3x (WV)
     #of its starting value, against regional load which stays within 1.35-1.75x.
     cap = _read(run_dir, 'cap.csv', ['i', 'r', 't', 'mw'])
-    cap_mw = (cap[cap['i'].str.startswith(prefix)]
+    cap_mw = (cap[cap['i'].str.lower().str.startswith(prefix)]
               .groupby(['r', 't'])['mw'].sum().rename('cap_mw'))
 
     #valnew carries the benchmark load and load-weighted price, by region and for the system.
     vn = _read(run_dir, 'valnew.csv', ['metric', 'i', 'r', 't', 'val'])
-    bench = vn[vn['i'] == 'benchmark']
+    bench = vn[vn['i'].str.lower() == 'benchmark']
     reg = (bench[bench['r'] != 'sys']
            .pivot_table(index=['r', 't'], columns='metric', values='val', aggfunc='sum'))
     sysb = (bench[bench['r'] == 'sys']
@@ -159,7 +163,7 @@ def load_regional(run_dir, prefix):
     price_energy_nat = (sysb['val_load'] / sysb['MWh']).rename('price_energy_nat')
 
     #New-build value, for the columns that have to line up with valcostfac_core.
-    new = (vn[vn['i'].str.startswith(prefix)]
+    new = (vn[vn['i'].str.lower().str.startswith(prefix)]
            .pivot_table(index=['r', 't'], columns='metric', values='val', aggfunc='sum')
            .fillna(0))
     new['lvoe_new'] = np.where(new['MWh'] > 0, (new['val_load'] + new['val_resmarg']) / new['MWh'], np.nan)
@@ -217,7 +221,7 @@ def load_regional_cost(run_dir, prefix, base):
     lcoe = _read(run_dir, 'lcoe.csv', ['i', 'v', 'r', 't', 'bin', 'lcoe'])
     chosen = _read(run_dir, 'cap_new_bin_out.csv', ['i', 'v', 'r', 't', 'bin', 'mw'])
     m = lcoe.merge(chosen, on=['i', 'v', 'r', 't', 'bin'])
-    m = m[m['i'].str.startswith(prefix) & (m['mw'] > 0)].copy()
+    m = m[m['i'].str.lower().str.startswith(prefix) & (m['mw'] > 0)].copy()
     m['num'] = m['lcoe'] * m['mw']
     g = m.groupby(['r', 't'])[['num', 'mw']].sum().reset_index()
     g['lcoe'] = g['num'] / g['mw']
