@@ -69,7 +69,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
                         spurline_cost(x) * Sw_SpurCostMult * INV_SPUR(x,t) }
 
 * --- cost of intra-zone network reinforcement (a.k.a. point-of-interconnection capacity or POI)
-* cost_poi_bin is already in $/MW and increases across bins (cheapest bin fills first)
+* cost_poi_bin is in $/MW and increases across bins (cheapest bin fills first)
                   + sum{(r,icbin)$[Sw_TransIntraCost$poi_bin_feas(r,icbin)],
                         trans_cost_cap_fin_mult(t) * cost_poi_bin(r,icbin) * INV_POI(r,icbin,t) }
 
