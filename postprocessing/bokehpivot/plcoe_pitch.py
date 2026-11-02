@@ -39,6 +39,7 @@ cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is
 storage_startcost_scenario = 'battery_sc3' #Scenario in the scenarios file that reruns the storage forcing case without gas-CC start costs (GSw_StartCost=3 rather than 4). A sensitivity like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and drawn against the core storage run in its own comparison figure, skipped if absent.
 storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Storage is built there without forcing, and it is drawn against the core storage run in its own comparison figure, with the storage dollar and factor grids also drawn for it. Skipped if absent.
 storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
+storage_duration_scenarios = {'battery_4h': 4, 'battery_8h': 8} #Scenarios in the scenarios file that rerun the storage forcing case with new battery builds fixed at this duration in hours (GSw_BatteryDuration) rather than chosen by the model. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and each drawn against the core storage run in its own comparison figure, skipped if absent.
 storage_share_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
 regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
 cc_scenario_min_new_gw = 1.0 #In the all-scenario capacity-credit figure, drop a year where the tech added less than this many GW. In the thermal-forced runs storage adds a few hundred MW in some years, and the credit of so little capacity swings between 0.75 and 0.98 on which one or two regions happened to build.
@@ -934,7 +935,8 @@ def capacity_credit_by_scenario(techs=None):
         if prefix is None:
             continue
         for _, sc in scen.iterrows():
-            if sc['name'] in (storage_formulation_scenario, storage_startcost_scenario):
+            if sc['name'] in (storage_formulation_scenario, storage_startcost_scenario,
+                              *storage_duration_scenarios):
                 continue  #a storage sensitivity, compared in its own figure
             try:
                 credit = new_build_capacity_credit(sc['path'], prefix)
@@ -2753,7 +2755,9 @@ def make_figs(valcostfac_core_path, output_dir=None):
                         (storage_startcost_scenario, 'No gas-CC start costs',
                          'Gas-CC start costs (default)', 'startcost'),
                         (storage_pv_scenario, 'PV forcing run, storage not forced',
-                         'Storage forcing run (default)', 'pv')]:
+                         'Storage forcing run (default)', 'pv'),
+                        *[(s, f'Fixed {h}-hour duration', 'Model-chosen duration (default)',
+                           f'duration{h}h') for s, h in storage_duration_scenarios.items()]]:
                     for perkw, sfx in [(False, '_permwh'), (True, '_perkw')]:
                         fig_sens, sens_tab = plot_storage_sensitivity(
                             valcostfac_core_path,
@@ -2778,7 +2782,9 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     full = pd.read_csv(full_path)
                     for run_tag, scen in [('formulation_', storage_formulation_scenario),
                                           ('startcost_', storage_startcost_scenario),
-                                          ('pv_', storage_pv_scenario)]:
+                                          ('pv_', storage_pv_scenario),
+                                          *[(f'duration{h}h_', s) for s, h in
+                                            storage_duration_scenarios.items()]]:
                         d_run = full[(full['tech'] == tech) & (full['year'] >= start_year)
                                      & (full['scenario'] == scen)]
                         if not d_run.empty:
