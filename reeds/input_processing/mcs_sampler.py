@@ -572,8 +572,6 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
     regions_and_agglevel = copy_files.get_regions_and_agglevel(
         reeds_path, inputs_case, save_regions_and_agglevel=False)
 
-    source_deflator_map = copy_files.get_source_deflator_map(reeds_path)
-
     hierarchy_file = reeds.io.get_hierarchy(inputs_case).reset_index()
 
     # Save the auxiliary info in a dictionary.
@@ -581,7 +579,6 @@ def get_dist_instructions(reeds_path: str, inputs_case: str) -> Tuple[pd.DataFra
         'sw': sw,
         'nonregion_files': nonregion_files,
         'region_files': region_files,
-        'source_deflator_map': source_deflator_map,
         'regions_and_agglevel': regions_and_agglevel,
         'hierarchy_file': hierarchy_file,
     }
@@ -1776,8 +1773,7 @@ def write_samples(
             dir_dst = os.path.dirname(save_path)
             # Get the row of the region-indexed file
             region_files_row = aux_files['region_files'].query('filename == @file_name').iloc[0]
-            copy_files.write_region_indexed_file(sample_values, dir_dst, aux_files['source_deflator_map'],
-                                                    aux_files['sw'], region_files_row)
+            copy_files.write_region_indexed_file(sample_values, dir_dst, aux_files['sw'], region_files_row)
         # ...if we have a csv file that isn't region-indexed (including switches.csv)
         elif file_termination == '.csv':
             if file_name == 'switches.csv':
@@ -1956,7 +1952,7 @@ def main_mga_rv(
     sampling_regions = hierarchy_val_r[sw['GSw_MGA_RV_region']].unique()
 
     ## objective (assumes sw.GSw_MGA_Objective in ['capacity', 'generation'] based on 
-    ## check in runreeds.check_compatibility()
+    ## check in reeds.checks.check_compatibility()
     ## if the subobjective is an aggregated category, break it up into leaf-level subcategories
     ## derived from tech-subset-table.csv; otherwise just use the subobjective as the group
     subsets = get_mga_rv_subsets(reeds_path, sw.GSw_MGA_SubObjective)
@@ -2069,4 +2065,3 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         process='input_processing/mcs_sampler.py',
         path=os.path.join(os.path.dirname(inputs_case))
     )
-
