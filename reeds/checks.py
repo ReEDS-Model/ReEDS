@@ -338,6 +338,10 @@ def check_compatibility(sw):
             )
             raise ModuleNotFoundError(err)
 
+    ## ReEDS-FINITO switches
+    if int(sw['GSw_FINITO_Link'])==1:
+        reeds.finito.check_FINITO_switch_compatability(sw)
+
 
 def check_GSw_LoadSiteReg(sw):
     """
