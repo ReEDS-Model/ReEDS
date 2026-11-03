@@ -981,9 +981,9 @@ class MCS_Sampler:
         # why we refer to the switch by its adjusted name)
         self.samples = {sw_name: [] for sw_name in self.sample_group['Sample_ID']}
 
-    @staticmethod
     def prepare_ref_data(
-        dist_files: list,
+        self,
+        dist_files_in: list,
         file_name: str,
         sw_name: str | list,
         aux_files,
@@ -1005,32 +1005,41 @@ class MCS_Sampler:
             dict: Dictionary with the number of decimal places for columns we will modify
         """
         ### ===========================================================================
-        ### --- Expand dist_files if necessary ---
+        ### --- Expand supply curve dist_files ---
         ### ===========================================================================
-        # For each file map the columns we need to verify in the df expansion
-        # (e.g For the supply curves we will make sure that all files are
-        # ajusted to contain all regions and sc_point_gid combinations)
-        map_files2ref_columns = {
-            file: ["region", "sc_point_gid"] for file in MCSConstants.SUPPLY_CURVE_FILES
-        }
-
-        if file_name in map_files2ref_columns:
-            ref_columns = map_files2ref_columns[file_name]
+        # For the supply curves we will make sure that all files are
+        # adjusted to contain all regions and sc_point_gid combinations
+        if file_name in MCSConstants.SUPPLY_CURVE_FILES:
+            ref_columns = ["region", "sc_point_gid"]
+            base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case)
+            siting_scenarios = {
+                key: val for entry in self.sample_group.assignments_list
+                for key, val in entry.items()
+            }[sw_name]
+            base_scenario_index = siting_scenarios.index(base_scenario)
+            dfbase = dist_files_in[base_scenario_index].set_index('sc_point_gid')
 
             # Get all unique combination for the reference columns
             unique_reg_gid_point = pd.concat(
-                [df[ref_columns] for df in dist_files],
+                [df[ref_columns] for df in dist_files_in],
                 ignore_index=True
             ).drop_duplicates().reset_index(drop=True)
 
             # Modify dfs in the dist_files list adding missing ref_columns combinations
             # and initializing the modifiable rows with 0
-            for i, df in enumerate(dist_files):
-                dist_files[i] = unique_reg_gid_point.merge(
+            dist_files = []
+            for i, df in enumerate(dist_files_in):
+                _df = unique_reg_gid_point.merge(
                     df.reset_index(drop=True),
                     on=ref_columns,
                     how="left",
                 ).fillna(0).sort_values(by=ref_columns).reset_index(drop=True)
+                ## Inherit everything but capacity from the base scenario
+                for col in ['class','cf','capital_adder_per_mw']:
+                    _df[col] = _df.sc_point_gid.map(dfbase[col])
+                dist_files.append(_df)
+        else:
+            dist_files = dist_files_in
 
         ### ===========================================================================
         ### --- Get a list of the columns we are allowed to apply weights directly ---
@@ -1491,16 +1500,16 @@ class MCS_Sampler:
             sw_name = self.sample_group['switch_names'][sample_idx]
             file_name = self.sample_group["file_names"][sample_idx]
             Sample_ID = self.sample_group['Sample_ID'][sample_idx]
-            dist_files = self.load_ref_files(sample_idx)
+            dist_files_in = self.load_ref_files(sample_idx)
 
             #In some small cases all dist_files are empty
-            if not all([len(df) for df in dist_files]):
-                self.samples[sample_ID] = [dist_files[0] for s in range(self.n_samples)]
+            if not all([len(df) for df in dist_files_in]):
+                self.samples[sample_ID] = [dist_files_in[0] for s in range(self.n_samples)]
                 continue
 
             # Extend/modify dist_files if necessary (e.g supply curve related data)
             dist_files, modifiable_columns, n_decimals = self.prepare_ref_data(
-                dist_files, file_name, sw_name, aux_files,
+                dist_files_in, file_name, sw_name, aux_files,
             )
 
             # Get weights we will apply to the reference files
@@ -1806,7 +1815,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # ---- Settings for testing ----
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20261008_mcM0_MC_tri_country_MC0001','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261102_mcM1_MonteCarlo_LHS_MC0001','inputs_case')
     # n_samples = 1
     # seed = 0
 
