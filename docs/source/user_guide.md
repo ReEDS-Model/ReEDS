@@ -794,7 +794,7 @@ To avoid double-counting, in a linked run the estimated 'reference' electricity 
 
 **Summary of linkage**
 
-The following ReEDS sets, parameters, and variables are referenced in FINITO. Updating them may require updates to FINITO to preserved the linkage functionality.
+The following ReEDS sets, parameters, and variables are referenced in FINITO. If you plan to update any of these in a breaking way (e.g., changing the name or indices) please let one of the FINITO developers know.
 
 Sets: `allt`, `bio(i)`, `bs_reeds(bs)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `cs`, `csfeas(cs)`, `i`, `map_i_fe(i,ec)`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `st`, `st_cendiv(st,cendiv)`, `t(allt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`
 
