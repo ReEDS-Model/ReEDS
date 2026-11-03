@@ -60,7 +60,7 @@ parser.add_argument(
 # caselist = [str(Path(reeds.io.reeds_path,'postprocessing','example.csv'))]
 # casenames = ''
 # titleshorten = ''
-# basepath = None
+# basepath = str(Path('~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_Central').expanduser())
 # write = 'png'
 # interactive = True
 
@@ -229,6 +229,62 @@ for caseprefix in casepaths:
         saveit(savename)
 
 
+#%%### Output plots
+#%% Generation capacity vertical histograms
+techs = [
+    'UPV',
+    'Gas-CC',
+    'Onshore Wind',
+    'Gas-CT',
+    'Nuclear',
+    'Battery',
+    'Offshore Wind',
+    'Coal-CCS',
+    'Gas-CC-CCS',
+    'Coal',
+    'Nuclear-SMR',
+]
+f, ax, dfplot = reeds.mcplots.plot_cap_gen_hist(
+    cases, casebase=casebase, nicelabels=nicelabels, colors=colors,
+)
+savename = (
+    f"out_cap-hist-{','.join(techs)}-"
+    f"{','.join([nicelabels[caseprefix].title().replace(' ','') for caseprefix in casepaths])}"
+)
+saveit(savename)
+
+
+#%% Transmission interface capacity vertical histograms
+
+
+#%% Emissions difference
+
+
+#%% Scatter & correlation, outputs vs inputs
+
+
+#%% Generation capacity stacked bars by sample: Nation (LOW priority)
+
+
+#%% Generation capacity stacked bars by sample: State (LOW priority)
+
+
+#%% Generation capacity lines with vertical histograms at end (LOW priority)
+
+
+#%% NPV (system, health, climate) vertical histograms (LOW priority)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -264,18 +320,6 @@ for case, row in tqdm(dfcases.iterrows(), desc='output transmission', total=len(
             dictin_trans_r[case].r.map(hierarchy[level])
             != dictin_trans_r[case].rr.map(hierarchy[level])
         ).astype(int)
-
-dictin_gen_r = {}
-for case, row in tqdm(dfcases.iterrows(), desc='output generation', total=len(dfcases)):
-    ### Generation
-    try:
-        dictin_gen_r[case] = reeds.io.read_output(row.path, 'gen_ann', valname='TWh')
-    except FileNotFoundError as _err:
-        # print(f'Missing {case}')
-        continue
-    ## Simplify techs
-    dictin_gen_r[case].i = reeds.reedsplots.simplify_techs(dictin_gen_r[case].i)
-    dictin_gen_r[case] = dictin_gen_r[case].groupby(['i','r','t']).TWh.sum() / 1e6
 
 val2sheet = reeds.io.get_report_sheetmap(basepath)
 dictin_scoe = {}
@@ -319,7 +363,6 @@ for case, row in tqdm(dfcases.iterrows(), desc='output emissions', total=len(dfc
 central_health = {'cr':'ACS', 'model':'EASIUR'}
 dictin_health = {}
 dictin_health_central = {}
-dictin_health_central_mort = {}
 for case, row in tqdm(dfcases.iterrows(), desc='health damages', total=len(dfcases)):
     try:
         dictin_health[case] = (
@@ -336,18 +379,10 @@ for case, row in tqdm(dfcases.iterrows(), desc='health damages', total=len(dfcas
             ### Inflate from dollaryear_reeds to dollaryear_output
             * inflator
         )
-        dictin_health_central_mort[case] = (
-            dictin_health[case]
-            .xs(central_health['cr'], level='cr')
-            .xs(central_health['model'], level='model')
-            .groupby('year').sum()
-            ['mortality']
-        )
     except FileNotFoundError as _err:
         continue
 
 # print(sorted(pd.concat(dictin_cap_r).i.unique()))
-# print(sorted(pd.concat(dictin_gen_r).i.unique()))
 
 # years = sorted(pd.concat(dictin_cap_r).t.unique())
 years = sorted(dictin_cap_r[list(dictin_cap_r.keys())[0]].t.unique())
@@ -672,153 +707,6 @@ dfwrite = (
 )
 dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv').replace('_cap-','_cap_diff-')))
 dfwrite
-
-
-#%% National capacity for all scenarios: just histogram
-t = 2050
-tstart = 2020
-
-dictplot = {}
-for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
-    # print(f'{caseprefix}: {(len(caseprefix_samples))}')
-    dictplot[caseprefix] = pd.concat({
-        sample: (
-            dictin_cap_r[caseprefix,sample]
-            .loc[dictin_cap_r[caseprefix,sample].t==t]
-            .groupby('i').MW.sum()
-            .rename('GW')
-            / 1e3
-        )
-        for sample in caseprefix_samples
-    }, axis=1)
-
-dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
-
-dfstart = (
-    dictin_cap_r[basecase]
-    .loc[dictin_cap_r[basecase].t==tstart]
-    .groupby('i').MW.sum()
-    .rename('GW') / 1e3
-)
-
-### Plot it
-techs = [
-    'Gas',
-    'PV',
-    'Wind',
-    'Nuclear',
-    'Storage',
-    'Coal+CCS',
-    'Offshore wind',
-    'Gas+CCS',
-    'Coal',
-    # 'Fossil',
-    # 'Geothermal',
-    # 'Hydro',
-]
-ymin = 0.
-numbins = 71
-xscale = 4.0
-ymax = dfplot.loc[techs].max().max()
-bins = np.linspace(ymin, ymax, numbins)
-nrows = 1
-ncols = len(techs)
-
-# plotcaseprefixes = [
-#     'v20250829_mcK0_MC_flat_state_IRA',
-#     'v20250829_mcK0_MC_flat_state_MC',
-#     'v20250829_mcK0_MC_flat_state_CAA0',
-# ]
-# plotlabels = {
-#     **nicelabels,
-#     'v20250829_mcK0_MC_flat_state_MC': 'CurrentPol',
-# }
-# figwidth = 1.7
-
-# plotcaseprefixes = [
-#     'v20250829_mcK0_MC_flat_state_MC',
-#     'v20250911_mcK0_MC_tri_state',
-#     'v20250829_mcK0_MC_flat_country',
-#     'v20250922_mcK0_MC_tri_country',
-# ]
-# plotlabels = nicelabels
-# figwidth = 1.7
-
-plotcaseprefixes = [
-    'v20250922_mcK0_MC_tri_country',
-    'v20250829_mcK0_MC_flat_country',
-    'v20250911_mcK0_MC_tri_state',
-    'v20250829_mcK0_MC_flat_state_MC',
-    'v20250829_mcK0_MC_flat_state_IRA',
-    'v20250829_mcK0_MC_flat_state_CAA0',
-]
-plotlabels = nicelabels
-figwidth = 2.0
-
-
-plt.close()
-f,ax = plt.subplots(
-    nrows, ncols, sharex='row', sharey='row', figsize=(figwidth*ncols, 2.5),
-    gridspec_kw={'wspace':0.3},
-    dpi=300,
-)
-for col, tech in enumerate(techs):
-    _ax = ax[col]
-    _ax.set_title(tech, weight='bold', fontsize='x-large')
-    for x, caseprefix in enumerate(plotcaseprefixes):
-        df = dfplot[caseprefix].loc[tech].fillna(0)
-        ## Histogram
-        hist_val, hist_y = np.histogram(df.values, bins=bins)
-        height = hist_y[1] - hist_y[0]
-        ax[col].barh(
-            y=hist_y[:-1],
-            width=(hist_val / max(hist_val) * 0.9),
-            height=height,
-            align='edge',
-            left=x,
-            color=colors[caseprefix],
-        )
-    ## Starting capacity
-    ax[col].axhline(dfstart.get(tech,0), c='k', ls='--', lw=0.75)
-    ## Formatting
-    ax[col].set_xticks(range(len(plotcaseprefixes)))
-    ax[col].set_xticklabels(
-        [plotlabels.get(caseprefix,caseprefix) for caseprefix in plotcaseprefixes],
-        rotation=90, weight='bold',
-    )
-    colors = [colors[c] for c in plotcaseprefixes]
-    for x, xtick in enumerate(ax[col].get_xticklabels()):
-        xtick.set_color(colors[x])
-
-## Formatting
-ax[0].set_ylabel(f'Capacity, {t} [GW]')
-ax[0].set_ylim(0)
-ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(400))
-ax[0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(100))
-ax[0].set_xlim(-0.15, len(plotcaseprefixes))
-# ## Legend
-# handles = [
-#     mpl.patches.Patch(
-#         facecolor=colors[caseprefix], edgecolor='none',
-#         label=plotlabels.get(caseprefix,caseprefix)
-#     )
-#     for caseprefix in plotcaseprefixes
-# ]
-# ax[-1].legend(
-#     handles=handles, frameon=False, loc='upper left', bbox_to_anchor=(-0.05,1),
-#     fontsize='x-large',
-#     handletextpad=0.3, handlelength=0.7,
-# )
-
-reeds.plots.despine(ax)
-savename = (
-    f"out_cap-hist-{','.join(techs)}-"
-    f"{','.join([plotlabels.get(c,c).title().replace(' ','') for c in plotcaseprefixes])}.png"
-)
-print(savename)
-plt.savefig(os.path.join(savepath, savename))
-plt.show()
 
 
 #%% Zonal generation capacity maps: Absolute difference from central
@@ -3243,7 +3131,7 @@ describe = (
     .T
 )
 
-ymax = dfplot.groupby(axis=1, level='caseprefix').sum().max().max()
+ymax = dfplot.T.groupby(level='caseprefix').sum().T.max().max()
 binstep = 100
 ymax = np.ceil(ymax / binstep) * binstep
 number_of_bins = int(ymax / binstep) + 1

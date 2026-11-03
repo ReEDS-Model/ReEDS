@@ -1,5 +1,6 @@
 import sys
 import shapely
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
@@ -10,6 +11,15 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
+
+
+#   #### ##    ## ########  ##     ## ########  ######  
+#    ##  ###   ## ##     ## ##     ##    ##    ##    ## 
+#    ##  ####  ## ##     ## ##     ##    ##    ##       
+#    ##  ## ## ## ########  ##     ##    ##     ######  
+#    ##  ##  #### ##        ##     ##    ##          ## 
+#    ##  ##   ### ##        ##     ##    ##    ##    ## 
+#   #### ##    ## ##         #######     ##     ######  
 
 
 def plot_demand_lines(
@@ -265,4 +275,150 @@ def map_supplycurve_diff(
         # )
     ax.set_title(f'{tech} availability relative to central case')
     ax.axis('off')
+    return f, ax, dfplot
+
+
+#    #######  ##     ## ######## ########  ##     ## ########  ######  
+#   ##     ## ##     ##    ##    ##     ## ##     ##    ##    ##    ## 
+#   ##     ## ##     ##    ##    ##     ## ##     ##    ##    ##       
+#   ##     ## ##     ##    ##    ########  ##     ##    ##     ######  
+#   ##     ## ##     ##    ##    ##        ##     ##    ##          ## 
+#   ##     ## ##     ##    ##    ##        ##     ##    ##    ##    ## 
+#    #######   #######     ##    ##         #######     ##     ######  
+
+def plot_cap_gen_hist(
+    cases,
+    casebase=None,
+    nicelabels=None,
+    colors=None,
+    t=2050,
+    tstart=2020,
+    techs=[
+        'UPV',
+        'Gas-CC',
+        'Onshore Wind',
+        'Gas-CT',
+        'Nuclear',
+        'Battery',
+        'Offshore Wind',
+        'Coal-CCS',
+        'Gas-CC-CCS',
+        'Coal',
+        'Nuclear-SMR',
+    ],
+    numbins=71,
+    plotwidth=2,
+    histwidth=None,
+    legend=False,
+):
+    """
+    Vertical histograms for generation capacity [GW] in final solve year
+    x axis = scenarios (sample groups)
+    subplots (columns) = technologies
+
+    Args:
+        cases: Dictionary of lists of ReEDScase objects with caseprefix keys
+        casebase: ReEDScase of base case (if not provided, the first sample is used)
+        nicelabels: Dictionary of caseprefix keys to nice labels used in plot
+        colors: Dictionary of nice label keys to colors used in plot
+        plotwidth: Subplot width [inches]
+        histwidth: Histogram width [inches]. If provided, overrides plotwidth.
+    """
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    if casebase is None:
+        casebase = cases[list(cases.keys())[0]][0]
+    if histwidth:
+        plotwidth = histwidth * len(cases)
+    ## Get data
+    dictplot = {}
+    for caseprefix, plotcases in cases.items():
+        dictplot[caseprefix] = pd.concat({
+            i: (
+                case.cap
+                .loc[case.cap.t==t]
+                .groupby('i').Value.sum()
+                .rename('GW')
+                / 1e3
+            )
+            for i, case in enumerate(plotcases)
+        }, axis=1)
+
+    dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
+    ## Simplify techs
+    dfplot.index = reeds.reedsplots.simplify_techs(dfplot.index)
+    dfplot = dfplot.groupby('i').sum()
+
+    dfstart = (
+        casebase.cap
+        .loc[casebase.cap.t==tstart]
+        .groupby('i').Value.sum()
+        .rename('GW') / 1e3
+    )
+
+    ### Plot it
+    ymin = 0.
+    ymax = dfplot.loc[techs].max().max()
+    bins = np.linspace(ymin, ymax, numbins)
+    nrows = 1
+    ncols = len(techs)
+
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, sharex='row', sharey='row', figsize=(plotwidth*ncols, 2.5),
+        gridspec_kw={'wspace':0.3},
+        dpi=300,
+    )
+    for col, tech in enumerate(techs):
+        _ax = ax[col]
+        _ax.set_title(tech, weight='bold', fontsize='x-large')
+        for x, caseprefix in enumerate(cases):
+            df = dfplot[caseprefix].loc[tech].fillna(0)
+            ## Histogram
+            hist_val, hist_y = np.histogram(df.values, bins=bins)
+            height = hist_y[1] - hist_y[0]
+            ax[col].barh(
+                y=hist_y[:-1],
+                width=(hist_val / max(hist_val) * 0.9),
+                height=height,
+                align='edge',
+                left=x,
+                color=colors[nicelabels[caseprefix]],
+            )
+        ## Starting capacity
+        ax[col].axhline(dfstart.get(tech,0), c='k', ls='--', lw=0.75)
+        ## Formatting
+        ax[col].set_xticks(range(len(cases)))
+        ax[col].set_xticklabels(
+            [nicelabels.get(caseprefix,caseprefix) for caseprefix in cases],
+            rotation=90, weight='bold',
+        )
+        colorlist = [colors[nicelabels[c]] for c in cases]
+        for x, xtick in enumerate(ax[col].get_xticklabels()):
+            xtick.set_color(colorlist[x])
+
+    ## Formatting
+    ax[0].set_ylabel(f'Capacity, {t} [GW]')
+    ax[0].set_ylim(0)
+    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(400))
+    ax[0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(100))
+    ax[0].set_xlim(-0.15, len(cases))
+    ## Legend
+    if legend:
+        handles = [
+            mpl.patches.Patch(
+                facecolor=colors[nicelabels[c]], edgecolor='none',
+                label=nicelabels.get(c,c)
+            )
+            for c in cases
+        ]
+        ax[-1].legend(
+            handles=handles, frameon=False, loc='upper left',
+            bbox_to_anchor=(1,1.1), fontsize='x-large',
+            handletextpad=0.3, handlelength=0.7,
+        )
+    reeds.plots.despine(ax)
     return f, ax, dfplot
