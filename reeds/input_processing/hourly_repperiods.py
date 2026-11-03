@@ -721,7 +721,7 @@ if __name__ == '__main__':
         sw=sw, reeds_path=reeds_path, inputs_case=inputs_case,
         periodtype='rep',
         make_plots=1,
-        logging=logging
+        logging=yeslog
     )
 
     ############################################
