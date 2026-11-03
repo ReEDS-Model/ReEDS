@@ -88,7 +88,7 @@ log = reeds.log.makelog(
 )
 
 #%% Make output directory
-savepath = os.path.join(case, 'outputs', 'figures')
+savepath = os.path.join(case, 'outputs', 'figures_new')
 os.makedirs(savepath, exist_ok=True)
 
 #%% Load colors
@@ -786,77 +786,79 @@ if not int(sw.GSw_PRM_CapCredit):
         print('map_period_dispatch failed:')
 
     try:
-        level = 'transreg'
         metrics = [
             'cap',
             'rep_mean',
             'stress_mean',
-            'stress_top5_load',
-            'stress_top5_netload',
-            'stress_bottom5_vregen',
-            'stress_max_load',
-            'stress_max_price',
+            'stress_top10_load',
+            'stress_top10_netload',
+            'stress_bottom10_vregen',
+            'stress_top10_price',
+            'stress_weight_price',
         ]
-        for units in ['percent', 'GW']:
-            plt.close()
-            f, ax, dictout = reedsplots.plot_cap_rep_stress_mix(
-                case=case, year=year, level=level, units=units, metrics=metrics,
-            )
-            savename = (
-                f"plot_techmix-{level}-{year}-{units}-"
-                f"{reedsplots.stress_metrics_shorten(metrics)}"
-            )[:max_filename_length-len('.png')] + '.png'
-            if write:
-                plt.savefig(os.path.join(savepath, savename))
-            if interactive:
-                plt.show()
-            plt.close()
-            print(savename)
+        for level in ['transreg', 'transgrp']:
+            for units in ['percent', 'GW']:
+                plt.close()
+                f, ax, dictout = reedsplots.plot_cap_rep_stress_mix(
+                    case=case, year=year, level=level, units=units, metrics=metrics,
+                )
+                savename = (
+                    f"plot_techmix-{level}-{year}-{units}-"
+                    f"{reedsplots.stress_metrics_shorten(metrics)}"
+                )[:max_filename_length-len('.png')] + '.png'
+                if write:
+                    plt.savefig(os.path.join(savepath, savename))
+                if interactive:
+                    plt.show()
+                plt.close()
+                print(savename)
     except Exception:
         print('plot_cap_rep_stress_mix failed:')
         print(traceback.format_exc())
 
     units = 'GW'
-    for metric in metrics:
-        try:
-            plt.close()
-            f, ax, dictout = reedsplots.plot_stress_mix(
-                case=case, level=level, units=units, metric=metric,
-            )
-            savename = f"plot_stressmix-{level}-{units}-{metric}.png"
-            if write:
-                plt.savefig(os.path.join(savepath, savename))
-            if interactive:
-                plt.show()
-            plt.close()
-            print(savename)
-        except Exception:
-            print(f'plot_stress_mix failed for {metric}:')
-            print(traceback.format_exc())
+    for level in ['transreg', 'transgrp']:
+        for metric in metrics:
+            try:
+                plt.close()
+                f, ax, dictout = reedsplots.plot_stress_mix(
+                    case=case, level=level, units=units, metric=metric,
+                )
+                savename = f"plot_stressmix-{level}-{units}-{metric}.png"
+                if write:
+                    plt.savefig(os.path.join(savepath, savename))
+                if interactive:
+                    plt.show()
+                plt.close()
+                print(savename)
+            except Exception:
+                print(f'plot_stress_mix failed for {metric}:')
+                print(traceback.format_exc())
 
-    # level, figheight = 'transreg', 1.2
-    level, figheight = 'interconnect', 1.8
-    for metric in [
-        'stress_top10_price',
-        'stress_top10_netload',
-        'stress_top10_load',
-        'stress_bottom10_vregen',
-    ]:
-        savename = f"plot_stress_cf-{level}-{metric}.png"
-        try:
-            plt.close()
-            f, ax, dictout = reedsplots.plot_stress_cf(
-                case=case, level=level, metric=metric, figheight=figheight,
-            )
-            if write:
-                plt.savefig(os.path.join(savepath, savename))
-            if interactive:
-                plt.show()
-            plt.close()
-            print(savename)
-        except Exception:
-            print(f'{savename} failed:')
-            print(traceback.format_exc())
+    for level, region, figheight in [('transreg', 'MISO', 1.8), ('transgrp', 'MISO_South', 1.8)]:
+        for metric in [
+            'stress_top10_price',
+            'stress_top10_netload',
+            'stress_top10_load',
+            'stress_bottom10_vregen',
+            'stress_weight_price',
+        ]:
+            savename = f"plot_stress_cf-{level}-{region}-{metric}.png"
+            try:
+                plt.close()
+                f, ax, dictout = reedsplots.plot_stress_cf(
+                    case=case, level=level, metric=metric, figheight=figheight,
+                    regions=[region],
+                )
+                if write:
+                    plt.savefig(os.path.join(savepath, savename))
+                if interactive:
+                    plt.show()
+                plt.close()
+                print(savename)
+            except Exception:
+                print(f'{savename} failed:')
+                print(traceback.format_exc())
 
 
 #%% PRM if iterating
