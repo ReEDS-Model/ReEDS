@@ -579,13 +579,13 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$(no
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 
 $ifthene.finitodetailedNG Sw_DetailedNG == 0
-* approach with GSw_FixedCostSupply=1 or default supply curves
+* approach with GSw_FixedCostSupply=1 in FINITO or the default FINITO supply curves
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
     deflator('%FINITO_dollaryear%') * 1/(cost_scale_finito) * 1/(pvf_onm(t)) 
     * eq_supplydemand_fsc.m('NG',cendiv,t)
 ;
 $else.finitodetailedNG
-* approach with detailed fuels representation (GSw_DetailedFuels=1)
+* approach with detailed natural gas representation (GSw_DetailedNG=1 in FINITO)
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
     deflator('%FINITO_dollaryear%') * 1/(cost_scale_finito) * 1/(pvf_onm(t)) 
 *   citygate price of natural gas
@@ -1826,7 +1826,7 @@ error_check('z') = (
         )
 * account for penalty paid to deploy capacity beyond interconnection queue limits        
         + sum{(tg,r), cap_penalty(tg) * CAP_ABOVE_LIM.l(tg,r,t) }  
-* account for costs from FINITO: deflate from $2018 to $2004,
+* account for costs from FINITO: deflate from FINITO to ReEDS dollar year,
 * remove any FINITO scaling, and then apply ReEDS scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
         + cost_scale * ( Z_finito.l(t)$tfinito(t) * deflator('%FINITO_dollaryear%') / cost_scale_finito )

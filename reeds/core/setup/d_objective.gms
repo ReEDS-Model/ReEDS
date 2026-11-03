@@ -22,7 +22,7 @@ Variable    Z        "--$-- total cost of operations and investment, scale varie
 eq_ObjFn.. Z =e= cost_scale * (
 * electricity and H2 costs
                     sum{t$tmodel(t), Z_inv(t) + Z_op(t) } 
-* economy-wide costs from FINITO: deflate from FINITO_dollaryear to $2004 
+* economy-wide costs from FINITO: deflate from FINITO_dollar year to ReEDS 
 * and remove any FINITO scaling
 $ifthene.linked_objective Sw_FINITO_Link==1
                     + (deflator('%FINITO_dollaryear%') / cost_scale_finito 
