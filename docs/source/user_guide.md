@@ -783,7 +783,7 @@ To avoid double-counting, in a linked run the estimated 'reference' electricity 
 - Note that when linked, FINITO does not represent existing industrial hydrogen demand; to account for this demand, when linked `GSw_H2_Demand_Case` should be set to `FINITO`.
 
 **CO2 representation**
-- The link model relies on ReEDS for the representation of CO2 transport and storage. 
+- The linked model relies on ReEDS for the representation of CO2 transport and storage. 
 - Total CO2 captured from FINITO is represented by `CAPTURE_CO2EM`.
 - In the absence of explicit CO2 transport and storage modeling (i.e., `GSw_CO2_Detail=0`), the FINITO switches `GSw_CO2Cost_opt` and `GSw_CO2Cost_value` should be used to provide a cost for transport and sequestration. 
 
@@ -791,6 +791,18 @@ To avoid double-counting, in a linked run the estimated 'reference' electricity 
 - Functions for processing related the linked model are located in the `reeds/finito.py` module.
 - Costs represented by FINITO are captured by `Z_finito`, which is rescaled and converted from `FINITO_dollaryear` before being added to costs from ReEDS in `eq_ObjFn`. 
 - Select outputs are saved by FINITO to a `finito_reeds_outputs_%case%.gdx` file, which is processed by `report_dump.py` to save csv/h5 outputs alongside other ReEDS results.
+
+**Summary of linkage**
+
+The following ReEDS sets, parameters, and variables are referenced in FINITO. Updating them may require updates to FINITO to preserved the linkage functionality.
+
+Sets: `allt`, `bio(i)`, `bs_reeds(bs)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `cs`, `csfeas(cs)`, `i`, `map_i_fe(i,ec)`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `st`, `st_cendiv(st,cendiv)`, `t(allt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`
+
+Parameters: `capture_rate`, `co2_injection_limit(cs)`, `co2_rate_elec_table(r,allt,*)`, `co2_storage_limit(cs)`, `cost_co2_pipeline_cap(r,rr,allt)`, `cost_co2_pipeline_fom(r,rr,allt)`, `cost_co2_spurline_cap(r,cs,allt)`, `cost_co2_spurline_fom(r,cs,allt)`, `cost_co2_stor_bec(cs)`, `cost_fom`, `cost_prod`, `cost_upgrade`, `cost_vom`, `deflator(allt)`, `emit_rate`, `heat_rate(i,v,r,t)`, `m_capacity_exog`, `price_ws_elec_ReEDS(r,allt,*)`, `r_cs_distance(r,cs)`, `tax_co2_input(allt,*)`, `upgrade_derate`
+
+Variables: `GEN(i,v,r,h,t)`
+
+Switches: `endyear`, `FINITO_dollaryear`, `GSw_CarbTax`, `GSw_CarbTaxOption`, `GSw_CO2_Detail`, `GSw_FINITO_Link` (set by `FINITO` switch in ReEDS `cases.csv`), `GSw_Region`, `GSw_RemoveSmallNumbers`, `GSw_RetailAdder`, `GSw_ZoneSet`, `ignore`, `keep_run_terminal`, `solver`, `yearset`
 
 
 ## Troubleshooting
