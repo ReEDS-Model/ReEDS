@@ -23,3 +23,4 @@ GSw_H2_Demand_Case,,,,,,,,,,,,,BAU
 GSw_H2_PTC,,,,,,,,,,,,,0
 GSw_H2_SMR,,,,,,,,,,,,,1
 GSw_GasPriceAdjMethod,,,,,,,,,,,,,0
+GSw_NewValCapShrink,,,,,,,,,,,,,1
