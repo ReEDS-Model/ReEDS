@@ -5348,12 +5348,14 @@ cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,
 * Parameter tracking for sequential solve
 parameter
     m_capacity_exog0(i,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
-    z_rep(t)      "--$-- objective function value by year"
-    z_rep_inv(t)  "--$-- investment component of objective function by year"
-    z_rep_op(t)   "--$-- operation component of objective function by year"
+    z_rep(t)                  "--$-- objective function value by year"
+    z_rep_inv(t)              "--$-- investment component of objective function by year"
+    z_rep_op(t)               "--$-- operation component of objective function by year"
+    z_rep_finito(t)           "--$-- FINITO component of objective function by year"
 ;
 z_rep_inv(t) = 0 ;
 z_rep_op(t) = 0 ;
+z_rep_finito(t) = 0 ;
 
 *====================================
 *     --- Employment Factors ---
