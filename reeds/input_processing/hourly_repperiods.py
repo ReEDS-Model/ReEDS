@@ -691,7 +691,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     reeds_path = args.reeds_path
     inputs_case = args.inputs_case
-    logging = not args.nolog
+    yeslog = not args.nolog
 
 
     # #%% Settings for testing
@@ -702,7 +702,7 @@ if __name__ == '__main__':
     # interactive = True
 
     #%% Set up logger
-    if logging:
+    if yeslog:
         log = reeds.log.makelog(
             scriptname=__file__,
             logpath=os.path.join(inputs_case,'..','gamslog.txt'),
