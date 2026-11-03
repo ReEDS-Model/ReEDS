@@ -371,6 +371,7 @@ def check_GSw_StateRPS_Stress(sw):
     GSw_StateRPS_Stress=1 or 2 applies the state RPS/CES over stress periods, which
     only exist when GSw_PRM_CapCredit=0. Otherwise the stress-period requirement
     is empty and silently does nothing.
+    
     GSw_StateRPS_Stress=2 additionally weights a state's stress-period RPS/CES by only
     the state's seeded peak-load stress period(s), which are only ever identified
     when GSw_PRM_StressSeedLoadLevel is enabled and stress periods aren't
@@ -399,6 +400,7 @@ def check_GSw_StateRPS_Stress(sw):
             f"hierarchy level (it is currently set to {level}) so that a peak-load stress "
             "period exists to weight against."
         )
+
 
 def estimate_numperiods(sw):
     """
