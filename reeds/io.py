@@ -515,22 +515,24 @@ def read_output(
         try:
             df = read_h5(h5path, key)
         except KeyError:
-            ## Empty dataframes aren't written to h5 file, so make one ourselves
-            fpath = Path(case, 'reeds', 'core', 'terminus', 'report_params.csv')
-            ## Fall back to older params list if necessary for backwards compatibility
-            if not fpath.is_file():
-                fpath = Path(case, 'e_report_params.csv')
-            report_params = pd.read_csv(fpath, comment='#')
-            _index = report_params.loc[
-                report_params.param.map(lambda x: x.split('(')[0]) == key, 'param'
-            ].squeeze()
-            if not len(_index):
-                raise KeyError(f"{filename} is not in {h5path}")
-            index = _index.split('(')[-1].strip(')').split(',')
-            df = pd.DataFrame(columns=index + ['Value'])
-    else:
-        _filename = filename if filename.endswith('.csv') else filename + '.csv'
-        df = pd.read_csv(os.path.join(case, 'outputs', _filename))
+            try:
+                ## Some output are only written to csv files
+                _filename = filename if filename.endswith('.csv') else filename + '.csv'
+                df = pd.read_csv(os.path.join(case, 'outputs', _filename))
+            except FileNotFoundError:
+                ## Empty dataframes aren't written to h5 file, so make one ourselves
+                fpath = Path(case, 'reeds', 'core', 'terminus', 'report_params.csv')
+                ## Fall back to older params list if necessary for backwards compatibility
+                if not fpath.is_file():
+                    fpath = Path(case, 'e_report_params.csv')
+                report_params = pd.read_csv(fpath, comment='#')
+                _index = report_params.loc[
+                    report_params.param.map(lambda x: x.split('(')[0]) == key, 'param'
+                ].squeeze()
+                if not len(_index):
+                    raise KeyError(f"{filename} is not in {h5path}")
+                index = _index.split('(')[-1].strip(')').split(',')
+                df = pd.DataFrame(columns=index + ['Value'])
 
     df = df.rename(columns={'allh':'h', 'allt':'t', 'eall':'e'})
 

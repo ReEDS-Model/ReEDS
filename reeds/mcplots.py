@@ -11,6 +11,8 @@ from matplotlib import patheffects as pe
 from tqdm import tqdm
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
+sys.path.append(str(Path(reeds.io.reeds_path, 'postprocessing', 'bokehpivot')))
+from defaults import DEFAULT_DOLLAR_YEAR
 
 
 #   #### ##    ## ########  ##     ## ########  ######  
@@ -154,7 +156,13 @@ def plot_capcost_lines(
         values = "nice" name used in tech_style.csv
     Lines with vertical historgram at end [$/MMBtu]
     """
+    ## Shared inputs
     colors_tech = reeds.io.get_plot_formatting()['tech_color'].squeeze(1)
+    inflatable = reeds.io.get_inflatable()
+    dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+    dollaryear_output = DEFAULT_DOLLAR_YEAR
+    inflator = inflatable[dollaryear_reeds, dollaryear_output]
+    ## Data
     dfplot = pd.concat(
         {
             # i: (
@@ -165,7 +173,7 @@ def plot_capcost_lines(
             #     / 1e3
             #     .rename(columns=labels)
             # )
-            i: case.capcost.rename(columns=labels)
+            i: case.capcost.rename(columns=labels) * inflator
             for i, case in enumerate(plotcases)
         },
         axis=1, names=['s','i'],
@@ -795,6 +803,11 @@ def plot_scatter_everything(
     nrows = len(ycols)
     ncols = len(xcols)
 
+    ## Shared inputs
+    inflatable = reeds.io.get_inflatable()
+    dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+    dollaryear_output = DEFAULT_DOLLAR_YEAR
+    inflator = inflatable[dollaryear_reeds, dollaryear_output]
     ## Capacity
     for case in plotcases:
         case.capagg = case.cap.copy()
@@ -849,7 +862,7 @@ def plot_scatter_everything(
     ### Generation capex costs
     costdata = pd.concat({
         f"cost_{cost_tech['label']}": pd.Series({
-            i: case.capcost.loc[t,cost_tech['tech_cost']]
+            i: case.capcost.loc[t,cost_tech['tech_cost']] * inflator
             for i, case in enumerate(plotcases)
         })
         for cost_tech in cost_techs
@@ -1005,5 +1018,129 @@ def plot_emissions(
     ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
     ax.set_xticks([2020,2030,2040,2050])
     ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_npv(
+    cases,
+    casebase=None,
+    nicelabels=None,
+    colors=None,
+    co2_social_cost=290,
+    health_cr='ACS',
+    health_model='EASIUR',
+    plotwidth=None,
+    histwidth=0.3,
+):
+    """
+    NPV of system, health, and climate costs
+    """
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    if casebase is None:
+        casebase = cases[list(cases.keys())[0]][0]
+    if histwidth:
+        plotwidth = histwidth * len(cases)
+    ## Shared inputs
+    inflatable = reeds.io.get_inflatable()
+    dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+    dollaryear_output = DEFAULT_DOLLAR_YEAR
+    inflator = inflatable[dollaryear_reeds, dollaryear_output]
+    ## Get data
+    pv_year = 2025
+    lastyear = 2050
+    discountrate_social = 0.02
+    discounts = pd.Series(
+        index=range(pv_year,lastyear+1),
+        data=[1/(1+discountrate_social)**(y-pv_year)
+            for y in range(pv_year,lastyear+1)]
+    ).rename_axis('t')
+
+    dictplot_npv = {}
+    dictplot_health = {}
+    dictplot_climate = {}
+    for caseprefix, plotcases in cases.items():
+        dictplot_npv[caseprefix] = pd.Series(
+            {i: case.npv.sum() for i, case in enumerate(plotcases)}
+        )
+        dictplot_climate[caseprefix] = pd.Series({
+            i: (
+                case.emit_nat.loc[
+                    (case.emit_nat.etype=='process') & (case.emit_nat.e=='CO2')
+                ].set_index('t').Value
+                .reindex(discounts.index).interpolate('index')
+                * co2_social_cost
+                / 1e9 # convert to $billion
+            ).multiply(discounts).sum()
+            for i, case in enumerate(plotcases)
+        })
+        dictplot_health[caseprefix] = pd.Series({
+            i: (
+                case.health_damages_caused_r
+                .groupby(['cr','model','year','pollutant'])['damage_$'].sum()
+                .loc[health_cr].loc[health_model].groupby('year').sum()
+                .reindex(discounts.index).interpolate('index')
+                * inflator # health_damage_calculations.py uses the ReEDS dollar year
+                / 1e9 # convert to $billion
+            ).multiply(discounts).sum()
+            for i, case in enumerate(plotcases)
+        })
+
+    dfplot = pd.concat(
+        {
+            'system':pd.concat(dictplot_npv, axis=1),
+            'climate':pd.concat(dictplot_climate, axis=1),
+            'health':pd.concat(dictplot_health, axis=1),
+        },
+        axis=1, names=('costtype','caseprefix')
+    )
+
+    ymax = dfplot.T.groupby(level='caseprefix').sum().T.max().max()
+    binstep = 100
+    ymax = np.ceil(ymax / binstep) * binstep
+    number_of_bins = int(ymax / binstep) + 1
+
+    ### Plot it
+    nrows = 1
+    costtypes = ['system', 'health', 'climate', 'total']
+    ncols = len(costtypes)
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*plotwidth, 3.75),
+        sharex=True, sharey=True,
+    )
+    for col, costtype in enumerate(costtypes):
+        if costtype == 'total':
+            df = dfplot.T.groupby(level='caseprefix').sum().T
+        else:
+            df = dfplot[costtype]
+        df = df[list(cases.keys())].rename(columns=nicelabels)
+        reeds.plots.plotquarthist(
+            ax=ax[col], dfplot=df,
+            histcolor=colors,
+            hist_range=(0., ymax), number_of_bins=number_of_bins,
+            pad=0.04, alpha=1, density=True,
+        )
+        ## Formatting
+        ax[col].set_title(costtype.title(), weight='bold')
+        ax[col].set_xticks(range(len(cases)))
+        ax[col].set_xticklabels(
+            [
+                f"{nicelabels.get(caseprefix,caseprefix)}"
+                for caseprefix in cases
+            ],
+            rotation=60, rotation_mode='anchor', ha='right',
+        )
+        ax[col].set_xlim(-0.1, len(cases))
+        for xtick, caseprefix in zip(ax[col].get_xticklabels(), cases):
+            xtick.set_color(colors[nicelabels[caseprefix]])
+    ax[0].set_ylabel(f'Net present value of costs,\n{pv_year}–{lastyear} [$billion]')
+    ax[0].set_ylim(0)
+    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(4000))
+    ax[0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(1000))
     reeds.plots.despine(ax)
     return f, ax, dfplot

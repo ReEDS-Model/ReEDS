@@ -163,8 +163,6 @@ hierarchy = reeds.io.get_hierarchy(basepath)
 hierarchy['r'] = hierarchy.index
 dfmap = reeds.io.get_dfmap(basepath)
 
-scco2_pindyck = 290
-
 ### Historical emissions
 try:
     ### EIA emissions https://www.eia.gov/totalenergy/data/monthly/
@@ -299,10 +297,18 @@ for caseprefix, plotcases in cases.items():
     saveit(savename)
 
 
+#%% NPV (system, health, climate) vertical histograms
+f, ax, dfplot = reeds.mcplots.plot_npv(
+    cases, casebase=casebase, nicelabels=nicelabels, colors=colors,
+)
+savename = (
+    f"out-npv_system,health,climate,total-"
+    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in cases])}"
+)
+saveit(savename)
+
+
 #%% Generation capacity lines with vertical histograms at end (LOW priority)
-
-
-#%% NPV (system, health, climate) vertical histograms (LOW priority)
 
 
 
@@ -2720,127 +2726,6 @@ print(savename)
 plt.savefig(os.path.join(savepath, savename))
 plt.show()
 
-
-#%% NPV of system, health, and climate costs
-pv_year = 2025
-lastyear = 2050
-discountrate_social = 0.02
-discounts = pd.Series(
-    index=range(pv_year,lastyear+1),
-    data=[1/(1+discountrate_social)**(y-pv_year)
-          for y in range(pv_year,lastyear+1)]
-).rename_axis('t')
-
-dictplot_npv = {}
-dictplot_health = {}
-dictplot_climate = {}
-for caseprefix in plotcaseprefixes:
-    caseprefix_samples = sorted([s for (c,s) in dictin_npv if c == caseprefix])
-    dictplot_npv[caseprefix] = pd.Series({
-        sample: dictin_npv[caseprefix,sample].sum()
-        for sample in caseprefix_samples
-    })
-    dictplot_climate[caseprefix] = pd.Series({
-        sample: (
-            dictin_emissions[caseprefix,sample]['process']['CO2']
-            .reindex(discounts.index).interpolate('index')
-            * scco2_pindyck
-            # * scghg_central['CO2']
-            / 1e9 # convert to $billion
-        ).multiply(discounts).sum()
-        for sample in caseprefix_samples
-    })
-    dictplot_health[caseprefix] = pd.Series({
-        sample: (
-            dictin_health_central[caseprefix,sample]
-            .reindex(discounts.index).interpolate('index')
-            / 1e9 # convert to $billion
-        ).multiply(discounts).sum()
-        for sample in caseprefix_samples
-    })
-
-dfplot = pd.concat(
-    {
-        'system':pd.concat(dictplot_npv, axis=1),
-        'climate':pd.concat(dictplot_climate, axis=1),
-        'health':pd.concat(dictplot_health, axis=1),
-    },
-    axis=1, names=('costtype','caseprefix')
-)
-describe = (
-    dfplot.stack(['costtype','caseprefix'])
-    .groupby(['costtype','caseprefix'])
-    .describe(percentiles=percentiles)
-    .T
-)
-
-ymax = dfplot.T.groupby(level='caseprefix').sum().T.max().max()
-binstep = 100
-ymax = np.ceil(ymax / binstep) * binstep
-number_of_bins = int(ymax / binstep) + 1
-bins = np.linspace(0., ymax, number_of_bins)
-
-### Plot it
-ncols = 4
-nrows = 1
-costtypes = ['system', 'health', 'climate', 'total']
-plt.close()
-f,ax = plt.subplots(
-    nrows, ncols, figsize=(ncols*1.5, 3.75),
-    sharex=True, sharey=True,
-)
-for col, costtype in enumerate(costtypes):
-    if costtype == 'total':
-        df = dfplot.groupby(axis=1, level='caseprefix').sum()
-    else:
-        df = dfplot[costtype]
-    df = df[plotcaseprefixes].rename(columns=plotlabels)
-    reeds.plots.plotquarthist(
-        ax=ax[col], dfplot=df,
-        histcolor={plotlabels[k]:v for k,v in colors.items()},
-        hist_range=(0., ymax), number_of_bins=number_of_bins,
-        pad=0.04, alpha=1, density=True,
-    )
-    # for x, caseprefix in enumerate(plotcaseprefixes):
-    #     df = dfplot[caseprefix]
-    #     ## Histogram
-    #     hist_val, hist_y = np.histogram(df.values, bins=bins)
-    #     height = hist_y[1] - hist_y[0]
-    #     ax[col].barh(
-    #         y=hist_y[:-1],
-    #         width=(hist_val / max(hist_val) * 0.9),
-    #         height=height,
-    #         align='edge',
-    #         left=x,
-    #         color=colors[caseprefix],
-    #         label=f'{plotlabels.get(caseprefix,caseprefix)} ({len(df)})',
-    #     )
-    ## Formatting
-    ax[col].set_title(costtype.title(), weight='bold')
-    ax[col].set_xticks(range(len(plotcaseprefixes)))
-    ax[col].set_xticklabels(
-        [
-            f"{plotlabels.get(caseprefix,caseprefix)}"
-            # f" ({len(dfplot['system'][caseprefix].dropna())})"
-            for caseprefix in plotcaseprefixes
-        ],
-        rotation=45, rotation_mode='anchor', ha='right',
-    )
-    ax[col].set_xlim(-0.1, len(plotcaseprefixes))
-    for xtick, caseprefix in zip(ax[col].get_xticklabels(), plotcaseprefixes):
-        xtick.set_color(colors[caseprefix])
-ax[0].set_ylabel(f'Net present value of costs,\n{pv_year}–{lastyear} [$billion]')
-ax[0].set_ylim(0)
-ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(4000))
-ax[0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(1000))
-reeds.plots.despine(ax)
-savename = (
-    f"out_npv-system,health,climate,total-"
-    f"{','.join([plotlabels.get(c,c).title().replace(' ','') for c in plotcaseprefixes])}.png"
-)
-print(savename)
-plt.savefig(os.path.join(savepath, savename))
-plt.show()
 
 #%% Cost stats
 dfwrite = pd.concat([

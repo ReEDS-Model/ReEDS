@@ -4,15 +4,6 @@ import copy
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import reeds
-sys.path.append(Path(reeds.io.reeds_path, 'postprocessing', 'bokehpivot'))
-from defaults import DEFAULT_DOLLAR_YEAR
-
-
-#%% Fixed inputs
-inflatable = reeds.io.get_inflatable()
-dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
-dollaryear_output = DEFAULT_DOLLAR_YEAR
-inflator = inflatable[dollaryear_reeds, dollaryear_output]
 
 
 #%% Specially processed inputs
@@ -37,7 +28,6 @@ def get_capcost(case):
         reeds.io.read_input(case, 'plantcharout')
         .set_index(['variable','*i','t'])
         .loc['capcost'].value.unstack('*i').rename_axis('i', axis=1)
-        * inflator
         / 1e3
     )
     df.columns = df.columns.str.lower()
