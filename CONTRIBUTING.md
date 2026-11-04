@@ -33,6 +33,5 @@ Contributors are responsible for understanding and verifying every change they m
 * Have the AI tool pause at checkpoints for human review before proceeding.
 
 **While developing**
-* If you don't understand why a change was made, dig into it before moving on.
 * Ask a separate AI tool to review your change.
 * Use an `AGENTS.md` file. The repo's [AGENTS.md](AGENTS.md) file can be used as-is.
