@@ -757,3 +757,93 @@ def plot_scatter_everything(
         ax.set_ylim(0)
     reeds.plots.despine(ax)
     return f, ax, dfplot
+
+
+def plot_emissions(
+    cases,
+    nicelabels=None,
+    colors=None,
+    pollutant='CO2',
+    etype='process',
+    numbins=71,
+    ymin=0,
+    tstart=2020,
+    xscale=2,
+    alpha=0.5,
+):
+    """
+    """
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    ## Get data
+    dictplot = {}
+    for caseprefix, plotcases in cases.items():
+        dictplot[caseprefix] = pd.concat({
+            i: case.emit_nat.loc[
+                (case.emit_nat.etype==etype) & (case.emit_nat.e==pollutant)
+            ].set_index('t').Value
+            for i, case in enumerate(plotcases)
+        }, axis=1) / 1e6
+
+    dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
+
+    ymax = dfplot.max().max()
+    bins = np.linspace(ymin, ymax, numbins)
+    years = dfplot.index
+
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(figsize=(5, 3.25))
+    for i, caseprefix in enumerate(cases):
+        df = dfplot[caseprefix].reindex(years).fillna(0)
+        ## Fill between max and min
+        ax.fill_between(
+            df.index, df.max(axis=1), df.min(axis=1),
+            color=colors[nicelabels[caseprefix]], alpha=0.2, lw=0,
+            label=f'{nicelabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
+        )
+        ## Max and min lines
+        # for agg in ['min', 'max']:
+        #     ax.plot(
+        #         df.index, df.agg(agg, axis=1), lw=0.5,
+        #         color=colors[nicelabels[caseprefix]],
+        #         label='_nolabel',
+        #     )
+        ## Lines
+        # df.plot(ax=ax, legend=False, lw=0.5, color='k', alpha=0.25)
+        for s in df:
+            ax.plot(
+                df.index, df[s].values, color=colors[nicelabels[caseprefix]],
+                lw=0.5, alpha=0.25,
+                label='_nolabel',
+            )
+        ## Histogram
+        reeds.plots.hist_last(
+            ax, df, color=colors[nicelabels[caseprefix]], bins=bins, alpha=alpha,
+            xpad=1+((xscale+0.5)*i), xscale=xscale,
+        )
+    ## Legend
+    handles = [
+        mpl.patches.Patch(
+            facecolor=colors[nicelabels[caseprefix]], edgecolor='none',
+            label=nicelabels.get(caseprefix,caseprefix)
+        )
+        for caseprefix in cases
+    ]
+    ax.legend(
+        handles=handles, frameon=False, fontsize='x-large',
+        loc='center left', bbox_to_anchor=(1, 0.5),
+        handletextpad=0.3, handlelength=0.7,
+    )
+    ## Formatting
+    ax.set_xlim(tstart)
+    ax.set_ylabel(f'{reeds.plots.chemlabel(pollutant)} emissions [MT/year]')
+    ax.set_ylim(0)
+    ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    ax.set_xticks([2020,2030,2040,2050])
+    ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot

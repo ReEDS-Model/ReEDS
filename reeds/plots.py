@@ -2308,6 +2308,21 @@ def wraptext(text, width, fontsize=14):
     return out
 
 
+def chemlabel(chem:str) -> str:
+    """Format chemical formulas with subscripts"""
+    out = (
+        chem
+        .replace('CO2', 'CO' + r'$\bf{_2}$')
+        .replace('CH4', 'CH' + r'$\bf{_4}$')
+        .replace('N2O', 'N' + r'$\bf{_2}$' + 'O')
+        .replace('SO2', 'SO' + r'$\bf{_2}$')
+        .replace('SOX', 'SO' + r'$\bfit{_x}$')
+        .replace('NOX', 'NO' + r'$\bfit{_x}$')
+        .replace('H2', 'H' + r'$\bf{_2}$')
+    )
+    return out
+
+
 def hist_last(
     ax, df, color='k', bins=None, xpad=0, xscale=5, alpha=1,
     percentiles=[],
@@ -2335,3 +2350,15 @@ def hist_last(
                 marker='o', markerfacecolor='none', markeredgecolor='k',
                 markeredgewidth=0.5, markersize=3,
             )
+            ## Lines
+            # ax.plot(
+            #     [x, x+xscale],
+            #     [describe[label]]*2,
+            #     color='k', lw=0.5,
+            # )
+
+    # ax.hist(
+    #     df.iloc[-1].values, bins=bins, color=color,
+    #     bottom=x, density=True,
+    #     orientation='horizontal',
+    # )

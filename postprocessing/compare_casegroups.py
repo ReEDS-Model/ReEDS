@@ -195,14 +195,14 @@ state_subplots = reeds.reedsplots.get_state_subplots()
 #%% Demand
 for caseprefix in casepaths:
     f, ax, dfplot = reeds.mcplots.plot_demand_lines(cases[caseprefix])
-    savename = f'demand-{nicelabels[caseprefix]}'
+    savename = f'in-demand-{nicelabels[caseprefix]}'
     saveit(savename)
 
 
 #%% Fuel price
 for caseprefix in casepaths:
     f, ax, dfplot = reeds.mcplots.plot_fuelprice_lines(cases[caseprefix])
-    savename = f'gasprice-{nicelabels[caseprefix]}'
+    savename = f'in-gasprice-{nicelabels[caseprefix]}'
     saveit(savename)
 
 
@@ -214,7 +214,7 @@ labels = {
 }
 for caseprefix in casepaths:
     f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix])
-    savename = f"capcost-{','.join(list(labels.values()))}-{nicelabels[caseprefix]}"
+    savename = f"in-capcost-{','.join(list(labels.values()))}-{nicelabels[caseprefix]}"
     saveit(savename)
 
 
@@ -225,7 +225,7 @@ for caseprefix in casepaths:
         f, ax, dfplot = reeds.mcplots.map_supplycurve_diff(
             cases[caseprefix], casebase=casebase, tech=tech, dfmap=dfmap,
         )
-        savename = f"supplycurve-{tech.replace('-','')}-{nicelabels[caseprefix]}"
+        savename = f"in-supplycurve-{tech.replace('-','')}-{nicelabels[caseprefix]}"
         saveit(savename)
 
 
@@ -248,8 +248,8 @@ f, ax, dfplot = reeds.mcplots.plot_cap_gen_hist(
     cases, casebase=casebase, nicelabels=nicelabels, colors=colors,
 )
 savename = (
-    f"out_cap-hist-{','.join(techs)}-"
-    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in casepaths])}"
+    f"out-cap-hist-{','.join(techs)}-"
+    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in cases])}"
 )
 saveit(savename)
 
@@ -260,13 +260,23 @@ f, ax, dfplot = reeds.mcplots.plot_cap_trans_hist(
     cases, casebase=casebase, nicelabels=nicelabels, colors=colors, level=level,
 )
 savename = (
-    f'out_trans-{level}-'
-    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in casepaths])}"
+    f'out-trans-{level}-'
+    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in cases])}"
 )
 saveit(savename)
 
 
-#%% Emissions difference
+#%% Emissions
+etype = 'process'
+for pollutant in ['CO2', 'CO2e', 'CH4', 'N2O', 'SO2', 'NOX']:
+    f, ax, dfplot = reeds.mcplots.plot_emissions(
+        cases, nicelabels=nicelabels, colors=colors, pollutant=pollutant, etype=etype,
+    )
+    savename = (
+        f"out-emissions_{etype}_{pollutant}-histline_country-"
+        f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in cases])}"
+    )
+    saveit(savename)
 
 
 #%% Scatter & correlation, outputs vs inputs
@@ -276,7 +286,7 @@ for caseprefix, plotcases in cases.items():
         plotcases,
     )
     savename = (
-        f"out_everything-scatter-x_everything-y_cap-corr_{corr_method}-"
+        f"out-everything-scatter-x_everything-y_cap-corr_{corr_method}-"
         + f"{nicelabels[caseprefix]}"
     ).replace(' ','')
     saveit(savename)
@@ -3019,89 +3029,6 @@ dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv')))
 dfwrite
 
 
-
-#%%
-#%% Emissions
-etype = 'process'
-pollutant = 'CO2'
-dictplot = {}
-for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_emissions if c == caseprefix])
-    # print(f'{caseprefix}: {(len(caseprefix_samples))}')
-    dictplot[caseprefix] = pd.concat({
-        sample: dictin_emissions[caseprefix,sample][etype][pollutant]
-        for sample in caseprefix_samples
-    }, axis=1) / 1e6
-
-dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
-
-ymax = dfplot.max().max()
-bins = np.linspace(ymin, ymax, numbins)
-
-### Plot it
-plt.close()
-f,ax = plt.subplots(figsize=(5, 3.25))
-for i, caseprefix in enumerate(plotcaseprefixes):
-    df = dfplot[caseprefix].reindex(years).fillna(0)
-    ## Fill between max and min
-    ax.fill_between(
-        df.index, df.max(axis=1), df.min(axis=1),
-        color=colors[caseprefix], alpha=0.2, lw=0,
-        label=f'{plotlabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
-    )
-    ## Max and min lines
-    # for agg in ['min', 'max']:
-    #     ax.plot(
-    #         df.index, df.agg(agg, axis=1), lw=0.5,
-    #         color=colors[caseprefix],
-    #         label='_nolabel',
-    #     )
-    ## Lines
-    # df.plot(ax=ax, legend=False, lw=0.5, color='k', alpha=0.25)
-    for s in df:
-        ax.plot(
-            df.index, df[s].values, color=colors[caseprefix],
-            lw=0.5, alpha=0.25,
-            label='_nolabel',
-        )
-    ## Histogram
-    reeds.plots.hist_last(
-        ax, df, color=colors[caseprefix], bins=bins, alpha=alpha,
-        xpad=1+((xscale+0.5)*i), xscale=xscale,
-    )
-## Legend
-handles = [
-    mpl.patches.Patch(
-        facecolor=colors[caseprefix], edgecolor='none',
-        label=plotlabels.get(caseprefix,caseprefix)
-    )
-    for caseprefix in plotcaseprefixes
-]
-if 'v20250829_mcK0_MC_flat_state_IRA' in plotcaseprefixes:
-    handles = handles[::-1]
-ax.legend(
-    handles=handles, frameon=False, loc='upper left', bbox_to_anchor=(-0.02,1.05),
-    fontsize='x-large',
-    handletextpad=0.3, handlelength=0.7,
-)
-## Formatting
-ax.set_xlim(tstart)
-# ax.set_ylabel(f'{pollutant} emissions [MMT/year]')
-ax.set_ylabel('CO' + r'$\bf{_2}$' + ' emissions [MT/year]')
-ax.set_ylim(0)
-ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-ax.set_xticks([2020,2030,2040,2050])
-ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-reeds.plots.despine(ax)
-# plt.draw()
-# reeds.plots.shorten_years(ax)
-savename = (
-    f"out_{pollutant.lower()}-line_country-"
-    f"{','.join([plotlabels.get(c,c).title().replace(' ','') for c in plotcaseprefixes])}.png"
-)
-print(savename)
-plt.savefig(os.path.join(savepath, savename))
-plt.show()
 
 #%% Print distribution of 2050 emissions
 dfplot.loc[2050].groupby('caseprefix').describe().round(0)
