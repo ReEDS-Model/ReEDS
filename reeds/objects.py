@@ -87,20 +87,6 @@ class ReEDScase:
         self.inputs = {}
         self.outputs = {}
 
-    # def get_status(self):
-    #     ...
-
-    # def get_results(self):
-    #     ...
-
-    # def result(self, filename:str):
-    #     """
-    #     """
-    #     if filename in self.outputs:
-    #         return self.outputs[filename]
-    #     else:
-    #         return reeds.io.read_output(self.casepath, filename=filename)
-
     def __getattr__(self, name):
         if name in SPECIAL:
             if name not in self.inputs:
@@ -123,43 +109,14 @@ class ReEDScase:
                     self.inputs[name] = value
                     setattr(self, name, value)
                 except FileNotFoundError:
-                    # err = (
-                    #     f"'{name}' is neither an input nor an output of this ReEDS run. "
-                    #     f'Check to make sure it finished: {self.casepath}'
-                    # )
                     err = f"'{name}' is neither an input nor an output of {self.casepath}"
                     raise KeyError(err)
             return value
         else:
             return getattr(self, name)
-            # return self.outputs[name]
 
     def copy(self, deep=True):
         if deep:
             return copy.deepcopy(self)
         else:
             return copy.copy(self)
-
-
-# #%% Test
-# casepath = '/Users/pbrown/github/ReEDS/runs/v20261008_chM0_Pacific'
-# foo = ReEDScase(casepath)
-
-# #%%
-# foo.cap
-# foo.gen_h
-
-# # # %time foo.capacity_offline
-# # %timeit foo.reqt_quant
-# foo.capacity_offline
-# # foo.barf
-# foo.tsc_forward
-
-# foo.hierarchy
-# foo.dfmap['r']
-
-# print(f'inputs: {foo.inputs.keys()}')
-# print(f'outputs: {foo.outputs.keys()}')
-
-# #%%
-# foo.barf
