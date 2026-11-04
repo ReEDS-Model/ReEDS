@@ -332,13 +332,7 @@ def plot_cap_gen_hist(
     dictplot = {}
     for caseprefix, plotcases in cases.items():
         dictplot[caseprefix] = pd.concat({
-            i: (
-                case.cap
-                .loc[case.cap.t==t]
-                .groupby('i').Value.sum()
-                .rename('GW')
-                / 1e3
-            )
+            i: case.cap.xs(t,0,'t').groupby('i').sum() / 1e3
             for i, case in enumerate(plotcases)
         }, axis=1)
 
@@ -347,12 +341,9 @@ def plot_cap_gen_hist(
     dfplot.index = reeds.reedsplots.simplify_techs(dfplot.index)
     dfplot = dfplot.groupby('i').sum()
 
-    dfstart = (
-        casebase.cap
-        .loc[casebase.cap.t==tstart]
-        .groupby('i').Value.sum()
-        .rename('GW') / 1e3
-    )
+    dfstart = casebase.cap.xs(tstart,0,'t').groupby('i').sum() / 1e3
+    dfstart.index = reeds.reedsplots.simplify_techs(dfstart.index)
+    dfstart = dfstart.groupby('i').sum()
 
     ## Take the top techs by capacity if desired
     if isinstance(techs, int):
@@ -443,7 +434,7 @@ def plot_cap_gen_bar(
     colors_tech = plot_settings['tech_color'].squeeze(1)
     ## Data
     dfin = pd.concat({
-        i: case.cap.loc[case.cap.t==t].groupby('i').Value.sum()
+        i: case.cap.xs(t,0,'t').groupby('i').sum()
         for i, case in enumerate(plotcases)
     }, axis=1)
     dfin.index = reeds.reedsplots.simplify_techs(dfin.index)
@@ -512,9 +503,9 @@ def plot_cap_gen_bar_states(
     dfplot = pd.concat(
         {
             i: (
-                case.cap
-                .assign(st=case.cap.r.map(hierarchy.st))
-                .loc[case.cap.t==t]
+                case.cap.reset_index()
+                .assign(st=case.cap.index.get_level_values('r').map(hierarchy.st))
+                .loc[case.cap.index.get_level_values('t') == t]
                 .groupby(['st','i']).Value.sum().rename('GW') / 1e3
             )
             for i, case in enumerate(plotcases)
@@ -603,10 +594,7 @@ def plot_cap_trans_hist(
     ## Get data
     hierarchy = casebase.hierarchy
     dfmap = casebase.dfmap
-    baseline = (
-        casebase.tran_out.loc[casebase.tran_out.t==tstart]
-        .groupby(['r','rr'], as_index=False).Value.sum()
-    )
+    baseline = casebase.tran_out.xs(t,0,'t').groupby(['r','rr']).sum().reset_index()
     baseline['level'] = baseline.r.map(hierarchy[level])
     baseline['levell'] = baseline.rr.map(hierarchy[level])
     baseline = baseline.loc[baseline.level != baseline.levell].copy()
@@ -620,9 +608,7 @@ def plot_cap_trans_hist(
     for caseprefix, plotcases in cases.items():
         df = pd.concat(
             {
-                i: case.tran_out.loc[
-                    case.tran_out.t==t
-                ].groupby(['r','rr']).Value.sum()
+                i: case.tran_out.xs(t,0,'t').groupby(['r','rr']).sum()
                 for i, case in enumerate(plotcases)
             },
             names=('case',),
@@ -789,14 +775,14 @@ def plot_scatter_everything(
     inflator = inflatable[dollaryear_reeds, dollaryear_output]
     ## Capacity
     for case in plotcases:
-        case.capagg = case.cap.copy()
+        case.capagg = case.cap.reset_index().copy()
         case.capagg.i = reeds.reedsplots.simplify_techs(case.capagg.i)
         case.capagg = case.capagg.groupby(['t','i']).Value.sum()
     dfcap = pd.Series({
         (techlabel, i): (
             case.capagg.loc[t].reindex(techgroup).sum()
             - case.capagg.loc[tstart].reindex(techgroup).sum()
-            # case.cap.loc[case.cap.t==t].groupby('i').Value.sum()
+            # case.cap.xs(t,0,'t').groupby('i').Value.sum()
             # - case.cap.loc[case.cap.t==tstart].groupby('i').Value.sum()
         ) / 1e3
         for i, case in enumerate(plotcases)
@@ -815,8 +801,8 @@ def plot_scatter_everything(
     dfco2 = pd.Series(
         {
             i: (
-                case.emit_nat.loc[(case.emit_nat.etype=='process') & (case.emit_nat.e=='CO2')]
-                .set_index('t').Value.reindex(co2years).interpolate('index').sum()
+                case.emit_nat.xs('process',0,'etype').xs('CO2',0,'e')
+                .reindex(co2years).interpolate('index').sum()
                 / 1e9
             )
             for i, case in enumerate(plotcases)
@@ -924,9 +910,7 @@ def plot_emissions(
     dictplot = {}
     for caseprefix, plotcases in cases.items():
         dictplot[caseprefix] = pd.concat({
-            i: case.emit_nat.loc[
-                (case.emit_nat.etype==etype) & (case.emit_nat.e==pollutant)
-            ].set_index('t').Value
+            i: case.emit_nat.xs(etype,0,'etype').xs(pollutant,0,'e')
             for i, case in enumerate(plotcases)
         }, axis=1) / 1e6
 
@@ -1030,9 +1014,7 @@ def plot_npv(
         )
         dictplot_climate[caseprefix] = pd.Series({
             i: (
-                case.emit_nat.loc[
-                    (case.emit_nat.etype=='process') & (case.emit_nat.e=='CO2')
-                ].set_index('t').Value
+                case.emit_nat.xs('process',0,'etype').xs('CO2',0,'e')
                 .reindex(discounts.index).interpolate('index')
                 * co2_social_cost
                 / 1e9 # convert to $billion

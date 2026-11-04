@@ -306,5 +306,3 @@ try:
     saveit(savename)
 except Exception:
     print(traceback.format_exc())
-
-print('Done')

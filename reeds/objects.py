@@ -90,28 +90,32 @@ class ReEDScase:
     def __getattr__(self, name):
         if name in SPECIAL:
             if name not in self.inputs:
-                value = SPECIAL[name](self.casepath)
-                self.inputs[name] = value
-                setattr(self, name, value)
+                df = SPECIAL[name](self.casepath)
+                self.inputs[name] = df
+                setattr(self, name, df)
             return self.inputs[name]
         elif name not in self.outputs:
             if self.verbose:
                 print(f'Loading {name}')
             ## Try outputs first
             try:
-                value = reeds.io.read_output(self.casepath, filename=name)
-                self.outputs[name] = value
-                setattr(self, name, value)
+                df = reeds.io.read_output(self.casepath, filename=name)
+                ## If in long format, convert to a multiindex series
+                if 'Value' in df:
+                    index = [c for c in df if c != 'Value']
+                    df = df.set_index(index).squeeze(1)
+                self.outputs[name] = df
+                setattr(self, name, df)
             ## Then inputs
             except (KeyError, FileNotFoundError):
                 try:
-                    value = reeds.io.read_input(self.casepath, name=name)
-                    self.inputs[name] = value
-                    setattr(self, name, value)
+                    df = reeds.io.read_input(self.casepath, name=name)
+                    self.inputs[name] = df
+                    setattr(self, name, df)
                 except FileNotFoundError:
                     err = f"'{name}' is neither an input nor an output of {self.casepath}"
                     raise KeyError(err)
-            return value
+            return df
         else:
             return getattr(self, name)
 
