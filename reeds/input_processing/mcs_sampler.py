@@ -1829,12 +1829,13 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     parser = argparse.ArgumentParser(description='Copy files needed for this run')
     parser.add_argument('reeds_path', help='ReEDS directory')
     parser.add_argument('inputs_case', help='Output directory')
-    parser.add_argument('--nolog', '-n', default=False, action='store_true', help='turn off logging for debugging')
+    parser.add_argument('--debug', '-d', default=False, action='store_true', 
+        help='turn off logging and run distribution checks for debugging')
                     
     args = parser.parse_args()
     reeds_path = os.path.abspath(args.reeds_path)
     inputs_case = os.path.abspath(args.inputs_case)
-    nolog = args.nolog
+    debug = args.debug
 
     # ---- Settings for testing ----
     # reeds_path = reeds.io.reeds_path
@@ -1844,7 +1845,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # Set up logger
     tic = datetime.datetime.now()
-    if not nolog:
+    if not debug:
         log = reeds.log.makelog(
             scriptname=__file__,
             logpath=os.path.join(os.path.dirname(inputs_case), 'gamslog.txt'),
@@ -1862,6 +1863,12 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     if MCS_runs >= 1:
         print('Starting Monte Carlo sampling with mcs_sampler.py')
+        if debug:
+            mcs_dist_path = os.path.join(
+                reeds.io.reeds_path, 'inputs', 'userinput',
+                f'mcs_distributions_{sw.MCS_dist}.yaml'
+            )
+            general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
         main_mcs(reeds_path, inputs_case, n_samples=MCS_runs, lhs_sampling=MCS_lhs, seed=seed)
     else:
         print('MCS_runs switch is set to 0 or not found. No Monte Carlo sampling will be performed')
