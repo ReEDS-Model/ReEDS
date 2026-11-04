@@ -222,11 +222,16 @@ def check_lhs_param_order(lower, upper):
     return lower_new, upper_new
 
 
-def get_base_supply_curve(sample_group: pd.Series, dist_files: list, sw_name: str) -> pd.DataFrame:
+def get_base_supply_curve(
+    sample_group: pd.Series, 
+    dist_files: list, 
+    sw_name: str, 
+    mcs_message: bool = True
+) -> pd.DataFrame:
     """
     Identifies base supply curve scenario to use for sc_point_gid index
     """
-    base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case)
+    base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case, mcs_message=mcs_message)
     siting_scenarios = {
         key: val for entry in sample_group.assignments_list
         for key, val in entry.items()
@@ -906,7 +911,7 @@ class WeightCalculator:
         # Dictionary to store computed weights for the modifiable columns
         # file index -> pd.DataFrame
         dict_df_weights = {}
-        base_scenario_index, dfbase = get_base_supply_curve(self.sample_group, dist_files, sw_name, mcs_message=False)
+        base_scenario_index, dfbase = get_base_supply_curve(self.sample_group, dist_files, sw_name, False)
 
         for f, df in enumerate(dist_files):
             # Initial skeleton of the weights DataFrame
