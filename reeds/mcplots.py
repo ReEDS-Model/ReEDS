@@ -431,6 +431,166 @@ def plot_cap_gen_hist(
     return f, ax, dfplot.loc[techs]
 
 
+def plot_cap_gen_bar(
+    plotcases,
+    t=2050,
+    scale=0.05,
+    barwidth=1,
+    sortby=None,
+    ymax=None,
+):
+    """
+    Capacity stacked bars [GW] by sample (x axis)
+    Args:
+        sortby: None to leave samples unsorted,
+            or a tech name string to sort by capacity of that tech,
+            or a list of tech name strings to sort by summed capacity of those techs
+    """
+    ## Shared inputs
+    plot_settings = reeds.io.get_plot_formatting()
+    colors_tech = plot_settings['tech_color'].squeeze(1)
+    ## Data
+    dfin = pd.concat({
+        i: case.cap.loc[case.cap.t==t].groupby('i').Value.sum()
+        for i, case in enumerate(plotcases)
+    }, axis=1)
+    dfin.index = reeds.reedsplots.simplify_techs(dfin.index)
+    dfin = dfin.groupby('i').sum().fillna(0) / 1e3
+
+    missing = [i for i in dfin.index if i not in colors_tech]
+    if len(missing):
+        print(f"missing colors: {', '.join(missing)}")
+    drop = ['Electrolyzer', 'Canadian Imports']
+    order = [c for c in colors_tech.index if (c in dfin.index) and (c not in drop)]
+    dfplot = dfin.loc[order].T
+    ## Get the order
+    if sortby is None:
+        order = dfplot.index
+        label = 'None'
+    elif isinstance(sortby, str):
+        order = dfplot.sort_values(sortby).index
+        label = sortby
+    elif isinstance(sortby, list):
+        order = dfplot[sortby].sum(axis=1).sort_values().index
+        label = ' + '.join([i.replace(' ','').replace('+','') for i in sortby])
+    else:
+        raise NotImplementedError(f'sortby={sortby}')
+    dfplot = dfplot.loc[order].reset_index(drop=True).copy()
+
+    ## Plot it
+    plt.close()
+    f,ax = plt.subplots(figsize=(scale*len(plotcases), 3.75))
+    reeds.plots.stackbar(df=dfplot, ax=ax, colors=colors_tech, width=barwidth, net=False)
+    ## Legend
+    handles = [
+        mpl.patches.Patch(facecolor=c, edgecolor='none', label=i)
+        for i,c in colors_tech.items() if i in dfplot
+    ]
+    _leg = ax.legend(
+        handles=handles[::-1],
+        loc='upper left', bbox_to_anchor=(1,1), frameon=False,
+        fontsize=11, labelspacing=0.0,
+        handletextpad=0.3, handlelength=0.7,
+    )
+    ## Formatting
+    ax.set_xlim(-0.5, len(dfplot)-0.5)
+    ax.set_ylabel(f"{t} capacity [GW]"+('\n'f'sorted by {label}' if sortby is not None else ''))
+    ax.set_xlabel(f'Sample number (n = {len(plotcases)})')
+    if ymax is not None:
+        ax.set_ylim(0, ymax)
+    ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_cap_gen_bar_states(
+    plotcases,
+    t=2050,
+    barwidth=1,
+    scale=1.2,
+):
+    """Capacity stacked bars [GW] by sample (x axis) and state (subplots)"""
+    ## Shared inputs
+    state_subplots = reeds.reedsplots.get_state_subplots()
+    hierarchy = plotcases[0].hierarchy
+    plot_settings = reeds.io.get_plot_formatting()
+    colors_tech = plot_settings['tech_color'].squeeze(1)
+    ## Data
+    dfplot = pd.concat(
+        {
+            i: (
+                case.cap
+                .assign(st=case.cap.r.map(hierarchy.st))
+                .loc[case.cap.t==t]
+                .groupby(['st','i']).Value.sum().rename('GW') / 1e3
+            )
+            for i, case in enumerate(plotcases)
+        },
+        axis=1,
+    ).fillna(0).copy().reset_index()
+    dfplot.i = reeds.reedsplots.simplify_techs(dfplot.i)
+    dfplot = dfplot.groupby(['st','i']).sum()
+
+    missing = [i for i in dfplot.index.get_level_values('i').unique() if i not in colors_tech]
+    if len(missing):
+        print(f"missing colors: {', '.join(missing)}")
+
+    ## Plot it
+    nrows = state_subplots['row'].max() + 1
+    ncols = state_subplots['col'].max() + 1
+    states = sorted(state_subplots.index.tolist())
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*scale, nrows*scale),
+        gridspec_kw={'hspace':0.4, 'wspace':0.5},
+        sharex=True,
+    )
+    # for state in ['CA','TX','FL']:
+    # for state in list(set(np.random.choice(states, 10))):
+    for state in states:
+        _ax = ax[state_subplots.loc[state,'ax']]
+        df = dfplot.loc[state].reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
+        df = df.reset_index(drop=True).copy()
+        reeds.plots.stackbar(df=df, ax=_ax, colors=colors_tech, width=barwidth, net=False)
+        ## Formatting
+        _ax.annotate(
+            state,
+            (0.05, 0.95), xycoords='axes fraction', ha='left', va='top',
+            color='k', fontsize='large',
+            path_effects=[pe.withStroke(linewidth=3.0, foreground='w', alpha=0.5)],
+            zorder=1e6,
+        )
+    ## Turn off unused axes
+    subplots_used = state_subplots['ax'].tolist()
+    for row in range(nrows):
+        for col in range(ncols):
+            if (row,col) not in subplots_used:
+                ax[row,col].axis('off')
+    ## Legend
+    handles = [
+        mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
+        for i in colors_tech if i in df
+    ]
+    _leg = ax[-1,-1].legend(
+        handles=handles[::-1],
+        loc='lower left', bbox_to_anchor=(-0.5,-0.2), frameon=False,
+        fontsize='large', labelspacing=0.3,
+        handletextpad=0.3, handlelength=0.7,
+    )
+    ## Formatting
+    ax[state_subplots.loc['MS','ax']].set_xlim(-0.5, len(df)-0.5)
+    # ax.set_ylabel(f"{t} capacity [GW]"+('\n'f'sorted by {label}' if sortby is not None else ''))
+    ax[state_subplots.loc['MS','ax']].set_xlabel(
+        f'Sample number (n = {len(plotcases)})', fontsize='xx-large')
+    ax[state_subplots.loc['OR','ax']].set_ylabel(
+        f"{t} capacity [GW]", labelpad=15, fontsize='xx-large')
+    # ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    # ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
 def plot_cap_trans_hist(
     cases,
     casebase=None,

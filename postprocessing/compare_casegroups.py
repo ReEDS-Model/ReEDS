@@ -55,7 +55,6 @@ parser.add_argument(
     '--write', '-w', choices=['pdf', 'png', 'ppt', 'pptx'], default='png',
     help='Output format (png or pptx)')
 
-
 # #%% Inputs for testing
 # caselist = [str(Path(reeds.io.reeds_path,'postprocessing','example.csv'))]
 # casenames = ''
@@ -64,7 +63,7 @@ parser.add_argument(
 # write = 'png'
 # interactive = True
 
-#%% Parse inputs
+### Parse inputs
 args = parser.parse_args()
 caselist = args.caselist
 casenames = args.casenames
@@ -186,10 +185,6 @@ try:
 except Exception as err:
     print(err)
 
-### State subplots
-state_subplots = reeds.reedsplots.get_state_subplots()
-
-
 
 ###### Inputs plots
 #%% Demand
@@ -282,9 +277,7 @@ for pollutant in ['CO2', 'CO2e', 'CH4', 'N2O', 'SO2', 'NOX']:
 #%% Scatter & correlation, outputs vs inputs
 corr_method = 'spearman'
 for caseprefix, plotcases in cases.items():
-    f, ax, dfplot = reeds.mcplots.plot_scatter_everything(
-        plotcases,
-    )
+    f, ax, dfplot = reeds.mcplots.plot_scatter_everything(plotcases)
     savename = (
         f"out-everything-scatter-x_everything-y_cap-corr_{corr_method}-"
         + f"{nicelabels[caseprefix]}"
@@ -292,10 +285,18 @@ for caseprefix, plotcases in cases.items():
     saveit(savename)
 
 
-#%% Generation capacity stacked bars by sample: Nation (LOW priority)
+#%% Generation capacity stacked bars by sample: Nation
+for caseprefix, plotcases in cases.items():
+    f, ax, dfplot = reeds.mcplots.plot_cap_gen_bar(plotcases)
+    savename = (f'out-cap-bar_country-{nicelabels[caseprefix]}').replace(' ','')
+    saveit(savename)
 
 
-#%% Generation capacity stacked bars by sample: State (LOW priority)
+#%% Generation capacity stacked bars by sample: State (SLOW)
+for caseprefix, plotcases in cases.items():
+    f, ax, dfplot = reeds.mcplots.plot_cap_gen_bar_states(plotcases)
+    savename = (f'out-cap-bar_st-{nicelabels[caseprefix]}').replace(' ','')
+    saveit(savename)
 
 
 #%% Generation capacity lines with vertical histograms at end (LOW priority)
@@ -841,173 +842,6 @@ for tech in techs:
         print(savename)
         plt.savefig(os.path.join(savepath, savename))
         plt.show()
-
-
-#%% National capacity stack bar for all scenarios
-t = 2050
-scale = 0.02
-scale = 0.1
-barwidth = 1.0
-for sortby in [
-    None,
-    'PV',
-    'Wind',
-    ['PV', 'Wind'],
-    'Nuclear',
-    'Gas',
-    'Coal',
-    ['Gas+CCS', 'Coal+CCS'],
-]:
-    for caseprefix in casepaths:
-        caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
-        dfin = pd.concat(
-            {
-                sample: dictin_cap_r[caseprefix,sample].loc[
-                    (dictin_cap_r[caseprefix,sample].t==t)
-                ].groupby('i').MW.sum().rename('GW') / 1e3
-                for sample in caseprefix_samples
-            },
-            axis=1,
-        ).fillna(0)
-
-        missing = [i for i in dfin.index if i not in colors_tech]
-        print(f"missing colors: {', '.join(missing)}")
-        dfplot = dfin.reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
-        ## Get the order
-        if sortby is None:
-            order = dfplot.index
-            label = 'None'
-        elif isinstance(sortby, str):
-            order = dfplot.sort_values(sortby).index
-            label = sortby
-        elif isinstance(sortby, list):
-            order = dfplot[sortby].sum(axis=1).sort_values().index
-            label = ' + '.join([i.replace(' ','').replace('+','') for i in sortby])
-        else:
-            raise NotImplementedError(f'sortby={sortby}')
-        dfplot = dfplot.loc[order].reset_index(drop=True).copy()
-
-        ## Plot it
-        plt.close()
-        f,ax = plt.subplots(figsize=(scale*len(caseprefix_samples), 3.75))
-        reeds.plots.stackbar(df=dfplot, ax=ax, colors=colors_tech, width=barwidth, net=False)
-        ## Legend
-        handles = [
-            mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
-            for i in colors_tech if i in dfplot
-        ]
-        leg = ax.legend(
-            handles=handles[::-1],
-            loc='upper left', bbox_to_anchor=(1,1), frameon=False,
-            fontsize='large', labelspacing=0.3,
-            handletextpad=0.3, handlelength=0.7,
-        )
-        ## Formatting
-        ax.set_title(nicelabels.get(caseprefix,caseprefix), x=0, ha='left')
-        ax.set_xlim(-0.5, len(dfplot)-0.5)
-        ax.set_ylabel(f"{t} capacity [GW]"+('\n'f'sorted by {label}' if sortby is not None else ''))
-        ax.set_xlabel(f'Sample number (n = {len(caseprefix_samples)})')
-        ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-        ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
-        reeds.plots.despine(ax)
-        savename = (
-            f"out_cap-bar_country-by_{label}-"
-            f"{nicelabels.get(caseprefix,caseprefix).title()}.png"
-        ).replace(' ','')
-        print(savename)
-        plt.savefig(os.path.join(savepath, savename))
-        plt.show()
-
-
-#%% State stack bars
-t = 2050
-nrows = state_subplots['row'].max() + 1
-ncols = state_subplots['col'].max() + 1
-states = sorted(state_subplots.index.tolist())
-scale = 1.2
-barwidth = 1.0
-for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c in [caseprefix]])
-    dfin = pd.concat(
-        {
-            sample: (
-                dictin_cap_r[caseprefix,sample]
-                .loc[(dictin_cap_r[caseprefix,sample].t==t)]
-                .assign(st=dictin_cap_r[caseprefix,sample].r.map(hierarchy.st))
-                .groupby(['st','i']).MW.sum().rename('GW') / 1e3
-            )
-            for sample in caseprefix_samples
-        },
-        axis=1,
-    ).fillna(0)
-
-    missing = [i for i in dfin.index.get_level_values('i').unique() if i not in colors_tech]
-    print(f"missing colors: {', '.join(missing)}")
-
-    ## Plot it
-    plt.close()
-    f,ax = plt.subplots(
-        nrows, ncols, figsize=(ncols*scale, nrows*scale),
-        gridspec_kw={'hspace':0.4, 'wspace':0.5},
-        sharex=True,
-    )
-    # for state in ['CA','TX','FL']:
-    # for state in list(set(np.random.choice(states, 10))):
-    for state in states:
-        _ax = ax[state_subplots.loc[state,'ax']]
-        dfplot = dfin.loc[state].reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
-        dfplot = dfplot.reset_index(drop=True).copy()
-        reeds.plots.stackbar(df=dfplot, ax=_ax, colors=colors_tech, width=barwidth, net=False)
-        ## Formatting
-        _ax.annotate(
-            state,
-            (0.05, 0.95), xycoords='axes fraction', ha='left', va='top',
-            color='k', fontsize='large',
-            path_effects=[pe.withStroke(linewidth=3.0, foreground='w', alpha=0.5)],
-            zorder=1e6,
-        )
-    ## Turn off unused axes
-    subplots_used = state_subplots['ax'].tolist()
-    for row in range(nrows):
-        for col in range(ncols):
-            if (row,col) not in subplots_used:
-                ax[row,col].axis('off')
-    ## Legend
-    handles = [
-        mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
-        for i in colors_tech if i in dfplot
-    ]
-    leg = ax[-1,-1].legend(
-        handles=handles[::-1],
-        loc='lower left', bbox_to_anchor=(-0.5,-0.2), frameon=False,
-        fontsize='large', labelspacing=0.3,
-        handletextpad=0.3, handlelength=0.7,
-    )
-    ## Formatting
-    ax[0,0].annotate(
-        f"{nicelabels.get(caseprefix,caseprefix)} (n = {len(caseprefix_samples)})",
-        (0.05, 0.9), xycoords='axes fraction', ha='left', va='top',
-        color='k', fontsize='xx-large',
-    )
-    ax[state_subplots.loc['MS','ax']].set_xlim(-0.5, len(dfplot)-0.5)
-    # ax.set_ylabel(f"{t} capacity [GW]"+('\n'f'sorted by {label}' if sortby is not None else ''))
-    ax[state_subplots.loc['MS','ax']].set_xlabel(
-        f'Sample number (n = {len(caseprefix_samples)})', fontsize='xx-large')
-    ax[state_subplots.loc['OR','ax']].set_ylabel(
-        f"{t} capacity [GW]", labelpad=15, fontsize='xx-large')
-    # ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-    # ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
-    reeds.plots.despine(ax)
-    savename = (
-        f"out_cap-bar_st-"
-        f"{nicelabels.get(caseprefix,caseprefix).title()}.png"
-    ).replace(' ','')
-    print(savename)
-    plt.savefig(os.path.join(savepath, savename))
-    plt.show()
-
-#%%
-#%%
 
 
 #%% National capacity stack bar with different inputs
