@@ -430,6 +430,7 @@ superpeak_hour_mapper.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,c
 supply_chain_adjust.csv,.csv,0,None,0,None,0,None,constant,None,None,new,
 supplycurve_egs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_geohydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+supplycurve_psh.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_upv.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_wind-ofs.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 supplycurve_wind-ons.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

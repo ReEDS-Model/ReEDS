@@ -26,7 +26,7 @@ def check_negative_values(df, cost_cols):
         ) 
 
 #%%### Fixed inputs
-if reeds.io.hpc:
+if reeds.slurm.check_slurm():
     remotepath = '/kfs2/shared-projects/reeds'
     filepaths = {
         'land': os.path.join(

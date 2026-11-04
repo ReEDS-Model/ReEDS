@@ -8,7 +8,7 @@ dependencies:
   - bokeh=3.9
   - click=8.4
   - cmocean=4.0
-  - geopandas=1.1
+  - geopandas=1.2
   - git-lfs=3.7
   - gitpython=3.1
   - h5py=3.16
@@ -27,6 +27,7 @@ dependencies:
   - tqdm=4.68
   ## vvv The next packages are optional for default settings and may
   ## vvv be excluded if you're having trouble building the environment.
+  - adjustText=1.4 # for avoiding map label overlaps
   - fiona=1.10 # for interactive maps
   - folium=0.20 # for interactive maps
   - ipykernel=7.3 # for interactive python in VS Code
