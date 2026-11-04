@@ -204,8 +204,6 @@ prepost.csv,inputs/sets/prepost.csv,1,ignore,ignore,,,,,,,,set,prepost,defines p
 psh_supply_curves_duration.csv,inputs/storage/PSH_supply_curves_durations.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,1,,,,
 psh_supply_curves_capacity.csv,inputs/supply_curve/PSH_supply_curves_capacity_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,sum,geosize,r,wide,,1,0,,,,,,
 psh_supply_curves_cost.csv,inputs/supply_curve/PSH_supply_curves_cost_{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,mean,uniform,r,wide,,1,0,,,,,,
-pvb_agg.csv,inputs/sets/pvb_agg.csv,1,ignore,ignore,,,,,0,,,set,pvb_agg,crosswalk between hybrid pv+battery configurations and technology options,
-pvb_config.csv,inputs/sets/pvb_config.csv,1,ignore,ignore,,,,,,,,set,pvb_config,set of hybrid pv+battery configurations,
 ramprate.csv,inputs/plant_characteristics/ramprate.csv,int(sw.GSw_OpRes) != 0,ignore,ignore,,,,,0,,,,,,
 ramptime.csv,inputs/reserves/ramptime.csv,int(sw.GSw_OpRes) != 0,ignore,ignore,,,,,0,,,,,,
 recstyle.csv,inputs/state_policies/recstyle.csv,int(sw.GSw_StateRPS) != 0,ignore,ignore,*st,"RPSCat,style",,,0,,,,,,

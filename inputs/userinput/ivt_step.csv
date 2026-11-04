@@ -42,10 +42,10 @@ Nuclear-SMR,5
 o-g-s,5
 pumped-hydro,1
 pumped-hydro-flex,1
-upv_1*upv_10,1
-pvb1_1 * pvb1_10,1
-pvb2_1 * pvb2_10,1
-pvb3_1 * pvb3_10,1
+upv,1
+pvb1,1
+pvb2,1
+pvb3,1
 wind-ofs_1*wind-ofs_10,1
 wind-ons,1
 csp1_1*csp1_12,5

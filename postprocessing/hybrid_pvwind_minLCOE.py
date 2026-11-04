@@ -300,9 +300,9 @@ cfwind.index = timeindex
 sitemap = pd.read_csv(
     os.path.join(inp['case'],'inputs_case','spurline_sitemap.csv')
 ).rename(columns={'*i':'i'})
-### Get profile names
-sitemap['profile'] = sitemap.i.map(lambda x: x.split('_')[1]) + '|' + sitemap.r
-sitemap['tech'] = sitemap.i.map(lambda x: x.split('_')[0])
+### Get profile names, which are keyed by resource class and region
+sitemap['profile'] = sitemap['c'].astype(str) + '|' + sitemap.r
+sitemap['tech'] = sitemap.i.map(lambda x: reeds.techs.split_class(x)[0])
 ### Get list of valid regions and subset to those regions
 val_r = reeds.io.read_input(inp['case'], 'r').squeeze(1).values
 sitemap = sitemap.loc[sitemap.r.isin(val_r)].copy()

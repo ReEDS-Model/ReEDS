@@ -59,7 +59,7 @@ def calc_financial_inputs(inputs_case):
     inflation_df = pd.read_csv(os.path.join(inputs_case,'inflation.csv'))
 
     # Import tech groups. Used to expand data inputs 
-    # (e.g., 'UPV' expands to all of the upv subclasses, like upv_1, upv_2, etc)
+    # (e.g., 'CSP1' expands to all of the csp1 subclasses, like csp1_1, csp1_2, etc)
     tech_groups = reeds.techs.import_tech_groups(os.path.join(inputs_case, 'tech-subset-table.csv'))
 
     # Set up scen_settings object

@@ -130,10 +130,6 @@
 
 - `prescriptivelink0.csv`: initial set of prescribed categories and their technologies - used in assigning prescribed builds
 
-- `pvb_agg.csv`: crosswalk between hybrid pv+battery configurations and technology options
-
-- `pvb_config.csv`: set of hybrid pv+battery configurations
-
 - `quarter.csv`:
 
 - `sdbin.csv`: set of storage durage bins

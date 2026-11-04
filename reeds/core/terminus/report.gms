@@ -675,16 +675,19 @@ cap_upv_class(c,r,t)$tmodel_new(t) =
 cap_cspns_short(c,r,t)$[cap_cspns(c,r,t)$tmodel_new(t)] =
     max(0, cap_cspns(c,r,t) - cap_upv_class(c,r,t)) ;
 
-* Move the generation that goes with the reassigned capacity, class by class
+* Move the generation that goes with the reassigned capacity. gen_h has no class, so the
+* share moved is csp-ns's share of the technology's upv capacity across its classes
 gen_h("csp-ns",r,h,t)$[sum{c, cap_cspns(c,r,t) }$tmodel_new(t)] =
-    sum{(i,c)$[upv(i)$i_c(i,c)$cap_upv_class(c,r,t)],
-        gen_h(i,r,h,t) * min(cap_cspns(c,r,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) } ;
+    sum{i$[upv(i)$sum{c$i_c(i,c), cap_upv_class(c,r,t) }],
+        gen_h(i,r,h,t)
+        * sum{c$i_c(i,c), min(cap_cspns(c,r,t), cap_upv_class(c,r,t)) }
+        / sum{c$i_c(i,c), cap_upv_class(c,r,t) } } ;
 
 gen_h(i,r,h,t)$[upv(i)$tmodel_new(t)$sum{c$i_c(i,c), cap_cspns(c,r,t) }
                $sum{c$i_c(i,c), cap_upv_class(c,r,t) }] =
     gen_h(i,r,h,t)
-    * (1 - sum{c$i_c(i,c),
-               min(cap_cspns(c,r,t), cap_upv_class(c,r,t)) / cap_upv_class(c,r,t) }) ;
+    * (1 - sum{c$i_c(i,c), min(cap_cspns(c,r,t), cap_upv_class(c,r,t)) }
+           / sum{c$i_c(i,c), cap_upv_class(c,r,t) }) ;
 gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 
 * Do it again for stress periods

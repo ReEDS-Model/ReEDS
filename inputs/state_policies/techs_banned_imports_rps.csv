@@ -43,11 +43,7 @@ hydNPD,,1,,1,,1
 hydNPND,,1,,1,,1
 hydED,,,,1,,1
 hydEND,,,,1,,1
-upv_1,,,1,,,
-upv_2,,,1,,,
-upv_3,,,1,,,
-upv_4,,,1,,,
-upv_5,,,1,,,
+upv,,,1,,,
 wind-ofs_1,,,,1,,
 wind-ofs_2,,,,1,,
 wind-ofs_3,,,,1,,

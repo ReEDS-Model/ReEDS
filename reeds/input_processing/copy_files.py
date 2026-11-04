@@ -948,13 +948,13 @@ def write_miscellaneous_files(
         {'*pvb_type': [f'pvb{i}' for i in sw['GSw_PVB_Types'].split('_')],
         'ilr': [np.around(float(c) / 100, 2) for c in sw['GSw_PVB_ILR'].split('_')
                 ][0:len(sw['GSw_PVB_Types'].split('_'))]}
-    ).to_csv(os.path.join(inputs_case, 'pvb_ilr.csv'), index=False)
+    ).to_csv(os.path.join(inputs_case, 'ilr_pvb.csv'), index=False)
 
     pd.DataFrame(
         {'*pvb_type': [f'pvb{i}' for i in sw['GSw_PVB_Types'].split('_')],
         'bir': [np.around(float(c) / 100, 2) for c in sw['GSw_PVB_BIR'].split('_')
                 ][0:len(sw['GSw_PVB_Types'].split('_'))]}
-    ).to_csv(os.path.join(inputs_case, 'pvb_bir.csv'), index=False)
+    ).to_csv(os.path.join(inputs_case, 'bir_pvb.csv'), index=False)
 
     ### County-to-zone mapping
     county2zone = reeds.io.get_county2zone(case=os.path.dirname(inputs_case))
