@@ -249,18 +249,37 @@ f, ax, dfplot = reeds.mcplots.plot_cap_gen_hist(
 )
 savename = (
     f"out_cap-hist-{','.join(techs)}-"
-    f"{','.join([nicelabels[caseprefix].title().replace(' ','') for caseprefix in casepaths])}"
+    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in casepaths])}"
 )
 saveit(savename)
 
 
 #%% Transmission interface capacity vertical histograms
+level = 'transreg'
+f, ax, dfplot = reeds.mcplots.plot_cap_trans_hist(
+    cases, casebase=casebase, nicelabels=nicelabels, colors=colors, level=level,
+)
+savename = (
+    f'out_trans-{level}-'
+    f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in casepaths])}"
+)
+saveit(savename)
 
 
 #%% Emissions difference
 
 
 #%% Scatter & correlation, outputs vs inputs
+corr_method = 'spearman'
+for caseprefix, plotcases in cases.items():
+    f, ax, dfplot = reeds.mcplots.plot_scatter_everything(
+        plotcases,
+    )
+    savename = (
+        f"out_everything-scatter-x_everything-y_cap-corr_{corr_method}-"
+        + f"{nicelabels[caseprefix]}"
+    ).replace(' ','')
+    saveit(savename)
 
 
 #%% Generation capacity stacked bars by sample: Nation (LOW priority)
@@ -1964,226 +1983,6 @@ for caseprefix in casepaths:
     plt.show()
 
 
-#%% Scatter plot: More outputs vs inputs, markers colored by single correlation metric
-cost_techs = [
-    {'tech_cost': 'battery_li', 'tech_cap':'Storage', 'label':'Battery'},
-    {'tech_cost': 'upv_3', 'tech_cap':'PV', 'label':'PV'},
-    {'tech_cost': 'wind-ons_5', 'tech_cap':'Wind', 'label':'Wind'},
-    # {'tech_cost': 'wind-ofs_5', 'label':'Wind (offshore fixed)'},
-    # {'tech_cost': 'geohydro_allkm_1', 'label':'Geothermal'},
-    # {'tech_cost': 'coal-ccs_mod', 'label':'Coal+CCS'},
-    {'tech_cost':'nuclear', 'tech_cap':'Nuclear', 'label':'Nuclear'},
-    {'tech_cost':'gas-cc-ccs_mod', 'tech_cap':'Gas+CCS', 'label':'Gas+CCS'},
-]
-x_labels = {
-    'gasprice':'Gas price [$/MMBtu]',
-    'demand':'Demand [PWh]',
-    'sc_wind':'Wind avail [TW]',
-    'cost_Wind':'Wind cost [$/kW]',
-    'cost_PV':'PV cost [$/kW]',
-    'cost_Battery':'Battery cost [$/kW]',
-    'cost_Nuclear':'Nuclear cost [$/kW]',
-    'cost_Gas+CCS':'Gas+CCS cost [$/kW]',
-}
-x_datums = ['gasprice', 'demand', 'sc_wind']
-cap_techs = [
-    'PV',
-    'Wind',
-    'Storage',
-    'Nuclear',
-    'Gas+CCS',
-    'Gas',
-]
-ycols = (
-    []
-    + [f'cap_{i}' for i in cap_techs]
-    + ['scoe', 'npv', 'co2']
-)
-ylabels = {
-    'cap_PV': 'PV',
-    'cap_Wind': 'Wind',
-    'cap_Storage': 'Storage',
-    'cap_Nuclear': 'Nuclear',
-    'cap_Gas+CCS': 'Gas+CCS',
-    'cap_Gas': 'Gas',
-    'npv': 'NPC\n[$trillion]',
-    'scoe': 'SCOE\n[$/MWh]',
-    'co2': 'CO' + r'$\bf{_2}$' + '\n[GT]',
-}
-xcols = [
-    'cost_PV',
-    'cost_Wind',
-    'cost_Battery',
-    'cost_Nuclear',
-    'cost_Gas+CCS',
-    'gasprice',
-    'demand',
-    'sc_wind',
-]
-
-t = 2050
-tstart = 2025
-zoom = False
-zoom = True
-corr_method = 'spearman'
-cmap = cmocean.tools.crop_by_percent(plt.cm.turbo, 10)
-cmap = plt.cm.Spectral_r
-cmap = plt.cm.turbo
-cmap, cmin, cmax = plt.cm.coolwarm, -0.8, 0.8
-# cmap = plt.cm.berlin
-# cmap = cmocean.tools.crop_by_percent(
-#     cmocean.tools.crop_by_percent(cmocean.cm.phase, 17, 'min'),
-#     50, 'max'
-# )
-# cmap.name = 'phase_17_50'
-# cmap = cmocean.tools.crop_by_percent(plt.cm.coolwarm, 10)
-norm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
-figscale = 1.3
-co2years = range(2025,2051)
-
-nrows = len(ycols)
-ncols = len(xcols)
-
-# for caseprefix in ['v20250829_mcK0_MC_flat_country']:
-for caseprefix in casepaths:
-    caseprefix_samples = sorted([s for (c,s) in dictin_cap_r if c == caseprefix])
-    ## Marker size
-    dfcap = pd.Series(
-        {
-            (tech, sample): (
-                dictin_cap_r[caseprefix,sample].loc[
-                    (dictin_cap_r[caseprefix,sample].t==t)
-                    & (dictin_cap_r[caseprefix,sample].i==tech)
-                ].MW.sum()
-                - dictin_cap_r[caseprefix,sample].loc[
-                    (dictin_cap_r[caseprefix,sample].t==tstart)
-                    & (dictin_cap_r[caseprefix,sample].i==tech)
-                ].MW.sum()
-            ) / 1e3
-            for sample in caseprefix_samples
-            for tech in cap_techs
-        }
-    ).clip(lower=0).unstack(level=0)
-    dfcap.columns = 'cap_' + dfcap.columns
-    ## More outputs
-    dfnpv = pd.Series(
-        {sample: dictin_npv[caseprefix,sample].sum() for sample in caseprefix_samples},
-        name='npv',
-    ) / 1e3
-    dfscoe = pd.Series(
-        {sample: dictin_scoe[caseprefix,sample].loc[2050].sum() for sample in caseprefix_samples},
-        name='scoe',
-    )
-    dfco2 = pd.Series(
-        {
-            sample: (
-                dictin_emissions[caseprefix,sample]['process']['CO2']
-                .reindex(co2years).interpolate('index').sum()
-                / 1e9
-            )
-            for sample in caseprefix_samples
-        },
-        name='co2',
-    )
-    ### x-axis variables
-    xdata = pd.concat({
-        'gasprice': pd.Series({
-            sample: dictin_gasprice[caseprefix,sample].mean(axis=1).loc[t]
-            for sample in caseprefix_samples
-        }),
-        'demand': pd.Series({
-            sample: dictin_demand[caseprefix,sample].groupby('t').sum().loc[t] / 1e3
-            for sample in caseprefix_samples
-        }),
-        'sc_wind': pd.Series({
-            sample: dictin_sc[caseprefix,sample].loc['wind-ons'].sum() / 1e3
-            for sample in caseprefix_samples
-        }),
-    }, axis=1)
-    ### Generation capex costs
-    costdata = pd.concat({
-        f"cost_{cost_tech['label']}": pd.Series({
-            sample: dictin_cap_cost[caseprefix,sample].loc[t,cost_tech['tech_cost']]
-            for sample in caseprefix_samples
-        })
-        for cost_tech in cost_techs
-    }, axis=1)
-    xdata = pd.concat([xdata, costdata], axis=1)
-    # ylabels = {}
-    # for cost_tech in cost_techs:
-    #     sep = ' ' if cost_tech['label'] in ['Battery', 'PV', 'Wind (land)'] else '\n'
-    #     ylabels[cost_tech['label']] = f"{cost_tech['label']}{sep}cost [$/kW]"
-    ## Combine
-    dfplot = pd.concat([dfcap, dfnpv, dfscoe, dfco2, xdata], axis=1)
-    # ## Get the y ranges
-    # ymax = ydata.max() + (0 if zoom else 100)
-    # ymin = ydata.min()
-    # yspan = ymax - ymin
-    ### Plot it
-    plt.close()
-    f,ax = plt.subplots(
-        nrows, ncols, figsize=(ncols*figscale, nrows*figscale), sharex='col', sharey='row',
-        # gridspec_kw={'height_ratios':(yspan.values if zoom else ymax.values)},
-    )
-    for row, ycol in enumerate(ycols):
-        for col, xcol in enumerate(xcols):
-            corrcoef = dfplot[ycol].corr(dfplot[xcol], method=corr_method)
-            color = '0.7' if abs(corrcoef) <= 0.2 else cmap(norm(corrcoef))
-            ax[row,col].scatter(
-                dfplot[xcol], dfplot[ycol], marker='o', lw=0, s=20,
-                color=color, alpha=0.2,
-            )
-            for c, a, p in [(color, 1, 1), ('k', 0.2, 0)]:
-                ax[row,col].annotate(
-                    f"{corrcoef:+.2f}",
-                    (0.95, 0.95), xycoords='axes fraction',
-                    ha='right', va='top', fontsize='x-large',
-                    path_effects=(
-                        [pe.withStroke(linewidth=3.0, foreground='w', alpha=0.9)]
-                        if p else []
-                    ),
-                    # color='k',
-                    color=c, alpha=a,
-                )
-            ## Formatting
-            if col == 0:
-                ax[row,col].set_ylabel(ylabels.get(ycol,ycol))
-            if row == nrows - 1:
-                ax[row,col].set_xlabel(
-                    x_labels.get(xcol,xcol), rotation=45, rotation_mode='anchor', ha='right',
-                )
-            if xcol == 'cost_Nuclear':
-                # ax[-1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(3000))
-                ax[-1,col].xaxis.set_major_locator(mpl.ticker.FixedLocator([3000, 5500]))
-    ## Formatting
-    # ax[2,0].annotate(
-    #     f'Capacity additions through {t} [GW]', (-0.95, 0.5), xycoords='axes fraction',
-    #     ha='center', va='center', annotation_clip=False,
-    #     rotation=90, weight='bold', fontsize='xx-large',
-    # )
-    ax[-1,0].annotate(
-        f'{t}:', (-0.35, -0.8), xycoords='axes fraction',
-        ha='right', va='top', annotation_clip=False,
-        weight='bold', fontsize='x-large',
-    )
-    ax[0,0].set_title(
-        f"{nicelabels.get(caseprefix,caseprefix)} (n = {len(caseprefix_samples)})",
-        x=0, ha='left',
-    )
-    if not zoom:
-        ax.set_xlim(0)
-        ax.set_ylim(0)
-    reeds.plots.despine(ax)
-    savename = (
-        f"out_everything-scatter-x_everything-y_cap-corr_{corr_method}_{cmap.name}-"
-        + ('zoom-' if zoom else '')
-        + f"{nicelabels.get(caseprefix,caseprefix).title()}.png"
-    ).replace(' ','')
-    print(savename)
-    plt.savefig(os.path.join(savepath, savename))
-    plt.show()
-
-
 #%%
 #%% Scatter by STATE: y = tech cost, x = gas price or avail, size = demand, color = cap
 tech_cap, cost_tech = 'Nuclear', 'nuclear'
@@ -3702,168 +3501,6 @@ dfwrite = (
 dfwrite.to_csv(os.path.join(savepath, savename.replace('.png','.csv')))
 dfwrite
 
-
-#%% Final regional transmission capacity for all scenarios
-level = 'transreg'
-binstep = 1
-alpha = 0.5
-nrows = 2
-regioncolors = ['C6', 'C9']
-regioncolors = ['k', '0.7']
-year = 2050
-year_baseline = 2020
-
-# plotcaseprefixes = list(casepaths.keys())
-# plotlabels = nicelabels
-
-# plotcaseprefixes = [
-#     'v20250829_mcK0_MC_flat_state_IRA',
-#     'v20250829_mcK0_MC_flat_state_MC',
-#     'v20250829_mcK0_MC_flat_state_CAA0',
-# ]
-# plotlabels = {
-#     **nicelabels,
-#     'v20250829_mcK0_MC_flat_state_MC': 'CurrentPol',
-# }
-# figsize = 1.25
-
-# plotcaseprefixes = [
-#     'v20250829_mcK0_MC_flat_state_MC',
-#     'v20250911_mcK0_MC_tri_state',
-#     'v20250829_mcK0_MC_flat_country',
-#     'v20250922_mcK0_MC_tri_country',
-# ]
-# plotlabels = nicelabels
-# figsize = 1.25
-
-plotcaseprefixes = [
-    'v20250922_mcK0_MC_tri_country',
-    'v20250829_mcK0_MC_flat_country',
-    'v20250911_mcK0_MC_tri_state',
-    'v20250829_mcK0_MC_flat_state_MC',
-    'v20250829_mcK0_MC_flat_state_IRA',
-    'v20250829_mcK0_MC_flat_state_CAA0',
-]
-plotlabels = nicelabels
-figwidth = 1.45
-
-
-baseline = (
-    dictin_trans_r[basecase].loc[dictin_trans_r[basecase].t==year_baseline]
-    .groupby(['r','rr'], as_index=False).MW.sum()
-)
-baseline['level'] = baseline.r.map(hierarchy[level])
-baseline['levell'] = baseline.rr.map(hierarchy[level])
-baseline = baseline.loc[baseline.level != baseline.levell].copy()
-baseline['interface'] = baseline.apply(
-    lambda row: '|'.join(sorted([row.level, row.levell])),
-    axis=1,
-)
-baseline = baseline.groupby('interface').MW.sum().rename('GW') / 1e3
-
-dfplot = {}
-for caseprefix in plotcaseprefixes:
-    caseprefix_samples = sorted([s for (c,s) in dictin_trans_r if c == caseprefix])
-    df = pd.concat(
-        {
-            sample: dictin_trans_r[caseprefix,sample].loc[
-                dictin_trans_r[caseprefix,sample].t==year
-            ].groupby(['r','rr']).MW.sum()
-            for sample in caseprefix_samples
-        },
-        names=('case',),
-    ).reset_index()
-    df['level'] = df.r.map(hierarchy[level])
-    df['levell'] = df.rr.map(hierarchy[level])
-    df = df.loc[df.level != df.levell].copy()
-    df['interface'] = df.apply(
-        lambda row: '|'.join(sorted([row.level, row.levell])),
-        axis=1,
-    )
-    df = df.groupby(['interface','case']).MW.sum().rename('GW') / 1e3
-    dfplot[caseprefix] = df
-dfplot = pd.concat(dfplot, names=('caseprefix',))
-
-print(
-    dfplot.loc[plotcaseprefixes].groupby('interface').mean()
-    .sort_values(ascending=False)
-)
-
-## Sort the interfaces from west to east
-interfaces_unsorted = dfplot.index.get_level_values('interface').unique()
-interfaces = {}
-for i in interfaces_unsorted:
-    region, regionn = i.split('|')
-    interfaces[i] = dfmap[level].loc[[region,regionn]].dissolve().bounds.minx.squeeze()
-interfaces = pd.Series(interfaces).sort_values().index.values
-
-ymax = dfplot.max()
-bins = np.arange(0, ymax+0.1, binstep)
-ncols = len(interfaces)
-
-plt.close()
-## figsize, height_ratios: (4, [0.3,1]) pre-20260112
-f,ax = plt.subplots(
-    nrows, ncols, sharex='row', sharey='row', figsize=(figwidth*ncols, 3),
-    gridspec_kw={'hspace':0.0, 'height_ratios':[0.5, 1]},
-    dpi=300,
-)
-for col, interface in enumerate(interfaces):
-    ### Maps on top
-    dfmap[level].plot(ax=ax[0,col], facecolor='0.99', edgecolor='0.75', lw=0.2)
-    dfmap[level].loc[[interface.split('|')[0]]].plot(
-        ax=ax[0,col], facecolor=regioncolors[0], edgecolor='w', lw=0.5)
-    dfmap[level].loc[[interface.split('|')[1]]].plot(
-        ax=ax[0,col], facecolor=regioncolors[1], edgecolor='w', lw=0.5)
-    ax[0,col].axis('off')
-    ax[0,col].patch.set_facecolor('none')
-    ### Data
-    row = 1
-    for x, caseprefix in enumerate(plotcaseprefixes):
-        df = dfplot.loc[caseprefix].loc[interface]
-        ## Histogram
-        hist_val, hist_y = np.histogram(df.values, bins=bins)
-        height = hist_y[1] - hist_y[0]
-        ax[row,col].barh(
-            y=hist_y[:-1],
-            width=(hist_val / max(hist_val) * 0.9),
-            height=height,
-            align='edge',
-            left=x,
-            color=colors[caseprefix],
-        )
-    ax[row,col].axhline(baseline[interface], c='k', ls='--', lw=0.75)
-## Formatting
-ax[1,0].set_ylabel(f'Interface capacity, {year} [GW]')
-ax[1,0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-ax[1,0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
-ax[1,0].set_ylim(0)
-ax[1,0].set_xlim(-0.15, len(plotcaseprefixes))
-
-reeds.plots.despine(ax)
-for col, interface in enumerate(interfaces):
-    ax[1,col].set_xlabel(None)
-    ax[0,col].annotate(
-        interface.replace('|', '\n'),
-        (0.05, 1.0), xycoords='axes fraction',
-        va='bottom', fontsize=10,
-    )
-    ax[1,col].set_xticks(range(len(plotcaseprefixes)))
-    ax[1,col].set_xticklabels(
-        [plotlabels.get(caseprefix,caseprefix) for caseprefix in plotcaseprefixes],
-        rotation=90, weight='bold',
-    )
-    _colors = [colors[c] for c in plotcaseprefixes]
-    for x, xtick in enumerate(ax[1,col].get_xticklabels()):
-        xtick.set_color(_colors[x])
-
-savename = (
-    f'out_trans-{level}-{year}-'
-    f"{','.join([plotlabels.get(c,c).title().replace(' ','') for c in plotcaseprefixes])}.png"
-)
-print(savename)
-plt.savefig(os.path.join(savepath, savename))
-plt.show()
 
 #%% Transmission capacity stats
 dfwrite = (

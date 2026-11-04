@@ -57,6 +57,24 @@ def get_supplycurve(case):
     return df
 
 
+def get_npv(case, val2sheet=None):
+    """Get net present value of system cost [$B]"""
+    df = (
+        reeds.io.read_report(case, 'Present Value of System Cost', val2sheet)
+        .set_index('cost_cat')['Discounted Cost (Bil $)']
+    ).rename('billionUSD')
+    return df
+
+
+def get_scoe(case, val2sheet=None):
+    """Get system cost of electricity [$/MWh]"""
+    df = (
+        reeds.io.read_report(case, 'National Average Electricity', val2sheet)
+        .pivot(index='year', columns='cost_cat', values='Average cost ($/MWh)').fillna(0)
+    )
+    return df
+
+
 #%% Results container
 SPECIAL = {
     'sw': reeds.io.get_switches,
@@ -67,6 +85,8 @@ SPECIAL = {
     'demand_rt': get_demand_rt,
     'capcost': get_capcost,
     'supplycurve': get_supplycurve,
+    'npv': get_npv,
+    'scoe': get_scoe,
 }
 
 class ReEDScase:
