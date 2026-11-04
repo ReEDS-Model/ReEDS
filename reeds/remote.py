@@ -75,7 +75,7 @@ def get_remote_filemap():
 
 def get_md5sum(filepath):
     with open(filepath, 'rb') as f:
-        return hashlib.file_digest(f, 'md5').hexdigest()
+        md5 = hashlib.md5(f.read()).hexdigest()
     return md5
 
 
