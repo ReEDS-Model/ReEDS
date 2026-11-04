@@ -306,3 +306,9 @@ try:
     saveit(savename)
 except Exception:
     print(traceback.format_exc())
+
+
+#%% Save the powerpoint file
+if write in ['ppt', 'pptx']:
+    prs.save(outpath)
+    print(f'\ncompare_casegroup.py results saved to:\n{outpath}')
