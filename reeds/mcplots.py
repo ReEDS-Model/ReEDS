@@ -165,14 +165,6 @@ def plot_capcost_lines(
     ## Data
     dfplot = pd.concat(
         {
-            # i: (
-            #     case.plantcharout.set_index(['variable','*i','t'])
-            #     .loc['capcost'].value.unstack('*i').rename_axis('i', axis=1)
-            #     [list(labels.keys())]
-            #     # * inflator
-            #     / 1e3
-            #     .rename(columns=labels)
-            # )
             i: case.capcost.rename(columns=labels) * inflator
             for i, case in enumerate(plotcases)
         },
@@ -254,9 +246,6 @@ def map_supplycurve_diff(
 
     central = casebase.supplycurve.loc[tech].rename('val')
     geom = dfmap['r'].geometry.simplify(1000)
-    # vmin = dfplot.loc[tech, samples].min().min()
-    # vmin = 0
-    # vmax = dfplot.loc[tech, samples].max().max()
     vmin, vmax = -100, 100
 
     plt.close()
@@ -276,11 +265,6 @@ def map_supplycurve_diff(
             lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
         )
         _dfstates.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.1)
-        # ax.annotate(
-        #     sample,
-        #     (x + xspan * col, y - yspan * row),
-        #     ha='center', va='center',
-        # )
     ax.set_title(f'{tech} availability relative to central case')
     ax.axis('off')
     return f, ax, dfplot
@@ -554,8 +538,6 @@ def plot_cap_gen_bar_states(
         gridspec_kw={'hspace':0.4, 'wspace':0.5},
         sharex=True,
     )
-    # for state in ['CA','TX','FL']:
-    # for state in list(set(np.random.choice(states, 10))):
     for state in states:
         _ax = ax[state_subplots.loc[state,'ax']]
         df = dfplot.loc[state].reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
@@ -588,13 +570,10 @@ def plot_cap_gen_bar_states(
     )
     ## Formatting
     ax[state_subplots.loc['MS','ax']].set_xlim(-0.5, len(df)-0.5)
-    # ax.set_ylabel(f"{t} capacity [GW]"+('\n'f'sorted by {label}' if sortby is not None else ''))
     ax[state_subplots.loc['MS','ax']].set_xlabel(
         f'Sample number (n = {len(plotcases)})', fontsize='xx-large')
     ax[state_subplots.loc['OR','ax']].set_ylabel(
         f"{t} capacity [GW]", labelpad=15, fontsize='xx-large')
-    # ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-    # ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
     reeds.plots.despine(ax)
     return f, ax, dfplot
 
@@ -868,21 +847,12 @@ def plot_scatter_everything(
         for cost_tech in cost_techs
     }, axis=1)
     xdata = pd.concat([xdata, costdata], axis=1)
-    # ylabels = {}
-    # for cost_tech in cost_techs:
-    #     sep = ' ' if cost_tech['label'] in ['Battery', 'PV', 'Wind (land)'] else '\n'
-    #     ylabels[cost_tech['label']] = f"{cost_tech['label']}{sep}cost [$/kW]"
     ## Combine
     dfplot = pd.concat([dfcap, dfnpv, dfscoe, dfco2, xdata], axis=1)
-    # ## Get the y ranges
-    # ymax = ydata.max() + (0 if zoom else 100)
-    # ymin = ydata.min()
-    # yspan = ymax - ymin
     ### Plot it
     plt.close()
     f,ax = plt.subplots(
         nrows, ncols, figsize=(ncols*figscale, nrows*figscale), sharex='col', sharey='row',
-        # gridspec_kw={'height_ratios':(yspan.values if zoom else ymax.values)},
     )
     for row, ycol in enumerate(ycols):
         for col, xcol in enumerate(xcols):
@@ -912,7 +882,6 @@ def plot_scatter_everything(
                     x_labels.get(xcol,xcol), rotation=45, rotation_mode='anchor', ha='right',
                 )
             if xcol == 'cost_Nuclear':
-                # ax[-1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(3000))
                 ax[-1,col].xaxis.set_major_locator(mpl.ticker.FixedLocator([3000, 5500]))
     ## Formatting
     ax[2,0].annotate(
@@ -978,15 +947,7 @@ def plot_emissions(
             color=colors[nicelabels[caseprefix]], alpha=0.2, lw=0,
             label=f'{nicelabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
         )
-        ## Max and min lines
-        # for agg in ['min', 'max']:
-        #     ax.plot(
-        #         df.index, df.agg(agg, axis=1), lw=0.5,
-        #         color=colors[nicelabels[caseprefix]],
-        #         label='_nolabel',
-        #     )
         ## Lines
-        # df.plot(ax=ax, legend=False, lw=0.5, color='k', alpha=0.25)
         for s in df:
             ax.plot(
                 df.index, df[s].values, color=colors[nicelabels[caseprefix]],
