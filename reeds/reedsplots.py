@@ -7047,7 +7047,6 @@ def dr_shift_resource_compare(case, year,savepath, region = 'ex', shift_tech = '
         df = df.loc[df.index.year == weather_year]
         baseline_dfs[k] = df
         temp = df.rename(columns = {cols_tech[0]:f'baseline_{k}'})
-        output_csv = pd.concat((output_csv,temp[f'baseline_{k}']),axis = 1)
 
 
     rep_dfs = {}
@@ -7061,7 +7060,6 @@ def dr_shift_resource_compare(case, year,savepath, region = 'ex', shift_tech = '
         df.set_index('date', inplace=True)
         df = df[['Values']]
         rep_dfs[k] = df
-        output_csv = pd.concat([output_csv,df.rename(columns = {'Values':f'rep_{k}'})],axis = 1)
 
 
     rep_gen = {}
@@ -7082,7 +7080,6 @@ def dr_shift_resource_compare(case, year,savepath, region = 'ex', shift_tech = '
         df.loc[df.Values <0,'Values'] = 0
         df = df[['Values']].fillna(0)
         rep_gen[k] = df
-        output_csv = pd.concat([output_csv,df.rename(columns = {'Values':f'deploy_{k}'})],axis = 1)
 
     plots_dr = {'DR Shift Resource Potential': {'Energy':(baseline_dfs['Energy'],'k','line'),
                                 'Charge':(baseline_dfs['Charge'],'red','fill'),
@@ -7102,9 +7099,7 @@ def dr_shift_resource_compare(case, year,savepath, region = 'ex', shift_tech = '
                                         'Discharge limits':(baseline_dfs['Discharge'],'green','fill')},
             }
 
-    output_csv.to_csv(os.path.join(os.path.split(savepath)[0],f"dr_shift-{region}-{year}.csv"))
 
-    save_dict = {}
     # Plot Charge, Discharge, Energy together through year
     for title, plot_dict in plots_dr.items():
         key = list(plot_dict.keys())
