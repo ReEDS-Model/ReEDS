@@ -221,6 +221,20 @@ def check_lhs_param_order(lower, upper):
 
     return lower_new, upper_new
 
+
+def get_base_supply_curve(sample_group: pd.Series, dist_files: list, sw_name: str) -> pd.DataFrame:
+    """
+    Identifies base supply curve scenario to use for sc_point_gid index
+    """
+    base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case)
+    siting_scenarios = {
+        key: val for entry in sample_group.assignments_list
+        for key, val in entry.items()
+    }[sw_name]
+    base_scenario_index = siting_scenarios.index(base_scenario)
+    dfbase = dist_files[base_scenario_index].set_index('sc_point_gid')
+    return base_scenario_index, dfbase
+
 #%% ===========================================================================
 ### --- FILE PATHS & DISTRIBUTION INSTRUCTIONS ---
 ### ===========================================================================
@@ -892,13 +906,7 @@ class WeightCalculator:
         # Dictionary to store computed weights for the modifiable columns
         # file index -> pd.DataFrame
         dict_df_weights = {}
-        base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case)
-        siting_scenarios = {
-            key: val for entry in self.sample_group.assignments_list
-            for key, val in entry.items()
-        }[sw_name]
-        base_scenario_index = siting_scenarios.index(base_scenario)
-        dfbase = dist_files[base_scenario_index].set_index('sc_point_gid')
+        base_scenario_index, dfbase = get_base_supply_curve(self.sample_group, dist_files, sw_name, mcs_message=False)
 
         for f, df in enumerate(dist_files):
             # Initial skeleton of the weights DataFrame
@@ -987,7 +995,8 @@ class MCS_Sampler:
         dist_files: list,
         file_name: str,
         sw_name: str | list,
-        aux_files,
+        aux_files: dict,
+        sample_group: pd.Series,
     ) -> Tuple[list, list, dict]:
         """
         This function prepares the reference dataframes for the Monte Carlo sampling.
@@ -999,6 +1008,10 @@ class MCS_Sampler:
             file_name (str): name given by reeds to the files in dist_files.
             sw_name (str or list): Name of the switch being sampled. For the special case
                 of float switches, this will be a list of switch names.
+            aux_files (dict): Dictionary with auxiliary information - from get_dist_instructions (.)
+            sample_group (pd.Series): a series with information about the sample group - from get_dist_instructions(.).
+                This contains the distribution, dist_params, switch_names, sw_assignments, file_names, save_paths, ...
+                It is a row of the df_input_dist_ex DataFrame.
 
         Returns:
             list of pd.DataFrame: List of modified reference dataframes.
@@ -1032,6 +1045,12 @@ class MCS_Sampler:
                     on=ref_columns,
                     how="left",
                 ).fillna(0).sort_values(by=ref_columns).reset_index(drop=True)
+            
+            # Inherit everything but capacity from the base scenario
+            __, dfbase = get_base_supply_curve(sample_group, dist_files, sw_name)
+            for i, df in enumerate(dist_files):
+                for col in ['class','cf','capital_adder_per_mw']:
+                    dist_files[i][col] = df.sc_point_gid.map(dfbase[col])
 
         ### ===========================================================================
         ### --- Get a list of the columns we are allowed to apply weights directly ---
@@ -1113,17 +1132,15 @@ class MCS_Sampler:
         return dist_files
 
     # ----------------------- Weight Application Helpers -----------------------
-    def _adjust_supply_curve_sample(self, samples_sw: pd.DataFrame, sw_name: str, sample_idx: int) -> pd.DataFrame:
+    def _adjust_supply_curve_sample(self, samples_sw: pd.DataFrame, sw_name: str) -> pd.DataFrame:
         """
         Adjust samples for supply curve files:
           - Convert the 'class' column to integers.
-          - Normalize the weights map.
           - Remove rows with no capacity.
 
         Args:
             samples_sw (pd.DataFrame): The sampled supply curve DataFrame.
             sw_name (str): Name of the switch being sampled.
-            sample_idx (int): Index of the Sample_ID in sample_group.
 
         Returns:
             pd.DataFrame: Adjusted supply curve sample.
@@ -1176,7 +1193,7 @@ class MCS_Sampler:
         samples_sw = samples_sw.round(n_decimals)
 
         if file_name in MCSConstants.SUPPLY_CURVE_FILES:
-            adjusted_samples = self._adjust_supply_curve_sample(samples_sw, sw_name, sample_idx)
+            adjusted_samples = self._adjust_supply_curve_sample(samples_sw, sw_name)
         else:
             # For all other files we can directly apply the weights
             adjusted_samples = samples_sw
@@ -1418,7 +1435,7 @@ class MCS_Sampler:
         self.samples[sw_name] = str(np.round(lhs_sw_val, n_decimals+1))
 
 
-    def apply_lhs_general(self, sample_group_num, Sample_ID, dist_files, aux_files, modifiable_columns):
+    def apply_lhs_general(self, sample_group_num, Sample_ID, dist_files, aux_files, modifiable_columns, sw_name):
         """Apply LHS sampling to a general (non-switch) file.
 
         For each modifiable column, draws values from the configured distribution
@@ -1431,6 +1448,7 @@ class MCS_Sampler:
             aux_files (dict): Auxiliary files dictionary.
             modifiable_columns (List[str]): Columns to sample new values for.
         """
+                            
         # set up final data
         samples_sw = dist_files[0].copy()
         # iterate over columns to update with lhs 
@@ -1475,6 +1493,10 @@ class MCS_Sampler:
                 # for NA values from sampling (occurs if lower == upper), use existing values file values
                 samples_sw[mod_col] = np.where(np.isnan(lhs_vals), samples_sw[mod_col], lhs_vals)
 
+        # clean up for supply curve files; ok to use Sample_ID here since 
+        # this matches the filename for non-switch sampling
+        if Sample_ID in MCSConstants.SUPPLY_CURVE_FILES:
+            samples_sw = self._adjust_supply_curve_sample(samples_sw, sw_name)
 
         self.samples[Sample_ID] = samples_sw
         # output: dictionary of sample values by filename (see samples_dict)
@@ -1505,7 +1527,7 @@ class MCS_Sampler:
 
             # Extend/modify dist_files if necessary (e.g supply curve related data)
             dist_files, modifiable_columns, n_decimals = self.prepare_ref_data(
-                dist_files, file_name, sw_name, aux_files,
+                dist_files, file_name, sw_name, aux_files, self.sample_group,
             )
 
             # Get weights we will apply to the reference files
@@ -1514,7 +1536,7 @@ class MCS_Sampler:
                 if file_name == "switches.csv":
                     self.apply_lhs_switches_csv(sample_group_num, sample_idx, dist_files, n_decimals)
                 else:
-                    self.apply_lhs_general(sample_group_num, Sample_ID, dist_files, aux_files, modifiable_columns)
+                    self.apply_lhs_general(sample_group_num, Sample_ID, dist_files, aux_files, modifiable_columns, sw_name)
             else:
                 dict_df_weights = self.weight_calc.get_df_weights(dist_files, modifiable_columns, sw_name, file_name)
                 # Dispatch weight application based on file type
