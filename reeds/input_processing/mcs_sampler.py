@@ -14,6 +14,7 @@ import pandas as pd
 import scipy.stats
 import sys
 import yaml
+import warnings
 from typing import Tuple, List
 
 # Local Imports
@@ -1342,8 +1343,12 @@ class MCS_Sampler:
         # set triangular distribution parametesr: location (loc), scale, and center (c)
         tri_loc = lower_new
         tri_scale = upper_new - lower_new
-        tri_c = (mode - tri_loc) / tri_scale
-
+        # instances where lower = upper result in NA from division by zero; these are handled
+        # later by defaulting to the existing value so we don't need the error message here
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide.*')
+            tri_c = (mode - tri_loc) / tri_scale
+        
         # draw lhs samples; 'sample_num' matches the sample row for the relevant ReEDS run and
         # 'dim_num' matches the relevant column for the dimension
         lhs_vals = scipy.stats.triang.ppf(self.lhs_samples[sample_num, dim_num], c=tri_c, loc=tri_loc, scale=tri_scale)
