@@ -273,7 +273,7 @@ def parse_cases(
                         "To ensure consistency, we strongly recommend setting "
                         "`GSw_HourlyClusterAlgorithm = user` in your switch configuration.\n"
                     )
-                    if not skip_checks:
+                    if not force:
                         user_input = input("Do you want to proceed with the current setup? y/[n]")
                         if user_input.strip().lower() not in ['yes', 'y']:
                             print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
