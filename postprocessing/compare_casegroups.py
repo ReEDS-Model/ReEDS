@@ -54,8 +54,8 @@ parser.add_argument(
 # caselist = [str(Path(reeds.io.reeds_path,'postprocessing','example.csv'))]
 # casenames = ''
 # titleshorten = ''
-# basepath = str(Path('~/Projects/Uncertainty/runs/20250829/v20250829_mcK0_Central').expanduser())
-# write = 'png'
+# basepath = None
+# write = 'pptx'
 # interactive = True
 # keep_incomplete = False
 
@@ -96,12 +96,11 @@ else:
     basepath = casepaths[list(casepaths.keys())[0]][0]
     savepath = Path(basepath, 'outputs', 'comparisons')
 
+savepath.mkdir(parents=True, exist_ok=True)
 print(f'Saving results to {savepath}')
 
 if write in ['pdf', 'png']:
-    savepath.mkdir(parents=True, exist_ok=True)
-
-    def saveit(savename):
+    def saveit(savename, **kwargs):
         outpath = Path(savepath, savename.replace(' ', '') + f'.{write}')
         plt.savefig(outpath)
         print(outpath)
@@ -155,8 +154,8 @@ dfmap = reeds.io.get_dfmap(basepath)
 
 
 #%%### Inputs plots
+#%% Demand
 for caseprefix in casepaths:
-    #%% Demand
     try:
         f, ax, dfplot = reeds.mcplots.plot_demand_lines(cases[caseprefix])
         savename = f'in-demand-{nicelabels[caseprefix]}'
@@ -165,16 +164,18 @@ for caseprefix in casepaths:
         print(traceback.format_exc())
 
 
-    #%% Fuel price
+#%% Fuel price
+for caseprefix in casepaths:
     try:
         f, ax, dfplot = reeds.mcplots.plot_fuelprice_lines(cases[caseprefix])
         savename = f'in-gasprice-{nicelabels[caseprefix]}'
-        saveit(savename)
+        saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
     except Exception:
         print(traceback.format_exc())
 
 
-    #%% Capital cost
+#%% Capital cost
+for caseprefix in casepaths:
     labels = {
         'upv_3': 'UPV',
         'wind-ons_3': 'Wind',
@@ -183,12 +184,13 @@ for caseprefix in casepaths:
     try:
         f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix])
         savename = f"in-capcost-{','.join(list(labels.values()))}-{nicelabels[caseprefix]}"
-        saveit(savename)
+        saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
     except Exception:
         print(traceback.format_exc())
 
 
-    #%% Supply curves (SLOW)
+#%% Supply curves (SLOW)
+for caseprefix in casepaths:
     techs = ['upv', 'wind-ons']
     for tech in techs:
         try:
@@ -269,7 +271,7 @@ for caseprefix, plotcases in cases.items():
             f"out-everything-scatter-x_everything-y_cap-corr_{corr_method}-"
             + f"{nicelabels[caseprefix]}"
         ).replace(' ','')
-        saveit(savename)
+        saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
     except Exception:
         print(traceback.format_exc())
 
@@ -303,7 +305,7 @@ try:
         f"out-npv_system,health,climate,total-"
         f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in cases])}"
     )
-    saveit(savename)
+    saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
 except Exception:
     print(traceback.format_exc())
 
