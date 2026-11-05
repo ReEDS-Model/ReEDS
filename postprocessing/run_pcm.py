@@ -31,20 +31,6 @@ switch_mods_default = {
 
 
 # %% Functions
-def check_slurm(forcelocal=False):
-    """Check whether to submit slurm jobs (if on HPC) or run locally"""
-    hpc = (
-        False
-        if forcelocal
-        else (
-            True
-            if int(os.environ.get('REEDS_USE_SLURM', 0)) and ('NREL_CLUSTER' in os.environ)
-            else False
-        )
-    )
-    return hpc
-
-
 def solvestring_pcm(
     batch_case,
     sw,
@@ -367,7 +353,7 @@ if __name__ == '__main__':
     # bigmem = True
 
     # %% Determine whether to submit slurm job
-    hpc = check_slurm(forcelocal=forcelocal)
+    hpc = reeds.slurm.check_slurm(forcelocal=forcelocal)
 
     ### Run it
     if not hpc:

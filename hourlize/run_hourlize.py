@@ -16,7 +16,12 @@ import shutil
 import subprocess
 import sys
 import traceback
+import copy_rev_folders
+from pathlib import Path
 from collections import OrderedDict
+sys.path.append(str(Path(__file__).parent.parent))
+import reeds
+
 
 #%% ===========================================================================
 ### --- FUNCTIONS ---
@@ -25,16 +30,14 @@ from collections import OrderedDict
 def get_remote_path(local):
     """detect path to supply curve files either on the HPC or nrelnas01"""
     # remote path for supply curves
-    hpc = True if ('NREL_CLUSTER' in os.environ) else False
+    hpc = reeds.slurm.check_slurm()
     if hpc:
         #For running hourlize on the HPC link to shared-projects folder
-        if os.environ.get('NREL_CLUSTER') == 'kestrel':
+        cluster = reeds.slurm.get_cluster()
+        if cluster == 'kestrel':
             remotepath = '/kfs2/shared-projects/reeds'
-        elif os.environ.get('NREL_CLUSTER') == 'eagle':
-            remotepath = '/shared-projects/reeds'
         else:
-            raise Exception(f"Detected {os.environ.get('NREL_CLUSTER')} as NLR Cluster; "
-                            "only 'eagle' and 'kestrel' are supported")
+            raise ValueError(f"Unsupported cluster: {cluster}")
     else:
         # if not on the hpc running link to nrelnas01 and set local to true
         remotepath = os.path.join(
@@ -164,13 +167,9 @@ def launch_batch_file(casename, configpath, outpath, args):
     # setup script to run each case
     ext = '.sh' if os.name == 'posix' else '.bat'
     with open(os.path.join(outpath, casename + "_run" + ext), 'w+') as OPATH:
-        if os.environ.get('NREL_CLUSTER') == 'kestrel':
-            OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
-            OPATH.writelines("module load anaconda3 \n")
-            OPATH.writelines("conda activate reeds \n\n")
-        elif os.environ.get('NREL_CLUSTER') == 'eagle':
-            OPATH.writelines("module load conda \n")
-            OPATH.writelines("conda activate reeds \n\n")
+        OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
+        OPATH.writelines("module load anaconda3 \n")
+        OPATH.writelines("conda activate reeds \n\n")
         # run hourlize
         OPATH.writelines(f"cd {hourlize_path}\n")
         if args.nolog:
