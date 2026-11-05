@@ -244,7 +244,7 @@
   dist_params: [1, 1]
   weight_r: st
 
-- name: load_discrete_st
+- name: load_discrete_state
   assignments_list: 
     - GSw_LoadProfiles: [EER2025_IRAlow, EER2025_100by2050]
   dist: discrete
@@ -316,7 +316,7 @@
   dist_params: [1, 1]
   weight_r: st
 
-- name: siting_discrete_st
+- name: siting_discrete_state
   assignments_list:
     - GSw_SitingUPV: [limited, reference]
     - GSw_SitingWindOfs: [limited, reference]
