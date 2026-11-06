@@ -1102,7 +1102,6 @@ def get_siting_switchval(
     tech:None|Literal['upv','wind-ons','wind-ofs']=None,
     switchname:None|Literal['GSw_SitingUPV','GSw_SitingWindOns','GSw_SitingWindOfs']=None,
     case=None,
-    mcs_message=True,
     **kwargs
 ) -> str:
     """
@@ -1136,8 +1135,6 @@ def get_siting_switchval(
         ## Keep the openest scenario (which is first in the list)
         for scen in options_openest_first:
             if scen in siting_scenarios:
-                if mcs_message:
-                    print(f'MCS: Using {scen}-access profiles for {switchname}')
                 return scen
 
 

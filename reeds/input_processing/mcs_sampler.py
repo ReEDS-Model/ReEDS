@@ -47,6 +47,7 @@ class MCSConstants:
         + OTHER_FIXED_COLUMNS
         + REGION_SYNONYMS
     )
+    SC_FIXED_COLUMNS = ['class', 'cf', 'capital_adder_per_mw']
 
     ### --- Files that require special treatment
     SUPPLY_CURVE_FILES = [
@@ -223,22 +224,28 @@ def check_lhs_param_order(lower, upper):
 
 
 def get_base_supply_curve(
-    sample_group: pd.Series, 
-    dist_files: list, 
-    sw_name: str, 
-    mcs_message: bool = True
-) -> pd.DataFrame:
+    sample_group:pd.Series,
+    dist_files:list,
+    sw_name:str,
+    verbose:bool=True,
+) -> dict:
     """
     Identifies base supply curve scenario to use for sc_point_gid index
+
+    Returns:
+        dict with the following keys:
+            'name' (str): Base scenario name (e.g. 'limited', 'reference', 'open')
+            'index' (int): The index of the base scenario in the dist_files list
+            'supplycurve' (pd.DataFrame): The base-scenario supply curve dataframe
     """
-    base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case, mcs_message=mcs_message)
+    base_scenario = reeds.io.get_siting_switchval(switchname=sw_name, case=inputs_case)
     siting_scenarios = {
         key: val for entry in sample_group.assignments_list
         for key, val in entry.items()
     }[sw_name]
     base_scenario_index = siting_scenarios.index(base_scenario)
     dfbase = dist_files[base_scenario_index].set_index('sc_point_gid')
-    return base_scenario_index, dfbase
+    return {'name':base_scenario, 'index':base_scenario_index, 'supplycurve':dfbase}
 
 #%% ===========================================================================
 ### --- FILE PATHS & DISTRIBUTION INSTRUCTIONS ---
@@ -792,7 +799,7 @@ class WeightCalculator:
         self._validate_inputs(dist_files, sw_name, file_name)
 
         if file_name in MCSConstants.SUPPLY_CURVE_FILES:
-            return self._get_weights_supply_curve(dist_files, modifiable_columns, sw_name)
+            return self._get_weights_supply_curve(dist_files, sw_name)
         else:
             return self._get_weights_general(dist_files, modifiable_columns, sw_name, file_name)
 
@@ -882,64 +889,32 @@ class WeightCalculator:
     def _get_weights_supply_curve(
         self,
         dist_files: list,
-        modifiable_columns: list,
         sw_name: str
     ) -> dict:
         """
-        Get the weights for supply curve files. These files require special treatment
-        because some columns are dependent on the capacity of each sc_point_gid.
+        Get the weights for supply curve files.
+        These files are handled differently; only the capacity column is sampled, while
+        the other data columns inherit their values from the most-permissive siting scenario.
 
         Args:
             dist_files (list of pd.DataFrame): List of reference dataframes (ajusted to have the same # of rows)
-            modifiable_columns (list of str): List of columns that can be directly multiplied by the weights.
             sw_name (str): Name of the switch we are getting the weights for.
 
         Returns:
             Dict[int, pd.DataFrame]: Dictionary mapping reference file index to
                 the weight DataFrame for that file.
         """
-        # Dictionary to store computed weights for the modifiable columns
-        # file index -> pd.DataFrame
+        base = get_base_supply_curve(self.sample_group, dist_files, sw_name)
+        print(f"Using {base['name']}-access profiles for {sw_name}")
         dict_df_weights = {}
-        base_scenario_index, dfbase = get_base_supply_curve(self.sample_group, dist_files, sw_name, False)
-
-        for f, df in enumerate(dist_files):
-            # Initial skeleton of the weights DataFrame
-            w_df_tmp = df[["region", "sc_point_gid"]].copy()
-
-            # Create a mapping from each unique region to its corresponding weight
-            region_to_weight = {
-                r: self.r_weights[r][f]
-                for r in w_df_tmp["region"].unique()
-            }
-
-            # Compute the region weights for each row
-            region_weights = w_df_tmp["region"].map(region_to_weight).values
-
-            # Build a new DataFrame for the modifiable columns using a dict comprehension.
-            # For "capacity", we assign the raw region weight; for others, multiply by capacity.
-            modifiable_df = pd.DataFrame({
-                col: (region_weights if col == "capacity" else region_weights * df["capacity"])
-                for col in modifiable_columns
-            }, index=w_df_tmp.index)
-
-            # Join the modifiable columns back into the original DataFrame
-            w_df_tmp = w_df_tmp.join(modifiable_df)
-
-            # Store in dictionary
-            dict_df_weights[f] = w_df_tmp
-
-        # Normalize the weights to sum to 1
-        # Divide the weights by the sum of the weights across all files
-        sum_weights = sum(dict_df_weights[f][modifiable_columns] for f in range(len(dist_files)))
-        sum_weights[sum_weights == 0] = 1
-
-        for f in range(len(dist_files)):
-            dict_df_weights[f][modifiable_columns] /= sum_weights
-            ## Inherit everything but capacity from the base scenario
-            for col in ['class','cf','capital_adder_per_mw']:
-                dict_df_weights[f][col] = 1 if f == base_scenario_index else 0
-                dist_files[f][col] = dist_files[f].sc_point_gid.map(dfbase[col])
+        for fileindex, dist_file in enumerate(dist_files):
+            weights = pd.DataFrame(self.r_weights).loc[fileindex]
+            ## Capacity uses the sampled weights
+            df = base['supplycurve'].assign(capacity=base['supplycurve'].region.map(weights))
+            ## Other cols use 1 (for the base dataframe) or 0 (for non-base dataframes)
+            for col in MCSConstants.SC_FIXED_COLUMNS:
+                df[col] = (1 if fileindex == base['index'] else 0)
+            dict_df_weights[fileindex] = df.reset_index()
 
         return dict_df_weights
 
@@ -1042,9 +1017,9 @@ class MCS_Sampler:
                 ).fillna(0).sort_values(by=ref_columns).reset_index(drop=True)
             
             # Inherit everything but capacity from the base scenario
-            __, dfbase = get_base_supply_curve(sample_group, dist_files, sw_name)
+            dfbase = get_base_supply_curve(sample_group, dist_files, sw_name)['supplycurve']
             for i, df in enumerate(dist_files):
-                for col in ['class','cf','capital_adder_per_mw']:
+                for col in MCSConstants.SC_FIXED_COLUMNS:
                     dist_files[i][col] = df.sc_point_gid.map(dfbase[col])
 
         ### ===========================================================================
@@ -1829,7 +1804,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
 
     # ---- Settings for testing ----
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20261008_mcM0_MC_tri_country_MC0001','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261106_mcM0_MonteCarlo_Random_MC0001','inputs_case')
     # n_samples = 1
     # seed = 0
 
