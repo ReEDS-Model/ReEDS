@@ -201,27 +201,34 @@
 ### ---------------------------------------------------###
 ### --- Distributions for NG-fuel prices
 ### ---------------------------------------------------###
-- name: ng_fuel_price
+- name: gasprice_flat
   assignments_list:
-    - ngscen: [AEO_2025_LOG, AEO_2025_reference, AEO_2025_HOG]
+    - ngscen: [AEO_2026_HOG, AEO_2026_LOG]
   dist: dirichlet
-  dist_params: [1, 1, 1]
+  dist_params: [1, 1]
   weight_r: country
 
-- name: ng_fuel_price_tri
+- name: gasprice_tri
   assignments_list:
-    - ngscen: [AEO_2025_HOG, AEO_2025_reference, AEO_2025_LOG]
+    - ngscen: [AEO_2026_HOG, AEO_2026_baseline, AEO_2026_LOG]
   dist: triangular
   weight_r: country
 
 ### ---------------------------------------------------###
 ### --- Distributions for load
 ### ---------------------------------------------------###
-- name: load_country
+- name: load_flat_country
   assignments_list: 
-    - GSw_LoadProfiles: [EER2025_100by2050, EER2025_IRAlow]
+    - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_100by2050]
   dist: dirichlet
   dist_params: [1, 1]
+  weight_r: country
+
+- name: load_tri_country
+  assignments_list: 
+    - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_IRAlow, EER2025_100by2050]
+  dist: dirichlet
+  dist_params: [1, 1, 1]
   weight_r: country
 
 - name: load_country_unif
@@ -230,23 +237,16 @@
   dist: uniform
   weight_r: country
 
-- name: load_st
+- name: load_flat_state
   assignments_list: 
-    - GSw_LoadProfiles: [EER2025_100by2050, EER2025_IRAlow]
+    - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_100by2050]
   dist: dirichlet
   dist_params: [1, 1]
   weight_r: st
 
-- name: load_ba
-  assignments_list: 
-    - GSw_LoadProfiles: [EER2025_100by2050, EER2025_IRAlow]
-  dist: dirichlet
-  dist_params: [1, 1]
-  weight_r: ba
-
 - name: load_discrete_st
   assignments_list: 
-    - GSw_LoadProfiles: [EER2025_100by2050, EER2025_IRAlow]
+    - GSw_LoadProfiles: [EER2025_IRAlow, EER2025_100by2050]
   dist: discrete
   dist_params: [1, 1]
   weight_r: st
@@ -289,7 +289,7 @@
   dist_params: [1, 1]
   weight_r: country
 
-- name: wind_solar_siting_country
+- name: siting_lowmid_country
   assignments_list:
     - GSw_SitingUPV: [limited, reference]
     - GSw_SitingWindOfs: [limited, reference]
@@ -298,25 +298,25 @@
   dist_params: [1, 1]
   weight_r: country
 
-- name: wind_solar_siting_st
+- name: siting_tri_country
   assignments_list:
-    - GSw_SitingUPV: [limited, reference]
-    - GSw_SitingWindOfs: [limited, reference]
-    - GSw_SitingWindOns: [limited, reference]
+    - GSw_SitingUPV: [limited, reference, open]
+    - GSw_SitingWindOfs: [limited, reference, open]
+    - GSw_SitingWindOns: [limited, reference, open]
+  dist: dirichlet
+  dist_params: [1, 1, 1]
+  weight_r: country
+
+- name: siting_flat_state
+  assignments_list:
+    - GSw_SitingUPV: [limited, open]
+    - GSw_SitingWindOfs: [limited, open]
+    - GSw_SitingWindOns: [limited, open]
   dist: dirichlet
   dist_params: [1, 1]
   weight_r: st
 
-- name: wind_solar_siting_ba
-  assignments_list:
-    - GSw_SitingUPV: [limited, reference]
-    - GSw_SitingWindOfs: [limited, reference]
-    - GSw_SitingWindOns: [limited, reference]
-  dist: dirichlet
-  dist_params: [1, 1]
-  weight_r: ba
-
-- name: wind_solar_siting_discrete_st
+- name: siting_discrete_st
   assignments_list:
     - GSw_SitingUPV: [limited, reference]
     - GSw_SitingWindOfs: [limited, reference]
@@ -324,6 +324,15 @@
   dist: discrete
   dist_params: [1, 1]
   weight_r: st
+
+- name: siting_country_discrete_flat
+  assignments_list:
+    - GSw_SitingUPV: [limited, reference, open]
+    - GSw_SitingWindOfs: [limited, reference, open]
+    - GSw_SitingWindOns: [limited, reference, open]
+  dist: discrete
+  dist_params: [1, 1, 1]
+  weight_r: country
 
 
 ### ---------------------------------------------------###
