@@ -18,6 +18,10 @@ number as a sentence, `figs/` holds the IEEE single-column figures (PDF +
 | 10 results after the constraint fix | `10_after_fix.py` | `results_after_fix.md`, `buckets`, `r2_ranking_rf`, `ba_heatmap_rf` (raw OOF scores), `data/10_*`, `data/after_fix/` (constrained per-output metrics, reference only); reads `data/12_corridor_floor_vs_init.csv` |
 | 11 dashboard check | `11_dashboard_check.py` | `data/11_dashboard_check.json` |
 | 12 corridor floors vs initial capacity | `12_corridor_floors.py` | `data/12_corridor_floor_vs_init.csv` |
+| 13 numbers behind the claims check | `13_claims_check.py` | `claims_check.md`, `data/13_claims_numbers.json` |
+| 14 candidate paper figures (no fitting) | `14_paper_figures.py` | `figs/*` (ercot_map … learning_curve), `figs/captions.md`, `data/14_figure_numbers.json` |
+| 15 dashboard screenshots (needs a running server + Chrome) | `15_dashboard_screenshots.py` | `figs/dashboard_predict`, `figs/dashboard_ci` |
+| 16 contact sheet | `16_contact_sheet.py` | `figs/contact_sheet.png` |
 
 The constraint fix itself is described in `constraint_fix_changelog.md`.
 

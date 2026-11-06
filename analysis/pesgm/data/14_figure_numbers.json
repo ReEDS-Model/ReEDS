@@ -1,0 +1,202 @@
+{
+ "buckets_system": {
+  "< 0": 2,
+  "0\u20130.5": 10,
+  "0.5\u20130.9": 25,
+  "\u2265 0.9": 29
+ },
+ "buckets_regional": {
+  "< 0": 24,
+  "0\u20130.5": 61,
+  "0.5\u20130.9": 147,
+  "\u2265 0.9": 76
+ },
+ "regional_below_neg05": 0,
+ "ba_heatmap_rows": {
+  "regular": 29,
+  "sparse_or_flat": 33
+ },
+ "model_comparison": {
+  "system": {
+   "Ridge": [
+    0.445,
+    0.449
+   ],
+   "Lasso": [
+    0.445,
+    0.449
+   ],
+   "k-NN": [
+    0.595,
+    0.695
+   ],
+   "XGBoost": [
+    0.532,
+    0.82
+   ],
+   "NGBoost": [
+    0.711,
+    0.815
+   ],
+   "MLP": [
+    0.712,
+    0.87
+   ],
+   "RF": [
+    0.749,
+    0.882
+   ]
+  },
+  "regional": {
+   "Ridge": [
+    0.308,
+    0.259
+   ],
+   "Lasso": [
+    0.308,
+    0.259
+   ],
+   "k-NN": [
+    0.452,
+    0.536
+   ],
+   "XGBoost": [
+    0.241,
+    0.484
+   ],
+   "NGBoost": [
+    0.559,
+    0.59
+   ],
+   "MLP": [
+    0.547,
+    0.679
+   ],
+   "RF": [
+    0.625,
+    0.715
+   ]
+  }
+ },
+ "failure_classes_class_counts": {
+  "regional/near-constant": 5,
+  "regional/regular": 174,
+  "regional/sparse": 129,
+  "system/near-constant": 2,
+  "system/regular": 41,
+  "system/sparse": 23
+ },
+ "constraints_effect": {
+  "Cost identity (runs)": [
+   355,
+   0
+  ],
+  "Additivity (pairs)": [
+   14943,
+   1167
+  ],
+  "Below floor RF": [
+   0,
+   0
+  ],
+  "Below floor MLP": [
+   1144,
+   0
+  ],
+  "Below floor Ridge": [
+   1022,
+   0
+  ]
+ },
+ "dial_sensitivity_pct": {
+  "Demand": {
+   "cost_total": 1.1,
+   "tran_total": 3.8,
+   "cap_wind-ons": 5.0,
+   "cap_upv": 17.8,
+   "cap_gas-cc": 3.9,
+   "cap_battery_li": 0.3,
+   "cap_gas-ct": 1.7,
+   "gen_gas-cc": 4.5
+  },
+  "Gas supply": {
+   "cost_total": 59.5,
+   "tran_total": 70.6,
+   "cap_wind-ons": 72.9,
+   "cap_upv": 49.1,
+   "cap_gas-cc": 48.3,
+   "cap_battery_li": 15.9,
+   "cap_gas-ct": 16.6,
+   "gen_gas-cc": 71.9
+  },
+  "Wind & solar cost": {
+   "cost_total": 7.7,
+   "tran_total": 4.4,
+   "cap_wind-ons": 13.8,
+   "cap_upv": 5.2,
+   "cap_gas-cc": 23.1,
+   "cap_battery_li": 0.6,
+   "cap_gas-ct": 20.0,
+   "gen_gas-cc": 14.0
+  },
+  "Siting": {
+   "cost_total": 0.9,
+   "tran_total": 4.3,
+   "cap_wind-ons": 0.2,
+   "cap_upv": 1.8,
+   "cap_gas-cc": 2.8,
+   "cap_battery_li": 0.8,
+   "cap_gas-ct": 2.1,
+   "gen_gas-cc": 0.1
+  },
+  "Battery cost": {
+   "cost_total": 0.1,
+   "tran_total": 0.2,
+   "cap_wind-ons": 0.9,
+   "cap_upv": 4.1,
+   "cap_gas-cc": 0.2,
+   "cap_battery_li": 58.6,
+   "cap_gas-ct": 15.1,
+   "gen_gas-cc": 0.0
+  },
+  "Policy": {
+   "cost_total": 9.6,
+   "tran_total": 2.8,
+   "cap_wind-ons": 1.6,
+   "cap_upv": 7.4,
+   "cap_gas-cc": 7.6,
+   "cap_battery_li": 1.1,
+   "cap_gas-ct": 16.2,
+   "gen_gas-cc": 2.6
+  },
+  "Interactions": {
+   "cost_total": 21.0,
+   "tran_total": 14.0,
+   "cap_wind-ons": 5.6,
+   "cap_upv": 14.6,
+   "cap_gas-cc": 14.0,
+   "cap_battery_li": 22.6,
+   "cap_gas-ct": 28.2,
+   "gen_gas-cc": 6.9
+  }
+ },
+ "ci_coverage_system": {
+  "median": 0.899,
+  "min": 0.893,
+  "frac_ge_085": 1.0
+ },
+ "ci_coverage_regional": {
+  "median": 0.899,
+  "min": 0.891,
+  "frac_ge_085": 1.0
+ },
+ "learning_curve_mean": {
+  "50": 0.455,
+  "100": 0.555,
+  "150": 0.626,
+  "200": 0.666,
+  "300": 0.695,
+  "400": 0.734,
+  "486": 0.752
+ }
+}

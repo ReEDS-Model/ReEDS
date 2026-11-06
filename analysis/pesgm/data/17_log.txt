@@ -1,0 +1,11 @@
+overall off-grid (final model): done
+overall training grid (OOF): done
+regional off-grid (final model): done
+regional training grid (OOF): done
+                                 a_inference_ms  b_constraints_ms  c_conformal_ms  d_render_ms  total_ms  n_predict_calls  n_conformal_calls
+layer    path                                                                                                                               
+system   off-grid (final model)          2042.5               3.4             1.3         10.8    2059.0              1.0                2.0
+         training grid (OOF)                0.0               2.8             1.8         17.2      21.8              0.0                3.0
+regional off-grid (final model)         11196.7              45.7             6.9         40.0   11289.1              2.0                2.0
+         training grid (OOF)                0.0              40.5             8.1         63.3     112.6              0.0                3.0
+wrote timing.md

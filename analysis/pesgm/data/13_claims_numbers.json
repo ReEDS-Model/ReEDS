@@ -1,0 +1,249 @@
+{
+ "x_levels": {
+  "x_Batt": [
+   0,
+   1,
+   2
+  ],
+  "x_Dem": [
+   0,
+   1,
+   2
+  ],
+  "x_Fuel": [
+   0,
+   1,
+   2
+  ],
+  "x_Pol": [
+   0,
+   1
+  ],
+  "x_REcost": [
+   0,
+   1,
+   2
+  ],
+  "x_Siting": [
+   0,
+   1,
+   2
+  ]
+ },
+ "n_runs": 486,
+ "n_system_modelled": 66,
+ "n_regional_modelled": 308,
+ "system_constants": {
+  "cap_distpv": 12994.628098999998,
+  "cap_hydED": 142.0,
+  "cap_hydEND": 405.8000000000002,
+  "cap_lfill-gas": 24.399999999999995,
+  "gen_Gas-CT_H2-CT": 0.0,
+  "gen_coal-igcc": 0.0,
+  "gen_coal-new": 0.0,
+  "gen_wind-ofs": 0.0
+ },
+ "n_regional_constants": 57,
+ "n_regional_constants_nonzero": 18,
+ "system_by_family": {
+  "gen": 22,
+  "cost": 22,
+  "cap": 19,
+  "tran": 2,
+  "runtime": 1
+ },
+ "regional_by_family": {
+  "cost": 126,
+  "gen": 91,
+  "cap": 81,
+  "tran": 10
+ },
+ "system_tran_cols": [
+  "tran_AC_total",
+  "tran_total"
+ ],
+ "regional_tran_cols_all": [
+  "tran_p60_p61_AC",
+  "tran_p60_p62_AC",
+  "tran_p60_p63_AC",
+  "tran_p61_p62_AC",
+  "tran_p61_p63_AC",
+  "tran_p61_p64_AC",
+  "tran_p61_p65_AC",
+  "tran_p63_p64_AC",
+  "tran_p64_p65_AC",
+  "tran_p64_p67_AC",
+  "tran_p65_p67_AC"
+ ],
+ "regional_tran_modelled": [
+  "tran_p60_p61_AC",
+  "tran_p60_p62_AC",
+  "tran_p60_p63_AC",
+  "tran_p61_p62_AC",
+  "tran_p61_p63_AC",
+  "tran_p61_p64_AC",
+  "tran_p61_p65_AC",
+  "tran_p64_p65_AC",
+  "tran_p64_p67_AC",
+  "tran_p65_p67_AC"
+ ],
+ "n_cost_components": 21,
+ "runtime_min": {
+  "min": 37.1,
+  "median": 46.3,
+  "mean": 46.6,
+  "max": 63.2
+ },
+ "regions": [
+  "p60",
+  "p61",
+  "p62",
+  "p63",
+  "p64",
+  "p65",
+  "p67"
+ ],
+ "headline_r2": {
+  "cost_total": 0.8975,
+  "tran_total": 0.9746,
+  "tran_AC_total": 0.9746,
+  "cap_wind-ons": 0.9886,
+  "gen_wind-ons": 0.9858,
+  "cap_upv": 0.9665,
+  "gen_upv": 0.9625,
+  "cap_gas-cc": 0.9525,
+  "gen_gas-cc": 0.9903,
+  "cap_battery_li": 0.9255,
+  "gen_battery_li": 0.9412
+ },
+ "cost_op_r2": {
+  "cost_op_co2_incentive_negative": 0.2587,
+  "cost_op_co2_transport_storage": 0.9209,
+  "cost_op_consume_fom": 0.9183,
+  "cost_op_fom_costs": 0.9803,
+  "cost_op_fuelcosts_objfn": 0.9712,
+  "cost_op_h2_storage": 0.9437,
+  "cost_op_h2_transport_intrareg": 0.9237,
+  "cost_op_ptc_payments_negative": 0.9664,
+  "cost_op_spurline_fom": 0.9926,
+  "cost_op_startcost": 0.8777,
+  "cost_op_transmission_fom": 0.9756,
+  "cost_op_transmission_intrazone_fom": 0.9865,
+  "cost_op_vom_costs": 0.9792
+ },
+ "cost_inv_r2": {
+  "cost_inv_h2_production": 0.0079,
+  "cost_inv_h2_storage": -0.0923,
+  "cost_inv_investment_capacity_costs": 0.9106,
+  "cost_inv_investment_refurbishment_capacity": 0.5406,
+  "cost_inv_investment_spurline_costs_rsc_technologies": 0.8931,
+  "cost_inv_itc_payments_negative": 0.0574,
+  "cost_inv_transmission_interzone_ac_investment": 0.8731,
+  "cost_inv_transmission_intrazone_investment": 0.8322
+ },
+ "cap_nuclear": {
+  "r2": -0.3619588637198803,
+  "mean_MW": 4979.830975619342,
+  "std_MW": 3.72237585550272,
+  "min_MW": 4897.854151,
+  "max_MW": 4980.0,
+  "n_unique": 2,
+  "mae_MW": 0.5821377430341126,
+  "max_abs_err_MW": 82.1458511352539,
+  "mae_pct_of_mean": 0.011689909675332144
+ },
+ "activation_sparse": {
+  "cap_CoalOldScr_coal-CCS_mod": 0.765,
+  "cap_Gas-CC_Gas-CC-CCS_mod": 0.023,
+  "cap_Gas-CC_H2-CC": 0.111,
+  "cap_H2-CC": 0.144,
+  "cap_H2-CT": 0.154,
+  "cap_coal-ccs_mod": 0.805,
+  "cap_electrolyzer": 0.169,
+  "cap_gas-cc-ccs_mod": 0.352,
+  "cap_nuclear-smr": 0.019,
+  "gen_CoalOldScr_coal-CCS_mod": 0.765,
+  "gen_Gas-CC_Gas-CC-CCS_mod": 0.023,
+  "gen_Gas-CC_H2-CC": 0.111,
+  "gen_Gas-CT_H2-CT": 0.0,
+  "gen_H2-CC": 0.144,
+  "gen_H2-CT": 0.154,
+  "gen_coal-ccs_mod": 0.805,
+  "gen_gas-cc-ccs_mod": 0.352,
+  "gen_nuclear-smr": 0.019,
+  "cost_inv_h2_production": 0.021,
+  "cost_inv_h2_storage": 0.029,
+  "cost_op_h2_storage": 0.187,
+  "cost_op_h2_transport_intrareg": 0.173
+ },
+ "n_system_outputs_active_lt_10pct": [
+  "cap_Gas-CC_Gas-CC-CCS_mod",
+  "cap_hydUD",
+  "cap_nuclear-smr",
+  "cost_inv_h2_production",
+  "cost_inv_h2_storage",
+  "cost_inv_itc_payments_negative",
+  "cost_op_co2_incentive_negative",
+  "gen_Gas-CC_Gas-CC-CCS_mod",
+  "gen_hydUD",
+  "gen_nuclear-smr"
+ ],
+ "perba_poor_cells": 83,
+ "perba_poor_sparse_or_flat": 63,
+ "perba_bases_in_3plus_regions": 47,
+ "perba_bases_poor_everywhere": 2,
+ "perba_bases_poor_nowhere": 15,
+ "perba_bases_mixed": [
+  "cap_CoalOldScr",
+  "cap_Gas-CC_H2-CC",
+  "cap_H2-CC",
+  "cap_H2-CT",
+  "cap_electrolyzer",
+  "cap_gas-cc",
+  "cap_gas-cc-ccs_mod",
+  "cap_gas-ct",
+  "cap_o-g-s",
+  "cost_inv_investment_capacity_costs",
+  "cost_inv_investment_refurbishment_capacity",
+  "cost_inv_transmission_intrazone_investment",
+  "cost_op_co2_transport_storage",
+  "cost_op_consume_fom",
+  "cost_op_fuelcosts_objfn",
+  "cost_op_h2_storage",
+  "cost_op_h2_transport_intrareg",
+  "cost_op_ptc_payments_negative",
+  "cost_op_spurline_fom",
+  "cost_op_startcost",
+  "cost_op_vom_costs",
+  "gen_CoalOldScr",
+  "gen_Gas-CC_H2-CC",
+  "gen_H2-CC",
+  "gen_H2-CT",
+  "gen_gas-cc",
+  "gen_gas-cc-ccs_mod",
+  "gen_gas-ct",
+  "gen_o-g-s",
+  "gen_upv"
+ ],
+ "region_mean_r2": {
+  "p60": 0.54,
+  "p61": 0.738,
+  "p62": 0.568,
+  "p63": 0.639,
+  "p64": 0.641,
+  "p65": 0.616,
+  "p67": 0.592
+ },
+ "remaining_violations": 1167,
+ "remaining_violations_rescale_not_applied": 1167,
+ "rf_stored_negative_cells_system": 5,
+ "rf_stored_most_negative": -0.02835499995853752,
+ "rf_corridor_below_1pct": 0,
+ "rf_corridor_max_shortfall_MW": 0.0,
+ "nn_corridor_below_1pct": 1144,
+ "nn_corridor_max_shortfall_MW": 1104.1,
+ "ridge_corridor_below_1pct": 1022,
+ "ridge_corridor_max_shortfall_MW": 4455.7,
+ "tran_total_floor": 34478.6,
+ "premerge_system_negative_r2": []
+}
