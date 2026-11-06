@@ -133,8 +133,13 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
                     if not dfcase.color.isnull().any():
                         use_table_colors = True
                 if 'base' in dfcase:
-                    if not dfcase.base.isnull().any():
-                        use_table_bases = True
+                    # If empty 'base' column, fill with 'casename' of first listed case
+                    if dfcase.base.isnull().all():
+                        dfcase['base'] = dfcase.loc[1,'casename']
+                    # Fill any empty 'base' values with the cases' corresponding 'casename' values
+                    elif dfcase.base.isnull().any():
+                        dfcase['base'] = dfcase['base'].fillna(dfcase['casename'])
+                    use_table_bases = True
             ## Otherwise assume it's a copy of a cases_{batchname}.csv file in a case folder
             ## This approach is less robust; the others are preferred.
             else:
