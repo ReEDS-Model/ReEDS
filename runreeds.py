@@ -1076,27 +1076,27 @@ def write_batch_script(
         ### (ReEDS-FINITO) call FINITO reporting
         if int(caseSwitches['GSw_FINITO_Link'])==1:
             OPATH.writelines(
-            'gams '
-            + f"{os.path.join(casedir,'finito', 'model', 'finito_report.gms')}"
-            + f" o={os.path.join('lstfiles',f'finito_report_{batch_case}.lst')}"
-            + (' license=gamslice.txt' if hpc else '')
-            + (' r=$r' if LINUXORMAC else ' r=!r!')
-            + ' gdxcompress=1'
-            + toLogGamsString
-            + f"--case={batch_case}"
-            + f" --casedir={casedir}"
-            + f" --GSw_FINITO_Link={caseSwitches['GSw_FINITO_Link']}"
-            + f" --GSw_RetailAdder={caseSwitches['GSw_RetailAdder']}"
-            + f" --finito_inputs_dir={os.path.join('finito','inputs')}"
-            + f" --inputs_case_finito_dir={os.path.join('finito','inputs_case')}"
-            + f" --linked_report_dir={caseSwitches['linked_report_dir']} \n"
+                'gams '
+                + f"{os.path.join(casedir,'finito', 'model', 'finito_report.gms')}"
+                + f" o={os.path.join('lstfiles',f'finito_report_{batch_case}.lst')}"
+                + (' license=gamslice.txt' if hpc else '')
+                + (' r=$r' if LINUXORMAC else ' r=!r!')
+                + ' gdxcompress=1'
+                + toLogGamsString
+                + f"--case={batch_case}"
+                + f" --casedir={casedir}"
+                + f" --GSw_FINITO_Link={caseSwitches['GSw_FINITO_Link']}"
+                + f" --GSw_RetailAdder={caseSwitches['GSw_RetailAdder']}"
+                + f" --finito_inputs_dir={os.path.join('finito','inputs')}"
+                + f" --inputs_case_finito_dir={os.path.join('finito','inputs_case')}"
+                + f" --linked_report_dir={caseSwitches['linked_report_dir']} \n"
             )
             # (ReEDS-FINITO) calls FINITO postprocessing
             OPATH.writelines(
             f"python {os.path.join(casedir, 'finito', 'visualization', 'postprocessing.py')}"
-            + " -b 0"            
-            + f" -l {caseSwitches['GSw_FINITO_Link']}"
-            + f' -c {batch_case} \n\n'
+                + " -b 0"            
+                + f" -l {caseSwitches['GSw_FINITO_Link']}"
+                + f' -c {batch_case} \n\n'
             )  
             if not LINUXORMAC:
                 OPATH.writelines("endlocal\n")

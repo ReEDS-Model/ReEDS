@@ -442,7 +442,7 @@ def check_numperiods(sw, threshold=24, force=0):
         if force:
             warn(err)
         else:
-            proceed = str(input(f'Do you want to proceed with {numperiods} periods? y/[n]') or 'n')
+            proceed = str(input(f'Do you want to proceed with {numperiods} periods? y/[n] ') or 'n')
             if proceed.lower() not in ['y','yes']:
                 raise ValueError(err)
 
@@ -494,7 +494,7 @@ def check_islands(sw, force=0):
         if force:
             warn(err)
         else:
-            proceed = str(input(f'Do you want to proceed with {len(islands)} islanded zones? y/[n]'))
+            proceed = str(input(f'Do you want to proceed with {len(islands)} islanded zones? y/[n] '))
             if proceed.lower() not in ['y','yes']:
                 raise ValueError(err)
 
