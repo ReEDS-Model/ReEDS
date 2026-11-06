@@ -762,7 +762,7 @@ def plot_scatter_everything(
         'cap_Gas': 'Gas',
         'npv': 'NPC\n[$trillion]',
         'scoe': 'SCOE\n[$/MWh]',
-        'co2': 'CO' + r'$\bf{_2}$' + '\n[GT]',
+        'co2': reeds.plots.chemlabel('CO2\n[GT]'),
     }
     xcols = [
         'cost_PV',

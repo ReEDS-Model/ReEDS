@@ -3237,11 +3237,10 @@ def map_zone_capacity(
             'Cap [GW]': [0.83, 0.2, 0.1, 0.17],
             'Gen [TWh/y]': [1.0, 0.2, 0.1, 0.17],
         }
-        nicelabels = {'CO2 [MMT/y]': 'CO'+r'$\bf{_2}$'+' [MMT/y]'}
         eax = {}
         for a in axbounds:
             eax[a] = f.add_axes(axbounds[a])
-            eax[a].set_ylabel(nicelabels.get(a,a))
+            eax[a].set_ylabel(reeds.plots.chemlabel(a))
             plots.despine(eax[a])
             eax[a].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
             eax[a].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))

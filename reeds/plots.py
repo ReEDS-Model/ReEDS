@@ -2325,7 +2325,7 @@ def chemlabel(chem:str) -> str:
 
 def hist_last(
     ax, df, color='k', bins=None, xpad=0, xscale=5, alpha=1,
-    percentiles=[],
+    percentiles=[], percentilestyle='o',
 ):
     """Plot a vertical histogram for the last value"""
     x = df.index[-1] + xpad
@@ -2344,21 +2344,11 @@ def hist_last(
         labels = [f'{i*100:.0f}%' for i in percentiles]
         assert all([i in describe.index for i in labels]), "Too many decimals in percentiles"
         for label in labels:
-            ## Markers
-            ax.plot(
-                [x], [describe[label]],
-                marker='o', markerfacecolor='none', markeredgecolor='k',
-                markeredgewidth=0.5, markersize=3,
-            )
-            ## Lines
-            # ax.plot(
-            #     [x, x+xscale],
-            #     [describe[label]]*2,
-            #     color='k', lw=0.5,
-            # )
-
-    # ax.hist(
-    #     df.iloc[-1].values, bins=bins, color=color,
-    #     bottom=x, density=True,
-    #     orientation='horizontal',
-    # )
+            if percentilestyle == 'line':
+                ax.plot([x, x+xscale], [describe[label]]*2, color='k', lw=0.5)
+            else:
+                ax.plot(
+                    [x], [describe[label]],
+                    marker=percentilestyle, markerfacecolor='none', markeredgecolor='k',
+                    markeredgewidth=0.5, markersize=3,
+                )

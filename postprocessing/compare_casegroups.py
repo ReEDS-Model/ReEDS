@@ -138,14 +138,8 @@ if basepath is not None:
 dfcases = dfcases.set_index(['caseprefix','number']).sort_index()
 samples = [i for i in dfcases.index.get_level_values('number').unique() if i != 0]
 ## Instantiate the data containers
-# dfcases['object'] = dfcases.path.map(lambda x: reeds.objects.ReEDScase(x))
-# dfcases['object'] = [reeds.objects.ReEDScase(x) for x in dfcases.path]
-# case
-cases = {
-    key: [reeds.objects.ReEDScase(x) for x in caselist]
-    for key, caselist in casepaths.items()
-}
-casebase = reeds.objects.ReEDScase(basepath)
+cases = {key: [reeds.ReEDScase(x) for x in caselist] for key, caselist in casepaths.items()}
+casebase = reeds.ReEDScase(basepath)
 
 
 #%% Shared inputs
