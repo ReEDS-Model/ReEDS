@@ -647,6 +647,7 @@ def plot_regional_cost_difference(
         'LFILL': 'Landfill gas',
         'CSP': 'CSP',
         'PVB': '(including in PV/battery hybrid)',
+        'GEO': 'Geothermal',
     },
     cmap=plt.cm.RdBu_r,
     scale=4,
@@ -692,6 +693,7 @@ def plot_regional_cost_difference(
             '\n'.join([nicelabels.get(i, i.title()).replace('_',' ') for i in column.split('|')]),
             y=0.92,
         )
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(dfin.columns))
     ## Colorbar
     reeds.plots.addcolorbarhist(
         f=f, ax0=ax[0,1], data=dfplot[column].values,
