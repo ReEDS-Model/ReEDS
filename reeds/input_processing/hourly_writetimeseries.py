@@ -341,8 +341,6 @@ def get_yearly_flexibility(
         modeledyears_int = [int(y) for y in modeledyears]        
         shape[stype] = shape[stype].loc[shape[stype].year.isin(modeledyears_int)]
 
-        unique_techs = list({x.split('|')[0] for x in shape[stype].columns[1:]})
-
         # EER derived shape data is populated for multiple weather years
         # The index is populated as a timestamp
         if len(str(shape[stype].index[0])) > 4:
@@ -375,110 +373,6 @@ def get_yearly_flexibility(
             # Reorder columns
             shape_out[stype] = shape[stype][['i','r','h','year','Values']].copy()
             shape_out[stype] = shape_out[stype].rename(columns={'year':'t'})
-
-
-        # End use shape data populated for single weather year
-        # The hour column is populated as an integer hour of year
-        else:
-            hoursperperiod = {"day": 24, "wek": 120, "year": np.nan}[sw["GSw_HourlyType"]]
-            ### Get the set of szn's and h's
-            szn_h = (
-                hmap_1yr.drop_duplicates(["h", "season"])
-                .sort_values(["season", "hour"])
-                .reset_index(drop=True)[["season", "h"]]
-                .assign(
-                    periodhour=np.ravel(
-                        (
-                            [range(1, 25)] * 365
-                            if sw["GSw_HourlyType"] == "year"
-                            else [range(1, hoursperperiod + 1)] * len(set_szn)
-                        )
-                    )
-                )
-                .set_index(["season", "periodhour"])
-                .h
-            ).copy()
-
-            idx_vals = [i + 1 for i in period_szn.index.values]
-            period_szn_dict = period_szn.set_index("yperiod").to_dict()["season"]
-            
-            ### Filter out the days not in the stress periods
-            shape[stype]['day'] = np.ceil(shape[stype].hour/24)
-
-            shape[stype] = shape[stype].loc[shape[stype]['day'].isin(list(period_szn_dict.keys()))]
-
-            unique_years = len(shape[stype].year.unique())
-
-            ### Add time indices ("season" is the identifier for modeled periods)
-            shape[stype]["yperiod"] = shape[stype]["day"].astype(int)
-
-            shape[stype].drop('day', axis = 1, inplace = True)
-            shape[stype].sort_values(by = ['i','year','hour'],inplace = True)
-
-            # Sort data by year so periodhour is assigned correctly
-            shape[stype] = shape[stype].sort_values(['i','year', 'yperiod', 'hour',])
-
-            shape[stype]["periodhour"] = (
-                np.ravel([range(1, 25) for d in range(365)] * unique_techs * unique_years)
-                if sw["GSw_HourlyType"] == "year"
-                else np.ravel(
-                    [range(1, hoursperperiod + 1) for d in idx_vals]
-                    * unique_techs
-                    * unique_years
-                )
-            )
-
-            shape[stype]["season"] = shape[stype].yperiod.map(period_szn_dict)
-
-            ### If modeling a full year, keep everything
-            if sw["GSw_HourlyType"] == "year":
-                shape_out[stype] = shape[stype].drop(
-                    ["yperiod", "periodhour", "season"], axis=1
-                )
-                shape_out[stype].index = hmap_1yr.h
-            
-            ### If using representative periods, pull out the representative periods
-            elif unique_years == 1:
-                shape_out[stype] = (
-                    shape[stype]
-                    .loc[shape[stype].season.isin(rep_periods)]
-                    .drop(["yperiod", "hour", "year"], axis=1)
-                    .set_index(["season", "periodhour"])
-                    .sort_index()
-                )
-                shape_out[stype].index = shape_out[stype].index.map(szn_h).rename("h")
-
-                shape_out[stype] = (
-                    shape_out[stype]
-                    .reset_index()
-                    .set_index(["h", "i"])
-                    .stack()
-                    .reset_index()
-                    .rename(columns={"i": "*i", "level_2": "r", 0: "Values"})[
-                        ["*i", "r", "h", "Values"]
-                    ]
-                )
-            else:
-                shape_out[stype] = (
-                    shape[stype]
-                    .loc[shape[stype].season.isin(rep_periods)]
-                    .drop(["yperiod", "hour"], axis=1)
-                    .set_index(["season", "periodhour"])
-                    .sort_index()
-                )
-
-                shape_out[stype].index = shape_out[stype].index.map(szn_h).rename("h")
-
-                shape_out[stype] = (
-                    shape_out[stype]
-                    .reset_index()
-                    .set_index(["h", "i", "year"])
-                    .stack()
-                    .reset_index()
-                    .rename(columns={"i": "*i", "level_3": "r", "year": "t", 0: "Values"})[
-                        ["*i", "r", "h", "t", "Values"]
-                    ]
-                )
 
     shape_out = {k: v.drop_duplicates() for k, v in shape_out.items()}
     
@@ -1316,22 +1210,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
     # -- DR Shape and DR Shift -- #
     #############################
 
-    if int(sw.GSw_DRShape):
-        # DR shape mapped to all weather years
-        if periodtype.startswith('stress'):
-            dr_shape_dec, dr_shape_inc = get_yearly_flexibility(
-                sw=sw,
-                period_szn=period_szn,
-                rep_periods=rep_periods,
-                hmap_1yr=hmap_allyrs,
-                set_szn=set_szn,
-                inputs_case=inputs_case,
-                drcat="dr_shape",
-                modeledyears=modeledyears,
-            )
-        # DR shape mapped to single year
-        else:        
-            dr_shape_dec, dr_shape_inc = get_yearly_flexibility(
+    if int(sw.GSw_DRShape):   
+        dr_shape_dec, dr_shape_inc = get_yearly_flexibility(
                 sw=sw,
                 period_szn=period_szn,
                 rep_periods=rep_periods,
