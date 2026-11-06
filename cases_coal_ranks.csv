@@ -1,5 +1,5 @@
 ,Default Value,USA_z90,USA_z134,PJM_county,MISO_county,Texas_county,WI_county,EI_county
-ignore,0,,,,,,,
+ignore,1,,,,0,,,
 GSw_Region,country/USA,,,transreg/PJM,transreg/MISO,interconnect/texas,interconnect/western,interconnect/eastern
 endyear,2050,,,,,,,
 yearset,,,,,,,,
