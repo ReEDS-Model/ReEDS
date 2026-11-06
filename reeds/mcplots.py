@@ -27,9 +27,8 @@ from defaults import DEFAULT_DOLLAR_YEAR
 def plot_demand_lines(
     plotcases:list,
     level='st',
-    ncols=8,
     tstart=2020,
-    figsize=(11,6),
+    scale=1,
     color='C7',
     alpha=0.5,
     bins=21,
@@ -41,7 +40,13 @@ def plot_demand_lines(
     hierarchy = plotcases[0].hierarchy
     r2region = hierarchy[level]
     regions = sorted(hierarchy[level].unique())
-    nrows, ncols, coords = reeds.plots.get_coordinates(regions, ncols=ncols)
+    if level == 'st':
+        state_subplots = reeds.reedsplots.get_state_subplots()
+        nrows = state_subplots.row.max() + 1
+        ncols = state_subplots.col.max() + 1
+        coords = state_subplots['ax']
+    else:
+        nrows, ncols, coords = reeds.plots.get_coordinates(regions)
     dfplot = pd.concat({
         i: (
             case.demand_rt
@@ -54,10 +59,10 @@ def plot_demand_lines(
     ### Plot it
     plt.close()
     f,ax = plt.subplots(
-        nrows, ncols, figsize=figsize, sharex=True,
-        gridspec_kw={'wspace':0.5},
+        nrows, ncols, figsize=(ncols*scale, nrows*scale*0.9), sharex=True,
+        gridspec_kw={'wspace':0.6},
     )
-    for r in tqdm(regions):
+    for r in regions:
         _ax = ax[coords[r]]
         df = dfplot.loc[r]
         ## Background
@@ -66,10 +71,7 @@ def plot_demand_lines(
             color=color, alpha=alpha, lw=0,
         )
         ## Lines
-        df.plot(
-            ax=_ax, legend=False,
-            lw=0.5, color='k', alpha=0.25,
-        )
+        df.plot(ax=_ax, legend=False, lw=0.5, color='k', alpha=0.25)
         ## Histogram
         reeds.plots.hist_last(
             _ax, df, color=color, bins=bins, alpha=alpha,
@@ -81,9 +83,18 @@ def plot_demand_lines(
         )
         _ax.set_xlabel(None)
         _ax.set_ylim(0)
+    ## Formatting
     _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
     _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    ax[-1,0].set_ylabel('Electricity demand [TWh]', y=0, va='bottom', ha='left')
+    if (level == 'st'):
+        if 'CA' in regions:
+            _ax = ax[state_subplots.loc['CA','ax']]
+        else:
+            _ax = ax[state_subplots.loc[regions].sort_values(['row','col']).ax.iloc[-1]]
+    else:
+        _ax = ax[coords[regions[-1]]]
+    _ax.set_ylabel('Electricity demand [TWh]', y=0, va='bottom', ha='left')
+    reeds.plots.trim_empty_subplots(ax)
     reeds.plots.despine(ax)
     plt.draw()
     reeds.plots.shorten_years(_ax)
@@ -222,10 +233,7 @@ def map_supplycurve_diff(
     if dfmap is None:
         dfmap = plotcases[0].dfmap
     dfplot = pd.concat(
-        {
-            i: case.supplycurve
-            for i, case in enumerate(plotcases)
-        },
+        {i: case.supplycurve for i, case in enumerate(plotcases)},
         axis=1,
     )
     samples = dfplot.columns.values
@@ -353,10 +361,11 @@ def plot_cap_gen_hist(
 
     ### Plot it
     ymin = 0.
-    ymax = dfplot.loc[techs].max().max()
+    plottechs = [i for i in techs if i in dfplot.index]
+    ymax = dfplot.loc[plottechs].max().max()
     bins = np.linspace(ymin, ymax, numbins)
     nrows = 1
-    ncols = len(techs)
+    ncols = len(plottechs)
 
     plt.close()
     f,ax = plt.subplots(
@@ -364,7 +373,7 @@ def plot_cap_gen_hist(
         gridspec_kw={'wspace':0.3},
         dpi=300,
     )
-    for col, tech in enumerate(techs):
+    for col, tech in enumerate(plottechs):
         _ax = ax[col]
         _ax.set_title(tech, weight='bold', fontsize='x-large')
         for x, caseprefix in enumerate(cases):
@@ -413,7 +422,7 @@ def plot_cap_gen_hist(
             handletextpad=0.3, handlelength=0.7,
         )
     reeds.plots.despine(ax)
-    return f, ax, dfplot.loc[techs]
+    return f, ax, dfplot.loc[plottechs]
 
 
 def plot_cap_gen_bar(
@@ -530,7 +539,7 @@ def plot_cap_gen_bar_states(
     ## Plot it
     nrows = state_subplots['row'].max() + 1
     ncols = state_subplots['col'].max() + 1
-    states = sorted(state_subplots.index.tolist())
+    states = dfplot.index.get_level_values('st').unique()
     plt.close()
     f,ax = plt.subplots(
         nrows, ncols, figsize=(ncols*scale, nrows*scale),
@@ -568,11 +577,14 @@ def plot_cap_gen_bar_states(
         handletextpad=0.3, handlelength=0.7,
     )
     ## Formatting
-    ax[state_subplots.loc['MS','ax']].set_xlim(-0.5, len(df)-0.5)
-    ax[state_subplots.loc['MS','ax']].set_xlabel(
-        f'Sample number (n = {len(plotcases)})', fontsize='xx-large')
-    ax[state_subplots.loc['OR','ax']].set_ylabel(
-        f"{t} capacity [GW]", labelpad=15, fontsize='xx-large')
+    ax_bottomleft = ax[state_subplots.loc[states].sort_values(['row','col']).ax.iloc[-1]]
+    _ax = ax[state_subplots.loc['TX','ax']] if 'TX' in states else ax_bottomleft
+    _ax.set_xlim(-0.5, len(df)-0.5)
+    _ax.set_xlabel(f'Sample number (n = {len(plotcases)})', ha='left', x=0, fontsize='xx-large')
+    _ax.set_xticks([])
+    _ax = ax[state_subplots.loc['OR','ax']] if 'OR' in states else ax_bottomleft
+    _ax.set_ylabel(f"{t} capacity [GW]", labelpad=15, fontsize='xx-large')
+    reeds.plots.trim_empty_subplots(ax)
     reeds.plots.despine(ax)
     return f, ax, dfplot
 
@@ -604,7 +616,7 @@ def plot_cap_trans_hist(
     ## Get data
     hierarchy = casebase.hierarchy
     dfmap = casebase.dfmap
-    baseline = casebase.tran_out.xs(t,0,'t').groupby(['r','rr']).sum().reset_index()
+    baseline = casebase.tran_out.xs(tstart,0,'t').groupby(['r','rr']).sum().reset_index()
     baseline['level'] = baseline.r.map(hierarchy[level])
     baseline['levell'] = baseline.rr.map(hierarchy[level])
     baseline = baseline.loc[baseline.level != baseline.levell].copy()
@@ -643,7 +655,7 @@ def plot_cap_trans_hist(
     interfaces = pd.Series(interfaces).sort_values().index.values
 
     ymax = dfplot.max()
-    bins = np.arange(0, ymax+0.1, binstep)
+    bins = np.arange(0, ymax+binstep, binstep)
     ncols = len(interfaces)
     nrows = 2
 
@@ -654,14 +666,15 @@ def plot_cap_trans_hist(
         dpi=300,
     )
     for col, interface in enumerate(interfaces):
+        _ax = ax[col] if ncols > 1 else ax
         ### Maps on top
-        dfmap[level].plot(ax=ax[0,col], facecolor='0.99', edgecolor='0.75', lw=0.2)
+        dfmap[level].plot(ax=_ax[0], facecolor='0.99', edgecolor='0.75', lw=0.2)
         dfmap[level].loc[[interface.split('|')[0]]].plot(
-            ax=ax[0,col], facecolor=regioncolors[0], edgecolor='w', lw=0.5)
+            ax=_ax[0], facecolor=regioncolors[0], edgecolor='w', lw=0.5)
         dfmap[level].loc[[interface.split('|')[1]]].plot(
-            ax=ax[0,col], facecolor=regioncolors[1], edgecolor='w', lw=0.5)
-        ax[0,col].axis('off')
-        ax[0,col].patch.set_facecolor('none')
+            ax=_ax[0], facecolor=regioncolors[1], edgecolor='w', lw=0.5)
+        _ax[0].axis('off')
+        _ax[0].patch.set_facecolor('none')
         ### Data
         row = 1
         for x, caseprefix in enumerate(cases):
@@ -669,7 +682,7 @@ def plot_cap_trans_hist(
             ## Histogram
             hist_val, hist_y = np.histogram(df.values, bins=bins)
             height = hist_y[1] - hist_y[0]
-            ax[row,col].barh(
+            _ax[row].barh(
                 y=hist_y[:-1],
                 width=(hist_val / max(hist_val) * 0.9),
                 height=height,
@@ -677,29 +690,31 @@ def plot_cap_trans_hist(
                 left=x,
                 color=colors[nicelabels[caseprefix]],
             )
-        ax[row,col].axhline(baseline[interface], c='k', ls='--', lw=0.75)
+        _ax[row].axhline(baseline[interface], c='k', ls='--', lw=0.75)
     ## Formatting
-    ax[1,0].set_ylabel(f'Interface capacity, {t} [GW]')
-    ax[1,0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
-    ax[1,0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
-    ax[1,0].set_ylim(0)
-    ax[1,0].set_xlim(-0.15, len(cases))
+    _ax = ax[1,0] if ncols > 1 else ax[1]
+    _ax.set_ylabel(f'Interface capacity, {t} [GW]')
+    _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    _ax.set_ylim(0)
+    _ax.set_xlim(-0.15, len(cases))
 
     reeds.plots.despine(ax)
     for col, interface in enumerate(interfaces):
-        ax[1,col].set_xlabel(None)
-        ax[0,col].annotate(
+        _ax = ax[col] if ncols > 1 else ax
+        _ax[1].set_xlabel(None)
+        _ax[0].annotate(
             interface.replace('|', '\n'),
             (0.05, 1.0), xycoords='axes fraction',
             va='bottom', fontsize=10,
         )
-        ax[1,col].set_xticks(range(len(cases)))
-        ax[1,col].set_xticklabels(
+        _ax[1].set_xticks(range(len(cases)))
+        _ax[1].set_xticklabels(
             [nicelabels.get(caseprefix,caseprefix) for caseprefix in cases],
             rotation=90, weight='bold',
         )
         _colors = [colors[nicelabels[c]] for c in cases]
-        for x, xtick in enumerate(ax[1,col].get_xticklabels()):
+        for x, xtick in enumerate(_ax[1].get_xticklabels()):
             xtick.set_color(_colors[x])
     return f, ax, dfplot
 

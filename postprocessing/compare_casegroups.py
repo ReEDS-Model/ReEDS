@@ -142,11 +142,6 @@ cases = {key: [reeds.ReEDScase(x) for x in caselist] for key, caselist in casepa
 casebase = reeds.ReEDScase(basepath)
 
 
-#%% Shared inputs
-basecase = dfcases.iloc[0].name
-dfmap = reeds.io.get_dfmap(basepath)
-
-
 #%%### Inputs plots
 #%% Demand
 for caseprefix in casepaths:
@@ -189,7 +184,7 @@ for caseprefix in casepaths:
     for tech in techs:
         try:
             f, ax, dfplot = reeds.mcplots.map_supplycurve_diff(
-                cases[caseprefix], casebase=casebase, tech=tech, dfmap=dfmap,
+                cases[caseprefix], casebase=casebase, tech=tech,
             )
             savename = f"in-supplycurve-{tech.replace('-','')}-{nicelabels[caseprefix]}"
             saveit(savename)
@@ -226,7 +221,7 @@ except Exception:
 
 
 #%% Transmission interface capacity vertical histograms
-level = 'transreg'
+level = 'transreg' if len(casebase.hierarchy.transreg.unique()) >= 2 else 'st'
 try:
     f, ax, dfplot = reeds.mcplots.plot_cap_trans_hist(
         cases, casebase=casebase, nicelabels=nicelabels, colors=colors, level=level,

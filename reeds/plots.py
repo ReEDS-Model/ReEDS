@@ -1571,6 +1571,15 @@ def trim_subplots(ax, nrows, ncols, nsubplots):
         ax[-1, -1-col].axis('off')
 
 
+def trim_empty_subplots(ax):
+    if isinstance(ax, np.ndarray):
+        for _ax in ax:
+            trim_empty_subplots(_ax)
+    else:
+        if not ax.has_data():
+            ax.axis('off')
+
+
 def patchlegend(colors, edgecolor='none', alpha=1, reverse=False, **kwargs):
     patches = [mpl.patches.Patch(
                    facecolor=colors[i],
