@@ -950,7 +950,7 @@ else:
         }
         plotwidth = 2.0
         figwidth = plotwidth * len(cases)
-        dfbase = {}
+
         for slidetitle, data in toplot.items():
             plt.close()
             f,ax = plt.subplots(
@@ -959,12 +959,11 @@ else:
             )
             ax[0,0].set_ylabel(data['label'], y=-0.075)
             ax[0,0].set_xlim(2017.5, lastyear+2.5)
-            ax[1,0].annotate(
-                f'Diff\nfrom\n{basecase}', (0.03,0.03), xycoords='axes fraction',
-                fontsize='x-large', weight='bold')
+
             ###### Absolute
             alltechs = set()
             for col, case in enumerate(cases):
+                # Process data for the given case
                 if case not in data['data']:
                     continue
                 dfplot = data['data'][case].pivot(index='year', columns=data['columns'], values=data['values'])
@@ -973,9 +972,7 @@ else:
                     .round(3).replace(0,np.nan)
                     .dropna(axis=1, how='all')
                 )
-
-                if case == basecase:
-                    dfbase[slidetitle] = dfplot.copy()
+                # Plot data and add techs to alltechs for legend handle generation
                 alltechs.update(dfplot.columns)
                 plots.stackbar(df=dfplot, ax=ax[0,col], colors=data['colors'], width=yearstep[case], net=False)
                 ax[0,col].set_title(
@@ -1005,25 +1002,42 @@ else:
                 ax[1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
                 ax[1,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
                 ax[1,col].axhline(0,c='k',ls='--',lw=0.75)
-
-                if (case not in data['data']) or (case == basecase):
-                    continue
+                
+                # Process data for the given case
                 dfplot = data['data'][case].pivot(index='year', columns=data['columns'], values=data['values'])
                 dfplot = (
                     dfplot
                     .round(3).replace(0,np.nan)
                     .dropna(axis=1, how='all')
                 )
+                # Process data for the corresponding basecase data from the basemap
+                if case == basemap[case]:
+                    dfbase = dfplot.copy()
+                else:
+                    dfbase = data['data'][basemap[case]].pivot(index='year', columns=data['columns'], values=data['values'])
+                    dfbase = (
+                        dfbase
+                        .round(3).replace(0,np.nan)
+                        .dropna(axis=1, how='all')
+                    )
+                # Fill missing tech columns with 0
                 for i in list(alltechs):
                     if i not in dfplot.columns:
                         dfplot[i] = 0
-                    if i not in dfbase[slidetitle].columns:
-                        dfbase[slidetitle][i] = 0
-
-                dfplot = dfplot.subtract(dfbase[slidetitle], fill_value=0)
+                    if i not in dfbase.columns:
+                        dfbase[i] = 0
+                # Calculate diff and plot
+                dfplot = dfplot.subtract(dfbase, fill_value=0)
                 dfplot = dfplot[[c for c in data['colors'].index if (( c in dfplot.columns) & (c not in (all_removals)))]].copy()
                 alltechs.update(dfplot.columns)
                 plots.stackbar(df=dfplot, ax=ax[1,col], colors=data['colors'], width=yearstep[case], net=True)
+                # Annotate diff label if not a base case
+                if case != basemap[case]:
+                    ax[1,col].annotate(
+                        f'Diff\nfrom\n{basemap[case]}', 
+                        (0.03,-0.15), xycoords='axes fraction', ha='left', va='top', 
+                        fontsize='x-large', weight='bold'
+                    )
 
             plots.despine(ax)
             plt.draw()
