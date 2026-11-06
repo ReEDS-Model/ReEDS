@@ -137,7 +137,7 @@ if __name__ == '__main__':
                     mem_eff = result['Memory Efficiency'].split('%')[0]
                     msg = f"{duration:>10} | {cpu_eff:>5}% CPU | {mem_eff:>5}% memory ({mem_use})"
                 if include_finished:
-                    print(f"{case:<{longest}}: {msg}")
+                    print(f"{case:<{longest+1}}: {msg}")
             else:
                 ### Get last .lst file
                 lstfiles = sorted(glob(os.path.join(fullcase,'lstfiles','*')))

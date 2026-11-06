@@ -14,6 +14,7 @@ from . import reedsplots as reedsplots
 from . import remote as remote
 from . import report_utils as report_utils
 from . import results as results
+from . import slurm as slurm
 from . import spatial as spatial
 from . import techs as techs
 from . import timeseries as timeseries
