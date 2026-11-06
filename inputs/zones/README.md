@@ -1,7 +1,6 @@
 ## Model Zone Definitions
 
-Zone definition sets are maintained in [`zones/`](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones) of the ReEDS_Input_Processing repo,
-one folder per set.
+Zone definition sets are maintained in [`zones/`](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/zones) of the ReEDS_Input_Processing repo, one folder per set.
 
 Model zones are defined by the following user-generated files:
 

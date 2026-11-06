@@ -1,9 +1,6 @@
 ## Plant Characteristics Input Files
 
-Most files in this folder give the cost and performance trajectory for one technology
-family, and are selected by the matching `plantchar_{tech}` switch in `cases.csv`,
-which is set to the full file name without the extension
-(e.g. `plantchar_coal = coal_ATB_2024_moderate`).
+Most files in this folder give the cost and performance trajectory for one technology family, and are selected by the matching `plantchar_{tech}` switch in `cases.csv`, which is set to the full file name without the extension (e.g. `plantchar_coal = coal_ATB_2024_moderate`).
 
 The most common column schema is `i,t,capcost,fom,vom,heatrate`:
 
@@ -20,15 +17,10 @@ The most common column schema is `i,t,capcost,fom,vom,heatrate`:
 | `rte` | Round-trip efficiency | fraction |
 | `cf_improvement` | Capacity factor improvement multiplier (UPV) | fraction |
 
-The wind and geothermal files instead carry their units in the column headers
-(`Overnight Cap Cost $/kW`, `Fixed O&M $/(kW-yr)`, `Var O&M $/MWh`,
-`Cap cost 1000$/MW`, `Fixed O&M 1000$/MW-yr`) and add a `CF_mult` capacity factor
-multiplier; the offshore wind and geothermal-class files also add `rsc_mult`, a
-supply-curve cost reduction multiplier.
+The wind and geothermal files instead carry their units in the column headers (`Overnight Cap Cost $/kW`, `Fixed O&M $/(kW-yr)`, `Var O&M $/MWh`, `Cap cost 1000$/MW`, `Fixed O&M 1000$/MW-yr`) and add a `CF_mult` capacity factor multiplier; the offshore wind and geothermal-class files also add `rsc_mult`, a supply-curve cost reduction multiplier.
 
-Costs are in the dollar year listed for that scenario in `dollaryear.csv` and are
-deflated to 2004$ during input processing. `advanced`, `moderate`, and `conservative`
-refer to the Annual Technology Baseline (ATB) cost scenarios of the same names.
+Costs are in the dollar year listed for that scenario in `dollaryear.csv` and are deflated to 2004$ during input processing. 
+`advanced`, `moderate`, and `conservative` refer to the Annual Technology Baseline (ATB) cost scenarios of the same names.
 
 - `battery_ATB_2024_*.csv`: Battery cost and performance from the 2024 ATB, including separate power and energy cost components; selected by `plantchar_battery`
   - `battery_ATB_2024_advanced.csv`: Advanced scenario
@@ -127,13 +119,11 @@ refer to the Annual Technology Baseline (ATB) cost scenarios of the same names.
 - `maxage.csv`: Maximum age [years] allowed for each technology
 
 - `maxdailycf.csv`: Maximum capacity factor [fraction] within each representative period, by technology
-  - Enforced per technology and zone when `Sw_MaxDailyCF` is on: fleet generation may not exceed
-    capacity x available hours x `maxdailycf`
+  - Enforced per technology and zone when `Sw_MaxDailyCF` is on: fleet generation may not exceed capacity x available hours x `maxdailycf`
   - The shed demand response supply curves it is set for assume one 4-hour event per day
 
 - `minCF.csv`: Minimum annual capacity factor [fraction] for each technology fleet
-  - Enforced per technology and zone when `Sw_MinCF` is on: fleet generation must be at least
-    capacity x hours x `minCF`
+  - Enforced per technology and zone when `Sw_MinCF` is on: fleet generation must be at least capacity x hours x `minCF`
 
 - `min_retire_age.csv`: Minimum retirement age [years] for given technology
 
