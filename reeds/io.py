@@ -1606,12 +1606,13 @@ def assemble_supplycurve(
             else:
                 dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
-    county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
     ### Combine
     dfout = dfin.copy()
     dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
-    dfout['region'] = dfout.FIPS.map(county2zone)
+    if 'region' not in dfout:
+        county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
+        dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:
         keep = '|meshed' if int(sw.GSw_OffshoreZones) else '|radial'
