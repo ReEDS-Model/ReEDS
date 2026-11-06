@@ -50,6 +50,8 @@ cost_cap_fin_mult_filt(i,r,t)      "--unitless-- capital cost financial multipli
 cost_vom_filt(i,v,r)               "--$/MWh-- VO&M costs filtered for the previous solve year and existing capacity"
 ctt_i_ii_filt(i,ii)                "--set-- set linking watercooling techs i to numeraire techs ii filtered for existing watercooling techs"
 ctt_i_ii_psh(i,ii)                 "--set-- set linking PSH techs with water i to numeraire techs ii filtered for valid capacity techs"
+dr_shape_load_mod(i,v,r,allh,t)    "--MW-- power consumed or reduced for DR shape"
+dr_shift_load_mod(i,v,r,allh,t)    "--MW-- power consumed or reduced for DR shift"
 emissions_price(e,r)               "--2004$/metric ton-- combined emissions taxes and marginal prices for emissions caps"
 emit_rate_filt(e,i,v,r)            "--metric tons/MWh-- emission rate for the previous solve year"
 energy_price(r,allh)               "--2004$/MWh-- energy price from the previous solve year"
@@ -138,9 +140,7 @@ ret(i,v,r)$valcap_ivr(i,v,r) = sum{t, ret_ivrt(i,v,r,t) } ;
 
 cap_exog_filt(i,v,r)$([not canada(i)]$valcap_ivr(i,v,r)) = sum{t$tnext(t), m_capacity_exog(i,v,r,t) } ;
 
-gen_h_stress_filt(i,r,allh,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
-  sum{v$valgen(i,v,r,t), GEN.l(i,v,r,allh,t)}
-;
+
 *============================
 * Fuel prices
 *============================
@@ -271,6 +271,18 @@ ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 prod_filt(i,v,r,h)$[sum{t$tcur(t), valcap(i,v,r,t)}$consume(i)$hours(h)] =
                 sum{(p,t)$[i_p(i,p)$tcur(t)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) } ;
 
+* DR Shape load modification based on net dr shift charging
+dr_shape_load_mod(i,v,r,h,t)$[tcur(t)$dr_shape(i)$hours(h)] =
+    (dr_shape_load(i,r,h,t) - dr_shape_gen(i,r,h,t)) * CAP.l(i,v,r,t);
+
+* DR Shift load modification based on net dr shift charging
+dr_shift_load_mod(i,v,r,h,t)$[tcur(t)$dr_shift(i)$hours(h)] =
+                 STORAGE_IN.l(i,v,r,h,t)-GEN.l(i,v,r,h,t) ;
+
+* DR Shed load modification 
+gen_h_stress_filt(i,r,h,t)$[tcur(t)$valgen_irt(i,r,t)$h_stress_t(h,t)] =
+                sum{v$valgen(i,v,r,t), GEN.l(i,v,r,h,t)};
+
 *============================
 * Get ReEDS emissions prices [$/metric ton]
 *============================
@@ -329,6 +341,14 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     ctt_i_ii_filt
     ctt_i_ii_psh
     degrade_annual
+    dr_shape
+    dr_shape_gen
+    dr_shape_load
+    dr_shape_load_mod
+    dr_shift_load_mod
+    dr_shift_charge_frac
+    dr_shift_discharge_frac
+    dr_shift_energy_hours
     emissions_price
     emit_rate_filt
     energy_price

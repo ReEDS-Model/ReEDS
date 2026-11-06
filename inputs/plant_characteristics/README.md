@@ -50,9 +50,15 @@
   - `dr_shed_fom_demo_data_January_2025.csv`:
   - `dr_shed_vom_demo_data_January_2025.csv`:
 
-- `evmc_*_Baseline.csv`:
-  - `evmc_shape_Baseline.csv`:
-  - `evmc_storage_Baseline.csv`:
+- `dr_shape_*_ex_dr1.csv`:
+  - `dr_shape_cost_scalars_ex_dr1.csv`:
+  - `dr_shape_fom_ex_dr1.csv`:
+  - `dr_shape_vom_ex_dr1.csv`:
+
+- `dr_shift_*_ex_dr1.csv`:
+  - `dr_shift_cost_scalars_ex_dr1.csv`:
+  - `dr_shift_fom_ex_dr1.csv`:
+  - `dr_shift_vom_ex_dr1.csv`:
 
 - `fuelcell_ATB_2024_*.csv`:
   - `fuelcell_ATB_2024_advanced.csv`:

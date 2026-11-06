@@ -231,7 +231,7 @@ def main(t, casedir, iteration=0):
     ], axis=0)
 
     #%% Remove VRE and demand-modifying techs (H2 production, DAC, DR)
-    demand_techs = tech_subset_table[['CONSUME', 'DR_SHED']].values
+    demand_techs = tech_subset_table[['CONSUME', 'DR_SHED','DR_SHAPE','DR_SHIFT']].values
     cap_nonloadtechs = cap_ivr.loc[~cap_ivr.i.isin(demand_techs)].copy()
 
     vretechs_i = resources.i.str.lower().unique()
@@ -334,6 +334,25 @@ def main(t, casedir, iteration=0):
         .reindex(h_dt_szn_load_years.index)
     )
 
+    ### DR shape: make it all inflexible for PRAS
+    load_dr_shape_all_hourly = (
+        gdxreeds['dr_shape_load_mod']
+        .groupby(['r', 'allh']).Value.sum().reset_index()
+        .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
+        .pivot(index='timestamp', columns='r', values='Value')
+        .fillna(0)
+        .reindex(h_dt_szn_load_years.index)
+    )
+
+    ### DR shift: make it all inflexible for PRAS
+    load_dr_shift_all_hourly = (
+        gdxreeds['dr_shift_load_mod']
+        .groupby(['r', 'allh']).Value.sum().reset_index()
+        .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
+        .pivot(index='timestamp', columns='r', values='Value')
+        .fillna(0)
+        .reindex(h_dt_szn_load_years.index)
+    )
     #%% Load shedding
     ## Get the DR shed load for all weather years
     gen_h_stress = gdxreeds['gen_h_stress_filt']
@@ -383,6 +402,17 @@ def main(t, casedir, iteration=0):
     if int(sw.GSw_DRShed) and not gen_shed_combined.empty:
         print(f'Subtracted shed load from PRAS load since GSw_DRShed = {sw.GSw_DRShed}')
         pras_load = pras_load.subtract(gen_shed_combined, fill_value=0).clip(lower=0)
+    
+    ## Modify load for DR shape impacts
+    if int(sw.GSw_DRShape):
+        print(f'Subtracted shape load from PRAS load since GSw_DRShape = {sw.GSw_DRShape}')
+        pras_load = pras_load.add(load_dr_shape_all_hourly, fill_value=0).clip(lower=0)
+    
+    ## Modify load for DR shift impacts
+    if int(sw.GSw_DRShift):
+        print(f'Subtracted shift load from PRAS load since GSw_DRShape = {sw.GSw_DRShape}')
+        pras_load = pras_load.add(load_dr_shift_all_hourly, fill_value=0).clip(lower=0)
+
 
     ### Add flexibly sited load if its profile is inflexible (GSw_LoadSiteCF = 1)
     if (

@@ -145,7 +145,6 @@ tload("%cur_year%") = yes ;
 $gdxin handoff%ds%reeds_data%ds%ccdata_%prev_year%.gdx
 $loaddcr cc_old_load = cc_old
 $loaddcr cc_mar_load = cc_mar
-$loaddcr cc_evmc_load = cc_evmc
 $loaddcr sdbin_size_load = sdbin_size
 $loaddcr mean_forced_outage_rate_load = mean_forced_outage_rate
 $gdxin
