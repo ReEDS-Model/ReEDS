@@ -27,7 +27,7 @@ OP_LOADSITE.fx(r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_
 CAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)] = CAP.l(i,v,r,tfix) ;
 CAP_ENERGY.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$battery(i)] = CAP_ENERGY.l(i,v,r,tfix) ;
 CAP_ABOVE_LIM.fx(tg,r,tfix)$[(yeart(tfix)>=model_builds_start_yr)
-                                $(sum{(tgg,rr), cap_limit(tgg,rr,tfix)})
+                                $(sum{(tgg,rr), queue_limit(tgg,rr,tfix)})
                                 $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,tfix)}] = CAP_ABOVE_LIM.l(tg,r,tfix) ;
 CAP_SDBIN.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$(storage(i) or hyd_add_pump(i))$(not csp(i))$Sw_PRM_CapCredit] = CAP_SDBIN.l(i,v,r,ccseason,sdbin,tfix) ;
 CAP_SDBIN_ENERGY.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$battery(i)$Sw_PRM_CapCredit] = CAP_SDBIN_ENERGY.l(i,v,r,ccseason,sdbin,tfix) ;

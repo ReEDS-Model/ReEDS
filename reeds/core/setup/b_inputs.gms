@@ -1416,9 +1416,6 @@ $onlisting
 
 **rsc_dat adjustments (see additional adjustments to m_rsc_dat further below)
 
-*need to adjust units for pumped hydro costs from $ / KW to $ / MW
-rsc_dat("pumped-hydro",r,"cost",rscbin) = rsc_dat("pumped-hydro",r,"cost",rscbin) * 1000 ;
-
 *need to adjust units for hydro costs from $ / KW to $ / MW
 rsc_dat(i,r,"cost",rscbin)$hydro(i) = rsc_dat(i,r,"cost",rscbin) * 1000 ;
 
@@ -1513,6 +1510,19 @@ $offempty
 
 parameter exog_upv(i,r,allt) "exogenous (pre-tfirst) upv capacity binned by capacity factor" ;
 exog_upv(i,r,t) = sum{rscbin, exog_upv_rsc(i,r,rscbin,t) } ;
+
+* Average build year of existing capacity.
+* writecapdat.py creates the file; writesupplycurves.py adds resource classes.
+$onempty
+parameter exog_onlineyear(i,v,r,allt) "--year-- capacity-weighted online year of exogenous (pre-tfirst) capacity"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%exog_onlineyear.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
 
 parameter avail_retire_exog_rsc(i,v,r,t) "--MW-- available retired capacity for refurbishments" ;
 avail_retire_exog_rsc(i,v,r,t) = 0 ;
@@ -1771,7 +1781,9 @@ m_required_prescriptions(i,v,r,t)$[tmodel_new(t)
 m_required_prescriptions_energy(i,v,r,t)$tmodel_new(t)
           = sum{tt$[yeart(t)>=yeart(tt)], prescribednonrsc_energy(i,v,r,tt) } ;
 
-parameter degrade(i,t,tt) "degradation factor by i" ;
+parameter degrade_new(i,t,tt) "--fraction-- the fraction of capacity from year t that remains after degradation is applied through the year tt" ;
+
+parameter degrade_init(i,v,r,t) "--fraction-- the fraction of existing (initv) capacity that remains after degradation is applied from its online year through the year t" ;
 
 parameter degrade_annual(i) "annual degredation rate"
 /
@@ -1790,8 +1802,21 @@ degrade_annual(i)$pvb(i) = sum{ii$[upv(ii)$rsc_agg(ii,i)], degrade_annual(ii) } 
 
 degrade_annual(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), degrade_annual(ii) } ;
 
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
-degrade(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+* Degrade new built capacity from its build year (t) to the evaluation year (tt).
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = 1 ;
+degrade_new(i,t,tt)$[(yeart(tt)>=yeart(t))$(not ban(i))] = (1-degrade_annual(i))**(yeart(tt)-yeart(t)) ;
+
+* Degrade existing capacity from its average build year.
+* Use hintage_data for binned technologies and distpv.
+exog_onlineyear(i,v,r,t)$[initv(v)$hintage_data(i,v,r,t,"wOnlineYear")]
+    = hintage_data(i,v,r,t,"wOnlineYear") ;
+
+* Capacity without an online year (or without degradation) is left undegraded.
+* Fill all years for which the unit has exogenous capacity in any year, since upgrades
+* can restore m_capacity_exog in years where it starts at zero.
+degrade_init(i,v,r,t)$[initv(v)$sum{tt, m_capacity_exog(i,v,r,tt) }] = 1 ;
+degrade_init(i,v,r,t)$[initv(v)$degrade_annual(i)$exog_onlineyear(i,v,r,t)]
+    = (1-degrade_annual(i))**max(0, yeart(t) - exog_onlineyear(i,v,r,t)) ;
 
 set prescription_check(i,v,r,t) "check to see if prescriptive capacity comes online in a given year" ;
 
@@ -1835,28 +1860,6 @@ prescription_check(i,newv,r,t)$[prescribed_build(i,newv,r,t)
 *Only enable for bin1 if there is no resource in any bins to keep parameter size down.
 m_rscfeas(r,i,"bin1")$[sum{(newv,t)$[tmodel_new(t)], prescribed_build(i,newv,r,t) }$rsc_i(i)$(not bannew(i))$(sum{rscbin, rsc_dat(i,r,"cap",rscbin) }=0)] = yes ;
 
-*==========================================================
-*--- Interconnection queues (Capacity deployment limit) ---
-*==========================================================
-$onempty
-table cap_limit(tg,r,allt) "--MW-- capacity deployment limit by region and technology based on interconnection queues"
-$offlisting
-$ondelim
-$include inputs_case%ds%cap_limit.csv
-$offdelim
-$onlisting
-;
-$offempty
-
-
-parameter cap_penalty(tg) "--per MW-- cost penalty for capacity deployment above cap limit"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%cap_penalty.csv
-$offdelim
-$onlisting
-/ ;
 
 *=============================================
 * -- Explicit spur-line capacity (if used) --

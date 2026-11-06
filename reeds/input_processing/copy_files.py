@@ -1013,14 +1013,14 @@ def write_miscellaneous_files(
     )
     
     # Add this_year to years_until_endogenous to generate the tech-specific firstyear parameter
-    scalars = reeds.io.get_scalars(full=True)
+    scalars = reeds.io.get_scalars()
     firstyear = (
         pd.read_csv(
             # years_until_endogenous created using function write_non_region_files
             os.path.join(inputs_case, 'years_until_endogenous.csv'),
             index_col=0,
         ).squeeze(1)
-        + int(scalars.loc['this_year','value'])
+        + int(scalars.this_year)
     )
     reeds.io.write_to_inputs_h5(
         firstyear, 'firstyear', inputs_case, gamstype='parameter',
@@ -1045,7 +1045,7 @@ def write_miscellaneous_files(
         gwp_ch4, gwp_n2o = [float(i.split('_')[1]) for i in sw['GSw_GWP'].split('/')]
         gwp_write = pd.Series({'CO2':1, 'CH4':gwp_ch4, 'N2O':gwp_n2o})
 
-    gwp_write['H2'] = scalars.loc['h2_gwp','value'].copy()
+    gwp_write['H2'] = scalars.h2_gwp
 
     reeds.io.write_to_inputs_h5(
         gwp_write, 'gwp', inputs_case, gamstype='parameter',
@@ -1198,14 +1198,26 @@ def write_miscellaneous_files(
         prm_initial.xs(t, 0, 't').to_csv(os.path.join(stresspath, 'prm.csv'))
 
     # Add capacity deployment limits based on interconnection queue data
-    cap_queue = pd.read_csv(
+    queue_limit = pd.read_csv(
         os.path.join(reeds_path,'inputs','capacity_exogenous','interconnection_queues.csv'))
+    # Only keep the next GSw_QueueConstraintYears
+    keepyears = [
+        i for i in queue_limit.set_index(['r','tg']).columns
+        if int(i) < scalars.this_year + int(sw.GSw_QueueConstraintYears)
+    ]
+    if len(keepyears):
+        print(f"Applying interconnection queue cap in {','.join(keepyears)}")
+    queue_limit = queue_limit[['r','tg']+keepyears].copy()
     # Map counties to zones
-    cap_queue['r'] = cap_queue['r'].map(county2zone)
-    cap_queue = cap_queue.dropna(subset='r')
+    queue_limit['r'] = queue_limit['r'].map(county2zone)
+    queue_limit = queue_limit.dropna(subset='r')
 
-    cap_queue = cap_queue.groupby(['tg','r'],as_index=False).sum()
-    cap_queue.to_csv(os.path.join(inputs_case,'cap_limit.csv'), index=False)
+    queue_limit = queue_limit.groupby(['tg', 'r']).sum().stack().rename_axis(['tg', 'r', 'allt'])
+    reeds.io.write_to_inputs_h5(
+        queue_limit, 'queue_limit', inputs_case, gamstype='parameter', units='MW',
+        comment='capacity deployment limit by region and technology based on interconnection queues',
+    )
+    queue_limit.to_csv(Path(inputs_case, 'queue_limit.csv'))
     # ----  Miscelanous files in non_region_files or region_files (in this case we are overwriting them)
     # Expand i (technologies) set if modeling water use. Overwrite originals.
     if int(sw['GSw_WaterMain']):

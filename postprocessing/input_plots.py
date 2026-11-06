@@ -975,10 +975,22 @@ def map_supplycurves(
     include_techneutral_adder=True,
     dollaryear=2023,
     figsize=(12,9),
+    f=None,
+    ax=None,
     draw_lakes=True,
     draw_stats=True,
     dpi=None,
     markers=False,
+    cols_out=[],
+    title="",
+    title_fontsize=None,
+    title_fontweight=None,
+    cbar_ticklabel_fontsize=20,
+    cbar_title_fontsize=24,
+    cbar_labelpad=2.1,
+    draw_colorbar=True,
+    vmax_default=1000.,
+    plot_ac=True,
 ):
     """
     Returns an iterator over supply-curve columns. Use as follows:
@@ -1028,6 +1040,10 @@ def map_supplycurves(
         else:
             scpath = os.path.join(case, 'inputs_case', f'supplycurve_{tech}.csv')
         dfsc = reeds.io.assemble_supplycurve(scpath, case=case, drop_extra=False)
+        # convert upv capacity from dc to ac
+        if plot_ac and tech == 'upv':
+            scalars = reeds.io.get_scalars(case=case)
+            dfsc['capacity'] /= float(scalars.ilr_utility)
         if 'latitude' not in dfsc:
             sitemap = reeds.io.get_sitemap(geo=True).to_crs(crs)
             dfsc = gpd.GeoDataFrame(
@@ -1050,9 +1066,9 @@ def map_supplycurves(
         costadder = float(sw.GSw_TransIntraCost) * inflatable[2004, dollaryear]
     else:
         costadder = 0
-    ## Convert from point to polygons if desired (raster is 11.52 km but include a little extra)
+    ## Convert from points to polygons if desired
     if not markers:
-        dfsc.geometry = dfsc.buffer(11530/2, cap_style='square')
+        dfsc = reeds.spatial.site2poly_buffer(dfsc)
 
     ###### Format inputs
     ## Use 4.5 for limited access wind-ofs
@@ -1067,9 +1083,9 @@ def map_supplycurves(
         'capacity': {
             'label':'Capacity [MW]',
             'vmax':{
-                'upv':5700., 'wind-ons':342., 'wind-ofs':530.,
-                'geohydro':700., 'egs':4000., 'csp':4900.,
-            }.get(tech, 1000.),
+                'upv':5000., 'wind-ons':342., 'wind-ofs':530.,
+                'geohydro':700., 'egs':2000., 'csp':4900.,
+            }.get(tech, vmax_default),
             'background':False,
             ## For onshore wind, align nbins with number of 6 MW turbines
             'nbins': {'wind-ons':342 // 6 + 1}.get(tech, 101),
@@ -1097,6 +1113,11 @@ def map_supplycurves(
         'dist-export_km': {'label':'Export cable distance [km]'},
     }
 
+    if isinstance(cols_out, str):
+        cols_out = [cols_out]
+    if cols_out:
+        settings = {k: settings[k] for k in cols_out if k in settings}
+
     for col in settings:
         setting = {**defaults, **settings[col]}
         if col not in dfsc:
@@ -1106,8 +1127,11 @@ def map_supplycurves(
         dfplot = dfsc.copy()
         dfplot[col] = dfplot[col] * setting['scale'] + setting['costadder']
         ### Plot it
-        plt.close()
-        f,ax = plt.subplots(figsize=figsize, dpi=dpi)
+        if ax is None:
+            plt.close()
+            f,ax = plt.subplots(figsize=figsize, dpi=dpi)
+        elif f is None:
+            f = ax.figure
         ## Background
         if setting['background']:
             dfmap['r'].plot(ax=ax, facecolor='C7', edgecolor='none', lw=0.3, zorder=-1e6)
@@ -1136,18 +1160,24 @@ def map_supplycurves(
                 note, (0.06, 0.06), xycoords='axes fraction',
                 ha='left', va='bottom', fontsize=10, fontfamily='monospace',
             )
+        if title:
+            ax.set_title(
+                title, y=0.97, fontsize=title_fontsize, fontweight=title_fontweight,
+            )
         ## Colorbar-histogram
-        plots.addcolorbarhist(
-            f=f, ax0=ax, data=dfplot[col].values,
-            title=setting['label'], cmap=cmap,
-            vmin=setting['vmin'], vmax=setting['vmax'],
-            orientation='horizontal', labelpad=2.1, cbarbottom=-0.06,
-            cbarheight=0.7, log=False,
-            nbins=setting['nbins'],
-            histratio=2,
-            ticklabel_fontsize=20, title_fontsize=24,
-            extend='neither',
-        )
+        if draw_colorbar:
+            plots.addcolorbarhist(
+                f=f, ax0=ax, data=dfplot[col].values,
+                title=setting['label'], cmap=cmap,
+                vmin=setting['vmin'], vmax=setting['vmax'],
+                orientation='horizontal', labelpad=cbar_labelpad, cbarbottom=-0.06,
+                cbarheight=0.7, log=False,
+                nbins=setting['nbins'],
+                histratio=2,
+                ticklabel_fontsize=cbar_ticklabel_fontsize,
+                title_fontsize=cbar_title_fontsize,
+                extend='neither',
+            )
         ## Formatting
         ax.axis('off')
         yield f, ax, dfplot, col
