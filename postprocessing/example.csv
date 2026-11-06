@@ -1,14 +1,21 @@
-casepath,casename,color
+casepath,casename,color,base
 ### Examples
 ## nrelnas01 on windows
-# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092424_main_ERCOT_county,main,
-# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092524_dev_check_ERCOT_county,dev check,
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092424_main_ERCOT_county,main,,
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092524_dev_check_ERCOT_county,dev check,,
 ## nrelnas01 on mac
-# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA,Ref,C1
-# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA_decarb,Z35,plt.cm.tab20(4)
+# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA,Ref,C1,
+# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA_decarb,Z35,plt.cm.tab20(4),
 ## kestrel
-# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA,main_Ref,plt.cm.tab20(0)
-# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1)
-# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
-# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA,main_Ref,plt.cm.tab20(0),
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1),
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2),
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3),
+### Multibase Comparison Examples - Define specific cases to use as base for comparison for each listed case; 
+#### If base column empty then first listed case is used as base
+#### If at least 1 case has a base value provided then all other cases with empty base values are assigned base values equal to their casename
+# /projects/reedsweto/jcarag/github/ReEDS/runs/v20261106_mainK0_USA,main_Ref,C1,
+# /projects/reedsweto/jcarag/github/ReEDS/runs/v20261106_porK0_USA,por_Ref,C2,main_Ref
+# /projects/reedsweto/jcarag/github/ReEDS/runs/v20261106_mainK0_USA_decarb,main_Decarb,C3,
+# /projects/reedsweto/jcarag/github/ReEDS/runs/v20261106_porK0_USA_decarb,por_Decarb,C3,main_Decarb
 ### Add your cases below (don't commit them) or create a new csv file with the same format
