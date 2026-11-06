@@ -1,0 +1,12 @@
+scenario_probability:
+  low: 0.1
+  mid: 0.8
+  high: 0.1
+
+scenario_switches:
+  low:
+    ngscen: AEO_2026_HOG
+  mid:
+    ngscen: AEO_2026_baseline
+  high:
+    ngscen: AEO_2026_LOG

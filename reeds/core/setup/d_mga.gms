@@ -4,9 +4,13 @@
 
 Equation eq_MGA_CostEnvelope(t) "--$-- System cost must be within allowed envelope" ;
 eq_MGA_CostEnvelope(t)$[tmodel(t)$Sw_MGA]..
-    (z_rep_inv(t) + z_rep_op(t)) * (1 + Sw_MGA_CostDelta)
+    (
+        z_rep_inv(t)
+        + sum{s, z_rep_op(s,t) * scenario_probability(s)}
+    )
+    * (1 + Sw_MGA_CostDelta)
     =g=
-    Z_inv(t) + Z_op(t)
+    Z_inv(t) + sum{s, Z_op(s,t) * scenario_probability(s) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -38,7 +42,7 @@ eq_MGA_Objective$Sw_MGA..
         $[tmodel(t)
         $valgen(i,v,r,t)
         $%GSw_MGA_SubObjective%(i)],
-        GEN(i,v,r,h,t) * hours(h)
+        GEN(s,i,v,r,h,t) * hours(h)
         * sum{i_subtech$i_subsets(i,i_subtech), mga_weights(r,i_subtech)}
     }
 ;
@@ -72,7 +76,7 @@ eq_MGA_Objective$Sw_MGA..
         $routes_prm(r,rr)
         $routes_transreg(transreg,transregg,r,rr)
         $h_stress(h)],
-        FLOW(r,rr,h,t,trtype) * hours(h)
+        FLOW(s,r,rr,h,t,trtype) * hours(h)
     }
 ;
 
@@ -86,7 +90,7 @@ eq_MGA_Objective$Sw_MGA..
     =e=
     sum{(r,t)
         $[tmodel(t)],
-        EMIT("process","CO2",r,t)
+        EMIT(s,"process","CO2",r,t)
     }
 ;
 
@@ -110,7 +114,7 @@ eq_MGA_Objective$Sw_MGA..
           $[tmodel(t)
           $valgen(i,v,r,t)],
 *         [MW] * [.] * [MWh/MW] * [job-years/MWh] = [job-years]
-          GEN(i,v,r,h,t) * pvf_onm(t) * hours(h) * employment_factor_plant(i,"vom")
+          GEN(s,i,v,r,h,t) * pvf_onm(t) * hours(h) * employment_factor_plant(i,"vom")
     }
 * Power plant construction employment    
     + sum{(i,v,r,t)

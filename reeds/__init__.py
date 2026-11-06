@@ -16,6 +16,7 @@ from . import report_utils as report_utils
 from . import results as results
 from . import slurm as slurm
 from . import spatial as spatial
+from . import stochastic as stochastic
 from . import techs as techs
 from . import timeseries as timeseries
 from . import units as units

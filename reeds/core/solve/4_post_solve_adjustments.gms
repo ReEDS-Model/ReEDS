@@ -70,20 +70,20 @@ if(Sw_Upgrades = 1,
 *** Regional emissions for tax credit phaseout
 * emit_r_tc is calculated the same as the EMIT variable in the model. We do not use
 * EMIT.l here because the emissions are only modeled for those in the emit_modeled set.
-emit_r_tc(r,t)$tmodel_new(t) = 
+emit_r_tc(s,r,t)$tmodel_new(t) = 
 
 * Emissions from generation
     sum{(i,v,h)$[valgen(i,v,r,t)$h_rep(h)],
         hours(h) * emit_rate("process","CO2",i,v,r,t)
-        * (GEN.l(i,v,r,h,t)
-           + CCSFLEX_POW.l(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
+        * (GEN.l(s,i,v,r,h,t)
+           + CCSFLEX_POW.l(s,i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
        }
 
 * Plus emissions produced via production activities (SMR, SMR-CCS, DAC)
 * The "production" of negative CO2 emissions via DAC is also included here
     + sum{(p,i,v,h)$[valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],
           hours(h) * prod_emit_rate("process","CO2",i,t)
-          * PRODUCE.l(p,i,v,r,h,t)
+          * PRODUCE.l(s,p,i,v,r,h,t)
          }
 
 *[minus] co2 reduce from flexible CCS capture
@@ -91,41 +91,41 @@ emit_r_tc(r,t)$tmodel_new(t) =
 
 * Flexible CCS - bypass
     - (sum{(i,v,h)$[valgen(i,v,r,t)$ccsflex_byp(i)$h_rep(h)],
-        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POW.l(i,v,r,h,t) })$Sw_CCSFLEX_BYP
+        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POW.l(s,i,v,r,h,t) })$Sw_CCSFLEX_BYP
 
 * Flexible CCS - storage
     - (sum{(i,v,h)$[valgen(i,v,r,t)$ccsflex_sto(i)$h_rep(h)],
-        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POWREQ.l(i,v,r,h,t) })$Sw_CCSFLEX_STO
+        ccsflex_co2eff(i,t) * hours(h) * CCSFLEX_POWREQ.l(s,i,v,r,h,t) })$Sw_CCSFLEX_STO
 ;
 
-emit_nat_tc(t)$tmodel_new(t) = sum{r, emit_r_tc(r,t) } ;
+emit_nat_tc(s,t)$tmodel_new(t) = sum{r, emit_r_tc(s,r,t) } ;
 
 
 *** Recalculate regional CO2 emissions rate for use in state CO2 cap import accounting
 * [metric kiloton] * [1000 metric ton / metric kiloton] / ([MW] * [hours]) = [metric ton/MWh]
 $ifthen.stateco2 %GSw_StateCO2ImportLevel% == 'r'
-    co2_emit_rate_r(r,t)$tmodel(t) = (
-        emit_r_tc(r,t)
-        / sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(i,v,r,h,t) }
+    co2_emit_rate_r(s,r,t)$tmodel(t) = (
+        emit_r_tc(s,r,t)
+        / sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(s,i,v,r,h,t) }
 * Avoid division-by-zero errors
-    )$sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(i,v,r,h,t) } ;
+    )$sum{(i,v,h)$[valgen(i,v,r,t)], hours(h) * GEN.l(s,i,v,r,h,t) } ;
 $else.stateco2
 * sum emissions and generation within the region
-    co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t)$tmodel(t) = (
+    co2_emit_rate_regional(s,%GSw_StateCO2ImportLevel%,t)$tmodel(t) = (
         sum{rr$r_%GSw_StateCO2ImportLevel%(rr,%GSw_StateCO2ImportLevel%),
-            emit_r_tc(rr,t) }
+            emit_r_tc(s,rr,t) }
         / sum{(i,v,rr,h)$[valgen(i,v,rr,t)
                         $r_%GSw_StateCO2ImportLevel%(rr,%GSw_StateCO2ImportLevel%)],
-              hours(h) * GEN.l(i,v,rr,h,t) }
+              hours(h) * GEN.l(s,i,v,rr,h,t) }
 * Avoid division-by-zero errors
     )$sum{(i,v,rr,h)$[valgen(i,v,rr,t)
                     $r_%GSw_StateCO2ImportLevel%(rr,%GSw_StateCO2ImportLevel%)],
-          hours(h) * GEN.l(i,v,rr,h,t) }
+          hours(h) * GEN.l(s,i,v,rr,h,t) }
     ;
 * broadcast the regional emissions rate to each r in the region
-    co2_emit_rate_r(r,t)$tmodel(t) =
+    co2_emit_rate_r(s,r,t)$tmodel(t) =
         sum{%GSw_StateCO2ImportLevel%
             $r_%GSw_StateCO2ImportLevel%(r,%GSw_StateCO2ImportLevel%),
-            co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t) }
+            co2_emit_rate_regional(s,%GSw_StateCO2ImportLevel%,t) }
     ;
 $endif.stateco2

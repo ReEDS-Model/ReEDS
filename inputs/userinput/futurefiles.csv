@@ -54,7 +54,6 @@ climate_param.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 climate_UnappWaterMult.csv,.csv,0,None,wide,"wst,r,szn",1,0,constant,0,None,done,constant
 climate_UnappWaterMultAnn.csv,.csv,0,None,wide,"wst,r",1,0,constant,0,None,done,constant
 climate_UnappWaterSeaAnnDistr.csv,.csv,0,None,wide,"wst,r,szn",1,0,constant,0,1,done,constant
-co2_cap.csv,.csv,0,None,allt,None,0,0,constant,0,None,"constant, linear, or saturate?",constant
 co2_capture_incentive.csv,.csv,1,None,9999,None,9999,0,constant,None,None,[CHECK] do we need to forecast within calc_financial_inputs? Data only extends to 2049; new,
 co2_site_char.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 co2_tax.csv,.csv,0,None,allt,None,0,0,linear_5,None,None,"constant, linear, or saturate?",linear_5
@@ -125,6 +124,7 @@ dr_shed_hourly.h5,.h5,0,None,year,datetime,1,keepindex,constant,None,None,new,
 dr_types.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 e.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 eall.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+emit_cap.csv,.csv,0,None,allt,"s,eall",0,0,constant,0,None,"constant, linear, or saturate?",constant
 emit_rate.csv,.csv,0,None,t,"etype,e,i,v,r",0,0,constant,0,None,done,constant
 emitrate.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 employment_factor_plant.csv,.csv,1,ignore,9999,None,9999,0,constant,0,None,,
@@ -518,6 +518,7 @@ ctt_cc_mult,inputs.h5,1,,,,9999,,,,,,
 ctt_cost_vom_mult,inputs.h5,1,,,,9999,,,,,,
 ctt_hr_mult,inputs.h5,1,,,,9999,,,,,,
 distance,inputs.h5,1,,,,9999,,,,,,
+emit_capped,inputs.h5,1,,,,9999,,,,,,
 evmc_storage_energy_h17,inputs.h5,1,,,,9999,,,,,has a t index so revisit if using,
 firm_import_limit,inputs.h5,1,,,,9999,,,,,handled in transmission.py,
 gasreg,inputs.h5,1,,,,9999,,,,,,
@@ -542,6 +543,8 @@ pvf_capital,inputs.h5,1,,,,9999,,,,,handled in calc_financial_inputs.py,
 pvf_onm,inputs.h5,1,,,,9999,,,,,handled in calc_financial_inputs.py,
 r,inputs.h5,1,,,,9999,,,,,,
 r_cs_distance,inputs.h5,1,,,,9999,,,,,,
+s,inputs.h5,1,,,,9999,,,,,,
+scenario_probability,inputs.h5,1,,,,9999,,,,,,
 st,inputs.h5,1,,,,9999,,,,,,
 stressperiods_seed,inputs.h5,1,,,,9999,,,,,,
 t,inputs.h5,1,,,,9999,,,,,,

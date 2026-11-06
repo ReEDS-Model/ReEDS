@@ -4168,8 +4168,8 @@ prod_emit_rate("process",e,i,t)
 
 parameter
     emit_rate(etype,eall,i,v,r,t) "--metric tons per MWh-- emissions rate"
-    emit_r_tc(r,t)  "--metric tons-- CO2 emissions, regional"
-    emit_nat_tc(t)  "--metric tons-- CO2 emissions, national"
+    emit_r_tc(s,r,t)  "--metric tons-- CO2 emissions, regional"
+    emit_nat_tc(s,t)  "--metric tons-- CO2 emissions, national"
 ;
 
 emit_rate(etype,e,i,v,r,t)$[emit_rate_fuel(i,etype,e)$valcap(i,v,r,t)]
@@ -4202,10 +4202,10 @@ emit_rate("process",e,i,v,r,t)
 emit_rate("process","H2",i,v,r,t)$[upgrade(i)] = sum{ii$upgrade_to(i,ii), emit_rate("process","H2",ii,v,r,t) } ;
 
 * CO2(e) emissions rate (used in postprocessing only)
-emit_rate(etype,"CO2e",i,v,r,t)$[Sw_AnnualCap=2]
+emit_rate(etype,"CO2e",i,v,r,t)$[not Sw_GWPH2]
   = round(sum{e, emit_rate(etype,e,i,v,r,t) * gwp(e)$[(not sameas(e, "H2"))]},10) ;
 
-emit_rate(etype,"CO2e",i,v,r,t)$[Sw_AnnualCap<>2]
+emit_rate(etype,"CO2e",i,v,r,t)$[Sw_GWPH2]
   = round(sum{e, emit_rate(etype,e,i,v,r,t) * gwp(e)},10) ;
 
 * calculate emissions capture rates (same logic as emissions calc above)
@@ -4216,11 +4216,11 @@ capture_rate(e,i,v,r,t)$[upgrade(i)$capture_rate_fuel(i,e)] = round(heat_rate(i,
 
 * Regional emissions rate
 parameter
-    co2_emit_rate_r(r,t) "--metric tons per MWh-- CO2 emissions rate by ReEDS region, for use in state carbon caps"
-    co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t) "--metric tons per MWh-- CO2 regional emissions rate, for use in state carbon caps"
+    co2_emit_rate_r(s,r,t) "--metric tons per MWh-- CO2 emissions rate by ReEDS region, for use in state carbon caps"
+    co2_emit_rate_regional(s,%GSw_StateCO2ImportLevel%,t) "--metric tons per MWh-- CO2 regional emissions rate, for use in state carbon caps"
 ;
-co2_emit_rate_r(r,t) = 0 ;
-co2_emit_rate_regional(%GSw_StateCO2ImportLevel%,t) = 0 ;
+co2_emit_rate_r(s,r,t) = 0 ;
+co2_emit_rate_regional(s,%GSw_StateCO2ImportLevel%,t) = 0 ;
 
 * ===========================================================================
 * Regional emissions rate limit (currently unused)
@@ -4969,24 +4969,14 @@ rep_bio_price_unused(r)$[sum{usda_region, 1$r_usda(r,usda_region) }] =
 * Emissions cap and tax
 *======================
 
-parameter emit_cap(eall,t)    "--metric tons per year-- annual CO2 emissions cap",
-          yearweight(t)       "--unitless-- weights applied to each solve year for the banking and borrowing cap - updated in e_solveprep.gms",
+parameter yearweight(t)       "--unitless-- weights applied to each solve year for the banking and borrowing cap - updated in e_solveprep.gms",
           emit_tax(e,r,t)     "--$ per metric ton-- tax applied to emissions" ;
 
-emit_cap(e,t) = 0 ;
 emit_tax(e,r,t) = 0 ;
 
 yearweight(t) = 0 ;
 yearweight(t)$tmodel_new(t) = sum{tt$tprev(tt,t), yeart(tt) } - yeart(t) ;
 yearweight(t)$tlast(t) = 1 + smax{yearafter, yearafter.val } ;
-
-if(Sw_AnnualCap = 1,
-    emit_cap("CO2",t) = co2_cap(t) ;
-) ;
-
-if(Sw_AnnualCap > 1,
-    emit_cap("CO2e",t) = co2_cap(t) ;
-) ;
 
 * set the carbon tax based on switch arguments
 if(Sw_CarbTax = 1,
@@ -4995,43 +4985,37 @@ emit_tax("CO2",r,t) = co2_tax(t) ;
 
 * All emissions are included in reported, but not all emissions need to be modeled
 * This set captures only the emissions that need to be included in the model
-set emit_modeled(e,r,t) "set of emissions that are necessary to include in the model" ;
+set emit_modeled(s,e,r,t) "set of emissions that are necessary to include in the model" ;
 
 * CO2 for RGGI regions and years
-emit_modeled("CO2",r,t)$[
+emit_modeled(s,"CO2",r,t)$[
   (yeart(t)>=RGGI_start_yr)
   $RGGI_r(r)
   $Sw_RGGI] = yes ;
 
 * CO2 for state cap regions and years
-emit_modeled("CO2",r,t)$[
+emit_modeled(s,"CO2",r,t)$[
   (yeart(t)>=state_cap_start_yr)
   $sum{(tt,st)$r_st(r,st), state_cap(st,tt) }
   $Sw_StateCap] = yes ;
 
 * Emissions with an emission rate limit constraint
-emit_modeled(e,r,t)$emit_rate_con(e,r,t) = yes ;
+emit_modeled(s,e,r,t)$emit_rate_con(e,r,t) = yes ;
 
 * Model all emissions with global warming potential
-emit_modeled(e,r,t)$gwp(e) = yes ;
+emit_modeled(s,e,r,t)$gwp(e) = yes ;
 
 * Emissions associated with bankbarrowcap
-emit_modeled(e,r,t)$[
+emit_modeled(s,e,r,t)$[
   Sw_BankBorrowCap
-  $sum{tt, emit_cap(e,tt) }] = yes ;
+  $sum{tt, emit_cap(s,e,tt) }] = yes ;
 
 * Emissions subject to an emissions tax
-emit_modeled(e,r,t)$emit_tax(e,r,t) = yes ;
+emit_modeled(s,e,r,t)$emit_tax(e,r,t) = yes ;
 
 * Remove years not modeled
-emit_modeled(e,r,t)$[not tmodel_new(t)] = no ;
+emit_modeled(s,e,r,t)$[not tmodel_new(t)] = no ;
 
-* Set of emissions that are being capped
-set emit_capped(e) "set of emissions that are included in emission cap depending on Sw_AnnualCap setting" ;
-emit_capped(e)$[Sw_AnnualCap=0] = no ;
-emit_capped("CO2")$[Sw_AnnualCap=1] = yes ;
-emit_capped(e)$[gwp(e)$(not sameas(e, "H2"))$(Sw_AnnualCap=2)] = yes ;
-emit_capped(e)$[gwp(e)$(Sw_AnnualCap=3)] = yes ;
 
 *====================================
 * --- Endogenous Retirements ---
@@ -5348,10 +5332,10 @@ parameter
     m_capacity_exog0(i,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
     z_rep(t)      "--$-- objective function value by year"
     z_rep_inv(t)  "--$-- investment component of objective function by year"
-    z_rep_op(t)   "--$-- operation component of objective function by year"
+    z_rep_op(s,t)   "--$-- operation component of objective function by year"
 ;
 z_rep_inv(t) = 0 ;
-z_rep_op(t) = 0 ;
+z_rep_op(s,t) = 0 ;
 
 *====================================
 *     --- Employment Factors ---
