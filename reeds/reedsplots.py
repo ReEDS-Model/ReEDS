@@ -5354,7 +5354,7 @@ def get_cap_rep_stress_mix(
         os.path.join(case,'inputs_case', 'rep', 'numhours.csv'),
     ).rename(columns={'*h':'h'}).set_index('h').squeeze(1)
     hours_t = (
-        report_calcs.get_gams_results(case, 'hours_t')['hours_t'].reset_index()
+        report_calcs.get_gams_results(case)['hours_t'].reset_index()
         .astype({'t':int}).rename(columns={'allh':'h'}).set_index(['h','t']).squeeze(1)
     )
     dfmap = reeds.io.get_dfmap(case)
@@ -5454,7 +5454,7 @@ def get_cap_rep_stress_mix(
                     ## sum_h(gen*price*hours) / sum_h(price*hours)
                     from reeds.core.terminus import report_calcs
                     hours_t = (
-                        report_calcs.get_gams_results(case, 'hours_t')['hours_t'].reset_index()
+                        report_calcs.get_gams_results(case)['hours_t'].reset_index()
                         .astype({'t':int}).rename(columns={'allh':'h', 'Value':'hours'})
                     )
                     price_long = price_stress.rename('price').reset_index().merge(
