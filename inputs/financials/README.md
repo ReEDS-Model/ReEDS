@@ -1,6 +1,6 @@
 ## Financials Input Files
 
-- `cap_penalty.csv`: Cost penalty [$/MW] for deploying capacity above the interconnection cap limit, by technology group
+- `cap_penalty.csv`: Cost penalty [$/MW] for deploying capacity above the interconnection queue limit (`queue_limit`), by technology group
 
 - `construction_schedules_default.csv`: Fraction of total construction expenditure incurred in each year of construction, by schedule name
   - Columns are the schedule identifiers referenced by the `construction_sch` column of the `financials_tech_*` and `financials_transmission_*` files; selected by the `construction_schedules_suffix` switch

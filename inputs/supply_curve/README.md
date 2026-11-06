@@ -7,7 +7,7 @@
     - 3: 0.26 ≤ CF
   - Site-level CSP supply curve costs are copied from the site-level supply curve costs for utility-scale photovoltaics (UPV). The mapping code is available on the [ReEDS input-processing repo](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/csp).
 
-- Each PSH supply curve filename is formatted as: `supplycurve_psh-{exclusion_scenario}{PSH_storage_duration}hr.csv`, with the 3 exclusion scenarios defined by the following exclusion layers:
+- Each PSH supply curve filename is formatted as: `supplycurve_psh-{PSH_storage_duration}hr_{exclusion_scenario}.csv`, with the 3 exclusion scenarios defined by the following exclusion layers:
   - `open`: census urbanized and global human settlement layer (GHSL) developed areas, existing waterbodies, permanent, or intermittent streams and 100yr flood plains, PAD-US prtected areas, conservation easements, areas of critical environmental concern, state and local protected areas, glaciers national land cover database (NLCD) permanent snow/ice and wetland ecosystmens, and airports/airstrips/helipads
   - `reference`: all open exclusions [plus] ephemeral streams, critical habitat for endangered species, railway, pipelines, and major roads with 30m buffer, and National Wetlands Inventory (including small, localized riparian environments aroud rivers, streams, and lakes)
   - `limited`: all reference exclusions [plus] agricultural easements, farm trust conservation land, and nationally important agricultural land, mature forests on federal lands, **all** building footprints, and Census and BIA-defined "tribal areas" (reservations and off-reservation trust land)
@@ -39,43 +39,11 @@
 - `interconnection_offshore.h5`: Offshore interconnection characteristics for each reV supply curve point, in the same format as `interconnection_land.h5`
   - Written by `hourlize/write_site_parameters.py`
 
-- `PSH_supply_curves_capacity_*.csv`: Pumped storage hydropower supply curve capacity as used in 2025 Annual Technology Baseline. Citation: [https://www.nlr.gov/gis/psh-supply-curves](https://www.nlr.gov/gis/psh-supply-curves)
-  - `PSH_supply_curves_capacity_10hr_ref_apr2025.csv`: supply curve capacity assuming 10 hour duration and reference exclusions
-  - `PSH_supply_curves_capacity_10hr_wEph_apr2025.csv`: supply curve capacity assuming 10 hour duration and allowing sites on ephemeral streams 
-  - `PSH_supply_curves_capacity_10hr_wExist_apr2025.csv`: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs 
-  - `PSH_supply_curves_capacity_10hr_wExist_wEph_apr2025.csv`: supply curve capacity assuming 10 hour duration and allowing sites using existing reservoirs and on ephemeral streams 
-  - `PSH_supply_curves_capacity_12hr_ref_apr2025.csv`: supply curve capacity assuming 12 hour duration and reference exclusions
-  - `PSH_supply_curves_capacity_12hr_wEph_apr2025.csv`: supply curve capacity assuming 12 hour duration and allowing sites on ephemeral streams
-  - `PSH_supply_curves_capacity_12hr_wExist_apr2025.csv`: supply curve capacity assuming 12 hour duration and allowing sites using existing reservoirs 
-  - `PSH_supply_curves_capacity_12hr_wExist_wEph_apr2025.csv`: supply curve capacity assuming 12 hour duration and allowing sites using existing reservoirs and on ephemeral streams
-  - `PSH_supply_curves_capacity_8hr_ref_apr2025.csv`: supply curve capacity assuming 8 hour duration and reference exclusions
-  - `PSH_supply_curves_capacity_8hr_wEph_apr2025.csv`: supply curve capacity assuming 8 hour duration and allowing sites on ephemeral streams
-  - `PSH_supply_curves_capacity_8hr_wExist_apr2025.csv`: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs
-  - `PSH_supply_curves_capacity_8hr_wExist_wEph_apr2025.csv`: supply curve capacity assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams
-
-- `PSH_supply_curves_cost_*.csv`: Pumped storage hydropower supply curve cost as used in 2025 Annual Technology Baseline. Citation: [https://www.nlr.gov/gis/psh-supply-curves](https://www.nlr.gov/gis/psh-supply-curves)
-  - `PSH_supply_curves_cost_10hr_ref_apr2025.csv`: assuming 10 hour duration and reference exclusions 
-  - `PSH_supply_curves_cost_10hr_wEph_apr2025.csv`: assuming 10 hour duration and allowing sites on ephemeral streams
-  - `PSH_supply_curves_cost_10hr_wExist_apr2025.csv`: assuming 10 hour duration and allowing sites using existing reservoirs
-  - `PSH_supply_curves_cost_10hr_wExist_wEph_apr2025.csv`: assuming 10 hour duration and allowing sites using existing reservoirs and on ephemeral streams 
-  - `PSH_supply_curves_cost_12hr_ref_apr2025.csv`: assuming 12 hour duration and reference exclusions 
-  - `PSH_supply_curves_cost_12hr_wEph_apr2025.csv`: assuming 12 hour duration and allowing sites on ephemeral streams
-  - `PSH_supply_curves_cost_12hr_wExist_apr2025.csv`: assuming 12 hour duration and allowing sites using existing reservoirs
-  - `PSH_supply_curves_cost_12hr_wExist_wEph_apr2025.csv`: assuming 12 hour duration and allowing sites using existing reservoirs and on ephemeral streams 
-  - `PSH_supply_curves_cost_8hr_ref_apr2025.csv`: assuming 8 hour duration and reference exclusions 
-  - `PSH_supply_curves_cost_8hr_wEph_apr2025.csv`: assuming 8 hour duration and allowing sites on ephemeral streams
-  - `PSH_supply_curves_cost_8hr_wExist_apr2025.csv`: assuming 8 hour duration and allowing sites using existing reservoirs  	
-  - `PSH_supply_curves_cost_8hr_wExist_wEph_apr2025.csv`: assuming 8 hour duration and allowing sites using existing reservoirs and on ephemeral streams 
-
 - `rev_paths.csv`: Paths to the reV supply curve and generation runs backing each technology, giving the siting access switch and case, supply curve and capacity factor paths, and the original reV case and supply curve file names
 
 - `supplycurve_egs-reference.csv`: Enhanced geothermal (EGS) supply curve by reV supply curve point: resource class, available capacity [MW], capital cost adder [$/MW], capacity factor, and mean resource temperature [deg C]
 
-- `sitemap.h5`:
-
-- `supplycurve_egs-reference.csv`:
-
-- `supplycurve_psh-*.csv`: Pumped storage hydropower supply curve. Citation: [https://www.nlr.gov/gis/psh-supply-curves](https://www.nlr.gov/gis/psh-supply-curves)
+- `supplycurve_psh-*.csv`: Pumped storage hydropower supply curve by site: upper and lower reservoir coordinates, available capacity [MW], and capital cost adder [$/MW]; the dollar year is given in `dollaryear.csv`. Citation: [https://www.nlr.gov/gis/psh-supply-curves](https://www.nlr.gov/gis/psh-supply-curves)
   - `supplycurve_psh-8hr_limited.csv`: assuming 8 hour duration for the limited siting scenario
   - `supplycurve_psh-8hr_open.csv`: assuming 8 hour duration for the open siting scenario
   - `supplycurve_psh-8hr_reference.csv`: assuming 8 hour duration for the reference siting scenario

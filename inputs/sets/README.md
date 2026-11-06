@@ -138,8 +138,6 @@
 
 - `quarter.csv`: four quarters (listed as seasons) of the year
 
-- `resourceclass.csv`: set of renewable resource classes
-
 - `sdbin.csv`: set of storage duration bins [hours]
 
 - `tg.csv`: set of technology groups used for growth constraints
