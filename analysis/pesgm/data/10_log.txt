@@ -1,0 +1,31 @@
+Loaded data: 486 samples, 81 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 74
+  Removed 8 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 66
+Loaded data: 486 samples, 81 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 74
+  Removed 8 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 66
+Loaded data: 486 samples, 372 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 365
+  Removed 57 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 308
+Loaded data: 486 samples, 372 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 365
+  Removed 57 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 308
+  constraining ridge
+  constraining lasso
+  constraining knn
+  constraining rf
+  constraining xgb
+  constraining nn
+  constraining ngboost
+  wrote figs/buckets.pdf and .png
+  wrote figs/r2_ranking_rf.pdf and .png
+  wrote figs/ba_heatmap_rf.pdf and .png
+wrote results_after_fix.md

@@ -1,0 +1,420 @@
+{
+  "checks": [
+    {
+      "name": "(a) rf training grid (OOF path): sum regional cap_nuclear = system",
+      "ok": true,
+      "regional_sum": 4980.0,
+      "system": 4980.0,
+      "n_regional_cols": 2,
+      "oof_path": true
+    },
+    {
+      "name": "(a) rf training grid (OOF path): sum regional tran_total = system",
+      "ok": true,
+      "regional_sum": 40921.11317533594,
+      "system": 40921.11317533594,
+      "n_regional_cols": 11,
+      "oof_path": true
+    },
+    {
+      "name": "(a) rf training grid (OOF path): sum regional gen_wind-ons = system",
+      "ok": true,
+      "regional_sum": 290596621.37755895,
+      "system": 290596621.37755895,
+      "n_regional_cols": 7,
+      "oof_path": true
+    },
+    {
+      "name": "(a') rf training grid (OOF path): every corridor >= its floor (initial capacity)",
+      "ok": true,
+      "min_margin_MW": 0.0,
+      "n_corridors": 11
+    },
+    {
+      "name": "(a'') rf training grid (OOF path): system tran_total >= sum of corridor floors",
+      "ok": true,
+      "tran_total": 40921.11317533594,
+      "floor_sum": 34478.6
+    },
+    {
+      "name": "(a) rf training grid (OOF path): Nuclear bars, regional sum = system bar",
+      "ok": true,
+      "regional": 4.98,
+      "system": 4.98
+    },
+    {
+      "name": "(a) rf training grid (OOF path): Onshore Wind bars, regional sum = system bar",
+      "ok": true,
+      "regional": 290.59662137755896,
+      "system": 290.59662137755896
+    },
+    {
+      "name": "(b) rf training grid (OOF path) overall: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 22.13749875936745,
+      "n_components": 21
+    },
+    {
+      "name": "(b) rf training grid (OOF path) overall: 'System cost' line = sum of cost bars",
+      "ok": true,
+      "line_B": 22.14,
+      "bars_B": 22.137498759367443
+    },
+    {
+      "name": "(b) rf training grid (OOF path) regional: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 22.264066559367443,
+      "n_components": 129
+    },
+    {
+      "name": "(b) rf training grid (OOF path) regional: 'System cost' line = sum of cost bars",
+      "ok": true,
+      "line_B": 22.26,
+      "bars_B": 22.264066559367443
+    },
+    {
+      "name": "(d) rf training grid (OOF path) overall: CI panel populated",
+      "ok": true,
+      "rows": 14,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(d) rf training grid (OOF path) regional: CI panel populated",
+      "ok": true,
+      "rows": 67,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(a) rf off-grid (final model): sum regional cap_nuclear = system",
+      "ok": true,
+      "regional_sum": 4980.0,
+      "system": 4980.0,
+      "n_regional_cols": 2,
+      "oof_path": false
+    },
+    {
+      "name": "(a) rf off-grid (final model): sum regional tran_total = system",
+      "ok": true,
+      "regional_sum": 36036.423105278845,
+      "system": 36036.423105278845,
+      "n_regional_cols": 11,
+      "oof_path": false
+    },
+    {
+      "name": "(a) rf off-grid (final model): sum regional gen_wind-ons = system",
+      "ok": true,
+      "regional_sum": 258541654.28331327,
+      "system": 258541654.2833132,
+      "n_regional_cols": 7,
+      "oof_path": false
+    },
+    {
+      "name": "(a') rf off-grid (final model): every corridor >= its floor (initial capacity)",
+      "ok": true,
+      "min_margin_MW": 0.0,
+      "n_corridors": 11
+    },
+    {
+      "name": "(a'') rf off-grid (final model): system tran_total >= sum of corridor floors",
+      "ok": true,
+      "tran_total": 36036.423105278845,
+      "floor_sum": 34478.6
+    },
+    {
+      "name": "(a) rf off-grid (final model): Nuclear bars, regional sum = system bar",
+      "ok": true,
+      "regional": 4.98,
+      "system": 4.98
+    },
+    {
+      "name": "(a) rf off-grid (final model): Onshore Wind bars, regional sum = system bar",
+      "ok": true,
+      "regional": 258.5416542833132,
+      "system": 258.5416542833132
+    },
+    {
+      "name": "(b) rf off-grid (final model) overall: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 29.298287446774555,
+      "n_components": 21
+    },
+    {
+      "name": "(b) rf off-grid (final model) regional: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 29.29828744677456,
+      "n_components": 129
+    },
+    {
+      "name": "(d) rf off-grid (final model) overall: CI panel populated",
+      "ok": true,
+      "rows": 15,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(d) rf off-grid (final model) regional: CI panel populated",
+      "ok": true,
+      "rows": 71,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(c) rf Dem=0.0: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(c) rf Dem=1.0: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(c) rf Dem=2.0: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(c) rf Dem=0.5: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(a) nn training grid (OOF path): sum regional cap_nuclear = system",
+      "ok": true,
+      "regional_sum": 4980.194483101368,
+      "system": 4980.194483101368,
+      "n_regional_cols": 2,
+      "oof_path": true
+    },
+    {
+      "name": "(a) nn training grid (OOF path): sum regional tran_total = system",
+      "ok": true,
+      "regional_sum": 39190.514267865234,
+      "system": 39190.514267865234,
+      "n_regional_cols": 11,
+      "oof_path": true
+    },
+    {
+      "name": "(a) nn training grid (OOF path): sum regional gen_wind-ons = system",
+      "ok": true,
+      "regional_sum": 302617223.25255895,
+      "system": 302617223.25255895,
+      "n_regional_cols": 7,
+      "oof_path": true
+    },
+    {
+      "name": "(a') nn training grid (OOF path): every corridor >= its floor (initial capacity)",
+      "ok": true,
+      "min_margin_MW": 0.0,
+      "n_corridors": 11
+    },
+    {
+      "name": "(a'') nn training grid (OOF path): system tran_total >= sum of corridor floors",
+      "ok": true,
+      "tran_total": 39190.514267865234,
+      "floor_sum": 34478.6
+    },
+    {
+      "name": "(a) nn training grid (OOF path): Nuclear bars, regional sum = system bar",
+      "ok": true,
+      "regional": 4.980194483101368,
+      "system": 4.980194483101368
+    },
+    {
+      "name": "(a) nn training grid (OOF path): Onshore Wind bars, regional sum = system bar",
+      "ok": true,
+      "regional": 302.61722325255886,
+      "system": 302.6172232525589
+    },
+    {
+      "name": "(b) nn training grid (OOF path) overall: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 22.37608289400806,
+      "n_components": 21
+    },
+    {
+      "name": "(b) nn training grid (OOF path) overall: 'System cost' line = sum of cost bars",
+      "ok": true,
+      "line_B": 22.38,
+      "bars_B": 22.376082891079626
+    },
+    {
+      "name": "(b) nn training grid (OOF path) regional: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 22.556258482010833,
+      "n_components": 129
+    },
+    {
+      "name": "(b) nn training grid (OOF path) regional: 'System cost' line = sum of cost bars",
+      "ok": true,
+      "line_B": 22.56,
+      "bars_B": 22.556138185189834
+    },
+    {
+      "name": "(d) nn training grid (OOF path) overall: CI panel populated",
+      "ok": true,
+      "rows": 14,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(d) nn training grid (OOF path) regional: CI panel populated",
+      "ok": true,
+      "rows": 93,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(a) nn off-grid (final model): sum regional cap_nuclear = system",
+      "ok": true,
+      "regional_sum": 4978.75247345483,
+      "system": 4978.752473454831,
+      "n_regional_cols": 2,
+      "oof_path": false
+    },
+    {
+      "name": "(a) nn off-grid (final model): sum regional tran_total = system",
+      "ok": true,
+      "regional_sum": 36266.63187805505,
+      "system": 36266.63187805505,
+      "n_regional_cols": 11,
+      "oof_path": false
+    },
+    {
+      "name": "(a) nn off-grid (final model): sum regional gen_wind-ons = system",
+      "ok": true,
+      "regional_sum": 234668390.2825788,
+      "system": 234668390.28257883,
+      "n_regional_cols": 7,
+      "oof_path": false
+    },
+    {
+      "name": "(a') nn off-grid (final model): every corridor >= its floor (initial capacity)",
+      "ok": true,
+      "min_margin_MW": 0.0,
+      "n_corridors": 11
+    },
+    {
+      "name": "(a'') nn off-grid (final model): system tran_total >= sum of corridor floors",
+      "ok": true,
+      "tran_total": 36266.63187805505,
+      "floor_sum": 34478.6
+    },
+    {
+      "name": "(a) nn off-grid (final model): Nuclear bars, regional sum = system bar",
+      "ok": true,
+      "regional": 4.97875247345483,
+      "system": 4.978752473454831
+    },
+    {
+      "name": "(a) nn off-grid (final model): Onshore Wind bars, regional sum = system bar",
+      "ok": true,
+      "regional": 234.66839028257883,
+      "system": 234.66839028257883
+    },
+    {
+      "name": "(b) nn off-grid (final model) overall: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 26.470995816574533,
+      "n_components": 21
+    },
+    {
+      "name": "(b) nn off-grid (final model) regional: cost_total = sum of components",
+      "ok": true,
+      "cost_total_B": 26.455974360585717,
+      "n_components": 129
+    },
+    {
+      "name": "(d) nn off-grid (final model) overall: CI panel populated",
+      "ok": true,
+      "rows": 18,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(d) nn off-grid (final model) regional: CI panel populated",
+      "ok": true,
+      "rows": 93,
+      "keys": [
+        "bottom",
+        "ci_hi",
+        "ci_lo",
+        "ci_pct",
+        "half",
+        "pred"
+      ]
+    },
+    {
+      "name": "(c) nn Dem=0.0: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(c) nn Dem=1.0: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(c) nn Dem=2.0: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    },
+    {
+      "name": "(c) nn Dem=0.5: DPV bar = 12,994.6 MW",
+      "ok": true,
+      "dpv_MW": 12994.628098999998
+    }
+  ],
+  "notes": [
+    "rf off-grid (final model) overall: no 'System cost' line (off-grid designs show only the runtime line)",
+    "rf off-grid (final model) regional: no 'System cost' line (off-grid designs show only the runtime line)",
+    "nn off-grid (final model) overall: no 'System cost' line (off-grid designs show only the runtime line)",
+    "nn off-grid (final model) regional: no 'System cost' line (off-grid designs show only the runtime line)"
+  ],
+  "n_pass": 56,
+  "n_checks": 56
+}

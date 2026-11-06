@@ -1,0 +1,73 @@
+model,layer,predictions,column,floor,n_eval,n_below,min_pred
+Random Forest,system,stored OOF,tran_AC_total,34478.6,486,0,34478.599994048825
+Random Forest,system,stored OOF,tran_total,34478.6,486,0,34478.599994048825
+Random Forest,system,after fix,tran_AC_total,34478.6,486,0,34478.599994048825
+Random Forest,system,after fix,tran_total,34478.6,486,0,34478.599994048825
+Random Forest,regional,stored OOF,tran_p60_p61_AC,2929.3,486,0,2929.299999999997
+Random Forest,regional,stored OOF,tran_p60_p62_AC,2537.55,486,0,2537.549999999992
+Random Forest,regional,stored OOF,tran_p60_p63_AC,5482.35,486,0,5482.349930203125
+Random Forest,regional,stored OOF,tran_p61_p62_AC,1386.85,486,0,1386.8500000000026
+Random Forest,regional,stored OOF,tran_p61_p63_AC,3026.45,486,0,3026.4500000000007
+Random Forest,regional,stored OOF,tran_p61_p64_AC,2242.75,486,0,2242.75
+Random Forest,regional,stored OOF,tran_p61_p65_AC,145.35,486,0,145.3499999999995
+Random Forest,regional,stored OOF,tran_p64_p65_AC,4457.15,486,0,4457.150000000015
+Random Forest,regional,stored OOF,tran_p64_p67_AC,2536.75,486,0,2536.75
+Random Forest,regional,stored OOF,tran_p65_p67_AC,3194.95,486,0,3194.9499999999985
+Random Forest,regional,after fix,tran_p60_p61_AC,2929.3,486,126,2693.412099240904
+Random Forest,regional,after fix,tran_p60_p62_AC,2537.55,486,49,2335.8957815348267
+Random Forest,regional,after fix,tran_p60_p63_AC,5482.35,486,43,5204.01362560909
+Random Forest,regional,after fix,tran_p61_p62_AC,1386.85,486,92,1283.6244975501036
+Random Forest,regional,after fix,tran_p61_p63_AC,3026.45,486,111,2782.7388958958263
+Random Forest,regional,after fix,tran_p61_p64_AC,2242.75,486,74,2104.5744305299127
+Random Forest,regional,after fix,tran_p61_p65_AC,145.35,486,23,138.7584476994832
+Random Forest,regional,after fix,tran_p64_p65_AC,4457.15,486,5,4241.594368722376
+Random Forest,regional,after fix,tran_p64_p67_AC,2536.75,486,5,2485.241818275221
+Random Forest,regional,after fix,tran_p65_p67_AC,3194.95,486,55,2959.580667948954
+MLP,system,stored OOF,tran_AC_total,34478.6,486,37,32112.46669921875
+MLP,system,stored OOF,tran_total,34478.6,486,37,32112.46669921875
+MLP,system,after fix,tran_AC_total,34478.6,486,37,32112.46669921875
+MLP,system,after fix,tran_total,34478.6,486,37,32112.46669921875
+MLP,regional,stored OOF,tran_p60_p61_AC,2929.3,486,25,2808.3419845581057
+MLP,regional,stored OOF,tran_p60_p62_AC,2537.55,486,113,1912.263372472656
+MLP,regional,stored OOF,tran_p60_p63_AC,5482.35,486,93,5033.458459472657
+MLP,regional,stored OOF,tran_p61_p62_AC,1386.85,486,153,1117.9803100585937
+MLP,regional,stored OOF,tran_p61_p63_AC,3026.45,486,147,2382.124865722656
+MLP,regional,stored OOF,tran_p61_p64_AC,2242.75,486,167,1277.3973999023438
+MLP,regional,stored OOF,tran_p61_p65_AC,145.35,486,153,-845.7217163085937
+MLP,regional,stored OOF,tran_p64_p65_AC,4457.15,486,94,3577.857580566406
+MLP,regional,stored OOF,tran_p64_p67_AC,2536.75,486,61,1452.4935302734375
+MLP,regional,stored OOF,tran_p65_p67_AC,3194.95,486,138,2090.893115234375
+MLP,regional,after fix,tran_p60_p61_AC,2929.3,486,157,2682.293329306758
+MLP,regional,after fix,tran_p60_p62_AC,2537.55,486,109,1939.5063744011093
+MLP,regional,after fix,tran_p60_p63_AC,5482.35,486,116,4804.7500273312435
+MLP,regional,after fix,tran_p61_p62_AC,1386.85,486,156,1121.5050372469893
+MLP,regional,after fix,tran_p61_p63_AC,3026.45,486,173,2482.2121554507066
+MLP,regional,after fix,tran_p61_p64_AC,2242.75,486,169,1333.691971995033
+MLP,regional,after fix,tran_p61_p65_AC,145.35,486,154,0.0
+MLP,regional,after fix,tran_p64_p65_AC,4457.15,486,94,3618.4443483520563
+MLP,regional,after fix,tran_p64_p67_AC,2536.75,486,63,1505.2655369924937
+MLP,regional,after fix,tran_p65_p67_AC,3194.95,486,136,2089.037010372678
+Ridge,system,stored OOF,tran_AC_total,34478.6,486,90,22283.83046875
+Ridge,system,stored OOF,tran_total,34478.6,486,90,22283.83046875
+Ridge,system,after fix,tran_AC_total,34478.6,486,90,22283.83046875
+Ridge,system,after fix,tran_total,34478.6,486,90,22283.83046875
+Ridge,regional,stored OOF,tran_p60_p61_AC,2929.3,486,47,2852.6682708740236
+Ridge,regional,stored OOF,tran_p60_p62_AC,2537.55,486,118,1655.2165649414064
+Ridge,regional,stored OOF,tran_p60_p63_AC,5482.35,486,95,3583.952172851563
+Ridge,regional,stored OOF,tran_p61_p62_AC,1386.85,486,103,1230.2155700683593
+Ridge,regional,stored OOF,tran_p61_p63_AC,3026.45,486,129,2442.5843994140623
+Ridge,regional,stored OOF,tran_p61_p64_AC,2242.75,486,119,661.4619140625
+Ridge,regional,stored OOF,tran_p61_p65_AC,145.35,486,118,-3121.79306640625
+Ridge,regional,stored OOF,tran_p64_p65_AC,4457.15,486,81,3179.7544921874996
+Ridge,regional,stored OOF,tran_p64_p67_AC,2536.75,486,82,-1918.974609375
+Ridge,regional,stored OOF,tran_p65_p67_AC,3194.95,486,130,-505.9284179687502
+Ridge,regional,after fix,tran_p60_p61_AC,2929.3,486,102,2192.147781042431
+Ridge,regional,after fix,tran_p60_p62_AC,2537.55,486,124,1271.9597848190235
+Ridge,regional,after fix,tran_p60_p63_AC,5482.35,486,100,2754.1067018884737
+Ridge,regional,after fix,tran_p61_p62_AC,1386.85,486,125,946.2685305443288
+Ridge,regional,after fix,tran_p61_p63_AC,3026.45,486,144,1879.9552018005556
+Ridge,regional,after fix,tran_p61_p64_AC,2242.75,486,119,514.7778071537658
+Ridge,regional,after fix,tran_p61_p65_AC,145.35,486,118,0.0
+Ridge,regional,after fix,tran_p64_p65_AC,4457.15,486,96,3162.5402087769257
+Ridge,regional,after fix,tran_p64_p67_AC,2536.75,486,82,0.0
+Ridge,regional,after fix,tran_p65_p67_AC,3194.95,486,134,0.0

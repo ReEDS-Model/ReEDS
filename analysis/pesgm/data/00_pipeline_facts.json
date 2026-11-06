@@ -1,0 +1,322 @@
+{
+  "system": {
+    "n_rows": 486,
+    "n_columns": 81,
+    "n_x": 6,
+    "x_cols": [
+      "x_Batt",
+      "x_Dem",
+      "x_Fuel",
+      "x_Pol",
+      "x_REcost",
+      "x_Siting"
+    ],
+    "n_y_in_csv": 74,
+    "n_y_constant_dropped": 8,
+    "n_y_modelled": 66,
+    "constant_outputs": {
+      "cap_distpv": 12994.628098999998,
+      "cap_hydED": 142.0,
+      "cap_hydEND": 405.8000000000002,
+      "cap_lfill-gas": 24.399999999999995,
+      "gen_Gas-CT_H2-CT": 0.0,
+      "gen_coal-igcc": 0.0,
+      "gen_coal-new": 0.0,
+      "gen_wind-ofs": 0.0
+    },
+    "y_by_category": {
+      "gen": 22,
+      "cost": 22,
+      "cap": 19,
+      "tran": 2,
+      "runtime": 1
+    },
+    "includes_runtime_seconds": true,
+    "negative_training_targets": {
+      "gen_battery_li": 486,
+      "gen_pumped-hydro": 486,
+      "cost_op_co2_incentive_negative": 9,
+      "cost_op_h2_transport_intrareg": 2,
+      "cost_op_ptc_payments_negative": 231
+    },
+    "dial_levels": {
+      "x_Batt": [
+        0,
+        1,
+        2
+      ],
+      "x_Dem": [
+        0,
+        1,
+        2
+      ],
+      "x_Fuel": [
+        0,
+        1,
+        2
+      ],
+      "x_Pol": [
+        0,
+        1
+      ],
+      "x_REcost": [
+        0,
+        1,
+        2
+      ],
+      "x_Siting": [
+        0,
+        1,
+        2
+      ]
+    },
+    "summary_models": {
+      "knn": {
+        "oof_r2_mean": 0.5951553555834074,
+        "oof_r2_median": 0.6954853557247919,
+        "n_outputs_r2_above_0.9": 7,
+        "n_outputs_r2_above_0.95": 0
+      },
+      "ridge": {
+        "oof_r2_mean": 0.445424368277806,
+        "oof_r2_median": 0.449228669387626,
+        "n_outputs_r2_above_0.9": 3,
+        "n_outputs_r2_above_0.95": 0
+      },
+      "lasso": {
+        "oof_r2_mean": 0.4448645495106197,
+        "oof_r2_median": 0.4492084018516969,
+        "n_outputs_r2_above_0.9": 3,
+        "n_outputs_r2_above_0.95": 0
+      },
+      "rf": {
+        "oof_r2_mean": 0.749017138119661,
+        "oof_r2_median": 0.8818578937616269,
+        "n_outputs_r2_above_0.9": 29,
+        "n_outputs_r2_above_0.95": 18
+      },
+      "xgb": {
+        "oof_r2_mean": 0.5316342347914651,
+        "oof_r2_median": 0.8196095518215353,
+        "n_outputs_r2_above_0.9": 21,
+        "n_outputs_r2_above_0.95": 12
+      },
+      "nn": {
+        "oof_r2_mean": 0.7121870807925501,
+        "oof_r2_median": 0.8695864880852301,
+        "n_outputs_r2_above_0.9": 28,
+        "n_outputs_r2_above_0.95": 17
+      },
+      "ngboost": {
+        "oof_r2_mean": 0.7106779271379117,
+        "oof_r2_median": 0.8147365595521859,
+        "n_outputs_r2_above_0.9": 23,
+        "n_outputs_r2_above_0.95": 16
+      }
+    },
+    "cv": {
+      "data_path": "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\inputs\\overall_ml_numeric_merged.csv",
+      "n_folds": 10,
+      "cv_type": "10-fold CV",
+      "n_samples": 486,
+      "n_x_features": 6,
+      "n_y_outputs": 66,
+      "evaluation": "Out-of-fold predictions (all samples used for both training and evaluation)"
+    },
+    "cost_identity_max_rel_err": 8.2216451520853805e-16,
+    "n_cost_components": 21,
+    "runtime_minutes": {
+      "mean": 46.57280058971193,
+      "median": 46.317590925,
+      "min": 37.1375519,
+      "max": 63.18257788333334
+    }
+  },
+  "regional": {
+    "n_rows": 486,
+    "n_columns": 372,
+    "n_x": 6,
+    "x_cols": [
+      "x_Batt",
+      "x_Dem",
+      "x_Fuel",
+      "x_Pol",
+      "x_REcost",
+      "x_Siting"
+    ],
+    "n_y_in_csv": 365,
+    "n_y_constant_dropped": 57,
+    "n_y_modelled": 308,
+    "constant_outputs": {
+      "cap_distpv_p60": 171.735537,
+      "cap_distpv_p61": 423.8016530000001,
+      "cap_distpv_p62": 294.04958700000003,
+      "cap_distpv_p63": 6263.388430000002,
+      "cap_distpv_p64": 816.3636359999999,
+      "cap_distpv_p65": 1408.6776859999998,
+      "cap_distpv_p67": 3616.611570000001,
+      "cap_hydED_p63": 142.0,
+      "cap_hydEND_p61": 58.0,
+      "cap_hydEND_p63": 2.0,
+      "cap_hydEND_p64": 309.30000000000007,
+      "cap_hydEND_p65": 36.5,
+      "cap_lfill-gas_p63": 10.599999999999998,
+      "cap_lfill-gas_p64": 8.0,
+      "cap_lfill-gas_p65": 5.799999999999997,
+      "cap_nuclear_p63": 2400.0,
+      "cap_pumped-hydro_p64": 5.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p60": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p61": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p62": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p64": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p65": 0.0,
+      "gen_Gas-CC_H2-CC_p67": 0.0,
+      "gen_Gas-CT_H2-CT_p60": 0.0,
+      "gen_Gas-CT_H2-CT_p61": 0.0,
+      "gen_Gas-CT_H2-CT_p62": 0.0,
+      "gen_Gas-CT_H2-CT_p63": 0.0,
+      "gen_Gas-CT_H2-CT_p64": 0.0,
+      "gen_Gas-CT_H2-CT_p65": 0.0,
+      "gen_Gas-CT_H2-CT_p67": 0.0,
+      "gen_H2-CC_p63": 0.0,
+      "gen_H2-CC_p64": 0.0,
+      "gen_H2-CC_p67": 0.0,
+      "gen_coal-ccs_mod_p60": 0.0,
+      "gen_coal-ccs_mod_p62": 0.0,
+      "gen_coal-ccs_mod_p63": 0.0,
+      "gen_coal-ccs_mod_p64": 0.0,
+      "gen_coal-ccs_mod_p65": 0.0,
+      "gen_coal-igcc_p61": 0.0,
+      "gen_coal-igcc_p64": 0.0,
+      "gen_coal-igcc_p67": 0.0,
+      "gen_coal-new_p60": 0.0,
+      "gen_coal-new_p61": 0.0,
+      "gen_coal-new_p62": 0.0,
+      "gen_coal-new_p63": 0.0,
+      "gen_coal-new_p67": 0.0,
+      "gen_gas-cc-ccs_mod_p60": 0.0,
+      "gen_gas-cc-ccs_mod_p61": 0.0,
+      "gen_gas-cc-ccs_mod_p62": 0.0,
+      "gen_nuclear_p67": 0.0,
+      "tran_p63_p64_AC": 6539.149999999999,
+      "cost_op_co2_transport_storage_p60": 0.0,
+      "cost_op_co2_transport_storage_p61": 0.0,
+      "cost_op_co2_transport_storage_p62": 0.0,
+      "gen_wind-ofs_p64": 0.0,
+      "gen_wind-ofs_p65": 0.0,
+      "gen_wind-ofs_p67": 0.0
+    },
+    "y_by_category": {
+      "cost": 126,
+      "gen": 91,
+      "cap": 81,
+      "tran": 10
+    },
+    "includes_runtime_seconds": false,
+    "negative_training_targets": {
+      "gen_battery_li_p60": 466,
+      "gen_battery_li_p61": 475,
+      "gen_battery_li_p62": 311,
+      "gen_battery_li_p63": 482,
+      "gen_battery_li_p64": 447,
+      "gen_battery_li_p65": 486,
+      "gen_battery_li_p67": 463,
+      "gen_pumped-hydro_p61": 12,
+      "gen_pumped-hydro_p64": 486,
+      "cost_op_co2_incentive_negative_p67": 9,
+      "cost_op_h2_transport_intrareg_p60": 1,
+      "cost_op_h2_transport_intrareg_p62": 1,
+      "cost_op_ptc_payments_negative_p60": 35,
+      "cost_op_ptc_payments_negative_p61": 131,
+      "cost_op_ptc_payments_negative_p62": 108,
+      "cost_op_ptc_payments_negative_p63": 213,
+      "cost_op_ptc_payments_negative_p64": 195,
+      "cost_op_ptc_payments_negative_p65": 155,
+      "cost_op_ptc_payments_negative_p67": 221
+    },
+    "dial_levels": {
+      "x_Batt": [
+        0,
+        1,
+        2
+      ],
+      "x_Dem": [
+        0,
+        1,
+        2
+      ],
+      "x_Fuel": [
+        0,
+        1,
+        2
+      ],
+      "x_Pol": [
+        0,
+        1
+      ],
+      "x_REcost": [
+        0,
+        1,
+        2
+      ],
+      "x_Siting": [
+        0,
+        1,
+        2
+      ]
+    },
+    "summary_models": {
+      "knn": {
+        "oof_r2_mean": 0.45215299762442107,
+        "oof_r2_median": 0.5363661051940396,
+        "n_outputs_r2_above_0.9": 1,
+        "n_outputs_r2_above_0.95": 0
+      },
+      "ridge": {
+        "oof_r2_mean": 0.3083964489437773,
+        "oof_r2_median": 0.2591398429657367,
+        "n_outputs_r2_above_0.9": 0,
+        "n_outputs_r2_above_0.95": 0
+      },
+      "lasso": {
+        "oof_r2_mean": 0.30840005137662097,
+        "oof_r2_median": 0.25909685070000205,
+        "n_outputs_r2_above_0.9": 0,
+        "n_outputs_r2_above_0.95": 0
+      },
+      "rf": {
+        "oof_r2_mean": 0.6250736311209436,
+        "oof_r2_median": 0.7151302236349734,
+        "n_outputs_r2_above_0.9": 76,
+        "n_outputs_r2_above_0.95": 45
+      },
+      "xgb": {
+        "oof_r2_mean": 0.24147401046761774,
+        "oof_r2_median": 0.48351187481073693,
+        "n_outputs_r2_above_0.9": 42,
+        "n_outputs_r2_above_0.95": 22
+      },
+      "nn": {
+        "oof_r2_mean": 0.5471860570908299,
+        "oof_r2_median": 0.6791887530389812,
+        "n_outputs_r2_above_0.9": 76,
+        "n_outputs_r2_above_0.95": 34
+      },
+      "ngboost": {
+        "oof_r2_mean": 0.558842281505659,
+        "oof_r2_median": 0.5897757133679618,
+        "n_outputs_r2_above_0.9": 59,
+        "n_outputs_r2_above_0.95": 26
+      }
+    },
+    "cv": {
+      "data_path": "..\\inputs\\regional_ml_numeric_merged.csv",
+      "n_folds": 10,
+      "cv_type": "10-fold CV",
+      "n_samples": 486,
+      "n_x_features": 6,
+      "n_y_outputs": 308,
+      "evaluation": "Out-of-fold predictions (all samples used for both training and evaluation)"
+    }
+  }
+}

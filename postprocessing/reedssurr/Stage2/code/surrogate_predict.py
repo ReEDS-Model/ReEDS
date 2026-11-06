@@ -84,13 +84,25 @@ def encode_design(levels: dict, x_cols: list[str]) -> np.ndarray:
     return x
 
 
-def predict(artifact: dict, levels: dict) -> pd.Series:
+def predict(
+    artifact: dict,
+    levels: dict,
+    overall_pred: pd.Series | None = None,
+    constants: dict | None = None,
+    floors: dict | None = None,
+) -> pd.Series:
     """Predict Y for a single design point and return a labelled Series.
 
     STAGE 2: predictions are passed through the full domain-constraint
-    stack (non-negativity + dgen DistPV override + cost decomposition).
-    Additivity is applied by the dashboard when both an overall and a
-    regional prediction are in hand.
+    stack (constant override + non-negativity + regional additivity + cost
+    decomposition; see ``surrogate_constraints.apply_constraints``).
+
+    For a regional artifact pass ``overall_pred``, the constrained
+    system-level prediction for the same design, so regional values are
+    rescaled to the system totals.  ``constants`` is the layer's
+    ``summary.json["constant_outputs"]``; when given, those outputs are
+    included in the result at their ReEDS value.  ``floors`` are lower bounds
+    kept by the regional rescale (``surrogate_constraints.transmission_floors``).
     """
     from surrogate_constraints import apply_constraints  # local import
     x = encode_design(levels, artifact["x_cols"])
@@ -101,14 +113,8 @@ def predict(artifact: dict, levels: dict) -> pd.Series:
         y_pred = scaler_y.inverse_transform(y_pred)
     y_arr = np.asarray(y_pred).ravel()
     series = pd.Series(y_arr, index=artifact["y_cols"], name="prediction")
-    # Pull x_Dem back out of the encoded vector so dgen_distpv_cap_mw can
-    # override cap_distpv with the exogenous adoption curve value.
-    x_dem_value: float | None = None
-    for xi, xc in enumerate(artifact["x_cols"]):
-        if xc == "x_Dem":
-            x_dem_value = float(x[xi])
-            break
-    return apply_constraints(series, x_dem_value=x_dem_value)
+    return apply_constraints(series, overall_pred=overall_pred, constants=constants,
+                             floors=floors)
 
 
 # ---------------------------------------------------------------------------
@@ -123,6 +129,8 @@ _STORAGE_GEN_PREFIXES = ("battery", "pumped-hydro", "pumped_hydro", "phs", "caes
 # Cost columns containing this substring are stored as negative on purpose
 # (tax credits / incentives that reduce total system cost — ITC, PTC, 45Q).
 # The ReEDS exporter tags them with a literal "_negative" segment.
+# The authoritative cost list is the ReEDS sys_costs set; see the note in
+# surrogate_constraints.py (op_h2_revenue_exog must be exempt if it appears).
 _NEGATIVE_COST_MARKER = "_negative"
 
 

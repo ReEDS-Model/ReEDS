@@ -1,0 +1,472 @@
+{
+  "q2_cells_changed_by_train_clip": {
+    "system": 2,
+    "regional": 2
+  },
+  "q3_mask_matches_clip_physical_bounds_system": true,
+  "q3_mask_matches_clip_physical_bounds_regional": true,
+  "q4": {
+    "cap_distpv": {
+      "n_unique": 1,
+      "min": 12994.628099,
+      "max": 12994.628099,
+      "modelled": false,
+      "dropped_constant": true,
+      "mean_by_x_Dem": {
+        "0": 12994.628099000001,
+        "1": 12994.628099000001,
+        "2": 12994.628099000001
+      }
+    },
+    "gen_distpv": {
+      "n_unique": 9,
+      "min": 25728515.7591,
+      "max": 30015915.9585,
+      "modelled": true,
+      "dropped_constant": false,
+      "mean_by_x_Dem": {
+        "0": 27254469.0029,
+        "1": 27689254.708300002,
+        "2": 27659939.7791
+      }
+    },
+    "regional_distpv": {
+      "cap_distpv_p60": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 171.735537
+      },
+      "cap_distpv_p61": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 423.801653
+      },
+      "cap_distpv_p62": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 294.049587
+      },
+      "cap_distpv_p63": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 6263.38843
+      },
+      "cap_distpv_p64": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 816.363636
+      },
+      "cap_distpv_p65": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 1408.677686
+      },
+      "cap_distpv_p67": {
+        "n_unique": 1,
+        "modelled": false,
+        "value": 3616.61157
+      },
+      "gen_distpv_p60": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      },
+      "gen_distpv_p61": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      },
+      "gen_distpv_p62": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      },
+      "gen_distpv_p63": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      },
+      "gen_distpv_p64": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      },
+      "gen_distpv_p65": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      },
+      "gen_distpv_p67": {
+        "n_unique": 9,
+        "modelled": true,
+        "value": null
+      }
+    },
+    "regional_cap_distpv_sum": 12994.628099000001,
+    "dgen_formula_values": {
+      "0.0": 12344.8966,
+      "0.5": 12669.7623,
+      "1.0": 12994.628,
+      "1.5": 13319.4937,
+      "2.0": 13644.359400000001
+    },
+    "system_constants": {
+      "cap_distpv": 12994.628098999998,
+      "cap_hydED": 142.0,
+      "cap_hydEND": 405.8000000000002,
+      "cap_lfill-gas": 24.399999999999995,
+      "gen_Gas-CT_H2-CT": 0.0,
+      "gen_coal-igcc": 0.0,
+      "gen_coal-new": 0.0,
+      "gen_wind-ofs": 0.0
+    },
+    "regional_constants": {
+      "cap_distpv_p60": 171.735537,
+      "cap_distpv_p61": 423.8016530000001,
+      "cap_distpv_p62": 294.04958700000003,
+      "cap_distpv_p63": 6263.388430000002,
+      "cap_distpv_p64": 816.3636359999999,
+      "cap_distpv_p65": 1408.6776859999998,
+      "cap_distpv_p67": 3616.611570000001,
+      "cap_hydED_p63": 142.0,
+      "cap_hydEND_p61": 58.0,
+      "cap_hydEND_p63": 2.0,
+      "cap_hydEND_p64": 309.30000000000007,
+      "cap_hydEND_p65": 36.5,
+      "cap_lfill-gas_p63": 10.599999999999998,
+      "cap_lfill-gas_p64": 8.0,
+      "cap_lfill-gas_p65": 5.799999999999997,
+      "cap_nuclear_p63": 2400.0,
+      "cap_pumped-hydro_p64": 5.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p60": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p61": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p62": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p64": 0.0,
+      "gen_Gas-CC_Gas-CC-CCS_mod_p65": 0.0,
+      "gen_Gas-CC_H2-CC_p67": 0.0,
+      "gen_Gas-CT_H2-CT_p60": 0.0,
+      "gen_Gas-CT_H2-CT_p61": 0.0,
+      "gen_Gas-CT_H2-CT_p62": 0.0,
+      "gen_Gas-CT_H2-CT_p63": 0.0,
+      "gen_Gas-CT_H2-CT_p64": 0.0,
+      "gen_Gas-CT_H2-CT_p65": 0.0,
+      "gen_Gas-CT_H2-CT_p67": 0.0,
+      "gen_H2-CC_p63": 0.0,
+      "gen_H2-CC_p64": 0.0,
+      "gen_H2-CC_p67": 0.0,
+      "gen_coal-ccs_mod_p60": 0.0,
+      "gen_coal-ccs_mod_p62": 0.0,
+      "gen_coal-ccs_mod_p63": 0.0,
+      "gen_coal-ccs_mod_p64": 0.0,
+      "gen_coal-ccs_mod_p65": 0.0,
+      "gen_coal-igcc_p61": 0.0,
+      "gen_coal-igcc_p64": 0.0,
+      "gen_coal-igcc_p67": 0.0,
+      "gen_coal-new_p60": 0.0,
+      "gen_coal-new_p61": 0.0,
+      "gen_coal-new_p62": 0.0,
+      "gen_coal-new_p63": 0.0,
+      "gen_coal-new_p67": 0.0,
+      "gen_gas-cc-ccs_mod_p60": 0.0,
+      "gen_gas-cc-ccs_mod_p61": 0.0,
+      "gen_gas-cc-ccs_mod_p62": 0.0,
+      "gen_nuclear_p67": 0.0,
+      "tran_p63_p64_AC": 6539.149999999999,
+      "cost_op_co2_transport_storage_p60": 0.0,
+      "cost_op_co2_transport_storage_p61": 0.0,
+      "cost_op_co2_transport_storage_p62": 0.0,
+      "gen_wind-ofs_p64": 0.0,
+      "gen_wind-ofs_p65": 0.0,
+      "gen_wind-ofs_p67": 0.0
+    }
+  },
+  "q5": {
+    "components_modelled": [
+      "cost_inv_h2_production",
+      "cost_inv_h2_storage",
+      "cost_inv_investment_capacity_costs",
+      "cost_inv_investment_refurbishment_capacity",
+      "cost_inv_investment_spurline_costs_rsc_technologies",
+      "cost_inv_itc_payments_negative",
+      "cost_inv_transmission_interzone_ac_investment",
+      "cost_inv_transmission_intrazone_investment",
+      "cost_op_co2_incentive_negative",
+      "cost_op_co2_transport_storage",
+      "cost_op_consume_fom",
+      "cost_op_fom_costs",
+      "cost_op_fuelcosts_objfn",
+      "cost_op_h2_storage",
+      "cost_op_h2_transport_intrareg",
+      "cost_op_ptc_payments_negative",
+      "cost_op_spurline_fom",
+      "cost_op_startcost",
+      "cost_op_transmission_fom",
+      "cost_op_transmission_intrazone_fom",
+      "cost_op_vom_costs"
+    ],
+    "components_all": [
+      "cost_inv_h2_production",
+      "cost_inv_h2_storage",
+      "cost_inv_investment_capacity_costs",
+      "cost_inv_investment_refurbishment_capacity",
+      "cost_inv_investment_spurline_costs_rsc_technologies",
+      "cost_inv_itc_payments_negative",
+      "cost_inv_transmission_interzone_ac_investment",
+      "cost_inv_transmission_intrazone_investment",
+      "cost_op_co2_incentive_negative",
+      "cost_op_co2_transport_storage",
+      "cost_op_consume_fom",
+      "cost_op_fom_costs",
+      "cost_op_fuelcosts_objfn",
+      "cost_op_h2_storage",
+      "cost_op_h2_transport_intrareg",
+      "cost_op_ptc_payments_negative",
+      "cost_op_spurline_fom",
+      "cost_op_startcost",
+      "cost_op_transmission_fom",
+      "cost_op_transmission_intrazone_fom",
+      "cost_op_vom_costs"
+    ],
+    "components_dropped_as_constant": [],
+    "cost_cols_not_component": [
+      "cost_total"
+    ],
+    "raw_identity_max_abs": 1.52587890625e-05,
+    "raw_identity_max_rel": 8.2216451520853805e-16,
+    "clipped_targets_identity_max_abs": 1.52587890625e-05
+  },
+  "oof_matches_stored_pipeline": {
+    "system_max_abs_diff": 499.54478454589844,
+    "regional_max_abs_diff": 240.75365781784058,
+    "system_max_rel_diff_vs_scale": 3.638997016188622e-08
+  },
+  "q5c": {
+    "trained raw, no clip (P0)": {
+      "r2_direct": 0.8975132833763838,
+      "r2_sum": 0.9117128842298363,
+      "rmse_direct_B": 2.7376885779246667,
+      "rmse_sum_B": 2.5409663791352153,
+      "mae_direct_B": 1.9416889586349397,
+      "mae_sum_B": 1.785180376668344
+    },
+    "trained clipped + prediction clip (P1)": {
+      "r2_direct": 0.8975132833763838,
+      "r2_sum": 0.9117128708520054,
+      "rmse_direct_B": 2.7376885779246667,
+      "rmse_sum_B": 2.5409665716469827,
+      "mae_direct_B": 1.9416889586349397,
+      "mae_sum_B": 1.7851806904650027
+    }
+  },
+  "q5_cost_total_mean_B": 26.21066292357327,
+  "q6_paper_numbers": {
+    "neg": {
+      "neg_cells": 86,
+      "must_pos_cells": 29160,
+      "neg_pct": 0.2949245541838134,
+      "neg_runs": 86,
+      "neg_outputs": [
+        "cost_op_h2_transport_intrareg"
+      ]
+    },
+    "cost": {
+      "cost_viol_runs": 355,
+      "cost_gap_median_pct": 2.277336482969903
+    },
+    "add_before": {
+      "add_quantities": 63,
+      "add_pairs_all": 30618,
+      "add_pairs_finite": 23544,
+      "add_viol": 14943,
+      "add_viol_pct": 63.4683995922528,
+      "add_gap_median_pct": 2.21246470279167,
+      "add_T0_S_nonzero": 1458
+    },
+    "add_after_item4": {
+      "add_quantities": 63,
+      "add_pairs_all": 30618,
+      "add_pairs_finite": 23544,
+      "add_viol": 1167,
+      "add_viol_pct": 4.956676860346585,
+      "add_gap_median_pct": 0.0,
+      "add_T0_S_nonzero": 1458
+    },
+    "add_reduction_pct": 92.19032322826742
+  },
+  "q6_steps": [
+    {
+      "step": "none -> +1",
+      "max_abs_output_r2_change": 4.916627336593038e-06,
+      "output": "('regional', 'cost_op_h2_transport_intrareg_p62')",
+      "n_outputs_changed_gt_0_005": 0
+    },
+    {
+      "step": "+1 -> +1,2",
+      "max_abs_output_r2_change": 415617.37101675005,
+      "output": "('regional', 'cap_nuclear_p65')",
+      "n_outputs_changed_gt_0_005": 162
+    },
+    {
+      "step": "+1,2 -> +1,2,3",
+      "max_abs_output_r2_change": 0.0,
+      "output": "('regional', 'cap_CoalOldScr_coal-CCS_mod_p63')",
+      "n_outputs_changed_gt_0_005": 0
+    },
+    {
+      "step": "+1,2,3 -> all four",
+      "max_abs_output_r2_change": 0.014199587475621556,
+      "output": "('system', 'cost_total')",
+      "n_outputs_changed_gt_0_005": 1
+    }
+  ],
+  "q1_quantities_paper_def": 63,
+  "q1_quantities_code_rescales": 62,
+  "q1_in_paper_not_code": [
+    "tran_total"
+  ],
+  "q1_in_code_not_paper": [],
+  "q1_clip_after_rescale": {
+    "cells_changed": 0,
+    "runs": 0,
+    "columns": [],
+    "max_abs_change": 0.0
+  },
+  "q1_final": {
+    "pairs_all": 30618,
+    "pairs_finite": 23536,
+    "pairs_T_zero": 7082,
+    "pairs_T_zero_S_nonzero": 1464,
+    "viol": 1976,
+    "viol_pct_of_finite": 8.3956492182189,
+    "causes": {
+      "rescale skipped (regional sum or system value <= 0)": 1165,
+      "dropped-constant regional columns not rescaled": 569,
+      "quantity not matched by enforce_additivity regex": 242
+    }
+  },
+  "q7_breakdown": {
+    "skipped": 8885,
+    "skipped_negative_by_definition_quantities": 2376,
+    "skipped_both_zero": 5618,
+    "skipped_system_zero_regional_nonzero": 1464,
+    "skipped_system_nonzero": 1803,
+    "skipped_system_nonzero_viol": 1165,
+    "t0_s_abs_median": 653.0247154572284,
+    "t0_s_abs_max": 6888111.0992758665,
+    "t0_s_by_quantity": {
+      "cap_CoalOldScr_coal-CCS_mod": {
+        "pairs": 8,
+        "median_abs": 1.82351600425,
+        "max_abs": 34.46863121166667
+      },
+      "cap_CoalOldScr": {
+        "pairs": 5,
+        "median_abs": 1.5227518075,
+        "max_abs": 2.5391118208333334
+      },
+      "cap_Gas-CC_H2-CC": {
+        "pairs": 94,
+        "median_abs": 0.937262353095238,
+        "max_abs": 107.99649489285716
+      },
+      "cap_H2-CC": {
+        "pairs": 116,
+        "median_abs": 0.42183541176190475,
+        "max_abs": 25.397981233488096
+      },
+      "cap_H2-CT": {
+        "pairs": 101,
+        "median_abs": 7.692759215583333,
+        "max_abs": 594.5247204816665
+      },
+      "cap_electrolyzer": {
+        "pairs": 139,
+        "median_abs": 8.304628624583332,
+        "max_abs": 322.2929917014404
+      },
+      "cap_gas-cc-ccs_mod": {
+        "pairs": 55,
+        "median_abs": 17.892206574797623,
+        "max_abs": 436.9678959034285
+      },
+      "gen_CoalOldScr_coal-CCS_mod": {
+        "pairs": 8,
+        "median_abs": 958.440012114,
+        "max_abs": 18116.712564246667
+      },
+      "gen_CoalOldScr": {
+        "pairs": 17,
+        "median_abs": 15700.33736391196,
+        "max_abs": 86605.42438665094
+      },
+      "gen_Gas-CC_H2-CC": {
+        "pairs": 78,
+        "median_abs": 326.0049123189583,
+        "max_abs": 74097.47226028702
+      },
+      "gen_H2-CC": {
+        "pairs": 117,
+        "median_abs": 228.05760018125002,
+        "max_abs": 13349.178929241843
+      },
+      "gen_H2-CT": {
+        "pairs": 104,
+        "median_abs": 3662.5977446602083,
+        "max_abs": 308638.69473385706
+      },
+      "gen_gas-cc-ccs_mod": {
+        "pairs": 35,
+        "median_abs": 8170.5955362194645,
+        "max_abs": 245308.32549557925
+      },
+      "cost_inv_h2_production": {
+        "pairs": 43,
+        "median_abs": 100236.76125731833,
+        "max_abs": 2055633.1137358653
+      },
+      "cost_inv_h2_storage": {
+        "pairs": 64,
+        "median_abs": 6669.299453268667,
+        "max_abs": 1018614.4028471592
+      },
+      "cost_inv_investment_spurline_costs_rsc_technologies": {
+        "pairs": 5,
+        "median_abs": 1562872.0622600499,
+        "max_abs": 5466119.677819928
+      },
+      "cost_inv_transmission_interzone_ac_investment": {
+        "pairs": 26,
+        "median_abs": 102907.51343712269,
+        "max_abs": 4391145.77969701
+      },
+      "cost_op_consume_fom": {
+        "pairs": 138,
+        "median_abs": 152120.3971538372,
+        "max_abs": 5633380.985300899
+      },
+      "cost_op_h2_storage": {
+        "pairs": 145,
+        "median_abs": 35182.48965551127,
+        "max_abs": 1251949.0143540332
+      },
+      "cost_op_h2_transport_intrareg": {
+        "pairs": 44,
+        "median_abs": 568151.5405742989,
+        "max_abs": 6888111.0992758665
+      },
+      "cost_op_ptc_payments_negative": {
+        "pairs": 122,
+        "median_abs": 159612.69940535945,
+        "max_abs": 6376101.21321455
+      }
+    }
+  },
+  "q7_total_skipped_pairs": 8885,
+  "raw_additivity_quantities_gap_gt_1e-6_rel": [
+    {
+      "quantity": "cap_H2-CT",
+      "max_abs_gap": 2.000000222324161e-06,
+      "max_rel_gap": 3.321376378466705e-06
+    }
+  ]
+}

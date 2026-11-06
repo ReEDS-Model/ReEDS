@@ -1,0 +1,48 @@
+Loaded data: 486 samples, 81 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 74
+  Removed 8 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 66
+Loaded data: 486 samples, 81 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 74
+  Removed 8 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 66
+Loaded data: 486 samples, 372 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 365
+  Removed 57 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 308
+Loaded data: 486 samples, 372 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 365
+  Removed 57 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 308
+Loaded data: 486 samples, 81 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 74
+  Removed 8 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 66
+Loaded data: 486 samples, 81 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 74
+  Removed 8 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 66
+Loaded data: 486 samples, 372 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 365
+  Removed 57 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 308
+Loaded data: 486 samples, 372 columns
+  X features: 6 (['x_Batt', 'x_Dem', 'x_Fuel', 'x_Pol', 'x_REcost', 'x_Siting'])
+  Y outputs: 365
+  Removed 57 constant Y columns (recorded as constant_outputs)
+  Final Y outputs: 308
+  none: sys 0.7490 reg 0.6251 cost 0.8975 add viol 14953/23549
+  +1: sys 0.7490 reg 0.6251 cost 0.8975 add viol 14937/23536
+  +1,2: sys 0.7490 reg -1348.7755 cost 0.8975 add viol 1976/23536
+  +1,2,3: sys 0.7490 reg -1348.7755 cost 0.8975 add viol 1976/23536
+  all four: sys 0.7492 reg -1348.7755 cost 0.9117 add viol 1976/23536
+C:\ReEDS\ReEDS\analysis\pesgm\09_constraints_check.py:414: RuntimeWarning: invalid value encountered in divide
+  max_rel_gap=float(np.nanmax(np.where(T_raw[:, k] != 0, gap / np.abs(T_raw[:, k]), 0)))))
+wrote results_09.md and data/09_constraints_check.json

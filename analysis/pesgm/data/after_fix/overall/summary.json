@@ -1,0 +1,78 @@
+{
+  "note": "Stored OOF predictions with the fixed Stage 2 constraint layer applied (analysis/pesgm/10_after_fix.py); scored against the raw ReEDS targets.",
+  "models": {
+    "ridge": {
+      "display_name": "Ridge Regression",
+      "oof_r2_mean": 0.46096288001722974,
+      "oof_r2_median": 0.45131957354629715,
+      "oof_r2_min": -0.013279429091548778,
+      "oof_r2_max": 0.9287117679903949,
+      "n_outputs_r2_above_0.9": 3,
+      "n_outputs_r2_above_0.95": 0
+    },
+    "lasso": {
+      "display_name": "Lasso Regression",
+      "oof_r2_mean": 0.46018409503417196,
+      "oof_r2_median": 0.45136361663026925,
+      "oof_r2_min": -0.006898967487127594,
+      "oof_r2_max": 0.9287097235759624,
+      "n_outputs_r2_above_0.9": 3,
+      "n_outputs_r2_above_0.95": 0
+    },
+    "knn": {
+      "display_name": "k-NN (k=3, baseline)",
+      "oof_r2_mean": 0.5951553557575795,
+      "oof_r2_median": 0.6954853588401404,
+      "oof_r2_min": -0.5571537040912697,
+      "oof_r2_max": 0.9165284644548902,
+      "n_outputs_r2_above_0.9": 7,
+      "n_outputs_r2_above_0.95": 0
+    },
+    "rf": {
+      "display_name": "Random Forest",
+      "oof_r2_mean": 0.7492322818759986,
+      "oof_r2_median": 0.881857893908228,
+      "oof_r2_min": -0.3619588637198803,
+      "oof_r2_max": 1.0,
+      "n_outputs_r2_above_0.9": 30,
+      "n_outputs_r2_above_0.95": 18
+    },
+    "xgb": {
+      "display_name": "XGBoost (Gradient Boosting, monotone)",
+      "oof_r2_mean": 0.5381913580529395,
+      "oof_r2_median": 0.8238764503608931,
+      "oof_r2_min": -2.1574732375369496,
+      "oof_r2_max": 0.9999998215072067,
+      "n_outputs_r2_above_0.9": 21,
+      "n_outputs_r2_above_0.95": 12
+    },
+    "nn": {
+      "display_name": "Neural Network (MLP (64, 32))",
+      "oof_r2_mean": 0.7190775943500123,
+      "oof_r2_median": 0.8730284962150119,
+      "oof_r2_min": -0.8109767674875039,
+      "oof_r2_max": 0.9875565987954925,
+      "n_outputs_r2_above_0.9": 29,
+      "n_outputs_r2_above_0.95": 17
+    },
+    "ngboost": {
+      "display_name": "NGBoost (distributional, UQ-native)",
+      "oof_r2_mean": 0.7131855164463275,
+      "oof_r2_median": 0.8189008165508725,
+      "oof_r2_min": -0.05846316833726184,
+      "oof_r2_max": 0.9999999846092462,
+      "n_outputs_r2_above_0.9": 23,
+      "n_outputs_r2_above_0.95": 16
+    }
+  },
+  "constant_outputs": {
+    "cap_distpv": 12994.628098999998,
+    "cap_hydED": 142.0,
+    "cap_hydEND": 405.8000000000002,
+    "cap_lfill-gas": 24.399999999999995,
+    "gen_Gas-CT_H2-CT": 0.0,
+    "gen_coal-igcc": 0.0,
+    "gen_coal-new": 0.0,
+    "gen_wind-ofs": 0.0
+  }
+}

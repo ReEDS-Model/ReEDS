@@ -1,0 +1,25 @@
+layer,column,reason,modelled
+system,gen_battery_li,storage net generation,True
+system,gen_pumped-hydro,storage net generation,True
+system,cost_inv_itc_payments_negative,'_negative' cost,True
+system,cost_op_co2_incentive_negative,'_negative' cost,True
+system,cost_op_ptc_payments_negative,'_negative' cost,True
+system,runtime_seconds,no cap_/tran_/gen_/cost_ prefix,True
+regional,gen_battery_li_p60,storage net generation,True
+regional,gen_battery_li_p61,storage net generation,True
+regional,gen_battery_li_p62,storage net generation,True
+regional,gen_battery_li_p63,storage net generation,True
+regional,gen_battery_li_p64,storage net generation,True
+regional,gen_battery_li_p65,storage net generation,True
+regional,gen_battery_li_p67,storage net generation,True
+regional,gen_pumped-hydro_p61,storage net generation,True
+regional,gen_pumped-hydro_p64,storage net generation,True
+regional,cost_inv_itc_payments_negative_p63,'_negative' cost,True
+regional,cost_op_co2_incentive_negative_p67,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p60,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p61,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p62,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p63,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p64,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p65,'_negative' cost,True
+regional,cost_op_ptc_payments_negative_p67,'_negative' cost,True

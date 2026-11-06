@@ -55,15 +55,24 @@ def conformal_widths(artifact: dict, alpha: float = 0.1) -> np.ndarray:
 
 def prediction_interval(
     artifact: dict, levels: dict[str, str], alpha: float = 0.1,
+    overall_pred: pd.Series | None = None, constants: dict | None = None,
+    floors: dict | None = None,
 ) -> tuple[pd.Series, pd.Series, pd.Series]:
     """Return (point, lower, upper) Series for a single design point.
 
     The interval is symmetric (point ± conformal half-width). For NGBoost
     artifacts you can also use :func:`ngboost_interval` which produces
     asymmetric bands from the predicted Normal distribution.
+
+    ``overall_pred``, ``constants`` and ``floors`` are passed to
+    :func:`predict` (pass ``overall_pred`` for a regional artifact). Outputs
+    that are not model columns (held constants, a derived regional
+    ``cost_total``) get a zero-width interval.
     """
-    point = predict(artifact, levels)
-    half = conformal_widths(artifact, alpha=alpha)
+    point = predict(artifact, levels, overall_pred=overall_pred, constants=constants,
+                    floors=floors)
+    half = pd.Series(conformal_widths(artifact, alpha=alpha), index=artifact["y_cols"])
+    half = half.reindex(point.index).fillna(0.0).to_numpy()
     lo = pd.Series(point.values - half, index=point.index, name="lower")
     hi = pd.Series(point.values + half, index=point.index, name="upper")
     return point, lo, hi

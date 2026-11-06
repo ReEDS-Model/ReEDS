@@ -1,0 +1,613 @@
+model,layer,predictions,gen,cap,cap_held_constant,cf_ceiling,n_eval,n_over,max_pred_cf
+Random Forest,system,stored OOF,gen_CoalOldScr,cap_CoalOldScr,False,0.5781273975561961,477,11,0.7820436069155746
+Random Forest,system,stored OOF,gen_CoalOldScr_coal-CCS_mod,cap_CoalOldScr_coal-CCS_mod,False,0.060000000185352224,473,16,0.06957722184024745
+Random Forest,system,stored OOF,gen_Gas-CC_Gas-CC-CCS_mod,cap_Gas-CC_Gas-CC-CCS_mod,False,0.8378873407730096,63,7,0.9581846360058005
+Random Forest,system,stored OOF,gen_Gas-CC_H2-CC,cap_Gas-CC_H2-CC,False,0.16397984885476358,142,26,0.576577096415773
+Random Forest,system,stored OOF,gen_H2-CC,cap_H2-CC,False,0.060000001546659396,180,28,0.11399999879789662
+Random Forest,system,stored OOF,gen_H2-CT,cap_H2-CT,False,0.060000000573171626,161,24,0.07572580344678678
+Random Forest,system,stored OOF,gen_coal-ccs_mod,cap_coal-ccs_mod,False,0.7674293248664392,469,0,0.7414996543647365
+Random Forest,system,stored OOF,gen_distpv,cap_distpv,True,0.26368391602911556,486,0,0.26368391602911495
+Random Forest,system,stored OOF,gen_gas-cc,cap_gas-cc,False,0.5557748436697498,486,0,0.5410715497192466
+Random Forest,system,stored OOF,gen_gas-cc-ccs_mod,cap_gas-cc-ccs_mod,False,0.8439753425213236,242,33,22.06512692130766
+Random Forest,system,stored OOF,gen_gas-ct,cap_gas-ct,False,0.3608157891889439,486,0,0.31363370300867105
+Random Forest,system,stored OOF,gen_hydED,cap_hydED,True,0.24092328767123286,486,0,0.24092328767123158
+Random Forest,system,stored OOF,gen_hydEND,cap_hydEND,True,0.12473585341318012,486,0,0.12473585341317978
+Random Forest,system,stored OOF,gen_hydUD,cap_hydUD,False,0.24092328767123286,43,14,0.304813173048773
+Random Forest,system,stored OOF,gen_lfill-gas,cap_lfill-gas,True,0.5253127928128977,486,0,0.5205234599458604
+Random Forest,system,stored OOF,gen_nuclear,cap_nuclear,False,0.9000863515184024,486,0,0.8961408893011716
+Random Forest,system,stored OOF,gen_nuclear-smr,cap_nuclear-smr,False,0.8664750950651069,73,4,1.5921304053158214
+Random Forest,system,stored OOF,gen_o-g-s,cap_o-g-s,False,0.2015969439433528,486,0,0.1470022696633081
+Random Forest,system,stored OOF,gen_upv,cap_upv,False,0.2842581185606715,486,7,0.31904910560229466
+Random Forest,system,stored OOF,gen_wind-ons,cap_wind-ons,False,0.48273002116938807,486,0,0.47777582489211673
+Random Forest,system,after fix,gen_CoalOldScr,cap_CoalOldScr,False,0.5781273975561961,477,11,0.7820436069155746
+Random Forest,system,after fix,gen_CoalOldScr_coal-CCS_mod,cap_CoalOldScr_coal-CCS_mod,False,0.060000000185352224,473,16,0.06957722184024745
+Random Forest,system,after fix,gen_Gas-CC_Gas-CC-CCS_mod,cap_Gas-CC_Gas-CC-CCS_mod,False,0.8378873407730096,63,7,0.9581846360058005
+Random Forest,system,after fix,gen_Gas-CC_H2-CC,cap_Gas-CC_H2-CC,False,0.16397984885476358,142,26,0.576577096415773
+Random Forest,system,after fix,gen_H2-CC,cap_H2-CC,False,0.060000001546659396,180,28,0.11399999879789662
+Random Forest,system,after fix,gen_H2-CT,cap_H2-CT,False,0.060000000573171626,161,24,0.07572580344678678
+Random Forest,system,after fix,gen_coal-ccs_mod,cap_coal-ccs_mod,False,0.7674293248664392,469,0,0.7414996543647365
+Random Forest,system,after fix,gen_distpv,cap_distpv,True,0.26368391602911556,486,0,0.26368391602911495
+Random Forest,system,after fix,gen_gas-cc,cap_gas-cc,False,0.5557748436697498,486,0,0.5410715497192466
+Random Forest,system,after fix,gen_gas-cc-ccs_mod,cap_gas-cc-ccs_mod,False,0.8439753425213236,242,33,22.06512692130766
+Random Forest,system,after fix,gen_gas-ct,cap_gas-ct,False,0.3608157891889439,486,0,0.31363370300867105
+Random Forest,system,after fix,gen_hydED,cap_hydED,True,0.24092328767123286,486,0,0.24092328767123158
+Random Forest,system,after fix,gen_hydEND,cap_hydEND,True,0.12473585341318012,486,0,0.12473585341317978
+Random Forest,system,after fix,gen_hydUD,cap_hydUD,False,0.24092328767123286,43,14,0.304813173048773
+Random Forest,system,after fix,gen_lfill-gas,cap_lfill-gas,True,0.5253127928128977,486,0,0.5205234599458604
+Random Forest,system,after fix,gen_nuclear,cap_nuclear,False,0.9000863515184024,486,0,0.8961408893011716
+Random Forest,system,after fix,gen_nuclear-smr,cap_nuclear-smr,False,0.8664750950651069,73,4,1.5921304053158214
+Random Forest,system,after fix,gen_o-g-s,cap_o-g-s,False,0.2015969439433528,486,0,0.1470022696633081
+Random Forest,system,after fix,gen_upv,cap_upv,False,0.2842581185606715,486,7,0.31904910560229466
+Random Forest,system,after fix,gen_wind-ons,cap_wind-ons,False,0.48273002116938807,486,0,0.47777582489211673
+Random Forest,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p63,cap_CoalOldScr_coal-CCS_mod_p63,False,0.06000000003522498,295,15,0.07175526847096296
+Random Forest,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p64,cap_CoalOldScr_coal-CCS_mod_p64,False,0.060000005075829733,410,44,0.07578947106200361
+Random Forest,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p65,cap_CoalOldScr_coal-CCS_mod_p65,False,0.060000000264293335,226,50,0.07402816814434188
+Random Forest,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p67,cap_CoalOldScr_coal-CCS_mod_p67,False,0.06000000028186944,472,9,0.07943456954038806
+Random Forest,regional,stored OOF,gen_CoalOldScr_p63,cap_CoalOldScr_p63,False,0.33345625051277233,289,26,1.0329992174643565
+Random Forest,regional,stored OOF,gen_CoalOldScr_p64,cap_CoalOldScr_p64,False,0.5708502345985694,289,6,1.4873464840085677
+Random Forest,regional,stored OOF,gen_CoalOldScr_p65,cap_CoalOldScr_p65,False,0.06000000034615166,192,31,0.10284844424986885
+Random Forest,regional,stored OOF,gen_CoalOldScr_p67,cap_CoalOldScr_p67,False,0.5783109586723466,480,9,0.683447869949761
+Random Forest,regional,stored OOF,gen_Gas-CC_Gas-CC-CCS_mod_p67,cap_Gas-CC_Gas-CC-CCS_mod_p67,False,0.8378873407730096,63,7,0.9581846360058005
+Random Forest,regional,stored OOF,gen_Gas-CC_H2-CC_p60,cap_Gas-CC_H2-CC_p60,False,0.060000004225548964,86,12,0.06875060141062324
+Random Forest,regional,stored OOF,gen_Gas-CC_H2-CC_p62,cap_Gas-CC_H2-CC_p62,False,0.06000000098792191,120,19,0.12530835790567976
+Random Forest,regional,stored OOF,gen_Gas-CC_H2-CC_p63,cap_Gas-CC_H2-CC_p63,False,0.059999999575482486,15,0,0.060000003300057204
+Random Forest,regional,stored OOF,gen_Gas-CC_H2-CC_p64,cap_Gas-CC_H2-CC_p64,False,0.13468024615952043,93,22,0.3464662366213629
+Random Forest,regional,stored OOF,gen_Gas-CC_H2-CC_p65,cap_Gas-CC_H2-CC_p65,False,0.21657464382976957,79,25,1.4555742735392592
+Random Forest,regional,stored OOF,gen_H2-CC_p60,cap_H2-CC_p60,False,0.06000000445499093,126,30,0.0728222876308761
+Random Forest,regional,stored OOF,gen_H2-CC_p61,cap_H2-CC_p61,False,0.06000000007992296,122,21,0.07817729544679278
+Random Forest,regional,stored OOF,gen_H2-CC_p62,cap_H2-CC_p62,False,0.05999999976636162,33,2,0.06106781882758181
+Random Forest,regional,stored OOF,gen_H2-CC_p65,cap_H2-CC_p65,False,0.06000000008102949,50,1,0.06091000000675166
+Random Forest,regional,stored OOF,gen_H2-CT_p60,cap_H2-CT_p60,False,0.06000001088284522,164,30,0.07333333893327171
+Random Forest,regional,stored OOF,gen_H2-CT_p61,cap_H2-CT_p61,False,0.06000000044156968,162,25,0.1523924005039705
+Random Forest,regional,stored OOF,gen_H2-CT_p62,cap_H2-CT_p62,False,0.060000007470690224,106,19,0.06385616701885509
+Random Forest,regional,stored OOF,gen_H2-CT_p63,cap_H2-CT_p63,False,0.060000000049891734,82,4,0.06946556959299835
+Random Forest,regional,stored OOF,gen_H2-CT_p64,cap_H2-CT_p64,False,0.06000000068051731,114,14,0.0725185634856066
+Random Forest,regional,stored OOF,gen_H2-CT_p65,cap_H2-CT_p65,False,0.060000000086420834,116,18,0.08102515865086982
+Random Forest,regional,stored OOF,gen_H2-CT_p67,cap_H2-CT_p67,False,0.05999999996115082,36,0,0.06000000256331754
+Random Forest,regional,stored OOF,gen_coal-ccs_mod_p67,cap_coal-ccs_mod_p67,False,0.7674293248664392,469,0,0.7414996543647365
+Random Forest,regional,stored OOF,gen_distpv_p60,cap_distpv_p60,True,0.2586466167246349,486,0,0.2586466167246347
+Random Forest,regional,stored OOF,gen_distpv_p61,cap_distpv_p61,True,0.27093018828748083,486,0,0.2709301882874806
+Random Forest,regional,stored OOF,gen_distpv_p62,cap_distpv_p62,True,0.2776867121180437,486,0,0.27768671211804347
+Random Forest,regional,stored OOF,gen_distpv_p63,cap_distpv_p63,True,0.2691827328660569,486,0,0.26918273286605715
+Random Forest,regional,stored OOF,gen_distpv_p64,cap_distpv_p64,True,0.26470283230968855,486,0,0.264702832309688
+Random Forest,regional,stored OOF,gen_distpv_p65,cap_distpv_p65,True,0.28118245204489667,486,0,0.281182452044896
+Random Forest,regional,stored OOF,gen_distpv_p67,cap_distpv_p67,True,0.2820563870056375,486,0,0.2820563870056367
+Random Forest,regional,stored OOF,gen_gas-cc-ccs_mod_p63,cap_gas-cc-ccs_mod_p63,False,0.8310000000493374,142,14,19.18769993221676
+Random Forest,regional,stored OOF,gen_gas-cc-ccs_mod_p64,cap_gas-cc-ccs_mod_p64,False,0.8309999998588649,166,19,10.98831332845115
+Random Forest,regional,stored OOF,gen_gas-cc-ccs_mod_p65,cap_gas-cc-ccs_mod_p65,False,0.8310000000072312,71,7,4.490248252776008
+Random Forest,regional,stored OOF,gen_gas-cc-ccs_mod_p67,cap_gas-cc-ccs_mod_p67,False,0.8439753425213236,243,30,25.345793765627022
+Random Forest,regional,stored OOF,gen_gas-cc_p60,cap_gas-cc_p60,False,0.4000000058152659,486,109,0.7818644580716948
+Random Forest,regional,stored OOF,gen_gas-cc_p61,cap_gas-cc_p61,False,0.40000000081455966,486,81,0.6471075965492896
+Random Forest,regional,stored OOF,gen_gas-cc_p62,cap_gas-cc_p62,False,0.6529715122273262,486,0,0.42262018381212113
+Random Forest,regional,stored OOF,gen_gas-cc_p63,cap_gas-cc_p63,False,0.7116369663745759,486,0,0.68043153181812
+Random Forest,regional,stored OOF,gen_gas-cc_p64,cap_gas-cc_p64,False,0.6964488054807028,486,0,0.6229760155034934
+Random Forest,regional,stored OOF,gen_gas-cc_p65,cap_gas-cc_p65,False,0.7879416776939874,486,0,0.719468449925242
+Random Forest,regional,stored OOF,gen_gas-cc_p67,cap_gas-cc_p67,False,0.47625308098319,486,0,0.47600242147614524
+Random Forest,regional,stored OOF,gen_gas-ct_p60,cap_gas-ct_p60,False,0.20729153297763153,486,0,0.15123767927298296
+Random Forest,regional,stored OOF,gen_gas-ct_p61,cap_gas-ct_p61,False,0.22883417335747386,486,2,0.35050279246688204
+Random Forest,regional,stored OOF,gen_gas-ct_p62,cap_gas-ct_p62,False,0.11936354086837866,486,0,0.08179945177072251
+Random Forest,regional,stored OOF,gen_gas-ct_p63,cap_gas-ct_p63,False,0.4083599973247748,486,5,0.556482676595389
+Random Forest,regional,stored OOF,gen_gas-ct_p64,cap_gas-ct_p64,False,0.4035786308571739,486,1,0.4497142266505241
+Random Forest,regional,stored OOF,gen_gas-ct_p65,cap_gas-ct_p65,False,0.5074881304504071,486,1,0.523321447735261
+Random Forest,regional,stored OOF,gen_gas-ct_p67,cap_gas-ct_p67,False,0.49215437245798005,486,5,0.5556622343689688
+Random Forest,regional,stored OOF,gen_hydED_p63,cap_hydED_p63,True,0.24092328767123286,486,0,0.24092328767123158
+Random Forest,regional,stored OOF,gen_hydEND_p61,cap_hydEND_p61,True,0.18430136986301368,486,0,0.1843013698630135
+Random Forest,regional,stored OOF,gen_hydEND_p63,cap_hydEND_p63,True,0.1986109589041096,486,0,0.19861095890410913
+Random Forest,regional,stored OOF,gen_hydEND_p64,cap_hydEND_p64,True,0.09375616438356164,486,0,0.09375616438356188
+Random Forest,regional,stored OOF,gen_hydEND_p65,cap_hydEND_p65,True,0.2890986301369863,486,0,0.2890986301369862
+Random Forest,regional,stored OOF,gen_hydUD_p63,cap_hydUD_p63,False,0.24092328767123286,43,14,0.304813173048773
+Random Forest,regional,stored OOF,gen_lfill-gas_p63,cap_lfill-gas_p63,True,0.5259563506827777,486,0,0.521775819379036
+Random Forest,regional,stored OOF,gen_lfill-gas_p64,cap_lfill-gas_p64,True,0.5240300087614155,486,0,0.5177940300824448
+Random Forest,regional,stored OOF,gen_lfill-gas_p65,cap_lfill-gas_p65,True,0.5259563506928043,486,0,0.5198218904510918
+Random Forest,regional,stored OOF,gen_nuclear-smr_p67,cap_nuclear-smr_p67,False,0.8664750950651069,73,4,1.5921304053158214
+Random Forest,regional,stored OOF,gen_nuclear_p63,cap_nuclear_p63,True,0.8989354839041096,486,0,0.895506088710224
+Random Forest,regional,stored OOF,gen_nuclear_p65,cap_nuclear_p65,False,0.9012434787671234,486,0,0.8967323831486939
+Random Forest,regional,stored OOF,gen_o-g-s_p62,cap_o-g-s_p62,False,0.6115863729452055,417,12,2.810502024651402
+Random Forest,regional,stored OOF,gen_o-g-s_p63,cap_o-g-s_p63,False,0.12987026044511016,486,0,0.09623962408504247
+Random Forest,regional,stored OOF,gen_o-g-s_p64,cap_o-g-s_p64,False,0.5162736287671232,486,0,0.3294937247729679
+Random Forest,regional,stored OOF,gen_o-g-s_p65,cap_o-g-s_p65,False,0.5578105067714314,486,2,0.6425958223128773
+Random Forest,regional,stored OOF,gen_o-g-s_p67,cap_o-g-s_p67,False,0.6183015013686355,486,16,1.1091077392142121
+Random Forest,regional,stored OOF,gen_upv_p63,cap_upv_p63,False,0.2850635926205161,486,0,0.2866944407997974
+Random Forest,regional,stored OOF,gen_upv_p61,cap_upv_p61,False,0.2910684927291097,486,7,0.356644186630099
+Random Forest,regional,stored OOF,gen_upv_p64,cap_upv_p64,False,0.3193388254707671,486,6,0.36293015551948676
+Random Forest,regional,stored OOF,gen_upv_p65,cap_upv_p65,False,0.3136250862718531,486,9,0.35135526449806115
+Random Forest,regional,stored OOF,gen_upv_p67,cap_upv_p67,False,0.33403442253528587,486,0,0.3322110339462277
+Random Forest,regional,stored OOF,gen_upv_p60,cap_upv_p60,False,0.2738100126505461,486,0,0.27322516340363684
+Random Forest,regional,stored OOF,gen_upv_p62,cap_upv_p62,False,0.3116712953363026,486,0,0.30315937679392246
+Random Forest,regional,stored OOF,gen_wind-ons_p60,cap_wind-ons_p60,False,0.4805072033050991,486,0,0.4677538355213374
+Random Forest,regional,stored OOF,gen_wind-ons_p61,cap_wind-ons_p61,False,0.5445631517041357,486,0,0.5427532925986762
+Random Forest,regional,stored OOF,gen_wind-ons_p62,cap_wind-ons_p62,False,0.5555353630952831,486,3,0.5851563898265657
+Random Forest,regional,stored OOF,gen_wind-ons_p63,cap_wind-ons_p63,False,0.44028814484245066,486,1,0.4485713183266283
+Random Forest,regional,stored OOF,gen_wind-ons_p64,cap_wind-ons_p64,False,0.5456515213717167,486,0,0.5486980800981331
+Random Forest,regional,stored OOF,gen_wind-ons_p65,cap_wind-ons_p65,False,0.43452423120163325,486,5,0.4579735582096215
+Random Forest,regional,stored OOF,gen_wind-ons_p67,cap_wind-ons_p67,False,0.27965358799190076,486,4,0.2997650374565323
+Random Forest,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p63,cap_CoalOldScr_coal-CCS_mod_p63,False,0.06000000003522498,293,18,0.0715573457671544
+Random Forest,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p64,cap_CoalOldScr_coal-CCS_mod_p64,False,0.060000005075829733,409,45,0.07846502591991265
+Random Forest,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p65,cap_CoalOldScr_coal-CCS_mod_p65,False,0.060000000264293335,227,49,0.0741336422653737
+Random Forest,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p67,cap_CoalOldScr_coal-CCS_mod_p67,False,0.06000000028186944,469,32,0.06957722184024745
+Random Forest,regional,after fix,gen_CoalOldScr_p63,cap_CoalOldScr_p63,False,0.33345625051277233,286,21,1.3056514179717293
+Random Forest,regional,after fix,gen_CoalOldScr_p64,cap_CoalOldScr_p64,False,0.5708502345985694,280,8,1.5371904702227173
+Random Forest,regional,after fix,gen_CoalOldScr_p65,cap_CoalOldScr_p65,False,0.06000000034615166,187,86,0.27884085380418994
+Random Forest,regional,after fix,gen_CoalOldScr_p67,cap_CoalOldScr_p67,False,0.5783109586723466,472,15,1.0055420860747932
+Random Forest,regional,after fix,gen_Gas-CC_Gas-CC-CCS_mod_p67,cap_Gas-CC_Gas-CC-CCS_mod_p67,False,0.8378873407730096,63,7,0.9581846360058005
+Random Forest,regional,after fix,gen_Gas-CC_H2-CC_p60,cap_Gas-CC_H2-CC_p60,False,0.060000004225548964,84,35,0.1499866319321815
+Random Forest,regional,after fix,gen_Gas-CC_H2-CC_p62,cap_Gas-CC_H2-CC_p62,False,0.06000000098792191,112,49,1.3284587771037952
+Random Forest,regional,after fix,gen_Gas-CC_H2-CC_p63,cap_Gas-CC_H2-CC_p63,False,0.059999999575482486,15,5,0.07303957455087834
+Random Forest,regional,after fix,gen_Gas-CC_H2-CC_p64,cap_Gas-CC_H2-CC_p64,False,0.13468024615952043,83,19,0.6374686832905696
+Random Forest,regional,after fix,gen_Gas-CC_H2-CC_p65,cap_Gas-CC_H2-CC_p65,False,0.21657464382976957,76,20,1.1717294517658454
+Random Forest,regional,after fix,gen_H2-CC_p60,cap_H2-CC_p60,False,0.06000000445499093,131,36,0.07407813724161066
+Random Forest,regional,after fix,gen_H2-CC_p61,cap_H2-CC_p61,False,0.06000000007992296,126,18,0.09046006334678951
+Random Forest,regional,after fix,gen_H2-CC_p62,cap_H2-CC_p62,False,0.05999999976636162,33,2,0.060840262350492315
+Random Forest,regional,after fix,gen_H2-CC_p65,cap_H2-CC_p65,False,0.06000000008102949,46,8,0.11399999879789662
+Random Forest,regional,after fix,gen_H2-CT_p60,cap_H2-CT_p60,False,0.06000001088284522,143,23,0.07333333893327171
+Random Forest,regional,after fix,gen_H2-CT_p61,cap_H2-CT_p61,False,0.06000000044156968,149,31,0.1523924005039705
+Random Forest,regional,after fix,gen_H2-CT_p62,cap_H2-CT_p62,False,0.060000007470690224,103,25,0.0717172826323983
+Random Forest,regional,after fix,gen_H2-CT_p63,cap_H2-CT_p63,False,0.060000000049891734,67,4,0.06962003756738548
+Random Forest,regional,after fix,gen_H2-CT_p64,cap_H2-CT_p64,False,0.06000000068051731,94,11,0.06673530845934551
+Random Forest,regional,after fix,gen_H2-CT_p65,cap_H2-CT_p65,False,0.060000000086420834,105,17,0.08493291316717673
+Random Forest,regional,after fix,gen_H2-CT_p67,cap_H2-CT_p67,False,0.05999999996115082,30,1,0.06478163842570352
+Random Forest,regional,after fix,gen_coal-ccs_mod_p67,cap_coal-ccs_mod_p67,False,0.7674293248664392,469,0,0.7414996543647365
+Random Forest,regional,after fix,gen_distpv_p60,cap_distpv_p60,True,0.2586466167246349,486,0,0.2586466167246347
+Random Forest,regional,after fix,gen_distpv_p61,cap_distpv_p61,True,0.27093018828748083,486,0,0.2709301882874806
+Random Forest,regional,after fix,gen_distpv_p62,cap_distpv_p62,True,0.2776867121180437,486,0,0.27768671211804347
+Random Forest,regional,after fix,gen_distpv_p63,cap_distpv_p63,True,0.2691827328660569,486,0,0.26918273286605715
+Random Forest,regional,after fix,gen_distpv_p64,cap_distpv_p64,True,0.26470283230968855,486,0,0.264702832309688
+Random Forest,regional,after fix,gen_distpv_p65,cap_distpv_p65,True,0.28118245204489667,486,0,0.281182452044896
+Random Forest,regional,after fix,gen_distpv_p67,cap_distpv_p67,True,0.2820563870056375,486,0,0.2820563870056367
+Random Forest,regional,after fix,gen_gas-cc-ccs_mod_p63,cap_gas-cc-ccs_mod_p63,False,0.8310000000493374,141,15,19.30520797465892
+Random Forest,regional,after fix,gen_gas-cc-ccs_mod_p64,cap_gas-cc-ccs_mod_p64,False,0.8309999998588649,166,20,11.000447434076031
+Random Forest,regional,after fix,gen_gas-cc-ccs_mod_p65,cap_gas-cc-ccs_mod_p65,False,0.8310000000072312,70,7,4.421231578685483
+Random Forest,regional,after fix,gen_gas-cc-ccs_mod_p67,cap_gas-cc-ccs_mod_p67,False,0.8439753425213236,243,40,35.77753162749411
+Random Forest,regional,after fix,gen_gas-cc_p60,cap_gas-cc_p60,False,0.4000000058152659,486,118,0.7945995332543756
+Random Forest,regional,after fix,gen_gas-cc_p61,cap_gas-cc_p61,False,0.40000000081455966,486,91,0.6493464145580641
+Random Forest,regional,after fix,gen_gas-cc_p62,cap_gas-cc_p62,False,0.6529715122273262,486,0,0.4201189425562727
+Random Forest,regional,after fix,gen_gas-cc_p63,cap_gas-cc_p63,False,0.7116369663745759,486,0,0.709479958594775
+Random Forest,regional,after fix,gen_gas-cc_p64,cap_gas-cc_p64,False,0.6964488054807028,486,0,0.6225233272470049
+Random Forest,regional,after fix,gen_gas-cc_p65,cap_gas-cc_p65,False,0.7879416776939874,486,0,0.6955038679562405
+Random Forest,regional,after fix,gen_gas-cc_p67,cap_gas-cc_p67,False,0.47625308098319,486,0,0.4724527303622618
+Random Forest,regional,after fix,gen_gas-ct_p60,cap_gas-ct_p60,False,0.20729153297763153,486,0,0.1366034212432345
+Random Forest,regional,after fix,gen_gas-ct_p61,cap_gas-ct_p61,False,0.22883417335747386,486,2,0.34008521851093665
+Random Forest,regional,after fix,gen_gas-ct_p62,cap_gas-ct_p62,False,0.11936354086837866,486,0,0.0763015682499712
+Random Forest,regional,after fix,gen_gas-ct_p63,cap_gas-ct_p63,False,0.4083599973247748,486,4,0.5160288568013753
+Random Forest,regional,after fix,gen_gas-ct_p64,cap_gas-ct_p64,False,0.4035786308571739,486,0,0.3829892894580221
+Random Forest,regional,after fix,gen_gas-ct_p65,cap_gas-ct_p65,False,0.5074881304504071,486,0,0.44567527009107466
+Random Forest,regional,after fix,gen_gas-ct_p67,cap_gas-ct_p67,False,0.49215437245798005,486,7,0.6178041592428405
+Random Forest,regional,after fix,gen_hydED_p63,cap_hydED_p63,True,0.24092328767123286,486,0,0.24092328767123158
+Random Forest,regional,after fix,gen_hydEND_p61,cap_hydEND_p61,True,0.18430136986301368,486,0,0.1843013698630135
+Random Forest,regional,after fix,gen_hydEND_p63,cap_hydEND_p63,True,0.1986109589041096,486,0,0.19861270050305135
+Random Forest,regional,after fix,gen_hydEND_p64,cap_hydEND_p64,True,0.09375616438356164,486,0,0.09375616438356188
+Random Forest,regional,after fix,gen_hydEND_p65,cap_hydEND_p65,True,0.2890986301369863,486,0,0.2890986301369862
+Random Forest,regional,after fix,gen_hydUD_p63,cap_hydUD_p63,False,0.24092328767123286,43,14,0.304813173048773
+Random Forest,regional,after fix,gen_lfill-gas_p63,cap_lfill-gas_p63,True,0.5259563506827777,486,0,0.5223181815147965
+Random Forest,regional,after fix,gen_lfill-gas_p64,cap_lfill-gas_p64,True,0.5240300087614155,486,0,0.518332253330072
+Random Forest,regional,after fix,gen_lfill-gas_p65,cap_lfill-gas_p65,True,0.5259563506928043,486,0,0.5202658055140641
+Random Forest,regional,after fix,gen_nuclear-smr_p67,cap_nuclear-smr_p67,False,0.8664750950651069,73,4,1.5921304053158214
+Random Forest,regional,after fix,gen_nuclear_p63,cap_nuclear_p63,True,0.8989354839041096,486,0,0.8956207705477827
+Random Forest,regional,after fix,gen_nuclear_p65,cap_nuclear_p65,False,0.9012434787671234,486,0,0.896865867826096
+Random Forest,regional,after fix,gen_o-g-s_p62,cap_o-g-s_p62,False,0.6115863729452055,417,12,2.543992448838074
+Random Forest,regional,after fix,gen_o-g-s_p63,cap_o-g-s_p63,False,0.12987026044511016,486,0,0.09699951636040526
+Random Forest,regional,after fix,gen_o-g-s_p64,cap_o-g-s_p64,False,0.5162736287671232,486,0,0.32318684112918244
+Random Forest,regional,after fix,gen_o-g-s_p65,cap_o-g-s_p65,False,0.5578105067714314,486,3,0.6436812122937771
+Random Forest,regional,after fix,gen_o-g-s_p67,cap_o-g-s_p67,False,0.6183015013686355,486,15,1.103271993602021
+Random Forest,regional,after fix,gen_upv_p63,cap_upv_p63,False,0.2850635926205161,486,4,0.29638887896043725
+Random Forest,regional,after fix,gen_upv_p61,cap_upv_p61,False,0.2910684927291097,486,7,0.34741567946291063
+Random Forest,regional,after fix,gen_upv_p64,cap_upv_p64,False,0.3193388254707671,486,7,0.3530937991737608
+Random Forest,regional,after fix,gen_upv_p65,cap_upv_p65,False,0.3136250862718531,486,7,0.36384395456961083
+Random Forest,regional,after fix,gen_upv_p67,cap_upv_p67,False,0.33403442253528587,486,1,0.33867173682215646
+Random Forest,regional,after fix,gen_upv_p60,cap_upv_p60,False,0.2738100126505461,486,1,0.28115123702996325
+Random Forest,regional,after fix,gen_upv_p62,cap_upv_p62,False,0.3116712953363026,486,0,0.3025859698586031
+Random Forest,regional,after fix,gen_wind-ons_p60,cap_wind-ons_p60,False,0.4805072033050991,486,0,0.4769108006533925
+Random Forest,regional,after fix,gen_wind-ons_p61,cap_wind-ons_p61,False,0.5445631517041357,486,4,0.571843769917296
+Random Forest,regional,after fix,gen_wind-ons_p62,cap_wind-ons_p62,False,0.5555353630952831,486,2,0.5724833810408447
+Random Forest,regional,after fix,gen_wind-ons_p63,cap_wind-ons_p63,False,0.44028814484245066,486,2,0.4554821626326314
+Random Forest,regional,after fix,gen_wind-ons_p64,cap_wind-ons_p64,False,0.5456515213717167,486,1,0.5542745848721535
+Random Forest,regional,after fix,gen_wind-ons_p65,cap_wind-ons_p65,False,0.43452423120163325,486,4,0.45097213782152995
+Random Forest,regional,after fix,gen_wind-ons_p67,cap_wind-ons_p67,False,0.27965358799190076,486,16,0.30623229535010166
+MLP,system,stored OOF,gen_CoalOldScr,cap_CoalOldScr,False,0.5781273975561961,420,30,10.194106499895767
+MLP,system,stored OOF,gen_CoalOldScr_coal-CCS_mod,cap_CoalOldScr_coal-CCS_mod,False,0.060000000185352224,434,0,0.060000022588621305
+MLP,system,stored OOF,gen_Gas-CC_Gas-CC-CCS_mod,cap_Gas-CC_Gas-CC-CCS_mod,False,0.8378873407730096,233,92,20.465133100473807
+MLP,system,stored OOF,gen_Gas-CC_H2-CC,cap_Gas-CC_H2-CC,False,0.16397984885476358,251,38,2.1167549922405047
+MLP,system,stored OOF,gen_H2-CC,cap_H2-CC,False,0.060000001546659396,270,0,0.06000000614421923
+MLP,system,stored OOF,gen_H2-CT,cap_H2-CT,False,0.060000000573171626,292,0,0.06000001015564927
+MLP,system,stored OOF,gen_coal-ccs_mod,cap_coal-ccs_mod,False,0.7674293248664392,435,16,28.99493965831388
+MLP,system,stored OOF,gen_distpv,cap_distpv,True,0.26368391602911556,486,8,0.2668395899515673
+MLP,system,stored OOF,gen_gas-cc,cap_gas-cc,False,0.5557748436697498,486,0,0.5518174774158813
+MLP,system,stored OOF,gen_gas-cc-ccs_mod,cap_gas-cc-ccs_mod,False,0.8439753425213236,351,44,151.67628828501063
+MLP,system,stored OOF,gen_gas-ct,cap_gas-ct,False,0.3608157891889439,486,0,0.34945088447219147
+MLP,system,stored OOF,gen_hydED,cap_hydED,True,0.24092328767123286,486,23,0.2475721810385716
+MLP,system,stored OOF,gen_hydEND,cap_hydEND,True,0.12473585341318012,486,0,0.12475333493982346
+MLP,system,stored OOF,gen_hydUD,cap_hydUD,False,0.24092328767123286,29,8,0.31647446549911773
+MLP,system,stored OOF,gen_lfill-gas,cap_lfill-gas,True,0.5253127928128977,486,5,0.5397497653348604
+MLP,system,stored OOF,gen_nuclear,cap_nuclear,False,0.9000863515184024,486,0,0.9042911901457802
+MLP,system,stored OOF,gen_nuclear-smr,cap_nuclear-smr,False,0.8664750950651069,257,108,17.23648674687643
+MLP,system,stored OOF,gen_o-g-s,cap_o-g-s,False,0.2015969439433528,479,6,1.4606186291847176
+MLP,system,stored OOF,gen_upv,cap_upv,False,0.2842581185606715,486,2,0.2923711817986067
+MLP,system,stored OOF,gen_wind-ons,cap_wind-ons,False,0.48273002116938807,486,1,0.49153649176071534
+MLP,system,after fix,gen_CoalOldScr,cap_CoalOldScr,False,0.5781273975561961,420,30,10.194106499895767
+MLP,system,after fix,gen_CoalOldScr_coal-CCS_mod,cap_CoalOldScr_coal-CCS_mod,False,0.060000000185352224,434,0,0.060000022588621305
+MLP,system,after fix,gen_Gas-CC_Gas-CC-CCS_mod,cap_Gas-CC_Gas-CC-CCS_mod,False,0.8378873407730096,233,92,20.465133100473807
+MLP,system,after fix,gen_Gas-CC_H2-CC,cap_Gas-CC_H2-CC,False,0.16397984885476358,251,38,2.1167549922405047
+MLP,system,after fix,gen_H2-CC,cap_H2-CC,False,0.060000001546659396,270,0,0.06000000614421923
+MLP,system,after fix,gen_H2-CT,cap_H2-CT,False,0.060000000573171626,292,0,0.06000001015564927
+MLP,system,after fix,gen_coal-ccs_mod,cap_coal-ccs_mod,False,0.7674293248664392,435,16,28.99493965831388
+MLP,system,after fix,gen_distpv,cap_distpv,True,0.26368391602911556,486,8,0.2668395899515673
+MLP,system,after fix,gen_gas-cc,cap_gas-cc,False,0.5557748436697498,486,0,0.5518174774158813
+MLP,system,after fix,gen_gas-cc-ccs_mod,cap_gas-cc-ccs_mod,False,0.8439753425213236,351,44,151.67628828501063
+MLP,system,after fix,gen_gas-ct,cap_gas-ct,False,0.3608157891889439,486,0,0.34945088447219147
+MLP,system,after fix,gen_hydED,cap_hydED,True,0.24092328767123286,486,23,0.2475721810385716
+MLP,system,after fix,gen_hydEND,cap_hydEND,True,0.12473585341318012,486,0,0.12475333493982346
+MLP,system,after fix,gen_hydUD,cap_hydUD,False,0.24092328767123286,29,8,0.31647446549911773
+MLP,system,after fix,gen_lfill-gas,cap_lfill-gas,True,0.5253127928128977,486,5,0.5397497653348604
+MLP,system,after fix,gen_nuclear,cap_nuclear,False,0.9000863515184024,486,0,0.9042911901457802
+MLP,system,after fix,gen_nuclear-smr,cap_nuclear-smr,False,0.8664750950651069,257,108,17.23648674687643
+MLP,system,after fix,gen_o-g-s,cap_o-g-s,False,0.2015969439433528,479,6,1.4606186291847176
+MLP,system,after fix,gen_upv,cap_upv,False,0.2842581185606715,486,2,0.2923711817986067
+MLP,system,after fix,gen_wind-ons,cap_wind-ons,False,0.48273002116938807,486,1,0.49153649176071534
+MLP,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p63,cap_CoalOldScr_coal-CCS_mod_p63,False,0.06000000003522498,319,0,0.06000000882603677
+MLP,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p64,cap_CoalOldScr_coal-CCS_mod_p64,False,0.060000005075829733,352,0,0.0600000510807939
+MLP,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p65,cap_CoalOldScr_coal-CCS_mod_p65,False,0.060000000264293335,312,0,0.06000003634974602
+MLP,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p67,cap_CoalOldScr_coal-CCS_mod_p67,False,0.06000000028186944,437,0,0.060000138610161326
+MLP,regional,stored OOF,gen_CoalOldScr_p63,cap_CoalOldScr_p63,False,0.33345625051277233,263,22,2.8263444334104944
+MLP,regional,stored OOF,gen_CoalOldScr_p64,cap_CoalOldScr_p64,False,0.5708502345985694,288,38,4.8377014713715125
+MLP,regional,stored OOF,gen_CoalOldScr_p65,cap_CoalOldScr_p65,False,0.06000000034615166,234,0,0.06000002032593573
+MLP,regional,stored OOF,gen_CoalOldScr_p67,cap_CoalOldScr_p67,False,0.5783109586723466,415,31,5.014917159849645
+MLP,regional,stored OOF,gen_Gas-CC_Gas-CC-CCS_mod_p67,cap_Gas-CC_Gas-CC-CCS_mod_p67,False,0.8378873407730096,233,92,20.465133100473807
+MLP,regional,stored OOF,gen_Gas-CC_H2-CC_p60,cap_Gas-CC_H2-CC_p60,False,0.060000004225548964,239,6,0.06369879671227026
+MLP,regional,stored OOF,gen_Gas-CC_H2-CC_p62,cap_Gas-CC_H2-CC_p62,False,0.06000000098792191,263,104,1.6407278146875302
+MLP,regional,stored OOF,gen_Gas-CC_H2-CC_p63,cap_Gas-CC_H2-CC_p63,False,0.059999999575482486,11,0,0.06000000348661857
+MLP,regional,stored OOF,gen_Gas-CC_H2-CC_p64,cap_Gas-CC_H2-CC_p64,False,0.13468024615952043,235,67,1.1114176537593206
+MLP,regional,stored OOF,gen_Gas-CC_H2-CC_p65,cap_Gas-CC_H2-CC_p65,False,0.21657464382976957,229,48,1.9330332252297424
+MLP,regional,stored OOF,gen_H2-CC_p60,cap_H2-CC_p60,False,0.06000000445499093,216,0,0.06000003983342529
+MLP,regional,stored OOF,gen_H2-CC_p61,cap_H2-CC_p61,False,0.06000000007992296,252,0,0.060000004639711335
+MLP,regional,stored OOF,gen_H2-CC_p62,cap_H2-CC_p62,False,0.05999999976636162,30,0,0.060000009344436715
+MLP,regional,stored OOF,gen_H2-CC_p65,cap_H2-CC_p65,False,0.06000000008102949,172,0,0.06000000589249698
+MLP,regional,stored OOF,gen_H2-CT_p60,cap_H2-CT_p60,False,0.06000001088284522,271,0,0.0600000142291676
+MLP,regional,stored OOF,gen_H2-CT_p61,cap_H2-CT_p61,False,0.06000000044156968,284,0,0.06000002392960695
+MLP,regional,stored OOF,gen_H2-CT_p62,cap_H2-CT_p62,False,0.060000007470690224,230,0,0.060000006078852454
+MLP,regional,stored OOF,gen_H2-CT_p63,cap_H2-CT_p63,False,0.060000000049891734,237,0,0.060000064504758074
+MLP,regional,stored OOF,gen_H2-CT_p64,cap_H2-CT_p64,False,0.06000000068051731,256,0,0.06000001132180123
+MLP,regional,stored OOF,gen_H2-CT_p65,cap_H2-CT_p65,False,0.060000000086420834,252,0,0.06000000418991908
+MLP,regional,stored OOF,gen_H2-CT_p67,cap_H2-CT_p67,False,0.05999999996115082,211,0,0.060000005277708095
+MLP,regional,stored OOF,gen_coal-ccs_mod_p67,cap_coal-ccs_mod_p67,False,0.7674293248664392,435,16,28.99493965831388
+MLP,regional,stored OOF,gen_distpv_p60,cap_distpv_p60,True,0.2586466167246349,486,15,0.26326993201630783
+MLP,regional,stored OOF,gen_distpv_p61,cap_distpv_p61,True,0.27093018828748083,486,14,0.27688808256044484
+MLP,regional,stored OOF,gen_distpv_p62,cap_distpv_p62,True,0.2776867121180437,486,0,0.2789216917295617
+MLP,regional,stored OOF,gen_distpv_p63,cap_distpv_p63,True,0.2691827328660569,486,11,0.27495758487649213
+MLP,regional,stored OOF,gen_distpv_p64,cap_distpv_p64,True,0.26470283230968855,486,0,0.2660864172131935
+MLP,regional,stored OOF,gen_distpv_p65,cap_distpv_p65,True,0.28118245204489667,486,1,0.2842827596956381
+MLP,regional,stored OOF,gen_distpv_p67,cap_distpv_p67,True,0.2820563870056375,486,0,0.28375230828289194
+MLP,regional,stored OOF,gen_gas-cc-ccs_mod_p63,cap_gas-cc-ccs_mod_p63,False,0.8310000000493374,271,57,54.90440572147006
+MLP,regional,stored OOF,gen_gas-cc-ccs_mod_p64,cap_gas-cc-ccs_mod_p64,False,0.8309999998588649,257,50,60.84151373086304
+MLP,regional,stored OOF,gen_gas-cc-ccs_mod_p65,cap_gas-cc-ccs_mod_p65,False,0.8310000000072312,273,34,11.090445335799112
+MLP,regional,stored OOF,gen_gas-cc-ccs_mod_p67,cap_gas-cc-ccs_mod_p67,False,0.8439753425213236,308,33,13.266239749074007
+MLP,regional,stored OOF,gen_gas-cc_p60,cap_gas-cc_p60,False,0.4000000058152659,381,122,24.851480551603558
+MLP,regional,stored OOF,gen_gas-cc_p61,cap_gas-cc_p61,False,0.40000000081455966,475,96,3.178498399995843
+MLP,regional,stored OOF,gen_gas-cc_p62,cap_gas-cc_p62,False,0.6529715122273262,486,0,0.6313446315643477
+MLP,regional,stored OOF,gen_gas-cc_p63,cap_gas-cc_p63,False,0.7116369663745759,486,1,0.7362625457067768
+MLP,regional,stored OOF,gen_gas-cc_p64,cap_gas-cc_p64,False,0.6964488054807028,486,0,0.6195021838591193
+MLP,regional,stored OOF,gen_gas-cc_p65,cap_gas-cc_p65,False,0.7879416776939874,486,0,0.7412537454159084
+MLP,regional,stored OOF,gen_gas-cc_p67,cap_gas-cc_p67,False,0.47625308098319,486,2,0.5135836394874681
+MLP,regional,stored OOF,gen_gas-ct_p60,cap_gas-ct_p60,False,0.20729153297763153,486,2,0.26613992070787246
+MLP,regional,stored OOF,gen_gas-ct_p61,cap_gas-ct_p61,False,0.22883417335747386,443,18,2.7991744762743997
+MLP,regional,stored OOF,gen_gas-ct_p62,cap_gas-ct_p62,False,0.11936354086837866,486,1,0.3325311188342533
+MLP,regional,stored OOF,gen_gas-ct_p63,cap_gas-ct_p63,False,0.4083599973247748,486,2,0.43921899854612884
+MLP,regional,stored OOF,gen_gas-ct_p64,cap_gas-ct_p64,False,0.4035786308571739,486,3,0.5124294505234709
+MLP,regional,stored OOF,gen_gas-ct_p65,cap_gas-ct_p65,False,0.5074881304504071,485,6,0.8063244319254123
+MLP,regional,stored OOF,gen_gas-ct_p67,cap_gas-ct_p67,False,0.49215437245798005,486,9,0.6797992192287957
+MLP,regional,stored OOF,gen_hydED_p63,cap_hydED_p63,True,0.24092328767123286,486,23,0.2475721810385716
+MLP,regional,stored OOF,gen_hydEND_p61,cap_hydEND_p61,True,0.18430136986301368,486,0,0.18431691551643964
+MLP,regional,stored OOF,gen_hydEND_p63,cap_hydEND_p63,True,0.1986109589041096,486,0,0.19863693950901568
+MLP,regional,stored OOF,gen_hydEND_p64,cap_hydEND_p64,True,0.09375616438356164,486,0,0.0937714644146102
+MLP,regional,stored OOF,gen_hydEND_p65,cap_hydEND_p65,True,0.2890986301369863,486,0,0.28912950131192083
+MLP,regional,stored OOF,gen_hydUD_p63,cap_hydUD_p63,False,0.24092328767123286,29,8,0.31647446549911773
+MLP,regional,stored OOF,gen_lfill-gas_p63,cap_lfill-gas_p63,True,0.5259563506827777,486,4,0.5445276920970038
+MLP,regional,stored OOF,gen_lfill-gas_p64,cap_lfill-gas_p64,True,0.5240300087614155,486,5,0.5369997996977784
+MLP,regional,stored OOF,gen_lfill-gas_p65,cap_lfill-gas_p65,True,0.5259563506928043,486,9,0.5377180919657094
+MLP,regional,stored OOF,gen_nuclear-smr_p67,cap_nuclear-smr_p67,False,0.8664750950651069,257,108,17.23648674687643
+MLP,regional,stored OOF,gen_nuclear_p63,cap_nuclear_p63,True,0.8989354839041096,486,0,0.9056063998501712
+MLP,regional,stored OOF,gen_nuclear_p65,cap_nuclear_p65,False,0.9012434787671234,486,1,0.9105853675138965
+MLP,regional,stored OOF,gen_o-g-s_p62,cap_o-g-s_p62,False,0.6115863729452055,380,18,1.9561193915964354
+MLP,regional,stored OOF,gen_o-g-s_p63,cap_o-g-s_p63,False,0.12987026044511016,472,4,0.39874518166797684
+MLP,regional,stored OOF,gen_o-g-s_p64,cap_o-g-s_p64,False,0.5162736287671232,379,8,2.8640097999367575
+MLP,regional,stored OOF,gen_o-g-s_p65,cap_o-g-s_p65,False,0.5578105067714314,454,16,1.2747825612809722
+MLP,regional,stored OOF,gen_o-g-s_p67,cap_o-g-s_p67,False,0.6183015013686355,467,42,4.647446073743635
+MLP,regional,stored OOF,gen_upv_p63,cap_upv_p63,False,0.2850635926205161,486,1,0.28845568864503296
+MLP,regional,stored OOF,gen_upv_p61,cap_upv_p61,False,0.2910684927291097,486,9,0.3375515815299271
+MLP,regional,stored OOF,gen_upv_p64,cap_upv_p64,False,0.3193388254707671,484,25,2.0319567249075217
+MLP,regional,stored OOF,gen_upv_p65,cap_upv_p65,False,0.3136250862718531,486,4,0.33257195611709545
+MLP,regional,stored OOF,gen_upv_p67,cap_upv_p67,False,0.33403442253528587,486,6,0.4884960212788037
+MLP,regional,stored OOF,gen_upv_p60,cap_upv_p60,False,0.2738100126505461,486,11,0.2990039791682192
+MLP,regional,stored OOF,gen_upv_p62,cap_upv_p62,False,0.3116712953363026,486,24,0.45020010922258863
+MLP,regional,stored OOF,gen_wind-ons_p60,cap_wind-ons_p60,False,0.4805072033050991,486,9,0.5209197155816001
+MLP,regional,stored OOF,gen_wind-ons_p61,cap_wind-ons_p61,False,0.5445631517041357,482,8,0.6383291589867967
+MLP,regional,stored OOF,gen_wind-ons_p62,cap_wind-ons_p62,False,0.5555353630952831,486,12,0.650231422024642
+MLP,regional,stored OOF,gen_wind-ons_p63,cap_wind-ons_p63,False,0.44028814484245066,486,4,0.4998250854442312
+MLP,regional,stored OOF,gen_wind-ons_p64,cap_wind-ons_p64,False,0.5456515213717167,482,2,1.146071846259303
+MLP,regional,stored OOF,gen_wind-ons_p65,cap_wind-ons_p65,False,0.43452423120163325,486,4,0.45138313421384246
+MLP,regional,stored OOF,gen_wind-ons_p67,cap_wind-ons_p67,False,0.27965358799190076,483,41,1.5729315477640562
+MLP,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p63,cap_CoalOldScr_coal-CCS_mod_p63,False,0.06000000003522498,319,0,0.06000000932378451
+MLP,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p64,cap_CoalOldScr_coal-CCS_mod_p64,False,0.060000005075829733,352,0,0.06000005578579475
+MLP,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p65,cap_CoalOldScr_coal-CCS_mod_p65,False,0.060000000264293335,313,0,0.06000003889417827
+MLP,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p67,cap_CoalOldScr_coal-CCS_mod_p67,False,0.06000000028186944,437,0,0.06000011558774097
+MLP,regional,after fix,gen_CoalOldScr_p63,cap_CoalOldScr_p63,False,0.33345625051277233,262,18,2.325791745530335
+MLP,regional,after fix,gen_CoalOldScr_p64,cap_CoalOldScr_p64,False,0.5708502345985694,284,33,4.691393311409008
+MLP,regional,after fix,gen_CoalOldScr_p65,cap_CoalOldScr_p65,False,0.06000000034615166,234,107,15.265192255316318
+MLP,regional,after fix,gen_CoalOldScr_p67,cap_CoalOldScr_p67,False,0.5783109586723466,414,39,7.559606947955647
+MLP,regional,after fix,gen_Gas-CC_Gas-CC-CCS_mod_p67,cap_Gas-CC_Gas-CC-CCS_mod_p67,False,0.8378873407730096,233,92,20.465133100473807
+MLP,regional,after fix,gen_Gas-CC_H2-CC_p60,cap_Gas-CC_H2-CC_p60,False,0.060000004225548964,225,86,0.9256153668341898
+MLP,regional,after fix,gen_Gas-CC_H2-CC_p62,cap_Gas-CC_H2-CC_p62,False,0.06000000098792191,255,120,1.6891854685431482
+MLP,regional,after fix,gen_Gas-CC_H2-CC_p63,cap_Gas-CC_H2-CC_p63,False,0.059999999575482486,18,3,0.09443895982501886
+MLP,regional,after fix,gen_Gas-CC_H2-CC_p64,cap_Gas-CC_H2-CC_p64,False,0.13468024615952043,223,64,2.5171978641960626
+MLP,regional,after fix,gen_Gas-CC_H2-CC_p65,cap_Gas-CC_H2-CC_p65,False,0.21657464382976957,219,36,3.98908811756826
+MLP,regional,after fix,gen_H2-CC_p60,cap_H2-CC_p60,False,0.06000000445499093,218,0,0.06000004075515005
+MLP,regional,after fix,gen_H2-CC_p61,cap_H2-CC_p61,False,0.06000000007992296,252,0,0.06000001343922909
+MLP,regional,after fix,gen_H2-CC_p62,cap_H2-CC_p62,False,0.05999999976636162,54,0,0.06000002160650451
+MLP,regional,after fix,gen_H2-CC_p65,cap_H2-CC_p65,False,0.06000000008102949,172,0,0.060000031160035876
+MLP,regional,after fix,gen_H2-CT_p60,cap_H2-CT_p60,False,0.06000001088284522,266,0,0.06003444662095042
+MLP,regional,after fix,gen_H2-CT_p61,cap_H2-CT_p61,False,0.06000000044156968,283,0,0.060029164086442585
+MLP,regional,after fix,gen_H2-CT_p62,cap_H2-CT_p62,False,0.060000007470690224,228,0,0.06001729216506151
+MLP,regional,after fix,gen_H2-CT_p63,cap_H2-CT_p63,False,0.060000000049891734,231,0,0.06003444568299985
+MLP,regional,after fix,gen_H2-CT_p64,cap_H2-CT_p64,False,0.06000000068051731,255,0,0.060034447214437514
+MLP,regional,after fix,gen_H2-CT_p65,cap_H2-CT_p65,False,0.060000000086420834,250,0,0.060023659073095814
+MLP,regional,after fix,gen_H2-CT_p67,cap_H2-CT_p67,False,0.05999999996115082,202,0,0.06000000887485004
+MLP,regional,after fix,gen_coal-ccs_mod_p67,cap_coal-ccs_mod_p67,False,0.7674293248664392,435,16,28.99493965831388
+MLP,regional,after fix,gen_distpv_p60,cap_distpv_p60,True,0.2586466167246349,486,25,0.26446027976970277
+MLP,regional,after fix,gen_distpv_p61,cap_distpv_p61,True,0.27093018828748083,486,13,0.27725419212675373
+MLP,regional,after fix,gen_distpv_p62,cap_distpv_p62,True,0.2776867121180437,486,4,0.28153574547967364
+MLP,regional,after fix,gen_distpv_p63,cap_distpv_p63,True,0.2691827328660569,486,8,0.27526790909595383
+MLP,regional,after fix,gen_distpv_p64,cap_distpv_p64,True,0.26470283230968855,486,12,0.2691162931944134
+MLP,regional,after fix,gen_distpv_p65,cap_distpv_p65,True,0.28118245204489667,486,17,0.28570297651030324
+MLP,regional,after fix,gen_distpv_p67,cap_distpv_p67,True,0.2820563870056375,486,0,0.28287442381204664
+MLP,regional,after fix,gen_gas-cc-ccs_mod_p63,cap_gas-cc-ccs_mod_p63,False,0.8310000000493374,269,59,54.90440572147006
+MLP,regional,after fix,gen_gas-cc-ccs_mod_p64,cap_gas-cc-ccs_mod_p64,False,0.8309999998588649,255,49,184.6148787145914
+MLP,regional,after fix,gen_gas-cc-ccs_mod_p65,cap_gas-cc-ccs_mod_p65,False,0.8310000000072312,272,44,227.92318615413706
+MLP,regional,after fix,gen_gas-cc-ccs_mod_p67,cap_gas-cc-ccs_mod_p67,False,0.8439753425213236,308,36,59.235025120297095
+MLP,regional,after fix,gen_gas-cc_p60,cap_gas-cc_p60,False,0.4000000058152659,381,122,24.063816755772
+MLP,regional,after fix,gen_gas-cc_p61,cap_gas-cc_p61,False,0.40000000081455966,475,96,3.097022918551809
+MLP,regional,after fix,gen_gas-cc_p62,cap_gas-cc_p62,False,0.6529715122273262,486,0,0.6387189895294364
+MLP,regional,after fix,gen_gas-cc_p63,cap_gas-cc_p63,False,0.7116369663745759,486,0,0.7173896888317355
+MLP,regional,after fix,gen_gas-cc_p64,cap_gas-cc_p64,False,0.6964488054807028,486,0,0.6266890349999149
+MLP,regional,after fix,gen_gas-cc_p65,cap_gas-cc_p65,False,0.7879416776939874,486,0,0.7504309502798329
+MLP,regional,after fix,gen_gas-cc_p67,cap_gas-cc_p67,False,0.47625308098319,486,3,0.508146976723171
+MLP,regional,after fix,gen_gas-ct_p60,cap_gas-ct_p60,False,0.20729153297763153,486,2,0.2873593810822026
+MLP,regional,after fix,gen_gas-ct_p61,cap_gas-ct_p61,False,0.22883417335747386,443,18,2.7424099390671652
+MLP,regional,after fix,gen_gas-ct_p62,cap_gas-ct_p62,False,0.11936354086837866,486,1,0.3334155743301377
+MLP,regional,after fix,gen_gas-ct_p63,cap_gas-ct_p63,False,0.4083599973247748,486,4,0.46209364508003303
+MLP,regional,after fix,gen_gas-ct_p64,cap_gas-ct_p64,False,0.4035786308571739,486,3,0.5394154443599265
+MLP,regional,after fix,gen_gas-ct_p65,cap_gas-ct_p65,False,0.5074881304504071,485,6,0.8338164331733593
+MLP,regional,after fix,gen_gas-ct_p67,cap_gas-ct_p67,False,0.49215437245798005,486,6,0.6801779457982313
+MLP,regional,after fix,gen_hydED_p63,cap_hydED_p63,True,0.24092328767123286,486,23,0.2475721810385716
+MLP,regional,after fix,gen_hydEND_p61,cap_hydEND_p61,True,0.18430136986301368,486,0,0.1843157575470287
+MLP,regional,after fix,gen_hydEND_p63,cap_hydEND_p63,True,0.1986109589041096,486,0,0.19863751899126708
+MLP,regional,after fix,gen_hydEND_p64,cap_hydEND_p64,True,0.09375616438356164,486,0,0.09377336703179823
+MLP,regional,after fix,gen_hydEND_p65,cap_hydEND_p65,True,0.2890986301369863,486,0,0.289142294115946
+MLP,regional,after fix,gen_hydUD_p63,cap_hydUD_p63,False,0.24092328767123286,29,8,0.31647446549911773
+MLP,regional,after fix,gen_lfill-gas_p63,cap_lfill-gas_p63,True,0.5259563506827777,486,7,0.5400370461005634
+MLP,regional,after fix,gen_lfill-gas_p64,cap_lfill-gas_p64,True,0.5240300087614155,486,6,0.5370465751676617
+MLP,regional,after fix,gen_lfill-gas_p65,cap_lfill-gas_p65,True,0.5259563506928043,486,7,0.542953273131608
+MLP,regional,after fix,gen_nuclear-smr_p67,cap_nuclear-smr_p67,False,0.8664750950651069,257,108,17.23648674687643
+MLP,regional,after fix,gen_nuclear_p63,cap_nuclear_p63,True,0.8989354839041096,486,0,0.9053413937183461
+MLP,regional,after fix,gen_nuclear_p65,cap_nuclear_p65,False,0.9012434787671234,486,0,0.9091334339215633
+MLP,regional,after fix,gen_o-g-s_p62,cap_o-g-s_p62,False,0.6115863729452055,381,24,2.8105684239407207
+MLP,regional,after fix,gen_o-g-s_p63,cap_o-g-s_p63,False,0.12987026044511016,472,4,0.49006700736608744
+MLP,regional,after fix,gen_o-g-s_p64,cap_o-g-s_p64,False,0.5162736287671232,379,6,2.7188584311182966
+MLP,regional,after fix,gen_o-g-s_p65,cap_o-g-s_p65,False,0.5578105067714314,452,20,1.6546502594267682
+MLP,regional,after fix,gen_o-g-s_p67,cap_o-g-s_p67,False,0.6183015013686355,467,47,5.351341869247466
+MLP,regional,after fix,gen_upv_p63,cap_upv_p63,False,0.2850635926205161,486,0,0.285082924334085
+MLP,regional,after fix,gen_upv_p61,cap_upv_p61,False,0.2910684927291097,486,13,0.34153572277030986
+MLP,regional,after fix,gen_upv_p64,cap_upv_p64,False,0.3193388254707671,484,23,1.9444706119553943
+MLP,regional,after fix,gen_upv_p65,cap_upv_p65,False,0.3136250862718531,486,6,0.33749415734256827
+MLP,regional,after fix,gen_upv_p67,cap_upv_p67,False,0.33403442253528587,486,6,0.4735502966269185
+MLP,regional,after fix,gen_upv_p60,cap_upv_p60,False,0.2738100126505461,486,12,0.32066789691124054
+MLP,regional,after fix,gen_upv_p62,cap_upv_p62,False,0.3116712953363026,486,26,0.436059407979159
+MLP,regional,after fix,gen_wind-ons_p60,cap_wind-ons_p60,False,0.4805072033050991,486,8,0.5226949477012686
+MLP,regional,after fix,gen_wind-ons_p61,cap_wind-ons_p61,False,0.5445631517041357,482,9,0.6182398814200692
+MLP,regional,after fix,gen_wind-ons_p62,cap_wind-ons_p62,False,0.5555353630952831,486,13,0.6266835133109412
+MLP,regional,after fix,gen_wind-ons_p63,cap_wind-ons_p63,False,0.44028814484245066,486,8,0.511643681648884
+MLP,regional,after fix,gen_wind-ons_p64,cap_wind-ons_p64,False,0.5456515213717167,482,5,1.0113321767656083
+MLP,regional,after fix,gen_wind-ons_p65,cap_wind-ons_p65,False,0.43452423120163325,486,3,0.4516088240083658
+MLP,regional,after fix,gen_wind-ons_p67,cap_wind-ons_p67,False,0.27965358799190076,483,52,1.5799730515302832
+Ridge,system,stored OOF,gen_CoalOldScr,cap_CoalOldScr,False,0.5781273975561961,461,5,1.3539740088000918
+Ridge,system,stored OOF,gen_CoalOldScr_coal-CCS_mod,cap_CoalOldScr_coal-CCS_mod,False,0.060000000185352224,463,0,0.06000001680998053
+Ridge,system,stored OOF,gen_Gas-CC_Gas-CC-CCS_mod,cap_Gas-CC_Gas-CC-CCS_mod,False,0.8378873407730096,321,31,1.7949349145758104
+Ridge,system,stored OOF,gen_Gas-CC_H2-CC,cap_Gas-CC_H2-CC,False,0.16397984885476358,347,8,0.5789162088143183
+Ridge,system,stored OOF,gen_H2-CC,cap_H2-CC,False,0.060000001546659396,347,0,0.060000013596240985
+Ridge,system,stored OOF,gen_H2-CT,cap_H2-CT,False,0.060000000573171626,339,0,0.06000000919211982
+Ridge,system,stored OOF,gen_coal-ccs_mod,cap_coal-ccs_mod,False,0.7674293248664392,442,4,2.762153983435535
+Ridge,system,stored OOF,gen_distpv,cap_distpv,True,0.26368391602911556,486,0,0.26161690760311307
+Ridge,system,stored OOF,gen_gas-cc,cap_gas-cc,False,0.5557748436697498,486,0,0.5255519735783881
+Ridge,system,stored OOF,gen_gas-cc-ccs_mod,cap_gas-cc-ccs_mod,False,0.8439753425213236,358,20,48.772416279922574
+Ridge,system,stored OOF,gen_gas-ct,cap_gas-ct,False,0.3608157891889439,486,0,0.2026527939863842
+Ridge,system,stored OOF,gen_hydED,cap_hydED,True,0.24092328767123286,486,92,0.259359210060233
+Ridge,system,stored OOF,gen_hydEND,cap_hydEND,True,0.12473585341318012,486,0,0.12475094381656329
+Ridge,system,stored OOF,gen_hydUD,cap_hydUD,False,0.24092328767123286,6,0,0.22768875816659206
+Ridge,system,stored OOF,gen_lfill-gas,cap_lfill-gas,True,0.5253127928128977,486,0,0.5258614278213612
+Ridge,system,stored OOF,gen_nuclear,cap_nuclear,False,0.9000863515184024,486,0,0.8981218957160175
+Ridge,system,stored OOF,gen_nuclear-smr,cap_nuclear-smr,False,0.8664750950651069,329,10,0.9224744354690801
+Ridge,system,stored OOF,gen_o-g-s,cap_o-g-s,False,0.2015969439433528,486,0,0.10036310305028336
+Ridge,system,stored OOF,gen_upv,cap_upv,False,0.2842581185606715,486,0,0.28227534319682074
+Ridge,system,stored OOF,gen_wind-ons,cap_wind-ons,False,0.48273002116938807,486,19,0.5764232222411464
+Ridge,system,after fix,gen_CoalOldScr,cap_CoalOldScr,False,0.5781273975561961,461,5,1.3539740088000918
+Ridge,system,after fix,gen_CoalOldScr_coal-CCS_mod,cap_CoalOldScr_coal-CCS_mod,False,0.060000000185352224,463,0,0.06000001680998053
+Ridge,system,after fix,gen_Gas-CC_Gas-CC-CCS_mod,cap_Gas-CC_Gas-CC-CCS_mod,False,0.8378873407730096,321,31,1.7949349145758104
+Ridge,system,after fix,gen_Gas-CC_H2-CC,cap_Gas-CC_H2-CC,False,0.16397984885476358,347,8,0.5789162088143183
+Ridge,system,after fix,gen_H2-CC,cap_H2-CC,False,0.060000001546659396,347,0,0.060000013596240985
+Ridge,system,after fix,gen_H2-CT,cap_H2-CT,False,0.060000000573171626,339,0,0.06000000919211982
+Ridge,system,after fix,gen_coal-ccs_mod,cap_coal-ccs_mod,False,0.7674293248664392,442,4,2.762153983435535
+Ridge,system,after fix,gen_distpv,cap_distpv,True,0.26368391602911556,486,0,0.26161690760311307
+Ridge,system,after fix,gen_gas-cc,cap_gas-cc,False,0.5557748436697498,486,0,0.5255519735783881
+Ridge,system,after fix,gen_gas-cc-ccs_mod,cap_gas-cc-ccs_mod,False,0.8439753425213236,358,20,48.772416279922574
+Ridge,system,after fix,gen_gas-ct,cap_gas-ct,False,0.3608157891889439,486,0,0.2026527939863842
+Ridge,system,after fix,gen_hydED,cap_hydED,True,0.24092328767123286,486,92,0.259359210060233
+Ridge,system,after fix,gen_hydEND,cap_hydEND,True,0.12473585341318012,486,0,0.12475094381656329
+Ridge,system,after fix,gen_hydUD,cap_hydUD,False,0.24092328767123286,6,0,0.22768875816659206
+Ridge,system,after fix,gen_lfill-gas,cap_lfill-gas,True,0.5253127928128977,486,0,0.5258614278213612
+Ridge,system,after fix,gen_nuclear,cap_nuclear,False,0.9000863515184024,486,0,0.8981218957160175
+Ridge,system,after fix,gen_nuclear-smr,cap_nuclear-smr,False,0.8664750950651069,329,10,0.9224744354690801
+Ridge,system,after fix,gen_o-g-s,cap_o-g-s,False,0.2015969439433528,486,0,0.10036310305028336
+Ridge,system,after fix,gen_upv,cap_upv,False,0.2842581185606715,486,0,0.28227534319682074
+Ridge,system,after fix,gen_wind-ons,cap_wind-ons,False,0.48273002116938807,486,19,0.5764232222411464
+Ridge,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p63,cap_CoalOldScr_coal-CCS_mod_p63,False,0.06000000003522498,387,0,0.06000000831620132
+Ridge,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p64,cap_CoalOldScr_coal-CCS_mod_p64,False,0.060000005075829733,453,0,0.06000002025480436
+Ridge,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p65,cap_CoalOldScr_coal-CCS_mod_p65,False,0.060000000264293335,347,0,0.06000000518213024
+Ridge,regional,stored OOF,gen_CoalOldScr_coal-CCS_mod_p67,cap_CoalOldScr_coal-CCS_mod_p67,False,0.06000000028186944,485,0,0.06000000574918164
+Ridge,regional,stored OOF,gen_CoalOldScr_p63,cap_CoalOldScr_p63,False,0.33345625051277233,383,16,1.3918407885743613
+Ridge,regional,stored OOF,gen_CoalOldScr_p64,cap_CoalOldScr_p64,False,0.5708502345985694,351,6,1.035278860306982
+Ridge,regional,stored OOF,gen_CoalOldScr_p65,cap_CoalOldScr_p65,False,0.06000000034615166,365,0,0.06000007106707482
+Ridge,regional,stored OOF,gen_CoalOldScr_p67,cap_CoalOldScr_p67,False,0.5783109586723466,469,7,6.177078108285417
+Ridge,regional,stored OOF,gen_Gas-CC_Gas-CC-CCS_mod_p67,cap_Gas-CC_Gas-CC-CCS_mod_p67,False,0.8378873407730096,321,31,1.7949349145758104
+Ridge,regional,stored OOF,gen_Gas-CC_H2-CC_p60,cap_Gas-CC_H2-CC_p60,False,0.060000004225548964,335,0,0.06000001434575679
+Ridge,regional,stored OOF,gen_Gas-CC_H2-CC_p62,cap_Gas-CC_H2-CC_p62,False,0.06000000098792191,323,0,0.060059031291447906
+Ridge,regional,stored OOF,gen_Gas-CC_H2-CC_p63,cap_Gas-CC_H2-CC_p63,False,0.059999999575482486,0,0,
+Ridge,regional,stored OOF,gen_Gas-CC_H2-CC_p64,cap_Gas-CC_H2-CC_p64,False,0.13468024615952043,318,8,0.2528118194737469
+Ridge,regional,stored OOF,gen_Gas-CC_H2-CC_p65,cap_Gas-CC_H2-CC_p65,False,0.21657464382976957,335,8,0.4334515077129271
+Ridge,regional,stored OOF,gen_H2-CC_p60,cap_H2-CC_p60,False,0.06000000445499093,304,0,0.0600000520604196
+Ridge,regional,stored OOF,gen_H2-CC_p61,cap_H2-CC_p61,False,0.06000000007992296,345,0,0.06000001585337151
+Ridge,regional,stored OOF,gen_H2-CC_p62,cap_H2-CC_p62,False,0.05999999976636162,0,0,
+Ridge,regional,stored OOF,gen_H2-CC_p65,cap_H2-CC_p65,False,0.06000000008102949,284,0,0.06000027849249513
+Ridge,regional,stored OOF,gen_H2-CT_p60,cap_H2-CT_p60,False,0.06000001088284522,327,0,0.060000019150783214
+Ridge,regional,stored OOF,gen_H2-CT_p61,cap_H2-CT_p61,False,0.06000000044156968,336,0,0.06000001054304853
+Ridge,regional,stored OOF,gen_H2-CT_p62,cap_H2-CT_p62,False,0.060000007470690224,318,0,0.06000007540247387
+Ridge,regional,stored OOF,gen_H2-CT_p63,cap_H2-CT_p63,False,0.060000000049891734,315,0,0.06000002713290306
+Ridge,regional,stored OOF,gen_H2-CT_p64,cap_H2-CT_p64,False,0.06000000068051731,314,0,0.060000040224944484
+Ridge,regional,stored OOF,gen_H2-CT_p65,cap_H2-CT_p65,False,0.060000000086420834,331,0,0.06000002594365512
+Ridge,regional,stored OOF,gen_H2-CT_p67,cap_H2-CT_p67,False,0.05999999996115082,223,0,0.06000000516802676
+Ridge,regional,stored OOF,gen_coal-ccs_mod_p67,cap_coal-ccs_mod_p67,False,0.7674293248664392,442,4,2.762153983435535
+Ridge,regional,stored OOF,gen_distpv_p60,cap_distpv_p60,True,0.2586466167246349,486,162,0.2700726859195939
+Ridge,regional,stored OOF,gen_distpv_p61,cap_distpv_p61,True,0.27093018828748083,486,162,0.2825319618916836
+Ridge,regional,stored OOF,gen_distpv_p62,cap_distpv_p62,True,0.2776867121180437,486,54,0.28219702639933947
+Ridge,regional,stored OOF,gen_distpv_p63,cap_distpv_p63,True,0.2691827328660569,486,0,0.2599830973884022
+Ridge,regional,stored OOF,gen_distpv_p64,cap_distpv_p64,True,0.26470283230968855,486,0,0.2670714289722269
+Ridge,regional,stored OOF,gen_distpv_p65,cap_distpv_p65,True,0.28118245204489667,486,54,0.28533616713033005
+Ridge,regional,stored OOF,gen_distpv_p67,cap_distpv_p67,True,0.2820563870056375,486,0,0.276737550454301
+Ridge,regional,stored OOF,gen_gas-cc-ccs_mod_p63,cap_gas-cc-ccs_mod_p63,False,0.8310000000493374,325,34,2.838429450537234
+Ridge,regional,stored OOF,gen_gas-cc-ccs_mod_p64,cap_gas-cc-ccs_mod_p64,False,0.8309999998588649,335,39,14.287932013872158
+Ridge,regional,stored OOF,gen_gas-cc-ccs_mod_p65,cap_gas-cc-ccs_mod_p65,False,0.8310000000072312,323,4,3.7566762963876608
+Ridge,regional,stored OOF,gen_gas-cc-ccs_mod_p67,cap_gas-cc-ccs_mod_p67,False,0.8439753425213236,363,19,76.71137645177038
+Ridge,regional,stored OOF,gen_gas-cc_p60,cap_gas-cc_p60,False,0.4000000058152659,419,83,0.4452081440492293
+Ridge,regional,stored OOF,gen_gas-cc_p61,cap_gas-cc_p61,False,0.40000000081455966,452,57,0.4351895560364475
+Ridge,regional,stored OOF,gen_gas-cc_p62,cap_gas-cc_p62,False,0.6529715122273262,486,0,0.1161854267736099
+Ridge,regional,stored OOF,gen_gas-cc_p63,cap_gas-cc_p63,False,0.7116369663745759,486,0,0.6249392586427026
+Ridge,regional,stored OOF,gen_gas-cc_p64,cap_gas-cc_p64,False,0.6964488054807028,486,0,0.4898019961235636
+Ridge,regional,stored OOF,gen_gas-cc_p65,cap_gas-cc_p65,False,0.7879416776939874,486,0,0.5462252218557868
+Ridge,regional,stored OOF,gen_gas-cc_p67,cap_gas-cc_p67,False,0.47625308098319,486,0,0.4513278519495189
+Ridge,regional,stored OOF,gen_gas-ct_p60,cap_gas-ct_p60,False,0.20729153297763153,486,0,0.08290191861203772
+Ridge,regional,stored OOF,gen_gas-ct_p61,cap_gas-ct_p61,False,0.22883417335747386,470,1,0.485103416542406
+Ridge,regional,stored OOF,gen_gas-ct_p62,cap_gas-ct_p62,False,0.11936354086837866,486,0,0.06365425900994724
+Ridge,regional,stored OOF,gen_gas-ct_p63,cap_gas-ct_p63,False,0.4083599973247748,486,0,0.27317762752740665
+Ridge,regional,stored OOF,gen_gas-ct_p64,cap_gas-ct_p64,False,0.4035786308571739,486,1,0.6891451198473958
+Ridge,regional,stored OOF,gen_gas-ct_p65,cap_gas-ct_p65,False,0.5074881304504071,486,0,0.17712390047811502
+Ridge,regional,stored OOF,gen_gas-ct_p67,cap_gas-ct_p67,False,0.49215437245798005,477,16,17.20732772363616
+Ridge,regional,stored OOF,gen_hydED_p63,cap_hydED_p63,True,0.24092328767123286,486,92,0.259359210060233
+Ridge,regional,stored OOF,gen_hydEND_p61,cap_hydEND_p61,True,0.18430136986301368,486,0,0.1842807759405853
+Ridge,regional,stored OOF,gen_hydEND_p63,cap_hydEND_p63,True,0.1986109589041096,486,0,0.1983244444988634
+Ridge,regional,stored OOF,gen_hydEND_p64,cap_hydEND_p64,True,0.09375616438356164,486,0,0.09375600969894136
+Ridge,regional,stored OOF,gen_hydEND_p65,cap_hydEND_p65,True,0.2890986301369863,486,0,0.28895309617814513
+Ridge,regional,stored OOF,gen_hydUD_p63,cap_hydUD_p63,False,0.24092328767123286,6,0,0.22768875816659206
+Ridge,regional,stored OOF,gen_lfill-gas_p63,cap_lfill-gas_p63,True,0.5259563506827777,486,0,0.5296728248432679
+Ridge,regional,stored OOF,gen_lfill-gas_p64,cap_lfill-gas_p64,True,0.5240300087614155,486,0,0.5249001576046809
+Ridge,regional,stored OOF,gen_lfill-gas_p65,cap_lfill-gas_p65,True,0.5259563506928043,486,0,0.5254170656977598
+Ridge,regional,stored OOF,gen_nuclear-smr_p67,cap_nuclear-smr_p67,False,0.8664750950651069,329,10,0.9224744354690801
+Ridge,regional,stored OOF,gen_nuclear_p63,cap_nuclear_p63,True,0.8989354839041096,486,0,0.899617397219844
+Ridge,regional,stored OOF,gen_nuclear_p65,cap_nuclear_p65,False,0.9012434787671234,486,0,0.8984375119776987
+Ridge,regional,stored OOF,gen_o-g-s_p62,cap_o-g-s_p62,False,0.6115863729452055,469,9,1.2389037482787992
+Ridge,regional,stored OOF,gen_o-g-s_p63,cap_o-g-s_p63,False,0.12987026044511016,486,0,0.06288322769779175
+Ridge,regional,stored OOF,gen_o-g-s_p64,cap_o-g-s_p64,False,0.5162736287671232,486,0,0.14395791474659514
+Ridge,regional,stored OOF,gen_o-g-s_p65,cap_o-g-s_p65,False,0.5578105067714314,486,0,0.4908536720095777
+Ridge,regional,stored OOF,gen_o-g-s_p67,cap_o-g-s_p67,False,0.6183015013686355,486,1,0.6499070095514754
+Ridge,regional,stored OOF,gen_upv_p63,cap_upv_p63,False,0.2850635926205161,486,0,0.2631050750135444
+Ridge,regional,stored OOF,gen_upv_p61,cap_upv_p61,False,0.2910684927291097,486,0,0.29328914685543467
+Ridge,regional,stored OOF,gen_upv_p64,cap_upv_p64,False,0.3193388254707671,460,17,1.0654131815982928
+Ridge,regional,stored OOF,gen_upv_p65,cap_upv_p65,False,0.3136250862718531,486,0,0.31533214156355266
+Ridge,regional,stored OOF,gen_upv_p67,cap_upv_p67,False,0.33403442253528587,486,0,0.3229524950621541
+Ridge,regional,stored OOF,gen_upv_p60,cap_upv_p60,False,0.2738100126505461,486,0,0.27206985150627183
+Ridge,regional,stored OOF,gen_upv_p62,cap_upv_p62,False,0.3116712953363026,486,0,0.27580481106171817
+Ridge,regional,stored OOF,gen_wind-ons_p60,cap_wind-ons_p60,False,0.4805072033050991,486,0,0.47190511284437064
+Ridge,regional,stored OOF,gen_wind-ons_p61,cap_wind-ons_p61,False,0.5445631517041357,457,2,0.5915447785192286
+Ridge,regional,stored OOF,gen_wind-ons_p62,cap_wind-ons_p62,False,0.5555353630952831,486,47,1.059369480552633
+Ridge,regional,stored OOF,gen_wind-ons_p63,cap_wind-ons_p63,False,0.44028814484245066,486,22,2.871987213773443
+Ridge,regional,stored OOF,gen_wind-ons_p64,cap_wind-ons_p64,False,0.5456515213717167,486,4,0.5680436908899383
+Ridge,regional,stored OOF,gen_wind-ons_p65,cap_wind-ons_p65,False,0.43452423120163325,444,0,0.4140157631342582
+Ridge,regional,stored OOF,gen_wind-ons_p67,cap_wind-ons_p67,False,0.27965358799190076,421,16,6.2515381708087085
+Ridge,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p63,cap_CoalOldScr_coal-CCS_mod_p63,False,0.06000000003522498,387,0,0.06000000831620132
+Ridge,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p64,cap_CoalOldScr_coal-CCS_mod_p64,False,0.060000005075829733,452,0,0.06000002025480436
+Ridge,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p65,cap_CoalOldScr_coal-CCS_mod_p65,False,0.060000000264293335,346,0,0.06000000673663204
+Ridge,regional,after fix,gen_CoalOldScr_coal-CCS_mod_p67,cap_CoalOldScr_coal-CCS_mod_p67,False,0.06000000028186944,485,0,0.060000016815572016
+Ridge,regional,after fix,gen_CoalOldScr_p63,cap_CoalOldScr_p63,False,0.33345625051277233,382,15,1.4022375262752047
+Ridge,regional,after fix,gen_CoalOldScr_p64,cap_CoalOldScr_p64,False,0.5708502345985694,351,7,1.035278860306982
+Ridge,regional,after fix,gen_CoalOldScr_p65,cap_CoalOldScr_p65,False,0.06000000034615166,360,55,0.19932077640421814
+Ridge,regional,after fix,gen_CoalOldScr_p67,cap_CoalOldScr_p67,False,0.5783109586723466,467,9,4.5552838736412395
+Ridge,regional,after fix,gen_Gas-CC_Gas-CC-CCS_mod_p67,cap_Gas-CC_Gas-CC-CCS_mod_p67,False,0.8378873407730096,321,31,1.7949349145758104
+Ridge,regional,after fix,gen_Gas-CC_H2-CC_p60,cap_Gas-CC_H2-CC_p60,False,0.060000004225548964,332,42,0.37050647091280553
+Ridge,regional,after fix,gen_Gas-CC_H2-CC_p62,cap_Gas-CC_H2-CC_p62,False,0.06000000098792191,322,30,0.3704986986255401
+Ridge,regional,after fix,gen_Gas-CC_H2-CC_p63,cap_Gas-CC_H2-CC_p63,False,0.059999999575482486,0,0,
+Ridge,regional,after fix,gen_Gas-CC_H2-CC_p64,cap_Gas-CC_H2-CC_p64,False,0.13468024615952043,317,19,0.5186132067002376
+Ridge,regional,after fix,gen_Gas-CC_H2-CC_p65,cap_Gas-CC_H2-CC_p65,False,0.21657464382976957,333,13,0.5975202107022083
+Ridge,regional,after fix,gen_H2-CC_p60,cap_H2-CC_p60,False,0.06000000445499093,303,0,0.06000004503718362
+Ridge,regional,after fix,gen_H2-CC_p61,cap_H2-CC_p61,False,0.06000000007992296,345,0,0.06000001585337151
+Ridge,regional,after fix,gen_H2-CC_p62,cap_H2-CC_p62,False,0.05999999976636162,0,0,
+Ridge,regional,after fix,gen_H2-CC_p65,cap_H2-CC_p65,False,0.06000000008102949,284,0,0.06000027849249513
+Ridge,regional,after fix,gen_H2-CT_p60,cap_H2-CT_p60,False,0.06000001088284522,326,0,0.060000019150783214
+Ridge,regional,after fix,gen_H2-CT_p61,cap_H2-CT_p61,False,0.06000000044156968,335,0,0.06000001054304853
+Ridge,regional,after fix,gen_H2-CT_p62,cap_H2-CT_p62,False,0.060000007470690224,317,0,0.06000007540247387
+Ridge,regional,after fix,gen_H2-CT_p63,cap_H2-CT_p63,False,0.060000000049891734,314,0,0.06000002713290306
+Ridge,regional,after fix,gen_H2-CT_p64,cap_H2-CT_p64,False,0.06000000068051731,314,0,0.060000040224944484
+Ridge,regional,after fix,gen_H2-CT_p65,cap_H2-CT_p65,False,0.060000000086420834,331,0,0.06000002594365512
+Ridge,regional,after fix,gen_H2-CT_p67,cap_H2-CT_p67,False,0.05999999996115082,219,0,0.06000000706649266
+Ridge,regional,after fix,gen_coal-ccs_mod_p67,cap_coal-ccs_mod_p67,False,0.7674293248664392,442,4,2.762153983435535
+Ridge,regional,after fix,gen_distpv_p60,cap_distpv_p60,True,0.2586466167246349,486,162,0.2700726859195939
+Ridge,regional,after fix,gen_distpv_p61,cap_distpv_p61,True,0.27093018828748083,486,162,0.2825319618916836
+Ridge,regional,after fix,gen_distpv_p62,cap_distpv_p62,True,0.2776867121180437,486,54,0.28219702639933947
+Ridge,regional,after fix,gen_distpv_p63,cap_distpv_p63,True,0.2691827328660569,486,0,0.2599830973884022
+Ridge,regional,after fix,gen_distpv_p64,cap_distpv_p64,True,0.26470283230968855,486,0,0.2670714289722269
+Ridge,regional,after fix,gen_distpv_p65,cap_distpv_p65,True,0.28118245204489667,486,54,0.28533616713033005
+Ridge,regional,after fix,gen_distpv_p67,cap_distpv_p67,True,0.2820563870056375,486,0,0.276737550454301
+Ridge,regional,after fix,gen_gas-cc-ccs_mod_p63,cap_gas-cc-ccs_mod_p63,False,0.8310000000493374,325,34,10.520977224529492
+Ridge,regional,after fix,gen_gas-cc-ccs_mod_p64,cap_gas-cc-ccs_mod_p64,False,0.8309999998588649,335,39,18.486749629766322
+Ridge,regional,after fix,gen_gas-cc-ccs_mod_p65,cap_gas-cc-ccs_mod_p65,False,0.8310000000072312,323,4,3.7566762963876608
+Ridge,regional,after fix,gen_gas-cc-ccs_mod_p67,cap_gas-cc-ccs_mod_p67,False,0.8439753425213236,363,21,66.86156605123782
+Ridge,regional,after fix,gen_gas-cc_p60,cap_gas-cc_p60,False,0.4000000058152659,419,83,0.4452081440492293
+Ridge,regional,after fix,gen_gas-cc_p61,cap_gas-cc_p61,False,0.40000000081455966,452,57,0.4351895560364475
+Ridge,regional,after fix,gen_gas-cc_p62,cap_gas-cc_p62,False,0.6529715122273262,486,0,0.1161854267736099
+Ridge,regional,after fix,gen_gas-cc_p63,cap_gas-cc_p63,False,0.7116369663745759,486,0,0.6249392586427026
+Ridge,regional,after fix,gen_gas-cc_p64,cap_gas-cc_p64,False,0.6964488054807028,486,0,0.4898019961235636
+Ridge,regional,after fix,gen_gas-cc_p65,cap_gas-cc_p65,False,0.7879416776939874,486,0,0.5462252218557868
+Ridge,regional,after fix,gen_gas-cc_p67,cap_gas-cc_p67,False,0.47625308098319,486,0,0.4513278519495189
+Ridge,regional,after fix,gen_gas-ct_p60,cap_gas-ct_p60,False,0.20729153297763153,486,0,0.08290191861203772
+Ridge,regional,after fix,gen_gas-ct_p61,cap_gas-ct_p61,False,0.22883417335747386,470,1,0.485103416542406
+Ridge,regional,after fix,gen_gas-ct_p62,cap_gas-ct_p62,False,0.11936354086837866,486,0,0.06992412875322195
+Ridge,regional,after fix,gen_gas-ct_p63,cap_gas-ct_p63,False,0.4083599973247748,486,0,0.27317762752740665
+Ridge,regional,after fix,gen_gas-ct_p64,cap_gas-ct_p64,False,0.4035786308571739,486,1,0.7891497102798322
+Ridge,regional,after fix,gen_gas-ct_p65,cap_gas-ct_p65,False,0.5074881304504071,486,0,0.17712390047811502
+Ridge,regional,after fix,gen_gas-ct_p67,cap_gas-ct_p67,False,0.49215437245798005,477,16,17.20732772363616
+Ridge,regional,after fix,gen_hydED_p63,cap_hydED_p63,True,0.24092328767123286,486,92,0.259359210060233
+Ridge,regional,after fix,gen_hydEND_p61,cap_hydEND_p61,True,0.18430136986301368,486,0,0.1842807759405853
+Ridge,regional,after fix,gen_hydEND_p63,cap_hydEND_p63,True,0.1986109589041096,486,0,0.1983244444988634
+Ridge,regional,after fix,gen_hydEND_p64,cap_hydEND_p64,True,0.09375616438356164,486,0,0.09375600969894136
+Ridge,regional,after fix,gen_hydEND_p65,cap_hydEND_p65,True,0.2890986301369863,486,0,0.28895309617814513
+Ridge,regional,after fix,gen_hydUD_p63,cap_hydUD_p63,False,0.24092328767123286,6,0,0.22768875816659206
+Ridge,regional,after fix,gen_lfill-gas_p63,cap_lfill-gas_p63,True,0.5259563506827777,486,0,0.5296728248432679
+Ridge,regional,after fix,gen_lfill-gas_p64,cap_lfill-gas_p64,True,0.5240300087614155,486,0,0.5249001576046809
+Ridge,regional,after fix,gen_lfill-gas_p65,cap_lfill-gas_p65,True,0.5259563506928043,486,0,0.5254170656977598
+Ridge,regional,after fix,gen_nuclear-smr_p67,cap_nuclear-smr_p67,False,0.8664750950651069,329,10,0.9224744354690801
+Ridge,regional,after fix,gen_nuclear_p63,cap_nuclear_p63,True,0.8989354839041096,486,0,0.899617397219844
+Ridge,regional,after fix,gen_nuclear_p65,cap_nuclear_p65,False,0.9012434787671234,486,0,0.8984375119776987
+Ridge,regional,after fix,gen_o-g-s_p62,cap_o-g-s_p62,False,0.6115863729452055,469,9,1.2389037482787992
+Ridge,regional,after fix,gen_o-g-s_p63,cap_o-g-s_p63,False,0.12987026044511016,486,0,0.06288322769779175
+Ridge,regional,after fix,gen_o-g-s_p64,cap_o-g-s_p64,False,0.5162736287671232,486,0,0.14395791474659514
+Ridge,regional,after fix,gen_o-g-s_p65,cap_o-g-s_p65,False,0.5578105067714314,486,0,0.4908536720095777
+Ridge,regional,after fix,gen_o-g-s_p67,cap_o-g-s_p67,False,0.6183015013686355,486,1,0.6499070095514754
+Ridge,regional,after fix,gen_upv_p63,cap_upv_p63,False,0.2850635926205161,486,0,0.2631050750135444
+Ridge,regional,after fix,gen_upv_p61,cap_upv_p61,False,0.2910684927291097,486,0,0.29328914685543467
+Ridge,regional,after fix,gen_upv_p64,cap_upv_p64,False,0.3193388254707671,460,17,1.0654131815982928
+Ridge,regional,after fix,gen_upv_p65,cap_upv_p65,False,0.3136250862718531,486,0,0.31533214156355266
+Ridge,regional,after fix,gen_upv_p67,cap_upv_p67,False,0.33403442253528587,486,0,0.3229524950621541
+Ridge,regional,after fix,gen_upv_p60,cap_upv_p60,False,0.2738100126505461,486,0,0.27206985150627183
+Ridge,regional,after fix,gen_upv_p62,cap_upv_p62,False,0.3116712953363026,486,0,0.27580481106171817
+Ridge,regional,after fix,gen_wind-ons_p60,cap_wind-ons_p60,False,0.4805072033050991,486,0,0.4802503955960401
+Ridge,regional,after fix,gen_wind-ons_p61,cap_wind-ons_p61,False,0.5445631517041357,457,4,0.5915447785192286
+Ridge,regional,after fix,gen_wind-ons_p62,cap_wind-ons_p62,False,0.5555353630952831,486,45,1.1204841073548284
+Ridge,regional,after fix,gen_wind-ons_p63,cap_wind-ons_p63,False,0.44028814484245066,486,23,2.9406358488395012
+Ridge,regional,after fix,gen_wind-ons_p64,cap_wind-ons_p64,False,0.5456515213717167,486,6,0.6008139177214405
+Ridge,regional,after fix,gen_wind-ons_p65,cap_wind-ons_p65,False,0.43452423120163325,444,0,0.4140157631342582
+Ridge,regional,after fix,gen_wind-ons_p67,cap_wind-ons_p67,False,0.27965358799190076,421,16,6.0989240257810815

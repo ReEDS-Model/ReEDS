@@ -1,0 +1,2245 @@
+config,layer,output,r2
+A (summed to merged outputs),system,cap_CoalOldScr,0.8038450057621566
+A (summed to merged outputs),system,cap_CoalOldScr_coal-CCS_mod,0.7196314257206684
+A (summed to merged outputs),system,cap_Gas-CC_Gas-CC-CCS_mod,0.29925293373918593
+A (summed to merged outputs),system,cap_Gas-CC_H2-CC,0.5526489296817578
+A (summed to merged outputs),system,cap_H2-CC,0.8492265798668357
+A (summed to merged outputs),system,cap_H2-CT,0.8818734961432703
+A (summed to merged outputs),system,cap_battery_li,0.9255427559379406
+A (summed to merged outputs),system,cap_coal-ccs_mod,0.9253822399549382
+A (summed to merged outputs),system,cap_electrolyzer,0.9182468127225318
+A (summed to merged outputs),system,cap_gas-cc,0.9525124134763072
+A (summed to merged outputs),system,cap_gas-cc-ccs_mod,0.8716989291732572
+A (summed to merged outputs),system,cap_gas-ct,0.892766750840119
+A (summed to merged outputs),system,cap_hydUD,0.4214448554678365
+A (summed to merged outputs),system,cap_nuclear,-0.3619588176269064
+A (summed to merged outputs),system,cap_nuclear-smr,0.2065389829669778
+A (summed to merged outputs),system,cap_o-g-s,0.5991445208729416
+A (summed to merged outputs),system,cap_pumped-hydro,0.5614070488654891
+A (summed to merged outputs),system,gen_CoalOldScr,0.9271186242869058
+A (summed to merged outputs),system,gen_CoalOldScr_coal-CCS_mod,0.7197436109890758
+A (summed to merged outputs),system,gen_Gas-CC_Gas-CC-CCS_mod,0.26869380076685767
+A (summed to merged outputs),system,gen_Gas-CC_H2-CC,0.371155105487342
+A (summed to merged outputs),system,gen_H2-CC,0.8493421810315692
+A (summed to merged outputs),system,gen_H2-CT,0.8818422913799836
+A (summed to merged outputs),system,gen_battery_li,0.9411626829551253
+A (summed to merged outputs),system,gen_coal-ccs_mod,0.9565333808719554
+A (summed to merged outputs),system,gen_distpv,1.0
+A (summed to merged outputs),system,gen_gas-cc,0.9902695400660981
+A (summed to merged outputs),system,gen_gas-cc-ccs_mod,0.8243076876061215
+A (summed to merged outputs),system,gen_gas-ct,0.8692447037091531
+A (summed to merged outputs),system,gen_hydED,0.9367058776163228
+A (summed to merged outputs),system,gen_hydEND,1.0
+A (summed to merged outputs),system,gen_hydUD,0.470233570525307
+A (summed to merged outputs),system,gen_lfill-gas,0.8280389563168207
+A (summed to merged outputs),system,gen_nuclear,0.8419679802508309
+A (summed to merged outputs),system,gen_nuclear-smr,0.20716166597055918
+A (summed to merged outputs),system,gen_o-g-s,0.7397425836890765
+A (summed to merged outputs),system,gen_pumped-hydro,0.5678083351869171
+A (summed to merged outputs),system,tran_AC_total,0.9745745316796562
+A (summed to merged outputs),system,tran_total,0.9745745316796562
+A (summed to merged outputs),system,cost_inv_h2_production,0.007900886985301891
+A (summed to merged outputs),system,cost_inv_h2_storage,-0.09233515564828343
+A (summed to merged outputs),system,cost_inv_investment_capacity_costs,0.9105881076116598
+A (summed to merged outputs),system,cost_inv_investment_refurbishment_capacity,0.540615094317072
+A (summed to merged outputs),system,cost_inv_investment_spurline_costs_rsc_technologies,0.893117420475558
+A (summed to merged outputs),system,cost_inv_itc_payments_negative,0.0573917934694671
+A (summed to merged outputs),system,cost_inv_transmission_interzone_ac_investment,0.8730757722666707
+A (summed to merged outputs),system,cost_inv_transmission_intrazone_investment,0.8322174279555381
+A (summed to merged outputs),system,cost_op_co2_incentive_negative,0.25872518429057634
+A (summed to merged outputs),system,cost_op_co2_transport_storage,0.9209487075135185
+A (summed to merged outputs),system,cost_op_consume_fom,0.9183256536395091
+A (summed to merged outputs),system,cost_op_fom_costs,0.9803146509486971
+A (summed to merged outputs),system,cost_op_fuelcosts_objfn,0.9711536587073933
+A (summed to merged outputs),system,cost_op_h2_storage,0.9436510557782409
+A (summed to merged outputs),system,cost_op_h2_transport_intrareg,0.9236598134584467
+A (summed to merged outputs),system,cost_op_ptc_payments_negative,0.9664254570900103
+A (summed to merged outputs),system,cost_op_spurline_fom,0.9925909118737257
+A (summed to merged outputs),system,cost_op_startcost,0.8776571065269615
+A (summed to merged outputs),system,cost_op_transmission_fom,0.9756074398753731
+A (summed to merged outputs),system,cost_op_transmission_intrazone_fom,0.9865076392523205
+A (summed to merged outputs),system,cost_op_vom_costs,0.9791714803109719
+A (summed to merged outputs),system,cost_total,0.8975132833763838
+A (summed to merged outputs),system,runtime_seconds,0.7574536061983923
+A (summed to merged outputs),system,cap_upv,0.961897905156812
+A (summed to merged outputs),system,cap_wind-ons,0.9874188075189289
+A (summed to merged outputs),system,gen_upv,0.9625010022261541
+A (summed to merged outputs),system,gen_wind-ons,0.9845389235454584
+A (summed to merged outputs),regional,cap_CoalOldScr_coal-CCS_mod_p63,0.6632353851449015
+A (summed to merged outputs),regional,cap_CoalOldScr_coal-CCS_mod_p64,0.5810516066214662
+A (summed to merged outputs),regional,cap_CoalOldScr_coal-CCS_mod_p65,0.7204420346369163
+A (summed to merged outputs),regional,cap_CoalOldScr_coal-CCS_mod_p67,0.6870226079031976
+A (summed to merged outputs),regional,cap_CoalOldScr_p63,0.03742380994555505
+A (summed to merged outputs),regional,cap_CoalOldScr_p64,0.5384516444803664
+A (summed to merged outputs),regional,cap_CoalOldScr_p65,0.20457520004438545
+A (summed to merged outputs),regional,cap_CoalOldScr_p67,0.7498633313397233
+A (summed to merged outputs),regional,cap_Gas-CC_Gas-CC-CCS_mod_p67,0.29925293373918593
+A (summed to merged outputs),regional,cap_Gas-CC_H2-CC_p60,0.6297810346285775
+A (summed to merged outputs),regional,cap_Gas-CC_H2-CC_p62,0.36845830898864107
+A (summed to merged outputs),regional,cap_Gas-CC_H2-CC_p63,-0.25272209395118916
+A (summed to merged outputs),regional,cap_Gas-CC_H2-CC_p64,0.19328840153603
+A (summed to merged outputs),regional,cap_Gas-CC_H2-CC_p65,0.762103560259098
+A (summed to merged outputs),regional,cap_H2-CC_p60,0.16599433855777046
+A (summed to merged outputs),regional,cap_H2-CC_p61,0.8503625003366572
+A (summed to merged outputs),regional,cap_H2-CC_p62,0.059563192023205924
+A (summed to merged outputs),regional,cap_H2-CC_p65,-0.30871262405666444
+A (summed to merged outputs),regional,cap_H2-CT_p60,0.7392365822549812
+A (summed to merged outputs),regional,cap_H2-CT_p61,0.8385584598567637
+A (summed to merged outputs),regional,cap_H2-CT_p62,0.7499890828975155
+A (summed to merged outputs),regional,cap_H2-CT_p63,0.3859135953381275
+A (summed to merged outputs),regional,cap_H2-CT_p64,0.3416555110111801
+A (summed to merged outputs),regional,cap_H2-CT_p65,0.5502369261156692
+A (summed to merged outputs),regional,cap_H2-CT_p67,-0.3029684000473394
+A (summed to merged outputs),regional,cap_battery_li_p60,0.5389944762362748
+A (summed to merged outputs),regional,cap_battery_li_p61,0.5636385388391267
+A (summed to merged outputs),regional,cap_battery_li_p62,0.5428125032970503
+A (summed to merged outputs),regional,cap_battery_li_p63,0.8427242007445954
+A (summed to merged outputs),regional,cap_battery_li_p64,0.5656896955935423
+A (summed to merged outputs),regional,cap_battery_li_p65,0.8021364560553368
+A (summed to merged outputs),regional,cap_battery_li_p67,0.8044454072258458
+A (summed to merged outputs),regional,cap_coal-ccs_mod_p67,0.9253822399549382
+A (summed to merged outputs),regional,cap_electrolyzer_p60,0.7795327149841424
+A (summed to merged outputs),regional,cap_electrolyzer_p61,0.8495747631556914
+A (summed to merged outputs),regional,cap_electrolyzer_p62,0.7149717663064388
+A (summed to merged outputs),regional,cap_electrolyzer_p63,0.37244608360773157
+A (summed to merged outputs),regional,cap_electrolyzer_p64,0.45493567065657414
+A (summed to merged outputs),regional,cap_electrolyzer_p65,0.6409844341853038
+A (summed to merged outputs),regional,cap_electrolyzer_p67,-0.3029684000473398
+A (summed to merged outputs),regional,cap_gas-cc-ccs_mod_p63,0.8768545006295067
+A (summed to merged outputs),regional,cap_gas-cc-ccs_mod_p64,0.5068042968941469
+A (summed to merged outputs),regional,cap_gas-cc-ccs_mod_p65,0.2906930046542002
+A (summed to merged outputs),regional,cap_gas-cc-ccs_mod_p67,0.840037550736944
+A (summed to merged outputs),regional,cap_gas-cc_p60,0.4153291263835692
+A (summed to merged outputs),regional,cap_gas-cc_p61,0.4118527564104675
+A (summed to merged outputs),regional,cap_gas-cc_p62,0.4976563179478156
+A (summed to merged outputs),regional,cap_gas-cc_p63,0.9147216704415907
+A (summed to merged outputs),regional,cap_gas-cc_p64,0.8666727944879209
+A (summed to merged outputs),regional,cap_gas-cc_p65,0.8876369146247203
+A (summed to merged outputs),regional,cap_gas-cc_p67,0.9288339628428584
+A (summed to merged outputs),regional,cap_gas-ct_p60,0.47031307524508226
+A (summed to merged outputs),regional,cap_gas-ct_p61,0.6126371206351381
+A (summed to merged outputs),regional,cap_gas-ct_p62,0.4048636571468519
+A (summed to merged outputs),regional,cap_gas-ct_p63,0.8018827771626647
+A (summed to merged outputs),regional,cap_gas-ct_p64,0.6935423572542605
+A (summed to merged outputs),regional,cap_gas-ct_p65,0.7265212508632136
+A (summed to merged outputs),regional,cap_gas-ct_p67,0.9158552629899279
+A (summed to merged outputs),regional,cap_hydUD_p63,0.4214448554678365
+A (summed to merged outputs),regional,cap_nuclear-smr_p67,0.2065389829669778
+A (summed to merged outputs),regional,cap_nuclear_p65,-0.36163123812447573
+A (summed to merged outputs),regional,cap_o-g-s_p62,0.5732953410520625
+A (summed to merged outputs),regional,cap_o-g-s_p63,0.5940801648584155
+A (summed to merged outputs),regional,cap_o-g-s_p64,0.39685228909910875
+A (summed to merged outputs),regional,cap_o-g-s_p65,0.4581704859550566
+A (summed to merged outputs),regional,cap_o-g-s_p67,0.5130386027451839
+A (summed to merged outputs),regional,cap_pumped-hydro_p61,0.5618156855378632
+A (summed to merged outputs),regional,gen_CoalOldScr_coal-CCS_mod_p63,0.662728509154676
+A (summed to merged outputs),regional,gen_CoalOldScr_coal-CCS_mod_p64,0.5802108313519709
+A (summed to merged outputs),regional,gen_CoalOldScr_coal-CCS_mod_p65,0.7221417369356677
+A (summed to merged outputs),regional,gen_CoalOldScr_coal-CCS_mod_p67,0.6869242276867829
+A (summed to merged outputs),regional,gen_CoalOldScr_p63,-0.0908699154044963
+A (summed to merged outputs),regional,gen_CoalOldScr_p64,0.638964799566578
+A (summed to merged outputs),regional,gen_CoalOldScr_p65,0.20613395652885846
+A (summed to merged outputs),regional,gen_CoalOldScr_p67,0.9040090709596635
+A (summed to merged outputs),regional,gen_Gas-CC_Gas-CC-CCS_mod_p67,0.26869380076685767
+A (summed to merged outputs),regional,gen_Gas-CC_H2-CC_p60,0.6297405183403214
+A (summed to merged outputs),regional,gen_Gas-CC_H2-CC_p62,0.36849289900993687
+A (summed to merged outputs),regional,gen_Gas-CC_H2-CC_p63,-0.2527220939511887
+A (summed to merged outputs),regional,gen_Gas-CC_H2-CC_p64,0.058901573172218
+A (summed to merged outputs),regional,gen_Gas-CC_H2-CC_p65,0.3774808706577848
+A (summed to merged outputs),regional,gen_H2-CC_p60,0.1662275710295784
+A (summed to merged outputs),regional,gen_H2-CC_p61,0.8503626967473025
+A (summed to merged outputs),regional,gen_H2-CC_p62,0.06046989350280629
+A (summed to merged outputs),regional,gen_H2-CC_p65,-0.3088372240916901
+A (summed to merged outputs),regional,gen_H2-CT_p60,0.7394398734022762
+A (summed to merged outputs),regional,gen_H2-CT_p61,0.8384990266701644
+A (summed to merged outputs),regional,gen_H2-CT_p62,0.7503329909354499
+A (summed to merged outputs),regional,gen_H2-CT_p63,0.38688985846923973
+A (summed to merged outputs),regional,gen_H2-CT_p64,0.34070933401000336
+A (summed to merged outputs),regional,gen_H2-CT_p65,0.5527824634675855
+A (summed to merged outputs),regional,gen_H2-CT_p67,-0.3029684000473407
+A (summed to merged outputs),regional,gen_battery_li_p60,0.5198336764247908
+A (summed to merged outputs),regional,gen_battery_li_p61,0.6802458104248584
+A (summed to merged outputs),regional,gen_battery_li_p62,0.5568793084159591
+A (summed to merged outputs),regional,gen_battery_li_p63,0.8651968725574635
+A (summed to merged outputs),regional,gen_battery_li_p64,0.5818922345431186
+A (summed to merged outputs),regional,gen_battery_li_p65,0.8632310414842981
+A (summed to merged outputs),regional,gen_battery_li_p67,0.8314309262582922
+A (summed to merged outputs),regional,gen_coal-ccs_mod_p67,0.9565333808719554
+A (summed to merged outputs),regional,gen_distpv_p60,1.0
+A (summed to merged outputs),regional,gen_distpv_p61,1.0
+A (summed to merged outputs),regional,gen_distpv_p62,1.0
+A (summed to merged outputs),regional,gen_distpv_p63,1.0
+A (summed to merged outputs),regional,gen_distpv_p64,1.0
+A (summed to merged outputs),regional,gen_distpv_p65,1.0
+A (summed to merged outputs),regional,gen_distpv_p67,1.0
+A (summed to merged outputs),regional,gen_gas-cc-ccs_mod_p63,0.8491578815362206
+A (summed to merged outputs),regional,gen_gas-cc-ccs_mod_p64,0.5287965628802063
+A (summed to merged outputs),regional,gen_gas-cc-ccs_mod_p65,-0.1804913877715446
+A (summed to merged outputs),regional,gen_gas-cc-ccs_mod_p67,0.8028810462334217
+A (summed to merged outputs),regional,gen_gas-cc_p60,0.4406269139720522
+A (summed to merged outputs),regional,gen_gas-cc_p61,0.4438534743097541
+A (summed to merged outputs),regional,gen_gas-cc_p62,0.2619994041861816
+A (summed to merged outputs),regional,gen_gas-cc_p63,0.9815123106247001
+A (summed to merged outputs),regional,gen_gas-cc_p64,0.9470758806575906
+A (summed to merged outputs),regional,gen_gas-cc_p65,0.9554784937717016
+A (summed to merged outputs),regional,gen_gas-cc_p67,0.968468053297612
+A (summed to merged outputs),regional,gen_gas-ct_p60,0.37374775359371215
+A (summed to merged outputs),regional,gen_gas-ct_p61,0.6903536739849908
+A (summed to merged outputs),regional,gen_gas-ct_p62,0.3540487890449652
+A (summed to merged outputs),regional,gen_gas-ct_p63,0.7839418332004937
+A (summed to merged outputs),regional,gen_gas-ct_p64,0.6777244184614823
+A (summed to merged outputs),regional,gen_gas-ct_p65,0.7498786727951903
+A (summed to merged outputs),regional,gen_gas-ct_p67,0.7832476503296526
+A (summed to merged outputs),regional,gen_hydED_p63,0.9367058776163228
+A (summed to merged outputs),regional,gen_hydEND_p61,0.9999870477469955
+A (summed to merged outputs),regional,gen_hydEND_p63,1.0
+A (summed to merged outputs),regional,gen_hydEND_p64,1.0
+A (summed to merged outputs),regional,gen_hydEND_p65,1.0
+A (summed to merged outputs),regional,gen_hydUD_p63,0.470233570525307
+A (summed to merged outputs),regional,gen_lfill-gas_p63,0.8184774108677129
+A (summed to merged outputs),regional,gen_lfill-gas_p64,0.8150505143317421
+A (summed to merged outputs),regional,gen_lfill-gas_p65,0.7766037465224628
+A (summed to merged outputs),regional,gen_nuclear-smr_p67,0.20716166597055918
+A (summed to merged outputs),regional,gen_nuclear_p63,0.8326125564752465
+A (summed to merged outputs),regional,gen_nuclear_p65,0.7751199842145181
+A (summed to merged outputs),regional,gen_o-g-s_p62,0.7074520499261696
+A (summed to merged outputs),regional,gen_o-g-s_p63,0.5752447607597635
+A (summed to merged outputs),regional,gen_o-g-s_p64,0.4631970919284043
+A (summed to merged outputs),regional,gen_o-g-s_p65,0.7307709914727584
+A (summed to merged outputs),regional,gen_o-g-s_p67,0.7545753945137519
+A (summed to merged outputs),regional,gen_pumped-hydro_p61,0.564803723944719
+A (summed to merged outputs),regional,gen_pumped-hydro_p64,0.5291973266232158
+A (summed to merged outputs),regional,tran_p60_p61_AC,0.48252868065791843
+A (summed to merged outputs),regional,tran_p60_p62_AC,0.8807790443527475
+A (summed to merged outputs),regional,tran_p60_p63_AC,0.8898917346115809
+A (summed to merged outputs),regional,tran_p61_p62_AC,0.40545498831122806
+A (summed to merged outputs),regional,tran_p61_p63_AC,0.8179972297831758
+A (summed to merged outputs),regional,tran_p61_p64_AC,0.8319752880678316
+A (summed to merged outputs),regional,tran_p61_p65_AC,0.9564116999249744
+A (summed to merged outputs),regional,tran_p64_p65_AC,0.6641154296725451
+A (summed to merged outputs),regional,tran_p64_p67_AC,0.9663527626422449
+A (summed to merged outputs),regional,tran_p65_p67_AC,0.9660525376047251
+A (summed to merged outputs),regional,cost_inv_h2_production_p60,-0.2850388092242897
+A (summed to merged outputs),regional,cost_inv_h2_production_p61,-0.2732794712475779
+A (summed to merged outputs),regional,cost_inv_h2_production_p62,-0.16797162223464146
+A (summed to merged outputs),regional,cost_inv_h2_production_p63,-0.011761374511926936
+A (summed to merged outputs),regional,cost_inv_h2_production_p65,-0.18214729576446698
+A (summed to merged outputs),regional,cost_inv_h2_storage_p60,-0.22299227425112678
+A (summed to merged outputs),regional,cost_inv_h2_storage_p62,-0.19167524466582808
+A (summed to merged outputs),regional,cost_inv_h2_storage_p63,-0.25272209395118805
+A (summed to merged outputs),regional,cost_inv_h2_storage_p64,-0.053342109687170014
+A (summed to merged outputs),regional,cost_inv_h2_storage_p65,-0.22432703370269036
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p60,0.4320863412422006
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p61,0.8553000400930906
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p62,0.7094381480562706
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p63,0.7771469805173352
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p64,0.6201820411926523
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p65,0.736982638878398
+A (summed to merged outputs),regional,cost_inv_investment_capacity_costs_p67,0.46598411458109124
+A (summed to merged outputs),regional,cost_inv_investment_refurbishment_capacity_p61,0.2998289291064049
+A (summed to merged outputs),regional,cost_inv_investment_refurbishment_capacity_p63,0.25547112131417615
+A (summed to merged outputs),regional,cost_inv_investment_refurbishment_capacity_p64,0.14649355778810746
+A (summed to merged outputs),regional,cost_inv_investment_refurbishment_capacity_p65,0.770080210600471
+A (summed to merged outputs),regional,cost_inv_investment_refurbishment_capacity_p67,-0.16793058229997904
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p60,0.5552409857911285
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p61,0.8557769215953359
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p62,0.7452605913821753
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p63,0.8520545379652403
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p64,0.5526013959306058
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p65,0.8362536443018571
+A (summed to merged outputs),regional,cost_inv_investment_spurline_costs_rsc_technologies_p67,0.8104609901774805
+A (summed to merged outputs),regional,cost_inv_itc_payments_negative_p63,0.0573917934694671
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p60,0.6864044150533319
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p61,0.8438093640018918
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p62,0.6564449729334703
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p63,0.87729107315496
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p64,0.6693551818203342
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p65,0.7864650796929892
+A (summed to merged outputs),regional,cost_inv_transmission_interzone_ac_investment_p67,0.6034073447335655
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p60,0.4625953299398834
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p61,0.8223007775214933
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p62,0.43543559870221915
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p63,0.70727509694272
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p64,0.5951446234939941
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p65,0.5760678021391501
+A (summed to merged outputs),regional,cost_inv_transmission_intrazone_investment_p67,0.5747576786636757
+A (summed to merged outputs),regional,cost_op_co2_incentive_negative_p67,0.25872518429057634
+A (summed to merged outputs),regional,cost_op_co2_transport_storage_p63,0.8132331457481609
+A (summed to merged outputs),regional,cost_op_co2_transport_storage_p64,0.5167813418137146
+A (summed to merged outputs),regional,cost_op_co2_transport_storage_p65,0.013531841183763271
+A (summed to merged outputs),regional,cost_op_co2_transport_storage_p67,0.9143978982995291
+A (summed to merged outputs),regional,cost_op_consume_fom_p60,0.7797531636132278
+A (summed to merged outputs),regional,cost_op_consume_fom_p61,0.8497443272594011
+A (summed to merged outputs),regional,cost_op_consume_fom_p62,0.715288680963508
+A (summed to merged outputs),regional,cost_op_consume_fom_p63,0.3728827615974306
+A (summed to merged outputs),regional,cost_op_consume_fom_p64,0.455938930038443
+A (summed to merged outputs),regional,cost_op_consume_fom_p65,0.6394173829391324
+A (summed to merged outputs),regional,cost_op_consume_fom_p67,-0.3029684000473378
+A (summed to merged outputs),regional,cost_op_fom_costs_p60,0.6066588024749597
+A (summed to merged outputs),regional,cost_op_fom_costs_p61,0.9721668205473006
+A (summed to merged outputs),regional,cost_op_fom_costs_p62,0.8972478702114158
+A (summed to merged outputs),regional,cost_op_fom_costs_p63,0.9410699604129897
+A (summed to merged outputs),regional,cost_op_fom_costs_p64,0.9670144737626023
+A (summed to merged outputs),regional,cost_op_fom_costs_p65,0.9641598604119715
+A (summed to merged outputs),regional,cost_op_fom_costs_p67,0.720654687968666
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p60,0.6710496144490569
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p61,0.49444483541977813
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p62,0.8132930447279392
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p63,0.9555953278781031
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p64,0.919884066387319
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p65,0.9170628563258316
+A (summed to merged outputs),regional,cost_op_fuelcosts_objfn_p67,0.9280224218628815
+A (summed to merged outputs),regional,cost_op_h2_storage_p60,0.9059517971269572
+A (summed to merged outputs),regional,cost_op_h2_storage_p61,0.8855585568890108
+A (summed to merged outputs),regional,cost_op_h2_storage_p62,0.6007560670229457
+A (summed to merged outputs),regional,cost_op_h2_storage_p63,0.34485574714045053
+A (summed to merged outputs),regional,cost_op_h2_storage_p64,0.5083319519232986
+A (summed to merged outputs),regional,cost_op_h2_storage_p65,0.7193766123478136
+A (summed to merged outputs),regional,cost_op_h2_storage_p67,-0.30296840004733716
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p60,0.761151536978413
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p61,0.8870416407535183
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p62,0.6805093038214254
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p63,0.3866264491480421
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p64,0.46820820502955296
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p65,0.6777539580991039
+A (summed to merged outputs),regional,cost_op_h2_transport_intrareg_p67,-0.3029684000473378
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p60,0.26786299680489056
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p61,0.7719962088728657
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p62,0.6837098857668288
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p63,0.9408729681030994
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p64,0.894557124820799
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p65,0.9270833781947205
+A (summed to merged outputs),regional,cost_op_ptc_payments_negative_p67,0.6596495800794686
+A (summed to merged outputs),regional,cost_op_spurline_fom_p60,0.4902150875674377
+A (summed to merged outputs),regional,cost_op_spurline_fom_p61,0.9572391282866733
+A (summed to merged outputs),regional,cost_op_spurline_fom_p62,0.9559622750081445
+A (summed to merged outputs),regional,cost_op_spurline_fom_p63,0.9720998731454398
+A (summed to merged outputs),regional,cost_op_spurline_fom_p64,0.981075576275396
+A (summed to merged outputs),regional,cost_op_spurline_fom_p65,0.9775194573506625
+A (summed to merged outputs),regional,cost_op_spurline_fom_p67,0.9303519896084016
+A (summed to merged outputs),regional,cost_op_startcost_p60,0.2028258605831078
+A (summed to merged outputs),regional,cost_op_startcost_p61,0.6688391346368625
+A (summed to merged outputs),regional,cost_op_startcost_p62,0.6753997121219693
+A (summed to merged outputs),regional,cost_op_startcost_p63,0.8146458268168986
+A (summed to merged outputs),regional,cost_op_startcost_p64,0.6796997167407305
+A (summed to merged outputs),regional,cost_op_startcost_p65,0.7658539131340102
+A (summed to merged outputs),regional,cost_op_startcost_p67,0.8245958370767326
+A (summed to merged outputs),regional,cost_op_transmission_fom_p60,0.8938950559256499
+A (summed to merged outputs),regional,cost_op_transmission_fom_p61,0.9620344544404812
+A (summed to merged outputs),regional,cost_op_transmission_fom_p62,0.8554790431403264
+A (summed to merged outputs),regional,cost_op_transmission_fom_p63,0.9081017419245541
+A (summed to merged outputs),regional,cost_op_transmission_fom_p64,0.935650839360642
+A (summed to merged outputs),regional,cost_op_transmission_fom_p65,0.9458144733379861
+A (summed to merged outputs),regional,cost_op_transmission_fom_p67,0.9788291865748852
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p60,0.6146612483366629
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p61,0.9375182460063446
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p62,0.868040631955612
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p63,0.9604763001296758
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p64,0.9612952577420159
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p65,0.9566453893733298
+A (summed to merged outputs),regional,cost_op_transmission_intrazone_fom_p67,0.8393372200239251
+A (summed to merged outputs),regional,cost_op_vom_costs_p60,0.5177569508930565
+A (summed to merged outputs),regional,cost_op_vom_costs_p61,0.7703066438199978
+A (summed to merged outputs),regional,cost_op_vom_costs_p62,0.23414402506208776
+A (summed to merged outputs),regional,cost_op_vom_costs_p63,0.9766569632227724
+A (summed to merged outputs),regional,cost_op_vom_costs_p64,0.938479251416653
+A (summed to merged outputs),regional,cost_op_vom_costs_p65,0.945523188364954
+A (summed to merged outputs),regional,cost_op_vom_costs_p67,0.9332963251917026
+A (summed to merged outputs),regional,cap_upv_p63,0.9586079809364315
+A (summed to merged outputs),regional,cap_upv_p64,0.9079593434644577
+A (summed to merged outputs),regional,cap_upv_p65,0.9250944714357948
+A (summed to merged outputs),regional,cap_upv_p67,0.9315291312376777
+A (summed to merged outputs),regional,cap_upv_p61,0.7062172302880594
+A (summed to merged outputs),regional,cap_upv_p60,0.7733107525318966
+A (summed to merged outputs),regional,cap_upv_p62,0.5097211080203238
+A (summed to merged outputs),regional,cap_wind-ons_p60,0.6455016699002902
+A (summed to merged outputs),regional,cap_wind-ons_p61,0.9763745212104311
+A (summed to merged outputs),regional,cap_wind-ons_p62,0.9672623698487297
+A (summed to merged outputs),regional,cap_wind-ons_p63,0.9577474267051634
+A (summed to merged outputs),regional,cap_wind-ons_p64,0.9822309100069494
+A (summed to merged outputs),regional,cap_wind-ons_p65,0.9843780022497205
+A (summed to merged outputs),regional,cap_wind-ons_p67,0.9550154694350943
+A (summed to merged outputs),regional,gen_upv_p63,0.9595994711894635
+A (summed to merged outputs),regional,gen_upv_p61,0.6892835792766747
+A (summed to merged outputs),regional,gen_upv_p64,0.8964855009486093
+A (summed to merged outputs),regional,gen_upv_p65,0.919531132181909
+A (summed to merged outputs),regional,gen_upv_p67,0.9156973287071657
+A (summed to merged outputs),regional,gen_upv_p60,0.8540476156249763
+A (summed to merged outputs),regional,gen_upv_p62,0.4489919715305275
+A (summed to merged outputs),regional,gen_wind-ons_p60,0.5813596212526719
+A (summed to merged outputs),regional,gen_wind-ons_p61,0.9748440552180633
+A (summed to merged outputs),regional,gen_wind-ons_p62,0.9563061977302898
+A (summed to merged outputs),regional,gen_wind-ons_p63,0.9511943120876031
+A (summed to merged outputs),regional,gen_wind-ons_p64,0.9851650302090157
+A (summed to merged outputs),regional,gen_wind-ons_p65,0.9867150823609436
+A (summed to merged outputs),regional,gen_wind-ons_p67,0.9523961110551746
+B,system,cap_CoalOldScr,0.8038450057621566
+B,system,cap_CoalOldScr_coal-CCS_mod,0.7196314257206684
+B,system,cap_Gas-CC_Gas-CC-CCS_mod,0.29925293373918593
+B,system,cap_Gas-CC_H2-CC,0.5526489296817578
+B,system,cap_H2-CC,0.8492265798668357
+B,system,cap_H2-CT,0.8818734961432703
+B,system,cap_battery_li,0.9255427559379406
+B,system,cap_coal-ccs_mod,0.9253822399549382
+B,system,cap_electrolyzer,0.9182468127225318
+B,system,cap_gas-cc,0.9525124134763072
+B,system,cap_gas-cc-ccs_mod,0.8716989291732572
+B,system,cap_gas-ct,0.892766750840119
+B,system,cap_hydUD,0.4214448554678365
+B,system,cap_nuclear,-0.3619588176269064
+B,system,cap_nuclear-smr,0.2065389829669778
+B,system,cap_o-g-s,0.5991445208729416
+B,system,cap_pumped-hydro,0.5614070488654891
+B,system,gen_CoalOldScr,0.9271186242869058
+B,system,gen_CoalOldScr_coal-CCS_mod,0.7197436109890758
+B,system,gen_Gas-CC_Gas-CC-CCS_mod,0.26869380076685767
+B,system,gen_Gas-CC_H2-CC,0.371155105487342
+B,system,gen_H2-CC,0.8493421810315692
+B,system,gen_H2-CT,0.8818422913799836
+B,system,gen_battery_li,0.9411626829551253
+B,system,gen_coal-ccs_mod,0.9565333808719554
+B,system,gen_distpv,1.0
+B,system,gen_gas-cc,0.9902695400660981
+B,system,gen_gas-cc-ccs_mod,0.8243076876061215
+B,system,gen_gas-ct,0.8692447037091531
+B,system,gen_hydED,0.9367058776163228
+B,system,gen_hydEND,1.0
+B,system,gen_hydUD,0.470233570525307
+B,system,gen_lfill-gas,0.8280389563168207
+B,system,gen_nuclear,0.8419679802508309
+B,system,gen_nuclear-smr,0.20716166597055918
+B,system,gen_o-g-s,0.7397425836890765
+B,system,gen_pumped-hydro,0.5678083351869171
+B,system,tran_AC_total,0.9745745316796562
+B,system,tran_total,0.9745745316796562
+B,system,cost_inv_h2_production,0.007900886985301891
+B,system,cost_inv_h2_storage,-0.09233515564828343
+B,system,cost_inv_investment_capacity_costs,0.9105881076116598
+B,system,cost_inv_investment_refurbishment_capacity,0.540615094317072
+B,system,cost_inv_investment_spurline_costs_rsc_technologies,0.893117420475558
+B,system,cost_inv_itc_payments_negative,0.0573917934694671
+B,system,cost_inv_transmission_interzone_ac_investment,0.8730757722666707
+B,system,cost_inv_transmission_intrazone_investment,0.8322174279555381
+B,system,cost_op_co2_incentive_negative,0.25872518429057634
+B,system,cost_op_co2_transport_storage,0.9209487075135185
+B,system,cost_op_consume_fom,0.9183256536395091
+B,system,cost_op_fom_costs,0.9803146509486971
+B,system,cost_op_fuelcosts_objfn,0.9711536587073933
+B,system,cost_op_h2_storage,0.9436510557782409
+B,system,cost_op_h2_transport_intrareg,0.9236598134584467
+B,system,cost_op_ptc_payments_negative,0.9664254570900103
+B,system,cost_op_spurline_fom,0.9925909118737257
+B,system,cost_op_startcost,0.8776571065269615
+B,system,cost_op_transmission_fom,0.9756074398753731
+B,system,cost_op_transmission_intrazone_fom,0.9865076392523205
+B,system,cost_op_vom_costs,0.9791714803109719
+B,system,cost_total,0.8975132833763838
+B,system,runtime_seconds,0.7574536061983923
+B,system,cap_upv,0.96651836821878
+B,system,cap_wind-ons,0.9886379755425312
+B,system,gen_upv,0.9625016708058938
+B,system,gen_wind-ons,0.9857702993814765
+B,regional,cap_CoalOldScr_coal-CCS_mod_p63,0.6632353851449015
+B,regional,cap_CoalOldScr_coal-CCS_mod_p64,0.5810516066214662
+B,regional,cap_CoalOldScr_coal-CCS_mod_p65,0.7204420346369163
+B,regional,cap_CoalOldScr_coal-CCS_mod_p67,0.6870226079031976
+B,regional,cap_CoalOldScr_p63,0.03742380994555505
+B,regional,cap_CoalOldScr_p64,0.5384516444803664
+B,regional,cap_CoalOldScr_p65,0.20457520004438545
+B,regional,cap_CoalOldScr_p67,0.7498633313397233
+B,regional,cap_Gas-CC_Gas-CC-CCS_mod_p67,0.29925293373918593
+B,regional,cap_Gas-CC_H2-CC_p60,0.6297810346285775
+B,regional,cap_Gas-CC_H2-CC_p62,0.36845830898864107
+B,regional,cap_Gas-CC_H2-CC_p63,-0.25272209395118916
+B,regional,cap_Gas-CC_H2-CC_p64,0.19328840153603
+B,regional,cap_Gas-CC_H2-CC_p65,0.762103560259098
+B,regional,cap_H2-CC_p60,0.16599433855777046
+B,regional,cap_H2-CC_p61,0.8503625003366572
+B,regional,cap_H2-CC_p62,0.059563192023205924
+B,regional,cap_H2-CC_p65,-0.30871262405666444
+B,regional,cap_H2-CT_p60,0.7392365822549812
+B,regional,cap_H2-CT_p61,0.8385584598567637
+B,regional,cap_H2-CT_p62,0.7499890828975155
+B,regional,cap_H2-CT_p63,0.3859135953381275
+B,regional,cap_H2-CT_p64,0.3416555110111801
+B,regional,cap_H2-CT_p65,0.5502369261156692
+B,regional,cap_H2-CT_p67,-0.3029684000473394
+B,regional,cap_battery_li_p60,0.5389944762362748
+B,regional,cap_battery_li_p61,0.5636385388391267
+B,regional,cap_battery_li_p62,0.5428125032970503
+B,regional,cap_battery_li_p63,0.8427242007445954
+B,regional,cap_battery_li_p64,0.5656896955935423
+B,regional,cap_battery_li_p65,0.8021364560553368
+B,regional,cap_battery_li_p67,0.8044454072258458
+B,regional,cap_coal-ccs_mod_p67,0.9253822399549382
+B,regional,cap_electrolyzer_p60,0.7795327149841424
+B,regional,cap_electrolyzer_p61,0.8495747631556914
+B,regional,cap_electrolyzer_p62,0.7149717663064388
+B,regional,cap_electrolyzer_p63,0.37244608360773157
+B,regional,cap_electrolyzer_p64,0.45493567065657414
+B,regional,cap_electrolyzer_p65,0.6409844341853038
+B,regional,cap_electrolyzer_p67,-0.3029684000473398
+B,regional,cap_gas-cc-ccs_mod_p63,0.8768545006295067
+B,regional,cap_gas-cc-ccs_mod_p64,0.5068042968941469
+B,regional,cap_gas-cc-ccs_mod_p65,0.2906930046542002
+B,regional,cap_gas-cc-ccs_mod_p67,0.840037550736944
+B,regional,cap_gas-cc_p60,0.4153291263835692
+B,regional,cap_gas-cc_p61,0.4118527564104675
+B,regional,cap_gas-cc_p62,0.4976563179478156
+B,regional,cap_gas-cc_p63,0.9147216704415907
+B,regional,cap_gas-cc_p64,0.8666727944879209
+B,regional,cap_gas-cc_p65,0.8876369146247203
+B,regional,cap_gas-cc_p67,0.9288339628428584
+B,regional,cap_gas-ct_p60,0.47031307524508226
+B,regional,cap_gas-ct_p61,0.6126371206351381
+B,regional,cap_gas-ct_p62,0.4048636571468519
+B,regional,cap_gas-ct_p63,0.8018827771626647
+B,regional,cap_gas-ct_p64,0.6935423572542605
+B,regional,cap_gas-ct_p65,0.7265212508632136
+B,regional,cap_gas-ct_p67,0.9158552629899279
+B,regional,cap_hydUD_p63,0.4214448554678365
+B,regional,cap_nuclear-smr_p67,0.2065389829669778
+B,regional,cap_nuclear_p65,-0.36163123812447573
+B,regional,cap_o-g-s_p62,0.5732953410520625
+B,regional,cap_o-g-s_p63,0.5940801648584155
+B,regional,cap_o-g-s_p64,0.39685228909910875
+B,regional,cap_o-g-s_p65,0.4581704859550566
+B,regional,cap_o-g-s_p67,0.5130386027451839
+B,regional,cap_pumped-hydro_p61,0.5618156855378632
+B,regional,gen_CoalOldScr_coal-CCS_mod_p63,0.662728509154676
+B,regional,gen_CoalOldScr_coal-CCS_mod_p64,0.5802108313519709
+B,regional,gen_CoalOldScr_coal-CCS_mod_p65,0.7221417369356677
+B,regional,gen_CoalOldScr_coal-CCS_mod_p67,0.6869242276867829
+B,regional,gen_CoalOldScr_p63,-0.0908699154044963
+B,regional,gen_CoalOldScr_p64,0.638964799566578
+B,regional,gen_CoalOldScr_p65,0.20613395652885846
+B,regional,gen_CoalOldScr_p67,0.9040090709596635
+B,regional,gen_Gas-CC_Gas-CC-CCS_mod_p67,0.26869380076685767
+B,regional,gen_Gas-CC_H2-CC_p60,0.6297405183403214
+B,regional,gen_Gas-CC_H2-CC_p62,0.36849289900993687
+B,regional,gen_Gas-CC_H2-CC_p63,-0.2527220939511887
+B,regional,gen_Gas-CC_H2-CC_p64,0.058901573172218
+B,regional,gen_Gas-CC_H2-CC_p65,0.3774808706577848
+B,regional,gen_H2-CC_p60,0.1662275710295784
+B,regional,gen_H2-CC_p61,0.8503626967473025
+B,regional,gen_H2-CC_p62,0.06046989350280629
+B,regional,gen_H2-CC_p65,-0.3088372240916901
+B,regional,gen_H2-CT_p60,0.7394398734022762
+B,regional,gen_H2-CT_p61,0.8384990266701644
+B,regional,gen_H2-CT_p62,0.7503329909354499
+B,regional,gen_H2-CT_p63,0.38688985846923973
+B,regional,gen_H2-CT_p64,0.34070933401000336
+B,regional,gen_H2-CT_p65,0.5527824634675855
+B,regional,gen_H2-CT_p67,-0.3029684000473407
+B,regional,gen_battery_li_p60,0.5198336764247908
+B,regional,gen_battery_li_p61,0.6802458104248584
+B,regional,gen_battery_li_p62,0.5568793084159591
+B,regional,gen_battery_li_p63,0.8651968725574635
+B,regional,gen_battery_li_p64,0.5818922345431186
+B,regional,gen_battery_li_p65,0.8632310414842981
+B,regional,gen_battery_li_p67,0.8314309262582922
+B,regional,gen_coal-ccs_mod_p67,0.9565333808719554
+B,regional,gen_distpv_p60,1.0
+B,regional,gen_distpv_p61,1.0
+B,regional,gen_distpv_p62,1.0
+B,regional,gen_distpv_p63,1.0
+B,regional,gen_distpv_p64,1.0
+B,regional,gen_distpv_p65,1.0
+B,regional,gen_distpv_p67,1.0
+B,regional,gen_gas-cc-ccs_mod_p63,0.8491578815362206
+B,regional,gen_gas-cc-ccs_mod_p64,0.5287965628802063
+B,regional,gen_gas-cc-ccs_mod_p65,-0.1804913877715446
+B,regional,gen_gas-cc-ccs_mod_p67,0.8028810462334217
+B,regional,gen_gas-cc_p60,0.4406269139720522
+B,regional,gen_gas-cc_p61,0.4438534743097541
+B,regional,gen_gas-cc_p62,0.2619994041861816
+B,regional,gen_gas-cc_p63,0.9815123106247001
+B,regional,gen_gas-cc_p64,0.9470758806575906
+B,regional,gen_gas-cc_p65,0.9554784937717016
+B,regional,gen_gas-cc_p67,0.968468053297612
+B,regional,gen_gas-ct_p60,0.37374775359371215
+B,regional,gen_gas-ct_p61,0.6903536739849908
+B,regional,gen_gas-ct_p62,0.3540487890449652
+B,regional,gen_gas-ct_p63,0.7839418332004937
+B,regional,gen_gas-ct_p64,0.6777244184614823
+B,regional,gen_gas-ct_p65,0.7498786727951903
+B,regional,gen_gas-ct_p67,0.7832476503296526
+B,regional,gen_hydED_p63,0.9367058776163228
+B,regional,gen_hydEND_p61,0.9999870477469955
+B,regional,gen_hydEND_p63,1.0
+B,regional,gen_hydEND_p64,1.0
+B,regional,gen_hydEND_p65,1.0
+B,regional,gen_hydUD_p63,0.470233570525307
+B,regional,gen_lfill-gas_p63,0.8184774108677129
+B,regional,gen_lfill-gas_p64,0.8150505143317421
+B,regional,gen_lfill-gas_p65,0.7766037465224628
+B,regional,gen_nuclear-smr_p67,0.20716166597055918
+B,regional,gen_nuclear_p63,0.8326125564752465
+B,regional,gen_nuclear_p65,0.7751199842145181
+B,regional,gen_o-g-s_p62,0.7074520499261696
+B,regional,gen_o-g-s_p63,0.5752447607597635
+B,regional,gen_o-g-s_p64,0.4631970919284043
+B,regional,gen_o-g-s_p65,0.7307709914727584
+B,regional,gen_o-g-s_p67,0.7545753945137519
+B,regional,gen_pumped-hydro_p61,0.564803723944719
+B,regional,gen_pumped-hydro_p64,0.5291973266232158
+B,regional,tran_p60_p61_AC,0.48252868065791843
+B,regional,tran_p60_p62_AC,0.8807790443527475
+B,regional,tran_p60_p63_AC,0.8898917346115809
+B,regional,tran_p61_p62_AC,0.40545498831122806
+B,regional,tran_p61_p63_AC,0.8179972297831758
+B,regional,tran_p61_p64_AC,0.8319752880678316
+B,regional,tran_p61_p65_AC,0.9564116999249744
+B,regional,tran_p64_p65_AC,0.6641154296725451
+B,regional,tran_p64_p67_AC,0.9663527626422449
+B,regional,tran_p65_p67_AC,0.9660525376047251
+B,regional,cost_inv_h2_production_p60,-0.2850388092242897
+B,regional,cost_inv_h2_production_p61,-0.2732794712475779
+B,regional,cost_inv_h2_production_p62,-0.16797162223464146
+B,regional,cost_inv_h2_production_p63,-0.011761374511926936
+B,regional,cost_inv_h2_production_p65,-0.18214729576446698
+B,regional,cost_inv_h2_storage_p60,-0.22299227425112678
+B,regional,cost_inv_h2_storage_p62,-0.19167524466582808
+B,regional,cost_inv_h2_storage_p63,-0.25272209395118805
+B,regional,cost_inv_h2_storage_p64,-0.053342109687170014
+B,regional,cost_inv_h2_storage_p65,-0.22432703370269036
+B,regional,cost_inv_investment_capacity_costs_p60,0.4320863412422006
+B,regional,cost_inv_investment_capacity_costs_p61,0.8553000400930906
+B,regional,cost_inv_investment_capacity_costs_p62,0.7094381480562706
+B,regional,cost_inv_investment_capacity_costs_p63,0.7771469805173352
+B,regional,cost_inv_investment_capacity_costs_p64,0.6201820411926523
+B,regional,cost_inv_investment_capacity_costs_p65,0.736982638878398
+B,regional,cost_inv_investment_capacity_costs_p67,0.46598411458109124
+B,regional,cost_inv_investment_refurbishment_capacity_p61,0.2998289291064049
+B,regional,cost_inv_investment_refurbishment_capacity_p63,0.25547112131417615
+B,regional,cost_inv_investment_refurbishment_capacity_p64,0.14649355778810746
+B,regional,cost_inv_investment_refurbishment_capacity_p65,0.770080210600471
+B,regional,cost_inv_investment_refurbishment_capacity_p67,-0.16793058229997904
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p60,0.5552409857911285
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p61,0.8557769215953359
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p62,0.7452605913821753
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p63,0.8520545379652403
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p64,0.5526013959306058
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p65,0.8362536443018571
+B,regional,cost_inv_investment_spurline_costs_rsc_technologies_p67,0.8104609901774805
+B,regional,cost_inv_itc_payments_negative_p63,0.0573917934694671
+B,regional,cost_inv_transmission_interzone_ac_investment_p60,0.6864044150533319
+B,regional,cost_inv_transmission_interzone_ac_investment_p61,0.8438093640018918
+B,regional,cost_inv_transmission_interzone_ac_investment_p62,0.6564449729334703
+B,regional,cost_inv_transmission_interzone_ac_investment_p63,0.87729107315496
+B,regional,cost_inv_transmission_interzone_ac_investment_p64,0.6693551818203342
+B,regional,cost_inv_transmission_interzone_ac_investment_p65,0.7864650796929892
+B,regional,cost_inv_transmission_interzone_ac_investment_p67,0.6034073447335655
+B,regional,cost_inv_transmission_intrazone_investment_p60,0.4625953299398834
+B,regional,cost_inv_transmission_intrazone_investment_p61,0.8223007775214933
+B,regional,cost_inv_transmission_intrazone_investment_p62,0.43543559870221915
+B,regional,cost_inv_transmission_intrazone_investment_p63,0.70727509694272
+B,regional,cost_inv_transmission_intrazone_investment_p64,0.5951446234939941
+B,regional,cost_inv_transmission_intrazone_investment_p65,0.5760678021391501
+B,regional,cost_inv_transmission_intrazone_investment_p67,0.5747576786636757
+B,regional,cost_op_co2_incentive_negative_p67,0.25872518429057634
+B,regional,cost_op_co2_transport_storage_p63,0.8132331457481609
+B,regional,cost_op_co2_transport_storage_p64,0.5167813418137146
+B,regional,cost_op_co2_transport_storage_p65,0.013531841183763271
+B,regional,cost_op_co2_transport_storage_p67,0.9143978982995291
+B,regional,cost_op_consume_fom_p60,0.7797531636132278
+B,regional,cost_op_consume_fom_p61,0.8497443272594011
+B,regional,cost_op_consume_fom_p62,0.715288680963508
+B,regional,cost_op_consume_fom_p63,0.3728827615974306
+B,regional,cost_op_consume_fom_p64,0.455938930038443
+B,regional,cost_op_consume_fom_p65,0.6394173829391324
+B,regional,cost_op_consume_fom_p67,-0.3029684000473378
+B,regional,cost_op_fom_costs_p60,0.6066588024749597
+B,regional,cost_op_fom_costs_p61,0.9721668205473006
+B,regional,cost_op_fom_costs_p62,0.8972478702114158
+B,regional,cost_op_fom_costs_p63,0.9410699604129897
+B,regional,cost_op_fom_costs_p64,0.9670144737626023
+B,regional,cost_op_fom_costs_p65,0.9641598604119715
+B,regional,cost_op_fom_costs_p67,0.720654687968666
+B,regional,cost_op_fuelcosts_objfn_p60,0.6710496144490569
+B,regional,cost_op_fuelcosts_objfn_p61,0.49444483541977813
+B,regional,cost_op_fuelcosts_objfn_p62,0.8132930447279392
+B,regional,cost_op_fuelcosts_objfn_p63,0.9555953278781031
+B,regional,cost_op_fuelcosts_objfn_p64,0.919884066387319
+B,regional,cost_op_fuelcosts_objfn_p65,0.9170628563258316
+B,regional,cost_op_fuelcosts_objfn_p67,0.9280224218628815
+B,regional,cost_op_h2_storage_p60,0.9059517971269572
+B,regional,cost_op_h2_storage_p61,0.8855585568890108
+B,regional,cost_op_h2_storage_p62,0.6007560670229457
+B,regional,cost_op_h2_storage_p63,0.34485574714045053
+B,regional,cost_op_h2_storage_p64,0.5083319519232986
+B,regional,cost_op_h2_storage_p65,0.7193766123478136
+B,regional,cost_op_h2_storage_p67,-0.30296840004733716
+B,regional,cost_op_h2_transport_intrareg_p60,0.761151536978413
+B,regional,cost_op_h2_transport_intrareg_p61,0.8870416407535183
+B,regional,cost_op_h2_transport_intrareg_p62,0.6805093038214254
+B,regional,cost_op_h2_transport_intrareg_p63,0.3866264491480421
+B,regional,cost_op_h2_transport_intrareg_p64,0.46820820502955296
+B,regional,cost_op_h2_transport_intrareg_p65,0.6777539580991039
+B,regional,cost_op_h2_transport_intrareg_p67,-0.3029684000473378
+B,regional,cost_op_ptc_payments_negative_p60,0.26786299680489056
+B,regional,cost_op_ptc_payments_negative_p61,0.7719962088728657
+B,regional,cost_op_ptc_payments_negative_p62,0.6837098857668288
+B,regional,cost_op_ptc_payments_negative_p63,0.9408729681030994
+B,regional,cost_op_ptc_payments_negative_p64,0.894557124820799
+B,regional,cost_op_ptc_payments_negative_p65,0.9270833781947205
+B,regional,cost_op_ptc_payments_negative_p67,0.6596495800794686
+B,regional,cost_op_spurline_fom_p60,0.4902150875674377
+B,regional,cost_op_spurline_fom_p61,0.9572391282866733
+B,regional,cost_op_spurline_fom_p62,0.9559622750081445
+B,regional,cost_op_spurline_fom_p63,0.9720998731454398
+B,regional,cost_op_spurline_fom_p64,0.981075576275396
+B,regional,cost_op_spurline_fom_p65,0.9775194573506625
+B,regional,cost_op_spurline_fom_p67,0.9303519896084016
+B,regional,cost_op_startcost_p60,0.2028258605831078
+B,regional,cost_op_startcost_p61,0.6688391346368625
+B,regional,cost_op_startcost_p62,0.6753997121219693
+B,regional,cost_op_startcost_p63,0.8146458268168986
+B,regional,cost_op_startcost_p64,0.6796997167407305
+B,regional,cost_op_startcost_p65,0.7658539131340102
+B,regional,cost_op_startcost_p67,0.8245958370767326
+B,regional,cost_op_transmission_fom_p60,0.8938950559256499
+B,regional,cost_op_transmission_fom_p61,0.9620344544404812
+B,regional,cost_op_transmission_fom_p62,0.8554790431403264
+B,regional,cost_op_transmission_fom_p63,0.9081017419245541
+B,regional,cost_op_transmission_fom_p64,0.935650839360642
+B,regional,cost_op_transmission_fom_p65,0.9458144733379861
+B,regional,cost_op_transmission_fom_p67,0.9788291865748852
+B,regional,cost_op_transmission_intrazone_fom_p60,0.6146612483366629
+B,regional,cost_op_transmission_intrazone_fom_p61,0.9375182460063446
+B,regional,cost_op_transmission_intrazone_fom_p62,0.868040631955612
+B,regional,cost_op_transmission_intrazone_fom_p63,0.9604763001296758
+B,regional,cost_op_transmission_intrazone_fom_p64,0.9612952577420159
+B,regional,cost_op_transmission_intrazone_fom_p65,0.9566453893733298
+B,regional,cost_op_transmission_intrazone_fom_p67,0.8393372200239251
+B,regional,cost_op_vom_costs_p60,0.5177569508930565
+B,regional,cost_op_vom_costs_p61,0.7703066438199978
+B,regional,cost_op_vom_costs_p62,0.23414402506208776
+B,regional,cost_op_vom_costs_p63,0.9766569632227724
+B,regional,cost_op_vom_costs_p64,0.938479251416653
+B,regional,cost_op_vom_costs_p65,0.945523188364954
+B,regional,cost_op_vom_costs_p67,0.9332963251917026
+B,regional,cap_upv_p63,0.9583487763389371
+B,regional,cap_upv_p64,0.9156847189642648
+B,regional,cap_upv_p65,0.931603794749269
+B,regional,cap_upv_p67,0.9315239153957916
+B,regional,cap_upv_p61,0.6698421050541695
+B,regional,cap_upv_p60,0.7733107525318966
+B,regional,cap_upv_p62,0.5097211080203238
+B,regional,cap_wind-ons_p60,0.6771023832384084
+B,regional,cap_wind-ons_p61,0.9780145293899171
+B,regional,cap_wind-ons_p62,0.9573220801558746
+B,regional,cap_wind-ons_p63,0.9564117936909837
+B,regional,cap_wind-ons_p64,0.9836143746713004
+B,regional,cap_wind-ons_p65,0.9834966460888155
+B,regional,cap_wind-ons_p67,0.9537173748063265
+B,regional,gen_upv_p63,0.9601535390425331
+B,regional,gen_upv_p61,0.6252491402020957
+B,regional,gen_upv_p64,0.9061540010043824
+B,regional,gen_upv_p65,0.9269981424124362
+B,regional,gen_upv_p67,0.9158010489364962
+B,regional,gen_upv_p60,0.8540476156249763
+B,regional,gen_upv_p62,0.4489919715305275
+B,regional,gen_wind-ons_p60,0.6337718515245799
+B,regional,gen_wind-ons_p61,0.9757777241300647
+B,regional,gen_wind-ons_p62,0.9434947845417018
+B,regional,gen_wind-ons_p63,0.946411202164007
+B,regional,gen_wind-ons_p64,0.9869560817532279
+B,regional,gen_wind-ons_p65,0.9849976963294228
+B,regional,gen_wind-ons_p67,0.9506219035498593
+C,system,cap_CoalOldScr,0.8038450059774623
+C,system,cap_CoalOldScr_coal-CCS_mod,0.7196314249844873
+C,system,cap_Gas-CC_Gas-CC-CCS_mod,0.29925293644288586
+C,system,cap_Gas-CC_H2-CC,0.5526489263067491
+C,system,cap_H2-CC,0.8492265792356384
+C,system,cap_H2-CT,0.881873494613978
+C,system,cap_battery_li,0.9255427560491806
+C,system,cap_coal-ccs_mod,0.9253822402493926
+C,system,cap_electrolyzer,0.9182468126152259
+C,system,cap_gas-cc,0.9525124132938734
+C,system,cap_gas-cc-ccs_mod,0.8716989280047232
+C,system,cap_gas-ct,0.8927667512632417
+C,system,cap_hydUD,0.4214448601739158
+C,system,cap_nuclear,-0.3619588637198803
+C,system,cap_nuclear-smr,0.2065389723044293
+C,system,cap_o-g-s,0.5991445228986491
+C,system,cap_pumped-hydro,0.5614070513478323
+C,system,gen_CoalOldScr,0.9271186240805573
+C,system,gen_CoalOldScr_coal-CCS_mod,0.7197436116106399
+C,system,gen_Gas-CC_Gas-CC-CCS_mod,0.26869380671224186
+C,system,gen_Gas-CC_H2-CC,0.37115512473352585
+C,system,gen_H2-CC,0.849342181589597
+C,system,gen_H2-CT,0.8818422932024781
+C,system,gen_battery_li,0.9411626835178702
+C,system,gen_coal-ccs_mod,0.9565333811239123
+C,system,gen_distpv,1.0
+C,system,gen_gas-cc,0.9902695400663847
+C,system,gen_gas-cc-ccs_mod,0.8243076887872866
+C,system,gen_gas-ct,0.869244703755094
+C,system,gen_hydED,0.936705876748087
+C,system,gen_hydEND,1.0
+C,system,gen_hydUD,0.4702335625254789
+C,system,gen_lfill-gas,0.8280389571666102
+C,system,gen_nuclear,0.8419679812032156
+C,system,gen_nuclear-smr,0.20716167187096757
+C,system,gen_o-g-s,0.7397425853980033
+C,system,gen_pumped-hydro,0.5678083284534705
+C,system,tran_AC_total,0.9745745318221438
+C,system,tran_total,0.9745745318221438
+C,system,cost_inv_h2_production,0.007900875205307134
+C,system,cost_inv_h2_storage,-0.09233515870160036
+C,system,cost_inv_investment_capacity_costs,0.9105881079337127
+C,system,cost_inv_investment_refurbishment_capacity,0.5406150904406439
+C,system,cost_inv_investment_spurline_costs_rsc_technologies,0.8931174200292075
+C,system,cost_inv_itc_payments_negative,0.05739175679287567
+C,system,cost_inv_transmission_interzone_ac_investment,0.8730757710457798
+C,system,cost_inv_transmission_intrazone_investment,0.8322174296673133
+C,system,cost_op_co2_incentive_negative,0.2587251693704331
+C,system,cost_op_co2_transport_storage,0.920948706517277
+C,system,cost_op_consume_fom,0.9183256529489209
+C,system,cost_op_fom_costs,0.9803146509457977
+C,system,cost_op_fuelcosts_objfn,0.971153658652351
+C,system,cost_op_h2_storage,0.9436510561402491
+C,system,cost_op_h2_transport_intrareg,0.9236591139082319
+C,system,cost_op_ptc_payments_negative,0.9664254573858154
+C,system,cost_op_spurline_fom,0.9925909118964384
+C,system,cost_op_startcost,0.8776571062797639
+C,system,cost_op_transmission_fom,0.9756074397092953
+C,system,cost_op_transmission_intrazone_fom,0.9865076392112763
+C,system,cost_op_vom_costs,0.9791714803408442
+C,system,cost_total,0.8975132823183339
+C,system,runtime_seconds,0.7574536052950696
+C,system,cap_upv,0.9665183681491591
+C,system,cap_wind-ons,0.98863797562924
+C,system,gen_upv,0.9625016706872863
+C,system,gen_wind-ons,0.9857702992722273
+C,regional,cap_CoalOldScr_coal-CCS_mod_p63,0.6632353879478199
+C,regional,cap_CoalOldScr_coal-CCS_mod_p64,0.5810516056468018
+C,regional,cap_CoalOldScr_coal-CCS_mod_p65,0.7204420366428572
+C,regional,cap_CoalOldScr_coal-CCS_mod_p67,0.6870226106811677
+C,regional,cap_CoalOldScr_p63,0.03742379638610538
+C,regional,cap_CoalOldScr_p64,0.5384516481913479
+C,regional,cap_CoalOldScr_p65,0.20457520125484707
+C,regional,cap_CoalOldScr_p67,0.7498633307741234
+C,regional,cap_Gas-CC_Gas-CC-CCS_mod_p67,0.29925293644288586
+C,regional,cap_Gas-CC_H2-CC_p60,0.6297810372755974
+C,regional,cap_Gas-CC_H2-CC_p62,0.3684583086277544
+C,regional,cap_Gas-CC_H2-CC_p63,-0.2527220923925171
+C,regional,cap_Gas-CC_H2-CC_p64,0.19328841347942072
+C,regional,cap_Gas-CC_H2-CC_p65,0.7621035630571846
+C,regional,cap_H2-CC_p60,0.1659943212815106
+C,regional,cap_H2-CC_p61,0.8503624992212425
+C,regional,cap_H2-CC_p62,0.05956321047162416
+C,regional,cap_H2-CC_p65,-0.30871257525345763
+C,regional,cap_H2-CT_p60,0.7392365685560753
+C,regional,cap_H2-CT_p61,0.8385584596131902
+C,regional,cap_H2-CT_p62,0.7499890819554843
+C,regional,cap_H2-CT_p63,0.38591359210266263
+C,regional,cap_H2-CT_p64,0.341655515752771
+C,regional,cap_H2-CT_p65,0.5502369216617993
+C,regional,cap_H2-CT_p67,-0.30296841346426095
+C,regional,cap_battery_li_p60,0.5389944794413646
+C,regional,cap_battery_li_p61,0.5636385403913169
+C,regional,cap_battery_li_p62,0.5428125049294108
+C,regional,cap_battery_li_p63,0.8427242008312179
+C,regional,cap_battery_li_p64,0.5656896972384126
+C,regional,cap_battery_li_p65,0.8021364585140845
+C,regional,cap_battery_li_p67,0.8044454061896009
+C,regional,cap_coal-ccs_mod_p67,0.9253822402493926
+C,regional,cap_electrolyzer_p60,0.7795327111560597
+C,regional,cap_electrolyzer_p61,0.849574766716988
+C,regional,cap_electrolyzer_p62,0.7149717689340223
+C,regional,cap_electrolyzer_p63,0.37244609945065155
+C,regional,cap_electrolyzer_p64,0.45493570537196104
+C,regional,cap_electrolyzer_p65,0.6409844396958329
+C,regional,cap_electrolyzer_p67,-0.3029684043183245
+C,regional,cap_gas-cc-ccs_mod_p63,0.8768544985339028
+C,regional,cap_gas-cc-ccs_mod_p64,0.5068043020456807
+C,regional,cap_gas-cc-ccs_mod_p65,0.2906930076298956
+C,regional,cap_gas-cc-ccs_mod_p67,0.8400375515580512
+C,regional,cap_gas-cc_p60,0.41532913335736654
+C,regional,cap_gas-cc_p61,0.4118527601636902
+C,regional,cap_gas-cc_p62,0.4976563200809009
+C,regional,cap_gas-cc_p63,0.9147216702614399
+C,regional,cap_gas-cc_p64,0.8666727946441586
+C,regional,cap_gas-cc_p65,0.8876369142626783
+C,regional,cap_gas-cc_p67,0.9288339625651544
+C,regional,cap_gas-ct_p60,0.47031307410295065
+C,regional,cap_gas-ct_p61,0.6126371198557898
+C,regional,cap_gas-ct_p62,0.4048636528995958
+C,regional,cap_gas-ct_p63,0.8018827783224864
+C,regional,cap_gas-ct_p64,0.6935423581231672
+C,regional,cap_gas-ct_p65,0.7265212503488224
+C,regional,cap_gas-ct_p67,0.9158552626580446
+C,regional,cap_hydUD_p63,0.4214448601739158
+C,regional,cap_nuclear-smr_p67,0.2065389723044293
+C,regional,cap_nuclear_p65,-0.3616312909285042
+C,regional,cap_o-g-s_p62,0.5732953411765713
+C,regional,cap_o-g-s_p63,0.5940801672840521
+C,regional,cap_o-g-s_p64,0.3968522926630267
+C,regional,cap_o-g-s_p65,0.4581704855118116
+C,regional,cap_o-g-s_p67,0.5130386030986752
+C,regional,cap_pumped-hydro_p61,0.5618156933303484
+C,regional,gen_CoalOldScr_coal-CCS_mod_p63,0.6627285118370352
+C,regional,gen_CoalOldScr_coal-CCS_mod_p64,0.5802108291301116
+C,regional,gen_CoalOldScr_coal-CCS_mod_p65,0.7221417378645416
+C,regional,gen_CoalOldScr_coal-CCS_mod_p67,0.686924229168218
+C,regional,gen_CoalOldScr_p63,-0.09086994635770029
+C,regional,gen_CoalOldScr_p64,0.6389647944817435
+C,regional,gen_CoalOldScr_p65,0.20613395553786384
+C,regional,gen_CoalOldScr_p67,0.9040090696814634
+C,regional,gen_Gas-CC_Gas-CC-CCS_mod_p67,0.26869380671224186
+C,regional,gen_Gas-CC_H2-CC_p60,0.6297405157309097
+C,regional,gen_Gas-CC_H2-CC_p62,0.3684928967944303
+C,regional,gen_Gas-CC_H2-CC_p63,-0.2527220903697873
+C,regional,gen_Gas-CC_H2-CC_p64,0.05890157944757024
+C,regional,gen_Gas-CC_H2-CC_p65,0.3774808603386657
+C,regional,gen_H2-CC_p60,0.1662275686432505
+C,regional,gen_H2-CC_p61,0.850362697437384
+C,regional,gen_H2-CC_p62,0.06046985476996747
+C,regional,gen_H2-CC_p65,-0.3088372127391956
+C,regional,gen_H2-CT_p60,0.7394398741518493
+C,regional,gen_H2-CT_p61,0.8384990272350235
+C,regional,gen_H2-CT_p62,0.7503329888019906
+C,regional,gen_H2-CT_p63,0.3868898648963731
+C,regional,gen_H2-CT_p64,0.3407093639466463
+C,regional,gen_H2-CT_p65,0.5527824711221963
+C,regional,gen_H2-CT_p67,-0.3029683762693445
+C,regional,gen_battery_li_p60,0.5198336728172337
+C,regional,gen_battery_li_p61,0.6802458093181925
+C,regional,gen_battery_li_p62,0.5568793132523494
+C,regional,gen_battery_li_p63,0.8651968730403757
+C,regional,gen_battery_li_p64,0.581892227025995
+C,regional,gen_battery_li_p65,0.8632310414653895
+C,regional,gen_battery_li_p67,0.831430925812042
+C,regional,gen_coal-ccs_mod_p67,0.9565333811239123
+C,regional,gen_distpv_p60,1.0
+C,regional,gen_distpv_p61,1.0
+C,regional,gen_distpv_p62,1.0
+C,regional,gen_distpv_p63,1.0
+C,regional,gen_distpv_p64,1.0
+C,regional,gen_distpv_p65,1.0
+C,regional,gen_distpv_p67,1.0
+C,regional,gen_gas-cc-ccs_mod_p63,0.8491578833072524
+C,regional,gen_gas-cc-ccs_mod_p64,0.5287965691335115
+C,regional,gen_gas-cc-ccs_mod_p65,-0.18049139332800235
+C,regional,gen_gas-cc-ccs_mod_p67,0.8028810442948917
+C,regional,gen_gas-cc_p60,0.44062691095488105
+C,regional,gen_gas-cc_p61,0.4438534715238932
+C,regional,gen_gas-cc_p62,0.2619993954157581
+C,regional,gen_gas-cc_p63,0.9815123106253285
+C,regional,gen_gas-cc_p64,0.9470758807294922
+C,regional,gen_gas-cc_p65,0.9554784938444304
+C,regional,gen_gas-cc_p67,0.9684680534429495
+C,regional,gen_gas-ct_p60,0.37374776058854475
+C,regional,gen_gas-ct_p61,0.6903536715647929
+C,regional,gen_gas-ct_p62,0.354048790521617
+C,regional,gen_gas-ct_p63,0.783941832145977
+C,regional,gen_gas-ct_p64,0.6777244190144175
+C,regional,gen_gas-ct_p65,0.7498786754457551
+C,regional,gen_gas-ct_p67,0.7832476498594537
+C,regional,gen_hydED_p63,0.936705876748087
+C,regional,gen_hydEND_p61,0.999987047746742
+C,regional,gen_hydEND_p63,1.0
+C,regional,gen_hydEND_p64,1.0
+C,regional,gen_hydEND_p65,1.0
+C,regional,gen_hydUD_p63,0.4702335625254789
+C,regional,gen_lfill-gas_p63,0.8184774101097214
+C,regional,gen_lfill-gas_p64,0.8150505151432006
+C,regional,gen_lfill-gas_p65,0.7766037473746497
+C,regional,gen_nuclear-smr_p67,0.20716167187096757
+C,regional,gen_nuclear_p63,0.8326125574179151
+C,regional,gen_nuclear_p65,0.7751199844081191
+C,regional,gen_o-g-s_p62,0.7074520503136106
+C,regional,gen_o-g-s_p63,0.5752447629837998
+C,regional,gen_o-g-s_p64,0.463197090404864
+C,regional,gen_o-g-s_p65,0.730770993796642
+C,regional,gen_o-g-s_p67,0.7545753929126527
+C,regional,gen_pumped-hydro_p61,0.564803728800578
+C,regional,gen_pumped-hydro_p64,0.5291973257224485
+C,regional,tran_p60_p61_AC,0.48252868862712217
+C,regional,tran_p60_p62_AC,0.8807790422435062
+C,regional,tran_p60_p63_AC,0.8898917339114961
+C,regional,tran_p61_p62_AC,0.4054549967188831
+C,regional,tran_p61_p63_AC,0.8179972288926359
+C,regional,tran_p61_p64_AC,0.8319752852029195
+C,regional,tran_p61_p65_AC,0.9564116992895833
+C,regional,tran_p64_p65_AC,0.6641154292698654
+C,regional,tran_p64_p67_AC,0.9663527629081475
+C,regional,tran_p65_p67_AC,0.9660525379549201
+C,regional,cost_inv_h2_production_p60,-0.2850387548688911
+C,regional,cost_inv_h2_production_p61,-0.27327947644322936
+C,regional,cost_inv_h2_production_p62,-0.16797158992154237
+C,regional,cost_inv_h2_production_p63,-0.011761452192558863
+C,regional,cost_inv_h2_production_p65,-0.1821472648147986
+C,regional,cost_inv_h2_storage_p60,-0.22299227090367535
+C,regional,cost_inv_h2_storage_p62,-0.19167529957559393
+C,regional,cost_inv_h2_storage_p63,-0.25272202434087965
+C,regional,cost_inv_h2_storage_p64,-0.053342047732520825
+C,regional,cost_inv_h2_storage_p65,-0.2243269786934603
+C,regional,cost_inv_investment_capacity_costs_p60,0.4320863406934746
+C,regional,cost_inv_investment_capacity_costs_p61,0.8553000400335258
+C,regional,cost_inv_investment_capacity_costs_p62,0.7094381498803622
+C,regional,cost_inv_investment_capacity_costs_p63,0.7771469802076116
+C,regional,cost_inv_investment_capacity_costs_p64,0.6201820439325949
+C,regional,cost_inv_investment_capacity_costs_p65,0.7369826382389012
+C,regional,cost_inv_investment_capacity_costs_p67,0.46598411432230713
+C,regional,cost_inv_investment_refurbishment_capacity_p61,0.299828926344057
+C,regional,cost_inv_investment_refurbishment_capacity_p63,0.2554711184344005
+C,regional,cost_inv_investment_refurbishment_capacity_p64,0.14649356201555108
+C,regional,cost_inv_investment_refurbishment_capacity_p65,0.7700802102517849
+C,regional,cost_inv_investment_refurbishment_capacity_p67,-0.16793057090496966
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p60,0.5552409877407212
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p61,0.855776920754693
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p62,0.7452605933923672
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p63,0.8520545372372138
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p64,0.552601395611307
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p65,0.8362536432065011
+C,regional,cost_inv_investment_spurline_costs_rsc_technologies_p67,0.8104609901710773
+C,regional,cost_inv_itc_payments_negative_p63,0.05739175679287567
+C,regional,cost_inv_transmission_interzone_ac_investment_p60,0.6864044135882437
+C,regional,cost_inv_transmission_interzone_ac_investment_p61,0.8438093633871311
+C,regional,cost_inv_transmission_interzone_ac_investment_p62,0.6564449754585653
+C,regional,cost_inv_transmission_interzone_ac_investment_p63,0.8772910744076815
+C,regional,cost_inv_transmission_interzone_ac_investment_p64,0.6693551834223537
+C,regional,cost_inv_transmission_interzone_ac_investment_p65,0.7864650775120788
+C,regional,cost_inv_transmission_interzone_ac_investment_p67,0.6034073405647038
+C,regional,cost_inv_transmission_intrazone_investment_p60,0.462595318391844
+C,regional,cost_inv_transmission_intrazone_investment_p61,0.8223007780348719
+C,regional,cost_inv_transmission_intrazone_investment_p62,0.435435587923515
+C,regional,cost_inv_transmission_intrazone_investment_p63,0.7072750966931913
+C,regional,cost_inv_transmission_intrazone_investment_p64,0.59514462255619
+C,regional,cost_inv_transmission_intrazone_investment_p65,0.5760678030809689
+C,regional,cost_inv_transmission_intrazone_investment_p67,0.5747576753591196
+C,regional,cost_op_co2_incentive_negative_p67,0.2587251693704331
+C,regional,cost_op_co2_transport_storage_p63,0.8132331439476824
+C,regional,cost_op_co2_transport_storage_p64,0.5167813359196844
+C,regional,cost_op_co2_transport_storage_p65,0.013531866216312971
+C,regional,cost_op_co2_transport_storage_p67,0.9143978982705687
+C,regional,cost_op_consume_fom_p60,0.7797531651558587
+C,regional,cost_op_consume_fom_p61,0.8497443262216191
+C,regional,cost_op_consume_fom_p62,0.7152886793726569
+C,regional,cost_op_consume_fom_p63,0.37288276573948365
+C,regional,cost_op_consume_fom_p64,0.45593892731794283
+C,regional,cost_op_consume_fom_p65,0.6394173837688091
+C,regional,cost_op_consume_fom_p67,-0.3029683926346065
+C,regional,cost_op_fom_costs_p60,0.6066588034957923
+C,regional,cost_op_fom_costs_p61,0.9721668206529205
+C,regional,cost_op_fom_costs_p62,0.8972478691100585
+C,regional,cost_op_fom_costs_p63,0.9410699597647498
+C,regional,cost_op_fom_costs_p64,0.9670144734699481
+C,regional,cost_op_fom_costs_p65,0.9641598603561282
+C,regional,cost_op_fom_costs_p67,0.7206546900574604
+C,regional,cost_op_fuelcosts_objfn_p60,0.6710496154130694
+C,regional,cost_op_fuelcosts_objfn_p61,0.4944448391920627
+C,regional,cost_op_fuelcosts_objfn_p62,0.8132930427581954
+C,regional,cost_op_fuelcosts_objfn_p63,0.9555953280999622
+C,regional,cost_op_fuelcosts_objfn_p64,0.9198840664559393
+C,regional,cost_op_fuelcosts_objfn_p65,0.9170628556111133
+C,regional,cost_op_fuelcosts_objfn_p67,0.9280224220294742
+C,regional,cost_op_h2_storage_p60,0.9059517974791769
+C,regional,cost_op_h2_storage_p61,0.8855585552129186
+C,regional,cost_op_h2_storage_p62,0.600756066207627
+C,regional,cost_op_h2_storage_p63,0.3448557610059698
+C,regional,cost_op_h2_storage_p64,0.5083319568113221
+C,regional,cost_op_h2_storage_p65,0.7193766190327965
+C,regional,cost_op_h2_storage_p67,-0.3029684130289696
+C,regional,cost_op_h2_transport_intrareg_p60,0.7611507867222306
+C,regional,cost_op_h2_transport_intrareg_p61,0.887041639323884
+C,regional,cost_op_h2_transport_intrareg_p62,0.6805043958245116
+C,regional,cost_op_h2_transport_intrareg_p63,0.38662644337627994
+C,regional,cost_op_h2_transport_intrareg_p64,0.4682081972699914
+C,regional,cost_op_h2_transport_intrareg_p65,0.6777539615840715
+C,regional,cost_op_h2_transport_intrareg_p67,-0.302968381117372
+C,regional,cost_op_ptc_payments_negative_p60,0.26786300892773784
+C,regional,cost_op_ptc_payments_negative_p61,0.771996210649576
+C,regional,cost_op_ptc_payments_negative_p62,0.6837098879620285
+C,regional,cost_op_ptc_payments_negative_p63,0.9408729695295315
+C,regional,cost_op_ptc_payments_negative_p64,0.8945571237027384
+C,regional,cost_op_ptc_payments_negative_p65,0.9270833793574113
+C,regional,cost_op_ptc_payments_negative_p67,0.6596495838055785
+C,regional,cost_op_spurline_fom_p60,0.49021508569535865
+C,regional,cost_op_spurline_fom_p61,0.9572391286244096
+C,regional,cost_op_spurline_fom_p62,0.9559622746994149
+C,regional,cost_op_spurline_fom_p63,0.9720998731419985
+C,regional,cost_op_spurline_fom_p64,0.9810755762514282
+C,regional,cost_op_spurline_fom_p65,0.9775194573562265
+C,regional,cost_op_spurline_fom_p67,0.9303519896962453
+C,regional,cost_op_startcost_p60,0.20282587378438055
+C,regional,cost_op_startcost_p61,0.6688391399514846
+C,regional,cost_op_startcost_p62,0.6753997136551586
+C,regional,cost_op_startcost_p63,0.8146458255757337
+C,regional,cost_op_startcost_p64,0.6796997146778694
+C,regional,cost_op_startcost_p65,0.7658539124003217
+C,regional,cost_op_startcost_p67,0.8245958367118269
+C,regional,cost_op_transmission_fom_p60,0.8938950554999427
+C,regional,cost_op_transmission_fom_p61,0.9620344547274762
+C,regional,cost_op_transmission_fom_p62,0.8554790415942433
+C,regional,cost_op_transmission_fom_p63,0.9081017418531429
+C,regional,cost_op_transmission_fom_p64,0.9356508389876335
+C,regional,cost_op_transmission_fom_p65,0.9458144735673669
+C,regional,cost_op_transmission_fom_p67,0.9788291866515738
+C,regional,cost_op_transmission_intrazone_fom_p60,0.6146612503468252
+C,regional,cost_op_transmission_intrazone_fom_p61,0.9375182456902859
+C,regional,cost_op_transmission_intrazone_fom_p62,0.868040632084587
+C,regional,cost_op_transmission_intrazone_fom_p63,0.96047630029759
+C,regional,cost_op_transmission_intrazone_fom_p64,0.9612952577622336
+C,regional,cost_op_transmission_intrazone_fom_p65,0.9566453895255144
+C,regional,cost_op_transmission_intrazone_fom_p67,0.8393372202678174
+C,regional,cost_op_vom_costs_p60,0.5177569542036295
+C,regional,cost_op_vom_costs_p61,0.7703066428411413
+C,regional,cost_op_vom_costs_p62,0.2341440314946005
+C,regional,cost_op_vom_costs_p63,0.9766569631204162
+C,regional,cost_op_vom_costs_p64,0.938479251709895
+C,regional,cost_op_vom_costs_p65,0.9455231879770087
+C,regional,cost_op_vom_costs_p67,0.9332963254871619
+C,regional,cap_upv_p63,0.9583487764991946
+C,regional,cap_upv_p64,0.9156847193121721
+C,regional,cap_upv_p65,0.9316037947902416
+C,regional,cap_upv_p67,0.9315239150944937
+C,regional,cap_upv_p61,0.6698421061495632
+C,regional,cap_upv_p60,0.7733107519438168
+C,regional,cap_upv_p62,0.5097211030853191
+C,regional,cap_wind-ons_p60,0.6771023814408421
+C,regional,cap_wind-ons_p61,0.9780145292176542
+C,regional,cap_wind-ons_p62,0.9573220795267157
+C,regional,cap_wind-ons_p63,0.9564117935529889
+C,regional,cap_wind-ons_p64,0.9836143746648187
+C,regional,cap_wind-ons_p65,0.983496646109901
+C,regional,cap_wind-ons_p67,0.9537173750700927
+C,regional,gen_upv_p63,0.960153538907248
+C,regional,gen_upv_p61,0.6252491371333171
+C,regional,gen_upv_p64,0.9061540006754066
+C,regional,gen_upv_p65,0.9269981418275982
+C,regional,gen_upv_p67,0.9158010489149844
+C,regional,gen_upv_p60,0.8540476158220265
+C,regional,gen_upv_p62,0.4489919761431551
+C,regional,gen_wind-ons_p60,0.6337718530402552
+C,regional,gen_wind-ons_p61,0.9757777240558754
+C,regional,gen_wind-ons_p62,0.9434947846801304
+C,regional,gen_wind-ons_p63,0.946411202514925
+C,regional,gen_wind-ons_p64,0.986956081697616
+C,regional,gen_wind-ons_p65,0.9849976965053336
+C,regional,gen_wind-ons_p67,0.9506219034613754
+D,system,cap_CoalOldScr,0.8038450059774623
+D,system,cap_CoalOldScr_coal-CCS_mod,0.7196314249844873
+D,system,cap_Gas-CC_Gas-CC-CCS_mod,0.29925293644288586
+D,system,cap_Gas-CC_H2-CC,0.5526489263067491
+D,system,cap_H2-CC,0.8492265792356384
+D,system,cap_H2-CT,0.881873494613978
+D,system,cap_battery_li,0.9255427560491806
+D,system,cap_coal-ccs_mod,0.9253822402493926
+D,system,cap_electrolyzer,0.9182468126152259
+D,system,cap_gas-cc,0.9525124132938734
+D,system,cap_gas-cc-ccs_mod,0.8716989280047232
+D,system,cap_gas-ct,0.8927667512632417
+D,system,cap_hydUD,0.4214448601739158
+D,system,cap_nuclear,-0.3619588637198803
+D,system,cap_nuclear-smr,0.2065389723044293
+D,system,cap_o-g-s,0.5991445228986491
+D,system,cap_pumped-hydro,0.5614070513478323
+D,system,gen_CoalOldScr,0.9271186240805573
+D,system,gen_CoalOldScr_coal-CCS_mod,0.7197436116106399
+D,system,gen_Gas-CC_Gas-CC-CCS_mod,0.26869380671224186
+D,system,gen_Gas-CC_H2-CC,0.37115512473352585
+D,system,gen_H2-CC,0.849342181589597
+D,system,gen_H2-CT,0.8818422932024781
+D,system,gen_battery_li,0.9411626835178702
+D,system,gen_coal-ccs_mod,0.9565333811239123
+D,system,gen_distpv,1.0
+D,system,gen_gas-cc,0.9902695400663847
+D,system,gen_gas-cc-ccs_mod,0.8243076887872866
+D,system,gen_gas-ct,0.869244703755094
+D,system,gen_hydED,0.936705876748087
+D,system,gen_hydEND,1.0
+D,system,gen_hydUD,0.4702335625254789
+D,system,gen_lfill-gas,0.8280389571666102
+D,system,gen_nuclear,0.8419679812032156
+D,system,gen_nuclear-smr,0.20716167187096757
+D,system,gen_o-g-s,0.7397425853980033
+D,system,gen_pumped-hydro,0.5678083284534705
+D,system,tran_AC_total,0.9745745318221438
+D,system,tran_total,0.9745745318221438
+D,system,cost_inv_h2_production,0.007900875205307134
+D,system,cost_inv_h2_storage,-0.09233515870160036
+D,system,cost_inv_investment_capacity_costs,0.9105881079337127
+D,system,cost_inv_investment_refurbishment_capacity,0.5406150904406439
+D,system,cost_inv_investment_spurline_costs_rsc_technologies,0.8931174200292075
+D,system,cost_inv_itc_payments_negative,0.05739175679287567
+D,system,cost_inv_transmission_interzone_ac_investment,0.8730757710457798
+D,system,cost_inv_transmission_intrazone_investment,0.8322174296673133
+D,system,cost_op_co2_incentive_negative,0.2587251693704331
+D,system,cost_op_co2_transport_storage,0.920948706517277
+D,system,cost_op_consume_fom,0.9183256529489209
+D,system,cost_op_fom_costs,0.9803146509457977
+D,system,cost_op_fuelcosts_objfn,0.971153658652351
+D,system,cost_op_h2_storage,0.9436510561402491
+D,system,cost_op_h2_transport_intrareg,0.9236591139082319
+D,system,cost_op_ptc_payments_negative,0.9664254573858154
+D,system,cost_op_spurline_fom,0.9925909118964384
+D,system,cost_op_startcost,0.8776571062797639
+D,system,cost_op_transmission_fom,0.9756074397092953
+D,system,cost_op_transmission_intrazone_fom,0.9865076392112763
+D,system,cost_op_vom_costs,0.9791714803408442
+D,system,cost_total,0.8975132823183339
+D,system,runtime_seconds,0.7574536052950696
+D,system,cap_upv,0.9665183681491591
+D,system,cap_wind-ons,0.98863797562924
+D,system,gen_upv,0.9625016706872863
+D,system,gen_wind-ons,0.9857702992722273
+D,regional,cap_CoalOldScr_coal-CCS_mod_p63,0.6632353879478199
+D,regional,cap_CoalOldScr_coal-CCS_mod_p64,0.5810516056468018
+D,regional,cap_CoalOldScr_coal-CCS_mod_p65,0.7204420366428572
+D,regional,cap_CoalOldScr_coal-CCS_mod_p67,0.6870226106811677
+D,regional,cap_CoalOldScr_p63,0.03742379638610538
+D,regional,cap_CoalOldScr_p64,0.5384516481913479
+D,regional,cap_CoalOldScr_p65,0.20457520125484707
+D,regional,cap_CoalOldScr_p67,0.7498633307741234
+D,regional,cap_Gas-CC_Gas-CC-CCS_mod_p67,0.29925293644288586
+D,regional,cap_Gas-CC_H2-CC_p60,0.6297810372755974
+D,regional,cap_Gas-CC_H2-CC_p62,0.3684583086277544
+D,regional,cap_Gas-CC_H2-CC_p63,-0.2527220923925171
+D,regional,cap_Gas-CC_H2-CC_p64,0.19328841347942072
+D,regional,cap_Gas-CC_H2-CC_p65,0.7621035630571846
+D,regional,cap_H2-CC_p60,0.1659943212815106
+D,regional,cap_H2-CC_p61,0.8503624992212425
+D,regional,cap_H2-CC_p62,0.05956321047162416
+D,regional,cap_H2-CC_p65,-0.30871257525345763
+D,regional,cap_H2-CT_p60,0.7392365685560753
+D,regional,cap_H2-CT_p61,0.8385584596131902
+D,regional,cap_H2-CT_p62,0.7499890819554843
+D,regional,cap_H2-CT_p63,0.38591359210266263
+D,regional,cap_H2-CT_p64,0.341655515752771
+D,regional,cap_H2-CT_p65,0.5502369216617993
+D,regional,cap_H2-CT_p67,-0.30296841346426095
+D,regional,cap_battery_li_p60,0.5389944794413646
+D,regional,cap_battery_li_p61,0.5636385403913169
+D,regional,cap_battery_li_p62,0.5428125049294108
+D,regional,cap_battery_li_p63,0.8427242008312179
+D,regional,cap_battery_li_p64,0.5656896972384126
+D,regional,cap_battery_li_p65,0.8021364585140845
+D,regional,cap_battery_li_p67,0.8044454061896009
+D,regional,cap_coal-ccs_mod_p67,0.9253822402493926
+D,regional,cap_electrolyzer_p60,0.7795327111560597
+D,regional,cap_electrolyzer_p61,0.849574766716988
+D,regional,cap_electrolyzer_p62,0.7149717689340223
+D,regional,cap_electrolyzer_p63,0.37244609945065155
+D,regional,cap_electrolyzer_p64,0.45493570537196104
+D,regional,cap_electrolyzer_p65,0.6409844396958329
+D,regional,cap_electrolyzer_p67,-0.3029684043183245
+D,regional,cap_gas-cc-ccs_mod_p63,0.8768544985339028
+D,regional,cap_gas-cc-ccs_mod_p64,0.5068043020456807
+D,regional,cap_gas-cc-ccs_mod_p65,0.2906930076298956
+D,regional,cap_gas-cc-ccs_mod_p67,0.8400375515580512
+D,regional,cap_gas-cc_p60,0.41532913335736654
+D,regional,cap_gas-cc_p61,0.4118527601636902
+D,regional,cap_gas-cc_p62,0.4976563200809009
+D,regional,cap_gas-cc_p63,0.9147216702614399
+D,regional,cap_gas-cc_p64,0.8666727946441586
+D,regional,cap_gas-cc_p65,0.8876369142626783
+D,regional,cap_gas-cc_p67,0.9288339625651544
+D,regional,cap_gas-ct_p60,0.47031307410295065
+D,regional,cap_gas-ct_p61,0.6126371198557898
+D,regional,cap_gas-ct_p62,0.4048636528995958
+D,regional,cap_gas-ct_p63,0.8018827783224864
+D,regional,cap_gas-ct_p64,0.6935423581231672
+D,regional,cap_gas-ct_p65,0.7265212503488224
+D,regional,cap_gas-ct_p67,0.9158552626580446
+D,regional,cap_hydUD_p63,0.4214448601739158
+D,regional,cap_nuclear-smr_p67,0.2065389723044293
+D,regional,cap_nuclear_p65,-0.3616312909285042
+D,regional,cap_o-g-s_p62,0.5732953411765713
+D,regional,cap_o-g-s_p63,0.5940801672840521
+D,regional,cap_o-g-s_p64,0.3968522926630267
+D,regional,cap_o-g-s_p65,0.4581704855118116
+D,regional,cap_o-g-s_p67,0.5130386030986752
+D,regional,cap_pumped-hydro_p61,0.5618156933303484
+D,regional,gen_CoalOldScr_coal-CCS_mod_p63,0.6627285118370352
+D,regional,gen_CoalOldScr_coal-CCS_mod_p64,0.5802108291301116
+D,regional,gen_CoalOldScr_coal-CCS_mod_p65,0.7221417378645416
+D,regional,gen_CoalOldScr_coal-CCS_mod_p67,0.686924229168218
+D,regional,gen_CoalOldScr_p63,-0.09086994635770029
+D,regional,gen_CoalOldScr_p64,0.6389647944817435
+D,regional,gen_CoalOldScr_p65,0.20613395553786384
+D,regional,gen_CoalOldScr_p67,0.9040090696814634
+D,regional,gen_Gas-CC_Gas-CC-CCS_mod_p67,0.26869380671224186
+D,regional,gen_Gas-CC_H2-CC_p60,0.6297405157309097
+D,regional,gen_Gas-CC_H2-CC_p62,0.3684928967944303
+D,regional,gen_Gas-CC_H2-CC_p63,-0.2527220903697873
+D,regional,gen_Gas-CC_H2-CC_p64,0.05890157944757024
+D,regional,gen_Gas-CC_H2-CC_p65,0.3774808603386657
+D,regional,gen_H2-CC_p60,0.1662275686432505
+D,regional,gen_H2-CC_p61,0.850362697437384
+D,regional,gen_H2-CC_p62,0.06046985476996747
+D,regional,gen_H2-CC_p65,-0.3088372127391956
+D,regional,gen_H2-CT_p60,0.7394398741518493
+D,regional,gen_H2-CT_p61,0.8384990272350235
+D,regional,gen_H2-CT_p62,0.7503329888019906
+D,regional,gen_H2-CT_p63,0.3868898648963731
+D,regional,gen_H2-CT_p64,0.3407093639466463
+D,regional,gen_H2-CT_p65,0.5527824711221963
+D,regional,gen_H2-CT_p67,-0.3029683762693445
+D,regional,gen_battery_li_p60,0.5198336728172337
+D,regional,gen_battery_li_p61,0.6802458093181925
+D,regional,gen_battery_li_p62,0.5568793132523494
+D,regional,gen_battery_li_p63,0.8651968730403757
+D,regional,gen_battery_li_p64,0.581892227025995
+D,regional,gen_battery_li_p65,0.8632310414653895
+D,regional,gen_battery_li_p67,0.831430925812042
+D,regional,gen_coal-ccs_mod_p67,0.9565333811239123
+D,regional,gen_distpv_p60,1.0
+D,regional,gen_distpv_p61,1.0
+D,regional,gen_distpv_p62,1.0
+D,regional,gen_distpv_p63,1.0
+D,regional,gen_distpv_p64,1.0
+D,regional,gen_distpv_p65,1.0
+D,regional,gen_distpv_p67,1.0
+D,regional,gen_gas-cc-ccs_mod_p63,0.8491578833072524
+D,regional,gen_gas-cc-ccs_mod_p64,0.5287965691335115
+D,regional,gen_gas-cc-ccs_mod_p65,-0.18049139332800235
+D,regional,gen_gas-cc-ccs_mod_p67,0.8028810442948917
+D,regional,gen_gas-cc_p60,0.44062691095488105
+D,regional,gen_gas-cc_p61,0.4438534715238932
+D,regional,gen_gas-cc_p62,0.2619993954157581
+D,regional,gen_gas-cc_p63,0.9815123106253285
+D,regional,gen_gas-cc_p64,0.9470758807294922
+D,regional,gen_gas-cc_p65,0.9554784938444304
+D,regional,gen_gas-cc_p67,0.9684680534429495
+D,regional,gen_gas-ct_p60,0.37374776058854475
+D,regional,gen_gas-ct_p61,0.6903536715647929
+D,regional,gen_gas-ct_p62,0.354048790521617
+D,regional,gen_gas-ct_p63,0.783941832145977
+D,regional,gen_gas-ct_p64,0.6777244190144175
+D,regional,gen_gas-ct_p65,0.7498786754457551
+D,regional,gen_gas-ct_p67,0.7832476498594537
+D,regional,gen_hydED_p63,0.936705876748087
+D,regional,gen_hydEND_p61,0.999987047746742
+D,regional,gen_hydEND_p63,1.0
+D,regional,gen_hydEND_p64,1.0
+D,regional,gen_hydEND_p65,1.0
+D,regional,gen_hydUD_p63,0.4702335625254789
+D,regional,gen_lfill-gas_p63,0.8184774101097214
+D,regional,gen_lfill-gas_p64,0.8150505151432006
+D,regional,gen_lfill-gas_p65,0.7766037473746497
+D,regional,gen_nuclear-smr_p67,0.20716167187096757
+D,regional,gen_nuclear_p63,0.8326125574179151
+D,regional,gen_nuclear_p65,0.7751199844081191
+D,regional,gen_o-g-s_p62,0.7074520503136106
+D,regional,gen_o-g-s_p63,0.5752447629837998
+D,regional,gen_o-g-s_p64,0.463197090404864
+D,regional,gen_o-g-s_p65,0.730770993796642
+D,regional,gen_o-g-s_p67,0.7545753929126527
+D,regional,gen_pumped-hydro_p61,0.564803728800578
+D,regional,gen_pumped-hydro_p64,0.5291973257224485
+D,regional,tran_p60_p61_AC,0.48252868862712217
+D,regional,tran_p60_p62_AC,0.8807790422435062
+D,regional,tran_p60_p63_AC,0.8898917339114961
+D,regional,tran_p61_p62_AC,0.4054549967188831
+D,regional,tran_p61_p63_AC,0.8179972288926359
+D,regional,tran_p61_p64_AC,0.8319752852029195
+D,regional,tran_p61_p65_AC,0.9564116992895833
+D,regional,tran_p64_p65_AC,0.6641154292698654
+D,regional,tran_p64_p67_AC,0.9663527629081475
+D,regional,tran_p65_p67_AC,0.9660525379549201
+D,regional,cost_inv_h2_production_p60,-0.2850387548688911
+D,regional,cost_inv_h2_production_p61,-0.27327947644322936
+D,regional,cost_inv_h2_production_p62,-0.16797158992154237
+D,regional,cost_inv_h2_production_p63,-0.011761452192558863
+D,regional,cost_inv_h2_production_p65,-0.1821472648147986
+D,regional,cost_inv_h2_storage_p60,-0.22299227090367535
+D,regional,cost_inv_h2_storage_p62,-0.19167529957559393
+D,regional,cost_inv_h2_storage_p63,-0.25272202434087965
+D,regional,cost_inv_h2_storage_p64,-0.053342047732520825
+D,regional,cost_inv_h2_storage_p65,-0.2243269786934603
+D,regional,cost_inv_investment_capacity_costs_p60,0.4320863406934746
+D,regional,cost_inv_investment_capacity_costs_p61,0.8553000400335258
+D,regional,cost_inv_investment_capacity_costs_p62,0.7094381498803622
+D,regional,cost_inv_investment_capacity_costs_p63,0.7771469802076116
+D,regional,cost_inv_investment_capacity_costs_p64,0.6201820439325949
+D,regional,cost_inv_investment_capacity_costs_p65,0.7369826382389012
+D,regional,cost_inv_investment_capacity_costs_p67,0.46598411432230713
+D,regional,cost_inv_investment_refurbishment_capacity_p61,0.299828926344057
+D,regional,cost_inv_investment_refurbishment_capacity_p63,0.2554711184344005
+D,regional,cost_inv_investment_refurbishment_capacity_p64,0.14649356201555108
+D,regional,cost_inv_investment_refurbishment_capacity_p65,0.7700802102517849
+D,regional,cost_inv_investment_refurbishment_capacity_p67,-0.16793057090496966
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p60,0.5552409877407212
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p61,0.855776920754693
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p62,0.7452605933923672
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p63,0.8520545372372138
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p64,0.552601395611307
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p65,0.8362536432065011
+D,regional,cost_inv_investment_spurline_costs_rsc_technologies_p67,0.8104609901710773
+D,regional,cost_inv_itc_payments_negative_p63,0.05739175679287567
+D,regional,cost_inv_transmission_interzone_ac_investment_p60,0.6864044135882437
+D,regional,cost_inv_transmission_interzone_ac_investment_p61,0.8438093633871311
+D,regional,cost_inv_transmission_interzone_ac_investment_p62,0.6564449754585653
+D,regional,cost_inv_transmission_interzone_ac_investment_p63,0.8772910744076815
+D,regional,cost_inv_transmission_interzone_ac_investment_p64,0.6693551834223537
+D,regional,cost_inv_transmission_interzone_ac_investment_p65,0.7864650775120788
+D,regional,cost_inv_transmission_interzone_ac_investment_p67,0.6034073405647038
+D,regional,cost_inv_transmission_intrazone_investment_p60,0.462595318391844
+D,regional,cost_inv_transmission_intrazone_investment_p61,0.8223007780348719
+D,regional,cost_inv_transmission_intrazone_investment_p62,0.435435587923515
+D,regional,cost_inv_transmission_intrazone_investment_p63,0.7072750966931913
+D,regional,cost_inv_transmission_intrazone_investment_p64,0.59514462255619
+D,regional,cost_inv_transmission_intrazone_investment_p65,0.5760678030809689
+D,regional,cost_inv_transmission_intrazone_investment_p67,0.5747576753591196
+D,regional,cost_op_co2_incentive_negative_p67,0.2587251693704331
+D,regional,cost_op_co2_transport_storage_p63,0.8132331439476824
+D,regional,cost_op_co2_transport_storage_p64,0.5167813359196844
+D,regional,cost_op_co2_transport_storage_p65,0.013531866216312971
+D,regional,cost_op_co2_transport_storage_p67,0.9143978982705687
+D,regional,cost_op_consume_fom_p60,0.7797531651558587
+D,regional,cost_op_consume_fom_p61,0.8497443262216191
+D,regional,cost_op_consume_fom_p62,0.7152886793726569
+D,regional,cost_op_consume_fom_p63,0.37288276573948365
+D,regional,cost_op_consume_fom_p64,0.45593892731794283
+D,regional,cost_op_consume_fom_p65,0.6394173837688091
+D,regional,cost_op_consume_fom_p67,-0.3029683926346065
+D,regional,cost_op_fom_costs_p60,0.6066588034957923
+D,regional,cost_op_fom_costs_p61,0.9721668206529205
+D,regional,cost_op_fom_costs_p62,0.8972478691100585
+D,regional,cost_op_fom_costs_p63,0.9410699597647498
+D,regional,cost_op_fom_costs_p64,0.9670144734699481
+D,regional,cost_op_fom_costs_p65,0.9641598603561282
+D,regional,cost_op_fom_costs_p67,0.7206546900574604
+D,regional,cost_op_fuelcosts_objfn_p60,0.6710496154130694
+D,regional,cost_op_fuelcosts_objfn_p61,0.4944448391920627
+D,regional,cost_op_fuelcosts_objfn_p62,0.8132930427581954
+D,regional,cost_op_fuelcosts_objfn_p63,0.9555953280999622
+D,regional,cost_op_fuelcosts_objfn_p64,0.9198840664559393
+D,regional,cost_op_fuelcosts_objfn_p65,0.9170628556111133
+D,regional,cost_op_fuelcosts_objfn_p67,0.9280224220294742
+D,regional,cost_op_h2_storage_p60,0.9059517974791769
+D,regional,cost_op_h2_storage_p61,0.8855585552129186
+D,regional,cost_op_h2_storage_p62,0.600756066207627
+D,regional,cost_op_h2_storage_p63,0.3448557610059698
+D,regional,cost_op_h2_storage_p64,0.5083319568113221
+D,regional,cost_op_h2_storage_p65,0.7193766190327965
+D,regional,cost_op_h2_storage_p67,-0.3029684130289696
+D,regional,cost_op_h2_transport_intrareg_p60,0.7611507867222306
+D,regional,cost_op_h2_transport_intrareg_p61,0.887041639323884
+D,regional,cost_op_h2_transport_intrareg_p62,0.6805043958245116
+D,regional,cost_op_h2_transport_intrareg_p63,0.38662644337627994
+D,regional,cost_op_h2_transport_intrareg_p64,0.4682081972699914
+D,regional,cost_op_h2_transport_intrareg_p65,0.6777539615840715
+D,regional,cost_op_h2_transport_intrareg_p67,-0.302968381117372
+D,regional,cost_op_ptc_payments_negative_p60,0.26786300892773784
+D,regional,cost_op_ptc_payments_negative_p61,0.771996210649576
+D,regional,cost_op_ptc_payments_negative_p62,0.6837098879620285
+D,regional,cost_op_ptc_payments_negative_p63,0.9408729695295315
+D,regional,cost_op_ptc_payments_negative_p64,0.8945571237027384
+D,regional,cost_op_ptc_payments_negative_p65,0.9270833793574113
+D,regional,cost_op_ptc_payments_negative_p67,0.6596495838055785
+D,regional,cost_op_spurline_fom_p60,0.49021508569535865
+D,regional,cost_op_spurline_fom_p61,0.9572391286244096
+D,regional,cost_op_spurline_fom_p62,0.9559622746994149
+D,regional,cost_op_spurline_fom_p63,0.9720998731419985
+D,regional,cost_op_spurline_fom_p64,0.9810755762514282
+D,regional,cost_op_spurline_fom_p65,0.9775194573562265
+D,regional,cost_op_spurline_fom_p67,0.9303519896962453
+D,regional,cost_op_startcost_p60,0.20282587378438055
+D,regional,cost_op_startcost_p61,0.6688391399514846
+D,regional,cost_op_startcost_p62,0.6753997136551586
+D,regional,cost_op_startcost_p63,0.8146458255757337
+D,regional,cost_op_startcost_p64,0.6796997146778694
+D,regional,cost_op_startcost_p65,0.7658539124003217
+D,regional,cost_op_startcost_p67,0.8245958367118269
+D,regional,cost_op_transmission_fom_p60,0.8938950554999427
+D,regional,cost_op_transmission_fom_p61,0.9620344547274762
+D,regional,cost_op_transmission_fom_p62,0.8554790415942433
+D,regional,cost_op_transmission_fom_p63,0.9081017418531429
+D,regional,cost_op_transmission_fom_p64,0.9356508389876335
+D,regional,cost_op_transmission_fom_p65,0.9458144735673669
+D,regional,cost_op_transmission_fom_p67,0.9788291866515738
+D,regional,cost_op_transmission_intrazone_fom_p60,0.6146612503468252
+D,regional,cost_op_transmission_intrazone_fom_p61,0.9375182456902859
+D,regional,cost_op_transmission_intrazone_fom_p62,0.868040632084587
+D,regional,cost_op_transmission_intrazone_fom_p63,0.96047630029759
+D,regional,cost_op_transmission_intrazone_fom_p64,0.9612952577622336
+D,regional,cost_op_transmission_intrazone_fom_p65,0.9566453895255144
+D,regional,cost_op_transmission_intrazone_fom_p67,0.8393372202678174
+D,regional,cost_op_vom_costs_p60,0.5177569542036295
+D,regional,cost_op_vom_costs_p61,0.7703066428411413
+D,regional,cost_op_vom_costs_p62,0.2341440314946005
+D,regional,cost_op_vom_costs_p63,0.9766569631204162
+D,regional,cost_op_vom_costs_p64,0.938479251709895
+D,regional,cost_op_vom_costs_p65,0.9455231879770087
+D,regional,cost_op_vom_costs_p67,0.9332963254871619
+D,regional,cap_upv_p63,0.9583487764991946
+D,regional,cap_upv_p64,0.9156847193121721
+D,regional,cap_upv_p65,0.9316037947902416
+D,regional,cap_upv_p67,0.9315239150944937
+D,regional,cap_upv_p61,0.6698421061495632
+D,regional,cap_upv_p60,0.7733107519438168
+D,regional,cap_upv_p62,0.5097211030853191
+D,regional,cap_wind-ons_p60,0.6771023814408421
+D,regional,cap_wind-ons_p61,0.9780145292176542
+D,regional,cap_wind-ons_p62,0.9573220795267157
+D,regional,cap_wind-ons_p63,0.9564117935529889
+D,regional,cap_wind-ons_p64,0.9836143746648187
+D,regional,cap_wind-ons_p65,0.983496646109901
+D,regional,cap_wind-ons_p67,0.9537173750700927
+D,regional,gen_upv_p63,0.960153538907248
+D,regional,gen_upv_p61,0.6252491371333171
+D,regional,gen_upv_p64,0.9061540006754066
+D,regional,gen_upv_p65,0.9269981418275982
+D,regional,gen_upv_p67,0.9158010489149844
+D,regional,gen_upv_p60,0.8540476158220265
+D,regional,gen_upv_p62,0.4489919761431551
+D,regional,gen_wind-ons_p60,0.6337718530402552
+D,regional,gen_wind-ons_p61,0.9757777240558754
+D,regional,gen_wind-ons_p62,0.9434947846801304
+D,regional,gen_wind-ons_p63,0.946411202514925
+D,regional,gen_wind-ons_p64,0.986956081697616
+D,regional,gen_wind-ons_p65,0.9849976965053336
+D,regional,gen_wind-ons_p67,0.9506219034613754
+E,system,cap_CoalOldScr,0.8038450059774623
+E,system,cap_CoalOldScr_coal-CCS_mod,0.7196314249844873
+E,system,cap_Gas-CC_Gas-CC-CCS_mod,0.29925293644288586
+E,system,cap_Gas-CC_H2-CC,0.5526489263067491
+E,system,cap_H2-CC,0.8492265792356384
+E,system,cap_H2-CT,0.881873494613978
+E,system,cap_battery_li,0.9255427560491806
+E,system,cap_coal-ccs_mod,0.9253822402493926
+E,system,cap_electrolyzer,0.9182468126152259
+E,system,cap_gas-cc,0.9525124132938734
+E,system,cap_gas-cc-ccs_mod,0.8716989280047232
+E,system,cap_gas-ct,0.8927667512632417
+E,system,cap_hydUD,0.4214448601739158
+E,system,cap_nuclear,-0.3619588637198803
+E,system,cap_nuclear-smr,0.2065389723044293
+E,system,cap_o-g-s,0.5991445228986491
+E,system,cap_pumped-hydro,0.5614070513478323
+E,system,gen_CoalOldScr,0.9271186240805573
+E,system,gen_CoalOldScr_coal-CCS_mod,0.7197436116106399
+E,system,gen_Gas-CC_Gas-CC-CCS_mod,0.26869380671224186
+E,system,gen_Gas-CC_H2-CC,0.37115512473352585
+E,system,gen_H2-CC,0.849342181589597
+E,system,gen_H2-CT,0.8818422932024781
+E,system,gen_battery_li,0.9411626835178702
+E,system,gen_coal-ccs_mod,0.9565333811239123
+E,system,gen_distpv,1.0
+E,system,gen_gas-cc,0.9902695400663847
+E,system,gen_gas-cc-ccs_mod,0.8243076887872866
+E,system,gen_gas-ct,0.869244703755094
+E,system,gen_hydED,0.936705876748087
+E,system,gen_hydEND,1.0
+E,system,gen_hydUD,0.4702335625254789
+E,system,gen_lfill-gas,0.8280389571666102
+E,system,gen_nuclear,0.8419679812032156
+E,system,gen_nuclear-smr,0.20716167187096757
+E,system,gen_o-g-s,0.7397425853980033
+E,system,gen_pumped-hydro,0.5678083284534705
+E,system,tran_AC_total,0.9745745318221438
+E,system,tran_total,0.9745745318221438
+E,system,cost_inv_h2_production,0.007900875205307134
+E,system,cost_inv_h2_storage,-0.09233515870160036
+E,system,cost_inv_investment_capacity_costs,0.9105881079337127
+E,system,cost_inv_investment_refurbishment_capacity,0.5406150904406439
+E,system,cost_inv_investment_spurline_costs_rsc_technologies,0.8931174200292075
+E,system,cost_inv_itc_payments_negative,0.05739175679287567
+E,system,cost_inv_transmission_interzone_ac_investment,0.8730757710457798
+E,system,cost_inv_transmission_intrazone_investment,0.8322174296673133
+E,system,cost_op_co2_incentive_negative,0.2587251693704331
+E,system,cost_op_co2_transport_storage,0.920948706517277
+E,system,cost_op_consume_fom,0.9183256529489209
+E,system,cost_op_fom_costs,0.9803146509457977
+E,system,cost_op_fuelcosts_objfn,0.971153658652351
+E,system,cost_op_h2_storage,0.9436510561402491
+E,system,cost_op_h2_transport_intrareg,0.9236591139082319
+E,system,cost_op_ptc_payments_negative,0.9664254573858154
+E,system,cost_op_spurline_fom,0.9925909118964384
+E,system,cost_op_startcost,0.8776571062797639
+E,system,cost_op_transmission_fom,0.9756074397092953
+E,system,cost_op_transmission_intrazone_fom,0.9865076392112763
+E,system,cost_op_vom_costs,0.9791714803408442
+E,system,cost_total,0.9117128708314631
+E,system,runtime_seconds,0.7574536052950696
+E,system,cap_upv,0.9665183681491591
+E,system,cap_wind-ons,0.98863797562924
+E,system,gen_upv,0.9625016706872863
+E,system,gen_wind-ons,0.9857702992722273
+E,regional,cap_CoalOldScr_coal-CCS_mod_p63,0.6632353879478199
+E,regional,cap_CoalOldScr_coal-CCS_mod_p64,0.5810516056468018
+E,regional,cap_CoalOldScr_coal-CCS_mod_p65,0.7204420366428572
+E,regional,cap_CoalOldScr_coal-CCS_mod_p67,0.6870226106811677
+E,regional,cap_CoalOldScr_p63,0.03742379638610538
+E,regional,cap_CoalOldScr_p64,0.5384516481913479
+E,regional,cap_CoalOldScr_p65,0.20457520125484707
+E,regional,cap_CoalOldScr_p67,0.7498633307741234
+E,regional,cap_Gas-CC_Gas-CC-CCS_mod_p67,0.29925293644288586
+E,regional,cap_Gas-CC_H2-CC_p60,0.6297810372755974
+E,regional,cap_Gas-CC_H2-CC_p62,0.3684583086277544
+E,regional,cap_Gas-CC_H2-CC_p63,-0.2527220923925171
+E,regional,cap_Gas-CC_H2-CC_p64,0.19328841347942072
+E,regional,cap_Gas-CC_H2-CC_p65,0.7621035630571846
+E,regional,cap_H2-CC_p60,0.1659943212815106
+E,regional,cap_H2-CC_p61,0.8503624992212425
+E,regional,cap_H2-CC_p62,0.05956321047162416
+E,regional,cap_H2-CC_p65,-0.30871257525345763
+E,regional,cap_H2-CT_p60,0.7392365685560753
+E,regional,cap_H2-CT_p61,0.8385584596131902
+E,regional,cap_H2-CT_p62,0.7499890819554843
+E,regional,cap_H2-CT_p63,0.38591359210266263
+E,regional,cap_H2-CT_p64,0.341655515752771
+E,regional,cap_H2-CT_p65,0.5502369216617993
+E,regional,cap_H2-CT_p67,-0.30296841346426095
+E,regional,cap_battery_li_p60,0.5389944794413646
+E,regional,cap_battery_li_p61,0.5636385403913169
+E,regional,cap_battery_li_p62,0.5428125049294108
+E,regional,cap_battery_li_p63,0.8427242008312179
+E,regional,cap_battery_li_p64,0.5656896972384126
+E,regional,cap_battery_li_p65,0.8021364585140845
+E,regional,cap_battery_li_p67,0.8044454061896009
+E,regional,cap_coal-ccs_mod_p67,0.9253822402493926
+E,regional,cap_electrolyzer_p60,0.7795327111560597
+E,regional,cap_electrolyzer_p61,0.849574766716988
+E,regional,cap_electrolyzer_p62,0.7149717689340223
+E,regional,cap_electrolyzer_p63,0.37244609945065155
+E,regional,cap_electrolyzer_p64,0.45493570537196104
+E,regional,cap_electrolyzer_p65,0.6409844396958329
+E,regional,cap_electrolyzer_p67,-0.3029684043183245
+E,regional,cap_gas-cc-ccs_mod_p63,0.8768544985339028
+E,regional,cap_gas-cc-ccs_mod_p64,0.5068043020456807
+E,regional,cap_gas-cc-ccs_mod_p65,0.2906930076298956
+E,regional,cap_gas-cc-ccs_mod_p67,0.8400375515580512
+E,regional,cap_gas-cc_p60,0.41532913335736654
+E,regional,cap_gas-cc_p61,0.4118527601636902
+E,regional,cap_gas-cc_p62,0.4976563200809009
+E,regional,cap_gas-cc_p63,0.9147216702614399
+E,regional,cap_gas-cc_p64,0.8666727946441586
+E,regional,cap_gas-cc_p65,0.8876369142626783
+E,regional,cap_gas-cc_p67,0.9288339625651544
+E,regional,cap_gas-ct_p60,0.47031307410295065
+E,regional,cap_gas-ct_p61,0.6126371198557898
+E,regional,cap_gas-ct_p62,0.4048636528995958
+E,regional,cap_gas-ct_p63,0.8018827783224864
+E,regional,cap_gas-ct_p64,0.6935423581231672
+E,regional,cap_gas-ct_p65,0.7265212503488224
+E,regional,cap_gas-ct_p67,0.9158552626580446
+E,regional,cap_hydUD_p63,0.4214448601739158
+E,regional,cap_nuclear-smr_p67,0.2065389723044293
+E,regional,cap_nuclear_p65,-0.3616312909285042
+E,regional,cap_o-g-s_p62,0.5732953411765713
+E,regional,cap_o-g-s_p63,0.5940801672840521
+E,regional,cap_o-g-s_p64,0.3968522926630267
+E,regional,cap_o-g-s_p65,0.4581704855118116
+E,regional,cap_o-g-s_p67,0.5130386030986752
+E,regional,cap_pumped-hydro_p61,0.5618156933303484
+E,regional,gen_CoalOldScr_coal-CCS_mod_p63,0.6627285118370352
+E,regional,gen_CoalOldScr_coal-CCS_mod_p64,0.5802108291301116
+E,regional,gen_CoalOldScr_coal-CCS_mod_p65,0.7221417378645416
+E,regional,gen_CoalOldScr_coal-CCS_mod_p67,0.686924229168218
+E,regional,gen_CoalOldScr_p63,-0.09086994635770029
+E,regional,gen_CoalOldScr_p64,0.6389647944817435
+E,regional,gen_CoalOldScr_p65,0.20613395553786384
+E,regional,gen_CoalOldScr_p67,0.9040090696814634
+E,regional,gen_Gas-CC_Gas-CC-CCS_mod_p67,0.26869380671224186
+E,regional,gen_Gas-CC_H2-CC_p60,0.6297405157309097
+E,regional,gen_Gas-CC_H2-CC_p62,0.3684928967944303
+E,regional,gen_Gas-CC_H2-CC_p63,-0.2527220903697873
+E,regional,gen_Gas-CC_H2-CC_p64,0.05890157944757024
+E,regional,gen_Gas-CC_H2-CC_p65,0.3774808603386657
+E,regional,gen_H2-CC_p60,0.1662275686432505
+E,regional,gen_H2-CC_p61,0.850362697437384
+E,regional,gen_H2-CC_p62,0.06046985476996747
+E,regional,gen_H2-CC_p65,-0.3088372127391956
+E,regional,gen_H2-CT_p60,0.7394398741518493
+E,regional,gen_H2-CT_p61,0.8384990272350235
+E,regional,gen_H2-CT_p62,0.7503329888019906
+E,regional,gen_H2-CT_p63,0.3868898648963731
+E,regional,gen_H2-CT_p64,0.3407093639466463
+E,regional,gen_H2-CT_p65,0.5527824711221963
+E,regional,gen_H2-CT_p67,-0.3029683762693445
+E,regional,gen_battery_li_p60,0.5198336728172337
+E,regional,gen_battery_li_p61,0.6802458093181925
+E,regional,gen_battery_li_p62,0.5568793132523494
+E,regional,gen_battery_li_p63,0.8651968730403757
+E,regional,gen_battery_li_p64,0.581892227025995
+E,regional,gen_battery_li_p65,0.8632310414653895
+E,regional,gen_battery_li_p67,0.831430925812042
+E,regional,gen_coal-ccs_mod_p67,0.9565333811239123
+E,regional,gen_distpv_p60,1.0
+E,regional,gen_distpv_p61,1.0
+E,regional,gen_distpv_p62,1.0
+E,regional,gen_distpv_p63,1.0
+E,regional,gen_distpv_p64,1.0
+E,regional,gen_distpv_p65,1.0
+E,regional,gen_distpv_p67,1.0
+E,regional,gen_gas-cc-ccs_mod_p63,0.8491578833072524
+E,regional,gen_gas-cc-ccs_mod_p64,0.5287965691335115
+E,regional,gen_gas-cc-ccs_mod_p65,-0.18049139332800235
+E,regional,gen_gas-cc-ccs_mod_p67,0.8028810442948917
+E,regional,gen_gas-cc_p60,0.44062691095488105
+E,regional,gen_gas-cc_p61,0.4438534715238932
+E,regional,gen_gas-cc_p62,0.2619993954157581
+E,regional,gen_gas-cc_p63,0.9815123106253285
+E,regional,gen_gas-cc_p64,0.9470758807294922
+E,regional,gen_gas-cc_p65,0.9554784938444304
+E,regional,gen_gas-cc_p67,0.9684680534429495
+E,regional,gen_gas-ct_p60,0.37374776058854475
+E,regional,gen_gas-ct_p61,0.6903536715647929
+E,regional,gen_gas-ct_p62,0.354048790521617
+E,regional,gen_gas-ct_p63,0.783941832145977
+E,regional,gen_gas-ct_p64,0.6777244190144175
+E,regional,gen_gas-ct_p65,0.7498786754457551
+E,regional,gen_gas-ct_p67,0.7832476498594537
+E,regional,gen_hydED_p63,0.936705876748087
+E,regional,gen_hydEND_p61,0.999987047746742
+E,regional,gen_hydEND_p63,1.0
+E,regional,gen_hydEND_p64,1.0
+E,regional,gen_hydEND_p65,1.0
+E,regional,gen_hydUD_p63,0.4702335625254789
+E,regional,gen_lfill-gas_p63,0.8184774101097214
+E,regional,gen_lfill-gas_p64,0.8150505151432006
+E,regional,gen_lfill-gas_p65,0.7766037473746497
+E,regional,gen_nuclear-smr_p67,0.20716167187096757
+E,regional,gen_nuclear_p63,0.8326125574179151
+E,regional,gen_nuclear_p65,0.7751199844081191
+E,regional,gen_o-g-s_p62,0.7074520503136106
+E,regional,gen_o-g-s_p63,0.5752447629837998
+E,regional,gen_o-g-s_p64,0.463197090404864
+E,regional,gen_o-g-s_p65,0.730770993796642
+E,regional,gen_o-g-s_p67,0.7545753929126527
+E,regional,gen_pumped-hydro_p61,0.564803728800578
+E,regional,gen_pumped-hydro_p64,0.5291973257224485
+E,regional,tran_p60_p61_AC,0.48252868862712217
+E,regional,tran_p60_p62_AC,0.8807790422435062
+E,regional,tran_p60_p63_AC,0.8898917339114961
+E,regional,tran_p61_p62_AC,0.4054549967188831
+E,regional,tran_p61_p63_AC,0.8179972288926359
+E,regional,tran_p61_p64_AC,0.8319752852029195
+E,regional,tran_p61_p65_AC,0.9564116992895833
+E,regional,tran_p64_p65_AC,0.6641154292698654
+E,regional,tran_p64_p67_AC,0.9663527629081475
+E,regional,tran_p65_p67_AC,0.9660525379549201
+E,regional,cost_inv_h2_production_p60,-0.2850387548688911
+E,regional,cost_inv_h2_production_p61,-0.27327947644322936
+E,regional,cost_inv_h2_production_p62,-0.16797158992154237
+E,regional,cost_inv_h2_production_p63,-0.011761452192558863
+E,regional,cost_inv_h2_production_p65,-0.1821472648147986
+E,regional,cost_inv_h2_storage_p60,-0.22299227090367535
+E,regional,cost_inv_h2_storage_p62,-0.19167529957559393
+E,regional,cost_inv_h2_storage_p63,-0.25272202434087965
+E,regional,cost_inv_h2_storage_p64,-0.053342047732520825
+E,regional,cost_inv_h2_storage_p65,-0.2243269786934603
+E,regional,cost_inv_investment_capacity_costs_p60,0.4320863406934746
+E,regional,cost_inv_investment_capacity_costs_p61,0.8553000400335258
+E,regional,cost_inv_investment_capacity_costs_p62,0.7094381498803622
+E,regional,cost_inv_investment_capacity_costs_p63,0.7771469802076116
+E,regional,cost_inv_investment_capacity_costs_p64,0.6201820439325949
+E,regional,cost_inv_investment_capacity_costs_p65,0.7369826382389012
+E,regional,cost_inv_investment_capacity_costs_p67,0.46598411432230713
+E,regional,cost_inv_investment_refurbishment_capacity_p61,0.299828926344057
+E,regional,cost_inv_investment_refurbishment_capacity_p63,0.2554711184344005
+E,regional,cost_inv_investment_refurbishment_capacity_p64,0.14649356201555108
+E,regional,cost_inv_investment_refurbishment_capacity_p65,0.7700802102517849
+E,regional,cost_inv_investment_refurbishment_capacity_p67,-0.16793057090496966
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p60,0.5552409877407212
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p61,0.855776920754693
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p62,0.7452605933923672
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p63,0.8520545372372138
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p64,0.552601395611307
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p65,0.8362536432065011
+E,regional,cost_inv_investment_spurline_costs_rsc_technologies_p67,0.8104609901710773
+E,regional,cost_inv_itc_payments_negative_p63,0.05739175679287567
+E,regional,cost_inv_transmission_interzone_ac_investment_p60,0.6864044135882437
+E,regional,cost_inv_transmission_interzone_ac_investment_p61,0.8438093633871311
+E,regional,cost_inv_transmission_interzone_ac_investment_p62,0.6564449754585653
+E,regional,cost_inv_transmission_interzone_ac_investment_p63,0.8772910744076815
+E,regional,cost_inv_transmission_interzone_ac_investment_p64,0.6693551834223537
+E,regional,cost_inv_transmission_interzone_ac_investment_p65,0.7864650775120788
+E,regional,cost_inv_transmission_interzone_ac_investment_p67,0.6034073405647038
+E,regional,cost_inv_transmission_intrazone_investment_p60,0.462595318391844
+E,regional,cost_inv_transmission_intrazone_investment_p61,0.8223007780348719
+E,regional,cost_inv_transmission_intrazone_investment_p62,0.435435587923515
+E,regional,cost_inv_transmission_intrazone_investment_p63,0.7072750966931913
+E,regional,cost_inv_transmission_intrazone_investment_p64,0.59514462255619
+E,regional,cost_inv_transmission_intrazone_investment_p65,0.5760678030809689
+E,regional,cost_inv_transmission_intrazone_investment_p67,0.5747576753591196
+E,regional,cost_op_co2_incentive_negative_p67,0.2587251693704331
+E,regional,cost_op_co2_transport_storage_p63,0.8132331439476824
+E,regional,cost_op_co2_transport_storage_p64,0.5167813359196844
+E,regional,cost_op_co2_transport_storage_p65,0.013531866216312971
+E,regional,cost_op_co2_transport_storage_p67,0.9143978982705687
+E,regional,cost_op_consume_fom_p60,0.7797531651558587
+E,regional,cost_op_consume_fom_p61,0.8497443262216191
+E,regional,cost_op_consume_fom_p62,0.7152886793726569
+E,regional,cost_op_consume_fom_p63,0.37288276573948365
+E,regional,cost_op_consume_fom_p64,0.45593892731794283
+E,regional,cost_op_consume_fom_p65,0.6394173837688091
+E,regional,cost_op_consume_fom_p67,-0.3029683926346065
+E,regional,cost_op_fom_costs_p60,0.6066588034957923
+E,regional,cost_op_fom_costs_p61,0.9721668206529205
+E,regional,cost_op_fom_costs_p62,0.8972478691100585
+E,regional,cost_op_fom_costs_p63,0.9410699597647498
+E,regional,cost_op_fom_costs_p64,0.9670144734699481
+E,regional,cost_op_fom_costs_p65,0.9641598603561282
+E,regional,cost_op_fom_costs_p67,0.7206546900574604
+E,regional,cost_op_fuelcosts_objfn_p60,0.6710496154130694
+E,regional,cost_op_fuelcosts_objfn_p61,0.4944448391920627
+E,regional,cost_op_fuelcosts_objfn_p62,0.8132930427581954
+E,regional,cost_op_fuelcosts_objfn_p63,0.9555953280999622
+E,regional,cost_op_fuelcosts_objfn_p64,0.9198840664559393
+E,regional,cost_op_fuelcosts_objfn_p65,0.9170628556111133
+E,regional,cost_op_fuelcosts_objfn_p67,0.9280224220294742
+E,regional,cost_op_h2_storage_p60,0.9059517974791769
+E,regional,cost_op_h2_storage_p61,0.8855585552129186
+E,regional,cost_op_h2_storage_p62,0.600756066207627
+E,regional,cost_op_h2_storage_p63,0.3448557610059698
+E,regional,cost_op_h2_storage_p64,0.5083319568113221
+E,regional,cost_op_h2_storage_p65,0.7193766190327965
+E,regional,cost_op_h2_storage_p67,-0.3029684130289696
+E,regional,cost_op_h2_transport_intrareg_p60,0.7611507867222306
+E,regional,cost_op_h2_transport_intrareg_p61,0.887041639323884
+E,regional,cost_op_h2_transport_intrareg_p62,0.6805043958245116
+E,regional,cost_op_h2_transport_intrareg_p63,0.38662644337627994
+E,regional,cost_op_h2_transport_intrareg_p64,0.4682081972699914
+E,regional,cost_op_h2_transport_intrareg_p65,0.6777539615840715
+E,regional,cost_op_h2_transport_intrareg_p67,-0.302968381117372
+E,regional,cost_op_ptc_payments_negative_p60,0.26786300892773784
+E,regional,cost_op_ptc_payments_negative_p61,0.771996210649576
+E,regional,cost_op_ptc_payments_negative_p62,0.6837098879620285
+E,regional,cost_op_ptc_payments_negative_p63,0.9408729695295315
+E,regional,cost_op_ptc_payments_negative_p64,0.8945571237027384
+E,regional,cost_op_ptc_payments_negative_p65,0.9270833793574113
+E,regional,cost_op_ptc_payments_negative_p67,0.6596495838055785
+E,regional,cost_op_spurline_fom_p60,0.49021508569535865
+E,regional,cost_op_spurline_fom_p61,0.9572391286244096
+E,regional,cost_op_spurline_fom_p62,0.9559622746994149
+E,regional,cost_op_spurline_fom_p63,0.9720998731419985
+E,regional,cost_op_spurline_fom_p64,0.9810755762514282
+E,regional,cost_op_spurline_fom_p65,0.9775194573562265
+E,regional,cost_op_spurline_fom_p67,0.9303519896962453
+E,regional,cost_op_startcost_p60,0.20282587378438055
+E,regional,cost_op_startcost_p61,0.6688391399514846
+E,regional,cost_op_startcost_p62,0.6753997136551586
+E,regional,cost_op_startcost_p63,0.8146458255757337
+E,regional,cost_op_startcost_p64,0.6796997146778694
+E,regional,cost_op_startcost_p65,0.7658539124003217
+E,regional,cost_op_startcost_p67,0.8245958367118269
+E,regional,cost_op_transmission_fom_p60,0.8938950554999427
+E,regional,cost_op_transmission_fom_p61,0.9620344547274762
+E,regional,cost_op_transmission_fom_p62,0.8554790415942433
+E,regional,cost_op_transmission_fom_p63,0.9081017418531429
+E,regional,cost_op_transmission_fom_p64,0.9356508389876335
+E,regional,cost_op_transmission_fom_p65,0.9458144735673669
+E,regional,cost_op_transmission_fom_p67,0.9788291866515738
+E,regional,cost_op_transmission_intrazone_fom_p60,0.6146612503468252
+E,regional,cost_op_transmission_intrazone_fom_p61,0.9375182456902859
+E,regional,cost_op_transmission_intrazone_fom_p62,0.868040632084587
+E,regional,cost_op_transmission_intrazone_fom_p63,0.96047630029759
+E,regional,cost_op_transmission_intrazone_fom_p64,0.9612952577622336
+E,regional,cost_op_transmission_intrazone_fom_p65,0.9566453895255144
+E,regional,cost_op_transmission_intrazone_fom_p67,0.8393372202678174
+E,regional,cost_op_vom_costs_p60,0.5177569542036295
+E,regional,cost_op_vom_costs_p61,0.7703066428411413
+E,regional,cost_op_vom_costs_p62,0.2341440314946005
+E,regional,cost_op_vom_costs_p63,0.9766569631204162
+E,regional,cost_op_vom_costs_p64,0.938479251709895
+E,regional,cost_op_vom_costs_p65,0.9455231879770087
+E,regional,cost_op_vom_costs_p67,0.9332963254871619
+E,regional,cap_upv_p63,0.9583487764991946
+E,regional,cap_upv_p64,0.9156847193121721
+E,regional,cap_upv_p65,0.9316037947902416
+E,regional,cap_upv_p67,0.9315239150944937
+E,regional,cap_upv_p61,0.6698421061495632
+E,regional,cap_upv_p60,0.7733107519438168
+E,regional,cap_upv_p62,0.5097211030853191
+E,regional,cap_wind-ons_p60,0.6771023814408421
+E,regional,cap_wind-ons_p61,0.9780145292176542
+E,regional,cap_wind-ons_p62,0.9573220795267157
+E,regional,cap_wind-ons_p63,0.9564117935529889
+E,regional,cap_wind-ons_p64,0.9836143746648187
+E,regional,cap_wind-ons_p65,0.983496646109901
+E,regional,cap_wind-ons_p67,0.9537173750700927
+E,regional,gen_upv_p63,0.960153538907248
+E,regional,gen_upv_p61,0.6252491371333171
+E,regional,gen_upv_p64,0.9061540006754066
+E,regional,gen_upv_p65,0.9269981418275982
+E,regional,gen_upv_p67,0.9158010489149844
+E,regional,gen_upv_p60,0.8540476158220265
+E,regional,gen_upv_p62,0.4489919761431551
+E,regional,gen_wind-ons_p60,0.6337718530402552
+E,regional,gen_wind-ons_p61,0.9757777240558754
+E,regional,gen_wind-ons_p62,0.9434947846801304
+E,regional,gen_wind-ons_p63,0.946411202514925
+E,regional,gen_wind-ons_p64,0.986956081697616
+E,regional,gen_wind-ons_p65,0.9849976965053336
+E,regional,gen_wind-ons_p67,0.9506219034613754
+F,system,cap_CoalOldScr,0.8038450059774623
+F,system,cap_CoalOldScr_coal-CCS_mod,0.7196314249844873
+F,system,cap_Gas-CC_Gas-CC-CCS_mod,0.29925293644288586
+F,system,cap_Gas-CC_H2-CC,0.5526489263067491
+F,system,cap_H2-CC,0.8492265792356384
+F,system,cap_H2-CT,0.881873494613978
+F,system,cap_battery_li,0.9255427560491806
+F,system,cap_coal-ccs_mod,0.9253822402493926
+F,system,cap_electrolyzer,0.9182468126152259
+F,system,cap_gas-cc,0.9525124132938734
+F,system,cap_gas-cc-ccs_mod,0.8716989280047232
+F,system,cap_gas-ct,0.8927667512632417
+F,system,cap_hydUD,0.4214448601739158
+F,system,cap_nuclear,-0.3619588637198803
+F,system,cap_nuclear-smr,0.2065389723044293
+F,system,cap_o-g-s,0.5991445228986491
+F,system,cap_pumped-hydro,0.5614070513478323
+F,system,gen_CoalOldScr,0.9271186240805573
+F,system,gen_CoalOldScr_coal-CCS_mod,0.7197436116106399
+F,system,gen_Gas-CC_Gas-CC-CCS_mod,0.26869380671224186
+F,system,gen_Gas-CC_H2-CC,0.37115512473352585
+F,system,gen_H2-CC,0.849342181589597
+F,system,gen_H2-CT,0.8818422932024781
+F,system,gen_battery_li,0.9411626835178702
+F,system,gen_coal-ccs_mod,0.9565333811239123
+F,system,gen_distpv,1.0
+F,system,gen_gas-cc,0.9902695400663847
+F,system,gen_gas-cc-ccs_mod,0.8243076887872866
+F,system,gen_gas-ct,0.869244703755094
+F,system,gen_hydED,0.936705876748087
+F,system,gen_hydEND,1.0
+F,system,gen_hydUD,0.4702335625254789
+F,system,gen_lfill-gas,0.8280389571666102
+F,system,gen_nuclear,0.8419679812032156
+F,system,gen_nuclear-smr,0.20716167187096757
+F,system,gen_o-g-s,0.7397425853980033
+F,system,gen_pumped-hydro,0.5678083284534705
+F,system,tran_AC_total,0.9745745318221438
+F,system,tran_total,0.9745745318221438
+F,system,cost_inv_h2_production,0.007900875205307134
+F,system,cost_inv_h2_storage,-0.09233515870160036
+F,system,cost_inv_investment_capacity_costs,0.9105881079337127
+F,system,cost_inv_investment_refurbishment_capacity,0.5406150904406439
+F,system,cost_inv_investment_spurline_costs_rsc_technologies,0.8931174200292075
+F,system,cost_inv_itc_payments_negative,0.05739175679287567
+F,system,cost_inv_transmission_interzone_ac_investment,0.8730757710457798
+F,system,cost_inv_transmission_intrazone_investment,0.8322174296673133
+F,system,cost_op_co2_incentive_negative,0.2587251693704331
+F,system,cost_op_co2_transport_storage,0.920948706517277
+F,system,cost_op_consume_fom,0.9183256529489209
+F,system,cost_op_fom_costs,0.9803146509457977
+F,system,cost_op_fuelcosts_objfn,0.971153658652351
+F,system,cost_op_h2_storage,0.9436510561402491
+F,system,cost_op_h2_transport_intrareg,0.9236591139082319
+F,system,cost_op_ptc_payments_negative,0.9664254573858154
+F,system,cost_op_spurline_fom,0.9925909118964384
+F,system,cost_op_startcost,0.8776571062797639
+F,system,cost_op_transmission_fom,0.9756074397092953
+F,system,cost_op_transmission_intrazone_fom,0.9865076392112763
+F,system,cost_op_vom_costs,0.9791714803408442
+F,system,cost_total,0.9117128708314631
+F,system,runtime_seconds,0.7574536052950696
+F,system,cap_upv,0.9665183681491591
+F,system,cap_wind-ons,0.98863797562924
+F,system,gen_upv,0.9625016706872863
+F,system,gen_wind-ons,0.9857702992722273
+F,regional,cap_CoalOldScr_coal-CCS_mod_p63,0.6573678049510584
+F,regional,cap_CoalOldScr_coal-CCS_mod_p64,0.5688370760322194
+F,regional,cap_CoalOldScr_coal-CCS_mod_p65,0.7135512530805839
+F,regional,cap_CoalOldScr_coal-CCS_mod_p67,0.6647115846648189
+F,regional,cap_CoalOldScr_p63,0.062206534425004456
+F,regional,cap_CoalOldScr_p64,0.5452700660780061
+F,regional,cap_CoalOldScr_p65,0.2232374239669166
+F,regional,cap_CoalOldScr_p67,0.7358471687176658
+F,regional,cap_Gas-CC_Gas-CC-CCS_mod_p67,0.29925293644288586
+F,regional,cap_Gas-CC_H2-CC_p60,0.5028382820575821
+F,regional,cap_Gas-CC_H2-CC_p62,0.3672736205848046
+F,regional,cap_Gas-CC_H2-CC_p63,-0.15228852007619698
+F,regional,cap_Gas-CC_H2-CC_p64,0.17909702123294646
+F,regional,cap_Gas-CC_H2-CC_p65,0.6192660965899113
+F,regional,cap_H2-CC_p60,0.1133118011304558
+F,regional,cap_H2-CC_p61,0.8477599591145807
+F,regional,cap_H2-CC_p62,0.055383340373427736
+F,regional,cap_H2-CC_p65,-0.06698250311294074
+F,regional,cap_H2-CT_p60,0.7452745246941903
+F,regional,cap_H2-CT_p61,0.7944758033047684
+F,regional,cap_H2-CT_p62,0.7850004080792485
+F,regional,cap_H2-CT_p63,0.4367551541465611
+F,regional,cap_H2-CT_p64,0.4356952940649981
+F,regional,cap_H2-CT_p65,0.525984709373839
+F,regional,cap_H2-CT_p67,-0.23606186184650757
+F,regional,cap_battery_li_p60,0.5052444096310515
+F,regional,cap_battery_li_p61,0.5571947739589629
+F,regional,cap_battery_li_p62,0.5389950613118659
+F,regional,cap_battery_li_p63,0.8387821506745308
+F,regional,cap_battery_li_p64,0.5662700885661347
+F,regional,cap_battery_li_p65,0.7999347659515232
+F,regional,cap_battery_li_p67,0.8072389928792452
+F,regional,cap_coal-ccs_mod_p67,0.9253822402493926
+F,regional,cap_electrolyzer_p60,0.8102255474206596
+F,regional,cap_electrolyzer_p61,0.8375873372770521
+F,regional,cap_electrolyzer_p62,0.7520008203431308
+F,regional,cap_electrolyzer_p63,0.41275995994193604
+F,regional,cap_electrolyzer_p64,0.6163949050254197
+F,regional,cap_electrolyzer_p65,0.6392208339146459
+F,regional,cap_electrolyzer_p67,-0.22495715356729074
+F,regional,cap_gas-cc-ccs_mod_p63,0.8745526025589401
+F,regional,cap_gas-cc-ccs_mod_p64,0.5204100832710288
+F,regional,cap_gas-cc-ccs_mod_p65,0.2856244970172558
+F,regional,cap_gas-cc-ccs_mod_p67,0.8333087634936847
+F,regional,cap_gas-cc_p60,0.42053496043297844
+F,regional,cap_gas-cc_p61,0.41472442962610023
+F,regional,cap_gas-cc_p62,0.49320313484766076
+F,regional,cap_gas-cc_p63,0.9025047871719347
+F,regional,cap_gas-cc_p64,0.8609307584627802
+F,regional,cap_gas-cc_p65,0.8834468684120073
+F,regional,cap_gas-cc_p67,0.9270964810237853
+F,regional,cap_gas-ct_p60,0.46246711394857487
+F,regional,cap_gas-ct_p61,0.6086923912968643
+F,regional,cap_gas-ct_p62,0.3884888034877011
+F,regional,cap_gas-ct_p63,0.7718635194818536
+F,regional,cap_gas-ct_p64,0.69066114580083
+F,regional,cap_gas-ct_p65,0.7266820395245401
+F,regional,cap_gas-ct_p67,0.9062853427138257
+F,regional,cap_hydUD_p63,0.4214448601739158
+F,regional,cap_nuclear-smr_p67,0.2065389723044293
+F,regional,cap_nuclear_p65,-0.36195886371988384
+F,regional,cap_o-g-s_p62,0.5790080045424133
+F,regional,cap_o-g-s_p63,0.597483220014788
+F,regional,cap_o-g-s_p64,0.4017531148963752
+F,regional,cap_o-g-s_p65,0.4609968896519001
+F,regional,cap_o-g-s_p67,0.5085287544551
+F,regional,cap_pumped-hydro_p61,0.5614068164149142
+F,regional,gen_CoalOldScr_coal-CCS_mod_p63,0.6570281435599676
+F,regional,gen_CoalOldScr_coal-CCS_mod_p64,0.568248012927131
+F,regional,gen_CoalOldScr_coal-CCS_mod_p65,0.7149542812019969
+F,regional,gen_CoalOldScr_coal-CCS_mod_p67,0.6651829796793061
+F,regional,gen_CoalOldScr_p63,-0.0180153499377933
+F,regional,gen_CoalOldScr_p64,0.6545926415166778
+F,regional,gen_CoalOldScr_p65,0.2221513734452507
+F,regional,gen_CoalOldScr_p67,0.8941063840326191
+F,regional,gen_Gas-CC_Gas-CC-CCS_mod_p67,0.26869380671224186
+F,regional,gen_Gas-CC_H2-CC_p60,0.5351910061907621
+F,regional,gen_Gas-CC_H2-CC_p62,0.342308444443681
+F,regional,gen_Gas-CC_H2-CC_p63,-0.15750237306256798
+F,regional,gen_Gas-CC_H2-CC_p64,0.03443696282139841
+F,regional,gen_Gas-CC_H2-CC_p65,0.31163749750509817
+F,regional,gen_H2-CC_p60,0.11616847338578762
+F,regional,gen_H2-CC_p61,0.8478911668521413
+F,regional,gen_H2-CC_p62,0.0559606470693631
+F,regional,gen_H2-CC_p65,-0.06920169726590952
+F,regional,gen_H2-CT_p60,0.7459368776050588
+F,regional,gen_H2-CT_p61,0.794424203423465
+F,regional,gen_H2-CT_p62,0.7856408555661423
+F,regional,gen_H2-CT_p63,0.43892127376250734
+F,regional,gen_H2-CT_p64,0.4375121787594046
+F,regional,gen_H2-CT_p65,0.5260475530978468
+F,regional,gen_H2-CT_p67,-0.23625403971328196
+F,regional,gen_battery_li_p60,0.5198336728172337
+F,regional,gen_battery_li_p61,0.6802458093181925
+F,regional,gen_battery_li_p62,0.5568793132523494
+F,regional,gen_battery_li_p63,0.8651968730403757
+F,regional,gen_battery_li_p64,0.581892227025995
+F,regional,gen_battery_li_p65,0.8632310414653895
+F,regional,gen_battery_li_p67,0.831430925812042
+F,regional,gen_coal-ccs_mod_p67,0.9565333811239123
+F,regional,gen_distpv_p60,1.0
+F,regional,gen_distpv_p61,1.0
+F,regional,gen_distpv_p62,1.0
+F,regional,gen_distpv_p63,1.0
+F,regional,gen_distpv_p64,1.0
+F,regional,gen_distpv_p65,1.0
+F,regional,gen_distpv_p67,1.0
+F,regional,gen_gas-cc-ccs_mod_p63,0.8582763061741316
+F,regional,gen_gas-cc-ccs_mod_p64,0.5505213763738633
+F,regional,gen_gas-cc-ccs_mod_p65,-0.21813015841874273
+F,regional,gen_gas-cc-ccs_mod_p67,0.8133000518678719
+F,regional,gen_gas-cc_p60,0.435486182455488
+F,regional,gen_gas-cc_p61,0.44357031061663976
+F,regional,gen_gas-cc_p62,0.2747987187863655
+F,regional,gen_gas-cc_p63,0.9804040688125595
+F,regional,gen_gas-cc_p64,0.947874632568814
+F,regional,gen_gas-cc_p65,0.9567607956076181
+F,regional,gen_gas-cc_p67,0.9661054176306365
+F,regional,gen_gas-ct_p60,0.3494164180032333
+F,regional,gen_gas-ct_p61,0.6869885394540909
+F,regional,gen_gas-ct_p62,0.3352711834648735
+F,regional,gen_gas-ct_p63,0.782871474331404
+F,regional,gen_gas-ct_p64,0.6655467890294977
+F,regional,gen_gas-ct_p65,0.7508524639162121
+F,regional,gen_gas-ct_p67,0.7910102858849127
+F,regional,gen_hydED_p63,0.936705876748087
+F,regional,gen_hydEND_p61,0.9999919402617089
+F,regional,gen_hydEND_p63,0.9999986901737707
+F,regional,gen_hydEND_p64,0.9999992755373868
+F,regional,gen_hydEND_p65,0.999997293514754
+F,regional,gen_hydUD_p63,0.4702335625254789
+F,regional,gen_lfill-gas_p63,0.8137230396242066
+F,regional,gen_lfill-gas_p64,0.8090437800425011
+F,regional,gen_lfill-gas_p65,0.773082986340303
+F,regional,gen_nuclear-smr_p67,0.20716167187096757
+F,regional,gen_nuclear_p63,0.8299708037856481
+F,regional,gen_nuclear_p65,0.7793644013158068
+F,regional,gen_o-g-s_p62,0.7054103636926368
+F,regional,gen_o-g-s_p63,0.5858224235629153
+F,regional,gen_o-g-s_p64,0.46866808762718093
+F,regional,gen_o-g-s_p65,0.7273084955918148
+F,regional,gen_o-g-s_p67,0.7452575748289483
+F,regional,gen_pumped-hydro_p61,0.564803728800578
+F,regional,gen_pumped-hydro_p64,0.5291973257224485
+F,regional,tran_p60_p61_AC,0.08153274908731312
+F,regional,tran_p60_p62_AC,0.864077741768416
+F,regional,tran_p60_p63_AC,0.8610098667364272
+F,regional,tran_p61_p62_AC,0.37938847039979595
+F,regional,tran_p61_p63_AC,0.8319902347668957
+F,regional,tran_p61_p64_AC,0.8279733326005045
+F,regional,tran_p61_p65_AC,0.9524638119401402
+F,regional,tran_p64_p65_AC,0.6741307663867695
+F,regional,tran_p64_p67_AC,0.9654020226964415
+F,regional,tran_p65_p67_AC,0.9658085517833335
+F,regional,cost_inv_h2_production_p60,-0.13664742331561963
+F,regional,cost_inv_h2_production_p61,-0.14235464656744123
+F,regional,cost_inv_h2_production_p62,-0.26033957301101185
+F,regional,cost_inv_h2_production_p63,0.04296906863916339
+F,regional,cost_inv_h2_production_p65,-0.1053462351865313
+F,regional,cost_inv_h2_storage_p60,-0.1410140989323685
+F,regional,cost_inv_h2_storage_p62,-0.054981460767879575
+F,regional,cost_inv_h2_storage_p63,-0.06840233389224593
+F,regional,cost_inv_h2_storage_p64,-0.02589570222899029
+F,regional,cost_inv_h2_storage_p65,-0.2055087475267412
+F,regional,cost_inv_investment_capacity_costs_p60,0.41899574404709317
+F,regional,cost_inv_investment_capacity_costs_p61,0.8467443300572509
+F,regional,cost_inv_investment_capacity_costs_p62,0.7023598608503792
+F,regional,cost_inv_investment_capacity_costs_p63,0.7716629246084216
+F,regional,cost_inv_investment_capacity_costs_p64,0.6316344144202526
+F,regional,cost_inv_investment_capacity_costs_p65,0.7464999207637041
+F,regional,cost_inv_investment_capacity_costs_p67,0.4576284596890112
+F,regional,cost_inv_investment_refurbishment_capacity_p61,0.26372010138188595
+F,regional,cost_inv_investment_refurbishment_capacity_p63,0.22083639262093235
+F,regional,cost_inv_investment_refurbishment_capacity_p64,0.053965861106155755
+F,regional,cost_inv_investment_refurbishment_capacity_p65,0.7539118372374268
+F,regional,cost_inv_investment_refurbishment_capacity_p67,-0.11563373892195594
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p60,0.5629229555963702
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p61,0.8521655195996704
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p62,0.7442972288649516
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p63,0.8467029627292331
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p64,0.555781952218734
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p65,0.8230709695715427
+F,regional,cost_inv_investment_spurline_costs_rsc_technologies_p67,0.8097092430207592
+F,regional,cost_inv_itc_payments_negative_p63,0.05739175679287567
+F,regional,cost_inv_transmission_interzone_ac_investment_p60,0.7049298271952964
+F,regional,cost_inv_transmission_interzone_ac_investment_p61,0.8206652622511337
+F,regional,cost_inv_transmission_interzone_ac_investment_p62,0.6797120035891469
+F,regional,cost_inv_transmission_interzone_ac_investment_p63,0.8811357657708223
+F,regional,cost_inv_transmission_interzone_ac_investment_p64,0.6687192868256866
+F,regional,cost_inv_transmission_interzone_ac_investment_p65,0.7806610978934019
+F,regional,cost_inv_transmission_interzone_ac_investment_p67,0.6191852593707842
+F,regional,cost_inv_transmission_intrazone_investment_p60,0.40875989045359507
+F,regional,cost_inv_transmission_intrazone_investment_p61,0.80352829604349
+F,regional,cost_inv_transmission_intrazone_investment_p62,0.44533760506921094
+F,regional,cost_inv_transmission_intrazone_investment_p63,0.6763925205533406
+F,regional,cost_inv_transmission_intrazone_investment_p64,0.5898614171500294
+F,regional,cost_inv_transmission_intrazone_investment_p65,0.5800007289814358
+F,regional,cost_inv_transmission_intrazone_investment_p67,0.580821937166982
+F,regional,cost_op_co2_incentive_negative_p67,0.2587251693704331
+F,regional,cost_op_co2_transport_storage_p63,0.8181653255491215
+F,regional,cost_op_co2_transport_storage_p64,0.5368100208311153
+F,regional,cost_op_co2_transport_storage_p65,-0.003614349215569801
+F,regional,cost_op_co2_transport_storage_p67,0.9116952499022452
+F,regional,cost_op_consume_fom_p60,0.8103651187209185
+F,regional,cost_op_consume_fom_p61,0.8377765457949975
+F,regional,cost_op_consume_fom_p62,0.7530467880024639
+F,regional,cost_op_consume_fom_p63,0.41550088295728405
+F,regional,cost_op_consume_fom_p64,0.6184370172935155
+F,regional,cost_op_consume_fom_p65,0.6355480825943307
+F,regional,cost_op_consume_fom_p67,-0.22492973797947968
+F,regional,cost_op_fom_costs_p60,0.5890321053886205
+F,regional,cost_op_fom_costs_p61,0.9726713129858677
+F,regional,cost_op_fom_costs_p62,0.9007291099657607
+F,regional,cost_op_fom_costs_p63,0.9431696385341742
+F,regional,cost_op_fom_costs_p64,0.9670274662654871
+F,regional,cost_op_fom_costs_p65,0.9633517775319955
+F,regional,cost_op_fom_costs_p67,0.7497839963207491
+F,regional,cost_op_fuelcosts_objfn_p60,0.6719541120830814
+F,regional,cost_op_fuelcosts_objfn_p61,0.5006768340693886
+F,regional,cost_op_fuelcosts_objfn_p62,0.809629366418336
+F,regional,cost_op_fuelcosts_objfn_p63,0.9483589735546718
+F,regional,cost_op_fuelcosts_objfn_p64,0.9194888496906182
+F,regional,cost_op_fuelcosts_objfn_p65,0.9139662184739841
+F,regional,cost_op_fuelcosts_objfn_p67,0.9249091983287536
+F,regional,cost_op_h2_storage_p60,0.9154337700402752
+F,regional,cost_op_h2_storage_p61,0.8854222890039197
+F,regional,cost_op_h2_storage_p62,0.6101882088672119
+F,regional,cost_op_h2_storage_p63,0.383995605570316
+F,regional,cost_op_h2_storage_p64,0.7137699879717763
+F,regional,cost_op_h2_storage_p65,0.708978282304155
+F,regional,cost_op_h2_storage_p67,-0.2155139931789074
+F,regional,cost_op_h2_transport_intrareg_p60,0.7858264498349037
+F,regional,cost_op_h2_transport_intrareg_p61,0.8709311628706898
+F,regional,cost_op_h2_transport_intrareg_p62,0.7218874682626677
+F,regional,cost_op_h2_transport_intrareg_p63,0.4556476298800991
+F,regional,cost_op_h2_transport_intrareg_p64,0.6070213138404752
+F,regional,cost_op_h2_transport_intrareg_p65,0.6576507383045646
+F,regional,cost_op_h2_transport_intrareg_p67,-0.10672914118878629
+F,regional,cost_op_ptc_payments_negative_p60,0.26786300892773784
+F,regional,cost_op_ptc_payments_negative_p61,0.771996210649576
+F,regional,cost_op_ptc_payments_negative_p62,0.6837098879620285
+F,regional,cost_op_ptc_payments_negative_p63,0.9408729695295315
+F,regional,cost_op_ptc_payments_negative_p64,0.8945571237027384
+F,regional,cost_op_ptc_payments_negative_p65,0.9270833793574113
+F,regional,cost_op_ptc_payments_negative_p67,0.6596495838055785
+F,regional,cost_op_spurline_fom_p60,0.4483313731118843
+F,regional,cost_op_spurline_fom_p61,0.9606479199072206
+F,regional,cost_op_spurline_fom_p62,0.9562656722677415
+F,regional,cost_op_spurline_fom_p63,0.9761607018636719
+F,regional,cost_op_spurline_fom_p64,0.9790730411995021
+F,regional,cost_op_spurline_fom_p65,0.9785225508747263
+F,regional,cost_op_spurline_fom_p67,0.9276413359556237
+F,regional,cost_op_startcost_p60,0.21102749168284562
+F,regional,cost_op_startcost_p61,0.6628088075790138
+F,regional,cost_op_startcost_p62,0.6645094726062797
+F,regional,cost_op_startcost_p63,0.8034416801766434
+F,regional,cost_op_startcost_p64,0.6772101825135586
+F,regional,cost_op_startcost_p65,0.7549681102554484
+F,regional,cost_op_startcost_p67,0.8198359818039522
+F,regional,cost_op_transmission_fom_p60,0.88092572061879
+F,regional,cost_op_transmission_fom_p61,0.9611556851787431
+F,regional,cost_op_transmission_fom_p62,0.8398034423295404
+F,regional,cost_op_transmission_fom_p63,0.903485638523012
+F,regional,cost_op_transmission_fom_p64,0.9270500127803776
+F,regional,cost_op_transmission_fom_p65,0.9440541247078313
+F,regional,cost_op_transmission_fom_p67,0.9776222151031422
+F,regional,cost_op_transmission_intrazone_fom_p60,0.5806747998359212
+F,regional,cost_op_transmission_intrazone_fom_p61,0.9427592363711277
+F,regional,cost_op_transmission_intrazone_fom_p62,0.863637975615023
+F,regional,cost_op_transmission_intrazone_fom_p63,0.9641841093065803
+F,regional,cost_op_transmission_intrazone_fom_p64,0.9594830468369275
+F,regional,cost_op_transmission_intrazone_fom_p65,0.9554781292149795
+F,regional,cost_op_transmission_intrazone_fom_p67,0.8440992105843486
+F,regional,cost_op_vom_costs_p60,0.5143878465315901
+F,regional,cost_op_vom_costs_p61,0.7711151887724816
+F,regional,cost_op_vom_costs_p62,0.22702892158727095
+F,regional,cost_op_vom_costs_p63,0.974568709007921
+F,regional,cost_op_vom_costs_p64,0.9374307158707817
+F,regional,cost_op_vom_costs_p65,0.943946754662138
+F,regional,cost_op_vom_costs_p67,0.9261724321787165
+F,regional,cap_upv_p63,0.9554007667214778
+F,regional,cap_upv_p64,0.9178703023073083
+F,regional,cap_upv_p65,0.9239117361767528
+F,regional,cap_upv_p67,0.9228919239022215
+F,regional,cap_upv_p61,0.6780173400701035
+F,regional,cap_upv_p60,0.7359500424971321
+F,regional,cap_upv_p62,0.5114777409911541
+F,regional,cap_wind-ons_p60,0.6683435124628099
+F,regional,cap_wind-ons_p61,0.9784495868644264
+F,regional,cap_wind-ons_p62,0.9554208034579669
+F,regional,cap_wind-ons_p63,0.958917051332456
+F,regional,cap_wind-ons_p64,0.981004067831568
+F,regional,cap_wind-ons_p65,0.985316470080381
+F,regional,cap_wind-ons_p67,0.955673865402813
+F,regional,gen_upv_p63,0.9578129296255848
+F,regional,gen_upv_p61,0.6197610092306177
+F,regional,gen_upv_p64,0.9073344745740792
+F,regional,gen_upv_p65,0.9213827452929713
+F,regional,gen_upv_p67,0.906631452612741
+F,regional,gen_upv_p60,0.83428758128615
+F,regional,gen_upv_p62,0.447686998841043
+F,regional,gen_wind-ons_p60,0.624723757923781
+F,regional,gen_wind-ons_p61,0.9752261290470098
+F,regional,gen_wind-ons_p62,0.9321632816174658
+F,regional,gen_wind-ons_p63,0.9497837926066709
+F,regional,gen_wind-ons_p64,0.9830541414744364
+F,regional,gen_wind-ons_p65,0.9856855446564954
+F,regional,gen_wind-ons_p67,0.9518144479642279

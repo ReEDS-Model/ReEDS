@@ -72,10 +72,12 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-from surrogate_predict import DIMENSION_ENCODING, clip_physical_bounds, predict   # noqa: E402
+from surrogate_predict import DIMENSION_ENCODING, predict   # noqa: E402
 from surrogate_artifact_cache import load_artifact_cached   # noqa: E402
 from surrogate_paths import resolve_models_dir   # noqa: E402
-from surrogate_constraints import dgen_distpv_cap_mw   # STAGE 2
+from surrogate_constraints import (   # noqa: E402  STAGE 2
+    apply_constraints, system_transmission_floors, transmission_floors,
+)
 from surrogate_plots import (                                              # noqa: E402
     _build_tech_lookup,
     aggregate_cap_to_tech_region,
@@ -257,29 +259,6 @@ def _constants_for_layer(short: str) -> dict[str, float]:
     return out
 
 
-def _augment_predicted_with_constants(predicted: pd.Series, short: str) -> pd.Series:
-    """Append known-constant Y columns to a model's prediction Series.
-
-    The trainer drops zero-variance columns before fitting (R\u00b2 is
-    undefined, scalers divide by zero, NGBoost crashes). But for those
-    columns we know the exact value (e.g. ``cap_distpv`` is always
-    12,994.6 MW because DistPV is an exogenous policy input in this
-    sweep). This helper splices those constants into the prediction so
-    the Predict tab's bar charts include them. Existing entries take
-    precedence so a model that did learn a column is never overwritten.
-    """
-    constants = _constants_for_layer(short)
-    if not constants:
-        return predicted
-    if predicted is None or not isinstance(predicted, pd.Series):
-        return predicted
-    missing = {k: v for k, v in constants.items() if k not in predicted.index}
-    if not missing:
-        return predicted
-    extra = pd.Series(missing, name=predicted.name)
-    return pd.concat([predicted, extra])
-
-
 def _models_for_layer(short: str) -> dict:
     """Discover ``.joblib`` artifacts for a specific layer."""
     target = "overall" if "overall" in short.lower() else "regional"
@@ -458,6 +437,44 @@ def _find_actual_row(levels: dict) -> pd.Series | None:
     return df.iloc[0]
 
 
+def _layer_floors(short: str) -> dict[str, float]:
+    """Known lower bounds for ``short`` layer: regional corridors at their
+    initial capacity (minimum over the training runs), system tran_total at
+    the sum of those."""
+    corridor = transmission_floors(_training_df_for_layer("regional"))
+    return corridor if short == "regional" else system_transmission_floors(corridor)
+
+
+def _system_pred_for_additivity(model_name: str, levels: dict,
+                                actual_row: pd.Series | None) -> pd.Series | None:
+    """Constrained system-level prediction used to rescale regional values.
+
+    Uses the same model on the overall layer and the same policy as the
+    regional prediction: the stored OOF prediction when the design matches a
+    training run, the final model otherwise. Returns None when no overall
+    artifact is available (the regional rescale is then skipped).
+    """
+    sys_art = _artifact_for_layer("overall", model_name) if model_name else None
+    if sys_art is None:
+        return None
+    sys_constants = _constants_for_layer("overall")
+    sys_floors = _layer_floors("overall")
+    res = sys_art.get("oof_residuals")
+    if actual_row is not None and res is not None:
+        sys_df = _training_df_for_layer("overall")
+        x_cols = [c for c in sys_df.columns if c.startswith("x_")]
+        if x_cols and all(c in actual_row.index for c in x_cols):
+            hit = (sys_df[x_cols].to_numpy(dtype=float)
+                   == actual_row[x_cols].to_numpy(dtype=float)).all(axis=1)
+            if hit.any():
+                i = int(np.flatnonzero(hit)[0])
+                y_cols = list(sys_art["y_cols"])
+                vec = sys_df.iloc[i][y_cols].to_numpy(dtype=float) - np.asarray(res)[i]
+                return apply_constraints(pd.Series(vec, index=y_cols),
+                                         constants=sys_constants, floors=sys_floors)
+    return predict(sys_art, levels, constants=sys_constants, floors=sys_floors)
+
+
 # ---------------------------------------------------------------------------
 # Model discovery
 # ---------------------------------------------------------------------------
@@ -608,8 +625,9 @@ def _design_from_row(row: pd.Series) -> dict[str, str]:
 header = Div(text="""
 <h2 style='margin:0'>ReEDS-Proxy — <span style='color:#0b6efd'>Stage 2</span> Interactive Panel</h2>
 <p style='color:#555;margin:2px 0 8px 0'>Continuous dials for Dem / Fuel / REcost / Siting / Batt (Pol stays binary).
-Predictions pass through the Stage 2 constraint stack (non-negativity, XGB
-monotone hints, dgen DistPV override, cost decomposition). The top panel
+Predictions pass through the Stage 2 constraint stack (constant outputs held
+at their ReEDS value, non-negativity, regional-to-system additivity, cost
+decomposition; XGB also uses monotone hints). The top panel
 shows the ReEDS-style stacked portfolio (actual vs. ReEDS-Proxy
 prediction). The bottom panel shows per-category proxy uncertainty
 (90% conformal CI). When the picked design matches a training run, the
@@ -1801,6 +1819,18 @@ def _redraw():
         # distance weighting hits it exactly), making Actual vs Predicted
         # look misleadingly perfect.
         # For custom / out-of-sample designs we fall back to the final model.
+        # Both paths run the same constraint stack (constants held at their
+        # ReEDS value, non-negativity, regional additivity, cost identity).
+        # Known-constant outputs the trainer dropped (zero variance, e.g.
+        # cap_distpv) are spliced in at their ReEDS value by that stack.
+        layer_short = _active_layer_short()
+        layer_constants = _constants_for_layer(layer_short)
+        # Transmission floors (initial capacity): corridors on the regional
+        # layer, tran_total on the system layer.
+        layer_floors = _layer_floors(layer_short)
+        overall_pred = None
+        if layer_short == "regional":
+            overall_pred = _system_pred_for_additivity(model_name, levels, actual_row)
         used_oof = False
         oof_residuals = artifact.get("oof_residuals")
         if (actual_row is not None
@@ -1812,28 +1842,16 @@ def _redraw():
             actual_vec = actual_row.reindex(y_cols).astype(float).values
             oof_pred_vec = actual_vec - oof_residuals[row_idx]
             predicted = pd.Series(oof_pred_vec, index=y_cols, name="prediction_oof")
-            # Apply the same physical-bound clipping used by predict() so
-            # OOF and final-model paths produce comparable, plausible bars.
-            predicted = clip_physical_bounds(predicted)
+            predicted = apply_constraints(
+                predicted, overall_pred=overall_pred, constants=layer_constants,
+                floors=layer_floors,
+            )
             used_oof = True
         else:
-            predicted = predict(artifact, levels)
-        # Splice in known-constant outputs the trainer dropped (zero
-        # variance \u2192 R\u00b2 undefined / scaler divides by zero). Without
-        # this, the Predicted bar misses things like cap_distpv that the
-        # Actual bar shows, even though the value is known exactly.
-        predicted = _augment_predicted_with_constants(
-            predicted, _active_layer_short()
-        )
-        # STAGE 2: after augmenting with the trainer's constant_outputs
-        # (which pinned cap_distpv at its Stage 1 mean), replace the DistPV
-        # capacity with the demand-elasticity dgen curve so continuous
-        # x_Dem values actually move the bar.
-        if "cap_distpv" in predicted.index:
-            dem_val = levels.get("Dem")
-            if isinstance(dem_val, (int, float)) and not isinstance(dem_val, bool):
-                predicted = predicted.copy()
-                predicted["cap_distpv"] = dgen_distpv_cap_mw(float(dem_val))
+            predicted = predict(
+                artifact, levels, overall_pred=overall_pred, constants=layer_constants,
+                floors=layer_floors,
+            )
         surrogate_ms = (time.perf_counter() - t0) * 1000.0
         pred_var_raw = _row_slice(predicted, active_prefix)
         pred_cap_raw = _row_slice(predicted, "cap_")

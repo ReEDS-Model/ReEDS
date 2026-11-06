@@ -1,0 +1,4 @@
+2026-11-06 13:17:24,579 Starting Bokeh server version 3.2.1 (running on Tornado 6.4.2)
+2026-11-06 13:17:25,551 User authentication hooks NOT provided (default user enabled)
+2026-11-06 13:17:25,565 Bokeh app running at: http://localhost:5009/reeds_proxy
+2026-11-06 13:17:25,566 Starting Bokeh server with process id: 8500

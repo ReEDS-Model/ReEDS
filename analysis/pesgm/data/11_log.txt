@@ -1,0 +1,57 @@
+PASS (a) rf training grid (OOF path): sum regional cap_nuclear = system  {"regional_sum": 4980.0, "system": 4980.0, "n_regional_cols": 2, "oof_path": true}
+PASS (a) rf training grid (OOF path): sum regional tran_total = system  {"regional_sum": 40921.11317533594, "system": 40921.11317533594, "n_regional_cols": 11, "oof_path": true}
+PASS (a) rf training grid (OOF path): sum regional gen_wind-ons = system  {"regional_sum": 290596621.37755895, "system": 290596621.37755895, "n_regional_cols": 7, "oof_path": true}
+PASS (a') rf training grid (OOF path): every corridor >= its floor (initial capacity)  {"min_margin_MW": 0.0, "n_corridors": 11}
+PASS (a'') rf training grid (OOF path): system tran_total >= sum of corridor floors  {"tran_total": 40921.11317533594, "floor_sum": 34478.6}
+PASS (a) rf training grid (OOF path): Nuclear bars, regional sum = system bar  {"regional": 4.98, "system": 4.98}
+PASS (a) rf training grid (OOF path): Onshore Wind bars, regional sum = system bar  {"regional": 290.59662137755896, "system": 290.59662137755896}
+PASS (b) rf training grid (OOF path) overall: cost_total = sum of components  {"cost_total_B": 22.13749875936745, "n_components": 21}
+PASS (b) rf training grid (OOF path) overall: 'System cost' line = sum of cost bars  {"line_B": 22.14, "bars_B": 22.137498759367443}
+PASS (b) rf training grid (OOF path) regional: cost_total = sum of components  {"cost_total_B": 22.264066559367443, "n_components": 129}
+PASS (b) rf training grid (OOF path) regional: 'System cost' line = sum of cost bars  {"line_B": 22.26, "bars_B": 22.264066559367443}
+PASS (d) rf training grid (OOF path) overall: CI panel populated  {"rows": 14, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (d) rf training grid (OOF path) regional: CI panel populated  {"rows": 67, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (a) rf off-grid (final model): sum regional cap_nuclear = system  {"regional_sum": 4980.0, "system": 4980.0, "n_regional_cols": 2, "oof_path": false}
+PASS (a) rf off-grid (final model): sum regional tran_total = system  {"regional_sum": 36036.423105278845, "system": 36036.423105278845, "n_regional_cols": 11, "oof_path": false}
+PASS (a) rf off-grid (final model): sum regional gen_wind-ons = system  {"regional_sum": 258541654.28331327, "system": 258541654.2833132, "n_regional_cols": 7, "oof_path": false}
+PASS (a') rf off-grid (final model): every corridor >= its floor (initial capacity)  {"min_margin_MW": 0.0, "n_corridors": 11}
+PASS (a'') rf off-grid (final model): system tran_total >= sum of corridor floors  {"tran_total": 36036.423105278845, "floor_sum": 34478.6}
+PASS (a) rf off-grid (final model): Nuclear bars, regional sum = system bar  {"regional": 4.98, "system": 4.98}
+PASS (a) rf off-grid (final model): Onshore Wind bars, regional sum = system bar  {"regional": 258.5416542833132, "system": 258.5416542833132}
+PASS (b) rf off-grid (final model) overall: cost_total = sum of components  {"cost_total_B": 29.298287446774555, "n_components": 21}
+PASS (b) rf off-grid (final model) regional: cost_total = sum of components  {"cost_total_B": 29.29828744677456, "n_components": 129}
+PASS (d) rf off-grid (final model) overall: CI panel populated  {"rows": 15, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (d) rf off-grid (final model) regional: CI panel populated  {"rows": 71, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (c) rf Dem=0.0: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (c) rf Dem=1.0: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (c) rf Dem=2.0: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (c) rf Dem=0.5: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (a) nn training grid (OOF path): sum regional cap_nuclear = system  {"regional_sum": 4980.194483101368, "system": 4980.194483101368, "n_regional_cols": 2, "oof_path": true}
+PASS (a) nn training grid (OOF path): sum regional tran_total = system  {"regional_sum": 39190.514267865234, "system": 39190.514267865234, "n_regional_cols": 11, "oof_path": true}
+PASS (a) nn training grid (OOF path): sum regional gen_wind-ons = system  {"regional_sum": 302617223.25255895, "system": 302617223.25255895, "n_regional_cols": 7, "oof_path": true}
+PASS (a') nn training grid (OOF path): every corridor >= its floor (initial capacity)  {"min_margin_MW": 0.0, "n_corridors": 11}
+PASS (a'') nn training grid (OOF path): system tran_total >= sum of corridor floors  {"tran_total": 39190.514267865234, "floor_sum": 34478.6}
+PASS (a) nn training grid (OOF path): Nuclear bars, regional sum = system bar  {"regional": 4.980194483101368, "system": 4.980194483101368}
+PASS (a) nn training grid (OOF path): Onshore Wind bars, regional sum = system bar  {"regional": 302.61722325255886, "system": 302.6172232525589}
+PASS (b) nn training grid (OOF path) overall: cost_total = sum of components  {"cost_total_B": 22.37608289400806, "n_components": 21}
+PASS (b) nn training grid (OOF path) overall: 'System cost' line = sum of cost bars  {"line_B": 22.38, "bars_B": 22.376082891079626}
+PASS (b) nn training grid (OOF path) regional: cost_total = sum of components  {"cost_total_B": 22.556258482010833, "n_components": 129}
+PASS (b) nn training grid (OOF path) regional: 'System cost' line = sum of cost bars  {"line_B": 22.56, "bars_B": 22.556138185189834}
+PASS (d) nn training grid (OOF path) overall: CI panel populated  {"rows": 14, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (d) nn training grid (OOF path) regional: CI panel populated  {"rows": 93, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (a) nn off-grid (final model): sum regional cap_nuclear = system  {"regional_sum": 4978.75247345483, "system": 4978.752473454831, "n_regional_cols": 2, "oof_path": false}
+PASS (a) nn off-grid (final model): sum regional tran_total = system  {"regional_sum": 36266.63187805505, "system": 36266.63187805505, "n_regional_cols": 11, "oof_path": false}
+PASS (a) nn off-grid (final model): sum regional gen_wind-ons = system  {"regional_sum": 234668390.2825788, "system": 234668390.28257883, "n_regional_cols": 7, "oof_path": false}
+PASS (a') nn off-grid (final model): every corridor >= its floor (initial capacity)  {"min_margin_MW": 0.0, "n_corridors": 11}
+PASS (a'') nn off-grid (final model): system tran_total >= sum of corridor floors  {"tran_total": 36266.63187805505, "floor_sum": 34478.6}
+PASS (a) nn off-grid (final model): Nuclear bars, regional sum = system bar  {"regional": 4.97875247345483, "system": 4.978752473454831}
+PASS (a) nn off-grid (final model): Onshore Wind bars, regional sum = system bar  {"regional": 234.66839028257883, "system": 234.66839028257883}
+PASS (b) nn off-grid (final model) overall: cost_total = sum of components  {"cost_total_B": 26.470995816574533, "n_components": 21}
+PASS (b) nn off-grid (final model) regional: cost_total = sum of components  {"cost_total_B": 26.455974360585717, "n_components": 129}
+PASS (d) nn off-grid (final model) overall: CI panel populated  {"rows": 18, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (d) nn off-grid (final model) regional: CI panel populated  {"rows": 93, "keys": ["bottom", "ci_hi", "ci_lo", "ci_pct", "half", "pred"]}
+PASS (c) nn Dem=0.0: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (c) nn Dem=1.0: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (c) nn Dem=2.0: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+PASS (c) nn Dem=0.5: DPV bar = 12,994.6 MW  {"dpv_MW": 12994.628098999998}
+56 / 56 checks passed
