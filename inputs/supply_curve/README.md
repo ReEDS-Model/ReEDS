@@ -8,8 +8,8 @@
   - Site-level CSP supply curve costs are copied from the site-level supply curve costs for utility-scale photovoltaics (UPV). The mapping code is available on the [ReEDS input-processing repo](https://github.com/ReEDS-Model/ReEDS_Input_Processing/tree/main/csp).
 
 - Each PSH supply curve filename is formatted as: `supplycurve_psh-{PSH_storage_duration}hr_{exclusion_scenario}.csv`, with the 3 exclusion scenarios defined by the following exclusion layers:
-  - `open`: census urbanized and global human settlement layer (GHSL) developed areas, existing waterbodies, permanent, or intermittent streams and 100yr flood plains, PAD-US prtected areas, conservation easements, areas of critical environmental concern, state and local protected areas, glaciers national land cover database (NLCD) permanent snow/ice and wetland ecosystmens, and airports/airstrips/helipads
-  - `reference`: all open exclusions [plus] ephemeral streams, critical habitat for endangered species, railway, pipelines, and major roads with 30m buffer, and National Wetlands Inventory (including small, localized riparian environments aroud rivers, streams, and lakes)
+  - `open`: census urbanized and global human settlement layer (GHSL) developed areas, existing waterbodies, permanent, or intermittent streams and 100yr flood plains, PAD-US protected areas, conservation easements, areas of critical environmental concern, state and local protected areas, glaciers national land cover database (NLCD) permanent snow/ice and wetland ecosystems, and airports/airstrips/helipads
+  - `reference`: all open exclusions [plus] ephemeral streams, critical habitat for endangered species, railway, pipelines, and major roads with 30m buffer, and National Wetlands Inventory (including small, localized riparian environments around rivers, streams, and lakes)
   - `limited`: all reference exclusions [plus] agricultural easements, farm trust conservation land, and nationally important agricultural land, mature forests on federal lands, **all** building footprints, and Census and BIA-defined "tribal areas" (reservations and off-reservation trust land)
 
 - `bio_supplycurve.csv`: Biomass supply [million dry tons] and cost [$/dry ton] by USDA region and biomass supply curve class
@@ -38,6 +38,11 @@
 
 - `interconnection_offshore.h5`: Offshore interconnection characteristics for each reV supply curve point, in the same format as `interconnection_land.h5`
   - Written by `hourlize/write_site_parameters.py`
+
+- `metadata/`: Configuration files recording how each supply curve and capacity factor profile was generated
+  - One subfolder per technology and siting access case (e.g., `upv_reference/`), each with the hourlize settings (`config.json`) and, for UPV and wind, the reV pipeline configuration files (`config_*.json` / `config_*.json5`) from the underlying reV run; land-based wind folders also include the SAM turbine file (`sam_*.json5`)
+  - Written by `hourlize/resource.py` when the hourlize `copy_to_reeds` option is on
+  - `distpv_county/` holds the SAM PV system settings for residential and commercial distributed PV
 
 - `rev_paths.csv`: Paths to the reV supply curve and generation runs backing each technology, giving the siting access switch and case, supply curve and capacity factor paths, and the original reV case and supply curve file names
 

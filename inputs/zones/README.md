@@ -63,7 +63,7 @@ Once you're happy with your zone and hierarchy level definitions, run the follow
         - Write pairs that require offshore routes (the links between land-based and offshore zones, new backbone links between offshore zones, and/or new exogenous offshore HVDC lines) into their own file, separate from routes that should be land-only
     - Send these files (with a note on which should allow offshore paths and which should not) to a member of the reV team who can calculate the interzonal least-cost paths using the [reVRt](https://github.com/NatLabRockies/reVRt) tool
 1. Write the resulting files to the ReEDS repo by running [TSC/analysis/write_for_reeds.py](https://github.nrel.gov/ReEDS/TSC/blob/pb/itldb/analysis/write_for_reeds.py). This script:
-    - Copies the `interface_r.csv` and `interface_transgrp.csv` files
+    - Copies the `interfaces_r.csv` and `interfaces_transgrp.csv` files
     - Creates the `zonehash.csv` file
     - Rewrites the `itl_NARIS.csv`, `transmission_cost_distance.csv`, and `transmission_cost_distance_lines.csv` files
     (existing data in the file are preserved, so you should only see new rows added, typically at the bottom of the file)

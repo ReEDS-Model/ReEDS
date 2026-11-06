@@ -14,3 +14,5 @@
 - `state_fips_codes.csv`: Mapping of states to FIPS codes and postal code abbreviations
 
 - `timezones.gpkg`: Time zone polygons, used to assign a time zone to each ReEDS region
+
+- `US_PCA/`: Legacy shapefile of the 134 balancing areas (`p1`–`p134`) with state, RTO, interconnection, country, and custom-region attributes, in North America Albers Equal Area Conic projection
