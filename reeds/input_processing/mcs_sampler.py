@@ -432,16 +432,6 @@ def general_mcs_dist_validation(reeds_path: str, mcs_dist_path: str, sw: pd.Seri
             f"The following switches are not valid (check cases.csv): {invalid_switches}"
         )
 
-    ## siting switches can only use specific distributions
-    siting_set = set(MCSConstants.SITING_SWITCHES)
-    for _, row in df_input_dist.iterrows():
-        if set(row['switch_names']) & siting_set:
-            if row['dist'] not in ['dirichlet', 'discrete']:
-                raise ValueError(
-                    f"[{row['name']}] Siting switches can only be sampled "
-                    "using a dirichlet or discrete distribution."
-                )
-
     ## check that all distributions are compatible with selected sampling method
     unsupported_sampling = dist_rules.loc[
         df_input_dist.dist.unique(), 'sampling_methods'].apply(lambda x: sampling_method not in x)

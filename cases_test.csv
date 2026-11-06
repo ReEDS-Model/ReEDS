@@ -31,7 +31,7 @@ resource_adequacy_years,,,,,,,2011_2012_2013_2021_2022_2023,,,,,,,,,,,,,,,2011_2
 GSw_HourlyClusterAlgorithm,,,,,,,,,,,,,hierarchical,,,,,,,user,user,,,,,,,,,,,
 GSw_HourlyNumClusters,,,,,,,,,,,,,365,,,,,,,,,,,,,,,,,,,
 MCS_runs,,,,,,,,,,,,,,,,,,,,2,2,,,,,,,,,,,
-MCS_dist_groups,,,,,,,,,,,,,,,,,,,,load_flat_state.gasprice_flat.siting_flat_state.upv.onswind.ofswind.battery.nuclear.geo,load_country_unif.gasprice_tri.siting_country_discrete_flat.upv_tri.nuclear_tri,,,,,,,,,,,
+MCS_dist_groups,,,,,,,,,,,,,,,,,,,,load_flat_state.gasprice_flat.siting_flat_state.upv.onswind.ofswind.battery.nuclear.geo,load_country_unif.gasprice_tri.siting_uniform_lowmid_country.upv_tri.nuclear_tri,,,,,,,,,,,
 MCS_lhs,,,,,,,,,,,,,,,,,,,,,1,,,,,,,,,,,
 GSw_PRM_StressIterateMax,,,,,,,,0,,,,,,,,0,0,,,1,1,,,,,,,,,,,
 GSw_ReducedResource,,,,,,,1,,,,,,,,,,,,,,,1,,,,,,,,,,
