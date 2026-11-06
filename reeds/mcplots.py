@@ -283,7 +283,7 @@ def plot_cap_gen_hist(
     casebase=None,
     nicelabels=None,
     colors=None,
-    t=2050,
+    t=None,
     tstart=2020,
     techs=[
         'UPV',
@@ -328,6 +328,8 @@ def plot_cap_gen_hist(
         casebase = cases[list(cases.keys())[0]][0]
     if histwidth:
         plotwidth = histwidth * len(cases)
+    if t is None:
+        t = casebase.tmodel_new.squeeze(1).max()
     ## Get data
     dictplot = {}
     for caseprefix, plotcases in cases.items():
@@ -416,7 +418,7 @@ def plot_cap_gen_hist(
 
 def plot_cap_gen_bar(
     plotcases,
-    t=2050,
+    t=None,
     scale=0.05,
     barwidth=1,
     sortby=None,
@@ -429,6 +431,9 @@ def plot_cap_gen_bar(
             or a tech name string to sort by capacity of that tech,
             or a list of tech name strings to sort by summed capacity of those techs
     """
+    ## Parse inputs
+    if t is None:
+        t = plotcases[0].tmodel_new.squeeze(1).max()
     ## Shared inputs
     plot_settings = reeds.io.get_plot_formatting()
     colors_tech = plot_settings['tech_color'].squeeze(1)
@@ -489,11 +494,14 @@ def plot_cap_gen_bar(
 
 def plot_cap_gen_bar_states(
     plotcases,
-    t=2050,
+    t=None,
     barwidth=1,
     scale=1.2,
 ):
     """Capacity stacked bars [GW] by sample (x axis) and state (subplots)"""
+    ## Parse inputs
+    if t is None:
+        t = plotcases[0].tmodel_new.squeeze(1).max()
     ## Shared inputs
     state_subplots = reeds.reedsplots.get_state_subplots()
     hierarchy = plotcases[0].hierarchy
@@ -575,7 +583,7 @@ def plot_cap_trans_hist(
     nicelabels=None,
     colors=None,
     level='transreg',
-    t=2050,
+    t=None,
     tstart=2020,
     binstep=1,
     plotwidth=1.45,
@@ -591,6 +599,8 @@ def plot_cap_trans_hist(
         casebase = cases[list(cases.keys())[0]][0]
     if histwidth:
         plotwidth = histwidth * len(cases)
+    if t is None:
+        t = casebase.tmodel_new.squeeze(1).max()
     ## Get data
     hierarchy = casebase.hierarchy
     dfmap = casebase.dfmap
@@ -698,7 +708,7 @@ def plot_scatter_everything(
     plotcases,
     corr_method:Literal['pearson','kendall','spearman']='spearman',
     zoom=True,
-    t=2050,
+    t=None,
     tstart=2020,
     cmap=plt.cm.coolwarm,
     cmin=-0.8,
@@ -708,6 +718,8 @@ def plot_scatter_everything(
     """
     Scatter plot of many outputs against many inputs, colored by correlation coefficient
     """
+    if t is None:
+        t = plotcases[0].tmodel_new.squeeze(1).max()
     cost_techs = [
         {'tech_cost': 'battery_li', 'tech_cap':'Storage', 'label':'Battery'},
         {'tech_cost': 'upv_3', 'tech_cap':'PV', 'label':'PV'},

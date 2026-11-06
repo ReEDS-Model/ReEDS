@@ -37,7 +37,7 @@ def add_to_pptx(
         file=None,
         left=0,
         top=0.62,
-        width=SLIDE_WIDTH,
+        width=None,
         height=None,
         verbose=1,
         slide=None,
@@ -54,12 +54,28 @@ def add_to_pptx(
         if not os.path.exists(image):
             raise FileNotFoundError(image)
 
+    ## Fit to slide (maintaining original aspect ratio) if no dimensions provided
+    if (width is None) and (height is None):
+        import PIL
+        with PIL.Image.open(image) as f:
+            figsize = f.size
+        figratio = figsize[0] / figsize[1]
+        slidespace = (SLIDE_WIDTH - left, SLIDE_HEIGHT)
+        slideratio = slidespace[0] / slidespace[1]
+        if figratio >= slideratio:
+            width = slidespace[0]
+            height = width / figratio
+        else:
+            height = slidespace[1]
+            width = height * figratio
+
     if prs is None:
         prs = init_pptx()
 
     if slide is None:
         slide = prs.slides.add_slide(prs.slide_layouts[layout])
         slide.shapes.title.text = title
+
     slide.shapes.add_picture(
         image,
         left=(None if left is None else Inches(left)),

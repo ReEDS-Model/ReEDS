@@ -169,7 +169,7 @@ for caseprefix in casepaths:
     try:
         f, ax, dfplot = reeds.mcplots.plot_fuelprice_lines(cases[caseprefix])
         savename = f'in-gasprice-{nicelabels[caseprefix]}'
-        saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
+        saveit(savename)
     except Exception:
         print(traceback.format_exc())
 
@@ -184,7 +184,7 @@ for caseprefix in casepaths:
     try:
         f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix])
         savename = f"in-capcost-{','.join(list(labels.values()))}-{nicelabels[caseprefix]}"
-        saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
+        saveit(savename)
     except Exception:
         print(traceback.format_exc())
 
@@ -271,7 +271,7 @@ for caseprefix, plotcases in cases.items():
             f"out-everything-scatter-x_everything-y_cap-corr_{corr_method}-"
             + f"{nicelabels[caseprefix]}"
         ).replace(' ','')
-        saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
+        saveit(savename)
     except Exception:
         print(traceback.format_exc())
 
@@ -305,7 +305,7 @@ try:
         f"out-npv_system,health,climate,total-"
         f"{','.join([nicelabels[caseprefix].replace(' ','') for caseprefix in cases])}"
     )
-    saveit(savename, width=None, height=reeds.report_utils.SLIDE_HEIGHT)
+    saveit(savename)
 except Exception:
     print(traceback.format_exc())
 
