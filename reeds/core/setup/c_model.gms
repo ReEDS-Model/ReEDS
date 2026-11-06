@@ -1072,7 +1072,7 @@ eq_growthlimit_relative(i,st,t)$[sum{r$[r_st(r,st)], valinv_irt(i,r,t) }
 
 * ---------------------------------------------------------------------------
 
-eq_growthbin_limit(gbin,st,tg,t)$[valinv_tg(st,tg,t)
+eq_growthbin_limit(gbin,st,tg,t)$[(valinv_tg(st,tg,t) or upgrade_tg(tg)$coal_tg(tg))
                                  $tmodel(t)
                                  $stfeas(st)
                                  $Sw_GrowthPenalties

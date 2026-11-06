@@ -220,6 +220,7 @@ set
   cf_tech(i)           "technologies that have a specified capacity factor"
   coal_ccs(i)          "technologies that use coal and have CCS",
   coal(i)              "technologies that use coal",
+  coal_tg(tg)          "technologies that use coal",
   cofire(i)            "cofire technologies",
   combined_cycle(i)    "combined cycle technologies",
   combustion_turbine(i)"combustion turbine technologies",
@@ -285,6 +286,7 @@ set
   storage_interday(i)  "interday storage",
   thermal_storage(i)   "thermal storage technologies",
   upgrade(i)           "technologies that are upgrades from other technologies",
+  upgrade_tg(tg)       "technologies that are upgrades from other technologies",
   upv(i)               "upv generation technologies",
   vre_distributed(i)   "distributed PV technologies",
   vre_no_csp(i)        "variable renewable energy technologies that are not csp",
@@ -2147,6 +2149,8 @@ valinv(i,v,r,t)$[(yeart(t)<firstyear(i))
 * Add aggregations of valinv
 valinv_irt(i,r,t) = sum{v, valinv(i,v,r,t) } ;
 valinv_tg(st,tg,t)$sum{(i,r)$[tg_i(tg,i)$r_st(r,st)], valinv_irt(i,r,t) } = yes ;
+upgrade_tg(tg) = sum{i$tg_i(tg,i), upgrade(i) }; 
+coal_tg(tg) = sum{i$tg_i(tg,i), coal(i) }; 
 
 * -- valgen specification --
 * if the balancing area and/or its
