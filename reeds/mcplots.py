@@ -666,7 +666,7 @@ def plot_cap_trans_hist(
         dpi=300,
     )
     for col, interface in enumerate(interfaces):
-        _ax = ax[col] if ncols > 1 else ax
+        _ax = ax[:,col] if ncols > 1 else ax
         ### Maps on top
         dfmap[level].plot(ax=_ax[0], facecolor='0.99', edgecolor='0.75', lw=0.2)
         dfmap[level].loc[[interface.split('|')[0]]].plot(
@@ -701,7 +701,7 @@ def plot_cap_trans_hist(
 
     reeds.plots.despine(ax)
     for col, interface in enumerate(interfaces):
-        _ax = ax[col] if ncols > 1 else ax
+        _ax = ax[:,col] if ncols > 1 else ax
         _ax[1].set_xlabel(None)
         _ax[0].annotate(
             interface.replace('|', '\n'),

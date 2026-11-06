@@ -44,10 +44,10 @@ parser.add_argument(
     '--basepath', '-b', type=str, default='',
     help='Substring of case path to use as default (if empty, uses first case in list)')
 parser.add_argument(
-    '--write', '-w', choices=['pdf', 'png', 'ppt', 'pptx'], default='png',
+    '--write', '-w', choices=['pdf', 'png', 'ppt', 'pptx'], default='pptx',
     help='Output format (png or pptx)')
 parser.add_argument(
-    '--keepincomplete', '-k', actions='store_true',
+    '--keepincomplete', '-k', action='store_true',
     help="Keep cases that didn't finish (e.g. if only interested in inputs)")
 
 # #%% Inputs for testing
