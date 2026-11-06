@@ -378,6 +378,7 @@ def solvestring_sequential(
             'GSw_ValStr',
             'GSw_FINITO_Link',
             'FINITO_first_year',
+            'FINITO_dollaryear',
             'solver',
             'debug',
             'startyear',
