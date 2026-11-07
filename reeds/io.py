@@ -1135,7 +1135,6 @@ def get_siting_switchval(
         ## Keep the openest scenario (which is first in the list)
         for scen in options_openest_first:
             if scen in siting_scenarios:
-                print(f'MCS: Using {scen}-access profiles for {switchname}')
                 return scen
 
 
@@ -1534,14 +1533,19 @@ def get_supplycurve(scpath, case=None, crs='EPSG:5070', zonecol='region'):
     sitemap = get_sitemap(standardize_case(case), offshore=('wind-ofs' in fname), crs=crs)
     dfsc = pd.read_csv(scpath)
     county2zone = get_county2zone(standardize_case(case))
+    sw = get_switches(case)
     ## Map PSH lower reservoirs to nearest sc_point_gid
     if 'psh' in fname:
         dfsc = reeds.plots.df2gdf(
             dfsc, crs=crs, lat='low_reservoir_latitude', lon='low_reservoir_longitude',
         )
         dfsc = dfsc.sjoin_nearest(sitemap[['geometry']], how='left').drop(columns=['geometry'])
-    ## Assign sc_point_gid's to counties and counties to zones
-    dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
+    ## Offshore zones are not user-adjustable and always use th same sc_point_gid's
+    if ('wind-ofs' in fname) and int(sw.GSw_OffshoreZones):
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.ba)
+    else:
+        ## Assign sc_point_gid's to counties and counties to zones
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
     ## Drop regions outside this run's study area
     return dfsc.dropna(subset=zonecol)
 
@@ -1602,12 +1606,13 @@ def assemble_supplycurve(
             else:
                 dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
-    county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
     ### Combine
     dfout = dfin.copy()
     dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
-    dfout['region'] = dfout.FIPS.map(county2zone)
+    if 'region' not in dfout:
+        county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
+        dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:
         keep = '|meshed' if int(sw.GSw_OffshoreZones) else '|radial'

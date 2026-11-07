@@ -273,7 +273,7 @@ def parse_cases(
                         "To ensure consistency, we strongly recommend setting "
                         "`GSw_HourlyClusterAlgorithm = user` in your switch configuration.\n"
                     )
-                    if not skip_checks:
+                    if not force:
                         user_input = input("Do you want to proceed with the current setup? y/[n]")
                         if user_input.strip().lower() not in ['yes', 'y']:
                             print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
@@ -285,7 +285,7 @@ def parse_cases(
                 sw = dfcases[c].fillna(dfcases['Default Value'])
                 mcs_dist_path = os.path.join(
                     reeds.io.reeds_path, 'inputs', 'userinput',
-                    'mcs_distributions_{}.yaml'.format(sw.MCS_dist)
+                    f'mcs_distributions_{sw.MCS_dist}.yaml'
                 )
                 if int(dfcases[c].MCS_runs) > 0:
                     mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)

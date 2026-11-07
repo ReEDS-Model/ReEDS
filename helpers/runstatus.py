@@ -206,6 +206,8 @@ if __name__ == '__main__':
                             errortext = "(infeasible)"
                         elif "Out of Memory" in slurm or "OOM Killed" in slurm:
                             errortext = "(out of memory)"
+                        elif 'At least one resource adequacy metric failed' in slurm:
+                            errortext = '(RA)'
                         else:
                             errortext = ""
                     print(f"{case:<{longest}}: failed in {last_lst} {errortext}")

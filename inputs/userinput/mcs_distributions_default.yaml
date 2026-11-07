@@ -30,7 +30,7 @@
 #    - uniform_multiplier: [low, high]
 #
 # 5. weight_r: For some files (those with regional data) we support the possibility of applying
-#    different weights to different ReEDS hierarchies. This field specifies the hierarchy 
+#    different weights to different ReEDS hierarchies. This field specifies the hierarchy
 #    considered (e.g. country, st, ba, transgrp, etc- weight_r: country is always supported).
 #    Note that regional weights are not currently supported with latin hypercube sampling.
 #
@@ -85,7 +85,7 @@
   weight_r: country
 
 - name: hydro
-  assignments_list: 
+  assignments_list:
     - plantchar_hydro: [hydro_ATB_2019_constant, hydro_ATB_2019_mid, hydro_ATB_2019_low]
   dist: dirichlet
   dist_params: [1, 1, 1]
@@ -218,34 +218,34 @@
 ### --- Distributions for load
 ### ---------------------------------------------------###
 - name: load_flat_country
-  assignments_list: 
+  assignments_list:
     - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_100by2050]
   dist: dirichlet
   dist_params: [1, 1]
   weight_r: country
 
 - name: load_tri_country
-  assignments_list: 
+  assignments_list:
     - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_IRAlow, EER2025_100by2050]
   dist: dirichlet
   dist_params: [1, 1, 1]
   weight_r: country
 
 - name: load_country_unif
-  assignments_list: 
+  assignments_list:
     - GSw_LoadProfiles: [EER2025_IRAlow, EER2025_100by2050]
   dist: uniform
   weight_r: country
 
 - name: load_flat_state
-  assignments_list: 
+  assignments_list:
     - GSw_LoadProfiles: [EER2025_Baseline_AEO2023, EER2025_100by2050]
   dist: dirichlet
   dist_params: [1, 1]
   weight_r: st
 
-- name: load_discrete_st
-  assignments_list: 
+- name: load_discrete_state
+  assignments_list:
     - GSw_LoadProfiles: [EER2025_IRAlow, EER2025_100by2050]
   dist: discrete
   dist_params: [1, 1]
@@ -316,7 +316,7 @@
   dist_params: [1, 1]
   weight_r: st
 
-- name: siting_discrete_st
+- name: siting_discrete_state
   assignments_list:
     - GSw_SitingUPV: [limited, reference]
     - GSw_SitingWindOfs: [limited, reference]
@@ -334,6 +334,14 @@
   dist_params: [1, 1, 1]
   weight_r: country
 
+- name: siting_uniform_lowmid_country
+  assignments_list:
+    - GSw_SitingUPV: [limited, reference]
+    - GSw_SitingWindOfs: [limited, reference]
+    - GSw_SitingWindOns: [limited, reference]
+  dist: uniform
+  weight_r: country
+
 
 ### ---------------------------------------------------###
 ### --- Miscellaneous distributions
@@ -345,7 +353,7 @@
   dist: triangular_multiplier
   dist_params: [1, 1, 2]
   weight_r: country
-  
+
 - name: transmission_2
   assignments_list:
     - GSw_TransInvMaxLongTerm: [1.4]
