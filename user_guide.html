@@ -987,6 +987,35 @@ resulting in unique sampling matrices for a given set of values of N and D.</p>
 <p>The LHS method tends to result in sampling values that converge on the true input distributions for lower numbers of samples.
 However, it does not currently support sampling for any spatial resolution besides country
 or using multivariate distributions such as the Dirichlet.</p>
+<section id="supply-curves-and-cf-profiles">
+<h4>Supply curves and CF profiles<a class="headerlink" href="#supply-curves-and-cf-profiles" title="Link to this heading"></a></h4>
+<p>The wind and solar supply curves and hourly capacity factor (CF) profiles are linked;
+each site in a supply curve (<code class="docutils literal notranslate"><span class="pre">inputs/supply_curve</span></code>) has a corresponding hourly profile (downloaded to <code class="docutils literal notranslate"><span class="pre">inputs/remote</span></code> and linked in <code class="docutils literal notranslate"><span class="pre">inputs/profiles_cf</span></code>),
+so different siting access assumptions (controlled by <code class="docutils literal notranslate"><span class="pre">GSw_SitingUPV</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_SitingWindOns</span></code>, and <code class="docutils literal notranslate"><span class="pre">GSw_SitingWindOfs</span></code>) have their own hourly profiles.
+Because the processing of site-level hourly profiles is relatively slow and memory-intensive,
+and because the variation in average CF for a given site across siting scenarios is relatively small,
+we apply the following simplified approach for Monte Carlo sampling of these inputs:</p>
+<ul class="simple">
+<li><p>Identify the most-permissive siting scenario included in the probability distribution</p>
+<ul>
+<li><p>For example, in a distribution with nonzero weight on “limited”, “reference”, and “open” siting, the “open” scenario will be the most permissive.
+In a distribution based on only on “limited” and “reference” siting, the “reference” scenario is most permissive.</p></li>
+</ul>
+</li>
+<li><p>Apply Monte Carlo sampling to the site-level available capacity [MW] using the specified probability distribution</p></li>
+<li><p>For all other parameters determined at the site level
+(the hourly CF profile, interconnection cost, and other site-level cost modifiers),
+inherit the value of most-permissive siting scenario included in the distribution.
+So the hourly CF profiles only need to be processed once, even when sampling from multiple siting scenarios.</p>
+<ul>
+<li><p>For example, if the siting distribution for wind includes the “open” access scenario, all sites will use the hourly CF profile from that scenario, even if the sampled capacity is lower</p></li>
+<li><p>In general, the site-level wind CF tends to be lower for more permissive siting scenarios, as the increased turbine density increases wake losses.
+So this simplification would tend to decrease wind CF by a small amount, with little effect on solar CF.
+The difference between the limited-access wind CF and reference-access wind CF is smaller than the difference between reference-access and open-access.</p></li>
+</ul>
+</li>
+</ul>
+</section>
 </section>
 <section id="tips">
 <h3>Tips<a class="headerlink" href="#tips" title="Link to this heading"></a></h3>
