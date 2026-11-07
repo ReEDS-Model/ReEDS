@@ -23,7 +23,6 @@
   - Selected by the `dr_shedscen` switch
 
 - `dr_shed_cost_demo_data_January_2025.csv`: Cost [$/MW] of shed demand response supply by technology and state
-  - Deflated to 2004$ during input processing using the `dr_shed` dollar year in `dollaryear.csv`
   - Selected by the `dr_shedscen` switch; deflated to 2004$ during input processing using the `dr_shed` dollar year in `dollaryear.csv`
 
 - `hyd_add_upg_cap.csv`: Cumulative increase in available hydropower upgrade capacity [MW] relative to the base year, by region, technology, resource bin, and year
@@ -59,7 +58,7 @@
   - `supplycurve_psh-12hr_open.csv`: assuming 12 hour duration for the open siting scenario
   - `supplycurve_psh-12hr_reference.csv`: assuming 12 hour duration for the reference siting scenario
 
-- `supplycurve_upv-*.csv:`: UPV supply curve from reV. Capacity numbers are in MW_DC and cost numbers are in $/MW_AC. Citation: [https://docs.nlr.gov/docs/fy25osti/91900.pdf](https://docs.nlr.gov/docs/fy25osti/91900.pdf)
+- `supplycurve_upv-*.csv`: UPV supply curve from reV. Capacity numbers are in MW_DC and cost numbers are in $/MW_AC. Citation: [https://docs.nlr.gov/docs/fy25osti/91900.pdf](https://docs.nlr.gov/docs/fy25osti/91900.pdf)
   - `supplycurve_upv-limited.csv`: limited siting scenario
   - `supplycurve_upv-open.csv`: open siting scenario
   - `supplycurve_upv-reference.csv`: reference siting scenario

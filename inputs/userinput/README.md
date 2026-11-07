@@ -10,7 +10,7 @@
 - `ivt_small.csv`: Reduced vintage bin assignment used for smaller and faster test runs, with fewer distinct vintages than `ivt_default.csv`
   - Selected with `ivt_suffix = small`
 
-- `ivt_step.csv`: ivt steps for endyears beyond 2050
+- `ivt_step.csv`: Number of years per vintage bin [years] by technology, used to extend the vintage assignment when `endyear` is past the last year in the `ivt_*.csv` file
 
 - `mcs_distribution_rules.yaml`: Validation rules for the distribution specifications used in Monte Carlo Sampling (MCS)
   - Each top-level key is a valid distribution name; the rules are checked against the user's `mcs_distributions_*.yaml` file by `reeds/input_processing/mcs_sampler.py`

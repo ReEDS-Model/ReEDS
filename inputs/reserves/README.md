@@ -10,8 +10,9 @@ Values for SERC-E/SE/C calculated using ESIG 2024 methodology.
 The same 0.1% definition has been used elsewhere, e.g. <https://www.congress.gov/bill/118th-congress/senate-bill/2827/text#id6543a3657b784ecbb9362b629a5290ea>.
 Values for MW_TotalDemand are for 2024 from [LTRA 2023](https://www.nerc.com/pa/RAPA/ra/Reliability%20Assessments%20DL/NERC_LTRA_2023.pdf) and represent on-peak projections (same as used in  NERC planning reserve margin calculations).
 
-- `prm_annual.csv`: Annual planning reserve margin by NERC region
-  - Taken from the 2023 NERC LTRA (specifically the "Reference Margin Level (%)" reported for each reliability region)
+- `prm_annual.csv`: Annual planning reserve margin [fraction] by NERC region and year
+  - The column is selected by the `GSw_PRM_scenario` switch: `nerc` uses the annual values and `static` holds the present-year values constant
+  - Taken from the 2025 NERC LTRA (specifically the "Reference Margin Level (%)" reported for each reliability region)
 
 - `opres_periods.csv`: Seasons within which the operating reserve constraint applies
 

@@ -62,7 +62,7 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
 - `transmission_cost_ac_500kv_z134.h5`: Example file illustrating the required format when using the transmission upgrade supply curve ([TSC](https://github.nrel.gov/ReEDS/TSC)) method for `GSw_ZoneSet = z134`
   - The full method is not yet supported; when implemented, it will only be supported for a limited number of `GSw_ZoneSet` definitions
 
-- `transmission_cost_distance.csv`: Cost [USD2024] and distance [miles] for greenfield interzonal single-circuit transmission lines of the specified polarity (AC or DC) and voltage [kV] between nodes of the specified zone hashes
+- `transmission_cost_distance.csv`: Cost [million 2024$] and distance [miles] for greenfield interzonal single-circuit transmission lines of the specified polarity (AC or DC) and voltage [kV] between nodes of the specified zone hashes
   - Node locations are described in `inputs/zones/README.md` and found in the `inputs/zones/{GSw_ZoneSet}/zonehash.csv` files
   - Least-cost paths between nodes (and integrated land/terrain-dependent costs along those paths) are determined using the [reV Routing (reVRt) model](https://github.com/NatLabRockies/reVRt)
   - Technical assumptions:
