@@ -841,12 +841,11 @@ def validate_zoneset(GSw_ZoneSet):
             'z90',
             'z132',
             'z134',
-            # 'z153',
-            # 'z1259',
-            # 'z2972',
+            'z2972',
             'z3109',
             'UTcounty',
             'PJMcounty',
+            'WIcounty',
         ]
         for GSw_ZoneSet in GSw_ZoneSets:
             print(GSw_ZoneSet)
