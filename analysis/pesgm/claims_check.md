@@ -6,7 +6,7 @@ numbers come from `13_claims_check.py` (`data/13_claims_numbers.json`), `10_afte
 (`results_after_fix.md`) and `00_pipeline_summary.py` (`results_00.md`). R² values are RF raw
 out-of-fold (OOF), scored against the raw ReEDS targets, unless a row says otherwise.
 
-**Verdict counts: 11 FALSE, 19 NEEDS REWORDING, 30 TRUE, 1 not checkable.** The FALSE rows are 1b
+**Verdict counts: 11 FALSE, 20 NEEDS REWORDING, 29 TRUE, 1 not checkable.** The FALSE rows are 1b
 (fuel dial direction), 6 (system constants), 11 (grid search), 13 (interval method), 14 (1 ms), 40
 (543 MW), and in the draft D3 (2025), D6 (interval), D9 (rule order), D12 (0.630) and D13 (dGen
 curve).
@@ -45,7 +45,7 @@ curve).
 | 17 | MLP 0.71/0.87/28, 0.55/0.68/76 | TRUE | 0.712 / 0.870 / 28; 0.547 / 0.679 / 76 | |
 | 18 | NGBoost 0.71/0.81/23, 0.56/0.59/59 | TRUE | 0.711 / 0.815 / 23; 0.559 / 0.590 / 59 | |
 | 19 | kNN 0.60/0.70/7, 0.45/0.54/1 | TRUE | 0.595 / 0.696 / 7; 0.452 / 0.536 / 1 | |
-| 20 | XGBoost 0.53/0.82/21, 0.24/0.48/42 | TRUE | 0.532 / 0.820 / 21; 0.241 / 0.484 / 42 | |
+| 20 | XGBoost 0.53/0.82/21, 0.24/0.48/42 | NEEDS REWORDING | Those are the hinted model (stored OOF: 0.532 / 0.820 / 21; 0.241 / 0.484 / 42), whose hints point the wrong way for the fuel and siting dials. Refit without hints, which is now the dashboard model: 0.676 / 0.882 / 29 (system) and 0.399 / 0.668 / 77 (regional) (`xgb_nohints.md`) | "XGBoost 0.68/0.88/29, 0.40/0.67/77" |
 | 21 | Ridge/Lasso 0.45/0.45/3, 0.31/0.26/0 | NEEDS REWORDING | Ridge 0.4454 / 0.449 / 3. **Lasso mean is 0.4449, which rounds to 0.44.** Regional 0.308 / 0.259 / 0 for both. | "Ridge 0.45 / 0.45 / 3, Lasso 0.44 / 0.45 / 3" |
 | 22 | Buckets, RF: system 44% / 53% / 3% (≥0.9, 0-0.9, <0); regional 25% / 68% / 8% | TRUE | System 29 / 35 / 2 of 66 = 43.9 / 53.0 / 3.0%. Regional 76 / 208 / 24 of 308 = 24.7 / 67.5 / 7.8%. | |
 | 23 | cost_total R² 0.90 | TRUE | 0.8975 | |

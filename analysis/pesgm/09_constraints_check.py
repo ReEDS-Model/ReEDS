@@ -1,4 +1,9 @@
-"""Item 9 - constraint-layer fact check for the paper's Section D / Table II.
+"""DEPRECATED - pre-fix record only; it no longer runs (it imports the DistPV
+function removed in the constraint fix). Its results stay in
+constraints_check.md, results_09.md and data/09_* (10_after_fix.py still reads
+data/09_oof_cache.npz). Use 10_after_fix.py for the current constraint layer.
+
+Item 9 - constraint-layer fact check for the paper's Section D / Table II.
 
 Answers the questions in constraints_check.md from the data and from the
 Stage 2 constraint code itself. The prediction-time rules are applied with the
@@ -15,6 +20,8 @@ Writes data/09_*.csv, data/09_constraints_check.json, results_09.md.
 Run with the reeds2 env.
 """
 from __future__ import annotations
+
+raise SystemExit("09_constraints_check.py is deprecated (pre-fix record); use 10_after_fix.py.")
 
 import re
 
