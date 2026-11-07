@@ -1,0 +1,13 @@
+label,row,0,1,2,3,4,5,6,7,8,9,10
+r6c11,0,,,,,,,,,VT,NH,ME
+r6c11,1,WA,ID,MT,ND,MN,WI,MI,NY,CT,RI,MA
+r6c11,2,OR,NV,WY,SD,IA,IL,IN,VA,PA,NJ,
+r6c11,3,CA,UT,CO,NE,MO,KY,OH,NC,MD,DE,
+r6c11,4,,AZ,NM,KS,AR,TN,WV,SC,,,
+r6c11,5,,,TX,OK,LA,MS,AL,GA,FL,,
+alphabetical,0,AL,AR,AZ,CA,CO,CT,DE,FL,,,
+alphabetical,1,GA,IA,ID,IL,IN,KS,KY,LA,,,
+alphabetical,2,MA,MD,ME,MI,MN,MO,MS,MT,,,
+alphabetical,3,NC,ND,NE,NH,NJ,NM,NV,NY,,,
+alphabetical,4,OH,OK,OR,PA,RI,SC,SD,TN,,,
+alphabetical,5,TX,UT,VA,VT,WA,WI,WV,WY,,,

@@ -1571,6 +1571,15 @@ def trim_subplots(ax, nrows, ncols, nsubplots):
         ax[-1, -1-col].axis('off')
 
 
+def trim_empty_subplots(ax):
+    if isinstance(ax, np.ndarray):
+        for _ax in ax:
+            trim_empty_subplots(_ax)
+    else:
+        if not ax.has_data():
+            ax.axis('off')
+
+
 def patchlegend(colors, edgecolor='none', alpha=1, reverse=False, **kwargs):
     patches = [mpl.patches.Patch(
                    facecolor=colors[i],
@@ -2306,3 +2315,49 @@ def wraptext(text, width, fontsize=14):
     outlist = [text[i*numchars:(i+1)*numchars] for i in range(numlines)]
     out = '\n'.join(outlist)
     return out
+
+
+def chemlabel(chem:str) -> str:
+    """Format chemical formulas with subscripts"""
+    out = (
+        chem
+        .replace('CO2', 'CO' + r'$\bf{_2}$')
+        .replace('CH4', 'CH' + r'$\bf{_4}$')
+        .replace('N2O', 'N' + r'$\bf{_2}$' + 'O')
+        .replace('SO2', 'SO' + r'$\bf{_2}$')
+        .replace('SOX', 'SO' + r'$\bfit{_x}$')
+        .replace('NOX', 'NO' + r'$\bfit{_x}$')
+        .replace('H2', 'H' + r'$\bf{_2}$')
+    )
+    return out
+
+
+def hist_last(
+    ax, df, color='k', bins=None, xpad=0, xscale=5, alpha=1,
+    percentiles=[], percentilestyle='o',
+):
+    """Plot a vertical histogram for the last value"""
+    x = df.index[-1] + xpad
+    hist_val, hist_y = np.histogram(df.iloc[-1].values, bins=bins)
+    height = hist_y[1] - hist_y[0]
+
+    ax.barh(
+        y=hist_y[:-1], width=(hist_val / max(hist_val) * xscale),
+        height=height, align='edge',
+        left=x, color=color,
+    )
+    ## Plot designated percentiles
+    if len(percentiles):
+        assert all([0 <= i <= 1 for i in percentiles]), "Percentiles must be ≥0 and ≤1"
+        describe = df.iloc[-1].describe(percentiles=percentiles)
+        labels = [f'{i*100:.0f}%' for i in percentiles]
+        assert all([i in describe.index for i in labels]), "Too many decimals in percentiles"
+        for label in labels:
+            if percentilestyle == 'line':
+                ax.plot([x, x+xscale], [describe[label]]*2, color='k', lw=0.5)
+            else:
+                ax.plot(
+                    [x], [describe[label]],
+                    marker=percentilestyle, markerfacecolor='none', markeredgecolor='k',
+                    markeredgewidth=0.5, markersize=3,
+                )

@@ -108,7 +108,7 @@ def parse_caselist(caselist):
     """Turn a list of globs into a flat list of filepaths"""
     outlist = []
     for caseprefix in caselist:
-        outlist.extend(glob(caseprefix))
+        outlist.extend(sorted(glob(caseprefix)))
     return sorted(outlist)
 
 
