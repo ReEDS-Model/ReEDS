@@ -55,6 +55,11 @@ _, Yrc, _, _, _, _ = load_layer("regional")
 RES = np.load(DATA / "10_stored_residuals.npz")
 OOF = {(l, m): (Ysc if l == "system" else Yrc) - RES[f"{l}_{m}"].astype(float)
        for l in ("system", "regional") for m, _ in MODELS}
+# XGBoost: OOF refitted without monotone hints (18_xgb_nohints.py; the stored hints are wrong, known_limits 11)
+_NH = np.load(DATA / "18_xgb_nohints_oof.npz")
+for l, cols in (("system", sc), ("regional", rc)):
+    assert list(_NH[f"{l}_cols"]) == list(cols)
+    OOF[(l, "xgb")] = _NH[f"{l}_oof"]
 R2 = {(l, m): pd.Series(per_output_r2(Ys if l == "system" else Yr, OOF[(l, m)]),
                         index=sc if l == "system" else rc)
       for l in ("system", "regional") for m, _ in MODELS}

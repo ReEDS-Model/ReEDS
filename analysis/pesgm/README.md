@@ -22,6 +22,7 @@ number as a sentence, `figs/` holds the IEEE single-column figures (PDF +
 | 14 candidate paper figures (no fitting) | `14_paper_figures.py` | `figs/*` (ercot_map … learning_curve), `figs/captions.md`, `data/14_figure_numbers.json` |
 | 15 dashboard screenshots (needs a running server + Chrome) | `15_dashboard_screenshots.py` | `figs/dashboard_predict`, `figs/dashboard_ci` |
 | 16 contact sheet | `16_contact_sheet.py` | `figs/contact_sheet.png` |
+| 18 XGBoost without monotone hints (refits XGBoost only, ~2 min) | `18_xgb_nohints.py` | `xgb_nohints.md`, `data/18_*`, `figs/model_comparison` |
 
 The constraint fix itself is described in `constraint_fix_changelog.md`.
 

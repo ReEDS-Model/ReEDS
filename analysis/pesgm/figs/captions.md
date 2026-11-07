@@ -36,8 +36,9 @@ sparse (non-zero in under half the runs) or near-constant (CV < 2%), and they ho
 poorly predicted cells.
 
 **model_comparison.** *Single column.* Mean and median OOF R² of the seven models on the system
-(top) and regional (bottom) layers, without constraints. RF is highest on both, at 0.749 / 0.882
-for the system layer and 0.625 / 0.715 regional. *An alternative to Table III.*
+(top) and regional (bottom) layers, without constraints. XGBoost is refitted without monotone hints
+(`../xgb_nohints.md`). RF has the highest mean on both layers, at 0.749 / 0.882 for the system layer
+and 0.625 / 0.715 regional. XGBoost ties RF on the system median (0.882). *An alternative to Table III.*
 
 **pred_vs_actual.** *Double column.* RF OOF prediction against the ReEDS value for six headline
 outputs across the 486 runs, with the 1:1 line:
