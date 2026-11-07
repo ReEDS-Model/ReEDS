@@ -587,9 +587,14 @@ repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
 $else.finitodetailedNG
 * approach with detailed natural gas representation (GSw_DetailedNG=1 in FINITO)
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
-    deflator('%FINITO_dollaryear%') * 1/(cost_scale_finito) * 1/(pvf_onm(t)) 
+    deflator('%FINITO_dollaryear%') * [
 *   citygate price of natural gas
-    * [ smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) ]
+        1/(cost_scale_finito) * 1/(pvf_onm(t)) * (
+            smax{(cfp,st)$st_cendiv(st,cendiv), eq_supplydemand_cf.M(cfp,'NG',st,h,t) } / hours(h) 
+        )
+*   markup for gas delivered to the electric power sector
+        + sum{cfp$gasp(cfp), ng_markup(cendiv,'Electric_Power') }
+    ]
 ;
 
 $endif.finitodetailedNG
