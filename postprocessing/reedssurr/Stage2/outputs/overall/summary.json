@@ -41,13 +41,13 @@
       "artifact": "models/rf.joblib"
     },
     "xgb": {
-      "display_name": "XGBoost (Gradient Boosting, monotone)",
-      "oof_r2_mean": 0.5316342347914651,
-      "oof_r2_median": 0.8196095518215353,
+      "display_name": "XGBoost (Gradient Boosting)",
+      "oof_r2_mean": 0.6761980885549121,
+      "oof_r2_median": 0.8819459805470926,
       "oof_r2_min": -2.157473185442873,
-      "oof_r2_max": 0.9999998215072071,
-      "n_outputs_r2_above_0.9": 21,
-      "n_outputs_r2_above_0.95": 12,
+      "oof_r2_max": 0.9999999999712927,
+      "n_outputs_r2_above_0.9": 29,
+      "n_outputs_r2_above_0.95": 19,
       "artifact": "models/xgb.joblib"
     },
     "nn": {

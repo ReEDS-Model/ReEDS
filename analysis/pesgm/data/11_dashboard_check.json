@@ -58,7 +58,7 @@
       "name": "(b) rf training grid (OOF path) overall: 'System cost' line = sum of cost bars",
       "ok": true,
       "line_B": 22.14,
-      "bars_B": 22.137498759367443
+      "bars_B": 22.137498759367446
     },
     {
       "name": "(b) rf training grid (OOF path) regional: cost_total = sum of components",
@@ -262,7 +262,7 @@
       "name": "(b) nn training grid (OOF path) overall: 'System cost' line = sum of cost bars",
       "ok": true,
       "line_B": 22.38,
-      "bars_B": 22.37608289107963
+      "bars_B": 22.376082891079626
     },
     {
       "name": "(b) nn training grid (OOF path) regional: cost_total = sum of components",
@@ -274,7 +274,7 @@
       "name": "(b) nn training grid (OOF path) regional: 'System cost' line = sum of cost bars",
       "ok": true,
       "line_B": 22.56,
-      "bars_B": 22.556138185189837
+      "bars_B": 22.556138185189834
     },
     {
       "name": "(d) nn training grid (OOF path) overall: CI panel populated",

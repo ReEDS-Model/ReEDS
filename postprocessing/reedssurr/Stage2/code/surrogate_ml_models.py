@@ -868,4 +868,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Run through the importable module, not __main__, so pickled artifacts
+    # record classes such as MonotoneXGBMultiOutput as
+    # surrogate_ml_models.<class> and load outside this script.
+    import surrogate_ml_models
+    surrogate_ml_models.main()

@@ -644,7 +644,7 @@ header = Div(text="""
 <p style='color:#555;margin:2px 0 8px 0'>Continuous dials for Dem / Natural gas price / REcost / Siting / Batt (Pol stays binary).
 Predictions pass through the Stage 2 constraint stack (constant outputs held
 at their ReEDS value, non-negativity, regional-to-system additivity, cost
-decomposition; XGB also uses monotone hints). The top panel
+decomposition). The top panel
 shows the ReEDS-style stacked portfolio (actual vs. ReEDS-Proxy
 prediction). The bottom panel shows per-category proxy uncertainty
 (90% conformal CI). When the picked design matches a training run, the
