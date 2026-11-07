@@ -15,11 +15,14 @@ Constraints implemented
     columns are exempted (same rules as Stage 1's clip_physical_bounds).
     At predict time the bound generalises to a known lower bound: 0 for
     those columns, the initial corridor capacity for regional transmission
-    corridors and their sum for the system ``tran_total`` (``floors``).
+    corridors and their sum for the system ``tran_total`` and
+    ``tran_AC_total`` (``floors``).  See ../CONSTRAINTS.md.
 
 2.  XGB monotone constraints — every XGB output uses a monotone hint
     vector aligned to `x_cols`.  Rules encoded in `_monotone_rules_for`
-    below; anything not covered is left unconstrained (0).
+    below; anything not covered is left unconstrained (0).  The fuel and
+    siting hints point the wrong way, so the deployed XGBoost is fitted
+    without them (``--no_monotone``).
 
 3.  Regional → system additivity — after regional prediction, rescale
     each per-BA vector so that ΣBA(tech) matches the overall model's
