@@ -1771,8 +1771,12 @@ def _format_metrics(
     if not np.isnan(actual_cost) and not np.isnan(pred_cost):
         cost_err = (pred_cost - actual_cost) / actual_cost * 100 if actual_cost else float("nan")
         cost_color = _tol_color(cost_err, COST_TOL_GOOD, COST_TOL_WARN)
+        # Regional layer: the value is the sum of the regional cost components
+        # and can differ from the system-layer total.
+        cost_label = ("System cost (sum of regional components)"
+                      if _is_regional_layout(predicted.index) else "System cost")
         lines.append(
-            f"<b>System cost:</b> actual ${actual_cost/1e9:,.2f} B vs "
+            f"<b>{cost_label}:</b> actual ${actual_cost/1e9:,.2f} B vs "
             f"predicted ${pred_cost/1e9:,.2f} B "
             f"(<span style='color:{cost_color}'><b>{cost_err:+.1f}%</b></span> error; "
             f"tol &plusmn;{COST_TOL_GOOD:.0f}%)"
@@ -4149,8 +4153,12 @@ for _d in DIMENSION_ENCODING:
     _dial_widgets.append(design_selects[_d])
     if _d == "Fuel":   # tooltip: what the gas price levels are
         _dial_widgets.append(HelpButton(tooltip=Tooltip(content=GAS_PRICE_NOTE, position="bottom")))
+interp_note = Div(text="<i style='color:#555'>Slider positions between the 0 / 1 / 2 levels are "
+                       "the surrogate's interpolation and have not been validated against ReEDS "
+                       "runs.</i>")
 controls = column(
     row(*_dial_widgets, spacing=8),
+    interp_note,
     row(stage_select, variable_select, model_select, spacing=12),
     status_div,
     metrics_div,
@@ -4823,7 +4831,7 @@ rc_category_select.on_change("value", lambda _a, _o, _n: _build_regcomp_grid())
 eval_tab = TabPanel(
     child=column(
         Div(text="<h2 style='margin:8px 0 4px 0'>ReEDS-Proxy "
-                 "&mdash; Evaluation</h2>"
+                 "&mdash; Evaluation (out-of-fold, no constraints)</h2>"
                  "<p style='color:#555;margin:0 0 10px 0;font-size:13px'>"
                  "Three views: (1) per-method parity to compare models, "
                  "(2) drill into a single model &times; layer &times; "
@@ -4871,7 +4879,7 @@ eval_tab = TabPanel(
         spacing=6,
         sizing_mode="stretch_width",
     ),
-    title="Evaluation results",
+    title="Evaluation results (out-of-fold, no constraints)",
 )
 
 
