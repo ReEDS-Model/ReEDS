@@ -362,7 +362,10 @@ def check_GSw_LoadSiteReg(sw):
     regions = df.index.unique()
     wrong = [r for r in regions if r not in allowed]
     if len(wrong):
-        err = f"{infile} contains [{', '.join(wrong)}] but can only contain [{', '.join(allowed)}]"
+        err = (
+            f"{sw.name}: {infile} contains [{', '.join(wrong)}] "
+            f"but can only contain [{', '.join(allowed)}]"
+        )
         raise ValueError(err)
 
 
@@ -423,6 +426,7 @@ def check_numperiods(sw, threshold=24, force=0):
         return
     else:
         msg = (
+            f'\n{sw.name}:'
             '\nThe estimated number of representative periods for your switch settings is '
             f'{numperiods}, which is less than the threshold of {threshold}.\n'
             'These conditions should only be used for testing and are not appropriate for '
@@ -468,6 +472,7 @@ def check_islands(sw, force=0):
 
     if (len(zones) == 1) and int(sw['pras']):
         err = (
+            f'\n{sw.name}:'
             f'\nThe system specified by GSw_ZoneSet = {sw["GSw_ZoneSet"]} and '
             f'GSw_Region = {sw["GSw_Region"]} results in a single zone: {zones[0]}.\n'
             'ReEDS2PRAS does not support single-zone systems. Please run a larger system.'
@@ -478,6 +483,7 @@ def check_islands(sw, force=0):
         return
     else:
         msg = (
+            f'\n{sw.name}:'
             f'\nThe system specified by GSw_ZoneSet = {sw["GSw_ZoneSet"]} and '
             f'GSw_Region = {sw["GSw_Region"]} results in {len(islands)} islanded zones:\n    '
             f'{"\n    ".join(islands)}\n'
@@ -495,10 +501,34 @@ def check_islands(sw, force=0):
                 raise ValueError(err)
 
 
-def check_switches(sw, force=0):
+def check_cases_format(dfcases:pd.DataFrame):
+    """Check the integrity of the input cases_{}.csv data"""
+    dfkeep = dfcases.loc[:, ~dfcases.loc['ignore'].astype(int).astype(bool)]
+    ## Only allow GSw_FakeData to be used all-or-nothing
+    unique_fakes = dfkeep.loc['GSw_FakeData'].unique()
+    if len(unique_fakes) > 1:
+        err = (
+            'GSw_FakeData can only take a single value in a set of cases but values of "'
+            + ', '.join(unique_fakes) + '" were provided'
+        )
+        raise ValueError(err)
+    ## Check for spaces in case names
+    spaces = [i for i in dfkeep if ' ' in i]
+    if len(spaces):
+        err = (
+            'Spaces are not allowed in case names; the following names have spaces:\n'
+            + '\n'.join(f'"{i}"' for i in spaces)
+        )
+        raise ValueError(err)
+
+
+def check_switches(dfcases:pd.DataFrame, force=0):
     """Run all the checks"""
-    check_numperiods(sw, force=force)
-    check_islands(sw, force=force)
-    if force < 2:
-        check_compatibility(sw)
-        check_GSw_LoadSiteReg(sw)
+    for case in dfcases:
+        sw = dfcases[case]
+        if force < 1:
+            check_numperiods(sw)
+            check_islands(sw)
+        if force < 2:
+            check_compatibility(sw)
+            check_GSw_LoadSiteReg(sw)
