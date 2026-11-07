@@ -12,7 +12,7 @@
 - `stscen2023_lowng/distpvcap_stscen2023_lowng.csv`: Distributed PV summer capacity [MW] by region and year using electricity price outputs from the Standard Scenarios 2023 low natural gas price scenario
     - Selected using `distpvscen`
 
-- `stscen2023_lowre/distpvcap_stscen2023_lowre.csv`: Distributed PV summer capacity [MW] by region and year using electricity price outputs from the Standard Scenarios 2023 high renewable energy cost scenario (including low distributed PV capital costs based on the 2023 Annual Technology Baseline)
+- `stscen2023_lowre/distpvcap_stscen2023_lowre.csv`: Distributed PV summer capacity [MW] by region and year using electricity price outputs from the Standard Scenarios 2023 low renewable energy cost scenario (including low distributed PV capital costs based on the 2023 Annual Technology Baseline)
     - Selected using `distpvscen`
 
 - `stscen2023_mid_case/distpvcap_stscen2023_mid_case.csv`: Distributed PV summer capacity [MW] by region and year using electricity price outputs from the Standard Scenarios 2023 mid-case scenario

@@ -4,10 +4,10 @@ Zone definition sets are maintained in [`zones/`](https://github.com/ReEDS-Model
 
 Model zones are defined by the following user-generated files:
 
-- `county2zone.csv`: Maps from counties (`FIPS` column) to ReEDS zones (`ba` column)
+- `county2zone.csv`: Maps from counties (`FIPS` column) to ReEDS zones (`r` column)
 - `hierarchy.csv`: Maps from ReEDS zones (`r` column) to the larger region hierarchy levels
 - `b2b.csv`: Back-to-back converter (B2B) capacity [MW] between model zones
-- `newlinks_offshore_radial.csv`: Candiate connections between offshore and coastal land-based zones
+- `newlinks_offshore_radial.csv`: Candidate connections between offshore and coastal land-based zones
 
 And the following automatically generated files:
 

@@ -18,7 +18,6 @@
 
 - `wat_access_cap_cost.csv`: Water supply curve for post-2010 capacity, by water source type and region
   - `sc_cat = cap` gives available supply [million gallons/year]; `sc_cat = cost` gives the access cost [$/(million gallons/year)]
-  - `sc_cat = cap` gives available supply [million gallons/year]; `sc_cat = cost` gives access cost [$ per million gallons/year]
 
 - `water_req_psh_10h_1_51.csv`: Water required to fill the reservoir during PSH construction [Mgal/MW/year], by region and resource bin
   - Used only when both `GSw_PSHwatercon` and `GSw_WaterMain` are on

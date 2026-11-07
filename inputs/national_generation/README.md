@@ -9,4 +9,4 @@
   - The column used is selected by the `GSw_GenMandateList` switch
 
 - `national_rps_frac_allScen.csv`: Required national RPS share [fraction] by year for a range of named scenarios
-  - Used when `GSw_StateRPS` is on
+  - Copied into `inputs_case/` when `GSw_StateRPS` is on

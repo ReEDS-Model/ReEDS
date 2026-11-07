@@ -1,7 +1,7 @@
 ## Power Sector Employment Data
 ### Data input options
 - `employment_factor_plant_jedi.csv`: Employment factors for power plants by technology and job type, from the JEDI/WIRED model
-  - `construction` and `fom` are in job-years per MW; `vom` is in job-years per MWh
+  - `construction` is in job-years per MW, `fom` in job-years per MW-year, and `vom` in job-years per MWh
 Sources for employment data of individual technologies in JEDI/WIRED are shown in the table below.
 
 | Technology              | Source                                                              |
@@ -24,8 +24,8 @@ Sources for employment data of individual technologies in JEDI/WIRED are shown i
 | Nuclear Conventional    | [Abou-Jaoude et al. (2023)](https://gain.inl.gov/content/uploads/4/2024/11/INL-RPT-23-72972-Literature-Review-of-Adv-Reactor-Cost-Estimates.pdf)                                      |
 | Nuclear SMR             | [Asuega et al. (2023)](https://www.sciencedirect.com/science/article/pii/S0306261923000338)                                           |
 | Offshore Wind           | [Hammond and Cooperman (2022)](https://www.osti.gov/servlets/purl/1894867/) and [Nunemaker et al. (2020)](https://www.osti.gov/servlets/purl/1660132/) |
-| Transmission-500kW AC   | WIRED Transmission Line Model (TL.12.23.16) based on [JEDI Transmission Line Model](https://www.nlr.gov/analysis/jedi/transmission-line)                                              |
-| Transmission-230kW AC   | WIRED Transmission Line Model (TL.12.23.16) based on [JEDI Transmission Line Model](https://www.nlr.gov/analysis/jedi/transmission-line)                                               |
+| Transmission-500kV AC   | WIRED Transmission Line Model (TL.12.23.16) based on [JEDI Transmission Line Model](https://www.nlr.gov/analysis/jedi/transmission-line)                                              |
+| Transmission-230kV AC   | WIRED Transmission Line Model (TL.12.23.16) based on [JEDI Transmission Line Model](https://www.nlr.gov/analysis/jedi/transmission-line)                                               |
 | UPV                     | [JEDI Photovoltaics Model (PV05.20.21)](https://www.nlr.gov/analysis/jedi/pv)                                             |
 
 - `employment_factor_plant_mayfield.csv`, `employment_factor_plant_rutovitz.csv`, and `employment_factor_plant_ram.csv`: Employment factor data for power plants of different technologies, taken from literature -- [Mayfield et al. (2023)](https://doi.org/10.1016/j.enpol.2023.113516), [Rutovitz et al. (2024)](https://doi.org/10.1016/j.rser.2025.115339), and [Ram et al. (2020)](https://doi.org/10.1016/j.techfore.2019.06.008), respectively.
