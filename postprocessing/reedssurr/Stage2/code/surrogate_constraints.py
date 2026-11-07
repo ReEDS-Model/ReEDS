@@ -261,10 +261,13 @@ def transmission_floors(train_df: pd.DataFrame) -> dict[str, float]:
 
 def system_transmission_floors(corridor_floors: Mapping[str, float]) -> dict[str, float]:
     """System-level floor: ``tran_total`` >= the sum of the corridor floors
-    (total initial interzonal capacity; 34,478.6 MW for the ERCOT runs)."""
+    (total initial interzonal capacity; 34,478.6 MW for the ERCOT runs).
+    ``tran_AC_total`` gets the same floor: every corridor is AC, so it equals
+    ``tran_total`` in all training runs."""
     if not corridor_floors:
         return {}
-    return {_TRAN_PARENT: float(sum(corridor_floors.values()))}
+    f = float(sum(corridor_floors.values()))
+    return {_TRAN_PARENT: f, "tran_AC_total": f}
 
 
 def enforce_additivity(

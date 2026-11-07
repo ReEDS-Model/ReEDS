@@ -137,10 +137,10 @@ def test_corridor_clipped_to_floor_before_rescale():
 def test_system_tran_total_clipped_to_sum_of_corridor_floors():
     corridor = {"tran_p60_p61_AC": 2929.30, "tran_p61_p62_AC": 1386.85}
     sys_floors = sc.system_transmission_floors(corridor)
-    assert sys_floors == {"tran_total": pytest.approx(4316.15)}
+    assert sys_floors == {"tran_total": pytest.approx(4316.15), "tran_AC_total": pytest.approx(4316.15)}
     out = apply_constraints(s({"tran_total": 4000.0, "tran_AC_total": 4000.0}), floors=sys_floors)
     assert out["tran_total"] == pytest.approx(4316.15)
-    assert out["tran_AC_total"] == 4000.0          # only tran_total has a floor
+    assert out["tran_AC_total"] == pytest.approx(4316.15)   # duplicate of tran_total, same floor
     assert sc.system_transmission_floors({}) == {}
 
 
