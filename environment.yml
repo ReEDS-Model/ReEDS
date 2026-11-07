@@ -27,6 +27,7 @@ dependencies:
   - mapclassify=2.5 # more mapping tools
   - mscorefonts=0.0 # extra fonts for plotting (only relevant on linux/HPC)
   - networkx=3.1 # for uncommonly-used network analysis postprocessing
+  - tabulate=0.9 # for postprocessing/reedssurr eval reports (pandas to_markdown)
   - notebook=6.5 # for jupyter notebooks
   ## ^^^
   - pip:

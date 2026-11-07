@@ -139,10 +139,11 @@ class Config:
     # (see surrogate_constraints.xgb_monotone_vector).
     x_cols: Optional[list] = None
     y_cols: Optional[list] = None
-    # When True, disable the per-output monotone_constraints wrapper for
-    # XGB and fall back to a plain XGBRegressor. Useful when the sample
-    # size is too small for strict monotonicity (n=486) to be helpful.
-    disable_monotone_xgb: bool = False
+    # When True (default), disable the per-output monotone_constraints
+    # wrapper for XGB and fall back to a plain XGBRegressor. The hints in
+    # surrogate_constraints._monotone_rules_for point the wrong way for the
+    # fuel and siting dials, so they are opt-in (--monotone).
+    disable_monotone_xgb: bool = True
 
 
 class MonotoneXGBMultiOutput:
@@ -848,9 +849,13 @@ def main():
     )
     parser.add_argument(
         "--no_monotone", action="store_true",
-        help="Disable per-output monotone_constraints for XGB (falls back "
-             "to plain XGBRegressor). Recommended at n=486 where strict "
-             "monotonicity over-regularizes.",
+        help="Plain XGBRegressor without monotone_constraints. This is now "
+             "the default; the flag is kept so older commands still work.",
+    )
+    parser.add_argument(
+        "--monotone", action="store_true",
+        help="Opt in to the per-output XGB monotone hints. Their fuel and "
+             "siting rules point the wrong way (see CONSTRAINTS.md).",
     )
     args = parser.parse_args()
 
@@ -861,7 +866,7 @@ def main():
         random_state=args.random_state,
         models=args.models,
         single_output_mode=not args.multi_output_native,
-        disable_monotone_xgb=args.no_monotone,
+        disable_monotone_xgb=not args.monotone,
     )
 
     run_pipeline(config)

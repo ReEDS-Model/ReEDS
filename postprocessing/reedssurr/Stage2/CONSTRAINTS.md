@@ -80,8 +80,8 @@ The full list with counts is `analysis/pesgm/known_limits.md`. The open ones:
 - **Rare-H2 amplification:** for the MLP, a spurious system H2 value can be rescaled into
   one region.
 - **XGBoost monotone hints:** the hints in `_monotone_rules_for` point the wrong way for the
-  fuel and siting dials. The deployed XGBoost is fitted without them. The training CLI still
-  applies them unless `--no_monotone` is passed.
+  fuel and siting dials. The deployed XGBoost is fitted without them, and training leaves
+  them off unless `--monotone` is passed.
 - **Not implemented:** an energy balance, a storage identity, joint projection across
   outputs, and special handling of sparse technologies.
 

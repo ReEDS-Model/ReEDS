@@ -22,7 +22,7 @@ Constraints implemented
     vector aligned to `x_cols`.  Rules encoded in `_monotone_rules_for`
     below; anything not covered is left unconstrained (0).  The fuel and
     siting hints point the wrong way, so the deployed XGBoost is fitted
-    without them (``--no_monotone``).
+    without them (the training default; ``--monotone`` opts in).
 
 3.  Regional → system additivity — after regional prediction, rescale
     each per-BA vector so that ΣBA(tech) matches the overall model's
