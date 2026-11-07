@@ -4,9 +4,12 @@
 
 Equation eq_MGA_CostEnvelope(t) "--$-- System cost must be within allowed envelope" ;
 eq_MGA_CostEnvelope(t)$[tmodel(t)$Sw_MGA]..
-    (z_rep_inv(t) + z_rep_op(t)) * (1 + Sw_MGA_CostDelta)
+    (z_rep_inv(t) + z_rep_op(t) + z_rep_finito(t)) * (1 + Sw_MGA_CostDelta)
     =g=
     Z_inv(t) + Z_op(t)
+$ifthene.linked_objective Sw_FINITO_Link==1
+    + (deflator('%FINITO_dollaryear%') / cost_scale_finito * Z_finito(t) )
+$endif.linked_objective 
 ;
 
 * ---------------------------------------------------------------------------
