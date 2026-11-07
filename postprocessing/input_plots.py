@@ -647,10 +647,13 @@ def plot_regional_cost_difference(
         'LFILL': 'Landfill gas',
         'CSP': 'CSP',
         'PVB': '(including in PV/battery hybrid)',
+        'GEO': 'Geothermal',
+        'H2_FUEL_CELL': 'H2 Fuel Cell',
+        'NG_FUEL_CELL': 'NG Fuel Cell'
     },
     cmap=plt.cm.RdBu_r,
     scale=4,
-    vlim=30,
+    vlim=50,
 ):
     dfmap = reeds.io.get_dfmap(case)
     ### Get data
@@ -671,7 +674,7 @@ def plot_regional_cost_difference(
     ### Set up plot
     if vlim in [None, 0]:
         vlim = max(abs(dfin.min().min()), dfin.max().max())
-    nrows, ncols, coords = reeds.plots.get_coordinates(dfin.columns, ncols=3)
+    nrows, ncols, coords = reeds.plots.get_coordinates(dfin.columns, ncols=4)
     ### Plot it
     plt.close()
     f,ax = plt.subplots(
@@ -692,9 +695,19 @@ def plot_regional_cost_difference(
             '\n'.join([nicelabels.get(i, i.title()).replace('_',' ') for i in column.split('|')]),
             y=0.92,
         )
+    reeds.plots.trim_subplots(ax, nrows, ncols, len(dfin.columns))
+    ## center the maps in the bottom row
+    nempty = nrows * ncols - len(dfin.columns)
+    if nempty and nrows > 1:
+        width = ax[0,0].get_position().width
+        for col in range(ncols - nempty):
+            pos = ax[-1,col].get_position()
+            ax[-1,col].set_position(
+                [pos.x0 + nempty * width / 2, pos.y0, pos.width, pos.height]
+            )
     ## Colorbar
-    reeds.plots.addcolorbarhist(
-        f=f, ax0=ax[0,1], data=dfplot[column].values,
+    cax, _, _ = reeds.plots.addcolorbarhist(
+        f=f, ax0=ax[-1,1], data=dfplot[column].values,
         histcolor='w', histratio=0.01, vmin=-vlim, vmax=vlim,
         orientation='horizontal', cbarwidth=0.05, cbarheight=0.9, cbarhoffset=10,
         cbarbottom=-0.075, labelpad=2,
