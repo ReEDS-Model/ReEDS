@@ -44,7 +44,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
                       }
 
 * --- penalty for exceeding interconnection queue limit  ---
-                  + sum{(tg,r), cap_penalty(tg) * CAP_ABOVE_LIM(tg,r,t) }    
+                  + sum{(tg,r), cap_penalty(tg) * CAP_ABOVE_LIM_INC(tg,r,t) }
 
 * --- growth penalties ---
                   + sum{(gbin,i,st)$[sum{r$[r_st(r,st)], valinv_irt(i,r,t) }$stfeas(st)],

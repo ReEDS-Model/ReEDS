@@ -27,7 +27,7 @@ can_imports_quarter_frac.csv,inputs/canada_imports/can_imports_quarter_frac.csv,
 cangrowth.csv,inputs/load/cangrowth.csv,int(sw.GSw_Canada) != 0,ignore,ignore,st,,,1,0,,,,,,
 cap_existing_hydro.csv,inputs/hydro/cap_existing_hydro.csv,1,ignore,ignore,,t,,0,0,,,,,,
 cap_existing_psh.csv,inputs/storage/cap_existing_psh.csv,(int(sw.GSw_Storage) != 0) and ((int(sw.GSw_HydroPSHDurData) == 1) or (sw.GSw_HydroStorInMaxFrac == 'data')),sum,ignore,r,"*i,v",,0,0,,,,,,
-cap_penalty.csv,inputs/financials/cap_penalty.csv,1,ignore,ignore,,tg,,,0,,,parameter,,--$/MW-- cost penalty for capacity deployment above queue_limit,
+cap_penalty.csv,inputs/financials/cap_penalty.csv,1,ignore,ignore,,tg,,,0,,,,,,"$/MW in cap_penalty_dollaryear dollars; converted to 2004$ and written to inputs.h5 as cap_penalty(tg) in copy_files.py"
 cappayments_ba.csv,inputs/capacity_exogenous/cappayments_ba.csv,1,ignore,ignore,,*r,,0,0,,,,,,not done but not used
 captype.csv,inputs/sets/captype.csv,1,ignore,ignore,,,,,,,,set,captype,capacity types ( existing and prescribed),
 ccs_link.csv,inputs/emission_constraints/ccs_link.csv,1,ignore,ignore,,,,,0,,,,,,
@@ -130,7 +130,7 @@ i_geotech.csv,inputs/sets/i_geotech.csv,1,ignore,ignore,,,,,0,,,set,i_geotech,cr
 i_p.csv,inputs/sets/i_p.csv,1,ignore,ignore,,,,,0,,,set,i_p,mapping from technologies to the products they produce,
 i_water_nocooling.csv,inputs/sets/i_water_nocooling.csv,1,ignore,ignore,,,,,0,,,set,i_water_nocooling,technologies that use water but are not differentiated by cooling tech and water source,
 inflation.csv,inputs/financials/inflation_{inflation_suffix}.csv,1,ignore,ignore,,,,0,0,,,,,,
-interconnection_queues.csv,inputs/capacity_exogenous/interconnection_queues.csv,1,ignore,ignore,r,"tg,r",,1,0,,,,,,
+interconnection_queues.csv,inputs/capacity_exogenous/interconnection_queues.csv,1,ignore,ignore,r,"tg,r,ia_executed",,0,0,,,,,,"active queue capacity by county, technology group, and IA status; queue_limit(tg,r,allt) is built from it in copy_files.py"
 jtype.csv,inputs/sets/jtype.csv,1,ignore,ignore,,,,,,,,set,jtype,job types used in model (construction and om),
 lcclike.csv,inputs/sets/lcclike.csv,1,ignore,ignore,,,,,0,,,set,lcclike,transmission capacity types where lines are bundled with AC/DC converters,
 load_multiplier.csv,inputs/load/demand_{demandscen}.csv,1,ignore,ignore,,,,,0,,,,,,

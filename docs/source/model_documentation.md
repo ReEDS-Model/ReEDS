@@ -1537,14 +1537,26 @@ These minimum growth sizes are shown in {numref}`min-growth-size-per-tech` and a
 ```
 
 #### Interconnection queues
-To incentivize near-term capacity deployments to be more aligned with the current grid interconnection capacity queues as of the end of 2024 {cite}`randUSInterconnectionQueue2025`,
-ReEDS includes a constraint that limits capacity deployment and refurbishment by technology and ReEDS region,
-starting in by default in 2025 and ending in 2030.
-The 2026 limits are based on plants with a signed interconnection agreement, and the 2030 limits are based on the total amount of capacity seeking interconnection.
-Values between years are interpolated based on the 2026 and 2030 points.
-The limits are applied regionally by technology.
+To incentivize near-term capacity deployments to be more aligned with the current grid interconnection queues {cite}`randUSInterconnectionQueue2025`,
+ReEDS includes a constraint that limits cumulative capacity deployment and refurbishment since `interconnection_start` (the year after the queue data vintage; 2026 by default) by technology group and ReEDS region.
+The queue input (`inputs/capacity_exogenous/interconnection_queues.csv`) gives the active queue capacity by county and technology group in two categories from the LBNL queue data:
+"IA Executed" capacity (active requests with an executed interconnection agreement) and "All Active" capacity (all active requests, including those with a missing agreement status).
+The annual limit is built within ReEDS from these two values:
+the limit equals the IA Executed capacity in the first anchor year (2 years after the queue data year; 2027 for the 2025 data) and the All Active capacity in the second anchor year (5 years after the queue data year; 2030),
+with linear interpolation between the anchor years and the All Active capacity held constant afterward.
+The constraint is applied for `GSw_QueueConstraintYears` (default 3) calendar years starting from the first anchor year (2027–2029 by default), so the second anchor year is only constrained if the window reaches it; setting `GSw_QueueConstraintYears = 0` turns the constraint off.
+Because the window is defined in calendar years, the constraint is only enforced in modeled years that fall inside it; with sparse model years (for example 5-year steps) it may apply in fewer years or not at all (with the default `yearset` of 5-year steps and `GSw_QueueConstraintYears = 3` it is inactive; setting `GSw_QueueConstraintYears = 4` applies it in 2030 with the All Active capacity as the limit).
 
-To avoid infeasibility, the constraint allows a technology to be built over the capacity limits with a penalty of $10,000/kW.
+Because the limit only applies to power capacity, `GSw_QueueBatteryDurationLimit` (off by default) can additionally limit the duration of batteries invested since `interconnection_start` to `maxbatteryduration` (4 hours by default) in the constrained years.
+
+To avoid infeasibility, the constraint allows a technology to be built over the capacity limit with a penalty (`inputs/financials/cap_penalty.csv`).
+The default penalty of \$300,000/MW (\$300/kW, 2024\$) is a provisional modeling proxy for sensitivity testing rather than an empirically established cost of exceeding a queue limit;
+it is informed by the average interconnection costs of about \$194/kW for completed, \$294/kW for active, and \$671/kW for withdrawn projects in non-ISO balancing authorities reported by {cite}`seelGeneratorInterconnectionCosts2026`,
+and it can be scaled with the `queue_penalty_multiplier` scalar.
+The penalty is charged on increases in the running maximum of capacity above the limit across consecutive constrained modeled years, so persistent excess capacity is not charged again in later years.
+The `cap_above_limit` output and its map show this running maximum, not the current-year excess; if the queue limit increases and the excess falls, the previously penalized amount is retained and only excess beyond that amount incurs another penalty.
+The penalty is a modeling penalty rather than a system cost: it is reported separately (`queue_penalty_cost`) and is not included in the reported system costs.
+Note that ReEDS already represents interconnection costs for new capacity through spur-line and network-reinforcement costs for wind and solar and the intra-zone network reinforcement cost (`GSw_TransIntraCost`) for all technologies, so the queue penalty should be interpreted as an additional premium for capacity deployed ahead of the queue rather than as the interconnection cost itself.
 
 
 ### Regional Parameter Variations and Adjustments

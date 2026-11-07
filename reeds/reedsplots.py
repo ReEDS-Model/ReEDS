@@ -6978,48 +6978,44 @@ def map_prm(case, tmin=2023, cmap=cmocean.cm.rain, scale=3, fontsize=7, vmax=Non
     return f, ax, prm_final
 
 
-def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
-    """Map capacity in interconnection queues"""
-    ### Get inputs
-    if case is None:
-        fpath = Path(
-            reeds.io.reeds_path, 'inputs', 'capacity_exogenous',
-            'interconnection_queues.csv',
-        )
-        dfqueue = (
-            pd.read_csv(fpath).set_index(['tg','r']).stack()
-            .rename_axis(['tg','r','t']).rename('GW') / 1e3
-        ).reset_index().astype({'t':int})
-        dfqueue.r = dfqueue.r.str.replace('p','')
-        dfqueue = dfqueue.set_index(['tg','r','t']).squeeze(1)
-        dfzones = reeds.spatial.get_map('county', 'tiger')
-        dfstates = reeds.spatial.get_map('state', 'census')
-        years = sorted(set(dfqueue.index.get_level_values('t')))
+def map_tg_rows(
+    dfvalues, dfzones, dfstates, rows=None, figscale=2, vmax=None, cmap=cmocean.cm.rain,
+):
+    """
+    Map values by technology group (columns) and a third index level such as year (rows).
+
+    Inputs
+    ------
+    dfvalues: pd.Series indexed by (tg, r, row label) with name used as the units label
+        (e.g. 'GW'); zeros are dropped since GAMS doesn't see them.
+    dfzones: GeoDataFrame of regions indexed by r
+    dfstates: GeoDataFrame of state outlines (used instead of dfzones if there are more
+        than 300 regions)
+    rows: Row labels to plot in order; if None, use the sorted labels in dfvalues
+    """
+    units = dfvalues.name
+    rowlevel = dfvalues.index.names[2]
+    ### Drop zeros since GAMS doesn't see them; stop here if there's nothing to plot
+    dfvalues = dfvalues.replace(0,np.nan).dropna()
+    if rows is None:
+        rows = sorted(set(dfvalues.index.get_level_values(rowlevel)))
     else:
-        dfqueue = (
-            reeds.io.read_input(case, 'queue_limit')
-            .rename(columns={'allt':'t','Value':'GW'}).astype({'t':int})
-            .set_index(['tg','r','t']).GW / 1e3
-        )
-        dfmap = reeds.io.get_dfmap(case)
-        dfzones = dfmap['r']
-        modelyears = reeds.io.read_input(case, 'tmodel_new').squeeze(1).tolist()
-        years = [y for y in modelyears if y in dfqueue.index.get_level_values('t')]
-    ### Drop zeros since GAMS doesn't see them; stop here if the queue is turned off
-    dfqueue = dfqueue.replace(0,np.nan).dropna().loc[:,:,years]
-    if not len(dfqueue):
-        return None, None, dfqueue
+        rows = [i for i in rows if i in dfvalues.index.get_level_values(rowlevel)]
+    if len(rows):
+        dfvalues = dfvalues.loc[:,:,rows]
+    if (not len(dfvalues)) or (not len(rows)):
+        return None, None, dfvalues
     ### Set up plot
-    tgs = dfqueue.groupby('tg').sum().sort_values(ascending=False).index.values
-    nrows, ncols, coords = layout_subplots(row_list=years, col_list=tgs)
+    tgs = dfvalues.groupby('tg').sum().sort_values(ascending=False).index.values
+    nrows, ncols, coords = layout_subplots(row_list=rows, col_list=tgs)
     bounds = dfzones.dissolve().bounds.squeeze(0)
     yscale = (bounds.maxy - bounds.miny) / (bounds.maxx - bounds.minx)
     if vmax in ['shared', 'same', 'all']:
-        _vmax = dict(zip(coords.keys(), [dfqueue.max()]*len(coords)))
+        _vmax = dict(zip(coords.keys(), [dfvalues.max()]*len(coords)))
     elif isinstance(vmax, (float, int)):
         _vmax = dict(zip(coords.keys(), [vmax]*len(coords)))
     else:
-        _vmax = dfqueue.groupby(['t','tg']).max()
+        _vmax = dfvalues.groupby([rowlevel,'tg']).max()
     ### Plot it
     plt.close()
     f,ax = plt.subplots(
@@ -7027,14 +7023,14 @@ def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
         sharex=True, sharey=True, gridspec_kw={'wspace':-0.1, 'hspace':0.5},
     )
     for tg in tgs:
-        for t in years:
-            _ax = ax[coords[t,tg]]
+        for row in rows:
+            _ax = (ax if (nrows * ncols == 1) else ax[coords[row,tg]])
             dfplot = dfzones.copy()
-            dfplot['GW'] = dfqueue.loc[tg,:,t]
-            if dfplot.GW.count():
-                dfplot.plot(ax=_ax, column='GW', cmap=cmap, vmin=0, vmax=_vmax[t,tg])
+            dfplot[units] = dfvalues.loc[tg,:,row]
+            if dfplot[units].count():
+                dfplot.plot(ax=_ax, column=units, cmap=cmap, vmin=0, vmax=_vmax[row,tg])
                 reeds.plots.addcolorbarhist(
-                    f, _ax, dfplot.GW, vmin=0, vmax=_vmax[t,tg], cmap=cmap,
+                    f, _ax, dfplot[units], vmin=0, vmax=_vmax[row,tg], cmap=cmap,
                     orientation='horizontal', cbarbottom=-0.15, cbarheight=0.8,
                     histratio=1, nbins=51, cbarwidth=0.1,
                 )
@@ -7044,17 +7040,130 @@ def map_queue(case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain):
                 dfstates.plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
             _ax.axis('off')
             ## Formatting
-            if t == years[0]:
+            if row == rows[0]:
                 _ax.annotate(
                     tg, (0.5,1), xycoords='axes fraction',
                     ha='center', weight='bold', fontsize=12,
                 )
             if tg == tgs[0]:
                 _ax.annotate(
-                    f'{t}\n[GW]', (0,0.5), xycoords='axes fraction',
+                    f'{row}\n[{units}]', (0,0.5), xycoords='axes fraction',
                     ha='right', va='center', weight='bold', fontsize=12,
                 )
-    return f, ax, dfqueue
+    return f, ax, dfvalues
+
+
+def map_queue(
+    case=None, figscale=2, vmax=None, cmap=cmocean.cm.rain, what='limit',
+):
+    """
+    Map interconnection queue capacity [GW] by technology group (columns) and
+    year or queue category (rows).
+
+    Inputs
+    ------
+    case: ReEDS case. If None, map the county-level input data
+        (inputs/capacity_exogenous/interconnection_queues.csv) using the default switches.
+    what: 'limit' to map the annual queue capacity limit (queue_limit) built from the
+        input data for the constraint window; 'status' to map the IA Executed and
+        All Active queue capacity from the input data.
+    """
+    ### Get inputs
+    if case is None:
+        sw = reeds.io.get_switches()
+        queue_capacity = reeds.inputs.get_queue_capacity()
+        queue_capacity.index = queue_capacity.index.set_levels(
+            queue_capacity.index.levels[1].str.replace('p',''), level='r')
+        dfzones = reeds.spatial.get_map('county', 'tiger')
+        dfstates = reeds.spatial.get_map('state', 'census')
+        if what == 'limit':
+            dfqueue = reeds.inputs.get_queue_limit(
+                queue_capacity, sw, reeds.io.get_scalars())
+            rows = sorted(set(dfqueue.index.get_level_values('allt')))
+    else:
+        dfmap = reeds.io.get_dfmap(case)
+        dfzones = dfmap['r']
+        dfstates = dfmap['st']
+        if what == 'limit':
+            dfqueue = (
+                reeds.io.read_input(case, 'queue_limit')
+                .astype({'allt':int}).set_index(['tg','r','allt']).Value
+            )
+            modelyears = reeds.io.read_input(case, 'tmodel_new').squeeze(1).tolist()
+            rows = [y for y in modelyears if y in dfqueue.index.get_level_values('allt')]
+    if what == 'limit':
+        dfqueue = dfqueue.rename_axis(['tg','r','t'])
+    elif what == 'status':
+        if case is not None:
+            queue_capacity = reeds.inputs.get_queue_capacity(case=case)
+        rows = ['IA Executed', 'All Active']
+        dfqueue = (
+            queue_capacity
+            .rename(columns={'ia_executed':rows[0], 'all_active':rows[1]})
+            .rename_axis(columns='status').stack()
+        )
+    else:
+        raise ValueError(f"what must be 'limit' or 'status' but is {what}")
+    dfqueue = (dfqueue / 1e3).rename('GW')
+    return map_tg_rows(
+        dfqueue, dfzones, dfstates, rows=rows, figscale=figscale, vmax=vmax, cmap=cmap)
+
+
+def map_queue_violation(
+    case, param='cap_above_limit', figscale=2, vmax=None, cmap=cmocean.cm.rain,
+):
+    """
+    Map the running maximum or newly penalized capacity above the interconnection queue
+    limit [GW] by technology group (columns) and modeled year (rows).
+
+    Inputs
+    ------
+    param: 'cap_above_limit' for the running maximum across consecutive constrained
+        modeled years (not current-year excess), or 'cap_above_limit_penalized' for
+        the capacity penalized in each modeled year
+    """
+    dfmap = reeds.io.get_dfmap(case)
+    dfvalues = (
+        reeds.io.read_output(case, param).astype({'t':int})
+        .set_index(['tg','r','t']).Value / 1e3
+    ).rename('GW')
+    return map_tg_rows(
+        dfvalues, dfmap['r'], dfmap['st'], figscale=figscale, vmax=vmax, cmap=cmap)
+
+
+def plot_queue_penalty(case, figsize=(7,3)):
+    """
+    Plot the capacity penalized for exceeding the interconnection queue limit [GW] and
+    the resulting queue violation penalty [billion 2004$, model-year value] by
+    technology group and modeled year.
+    """
+    dfcap = (
+        reeds.io.read_output(case, 'cap_above_limit_penalized').astype({'t':int})
+        .groupby(['t','tg']).Value.sum().unstack('tg').fillna(0) / 1e3
+    )
+    dfcost = (
+        reeds.io.read_output(case, 'queue_penalty_cost').astype({'t':int})
+        .groupby(['t','tg']).Value.sum().unstack('tg').fillna(0) / 1e9
+    )
+    plt.close()
+    f, ax = plt.subplots(1, 2, figsize=figsize, gridspec_kw={'wspace':0.5})
+    for _ax, df, ylabel in zip(
+        ax,
+        [dfcap, dfcost],
+        ['Capacity penalized for\nexceeding queue limit [GW]',
+         'Queue violation penalty\n[billion 2004$]'],
+    ):
+        if len(df):
+            df.plot.bar(ax=_ax, stacked=True, width=0.8, legend=False)
+        _ax.set_ylabel(ylabel)
+        _ax.set_xlabel('')
+        _ax.set_ylim(0)
+        plots.despine(_ax)
+    if len(dfcost):
+        ax[1].legend(
+            loc='upper left', bbox_to_anchor=(1,1), frameon=False, title='tg',
+        )
+    return f, ax, {'cap_above_limit_penalized':dfcap, 'queue_penalty_cost':dfcost}
 
 
 def validate_regional_capacity(

@@ -915,3 +915,82 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
+
+
+def get_queue_capacity(
+    county2zone:pd.Series|None=None,
+    case:str|Path|None=None,
+) -> pd.DataFrame:
+    """
+    Get the IA Executed and All Active interconnection queue capacity [MW] by (tg, r)
+    from inputs/capacity_exogenous/interconnection_queues.csv.
+    If county2zone (indexed by 'p'+FIPS) is provided, or can be read from case,
+    counties are aggregated to zones and counties outside the map are dropped.
+    A (tg, r) pair without an ia_executed = 1 row has zero IA Executed capacity.
+    """
+    dfqueue = pd.read_csv(Path(
+        reeds.io.reeds_path, 'inputs', 'capacity_exogenous', 'interconnection_queues.csv'))
+    ### Validate the input
+    required = ['r', 'tg', 'ia_executed', 'capacity_mw']
+    missing = [c for c in required if c not in dfqueue]
+    if len(missing):
+        raise ValueError(f'interconnection_queues.csv is missing columns: {missing}')
+    if not dfqueue.ia_executed.isin([0, 1]).all():
+        raise ValueError('ia_executed in interconnection_queues.csv must be 0 or 1')
+    if dfqueue.capacity_mw.isnull().any() or (dfqueue.capacity_mw < 0).any():
+        raise ValueError('capacity_mw in interconnection_queues.csv must be >= 0 and not missing')
+    if dfqueue.duplicated(['r', 'tg', 'ia_executed']).any():
+        raise ValueError('interconnection_queues.csv has duplicate (r, tg, ia_executed) rows')
+    ### IA Executed and All Active capacity by county and technology group
+    all_active = dfqueue.groupby(['tg', 'r']).capacity_mw.sum()
+    ia_executed = (
+        dfqueue.loc[dfqueue.ia_executed == 1].groupby(['tg', 'r']).capacity_mw.sum()
+        .reindex(all_active.index).fillna(0)
+    )
+    queue_capacity = pd.DataFrame({'ia_executed': ia_executed, 'all_active': all_active})
+    ### Map counties to zones
+    if (county2zone is None) and (case is not None):
+        county2zone = reeds.io.get_county2zone(case)
+        county2zone.index = 'p' + county2zone.index
+    if county2zone is not None:
+        queue_capacity = queue_capacity.reset_index()
+        queue_capacity['r'] = queue_capacity['r'].map(county2zone)
+        queue_capacity = queue_capacity.dropna(subset='r').groupby(['tg', 'r']).sum()
+    return queue_capacity
+
+
+def get_queue_limit(
+    queue_capacity:pd.DataFrame,
+    sw:pd.Series|dict,
+    scalars:pd.Series|dict,
+) -> pd.Series:
+    """
+    Build the annual interconnection queue limit [MW] (queue_limit(tg,r,allt)) from the
+    output of get_queue_capacity() for the GSw_QueueConstraintYears calendar years
+    starting from the first anchor year. The anchor years are relative to the queue data
+    year (the year before interconnection_start): the limit equals the IA Executed
+    capacity 2 years after the data year and the All Active capacity 5 years after,
+    with linear interpolation in between and the All Active capacity afterward.
+    The constraint is only enforced in modeled years that fall in the window.
+    """
+    nyears = int(sw['GSw_QueueConstraintYears'])
+    data_year = int(scalars['interconnection_start']) - 1
+    first_anchor = data_year + 2
+    second_anchor = data_year + 5
+    if nyears < 0:
+        raise ValueError(f'GSw_QueueConstraintYears must be >= 0 but is {nyears}')
+    years = pd.Index(range(first_anchor, first_anchor + nyears), name='allt')
+    fraction = np.clip((years.values - first_anchor) / (second_anchor - first_anchor), 0, 1)
+    queue_limit = pd.DataFrame(
+        {
+            t: (
+                queue_capacity.ia_executed
+                + (queue_capacity.all_active - queue_capacity.ia_executed) * f
+            )
+            for t, f in zip(years, fraction)
+        },
+        index=queue_capacity.index,
+        columns=years,
+    )
+    queue_limit = queue_limit.stack().rename('MW')
+    return queue_limit
