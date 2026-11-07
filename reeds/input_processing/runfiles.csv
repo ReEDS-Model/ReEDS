@@ -248,7 +248,7 @@ unitdata_orig.csv,inputs/capacity_exogenous/ReEDS_generator_database_final_{unit
 unitspec_upgrades.csv,inputs/sets/unitspec_upgrades.csv,1,ignore,ignore,,,,,0,,,set,unitspec_upgrades,upgraded technologies that get unit-specific characteristics,
 upgrade_hintage_char.csv,inputs/sets/upgrade_hintage_char.csv,1,ignore,ignore,,,,,0,,,set,upgrade_hintage_char,sets to operate over in extension of hintage_data characteristics when sw_upgrades = 1,
 upgrade_link.csv,inputs/upgrades/upgrade_link.csv,1,ignore,ignore,,,,,0,,,,,,
-upgrade_mult_advanced.csv,inputs/upgrades/upgrade_mult_atb23_ccs_mid.csv,int(sw.GSw_UpgradeCost_Mult) != 0,ignore,ignore,,,,,0,,,,,,
+upgrade_mult_advanced.csv,inputs/upgrades/upgrade_mult_atb23_ccs_adv.csv,int(sw.GSw_UpgradeCost_Mult) != 0,ignore,ignore,,,,,0,,,,,,
 upgrade_mult_conservative.csv,inputs/upgrades/upgrade_mult_atb23_ccs_con.csv,int(sw.GSw_UpgradeCost_Mult) == 2,ignore,ignore,,,,,0,,,,,,
 upgrade_mult_mid.csv,inputs/upgrades/upgrade_mult_atb23_ccs_mid.csv,"int(sw.GSw_UpgradeCost_Mult) in [0, 4]",ignore,ignore,,,,,0,,,,,,
 upgradelink_water.csv,inputs/upgrades/upgradelink_water.csv,1,ignore,ignore,,,,,0,,,,,,
