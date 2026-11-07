@@ -27,7 +27,8 @@ positive variables
   CAP_SDBIN_ENERGY(i,v,r,ccseason,sdbin,t) "--MWh-- generation energy capacity by storage duration bin for relevant technologies"
   CAP(i,v,r,t)                             "--MW-- total generation capacity in MWac (MWdc for PV); PV capacity of hybrid PV+battery; max native, flexible EV load for EVMC"
   CAP_ENERGY(i,v,r,t)                      "--MWh-- battery capacity in terms of energy"
-  CAP_ABOVE_LIM(tg,r,t)                    "--MW-- amount of capacity that is deployed above the interconnection queue limits"
+  CAP_ABOVE_LIM(tg,r,t)                    "--MW-- amount of capacity that is deployed above the interconnection queue limits (running maximum over modeled years)"
+  CAP_ABOVE_LIM_INC(tg,r,t)                "--MW-- increase in CAP_ABOVE_LIM relative to the previous modeled year; penalized once in the objective"
   CAP_RSC(i,v,r,rscbin,t)                  "--MW-- total generation capacity in MWac (MWdc for PV) for wind-ons and upv"
   GROWTH_BIN(gbin,i,st,t)                  "--MW-- total new (from INV) generation capacity in each growth bin by state and technology group"
   INV(i,v,r,t)                             "--MW-- generation capacity additions in year t"
@@ -173,6 +174,7 @@ EQUATION
  eq_growthlimit_absolute(tg,t)            "--MW-- absolute growth limit on technologies"
 
 eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit based on interconnection queues"  
+eq_interconnection_queues_inc(tg,r,t)     "--MW-- capacity above the interconnection queue limit equals the previous modeled year's value plus the increase, which is penalized once"
 
 * storage capacity credit supply curves
  eq_cap_sdbin_balance(i,v,r,ccseason,t)             "--MW-- total binned storage power capacity must be greater than total storage capacity"
@@ -1367,7 +1369,8 @@ eq_dhyd_dispatch(i,v,r,szn,t)
 * Limit near-term capacity deployments by tech and region based on interconnection queues
 eq_interconnection_queues(tg,r,t)
     $[tmodel(t)$(yeart(t)>=model_builds_start_yr)
-    $(sum{(tgg,rr), queue_limit(tgg,rr,t)})
+    $(yeart(t)>=interconnection_start+1)
+    $(yeart(t)<interconnection_start+1+Sw_QueueConstraintYears)
     $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,t)}
     $Sw_QueueConstraintYears
     $(not Sw_PCM)]..
@@ -1382,8 +1385,39 @@ eq_interconnection_queues(tg,r,t)
 * start of the interconnection queue data
     sum{(i,newv,tt)$[valinv(i,newv,r,tt)$tg_i(tg,i)
                                     $(yeart(tt)>=interconnection_start)
+                                    $(yeart(tt)<=yeart(t))
                                     $(tmodel(tt) or tfix(tt))],
         INV(i,newv,r,tt) + INV_REFURB(i,newv,r,tt)$[refurbtech(i)$Sw_Refurb] }
+;
+
+* ---------------------------------------------------------------------------------------
+* One-time (incremental) interconnection queue penalty:
+* CAP_ABOVE_LIM is nondecreasing over the modeled years and only its increase
+* (CAP_ABOVE_LIM_INC) is penalized in the objective, so each MW of capacity deployed above
+* the queue limit is charged once rather than in every modeled year in which the excess
+* persists. The previous modeled year's CAP_ABOVE_LIM is only included if it was itself
+* constrained (and so is fixed in sequential solves or penalized in intertemporal solves);
+* otherwise it would be a free variable that could offset the increase.
+eq_interconnection_queues_inc(tg,r,t)
+    $[tmodel(t)$(yeart(t)>=model_builds_start_yr)
+    $(yeart(t)>=interconnection_start+1)
+    $(yeart(t)<interconnection_start+1+Sw_QueueConstraintYears)
+    $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,t)}
+    $Sw_QueueConstraintYears
+    $(not Sw_PCM)]..
+
+    CAP_ABOVE_LIM(tg,r,t)
+
+    =e=
+
+    CAP_ABOVE_LIM_INC(tg,r,t)
+
+    + sum{tt$[tprev(t,tt)$(tmodel(tt) or tfix(tt))
+             $(yeart(tt)>=model_builds_start_yr)
+             $(yeart(tt)>=interconnection_start+1)
+             $(yeart(tt)<interconnection_start+1+Sw_QueueConstraintYears)
+             $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,tt)}],
+          CAP_ABOVE_LIM(tg,r,tt) }
 ;
 
 *===============================
@@ -3211,22 +3245,29 @@ eq_battery_minduration(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$battery(i)]..
 * for batteries
 * energy capacity invested since the start of the interconnection queue data cannot
 * exceed the maximum duration times the power capacity invested over the same years;
-* only applied in the years with the interconnection queue constraint, since the
-* queue limit only caps power capacity and would otherwise be circumvented by
-* building more energy capacity on top of the limited power capacity
+* only applied if Sw_QueueBatteryDurationLimit = 1 and in the years with the
+* interconnection queue constraint (so Sw_QueueConstraintYears = 0 also turns it off),
+* since the queue limit only caps power capacity and would otherwise be circumvented by
+* building more energy capacity on top of the limited power capacity.
+* Only new investments (INV, INV_ENERGY) since interconnection_start are included,
+* so existing and historical battery capacity is not restricted.
 eq_battery_maxduration(i,v,r,t)
     $[valcap(i,v,r,t)$tmodel(t)$newv(v)$battery(i)
-    $(sum{(tgg,rr), queue_limit(tgg,rr,t)})
+    $(yeart(t)>=interconnection_start+1)
+    $(yeart(t)<interconnection_start+1+Sw_QueueConstraintYears)
     $Sw_QueueConstraintYears
+    $Sw_QueueBatteryDurationLimit
     $(not Sw_PCM)]..
 
     maxbatteryduration
-    * sum{tt$[valinv(i,v,r,tt)$(yeart(tt)>=interconnection_start)$(tmodel(tt) or tfix(tt))],
+    * sum{tt$[valinv(i,v,r,tt)$(yeart(tt)>=interconnection_start)
+              $(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))],
           INV(i,v,r,tt) }
 
     =g=
 
-    sum{tt$[valinv(i,v,r,tt)$(yeart(tt)>=interconnection_start)$(tmodel(tt) or tfix(tt))],
+    sum{tt$[valinv(i,v,r,tt)$(yeart(tt)>=interconnection_start)
+            $(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))],
         INV_ENERGY(i,v,r,tt) }
 ;
 
