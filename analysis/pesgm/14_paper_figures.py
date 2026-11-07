@@ -87,7 +87,7 @@ def ercot_map():
 # ---------------------------------------------------------------- 2 case_design
 def case_design():
     rows = [("Demand", ["EER baseline", "EER IRA-low", "EER 100% by 2050"]),
-            ("Natural gas supply", ["Low supply\n(high price)", "Reference", "High supply\n(low price)"]),
+            ("Natural gas price", ["High\n(AEO low supply)", "Reference", "Low\n(AEO high supply)"]),
             ("Wind & solar cost", ["ATB advanced", "ATB moderate", "ATB conservative"]),
             ("Wind & solar siting", ["Open", "Reference", "Limited"]),
             ("Battery cost", ["ATB advanced", "ATB moderate", "ATB conservative"]),
@@ -335,7 +335,7 @@ def dial_sensitivity():
     names = {"cost_total": "Total cost", "tran_total": "Transmission", "cap_wind-ons": "Wind cap.",
              "cap_upv": "UPV cap.", "cap_gas-cc": "Gas-CC cap.", "cap_battery_li": "Battery cap.",
              "cap_gas-ct": "Gas-CT cap.", "gen_gas-cc": "Gas-CC gen."}
-    dials = [("Dem", "Demand"), ("Fuel", "Gas supply"), ("REcost", "Wind & solar cost"),
+    dials = [("Dem", "Demand"), ("Fuel", "Gas price"), ("REcost", "Wind & solar cost"),
              ("Siting", "Siting"), ("Batt", "Battery cost"), ("Pol", "Policy")]
     f, ax = fig(3.5, 2.7)
     y = np.arange(len(outs))[::-1]

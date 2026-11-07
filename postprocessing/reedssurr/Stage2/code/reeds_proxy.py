@@ -52,6 +52,7 @@ from bokeh.models import (
     DataTable,
     Div,
     FactorRange,
+    HelpButton,
     HoverTool,
     LinearColorMapper,
     NumberFormatter,
@@ -62,6 +63,7 @@ from bokeh.models import (
     TableColumn,
     TabPanel,
     Tabs,
+    Tooltip,
 )
 from bokeh.palettes import Category10, Category20, RdYlGn11
 from bokeh.plotting import figure
@@ -515,6 +517,20 @@ def _get_artifact(name: str) -> dict | None:
 # Bokeh widgets
 # ---------------------------------------------------------------------------
 
+# User-facing dial names. The 0/1/2 encoding and the training data are unchanged:
+# x_Fuel = 0 / 1 / 2 are the AEO 2025 low / reference / high natural gas SUPPLY
+# cases (ngscen AEO_2025_LOG / reference / HOG), i.e. high / reference / low PRICE.
+DIAL_DISPLAY = {"Fuel": ("Natural gas price", {"Lo": "High", "Md": "Reference", "Hi": "Low"})}
+GAS_PRICE_NOTE = ("Natural gas price: High / Reference / Low are the AEO 2025 "
+                  "low / reference / high natural gas supply cases.")
+
+
+def _dial_text(dim: str, value) -> str:
+    """'dim=value' with the user-facing dial name and level label."""
+    name, labels = DIAL_DISPLAY.get(dim, (dim, {}))
+    return f"{name}={labels.get(value, value)}"
+
+
 design_selects: dict = {}
 for dim, levels in DIMENSION_ENCODING.items():
     # STAGE 2: continuous slider for every dial except Pol (binary policy
@@ -529,10 +545,11 @@ for dim, levels in DIMENSION_ENCODING.items():
         max_val = max(levels.values())
         # Level labels sorted by numeric encoding for the slider tooltip.
         sorted_labels = sorted(levels.items(), key=lambda kv: kv[1])
-        tick_hint = " → ".join(f"{v}={k}" for k, v in sorted_labels)
+        name, labels = DIAL_DISPLAY.get(dim, (dim, {}))
+        tick_hint = " → ".join(f"{v}={labels.get(k, k)}" for k, v in sorted_labels)
         default = float(levels.get("Md", levels.get("Ref", 1)))
         design_selects[dim] = Slider(
-            title=f"{dim}  ({tick_hint})",
+            title=f"{name}  ({tick_hint})",
             start=0.0, end=float(max_val), value=default, step=0.05,
             width=220,
         )
@@ -624,7 +641,7 @@ def _design_from_row(row: pd.Series) -> dict[str, str]:
 
 header = Div(text="""
 <h2 style='margin:0'>ReEDS-Proxy — <span style='color:#0b6efd'>Stage 2</span> Interactive Panel</h2>
-<p style='color:#555;margin:2px 0 8px 0'>Continuous dials for Dem / Fuel / REcost / Siting / Batt (Pol stays binary).
+<p style='color:#555;margin:2px 0 8px 0'>Continuous dials for Dem / Natural gas price / REcost / Siting / Batt (Pol stays binary).
 Predictions pass through the Stage 2 constraint stack (constant outputs held
 at their ReEDS value, non-negativity, regional-to-system additivity, cost
 decomposition; XGB also uses monotone hints). The top panel
@@ -1685,7 +1702,7 @@ def _format_metrics(
 ) -> str:
     lines = []
     lines.append(f"<b>Design point:</b> "
-                 + ", ".join(f"{d}={v}" for d, v in levels.items()))
+                 + ", ".join(_dial_text(d, v) for d, v in levels.items()))
     if artifact is not None:
         lines.append(
             f"<b>Model:</b> {artifact.get('display_name', '?')} "
@@ -3170,7 +3187,7 @@ def _design_label(row: pd.Series) -> str:
             continue
         try:
             inv = {v: k for k, v in levels.items()}
-            parts.append(f"{dim}={inv.get(int(row[col]), str(row[col]))}")
+            parts.append(_dial_text(dim, inv.get(int(row[col]), str(row[col]))))
         except Exception:
             parts.append(f"{dim}={row[col]}")
     return ", ".join(parts) if parts else "—"
@@ -4127,8 +4144,13 @@ stage_select.on_change("value", lambda _attr, _old, new: _set_active_stage(new))
 # Layout — tabs: "Predict" (interactive) + "Evaluation results" (diagnostics)
 # ---------------------------------------------------------------------------
 
+_dial_widgets = []
+for _d in DIMENSION_ENCODING:
+    _dial_widgets.append(design_selects[_d])
+    if _d == "Fuel":   # tooltip: what the gas price levels are
+        _dial_widgets.append(HelpButton(tooltip=Tooltip(content=GAS_PRICE_NOTE, position="bottom")))
 controls = column(
-    row(*[design_selects[d] for d in DIMENSION_ENCODING], spacing=8),
+    row(*_dial_widgets, spacing=8),
     row(stage_select, variable_select, model_select, spacing=12),
     status_div,
     metrics_div,

@@ -13,8 +13,8 @@ ERCOT region. The outline includes the parts of Texas outside ERCOT.
 
 **case_design.** *Single column.* Full-factorial case design: five three-level dials and a two-level
 policy switch, 3⁵ × 2 = 486 ReEDS runs for ERCOT through 2050. The column headers give each
-level's input encoding (0/1/2). The natural gas dial is labelled by AEO 2025 *supply* case, so its
-"Lo" level is the high-price case. *Replaces `fig1_case_design.png` in the OneDrive folder.*
+level's input encoding (0/1/2). The natural gas price levels High / Reference / Low are the AEO 2025
+low / reference / high *supply* cases, so encoding 0 is the high-price case. *Replaces `fig1_case_design.png` in the OneDrive folder.*
 
 **buckets_rf.** *Single column.* Distribution of RF per-output OOF R². System layer (66 outputs):
 29 (44%) ≥ 0.9, 25 (38%) 0.5–0.9, 10 (15%) 0–0.5, and 2 (3%) < 0. Regional layer (308 outputs): 76
@@ -68,7 +68,7 @@ All counts are for RF unless the bar names another model.
 
 **dial_sensitivity.** *Single column.* Share of the variance of eight headline ReEDS outputs
 explained by each dial's main effect (exact ANOVA on the balanced full factorial, no model). The
-grey segment is all interactions. Natural gas supply dominates: it explains 60% of total cost, 71%
+grey segment is all interactions. Natural gas price (AEO 2025 supply cases) dominates: it explains 60% of total cost, 71%
 of transmission, 73% of wind capacity and 72% of gas-CC generation. Battery cost drives battery
 capacity (59%). Interactions account for 6–28%.
 

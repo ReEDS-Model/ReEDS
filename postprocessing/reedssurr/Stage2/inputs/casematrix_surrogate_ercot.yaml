@@ -22,6 +22,9 @@ dimensions:
     DemHi:
       GSw_LoadProfiles: EER2025_100by2050
 
+  ### Shown to users as "Natural gas price". The levels are SUPPLY cases, so they run
+  ### opposite to price: FuelLo = AEO 2025 low supply = HIGH price, FuelMd = reference,
+  ### FuelHi = AEO 2025 high supply = LOW price (x_Fuel = 0 / 1 / 2).
   fuelprice:
     FuelLo:
       ngscen: AEO_2025_LOG

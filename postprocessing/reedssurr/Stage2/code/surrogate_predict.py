@@ -32,6 +32,9 @@ import pandas as pd
 # Must match DIMENSION_ENCODING in surrogate_stage1_system.py / stage2.
 DIMENSION_ENCODING = {
     "Dem":    {"Lo": 0, "Md": 1, "Hi": 2},
+    # Fuel = natural gas price dial. Lo / Md / Hi are the AEO 2025 low / reference /
+    # high gas SUPPLY cases, i.e. HIGH / reference / LOW price (dashboard label:
+    # "Natural gas price" High / Reference / Low). Encoding unchanged.
     "Fuel":   {"Lo": 0, "Md": 1, "Hi": 2},
     "REcost": {"Lo": 0, "Md": 1, "Hi": 2},
     "Siting": {"Open": 0, "Ref": 1, "Lim": 2},

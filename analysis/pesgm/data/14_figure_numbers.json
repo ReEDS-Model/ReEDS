@@ -119,7 +119,7 @@
    "cap_gas-ct": 1.7,
    "gen_gas-cc": 4.5
   },
-  "Gas supply": {
+  "Gas price": {
    "cost_total": 59.5,
    "tran_total": 70.6,
    "cap_wind-ons": 72.9,
