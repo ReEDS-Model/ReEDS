@@ -3971,6 +3971,9 @@ reserve_frac(i,ortype) = min(1,ramprate(i) * ramptime(ortype)) ;
 
 reserve_frac(i,ortype)$upgrade(i) = sum{ii$upgrade_to(i,ii), reserve_frac(ii,ortype) } ;
 
+* Do not allow DR shift resources to provide operating reserves
+reserve_frac(i,ortype)$dr_shift(i) = 0 ;
+
 * input data for opres reserve costs by generator type (in $2004)
 * current options are bottom up costs by generator type ("default") or estimates based on historical reserve prices ("market")
 * market data based on national reserve prices in https://www.nlr.gov/docs/fy19osti/72578.pdf (converted from $2017)
