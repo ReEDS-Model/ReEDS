@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--batch_name', '-b', type=str, default='', help='Prefix for batch of runs')
 args = parser.parse_args()
 # check if on hpc
-hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
+hpc = reeds.slurm.check_slurm()
 
 # get list of cases with matching batch name
 case_list = glob(os.path.join('runs', '*'))
@@ -57,7 +57,7 @@ for case in case_list:
 
                 # load environments 
                 SPATH.writelines("\nmodule purge\n")
-                SPATH.writelines("module load conda\n")
+                SPATH.writelines("module load anaconda3\n")
                 SPATH.writelines("conda activate reeds\n")
                 SPATH.writelines("module load gams\n\n\n")
 

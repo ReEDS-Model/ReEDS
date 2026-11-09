@@ -20,7 +20,6 @@ reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if 'runs' in reeds_path.split(os.path.sep):
     reeds_path = reeds_path[: reeds_path.index(os.sep + 'runs' + os.sep)]
 
-hpc = True if ('NREL_CLUSTER' in os.environ) else False
 
 #   ########  ########    ###    ########
 #   ##     ## ##         ## ##   ##     ##
@@ -755,7 +754,7 @@ def get_switches(case=None, **kwargs):
     threads = get_param_value(fpath_opt, "threads", dtype=int)
     sw['threads'] = threads
     ## Determine whether run is on HPC
-    sw['hpc'] = True if int(os.environ.get('REEDS_USE_SLURM', 0)) else False
+    sw['hpc'] = reeds.slurm.check_slurm()
     ## Add the run location
     sw['casedir'] = case
     sw['reeds_path'] = reeds_path if case is None else os.path.dirname(os.path.dirname(case))
@@ -1099,7 +1098,47 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     return temperatures
 
 
-def get_site_cf_hourly(tech, year, case=None, **kwargs):
+def get_siting_switchval(
+    tech:None|Literal['upv','wind-ons','wind-ofs']=None,
+    switchname:None|Literal['GSw_SitingUPV','GSw_SitingWindOns','GSw_SitingWindOfs']=None,
+    case=None,
+    **kwargs
+) -> str:
+    """
+    Get the siting scenario to use for the specified tech.
+    If not using Monte Carlo sampling, simply reads from the case switches.
+    If using Monte Carlo sampling, returns the most permissive scenario used in the distribution
+    of siting scenarios for the specified technology (e.g., if the distribution includes
+    'open' and 'limited', it returns 'open').
+    """
+    sw = reeds.io.get_switches(case, **kwargs)
+    if switchname is None:
+        switchname = {
+            'upv': 'GSw_SitingUPV',
+            'wind-ons': 'GSw_SitingWindOns',
+            'wind-ofs': 'GSw_SitingWindOfs',
+        }[tech]
+    options_openest_first = ['open', 'reference', 'limited']
+    if not int(sw['MCS_runs']):
+        return sw[switchname]
+    else:
+        mc_inputs = reeds.input_processing.mcs_sampler.load_mcs_dist(case)
+        keep = mc_inputs.assignments_list.map(lambda x: any([switchname in entry for entry in x]))
+        ## Siting should only be specified in one entry
+        assert keep.sum() <= 1
+        if keep.sum() == 0:
+            return sw[switchname]
+        dist = mc_inputs.loc[keep].squeeze(0)
+        siting_scenarios = {
+            key: val for entry in dist.assignments_list for key, val in entry.items()
+        }[switchname]
+        ## Keep the openest scenario (which is first in the list)
+        for scen in options_openest_first:
+            if scen in siting_scenarios:
+                return scen
+
+
+def get_site_cf_hourly(tech:Literal['upv','wind-ons','wind-ofs'], year, case=None, **kwargs):
     """
     Get hourly site-level capacity factor profiles for the given tech and year
     in UTC. Note that "distpv" is not a valid input to the "tech" parameter for
@@ -1115,30 +1154,12 @@ def get_site_cf_hourly(tech, year, case=None, **kwargs):
     precedence. If {case} is None and a keyword argument is not provided
     for a switch, the default switch values specified in cases.csv are used.
     """
-    sw = reeds.io.get_switches(case, **kwargs)
-    match tech:
-        case 'upv':
-            fname = f'cf_upv_{sw.GSw_SitingUPV}'
-        case 'wind-ons':
-            fname = f'cf_wind-ons_{sw.GSw_SitingWindOns}'
-        case 'wind-ofs':
-            fname = f'cf_wind-ofs_{sw.GSw_SitingWindOfs}'
-        case None:
-            raise ValueError(
-                "A technology must be provided if no case is "
-                "provided or if inputs_case/recf.h5 does not exist."
-            )
-        case _:
-            raise NotImplementedError(
-                f"The provided tech '{tech}' does not have CF profiles."
-            )
+    access = get_siting_switchval(tech=tech, case=case, **kwargs)
+    fname = f'cf_{tech}_{access}.h5'
+    h5path = Path(reeds_path, 'inputs', 'profiles_cf', fname)
+    if not h5path.is_file():
+        raise FileNotFoundError(h5path)
 
-    h5path = os.path.join(
-        reeds_path,
-        'inputs',
-        'profiles_cf',
-        f'{fname}.h5'
-    )
     with h5py.File(h5path, 'r') as f:
         time_index = pd.to_datetime(
             pd.Series(f[f'time_index_{year}'][:])
@@ -1506,6 +1527,30 @@ def floatify(df:pd.DataFrame, col_label:str='cost') -> pd.DataFrame:
     return dfout
 
 
+def get_supplycurve(scpath, case=None, crs='EPSG:5070', zonecol='region'):
+    """Load a supply curve file and map sc_point_gid's to model zones"""
+    fname = Path(scpath).stem
+    ## Get supply curve, reV sites, and zone map
+    sitemap = get_sitemap(standardize_case(case), offshore=('wind-ofs' in fname), crs=crs)
+    dfsc = pd.read_csv(scpath)
+    county2zone = get_county2zone(standardize_case(case))
+    sw = get_switches(case)
+    ## Map PSH lower reservoirs to nearest sc_point_gid
+    if 'psh' in fname:
+        dfsc = reeds.plots.df2gdf(
+            dfsc, crs=crs, lat='low_reservoir_latitude', lon='low_reservoir_longitude',
+        )
+        dfsc = dfsc.sjoin_nearest(sitemap[['geometry']], how='left').drop(columns=['geometry'])
+    ## Offshore zones are not user-adjustable and always use th same sc_point_gid's
+    if ('wind-ofs' in fname) and int(sw.GSw_OffshoreZones):
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.ba)
+    else:
+        ## Assign sc_point_gid's to counties and counties to zones
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
+    ## Drop regions outside this run's study area
+    return dfsc.dropna(subset=zonecol)
+
+
 def assemble_supplycurve(
     scfile=None,
     case=None,
@@ -1537,11 +1582,8 @@ def assemble_supplycurve(
     if scfile is None:
         offshore = False
     else:
-        offshore = (
-            True if ('wind-ofs' in os.path.basename(scfile)) or (scfile == 'offshore')
-            else False
-        )
-    ### Get interconnection cost
+        offshore = bool('wind-ofs' in os.path.basename(scfile) or scfile == 'offshore')
+        psh = bool('psh' in os.path.basename(scfile))
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
@@ -1551,21 +1593,27 @@ def assemble_supplycurve(
         return interconnection_cost
 
     ### Get supply curve
-    dfin = floatify(pd.read_csv(scfile, index_col='sc_point_gid'))
+    dfin = floatify(pd.read_csv(scfile))
+    if 'sc_point_gid' in dfin.columns:
+        dfin = dfin.set_index('sc_point_gid')
     ## If derived columns are already in file, it's already been assembled, so stop here
     if 'supply_curve_cost_per_mw' in dfin:
         ## Rebuild it if not aggregating
         if skip_if_complete:
             return dfin
         else:
-            dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
+            if psh:
+                dfin = dfin[['capacity', 'capital_adder_per_mw']].copy()
+            else:
+                dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
-    county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
     ### Combine
     dfout = dfin.copy()
     dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
-    dfout['region'] = dfout.FIPS.map(county2zone)
+    if 'region' not in dfout:
+        county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
+        dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:
         keep = '|meshed' if int(sw.GSw_OffshoreZones) else '|radial'

@@ -61,7 +61,7 @@ cost_cap_fin_mult:
   - valinv
 cap_penalty:
   indexsets:
-  - cap_limit
+  - queue_limit
 cost_upgrade:
   indexsets:
   - valcap

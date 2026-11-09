@@ -654,10 +654,11 @@ gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
 cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$(not cf_tech(i))] = CAP.l(i,v,r,t) / ilr(i) ;
 cap_deg_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)] = CAP_CLASS.l(i,c,v,r,t) / ilr(i) ;
 
-cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i)))$valcap_class(i,c,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
-*upv, and wind have degradation, so use INV rather than CAP to get the reported capacity
-cap_ivrt(i,c,v,r,t)$[(upv(i) or wind(i))$valcap_class(i,c,v,r,t)] = (
-  sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$tmodel_new(t)
+cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i) or distpv(i)))$valcap_class(i,c,v,r,t)] = cap_deg_ivrt(i,c,v,r,t) ;
+*upv, wind, and distpv have degradation, so use INV rather than CAP to get the reported capacity
+*distpv exogenous capacity is not tracked by rscbin
+cap_ivrt(i,c,v,r,t)$[(upv(i) or wind(i) or distpv(i))$valcap_class(i,c,v,r,t)] = (
+  (sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$(not distpv(i)) + m_capacity_exog(i,c,v,r,t)$distpv(i))$tmodel_new(t)
   + sum{tt$[inv_cond(i,v,r,t,tt)$[tmodel(tt) or tfix(tt)]],
         sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
         + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]}) / ilr(i) ;

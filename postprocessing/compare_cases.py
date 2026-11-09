@@ -130,7 +130,7 @@ interactive = False
 
 
 #%%### Fixed inputs
-cmap = cmocean.cm.rain
+cmap = cmocean.cm.tempo
 cmap_diff = plt.cm.RdBu_r
 ## https://www.whitehouse.gov/wp-content/uploads/2023/11/CircularA-4.pdf
 discountrate_social = DEFAULT_DISCOUNT_RATE
@@ -2597,7 +2597,7 @@ try:
                 year=lastyear, casebase=casebase, casecomp=casecomp,
                 level=level,
                 plot='base', f=f, ax=ax[0],
-                cmap=cmocean.cm.rain,
+                cmap=cmap,
             )
             ax[0].annotate(
                 casebase_name,
@@ -2608,7 +2608,7 @@ try:
                 year=lastyear, casebase=casebase, casecomp=casecomp,
                 level=level,
                 plot='comp', f=f, ax=ax[1],
-                cmap=cmocean.cm.rain,
+                cmap=cmap,
             )
             ax[1].annotate(
                 casecomp_name,
@@ -2684,6 +2684,7 @@ try:
                     ax=ax[coords[case]], column='GW', cmap=cmap, vmin=vmin, vmax=vmax,
                     legend=False,
                 )
+                reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", text_kwargs={'fontsize': 5})
                 ## Legend
                 if coords[case] == legendcoords:
                     plots.addcolorbarhist(
@@ -2755,6 +2756,7 @@ try:
                     vmax=(absmax if case == basecase else diffmax),
                     legend=False,
                 )
+                reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", text_kwargs={'fontsize': 5})
                 ## Difference legend
                 if coords[case] == legendcoords:
                     plots.addcolorbarhist(

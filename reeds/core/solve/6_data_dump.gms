@@ -118,11 +118,12 @@ cap_exist_ir(i,r)$valcap_ir_filt(i,r) = sum{v, cap_exist(i,v,r) } ;
 cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
-cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i)))$valcap_class(i,c,v,r,t)$(not cf_tech(i))$trange(t)] = CAP.l(i,v,r,t) ;
-cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(not (upv(i) or wind(i)))$trange(t)] = CAP_CLASS.l(i,c,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[(not (upv(i) or wind(i) or distpv(i)))$valcap_class(i,c,v,r,t)$(not cf_tech(i))$trange(t)] = CAP.l(i,v,r,t) ;
+cap_ivrt(i,c,v,r,t)$[valcap_class(i,c,v,r,t)$cf_tech(i)$(not (upv(i) or wind(i) or distpv(i)))$trange(t)] = CAP_CLASS.l(i,c,v,r,t) ;
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
-cap_ivrt(i,c,v,r,t)$[(upv(i) or wind(i))$valcap_class(i,c,v,r,t)] =
-    sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$trange(t)
+* distpv exogenous capacity is not tracked by rscbin
+cap_ivrt(i,c,v,r,t)$[(upv(i) or wind(i) or distpv(i))$valcap_class(i,c,v,r,t)] =
+    (sum{rscbin, capacity_exog_rsc(i,c,v,r,rscbin,t) }$(not distpv(i)) + m_capacity_exog(i,c,v,r,t)$distpv(i))$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
           sum{rscbin$m_rscfeas(r,i,c,rscbin), INV_RSC.l(i,c,v,r,rscbin,tt) }
           + INV_REFURB.l(i,c,v,r,tt)$[refurbtech(i)$Sw_Refurb]} ;
