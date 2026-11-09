@@ -365,7 +365,11 @@ def match_act2rep_milp(profiles_period_mean, iweights):
     ### Each representative day must be used a number of times equal to its weight
     for r in repdays:
         m += pulp.lpSum([WEIGHT[a,r] for a in actualdays]) == iweights[r]
-    ### Define the error variables
+    ### Define the error variables.
+    ### profiles_period_mean[c] rebuilds a Series on every lookup, which slows
+    ### model construction, so take plain dicts of the values up front and use
+    ### those instead.
+    values = {c: profiles_period_mean[c].to_dict() for c in profiles_period_mean.columns}
     for a in actualdays:
         for c in profiles_period_mean.columns:
             m += (
@@ -373,9 +377,9 @@ def match_act2rep_milp(profiles_period_mean, iweights):
                 ### component minus negative component)...
                 ERROR_POS[a,c] - ERROR_NEG[a,c]
                 ### ...plus value for its representative day (since WEIGHT is binary)...
-                + pulp.lpSum([WEIGHT[a,r] * profiles_period_mean[c][r] for r in repdays])
+                + pulp.lpSum([WEIGHT[a,r] * values[c][r] for r in repdays])
                 ### ...equals the actual value for that column and day
-                == profiles_period_mean[c][a])
+                == values[c][a])
     ###### Objective: minimize the sum of absolute values of errors
     m += pulp.lpSum([
         ERROR_POS[a,c] + ERROR_NEG[a,c]
