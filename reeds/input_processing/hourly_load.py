@@ -593,7 +593,7 @@ def reaggregate_to_model_regions(
     # Demand response shape and shift data are fractions which should be distributed uniformly across all regions within a state
     if dr_data and dr_agg_type == 'fraction':
         # Determine the number of regions within each state
-        unique_state = disagg_data['state'].unique()
+        unique_state = list(state_load_hourly.columns)
         state_map = {}
         for st in unique_state:
             regs_in_state = disagg_data.loc[disagg_data['state'] == st]['r'].unique().tolist()
