@@ -5391,7 +5391,7 @@ def get_tech_colors_order(order='fuel_storage_vre'):
     ### For this particular plot we put storage below VRE
     if order == 'fuel_storage_vre':
         vre_keywords = ['wind', 'pv', 'solar', 'csp']
-        storage_keywords = ['battery', 'pump', 'storage','dr']
+        storage_keywords = ['battery', 'pump', 'storage','dr_shift']
         vre_stor_can = vre_keywords + storage_keywords + ['canada']
         plotorder = [
                 k for k in bokehcolors.keys()

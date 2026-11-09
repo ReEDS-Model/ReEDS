@@ -410,7 +410,7 @@ def main(t, casedir, iteration=0):
     
     ## Modify load for DR shift impacts
     if int(sw.GSw_DRShift):
-        print(f'Subtracted shift load from PRAS load since GSw_DRShape = {sw.GSw_DRShape}')
+        print(f'Subtracted shift load from PRAS load since GSw_DRShift = {sw.GSw_DRShift}')
         pras_load = pras_load.add(load_dr_shift_all_hourly, fill_value=0).clip(lower=0)
 
 

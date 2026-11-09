@@ -965,46 +965,27 @@ def main(
             
             return dr_dat,dr_capacity_scalar_reg
 
-        # State-level DR data - process state-level shape and shift data
-        # Use capacity and cost to add DR to rsc_combined
+        # State-level DR data - use capacity and cost to add DR to rsc_combined
         disagg_data = pd.read_csv(os.path.join(inputs_case, 'disagg_state_lpf.csv'))
         state2r = disagg_data.groupby('state')['r'].unique().apply(list).to_dict()
-        
-        dr_shed_dat, dr_shed_capacity_scalar_reg = process_dr_state_level('dr_shed', disagg_data, state2r)
-        dr_shape_dat, dr_shape_capacity_scalar_reg = process_dr_state_level('dr_shape', disagg_data, state2r)
-        dr_shift_dat, dr_shift_capacity_scalar_reg = process_dr_state_level('dr_shift', disagg_data, state2r)
 
-        # Add DR data to rsc_combined if turned on, otherwise populate empty files 
-        if int(sw.GSw_DRShed) == 1:
-            allout_list.append(dr_shed_dat)
-            dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shed_capacity_scalar.csv'), index=False)
-
+    # Only process DR types whose switch is turned on;
+    # write empty capacity scalar files for DR types that are turned off
+    dr_switches = {
+        'dr_shed': int(sw.GSw_DRShed),
+        'dr_shape': int(sw.GSw_DRShape),
+        'dr_shift': int(sw.GSw_DRShift),
+    }
+    for dr_type, dr_on in dr_switches.items():
+        fpath_scalar = os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv')
+        if dr_on == 1:
+            dr_dat, dr_capacity_scalar_reg = process_dr_state_level(dr_type, disagg_data, state2r)
+            allout_list.append(dr_dat)
         else:
-            dr_shed_capacity_scalar_reg = pd.DataFrame(columns=dr_shed_capacity_scalar_reg.columns)
-            dr_shed_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shed_capacity_scalar.csv'), index=False)
-
-        if int(sw.GSw_DRShape) == 1:
-            allout_list.append(dr_shape_dat)
-            dr_shape_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shape_capacity_scalar.csv'), index=False)
-
-        else:
-            dr_shape_capacity_scalar_reg = pd.DataFrame(columns=dr_shape_capacity_scalar_reg.columns)
-            dr_shape_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shape_capacity_scalar.csv'), index=False)
-
-        if int(sw.GSw_DRShift) == 1:  
-            allout_list.append(dr_shift_dat)
-            dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
-
-        else:
-            dr_shift_capacity_scalar_reg = pd.DataFrame(columns=dr_shift_capacity_scalar_reg.columns)
-            dr_shift_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'dr_shift_capacity_scalar.csv'), index=False)
-    
-    # write out empty files if DR is turned off
-    else:
-        for dr_type in ['dr_shed','dr_shape','dr_shift']:
-            dr_capacity_scalar_reg = pd.read_csv(os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv'), header=0)
-            dr_capacity_scalar_reg = pd.DataFrame(columns=dr_capacity_scalar_reg.columns)
-            dr_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv'), index=False)
+            dr_capacity_scalar_reg = pd.DataFrame(
+                columns=pd.read_csv(fpath_scalar, nrows=0).columns)
+        if write:
+            dr_capacity_scalar_reg.to_csv(fpath_scalar, index=False)
 
 
     # %%----------------------------------------------------------------------------------
