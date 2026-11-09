@@ -865,10 +865,10 @@ tg_rsc_cspagg(i,ii)$[tg_rsc_cspagg_tmp(i,ii)$Sw_WaterMain] = yes ;
 tg_rsc_cspagg(i,ii)$[csp(ii)$i_numeraire(ii)$Sw_WaterMain] = no ;
 
 $ontext
-Replicating the construct for CSP to link Hybrid PV+battery and UPV for the resoruce supply curve constraints
-  eq_rsc_invlim(i,bin).. sum{ii$rsc_agg(i,ii), INV_RSC(i,bin) } <= bin_capacity(i,bin) ;
-  When i = "upv", this constraint looks like:
-  eq_rsc_invlim("upv",c,bin).. INV_RSC("pvb1",c) + INV_RSC("upv",c) <= bin_capacity("upv",c,bin)
+Replicating the construct for CSP to link Hybrid PV+battery and UPV for the resource supply curve constraints
+  eq_rsc_invlim(i,c,bin).. sum{ii$rsc_agg(i,ii), INV_RSC(ii,c,bin) } <= bin_capacity(i,c,bin) ;
+  When i = "upv", and for each resource class 'c', this constraint looks like:
+  eq_rsc_invlim("upv",c,bin).. INV_RSC("pvb1",c,bin) + INV_RSC("upv",c,bin) <= bin_capacity("upv",c,bin)
   Because the first index of rsc_agg is only a UPV technology the above constraint will never be generated when "i" is a pvb(i).
 $offtext
 
@@ -3360,7 +3360,7 @@ ilr(i)$[valcap_i(i)] = 1 ;
 ilr(i)$[upv(i)] = ilr_utility ;
 ilr(i)$distpv(i) = ilr_dist ;
 * Assign an ILR to each hybrid PV+battery technology
-ilr(pvb) = ilr_pvb(pvb) ;
+ilr(i)$pvb(i) = ilr_pvb(i) ;
 
 parameter bir_pvb(i) "--unitless-- ratio of the battery capacity to the inverter capacity (MW_battery / MW_inverter) for hybrid pv+battery technologies"
 /
@@ -3373,7 +3373,7 @@ $onlisting
 
 * Assign a battery capacity ratio to each hybrid PV+battery technology
 parameter bcr(i) "--unitless-- ratio of the battery capacity to the PV DC capacity (battery capacity ratio)" ;
-bcr(pvb) = bir_pvb(pvb) / ilr_pvb(pvb) ;
+bcr(i)$pvb(i) = bir_pvb(i) / ilr_pvb(i) ;
 bcr(i)$[storage_standalone(i) or csp_storage(i) or hyd_add_pump(i)] = 1 ;
 
 *=========================================
