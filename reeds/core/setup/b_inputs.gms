@@ -3451,7 +3451,7 @@ $offempty
 
 *Written in copy_files.py
 $onempty
-table fom_dr_shed(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table fom_dr_shed(i,r,allt) "--$/MW-yr-- dr_shed fom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shed_fom.csv
