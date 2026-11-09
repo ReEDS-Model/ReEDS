@@ -289,18 +289,26 @@ def remove_finito_load(
             'ReEDS load data; check load_finito.csv'
         )
 
-    # Validation check: FINITO reference load should not exceed baseline load.
-    # If it does, clip to zero and report
+    # FINITO reference load should not exceed baseline load in ReEDS;
+    # if does, flag any instances of mismatches and stop the run.
     negative = result < 0
     if negative.any().any():
-        clipped = (-result[negative]).groupby('year').sum()
-        clipped = clipped.stack().loc[lambda x: x > 0].rename('clipped_MWh')
-        print(
-            'WARNING: FINITO reference load exceeds baseline load; clipping '
-            f'{clipped.sum():.0f} MWh (summed over weather years) to zero.\n'
-            'Clipped MWh by (year, region):\n'
-            + clipped.to_string()
+        negative_values = (
+            result.where(negative)
+            .rename_axis(columns='region')
+            .reset_index()
+            .melt(
+                id_vars=['year', 'datetime'],
+                var_name='region',
+                value_name='value',
+            )
+            .dropna(subset=['value'])
         )
-        result = result.clip(lower=0)
-
+        negative_values_path = Path(inputs_case) / 'finito_negative_load.csv'
+        negative_values.to_csv(negative_values_path, index=False)
+        raise ValueError(
+            'FINITO reference load exceeds baseline load. '
+            f'Negative entries were written to {negative_values_path}.'
+        )
+    
     return result
