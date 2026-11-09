@@ -75,7 +75,7 @@ def setup_linked_FINITO_cases(df_cases, case):
     # check for valid FINITO directory
     finito_model = Path(df_cases[case]['FINITO_dir']) / 'model' / 'finito_model.gms'
     if not (os.path.isdir(df_cases[case]['FINITO_dir']) and finito_model.exists()):
-        raise ValueError(
+        raise FileNotFoundError(
             f"FINITO_dir = {df_cases[case]['FINITO_dir']} is not a valid path. "
             "Please ensure this path points to a cloned version of the FINITO repository. "
         )    
@@ -142,7 +142,24 @@ def setup_linked_FINITO_cases(df_cases, case):
     return df_cases_combine
 
 
+def run_finito_subprocess(command, error_message=None):
+    """
+    Run FINITO python script as a subprocess, printing captured output
+    and raising an error if the script failed.
+    """
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    if result.stdout:
+        print(result.stdout, end='')
+    if result.stderr:
+        print(result.stderr, end='', file=sys.stderr)
+    if result.returncode != 0:
+        if error_message:
+            raise RuntimeError(error_message)
+        raise subprocess.CalledProcessError(result.returncode, command)
+
+
 def setup_finito(casedir, caseSwitches, BatchName):
+    """Copy FINITO files into a case directory and prepare linked-run inputs."""
     #%% Copy FINITO code folders and inputs into [casedir]/finito
     finito_dir = Path(caseSwitches['FINITO_dir'])
     # ... finito directory within the case directory
@@ -166,57 +183,50 @@ def setup_finito(casedir, caseSwitches, BatchName):
         initialize_price_response_path = (
             casedir_finito / 'input_processing' / 'processing' / 'initialize_price_response.py'
         )
-        subprocess.run(
+        run_finito_subprocess(
             [
                 'python', str(initialize_price_response_path),
                 '-c', str(casedir),
                 '-b', str(BatchName),
                 '-cr', str(caseSwitches['GSw_Trade_PriceResponse_RefScen']),
                 '-l', str(caseSwitches['GSw_FINITO_Link']),
-            ],
-            check=True,
+            ]
         )
 
     #%% Filter and copy all input files for each scenario
     # Call FINITO copy_files.py file before starting the runs
-    copy_files_run = subprocess.run(
+    run_finito_subprocess(
         [
             'python', str(finito_dir / 'input_processing' / 'processing' / 'copy_files.py'),
             '-c', str(casedir_finito),
             '-d', str(inputs_case_finito),
             '--link',
         ],
-        check=False,
-    )
-
-    # Raise an error if copy_files.py encounters any issue
-    if copy_files_run.returncode != 0:
-        raise RuntimeError(
+        error_message=(
             "FINITO copy_files.py encountered an issue and did not complete successfully. "
             "Please check the console output above for details. "
             "The issue could be due to regionality, focus sector filtering, or file reading errors."
-        )
+        ),
+    )
 
     ## Populate sets for each linked run using autopop_set.py
-    subprocess.run(
+    run_finito_subprocess(
         [
             'python', str(finito_dir / 'input_processing' / 'processing' / 'autopop_set.py'),
             '-c', str(casedir_finito),
             '-d', str(inputs_case_finito),
             '--link',
-        ],
-        check=True,
+        ]
     )
 
     ## Call read_mecs_heat.py to generate heat/nonheat/feedstock ratios for FINITO Rest of Industry (ROI)
-    subprocess.run(
+    run_finito_subprocess(
         [
             'python', str(finito_dir / 'input_processing' / 'processing' / 'mecs' / 'read_mecs_heat.py'), 
             '-c', str(casedir_finito),
             '-d', str(inputs_case_finito), 
             '--link'
-        ],
-        check=True,
+        ]
     )
 
 
@@ -271,6 +281,7 @@ def remove_finito_load(
     inputs_case: str,
     distloss: float,
 ) -> pd.DataFrame:
+    """Subtract the FINITO reference load from hourly ReEDS load data."""
 
     # get FINITO reference load
     load_hourly_finito = get_hourly_finito_load(inputs_case)
