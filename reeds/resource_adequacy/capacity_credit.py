@@ -275,7 +275,7 @@ def reeds_cc(t, tnext, casedir):
                     ccseason, axis=0, level='ccseason').reset_index()
                 hours_considered = int(sw['GSw_PRM_CapCreditHours'])
 
-                  # log.debug(ccseason, int(len(load_profile_ccseason) / 7))
+            # log.debug(ccseason, int(len(load_profile_ccseason) / 7))
             ###### Calculate the capacity credit for each resource
             cc_vg_results = cc_vg(
                 vg_power=vregen_ccseason[ccseason][resourcelist].values,
