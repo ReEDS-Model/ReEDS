@@ -25,7 +25,7 @@ Please contact GAMS for more information.
 
 ### Is there a trial version of the GAMS license so that I can test ReEDS?
 
-We have created a reduced size version of the ReEDS model that has less than 5,000 rows and columns, and therefore should be compatible with the GAMS community license ([https://www.gams.com/try_gams/](https://www.gams.com/try_gams/) -- Please contact GAMS if you need additional information regarding the community license). You can run this reduced model version by using the cases_small.csv input file. This reduced model uses a smaller technology subset, smaller geographic extent, and simplifies several model constraints.
+We have created a reduced size version of the ReEDS model that has less than 5,000 rows and columns, and therefore should be compatible with the GAMS community license ([https://www.gams.com/sales/licensing/](https://www.gams.com/sales/licensing/) -- Please contact GAMS if you need additional information regarding the community license). You can run this reduced model version using the ND_small case in cases_test.csv (`python runreeds.py -c test -s ND_small`). This reduced model uses a smaller technology subset, smaller geographic extent, and simplifies several model constraints.
 
 ### What if the GAMS community license isn't enough to run my ReEDS case?
 
@@ -65,7 +65,7 @@ This aspect of the model is controlled by the `GSw_Region` and `GSw_ZoneSet` swi
 - Zone sets based on the traditional 134 ReEDS zones:
   - 134 zones: `GSw_ZoneSet = z134`
   - 132 zones: `GSw_ZoneSet = z132`. Identical to z134 except merges p119 into p122 and p30 into p28.
-  - 69 zones: `GSw_ZoneSet = z69`. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
+  - 70 zones: `GSw_ZoneSet = z70`. Obeys z134 state, interconnect, NERC, and FERC region boundaries; most other zones below these levels are aggregated together.
   - 54 zones: `GSw_ZoneSet = z54`. Obeys state boundaries but nudges the edges of interconnect, NERC, and FERC region boundaries from z134 to align with states. Keeps CA, IL, and NY split into 2 zones and TX split into 4 zones.
   - Counties for Utah, 134 zones for the rest: `GSw_ZoneSet = UTcounty`
   - Counties for PJM and a few adjacent states, 134 zones for the rest: `GSw_ZoneSet = PJMcounty`

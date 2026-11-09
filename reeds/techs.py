@@ -11,30 +11,58 @@ ignore_techs = []
 
 
 ### Functions
-def expand_GAMS_tech_groups(df):
+def expand_star(techs):
+    '''
+    Expand the GAMS range convention (e.g. upv_1*upv_10 becomes upv_1, upv_2,..., upv_10)
+    in a list of technology names. We assume the numbers we would like to enumerate occur
+    at the end. Entries without a '*' are passed through unchanged.
+    '''
+    expanded = []
+    for tech in techs:
+        if '*' not in tech:
+            expanded.append(tech)
+            continue
+        start, end = tech.split('*')
+        num_start = int(re.search(r'(\d+)\s*$', start).group(1))
+        num_end = int(re.search(r'(\d+)$', end).group(1))
+        root = re.sub(r'\d+\s*$', '', start)
+        expanded += [f'{root}{num}' for num in range(num_start, num_end + 1)]
+
+    return expanded
+
+
+def split_class(i):
+    '''
+    Split a resource-class-bearing tech name into (base, class), e.g.,
+    'upv_5' -> ('upv', 5), 'csp2_5' -> ('csp2', 5).
+    Techs with no numeric class suffix (e.g. 'distpv') return (i, None).
+    '''
+    match = re.search(r'^(.+)_(\d+)$', i)
+    if match is None:
+        return i, None
+    return match.group(1), int(match.group(2))
+
+
+def expand_GAMS_tech_groups(df, col='i'):
     '''
     GAMS has a convention for expanding rows (e.g. upv_1*upv_10 is expanded to upv_1, upv_2,..., upv_10)
     This function expands a df with the same convention, for the instances where a file is ingested
     by both python and GAMS. We assume the numbers we would like to enumerate occur at the end.
     '''
-    tech_groups = [group for group in df['i'] if '*' in group]
+    tech_groups = [group for group in df[col] if '*' in group]
 
     for tech_group in tech_groups:
-        tech_group_ls = tech_group.split('*')
-        num_start = int(re.search(r'(\d+)\s*$', tech_group_ls[0]).group(1))
-        num_end = int(re.search(r'(\d+)$', tech_group_ls[1]).group(1))
-        tech_group_root = re.sub(r'\d+\s*$', '', tech_group_ls[0])
-        techs = [f'{tech_group_root}{num}' for num in range(num_start, num_end + 1)]
+        techs = expand_star([tech_group])
         # Extract the tech group from the main df
-        df_subset = df[df['i'] == tech_group]
+        df_subset = df[df[col] == tech_group]
         # Drop the tech group from the main df
-        df = df[df['i'] != tech_group]
+        df = df[df[col] != tech_group]
 
         df_list = []
 
         for tech in techs:
             df_expanded_single = df_subset.copy()
-            df_expanded_single['i'] = tech
+            df_expanded_single[col] = tech
             df_list = df_list + [df_expanded_single]
 
         df = pd.concat([df] + df_list, ignore_index=True)

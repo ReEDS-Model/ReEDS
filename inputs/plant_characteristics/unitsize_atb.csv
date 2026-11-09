@@ -64,3 +64,4 @@ hydend,94,hydro assumption
 can-imports,20000,arbitrarily high (not disaggregated so doesn't matter)
 evmc,20000,arbitrarily high (not disaggregated so doesn't matter)
 dr_shed,20000,arbitrarily high (not disaggregated so doesn't matter)
+h2-fuel-cell,100,https://docs.nlr.gov/docs/fy26osti/91146.pdf

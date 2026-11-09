@@ -159,7 +159,7 @@ def calculate_class_region_cf_hourly(
     sw = reeds.io.get_switches(inputs_case)
     # Get supply curve information
     df_sc = reeds.io.assemble_supplycurve(
-        os.path.join(inputs_case, f'supplycurve_{tech}.csv'),
+        os.path.join(inputs_case, f'supplycurve_init_{tech}.csv'),
         case=os.path.dirname(inputs_case),
         agg=True,
     )
@@ -189,8 +189,23 @@ def calculate_class_region_cf_hourly(
                 year=year,
                 case=inputs_case,
             )
-        # Downselect to relevant sites
-        weather_year_site_cf_hourly = weather_year_site_cf_hourly[df_sc.index]
+        # Downselect to relevant sites.
+        # For scenarios not using Monte Carlo, we require an exact match to make
+        # sure our datasets stay in sync.
+        # For Monte Carlo scenarios, we allow for missing values, because the
+        # limited scenario contains sites not in reference/open, but we only use profiles
+        # from the most-open scenario in the distribution.
+        if not int(sw['MCS_runs']):
+            weather_year_site_cf_hourly = weather_year_site_cf_hourly[df_sc.index]
+        else:
+            keep_sites = [i for i in weather_year_site_cf_hourly if i in df_sc.index]
+            if len(keep_sites) != len(df_sc):
+                dropped = [i for i in df_sc.index if i not in keep_sites]
+                print(
+                    f'MCS: Dropped {len(dropped)} {tech} sites: '
+                    + ', '.join([str(i) for i in dropped])
+                )
+            weather_year_site_cf_hourly = weather_year_site_cf_hourly[keep_sites]
         # Calculate the capacity-weighted average CF for each class-region pair
         weather_year_class_region_cf_hourly = (
             weather_year_site_cf_hourly.mul(df_sc['capacity'])
@@ -343,26 +358,8 @@ def main(reeds_path, inputs_case):
     for tech in techs.keys():
         techs[tech] = tech_table[tech_table[tech]].index.values.tolist()
         techs[tech] = [x.lower() for x in techs[tech]]
-        temp_save = []
-        temp_remove = []
         # Interpreting GAMS syntax in tech-subset-table.csv
-        for subset in techs[tech]:
-            if '*' in subset:
-                temp_remove.append(subset)
-                temp = subset.split('*')
-                temp2 = temp[0].split('_')
-                temp_low = pd.to_numeric(temp[0].split('_')[-1])
-                temp_high = pd.to_numeric(temp[1].split('_')[-1])
-                temp_tech = ''
-                for n in range(0,len(temp2)-1):
-                    temp_tech += temp2[n]
-                    if not n == len(temp2)-2:
-                        temp_tech += '_'
-                for c in range(temp_low,temp_high+1):
-                    temp_save.append('{}_{}'.format(temp_tech,str(c)))
-        for subset in temp_remove:
-            techs[tech].remove(subset)
-        techs[tech].extend(temp_save)
+        techs[tech] = reeds.techs.expand_star(techs[tech])
     vre_dist = techs['VRE_DISTRIBUTED']
 
     #%% Read capacity factor profiles
@@ -380,7 +377,11 @@ def main(reeds_path, inputs_case):
     lookup['i'] = lookup.ragg.map(lambda x: x.rsplit('|',1)[0])
 
     ### Offshore Wind
-    if int(sw['GSw_OfsWind']) != 0:
+    # If offshore wind is turned off, create an empty dataframe with the same
+    # index as onshore wind
+    if int(sw['GSw_OfsWind']) == 0:
+        df_windofs = pd.DataFrame(index=df_windons.index)
+    else:
         df_windofs = calculate_class_region_cf_hourly(
             inputs_case,
             'wind-ofs',
@@ -438,7 +439,7 @@ def main(reeds_path, inputs_case):
     recf = pd.concat(
         [df_windons, df_windofs, df_upv, df_distpv]
         + [df_pvb[pvb_type] for pvb_type in df_pvb],
-        sort=False, axis=1, copy=False)
+        sort=False, axis=1)
     
     ### Downselect RECF data to resource adequacy and weather years
     recf = recf.loc[recf.index.year.isin(resource_adequacy_years)]
@@ -462,7 +463,7 @@ def main(reeds_path, inputs_case):
     
     # Sorting profiles of resources to match the order of the rows in resources
     resources = resources.sort_values(['resource','area'])
-    recf = recf.reindex(labels=resources['resource'].drop_duplicates(), axis=1, copy=False)
+    recf = recf.reindex(labels=resources['resource'].drop_duplicates(), axis=1)
 
     ### Scale up distpv by 1/(1-distloss)
     recf.loc[
@@ -600,7 +601,7 @@ if __name__ == '__main__':
 
     # #%% Settings for testing
     # reeds_path = reeds.io.reeds_path
-    # inputs_case = os.path.join(reeds_path,'runs','v20260804_inputsM0_MARICTNYNJPAOH_Offshore','inputs_case')
+    # inputs_case = os.path.join(reeds_path,'runs','v20261006_mcM1_MonteCarlo_Random_MC0001','inputs_case')
     
     log = reeds.log.makelog(
         scriptname=__file__,
