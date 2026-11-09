@@ -197,35 +197,15 @@ def get_rev_paths(revswitches):
     return revswitches
 
 
-def check_cases_format(df_cases):
-    """Check the integrity of the input cases_{}.csv data"""
-    dfkeep = df_cases.loc[:, ~df_cases.loc['ignore'].astype(int).astype(bool)]
-    ## Only allow GSw_FakeData to be used all-or-nothing
-    unique_fakes = dfkeep.loc['GSw_FakeData'].unique()
-    if len(unique_fakes) > 1:
-        err = (
-            'GSw_FakeData can only take a single value in a set of cases but values of "'
-            + ', '.join(unique_fakes) + '" were provided'
-        )
-        raise ValueError(err)
-    ## Check for spaces in case names
-    spaces = [i for i in dfkeep if ' ' in i]
-    if len(spaces):
-        err = (
-            'Spaces are not allowed in case names; the following names have spaces:\n'
-            + '\n'.join(f'"{i}"' for i in spaces)
-        )
-        raise ValueError(err)
-
-
-# function to stop the model after input processing
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
+    """Stop the model after input processing"""
     comment('Exit after input_processing', OPATH)
     OPATH.writelines(
         f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
         f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
     )
     OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
+
 
 def setup_sequential_year(
         cur_year, prev_year, next_year,
@@ -554,13 +534,6 @@ def setupEnvironment(
         single=single,
     )
 
-    #%% Stop now if any switches are incompatible
-    check_cases_format(df_cases)
-    for sw in caseSwitches:
-        reeds.checks.check_switches(sw, force=force)
-    if dryrun:
-        quit()
-
     # If no --single/-s, drop the ignored cases, otherwise leave them
     if not single:
         casenames = [case for case in casenames
@@ -581,6 +554,12 @@ def setupEnvironment(
                 raise ValueError(err)
         df_cases = df_cases[single.split(',')].copy()
         casenames = single.split(',')
+
+    #%% Stop now if any switches are incompatible
+    reeds.checks.check_cases_format(df_cases)
+    reeds.checks.check_switches(df_cases, force=force)
+    if dryrun:
+        quit()
 
     # Make sure the run folders don't already exist
     outpaths = [os.path.join(reeds_path,'runs',f'{BatchName}_{case}') for case in casenames]
@@ -962,8 +941,8 @@ def write_batch_script(
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
-            'process_unitdata',
             'mcs_sampler',
+            'process_unitdata',
             'climateprep',            
             'hydcf',
             'h2_storage',
