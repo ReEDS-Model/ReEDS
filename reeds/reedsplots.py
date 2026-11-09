@@ -2114,9 +2114,9 @@ def animate_dispatch(
     aggtechs = {
         **{f'battery_{i}': 'battery' for i in [2,4,6,8,10,12,24,48,72,100]},
         **{f'wind-ofs_{i}': 'wind-ofs' for i in range(1,11)},
-        **{f'upv_{i}': 'pv' for i in range(1,11)},
         **{
             'battery_li':'battery',
+            'upv':'pv',
             'distpv':'pv',
             'lfill-gas':'biopower',
             'Nuclear':'nuclear',

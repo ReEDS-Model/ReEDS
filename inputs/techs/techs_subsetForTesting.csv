@@ -5,10 +5,8 @@ Coal-IGCC,p
 coal-new,p
 CoalOldScr,p
 CoalOldUns,p
-upv_1,p
-upv_2,p
-pvb1_1,p
-pvb1_2,p
+upv,p
+pvb1,p
 wind-ofs_1,s
 wind-ofs_2,s
 wind-ons,s

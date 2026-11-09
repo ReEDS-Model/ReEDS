@@ -52,7 +52,7 @@ class Conventions:
     # --- Technology name mappings ---
     # tech_map1: Most simplified groupings
     tech_map1 = {
-        **{f'upv_{i}':'PV' for i in range(20)},
+        'upv': 'PV',
         **{f'dupv_{i}':'PV' for i in range(20)},
         'wind-ons': 'Wind',
         **{f'wind-ofs_{i}':'Wind' for i in range(20)},
@@ -87,7 +87,7 @@ class Conventions:
 
     # tech_map2: Intermediate simplification
     tech_map2 = {
-        **{f'upv_{i}': 'PV' for i in range(20)},
+        'upv': 'PV',
         **{f'dupv_{i}': 'PV' for i in range(20)},
         'wind-ons': 'Wind',
         **{f'wind-ofs_{i}': 'Offshore Wind' for i in range(20)},

@@ -314,7 +314,7 @@ energy_price(r,h)$hours(h) =
 execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     avail_filt
     bcr
-    bir_pvb_config
+    bir_pvb
     can_exports_h_filt
     can_imports_cap
     can_imports_szn_filt
@@ -353,7 +353,7 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     hydmin
     i
     ilr
-    ilr_pvb_config
+    ilr_pvb
     i_subsets
     inv_cond_filt
     inv_ivrt
