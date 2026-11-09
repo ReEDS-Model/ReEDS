@@ -131,9 +131,9 @@ def setup_linked_FINITO_cases(df_cases, case):
     )
 
     #### create new dataframe for the combined ReEDS and FINITO switches
-    df_cases_combine = pd.concat([df_cases[case], df_cases_finito[finito_case]])
-    ### drop duplicated switches, defaulting to reeds
-    df_cases_combine = df_cases_combine[~df_cases_combine.index.duplicated(keep='first')]
+    # only add FINITO switches that aren't already in ReEDS
+    finito_case_merge = df_cases_finito[finito_case].loc[~df_cases_finito.index.isin(df_cases.index)]    
+    df_cases_combine = pd.concat([df_cases[case], finito_case_merge])
 
     #%% Check for incompatibility of FINITO switches
     model_sectors = df_cases_finito['Default Value']['focus_sectors'].split('.')
