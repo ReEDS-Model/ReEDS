@@ -3502,7 +3502,7 @@ $offempty
 
 * Written by plantcostprep.py
 $onempty
-table fom_dr_shed(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table fom_dr_shed(i,r,allt) "--$/MW-yr-- dr_shed vom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shed_fom.csv
@@ -3526,7 +3526,7 @@ $offempty
 
 * Written by plantcostprep.py
 $onempty
-table fom_dr_shape(i,r,allt) "--$/MWh-- dr_shape vom costs over time"
+table fom_dr_shape(i,r,allt) "--$/MW-yr-- dr_shape fom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shape_fom.csv
@@ -3549,7 +3549,7 @@ $offempty
 
 * Written by plantcostprep.py
 $onempty
-table fom_dr_shift(i,r,allt) "--$/MWh-- dr_shift vom costs over time"
+table fom_dr_shift(i,r,allt) "--$/MW-yr-- dr_shift fom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shift_fom.csv
