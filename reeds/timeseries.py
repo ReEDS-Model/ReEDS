@@ -331,69 +331,42 @@ def optimize_period_weights(
     return iweights, weights
 
 
-def match_act2rep_milp(profiles_period_mean, iweights):
+def match_act2rep_exact(profiles_period_mean, iweights):
     """
-    Assign representative periods to actual periods to minimize sum of errors in
-    feature values by period (MILP optimization)
+    Assign representative periods to actual periods to minimize the sum of absolute
+    errors in feature values, with each representative period used iweights[r] times.
+
+    Each actual period maps to exactly one representative period, so the error for a
+    pairing is cost[a,r] = sum_c |value[a,c] - value[r,c]| and the problem is a
+    transportation problem. Repeating each representative period by its weight turns it
+    into a square assignment problem, which is solved exactly.
     """
     ### Imports
-    import pulp
+    import scipy.optimize
+    import scipy.spatial.distance
 
     ### Input processing
-    actualdays = profiles_period_mean.index.values
     repdays = list(iweights.index)
+    counts = iweights.astype(int).values
+    if counts.sum() != len(profiles_period_mean):
+        raise ValueError(
+            f'iweights sum to {counts.sum()} but there are {len(profiles_period_mean)} periods')
 
-    ### Optimization: minimize sum of absolute errors
-    m = pulp.LpProblem('RepDayAssignment', pulp.LpMinimize)
-    ###### Variables
-    ### Weighting of rep days (r) for each actual day (a).
-    ### Can only use whole days, so it's a binary variable.
-    WEIGHT = pulp.LpVariable.dicts(
-        'WEIGHT', ((a,r) for a in actualdays for r in repdays),
-        lowBound=0, upBound=1, cat=pulp.LpInteger)
-    ### Errors. These are defined for features (c) and for actual days (a).
-    ERROR_POS = pulp.LpVariable.dicts(
-        'ERROR_POS', ((a,c) for a in actualdays for c in profiles_period_mean.columns),
-        lowBound=0, cat='Continuous')
-    ERROR_NEG = pulp.LpVariable.dicts(
-        'ERROR_NEG', ((a,c) for a in actualdays for c in profiles_period_mean.columns),
-        lowBound=0, cat='Continuous')
-    ###### Constraints
-    ### Each actual day can only be assigned to one representative day
-    for a in actualdays:
-        m += pulp.lpSum([WEIGHT[a,r] for r in repdays]) == 1
-    ### Each representative day must be used a number of times equal to its weight
-    for r in repdays:
-        m += pulp.lpSum([WEIGHT[a,r] for a in actualdays]) == iweights[r]
-    ### Define the error variables.
-    ### profiles_period_mean[c] rebuilds a Series on every lookup, which slows
-    ### model construction, so take plain dicts of the values up front and use
-    ### those instead.
-    values = {c: profiles_period_mean[c].to_dict() for c in profiles_period_mean.columns}
-    for a in actualdays:
-        for c in profiles_period_mean.columns:
-            m += (
-                ### Full error for column on actual day (given by positive
-                ### component minus negative component)...
-                ERROR_POS[a,c] - ERROR_NEG[a,c]
-                ### ...plus value for its representative day (since WEIGHT is binary)...
-                + pulp.lpSum([WEIGHT[a,r] * values[c][r] for r in repdays])
-                ### ...equals the actual value for that column and day
-                == values[c][a])
-    ###### Objective: minimize the sum of absolute values of errors
-    m += pulp.lpSum([
-        ERROR_POS[a,c] + ERROR_NEG[a,c]
-        for a in actualdays for c in profiles_period_mean.columns
-    ])
+    ### Cost of assigning each actual period (rows) to each representative period (columns)
+    actual = profiles_period_mean.values
+    rep = profiles_period_mean.loc[repdays].values
+    cost = scipy.spatial.distance.cdist(actual, rep, metric='cityblock')
 
-    ### Solve it
-    m.solve(solver=pulp.PULP_CBC_CMD(msg=True))
+    ### One column per use of each representative period, then solve the assignment
+    slots = np.repeat(np.arange(len(repdays)), counts)
+    rows, cols = scipy.optimize.linear_sum_assignment(cost[:, slots])
 
     ### Collect assignments
-    assignments = pd.Series(
-        {(a,r):WEIGHT[a,r].varValue for a in actualdays for r in repdays}).astype(int)
-    assignments.index = assignments.index.rename(['act','rep'])
-    a2r = assignments.replace(0,np.nan).dropna().reset_index(level='rep').rep
+    a2r = pd.Series(
+        [repdays[slots[j]] for j in cols],
+        index=pd.Index(list(profiles_period_mean.index[rows]), name='act', tupleize_cols=False),
+        name='rep',
+    ).sort_index()
 
     return a2r
 
