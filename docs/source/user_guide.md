@@ -93,12 +93,14 @@ Here is partial list of remotely hosted files used by ReEDS:
     - You can feed the period:szn mapping from a completed run into the inputs folder of your repo to force ReEDS to use the same representative or stress periods.
       More detail can be found in the <a href="postprocessing_tools.html#fix-representative-stress-periods-preprocessing-get-case-periods-py">postprocessing tools</a> guide.
 
-- `GSw_PRM_StressThreshold`: The default setting of 'transgrp_1_EUE_sum' means a threshold of "**1** ppm NEUE in each **transgrp**", with stress periods selected by the daily **sum** of **EUE** within each **transgrp**.
-  - The first argument can be selected from ['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'] and specifies the hierarchy level within which to compare RA performance against the threshold.
-  - The second argument can be any float and specifies the RA performance threshold in parts per million [ppm].
-  - The third argument can be 'NEUE' or 'EUE', specifying which metric to use when selecting stress periods. If set to 'NEUE' the model will add stress periods with the largest **fraction** of dropped load; if set to 'EUE' the model will add stress periods with the largest **absolute MWh** of dropped load.
-  - The fourth argument can be 'sum' or 'max', specifying whether to add stress periods in order of their daily per-hour max dropped load or by their daily sum of dropped load when selecting stress periods.
-  - If desired you can provide /-delimited entries like 'transgrp_10_EUE_sum/country_1_EUE_sum', meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.
+- `GSw_PRM_StressThresholdMetrics` and `GSw_PRM_StressThreshold{metric}`: Resource adequacy thresholds used to decide whether to add new stress periods.
+  - `GSw_PRM_StressThresholdMetrics` (default `NEUE`) is a /-delimited list of the metrics that can be used. Supported metrics are `NEUE`, `LOLD`, `LOLE`, `LOLH`, `Depth`, and `Duration`.
+  - Each listed metric reads its threshold from the matching `GSw_PRM_StressThreshold{metric}` switch, formatted as `{level}_{value}`. The default `GSw_PRM_StressThresholdNEUE=transgrp_1` means a threshold of "**1** ppm NEUE in each **transgrp**".
+    - `{level}` can be selected from ['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'] and specifies the hierarchy level within which to compare RA performance against the threshold.
+    - `{value}` is a non-negative number in the units of the metric: NEUE [ppm]; LOLD [event-days/year]; LOLE [events/year]; LOLH [event-hours/year]; Depth [maximum hourly EUE as a fraction of peak load]; Duration [hours in the longest outage event].
+    - If desired you can provide /-delimited entries like `GSw_PRM_StressThresholdNEUE=transgrp_10/country_1`, meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.
+  - For each region that exceeds a threshold, `GSw_PRM_StressIncrement` new stress periods are added, ranked by a metric-specific criterion: daily sum of EUE (NEUE), daily maximum hourly EUE (Depth), daily maximum hourly loss-of-load probability (LOLD, LOLE), daily sum of hourly loss-of-load probability (LOLH), or longest EUE events (Duration).
+  - Shoulder periods for storage recharge (`GSw_PRM_StressStorageCutoff`) are only added for the NEUE metric.
 
 
 ### Conventions
@@ -400,8 +402,8 @@ In addition, the `GSw_ReducedResource` switch allows for a uniform reduction of 
 1. `GSw_TransSquigglinessMin`: Minimum squiggliness (straight-line length multiplier) to apply for interzonal transmission; the default value of 1.3 is from the [MISO Transmission Cost Estimation Guide](https://www.misoenergy.org/planning/transmission-planning/mtep).
 The cost and length of representative interzonal transmission routes that are straighter than `GSw_TransSquigglinessMin` are scaled up to match `GSw_TransSquigglinessMin`
 (i.e., if a representative route is 11 miles long and the straight-line distance between its endpoints is 10 miles, giving a squiggliness factor of 1.1, its cost and length are scaled up by 1.3 / 1.1 = 1.18).
-1. `GSw_TransHurdle`: Intra-US hurdle rate for interzonal flows, measured in $2004/MWh
-1. `GSw_TransHurdleLevel`: Indicate the level of hierarchy.csv between which to apply the hurdle rate specified by `GSw_TransHurdle`. i.e. if set to ‘st’, intra-state flows will have no hurdle rates but inter-state flows will have hurdle rates specified by `GSw_TransHurdle`.
+1. `GSw_TransHurdleRate`: Turn on (1) or off (0) hurdle rates for intra-US interzonal flows. The rates [2004$/MWh] are taken by year from the column of `inputs/transmission/cost_hurdle_intra.csv` that matches the selected hierarchy level.
+1. `GSw_TransHurdleLevel1` and `GSw_TransHurdleLevel2`: Levels of hierarchy.csv between which to apply hurdle rates when `GSw_TransHurdleRate=1`. For example, if `GSw_TransHurdleLevel1=st`, intra-state flows will have no level-1 hurdle rate but inter-state flows will. The hurdle rate on each interface is the larger of the level-1 and level-2 rates (with a floor of `hurdle_rate_floor` from `inputs/scalars.csv`). Hurdle rates between the US and Canada/Mexico are set separately in `inputs/transmission/cost_hurdle_country.csv`.
 1. `GSw_TransRestrict`: Spatial hierarchy level within which to allow transmission expansion. For example, if set to `st`, no inter-state expansion is allowed.
 1. `GSw_TransScen`: Which `inputs/transmission/hvdc_planned-{GSw_TransScen}.csv` file to use.
 This file provides a list of additional transmission lines that can be built.
