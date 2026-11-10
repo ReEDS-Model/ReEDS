@@ -1,0 +1,262 @@
+[
+  {
+    "outer_fold": 0,
+    "n_proper": 327,
+    "n_cal": 110,
+    "n_test": 49,
+    "rank": 100,
+    "cal_seed": 1042,
+    "elapsed_seconds": 15.235748300037812,
+    "constants": {
+      "system": 9,
+      "regional": 67
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 1,
+    "n_proper": 327,
+    "n_cal": 110,
+    "n_test": 49,
+    "rank": 100,
+    "cal_seed": 1043,
+    "elapsed_seconds": 13.356181200011633,
+    "constants": {
+      "system": 8,
+      "regional": 63
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 2,
+    "n_proper": 327,
+    "n_cal": 110,
+    "n_test": 49,
+    "rank": 100,
+    "cal_seed": 1044,
+    "elapsed_seconds": 13.921105200017337,
+    "constants": {
+      "system": 9,
+      "regional": 58
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 3,
+    "n_proper": 327,
+    "n_cal": 110,
+    "n_test": 49,
+    "rank": 100,
+    "cal_seed": 1045,
+    "elapsed_seconds": 13.918299300014041,
+    "constants": {
+      "system": 8,
+      "regional": 64
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 4,
+    "n_proper": 327,
+    "n_cal": 110,
+    "n_test": 49,
+    "rank": 100,
+    "cal_seed": 1046,
+    "elapsed_seconds": 14.01031059998786,
+    "constants": {
+      "system": 9,
+      "regional": 58
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 5,
+    "n_proper": 327,
+    "n_cal": 110,
+    "n_test": 49,
+    "rank": 100,
+    "cal_seed": 1047,
+    "elapsed_seconds": 14.990658900002018,
+    "constants": {
+      "system": 8,
+      "regional": 64
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 6,
+    "n_proper": 328,
+    "n_cal": 110,
+    "n_test": 48,
+    "rank": 100,
+    "cal_seed": 1048,
+    "elapsed_seconds": 14.197505599993747,
+    "constants": {
+      "system": 8,
+      "regional": 64
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 7,
+    "n_proper": 328,
+    "n_cal": 110,
+    "n_test": 48,
+    "rank": 100,
+    "cal_seed": 1049,
+    "elapsed_seconds": 14.662835700029973,
+    "constants": {
+      "system": 9,
+      "regional": 59
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 8,
+    "n_proper": 328,
+    "n_cal": 110,
+    "n_test": 48,
+    "rank": 100,
+    "cal_seed": 1050,
+    "elapsed_seconds": 16.04520140000386,
+    "constants": {
+      "system": 8,
+      "regional": 63
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  },
+  {
+    "outer_fold": 9,
+    "n_proper": 328,
+    "n_cal": 110,
+    "n_test": 48,
+    "rank": 100,
+    "cal_seed": 1051,
+    "elapsed_seconds": 26.336368200019933,
+    "constants": {
+      "system": 9,
+      "regional": 68
+    },
+    "corridor_floors": {
+      "tran_p60_p61_AC": 2929.3,
+      "tran_p60_p62_AC": 2537.55,
+      "tran_p60_p63_AC": 5482.35,
+      "tran_p61_p62_AC": 1386.85,
+      "tran_p61_p63_AC": 3026.45,
+      "tran_p61_p64_AC": 2242.75,
+      "tran_p61_p65_AC": 145.35,
+      "tran_p63_p64_AC": 6539.15,
+      "tran_p64_p65_AC": 4457.15,
+      "tran_p64_p67_AC": 2536.75,
+      "tran_p65_p67_AC": 3194.95
+    }
+  }
+]

@@ -1,0 +1,5 @@
+# cap_nuclear check (read-only, 2026-11-09)
+
+(1) Yes: across all 486 runs cap_nuclear never exceeds 4,980 MW, which is exactly the existing fleet (cap_nuclear_p63 = 2,400 MW Comanche Peak, constant in every run, plus cap_nuclear_p65 = 2,580 MW South Texas Project), so new conventional nuclear investment is zero in every run; the only new nuclear is SMR (cap_nuclear-smr, p67 only, non-zero in 9 of 486 runs, up to 2,882 MW), which is a separate column.
+
+(2) Only one run has 4,897.9 MW, test0_DemMd_FuelHi_REcostLo_SitingRef_BattMd_PolIRA, so no dial separates it (it is a single factorial corner, not a level effect); the whole 82.1 MW gap sits in p65 (2,497.9 vs 2,580 MW) and lies below the initial capacity, so it can only be an endogenous partial retirement in that run (the case matrix leaves GSw_Retire at its default of 5, which allows existing nuclear to retire after 2030), not an uprate; the ReEDS run folders (cap_new / ret_ann) are not on this machine, so the retirement year could not be confirmed from the outputs directly.

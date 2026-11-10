@@ -1,0 +1,108 @@
+{
+  "system": {
+    "rows": 486,
+    "unique_designs": 486,
+    "n_paper_outputs": 66,
+    "n_constants": 8,
+    "constant_max_range": 0.0,
+    "max_train_constant_mean_difference": 1.8189894035458565e-12,
+    "max_train_floor_difference": 0,
+    "fold_sizes": [
+      49,
+      49,
+      49,
+      49,
+      49,
+      49,
+      48,
+      48,
+      48,
+      48
+    ],
+    "overlaps": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "each_row_tested_once": true,
+    "clipped_cells": 2,
+    "max_clip": 3e-06,
+    "instrumented_current_cv": {
+      "rf": {
+        "fits": 10,
+        "yfits": 0,
+        "predicts": 10
+      },
+      "nn": {
+        "fits": 10,
+        "yfits": 10,
+        "predicts": 10
+      },
+      "ngboost": {
+        "fits": 10,
+        "yfits": 10,
+        "predicts": 10
+      }
+    }
+  },
+  "regional": {
+    "rows": 486,
+    "unique_designs": 486,
+    "n_paper_outputs": 308,
+    "n_constants": 57,
+    "constant_max_range": 0.0,
+    "max_train_constant_mean_difference": 1.8189894035458565e-12,
+    "max_train_floor_difference": 0.0,
+    "fold_sizes": [
+      49,
+      49,
+      49,
+      49,
+      49,
+      49,
+      48,
+      48,
+      48,
+      48
+    ],
+    "overlaps": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "each_row_tested_once": true,
+    "clipped_cells": 2,
+    "max_clip": 3e-06,
+    "instrumented_current_cv": {
+      "rf": {
+        "fits": 10,
+        "yfits": 0,
+        "predicts": 10
+      },
+      "nn": {
+        "fits": 10,
+        "yfits": 10,
+        "predicts": 10
+      },
+      "ngboost": {
+        "fits": 10,
+        "yfits": 10,
+        "predicts": 10
+      }
+    }
+  }
+}

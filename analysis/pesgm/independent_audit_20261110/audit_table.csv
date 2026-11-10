@@ -1,0 +1,13 @@
+check,status,evidence
+Scenario uniqueness and layer alignment,PASS,486 distinct full-factorial designs; input vectors and case names aligned
+Current CV split and OOF assignment,PASS,Zero overlap in all 10 folds; each scenario tested once; 60 instrumented fit/predict checks
+Fold-local feature and target scaling,PASS,Actual CV function executed with checked scalers and spy estimators for RF MLP and NGBoost on both layers
+Full-table constant filtering,NEEDS REVIEW,Uses full targets but all excluded columns have exactly zero range; no demonstrated R2 inflation
+Table III reproduction,PASS,All 42 numerical manuscript cells match recomputed metrics
+Historical model selection independence,NEEDS REVIEW,Fixed current settings; earlier development and selection not independently held out
+Original split-conformal designation,FAIL,Pooled OOF residual quantile is not split conformal
+Original independent coverage validation,FAIL,Self-check reuses residuals; other-fold residual models include evaluated-fold targets in training
+New outer split isolation,PASS,Ten executed folds with disjoint proper-training calibration and test sets
+New finite-sample quantile,PASS,Rank 100 of 110 calibration errors independently verified for every output
+New average nominal 90 percent coverage,PASS,Raw 90.86/90.78 percent; constrained 90.84/90.76 percent system/regional
+Rare nonzero outcome coverage,NEEDS REVIEW,Constrained SMR 0 of 9 and gas-CC CCS retrofit 1 of 11 nonzero cases covered

@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "All original source/input hashes still match; main run completed.",
+    "system/raw: split isolation, training means/constants, all quantiles, 486 test rows, coverage and widths verified; endpoint-roundoff disagreements=0.",
+    "system/constrained: split isolation, training means/constants, all quantiles, 486 test rows, coverage and widths verified; endpoint-roundoff disagreements=0.",
+    "system: production UQ helpers reproduce residual reuse; every other-fold calibration model includes the evaluated fold in training.",
+    "regional/raw: split isolation, training means/constants, all quantiles, 486 test rows, coverage and widths verified; endpoint-roundoff disagreements=0.",
+    "regional/constrained: split isolation, training means/constants, all quantiles, 486 test rows, coverage and widths verified; endpoint-roundoff disagreements=0.",
+    "regional: production UQ helpers reproduce residual reuse; every other-fold calibration model includes the evaluated fold in training.",
+    "All 42 numerical cells in current manuscript Table III match independently recomputed rounded metrics."
+  ],
+  "manuscript": "C:\\Users\\ychen10\\OneDrive - NREL\\Project 18 - ReEDS Surrogate\\IEEE PES 2027\\PESGM2027_ReEDS_Surrogate_0.docx",
+  "manuscript_sha256": "f653bd5c0216af5acc549baccc69e9bbb1784d3f624cce0f4192b7d7bacabe8f",
+  "verifier_sha256": "fc22251583132b37857247ecb4d1689ac78f7e01409efcabee395322970b6474",
+  "manuscript_models_verified": [
+    "Random Forest",
+    "MLP",
+    "NGBoost",
+    "XGBoost",
+    "k-NN",
+    "Ridge",
+    "Lasso"
+  ]
+}

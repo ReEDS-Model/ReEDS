@@ -1,0 +1,36 @@
+{
+  "python": "3.11.11 | packaged by conda-forge | (main, Mar  3 2025, 20:29:43) [MSC v.1943 64 bit (AMD64)]",
+  "sklearn": "1.2.2",
+  "numpy": "1.26.4",
+  "pandas": "2.0.3",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "cpu_count": 14,
+  "jobs": 10,
+  "outer_folds": 10,
+  "outer_seed": 42,
+  "cal_seed_base": 1042,
+  "cal_fraction": 0.25,
+  "alpha": 0.1,
+  "rf": {
+    "n_estimators": 200,
+    "min_samples_leaf": 2,
+    "max_depth": null,
+    "random_state": 42
+  },
+  "source_sha256": {
+    "C:\\ReEDS\\ReEDS\\analysis\\pesgm\\independent_cv_uq_audit.py": "9262d399c35fc528c985e5c3da314f72d60e2aee993737c11379db17e297ac4c",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\inputs\\overall_ml_numeric_merged.csv": "a196f208fed9bf2dd55fc73d281d10e641843c4e6b943e6621d6d0f4457f4c68",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\inputs\\regional_ml_numeric_merged.csv": "35683a7ad586bc0a0ae704f6ac339856c2bbcd3e4465bd5e7c177ec44d79c0f1",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\code\\surrogate_ml_models.py": "db62c47e08f9a91cf4c578eda552b16a05c63454da8f1ad69b902004ed1db67b",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\code\\surrogate_constraints.py": "8466ae12097e6d05906da1afabaa2a7041a37149599ba4f76df07048aabfd64e",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\code\\surrogate_uq.py": "fc363a3b754b905eaed629dcb0e5fbd0945a6da8c914bb74d09dd2ca316ea3ac",
+    "C:\\ReEDS\\ReEDS\\analysis\\pesgm\\data\\10_stored_residuals.npz": "59edbc08760ec977b168bb01de3d11c3fe5d980d658670c91ceeb12c43d47801",
+    "C:\\ReEDS\\ReEDS\\analysis\\pesgm\\data\\10_stored_residuals_cols.json": "5b1dd8ccb820cb30fc771bdb3636f21688469ded803a14573a65a0617edc9e4a",
+    "C:\\ReEDS\\ReEDS\\analysis\\pesgm\\data\\18_xgb_nohints_oof.npz": "c551d30c505371465af94fe5eeab7e5ba8204787c7bbe4e321ed34ed67e0e079",
+    "C:\\ReEDS\\ReEDS\\analysis\\pesgm\\data\\01_oof_system.npz": "63b9b5127426233323b6a92ae5f84120b7107a0bf9116cc3def0354ea0bc39fe",
+    "C:\\ReEDS\\ReEDS\\analysis\\pesgm\\data\\01_oof_regional.npz": "47b8a4bc4f4c0191cfb07d52fac911c58c293e0fe48c4de8c6132bf9ecd91b13",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\outputs\\overall\\summary.json": "07bae000539aad1ad4854fa6ed8ec2eadcac4e63d1d6f6107a7622ecd8c696ce",
+    "C:\\ReEDS\\ReEDS\\postprocessing\\reedssurr\\Stage2\\outputs\\regional\\summary.json": "8e2076df4596539dcac9dfcd3961db17311d5ed06fa7710278971d659c2fd46e"
+  },
+  "complete": true
+}
