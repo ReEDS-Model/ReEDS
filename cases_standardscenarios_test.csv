@@ -3,7 +3,7 @@ ignore,0,1,1,0,1,1,1,1,1
 coalscen,AEO_2026_baseline,,,,,,,,
 demandscen,AEO_2026_baseline,,,,,,,,
 distpvscen,stscen2026_midcase,,,,,,,,
-endyear,2050,,,,,,,,
+endyear,2035,,,,,,,,
 geodiscov,BAU,,TI,,TI,,,,TI
 geohydrosupplycurve,ATB_2023,,,,,,,,
 GSw_AnnualCap,0,,,,,,,,
