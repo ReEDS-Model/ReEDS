@@ -2867,15 +2867,6 @@ This section primarily focuses on existing policies, but additional frameworks t
 
 ### Federal and State Emission Standards
 
-#### Clean Air Act
-ReEDS represents EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
-For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
-This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
-This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
-Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
-Existing gas plants fall outside the scope of this rule.
-
-
 #### Cross-State Air Pollution Rule
 
 ReEDS applies the Cross-State Air Pollution Rule using caps on power plant emissions for the states in the eastern half of the United States over which the rules are imposed.
@@ -3190,6 +3181,18 @@ Users can restrict negative emissions technologies to offset emissions only from
 - **Alternative ITC and PTC Schedules:** In addition to the ITC and PTC schedules described in the [Federal and State Tax Incentives](#federal-and-state-emission-standards) section, the ITC and PTC can be modified to apply for any number of years and to any technology.
 
 - **Alternative Financing Measures:** Policy-related financing impacts such as MACRS or the under-construction provisions for the ITC and PTC can be modified as specified by the user.
+
+- **Clean Air Act, Section 111:**
+ReEDS can represent EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
+For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
+This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
+This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
+Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
+Existing gas plants fall outside the scope of this rule.
+
+```{admonition} Clean Air Act settings
+The Section 111 standards are turned off by default but can be turned on in `cases.csv` by setting `GSw_Clean_Air_Act` to 1.
+```
 
 
 ## Capital Financing, System Costs, and Economic Metrics
