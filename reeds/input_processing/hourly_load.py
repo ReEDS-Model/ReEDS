@@ -613,7 +613,6 @@ def reaggregate_to_model_regions(
 
     return regional_load_hourly
 
-
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
@@ -713,7 +712,22 @@ def main(reeds_path, inputs_case):
 
     peakload = calculate_peak_load(regional_load_hourly, hierarchy)
 
-#%%
+
+
+    #%%%#########################################
+    #    -- FINITO Load Adjustment --           #
+    #############################################
+
+    # note that this step occurs after peakload calculation so that the latter
+    # includes a baseline estimate of industrial load captured by FINITO
+    if int(sw.GSw_FINITO_Link):
+        regional_load_hourly = reeds.finito.remove_finito_load(
+                regional_load_hourly,
+                inputs_case,
+                scalars['distloss']
+        )
+
+    #%%
     # #%%%############################################
     # # -- DR Shed, Shape, Shift Load Modifications --    #
     # ################################################
@@ -725,7 +739,6 @@ def main(reeds_path, inputs_case):
         state_profiles = state_profiles.reset_index().set_index(['year', 'datetime'])
         dr_types = list({x.split('|')[0] for x in state_profiles.columns[1:]})
         regional_profiles = {}
-
         for dr_type in dr_types:
             type_cols = [col for col in state_profiles.columns if col.startswith(dr_type)]
             reg_profile = state_profiles[type_cols].copy()

@@ -200,6 +200,9 @@ def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
     reload the raw demand and extract the demand on the modeled days for each year.
     """
     ### Get original demand data, subset to cluster year
+    ### Note that this does not include FINITO demand when running with the linked model
+    ### (GSw_FINITO_Link=1) even though the reference estimates for that load is used when
+    ### identifying the representative days
     load_in = reeds.io.read_file(
         os.path.join(inputs_case,'load.h5')).unstack(level=0)
     load_in.columns = load_in.columns.rename(['r','t'])
