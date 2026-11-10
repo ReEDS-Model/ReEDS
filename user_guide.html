@@ -123,6 +123,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#details-on-config-file-settings">Details on config file settings</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#reeds-finito">ReEDS-FINITO</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup">Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linkage-points">Linkage points</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#key-areas-for-error-checking">Key Areas for Error Checking</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#re-running-a-failed-reeds-case">Re-running a Failed ReEDS Case</a></li>
@@ -1616,6 +1621,75 @@ To see details on all command line arguments run <code class="docutils literal n
 </table>
 <p>For additional information on using Hourlize, you can watch the training video: <a class="reference external" href="https://nrel-my.sharepoint.com/:v:/r/personal/bsergi_nrel_gov/Documents/Misc/Recordings/Hourlize%20wind_solar%20resource%20preprocessing%20tutorial-20240212_150245-Meeting%20Recording.mp4?csf=1&amp;web=1&amp;e=vIds6r&amp;nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D">Hourlize wind/solar resource preprocessing tutorial</a></p>
 </section>
+</section>
+</section>
+<section id="reeds-finito">
+<h2>ReEDS-FINITO<a class="headerlink" href="#reeds-finito" title="Link to this heading"></a></h2>
+<p>The Fuels and Industry Integrated Optimization Model (FINITO) provides a representation of the U.S. energy system with a bottom-up, technology-rich representation of certain energy-intensive industrial subsectors.
+ReEDS and FINITO can be linked to provide integrated modeling of the power sector with economy-wide energy supply and demand dynamics.
+When linked, ReEDS and FINITO are formulated as a single optimization problem.</p>
+<section id="setup">
+<h3>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h3>
+<p>FINITO can be cloned from https://github.com/NatLabRockies/FINITO (Note: this repository is currently private and only available within NLR).
+By default ReEDS will look for a copy of the FINITO in the parent directory, but this can be configured by setting a value for <code class="docutils literal notranslate"><span class="pre">FINITO_dir</span></code> in your cases file.</p>
+<p>ReEdS switches controlling ReEDS-FINITO linkage:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FINITO</span></code> (default 0): Turn off/on the linked model.
+Passes its value to <code class="docutils literal notranslate"><span class="pre">GSw_FINITO_Link</span></code> which is used to activate the linkage in the model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FINITO_cases_file</span></code> (default ‘linked’): Filename suffix of the FINITO cases file to use.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FINITO_case</span></code> (default ‘same’): Name of the case in <code class="docutils literal notranslate"><span class="pre">FINITO_cases_file</span></code> to use for the ReEDS run; used to determine FINITO switch settings.
+When set to ‘same’ it will assume the same case name as used in ReEDS.</p></li>
+</ul>
+<p>A linked model run is launched using the same call to <code class="docutils literal notranslate"><span class="pre">runreeds.py</span></code> as a normal ReEDS run.</p>
+<p>All ReEDS and FINITO switches are combined into a single group of switches.
+As FINITO can also be run as a standalone model, some switches in the FINITO cases files have the same name as switches in ReEDS.
+For any switches with conflicting values, a linked run will always use the value specified from ReEDS, using the default in the ReEDS <code class="docutils literal notranslate"><span class="pre">cases.csv</span></code> file as a fallback for any unspecfied switches.</p>
+</section>
+<section id="linkage-points">
+<h3>Linkage points<a class="headerlink" href="#linkage-points" title="Link to this heading"></a></h3>
+<p><strong>Load balance</strong></p>
+<ul class="simple">
+<li><p>Electricity demand from FINITO’s industrial focus sectors (set by the FINITO <code class="docutils literal notranslate"><span class="pre">focus_sectors</span></code> switch) and from converted fuel processing is added to the ReEDS load balancing equation via <code class="docutils literal notranslate"><span class="pre">USE_ELE_FINITO</span></code>.</p></li>
+<li><p>The load projection input data in ReEDS accounts for demand from sectors represented endogenously in FINITO.
+To avoid double-counting, in a linked run the estimated ‘reference’ electricity demand for covered sectors is substracted from the load data processed for ReEDS in <code class="docutils literal notranslate"><span class="pre">hourly_load.py</span></code> (see the <code class="docutils literal notranslate"><span class="pre">finito.remove_finito_load</span></code> function)</p></li>
+<li><p>Due to lack of granular sector electricity demand data, the current approach takes annual demand estimates and allocates to hourly profiles assuming constant demand, and the broadcasts those across all weather years. This approach is a coarse assumption that enables running the linked model with detailed hourly sectoral, and future work aims to improve the temporal and interannual characterization of industrial loads.</p></li>
+<li><p>When itereating with PRAS, the demand represented by <code class="docutils literal notranslate"><span class="pre">USE_ELE_FINITO</span></code> is added back to the original load file. Values from each representative timeslice are mapped back to their corresponding ‘actual’ hour for the modeled year, with the data being repeated for other weather years. Currently all load is assumed to be inflexible; future work aims to explore characterizing the flexibility of this load in PRAS.</p></li>
+<li><p>The FINITO switch <code class="docutils literal notranslate"><span class="pre">GSw_ConstantProduction</span></code> can be used to enforce flat hourly production (and therefore electricity demand) across all hours represented by the model.</p></li>
+</ul>
+<p><strong>Fuel supply curves</strong></p>
+<ul class="simple">
+<li><p>When linked, ReEDS defers to FINITO for representation of hydrocarbon and biomass supply curves for solve years with FINITO activated. This representation supersedes any settings specified by fuel price switches in ReEDS (e.g., <code class="docutils literal notranslate"><span class="pre">ngscen</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_GasCurve</span></code>).</p></li>
+<li><p>Consumption of fuel equivalents in ReEDS is accounted for in FINITO by the <code class="docutils literal notranslate"><span class="pre">USE_FE_REEDS</span></code> variable.</p></li>
+<li><p>The activation of the FINITO supply curves is controlled by the <code class="docutils literal notranslate"><span class="pre">tfinito_all</span></code> set, which is populated for any years running with FINITO. In a standalone ReEDS run <code class="docutils literal notranslate"><span class="pre">tfinito_all</span></code> will not include any solve years; in a linked run it will include all t &gt;= <code class="docutils literal notranslate"><span class="pre">FINITO_first_year</span></code>. Any years not in <code class="docutils literal notranslate"><span class="pre">tfinito_all</span></code> use the ReEDS supply curve representation.</p></li>
+<li><p>When linked, the output reporting in <code class="docutils literal notranslate"><span class="pre">report.gms</span></code> utilizes the FINITO marginals for calculating prices on the relevant quantities.</p></li>
+<li><p>The fuel supply curves can be adjusted by scenario by the <code class="docutils literal notranslate"><span class="pre">GSw_supply_scen</span></code> in FINITO, which includes scenarios from the AEO (e.g., Reference, HOG, LOG).</p></li>
+<li><p>Setting <code class="docutils literal notranslate"><span class="pre">GSw_DetailedNG=1</span></code> in FINITO enables explicit representation of natural gas production and interstate pipeline transport.</p></li>
+<li><p>Projections for transportation and buildings sector demand are scenario based and can be toggled using <code class="docutils literal notranslate"><span class="pre">GSw_demand_scen</span></code>. Scenarios derived from both AEO and EER data are supported.</p></li>
+</ul>
+<p><strong>Hydrogen</strong></p>
+<ul class="simple">
+<li><p>When linked, FINITO defers to ReEDS for the representation of the production and transport of hydrogen.</p></li>
+<li><p>FINITO focus sector hydrogen demand from future conversion to hydrogen processes is tracked in ReEDS by <code class="docutils literal notranslate"><span class="pre">USE_H2_FINITO</span></code>.</p></li>
+<li><p>Note that when linked, FINITO does not represent existing industrial hydrogen demand; to account for this demand, when linked <code class="docutils literal notranslate"><span class="pre">GSw_H2_Demand_Case</span></code> should be set to <code class="docutils literal notranslate"><span class="pre">FINITO</span></code>.</p></li>
+</ul>
+<p><strong>CO2 representation</strong></p>
+<ul class="simple">
+<li><p>The linked model relies on ReEDS for the representation of CO2 transport and storage.</p></li>
+<li><p>Total CO2 captured from FINITO is represented by <code class="docutils literal notranslate"><span class="pre">CAPTURE_CO2EM</span></code>.</p></li>
+<li><p>In the absence of explicit CO2 transport and storage modeling (i.e., <code class="docutils literal notranslate"><span class="pre">GSw_CO2_Detail=0</span></code>), the FINITO switches <code class="docutils literal notranslate"><span class="pre">GSw_CO2Cost_opt</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_CO2Cost_value</span></code> should be used to provide a cost for transport and sequestration.</p></li>
+</ul>
+<p><strong>Other linkages</strong></p>
+<ul class="simple">
+<li><p>Functions for processing related the linked model are located in the <code class="docutils literal notranslate"><span class="pre">reeds/finito.py</span></code> module.</p></li>
+<li><p>Costs represented by FINITO are captured by <code class="docutils literal notranslate"><span class="pre">Z_finito</span></code>, which is rescaled and converted from <code class="docutils literal notranslate"><span class="pre">FINITO_dollaryear</span></code> before being added to costs from ReEDS in <code class="docutils literal notranslate"><span class="pre">eq_ObjFn</span></code>.</p></li>
+<li><p>Select outputs are saved by FINITO to a <code class="docutils literal notranslate"><span class="pre">finito_reeds_outputs_%case%.gdx</span></code> file, which is processed by <code class="docutils literal notranslate"><span class="pre">report_dump.py</span></code> to save csv/h5 outputs alongside other ReEDS results.</p></li>
+</ul>
+<p><strong>Summary of linkage</strong></p>
+<p>The following ReEDS sets, parameters, and variables are referenced in FINITO. If you plan to update any of these in a breaking way (e.g., changing the name or indices) please let one of the FINITO developers know.</p>
+<p>Sets: <code class="docutils literal notranslate"><span class="pre">allt</span></code>, <code class="docutils literal notranslate"><span class="pre">bio(i)</span></code>, <code class="docutils literal notranslate"><span class="pre">bs_reeds(bs)</span></code>, <code class="docutils literal notranslate"><span class="pre">cendiv</span></code>, <code class="docutils literal notranslate"><span class="pre">co2_routes(r,rr)</span></code>, <code class="docutils literal notranslate"><span class="pre">cofire(i)</span></code>, <code class="docutils literal notranslate"><span class="pre">cs</span></code>, <code class="docutils literal notranslate"><span class="pre">csfeas(cs)</span></code>, <code class="docutils literal notranslate"><span class="pre">i</span></code>, <code class="docutils literal notranslate"><span class="pre">map_i_fe(i,ec)</span></code>, <code class="docutils literal notranslate"><span class="pre">r</span></code>, <code class="docutils literal notranslate"><span class="pre">r_cendiv(r,cendiv)</span></code>, <code class="docutils literal notranslate"><span class="pre">r_cs(r,cs)</span></code>, <code class="docutils literal notranslate"><span class="pre">r_st(r,st)</span></code>, <code class="docutils literal notranslate"><span class="pre">st</span></code>, <code class="docutils literal notranslate"><span class="pre">st_cendiv(st,cendiv)</span></code>, <code class="docutils literal notranslate"><span class="pre">t(allt)</span></code>, <code class="docutils literal notranslate"><span class="pre">upgrade(i)</span></code>, <code class="docutils literal notranslate"><span class="pre">upgrade_to(i,ii)</span></code>, <code class="docutils literal notranslate"><span class="pre">v</span></code>, <code class="docutils literal notranslate"><span class="pre">valcap(i,v,r,t)</span></code>, <code class="docutils literal notranslate"><span class="pre">valgen(i,v,r,t)</span></code>, <code class="docutils literal notranslate"><span class="pre">valinv(i,v,r,t)</span></code></p>
+<p>Parameters: <code class="docutils literal notranslate"><span class="pre">capture_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">co2_injection_limit(cs)</span></code>, <code class="docutils literal notranslate"><span class="pre">co2_rate_elec_table(r,allt,*)</span></code>, <code class="docutils literal notranslate"><span class="pre">co2_storage_limit(cs)</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_co2_pipeline_cap(r,rr,allt)</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_co2_pipeline_fom(r,rr,allt)</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_co2_spurline_cap(r,cs,allt)</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_co2_spurline_fom(r,cs,allt)</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_co2_stor_bec(cs)</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_fom</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_prod</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_upgrade</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_vom</span></code>, <code class="docutils literal notranslate"><span class="pre">deflator(allt)</span></code>, <code class="docutils literal notranslate"><span class="pre">emit_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">heat_rate(i,v,r,t)</span></code>, <code class="docutils literal notranslate"><span class="pre">m_capacity_exog</span></code>, <code class="docutils literal notranslate"><span class="pre">price_ws_elec_ReEDS(r,allt,*)</span></code>, <code class="docutils literal notranslate"><span class="pre">r_cs_distance(r,cs)</span></code>, <code class="docutils literal notranslate"><span class="pre">tax_co2_input(allt,*)</span></code>, <code class="docutils literal notranslate"><span class="pre">upgrade_derate</span></code></p>
+<p>Variables: <code class="docutils literal notranslate"><span class="pre">GEN(i,v,r,h,t)</span></code></p>
+<p>Switches: <code class="docutils literal notranslate"><span class="pre">endyear</span></code>, <code class="docutils literal notranslate"><span class="pre">FINITO_dollaryear</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_CarbTax</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_CarbTaxOption</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_CO2_Detail</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_FINITO_Link</span></code> (set by <code class="docutils literal notranslate"><span class="pre">FINITO</span></code> switch in ReEDS <code class="docutils literal notranslate"><span class="pre">cases.csv</span></code>), <code class="docutils literal notranslate"><span class="pre">GSw_Region</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_RemoveSmallNumbers</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_RetailAdder</span></code>, <code class="docutils literal notranslate"><span class="pre">GSw_ZoneSet</span></code>, <code class="docutils literal notranslate"><span class="pre">ignore</span></code>, <code class="docutils literal notranslate"><span class="pre">keep_run_terminal</span></code>, <code class="docutils literal notranslate"><span class="pre">solver</span></code>, <code class="docutils literal notranslate"><span class="pre">yearset</span></code></p>
 </section>
 </section>
 <section id="troubleshooting">
