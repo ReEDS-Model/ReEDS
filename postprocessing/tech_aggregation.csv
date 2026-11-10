@@ -65,6 +65,8 @@ csp-ns,CSP,Solar,VRE,CSP
 dr_shed,DR Shed,DR,DR,DR Shed
 dr_shape,DR Shape,DR,DR,DR Shape
 dr_shift,DR Shift,DR,DR,DR Shift
+der-ftm-pv,DER-FTM-PV,Solar,VRE,DER-FTM-PV
+der-ftm-battery_li,DER-FTM-Battery,Storage,Storage,DER-FTM-Battery
 hydro,Hydropower,Hydropower,Hydropower,Hydropower Existing
 hyde,Hydropower,Hydropower,Hydropower,Hydropower Existing
 hydd,Hydropower,Hydropower,Hydropower,Hydropower New

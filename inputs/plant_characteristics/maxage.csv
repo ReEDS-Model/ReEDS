@@ -65,3 +65,5 @@ dr_shift_1*dr_shift_2,8
 electrolyzer,20
 smr,25
 smr_ccs,25
+der-ftm-pv,30
+der-ftm-battery_li,30

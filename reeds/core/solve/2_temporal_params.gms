@@ -754,6 +754,32 @@ $onlisting
 / ;
 $offempty
 
+* Front-of-the-meter DER operating requirements
+* Written by hourly_writetimeseries.py
+$onempty
+parameter der_ftm_min_output(r,allh,allt) "--MW-- minimum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_min_output.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_min_output.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_battery_nocharge(r,allh,allt) "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_battery_nocharge.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_battery_nocharge.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 * Written by hourly_writetimeseries.py
 parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"
 / 

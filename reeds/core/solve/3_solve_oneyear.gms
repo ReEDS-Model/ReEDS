@@ -43,8 +43,9 @@ $ifthene.post_startyear %cur_year%>%startyear%
 rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)] = 
 
 *capacity indicated by the resource supply curve net of first-year exogenous capacity
-*(with resource availability and hydro upgrade availability adjusted over time)
-    ( m_rsc_dat(r,i,rscbin,"cap")
+*(with resource availability and hydro upgrade availability adjusted over time;
+*front-of-the-meter DER use their capacity in year t, as in eq_der_ftm_INVlim)
+    ( m_rsc_dat(r,i,rscbin,"cap")$(not der_ftm(i)) + der_ftm_rsc(r,i,rscbin,t,"cap")
       - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
              capacity_exog_rsc(ii,v,r,rscbin,tt) } )
         * (1$[not rsc_capacity_scalar_i(i)]
@@ -205,12 +206,13 @@ $endif
 * the minimum cost of that technology within a state
 if(Sw_GrowthPenalties > 0,
 *rsc_fin_mult holds the multipliers for sccapcosttech, so don't include them here
-    cost_growth(i,st,t)$[tmodel(t)$sum{r$[r_st(r,st)], valinv_irt(i,r,t) }$stfeas(st)$(not sccapcosttech(i))] = 
+*(front-of-the-meter DER have a cost_cap, so they are treated like other techs)
+    cost_growth(i,st,t)$[tmodel(t)$sum{r$[r_st(r,st)], valinv_irt(i,r,t) }$stfeas(st)$(not sccapcosttech(i) or der_ftm(i))] = 
         smin{r$[valinv_irt(i,r,t)$r_st(r,st)$cost_cap_fin_mult(i,r,t)],
             cost_cap_fin_mult(i,r,t) * cost_cap(i,t) } ;
 
 *rsc_fin_mult holds the capital costs for sccapcosttech
-    cost_growth(i,st,t)$[tmodel(t)$sum{r$[r_st(r,st)], valinv_irt(i,r,t) }$stfeas(st)$sccapcosttech(i)] = 
+    cost_growth(i,st,t)$[tmodel(t)$sum{r$[r_st(r,st)], valinv_irt(i,r,t) }$stfeas(st)$sccapcosttech(i)$(not der_ftm(i))] = 
         smin{(r,rscbin)$[valinv_irt(i,r,t)$r_st(r,st)$rsc_fin_mult(i,r,t)],
             rsc_fin_mult(i,r,t) * m_rsc_dat(r,i,rscbin,"cost") } ;
 

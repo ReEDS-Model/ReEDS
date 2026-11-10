@@ -55,3 +55,5 @@ dac,0
 dac_gas,0
 electrolyzer,0
 can-imports,0
+der-ftm-pv,0.015
+der-ftm-battery_li,0.006

@@ -63,6 +63,10 @@ eq_ObjFn_inv(t)$tmodel(t)..
                   + sum{(i,v,r,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)$(not spur_techs(i))],
                       m_rsc_dat(r,i,rscbin,"cost") * rsc_fin_mult(i,r,t) * sum{ii$rsc_agg(i,ii), INV_RSC(ii,v,r,rscbin,t) } }
 
+* --- front-of-the-meter DER supply curve cost adders, which change by year ---
+                  + sum{(i,v,r,rscbin)$[der_ftm(i)$m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)],
+                      der_ftm_rsc(r,i,rscbin,t,"cost") * rsc_fin_mult(i,r,t) * INV_RSC(i,v,r,rscbin,t) }
+
 * ---cost of spur lines modeled explicitly---
 * NOTE: no rsc_fin_mult(i,r,t) here, but it's 1 for upv and wind-ons anyway
                   + sum{x$[Sw_SpurScen$xfeas(x)],

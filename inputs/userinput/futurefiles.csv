@@ -135,6 +135,10 @@ dr_shift_cost.csv,.csv,1,None,wide,"None",1,0,constant,None,None,new; check cons
 dr_shift_profile_energy.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant
 dr_shift_profile_decrease.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant
 dr_shift_profile_increase.csv,.csv,1,None,year,"i,hour",9999,0,constant,None,None,,constant
+der_ftm_min_output.h5,.h5,1,None,9999,None,9999,keepindex,constant,None,None,new,
+der_ftm_battery_nocharge.h5,.h5,1,None,9999,None,9999,keepindex,constant,None,None,new,
+der_ftm_prescribed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
+der_ftm_supplycurve.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 dr_types.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 e.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 eall.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,

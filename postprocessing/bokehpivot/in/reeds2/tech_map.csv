@@ -95,6 +95,8 @@ csp-ns*,CSP
 dr_shed*,DR Shed
 dr_shape*,DR Shape
 dr_shift*,DR Shift
+der-ftm-pv,DER-FTM-PV
+der-ftm-battery_li,DER-FTM-Battery
 hyd*,Hydropower
 egs_allkm_*,Geothermal
 geohydro_allkm_*,Geothermal

@@ -115,6 +115,9 @@ rsc_fin_mult(i,r,t)$dr_shape(i) = cost_cap_fin_mult(i,r,t)* dr_shape_capmult(i,r
 rsc_fin_mult_noITC(i,r,t)$dr_shape(i) = cost_cap_fin_mult_noITC(i,r,t)* dr_shape_capmult(i,r,t) ;
 rsc_fin_mult(i,r,t)$dr_shift(i) = cost_cap_fin_mult(i,r,t)* dr_shift_capmult(i,r,t) ;
 rsc_fin_mult_noITC(i,r,t)$dr_shift(i) = cost_cap_fin_mult_noITC(i,r,t)* dr_shift_capmult(i,r,t) ;
+* Front-of-the-meter DER also have capital costs included in the supply curve
+rsc_fin_mult(i,r,t)$der_ftm(i) = cost_cap_fin_mult(i,r,t) ;
+rsc_fin_mult_noITC(i,r,t)$der_ftm(i) = cost_cap_fin_mult_noITC(i,r,t) ;
 
 * Create a new parameter to hold capital financing multipliers with and without ITC for OSW transmission costs inside the resource supply curve cost
 * Currently, OSW receives federal incentives in both its capital and transmission costs, hence this custom application for OSW
