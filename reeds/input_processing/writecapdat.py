@@ -783,6 +783,43 @@ def main(reeds_path, inputs_case):
     prescribed_rsc = pd.concat([cap_pres[tech] for tech in TECH["rsc_wsc"]
                                 if tech in cap_pres and not cap_pres[tech].empty],ignore_index=True)
 
+    # Front-of-the-meter DER builds in the first supply curve bin are prescribed
+    if int(sw.GSw_DER_FTM):
+        der_ftm_prescribed = pd.read_csv(os.path.join(inputs_case, 'der_ftm_prescribed.csv'))
+        der_ftm_prescribed['MWh'] = der_ftm_prescribed['MWh'].fillna(0)
+        # Energy capacity [MWh] is only prescribed for batteries, alongside prescribed power capacity
+        der_ftm_batteries = reeds.techs.get_tech_subset_table(inputs_case).loc['BATTERY'].values
+        bad_energy = der_ftm_prescribed.loc[
+            (der_ftm_prescribed['MWh'] > 0)
+            & ~(der_ftm_prescribed['i'].isin(der_ftm_batteries) & (der_ftm_prescribed['MW'] > 0))
+        ]
+        if len(bad_energy):
+            raise ValueError(
+                'der_ftm_prescribed.csv: MWh can only be given for batteries with MW > 0:\n'
+                f'{bad_energy}'
+            )
+        der_ftm_prescribed = der_ftm_prescribed.loc[
+            (der_ftm_prescribed['t'] >= startyear)
+            & (der_ftm_prescribed['t'] <= endyear)
+            & (der_ftm_prescribed['MW'] > 0)
+        ].copy()
+        # assign vintages based on the build year
+        ivt_lookup = ivt_df.set_index('Unnamed: 0')
+        der_ftm_prescribed['v'] = [
+            'new' + ivt_lookup.at[i, str(t)]
+            for i, t in zip(der_ftm_prescribed['i'], der_ftm_prescribed['t'])
+        ]
+        prescribed_rsc = pd.concat(
+            [prescribed_rsc, der_ftm_prescribed.rename(columns={'MW': 'value'})],
+            ignore_index=True,
+        )[COLNAMES['prescribed_RSC'][1]]
+        der_ftm_prescribed_energy = (
+            der_ftm_prescribed.loc[der_ftm_prescribed['MWh'] > 0]
+            .rename(columns={'MWh': 'value'})[['i','v','r','t','value']]
+        )
+    else:
+        der_ftm_prescribed_energy = pd.DataFrame(columns=['i','v','r','t','value'])
+
 
     #%%----------------------------------------------------------------------------
     ################################
@@ -1033,6 +1070,10 @@ def main(reeds_path, inputs_case):
 
         prescribed_nonRSC_energy = prescribed_nonRSC_energy.groupby(['i','v','r','t']).value.sum().reset_index()
         prescribed_nonRSC_energy.columns = ['i','v','r','t','value']
+
+    # Prescribed energy capacity of front-of-the-meter DER batteries
+    prescribed_nonRSC_energy = pd.concat(
+        [prescribed_nonRSC_energy, der_ftm_prescribed_energy], ignore_index=True)
 
     # Final Groupby step for capacity groupings not affected by GSw_WaterMain:
     caprsc = caprsc.groupby(['i','v','r']).value.sum().reset_index()

@@ -1007,6 +1007,102 @@ def main(
             dr_capacity_scalar_reg.to_csv(os.path.join(inputs_case, f'{dr_type}_capacity_scalar.csv'), index=False)
 
 
+    #######################################################
+    #    -- Front-of-the-meter DER --    #
+    #######################################################
+    # The FTM DER supply curve changes by year: in each year t, cap is the cumulative capacity
+    # available in each bin through t and cost is the adder [$/MW] to the utility-scale capital
+    # cost (cost_cap) for builds in t. bin1 holds the prescribed builds, so its capacity in t is
+    # the cumulative prescribed capacity through t; the remaining bins are optional.
+    # Values are filled forward from the data years; bins are unavailable before the first data year.
+    # The time-varying supply curve is written to der_ftm_rsc.csv. rsc_combined.csv gets each
+    # bin's largest capacity (to define feasible bins) and no cost.
+    der_ftm_rsc_cols = ['r', 'i', 'rscbin', 't', 'sc_cat', 'value']
+    if int(sw.GSw_DER_FTM):
+        der_ftm_sc = pd.read_csv(os.path.join(inputs_case, 'der_ftm_supplycurve.csv'))
+        if der_ftm_sc.loc[der_ftm_sc.rscbin == 'bin1', 'cap'].notna().any():
+            raise ValueError(
+                'bin1 capacity in der_ftm_supplycurve.csv must be blank: '
+                'it is set to the cumulative prescribed capacity in der_ftm_prescribed.csv'
+            )
+        years = range(int(sw.startyear), int(sw.endyear) + 1)
+        der_ftm_sc = (
+            der_ftm_sc.set_index(['i', 'r', 'rscbin', 't'])[['cap', 'cost']]
+            .unstack(['i', 'r', 'rscbin'])
+            .reindex(years).ffill()
+            .stack(['i', 'r', 'rscbin'], future_stack=True)
+            .dropna(subset=['cost'])
+            .reorder_levels(['i', 'r', 'rscbin', 't']).sort_index()
+        )
+        # Bin capacity is cumulative, so it cannot decrease over time
+        cap_change = der_ftm_sc['cap'].groupby(['i', 'r', 'rscbin']).diff()
+        if (cap_change < 0).any():
+            raise ValueError(
+                'Bin capacity in der_ftm_supplycurve.csv cannot decrease over time:\n'
+                f'{cap_change.loc[cap_change < 0]}'
+            )
+        # Prescribed builds fill bin1
+        der_ftm_prescribed = pd.read_csv(os.path.join(inputs_case, 'der_ftm_prescribed.csv'))
+        der_ftm_prescribed = der_ftm_prescribed.loc[
+            der_ftm_prescribed.t.between(int(sw.startyear), int(sw.endyear))
+            & (der_ftm_prescribed.MW > 0)
+        ]
+        # (rounded up to 1e-6 MW so it is not below the sum of the prescriptions in GAMS)
+        der_ftm_bin1_cap = (
+            der_ftm_prescribed.groupby(['i', 'r', 't']).MW.sum()
+            .unstack(['i', 'r']).reindex(years).fillna(0).cumsum()
+            .stack(['i', 'r'], future_stack=True).rename('cap')
+        )
+        der_ftm_bin1_cap = np.ceil(der_ftm_bin1_cap.round(9) * 1e6) / 1e6
+        der_ftm_bin1_cap = der_ftm_bin1_cap.loc[der_ftm_bin1_cap > 0]
+        der_ftm_bin1_cost = der_ftm_sc.xs('bin1', level='rscbin')['cost']
+        missing_cost = (
+            der_ftm_bin1_cap.reorder_levels(['i', 'r', 't']).index
+            .difference(der_ftm_bin1_cost.index)
+        )
+        if len(missing_cost):
+            raise ValueError(
+                'Missing bin1 cost in der_ftm_supplycurve.csv for prescribed (i,r,t) '
+                '(bin1 needs a cost in or before the first year with prescribed builds): '
+                f'{missing_cost.tolist()}'
+            )
+        is_bin1 = der_ftm_sc.index.get_level_values('rscbin') == 'bin1'
+        der_ftm_sc.loc[is_bin1, 'cap'] = (
+            der_ftm_bin1_cap.reorder_levels(['i', 'r', 't'])
+            .reindex(der_ftm_sc.loc[is_bin1].index.droplevel('rscbin')).fillna(0).values
+        )
+        # Optional bins must not be cheaper than bin1, or prescribed builds would not fill bin1
+        cost_wide = der_ftm_sc['cost'].unstack('rscbin')
+        bins = sorted(cost_wide.columns, key=lambda b: int(b.replace('bin', '')))
+        cost_wide = cost_wide[bins]
+        out_of_order = (cost_wide < cost_wide.cummax(axis=1)).any(axis=1)
+        if out_of_order.any():
+            raise ValueError(
+                'Costs in der_ftm_supplycurve.csv must not decrease from one bin to the next:\n'
+                f'{cost_wide.loc[out_of_order]}'
+            )
+        der_ftm_sc['cost'] *= deflate[f'der_ftm_{sw.der_ftm_scen}']
+        der_ftm_rsc = (
+            der_ftm_sc.rename_axis(columns='sc_cat').stack(future_stack=True).dropna().rename('value')
+            .reset_index()[der_ftm_rsc_cols]
+            .sort_values(der_ftm_rsc_cols[:-1])
+            .round(6)
+        )
+        allout_list.append(
+            der_ftm_sc['cap'].groupby(['i', 'r', 'rscbin']).max().to_frame()
+            .assign(cost=0.)
+            .reset_index()
+            .rename(columns={'i': 'tech', 'rscbin': 'variable'})
+            .melt(id_vars=['tech', 'r', 'variable'], value_vars=['cap', 'cost'], var_name='var')
+            [['tech', 'r', 'value', 'var', 'variable']]
+        )
+    else:
+        der_ftm_rsc = pd.DataFrame(columns=der_ftm_rsc_cols)
+    if write:
+        der_ftm_rsc.rename(columns={'r': '*r'}).to_csv(
+            os.path.join(inputs_case, 'der_ftm_rsc.csv'), index=False)
+
+
     # %%----------------------------------------------------------------------------------
     ##################################
     #    -- Combine everything --    #

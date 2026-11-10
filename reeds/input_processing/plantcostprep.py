@@ -258,12 +258,27 @@ battery['capcost_energy'] = (
 battery = battery.reset_index()
 
 
+#%%#################################
+#    -- Front-of-the-meter DER --    #
+####################################
+# FTM DER use the costs and performance of the corresponding utility-scale technologies
+# (UPV in $/kW_DC, and battery_li including its refurbishment adder); the FTM DER supply
+# curve (writesupplycurves.py) adds a cost adder to the capital cost
+if int(sw.GSw_DER_FTM):
+    der_ftm = pd.concat([
+        upv.reset_index()[['t','capcost','fom','vom']].assign(i='der-ftm-pv'),
+        battery.loc[battery.i == 'battery_li'].assign(i='der-ftm-battery_li'),
+    ], sort=False)
+else:
+    der_ftm = pd.DataFrame()
+
+
 #%%############################
 #    -- Concat all data --    #
 ###############################
 
 alldata = pd.concat([conv,upv_stack,wind_stack,geo_stack,csp_stack,battery,
-                     beccs,ccsflex,h2combustion],sort=False)
+                     beccs,ccsflex,h2combustion,der_ftm],sort=False)
 
 if sw.upgradescen != 'default':
     alldata = pd.concat([alldata,upgrade])

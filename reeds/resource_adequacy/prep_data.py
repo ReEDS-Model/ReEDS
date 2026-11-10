@@ -505,6 +505,18 @@ def main(t, casedir, iteration=0):
     missing_index = energy_cap.index.difference(max_cap.index)
     max_cap = pd.concat([max_cap, pd.Series(0, index=missing_index, name=max_cap.name)])
 
+    ## Distribution-connected (front-of-the-meter DER) storage charges and discharges at the
+    ## end-use level, so 1 MW at the device is 1/(1-distloss) MW at the busbar (as in
+    ## busbar_mult_storage in ReEDS). Scale its power and energy capacity to busbar-equivalent
+    ## values; the charging and discharging efficiencies are unchanged in these units.
+    der_ftm_storage = (
+        set(tech_subset_table.loc[tech_subset_table.index == 'DER_FTM'].values)
+        & set(gdxreeds['storage_standalone'].i)
+    )
+    busbar_mult = 1 / (1 - reeds.io.get_scalars(casedir)['distloss'])
+    for df in [max_cap, energy_cap]:
+        df.loc[df.index.get_level_values('i').isin(der_ftm_storage)] *= busbar_mult
+
     ## Drop storage with energy or power capacity below the PRAS cutoff
     too_small_storage = list(set(
         energy_cap.loc[energy_cap < sw['storcap_cutoff']].index.tolist()

@@ -184,7 +184,8 @@ def identify_required_remote_files(sw) -> list:
         ])
     if int(sw.GSw_OfsWind) and not fake:
         required_files.append(f"cf_wind-ofs_{sw.GSw_SitingWindOfs}.h5")
-    if int(sw.GSw_distpv):
+    # Front-of-the-meter PV (GSw_DER_FTM) uses the distpv profile
+    if int(sw.GSw_distpv) or int(sw.get('GSw_DER_FTM', 0)):
         required_files.append("cf_distpv_county.h5")
 
     ## If a filepath is provided to GSw_LoadProfiles, we don't pull it from the remote

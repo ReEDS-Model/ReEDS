@@ -382,6 +382,59 @@ def get_yearly_flexibility(
         return shape_out["decrease"], shape_out["increase"]
 
 
+def get_der_ftm_profiles(
+    sw,
+    hmap_myr,
+    hmap_allyrs,
+    inputs_case,
+    modeledyears,
+    periodtype='rep',
+):
+    """
+    Extract the front-of-the-meter (FTM) DER operating profiles for the modeled periods.
+    The input profiles are indexed by (year, hour of year) and are applied to every weather year.
+    Each modeled year uses the profile for the latest input year at or before it
+    (or the earliest input year if all input years are after it).
+
+    Returns a dict of dataframes with columns [r, h, t, value] for
+    'der_ftm_min_output' (minimum combined net output of FTM DER [MW]) and
+    'der_ftm_battery_nocharge' (1 where FTM batteries cannot charge).
+    """
+    ### Get the hour of year for each modeled hour
+    if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
+        hmap = hmap_allyrs.loc[hmap_allyrs.year.isin(sw['GSw_HourlyWeatherYears'])]
+    else:
+        hmap = hmap_allyrs.loc[hmap_allyrs.actual_h.isin(hmap_myr.h.unique())]
+    h2yearhour = hmap.set_index('actual_h').yearhour.rename_axis('h')
+
+    profiles = {}
+    for ptype in ['der_ftm_min_output', 'der_ftm_battery_nocharge']:
+        dfin = reeds.io.read_file(os.path.join(inputs_case, f'{ptype}.h5'))
+        ## No data for the modeled regions
+        if dfin.columns.empty:
+            profiles[ptype] = pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
+            continue
+        datayears = sorted(dfin.index.get_level_values('year').unique())
+        dfout = {}
+        for t in modeledyears:
+            datayear = max([y for y in datayears if y <= int(t)], default=datayears[0])
+            dfout[int(t)] = (
+                dfin.xs(datayear, level='year')
+                .reindex(h2yearhour.values)
+                .set_axis(h2yearhour.index)
+            )
+        profiles[ptype] = (
+            pd.concat(dfout, names=['t'])
+            .rename_axis(columns='r')
+            .stack()
+            .rename('value')
+            .reset_index()
+            [['r', 'h', 't', 'value']]
+        )
+
+    return profiles
+
+
 # %% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
@@ -492,6 +545,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'dr_shift_discharge': ['*i','r','h','t'],
             'dr_shift_charge': ['*i','r','h','t'],
             'dr_shift_profile_energy': ['*i','r','h','t'],
+            'der_ftm_min_output': ['*r','h','t'],
+            'der_ftm_battery_nocharge': ['*r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
             'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
@@ -1246,6 +1301,24 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         dr_shift_inc = pd.DataFrame(columns=["i", "r", "h", "t"])
         dr_shift_profile_energy = pd.DataFrame(columns=["i", "r", "h", "t"])
 
+    ###############################
+    # -- Front-of-the-meter DER -- #
+    ###############################
+
+    if int(sw.GSw_DER_FTM):
+        der_ftm_profiles = get_der_ftm_profiles(
+            sw=sw,
+            hmap_myr=hmap_myr,
+            hmap_allyrs=hmap_allyrs,
+            inputs_case=inputs_case,
+            modeledyears=modeledyears,
+            periodtype=periodtype,
+        )
+    else:
+        der_ftm_profiles = {
+            ptype: pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
+            for ptype in ['der_ftm_min_output', 'der_ftm_battery_nocharge']
+        }
 
 
     #%% Chunk the profiles
@@ -1505,6 +1578,22 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False,
         ],
+        ## Front-of-the-meter DER: minimum combined net output [MW]
+        ## and battery charging restriction [fraction of the chunk in which charging is not allowed]
+        **{
+            ptype: [
+                (
+                    df.assign(h=df.h.map(chunkmap))
+                    .groupby(["r", "h", "t"]).value.mean()
+                    .round(decimals)
+                    .loc[lambda x: x > 0]
+                    .reset_index()
+                ),
+                False,
+                False,
+            ]
+            for ptype, df in der_ftm_profiles.items()
+        },
         ## Gas price multipliers
         'daily_gasprice_multipliers_r': [
             daily_gasprice_multipliers_dict['r'].round(decimals),
