@@ -60,7 +60,7 @@ A range of values for global warming potentials (GWP) of CH<sub>4</sub> and N<su
 #### The regulation itself
 
 The Clean Air Act, Section 111 is a federal regulation from the Environmental Protection Agency (EPA), which features carbon pollution standards to reduce greenhouse gas emissions from power plants.
-These regulations are called Section 111 for the section of the tax code which it is implemented in.
+These regulations are called Section 111 for the section of the Clean Air Act under which they are issued.
 The regulations stipulate a couple of compliance mechanisms for plants to comply with these regulations.
 
 The first compliance mechanism, and the strictest, is a best system of emissions reduction (BSER) for every technology and vintage (existing vs new plants).
@@ -91,7 +91,8 @@ This is only possible if that state also has coal-CCS plants with high capture r
 - [History of the Clean Air Act](https://www.epa.gov/clean-air-act-overview/evolution-clean-air-act)
 
 #### Implementation in ReEDS
-In ReEDS, new gas plants must adhere to their BSER and existing coal plants adhere to an emissions rate-based standard.
+These provisions are off by default and are active only when `GSw_Clean_Air_Act=1`.
+When active, new gas plants must adhere to their BSER and existing coal plants adhere to an emissions rate-based standard.
 
 For new gas plants, this is the code implementation:
 
@@ -114,11 +115,11 @@ For existing coal plants, this is the code implementation:
     A unit that captures more than 90%, such as a new coal-CCS plant at 95%, emits less than its own allowance and so creates headroom for other coal in that state.
 2. `reeds/input_processing/WriteHintage.py`
     - Coal plants are binned at the unit level if `GSw_Clean_Air_Act=1` so that each coal unit can independently choose to retire or upgrade.
+    - The number of existing-capacity bins is set to the largest bin number across all technologies (rather than `numhintage`) to accommodate the large number of coal bins.
     - Coal plants maintain their exogenous retirement assumption, except after 2032, when the Clean Air Act regulations begin and coal can retire endogenously.
     For example, if the NEMS data states that a plant will retire in 2029, we maintain that assumption and that plant will retire in 2029.
     However, if the NEMS data previously stated that a plant will retire in 2040, they are now subject to the Clean Air Act regulations and may retire sooner than their previously stated retirement date.
 3. `b_inputs.gms`
-    - `numhintage` is set to 300, so that we can accommodate a large number of coal bins since they are binned at the unit level.
     - Revise `m_capacity_exog` so that it matches with which coal capacity is allowed.
     - if `caa_coal_retire_year` is not in the set of years being modeled for this run, then set it to the first year that is modeled after `caa_coal_retire_year`.
     For example, if running 5 year solves, then instead of enforcing coal retirement in 2032, it will be enforced in 2035.
