@@ -124,7 +124,13 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
             int(sw['numbins_upv']),
             15,
         ))
-    dfcases_out = pd.concat([dfcases, pd.DataFrame(new_switches)])
+        ## add intermediate ReEDS-FINITO switches
+        new_switches = reeds.finito.update_FINITO_switches(case, sw, new_switches)
+
+    # combine old and new switches, dropping the old 'FINITO_dir' to avoid
+    # duplication with the filled path from update_FINITO_switches
+    dfcases_out = pd.concat([dfcases.drop('FINITO_dir'), pd.DataFrame(new_switches)])
+    
     return dfcases_out
 
 
@@ -273,7 +279,7 @@ def parse_cases(
                         "To ensure consistency, we strongly recommend setting "
                         "`GSw_HourlyClusterAlgorithm = user` in your switch configuration.\n"
                     )
-                    if not skip_checks:
+                    if not force:
                         user_input = input("Do you want to proceed with the current setup? y/[n]")
                         if user_input.strip().lower() not in ['yes', 'y']:
                             print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
@@ -285,7 +291,7 @@ def parse_cases(
                 sw = dfcases[c].fillna(dfcases['Default Value'])
                 mcs_dist_path = os.path.join(
                     reeds.io.reeds_path, 'inputs', 'userinput',
-                    'mcs_distributions_{}.yaml'.format(sw.MCS_dist)
+                    f'mcs_distributions_{sw.MCS_dist}.yaml'
                 )
                 if int(dfcases[c].MCS_runs) > 0:
                     mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
@@ -368,6 +374,9 @@ def solvestring_sequential(
             'GSw_StateCO2ImportLevel',
             'GSw_StartMarkets',
             'GSw_ValStr',
+            'GSw_FINITO_Link',
+            'FINITO_first_year',
+            'FINITO_dollaryear',
             'solver',
             'debug',
             'startyear',
