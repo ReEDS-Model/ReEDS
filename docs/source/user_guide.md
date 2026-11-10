@@ -85,7 +85,7 @@ Here is partial list of remotely hosted files used by ReEDS:
       affinity='euclidean', linkage='ward')
   ```
 
-  - If set to 'optimized', then a two-step custom optimization is performed using the `hourly_repperiods.optimize_period_weights()` and `hourly_repperiods.match_act2rep_milp()` functions to minimize the deviation in regional load and PV/wind CF between the weighted representative periods and the full year.
+  - If set to 'optimized', then a two-step custom optimization is performed using the `reeds.timeseries.optimize_period_weights()` and `reeds.timeseries.match_act2rep_milp()` functions to minimize the deviation in regional load and PV/wind CF between the weighted representative periods and the full year.
   - If set to a string containing the substring 'user', then instead of optimizing the choice of representative periods for this run, the model reads a user-supplied file at `inputs/temporal/period_szn_{GSw_HourlyClusterAlgorithm}.csv`.
     - So if you want to use the example period:szn map, set `GSw_HourlyClusterAlgorithm=user` and provide `inputs/temporal/period_szn_user.csv`.
     - If you want to specify a different period:szn map, then create a file with your label in the filename and set `GSw_HourlyClusterAlgorithm` to that same label (which must contain the substring 'user'). For example, for `GSw_HourlyClusterAlgorithm=user_myname_20230130`, provide `inputs/temporal/period_szn_user_myname_20230130.csv`.
