@@ -112,7 +112,7 @@ GSw_CCS_NoRetire,Switch to prevent coal and gas from turning off CCS equipment a
 GSw_CheckInputs,Switch to turn on/off inputs checking,0; 1,1,
 climateloc,Directory for climate scenarios (change to qnap/CIRA_Inputs_R2 to use scenarios not included in inputs/climate),N/A,inputs/climate,
 climatescen,Climate scenario for climate impacts,HadGEM2-ES_rcp45_AT; HadGEM2-ES_rcp85_AT; HadGEM2-ES_RCP2p6; HadGEM2-ES_RCP4p5; HadGEM2-ES_RCP8p5; GFDL-ESM2M_RCP4p5_WM; IPSL-CM5A-LR_RCP8p5_WM,HadGEM2-ES_rcp45_AT,
-GSw_Clean_Air_Act,"Turn on/off the provisions under the Clean Air Act, Section 111, which regulate the emissions from existing coal plants and new gas plants.",0; 1,1,
+GSw_Clean_Air_Act,"Turn on/off the provisions under the Clean Air Act, Section 111, which regulate the emissions from existing coal plants and new gas plants.",0; 1,0,
 GSw_ClimateHeuristics,Select scenario for a variety of climate heuristics,none; 2025_2050_linear,none,
 GSw_ClimateHydro,Turn on/off climate impacts on hydropower,0; 1,0,
 GSw_ClimateStartYear,Year in which to start applying climate impacts,N/A,2022,
