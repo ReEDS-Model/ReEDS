@@ -1,32 +1,42 @@
 # User guide
 
 ## General Suggestions
+
 ### Document and Communicate Inputs
+
 Document and communicate inputs used and any changes made to the model. For example, published reports or journal articles should include enough information so that others can reproduce your work.
 
 ### Emphasize Aggregated Results
+
 Emphasize aggregated results rather than results for a specific region or year, given that aggregate results will be more robust.  For example, the magnitude of new wind builds identified across a multistate region will be substantially more robust result than wind builds in a single ReEDS region. Similarly, the magnitude of natural gas combined cycle capacity additions across a multiyear period (e.g., 2030-2040) will be more robust result than the amount added in a single year (e.g., 2032).
 
 We recommend this practice because:
+
 - ReEDS results at their finest resolution can be sensitive to small changes in assumptions. For example, small differences in natural gas prices between two adjacent regions could lead to large disparities in gas-based capacity expansion in those regions that ignore practical constraints that might produce more even deployment.
 - ReEDS was designed as a national-scale model. That level of geographic scope means that many local conditions important to power plant build decisions might not be captured.
 
 ### Emphasize Trends or Scenario Differences
+
 Emphasize trends or scenario differences over absolute results.  For example, the result that photovoltaic (PV) deployment is highly sensitive to natural gas price is more robust than the specific amounts of PV capacity deployed under high and low gas price scenarios.
 
 ### Understand Calculations Behind Reported Numbers
+
 Do not rely on parameter names or labels alone when interpreting results. Explore the underlying calculations to ensure a robust understanding of the parameter and what it means. For example, reported electricity prices represent the marginal cost of meeting an additional infinitesimally small amount of load. They do not consider existing real-world market structure, rate design, or distribution costs, and thus should not be interpreted as estimates of retail rates.
 
 ### Employ Scenario Sensitivity Analysis
+
 Always employ scenario sensitivity analysis. ReEDS is a deterministic model, so uncertainties are not captured in individual model runs.
 
 ### Deliberately Choose Model Inputs
+
 Be deliberate in how you choose model inputs.  The ReEDS default values are not necessarily “most likely,” and “high” and “low” input options are not based on specific probabilities of occurrence.
 
 ### Keep Questions Within Model's Scope
+
 Ensure that your questions are within the scope of the model. ReEDS is primarily meant to inform decisions at the investment or planning timescales in the bulk power sector.  For other questions at different timescales (such as unit commitment questions) or touching other sectors (such as distributed generation adoption), other models should be used.  However, ReEDS might be used to inform inputs or identify analysis questions for these other models.
 
 ### Cautiously Use Near-Term Results
+
 Use near-term results with caution.  We have designed ReEDS primarily to consider long-term questions, and as such, not all near-term power sector changes are represented.
 
 ## Large input files
@@ -77,10 +87,10 @@ Here is partial list of remotely hosted files used by ReEDS:
 
   - If set to 'optimized', then a two-step custom optimization is performed using the `hourly_repperiods.optimize_period_weights()` and `hourly_repperiods.match_act2rep_milp()` functions to minimize the deviation in regional load and PV/wind CF between the weighted representative periods and the full year.
   - If set to a string containing the substring 'user', then instead of optimizing the choice of representative periods for this run, the model reads a user-supplied file at `inputs/temporal/period_szn_{GSw_HourlyClusterAlgorithm}.csv`.
-      - So if you want to use the example period:szn map, set `GSw_HourlyClusterAlgorithm=user` and provide `inputs/temporal/period_szn_user.csv`.
-      - If you want to specify a different period:szn map, then create a file with your label in the filename and set `GSw_HourlyClusterAlgorithm` to that same label (which must contain the substring 'user'). For example, for `GSw_HourlyClusterAlgorithm=user_myname_20230130`, provide `inputs/temporal/period_szn_user_myname_20230130.csv`.
-      - Make sure the settings for `GSw_HourlyType` and `GSw_HourlyWeatherYears` match your user-defined map. For example, if your user-defined map includes 365 representative days for weather year 2012, then set `GSw_HourlyType=day` and `GSw_HourlyWeatherYears=2012`.
-      - You can feed the period:szn mapping from a completed run into the inputs folder of your repo to force ReEDS to use the same representative or stress periods.
+    - So if you want to use the example period:szn map, set `GSw_HourlyClusterAlgorithm=user` and provide `inputs/temporal/period_szn_user.csv`.
+    - If you want to specify a different period:szn map, then create a file with your label in the filename and set `GSw_HourlyClusterAlgorithm` to that same label (which must contain the substring 'user'). For example, for `GSw_HourlyClusterAlgorithm=user_myname_20230130`, provide `inputs/temporal/period_szn_user_myname_20230130.csv`.
+    - Make sure the settings for `GSw_HourlyType` and `GSw_HourlyWeatherYears` match your user-defined map. For example, if your user-defined map includes 365 representative days for weather year 2012, then set `GSw_HourlyType=day` and `GSw_HourlyWeatherYears=2012`.
+    - You can feed the period:szn mapping from a completed run into the inputs folder of your repo to force ReEDS to use the same representative or stress periods.
       More detail can be found in the <a href="postprocessing_tools.html#fix-representative-stress-periods-preprocessing-get-case-periods-py">postprocessing tools</a> guide.
 
 - `GSw_PRM_StressThreshold`: The default setting of 'transgrp_1_EUE_sum' means a threshold of "**1** ppm NEUE in each **transgrp**", with stress periods selected by the daily **sum** of **EUE** within each **transgrp**.
@@ -107,23 +117,23 @@ Here is partial list of remotely hosted files used by ReEDS:
 The hourly load files are hosted remotely as described in [Large Input Files](#large-input-files).
 The `GSw_LoadProfiles` switch corresponds to a file saved to `inputs/remote/demand_{GSw_LoadProfiles}_{record_id}.h5` and its link at `inputs/profiles_demand/demand_{GSw_LoadProfiles}.h5`.
 
-| Switch Name    | Description of Profile | Origin | Weather year included |
+| Switch Name | Description of Profile | Origin | Weather year included |
 | ------------- | ------------- | ------------- | ------------- |
 | historic | Detrended historic demand from 2007-2013 and 2016-2023. This is multiplied by annual growth factors from AEO to forecast load growth. | Produced by the ReEDS team from a compilation of data sources. More detail can be found in the [hourlize readme](https://github.com/ReEDS-Model/ReEDS/tree/main/hourlize). | 2007-2013 & 2016-2023 |
-| EFS_Clean2035_LTS | Net-zero emissions, economy wide, by 2050 based on the White House's Long Term Strategy as shown here: <https://www.whitehouse.gov/wp-content/uploads/2021/10/US-Long-Term-Strategy.pdf> | Developed for the 100% Clean Electricity by 2035 study: <https://www.nlr.gov/docs/fy22osti/81644.pdf> |  2007-2013 |
-| EFS_Clean2035    | Accelerated Demand Electrification (ADE) profile. This profile was custom made for the 100% Clean Electricity by 2035 study. More information about how it was formed can be found in <https://www.nlr.gov/docs/fy22osti/81644.pdf> Appendix C. | Developed for the 100% Clean Electricity by 2035 study: <https://www.nlr.gov/docs/fy22osti/81644.pdf> |  2007-2013 |
-| EFS_Clean2035clip1pct | Same as Clean2035 but clips off the top 1% of load hours. | Developed for the 100% Clean Electricity by 2035 study: <https://www.nlr.gov/docs/fy22osti/81644.pdf> |  2007-2013 |
-| EFS_HIGH | Features a combination of technology advancements, policy support and consumer enthusiasm that enables transformational change in electrification.   | Developed for the Electrification Futures Study <https://www.nlr.gov/docs/fy18osti/71500.pdf>. | 2007-2013 |
-| EFS_MEDIUMStretch2046 | An average of the EFS_MEDIUM profile and the AEO reference trajectory. This was created to very roughly simulate the EV and broader electrification incentives in IRA, before we had better estimates of the actual effects of IRA. | NLR researchers combined the EFS_MEDIUM profile and the AEO reference trajectory. |  2007-2013 |
+| EFS_Clean2035_LTS | Net-zero emissions, economy wide, by 2050 based on the White House's Long Term Strategy as shown here: <https://www.whitehouse.gov/wp-content/uploads/2021/10/US-Long-Term-Strategy.pdf> | Developed for the 100% Clean Electricity by 2035 study: <https://www.nlr.gov/docs/fy22osti/81644.pdf> | 2007-2013 |
+| EFS_Clean2035 | Accelerated Demand Electrification (ADE) profile. This profile was custom made for the 100% Clean Electricity by 2035 study. More information about how it was formed can be found in <https://www.nlr.gov/docs/fy22osti/81644.pdf> Appendix C. | Developed for the 100% Clean Electricity by 2035 study: <https://www.nlr.gov/docs/fy22osti/81644.pdf> | 2007-2013 |
+| EFS_Clean2035clip1pct | Same as Clean2035 but clips off the top 1% of load hours. | Developed for the 100% Clean Electricity by 2035 study: <https://www.nlr.gov/docs/fy22osti/81644.pdf> | 2007-2013 |
+| EFS_HIGH | Features a combination of technology advancements, policy support and consumer enthusiasm that enables transformational change in electrification. | Developed for the Electrification Futures Study <https://www.nlr.gov/docs/fy18osti/71500.pdf>. | 2007-2013 |
+| EFS_MEDIUMStretch2046 | An average of the EFS_MEDIUM profile and the AEO reference trajectory. This was created to very roughly simulate the EV and broader electrification incentives in IRA, before we had better estimates of the actual effects of IRA. | NLR researchers combined the EFS_MEDIUM profile and the AEO reference trajectory. | 2007-2013 |
 | EFS_MEDIUM | Features a future with widespread electrification among the “low-hanging fruit” opportunities in electric vehicles, heat pumps and select industrial applications, but one that does not result in transformational change. | Developed for the Electrification Futures Study <https://www.nlr.gov/docs/fy18osti/71500.pdf>. | 2007-2013 |
-| EFS_REFERENCE | Features the least incremental change in electrification through 2050, which serves as a baseline of comparison to the other scenarios.| Developed for the Electrification Futures Study <https://www.nlr.gov/docs/fy18osti/71500.pdf>. | 2007-2013 |
-| EER2023_Baseline_AEO2022  | Business as usual load growth. Based on the service demand projections from AEO 2022. This does not include the impacts of the Inflation Reduction Act.   | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. More information can be found in [EER's 2022 Annual Decarbonization Report](https://www.evolved.energy/post/adp2022). This is the "Baseline" scenario in EER's 2022 ADP. | 2007-2013 |
-| EER2023_IRAlow  | Modeling load change under conservative assumptions about the Inflation Reduction Act | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. This scenario is unfortunately not described in EER's 2022 ADP. It was originally prepared for the Princeton REPEAT project. Please cite the [Princeton REPEAT project](https://repeatproject.org/) when using this profile. | 2007-2013 |
-| EER2023_IRAmoderate  |  Modeling load change under moderate assumptions about the Inflation Reduction Act | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. This scenario is unfortunately not described in EER's 2022 ADP. It was originally prepared for the Princeton REPEAT project. Please cite the [Princeton REPEAT project](https://repeatproject.org/) when using this profile. | 2007-2013 |
-| EER2023_100by2050  | 100% decarbonization by 2050 scenario. This does not explicitly include the impacts of the Inflation Reduction Act. However, due to its decarbonization, it is a more aggressive electrification profile than EER2025_IRAlow.  | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. More information can be found in [EER's 2022 Annual Decarbonization Report](https://www.evolved.energy/post/adp2022). This is the "Central" scenario in EER's 2022 ADP. | 2007-2013 |
-| EER2025_Baseline_AEO2023  | Business as usual load growth. Based on the service demand projections from AEO 2023. This does not include the impacts of the Inflation Reduction Act.   | Purchased from Evolved Energy Research in 2024. More information can be found in [EER's 2024 Annual Decarbonization Report](https://www.evolved.energy/us-adp-2024). This is the "Baseline" scenario in EER's 2024 ADP. | 2007-2013 & 2016-2023 |
-| EER2025_IRAlow  | Modeling load change under conservative assumptions about the Inflation Reduction Act   | Purchased from Evolved Energy Research in 2024. This scenario is not described in EER's 2024 ADP. It is most similar to the "Current Policy" scenario; however, that scenario has "moderate assumptions about the Inflation Reduction Act" compared to this scenario which has "conservative assumptions about the Inflation Reduction Act". This scenario was originally prepared for the Princeton REPEAT project. Please cite the [Princeton REPEAT project](https://repeatproject.org/) when using this profile. | 2007-2013 & 2016-2023 |
-| EER2025_100by2050  | 100% decarbonization by 2050 scenario. This does not explicitly include the impacts of the Inflation Reduction Act. However, due to its decarbonization, it is a more aggressive electrification profile than EER2025_IRAlow.  | Purchased from Evolved Energy Research in 2024. More information can be found in [EER's 2024 Annual Decarbonization Report](https://www.evolved.energy/us-adp-2024). This is the "Central" scenario in EER's 2024 ADP. | 2007-2013 & 2016-2023 |
+| EFS_REFERENCE | Features the least incremental change in electrification through 2050, which serves as a baseline of comparison to the other scenarios. | Developed for the Electrification Futures Study <https://www.nlr.gov/docs/fy18osti/71500.pdf>. | 2007-2013 |
+| EER2023_Baseline_AEO2022 | Business as usual load growth. Based on the service demand projections from AEO 2022. This does not include the impacts of the Inflation Reduction Act. | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. More information can be found in [EER's 2022 Annual Decarbonization Report](https://www.evolved.energy/post/adp2022). This is the "Baseline" scenario in EER's 2022 ADP. | 2007-2013 |
+| EER2023_IRAlow | Modeling load change under conservative assumptions about the Inflation Reduction Act | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. This scenario is unfortunately not described in EER's 2022 ADP. It was originally prepared for the Princeton REPEAT project. Please cite the [Princeton REPEAT project](https://repeatproject.org/) when using this profile. | 2007-2013 |
+| EER2023_IRAmoderate | Modeling load change under moderate assumptions about the Inflation Reduction Act | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. This scenario is unfortunately not described in EER's 2022 ADP. It was originally prepared for the Princeton REPEAT project. Please cite the [Princeton REPEAT project](https://repeatproject.org/) when using this profile. | 2007-2013 |
+| EER2023_100by2050 | 100% decarbonization by 2050 scenario. This does not explicitly include the impacts of the Inflation Reduction Act. However, due to its decarbonization, it is a more aggressive electrification profile than EER2025_IRAlow. | Purchased from Evolved Energy Research in June 2023 for the National Transmission Planning Study and to update our load profiles in general. More information can be found in [EER's 2022 Annual Decarbonization Report](https://www.evolved.energy/post/adp2022). This is the "Central" scenario in EER's 2022 ADP. | 2007-2013 |
+| EER2025_Baseline_AEO2023 | Business as usual load growth. Based on the service demand projections from AEO 2023. This does not include the impacts of the Inflation Reduction Act. | Purchased from Evolved Energy Research in 2024. More information can be found in [EER's 2024 Annual Decarbonization Report](https://www.evolved.energy/us-adp-2024). This is the "Baseline" scenario in EER's 2024 ADP. | 2007-2013 & 2016-2023 |
+| EER2025_IRAlow | Modeling load change under conservative assumptions about the Inflation Reduction Act | Purchased from Evolved Energy Research in 2024. This scenario is not described in EER's 2024 ADP. It is most similar to the "Current Policy" scenario; however, that scenario has "moderate assumptions about the Inflation Reduction Act" compared to this scenario which has "conservative assumptions about the Inflation Reduction Act". This scenario was originally prepared for the Princeton REPEAT project. Please cite the [Princeton REPEAT project](https://repeatproject.org/) when using this profile. | 2007-2013 & 2016-2023 |
+| EER2025_100by2050 | 100% decarbonization by 2050 scenario. This does not explicitly include the impacts of the Inflation Reduction Act. However, due to its decarbonization, it is a more aggressive electrification profile than EER2025_IRAlow. | Purchased from Evolved Energy Research in 2024. More information can be found in [EER's 2024 Annual Decarbonization Report](https://www.evolved.energy/us-adp-2024). This is the "Central" scenario in EER's 2024 ADP. | 2007-2013 & 2016-2023 |
 
 
 ### Resources for more info about ReEDS's load profiles
@@ -170,17 +180,17 @@ Note that SMR costs are currently in 2018$ and electrolyzer costs are in 2022$.
 
 ### h2_transport_and_storage_costs.csv
 
-| Investment    | Cost type | Units |
+| Investment | Cost type | Units |
 | ------------- | ------------- | ------------- |
-| Pipelines  | Overnight Capital Cost  | $/[(metric ton/hour)*mile] |
-| Pipelines  | FOM  | $/[(metric ton/hour)*mile*year] |
-| Pipelines  | Electric load | MWh/metric ton |
-| Compressors  | Overnight Capital Cost  | $/(metric ton-hour) |
-| Compressors  | FOM  | $/[(metric ton/hour)*year) |
-| Compressors  | Electric load  | MWh/metric ton |
-| Storage  | Overnight Capital Cost  | $/metric ton |
-| Storage  | FOM  | $/(metric ton*year) |
-| Storage  | Electric load  | MWh/metric ton |
+| Pipelines | Overnight Capital Cost | $/[(metric ton/hour)*mile] |
+| Pipelines | FOM | $/[(metric ton/hour)*mile*year] |
+| Pipelines | Electric load | MWh/metric ton |
+| Compressors | Overnight Capital Cost | $/(metric ton-hour) |
+| Compressors | FOM | $/[(metric ton/hour)*year) |
+| Compressors | Electric load | MWh/metric ton |
+| Storage | Overnight Capital Cost | $/metric ton |
+| Storage | FOM | $/(metric ton*year) |
+| Storage | Electric load | MWh/metric ton |
 
 The values in `H2_transport_and_storage_costs.csv` are based on raw data provided from the SERA model by Paige Jadun.
 The raw data are formatted by the [`process-h2-inputs.py` script](https://github.com/ReEDS-Model/ReEDS_Input_Processing/blob/main/hydrogen/process-h2-inputs.py) in the input processing repository.
@@ -229,8 +239,8 @@ This press release has a nice [summary](https://home.treasury.gov/news/press-rel
 
 | Life-cycle Emissions (kg CO2-e / kg H2) | PTC (2022$ / kg H2) | CO2 intensity of electricity to meet incentive required through electrolysis (tonnes CO2 / MWh) |
 | --------------- | ---------- | --------------- |
-| [4, 2.5]  | 0.6 | [.07, .045] |
-| (2.5, 1.5] | 0.75 | (.045, .027]  |
+| [4, 2.5] | 0.6 | [.07, .045] |
+| (2.5, 1.5] | 0.75 | (.045, .027] |
 | (1.5, 0.45] | 1 | (.027, .007] |
 | (0.45, 0] | 3 | (.008, 0] |
 
@@ -325,11 +335,11 @@ This assumption is enforced by the constraints `eq_h2_ptc_region_balance` and `e
 
 | Switch | Value | Recommend or Required for running with the H2 PTC enabled | Function |
 | -- | -- | -- | -- |
-| GSw_H2_PTC | 1 | Required | Turns on and off hydrogen production tax credit  |
-| GSw_H2 | 2 | Recommended | Representation of hydrogen supply/demand balance. Sw_H2=1 will not cause the model to fail but it is not recommended for the most accurate representation of the H2 PTC.  |
-| GSw_H2_Demand_Case | Anything except 'none' | Recommended |  Annual H2 demand profile  |
-| GSw_H2_IntraReg_Transport | 0.32 | Recommended | Flat cost for intra-ReEDS BA hydrogen transport and storage in $2004 / kg H2 produced. Note: This is now included as the default representation even if the H2 PTC is not enabled. This is assuming transport via pipelines. Transport costs could be more expensive if you assume other methods of H2 transport (ex. trucking).  |
-| GSw_RetailAdder  | $0/MWh | Recommended | 2004$/MWh adder to the cost of energy consumed by hydrogen producing facilities and direct air CO2 capture facilities. Included to represent the non-bulk-power-system costs of increasing electrical loads that are not captured within ReEDS. The default value of 0 indicates an assumption that these facilities are large enough to participate directly in wholesale markets.  |
+| GSw_H2_PTC | 1 | Required | Turns on and off hydrogen production tax credit |
+| GSw_H2 | 2 | Recommended | Representation of hydrogen supply/demand balance. Sw_H2=1 will not cause the model to fail but it is not recommended for the most accurate representation of the H2 PTC. |
+| GSw_H2_Demand_Case | Anything except 'none'  | Recommended |  Annual H2 demand profile |
+| GSw_H2_IntraReg_Transport | 0.32 | Recommended | Flat cost for intra-ReEDS BA hydrogen transport and storage in $2004 / kg H2 produced. Note: This is now included as the default representation even if the H2 PTC is not enabled. This is assuming transport via pipelines. Transport costs could be more expensive if you assume other methods of H2 transport (ex. trucking). |
+| GSw_RetailAdder | $0/MWh | Recommended | 2004$/MWh adder to the cost of energy consumed by hydrogen producing facilities and direct air CO2 capture facilities. Included to represent the non-bulk-power-system costs of increasing electrical loads that are not captured within ReEDS. The default value of 0 indicates an assumption that these facilities are large enough to participate directly in wholesale markets. |
 
 #### Other Notes
 
@@ -565,28 +575,52 @@ This enables state level uncertainty in siting supply curves for wind and solar 
 
 ### Sampling method
 
-There are two sampling approaches available for Monte Carlo analysis: random sampling and Latin Hypercube sampling. 
+There are two sampling approaches available for Monte Carlo analysis: random sampling and Latin Hypercube sampling.
 
-Random sampling uses the numpy `random` method for the relevant distribution to sample a set of weights. 
-These weights are applied to the assignment values specified in the distribution group to generate the value for each run. 
-To ensure reproducibility, the Monte Carlo run number is used as the seed value. This means that, for a given 
-run configuration, run MC001 will always have the same sampled values. A global seed value (set by `MCS_seed` in `inputs/scalars.csv`) 
-can be used to shift the seed values for a batch of runs; this can be useful for extending a set of runs; 
-for example, if you ran already 200 runs and now want to add 100 more, set the seed value to 200 to generate 
+Random sampling uses the numpy `random` method for the relevant distribution to sample a set of weights.
+These weights are applied to the assignment values specified in the distribution group to generate the value for each run.
+To ensure reproducibility, the Monte Carlo run number is used as the seed value. This means that, for a given
+run configuration, run MC001 will always have the same sampled values. A global seed value (set by `MCS_seed` in `inputs/scalars.csv`)
+can be used to shift the seed values for a batch of runs; this can be useful for extending a set of runs;
+for example, if you ran already 200 runs and now want to add 100 more, set the seed value to 200 to generate
 new sampled runs.
 
-The second approach, Latin Hypercube sampling (LHS), utilizes a quasi-Monte Carlo sampling method that is 
+The second approach, Latin Hypercube sampling (LHS), utilizes a quasi-Monte Carlo sampling method that is
 designed to improve efficiency by reducing overlap of the sampled values. An overview of this method
 can be found in {cite}`sheikholeslamiProgressiveLatinHypercube2017`. For this method, an NxD matrix is generated upfront
-for all model runs based on the number of samples (N) and the independent dimensions being sampled (D). 
-The values in this matrix represent sampling of the cumulative probability distribution functions, 
-and are later used by the inverse CDF (percent point) functions to derive the actual sample values. 
-A single global seed value (set by `MCS_seed` in `inputs/scalars.csv`) is used for all runs, 
+for all model runs based on the number of samples (N) and the independent dimensions being sampled (D).
+The values in this matrix represent sampling of the cumulative probability distribution functions,
+and are later used by the inverse CDF (percent point) functions to derive the actual sample values.
+A single global seed value (set by `MCS_seed` in `inputs/scalars.csv`) is used for all runs,
 resulting in unique sampling matrices for a given set of values of N and D.
 
 The LHS method tends to result in sampling values that converge on the true input distributions for lower numbers of samples.
-However, it does not currently support sampling for any spatial resolution besides country 
+However, it does not currently support sampling for any spatial resolution besides country
 or using multivariate distributions such as the Dirichlet.
+
+#### Supply curves and CF profiles
+
+The wind and solar supply curves and hourly capacity factor (CF) profiles are linked;
+each site in a supply curve (`inputs/supply_curve`) has a corresponding hourly profile (downloaded to `inputs/remote` and linked in `inputs/profiles_cf`),
+so different siting access assumptions (controlled by `GSw_SitingUPV`, `GSw_SitingWindOns`, and `GSw_SitingWindOfs`) have their own hourly profiles.
+Because the processing of site-level hourly profiles is relatively slow and memory-intensive,
+and because the variation in average CF for a given site across siting scenarios is relatively small,
+we apply the following simplified approach for Monte Carlo sampling of these inputs:
+
+- Identify the most-permissive siting scenario included in the probability distribution
+  - For example, in a distribution with nonzero weight on "limited", "reference", and "open" siting, the "open" scenario will be the most permissive.
+  In a distribution based on only on "limited" and "reference" siting, the "reference" scenario is most permissive.
+- Apply Monte Carlo sampling to the site-level available capacity [MW] using the specified probability distribution
+- For all other parameters determined at the site level
+(the hourly CF profile, interconnection cost, and other site-level cost modifiers),
+inherit the value of most-permissive siting scenario included in the distribution.
+So the hourly CF profiles only need to be processed once, even when sampling from multiple siting scenarios.
+  - For example, if the siting distribution for wind includes the "open" access scenario, all sites will use the hourly CF profile from that scenario, even if the sampled capacity is lower
+  - In general, the site-level wind CF tends to be lower for more permissive siting scenarios, as the increased turbine density increases wake losses.
+  So this simplification would tend to decrease wind CF by a small amount, with little effect on solar CF.
+  The difference between the limited-access wind CF and reference-access wind CF is smaller than the difference between reference-access and open-access.
+
+
 
 ### Tips
 
@@ -641,10 +675,11 @@ This method can be used to characterize the uncertainty in the regional distribu
 Weights are sampled as discrete values from {-1,1} to allow for simultaneous minimization and maximization.
 
 The MGA random vector capability is controlled by the following switches:
-- `GSw_MGA_RV_runs` (default `0`): Number of random samples of weight vectors to draw; corresponds to the number of runs.
-- `GSw_MGA_RV_region` (default `r`): Regionality level (specified by hierarchy file) over which to sample the random weights. 
 
-Note that this capability is currently only supported when `GSw_MGA_Objective = (capacity or generation)`. 
+- `GSw_MGA_RV_runs` (default `0`): Number of random samples of weight vectors to draw; corresponds to the number of runs.
+- `GSw_MGA_RV_region` (default `r`): Regionality level (specified by hierarchy file) over which to sample the random weights.
+
+Note that this capability is currently only supported when `GSw_MGA_Objective = (capacity or generation)`.
 Weights for each run are stored in the `mga_weights` parameter.
 
 ## Uncertainty Plots
@@ -676,13 +711,13 @@ python uncertainty_plots.py {runs_folder} \
 
 **Arguments:**
 
-| Flag          | Purpose                                                         | Type            | Default            | Example                                                                 |
+| Flag          | Purpose                                                          | Type            | Default            | Example                                                                 |
 | :------------ | :--------------------------------------------------------------- | :-------------- | :----------------- | :---------------------------------------------------------------------- |
 | `runs_folder` | Folder that contains the runs to plot                            | Path            | required           | `../runs`                                                               |
-| `-p`          | Rename or select runs, pairs `old:new` or a two column file     | List or file    | all by prefix      | `-p caseA:HighGas caseB:LowGas` or `-p labels.csv`                      |
-| `-hl`         | Highlight runs, triplets `old:new:color` or a three column file | List or file    | none               | `-hl caseA:HighGas:red` or `-hl highlights.csv`                         |
-| `-t`          | Scope of plots, inputs or outputs or both                       | String          | `inout`            | `-t out`                                                                |
-| `-s`          | Output directory for the PowerPoint and the Excel file          | Path            | `runs/comparisons` | `-s ../studyA/summary_plots`                                            |
+| `-p`          | Rename or select runs, pairs `old:new` or a two column file      | List or file    | all by prefix      | `-p caseA:HighGas caseB:LowGas` or `-p labels.csv`                      |
+| `-hl`         | Highlight runs, triplets `old:new:color` or a three column file  | List or file    | none               | `-hl caseA:HighGas:red` or `-hl highlights.csv`                         |
+| `-t`          | Scope of plots, inputs or outputs or both                        | String          | `inout`            | `-t out`                                                                |
+| `-s`          | Output directory for the PowerPoint and the Excel file           | Path            | `runs/comparisons` | `-s ../studyA/summary_plots`                                            |
 
 
 ### Example of input plots
@@ -737,6 +772,76 @@ MCS Example: Total transmission capacity by interface.
 ```
 
 For additional information on using Hourlize, you can watch the training video: [Hourlize wind/solar resource preprocessing tutorial](https://nrel-my.sharepoint.com/:v:/r/personal/bsergi_nrel_gov/Documents/Misc/Recordings/Hourlize%20wind_solar%20resource%20preprocessing%20tutorial-20240212_150245-Meeting%20Recording.mp4?csf=1&web=1&e=vIds6r&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D)
+
+## ReEDS-FINITO 
+
+The Fuels and Industry Integrated Optimization Model (FINITO) provides a representation of the U.S. energy system with a bottom-up, technology-rich representation of certain energy-intensive industrial subsectors. 
+ReEDS and FINITO can be linked to provide integrated modeling of the power sector with economy-wide energy supply and demand dynamics.
+When linked, ReEDS and FINITO are formulated as a single optimization problem.
+
+### Setup
+
+FINITO can be cloned from https://github.com/NatLabRockies/FINITO (Note: this repository is currently private and only available within NLR).
+By default ReEDS will look for a copy of the FINITO in the parent directory, but this can be configured by setting a value for `FINITO_dir` in your cases file.
+
+ReEdS switches controlling ReEDS-FINITO linkage:
+- `FINITO` (default 0): Turn off/on the linked model. 
+Passes its value to `GSw_FINITO_Link` which is used to activate the linkage in the model.
+- `FINITO_cases_file` (default 'linked'): Filename suffix of the FINITO cases file to use.
+- `FINITO_case` (default 'same'): Name of the case in `FINITO_cases_file` to use for the ReEDS run; used to determine FINITO switch settings.
+When set to 'same' it will assume the same case name as used in ReEDS.
+
+A linked model run is launched using the same call to `runreeds.py` as a normal ReEDS run. 
+
+All ReEDS and FINITO switches are combined into a single group of switches. 
+As FINITO can also be run as a standalone model, some switches in the FINITO cases files have the same name as switches in ReEDS.
+For any switches with conflicting values, a linked run will always use the value specified from ReEDS, using the default in the ReEDS `cases.csv` file as a fallback for any unspecfied switches.
+
+### Linkage points
+
+**Load balance**
+- Electricity demand from FINITO's industrial focus sectors (set by the FINITO `focus_sectors` switch) and from converted fuel processing is added to the ReEDS load balancing equation via `USE_ELE_FINITO`.
+- The load projection input data in ReEDS accounts for demand from sectors represented endogenously in FINITO. 
+To avoid double-counting, in a linked run the estimated 'reference' electricity demand for covered sectors is substracted from the load data processed for ReEDS in `hourly_load.py` (see the `finito.remove_finito_load` function)
+- Due to lack of granular sector electricity demand data, the current approach takes annual demand estimates and allocates to hourly profiles assuming constant demand, and the broadcasts those across all weather years. This approach is a coarse assumption that enables running the linked model with detailed hourly sectoral, and future work aims to improve the temporal and interannual characterization of industrial loads. 
+- When itereating with PRAS, the demand represented by `USE_ELE_FINITO` is added back to the original load file. Values from each representative timeslice are mapped back to their corresponding 'actual' hour for the modeled year, with the data being repeated for other weather years. Currently all load is assumed to be inflexible; future work aims to explore characterizing the flexibility of this load in PRAS.
+- The FINITO switch `GSw_ConstantProduction` can be used to enforce flat hourly production (and therefore electricity demand) across all hours represented by the model.
+
+**Fuel supply curves**
+- When linked, ReEDS defers to FINITO for representation of hydrocarbon and biomass supply curves for solve years with FINITO activated. This representation supersedes any settings specified by fuel price switches in ReEDS (e.g., `ngscen`, `GSw_GasCurve`).
+- Consumption of fuel equivalents in ReEDS is accounted for in FINITO by the `USE_FE_REEDS` variable.
+- The activation of the FINITO supply curves is controlled by the `tfinito_all` set, which is populated for any years running with FINITO. In a standalone ReEDS run `tfinito_all` will not include any solve years; in a linked run it will include all t >= `FINITO_first_year`. Any years not in `tfinito_all` use the ReEDS supply curve representation.
+- When linked, the output reporting in `report.gms` utilizes the FINITO marginals for calculating prices on the relevant quantities.
+- The fuel supply curves can be adjusted by scenario by the `GSw_supply_scen` in FINITO, which includes scenarios from the AEO (e.g., Reference, HOG, LOG).
+- Setting `GSw_DetailedNG=1` in FINITO enables explicit representation of natural gas production and interstate pipeline transport. 
+- Projections for transportation and buildings sector demand are scenario based and can be toggled using `GSw_demand_scen`. Scenarios derived from both AEO and EER data are supported.
+
+**Hydrogen**
+- When linked, FINITO defers to ReEDS for the representation of the production and transport of hydrogen. 
+- FINITO focus sector hydrogen demand from future conversion to hydrogen processes is tracked in ReEDS by `USE_H2_FINITO`. 
+- Note that when linked, FINITO does not represent existing industrial hydrogen demand; to account for this demand, when linked `GSw_H2_Demand_Case` should be set to `FINITO`.
+
+**CO2 representation**
+- The linked model relies on ReEDS for the representation of CO2 transport and storage. 
+- Total CO2 captured from FINITO is represented by `CAPTURE_CO2EM`.
+- In the absence of explicit CO2 transport and storage modeling (i.e., `GSw_CO2_Detail=0`), the FINITO switches `GSw_CO2Cost_opt` and `GSw_CO2Cost_value` should be used to provide a cost for transport and sequestration. 
+
+**Other linkages**
+- Functions for processing related the linked model are located in the `reeds/finito.py` module.
+- Costs represented by FINITO are captured by `Z_finito`, which is rescaled and converted from `FINITO_dollaryear` before being added to costs from ReEDS in `eq_ObjFn`. 
+- Select outputs are saved by FINITO to a `finito_reeds_outputs_%case%.gdx` file, which is processed by `report_dump.py` to save csv/h5 outputs alongside other ReEDS results.
+
+**Summary of linkage**
+
+The following ReEDS sets, parameters, and variables are referenced in FINITO. If you plan to update any of these in a breaking way (e.g., changing the name or indices) please let one of the FINITO developers know.
+
+Sets: `allt`, `bio(i)`, `bs_reeds(bs)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `cs`, `csfeas(cs)`, `i`, `map_i_fe(i,ec)`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `st`, `st_cendiv(st,cendiv)`, `t(allt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`
+
+Parameters: `capture_rate`, `co2_injection_limit(cs)`, `co2_rate_elec_table(r,allt,*)`, `co2_storage_limit(cs)`, `cost_co2_pipeline_cap(r,rr,allt)`, `cost_co2_pipeline_fom(r,rr,allt)`, `cost_co2_spurline_cap(r,cs,allt)`, `cost_co2_spurline_fom(r,cs,allt)`, `cost_co2_stor_bec(cs)`, `cost_fom`, `cost_prod`, `cost_upgrade`, `cost_vom`, `deflator(allt)`, `emit_rate`, `heat_rate(i,v,r,t)`, `m_capacity_exog`, `price_ws_elec_ReEDS(r,allt,*)`, `r_cs_distance(r,cs)`, `tax_co2_input(allt,*)`, `upgrade_derate`
+
+Variables: `GEN(i,v,r,h,t)`
+
+Switches: `endyear`, `FINITO_dollaryear`, `GSw_CarbTax`, `GSw_CarbTaxOption`, `GSw_CO2_Detail`, `GSw_FINITO_Link` (set by `FINITO` switch in ReEDS `cases.csv`), `GSw_Region`, `GSw_RemoveSmallNumbers`, `GSw_RetailAdder`, `GSw_ZoneSet`, `ignore`, `keep_run_terminal`, `solver`, `yearset`
 
 
 ## Troubleshooting

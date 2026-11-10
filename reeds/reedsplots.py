@@ -2782,111 +2782,6 @@ def map_capacity_techs(
     plots.trim_subplots(ax, nrows, ncols, len(techs))
     return f, ax
 
-def map_potential_and_load(
-        case, year=2050,
-        cmap=cmocean.cm.rain,data_type='potential',title = '1% Shed Potential',case2 = None,drscen='1pct_24h_transreg',
-    ):
-    """
-    """
-    # title = 'Max Load Difference (No DR - With DR) across all weather years'
-    ### Get maps
-    dfmap = reeds.io.get_dfmap(case)
-    dfba = dfmap['r']
-    dfstates = dfmap['st']
-    ### Case data
-    if data_type=='potential':
-        # get supply curve capacity
-        dfcap = pd.read_csv(os.path.join(case,'inputs_case','rsc_combined.csv'))
-        dfcap = dfcap.loc[dfcap.sc_cat=='cap'].copy()
-        dfcap = dfcap.loc[dfcap['*i'].str.contains('dr_')]
-        # get supply curve capacity multipliers
-        dr_types = ['dr_shape','dr_shed']
-        dr_cap_mults = {}
-        for dr_type in dr_types:
-            if dr_type =='dr_shape':
-                dr_cap_mults[dr_type] = pd.read_csv(os.path.join(reeds_path,'inputs','demand_response',f'{dr_type}_cap_scalar_{drscen}.csv'))  
-                # combine p28 and p30 into z28
-                dr_cap_mults[dr_type]['r'] = dr_cap_mults[dr_type]['r'].replace({'p28': 'z28', 'p30': 'z28'})   
-                # combine p119 and p122
-                dr_cap_mults[dr_type]['r'] = dr_cap_mults[dr_type]['r'].replace({'p122': 'z122', 'p119': 'z122'})         
-                dr_cap_mults[dr_type] = dr_cap_mults[dr_type].groupby(['tech', 'r'], as_index=False).mean()
-            else:
-                dr_cap_mults[dr_type] = pd.read_csv(os.path.join(case,'inputs_case',f'{dr_type}_capacity_scalar.csv'))            
-        dr_cap_mults = pd.concat(dr_cap_mults).reset_index(drop=True)
-        dr_cap_mults = dr_cap_mults[['tech','r',str(year)]].rename(columns={'tech':'*i'})
-        # scale cap by mutliplier
-        dfcap = dfcap.set_index(['*i','r']).drop(columns =['sc_cat','rscbin'])
-        dr_cap_mults = dr_cap_mults.set_index(['*i','r'])
-        dfcap = dfcap.merge(dr_cap_mults, on=['*i','r'])
-        dfcap['potential_MW'] = dfcap['value'] * dfcap[str(year)]
-        dfcap = dfcap.reset_index()
-        _vmax = None
-        _vmax = 2
-    elif data_type=='load':
-        # get load data
-        load_noDR = reeds.io.read_file(os.path.join(case,'inputs_case', 'load.h5'), parse_timestamps=True)
-        #load_noDR = reeds.io.read_file('/projects/last10p/lserpe/reeds_dr/repo1/ReEDS-2.0/inputs/load/EER_Baseline_AEO2023_load_hourly.h5', parse_timestamps=True)
-        load_noDR = load_noDR.reset_index()
-        load_noDR['datetime'] = load_noDR['datetime'].astype(str)
-        load_noDR = load_noDR[load_noDR['year']==year]
-
-        load_DR = reeds.io.read_file(os.path.join(case2,'inputs_case', 'load.h5'), parse_timestamps=True)
-        #load_DR = reeds.io.read_file('/projects/last10p/lserpe/reeds_dr/repo1/ReEDS-2.0/inputs/load/shed_1_pct_load_hourly.h5', parse_timestamps=True)
-        load_DR = load_DR.reset_index()
-        load_DR['datetime'] = load_DR['datetime'].astype(str)
-        load_DR = load_DR[load_DR['year']==year]
-
-        # difference in each hour across all weather years 
-        regions = [col for col in load_noDR.columns if col not in ['datetime','year']]
-        load_diff = load_noDR[regions] - load_DR[regions]
-        # Find max difference for each region 
-        dfcap = pd.DataFrame({
-            'r':regions,
-            'potential_MW':load_diff.max().values
-        })
-        # # Find mean difference for each region 
-        # dfcap = pd.DataFrame({
-        #     'r':regions,
-        #     'potential_MW':load_diff.mean().values
-        # })
-    
-    ### Plot it
-    plt.close()
-    f, ax = plt.subplots(figsize=(8, 8), dpi=150)
-
-    dfval = dfcap.groupby('r').potential_MW.sum().round(3)
-    dfplot = dfba.copy()
-    dfplot['GW'] = (dfval / 1000).fillna(0)
-
-    dfba.plot(
-        ax=ax,
-        facecolor='none', edgecolor='k', lw=0.1, zorder=10000)
-    dfstates.plot(
-        ax=ax,
-        facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
-    dfplot.plot(
-        ax=ax, column='GW', cmap=cmap, legend=True,
-        # vmin=0, vmax=_vmax,
-        # legend_kwds={
-        #     'shrink': 0.75, 'pad': 0, 'orientation': 'horizontal',
-        #     'label': '[GW]',
-        # }
-        vmin=0, vmax=int(_vmax),
-        legend_kwds={
-            'shrink': 0.75, 'pad': 0, 'orientation': 'horizontal',
-            'label': '[GW]',
-            'format': '{:.0f}'.format,
-            'ticks': [0, 1, 2],  # Set 3 ticks: min, mid, max
-        }
-
-    )
-    ax.axis('off')
-    ax.set_title(
-        '{} ({})'.format(title, year),
-        x=0.1, ha='left', va='top')
-    return f, ax
-
-
 def map_capacity_markers(
         case, level='r', year=2050, ms=5,
         unitsize=1,
@@ -5391,7 +5286,7 @@ def get_tech_colors_order(order='fuel_storage_vre'):
     ### For this particular plot we put storage below VRE
     if order == 'fuel_storage_vre':
         vre_keywords = ['wind', 'pv', 'solar', 'csp']
-        storage_keywords = ['battery', 'pump', 'storage','dr']
+        storage_keywords = ['battery', 'pump', 'storage','dr_shift']
         vre_stor_can = vre_keywords + storage_keywords + ['canada']
         plotorder = [
                 k for k in bokehcolors.keys()
@@ -5441,7 +5336,7 @@ def separate_charge_discharge(df):
 
 def check_metric(metric):
     allowed = (
-        r'(cap|rep_mean|stress_(mean|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
+        r'(cap|rep_mean|stress_(mean|weight_price|(max|min|top\d+|bottom\d+)_(gen|load|netload|price|vregen)))'
     )
     if not re.match(allowed, metric):
         raise ValueError(f"metric={metric} must match {allowed}")
@@ -5536,7 +5431,7 @@ def get_cap_rep_stress_mix(
         & (reqt_price.t.isin(years))
     ].rename(columns={'*.2':'h'}).copy()
     price_stress.r = price_stress.r.map(r2agg)
-    price_stress = price_stress.groupby(['t','r','h']).Value.max().unstack('r')
+    price_stress = price_stress.groupby(['t','r','h']).Value.max()
 
     ### VRE generation hours
     vregen_stress = (
@@ -5581,6 +5476,29 @@ def get_cap_rep_stress_mix(
                     .divide(gen_h_stress.groupby('t').h.unique().map(len), axis=0)
                 )
 
+            elif key == 'stress_weight_price':
+                ## Price-weighted average generation across all stress hours:
+                ## sum_h(gen*price*hours) / sum_h(price*hours)
+                from reeds.core.terminus import report_calcs
+                hours_t = (
+                    report_calcs.get_gams_results(case, 'hours_t')['hours_t'].reset_index()
+                    .astype({'t':int}).rename(columns={'allh':'h', 'Value':'hours'})
+                )
+                price_long = price_stress.rename('price').reset_index().merge(
+                    hours_t, on=['t','h'], how='left')
+                price_long['price'] *= price_long.hours
+                price_sum = price_long.groupby(['t','r'], as_index=False).price.sum()
+                gen_price = gen_h_stress.merge(
+                    price_long[['t','r','h','price']], on=['t','r','h'], how='left')
+                gen_price['price'] = gen_price['price'].fillna(0)
+                gen_price['gen_x_price'] = gen_price.MW * gen_price.price
+                numer = gen_price.groupby(['t','i','r'], as_index=False).gen_x_price.sum()
+                df = numer.merge(price_sum, on=['t','r'], how='left')
+                df['MW'] = df.gen_x_price / df.price
+                df = df.set_index(['t','i','r']).MW.unstack('r')
+                ## A region-year with no binding PRM has a zero price sum, giving inf or NaN
+                df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+
             ## Generation during regional max hours
             elif key.startswith('stress'):
                 direction = ('top' if 'top' in key else 'bottom')
@@ -5590,7 +5508,7 @@ def get_cap_rep_stress_mix(
                 elif key.split('_')[-1] == 'gen':
                     dfindex = gen_h_stress.groupby(['t','r','h']).MW.sum()
                 elif key.split('_')[-1] == 'price':
-                    dfindex = price_stress.stack('r').reorder_levels(['t','r','h'])
+                    dfindex = price_stress
                 elif key.split('_')[-1] == 'vregen':
                     dfindex = vregen_stress.stack('r').reorder_levels(['t','r','h'])
                 elif key.split('_')[-1] == 'netload':
@@ -5651,6 +5569,8 @@ def stress_mix_label(case, metric):
         xlabel = f"Rep {metric.split('_')[1]} gen"
     elif metric == 'stress_mean':
         xlabel = 'Stress mean gen'
+    elif metric == 'stress_weight_price':
+        xlabel = 'Stress: price-weighted gen'
     elif ('top' in metric) or ('bottom' in metric):
         direction = ('top' if 'top' in metric else 'bottom')
         xlabel = "Stress: {} {} {} hours".format(
@@ -5933,7 +5853,7 @@ def plot_stress_mix(
 def plot_stress_cf(
     case:str|Path,
     level='transreg',
-    metric='stress_top10_netload',
+    metric='stress_weight_price',
     include_rep=True,
     figwidth=1.2,
     figheight=1.2,
@@ -5967,6 +5887,9 @@ def plot_stress_cf(
     techs = dfstress['cap'].index.tolist()
     capcredit = (dfstress[metric] / dfstress['cap']).reindex(techs) * 100
     repfraction = (dfstress['rep_mean'] / dfstress['cap']).reindex(techs) * 100
+    ## Replace and INF values with NaN (can occur due to small-number division)
+    capcredit = capcredit.replace([np.inf, -np.inf], np.nan)
+    repfraction = repfraction.replace([np.inf, -np.inf], np.nan)
     ### Set up plot
     dfmap = reeds.io.get_dfmap(case)
     regions = dfmap[level].bounds.minx.sort_values().index
@@ -6014,7 +5937,7 @@ def plot_stress_cf(
                     )
             _ax.set_xlabel(None)
     ## Formatting
-    _ax.set_ylim(0, 100)
+    _ax.set_ylim(0, max(100, _ax.get_ylim()[1]))
     _ax.set_xlim(yearmin, yearmax)
     _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(50))
     _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))

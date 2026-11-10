@@ -8,7 +8,7 @@
 - **`inputs/supply_curve/dr_shed_cap_{dr_shedscen}.csv`**: Supply curve capacity [MW], populated with maximum technical potential in 2030 for each ReEDS zone from the hourly shed data.
 - **`inputs/demand_response/dr_shed_cap_scalar_{dr_shedscen}.csv`**: Supply curve populated with 2030 capacity data, scaled in the model to reflect additional years through 2050.
 - **`inputs/plant_characteristics/dr_shed_vom_{dr_shedscen}.csv`**: Variable operation and maintenance costs for the DR Shed resource [$/MWh].
-- **`inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}.csv`**: Fixed operation and maintenance costs for the DR Shed resource [$/MWh].
+- **`inputs/plant_characteristics/dr_shed_fom_{dr_shedscen}.csv`**: Fixed operation and maintenance costs for the DR Shed resource [$/MW-yr].
 - **`inputs/demand_response/dr_shed_avail_scalar.csv`**: Scalar representing the response rate of the resource by decrementing availability. Set to 1 by default.
 - **`inputs/plant_characteristics/maxdailycf.csv`**: Defines the maximum daily capacity factor for any technology. Default is 4 hours per day for DR shed (0.167 = 4/24).
 
@@ -21,7 +21,7 @@
 - **`inputs/plant_characteristics/dr_shape_cost_scalars_{dr_shapescen}.csv`**: Supply curve populated with 2030 cost data, scaled in the model to reflect additional years through 2050.
 - **`inputs/demand_response/dr_shape_capacity_scalar_{dr_shapescen}.csv`**: Supply curve populated with 2030 capacity data, scaled in the model to reflect additional years through 2050.
 - **`inputs/plant_characteristics/dr_shape_vom_{dr_shapescen}.csv`**: Variable operation and maintenance costs for the DR Shape resource [$/MWh].
-- **`inputs/plant_characteristics/dr_shape_fom_{dr_shapescen}.csv`**: Fixed operation and maintenance costs for the DR Shape resource [$/MWh].
+- **`inputs/plant_characteristics/dr_shape_fom_{dr_shapescen}.csv`**: Fixed operation and maintenance costs for the DR Shape resource [$/MW-yr].
 
 ### DR Shift Input Files
 
@@ -33,4 +33,4 @@
 - **`inputs/plant_characteristics/dr_shift_cost_scalars_{dr_shiftscen}.csv`**: Supply curve populated with 2030 cost data, scaled in the model to reflect additional years through 2050.
 - **`inputs/demand_response/dr_shift_capacity_scalar_{dr_shiftscen}.csv`**: Supply curve populated with 2030 capacity data, scaled in the model to reflect additional years through 2050.
 - **`inputs/plant_characteristics/dr_shift_vom_{dr_shiftscen}.csv`**: Variable operation and maintenance costs for the DR Shift resource [$/MWh].
-- **`inputs/plant_characteristics/dr_shift_fom_{dr_shiftscen}.csv`**: Fixed operation and maintenance costs for the DR Shift resource [$/MWh].
+- **`inputs/plant_characteristics/dr_shift_fom_{dr_shiftscen}.csv`**: Fixed operation and maintenance costs for the DR Shift resource [$/MW-yr].
