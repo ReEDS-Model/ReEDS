@@ -97,6 +97,15 @@ Example for a .csv file of cases:
 python postprocessing/compare_cases.py /Users/username/github/ReEDS/postprocessing/example.csv
 ```
 
+### Multibase Comparison: `postprocessing/compare_cases.py`
+compare_cases.py is also capable of performing comparisons between the results of cases where each case is compared against different user-specified base case. By defining a `base` column to the .csv, users can specify the `casename` of the base case to use for each of the listed cases in the file (see `postprocessing/example_multibase.csv` for examples).
+
+#### Notes on Multibase Comparison:
+ - Each case of interest, including ones explicitly used as the base case for another, must be listed in the .csv file
+ - The `base` column takes the `casename` value of the base case to be used for comparison
+ - If the `base` column is missing from or empty in the .csv file, then `compare_cases.py` will use the first listed case as the base case for all comparison plots (as with the single base comparison)
+ - If the `base` column is not empty, then all cases with missing `base` values will be assigned their own `casename`, thus no comparison plots will be produced for these cases.
+
 ### Run PRAS: `postprocessing/run_reeds2pras.py`
 
 The PRAS model is typically run multiple times during each ReEDS case (as long as `GSw_PRM_CapCredit = 0`) to ensure resource adequacy.
