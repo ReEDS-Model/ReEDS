@@ -124,7 +124,13 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
             int(sw['numbins_upv']),
             15,
         ))
-    dfcases_out = pd.concat([dfcases, pd.DataFrame(new_switches)])
+        ## add intermediate ReEDS-FINITO switches
+        new_switches = reeds.finito.update_FINITO_switches(case, sw, new_switches)
+
+    # combine old and new switches, dropping the old 'FINITO_dir' to avoid
+    # duplication with the filled path from update_FINITO_switches
+    dfcases_out = pd.concat([dfcases.drop('FINITO_dir'), pd.DataFrame(new_switches)])
+    
     return dfcases_out
 
 
@@ -368,6 +374,9 @@ def solvestring_sequential(
             'GSw_StateCO2ImportLevel',
             'GSw_StartMarkets',
             'GSw_ValStr',
+            'GSw_FINITO_Link',
+            'FINITO_first_year',
+            'FINITO_dollaryear',
             'solver',
             'debug',
             'startyear',
