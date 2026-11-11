@@ -1,0 +1,24 @@
+,Default Value,FINITO_Pacific,FINITO_BAU_Fast,FINITO_DD_Fast,FINITO_Example,FINITO_Example_Fast,ReEDS_BAU_3HR_CAA,FINITO_BAU_3HR_CAA,ReEDS_BAU_3HR_xCAA,FINITO_BAU_3HR_xCAA,ReEDS_DD_3HR_CAA,FINITO_DD_3HR_CAA,ReEDS_DD_3HR_xCAA,FINITO_DD_3HR_xCAA,ReEDS_BAU_4HR_CAA,FINITO_BAU_4HR_CAA,ReEDS_BAU_4HR_xCAA,FINITO_BAU_4HR_xCAA,ReEDS_DD_4HR_CAA,FINITO_DD_4HR_CAA,ReEDS_DD_4HR_xCAA,FINITO_DD_4HR_xCAA
+ignore,0,1,,,,,,,,,,,,,,,,,,,,
+GSw_gopt,2,,,,,,,,,,,,,,,,,,,,,
+GSw_Region,country/USA,cendiv/Pacific,,,,,,,,,,,,,,,,,,,,
+endyear,2050,2035,,,,,,,,,,,,,,,,,,,,
+yearset,,,,,,,,,,,,,,,,,,,,,,
+GSw_ZoneSet,z54,,,,,,,,,,,,,,,,,,,,,
+GSw_GasPriceAdjMethod,0,,,,0,0,,,,,,,,,,,,,,,,
+GSw_GasCurve,1,2,,,,,,,,,,,,,,,,,,,,
+GSw_HourlyNumClusters,33,,,,20,20,,,,,,,,,,,,,,,,
+GSw_HourlyChunkLengthRep,3,,4,4,4,4,,,,,,,,,,,,,,,,
+GSw_HourlyChunkLengthStress,3,,4,4,4,4,,,,,,,,,,,,,,,,
+FINITO,0,1,,,,,,1,,1,,1,,1,,1,,1,,1,,1
+FINITO_cases_file,linked_speedups,,,,,,,,,,,,,,,,,,,,,
+FINITO_case,BAU,BAUreg,BAU_Fast,DeepDecarb_Fast,BAU_Example,BAU_Fast,,,,,DeepDecarb,DeepDecarb,DeepDecarb,DeepDecarb,,,,,DeepDecarb,DeepDecarb,DeepDecarb,DeepDecarb
+GSw_NewValCapShrink,1,,,,,,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+GSw_H2_Demand_Case,BAU,,,,,,,,,,,,,,,,,,,,,
+GSw_H2,2,,,,1,1,,,,,,,,,,,,,,,,
+GSw_H2_SMR,1,,,,,,,,,,,,,,,,,,,,,
+GSw_H2_PTC,0,,,,,,,,,,,,,,,,,,,,,
+GSw_Clean_Air_Act,1,,0,0,,0,,,0,0,,,0,0,,,0,0,,,0,0
+GSw_CO2_Detail,0,,,1,,,,,,,1,1,1,1,,,,,1,1,1,1
+GSw_DAC,0,,,1,,,,,,,1,1,1,1,,,,,1,1,1,1
+GSw_NoFossilOffsetCDR,0,,,1,,,,,,,1,1,1,1,,,,,1,1,1,1
