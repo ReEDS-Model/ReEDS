@@ -3042,19 +3042,21 @@ eq_storage_capacity(i,v,r,h,t)$[valgen(i,v,r,t)
 *  Does not apply for storage technologies that allow cross-season energy arbitrage.
 *  When inter-day linkage is used, the nexth will be disabled, and this equation will
 *  be used to calculate intra-day storage dispatch for further inter-day linkage use.
+*  Stress periods have no inter-day partitions, so inter-day techs keep the daily
+*  storage level there.
 eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
 
 *[plus] storage level in h+1
-    sum{(hh)$[nexth(h,hh)], STORAGE_LEVEL(i,v,r,hh,t)}$(not storage_interday(i))
+    sum{(hh)$[nexth(h,hh)], STORAGE_LEVEL(i,v,r,hh,t)}$[not storage_interday(i) or h_stress(h)]
 
 *[plus] the net dispatch of inter-day storage technologies
-    + STORAGE_INTERDAY_DISPATCH(i,v,r,h,t)$(storage_interday(i)) * hours_daily(h)
+    + STORAGE_INTERDAY_DISPATCH(i,v,r,h,t)$[storage_interday(i)$(not h_stress(h))] * hours_daily(h)
 
     =e=
 
 * only want to include storage_level from periods that have had a previous storage_level
 * otherwise it becomes a free variable, implying you can charge storage without bound
-    STORAGE_LEVEL(i,v,r,h,t)$(not storage_interday(i))
+    STORAGE_LEVEL(i,v,r,h,t)$[not storage_interday(i) or h_stress(h)]
 
 *[plus] storage charging
     + storage_eff(i,t) *  hours_daily(h) * (
@@ -3140,11 +3142,12 @@ eq_storage_thermalres(i,v,r,h,t)
 
 *batteries and CSP-TES are limited by their duration for each normalized hour per season
 *seas_cap_frac_delta is not applied here because we assume that the storage energy capacity is
-*constant across the year.
+*constant across the year. Inter-day techs are limited by the inter-day level constraints
+*instead, except in stress periods, which have no inter-day partitions.
 eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
                                $storage(i)
                                $tmodel(t)
-                               $(not storage_interday(i))]..
+                               $(not storage_interday(i) or h_stress(h))]..
 
 * [plus] storage duration times storage capacity for fixed-duration techs
     storage_duration_m(i,v,r) * CAP(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$pvb(i))
@@ -3245,7 +3248,7 @@ eq_storage_interday_level(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)$t
 * Constraints for building inter-day storage linkage
 * Define the maximum relative soc on a representative period compared to its hour 0
 * It's noted that STORAGE_INTERDAY_LEVEL_MAX_DAY can be nagative since it represent a relative value
-eq_storage_interday_level_max_day(i,v,r,szn,h,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$h_szn(h,szn)]..
+eq_storage_interday_level_max_day(i,v,r,szn,h,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$h_szn(h,szn)$(not szn_stress(szn))]..
     
     STORAGE_INTERDAY_LEVEL_MAX_DAY(i,v,r,szn,t)
 
@@ -3259,7 +3262,7 @@ eq_storage_interday_level_max_day(i,v,r,szn,h,t)$[valgen(i,v,r,t)$storage_interd
 * Constraints for building inter-day storage linkage
 * Define the minimum relative soc on a representative period compared to its hour 0
 * It's noted that STORAGE_INTERDAY_LEVEL_MIN_DAY can be nagative since it represent a relative value
-eq_storage_interday_level_min_day(i,v,r,szn,h,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$h_szn(h,szn)]..
+eq_storage_interday_level_min_day(i,v,r,szn,h,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$h_szn(h,szn)$(not szn_stress(szn))]..
     
     sum{(hh)$[h_preh(h,hh)], (STORAGE_INTERDAY_DISPATCH(i,v,r,hh,t) * hours_daily(h))}
 
