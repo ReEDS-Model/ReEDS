@@ -96,8 +96,6 @@ sets
     unknown
     geothermal
     hydro
-    csp3
-    csp4
     pumped-hydro-flex
     hydED_pumped-hydro-flex
     CoalOldUns_CoalOldScr
@@ -412,10 +410,6 @@ if(Sw_CSP = 0,
   ban(i)$i_subsets(i,'csp') = yes ;
 ) ;
 
-if(Sw_CSP = 1,
-  ban(i)$i_subsets(i,'csp2') = yes ;
-) ;
-
 if(Sw_CoalIGCC = 0,
   ban('Coal-IGCC') = yes ;
 ) ;
@@ -554,7 +548,7 @@ if(Sw_HybridPlant = 2,
  ban(i)$[i_subsets(i,'storage_hybrid')$(not i_subsets(i,'csp_storage'))] = no ;
  ban(i)$i_subsets(i,'csp_storage') = yes ;
 ) ;
-* 3: Allow CSP and all other hybrid plants (note csp_storage bans are controlled by Sw_CSP)
+* 3: Allow CSP and all other hybrid plants (note csp_storage bans are controlled by Sw_CSP and GSw_CSP_Types)
 if(Sw_HybridPlant = 3,
  ban(i)$[i_subsets(i,'storage_hybrid')$(not i_subsets(i,'csp_storage'))] = no ;
 ) ;
@@ -573,6 +567,20 @@ $ifthen.pvb12 %GSw_PVB_Types% == '1'
     ban(i)$i_subsets(i,'pvb2') = yes ;
     ban(i)$i_subsets(i,'pvb3') = yes ;
 $endif.pvb12
+
+* Ban CSP_Types that aren't included in the model
+$ifthen.csp123 %GSw_CSP_Types% == '1_2_3'
+    ban(i)$i_subsets(i,'csp4') = yes ;
+$endif.csp123
+$ifthen.csp12 %GSw_CSP_Types% == '1_2'
+    ban(i)$i_subsets(i,'csp3') = yes ;
+    ban(i)$i_subsets(i,'csp4') = yes ;
+$endif.csp12
+$ifthen.csp1 %GSw_CSP_Types% == '1'
+    ban(i)$i_subsets(i,'csp2') = yes ;
+    ban(i)$i_subsets(i,'csp3') = yes ;
+    ban(i)$i_subsets(i,'csp4') = yes ;
+$endif.csp1
 
 *** Ban storage techs based on Sw_Storage switch
 * 0: Ban all storage
