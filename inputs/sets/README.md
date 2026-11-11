@@ -136,7 +136,7 @@
 
 - `tg.csv`: set of technology groups
 
-- `tg_rsc_cspagg.csv`: set of csp technologies that belong to the same class
+- `tg_rsc_cspagg.csv`: set of CSP configurations that share a resource supply curve
 
 - `tg_rsc_upvagg.csv`: set of pv and pvb technologies that belong to the same class
 
