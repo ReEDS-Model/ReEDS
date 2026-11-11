@@ -2877,7 +2877,6 @@ try:
                     else:
                         ax[row,col].axis('off')
             ### Save it
-            breakpoint()
             slide = reeds.report_utils.add_to_pptx(
                 f'Difference: {tech_type} Capacity {lastyear} [GW]'+(' - multibase' if multibase else ''), 
                 prs=prs)
