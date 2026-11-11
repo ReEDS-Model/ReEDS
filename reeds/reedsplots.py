@@ -506,7 +506,7 @@ def plot_diff(
 
 
 def plot_trans_diff(
-        casebase, casecomp,
+        casebase, casecomp, casenamebase,
         level='r',
         pcalabel=False, wscale=0.0003,
         year='last', yearlabel=True,
@@ -518,6 +518,7 @@ def plot_trans_diff(
         f=None, ax=None, scale=True, label_line_capacity=True,
         titleshorten=0,
         thickborders='none', thickness=0.5,
+        multibase=False,
     ):
     """Plot difference map of interzonal transmission"""
     ### Load shapefiles
@@ -602,6 +603,8 @@ def plot_trans_diff(
             )
             if label_line_capacity and (abs(row.MW_diff/1000) >= label_line_capacity):
                 _label_line(row=row, ax=ax, wscale=wscale, cap='MW_diff', sign=True)
+        if multibase:
+            ax.annotate(f'Diff from\n{casenamebase}', (0.1,0), xycoords='axes fraction', fontsize=10)
         ### Stop here
         return dfplot
 
@@ -730,6 +733,7 @@ def plot_trans_onecase(
         drawstates=True,
         label_line_capacity=0,
         crossing_level='r',
+        multibase=False,
     ):
     """
     Notes
@@ -891,6 +895,8 @@ def plot_trans_onecase(
                 f', additions since {subtract_baseyear}' if subtract_baseyear else ' total',
             ),
             (0.1,1), xycoords='axes fraction', fontsize=10)
+    if multibase:
+        ax.annotate('Base', (0.1,0), xycoords='axes fraction', fontsize=10)
     if scale:
         if not show_overlap:
             gpd.GeoSeries(
