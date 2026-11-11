@@ -7,10 +7,13 @@ eq_MGA_CostEnvelope(t)$[tmodel(t)$Sw_MGA]..
     (
         z_rep_inv(t)
         + sum{s, z_rep_op(s,t) * scenario_probability(s)}
-    )
-    * (1 + Sw_MGA_CostDelta)
+        + z_rep_finito(t)
+    ) * (1 + Sw_MGA_CostDelta)
     =g=
     Z_inv(t) + sum{s, Z_op(s,t) * scenario_probability(s) }
+$ifthene.linked_objective Sw_FINITO_Link==1
+    + (deflator('%FINITO_dollaryear%') / cost_scale_finito * Z_finito(t) )
+$endif.linked_objective 
 ;
 
 * ---------------------------------------------------------------------------
