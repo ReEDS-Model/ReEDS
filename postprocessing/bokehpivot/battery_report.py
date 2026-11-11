@@ -53,7 +53,8 @@ def build_html(output_dir, core_path):
     dol_fig = figure(output_dir, 'plcoe_pitch_storage_dollars.png', 2,
                      'LCOE base, marginal LCOE, LVOE, benchmark price and PLCOE for storage, per MWh '
                      'and per kW, by model year and by share.',
-                     'Top row, in $/MWh: LCOE base, the unforced ATB cost; LVOE, value per MWh of '
+                     'Top row, in $/MWh: LCOE base, the unforced ATB cost of a four-hour battery, '
+                     'annualized as ReEDS annualizes it (battery_lcoe_base.py); LVOE, value per MWh of '
                      'discharge; and the benchmark price (Pb), the benchmark value per MWh of load. '
                      'Bottom row, in $/kW-yr, per kW of new power capacity: LCOE base at a capacity '
                      'factor of 4/24, a four-hour battery cycling once a day; LVOE, value per kW-yr; '

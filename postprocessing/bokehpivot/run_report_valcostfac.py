@@ -182,8 +182,8 @@ df['net_cost'] = df['relative_cost'] + df['integration_cost']
 df['BCR'] = df['lvoe'] / (df['lvoe'] / df['force_mult'])
 df['value_cost_adder'] = df['lcoe_adder'] + df['integration_cost']
 #Per-kW cost and value-cost factors, for storage only: its LCOE_base.csv entry is a four-hour battery
-#cycling once a day, so a capacity factor of 4/24 converts it to $/kW-yr. The other techs have no
-#per-kW base cost.
+#cycling once a day, written by battery_lcoe_base.py, so a capacity factor of 4/24 converts it to
+#$/kW-yr. The other techs have no per-kW base cost.
 stor_base_cf = 4/24
 df.loc[df['tech'].isin(stor_report_techs), 'lcoe_base_perkw'] = df['lcoe_base'] * stor_base_cf * 8760 / 1000
 df['cost_factor_perkw'] = df['lvoe_perkw'] / df['lcoe_base_perkw']
