@@ -383,6 +383,23 @@ if __name__ == '__main__':
     #    -- Natural Gas --    #
     ###########################
 
+    # Use the baseline values through GSw_HarmonizeHistorical for HOG/LOG inputs
+    ngscen_ref = sw.ngscen.replace('HOG','baseline').replace('LOG','baseline')
+    if int(sw.GSw_HarmonizeHistorical) and (ngscen_ref != sw.ngscen):
+        for filename, prefix in [
+            ('natgas_price_cendiv', 'ng'),
+            ('alpha', 'alpha'),
+            ('ng_demand_elec', 'ng_demand'),
+            ('ng_demand_tot', 'ng_tot_demand'),
+        ]:
+            fpath = os.path.join(inputs_case, f'{filename}.csv')
+            df = pd.read_csv(fpath, index_col=0)
+            dfref = pd.read_csv(
+                os.path.join(reeds_path, 'inputs', 'fuelprices', f'{prefix}_{ngscen_ref}.csv'),
+                index_col=0)
+            df.update(dfref.loc[:int(sw.GSw_HarmonizeHistorical)])
+            df.to_csv(fpath)
+
     ngprice = pd.read_csv(os.path.join(inputs_case,'natgas_price_cendiv.csv'))
     ngprice = ngprice.melt(id_vars=['year']).rename(columns={'variable':'cendiv'})
     ngprice = ngprice.loc[ngprice['cendiv'].isin(val_cendiv)]
