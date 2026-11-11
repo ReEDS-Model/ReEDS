@@ -211,15 +211,7 @@ geo_stack = geodata[['t','i','capcost','fom','vom']].copy()
 csp = pd.read_csv(os.path.join(inputs_case,'plantchar_csp.csv'))
 csp = deflate_func(csp, sw.plantchar_csp)
 
-csp_stack = pd.DataFrame(columns=csp.columns)
-
-#create categories for all upv categories
-for n in range(1,13):
-	tcsp = csp.copy()
-	tcsp['i'] = csp['type']+"_"+str(n)
-	csp_stack = pd.concat([csp_stack,tcsp],sort=False)
-
-csp_stack = csp_stack[['t','capcost','fom','vom','i']]
+csp_stack = csp.assign(i=csp['type'])[['t','capcost','fom','vom','i']]
 
 #%%####################
 #    -- Storage --    #
