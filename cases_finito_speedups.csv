@@ -1,6 +1,6 @@
 ,Default Value,FINITO_Pacific,FINITO_BAU_Fast,FINITO_DD_Fast,FINITO_Example,FINITO_Example_Fast,ReEDS_BAU_3HR_CAA,FINITO_BAU_3HR_CAA,ReEDS_BAU_3HR_xCAA,FINITO_BAU_3HR_xCAA,ReEDS_DD_3HR_CAA,FINITO_DD_3HR_CAA,ReEDS_DD_3HR_xCAA,FINITO_DD_3HR_xCAA,ReEDS_BAU_4HR_CAA,FINITO_BAU_4HR_CAA,ReEDS_BAU_4HR_xCAA,FINITO_BAU_4HR_xCAA,ReEDS_DD_4HR_CAA,FINITO_DD_4HR_CAA,ReEDS_DD_4HR_xCAA,FINITO_DD_4HR_xCAA
 ignore,0,1,,,,,,,,,,,,,,,,,,,,
-GSw_gopt,2,,,,,,,,,,,,,,,,,,,,,
+GSw_gopt,1,,,,,,,,,,,,,,,,,,,,,
 GSw_Region,country/USA,cendiv/Pacific,,,,,,,,,,,,,,,,,,,,
 endyear,2050,2035,,,,,,,,,,,,,,,,,,,,
 yearset,,,,,,,,,,,,,,,,,,,,,,
