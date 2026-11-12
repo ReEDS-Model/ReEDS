@@ -2732,7 +2732,7 @@ set routes(r,rr,trtype,t)     "final conditional on transmission feasibility"
     opres_routes(r,rr,t)      "final conditional on operating reserve flow feasibility"
 ;
 
-* Specify the transmission types that are limited by Sw_TransCapMax and Sw_TransCapMaxTotal
+* Specify the transmission types that are limited by Sw_TransCapMaxEachType and Sw_TransCapMaxAllTypes
 set trtypemax(trtype) "trtypes to limit" ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=0)] = no ;
 trtypemax(trtype)$[(Sw_TransCapMaxTypes=1)] = yes ;
@@ -2898,7 +2898,7 @@ $onlisting
 / ;
 $offempty
 
-* Assign hurdle rates to chosen GSw_TransHurdLevel
+* Assign hurdle rates to chosen GSw_TransHurdleLevel1 and GSw_TransHurdleLevel2
 * define hurdle rates across international lines
 * first determine whether the regions are of different countries..
 cost_hurdle_regiongrp1(r,rr,t)$[sum{country$r_country(r,country),ord(country) }

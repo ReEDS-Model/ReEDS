@@ -1212,7 +1212,7 @@ PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020G
 
 ```{admonition} PSH options
 - `pshsupplycurve`: Determines the PSH supply-curve dataset used.
-  - PSH storage duration is either 8, 10, or 12 hours depending on the chosen PSH supply curve (with 12 hours as the default). Supply curves with wEph or wEphemeral in the filename allow sites that intersect with ephemeral streams. Supply curves with wExist in the filename allow sites that utilize existing reservoirs. The repository typically includes the latest and previous data vintages.
+  - Specified as `{duration}hr_{siting}` with entries from `inputs/supply_curve/supplycurve_psh-{pshsupplycurve}.csv`. The PSH storage duration options are 8, 10, or 12 hours and the siting scenario options are `limited`, `reference`, or `open`. The default is `8hr_reference`.
 
 - `GSw_PSHwatercon`: Requires new PSH to purchase water access from water supply supply curves.
   - `0`: Ignore water access costs (default).
@@ -1226,7 +1226,7 @@ PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020G
 - `GSw_PSHfillyears`: Scales the water requirement by the number of years it is assumed to take to fill the PSH reservoirs.
   - Default setting: 3 years.
 
-**`GSw_PSHwatertypes` and `GSw_PSHfillyears` are only relevant when `GSw_watercon = 1`.**
+**`GSw_PSHwatertypes` is only relevant when `GSw_WaterMain = 1`, and `GSw_PSHfillyears` is only relevant when `GSw_PSHwatercon = 1` (which also requires `GSw_WaterMain = 1`).**
 
 ```
 
@@ -1267,7 +1267,7 @@ By default, the model uses the third option (endogenous representation with zona
 ```{admonition} Hydrogen options
 
 - `GSw_H2` (default `2`): Controls the representation of hydrogen.
-  - `0`: **drop-in fuel** — no endogenous representation of hydrogen production or transport; if `GSw_H2CT=1` fuel is assumed to be available at the cost specified by `h2ctfuelscen`.
+  - `0`: **drop-in fuel** — no endogenous representation of hydrogen production or transport; if `GSw_H2Combustion=1`, fuel for H2-CT and H2-CC is assumed to be available at the cost specified by `h2combustionfuelscen`.
   - `1`: **production, national balancing** — endogenous representation of hydrogen production represented with national balancing (no network constraints).
   - `2`: **production, regional balancing** — endogenous representation of hydrogen production and transport network.
 
@@ -2428,7 +2428,8 @@ The syntax for these switches is described in the "Description" column of `cases
 - Choose between stress periods vs. capacity credit
   - `GSw_PRM_CapCredit` (default 0): Use stress periods if 0, capacity credit if 1
 - Control the iteration between ReEDS and PRAS
-  - `GSw_PRM_StressThreshold` (default `transgrp_1_EUE_sum`): Regional RA threshold for stress period iteration
+  - `GSw_PRM_StressThresholdMetrics` (default `NEUE`): RA metric(s) checked during stress period iteration
+  - `GSw_PRM_StressThreshold{metric}` (default `GSw_PRM_StressThresholdNEUE=transgrp_1`): Regional RA threshold for each metric
   - `GSw_PRM_StressIterateMax` (default 5): Max number of times to iterate on a particular solve year before halting the run
   - `GSw_PRM_StressIncrement` (default 2): How many stress periods to add per region per iteration
   - `GSw_PRM_StressStorageCutoff` (default `EUE_0.1`): How to select "shoulder" stress periods for interday storage
@@ -2446,7 +2447,7 @@ The syntax for these switches is described in the "Description" column of `cases
 - Additional RA modeling details
   - `resource_adequacy_years` (default `2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023`): Weather years to include in resource adequacy calculations
   - `GSw_HourlyChunkLengthStress` (default 3): Hours per time chunk modeled during stress periods
-  - `pras_samples` (default 10): Number of Monte Carlo outage draws modeled in PRAS
+  - `pras_samples` (default 100): Number of Monte Carlo outage draws modeled in PRAS
   - `GSw_PRM_StressLoadAggMethod` (default `max`): How to aggregate load within time chunks: "mean" or "max"
   - `GSw_PRM_StressOutages` (default 1): Turn on (1) / off (0) outages during stress periods in ReEDS
 ```
@@ -2524,8 +2525,8 @@ In all cases, the VRE profile is compared against the aggregated regional load p
 Many settings related to capacity credit calculations can be adjusted by the user.
 - `capcredit_hierarchy_level` (default `transreg` for the 11 planning regions shown in {numref}`figure-spatial_layers_zones`): Level at which to aggregate net load for capacity credit calculation
 - `GSw_PRM_CapCreditHours` (default 20): Number of peak net load hours per capacity credit season considered in capacity credit calculation
-- `marg_vre_mw` (default 1000): Amount of marginal VRE capacity to add in MW for marginal capacity credit calculation
-- `marg_stor_mw` (default 100): Amount of marginal storage capacity to add in MW for marginal capacity credit calculation
+- `marg_vre_mw` (default 1000): Minimum amount of marginal VRE capacity in MW to add for marginal capacity credit calculation; the specific amount used is the maximum of this value and the the most recent average new VRE investment per capacity credit region (looking back the number of solve years specified by `marg_vre_steps`)
+- `cc_stor_stepsize` (default 100): Amount of marginal storage capacity in MW to add for marginal storage capacity credit calculation
 ```
 
 
