@@ -190,7 +190,7 @@ GSw_HourlyClusterRegionLevel,Indicate the region hierarchy level at which to agg
 GSw_HourlyClusterWeights,/-delimited relative weights for load and RE profiles used in clustering,^load_\d*.?\d+\/upv_\d*.?\d+\/wind-ons_\d*.?\d+\/wind-ofs_\d*.?\d+$,load_1/upv_1/wind-ons_1/wind-ofs_0,
 GSw_HourlyClusterYear,Year to use when clustering EFS and/or climate-modified data,N/A,2035,
 GSw_HourlyClusterTimestep,Indicate the time resolution to use in clustering algorithm (period=day or wek depending on GSw_HourlyType),hour; period,period,
-GSw_HourlyClusterMapMethod,How to map actual periods to representative periods: 'milp' minimizes sum of absolute errors but is slow; 'bestfirst' is orders of magnitude faster when using many weather years in GSw_HourlyWeatherYears,^(milp|bestfirst)$,milp,
+GSw_HourlyClusterMapMethod,How to map actual periods to representative periods: 'exact' finds the mapping with the minimum sum of absolute errors (solved as an assignment problem); 'bestfirst' uses a greedy heuristic that does not guarantee the minimum,^(exact|bestfirst)$,exact,
 GSw_HourlyMinRElevel,Indicate the region hierarchy level at which to include minimum wind and solar capacity factor days (or False to ignore min-wind/solar CF days),false; False; FALSE; r; nercr; transreg; transgrp; cendiv; st; interconnect; country; usda_region; ccreg,interconnect,
 GSw_HourlyNormProfiles,Indicate whether to normalize load/wind/solar profiles before identification of representative periods,0; 1,0,
 GSw_HourlyNumClusters,Number of clusters to create (i.e. number of representative days or weks),int,33,
