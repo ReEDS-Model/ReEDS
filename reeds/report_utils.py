@@ -43,7 +43,8 @@ def add_to_pptx(
         layout=3,
     ):
     """Add current matplotlib figure (or file if specified) to new powerpoint slide"""
-    from pptx.util import Inches
+    from pptx.enum.text import PP_ALIGN
+    from pptx.util import Inches, Pt
 
     if not file:
         image = io.BytesIO()
@@ -57,8 +58,13 @@ def add_to_pptx(
         prs = init_pptx()
 
     if slide is None:
+        # Construct slide and format slide title to fit in shape
         slide = prs.slides.add_slide(prs.slide_layouts[layout])
-        slide.shapes.title.text = title
+        title_shape = slide.shapes.title
+        title_shape.text = title
+        title_shape.text_frame.word_wrap = True
+        title_shape.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        title_shape.text_frame.paragraphs[0].runs[0].font.size = Pt(34)
     slide.shapes.add_picture(
         image,
         left=(None if left is None else Inches(left)),
@@ -103,6 +109,7 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
     use_table_casenames = False
     use_table_colors = False
     use_table_bases = False
+    multibase = False
     _caselist = caselist.copy()
     _casenames = casenames
     if len(_caselist) == 1:
@@ -132,9 +139,14 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
                 if 'color' in dfcase:
                     if not dfcase.color.isnull().any():
                         use_table_colors = True
-                if 'base' in dfcase:
-                    if not dfcase.base.isnull().any():
-                        use_table_bases = True
+                # Single base case: If missing or empty 'base' column, fill with 'casename' of first listed case
+                if ('base' not in dfcase) or (dfcase.base.isnull().all()):
+                    dfcase['base'] = dfcase.loc[1,'casename']
+                # Multibase case: Fill any empty 'base' values with the cases' corresponding 'casename' values
+                elif dfcase.base.isnull().any():
+                    dfcase['base'] = dfcase['base'].fillna(dfcase['casename'])
+                    multibase = True
+                
             ## Otherwise assume it's a copy of a cases_{batchname}.csv file in a case folder
             ## This approach is less robust; the others are preferred.
             else:
@@ -180,11 +192,17 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
     if len(cases) <= 1: 
         err = f"There are less than two cases being compared: {', '.join(cases.values())}"
         raise ValueError(err)
-
-    ### Get the base cases
-    if not len(basecase_in):
-        basecase = list(cases.keys())[0]
-    else:
+    
+    # check to ensure basecase is not defined for multibase comparison
+    if (len(basecase_in) > 0) & multibase:
+        err = (f"A basecase argument was provided for a multibase comparison. Either remove "
+                "the basecase argument from compare_cases.py call or delete the base column "
+                "in the input csv." 
+        )
+        raise ValueError(err)
+        
+    ### Get the base cases, overriding base column of dfcase if basecase_in is defined
+    if (len(basecase_in) > 0):
         basepath = [c for c in cases.values() if c.endswith(basecase_in)]
         if len(basepath) == 0:
             err = (
@@ -204,12 +222,20 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
             basecase = casenames[caselist.index(basepath)]
             ## Put it first in the list
             cases = {**{basecase:cases[basecase]}, **{k:v for k,v in cases.items() if k != basecase}}
-
-    ## Make case->base dictionary
-    if use_table_bases:
-        basemap = dfcase.set_index('casename').base.to_dict()
+            ## Override base column of dfcase
+            dfcase['base'] = basecase
     else:
-        basemap = dict(zip(cases, [basecase]*len(cases)))
+        ### If using multibase comparison, basecase variable is unused; arbitrarily set to 
+        ### the casename of first instance where casename == basecase
+        if multibase:
+            basecase = dfcase.loc[dfcase['casename'] == dfcase['base']].iloc[0]['casename']
+        else:
+            basecase = dfcase.loc[1,'base']
+
+    ## Make case->base dictionary, putting basecase first in the list if not multibase
+    basemap = dfcase.set_index('casename').base.to_dict()
+    if not multibase:
+        basemap = {**{basecase:basemap[basecase]}, **{k:v for k,v in basemap.items() if k != basecase}}
 
     ## Get the colors
     if use_table_colors:
@@ -222,10 +248,11 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
 
     ## Take a look
     print('Analyzing the following cases:')
+    maxpathlength = len(max(cases.values(), key=len))
     for case, path in cases.items():
         print(
-            f'{path} -> {case}'
-            + (' (base)' if ((not use_table_bases) and (case == basecase)) else '')
+            ('(base) ' if (case == basemap[case]) else '       ')
+            + f'{path.ljust(maxpathlength)} -> {case}'
         )
 
-    return cases, colors, basecase, basemap
+    return cases, colors, basecase, basemap, multibase

@@ -200,6 +200,42 @@ plotdiffvals = [
 onlytechs = None
 
 #%%### Functions
+def add_basemap_table_slide(
+    prs, basemap, title='Multibase Comparison: Base Case Mapping'
+    ):
+    """
+    Add a slide with a two-column table listing each case and its user-defined base case.
+    NOTE: This function is only called for multibase comparisons, as all cases in a single-base
+          comparison are assumed to use the same base case.
+    """
+    from pptx.enum.text import PP_ALIGN
+    from pptx.util import Inches, Pt
+    
+    # Construct slide and add title shape
+    slide = prs.slides.add_slide(prs.slide_layouts[3])
+    title_shape = slide.shapes.title
+    title_shape.text = title
+    title_shape.text_frame.word_wrap = True
+    title_shape.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+    title_shape.text_frame.paragraphs[0].runs[0].font.size = Pt(34)
+    # Construct table 
+    rows = len(basemap) + 1
+    cols = 2
+    table = slide.shapes.add_table(
+        rows, cols, 
+        Inches(0.7), Inches(1.25), Inches(12.0), Inches(5.0),
+    ).table
+    # Assign column values
+    table.cell(0, 0).text = 'Case'
+    table.cell(0, 1).text = 'Base'
+    # Fill table with case:base mapping
+    for i, (case, base) in enumerate(basemap.items(), start=1):
+        table.cell(i, 0).text = str(case)
+        table.cell(i, 1).text = str(base)
+
+    return slide
+
+
 def plot_bars_abs_stacked(
         dfplot, basecase, colors, ax, col=0,
         net=True, label=True, ypad=0.02, fontsize=9,
@@ -245,7 +281,7 @@ def plot_bars_abs_stacked(
 
 #%%### Procedure
 #%% Parse arguments
-cases, colors, basecase, basemap = reeds.report_utils.parse_caselist(
+cases, colors, basecase, basemap, multibase = reeds.report_utils.parse_caselist(
     caselist,
     casenames,
     basecase_in,
@@ -894,6 +930,11 @@ try:
 except Exception:
     print(traceback.format_exc())
 
+#%%### Multibase Comparison: Case:Base Mapping
+
+if multibase:
+    add_basemap_table_slide(prs, basemap)
+
 #%%### Capacity and generation bars
 
 if not int(sw.GSw_PRM_CapCredit):
@@ -950,7 +991,7 @@ else:
         }
         plotwidth = 2.0
         figwidth = plotwidth * len(cases)
-        dfbase = {}
+
         for slidetitle, data in toplot.items():
             plt.close()
             f,ax = plt.subplots(
@@ -959,12 +1000,11 @@ else:
             )
             ax[0,0].set_ylabel(data['label'], y=-0.075)
             ax[0,0].set_xlim(2017.5, lastyear+2.5)
-            ax[1,0].annotate(
-                f'Diff\nfrom\n{basecase}', (0.03,0.03), xycoords='axes fraction',
-                fontsize='x-large', weight='bold')
+
             ###### Absolute
             alltechs = set()
             for col, case in enumerate(cases):
+                # Process data for the given case
                 if case not in data['data']:
                     continue
                 dfplot = data['data'][case].pivot(index='year', columns=data['columns'], values=data['values'])
@@ -973,9 +1013,7 @@ else:
                     .round(3).replace(0,np.nan)
                     .dropna(axis=1, how='all')
                 )
-
-                if case == basecase:
-                    dfbase[slidetitle] = dfplot.copy()
+                # Plot data and add techs to alltechs for legend handle generation
                 alltechs.update(dfplot.columns)
                 plots.stackbar(df=dfplot, ax=ax[0,col], colors=data['colors'], width=yearstep[case], net=False)
                 ax[0,col].set_title(
@@ -1005,32 +1043,56 @@ else:
                 ax[1,col].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
                 ax[1,col].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
                 ax[1,col].axhline(0,c='k',ls='--',lw=0.75)
-
-                if (case not in data['data']) or (case == basecase):
-                    continue
+                
+                # Process data for the given case
                 dfplot = data['data'][case].pivot(index='year', columns=data['columns'], values=data['values'])
                 dfplot = (
                     dfplot
                     .round(3).replace(0,np.nan)
                     .dropna(axis=1, how='all')
                 )
+                # Process data for the corresponding basecase data from the basemap
+                if case == basemap[case]:
+                    dfbase = dfplot.copy()
+                else:
+                    dfbase = data['data'][basemap[case]].pivot(index='year', columns=data['columns'], values=data['values'])
+                    dfbase = (
+                        dfbase
+                        .round(3).replace(0,np.nan)
+                        .dropna(axis=1, how='all')
+                    )
+                # Fill missing tech columns with 0
                 for i in list(alltechs):
                     if i not in dfplot.columns:
                         dfplot[i] = 0
-                    if i not in dfbase[slidetitle].columns:
-                        dfbase[slidetitle][i] = 0
-
-                dfplot = dfplot.subtract(dfbase[slidetitle], fill_value=0)
+                    if i not in dfbase.columns:
+                        dfbase[i] = 0
+                # Calculate diff and plot
+                dfplot = dfplot.subtract(dfbase, fill_value=0)
                 dfplot = dfplot[[c for c in data['colors'].index if (( c in dfplot.columns) & (c not in (all_removals)))]].copy()
                 alltechs.update(dfplot.columns)
                 plots.stackbar(df=dfplot, ax=ax[1,col], colors=data['colors'], width=yearstep[case], net=True)
+                # Annotate diff label if not a base case
+                if (not multibase) and (col==0):
+                    ax[1,col].annotate(
+                        f'Diff\nfrom\n{basemap[case]}', 
+                        (0.03,0.03), xycoords='axes fraction',
+                        fontsize='x-large', weight='bold'
+                    )
+                elif multibase and (case != basemap[case]):
+                    ax[1,col].annotate(
+                        f'Diff\nfrom\n{basemap[case]}', 
+                        (0.03,-0.15), xycoords='axes fraction', ha='left', va='top', 
+                        fontsize='x-large', weight='bold'
+                    )
 
             plots.despine(ax)
             plt.draw()
             plots.shorten_years(ax[1,col])
             ### Save it
             slide = reeds.report_utils.add_to_pptx(
-                slidetitle+' stack', prs=prs, width=min(figwidth, SLIDE_WIDTH))
+                slidetitle+' stack'+(' - multibase' if multibase else ''), 
+                prs=prs, width=min(figwidth, SLIDE_WIDTH))
             if interactive:
                 plt.show()
     except Exception:
@@ -1252,14 +1314,18 @@ try:
     for col in range(_ncols):
         ax[1,col].set_xticks(range(len(cases)))
         ax[1,col].set_xticklabels(cases.keys(), rotation=90)
-        ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
+        if multibase:
+            ax[1,col].annotate('Multibase\nDiff', (0.03,0.03), xycoords='axes fraction', fontsize='medium')
+        else:
+            ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
         ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
     plt.tight_layout()
     plots.despine(ax)
     plt.draw()
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
-        'Capacity, Generation, Transmission, NPV, Runtime', prs=prs, width=width)
+        'Capacity, Generation, Transmission, NPV, Runtime'+(' - multibase' if multibase else ''), 
+        prs=prs, width=width)
     if interactive:
         plt.show()
 
@@ -1343,7 +1409,10 @@ try:
     for col in range(3):
         ax[1,col].set_xticks(range(len(cases)))
         ax[1,col].set_xticklabels(cases.keys(), rotation=90)
-        ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
+        if multibase:
+            ax[1,col].annotate('Multibase\nDiff', (0.03,0.03), xycoords='axes fraction', fontsize='medium')
+        else:
+            ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
         ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
         ## Add commas to y axis labels
         if max([abs(i) for i in ax[0,col].get_ylim()]) >= 10000:
@@ -1352,7 +1421,10 @@ try:
     plots.despine(ax)
     plt.draw()
     ### Save it
-    slide = reeds.report_utils.add_to_pptx('NPV of System, Climate, Health costs', height=SLIDE_HEIGHT)
+    slide = reeds.report_utils.add_to_pptx(
+        'NPV of System, Climate, Health costs'+(' - multibase' if multibase else ''), 
+        height=SLIDE_HEIGHT
+    )
     if interactive:
         plt.show()
 
@@ -1445,7 +1517,10 @@ try:
     for col in range(3):
         ax[1,col].set_xticks(range(len(cases)))
         ax[1,col].set_xticklabels(cases.keys(), rotation=90)
-        ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
+        if multibase:
+            ax[1,col].annotate('Multibase\nDiff', (0.03,0.03), xycoords='axes fraction', fontsize='medium')
+        else:
+            ax[1,col].annotate('Diff', (0.03,0.03), xycoords='axes fraction', fontsize='large')
         ax[1,col].axhline(0, c='k', ls='--', lw=0.75)
         ## Add commas to y axis labels
         if max([abs(i) for i in ax[0,col].get_ylim()]) >= 10000:
@@ -1455,7 +1530,8 @@ try:
 
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
-        'NPV of System, Climate, Health Costs', prs=prs, width=min(width, SLIDE_WIDTH))
+        'NPV of System, Climate, Health Costs'+(' - multibase' if multibase else ''), 
+        prs=prs, width=min(width, SLIDE_WIDTH))
     if interactive:
         plt.show()
 except Exception:
@@ -2292,8 +2368,8 @@ try:
         )
         for case in cases:
             ax[coords[case]].set_title(case)
-            if case == basecase:
-                ### Plot absolute
+            ### Plot absolute maps if a base case...
+            if case == basemap[case]:
                 reedsplots.plot_trans_onecase(
                     case=cases[case], pcalabel=False, wscale=wscale,
                     yearlabel=False, year=lastyear, simpletypes=None,
@@ -2302,12 +2378,13 @@ try:
                     subtract_baseyear=subtract_baseyear,
                     thickborders='transreg', drawstates=False, drawzones=False,
                     label_line_capacity=10,
-                    scale=(True if case == basecase else False),
+                    scale=(True if case == basemap[case] else False),
+                    multibase=multibase,
                 )
+            ### ...otherwise, plot difference maps
             else:
-                ### Plot the difference
                 reedsplots.plot_trans_diff(
-                    casebase=cases[basecase], casecomp=cases[case],
+                    casebase=cases[basemap[case]], casecomp=cases[case], casenamebase=basemap[case],
                     pcalabel=False, wscale=wscale,
                     yearlabel=False, year=lastyear, simpletypes=None,
                     alpha=alpha,
@@ -2316,9 +2393,10 @@ try:
                     thickborders='transreg', drawstates=False, drawzones=False,
                     label_line_capacity=10,
                     scale=False,
+                    multibase=multibase,
                 )
         ### Formatting
-        title = 'Interzonal transmission difference'
+        title = 'Interzonal transmission difference'+(' - multibase' if multibase else '')
         for row in range(nrows):
             for col in range(ncols):
                 if nrows == 1:
@@ -2687,7 +2765,7 @@ try:
                 if coords[case] == legendcoords:
                     plots.addcolorbarhist(
                         f=f, ax0=ax[coords[case]], data=dfplot.GW.values,
-                        title=f'{tech_type} {lastyear}\ncapacity [GW]', cmap=cmap, vmin=vmin, vmax=vmax,
+                        title=f'{tech_type} {lastyear}\ncapacity [GW]', title_fontsize=10, cmap=cmap, vmin=vmin, vmax=vmax,
                         orientation='horizontal', labelpad=2.25, histratio=0.,
                         cbarwidth=0.05, cbarheight=0.85,
                         cbarbottom=-0.05, cbarhoffset=0.,
@@ -2717,10 +2795,16 @@ try:
                 ].groupby('r').MW.sum()
                 for case in cases
             }, axis=1).fillna(0) / 1e3
-            dfdiff = dfval.subtract(dfval[basecase], axis=0)
-            ### Get colorbar limits
+            ### Calculate diffs only for cases where the base case is not the casename
+            dfdiff = pd.DataFrame(index=dfval.index.copy())
+            for col in dfval:
+                if col == basemap[col]:
+                    dfdiff[col] = dfval[col].copy()
+                else:
+                    dfdiff[col] = dfval[col].subtract(dfval[basemap[col]], axis=0)
+            ### Get colorbar limits for absolute and difference maps
             absmax = dfval.stack().max()
-            diffmax = dfdiff.unstack().abs().max()
+            diffmax = dfdiff[[col for col in dfdiff if col != basemap[col]]].unstack().abs().max()
 
             if np.isnan(absmax):
                 absmax = 0.
@@ -2736,7 +2820,7 @@ try:
             ### Plot it
             for case in cases:
                 dfplot = dfba.copy()
-                dfplot['GW'] = dfval[case] if case == basecase else dfdiff[case]
+                dfplot['GW'] = dfdiff[case]
 
                 ax[coords[case]].set_title(
                     case if nowrap else plots.wraptext(case, width=figwidth/ncols*0.9, fontsize=14)
@@ -2749,33 +2833,40 @@ try:
                     facecolor='none', edgecolor='k', lw=0.2, zorder=10001)
                 dfplot.plot(
                     ax=ax[coords[case]], column='GW',
-                    cmap=(cmap if case == basecase else cmap_diff),
-                    vmin=(0 if case == basecase else -diffmax),
-                    vmax=(absmax if case == basecase else diffmax),
+                    cmap=(cmap if case == basemap[case] else cmap_diff),
+                    vmin=(0 if case == basemap[case] else -diffmax),
+                    vmax=(absmax if case == basemap[case] else diffmax),
                     legend=False,
                 )
+                ## If no difference between case and base case values, then color all regions white
+                if dfplot['GW'].sum() == 0:
+                    dfplot.plot(
+                        ax=ax[coords[case]],color='white',edgecolor='none',legend=False,
+                    )
                 reedsplots.label_region_value(dfplot, ax=ax[coords[case]], column="GW", text_kwargs={'fontsize': 5})
-                ## Difference legend
-                if coords[case] == legendcoords:
+                ## Legends
+                ### Absolute value colorbar
+                if case == basemap[case]:
                     plots.addcolorbarhist(
-                        f=f, ax0=ax[coords[case]], data=dfplot.GW.values,
-                        title=f'{tech_type} {lastyear}\ncapacity, difference\nfrom {basecase} [GW]',
-                        cmap=(cmap if case == basecase else cmap_diff),
-                        vmin=(0 if case == basecase else -diffmax),
-                        vmax=(absmax if case == basecase else diffmax),
+                        f=f, ax0=ax[coords[case]], data=dfval[case].values,
+                        title=f'{tech_type} {lastyear} capacity [GW]', title_fontsize=10,
+                        cmap=cmap, vmin=0, vmax=absmax,
                         orientation='horizontal', labelpad=2.25, histratio=0.,
                         cbarwidth=0.05, cbarheight=0.85,
                         cbarbottom=-0.05, cbarhoffset=0.,
                     )
-            ## Absolute legend
-            plots.addcolorbarhist(
-                f=f, ax0=ax[coords[basecase]], data=dfval[basecase].values,
-                title=f'{tech_type} {lastyear}\ncapacity [GW]',
-                cmap=cmap, vmin=0, vmax=absmax,
-                orientation='horizontal', labelpad=2.25, histratio=0.,
-                cbarwidth=0.05, cbarheight=0.85,
-                cbarbottom=-0.05, cbarhoffset=0.,
-            )
+                ### Difference value colorbar
+                else:
+                    plots.addcolorbarhist(
+                        f=f, ax0=ax[coords[case]], data=dfplot.GW.values,
+                        title=f'{tech_type} {lastyear} capacity [GW],\ndiff from {basemap[case]}', title_fontsize=10,
+                        cmap=(cmap if case == basemap[case] else cmap_diff),
+                        vmin=(0 if case == basemap[case] else -diffmax),
+                        vmax=(absmax if case == basemap[case] else diffmax),
+                        orientation='horizontal', labelpad=2.25, histratio=0.,
+                        cbarwidth=0.05, cbarheight=0.85,
+                        cbarbottom=-0.05, cbarhoffset=0.,
+                    )
 
             for row in range(nrows):
                 for col in range(ncols):
@@ -2786,7 +2877,9 @@ try:
                     else:
                         ax[row,col].axis('off')
             ### Save it
-            slide = reeds.report_utils.add_to_pptx(f'Difference: {tech_type} Capacity {lastyear} [GW]', prs=prs)
+            slide = reeds.report_utils.add_to_pptx(
+                f'Difference: {tech_type} Capacity {lastyear} [GW]'+(' - multibase' if multibase else ''), 
+                prs=prs)
             if interactive:
                 plt.show()
 except Exception:
