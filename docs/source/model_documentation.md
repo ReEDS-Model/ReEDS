@@ -873,6 +873,7 @@ Instead, the profiles of power input from the collectors (solar field) of the CS
 
 ```{admonition} CSP settings
 - New CSP deployment is turned off by default but can be enabled by setting the `GSw_CSP` switch to `1`.
+- `GSw_CSP_Types` selects which CSP configurations (`csp1` through `csp4`) are included in the model when CSP is turned on.
 ```
 
 
