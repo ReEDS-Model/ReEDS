@@ -64,6 +64,8 @@ Include additional illustrative plots describing input data, methods, testing, a
     - [ ] Map of absolute values after
     - [ ] Map of differences: (after - before) or (after / before)
   - [ ] If entries are added/removed/changed in the EIA-NEMS unit database, associated changes have been committed to [ReEDS_Input_Processing](https://github.com/ReEDS-Model/ReEDS_Input_Processing)
+- [ ] If new variables related to system operations have been added to `c_model.gms`/`d_objective.gms`, they have an `s` (stochastic scenario) index and they are included in `unfix_op.gms` (to release them when using dispatch mode)
+- [ ] If new constraints related to capacity investments have been added to `c_model.gms`, they have a `$(not Sw_PCM)` conditional (to release them when using dispatch mode)
 - [ ] Code formatting standardized <!-- Coding conventions: https://reeds-model.github.io/ReEDS/developer_best_practices.html#coding-standards-and-conventions -->
 - [ ] Reusable functions used where possible instead of copy/pasted code
 
