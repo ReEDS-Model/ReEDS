@@ -709,7 +709,6 @@ plot = figure(
 )
 plot.toolbar.logo = None
 plot.xgrid.grid_line_color = None
-plot.title.text_font_size = "11pt"
 plot.xaxis.major_label_orientation = 0.6  # angled labels for Regional nested factors
 
 # ---------------------------------------------------------------------------
@@ -797,7 +796,7 @@ legend_div = Div(
         "overflow-y": "auto",
         "overflow-x": "hidden",
         "padding": "24px 8px 8px 0",
-        "font-size": "11px",
+        "font-size": "15px",
         "line-height": "1.45",
     },
 )
@@ -811,7 +810,7 @@ def _build_legend_html(items: list[tuple[str, str]]) -> str:
     for label, color in items:
         rows.append(
             f"<div style='display:flex;align-items:center;margin-bottom:3px'>"
-            f"<span style='display:inline-block;width:14px;height:14px;"
+            f"<span style='display:inline-block;width:16px;height:16px;"
             f"background:{color};border:1px solid rgba(0,0,0,0.15);"
             f"margin-right:6px;flex-shrink:0'></span>"
             f"<span style='color:#222'>{label}</span>"
@@ -953,6 +952,20 @@ uq_plot = figure(
 uq_plot.toolbar.logo = None
 uq_plot.xaxis.major_label_orientation = 0.6
 uq_plot.xgrid.grid_line_color = None
+
+# Larger fonts on the three Predict-tab figures (title, axis titles, ticks).
+_PREDICT_TITLE_FONT = "14pt"
+_PREDICT_AXIS_FONT = "14pt"
+_PREDICT_TICK_FONT = "13pt"
+for _fig in (plot, diff_plot, uq_plot):
+    _fig.title.text_font_size = _PREDICT_TITLE_FONT
+    _fig.xaxis.axis_label_text_font_size = _PREDICT_AXIS_FONT
+    _fig.yaxis.axis_label_text_font_size = _PREDICT_AXIS_FONT
+    _fig.xaxis.major_label_text_font_size = _PREDICT_TICK_FONT
+    _fig.yaxis.major_label_text_font_size = _PREDICT_TICK_FONT
+    # Regional view: the outer group labels (p60, p61, ...) under the ticks.
+    _fig.xaxis.group_text_font_size = _PREDICT_TICK_FONT
+    _fig.xaxis.group_text_color = "#222"
 
 uq_source = ColumnDataSource(data=dict(
     x=[], bottom=[], top=[], ci_pct=[], tech=[],
