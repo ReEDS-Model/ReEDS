@@ -223,7 +223,7 @@ class ReEDScase:
                 self.outputs[name] = df
                 setattr(self, name, df)
             return self.outputs[name]
-        elif name not in self.outputs:
+        else:
             if self.verbose:
                 print(f'Loading {name}')
             ## Try outputs first
@@ -245,8 +245,6 @@ class ReEDScase:
                     err = f"'{name}' is neither an input nor an output of {self.casepath}"
                     raise KeyError(err)
             return df
-        else:
-            return getattr(self, name)
 
     def copy(self, deep=True):
         if deep:

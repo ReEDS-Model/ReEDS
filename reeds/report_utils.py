@@ -318,7 +318,7 @@ def parse_caseglobs(
             if v.startswith('plt.cm.') or v.startswith('cmocean.cm.'):
                 colors[k] = eval(v)
     else:
-        colors = reeds.plots.rainbowmapper(casepaths.keys())
+        colors = reeds.plots.rainbowmapper(casenames)
 
     ## Take a look
     print('Analyzing the following groups of samples:')

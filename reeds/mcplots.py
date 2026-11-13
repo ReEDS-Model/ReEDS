@@ -27,7 +27,7 @@ from defaults import DEFAULT_DOLLAR_YEAR
 def plot_demand_lines(
     plotcases:list,
     level='st',
-    tstart=2020,
+    tstart=None,
     scale=1,
     color='C7',
     alpha=0.5,
@@ -37,16 +37,23 @@ def plot_demand_lines(
     Sum of input electricity demand
     Lines with vertical histograms at the end for each region in level [TWh]
     """
+    ## Parse inputs
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Shared inputs
     hierarchy = plotcases[0].hierarchy
     r2region = hierarchy[level]
     regions = sorted(hierarchy[level].unique())
     if level == 'st':
-        state_subplots = reeds.reedsplots.get_state_subplots()
-        nrows = state_subplots.row.max() + 1
-        ncols = state_subplots.col.max() + 1
-        coords = state_subplots['ax']
+        subplots = reeds.reedsplots.get_state_subplots()
+        nrows = subplots.row.max() + 1
+        ncols = subplots.col.max() + 1
+        coords = subplots['ax']
     else:
         nrows, ncols, coords = reeds.plots.get_coordinates(regions)
+        subplots = pd.DataFrame(coords, index=['row','col']).T
+        subplots['ax'] = subplots.apply(lambda row: tuple(row), axis=1)
     dfplot = pd.concat({
         i: (
             case.demand_rt
@@ -86,14 +93,9 @@ def plot_demand_lines(
     ## Formatting
     _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
     _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-    if (level == 'st'):
-        if 'CA' in regions:
-            _ax = ax[state_subplots.loc['CA','ax']]
-        else:
-            _ax = ax[state_subplots.loc[regions].sort_values(['row','col']).ax.iloc[-1]]
-    else:
-        _ax = ax[coords[regions[-1]]]
-    _ax.set_ylabel('Electricity demand [TWh]', y=0, va='bottom', ha='left')
+    ax_bottomleft = ax[subplots.loc[regions].sort_values(['row','col']).ax.iloc[-1]]
+    _ax = ax[subplots.loc['OR','ax']] if level == 'st' else ax_bottomleft
+    _ax.set_ylabel('Electricity demand [TWh]')
     reeds.plots.trim_empty_subplots(ax)
     reeds.plots.despine(ax)
     plt.draw()
@@ -104,7 +106,7 @@ def plot_demand_lines(
 def plot_fuelprice_lines(
     plotcases:list,
     fuel:Literal['gas','coal','uranium','h2']='gas',
-    tstart=2020,
+    tstart=None,
     color='C7',
     bins=21,
     alpha=0.5,
@@ -113,6 +115,11 @@ def plot_fuelprice_lines(
     All-region unweighted average fuel price
     Lines with vertical historgram at end [$/MMBtu]
     """
+    ## Parse inputs
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Data
     colname = {'gas':'naturalgas', 'h2':'h2fuel'}
     dfplot = pd.concat({
         i: case.fprice.groupby('t')[colname.get(fuel,fuel)].mean()
@@ -157,7 +164,7 @@ def plot_capcost_lines(
         # 'geothermal': 'Geothermal',
         # 'hydro': 'Hydropower',
     },
-    tstart=2020,
+    tstart=None,
     bins=31,
     alpha=0.5,
 ):
@@ -167,6 +174,10 @@ def plot_capcost_lines(
         values = "nice" name used in tech_style.csv
     Lines with vertical historgram at end [$/MMBtu]
     """
+    ## Parse inputs
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
     ## Shared inputs
     colors_tech = reeds.io.get_plot_formatting()['tech_color'].squeeze(1)
     inflatable = reeds.io.get_inflatable()
@@ -292,7 +303,7 @@ def plot_cap_gen_hist(
     nicelabels=None,
     colors=None,
     t=None,
-    tstart=2020,
+    tstart=None,
     techs=[
         'UPV',
         'Gas-CC',
@@ -321,6 +332,8 @@ def plot_cap_gen_hist(
         casebase: ReEDScase of base case (if not provided, the first sample is used)
         nicelabels: Dictionary of caseprefix keys to nice labels used in plot
         colors: Dictionary of nice label keys to colors used in plot
+        t: Year to plot (int). If None, uses the final model year
+        tstart: First year to plot (int). If None, uses the last model year before GSw_StartMarkets
         plotwidth: Subplot width [inches]
         histwidth: Histogram width [inches]. If provided, overrides plotwidth.
         techs: int or list of tech name strings.
@@ -338,6 +351,9 @@ def plot_cap_gen_hist(
         plotwidth = histwidth * len(cases)
     if t is None:
         t = casebase.tmodel_new.squeeze(1).max()
+    if tstart is None:
+        _years = casebase.tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(casebase.sw.GSw_StartMarkets)].max()
     ## Get data
     dictplot = {}
     for caseprefix, plotcases in cases.items():
@@ -596,7 +612,7 @@ def plot_cap_trans_hist(
     colors=None,
     level='transreg',
     t=None,
-    tstart=2020,
+    tstart=None,
     binstep=1,
     plotwidth=1.45,
     histwidth=None,
@@ -613,6 +629,10 @@ def plot_cap_trans_hist(
         plotwidth = histwidth * len(cases)
     if t is None:
         t = casebase.tmodel_new.squeeze(1).max()
+    ## Parse inputs
+    if tstart is None:
+        _years = casebase.tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(casebase.sw.GSw_StartMarkets)].max()
     ## Get data
     hierarchy = casebase.hierarchy
     dfmap = casebase.dfmap
@@ -724,7 +744,7 @@ def plot_scatter_everything(
     corr_method:Literal['pearson','kendall','spearman']='spearman',
     zoom=True,
     t=None,
-    tstart=2020,
+    tstart=None,
     cmap=plt.cm.coolwarm,
     cmin=-0.8,
     cmax=0.8,
@@ -733,8 +753,13 @@ def plot_scatter_everything(
     """
     Scatter plot of many outputs against many inputs, colored by correlation coefficient
     """
+    ## Parse inputs
     if t is None:
         t = plotcases[0].tmodel_new.squeeze(1).max()
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Fixed inputs
     cost_techs = [
         {'tech_cost': 'battery_li', 'tech_cap':'Storage', 'label':'Battery'},
         {'tech_cost': 'upv_3', 'tech_cap':'PV', 'label':'PV'},
@@ -922,7 +947,7 @@ def plot_emissions(
     etype='process',
     numbins=71,
     ymin=0,
-    tstart=2020,
+    tstart=None,
     xscale=2,
     alpha=0.5,
 ):
@@ -933,6 +958,11 @@ def plot_emissions(
         nicelabels = dict(zip(cases.keys(), cases.keys()))
     if colors is None:
         colors = reeds.plots.rainbowmapper(nicelabels)
+    ## Parse inputs
+    if tstart is None:
+        casebase = cases[list(cases.keys())[0]][0]
+        _years = casebase.tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(casebase.sw.GSw_StartMarkets)].max()
     ## Get data
     dictplot = {}
     for caseprefix, plotcases in cases.items():
