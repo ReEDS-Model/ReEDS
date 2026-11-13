@@ -12,3 +12,7 @@ casepath,casename,color
 # /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
 # /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
 ### Add your cases below (don't commit them) or create a new csv file with the same format
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_04112026_USA_defaults, USA Defaults,plt.cm.tab20(2)
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_04112026_USA_defaults_queue_off, USA Queue Off,plt.cm.tab20(3)
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_04112026_EI_defaults, EI Defaults,plt.cm.tab20(0)
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_04112026_EI_defaults_queue_off, EI Queue Off,plt.cm.tab20(1)

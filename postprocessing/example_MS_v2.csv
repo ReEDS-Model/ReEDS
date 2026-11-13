@@ -1,0 +1,17 @@
+casepath,casename,color
+### Examples
+## nrelnas01 on windows
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092424_main_ERCOT_county,main,
+# Z:\FY23-ReEDS_Spatial_Flex-LS\mixed_resolution\runs\v1_092524_dev_check_ERCOT_county,dev check,
+## nrelnas01 on mac
+# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA,Ref,C1
+# /Volumes/ReEDS/Users/pbrown/ReEDSruns/main/v20241028_mainK0_USA_decarb,Z35,plt.cm.tab20(4)
+## kestrel
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA,main_Ref,plt.cm.tab20(0)
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA,por_Ref,plt.cm.tab20(1)
+# /projects/reedsweto/pbrown/github/ReEDS/runs/v20241028_mainK0_USA_decarb,main_Z35,plt.cm.tab20(2)
+# /projects/reedsweto/pbrown/github4/ReEDS/runs/v20241028_porK0_USA_decarb,por_Z35,plt.cm.tab20(3)
+### Add your cases below (don't commit them) or create a new csv file with the same format
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_11112026_CAA_off_USA, USA CAA Off,plt.cm.tab20(2)
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_11112026_CAA_off_EI, EI CAA Off,plt.cm.tab20(0)
+/data/shared/projects/lserpe/model1/ReEDS/runs/v1_11112026_CAA_off_partial_EI_annual_2031, Partial EI Annual 2031 CAA Off,plt.cm.tab20(4)

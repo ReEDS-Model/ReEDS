@@ -275,6 +275,10 @@ def calc_systemcost(
     remove_existing=False,
     crf_from_user=False,
     drop_zeros=True,
+    # Parameters for state costs
+    r_subset: str = None,
+    RECS: bool = False,
+    st_subset: str = None,
 ):
     """
     Calculate system costs from ReEDS output.
@@ -303,6 +307,18 @@ def calc_systemcost(
         crf_from_user (bool): Use a user-specified Capital Recovery Factor (CRF) instead of the model’s.
             (Only used if cost_type == 'annualized'.)
     """
+    # Identify the inputs_case directory based on provided path
+    inputs_case = (
+        os.path.abspath(os.path.join(case, '..', '..', 'inputs_case'))
+        if case.endswith('.h5')
+        else os.path.join(case, 'inputs_case')
+    )
+    expenditure_flow = reeds.io.read_output(case, 'expenditure_flow')
+    expenditure_flow_rps = reeds.io.read_output(case, 'expenditure_flow_rps')
+    expenditure_flow_int = reeds.io.read_output(case, 'expenditure_flow_int')
+    if st_subset is not None:
+        RECS = True # Default assumption
+
     # Get case inputs
     systemcost = reeds.io.read_output(case, 'systemcost_ba')
     pvf_capital = reeds.io.read_output(case, 'pvf_capital', valname='pvfcap')
@@ -326,6 +342,48 @@ def calc_systemcost(
     crf_in.rename(columns={'t':'year', 'Value':'crf'}, inplace=True)
     df_capex_init.rename(columns={'t':'year','region':'r'}, inplace=True)
 
+     # Redefine regions for specific subset if defined
+    if r_subset is not None:
+        systemcost = systemcost.loc[systemcost.r.isin(r_subset)]
+        df_capex_init = df_capex_init.loc[df_capex_init.r.isin(r_subset)]
+
+        expenditure_flow = expenditure_flow.loc[
+            expenditure_flow.r.isin(r_subset) | expenditure_flow.rr.isin(r_subset)]
+        expenditure_flow = expenditure_flow.loc[~(
+            expenditure_flow.r.isin(r_subset) * expenditure_flow.rr.isin(r_subset))]
+        expenditure_flow.loc[expenditure_flow.r.isin(r_subset),'Value'] *= -1 # aligning signs for import/export costs & revenues
+        expenditure_flow = pd.concat((
+            expenditure_flow.loc[expenditure_flow.r.isin(r_subset)],
+            expenditure_flow.loc[expenditure_flow.rr.isin(r_subset)].rename(
+                columns = {'r':'rr','rr':'r'}
+            ))).rename(columns = {'*':'cost_cat','t':'year'})
+        expenditure_flow = pd.pivot_table(data = expenditure_flow, index = ['cost_cat','r','year'],
+            values = ['Value'], aggfunc = 'sum').reset_index(drop = False)
+        systemcost = pd.concat((systemcost,expenditure_flow))
+
+        expenditure_flow_int = expenditure_flow_int.loc[
+            expenditure_flow_int.r.isin(r_subset)]
+        expenditure_flow_int['Value'] *= -1 # aligning signs for import/export costs & revenues
+        expenditure_flow_int.rename(columns = {'t':'year'}, inplace = True)
+        expenditure_flow_int['cost_cat'] = 'expenditure_int'
+        systemcost = pd.concat((systemcost,expenditure_flow_int))
+
+        if RECS:
+            expenditure_flow_rps = expenditure_flow_rps.loc[
+                expenditure_flow_rps.st.isin(st_subset) | expenditure_flow_rps.ast.isin(st_subset)]
+            expenditure_flow_rps = expenditure_flow_rps.loc[~(
+                expenditure_flow_rps.st.isin(st_subset) * expenditure_flow_rps.ast.isin(st_subset))]
+            expenditure_flow_rps.loc[expenditure_flow_rps.st.isin(st_subset),'Value'] *= -1 # aligning signs for import/export costs & revenues
+            expenditure_flow_rps = pd.concat((
+                expenditure_flow_rps.loc[expenditure_flow_rps.st.isin(st_subset)],
+                expenditure_flow_rps.loc[expenditure_flow_rps.ast.isin(st_subset)].rename(
+                    columns = {'st':'ast','ast':'st'}
+                ))).rename(columns = {'t':'year'})
+            expenditure_flow_rps = pd.pivot_table(data = expenditure_flow_rps, index = ['st','year'],
+                values = ['Value'], aggfunc = 'sum').reset_index(drop = False)
+            expenditure_flow_int['cost_cat'] = 'expenditure_rps'
+            systemcost = pd.concat((systemcost,expenditure_flow_rps))
+            
     # Convert to Billion dollars
     systemcost['Value'] *= 1e-9
     df_capex_init['capex'] *= 1e-9
