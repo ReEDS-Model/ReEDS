@@ -124,14 +124,20 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
             int(sw['numbins_upv']),
             15,
         ))
-    dfcases_out = pd.concat([dfcases, pd.DataFrame(new_switches)])
+        ## add intermediate ReEDS-FINITO switches
+        new_switches = reeds.finito.update_FINITO_switches(case, sw, new_switches)
+
+    # combine old and new switches, dropping the old 'FINITO_dir' to avoid
+    # duplication with the filled path from update_FINITO_switches
+    dfcases_out = pd.concat([dfcases.drop('FINITO_dir'), pd.DataFrame(new_switches)])
+    
     return dfcases_out
 
 
 def parse_cases(
     cases_filename:str='cases_test.csv',
     single:str='',
-    skip_checks:bool=False,
+    force:int=0,
 ) -> pd.DataFrame:
     """
     Read a ReEDS cases file, look up empty switch values from "Default Value" or cases.csv,
@@ -140,7 +146,7 @@ def parse_cases(
     Args:
         cases_filename (str): 'cases_{something}.csv' or 'cases.csv'
         single (str): If not '', specifies a single column to keep from cases_filename
-        skip_checks (bool): Skip case validation (not recommended)
+        force (bool): Skip case validation (not recommended)
 
     Returns:
         pd.DataFrame
@@ -198,7 +204,7 @@ def parse_cases(
 
         # Check to make sure the switch setting is valid
         for i, val in dfcases[case].items():
-            if skip_checks:
+            if force:
                 continue
             # check that the switch isn't duplicated
             if isinstance(choices[i], pd.Series) and len(choices[i]) > 1:
@@ -272,12 +278,12 @@ def parse_cases(
                         "This may result in inconsistent representative days across MCS runs.\n\n"
                         "To ensure consistency, we strongly recommend setting "
                         "`GSw_HourlyClusterAlgorithm = user` in your switch configuration.\n"
-                        "Do you want to proceed with the current setup?"
                     )
-                    user_input = input("Type 'yes' to proceed, or 'no' to exit: ").strip().lower()
-                    if user_input not in ['yes', 'y']:
-                        print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
-                        quit()
+                    if not force:
+                        user_input = input("Do you want to proceed with the current setup? y/[n]")
+                        if user_input.strip().lower() not in ['yes', 'y']:
+                            print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
+                            quit()
                     warned_about_cluster_alg = True
                     print()
 
@@ -285,7 +291,7 @@ def parse_cases(
                 sw = dfcases[c].fillna(dfcases['Default Value'])
                 mcs_dist_path = os.path.join(
                     reeds.io.reeds_path, 'inputs', 'userinput',
-                    'mcs_distributions_{}.yaml'.format(sw.MCS_dist)
+                    f'mcs_distributions_{sw.MCS_dist}.yaml'
                 )
                 if int(dfcases[c].MCS_runs) > 0:
                     mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
@@ -368,6 +374,9 @@ def solvestring_sequential(
             'GSw_StateCO2ImportLevel',
             'GSw_StartMarkets',
             'GSw_ValStr',
+            'GSw_FINITO_Link',
+            'FINITO_first_year',
+            'FINITO_dollaryear',
             'solver',
             'debug',
             'startyear',
@@ -441,7 +450,7 @@ def get_bin(
         bin_ser = bin_ser.rank(method='dense')
         df[bin_out_col] = bin_ser.values
         # we need the same index ordering for apply to work
-        df = df.reindex(index=orig_index)
+        df = df.reindex(index=orig_index).drop(columns='cum_cap')
     df[bin_out_col] = df[bin_out_col].astype(int)
     return df
 

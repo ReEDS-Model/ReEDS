@@ -220,12 +220,11 @@ state_cap.csv,inputs/emission_constraints/state_cap.csv,int(sw.GSw_StateCap) != 
 storage_duration.csv,inputs/storage/storage_duration.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,,parameter,,--hours-- storage duration by tech,
 storage_mandates.csv,inputs/state_policies/storage_mandates.csv,int(sw.GSw_BatteryMandate) != 0,ignore,ignore,*st,t,,0,0,,,,,,
 stressperiods_user.csv,inputs/temporal/stressperiods_{GSw_PRM_StressModel}.csv,sw.GSw_PRM_StressModel == 'user*',ignore,ignore,,,,,,,,,,,
-supply_chain_adjust.csv,inputs/financials/supply_chain_adjust.csv,1,ignore,ignore,,,,,0,,,,,,
-supplycurve_egs.csv,inputs/supply_curve/supplycurve_egs-reference.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
-supplycurve_psh.csv,inputs/supply_curve/supplycurve_psh-{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
-supplycurve_upv.csv,inputs/supply_curve/supplycurve_upv-{GSw_SitingUPV}.csv,1,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
-supplycurve_wind-ofs.csv,inputs/supply_curve/supplycurve_wind-ofs-{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
-supplycurve_wind-ons.csv,inputs/supply_curve/supplycurve_wind-ons-{GSw_SitingWindOns}.csv,1,ignore,ignore,region,,,,0,,,,,,No fix_col (only region_col) because this is an intermediate input file
+supplycurve_init_egs.csv,inputs/supply_curve/supplycurve_egs-reference.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,region,,,,0,,,,,,Intermediate scratch file: Gen info with region assigned but no transmission info
+supplycurve_init_psh.csv,inputs/supply_curve/supplycurve_psh-{pshsupplycurve}.csv,int(sw.GSw_Storage) != 0,ignore,ignore,region,,,,0,,,,,,Intermediate scratch file: Gen info with region assigned but no transmission info
+supplycurve_init_upv.csv,inputs/supply_curve/supplycurve_upv-{GSw_SitingUPV}.csv,1,ignore,ignore,region,,,,0,,,,,,Intermediate scratch file: Gen info with region assigned but no transmission info
+supplycurve_init_wind-ofs.csv,inputs/supply_curve/supplycurve_wind-ofs-{GSw_SitingWindOfs}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,region,,,,0,,,,,,Intermediate scratch file: Gen info with region assigned but no transmission info
+supplycurve_init_wind-ons.csv,inputs/supply_curve/supplycurve_wind-ons-{GSw_SitingWindOns}.csv,1,ignore,ignore,region,,,,0,,,,,,Intermediate scratch file: Gen info with region assigned but no transmission info
 wst_surface.csv,inputs/sets/wst_surface.csv,1,ignore,ignore,,,,,0,,,set,wst_surface,surface water types where access is based on consumption not withdrawal,
 tc_phaseout_schedule.csv,inputs/financials/tc_phaseout_schedule_{GSw_TCPhaseout_schedule}.csv,int(sw.GSw_TCPhaseout) != 0,ignore,ignore,,,,,0,,,,,,
 tech_cost_adjustments.csv,inputs/plant_characteristics/tech_cost_adjustments_{GSw_TechCostAdjust}.csv,sw.GSw_TechCostAdjust != 'none',ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
@@ -250,7 +249,7 @@ unitdata_orig.csv,inputs/capacity_exogenous/ReEDS_generator_database_final_{unit
 unitspec_upgrades.csv,inputs/sets/unitspec_upgrades.csv,1,ignore,ignore,,,,,0,,,set,unitspec_upgrades,upgraded technologies that get unit-specific characteristics,
 upgrade_hintage_char.csv,inputs/sets/upgrade_hintage_char.csv,1,ignore,ignore,,,,,0,,,set,upgrade_hintage_char,sets to operate over in extension of hintage_data characteristics when sw_upgrades = 1,
 upgrade_link.csv,inputs/upgrades/upgrade_link.csv,1,ignore,ignore,,,,,0,,,,,,
-upgrade_mult_advanced.csv,inputs/upgrades/upgrade_mult_atb23_ccs_mid.csv,int(sw.GSw_UpgradeCost_Mult) != 0,ignore,ignore,,,,,0,,,,,,
+upgrade_mult_advanced.csv,inputs/upgrades/upgrade_mult_atb23_ccs_adv.csv,int(sw.GSw_UpgradeCost_Mult) != 0,ignore,ignore,,,,,0,,,,,,
 upgrade_mult_conservative.csv,inputs/upgrades/upgrade_mult_atb23_ccs_con.csv,int(sw.GSw_UpgradeCost_Mult) == 2,ignore,ignore,,,,,0,,,,,,
 upgrade_mult_mid.csv,inputs/upgrades/upgrade_mult_atb23_ccs_mid.csv,"int(sw.GSw_UpgradeCost_Mult) in [0, 4]",ignore,ignore,,,,,0,,,,,,
 upgradelink_water.csv,inputs/upgrades/upgradelink_water.csv,1,ignore,ignore,,,,,0,,,,,,
