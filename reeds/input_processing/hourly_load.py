@@ -804,6 +804,19 @@ def main(reeds_path, inputs_case):
     peakload = calculate_peak_load(regional_load_hourly, hierarchy)
 
     #%%%#########################################
+    #    -- FINITO Load Adjustment --           #
+    #############################################
+
+    # note that this step occurs after peakload calculation so that the latter
+    # includes a baseline estimate of industrial load captured by FINITO
+    if int(sw.GSw_FINITO_Link):
+        regional_load_hourly = reeds.finito.remove_finito_load(
+                regional_load_hourly,
+                inputs_case,
+                scalars['distloss']
+        )
+
+    #############################################
     #    -- DR Shed Load Modifications --    #
     #############################################
 
