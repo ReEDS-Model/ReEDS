@@ -1,0 +1,25 @@
+name,color,path
+Base 8hr Lim - noSC,#1f77b4,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_refPSH_lim8hr_noSC
+Base 8hr Ref - noSC,#ff7f0e,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_refPSH_ref8hr_noSC
+Base 8hr Open - noSC,#2ca02c,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_refPSH_open8hr_noSC
+hiSloB 8hr Lim - noSC,#c49c94,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_refPSH_lim8hr_noSC
+hiSloB 8hr Ref - noSC,#f7b6d2,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_refPSH_ref8hr_noSC
+hiSloB 8hr Open - noSC,#c7c7c7,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_refPSH_open8hr_noSC
+30% PSH Cost 8hr Lim - noSC,#1f77b4,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_30pctPSH_lim8hr_noSC
+30% PSH Cost 8hr Ref - noSC,#ff7f0e,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_30pctPSH_ref8hr_noSC
+30% PSH Cost 8hr Open - noSC,#2ca02c,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_30pctPSH_open8hr_noSC
+hiSloB 30% PSH Cost 8hr Lim - noSC,#d62728,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_30pctPSH_lim8hr_noSC
+hiSloB 30% PSH Cost 8hr Ref - noSC,#9467bd,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_30pctPSH_ref8hr_noSC
+hiSloB 30% PSH Cost 8hr Open - noSC,#8c564b,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_30pctPSH_open8hr_noSC
+Base 8hr Lim - SC,#e377c2,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_refPSH_lim8hr_SC
+Base 8hr Ref - SC,#7f7f7f,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_refPSH_ref8hr_SC
+Base 8hr Open - SC,#bcbd22,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_refPSH_open8hr_SC
+hiSloB 8hr Lim - SC,#17becf,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_refPSH_lim8hr_SC
+hiSloB 8hr Ref - SC,#aec7e8,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_refPSH_ref8hr_SC
+hiSloB 8hr Open - SC,#ffbb78,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_refPSH_open8hr_SC
+30% PSH Cost 8hr Lim - SC,#98df8a,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_30pctPSH_lim8hr_SC
+30% PSH Cost 8hr Ref - SC,#ff9896,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_30pctPSH_ref8hr_SC
+30% PSH Cost 8hr Open - SC,#c5b0d5,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_refSB_30pctPSH_open8hr_SC
+hiSloB 30% PSH Cost 8hr Lim - SC,#c49c94,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_30pctPSH_lim8hr_SC
+hiSloB 30% PSH Cost 8hr Ref - SC,#f7b6d2,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_30pctPSH_ref8hr_SC
+hiSloB 30% PSH Cost 8hr Open - SC,#c7c7c7,/Volumes/Projects/18_PSHDataCenters/runs/Oct27_highPSH2_EER2023-IRAlow_hiSloB_30pctPSH_open8hr_SC

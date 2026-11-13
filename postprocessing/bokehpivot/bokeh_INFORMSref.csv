@@ -1,0 +1,5 @@
+name,color,path
+Diurnal_ref_8hr,#ff7f0e,/Volumes/Projects/2026INFORMS/runs/Oct10_INFORMS_ref_8hr_diurnal
+Interday_ref_8hr,#d62728,/Volumes/Projects/2026INFORMS/runs/Oct10_INFORMS_ref_8hr_interday
+Diurnal_ref_RealDur,#2ca02c,/Volumes/Projects/2026INFORMS/runs/Oct10_INFORMS_ref_RealDur_diurnal
+Interday_ref_RealDur,#d62728,/Volumes/Projects/2026INFORMS/runs/Oct10_INFORMS_ref_RealDur_interday
