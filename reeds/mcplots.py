@@ -834,8 +834,6 @@ def plot_scatter_everything(
         (techlabel, i): (
             case.capagg.loc[t].reindex(techgroup).sum()
             - case.capagg.loc[tstart].reindex(techgroup).sum()
-            # case.cap.xs(t,0,'t').groupby('i').Value.sum()
-            # - case.cap.loc[case.cap.t==tstart].groupby('i').Value.sum()
         ) / 1e3
         for i, case in enumerate(plotcases)
         for techlabel, techgroup in cap_techs.items()
