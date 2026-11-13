@@ -155,24 +155,26 @@ def plot_fuelprice_lines(
 
 def plot_capcost_lines(
     plotcases:list,
-    labels={
-        'upv_3': 'UPV',
-        'wind-ons_3': 'Wind',
-        'battery_li': 'Battery',
-        # 'nuclear': 'Nuclear',
-        # 'gas-cc': 'Gas-CC',
-        # 'geothermal': 'Geothermal',
-        # 'hydro': 'Hydropower',
-    },
+    techs=['UPV','Onshore Wind','Battery'],
     tstart=None,
     bins=31,
     alpha=0.5,
 ):
     """
-    Capex cost for technologies specified by labels
-        keys = technology name used in ReEDS
-        values = "nice" name used in tech_style.csv
-    Lines with vertical historgram at end [$/MMBtu]
+    Capex cost for techs, plotted as lines with vertical histogram at end [$/kW]
+
+    Args:
+        plotcases: List of ReEDScase objects
+        techs: List or dict.
+            If a list, a list of tech names matching
+                postprocessing/bokehpivot/in/reeds2/tech_map.csv.
+                Only works for techs that have the same cost for every resource class.
+            If a dict, must have (nice label name) keys
+                and (explicit GAMS tech names, including resource class as appropriate) values.
+                Used if you want to break out fixed and floating offshore wind, for example.
+        tstart: First year to plot (int). If None, uses the last model year before GSw_StartMarkets
+        bins (int): Number of histogram bins
+        alpha (float): Color alpha for filled area and histograms
     """
     ## Parse inputs
     if tstart is None:
@@ -187,19 +189,28 @@ def plot_capcost_lines(
     ## Data
     dfplot = pd.concat(
         {
-            i: case.capcost.rename(columns=labels) * inflator
+            i: case.capcost.loc[tstart:].stack('i') * inflator
             for i, case in enumerate(plotcases)
         },
-        axis=1, names=['s','i'],
-    ).reorder_levels(['i','s'], axis=1).loc[tstart:]
+        axis=1, names=['s'],
+    ).reset_index()
+    if isinstance(techs, list):
+        dfplot.i = reeds.reedsplots.simplify_techs(dfplot.i)
+    elif isinstance(techs, dict):
+        rename = {v:k for k,v in techs.items()}
+        dfplot.i = dfplot.i.replace(rename)
+        techs = list(techs.keys())
+    else:
+        raise NotImplementedError(f'{techs=} ({type(techs)})')
+    dfplot = dfplot.drop_duplicates().set_index(['i','t']).loc[techs]
 
     ### Plot it
-    ncols = len(labels)
+    ncols = len(techs)
     plt.close()
     f,ax = plt.subplots(1, ncols, sharex=True, sharey=True, figsize=(2*ncols, 3.75))
-    for col, tech in enumerate(labels.values()):
+    for col, tech in enumerate(techs):
         _ax = ax[col]
-        df = dfplot[tech]
+        df = dfplot.loc[tech]
         ## Background
         _ax.fill_between(
             df.index, df.max(axis=1), df.min(axis=1),
@@ -760,25 +771,25 @@ def plot_scatter_everything(
         _years = plotcases[0].tmodel_new.squeeze(1)
         tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
     ## Fixed inputs
-    cost_techs = [
-        {'tech_cost': 'battery_li', 'tech_cap':'Storage', 'label':'Battery'},
-        {'tech_cost': 'upv_3', 'tech_cap':'PV', 'label':'PV'},
-        {'tech_cost': 'wind-ons_5', 'tech_cap':'Wind', 'label':'Wind'},
-        # {'tech_cost': 'wind-ofs_5', 'label':'Wind (offshore fixed)'},
-        # {'tech_cost': 'geohydro_allkm_1', 'label':'Geothermal'},
-        # {'tech_cost': 'coal-ccs_mod', 'label':'Coal+CCS'},
-        {'tech_cost':'nuclear', 'tech_cap':'Nuclear', 'label':'Nuclear'},
-        {'tech_cost':'gas-cc-ccs_mod', 'tech_cap':'Gas+CCS', 'label':'Gas+CCS'},
-    ]
+    cost_techs = {
+        'Battery': 'battery_li',
+        'PV': 'upv_3',
+        'Wind': 'wind-ons_5',
+        # 'Wind (offshore fixed)': 'wind-ofs_5',
+        # 'Geothermal': 'geohydro_allkm_1',
+        # 'Coal+CCS': 'coal-ccs_mod',
+        'Nuclear': 'nuclear',
+        'Gas+CCS': 'gas-cc-ccs_mod',
+    }
     x_labels = {
-        'gasprice':'Gas price [$/MMBtu]',
-        'demand':'Demand [PWh]',
-        'sc_wind':'Wind avail [TW]',
-        'cost_Wind':'Wind cost [$/kW]',
-        'cost_PV':'PV cost [$/kW]',
-        'cost_Battery':'Battery cost [$/kW]',
-        'cost_Nuclear':'Nuclear cost [$/kW]',
-        'cost_Gas+CCS':'Gas+CCS cost [$/kW]',
+        'gasprice': 'Gas price [$/MMBtu]',
+        'demand': 'Demand [PWh]',
+        'sc_wind': 'Wind avail [TW]',
+        'cost_Wind': 'Wind cost [$/kW]',
+        'cost_PV': 'PV cost [$/kW]',
+        'cost_Battery': 'Battery cost [$/kW]',
+        'cost_Nuclear': 'Nuclear cost [$/kW]',
+        'cost_Gas+CCS': 'Gas+CCS cost [$/kW]',
     }
     cap_techs = {
         'PV': ['UPV'],
@@ -876,11 +887,11 @@ def plot_scatter_everything(
     }, axis=1)
     ### Generation capex costs
     costdata = pd.concat({
-        f"cost_{cost_tech['label']}": pd.Series({
-            i: case.capcost.loc[t,cost_tech['tech_cost']] * inflator
+        f"cost_{label}": pd.Series({
+            i: case.capcost.loc[t, tech] * inflator
             for i, case in enumerate(plotcases)
         })
-        for cost_tech in cost_techs
+        for label, tech in cost_techs.items()
     }, axis=1)
     xdata = pd.concat([xdata, costdata], axis=1)
     ## Combine

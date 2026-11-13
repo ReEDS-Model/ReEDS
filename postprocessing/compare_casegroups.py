@@ -164,14 +164,10 @@ for caseprefix in casepaths:
 
 #%% Capital cost
 for caseprefix in casepaths:
-    labels = {
-        'upv_3': 'UPV',
-        'wind-ons_3': 'Wind',
-        'battery_li': 'Battery',
-    }
+    techs=['UPV', 'Onshore Wind', 'Battery']
     try:
-        f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix])
-        savename = f"in-capcost-{','.join(list(labels.values()))}-{nicelabels[caseprefix]}"
+        f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix], techs=techs)
+        savename = f"in-capcost-{','.join(techs)}-{nicelabels[caseprefix]}"
         saveit(savename)
     except Exception:
         print(traceback.format_exc())
