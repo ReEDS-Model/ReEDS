@@ -53,10 +53,10 @@ STORAGE_IN.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$(storage_standalone(i) or hyd_ad
 STORAGE_IN_PLANT.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_PLANT.l(i,v,r,h,tfix) ;
 STORAGE_IN_GRID.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_GRID.l(i,v,r,h,tfix) ;
 STORAGE_LEVEL.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage(i)$(not storage_interday(i) or h_stress(h))] = STORAGE_LEVEL.l(i,v,r,h,tfix) ;
-STORAGE_INTERDAY_LEVEL.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL.l(i,v,r,allszn,tfix) ;
-STORAGE_INTERDAY_DISPATCH.fx(i,v,r,allh,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_DISPATCH.l(i,v,r,allh,tfix) ;
-STORAGE_INTERDAY_LEVEL_MAX_DAY.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL_MAX_DAY.l(i,v,r,allszn,tfix) ;
-STORAGE_INTERDAY_LEVEL_MIN_DAY.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL_MIN_DAY.l(i,v,r,allszn,tfix) ;
+STORAGE_INTERDAY_LEVEL.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)$actualszn(allszn)] = STORAGE_INTERDAY_LEVEL.l(i,v,r,allszn,tfix) ;
+STORAGE_INTERDAY_DISPATCH.fx(i,v,r,allh,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)$h_t(allh,tfix)] = STORAGE_INTERDAY_DISPATCH.l(i,v,r,allh,tfix) ;
+STORAGE_INTERDAY_LEVEL_MAX_DAY.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)$szn_t(allszn,tfix)] = STORAGE_INTERDAY_LEVEL_MAX_DAY.l(i,v,r,allszn,tfix) ;
+STORAGE_INTERDAY_LEVEL_MIN_DAY.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)$szn_t(allszn,tfix)] = STORAGE_INTERDAY_LEVEL_MIN_DAY.l(i,v,r,allszn,tfix) ;
 AVAIL_SITE.fx(x,h,tfix)$[Sw_SpurScen$xfeas(x)] = AVAIL_SITE.l(x,h,tfix) ;
 RAMPUP.fx(i,r,h,hh,tfix)$[Sw_StartCost$startcost(i)$numhours_nexth(h,hh)$valgen_irt(i,r,tfix)] = RAMPUP.l(i,r,h,hh,tfix) ;
 
