@@ -113,6 +113,18 @@ def add_textbox(
     return slide
 
 
+def open_powerpoint(filepath):
+    """Open a powerpoint file"""
+    import platform
+    import subprocess
+    if not Path(filepath).is_file():
+        raise FileNotFoundError(filepath)
+    if sys.platform == 'darwin':
+        subprocess.run(f"open '{filepath}'", shell=True)
+    elif platform.system() == 'Windows':
+        subprocess.run(f'"{filepath}"', shell=True)
+
+
 #%% ===========================================================================
 ### --- Tools to get cases
 ### ===========================================================================

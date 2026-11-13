@@ -30,16 +30,19 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     'caselist', type=str, nargs='+',
     help=(
-        'space-delimited list of dfcases to plot, OR csv file of dfcases (both with glob '
-        'controls included). The first case is treated as the base case '
-        'unless a different one is provided via the --basecase/-b argument.'
+        'Space-delimited list of case glob patterns to plot, OR path to a csv file of '
+        'case glob patterns (and, optionally, names and colors). '
+        'If providing a list of glob patterns via bash, remember to encase them in '
+        "'quotes'; otherwise, bash will expand them before passing to this script. "
+        'The first case is treated as the base case unless a different case is provided '
+        'via the --basepath/-b argument.'
     ))
 parser.add_argument(
     '--casenames', '-n', type=str, default='',
-    help='comma-delimited list of shorter case names to use in plots')
+    help='Comma-delimited list of shorter case names to use in plots')
 parser.add_argument(
     '--titleshorten', '-s', type=str, default='',
-    help='characters to cut from start of case name (only used if no casenames)')
+    help='Characters to cut from start of case name (only used if no casenames)')
 parser.add_argument(
     '--basepath', '-b', type=str, default='',
     help='Substring of case path to use as default (if empty, uses first case in list)')
@@ -164,7 +167,7 @@ for caseprefix in casepaths:
 
 #%% Capital cost
 for caseprefix in casepaths:
-    techs=['UPV', 'Onshore Wind', 'Battery']
+    techs = ['UPV', 'Onshore Wind', 'Battery']
     try:
         f, ax, dfplot = reeds.mcplots.plot_capcost_lines(cases[caseprefix], techs=techs)
         savename = f"in-capcost-{','.join(techs)}-{nicelabels[caseprefix]}"
@@ -298,3 +301,4 @@ except Exception:
 if write in ['ppt', 'pptx']:
     prs.save(outpath)
     print(f'\ncompare_casegroup.py results saved to:\n{outpath}')
+    reeds.report_utils.open_powerpoint(outpath)
