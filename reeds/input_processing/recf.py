@@ -362,7 +362,11 @@ def main(reeds_path, inputs_case):
     lookup['i'] = lookup.ragg.map(lambda x: x.rsplit('|',1)[0])
 
     ### Offshore Wind
-    if int(sw['GSw_OfsWind']) != 0:
+    # If offshore wind is turned off, create an empty dataframe with the same
+    # index as onshore wind
+    if int(sw['GSw_OfsWind']) == 0:
+        df_windofs = pd.DataFrame(index=df_windons.index)
+    else:
         df_windofs = calculate_class_region_cf_hourly(
             inputs_case,
             'wind-ofs',

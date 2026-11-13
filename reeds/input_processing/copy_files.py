@@ -1197,27 +1197,46 @@ def write_miscellaneous_files(
         os.makedirs(stresspath, exist_ok=True)
         prm_initial.xs(t, 0, 't').to_csv(os.path.join(stresspath, 'prm.csv'))
 
-    # Add capacity deployment limits based on interconnection queue data
-    queue_limit = pd.read_csv(
-        os.path.join(reeds_path,'inputs','capacity_exogenous','interconnection_queues.csv'))
-    # Only keep the next GSw_QueueConstraintYears
-    keepyears = [
-        i for i in queue_limit.set_index(['r','tg']).columns
-        if int(i) < scalars.this_year + int(sw.GSw_QueueConstraintYears)
-    ]
-    if len(keepyears):
-        print(f"Applying interconnection queue cap in {','.join(keepyears)}")
-    queue_limit = queue_limit[['r','tg']+keepyears].copy()
-    # Map counties to zones
-    queue_limit['r'] = queue_limit['r'].map(county2zone)
-    queue_limit = queue_limit.dropna(subset='r')
-
-    queue_limit = queue_limit.groupby(['tg', 'r']).sum().stack().rename_axis(['tg', 'r', 'allt'])
+    # Add capacity deployment limits based on interconnection queue data.
+    # interconnection_queues.csv gives the active queue capacity by county, technology
+    # group, and interconnection agreement (IA) status; the annual limit trajectory
+    # (IA Executed capacity 2 years after the queue data year, All Active capacity 5 years
+    # after, linear in between) is built here in reeds.inputs.get_queue_limit() for the
+    # GSw_QueueConstraintYears calendar years starting from the first anchor year.
+    queue_capacity = reeds.inputs.get_queue_capacity(county2zone=county2zone)
+    queue_limit = reeds.inputs.get_queue_limit(queue_capacity, sw, scalars)
+    queue_years = sorted(set(queue_limit.index.get_level_values('allt')))
+    if len(queue_years):
+        print(f"Applying interconnection queue cap in {','.join(map(str, queue_years))}")
+        # The constraint is only enforced in modeled years inside the window
+        if not any(y in queue_years for y in solveyears):
+            print(
+                'WARNING: No modeled year falls in the interconnection queue constraint '
+                f'window ({queue_years[0]}-{queue_years[-1]}), so the constraint is inactive; '
+                'adjust yearset or GSw_QueueConstraintYears'
+            )
     reeds.io.write_to_inputs_h5(
         queue_limit, 'queue_limit', inputs_case, gamstype='parameter', units='MW',
         comment='capacity deployment limit by region and technology based on interconnection queues',
     )
     queue_limit.to_csv(Path(inputs_case, 'queue_limit.csv'))
+    # Convert the queue penalty to 2004$/MW and apply the sensitivity multiplier.
+    penalty_scalars = reeds.io.get_scalars(case)
+    deflator = pd.read_csv(
+        Path(inputs_case, 'deflator.csv'), index_col=0,
+    ).squeeze(1)
+    cap_penalty = pd.read_csv(
+        Path(inputs_case, 'cap_penalty.csv'), index_col=0,
+    ).squeeze(1).rename_axis('tg').rename('cap_penalty')
+    cap_penalty = (
+        cap_penalty
+        * float(deflator.loc[int(penalty_scalars['cap_penalty_dollaryear'])])
+        * float(penalty_scalars['queue_penalty_multiplier'])
+    )
+    reeds.io.write_to_inputs_h5(
+        cap_penalty, 'cap_penalty', inputs_case, gamstype='parameter', units='2004$/MW',
+        comment='cost penalty for capacity deployment above queue_limit',
+    )
     # ----  Miscelanous files in non_region_files or region_files (in this case we are overwriting them)
     # Expand i (technologies) set if modeling water use. Overwrite originals.
     if int(sw['GSw_WaterMain']):

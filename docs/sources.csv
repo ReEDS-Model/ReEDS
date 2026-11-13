@@ -1,7 +1,6 @@
 RelativeFilePath,RelativeFolderPath,FileName_new,FileExtension,Description_new,Indices,DollarYear,Citation,Filetype,Units
 /cases.csv,/,cases,.csv,Contains the configuration settings for the ReEDS run(s).,,2004,,Switches file,
 /cases_examples.csv,/,cases_examples,.csv,,,,,,
-/cases_small.csv,/,cases_small,.csv,Contains settings to run ReEDS at a smaller scale to test operability of the ReEDS model. Turns off several technologies and reduces the model size to significantly improve solve times.,,,,,
 /cases_standardscenarios.csv,/,cases_standardscenarios,.csv,Contains the configuration settings for the Standard Scenarios ReEDS runs.,,,,StdScen Cases file,
 /cases_test.csv,/,cases_test,.csv,Contains the configuration settings for doing test runs including the default Pacific census division test case.,,,,,
 /e_report_params.csv,/,e_report_params,.csv,Contains a parameter list used in the model along with descriptions of what they are and units used.,,,,,

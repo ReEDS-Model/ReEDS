@@ -1,6 +1,8 @@
 ## Financials Input Files
 
-- `cap_penalty.csv`: 
+- `cap_penalty.csv`: Penalty for capacity deployed above the interconnection queue limit (`queue_limit`), by technology group [$/MW in `cap_penalty_dollaryear` dollars (scalars.csv), currently 2024$]. Converted to 2004$/MW using `deflator.csv` and multiplied by the `queue_penalty_multiplier` scalar (scalars.csv) in `copy_files.py`.
+  - The default of $300,000/MW ($300/kW, 2024$) is a provisional modeling proxy for sensitivity testing, informed by the average interconnection costs reported by Seel et al. (2026), *Generator Interconnection Costs to the Transmission System in non-ISO Balancing Authorities*, LBNL ([link](https://eta-publications.lbl.gov/publications/generator-interconnection-costs-0)): about $194/kW for completed, $294/kW for active, and $671/kW for withdrawn projects. These are observed interconnection costs, not measurements of the cost of exceeding a queue limit.
+  - The penalty is charged on increases in the running maximum of capacity above the limit across consecutive constrained modeled years. If the excess falls, the previously penalized amount is retained; only excess beyond that amount incurs another penalty.
 
 - `construction_schedules_default.csv`: 
 

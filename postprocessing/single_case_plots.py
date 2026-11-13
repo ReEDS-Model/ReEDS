@@ -126,18 +126,26 @@ try:
 except Exception:
     print(traceback.format_exc())
 
-try:
-    if int(sw.GSw_QueueConstraintYears):
-        f, ax, df = reedsplots.map_queue(case=case)
-        savename = 'validate_queue.png'
-        if write:
-            plt.savefig(os.path.join(savepath, savename))
-        if interactive:
-            plt.show()
-        plt.close()
-        print(savename)
-except Exception:
-    print(traceback.format_exc())
+### Interconnection queue: limits, input data by IA status, violations, and penalties
+if int(sw.GSw_QueueConstraintYears):
+    for savename, func, kwargs in [
+        ('validate_queue.png', reedsplots.map_queue, {'what':'limit'}),
+        ('validate_queue_status.png', reedsplots.map_queue, {'what':'status'}),
+        ('validate_queue_violation.png', reedsplots.map_queue_violation, {}),
+        ('validate_queue_penalty.png', reedsplots.plot_queue_penalty, {}),
+    ]:
+        try:
+            f, ax, df = func(case=case, **kwargs)
+            if f is None:
+                continue
+            if write:
+                plt.savefig(os.path.join(savepath, savename))
+            if interactive:
+                plt.show()
+            plt.close()
+            print(savename)
+        except Exception:
+            print(traceback.format_exc())
 
 #%% Transmission line map with disaggregated transmission types
 ### Plot both total capacity (subtract_baseyear=None) and new (subtract_baseyear=2020)

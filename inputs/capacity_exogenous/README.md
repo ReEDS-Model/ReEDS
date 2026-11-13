@@ -22,7 +22,10 @@
   - `exog_cap_wind-ons_open.csv`: 
   - `exog_cap_wind-ons_reference.csv`: 
 
-- `interconnection_queues.csv`: 
+- `interconnection_queues.csv`: Active interconnection queue capacity [MW] by ReEDS county (`r`), technology group (`tg`), and interconnection agreement (IA) status (`ia_executed`), from the LBNL queue data (currently requests through 2025). Produced by `interconnection_queues/process_interconnection_queues.py` in the ReEDS_Input_Processing repository.
+  - `ia_executed = 1`: active requests with an executed IA ("IA Executed" capacity); `ia_executed = 0`: active requests without a confirmed executed IA, including missing IA status. "All Active" capacity is the sum of both rows.
+  - A `capacity_mw` of 0 means no active queue capacity in that category (not missing data); counties absent from the file had no active requests.
+  - The annual capacity deployment limit (`queue_limit(tg,r,allt)`) is built in `copy_files.py` (see `reeds.inputs.get_queue_limit`): IA Executed capacity 2 years after the queue data year (2027 for the 2025 data), All Active capacity 5 years after (2030), linear interpolation in between, and All Active capacity afterward, for the `GSw_QueueConstraintYears` (default 3) calendar years starting from the first anchor year.
 
 - `prescribed_builds_wind-ofs_meshed_*.csv`:
   - `prescribed_builds_wind-ofs_meshed_limited.csv`: 

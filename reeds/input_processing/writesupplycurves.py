@@ -346,15 +346,23 @@ def main(
     alloutcap_list.append(windcap)
 
     if write:
-        ## Exogenous wind capacity and build year
-        for s in wind_types:
-            exog_wind_rsc, exog_onlineyear = get_exog_outputs(
-                inputs_case, tech=f'wind-{s}', dfsc=wind[s]
-            )
-            exog_wind_rsc.round(3).to_csv(
-                os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv")
-            )
-            exog_onlineyear_list.append(exog_onlineyear)
+        ## Exogenous wind capacity and build year. GAMS loads both capacity files
+        ## regardless of GSw_OfsWind, so write an empty offshore file when offshore wind is off.
+        for s in ["ons", "ofs"]:
+            if s in wind:
+                exog_wind_rsc, exog_onlineyear = get_exog_outputs(
+                    inputs_case, tech=f'wind-{s}', dfsc=wind[s]
+                )
+                exog_wind_rsc.round(3).to_csv(
+                    os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv")
+                )
+                exog_onlineyear_list.append(exog_onlineyear)
+            else:
+                pd.DataFrame(
+                    columns=["*tech", "region", "rscbin", "year", "MW"]
+                ).to_csv(
+                    os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv"), index=False
+                )
 
     # %%###############
     #    -- PV --    #
