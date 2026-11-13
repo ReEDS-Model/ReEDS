@@ -1001,7 +1001,8 @@ def main(
     #######################################################
     # The FTM DER supply curve changes by year: in each year t, cap is the cumulative capacity
     # available in each bin through t and cost is the adder [$/MW] to the utility-scale capital
-    # cost (cost_cap) for builds in t. bin1 holds the prescribed builds, so its capacity in t is
+    # cost (cost_cap) for builds in t (der-ftm-shape has no cost_cap, so its cost is the full
+    # capital cost). bin1 holds the prescribed builds, so its capacity in t is
     # the cumulative prescribed capacity through t; the remaining bins are optional.
     # Values are filled forward from the data years; bins are unavailable before the first data year.
     # The time-varying supply curve is written to der_ftm_rsc.csv. rsc_combined.csv gets each

@@ -201,5 +201,6 @@ smr,0
 smr_ccs,5
 dac,3
 dac_gas,3
+der-ftm-shape,0
 der-ftm-pv,0
 der-ftm-battery_li,0

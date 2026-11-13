@@ -45,6 +45,7 @@ DR Shed,#B9CBF5,o
 DR Shift,#B9CBF5,o
 DER-FTM-PV,#E6A800,o
 DER-FTM-Battery,#C2185B,"(4,1,0)"
+DER-FTM-Shape,#7B9FD4,"(2,1,0)"
 DR Shape,#B9CBF5,o
 DR,#B9CBF5,o
 Storage-H2,#FF7FBB,"(6,1,0)"

@@ -75,5 +75,6 @@ hyded_pumped-hydro-flex,5
 egs_allkm_1*egs_allkm_10,0
 geohydro_allkm_1*geohydro_allkm_10,0
 egs_nearfield_1*egs_nearfield_10,0
+der-ftm-shape,0
 der-ftm-pv,1
 der-ftm-battery_li,0

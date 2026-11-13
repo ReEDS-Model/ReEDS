@@ -780,6 +780,18 @@ $onlisting
 / ;
 $offempty
 
+$onempty
+parameter der_ftm_profile_change(r,allh,allt) "--MW/MW-- FTM DER load shape: change in end-use load per MW of der_ftm_shape capacity in each timeslice h (negative = reduction)"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_profile_change.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_profile_change.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 * Written by hourly_writetimeseries.py
 parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"
 / 

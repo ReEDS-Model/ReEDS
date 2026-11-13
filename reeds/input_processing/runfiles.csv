@@ -88,8 +88,9 @@ dr_shift_profile_increase.h5,inputs/profiles_dr/dr_shift_increase_profile_{dr_sh
 dr_shift_profile_energy.h5,inputs/profiles_dr/dr_shift_energy_profile_{dr_shiftscen}.h5,int(sw.GSw_DRShift) !=0,ignore,ignore,wide,"i,hour,year",,1,0,,,,,,
 der_ftm_min_output.h5,inputs/der_ftm/der_ftm_min_output_{der_ftm_scen}.h5,int(sw.GSw_DER_FTM) != 0,ignore,ignore,wide,"year,hour",,1,keepindex,,,,,,minimum combined net output [MW] of FTM DER by model year and hour of year
 der_ftm_battery_nocharge.h5,inputs/der_ftm/der_ftm_battery_nocharge_{der_ftm_scen}.h5,int(sw.GSw_DER_FTM) != 0,ignore,ignore,wide,"year,hour",,1,keepindex,,,,,,1 where FTM batteries cannot charge by model year and hour of year
+der_ftm_profile_change.h5,inputs/der_ftm/der_ftm_profile_change_{der_ftm_scen}.h5,int(sw.GSw_DER_FTM) != 0,ignore,ignore,wide,"year,hour",,1,keepindex,,,,,,change in end-use load (negative = reduction) per MW of FTM DER load shape (der-ftm-shape) capacity by model year and hour of year
 der_ftm_prescribed.csv,inputs/der_ftm/der_ftm_prescribed_{der_ftm_scen}.csv,int(sw.GSw_DER_FTM) != 0,ignore,ignore,r,"i,t",,0,0,,,,,,prescribed (supply curve bin1) FTM DER builds
-der_ftm_supplycurve.csv,inputs/der_ftm/der_ftm_supplycurve_{der_ftm_scen}.csv,int(sw.GSw_DER_FTM) != 0,ignore,ignore,r,"i,rscbin,t",,0,0,,,,,,FTM DER supply curve bins by year (cost is an adder to the utility-scale capital cost)
+der_ftm_supplycurve.csv,inputs/der_ftm/der_ftm_supplycurve_{der_ftm_scen}.csv,int(sw.GSw_DER_FTM) != 0,ignore,ignore,r,"i,rscbin,t",,0,0,,,,,,FTM DER supply curve bins by year (cost is an adder to the utility-scale capital cost; full capital cost for der-ftm-shape)
 e.csv,inputs/sets/e.csv,1,ignore,ignore,,,,,0,,,set,e,emission categories used in model,
 eall.csv,inputs/sets/eall.csv,1,ignore,ignore,,,,,,,,set,eall,emission categories used in reporting,
 emitrate.csv,inputs/emission_constraints/emitrate.csv,1,ignore,ignore,,,,,0,,,,,,

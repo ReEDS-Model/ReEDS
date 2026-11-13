@@ -385,6 +385,14 @@ def get_yearly_flexibility(
         return shape_out["decrease"], shape_out["increase"]
 
 
+## Front-of-the-meter DER hourly profiles (inputs_case/{ptype}.h5)
+DER_FTM_PROFILES = [
+    'der_ftm_min_output',
+    'der_ftm_battery_nocharge',
+    'der_ftm_profile_change',
+]
+
+
 def get_der_ftm_profiles(
     sw,
     hmap_myr,
@@ -400,8 +408,10 @@ def get_der_ftm_profiles(
     (or the earliest input year if all input years are after it).
 
     Returns a dict of dataframes with columns [r, h, t, value] for
-    'der_ftm_min_output' (minimum combined net output of FTM DER [MW]) and
-    'der_ftm_battery_nocharge' (1 where FTM batteries cannot charge).
+    'der_ftm_min_output' (minimum combined net output of FTM DER [MW]),
+    'der_ftm_battery_nocharge' (1 where FTM batteries cannot charge), and
+    'der_ftm_profile_change' (change in end-use load per MW of FTM DER load shape capacity;
+    negative values are load reductions).
     """
     ### Get the hour of year for each modeled hour
     if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
@@ -411,7 +421,7 @@ def get_der_ftm_profiles(
     h2yearhour = hmap.set_index('actual_h').yearhour.rename_axis('h')
 
     profiles = {}
-    for ptype in ['der_ftm_min_output', 'der_ftm_battery_nocharge']:
+    for ptype in DER_FTM_PROFILES:
         dfin = reeds.io.read_file(os.path.join(inputs_case, f'{ptype}.h5'))
         ## No data for the modeled regions
         if dfin.columns.empty:
@@ -550,6 +560,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'dr_shift_profile_energy': ['*i','r','h','t'],
             'der_ftm_min_output': ['*r','h','t'],
             'der_ftm_battery_nocharge': ['*r','h','t'],
+            'der_ftm_profile_change': ['*r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
             'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
@@ -1320,7 +1331,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
     else:
         der_ftm_profiles = {
             ptype: pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
-            for ptype in ['der_ftm_min_output', 'der_ftm_battery_nocharge']
+            for ptype in DER_FTM_PROFILES
         }
 
 
@@ -1581,15 +1592,16 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False,
         ],
-        ## Front-of-the-meter DER: minimum combined net output [MW]
-        ## and battery charging restriction [fraction of the chunk in which charging is not allowed]
+        ## Front-of-the-meter DER: minimum combined net output [MW],
+        ## battery charging restriction [fraction of the chunk in which charging is not allowed],
+        ## and load shape change [MW/MW; signed, so only zeros are dropped]
         **{
             ptype: [
                 (
                     df.assign(h=df.h.map(chunkmap))
                     .groupby(["r", "h", "t"]).value.mean()
                     .round(decimals)
-                    .loc[lambda x: x > 0]
+                    .loc[lambda x: x != 0]
                     .reset_index()
                 ),
                 False,

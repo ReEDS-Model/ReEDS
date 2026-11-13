@@ -372,6 +372,12 @@ eq_loadcon(r,h,t)$tmodel(t)..
     + sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_load(i,r,h,t) * CAP(i,v,r,t)}
     - sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_gen(i,r,h,t) * CAP(i,v,r,t)}
 
+*[plus] load shape change from front-of-the-meter DER load shape resources
+*(the profiles are at the end-use level, so they are scaled up to the busbar level like end-use load)
+    + sum{(i,v)$[der_ftm_shape(i)$valcap(i,v,r,t)],
+          der_ftm_profile_change(r,h,t) * CAP(i,v,r,t) }
+      / (1 - distloss)
+
 
 *[plus] load shifted from other timeslices
     + sum{flex_type, FLEX(flex_type,r,h,t) }$Sw_EFS_flex
@@ -1736,7 +1742,9 @@ eq_reserve_margin(r,ccseason,t)
 * Because it can provide no services, it will either upgrade or retire.
 
 *[plus] sum of all non-rsc and non-storage capacity
-    + sum{(i,v)$[valcap(i,v,r,t)$(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))$(not forced_retire(i,r,t))],
+*(FTM DER load shape resources only change load, so they do not provide firm capacity here)
+    + sum{(i,v)$[valcap(i,v,r,t)$(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))
+                $(not der_ftm_shape(i))$(not forced_retire(i,r,t))],
           CAP(i,v,r,t)
           * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))
           * (1 - mean_forced_outage_rate(i,r,ccseason,t))
@@ -3117,11 +3125,12 @@ eq_dr_shift_storage_in_capacity(i,v,r,h,t)
 * The combined net output of front-of-the-meter DER (generation minus storage charging) must
 * be at least a given level [MW] in some timeslices. The requirement applies in regions and
 * years with prescribed FTM DER builds; output from all FTM DER capacity counts toward it.
+* FTM DER load shape resources (der_ftm_shape) neither count toward it nor trigger it.
 * Output is measured at the devices (end-use level), so distributed PV generation, which is
 * scaled up to the busbar level by its capacity factor, is scaled back down by (1-distloss).
 eq_der_ftm_min_output(r,h,t)
     $[der_ftm_min_output(r,h,t)
-    $sum{(i,v,tt)$[der_ftm(i)$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }
+    $sum{(i,v,tt)$[der_ftm(i)$(not der_ftm_shape(i))$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }
     $tmodel(t)]..
 
     sum{(i,v)$[der_ftm(i)$valgen(i,v,r,t)],

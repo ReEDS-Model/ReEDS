@@ -58,5 +58,6 @@ egs_nearfield_1*egs_nearfield_10,0
 dr_shed_1*dr_shed_2,0
 dr_shape_1*dr_shape_2,0
 dr_shift_1*dr_shift_2,0
+der-ftm-shape,0
 der-ftm-pv,0.007
 der-ftm-battery_li,0

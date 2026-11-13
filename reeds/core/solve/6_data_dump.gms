@@ -52,6 +52,7 @@ cost_vom_filt(i,v,r)               "--$/MWh-- VO&M costs filtered for the previo
 ctt_i_ii_filt(i,ii)                "--set-- set linking watercooling techs i to numeraire techs ii filtered for existing watercooling techs"
 ctt_i_ii_psh(i,ii)                 "--set-- set linking PSH techs with water i to numeraire techs ii filtered for valid capacity techs"
 dr_shape_load_mod(i,v,r,allh,t)    "--MW-- power consumed or reduced for DR shape"
+der_ftm_shape_load_mod(i,v,r,allh,t) "--MW-- busbar load added (or reduced, if negative) by FTM DER load shape resources"
 dr_shift_load_mod(i,v,r,allh,t)    "--MW-- power consumed or reduced for DR shift"
 emissions_price(e,r)               "--2004$/metric ton-- combined emissions taxes and marginal prices for emissions caps"
 emit_rate_filt(e,i,v,r)            "--metric tons/MWh-- emission rate for the previous solve year"
@@ -291,6 +292,10 @@ prod_filt(i,v,r,h)$[sum{t$tcur(t), valcap(i,v,r,t)}$consume(i)$hours(h)] =
 dr_shape_load_mod(i,v,r,h,t)$[tcur(t)$dr_shape(i)$hours(h)] =
     (dr_shape_load(i,r,h,t) - dr_shape_gen(i,r,h,t)) * CAP.l(i,v,r,t);
 
+* FTM DER load shape modification at the busbar level (as in eq_loadcon)
+der_ftm_shape_load_mod(i,v,r,h,t)$[tcur(t)$der_ftm_shape(i)$valcap(i,v,r,t)$hours(h)] =
+    der_ftm_profile_change(r,h,t) * CAP.l(i,v,r,t) / (1 - distloss) ;
+
 * DR Shift load modification based on net dr shift charging
 dr_shift_load_mod(i,v,r,h,t)$[tcur(t)$dr_shift(i)$hours(h)] =
                  STORAGE_IN.l(i,v,r,h,t)-GEN.l(i,v,r,h,t) ;
@@ -361,6 +366,7 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     dr_shape_gen
     dr_shape_load
     dr_shape_load_mod
+    der_ftm_shape_load_mod
     dr_shift_load_mod
     dr_shift_charge_frac
     dr_shift_discharge_frac

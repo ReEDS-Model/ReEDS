@@ -720,6 +720,12 @@ gen_h(i,r,h,t)$[tmodel_new(t)$dr_shape(i)] =
 * plus dr_shape_gen loads
  + sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_gen(i,r,h,t) * CAP.l(i,v,r,t)}
 ;
+* Calculate busbar-level 'generation' (load reduction net of load increase) from FTM DER load shape resources
+gen_h(i,r,h,t)$[tmodel_new(t)$der_ftm_shape(i)] =
+    sum{v$valcap(i,v,r,t),
+        - der_ftm_profile_change(r,h,t) * CAP.l(i,v,r,t) }
+    / (1 - distloss)
+;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR.
@@ -750,6 +756,13 @@ gen_h_stress(i,r,allh,t)$[tmodel_new(t)$dr_shape(i)$h_stress_t(allh,t)] =
  - sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_load(i,r,allh,t) * CAP.l(i,v,r,t)}
 * plus dr_shape_gen loads
  + sum{v$[dr_shape(i)$valcap(i,v,r,t)],dr_shape_gen(i,r,allh,t) * CAP.l(i,v,r,t)}
+;
+
+* Calculate stress period 'generation' from FTM DER load shape resources
+gen_h_stress(i,r,allh,t)$[tmodel_new(t)$der_ftm_shape(i)$h_stress_t(allh,t)] =
+    sum{v$valcap(i,v,r,t),
+        - der_ftm_profile_change(r,allh,t) * CAP.l(i,v,r,t) }
+    / (1 - distloss)
 ;
 
 gen_h_stress_nat(i,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = sum{r, gen_h_stress(i,r,allh,t) } ;

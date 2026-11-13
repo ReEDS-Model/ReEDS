@@ -1,7 +1,7 @@
 ## Front-of-the-Meter Distributed Energy Resource (FTM DER) Input Files
 
 FTM DER are distribution-connected resources that ReEDS can invest in when `GSw_DER_FTM = 1`.
-There are two technologies:
+There are three technologies:
 
 - **`der-ftm-pv`**: PV with a fixed profile. The profile is a copy of the distpv profile (including the
   scaling by `1/(1-distloss)` that converts distribution-level generation to busbar generation),
@@ -21,12 +21,20 @@ There are two technologies:
   energy capacity scaled up by `1/(1-distloss)` (`resource_adequacy/prep_data.py`).
   Charging from FTM PV is not modeled separately: since FTM PV output is already credited with avoided distribution
   losses, charging from it costs the same `1/(1-distloss)` MW of busbar supply per MW as charging from the bulk grid.
+- **`der-ftm-shape`**: a change to the load shape, like the `dr_shape` technologies. It does not generate.
+  Each MW of capacity changes end-use load by the load shape profile (MW per MW of capacity; negative values are
+  load reductions; see the files below). Because the profile is at the end-use level, the
+  change to busbar load is scaled up by `1/(1-distloss)`, like end-use load (`eq_loadcon` in `c_model.gms`).
+  It provides no operating reserves and no firm capacity in the capacity credit formulation of the planning
+  reserve margin; its effect on resource adequacy comes through the load in stress periods and in PRAS
+  (`resource_adequacy/prep_data.py`). It is in the `DER_FTM_SHAPE` tech subset.
 
-In hours given by the minimum-output profile below, the combined net output of all FTM DER technologies in a zone
-(PV generation plus battery discharge minus battery charging, measured at the devices rather than the busbar)
+In hours given by the minimum-output profile below, the combined net output of the FTM PV and battery technologies
+in a zone (PV generation plus battery discharge minus battery charging, measured at the devices rather than the busbar)
 must be at least a given number of MW.
-This requirement applies only in zones and model years where prescribed FTM DER builds exist,
-but output from all FTM DER capacity (prescribed and optional) counts toward it.
+This requirement applies only in zones and model years where prescribed FTM PV or battery builds exist,
+but output from all FTM PV and battery capacity (prescribed and optional) counts toward it.
+`der-ftm-shape` neither counts toward this requirement nor triggers it.
 
 ### Costs
 
@@ -37,9 +45,12 @@ FTM DER use the costs and performance of the corresponding utility-scale technol
   in $/kW-DC like UPV.
 - `der-ftm-battery_li` takes its power and energy capital costs, fixed O&M, variable O&M, and round-trip efficiency
   from `battery_li` (`plantchar_battery`), including the battery refurbishment adder on the energy capital cost.
+- `der-ftm-shape` has no utility-scale counterpart: it has no base capital cost and no O&M costs, so its
+  supply curve cost (below) is its full capital cost. Its financing inputs are under the `DER_FTM_SHAPE` tech group
+  in `inputs/financials` (the same as `DR_SHAPE`, but with a 30-year evaluation period, or 20 years in the CRP20 file).
 
-On top of the utility-scale capital cost, each FTM DER technology pays a supply curve cost adder [$/MW]
-that depends on the bin and the build year. The supply curve has three bins:
+On top of the utility-scale capital cost (zero for `der-ftm-shape`), each FTM DER technology pays a supply curve
+cost adder [$/MW] that depends on the bin and the build year. The example supply curve has three bins:
 
 1. **bin1**: prescribed builds. ReEDS must build the capacity in `der_ftm_prescribed_{der_ftm_scen}.csv`
    in each year. The capacity of bin1 in year t is the cumulative prescribed capacity through t,
@@ -71,18 +82,22 @@ Pacific census division zones only.
     It must be blank for bin1 (it is set to the cumulative prescribed capacity).
   - `cost` is the capital cost adder [$/MW; $/MW-DC for PV] for builds in year `t`, in the dollar year listed for
     `der_ftm_{der_ftm_scen}` in `inputs/supply_curve/dollaryear.csv`. It can be zero or negative.
+    For `der-ftm-shape` it is the full capital cost.
   - Values are filled forward from each `t` until the next `t` in the file; bins are unavailable before their first `t`.
     Every zone with prescribed builds needs a bin1 cost in or before its first year with prescribed builds.
-- **`der_ftm_min_output_{der_ftm_scen}.h5`**: Minimum combined net output [MW] of all FTM DER technologies in each zone
-  (generation minus battery charging).
+- **`der_ftm_min_output_{der_ftm_scen}.h5`**: Minimum combined net output [MW] of the FTM PV and battery technologies
+  in each zone (generation minus battery charging).
   Index: (`year`, `hour`), where `year` is the model year and `hour` is the hour of the year (1–8760, Central Standard Time);
   columns are zones. The same profile is used for every weather year.
 - **`der_ftm_battery_nocharge_{der_ftm_scen}.h5`**: 1 in hours when FTM batteries cannot charge, 0 otherwise.
   Same format as the minimum-output file.
+- **`der_ftm_profile_change_{der_ftm_scen}.h5`**: Change in end-use load per MW of `der-ftm-shape` capacity [MW/MW];
+  positive values are load increases and negative values are load reductions.
+  The change in end-use load is this profile × capacity. Same format as the minimum-output file.
 
-For both profiles, each model year uses the data for the latest `year` at or before it
+For all profiles, each model year uses the data for the latest `year` at or before it
 (or the earliest `year` if all are after it). When modeled timeslices aggregate several hours,
-the minimum output and charging restriction are averaged over the hours in the timeslice
+the profiles are averaged over the hours in the timeslice
 (so a timeslice in which charging is restricted for half of the hours allows charging at up to half of the power capacity).
 
 Make sure the minimum output can be met by the prescribed FTM DER capacity, given the PV profile, battery energy capacity,

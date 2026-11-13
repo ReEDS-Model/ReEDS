@@ -239,6 +239,7 @@ set
   dr_shape(i)          "DR shape technologies",
   dr_shift(i)          "DR shift technologies",
   der_ftm(i)           "front-of-the-meter distributed energy resource technologies",
+  der_ftm_shape(i)     "front-of-the-meter DER technologies that change the load shape",
   fossil(i)            "fossil technologies"
   ng_fuel_cell(i)      "natural gas fuel cell technologies",
   gas_cc_ccs(i)        "techs that are gas combined cycle and have CCS",
@@ -712,6 +713,7 @@ dr_shed(i)$(not ban(i))             = yes$i_subsets(i,'dr_shed') ;
 dr_shape(i)$(not ban(i))             = yes$i_subsets(i,'dr_shape') ;
 dr_shift(i)$(not ban(i))            = yes$i_subsets(i,'dr_shift') ;
 der_ftm(i)$(not ban(i))             = yes$i_subsets(i,'der_ftm') ;
+der_ftm_shape(i)$(not ban(i))       = yes$i_subsets(i,'der_ftm_shape') ;
 demand_flex(i)$(not ban(i))         = yes$i_subsets(i,'demand_flex') ;
 fossil(i)$(not ban(i))              = yes$i_subsets(i,'fossil') ;
 ng_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'ng_fuel_cell') ;
@@ -840,7 +842,8 @@ set dispatchtech(i)                 "technologies that are dispatchable",
 noret_upgrade_tech(i)$hyd_add_pump(i) = yes ;
 noret_upgrade_tech(i)$[(coal_ccs(i) or gas_cc_ccs(i))$upgrade(i)$Sw_CCS_NoRetire] = yes ;
 dispatchtech(i)$[not(vre(i) or hydro_nd(i) or ban(i))] = yes ;
-* Front-of-the-meter DER also have a cost_cap; their supply curve cost (der_ftm_rsc) is an adder to it.
+* Front-of-the-meter DER also have a cost_cap (zero for der_ftm_shape); their supply curve cost (der_ftm_rsc)
+* is an adder to it.
 * They are included here so the supply curve cost is not treated as a spur line cost.
 sccapcosttech(i)$[hydro(i) or psh(i) or dr_shed(i) or dr_shape(i) or dr_shift(i) or der_ftm(i) ] = yes ;
 
@@ -1375,6 +1378,7 @@ $onlisting
 * Front-of-the-meter DER supply curves change by year, so they are read separately:
 * "cap" is the cumulative capacity available in each bin through year t (bin1 holds the prescribed builds)
 * and "cost" is the adder to cost_cap for builds in year t. rsc_dat holds each bin's largest capacity and no cost.
+* der_ftm_shape techs have no cost_cap, so their "cost" is the full capital cost.
 $onempty
 parameter der_ftm_rsc(r,i,rscbin,allt,sc_cat) "--MW or $/MW-- front-of-the-meter DER supply curve by year"
 /
@@ -2190,6 +2194,7 @@ valgen(i,v,r,t)$consume(i) = no ;
 
 * load modification technologies not allowed to generate
 valgen(i,v,r,t)$dr_shape(i) = no ;
+valgen(i,v,r,t)$der_ftm_shape(i) = no ;
 
 * Remove technologies that are required to retire
 valgen(i,v,r,t)$forced_retire(i,r,t) = no ;
@@ -5660,6 +5665,7 @@ Parameter
     dr_shift_energy_hours(i,r,allh,allt)   "--hours-- Allowable DR shift device storage SOC (quantity deferred charge) [MWh] divided by nameplate discharge capacity [MW]"
     der_ftm_min_output(r,allh,allt)            "--MW-- minimum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
     der_ftm_battery_nocharge(r,allh,allt)      "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
+    der_ftm_profile_change(r,allh,allt)        "--MW/MW-- FTM DER load shape: change in end-use load per MW of der_ftm_shape capacity in each timeslice h (negative = reduction)"
 * Flexible Canadian imports/exports [Sw_Canada=1]
     can_imports_szn(r,allszn,t)            "--MWh-- [Sw_Canada=1] seasonal imports from Canada by year"
     can_imports_szn_frac(allszn)           "--fraction-- [Sw_Canada=1] fraction of annual imports that occur in each season"
