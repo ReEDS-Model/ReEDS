@@ -264,8 +264,8 @@ def parse_caseglobs(
     """
     use_table_casenames = False
     use_table_colors = False
+    ## If it's a .csv, read the cases to compare
     if len(caseglobs) == 1:
-        ## If it's a .csv, read the cases to compare
         if Path(caseglobs[0]).suffix == '.csv':
             dfcase = pd.read_csv(Path(caseglobs[0]).expanduser(), header=None, comment='#', quoting=3)
             ## First check it's a simple csv with one case per row
@@ -282,11 +282,6 @@ def parse_caseglobs(
                 if 'color' in dfcase:
                     if not dfcase.color.isnull().any():
                         use_table_colors = True
-        ## Otherwise look for all runs starting with the provided string
-        else:
-            caseglobs = caseglobs
-    else:
-        caseglobs = caseglobs
 
     ## Expand the globs
     casepaths = {}

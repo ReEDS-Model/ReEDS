@@ -66,7 +66,7 @@ def get_scoe(case, val2sheet=None):
 
 
 ### Function holders
-SPECIAL_INPUTS = {
+SPECIAL_INPUT_FUNCTIONS = {
     'sw': reeds.io.get_switches,
     'hierarchy': reeds.io.get_hierarchy,
     'dfmap': reeds.io.get_dfmap,
@@ -77,7 +77,7 @@ SPECIAL_INPUTS = {
     'supplycurve': get_supplycurve,
 }
 
-SPECIAL_OUTPUTS = {
+SPECIAL_OUTPUT_FUNCTIONS = {
     'npv': get_npv,
     'scoe': get_scoe,
 }
@@ -211,15 +211,15 @@ class ReEDScase:
         self.outputs = {}
 
     def __getattr__(self, name):
-        if name in SPECIAL_INPUTS:
+        if name in SPECIAL_INPUT_FUNCTIONS:
             if name not in self.inputs:
-                df = SPECIAL_INPUTS[name](self.casepath)
+                df = SPECIAL_INPUT_FUNCTIONS[name](self.casepath)
                 self.inputs[name] = df
                 setattr(self, name, df)
             return self.inputs[name]
-        elif name in SPECIAL_OUTPUTS:
+        elif name in SPECIAL_OUTPUT_FUNCTIONS:
             if name not in self.outputs:
-                df = SPECIAL_OUTPUTS[name](self.casepath)
+                df = SPECIAL_OUTPUT_FUNCTIONS[name](self.casepath)
                 self.outputs[name] = df
                 setattr(self, name, df)
             return self.outputs[name]

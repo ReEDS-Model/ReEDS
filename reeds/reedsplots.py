@@ -7171,11 +7171,11 @@ def validate_regional_capacity(
     return f, ax, dictout
 
 
-def get_state_subplots(layout:Literal['alphabetical','r6c11']='r6c11') -> pd.DataFrame:
+def get_state_subplots(layout:Literal['alpha','geo']='geo') -> pd.DataFrame:
     """
     Generate a mapping from state abbreviations to (row, col) according to the specified layout:
-        alphabetical: Sort states alphabetically from top left to bottom right
-        r6c11: Sort states pseudo-geographically in 6 rows and 11 columns
+        alpha: Sort states alphabetically (top left to bottom right) in 6 rows and 8 columns
+        geo: Sort states pseudo-geographically in 6 rows and 11 columns
     """
     fpath = Path(reeds.io.reeds_path, 'postprocessing', 'plots', 'state_subplots.csv')
     state_subplots = (
