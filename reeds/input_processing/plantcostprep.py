@@ -341,20 +341,6 @@ def disaggregate_to_regions(data, state2r):
         regional_data[st] = pd.concat(data2r.values())
     return pd.concat(regional_data.values()).set_index('tech')
 
-def check_dr_data(dr_type, switch, scen, data_dict):
-    """
-    Raise an error if a DR type is turned on but any of its input files has
-    no data for the regions in this run (input files are filtered to the run's
-    states by copy_files, so they are empty if the DR data don't cover them).
-    """
-    empty = [name for name, df in data_dict.items() if df.empty]
-    if empty:
-        raise ValueError(
-            f"{switch}=1 but the following DR {dr_type} input files have no data "
-            f"for the regions in this run (scenario '{scen}'): {', '.join(empty)}. "
-            f"Add data for these regions or set {switch}=0."
-        )
-
 state2r = pd.read_csv(os.path.join(inputs_case,'disagg_state_lpf.csv'),usecols=['state','r'])
 # Map each unique state to all r values within that state
 state2r = state2r.groupby('state')['r'].unique().apply(list).to_dict()   
@@ -365,11 +351,6 @@ dr_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed.csv'))
 fom_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed_fom.csv'))
 vom_shed = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shed_vom.csv'))
 if int(sw.GSw_DRShed):
-    check_dr_data('shed', 'GSw_DRShed', sw.dr_shedscen, {
-        'plantchar_dr_shed.csv': dr_shed,
-        'plantchar_dr_shed_fom.csv': fom_shed,
-        'plantchar_dr_shed_vom.csv': vom_shed,
-    })
     # Write from state-level to region-level
     dr_shed_capcost_mult = disaggregate_to_regions(dr_shed, state2r)
     dr_shed_fom_regional = disaggregate_to_regions(fom_shed, state2r)
@@ -386,11 +367,6 @@ dr_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape.csv'))
 fom_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape_fom.csv'))
 vom_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shape_vom.csv'))
 if int(sw.GSw_DRShape):
-    check_dr_data('shape', 'GSw_DRShape', sw.dr_shapescen, {
-        'plantchar_dr_shape.csv': dr_shape,
-        'plantchar_dr_shape_fom.csv': fom_shape,
-        'plantchar_dr_shape_vom.csv': vom_shape,
-    })
     dr_shape_capcost_mult = disaggregate_to_regions(dr_shape, state2r)
     dr_shape_fom_regional = disaggregate_to_regions(fom_shape, state2r)
     dr_shape_vom_regional = disaggregate_to_regions(vom_shape, state2r)
@@ -406,11 +382,6 @@ dr_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift.csv'))
 fom_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift_fom.csv'))
 vom_shift = pd.read_csv(os.path.join(inputs_case,'plantchar_dr_shift_vom.csv'))
 if int(sw.GSw_DRShift):
-    check_dr_data('shift', 'GSw_DRShift', sw.dr_shiftscen, {
-        'plantchar_dr_shift.csv': dr_shift,
-        'plantchar_dr_shift_fom.csv': fom_shift,
-        'plantchar_dr_shift_vom.csv': vom_shift,
-    })
     dr_shift_capcost_mult = disaggregate_to_regions(dr_shift, state2r)
     dr_shift_fom_regional = disaggregate_to_regions(fom_shift, state2r)
     dr_shift_vom_regional = disaggregate_to_regions(vom_shift, state2r)

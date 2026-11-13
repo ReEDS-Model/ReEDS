@@ -183,6 +183,19 @@ def check_compatibility(sw):
             "\n3: dynamic update but only after all new stress periods have been added"
         )
 
+    dr_switches = [s for s in ['GSw_DRShed', 'GSw_DRShape', 'GSw_DRShift'] if int(sw[s])]
+    if dr_switches:
+        if int(sw['GSw_PRM_CapCredit']) == 1:
+            raise ValueError(
+                f"{', '.join(dr_switches)} cannot be used with GSw_PRM_CapCredit=1. "
+                "Set GSw_PRM_CapCredit=0 or turn off the demand response switches."
+            )
+        if int(sw['GSw_OpRes']) == 1:
+            raise ValueError(
+                f"{', '.join(dr_switches)} cannot be used with GSw_OpRes=1. "
+                "Set GSw_OpRes to 0 or 2 or turn off the demand response switches."
+            )
+
     for bir in sw['GSw_PVB_BIR'].split('_'):
         if not (float(bir) >= 0):
             raise ValueError("Fix GSw_PVB_BIR")
@@ -341,6 +354,46 @@ def check_compatibility(sw):
     ## ReEDS-FINITO switches
     if int(sw['GSw_FINITO_Link'])==1:
         reeds.finito.check_FINITO_switch_compatability(sw)
+
+
+def check_dr_data(sw):
+    """
+    Before the run starts, raise an error if a DR type (shed, shape, shift) is turned on
+    but any of its state-level input files has no data for the states in this run.
+    The input files are listed in runfiles.csv with region_col = 'wide' (states are
+    column names) or 'r' (states are in the 'r' column).
+    """
+    dr_switches = {'shed': 'GSw_DRShed', 'shape': 'GSw_DRShape', 'shift': 'GSw_DRShift'}
+    active = {dr: switch for dr, switch in dr_switches.items() if int(sw[switch])}
+    if not active:
+        return
+
+    hierarchy = reeds.io.assemble_hierarchy(**sw)
+    zones = reeds.inputs.parse_regions(**sw)
+    states = set(hierarchy.loc[hierarchy['r'].isin(zones), 'st'])
+
+    runfiles = pd.read_csv(Path(reeds.io.reeds_path, 'reeds', 'input_processing', 'runfiles.csv'))
+    runfiles = runfiles.loc[runfiles.region_col.isin(['wide', 'r'])]
+    for dr, switch in active.items():
+        drfiles = runfiles.loc[
+            runfiles.filename.str.endswith('.csv')
+            & runfiles.filename.str.startswith((f'dr_{dr}_', f'plantchar_dr_{dr}'))
+        ]
+        empty = []
+        for _, row in drfiles.iterrows():
+            fpath = Path(reeds.io.reeds_path, row.filepath.format(**sw.to_dict()))
+            if not fpath.exists():
+                raise FileNotFoundError(f"{switch}=1 but {fpath} does not exist")
+            df = pd.read_csv(fpath)
+            covered = set(df.columns) if row.region_col == 'wide' else set(df['r'])
+            if not (covered & states):
+                empty.append(fpath.name)
+        if empty:
+            raise ValueError(
+                f"\n{sw.name}:\n{switch}=1 but the following DR {dr} input files have no data "
+                f"for the states in this run ({', '.join(sorted(states))}): {', '.join(empty)}. "
+                f"Add data for these states or set {switch}=0."
+            )
 
 
 def check_GSw_LoadSiteReg(sw):
@@ -535,4 +588,5 @@ def check_switches(dfcases:pd.DataFrame, force=0):
             check_islands(sw)
         if force < 2:
             check_compatibility(sw)
+            check_dr_data(sw)
             check_GSw_LoadSiteReg(sw)
