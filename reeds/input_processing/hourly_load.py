@@ -654,8 +654,12 @@ def splice_with_historical_demand(state_load_hourly, sw, weather_years, solveyea
     )
     
     # downselect to model years, but don't add spliced load before this_year
+    # or through GSw_HarmonizeHistorical
     scalars = reeds.io.get_scalars()
-    future_years = [y for y in solveyears if y >= int(scalars.this_year)]
+    future_years = [
+        y for y in solveyears
+        if y >= max(int(scalars.this_year), int(sw.GSw_HarmonizeHistorical) + 1)
+    ]
     splice_load = downselect_to_model_years(
         splice_load,
         future_years
@@ -730,6 +734,21 @@ def main(reeds_path, inputs_case):
                 state_load_hourly,
                 solveyears
             )
+            # Through GSw_HarmonizeHistorical, use the same load as GSw_LoadProfiles=historic
+            harmonize_year = int(sw.GSw_HarmonizeHistorical)
+            if harmonize_year:
+                state_load_hourly = pd.concat([
+                    apply_load_growth_factors_to_historical_state_load(
+                        historical_state_load_hourly,
+                        historical_state_load_annual,
+                        inputs_case,
+                        [y for y in solveyears if y <= harmonize_year]
+                    ),
+                    downselect_to_model_years(
+                        state_load_hourly,
+                        [y for y in solveyears if y > harmonize_year]
+                    )
+                ])
         case 'historic':
             state_load_hourly = (
                 apply_load_growth_factors_to_historical_state_load(

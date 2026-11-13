@@ -111,6 +111,30 @@ else:
             'tech_cost_adjustments assigns multiple adjustments to '
             f'{sorted(set(capcost_mult.index[capcost_mult.index.duplicated()]))}')
 
+#%%######################################
+#    -- Historical Harmonization --    #
+#########################################
+
+# Use the moderate values through GSw_HarmonizeHistorical for advanced/conservative inputs
+if int(sw.GSw_HarmonizeHistorical):
+    for key in sw.index[sw.index.str.startswith('plantchar_')]:
+        plantchar_ref = sw[key].replace('advanced','moderate').replace('conservative','moderate')
+        if key == 'plantchar_hydro':
+            plantchar_ref = sw[key].replace('low','mid').replace('constant','mid')
+        if plantchar_ref == sw[key]:
+            continue
+        fpath = os.path.join(inputs_case, f'{key}.csv')
+        df = pd.read_csv(fpath)
+        # Rows are identified by the columns up to and including the year column
+        idcols = df.columns[:df.columns.isin(['t','Year']).argmax() + 1].tolist()
+        dfref = pd.read_csv(
+            os.path.join(reeds_path,'inputs','plant_characteristics',f'{plantchar_ref}.csv'),
+            index_col=idcols)
+        df = df.set_index(idcols).astype(float)
+        df.update(
+            dfref.loc[dfref.index.get_level_values(idcols[-1]) <= int(sw.GSw_HarmonizeHistorical)])
+        df.to_csv(fpath)
+
 #%%###############
 #    -- PV --    #
 ##################
@@ -275,6 +299,17 @@ d_real = financials_sys.set_index('t')['d_real']
 # (consistent with futurefiles.csv used by forecast.py--it should be adjusted
 # if it is changed there)
 cost_by_year = battery.set_index('t')['capcost_energy']
+# For build years through GSw_HarmonizeHistorical, refurbish at the moderate cost
+if int(sw.GSw_HarmonizeHistorical):
+    battery_ref = sw.plantchar_battery.replace('advanced','moderate').replace('conservative','moderate')
+    cost_by_year.update(
+        deflate_func(
+            pd.read_csv(
+                os.path.join(reeds_path,'inputs','plant_characteristics',f'{battery_ref}.csv')),
+            battery_ref,
+        ).set_index('t')['capcost_energy']
+        .loc[:int(sw.GSw_HarmonizeHistorical) + years_until_refurb]
+    )
 future_cost_batt = (
     cost_by_year
     .reindex(range(

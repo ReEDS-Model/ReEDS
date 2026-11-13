@@ -64,7 +64,7 @@ Here is partial list of remotely hosted files used by ReEDS:
   - So turning up `GSw_HourlyNumClusters` on its own won't increase the temporal coverage. If you want more temporal coverage, the options are:
     - Switch to `GSw_HourlyType=wek`, which increases the length of the periods from 1 day to 5 days. If all the other switches are left at their defaults, switching to `wek` would increase the coverage from 42 days to 5*42=210 days.
     - Reduce `GSw_HourlyClusterRegionLevel` to something smaller than transreg (like `st`), and then increase `GSw_HourlyNumClusters`
-    - Switch to `GSw_HourlyClusteAlgorithm=hierarchical` and then increase `GSw_HourlyNumClusters` (although that's less desirable, because hierarchical clustering doesn't do as good of a job of reproducing the actual spatial distribution of CF and load)
+    - Switch to `GSw_HourlyClusterAlgorithm=hierarchical` and then increase `GSw_HourlyNumClusters` (although that's less desirable, because hierarchical clustering doesn't do as good of a job of reproducing the actual spatial distribution of CF and load)
     - Switch to `Gsw_HourlyType=year`. Although if you're running for the whole US you'll need to turn on region aggregation (`GSw_ZoneSet` in [`z54` or `z70`]) for it to solve.
 - `GSw_HourlyClusterAlgorithm`
   - If set to 'hierarchical', then hierarchical clustering is used via
@@ -434,6 +434,15 @@ However, for zones with relatively low load and low interzonal transmission capa
 using larger unit sizes (particularly unit sizes greater than the reserve margin) can increase the level of unserved energy;
 if a single unit is larger than the planning reserve margin, unserved energy is likely whenever that unit experiences on outage.
 This approach should therefore be used with caution.
+
+
+## State RPS/CES stress-period requirement
+
+By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over representative periods only. `GSw_StateRPS_Stress` adds a parallel requirement over stress periods, reusing the same compliance target:
+
+- `0` (default): off.
+- `1`: weight all modeled stress hours equally.
+- `2`: weight only each state's own peak-load stress period(s) — the seeded peak-load period(s) that the state's regions belong to (a state spanning multiple `GSw_PRM_StressSeedLoadLevel` groups gets the union of all of them). Requires `GSw_PRM_CapCredit=0` and `GSw_PRM_StressSeedLoadLevel` to be enabled.
 
 
 ## Monte Carlo Sampling (MCS)

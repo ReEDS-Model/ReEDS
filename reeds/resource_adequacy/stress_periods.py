@@ -1,8 +1,10 @@
 #%%### General imports
 import os
+import shutil
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from warnings import warn
 from typing import Literal
 
 import reeds
@@ -809,9 +811,8 @@ def main(sw, t, iteration=0, logging=True):
     """
     #%% Write consolidated stress metrics
     ra_metrics = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration)
-    ra_metrics.round(3).to_csv(
-        os.path.join(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
-    )
+    ra_metrics_path = Path(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
+    ra_metrics.round(3).to_csv(ra_metrics_path)
 
     #%% Write EUE events
     eue_events = get_eue_events(case=sw.casedir, t=t, iteration=iteration)
@@ -848,6 +849,14 @@ def main(sw, t, iteration=0, logging=True):
         logging=logging
     )
 
+    # Carry forward the state RPS/CES peak-day file. It's computed once per model
+    # year and doesn't change across iterations, but each iteration's folder needs
+    # its own copy.
+    shutil.copy2(
+        os.path.join(sw.casedir, 'inputs_case', f'stress{t}i0', 'ces_peakday_st.csv'),
+        os.path.join(sw.casedir, 'inputs_case', newstresspath, 'ces_peakday_st.csv'),
+    )
+
     #%% Write updated PRM values
     if (
         (int(sw.GSw_PRM_UpdateMethod) == 0)
@@ -864,6 +873,27 @@ def main(sw, t, iteration=0, logging=True):
     prm_next_iteration.to_csv(
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'prm.csv'),
     )
+
+    #%% Raise an error if it's the final iteration and metrics still exceed the threshold
+    if (
+        ((iteration + 1) == int(sw.GSw_PRM_StressIterateMax))
+        and (len(failed))
+    ):
+        err = (
+            '\nAt least one resource adequacy metric failed to meet the required '
+            f'threshold(s) within {sw.GSw_PRM_StressIterateMax} iterations.\n'
+            f'Check this file for regional details:\n{ra_metrics_path}\n'
+            'Consider:\n'
+            '- adding more iterations (GSw_PRM_StressIterateMax)\n'
+            '- increasing the planning reserve margin (GSw_PRM_scenario)\n'
+            '- relaxing the RA threshold(s) (GSw_PRM_StressThreshold*)\n'
+            '- revisiting other RA settings (GSw_PRM*)'
+            '- modeling a larger area (GSw_Region)'
+        )
+        if int(sw['debug']):
+            warn(err)
+        else:
+            raise ValueError(err)
 
 
 # #%%### Option to run script directly for debugging

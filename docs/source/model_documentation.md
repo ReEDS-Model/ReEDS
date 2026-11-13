@@ -2414,8 +2414,9 @@ if any regions do not meet the specified threshold,
 the days with highest EUE in the failing regions are added as "dynamic" stress periods ({numref}`figure-ra-flowcharts`)
 and another ReEDS-PRAS iteration is performed.
 This process is illustrated graphically in {numref}`figure-ra-iteration-example`.
-Once all regions meet the reliability threshold (or once a user-specified maximum number of iterations is reached),
+Once all regions meet the reliability threshold,
 the simulation progresses to the next model year, and the process begins again ({numref}`figure-reeds-pras`).
+If the reliability threshold is not met after the user-defined maximum number of iterations, the simulation is halted.
 The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss of load expectation of 0.1 days/year in many regions {cite}`epriMetricsCriteriaInsights2024`.
 
 ```{figure} figs/docs/ra-iteration-example.png
@@ -2453,7 +2454,7 @@ The syntax for these switches is described in the "Description" column of `cases
   - `GSw_PRM_CapCredit` (default 0): Use stress periods if 0, capacity credit if 1
 - Control the iteration between ReEDS and PRAS
   - `GSw_PRM_StressThreshold` (default `transgrp_1_EUE_sum`): Regional RA threshold for stress period iteration
-  - `GSw_PRM_StressIterateMax` (default 5): Max number of times to iterate on a particular solve year
+  - `GSw_PRM_StressIterateMax` (default 5): Max number of times to iterate on a particular solve year before halting the run
   - `GSw_PRM_StressIncrement` (default 2): How many stress periods to add per region per iteration
   - `GSw_PRM_StressStorageCutoff` (default `EUE_0.1`): How to select "shoulder" stress periods for interday storage
   - `GSw_PRM_StressModel` (default `pras`): Interface for specifying fixed user-defined stress periods; when set to `pras`, stress periods are identified dynamically
@@ -3106,6 +3107,9 @@ These CESs are in effect generalized versions of RPSs; their model representatio
 
 ```{admonition} CES input data
 The annual compliance for states with a CES policy can be found in `inputs/state_policies/ces_fraction.csv`.
+
+By default, RPS and CES requirements are enforced during representative periods only.
+'GSw_StateRPS_Stress' allows the requirements to also be enforced during stress periods: 0=off (default), 1=weight all modeled stress hours equally, 2=weight only each state's own peak-load stress period(s).
 ```
 
 [^ref56]: Not all electricity produced in a state is subject to the state law.
