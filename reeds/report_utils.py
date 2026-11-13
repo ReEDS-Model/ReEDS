@@ -250,16 +250,32 @@ def parse_caselist(caselist, casenames, basecase_in, titleshorten=0):
 
 def parse_caseglobs(
     caseglobs:list,
-    casenames=None,
-    basecase_in=None,
-    titleshorten=0,
-    keep_incomplete=True,
-):
+    casenames:str|None=None,
+    titleshorten:int=0,
+    keep_incomplete:bool=True,
+) -> tuple:
     """
+    Parse a list of glob-pattern filepaths and return the matching directories.
+
+    Args:
+        caseglobs (list): List of glob-pattern filepaths, such as:
+            ['path/to/base_sample*', 'path/to/sensitivity_sample*']
+        casenames (optional): If a string, a comma-delimited list of "nice" names to use
+            in plots (should be as long as the caseglobs list).
+            If None, the caseglob base paths are used directly, or shortened by titleshorten.
+        titleshorten (int): How much to shorten caseglob base paths by for "nice" plot labels
+            (only used if casenames is None)
+        keep_incomplete (bool): Whether to keep unfinished runs (if True) or drop them (if False)
+
+    Returns:
+        3-element tuple of:
+            casepaths: Dictionary of caseglobs (str) -> caselist (list)
+            nicelabels: Dictionary of caseglobs (str) -> "nice" label for plots (str)
+            colors: Dictionary of caseglobs (str) -> color for plots (str or tuple)
+
     Inputs for testing:
         caseglobs = ['/Users/pbrown/github/ReEDS/runs/v20261017_mcM1_MonteCarlo_Random_MC*']
         casenames = None
-        basecase_in = None
         titleshorten = 0
     """
     use_table_casenames = False

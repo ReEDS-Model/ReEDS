@@ -83,7 +83,6 @@ else:
 casepaths, nicelabels, colors = reeds.report_utils.parse_caseglobs(
     caselist,
     casenames,
-    basepath,
     titleshorten,
     keep_incomplete=keep_incomplete,
 )
