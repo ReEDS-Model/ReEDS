@@ -10,6 +10,8 @@
   - `battery_ATB_2025_conservative.csv`:
   - `battery_ATB_2025_moderate.csv`:
 
+- `beccs_ATB_2025_moderate.csv`:
+
 - `beccs_BVRE_2021_*.csv`:
   - `beccs_BVRE_2021_high.csv`:
   - `beccs_BVRE_2021_low.csv`:
@@ -39,7 +41,10 @@
 
 - `coal_ATB_2024_moderate.csv`:
 
-- `coal_ATB_2025_moderate.csv`:
+- `coal_ATB_2025_*.csv`:
+  - `coal_ATB_2025_advanced.csv`:
+  - `coal_ATB_2025_conservative.csv`:
+  - `coal_ATB_2025_moderate.csv`:
 
 - `cost_opres_*.csv`:
   - `cost_opres_default.csv`:
@@ -93,7 +98,10 @@
 
 - `gas_ATB_2024_moderate.csv`:
 
-- `gas_ATB_2025_moderate.csv`:
+- `gas_ATB_2025_*.csv`:
+  - `gas_ATB_2025_advanced.csv`:
+  - `gas_ATB_2025_conservative.csv`:
+  - `gas_ATB_2025_moderate.csv`:
 
 - `geo_ATB_2023_*.csv`:
   - `geo_ATB_2023_advanced.csv`:

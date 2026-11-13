@@ -8,6 +8,7 @@ battery_ATB_2024_moderate,2022
 battery_ATB_2025_advanced,2023
 battery_ATB_2025_conservative,2023
 battery_ATB_2025_moderate,2023
+beccs_ATB_2025_moderate,2023
 beccs_BVRE_2021_high,2019
 beccs_BVRE_2021_low,2019
 beccs_BVRE_2021_mid,2019
@@ -17,6 +18,8 @@ biopower_ATB_2024_moderate,2022
 biopower_ATB_2025_moderate,2023
 ccsflex_ATB_2020,2019
 coal_ATB_2024_moderate,2022
+coal_ATB_2025_advanced,2023
+coal_ATB_2025_conservative,2023
 coal_ATB_2025_moderate,2023
 coal-ccs_ATB_2024_advanced,2022
 coal-ccs_ATB_2024_conservative,2022
@@ -40,6 +43,8 @@ h2fuelcell_advanced,2022
 h2fuelcell_moderate,2022
 h2fuelcell_conservative,2022
 gas_ATB_2024_moderate,2022
+gas_ATB_2025_advanced,2023
+gas_ATB_2025_conservative,2023
 gas_ATB_2025_moderate,2023
 gas-ccs_ATB_2024_advanced,2022
 gas-ccs_ATB_2024_conservative,2022
