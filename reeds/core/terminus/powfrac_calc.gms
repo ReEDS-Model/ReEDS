@@ -15,10 +15,10 @@ parameter
   flow_ba2ba(r,rr,allh,t) "--MW-- average flow of power out of BA r into BA rr during time-slice h"
 ;
 
-flow_in(rr,h,t)$tmodel_new(t) = sum{(r,trtype)$routes(rr,r,trtype,t), FLOW.l(r,rr,h,t,trtype) } ;
-flow_out(r,h,t)$tmodel_new(t) = sum{(rr,trtype)$routes(rr,r,trtype,t), FLOW.l(r,rr,h,t,trtype) } ;
+flow_in(rr,h,t)$tmodel_new(t) = sum{(r,trtype)$routes(rr,r,trtype,t), FLOW.l(s,r,rr,h,t,trtype) } ;
+flow_out(r,h,t)$tmodel_new(t) = sum{(rr,trtype)$routes(rr,r,trtype,t), FLOW.l(s,r,rr,h,t,trtype) } ;
 flow_ba2ba(r,rr,h,t)$[tmodel_new(t)$sum{trtype,routes(rr,r,trtype,t) }] =
-    sum{(trtype)$[routes(rr,r,trtype,t)], FLOW.l(r,rr,h,t,trtype) } ;
+    sum{(trtype)$[routes(rr,r,trtype,t)], FLOW.l(s,r,rr,h,t,trtype) } ;
 
 * --- calculate the "total load" ---
 
@@ -26,8 +26,8 @@ Parameter totload(r,allh,t) "--MW-- load modified to include charging of storage
 
 totload(r,h,t)$[tmodel_new(t)] =
     load_exog(r,h,t) + can_exports_h(r,h,t)
-  + sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN.l(i,v,r,h,t)}
-  + sum{(rr,trtype)$routes(rr,r,trtype,t), tranloss(rr,r,trtype) * FLOW.l(rr,r,h,t,trtype)}
+  + sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN.l(s,i,v,r,h,t)}
+  + sum{(rr,trtype)$routes(rr,r,trtype,t), tranloss(rr,r,trtype) * FLOW.l(s,rr,r,h,t,trtype)}
 ;
 
 * --- calcultate power flowing through a balancing area ---
@@ -46,8 +46,8 @@ totgen(r,h,t)$tmodel_new(t) =
   + sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN.l(i,v,r,h,t) }
 
   + sum{(rr,trtype)$routes(rr,r,trtype,t),
-      + FLOW.l(r,rr,h,t,trtype)
-      - FLOW.l(rr,r,h,t,trtype)
+      + FLOW.l(s,r,rr,h,t,trtype)
+      - FLOW.l(s,rr,r,h,t,trtype)
   }
 
 ;
