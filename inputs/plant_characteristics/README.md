@@ -72,9 +72,15 @@ Costs are in the dollar year listed for that scenario in `dollaryear.csv` and ar
   - `dr_shed_fom_demo_data_January_2025.csv`: Fixed O&M cost [$/MW-yr]
   - `dr_shed_vom_demo_data_January_2025.csv`: Variable O&M cost [$/MWh]
 
-- `evmc_*_Baseline.csv`: Electric vehicle managed charging (EVMC) cost and performance by year; selected by `evmcscen`
-  - `evmc_shape_Baseline.csv`: EVMC resources that shift charging load in response to prices
-  - `evmc_storage_Baseline.csv`: EVMC resources under direct load control, modeled like storage
+- `dr_shape_*_ex_dr1.csv`:
+  - `dr_shape_cost_scalars_ex_dr1.csv`:
+  - `dr_shape_fom_ex_dr1.csv`:
+  - `dr_shape_vom_ex_dr1.csv`:
+
+- `dr_shift_*_ex_dr1.csv`:
+  - `dr_shift_cost_scalars_ex_dr1.csv`:
+  - `dr_shift_fom_ex_dr1.csv`:
+  - `dr_shift_vom_ex_dr1.csv`:
 
 - `fuelcell_ATB_2024_*.csv`: Fuel cell cost and performance from the 2024 ATB; selected by `plantchar_fuelcell`
   - `fuelcell_ATB_2024_advanced.csv`: Advanced scenario
