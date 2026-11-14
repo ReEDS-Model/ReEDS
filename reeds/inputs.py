@@ -983,7 +983,7 @@ def get_emit_cap(case:str|Path|None=None, **kwargs) -> pd.Series:
     return emit_cap
 
 
-def get_emit_capped(case:str|Path|None=None, **kwargs) -> pd.Series:
+def get_capped_pollutants(case:str|Path|None=None, **kwargs) -> pd.Series:
     """
     Get list of capped pollutants by scenario and emissions type
 

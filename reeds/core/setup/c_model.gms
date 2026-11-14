@@ -1602,7 +1602,7 @@ eq_PRMTRADELimit(s,r,rr,trtype,ccseason,t)
     + PRMTRADE(s,r,rr,trtype,ccseason,t)
 ;
 
-* s,---------------------------------------------------------------------------
+* ---------------------------------------------------------------------------
 
 eq_PRMTRADE_VSC(s,r,ccseason,t)
     $[tmodel(t)
@@ -2102,7 +2102,7 @@ eq_transgrp_limit_prm(s,transgrp,transgrpp,ccseason,t)
         PRMTRADE(s,r,rr,"AC",ccseason,t) }
 ;
 
-* s,---------------------------------------------------------------------------
+* ---------------------------------------------------------------------------
 
 *capacity transmission is equal to the exogenously-specified level of transmission
 *plus the investment in transmission capacity between ITL groups for county/mixed
@@ -2162,7 +2162,7 @@ eq_itlgrp_limit_prm(s,itlgrp,itlgrpp,ccseason,t)
         PRMTRADE(s,r,rr,"AC",ccseason,t) }
 ;
 
-* s,---------------------------------------------------------------------------
+* ---------------------------------------------------------------------------
 
 * FERC regions are only allowed to import firm capacity up to their limit
 eq_firm_transfer_limit(s,transreg,h,t)
@@ -2212,7 +2212,7 @@ eq_firm_transfer_limit_cc(s,transreg,ccseason,t)
           PRMTRADE(s,r,rr,trtype,ccseason,t) }
 ;
 
-* s,---------------------------------------------------------------------------
+* ---------------------------------------------------------------------------
 
 * CAP_CONVERTER accumulates INV_CONVERTER from years <= t
 eq_CAP_CONVERTER(r,t)

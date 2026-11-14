@@ -1073,7 +1073,7 @@ def write_miscellaneous_files(
         units='metric tons per year', comment='Annual CO2 or CO2e emissions cap',
     )
 
-    emit_capped = reeds.inputs.get_emit_capped(reeds.io.standardize_case(inputs_case))
+    emit_capped = reeds.inputs.get_capped_pollutants(reeds.io.standardize_case(inputs_case))
     reeds.io.write_to_inputs_h5(
         emit_capped, 'emit_capped', inputs_case, gamstype='set',
         comment='Pollutants that are included in emission cap depending on GSw_AnnualCap',

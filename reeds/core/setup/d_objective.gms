@@ -17,8 +17,12 @@ Variable    Z        "--$-- total cost of operations and investment, scale varie
             Z_inv(t)  "--$-- total cost of operations"
 ;
 
-* objective function is the sum over modeled years of the investment
-* and operations components
+* The objective function is the sum over modeled years of the investment
+* and operations components. The operations component is the probability-weighted average
+* over the stochastic scenarios represented by the 's' index.
+* Investment variables are fixed across stochastic scenarios (since the idea is to make
+* one set of investment decisions that minimizes cost across multiple uncertain futures),
+* so they do not have an 's' index.
 eq_ObjFn.. Z =e= cost_scale * (
 * electricity and H2 costs
      sum{t$tmodel(t), Z_inv(t) + sum{s, Z_op(s,t) * scenario_probability(s)} }
