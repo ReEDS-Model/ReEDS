@@ -3233,14 +3233,14 @@ def map_zone_capacity(
         axbounds = {
             ## left, bottom, width, height
             'Trans [TW-mi]': [0.92, 0.62, 0.1, 0.17],
-            'CO2 [MMT]': [0.92, 0.41, 0.1, 0.17],
+            'CO2 [MMT/y]': [0.92, 0.41, 0.1, 0.17],
             'Cap [GW]': [0.83, 0.2, 0.1, 0.17],
-            'Gen [TWh]': [1.0, 0.2, 0.1, 0.17],
+            'Gen [TWh/y]': [1.0, 0.2, 0.1, 0.17],
         }
         eax = {}
         for a in axbounds:
             eax[a] = f.add_axes(axbounds[a])
-            eax[a].set_ylabel(a)
+            eax[a].set_ylabel(reeds.plots.chemlabel(a))
             plots.despine(eax[a])
             eax[a].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
             eax[a].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
@@ -3269,9 +3269,9 @@ def map_zone_capacity(
         )
         alltechs.update(dfgen.columns)
         plots.stackbar(
-            df=dfgen, ax=eax['Gen [TWh]'],
+            df=dfgen, ax=eax['Gen [TWh/y]'],
             colors=bokehcolors, width=yearstep, net=False)
-        eax['Gen [TWh]'].axhline(0, c='k', ls=':', lw=0.75)
+        eax['Gen [TWh/y]'].axhline(0, c='k', ls=':', lw=0.75)
 
         ### Side plot of transmission capacity over time
         dftrans = dfin_trans.pivot(
@@ -3300,10 +3300,10 @@ def map_zone_capacity(
             .loc[2020:]
         )
         plots.stackbar(
-            df=dfco2, ax=eax['CO2 [MMT]'],
+            df=dfco2, ax=eax['CO2 [MMT/y]'],
             colors=bokehcolors, width=yearstep, net=True,
             markerfacecolor=(1,1,1,0.8), markersize=4.5)
-        eax['CO2 [MMT]'].axhline(0, c='k', ls=':', lw=0.75)
+        eax['CO2 [MMT/y]'].axhline(0, c='k', ls=':', lw=0.75)
 
         plt.draw()
         for a in eax:
@@ -7169,3 +7169,21 @@ def validate_regional_capacity(
     reeds.plots.trim_subplots(ax, nrows, ncols, len(rs))
     reeds.plots.despine(ax)
     return f, ax, dictout
+
+
+def get_state_subplots(layout:Literal['alpha','geo']='geo') -> pd.DataFrame:
+    """
+    Generate a mapping from state abbreviations to (row, col) according to the specified layout:
+        alpha: Sort states alphabetically (top left to bottom right) in 6 rows and 8 columns
+        geo: Sort states pseudo-geographically in 6 rows and 11 columns
+    """
+    fpath = Path(reeds.io.reeds_path, 'postprocessing', 'plots', 'state_subplots.csv')
+    state_subplots = (
+        pd.read_csv(fpath, index_col=[0,1], header=0)
+        .loc[layout]
+        .stack().dropna()
+        .rename_axis(['row','col']).rename('state').reset_index().set_index('state')
+        .astype({'row':int, 'col':int})
+    )
+    state_subplots['ax'] = state_subplots[['row','col']].apply(lambda row: tuple(row), axis=1)
+    return state_subplots
