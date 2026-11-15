@@ -29,6 +29,9 @@ epopt = 1e-6
 *** memoryemphasis (boolean): reduces use of memory but writes TBs of files to disk
 memoryemphasis 0
 
+*** predual (integer) [default = 0]: 0 automatic, 1 gives dual to optimizer, -1 does not give dual to optimizer
+predual = -1
+
 *** epmrk (float): Markowitz pivot tolerance
 *epmrk = 0.1
 
