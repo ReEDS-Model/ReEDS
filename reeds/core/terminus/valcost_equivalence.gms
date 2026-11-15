@@ -153,6 +153,9 @@ vc_ratio_energy(i,v,r,t)$[vc_new(i,v,r,t)$CAP_ENERGY.l(i,v,r,t)] =
 * plus lambda_E times this gap. For a battery CAP_ENERGY enters one operating row,
 * eq_storage_duration, at every rep and stress hour, plus eq_cap_sdbin_energy_balance under the
 * capacity credit formulation, so lambda_E is read off those and lambda_P never has to be listed.
+* With inter-day linkage (storage_interday), eq_storage_duration covers stress hours only, and at
+* rep periods CAP_ENERGY instead enters eq_storage_interday_max_level_start and _end, once per actual
+* period, so those two rows carry the rep-period lambda_E there.
 parameter vc_energy_gap(i,v,r,t) "INV_ENERGY - INV*CAP_ENERGY/CAP of the new vintage, MWh" ;
 vc_energy_gap(i,v,r,t)$[vc_new(i,v,r,t)$battery(i)] =
     INV_ENERGY.l(i,v,r,t) - vc_ratio(i,v,r,t) * CAP_ENERGY.l(i,v,r,t) ;
@@ -276,8 +279,11 @@ valcost('val_load',i,r,t)$sum{v, vc_new(i,v,r,t)} =
 valcost('val_load',i,r,t)$[sum{v, vc_new(i,v,r,t)}$battery(i)] =
     valcost('val_load',i,r,t)
   + (1 / cost_scale) * (1 / pvf_onm(t)) *
-    sum{(v,h)$[vc_new(i,v,r,t)$h_t(h,t)$(not h_stress_t(h,t))],
-        vc_energy_gap(i,v,r,t) * eq_storage_duration.m(i,v,r,h,t) } ;
+    sum{v$vc_new(i,v,r,t), vc_energy_gap(i,v,r,t) * (
+        sum{h$[h_t(h,t)$(not h_stress_t(h,t))], eq_storage_duration.m(i,v,r,h,t) }
+      + sum{allszn$numpartitions(allszn),
+            eq_storage_interday_max_level_start.m(i,v,r,allszn,t)
+          + eq_storage_interday_max_level_end.m(i,v,r,allszn,t) }$storage_interday(i) ) } ;
 
 valcost('val_resmarg',i,r,t)$[sum{v, vc_new(i,v,r,t)}$(Sw_PRM_CapCredit=0)] =
     (1 / cost_scale) * (1 / pvf_onm(t)) *
