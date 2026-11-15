@@ -40,6 +40,7 @@ storage_startcost_scenario = 'battery_sc3' #Scenario in the scenarios file that 
 storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Storage is built there without forcing, and it is drawn against the core storage run in its own comparison figure, with the storage dollar and factor grids also drawn for it. Skipped if absent.
 storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
 storage_duration_scenarios = {'battery_4h': 4, 'battery_8h': 8} #Scenarios in the scenarios file that rerun the storage forcing case with new battery builds fixed at this duration in hours (GSw_BatteryDuration) rather than chosen by the model. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and each drawn against the core storage run in its own comparison figure, skipped if absent.
+storage_interday_scenarios = {'battery_interday': 'battery', 'battery_interday_4h': 'battery_4h'} #Scenarios in the scenarios file that rerun a storage case with inter-day storage linkage (GSw_InterDayLinkage=1), each mapped to the run it repeats, which it is drawn against in its own comparison figure. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure, skipped if absent. A run listed in storage_duration_scenarios is labelled with its fixed duration.
 storage_share_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
 regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
 cc_scenario_min_new_gw = 1.0 #In the all-scenario capacity-credit figure, drop a year where the tech added less than this many GW. In the thermal-forced runs storage adds a few hundred MW in some years, and the credit of so little capacity swings between 0.75 and 0.98 on which one or two regions happened to build.
@@ -936,7 +937,7 @@ def capacity_credit_by_scenario(techs=None):
             continue
         for _, sc in scen.iterrows():
             if sc['name'] in (storage_formulation_scenario, storage_startcost_scenario,
-                              *storage_duration_scenarios):
+                              *storage_duration_scenarios, *storage_interday_scenarios):
                 continue  #a storage sensitivity, compared in its own figure
             try:
                 credit = new_build_capacity_credit(sc['path'], prefix)
@@ -1636,8 +1637,9 @@ def plot_grouped_vcf_grid(run_dir, valcostfac_core_path, output_path, tech='Batt
 
 
 def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label, base_label,
-                             tech='Battery', perkw=False):
-    """The core storage run (drawn as base_label) against another run (scenario, drawn as label),
+                             tech='Battery', perkw=False, base_scenario=None):
+    """The core storage run, or base_scenario if given, (drawn as base_label) against another run
+    (scenario, drawn as label),
     per MWh against market share, or with perkw, per kW against installed capacity as a share of
     peak load, the natural axis there since market share is discharge, which the per-kW versions
     leave out. The top row is value factor, cost factor, value-cost factor and capacity credit; the
@@ -1657,10 +1659,13 @@ def plot_storage_sensitivity(valcostfac_core_path, output_path, scenario, label,
     base = core.loc[core['tech'] == tech, 'scenario']
     if base.empty or scenario not in set(full['scenario']):
         return None, pd.DataFrame()
+    base_scen = base_scenario or base.iloc[0]
+    if base_scen not in set(full['scenario']):
+        return None, pd.DataFrame()
     from reeds_vs_rev import scenarios_path
     paths = pd.read_csv(scenarios_path).set_index('name')['path']
     prefix = avail_basis_prefix.get(tech, tech.lower())
-    series = [(base.iloc[0], base_label, '#2A6F8E', 'o', '-'),
+    series = [(base_scen, base_label, '#2A6F8E', 'o', '-'),
               (scenario, label, '#C0392B', 's', '--')]
     rows = []
     for scen, label, *_ in series:
@@ -2749,20 +2754,28 @@ def make_figs(valcostfac_core_path, output_dir=None):
                         tech=tech, prefix=prefix, x=x)
                     if fig_rcomp is not None:
                         plt.close(fig_rcomp)
-                for sens, label, base_label, name in [
+                interday_runs = []
+                for s, b in storage_interday_scenarios.items():
+                    h = storage_duration_scenarios.get(b)
+                    dur = f'Fixed {h}-hour duration' if h else 'Model-chosen duration'
+                    interday_runs.append((s, f'{dur}, inter-day linkage',
+                                          f'{dur}, no inter-day linkage',
+                                          f'interday{h}h' if h else 'interday', b))
+                for sens, label, base_label, name, base_scen in [
                         (storage_formulation_scenario, 'Capacity-credit formulation',
-                         'Stress periods (default)', 'formulation'),
+                         'Stress periods (default)', 'formulation', None),
                         (storage_startcost_scenario, 'No gas-CC start costs',
-                         'Gas-CC start costs (default)', 'startcost'),
+                         'Gas-CC start costs (default)', 'startcost', None),
                         (storage_pv_scenario, 'PV forcing run, storage not forced',
-                         'Storage forcing run (default)', 'pv'),
+                         'Storage forcing run (default)', 'pv', None),
                         *[(s, f'Fixed {h}-hour duration', 'Model-chosen duration (default)',
-                           f'duration{h}h') for s, h in storage_duration_scenarios.items()]]:
+                           f'duration{h}h', None) for s, h in storage_duration_scenarios.items()],
+                        *interday_runs]:
                     for perkw, sfx in [(False, '_permwh'), (True, '_perkw')]:
                         fig_sens, sens_tab = plot_storage_sensitivity(
                             valcostfac_core_path,
                             os.path.join(output_dir, f'plcoe_pitch_storage_{name}{sfx}.png'), sens,
-                            label, base_label, tech=tech, perkw=perkw)
+                            label, base_label, tech=tech, perkw=perkw, base_scenario=base_scen)
                         if fig_sens is not None:
                             plt.close(fig_sens)
                             sens_tab.to_csv(
@@ -2784,7 +2797,8 @@ def make_figs(valcostfac_core_path, output_dir=None):
                                           ('startcost_', storage_startcost_scenario),
                                           ('pv_', storage_pv_scenario),
                                           *[(f'duration{h}h_', s) for s, h in
-                                            storage_duration_scenarios.items()]]:
+                                            storage_duration_scenarios.items()],
+                                          *[(f'{name}_', s) for s, *_, name, _ in interday_runs]]:
                         d_run = full[(full['tech'] == tech) & (full['year'] >= start_year)
                                      & (full['scenario'] == scen)]
                         if not d_run.empty:

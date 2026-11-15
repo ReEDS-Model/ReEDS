@@ -10,3 +10,5 @@ battery_cc,/data/shared/projects/mmowers/ReEDS/runs/vcf5_battery_cc
 battery_sc3,/data/shared/projects/mmowers/ReEDS/runs/vcf5_battery_sc3
 battery_4h,/data/shared/projects/mmowers/ReEDS/runs/vcf6_battery_4h
 battery_8h,/data/shared/projects/mmowers/ReEDS/runs/vcf6_battery_8h
+battery_interday,/data/shared/projects/mmowers/ReEDS/runs/vcf6_battery_interday
+battery_interday_4h,/data/shared/projects/mmowers/ReEDS/runs/vcf6_battery_interday_4h
