@@ -813,24 +813,28 @@ def calc_ng_crf_penalty_st(inputs_case, years, financials_sys, sw):
 
     # Years when retirements are forced, and the model's active year range
     forced_years = ng_st_forced['*t'].astype(int).unique()
-    years_arr = np.asarray([y for y in years if int(sw['startyear']) <= y <= int(sw['endyear'])])
+    modeled_years = (
+        pd.read_csv(os.path.join(inputs_case, 'modeledyears.csv')).columns.astype(int).values
+    )
 
     # Real discount rate and full-life CRF for each year (the baseline)
-    d_real_arr  = financials_sys.set_index('t')['d_real'].reindex(years_arr).values
-    base_crf_arr = np.array([calc_crf(d, sw['sys_eval_years']) for d in d_real_arr])
+    d_real  = financials_sys.set_index('t')['d_real'].reindex(modeled_years).values
+    base_crf= np.array([calc_crf(d, sw['sys_eval_years']) for d in d_real])
 
     # How many years remain between each build year t and each forced retirement year
-    # shape: (len(years_arr), len(forced_years))
-    diff  = forced_years[None, :] - years_arr[:, None]
+
+    diff  = forced_years[None, :] - modeled_years[:, None]
     # Effective remaining life: at least 1 year, at most the full evaluation period
     n_eff = np.clip(diff, 1, sw['sys_eval_years'])
 
     # CRF over the truncated life, then normalize by the full-life baseline
-    crf_vals     = np.vectorize(calc_crf)(d_real_arr[:, None], n_eff)
-    value_matrix = np.where(diff <= 0, 100.0, crf_vals / base_crf_arr[:, None])
+    crf_vals     = np.vectorize(calc_crf)(d_real[:, None], n_eff)
+
+    # 100 = prohibitive cost multiplier that blocks new NG builds in and after the forced retirement year
+    value_matrix = np.where(diff <= 0, 100.0, crf_vals / base_crf[:, None])
 
     # Wrap results in a DataFrame indexed by build year, columns = forced years
-    crf_table = pd.DataFrame(value_matrix, index=years_arr,
+    crf_table = pd.DataFrame(value_matrix, index=modeled_years,
                              columns=forced_years, dtype=float)
     crf_table.index.name = 't'
 
