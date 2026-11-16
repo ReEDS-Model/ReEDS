@@ -39,6 +39,7 @@ GSw_PRM_StressThresholdLOLD,transgrp_0.1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 GSw_PRM_StressThresholdMetrics,NEUE/LOLD,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 GSw_PRM_StressThresholdNEUE,transgrp_1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 GSw_QueueConstraintYears,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GSw_QueueExemptionAero,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 GSw_ReducedResource,0,,,,,,,,,,,,,,,,,,,1,,,,,1,,,,,,,,,,,,,,,,,,,,,1,,,,,1,,,,,,
 GSw_RetireYears_Thermal,0,,,,,,,,30,-30,,,,,,,,,,,,,,,,30,,,,,,30,30,30,30,30,30,-30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30
 GSw_SitingUPV,reference,,,,,,,,,,,,,,,,,,,limited,,,,,limited,,,,,,,,,,,,,,,,,,,,,limited,,,,,limited,,,,,,

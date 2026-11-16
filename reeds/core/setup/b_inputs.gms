@@ -766,6 +766,10 @@ tg_i('wind-ofs',i)$ofswind(i) = yes ;
 tg_i('pv',i)$[(pv(i) or pvb(i))$(not distpv(i))] = yes ;
 tg_i('csp',i)$csp(i) = yes ;
 tg_i('gas',i)$gas(i) = yes ;
+*option to exclude aeroderivatives from the queue constraint
+if(Sw_QueueExemptionAero = 1, 
+  tg_i('gas',i)$sameas(i,'Gas-CT_aero') = no 
+) ;
 tg_i('coal',i)$coal(i) = yes ;
 tg_i('nuclear',i)$nuclear(i) = yes ;
 tg_i('battery',i)$battery(i) = yes ;
