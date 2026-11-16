@@ -238,19 +238,19 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     parser.add_argument("case", help="ReEDS scenario name")
     parser.add_argument('--csv', '-c', action='store_true', help='write csv files')
     parser.add_argument('--xlsx', '-x', action='store_true', help='write xlsx file')
-    parser.add_argument('--stochastic', '-s', action='store_true', help='keep s index')
+    parser.add_argument('--keep_scenario_index', '-s', action='store_true', help='keep s index')
 
     args = parser.parse_args()
     case = args.case
     write_csv = args.csv
     write_xlsx = args.xlsx
-    stochastic = args.stochastic
+    keep_scenario_index = args.keep_scenario_index
 
     # #%% Inputs for debugging
     # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20261023_stochasticM2_Stochastic')
     # write_csv = True
     # write_xlsx = False
-    # stochastic = False
+    # keep_scenario_index = False
 
     #%% Set up logger
     reeds_path = os.path.abspath(os.path.dirname(__file__))
@@ -259,7 +259,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     print("Starting report_dump.py")
 
     # %%### Parse inputs and get switches
-    if stochastic:
+    if keep_scenario_index:
         outputs_path = Path(case, 'outputs', 'outputs_stochastic.h5')
     else:
         outputs_path = Path(case, 'outputs', 'outputs.h5')
@@ -305,7 +305,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         dictout = {key: df.drop(columns='s', errors='ignore') for key, df in dictin.items()}
     ## If we're using stochastic optimization but dropping the s index, take the
     ## probability-weighted average over scenarios
-    elif not stochastic:
+    elif not keep_scenario_index:
         prob = reeds.io.read_input(case, 'scenario_probability').set_index('s').squeeze(1)
         dictout = {}
         for key, df in dictin.items():
