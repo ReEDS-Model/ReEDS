@@ -77,7 +77,7 @@ function parse_commandline()
         "--write_shortfall_samples_totals"
             help = "Write per-sample total shortfall by region over the full PRAS time period"
             arg_type = Int
-            default = 0
+            default = 1
             required = false
         "--write_availability_samples"
             help = "Write the sample-level generator and storage availability"
@@ -344,7 +344,6 @@ function run_pras(pras_system_path::String, args::Dict)
         totalsfile = replace(outfile, ".h5"=>"-shortfall_totals_by_sample.h5")
         HDF5.h5open(totalsfile, "w") do f
             f["sample", compress=4] = collect(1:args["samples"])
-            f["USA", compress=4] = Float64.(sf.shortfall_samples)
             for r in regions
                 i_r = findfirst(==(r), region_names)
                 f["$r", compress=4] = Float64.(sf.shortfall_region_samples[i_r, :])
