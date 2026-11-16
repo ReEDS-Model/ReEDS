@@ -780,7 +780,7 @@ def inv_param_exporter(
     reeds.io.write_to_inputs_h5(
         df_param, file_name, inputs_case, gamstype='parameter', units=units, comment=comment,
     )
-def calc_ng_crf_penalty_st(inputs_case, years, financials_sys, sw):
+def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     """
     Compute the CRF-based cost penalty for natural gas plants in states with
     forced retirement policies.
@@ -813,13 +813,11 @@ def calc_ng_crf_penalty_st(inputs_case, years, financials_sys, sw):
 
     # Years when retirements are forced, and the model's active year range
     forced_years = ng_st_forced['*t'].astype(int).unique()
-    modeled_years = (
-        pd.read_csv(os.path.join(inputs_case, 'modeledyears.csv')).columns.astype(int).values
-    )
 
     # Real discount rate and full-life CRF for each year (the baseline)
-    d_real  = financials_sys.set_index('t')['d_real'].reindex(modeled_years).values
-    base_crf= np.array([calc_crf(d, sw['sys_eval_years']) for d in d_real])
+    fin = financials_sys.set_index('t').reindex(modeled_years)
+    d_real = fin['d_real'].values
+    base_crf = fin['crf'].values
 
     # How many years remain between each build year t and each forced retirement year
 
