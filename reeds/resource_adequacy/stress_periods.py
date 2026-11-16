@@ -544,15 +544,18 @@ def get_stress_periods(case, sw, t, iteration):
             if dictout is not None:
                 _failed[stress_metric, criterion] = dictout['failed']
                 _high_stress_periods[stress_metric, criterion] = dictout['high_stress_periods']
-                _shoulder_periods[stress_metric, criterion] = dictout['shoulder_periods']
+                if len(dictout['shoulder_periods']):
+                    _shoulder_periods[stress_metric, criterion] = dictout['shoulder_periods']
 
     ### Get lists of stress periods: new (added this iteration) and all
     if len(_failed):
         failed = pd.concat(_failed, names=['stress_metric', 'criterion'])
         high_stress_periods = pd.concat(_high_stress_periods)
-        shoulder_periods = pd.concat(_shoulder_periods)
+        _new_stress_periods = {'stress':high_stress_periods}
+        if len(_shoulder_periods):
+            _new_stress_periods['shoulder'] = pd.concat(_shoulder_periods)
         new_stress_periods = pd.concat(
-            {'stress':high_stress_periods, 'shoulder':shoulder_periods},
+            _new_stress_periods,
             names=['periodtype','metric','criterion','num'],
         ).reset_index()
         print('All identified stress periods:')

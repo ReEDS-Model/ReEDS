@@ -130,7 +130,7 @@ def agg_supplycurve(
         scfile=scpath,
         case=os.path.dirname(os.path.normpath(inputs_case)),
         skip_if_complete=True,
-    ).reset_index().drop(columns=['FIPS','cf','index'], errors='ignore')
+    ).reset_index().drop(columns=['FIPS'], errors='ignore')
     ## Convert dollar year and recalculate total cost
     transcost_cols = [c for c in dfin if 'cost' in c]
     dfin.loc[:, transcost_cols] *= deflate['interconnection']
@@ -260,7 +260,7 @@ def main(
 
     for s in wind_types:
         windin[s], wind[s] = agg_supplycurve(
-            scpath=os.path.join(inputs_case,f'supplycurve_wind-{s}.csv'),
+            scpath=Path(inputs_case, f'supplycurve_init_wind-{s}.csv'),
             inputs_case=inputs_case,
             numbins_tech=numbins[f'wind-{s}'],
             deflate=deflate,
@@ -346,22 +346,27 @@ def main(
     alloutcap_list.append(windcap)
 
     if write:
-        ## Exogenous wind capacity and build year
-        for s in wind_types:
-            exog_wind_rsc, exog_onlineyear = get_exog_outputs(
-                inputs_case, tech=f'wind-{s}', dfsc=wind[s]
-            )
-            exog_wind_rsc.round(3).to_csv(
-                os.path.join(inputs_case, f"exog_wind_{s}_rsc.csv")
-            )
-            exog_onlineyear_list.append(exog_onlineyear)
+        ## Exogenous wind capacity and build year. GAMS loads both capacity files
+        ## regardless of GSw_OfsWind, so write an empty offshore file when offshore wind is off.
+        for s in ["ons", "ofs"]:
+            fpath = Path(inputs_case, f'exog_wind_{s}_rsc.csv')
+            if s in wind:
+                exog_wind_rsc, exog_onlineyear = get_exog_outputs(
+                    inputs_case, tech=f'wind-{s}', dfsc=wind[s]
+                )
+                exog_wind_rsc.round(3).to_csv(fpath)
+                exog_onlineyear_list.append(exog_onlineyear)
+                windin[s].round(3).to_csv(Path(inputs_case, f'supplycurve_wind-{s}.csv'))
+            else:
+                exog_wind_rsc = pd.DataFrame(columns=["*tech", "region", "rscbin", "year", "MW"])
+                exog_wind_rsc.to_csv(fpath, index=False)
 
     # %%###############
     #    -- PV --    #
     ##################
 
     upvin, upv = agg_supplycurve(
-        scpath=os.path.join(inputs_case, 'supplycurve_upv.csv'),
+        scpath=Path(inputs_case, 'supplycurve_init_upv.csv'),
         inputs_case=inputs_case,
         numbins_tech=numbins['upv'],
         deflate=deflate,
@@ -397,6 +402,7 @@ def main(
         )
         exog_upv_rsc.round(3).to_csv(os.path.join(inputs_case, "exog_upv_rsc.csv"))
         exog_onlineyear_list.append(exog_onlineyear)
+        upvin.round(3).to_csv(Path(inputs_case, 'supplycurve_upv.csv'))
 
     ### Normalize formatting
     upv = upv.reset_index()
@@ -443,7 +449,7 @@ def main(
 
     if int(sw["GSw_CSP"]):
         _, csp = agg_supplycurve(
-            scpath=os.path.join(inputs_case, 'supplycurve_csp.csv'),
+            scpath=Path(inputs_case, 'supplycurve_init_csp.csv'),
             inputs_case=inputs_case,
             numbins_tech=numbins['csp'],
             deflate=deflate,
@@ -522,7 +528,7 @@ def main(
             geoin[s], geo[s] = agg_supplycurve(
                 scpath=os.path.join(
                     inputs_case,
-                    f'supplycurve_{s}.csv'
+                    f'supplycurve_init_{s}.csv'
                 ),
                 numbins_tech=numbins[s],
                 inputs_case=inputs_case,
@@ -535,6 +541,8 @@ def main(
                 .assign(rscbin="bin" + geo[s].reset_index()["bin"].astype(str))
                 .rename(columns={"region": "r"})
             )
+            if write:
+                geoin[s].round(3).to_csv(Path(inputs_case, f'supplycurve_{s}.csv'))
 
         geoall = (
             pd.concat(geo, axis=0)
@@ -803,7 +811,7 @@ def main(
     '''
     if int(sw["GSw_Storage"]):
         _, psh = agg_supplycurve(
-            scpath = os.path.join(inputs_case, 'supplycurve_psh.csv'),
+            scpath = os.path.join(inputs_case, 'supplycurve_init_psh.csv'),
             inputs_case=inputs_case,
             numbins_tech=numbins['psh'],
             bin_method='equal_cap_cut',
