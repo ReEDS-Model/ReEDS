@@ -1790,6 +1790,19 @@ tax_expenditure_ptc(t) = systemcost("op_ptc_payments_negative",t)
 raw_inv_cost(t) = sum{sys_costs_inv, systemcost(sys_costs_inv,t) } ;
 raw_op_cost(t) = sum{sys_costs_op, systemcost(sys_costs_op,t) } ;
 
+*=========================
+* Interconnection queue
+*=========================
+
+* Capacity above the queue limit that is penalized in each modeled year
+* (the increase in CAP_ABOVE_LIM relative to the previous modeled year)
+cap_above_limit_penalized(tg,r,t)$tmodel_new(t) = CAP_ABOVE_LIM_INC.l(tg,r,t) ;
+
+* Queue violation penalty [2004$, model-year value as for investment costs in systemcost].
+* It is a modeling penalty rather than a system cost, so (like the growth penalties)
+* it is not included in systemcost and is instead removed from the objective in error_check.
+queue_penalty_cost(tg,r,t)$tmodel_new(t) = cap_penalty(tg) * cap_above_limit_penalized(tg,r,t) ;
+
 *======================
 * Error Check
 *======================
