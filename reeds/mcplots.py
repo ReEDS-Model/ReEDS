@@ -1,0 +1,1155 @@
+import sys
+import shapely
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from pathlib import Path
+import matplotlib as mpl
+from typing import Literal
+import matplotlib.pyplot as plt
+from matplotlib import patheffects as pe
+from tqdm import tqdm
+sys.path.append(str(Path(__file__).parent.parent))
+import reeds
+sys.path.append(str(Path(reeds.io.reeds_path, 'postprocessing', 'bokehpivot')))
+from defaults import DEFAULT_DOLLAR_YEAR
+
+
+#   #### ##    ## ########  ##     ## ########  ######  
+#    ##  ###   ## ##     ## ##     ##    ##    ##    ## 
+#    ##  ####  ## ##     ## ##     ##    ##    ##       
+#    ##  ## ## ## ########  ##     ##    ##     ######  
+#    ##  ##  #### ##        ##     ##    ##          ## 
+#    ##  ##   ### ##        ##     ##    ##    ##    ## 
+#   #### ##    ## ##         #######     ##     ######  
+
+
+def plot_demand_lines(
+    plotcases:list,
+    level='st',
+    tstart=None,
+    scale=1,
+    color='C7',
+    alpha=0.5,
+    bins=21,
+):
+    """
+    Sum of input electricity demand
+    Lines with vertical histograms at the end for each region in level [TWh]
+    """
+    ## Parse inputs
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Shared inputs
+    hierarchy = plotcases[0].hierarchy
+    r2region = hierarchy[level]
+    regions = sorted(hierarchy[level].unique())
+    if level == 'st':
+        subplots = reeds.reedsplots.get_state_subplots()
+        nrows = subplots.row.max() + 1
+        ncols = subplots.col.max() + 1
+        coords = subplots['ax']
+    else:
+        nrows, ncols, coords = reeds.plots.get_coordinates(regions)
+        subplots = pd.DataFrame(coords, index=['row','col']).T
+        subplots['ax'] = subplots.apply(lambda row: tuple(row), axis=1)
+    dfplot = pd.concat({
+        i: (
+            case.demand_rt
+            .rename(r2region, axis=0, level='r')
+            .groupby(['r','t']).sum()
+        )
+        for i, case in enumerate(plotcases)
+    }, axis=1).loc[:, tstart:, :]
+
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*scale, nrows*scale*0.9), sharex=True,
+        gridspec_kw={'wspace':0.6},
+    )
+    for r in regions:
+        _ax = ax[coords[r]]
+        df = dfplot.loc[r]
+        ## Background
+        _ax.fill_between(
+            df.index, df.max(axis=1), df.min(axis=1),
+            color=color, alpha=alpha, lw=0,
+        )
+        ## Lines
+        df.plot(ax=_ax, legend=False, lw=0.5, color='k', alpha=0.25)
+        ## Histogram
+        reeds.plots.hist_last(
+            _ax, df, color=color, bins=bins, alpha=alpha,
+            xpad=1, xscale=4,
+        )
+        ## Formatting
+        _ax.annotate(
+            r, (0.05, 0.05), xycoords='axes fraction', va='bottom', weight='bold',
+        )
+        _ax.set_xlabel(None)
+        _ax.set_ylim(0)
+    ## Formatting
+    _ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    _ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    ax_bottomleft = ax[subplots.loc[regions].sort_values(['row','col']).ax.iloc[-1]]
+    _ax = ax[subplots.loc['OR','ax']] if level == 'st' else ax_bottomleft
+    _ax.set_ylabel('Electricity demand [TWh]')
+    reeds.plots.trim_empty_subplots(ax)
+    reeds.plots.despine(ax)
+    plt.draw()
+    reeds.plots.shorten_years(_ax)
+    return f, ax, dfplot
+
+
+def plot_fuelprice_lines(
+    plotcases:list,
+    fuel:Literal['gas','coal','uranium','h2']='gas',
+    tstart=None,
+    color='C7',
+    bins=21,
+    alpha=0.5,
+):
+    """
+    All-region unweighted average fuel price
+    Lines with vertical historgram at end [$/MMBtu]
+    """
+    ## Parse inputs
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Data
+    colname = {'gas':'naturalgas', 'h2':'h2fuel'}
+    dfplot = pd.concat({
+        i: case.fprice.groupby('t')[colname.get(fuel,fuel)].mean()
+        for i, case in enumerate(plotcases)
+    }, axis=1).loc[tstart:]
+
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(figsize=(2, 3.75))
+    ## Background
+    ax.fill_between(
+        dfplot.index, dfplot.max(axis=1), dfplot.min(axis=1),
+        color=color, alpha=alpha, lw=0,
+    )
+    ## Lines
+    dfplot.plot(
+        ax=ax, legend=False,
+        lw=0.5, color='k', alpha=0.25,
+    )
+    ## Histogram
+    reeds.plots.hist_last(
+        ax, dfplot, color=color, bins=bins, alpha=alpha,
+        xpad=1, xscale=4,
+    )
+    ## Formatting
+    ax.set_ylim(0)
+    ax.set_ylabel(f'{fuel.title()} price [$/MMBtu]')
+    ax.set_xlabel(None)
+    ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_capcost_lines(
+    plotcases:list,
+    techs=['UPV','Onshore Wind','Battery'],
+    tstart=None,
+    bins=31,
+    alpha=0.5,
+):
+    """
+    Capex cost for techs, plotted as lines with vertical histogram at end [$/kW]
+
+    Args:
+        plotcases: List of ReEDScase objects
+        techs: List or dict.
+            If a list, a list of tech names matching
+                postprocessing/bokehpivot/in/reeds2/tech_map.csv.
+                Only works for techs that have the same cost for every resource class.
+            If a dict, must have (nice label name) keys
+                and (explicit GAMS tech names, including resource class as appropriate) values.
+                Used if you want to break out fixed and floating offshore wind, for example.
+        tstart: First year to plot (int). If None, uses the last model year before GSw_StartMarkets
+        bins (int): Number of histogram bins
+        alpha (float): Color alpha for filled area and histograms
+    """
+    ## Parse inputs
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Shared inputs
+    colors_tech = reeds.io.get_plot_formatting()['tech_color'].squeeze(1)
+    inflatable = reeds.io.get_inflatable()
+    dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+    dollaryear_output = DEFAULT_DOLLAR_YEAR
+    inflator = inflatable[dollaryear_reeds, dollaryear_output]
+    ## Data
+    dfplot = pd.concat(
+        {
+            i: case.capcost.loc[tstart:].stack('i') * inflator
+            for i, case in enumerate(plotcases)
+        },
+        axis=1, names=['s'],
+    ).reset_index()
+    if isinstance(techs, list):
+        dfplot.i = reeds.reedsplots.simplify_techs(dfplot.i)
+    elif isinstance(techs, dict):
+        rename = {v:k for k,v in techs.items()}
+        dfplot.i = dfplot.i.replace(rename)
+        techs = list(techs.keys())
+    else:
+        raise NotImplementedError(f'{techs=} ({type(techs)})')
+    dfplot = dfplot.drop_duplicates().set_index(['i','t']).loc[techs]
+
+    ### Plot it
+    ncols = len(techs)
+    plt.close()
+    f,ax = plt.subplots(1, ncols, sharex=True, sharey=True, figsize=(2*ncols, 3.75))
+    for col, tech in enumerate(techs):
+        _ax = ax[col]
+        df = dfplot.loc[tech]
+        ## Background
+        _ax.fill_between(
+            df.index, df.max(axis=1), df.min(axis=1),
+            color=colors_tech[tech], alpha=alpha, lw=0,
+        )
+        ## Lines
+        df.plot(
+            ax=_ax, legend=False,
+            lw=0.5, color='k', alpha=0.1,
+        )
+        ## Histogram
+        reeds.plots.hist_last(
+            _ax, df, color=colors_tech[tech], bins=bins, alpha=alpha,
+            xpad=1, xscale=4,
+        )
+        ## Formatting
+        _ax.set_title(tech, color=colors_tech[tech], weight='bold')
+        _ax.set_xlabel(None)
+
+    ax[0].xaxis.set_major_locator(mpl.ticker.MultipleLocator(10))
+    ax[0].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    ax[0].set_ylabel('Capex cost [$/kW]')
+    ax[0].set_ylim(0)
+    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(500))
+    ax[0].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(5))
+    reeds.plots.despine(ax)
+    plt.draw()
+    reeds.plots.shorten_years(ax[0])
+    return f, ax, dfplot
+
+
+def map_supplycurve_diff(
+    plotcases,
+    casebase,
+    tech='upv',
+    dfmap=None,
+    cmap=plt.cm.RdBu_r,
+):
+    """
+    Difference map [GW] between sample supply curves and casebase
+    """
+    if dfmap is None:
+        dfmap = plotcases[0].dfmap
+    dfplot = pd.concat(
+        {i: case.supplycurve for i, case in enumerate(plotcases)},
+        axis=1,
+    )
+    samples = dfplot.columns.values
+    dfplot['geometry'] = dfplot.index.get_level_values('r').map(dfmap['r'].geometry)
+    dfplot = gpd.GeoDataFrame(dfplot, crs=dfmap['r'].crs)
+
+    ### Get coordinates
+    nrows, ncols, coords = reeds.plots.get_coordinates(samples, aspect=1.2)
+    scale = 1
+
+    bounds = dfmap['country'].bounds.squeeze(0)
+    xspan = bounds.maxx - bounds.minx
+    yspan = bounds.maxy - bounds.miny
+
+    ### Plot relative difference
+    dfstates = dfmap['st'].copy()
+    dfstates.geometry = dfstates.simplify(1000)
+
+    central = casebase.supplycurve.loc[tech].rename('val')
+    geom = dfmap['r'].geometry.simplify(1000)
+    vmin, vmax = -100, 100
+
+    plt.close()
+    f,ax = plt.subplots(figsize=(ncols*scale, nrows*scale*0.8))
+    for sample in tqdm(samples):
+        row, col = coords[sample]
+        ## Data
+        df = dfplot.loc[tech, [sample, 'geometry']].rename(columns={sample:'val'}).copy()
+        df.val = (df.val / central - 1) * 100
+        df.geometry = geom.map(
+            lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
+        )
+        df.plot(ax=ax, column='val', cmap=cmap, vmin=vmin, vmax=vmax)
+        ## States
+        _dfstates = dfstates.copy()
+        _dfstates.geometry = _dfstates.geometry.map(
+            lambda x: shapely.affinity.translate(x, xoff=xspan*col, yoff=-yspan*row)
+        )
+        _dfstates.plot(ax=ax, facecolor='none', edgecolor='k', lw=0.1)
+    ax.set_title(f'{tech} availability relative to central case')
+    ax.axis('off')
+    return f, ax, dfplot
+
+
+#    #######  ##     ## ######## ########  ##     ## ########  ######  
+#   ##     ## ##     ##    ##    ##     ## ##     ##    ##    ##    ## 
+#   ##     ## ##     ##    ##    ##     ## ##     ##    ##    ##       
+#   ##     ## ##     ##    ##    ########  ##     ##    ##     ######  
+#   ##     ## ##     ##    ##    ##        ##     ##    ##          ## 
+#   ##     ## ##     ##    ##    ##        ##     ##    ##    ##    ## 
+#    #######   #######     ##    ##         #######     ##     ######  
+
+def plot_cap_gen_hist(
+    cases,
+    casebase=None,
+    nicelabels=None,
+    colors=None,
+    t=None,
+    tstart=None,
+    techs=[
+        'UPV',
+        'Gas-CC',
+        'Onshore Wind',
+        'Gas-CT',
+        'Nuclear',
+        'Battery',
+        'Offshore Wind',
+        'Coal-CCS',
+        'Gas-CC-CCS',
+        'Coal',
+        'Nuclear-SMR',
+    ],
+    numbins=71,
+    plotwidth=2,
+    histwidth=None,
+    legend=False,
+):
+    """
+    Vertical histograms for generation capacity [GW] in final solve year
+    x axis = scenarios (sample groups)
+    subplots (columns) = technologies
+
+    Args:
+        cases: Dictionary of lists of ReEDScase objects with caseprefix keys
+        casebase: ReEDScase of base case (if not provided, the first sample is used)
+        nicelabels: Dictionary of caseprefix keys to nice labels used in plot
+        colors: Dictionary of nice label keys to colors used in plot
+        t: Year to plot (int). If None, uses the final model year
+        tstart: First year to plot (int). If None, uses the last model year before GSw_StartMarkets
+        plotwidth: Subplot width [inches]
+        histwidth: Histogram width [inches]. If provided, overrides plotwidth.
+        techs: int or list of tech name strings.
+            If an int, plot the top {techs} techs by average capacity.
+            If a list of strings, must match postprocessing/tech_aggregation.csv.
+    """
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    if casebase is None:
+        casebase = cases[list(cases.keys())[0]][0]
+    if histwidth:
+        plotwidth = histwidth * len(cases)
+    if t is None:
+        t = casebase.tmodel_new.squeeze(1).max()
+    if tstart is None:
+        _years = casebase.tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(casebase.sw.GSw_StartMarkets)].max()
+    ## Get data
+    dictplot = {}
+    for caseprefix, plotcases in cases.items():
+        dictplot[caseprefix] = pd.concat({
+            i: case.cap.xs(t,0,'t').groupby('i').sum() / 1e3
+            for i, case in enumerate(plotcases)
+        }, axis=1)
+
+    dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
+    ## Simplify techs
+    dfplot.index = reeds.reedsplots.simplify_techs(dfplot.index)
+    dfplot = dfplot.groupby('i').sum()
+
+    dfstart = casebase.cap.xs(tstart,0,'t').groupby('i').sum() / 1e3
+    dfstart.index = reeds.reedsplots.simplify_techs(dfstart.index)
+    dfstart = dfstart.groupby('i').sum()
+
+    ## Take the top techs by capacity if desired
+    if isinstance(techs, int):
+        techs = dfplot.mean(axis=1).nlargest(techs).index.tolist()
+
+    ### Plot it
+    ymin = 0.
+    plottechs = [i for i in techs if i in dfplot.index]
+    ymax = dfplot.loc[plottechs].max().max()
+    bins = np.linspace(ymin, ymax, numbins)
+    nrows = 1
+    ncols = len(plottechs)
+
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, sharex='row', sharey='row', figsize=(plotwidth*ncols, 2.5),
+        gridspec_kw={'wspace':0.3},
+        dpi=300,
+    )
+    for col, tech in enumerate(plottechs):
+        _ax = ax[col]
+        _ax.set_title(tech, weight='bold', fontsize='x-large')
+        for x, caseprefix in enumerate(cases):
+            df = dfplot[caseprefix].loc[tech].fillna(0)
+            ## Histogram
+            hist_val, hist_y = np.histogram(df.values, bins=bins)
+            height = hist_y[1] - hist_y[0]
+            ax[col].barh(
+                y=hist_y[:-1],
+                width=(hist_val / max(hist_val) * 0.9),
+                height=height,
+                align='edge',
+                left=x,
+                color=colors[nicelabels[caseprefix]],
+            )
+        ## Starting capacity
+        ax[col].axhline(dfstart.get(tech,0), c='k', ls='--', lw=0.75)
+        ## Formatting
+        ax[col].set_xticks(range(len(cases)))
+        ax[col].set_xticklabels(
+            [nicelabels.get(caseprefix,caseprefix) for caseprefix in cases],
+            rotation=90, weight='bold',
+        )
+        colorlist = [colors[nicelabels[c]] for c in cases]
+        for x, xtick in enumerate(ax[col].get_xticklabels()):
+            xtick.set_color(colorlist[x])
+
+    ## Formatting
+    ax[0].set_ylabel(f'Capacity, {t} [GW]')
+    ax[0].set_ylim(0)
+    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(400))
+    ax[0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(100))
+    ax[0].set_xlim(-0.15, len(cases))
+    ## Legend
+    if legend:
+        handles = [
+            mpl.patches.Patch(
+                facecolor=colors[nicelabels[c]], edgecolor='none',
+                label=nicelabels.get(c,c)
+            )
+            for c in cases
+        ]
+        ax[-1].legend(
+            handles=handles, frameon=False, loc='upper left',
+            bbox_to_anchor=(1,1.1), fontsize='x-large',
+            handletextpad=0.3, handlelength=0.7,
+        )
+    reeds.plots.despine(ax)
+    return f, ax, dfplot.loc[plottechs]
+
+
+def plot_cap_gen_bar(
+    plotcases,
+    t=None,
+    scale=0.05,
+    barwidth=1,
+    sortby=None,
+    ymax=None,
+):
+    """
+    Capacity stacked bars [GW] by sample (x axis)
+    Args:
+        sortby: None to leave samples unsorted,
+            or a tech name string to sort by capacity of that tech,
+            or a list of tech name strings to sort by summed capacity of those techs
+    """
+    ## Parse inputs
+    if t is None:
+        t = plotcases[0].tmodel_new.squeeze(1).max()
+    ## Shared inputs
+    plot_settings = reeds.io.get_plot_formatting()
+    colors_tech = plot_settings['tech_color'].squeeze(1)
+    ## Data
+    dfin = pd.concat({
+        i: case.cap.xs(t,0,'t').groupby('i').sum()
+        for i, case in enumerate(plotcases)
+    }, axis=1)
+    dfin.index = reeds.reedsplots.simplify_techs(dfin.index)
+    dfin = dfin.groupby('i').sum().fillna(0) / 1e3
+
+    missing = [i for i in dfin.index if i not in colors_tech]
+    if len(missing):
+        print(f"missing colors: {', '.join(missing)}")
+    drop = ['Electrolyzer', 'Canadian Imports']
+    order = [c for c in colors_tech.index if (c in dfin.index) and (c not in drop)]
+    dfplot = dfin.loc[order].T
+    ## Get the order
+    if sortby is None:
+        order = dfplot.index
+        label = 'None'
+    elif isinstance(sortby, str):
+        order = dfplot.sort_values(sortby).index
+        label = sortby
+    elif isinstance(sortby, list):
+        order = dfplot[sortby].sum(axis=1).sort_values().index
+        label = ' + '.join([i.replace(' ','').replace('+','') for i in sortby])
+    else:
+        raise NotImplementedError(f'sortby={sortby}')
+    dfplot = dfplot.loc[order].reset_index(drop=True).copy()
+
+    ## Plot it
+    plt.close()
+    f,ax = plt.subplots(figsize=(scale*len(plotcases), 3.75))
+    reeds.plots.stackbar(df=dfplot, ax=ax, colors=colors_tech, width=barwidth, net=False)
+    ## Legend
+    handles = [
+        mpl.patches.Patch(facecolor=c, edgecolor='none', label=i)
+        for i,c in colors_tech.items() if i in dfplot
+    ]
+    _leg = ax.legend(
+        handles=handles[::-1],
+        loc='upper left', bbox_to_anchor=(1,1), frameon=False,
+        fontsize=11, labelspacing=0.0,
+        handletextpad=0.3, handlelength=0.7,
+    )
+    ## Formatting
+    ax.set_xlim(-0.5, len(dfplot)-0.5)
+    ax.set_ylabel(f"{t} capacity [GW]"+('\n'f'sorted by {label}' if sortby is not None else ''))
+    ax.set_xlabel(f'Sample number (n = {len(plotcases)})')
+    if ymax is not None:
+        ax.set_ylim(0, ymax)
+    ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_cap_gen_bar_states(
+    plotcases,
+    t=None,
+    barwidth=1,
+    scale=1.2,
+):
+    """Capacity stacked bars [GW] by sample (x axis) and state (subplots)"""
+    ## Parse inputs
+    if t is None:
+        t = plotcases[0].tmodel_new.squeeze(1).max()
+    ## Shared inputs
+    state_subplots = reeds.reedsplots.get_state_subplots()
+    hierarchy = plotcases[0].hierarchy
+    plot_settings = reeds.io.get_plot_formatting()
+    colors_tech = plot_settings['tech_color'].squeeze(1)
+    ## Data
+    dfplot = pd.concat(
+        {
+            i: (
+                case.cap.reset_index()
+                .assign(st=case.cap.index.get_level_values('r').map(hierarchy.st))
+                .loc[case.cap.index.get_level_values('t') == t]
+                .groupby(['st','i']).Value.sum().rename('GW') / 1e3
+            )
+            for i, case in enumerate(plotcases)
+        },
+        axis=1,
+    ).fillna(0).copy().reset_index()
+    dfplot.i = reeds.reedsplots.simplify_techs(dfplot.i)
+    dfplot = dfplot.groupby(['st','i']).sum()
+
+    missing = [i for i in dfplot.index.get_level_values('i').unique() if i not in colors_tech]
+    if len(missing):
+        print(f"missing colors: {', '.join(missing)}")
+
+    ## Plot it
+    nrows = state_subplots['row'].max() + 1
+    ncols = state_subplots['col'].max() + 1
+    states = dfplot.index.get_level_values('st').unique()
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*scale, nrows*scale),
+        gridspec_kw={'hspace':0.4, 'wspace':0.5},
+        sharex=True,
+    )
+    for state in states:
+        _ax = ax[state_subplots.loc[state,'ax']]
+        df = dfplot.loc[state].reindex(list(colors_tech.keys())).fillna(0).T.reset_index(drop=True)
+        df = df.reset_index(drop=True).copy()
+        reeds.plots.stackbar(df=df, ax=_ax, colors=colors_tech, width=barwidth, net=False)
+        ## Formatting
+        _ax.annotate(
+            state,
+            (0.05, 0.95), xycoords='axes fraction', ha='left', va='top',
+            color='k', fontsize='large',
+            path_effects=[pe.withStroke(linewidth=3.0, foreground='w', alpha=0.5)],
+            zorder=1e6,
+        )
+    ## Turn off unused axes
+    subplots_used = state_subplots['ax'].tolist()
+    for row in range(nrows):
+        for col in range(ncols):
+            if (row,col) not in subplots_used:
+                ax[row,col].axis('off')
+    ## Legend
+    handles = [
+        mpl.patches.Patch(facecolor=colors_tech[i], edgecolor='none', label=i)
+        for i in colors_tech if i in df
+    ]
+    _leg = ax[-1,-1].legend(
+        handles=handles[::-1],
+        loc='lower left', bbox_to_anchor=(-0.5,-0.2), frameon=False,
+        fontsize='large', labelspacing=0.3,
+        handletextpad=0.3, handlelength=0.7,
+    )
+    ## Formatting
+    ax_bottomleft = ax[state_subplots.loc[states].sort_values(['row','col']).ax.iloc[-1]]
+    _ax = ax[state_subplots.loc['TX','ax']] if 'TX' in states else ax_bottomleft
+    _ax.set_xlim(-0.5, len(df)-0.5)
+    _ax.set_xlabel(f'Sample number (n = {len(plotcases)})', ha='left', x=0, fontsize='xx-large')
+    _ax.set_xticks([])
+    _ax = ax[state_subplots.loc['OR','ax']] if 'OR' in states else ax_bottomleft
+    _ax.set_ylabel(f"{t} capacity [GW]", labelpad=15, fontsize='xx-large')
+    reeds.plots.trim_empty_subplots(ax)
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_cap_trans_hist(
+    cases,
+    casebase=None,
+    nicelabels=None,
+    colors=None,
+    level='transreg',
+    t=None,
+    tstart=None,
+    binstep=1,
+    plotwidth=1.45,
+    histwidth=None,
+    regioncolors=['k','0.7'],
+):
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    if casebase is None:
+        casebase = cases[list(cases.keys())[0]][0]
+    if histwidth:
+        plotwidth = histwidth * len(cases)
+    if t is None:
+        t = casebase.tmodel_new.squeeze(1).max()
+    ## Parse inputs
+    if tstart is None:
+        _years = casebase.tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(casebase.sw.GSw_StartMarkets)].max()
+    ## Get data
+    hierarchy = casebase.hierarchy
+    dfmap = casebase.dfmap
+    baseline = casebase.tran_out.xs(tstart,0,'t').groupby(['r','rr']).sum().reset_index()
+    baseline['level'] = baseline.r.map(hierarchy[level])
+    baseline['levell'] = baseline.rr.map(hierarchy[level])
+    baseline = baseline.loc[baseline.level != baseline.levell].copy()
+    baseline['interface'] = baseline.apply(
+        lambda row: '|'.join(sorted([row.level, row.levell])),
+        axis=1,
+    )
+    baseline = baseline.groupby('interface').Value.sum().rename('GW') / 1e3
+
+    dfplot = {}
+    for caseprefix, plotcases in cases.items():
+        df = pd.concat(
+            {
+                i: case.tran_out.xs(t,0,'t').groupby(['r','rr']).sum()
+                for i, case in enumerate(plotcases)
+            },
+            names=('case',),
+        ).reset_index()
+        df['level'] = df.r.map(hierarchy[level])
+        df['levell'] = df.rr.map(hierarchy[level])
+        df = df.loc[df.level != df.levell].copy()
+        df['interface'] = df.apply(
+            lambda row: '|'.join(sorted([row.level, row.levell])),
+            axis=1,
+        )
+        df = df.groupby(['interface','case']).Value.sum().rename('GW') / 1e3
+        dfplot[caseprefix] = df
+    dfplot = pd.concat(dfplot, names=('caseprefix',))
+
+    ## Sort the interfaces from west to east
+    interfaces_unsorted = dfplot.index.get_level_values('interface').unique()
+    interfaces = {}
+    for i in interfaces_unsorted:
+        region, regionn = i.split('|')
+        interfaces[i] = dfmap[level].loc[[region,regionn]].dissolve().bounds.minx.squeeze()
+    interfaces = pd.Series(interfaces).sort_values().index.values
+
+    ymax = dfplot.max()
+    bins = np.arange(0, ymax+binstep, binstep)
+    ncols = len(interfaces)
+    nrows = 2
+
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, sharex='row', sharey='row', figsize=(plotwidth*ncols, 3),
+        gridspec_kw={'hspace':0.0, 'height_ratios':[0.5, 1]},
+        dpi=300,
+    )
+    for col, interface in enumerate(interfaces):
+        _ax = ax[:,col] if ncols > 1 else ax
+        ### Maps on top
+        dfmap[level].plot(ax=_ax[0], facecolor='0.99', edgecolor='0.75', lw=0.2)
+        dfmap[level].loc[[interface.split('|')[0]]].plot(
+            ax=_ax[0], facecolor=regioncolors[0], edgecolor='w', lw=0.5)
+        dfmap[level].loc[[interface.split('|')[1]]].plot(
+            ax=_ax[0], facecolor=regioncolors[1], edgecolor='w', lw=0.5)
+        _ax[0].axis('off')
+        _ax[0].patch.set_facecolor('none')
+        ### Data
+        row = 1
+        for x, caseprefix in enumerate(cases):
+            df = dfplot.loc[caseprefix].loc[interface]
+            ## Histogram
+            hist_val, hist_y = np.histogram(df.values, bins=bins)
+            height = hist_y[1] - hist_y[0]
+            _ax[row].barh(
+                y=hist_y[:-1],
+                width=(hist_val / max(hist_val) * 0.9),
+                height=height,
+                align='edge',
+                left=x,
+                color=colors[nicelabels[caseprefix]],
+            )
+        _ax[row].axhline(baseline[interface], c='k', ls='--', lw=0.75)
+    ## Formatting
+    _ax = ax[1,0] if ncols > 1 else ax[1]
+    _ax.set_ylabel(f'Interface capacity, {t} [GW]')
+    _ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
+    _ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    _ax.set_ylim(0)
+    _ax.set_xlim(-0.15, len(cases))
+
+    reeds.plots.despine(ax)
+    for col, interface in enumerate(interfaces):
+        _ax = ax[:,col] if ncols > 1 else ax
+        _ax[1].set_xlabel(None)
+        _ax[0].annotate(
+            interface.replace('|', '\n'),
+            (0.05, 1.0), xycoords='axes fraction',
+            va='bottom', fontsize=10,
+        )
+        _ax[1].set_xticks(range(len(cases)))
+        _ax[1].set_xticklabels(
+            [nicelabels.get(caseprefix,caseprefix) for caseprefix in cases],
+            rotation=90, weight='bold',
+        )
+        _colors = [colors[nicelabels[c]] for c in cases]
+        for x, xtick in enumerate(_ax[1].get_xticklabels()):
+            xtick.set_color(_colors[x])
+    return f, ax, dfplot
+
+
+def plot_scatter_everything(
+    plotcases,
+    corr_method:Literal['pearson','kendall','spearman']='spearman',
+    zoom=True,
+    t=None,
+    tstart=None,
+    cmap=plt.cm.coolwarm,
+    cmin=-0.8,
+    cmax=0.8,
+    figscale=1.3,
+):
+    """
+    Scatter plot of many outputs against many inputs, colored by correlation coefficient
+    """
+    ## Parse inputs
+    if t is None:
+        t = plotcases[0].tmodel_new.squeeze(1).max()
+    if tstart is None:
+        _years = plotcases[0].tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(plotcases[0].sw.GSw_StartMarkets)].max()
+    ## Fixed inputs
+    cost_techs = {
+        'Battery': 'battery_li',
+        'PV': 'upv_3',
+        'Wind': 'wind-ons_5',
+        # 'Wind (offshore fixed)': 'wind-ofs_5',
+        # 'Geothermal': 'geohydro_allkm_1',
+        # 'Coal+CCS': 'coal-ccs_mod',
+        'Nuclear': 'nuclear',
+        'Gas+CCS': 'gas-cc-ccs_mod',
+    }
+    x_labels = {
+        'gasprice': 'Gas price [$/MMBtu]',
+        'demand': 'Demand [PWh]',
+        'sc_wind': 'Wind avail [TW]',
+        'cost_Wind': 'Wind cost [$/kW]',
+        'cost_PV': 'PV cost [$/kW]',
+        'cost_Battery': 'Battery cost [$/kW]',
+        'cost_Nuclear': 'Nuclear cost [$/kW]',
+        'cost_Gas+CCS': 'Gas+CCS cost [$/kW]',
+    }
+    cap_techs = {
+        'PV': ['UPV'],
+        'Wind': ['Onshore Wind'],
+        'Storage': ['Battery', 'Pumped-Hydro'],
+        'Nuclear': ['Nuclear', 'Nuclear-SMR'],
+        'Gas+CCS': ['Gas-CC-CCS'],
+        'Gas': ['Gas-CT', 'Gas-CC'],
+    }
+    ycols = (
+        []
+        + [f'cap_{i}' for i in cap_techs]
+        + ['scoe', 'npv', 'co2']
+    )
+    ylabels = {
+        'cap_PV': 'PV',
+        'cap_Wind': 'Wind',
+        'cap_Storage': 'Storage',
+        'cap_Nuclear': 'Nuclear',
+        'cap_Gas+CCS': 'Gas+CCS',
+        'cap_Gas': 'Gas',
+        'npv': 'NPC\n[$trillion]',
+        'scoe': 'SCOE\n[$/MWh]',
+        'co2': reeds.plots.chemlabel('CO2\n[GT]'),
+    }
+    xcols = [
+        'cost_PV',
+        'cost_Wind',
+        'cost_Battery',
+        'cost_Nuclear',
+        'cost_Gas+CCS',
+        'gasprice',
+        'demand',
+        'sc_wind',
+    ]
+    norm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
+    co2years = range(2025,2051)
+
+    nrows = len(ycols)
+    ncols = len(xcols)
+
+    ## Shared inputs
+    inflatable = reeds.io.get_inflatable()
+    dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+    dollaryear_output = DEFAULT_DOLLAR_YEAR
+    inflator = inflatable[dollaryear_reeds, dollaryear_output]
+    ## Capacity
+    for case in plotcases:
+        case.capagg = case.cap.reset_index().copy()
+        case.capagg.i = reeds.reedsplots.simplify_techs(case.capagg.i)
+        case.capagg = case.capagg.groupby(['t','i']).Value.sum()
+    dfcap = pd.Series({
+        (techlabel, i): (
+            case.capagg.loc[t].reindex(techgroup).sum()
+            - case.capagg.loc[tstart].reindex(techgroup).sum()
+        ) / 1e3
+        for i, case in enumerate(plotcases)
+        for techlabel, techgroup in cap_techs.items()
+    }).clip(lower=0).unstack(level=0)
+    dfcap.columns = 'cap_' + dfcap.columns
+    ## More outputs
+    dfnpv = pd.Series(
+        {i: case.npv.sum() for i, case in enumerate(plotcases)},
+        name='npv',
+    ) / 1e3
+    dfscoe = pd.Series(
+        {i: case.scoe.loc[t].sum() for i, case in enumerate(plotcases)},
+        name='scoe',
+    )
+    dfco2 = pd.Series(
+        {
+            i: (
+                case.emit_nat.xs('process',0,'etype').xs('CO2',0,'e')
+                .reindex(co2years).interpolate('index').sum()
+                / 1e9
+            )
+            for i, case in enumerate(plotcases)
+        },
+        name='co2',
+    )
+    ### x-axis variables
+    xdata = pd.concat({
+        'gasprice': pd.Series({
+            i: case.fprice.groupby('t')['naturalgas'].mean().loc[t]
+            for i, case in enumerate(plotcases)
+        }),
+        'demand': pd.Series({
+            i: case.demand_rt.groupby('t').sum().loc[t] / 1e3
+            for i, case in enumerate(plotcases)
+        }),
+        'sc_wind': pd.Series({
+            i: case.supplycurve.loc['wind-ons'].sum() / 1e3
+            for i, case in enumerate(plotcases)
+        }),
+    }, axis=1)
+    ### Generation capex costs
+    costdata = pd.concat({
+        f"cost_{label}": pd.Series({
+            i: case.capcost.loc[t, tech] * inflator
+            for i, case in enumerate(plotcases)
+        })
+        for label, tech in cost_techs.items()
+    }, axis=1)
+    xdata = pd.concat([xdata, costdata], axis=1)
+    ## Combine
+    dfplot = pd.concat([dfcap, dfnpv, dfscoe, dfco2, xdata], axis=1)
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*figscale, nrows*figscale), sharex='col', sharey='row',
+    )
+    for row, ycol in enumerate(ycols):
+        for col, xcol in enumerate(xcols):
+            corrcoef = dfplot[ycol].corr(dfplot[xcol], method=corr_method)
+            color = '0.7' if abs(corrcoef) <= 0.2 else cmap(norm(corrcoef))
+            ax[row,col].scatter(
+                dfplot[xcol], dfplot[ycol], marker='o', lw=0, s=20,
+                color=color, alpha=0.2,
+            )
+            for c, a, p in [(color, 1, 1), ('k', 0.2, 0)]:
+                ax[row,col].annotate(
+                    f"{corrcoef:+.2f}",
+                    (0.95, 0.95), xycoords='axes fraction',
+                    ha='right', va='top', fontsize='x-large',
+                    path_effects=(
+                        [pe.withStroke(linewidth=3.0, foreground='w', alpha=0.9)]
+                        if p else []
+                    ),
+                    # color='k',
+                    color=c, alpha=a,
+                )
+            ## Formatting
+            if col == 0:
+                ax[row,col].set_ylabel(ylabels.get(ycol,ycol))
+            if row == nrows - 1:
+                ax[row,col].set_xlabel(
+                    x_labels.get(xcol,xcol), rotation=45, rotation_mode='anchor', ha='right',
+                )
+            if xcol == 'cost_Nuclear':
+                ax[-1,col].xaxis.set_major_locator(mpl.ticker.FixedLocator([3000, 5500]))
+    ## Formatting
+    ax[2,0].annotate(
+        f'Capacity additions through {t} [GW]', (-0.95, -0.075), xycoords='axes fraction',
+        ha='center', va='center', annotation_clip=False,
+        rotation=90, weight='bold', fontsize='xx-large',
+    )
+    ax[-1,0].annotate(
+        f'{t}:', (-0.35, -0.8), xycoords='axes fraction',
+        ha='right', va='top', annotation_clip=False,
+        weight='bold', fontsize='x-large',
+    )
+    if not zoom:
+        ax.set_xlim(0)
+        ax.set_ylim(0)
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_emissions(
+    cases,
+    nicelabels=None,
+    colors=None,
+    pollutant='CO2',
+    etype='process',
+    numbins=71,
+    ymin=0,
+    tstart=None,
+    xscale=2,
+    alpha=0.5,
+):
+    """
+    """
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    ## Parse inputs
+    if tstart is None:
+        casebase = cases[list(cases.keys())[0]][0]
+        _years = casebase.tmodel_new.squeeze(1)
+        tstart = _years.loc[_years < int(casebase.sw.GSw_StartMarkets)].max()
+    ## Get data
+    dictplot = {}
+    for caseprefix, plotcases in cases.items():
+        dictplot[caseprefix] = pd.concat({
+            i: case.emit_nat.xs(etype,0,'etype').xs(pollutant,0,'e')
+            for i, case in enumerate(plotcases)
+        }, axis=1) / 1e6
+
+    dfplot = pd.concat(dictplot, axis=1, names=('caseprefix','sample'))
+
+    ymax = dfplot.max().max()
+    bins = np.linspace(ymin, ymax, numbins)
+    years = dfplot.index
+
+    ### Plot it
+    plt.close()
+    f,ax = plt.subplots(figsize=(5, 3.25))
+    for i, caseprefix in enumerate(cases):
+        df = dfplot[caseprefix].reindex(years).fillna(0)
+        ## Fill between max and min
+        ax.fill_between(
+            df.index, df.max(axis=1), df.min(axis=1),
+            color=colors[nicelabels[caseprefix]], alpha=0.2, lw=0,
+            label=f'{nicelabels.get(caseprefix,caseprefix)} ({df.shape[1]})',
+        )
+        ## Lines
+        for s in df:
+            ax.plot(
+                df.index, df[s].values, color=colors[nicelabels[caseprefix]],
+                lw=0.5, alpha=0.25,
+                label='_nolabel',
+            )
+        ## Histogram
+        reeds.plots.hist_last(
+            ax, df, color=colors[nicelabels[caseprefix]], bins=bins, alpha=alpha,
+            xpad=1+((xscale+0.5)*i), xscale=xscale,
+        )
+    ## Legend
+    handles = [
+        mpl.patches.Patch(
+            facecolor=colors[nicelabels[caseprefix]], edgecolor='none',
+            label=nicelabels.get(caseprefix,caseprefix)
+        )
+        for caseprefix in cases
+    ]
+    ax.legend(
+        handles=handles, frameon=False, fontsize='x-large',
+        loc='center left', bbox_to_anchor=(1, 0.5),
+        handletextpad=0.3, handlelength=0.7,
+    )
+    ## Formatting
+    ax.set_xlim(tstart)
+    ax.set_ylabel(f'{reeds.plots.chemlabel(pollutant)} emissions [MT/year]')
+    ax.set_ylim(0)
+    ax.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    ax.set_xticks([2020,2030,2040,2050])
+    ax.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
+
+
+def plot_npv(
+    cases,
+    casebase=None,
+    nicelabels=None,
+    colors=None,
+    co2_social_cost=290,
+    health_cr='ACS',
+    health_model='EASIUR',
+    plotwidth=None,
+    histwidth=0.3,
+):
+    """
+    NPV of system, health, and climate costs
+    """
+    ## Parse inputs
+    if nicelabels is None:
+        nicelabels = dict(zip(cases.keys(), cases.keys()))
+    if colors is None:
+        colors = reeds.plots.rainbowmapper(nicelabels)
+    if casebase is None:
+        casebase = cases[list(cases.keys())[0]][0]
+    if histwidth:
+        plotwidth = histwidth * len(cases)
+    ## Shared inputs
+    inflatable = reeds.io.get_inflatable()
+    dollaryear_reeds = int(reeds.io.get_switches().dollar_year)
+    dollaryear_output = DEFAULT_DOLLAR_YEAR
+    inflator = inflatable[dollaryear_reeds, dollaryear_output]
+    ## Get data
+    pv_year = 2025
+    lastyear = 2050
+    discountrate_social = 0.02
+    discounts = pd.Series(
+        index=range(pv_year,lastyear+1),
+        data=[1/(1+discountrate_social)**(y-pv_year)
+            for y in range(pv_year,lastyear+1)]
+    ).rename_axis('t')
+
+    dictplot_npv = {}
+    dictplot_health = {}
+    dictplot_climate = {}
+    for caseprefix, plotcases in cases.items():
+        dictplot_npv[caseprefix] = pd.Series(
+            {i: case.npv.sum() for i, case in enumerate(plotcases)}
+        )
+        dictplot_climate[caseprefix] = pd.Series({
+            i: (
+                case.emit_nat.xs('process',0,'etype').xs('CO2',0,'e')
+                .reindex(discounts.index).interpolate('index')
+                * co2_social_cost
+                / 1e9 # convert to $billion
+            ).multiply(discounts).sum()
+            for i, case in enumerate(plotcases)
+        })
+        dictplot_health[caseprefix] = pd.Series({
+            i: (
+                case.health_damages_caused_r
+                .groupby(['cr','model','year','pollutant'])['damage_$'].sum()
+                .loc[health_cr].loc[health_model].groupby('year').sum()
+                .reindex(discounts.index).interpolate('index')
+                * inflator # health_damage_calculations.py uses the ReEDS dollar year
+                / 1e9 # convert to $billion
+            ).multiply(discounts).sum()
+            for i, case in enumerate(plotcases)
+        })
+
+    dfplot = pd.concat(
+        {
+            'system':pd.concat(dictplot_npv, axis=1),
+            'climate':pd.concat(dictplot_climate, axis=1),
+            'health':pd.concat(dictplot_health, axis=1),
+        },
+        axis=1, names=('costtype','caseprefix')
+    )
+
+    ymax = dfplot.T.groupby(level='caseprefix').sum().T.max().max()
+    binstep = 100
+    ymax = np.ceil(ymax / binstep) * binstep
+    number_of_bins = int(ymax / binstep) + 1
+
+    ### Plot it
+    nrows = 1
+    costtypes = ['system', 'health', 'climate', 'total']
+    ncols = len(costtypes)
+    plt.close()
+    f,ax = plt.subplots(
+        nrows, ncols, figsize=(ncols*plotwidth, 3.75),
+        sharex=True, sharey=True,
+    )
+    for col, costtype in enumerate(costtypes):
+        if costtype == 'total':
+            df = dfplot.T.groupby(level='caseprefix').sum().T
+        else:
+            df = dfplot[costtype]
+        df = df[list(cases.keys())].rename(columns=nicelabels)
+        reeds.plots.plotquarthist(
+            ax=ax[col], dfplot=df,
+            histcolor=colors,
+            hist_range=(0., ymax), number_of_bins=number_of_bins,
+            pad=0.04, alpha=1, density=True,
+        )
+        ## Formatting
+        ax[col].set_title(costtype.title(), weight='bold')
+        ax[col].set_xticks(range(len(cases)))
+        ax[col].set_xticklabels(
+            [
+                f"{nicelabels.get(caseprefix,caseprefix)}"
+                for caseprefix in cases
+            ],
+            rotation=60, rotation_mode='anchor', ha='right',
+        )
+        ax[col].set_xlim(-0.1, len(cases))
+        for xtick, caseprefix in zip(ax[col].get_xticklabels(), cases):
+            xtick.set_color(colors[nicelabels[caseprefix]])
+    ax[0].set_ylabel(f'Net present value of costs,\n{pv_year}–{lastyear} [$billion]')
+    ax[0].set_ylim(0)
+    ax[0].yaxis.set_major_locator(mpl.ticker.MultipleLocator(4000))
+    ax[0].yaxis.set_minor_locator(mpl.ticker.MultipleLocator(1000))
+    reeds.plots.despine(ax)
+    return f, ax, dfplot
