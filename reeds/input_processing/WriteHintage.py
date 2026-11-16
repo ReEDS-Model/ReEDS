@@ -26,7 +26,7 @@ BA combinations, is as follows:
     4. Assign units to their nearest heat rate bin
        - if only one unique unit in a bin, assign its original heat rate
        - if more than one unit in a bin, assign the capacity-weighted average
-    5. For all years from 2010-2100, compute the remaining amount of capacity
+    5. For all years from start year to 2100, compute the remaining amount of capacity
        based on the units specified retirement date and compute the remaining
        units' capacity-weighted-average characteristics (FOM/VOM/HR/...)
 
@@ -64,6 +64,48 @@ warnings.filterwarnings("ignore", message="KMeans is known to have a memory leak
 #%% ===========================================================================
 ### --- FUNCTIONS AND CLASSES ---
 ### ===========================================================================
+def infer_capacity_weighted_onlineyear(years, capacities):
+    """Estimate distpv's average build year from its capacity history.
+
+    Increases are new builds. Decreases retire the oldest capacity first.
+    """
+    years = np.asarray(years, dtype=int)
+    capacities = np.asarray(capacities, dtype=float)
+    if len(years) != len(capacities):
+        raise ValueError('years and capacities must have the same length')
+    if (np.diff(years) <= 0).any():
+        raise ValueError('years must be strictly increasing')
+    if np.isnan(capacities).any() or (capacities < 0).any():
+        raise ValueError('capacities must be finite and nonnegative')
+
+    cohorts = []
+    onlineyears = []
+    for year, target_capacity in zip(years, capacities):
+        current_capacity = sum(capacity for _, capacity in cohorts)
+        capacity_change = target_capacity - current_capacity
+        if capacity_change > 0:
+            cohorts.append([year, capacity_change])
+        elif capacity_change < 0:
+            capacity_to_retire = -capacity_change
+            while capacity_to_retire > 1e-9 and cohorts:
+                retired = min(capacity_to_retire, cohorts[0][1])
+                cohorts[0][1] -= retired
+                capacity_to_retire -= retired
+                if cohorts[0][1] <= 1e-9:
+                    cohorts.pop(0)
+
+        remaining_capacity = sum(capacity for _, capacity in cohorts)
+        if remaining_capacity:
+            onlineyears.append(
+                sum(cohort_year * capacity for cohort_year, capacity in cohorts)
+                / remaining_capacity
+            )
+        else:
+            onlineyears.append(float(year))
+
+    return np.asarray(onlineyears)
+
+
 class grouping:
     def __init__(self, nbins, *args, **kwargs):
         #df = tdat
@@ -297,20 +339,20 @@ def main(reeds_path, inputs_case):
     print('Starting WriteHintage.py')
 
     # #%% Settings for testing
-    # reeds_path = os.path.expanduser('~/github/ReEDS')
+    # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
-    #     reeds_path,'runs','v20231027_yamM0_Z45_h_d_365_transreg_z69_core','inputs_case')
+    #     reeds_path,'runs','v20260626_inputsM1_Pacific','inputs_case')
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
 
     nBin = int(sw.numhintage)
-    retscen = sw.retscen
     mindev = int(sw.mindev)
     GSw_WaterMain = sw.GSw_WaterMain    
     GSw_RetireYears_Coal = int(sw.GSw_RetireYears_Coal)
     GSw_RetireYears_Thermal = int(sw.GSw_RetireYears_Thermal)
     GSw_Clean_Air_Act = int(sw.GSw_Clean_Air_Act)
+    startyear=int(sw.startyear)
 
     #%%
     # Inflation factor 1987$ to 2004$
@@ -327,17 +369,10 @@ def main(reeds_path, inputs_case):
                     ]
     }
 
-    # Import mapping files
-    r_county = pd.read_csv(
-        os.path.join(inputs_case,'r_county.csv'), index_col='county').squeeze(1)
-
     # Import generator database
     indat = pd.read_csv(os.path.join(inputs_case,'unitdata.csv'),
                         low_memory=False
     )
-
-    # Map counties to modeled regions
-    indat['r'] = indat.FIPS.map(r_county)
 
     # Apply inflation to VOM costs
     indat['T_VOM'] *= inflator
@@ -355,7 +390,7 @@ def main(reeds_path, inputs_case):
         indat['tech'] = indat.coolingwatertech
 
     ### NOTE: New addition for columns AO:AR, AW:AX in the plant file
-    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", retscen,
+    ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", "RetireYear",
                 "StartYear", "IsExistUnit", "HeatRate", "T_VOM", "T_FOM",
                 "T_CCSROV", "T_CCSF", "T_CCSV", "T_CCSHR", "T_CCSCAPA", "T_CCSLOC"]].copy() 
 
@@ -366,7 +401,6 @@ def main(reeds_path, inputs_case):
         'ctt'    : 'ctt',
         'summer_power_capacity_MW'    : 'Summer.capacity',
         'TC_WIN' : 'Winter.capacity',
-        retscen  : 'RetireYear',
         'StartYear' : 'onlineyear',
         'IsExistUnit' : 'EXIST',
         'HeatRate' : 'HR',
@@ -443,7 +477,7 @@ def main(reeds_path, inputs_case):
     dat = dat[dat.TECH != 'others'].copy()
 
     # Remove some generators based on retire year and online year
-    dat = dat[(dat.RetireYear >= 2010) & (dat['onlineyear'] < 2010)].copy()
+    dat = dat[(dat.RetireYear >= startyear) & (dat['onlineyear'] < startyear)].copy()
 
     # Make unique ID column for generators
     id_delimiter = '<dontputthisinaname>'
@@ -488,7 +522,7 @@ def main(reeds_path, inputs_case):
     combine_cols = level_cols + ['Winter.capacity']
 
 # Adjust the HR, VOM, FOM, solveYearOnline, and winter capacity
-    for i in list(range(2010, tdat.RetireYear.max() + 1)):
+    for i in list(range(startyear, tdat.RetireYear.max() + 1)):
         # Subset on years earlier than i
         ydat = tdat.loc[tdat.RetireYear > i, ['id','bin','Summer.capacity'] + combine_cols]
 
@@ -538,8 +572,17 @@ def main(reeds_path, inputs_case):
     dpv['wFOM'] = 0
     dpv['Winter.capacity'] = dpv['Summer.capacity']
     dpv['bin'] = 1
-    dpv['solveYearOnline'] = 2010
     dpv['year'] = dpv['year'].astype(int)
+    dpv['solveYearOnline'] = np.nan
+    # Estimate distpv's average build year in each region and year.
+    for _, region_index in dpv.groupby('r').groups.items():
+        region_dpv = dpv.loc[region_index].sort_values('year')
+        dpv.loc[region_dpv.index, 'solveYearOnline'] = (
+            infer_capacity_weighted_onlineyear(
+                region_dpv.year,
+                region_dpv['Summer.capacity'],
+            )
+        )
 
     # Concat dpv and the output dataframes
     zout = pd.concat([zout, dpv])
@@ -547,10 +590,11 @@ def main(reeds_path, inputs_case):
     #%%############################################################################
     #    -- Get forced retirement dataframe and merge onto output dataframe --    #
     ###############################################################################
-    forced_retire = pd.read_csv(
-        os.path.join(inputs_case, 'forced_retirements.csv'),
-        header=0, names=['tech','st','retire_year'])
-    
+    forced_retire = (
+        reeds.io.read_input(inputs_case, 'forced_retirements')
+        .astype({'Value':int})
+        .rename(columns={'i':'tech', 'Value':'retire_year'})
+    )
     # Forced retirements are at the state level, so use hierarchy to get the regions
     state2r = (
         pd.read_csv(
@@ -809,4 +853,3 @@ if __name__ == '__main__':
         path=os.path.join(inputs_case,'..'))
 
     print('Finished WriteHintage.py')
-  

@@ -78,7 +78,7 @@ def errorcheck_reeds2pras(casedir, csvout, h5out):
     ### Make sure there are no missing values in data sent to ReEDS2PRAS
     for key in ['pras_load', 'pras_vre_gen']:
         if h5out[key].isnull().sum().sum() > 0:
-            missing_data_cols = [i for i in h5out[key] if h5out[key].isnull().sum(axis=0) > 0]
+            missing_data_cols = [i for i in h5out[key] if h5out[key][i].isnull().sum(axis=0) > 0]
             print(missing_data_cols)
             raise ValueError(f'{key} has NaN values in {len(missing_data_cols)} columns')
 
@@ -147,10 +147,11 @@ def main(t, casedir, iteration=0):
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
-    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'), parse_timestamps=True)
+    # load exogenous demand seen by ReEDS
+    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
 
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
                                              names=('i','r'))
 
@@ -170,7 +171,7 @@ def main(t, casedir, iteration=0):
         ## e.g. "upv_5" -> "upv", "csp2_3" -> "csp"
         techs_vre_simplify = dict(zip(
             techs_vre,
-            [re.sub('\d?_\d+$', '', i) for i in techs_vre]
+            [re.sub(r'\d?_\d+$', '', i) for i in techs_vre]
         ))
 
     try:
@@ -270,7 +271,7 @@ def main(t, casedir, iteration=0):
         )
     ### Aggregate by model zone
     gen_vre_r = gen_vre_ir.copy()
-    gen_vre_r = gen_vre_r.groupby(axis=1, level='r').sum()
+    gen_vre_r = gen_vre_r.T.groupby(level='r').sum().T
 
     ### Store generation by (i,r) for capacity_credit.py
     gen_vre_resources = gen_vre_ir.reindex(resources[['i','r']], axis=1).fillna(0).clip(lower=0)
@@ -286,7 +287,7 @@ def main(t, casedir, iteration=0):
         pras_vre_gen.columns.get_level_values('i').map(lambda x: techs_vre_simplify.get(x,x)),
         pras_vre_gen.columns.get_level_values('r')
     ])
-    pras_vre_gen = pras_vre_gen.groupby(['i','r'], axis=1).sum()
+    pras_vre_gen = pras_vre_gen.T.groupby(['i','r']).sum().T
 
     pras_vre_gen.columns = ['|'.join(c) for c in pras_vre_gen.columns]
     h5out['pras_vre_gen'] = pras_vre_gen
@@ -358,13 +359,43 @@ def main(t, casedir, iteration=0):
     )
 
     #%%### Total load and net load
+
+    # get load data for model year
+    load_year = load.loc[t]
+
+    ### Add load from FINITO when running linked model (GSw_FINITO_Link=FINITO=1) 
+    if int(sw.GSw_FINITO_Link):
+        load_finito_rt = gdxreeds['load_finito_rt'].rename(columns={'allh':'h', 'Value':'load_MW'})
+
+        # down select to relevant model year
+        load_finito = load_finito_rt.loc[load_finito_rt.t==t].drop('t', axis=1).copy()
+        load_finito = load_finito.pivot(index=['h'], columns='r', values='load_MW')
+
+        # map from rep day to actual hour
+        # since we don't have multi-year profiles for FINITO load 
+        # we assume they repeat across all weather years
+        load_finito = pd.merge(
+            load_finito.reset_index(), 
+            h_dt_szn.reset_index()[['h', 'timestamp']], 
+            on='h', how='outer').drop('h', axis=1)
+        load_finito = load_finito.rename(columns={'timestamp':'datetime'}).set_index('datetime')
+
+        # convert timezone and fill any missing columns
+        load_finito.index = load_finito.index.tz_convert(load_year.index.tz)
+        load_finito = load_finito.reindex(columns=load_year.columns, fill_value=0)
+        load_finito = load_finito.fillna(0)
+
+        # add to load
+        load_year = load_year + load_finito
+
+
     ### Get Candian exports and add to this solve year's load
     can_exports = (
         gdxreeds['can_exports_h_filt']
         .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
         .pivot(index='timestamp', columns='r', values='Value')
     )
-    load_year = load.loc[t].add(can_exports, fill_value=0)
+    load_year = load_year.add(can_exports, fill_value=0)
 
     ### PRAS doesn't yet handle flexible load, so include all H2/DAC load in the
     ### version we write for PRAS
@@ -510,11 +541,13 @@ def main(t, casedir, iteration=0):
     ).round().astype(int).rename_axis('r').rename('mw')
     ## Turn off for counties by setting to zero (zeros in this file mean the max unit
     ## size is not enforced for that region in ReEDS2PRAS)
-    agglevel_variables = reeds.spatial.get_agglevel_variables(
-        reeds.io.reeds_path, os.path.join(casedir, 'inputs_case')
+    counties = reeds.io.get_county_zones(casedir)
+    unconstrain_counties = sw.GSw_ZoneSet in (
+        reeds.inputs.get_applicable_zonesets(
+            'reeds2pras_unitsize_unconstrain_counties'
+        )
     )
-    counties = agglevel_variables['county_regions']
-    if len(counties):
+    if len(counties) and unconstrain_counties:
         csvout['max_unitsize'].loc[counties] = 0
 
     #%% Strip water tech suffixes from water-dependent technologies

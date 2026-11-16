@@ -1,6 +1,6 @@
 order,color
 input_processing/copy_files.py,#393B79
-input_processing/aggregate_regions.py,#5254A3
+input_processing/h2_storage.py,#5254A3
 input_processing/calc_financial_inputs.py,#6B6ECF
 input_processing/fuelcostprep.py,#9C9EDE
 input_processing/writecapdat.py,#637939

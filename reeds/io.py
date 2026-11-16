@@ -20,7 +20,6 @@ reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if 'runs' in reeds_path.split(os.path.sep):
     reeds_path = reeds_path[: reeds_path.index(os.sep + 'runs' + os.sep)]
 
-hpc = True if ('NREL_CLUSTER' in os.environ) else False
 
 #   ########  ########    ###    ########
 #   ##     ## ##         ## ##   ##     ##
@@ -81,6 +80,15 @@ def assemble_hierarchy(case=None, fpath=None, extra=True, **kwargs) -> pd.DataFr
     if fpath is None:
         fpath = Path(fpath_base, 'hierarchy.csv')
     dfin = pd.read_csv(fpath)
+    ## Add offshore zones if necessary
+    if int(sw.GSw_OffshoreZones):
+        fpath_offshore = Path(reeds.io.reeds_path, 'inputs', 'zones', 'hierarchy_offshore.csv')
+        hierarchy_offshore = (
+            pd.read_csv(fpath_offshore)
+            .rename(columns={'ba':'r'})
+            .drop(columns='aggreg', errors='ignore')
+        )
+        dfin = pd.concat([dfin, hierarchy_offshore])
     ## Add hierarchy levels defined by groups of states
     fpath_state = Path(reeds.io.reeds_path, 'inputs', 'zones', 'state_groups.csv')
     state_groups = pd.read_csv(fpath_state, index_col='st')
@@ -93,6 +101,17 @@ def assemble_hierarchy(case=None, fpath=None, extra=True, **kwargs) -> pd.DataFr
     if extra:
         fpath_zonehash = Path(fpath_base, 'zonehash.csv')
         zonehash = pd.read_csv(fpath_zonehash)
+        if int(sw.GSw_OffshoreZones):
+            hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+            offshore_zones = (
+                get_offshore_zones().reset_index()
+                .rename(columns={'zone':'r'})
+                .drop(columns='geometry', errors='ignore')
+            )
+            ## Offshore zones are not groups of counties and are not user-adjustable,
+            ## so we use their hardcoded name as their zonehash
+            offshore_zones[hashfunc] = offshore_zones['r'].copy()
+            zonehash = pd.concat([zonehash, offshore_zones])
         dfout = dfout.merge(zonehash, on='r', how='left')
         if any(dfout.isnull().sum()):
             print(dfout.loc[dfout.isnull().sum(axis=1) > 0])
@@ -104,18 +123,12 @@ def get_hierarchy(case=None, original=False, **kwargs):
     """Get hierarchy for ReEDs case if provided, or for country if case not provided"""
     if case:
         if original:
-            filepath = Path(case, 'inputs_case', 'hierarchy_original.csv')
+            filepath = Path(standardize_case(case), 'inputs_case', 'hierarchy_original.csv')
         else:
-            filepath = Path(case, 'inputs_case', 'hierarchy.csv')
+            filepath = Path(standardize_case(case), 'inputs_case', 'hierarchy.csv')
+        hierarchy = pd.read_csv(filepath).rename(columns={'*r':'r', 'ba':'r'}).set_index('r')
     else:
-        ## TEMPORARY 20260402: Use deprecated hierarchy inputs.
-        ## Use the line below once we make the switch:
-        # hierarchy = assemble_hierarchy(case=case, **kwargs).set_index('r')
-        sw = reeds.io.get_switches(**kwargs)
-        filepath = Path(
-            reeds.io.reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'hierarchy_from134.csv',
-        )
-    hierarchy = pd.read_csv(filepath).rename(columns={'*r':'r', 'ba':'r'}).set_index('r')
+        hierarchy = assemble_hierarchy(case=case, **kwargs).set_index('r')
     return hierarchy
 
 
@@ -158,12 +171,89 @@ def get_county2zone(
 
     if as_map:
         dfout = dfin.set_index('FIPS')['r']
-    else:
+    elif case is None:
         fpath_countystate = Path(reeds.io.reeds_path, 'inputs', 'zones', 'county_state.csv')
         county_state = pd.read_csv(fpath_countystate, dtype=str)
         dfout = dfin.merge(county_state, on='FIPS', how='left')
+    else:
+        dfout = dfin
 
     return dfout
+
+
+def get_county_zones(
+    case: str | Path | None = None,
+    **kwargs
+) -> list[str]:
+    """
+    Get the set of county-level zones corresponding to a given zone set.
+    Reads from the inputs_case folder if {case} is provided or from the
+    default set of inputs (with key word arguments overriding case
+    switches, e.g., "GSw_ZoneSet") otherwise.
+
+    Args:
+        case: Path to a ReEDS case.
+
+    Returns:
+        list[str]
+    """
+    county2zone = get_county2zone(case, as_map=True, **kwargs)
+    county_zones = county2zone.loc[
+        county2zone.isin(
+            county2zone.value_counts()
+            .loc[county2zone.value_counts() == 1]
+            .index
+        )
+    ].tolist()
+
+    return county_zones
+
+
+def get_zone_nodes(case=None, crs='ESRI:102008', **kwargs):
+    """Get the transmission node for each model zone"""
+    sw = get_switches(case, **kwargs)
+    zonepath = Path(reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet)
+    zonehash = pd.read_csv(Path(zonepath, 'zonehash.csv'), index_col='r')
+    ## Convert lat/lon to x/y
+    xy = reeds.plots.df2gdf(zonehash, lat='node_lat', lon='node_lon', crs=crs)
+    zonehash['x'] = xy.geometry.x
+    zonehash['y'] = xy.geometry.y
+    ## Drop zone hash
+    hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+    zonehash = zonehash.drop(columns=hashfunc, errors='ignore')
+    return zonehash
+
+
+def get_zones(
+    case=None,
+    crs='ESRI:102008',
+    tolerance:float=100,
+    exclude_water_areas:bool=True,
+    **kwargs,
+) -> gpd.GeoDataFrame:
+    """
+    Args:
+        case (str, Path, or None): Path to a ReEDS case.
+            If None, uses the default GSw_ZoneSet from cases.csv.
+        crs (str): Coordinate reference system
+        tolerance (float) [m]: Degree of simplification of aggregated geometries
+            (passed to gpd.GeoSeries.simplify_coverage())
+        **kwargs: ReEDS switch:value pairs (overrides case argument)
+    """
+    dfcounty = reeds.spatial.get_map('county', source='tiger', crs=crs)
+    county2zone = reeds.io.get_county2zone(case, **kwargs)
+    dfcounty['r'] = county2zone
+    dfzones = dfcounty.dissolve('r')
+
+    if exclude_water_areas:
+        dfstates = reeds.spatial.get_map('states', source='census', crs=crs)
+        country = dfstates.dissolve().geometry[0]
+        dfzones.geometry = dfzones.intersection(country).buffer(0)
+
+    if tolerance:
+        dfzones.geometry = dfzones.geometry.simplify_coverage(tolerance=tolerance)
+
+    return dfzones[['geometry']]
 
 
 def get_countymap(select_counties=None, exclude_water_areas=False):
@@ -191,197 +281,63 @@ def get_countymap(select_counties=None, exclude_water_areas=False):
     return dfcounty
 
 
-def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008'):
+def get_offshore_zones(crs='ESRI:102008'):
+    offshore_zones = (
+        gpd.read_file(
+            os.path.join(reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
+        ).set_index('zone').to_crs(crs).drop(columns=['zone_old'], errors='ignore')
+        .rename(columns={'node_latitude':'node_lat', 'node_longitude':'node_lon'})
+    )
+    return offshore_zones
+
+
+def get_zonemap(case=None, exclude_water_areas=False, crs='ESRI:102008', **kwargs):
     """
-    Get geodataframe of model zones, applying aggregation if necessary
+    Get geodataframe of model zones, node locations, and hierarchy levels
     """
+    zone_nodes = get_zone_nodes(case=case, **kwargs)
+    dfzones = get_zones(case=case, exclude_water_areas=exclude_water_areas, crs=crs, **kwargs)
+    dfzones = dfzones.merge(zone_nodes, left_index=True, right_index=True, how='left')
+    ## Add offshore zones if necessary
     sw = get_switches(case)
-    ## Backwards compatibility
-    if 'GSw_RegionResolution' not in sw:
-        sw['GSw_RegionResolution'] = 'ba'
-
-    if case:
-        agglevel_variables = reeds.spatial.get_agglevel_variables(
-            reeds_path,
-            os.path.join(case, 'inputs_case'),
+    if int(sw.GSw_OffshoreZones):
+        offshore_zones = get_offshore_zones(crs=crs)
+        regions = reeds.inputs.parse_regions(case=case, **kwargs)
+        regions_offshore = [i for i in regions if i in offshore_zones.index]
+        offshore_zones = offshore_zones.loc[regions_offshore]
+        ## Get node x/y for consistency with land-based zones
+        xy = reeds.plots.df2gdf(
+            offshore_zones.drop(columns='geometry'),
+            lat='node_lat',
+            lon='node_lon',
+            crs=crs,
         )
-    else:
-        agglevel_variables = {'lvl': 'ba',
-                              'agglevel': 'ba',
-                              }
-
-    # Mixed resolution procedure
-    if agglevel_variables['lvl'] == 'mult':
-        ### Model zones
-        dfba = gpd.read_file(os.path.join(reeds_path, 'inputs', 'shapefiles', 'US_PCA'))
-        ### Use transmission endpoints from reV
-        endpoints = gpd.read_file(
-            os.path.join(reeds_path, 'inputs', 'shapefiles', 'transmission_endpoints')
-        ).set_index('ba_str')
-        endpoints['x'] = endpoints.centroid.x
-        endpoints['y'] = endpoints.centroid.y
-
-        dfba['x'] = dfba['rb'].map(endpoints.x)
-        dfba['y'] = dfba['rb'].map(endpoints.y)
-        dfba['centroid_x'] = dfba.geometry.centroid.x
-        dfba['centroid_y'] = dfba.geometry.centroid.y
-
-        # Filter to regions being solved at BA resolution
-        dfba = dfba[dfba['rb'].isin(agglevel_variables['ba_regions'])].set_index('rb')
-
-        if 'aggreg' in agglevel_variables['agglevel']:
-            r2aggreg = (
-                pd.read_csv(os.path.join(case, 'inputs_case', 'hierarchy_original.csv'))
-                .rename(columns={'ba': 'r'})
-                .set_index('r')
-                .aggreg
-            )
-            ### Take the "anchor" zone as the zone with the largest area [km2]
-            dfba['km2'] = dfba.area / 1e6
-            ## Add column for new regions
-            dfba['aggreg'] = dfba.index.map(r2aggreg)
-            ## Take the original zone with largest area
-            aggreg2anchorreg = dfba.groupby('aggreg').km2.idxmax().rename('rb')
-            ## Save it for plotting
-            aggreg2anchorreg.to_csv(os.path.join(case,'inputs_case', 'aggreg2anchorreg.csv'))
-
-            aggreg2anchorreg = aggreg2anchorreg.reset_index()
-            aggreg2anchorreg = aggreg2anchorreg[aggreg2anchorreg
-                ['aggreg'].isin(agglevel_variables['ba_regions'])
-            ]
-            dfba = dfba.reset_index()
-            dfba.rb = dfba.rb.map(r2aggreg)
-            dfba = dfba.dissolve('rb').loc[aggreg2anchorreg.aggreg].copy()
-
-        ### Get the county map
-        dfcounty = get_countymap(
-            agglevel_variables['county_regions'], exclude_water_areas
-        )
-        dfcounty = dfcounty[['rb', 'NAMELSAD', 'STATE', 'geometry']]
-
-        ## Use the centroid for both the transmission endpoint and centroid
-        for prefix in ['', 'centroid_']:
-            dfcounty[prefix + 'x'] = dfcounty.geometry.centroid.x
-            dfcounty[prefix + 'y'] = dfcounty.geometry.centroid.y
-
-        dfcounty = (
-            dfcounty.rename(columns={'NAMELSAD': 'county', 'STCODE': 'st'})
-            .set_index('rb')
-            .drop(columns=['county'])
-        )
-
-        # Combine BA and County
-        dfcounty = dfcounty.to_crs(dfba.crs)
-        dfba = pd.concat([dfba, dfcounty])
-
-        ### Include all hierarchy levels
-        hierarchy = get_hierarchy(case)
-
-        for col in hierarchy:
-            dfba[col] = dfba.index.map(hierarchy[col])
-
-    ######## Single Resolution Procedure ########
-    else:
-        ### Check if resolution is at county level
-        if sw.GSw_RegionResolution != 'county':
-            hierarchy = get_hierarchy(case, original=True)
-            ### Model zones
-            dfba = gpd.read_file(
-                os.path.join(reeds_path, 'inputs', 'shapefiles', 'US_PCA')
-            ).set_index('rb').to_crs(crs)[['geometry']].copy()
-            ## Add transmission endpoints
-            endpoints = (
-                gpd.read_file(
-                    os.path.join(reeds_path, 'inputs', 'shapefiles', 'transmission_endpoints')
-                )
-                .set_index('ba_str')
-                .rename(columns={'lon':'node_longitude','lat':'node_latitude'})
-                [['node_longitude','node_latitude','geometry']]
-            )
-            endpoints['x'] = endpoints.centroid.x
-            endpoints['y'] = endpoints.centroid.y
-            dfba = dfba.merge(endpoints.drop(columns='geometry'), left_index=True, right_index=True)
-            ## Add offshore zones (transmission endpoints already included)
-            if int(sw.GSw_OffshoreZones):
-                offshore_zones = gpd.read_file(
-                    os.path.join(reeds_path, 'inputs', 'shapefiles', 'offshore_zones.gpkg')
-                ).set_index('zone').to_crs(crs).drop(columns=['zone_old'], errors='ignore')
-                ## Get node x/y for consistency with land-based zones
-                xy = reeds.plots.df2gdf(
-                    offshore_zones.drop(columns='geometry'),
-                    lat='node_latitude',
-                    lon='node_longitude',
-                    crs=crs,
-                )
-                offshore_zones['x'] = xy.geometry.x
-                offshore_zones['y'] = xy.geometry.y
-                ## Combine
-                dfba = pd.concat([dfba.assign(offshore=0), offshore_zones.assign(offshore=1)])
-            ## Filter to regions used in this run
-            if 'ba_regions' in agglevel_variables:
-                dfba = dfba.loc[(
-                    dfba.index.intersection(agglevel_variables['ba_regions'])
-                )]
-            ## Record centroid locations for plot labels
-            dfba['centroid_x'] = dfba.geometry.centroid.x
-            dfba['centroid_y'] = dfba.geometry.centroid.y
-
-            if 'aggreg' in agglevel_variables['agglevel']:
-                r2aggreg = (
-                    pd.read_csv(os.path.join(case, 'inputs_case', 'hierarchy_original.csv'))
-                    .rename(columns={'ba': 'r'})
-                    .set_index('r')
-                    .aggreg
-                    )
-                ### Take the "anchor" zone as the zone with the largest area [km2]
-                dfba['km2'] = dfba.area / 1e6
-                ## Add column for new regions
-                dfba['aggreg'] = dfba.index.map(r2aggreg)
-                ## Take the original zone with largest area
-                aggreg2anchorreg = dfba.groupby('aggreg').km2.idxmax().rename('rb')
-                ## Save it for plotting
-                aggreg2anchorreg.to_csv(os.path.join(case,'inputs_case', 'aggreg2anchorreg.csv'))
-
-        else:
-            hierarchy = (
-                pd.read_csv(os.path.join(case, 'inputs_case', 'hierarchy.csv'))
-                .rename(columns={'*r': 'r', 'ba': 'r'})
-                .set_index('r')
-            )
-            ### Get the county map
-            select_counties = agglevel_variables.get('county_regions')
-            dfba = get_countymap(select_counties, exclude_water_areas)
-
-            ### Add US state code and drop states outside of CONUS
-            state_fips = pd.read_csv(
-                os.path.join(reeds_path, 'inputs', 'shapefiles', "state_fips_codes.csv"),
-                names=["STATE", "STCODE", "STATEFP", "CONUS"],
-                dtype={"STATEFP": "string"},
-                header=0,
-            )
-            state_fips = state_fips.loc[state_fips['CONUS'], :]
-            dfba = dfba.merge(state_fips, on="STATEFP")
-            dfba = dfba[['rb', 'NAMELSAD', 'STATE_x', 'geometry']].set_index('rb')
-
-            ## Use the centroid for both the transmission endpoint and centroid
-            for prefix in ['', 'centroid_']:
-                dfba[prefix + 'x'] = dfba.geometry.centroid.x
-                dfba[prefix + 'y'] = dfba.geometry.centroid.y
-
-            dfba.rename(columns={'NAMELSAD': 'county', 'STATE_x': 'st'}, inplace=True)
-
-        ### Include all hierarchy levels
-        for col in hierarchy:
-            dfba[col] = dfba.index.map(hierarchy[col])
+        offshore_zones['x'] = xy.geometry.x
+        offshore_zones['y'] = xy.geometry.y
+        ## Combine
+        dfzones = pd.concat([dfzones.assign(offshore=0), offshore_zones.assign(offshore=1)])
+    ## Add spatial hierarchy levels
+    hierarchy = assemble_hierarchy(case=case, extra=False, **kwargs)
+    dfba = dfzones.merge(hierarchy, left_index=True, right_on='r').set_index('r')
+    ## Record centroid locations for plot labels
+    dfba['centroid_x'] = dfba.geometry.centroid.x
+    dfba['centroid_y'] = dfba.geometry.centroid.y
 
     return dfba
 
 
-def get_dfmap(case=None, levels=None, exclude_water_areas=False):
-    """Get dictionary of maps at different hierarchy levels"""
+def get_dfmap(case=None, levels=None, exclude_water_areas=True, **kwargs):
+    """
+    Get dictionary of maps at all spatial hierarchy levels.
+    Non-default switch settings (GSw_ZoneSet in particular) can be provided as keyword arguments;
+    if not provided, settings are taken from the provided case path.
+    """
     hierarchy = (
-        get_hierarchy(case, original=True)
-        .drop(columns=['aggreg', 'st_interconnect'], errors='ignore')
+        get_hierarchy(case, original=True, **kwargs)
+        .drop(
+            columns=['aggreg', 'st_interconnect', 'md5', 'node_lat', 'node_lon'],
+            errors='ignore'
+        )
     )
     hierarchy_levels = list(hierarchy.columns)
     if levels:
@@ -395,7 +351,7 @@ def get_dfmap(case=None, levels=None, exclude_water_areas=False):
             dfmap[level] = dfmap[level].set_index(dfmap[level].columns[0]).rename_axis(level)
         return dfmap
 
-    dfba = get_zonemap(case, exclude_water_areas)
+    dfba = get_zonemap(case, exclude_water_areas, **kwargs)
 
     dfmap = {'r': dfba.dropna(subset='country').copy()}
     dfmap['r']['centroid_x'] = dfmap['r'].centroid.x
@@ -476,14 +432,14 @@ def read_h5(h5path:str|Path, key:str) -> pd.DataFrame:
         except KeyError:
             df = pd.DataFrame(columns=columns)
     for col in df:
-        if df[col].dtype == 'O':
+        if pd.api.types.is_string_dtype(df[col].dtype):
             df[col] = df[col].str.decode('utf-8')
     return df
 
 
 def read_input(
     case:str|Path,
-    name:str,
+    name:str|tuple,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -494,14 +450,20 @@ def read_input(
 
     Args:
         case (str or Path): Absolute path to a ReEDS case
-        name (str): Name of the ReEDS parameter or {case}/inputs_case/{name}.csv
+        name (str or tuple): Name of the ReEDS parameter or {case}/inputs_case/{name}.csv.
+            If a tuple is provided, the elements before the last element indicate folders.
+            So ('rep', 'numhours') would read from {case}/inputs_case/rep/numhours.csv.
 
     Returns:
         pd.DataFrame
     """
-    key = Path(name).stem
     h5path = Path(reeds.io.standardize_case(case), 'inputs_case', 'inputs.h5')
-    csvpath = Path(h5path.parent, f'{key}.csv')
+    if isinstance(name, str):
+        key = Path(name).stem
+        csvpath = Path(h5path.parent, f'{key}.csv')
+    else:
+        key = Path(name[-1]).stem
+        csvpath = Path(h5path.parent, *name[:-1], f'{key}.csv')
     if h5path.is_file():
         try:
             df = read_h5(h5path, key)
@@ -543,7 +505,7 @@ def read_output(
     Returns:
         pd.DataFrame
     """
-    if case.endswith('.h5'):
+    if Path(case).suffix == '.h5':
         h5path = case
     else:
         h5path = os.path.join(case, 'outputs', 'outputs.h5')
@@ -552,22 +514,24 @@ def read_output(
         try:
             df = read_h5(h5path, key)
         except KeyError:
-            ## Empty dataframes aren't written to h5 file, so make one ourselves
-            fpath = Path(case, 'reeds', 'core', 'terminus', 'report_params.csv')
-            ## Fall back to older params list if necessary for backwards compatibility
-            if not fpath.is_file():
-                fpath = Path(case, 'e_report_params.csv')
-            report_params = pd.read_csv(fpath, comment='#')
-            _index = report_params.loc[
-                report_params.param.map(lambda x: x.split('(')[0]) == key, 'param'
-            ].squeeze()
-            if not len(_index):
-                raise KeyError(f"{filename} is not in {h5path}")
-            index = _index.split('(')[-1].strip(')').split(',')
-            df = pd.DataFrame(columns=index + ['Value'])
-    else:
-        _filename = filename if filename.endswith('.csv') else filename + '.csv'
-        df = pd.read_csv(os.path.join(case, 'outputs', _filename))
+            try:
+                ## Some output are only written to csv files
+                _filename = filename if filename.endswith('.csv') else filename + '.csv'
+                df = pd.read_csv(os.path.join(case, 'outputs', _filename))
+            except FileNotFoundError:
+                ## Empty dataframes aren't written to h5 file, so make one ourselves
+                fpath = Path(case, 'reeds', 'core', 'terminus', 'report_params.csv')
+                ## Fall back to older params list if necessary for backwards compatibility
+                if not fpath.is_file():
+                    fpath = Path(case, 'e_report_params.csv')
+                report_params = pd.read_csv(fpath, comment='#')
+                _index = report_params.loc[
+                    report_params.param.map(lambda x: x.split('(')[0]) == key, 'param'
+                ].squeeze()
+                if not len(_index):
+                    raise KeyError(f"{filename} is not in {h5path}")
+                index = _index.split('(')[-1].strip(')').split(',')
+                df = pd.DataFrame(columns=index + ['Value'])
 
     df = df.rename(columns={'allh':'h', 'allt':'t', 'eall':'e'})
 
@@ -709,6 +673,10 @@ def get_switches_base(case=None, **kwargs):
             index_col=0,
             header=None,
         ).squeeze(1)
+    ### Overwrite values with keyword arguments if provided
+    for key, value in kwargs.items():
+        if key in sw.keys():
+            sw[key] = value
     return sw
 
 
@@ -746,30 +714,31 @@ def get_switches(case=None, **kwargs):
     that is not a valid switch name, it is ignored.
     """
     case = standardize_case(case)
-    sw = get_switches_base(case)
+    sw = get_switches_base(case, **kwargs)
     ### Resource-adequacy-specific switches
     try:
         fpath_asw = os.path.join(
             (case if case is not None else reeds_path),
             'reeds', 'resource_adequacy', 'ra_switches.csv',
         )
-        asw = pd.read_csv(fpath_asw, index_col='key')
-        for i, row in asw.iterrows():
+        dfra = pd.read_csv(fpath_asw, index_col='key', dtype='object')
+        ra_switches = {}
+        for key, row in dfra.iterrows():
             if row['dtype'] == 'list':
-                row.value = row.value.split(',')
+                ra_switches[key] = row.value.split(',')
                 try:
-                    row.value = [int(i) for i in row.value]
+                    ra_switches[key] = [int(i) for i in row.value]
                 except ValueError:
                     pass
             elif row['dtype'] == 'boolean':
-                row.value = False if row.value.lower() == 'false' else True
+                ra_switches[key] = False if row.value.lower() == 'false' else True
             elif row['dtype'] == 'str':
-                row.value = str(row.value)
+                ra_switches[key] = str(row.value)
             elif row['dtype'] == 'int':
-                row.value = int(row.value)
+                ra_switches[key] = int(row.value)
             elif row['dtype'] == 'float':
-                row.value = float(row.value)
-        sw = pd.concat([sw, asw.value])
+                ra_switches[key] = float(row.value)
+        sw = pd.concat([sw, pd.Series(ra_switches)])
     except FileNotFoundError:
         print(f"{fpath_asw} not found so leaving out resource adequacy switches")
     ### Add derivative switches
@@ -793,7 +762,7 @@ def get_switches(case=None, **kwargs):
     threads = get_param_value(fpath_opt, "threads", dtype=int)
     sw['threads'] = threads
     ## Determine whether run is on HPC
-    sw['hpc'] = True if int(os.environ.get('REEDS_USE_SLURM', 0)) else False
+    sw['hpc'] = reeds.slurm.check_slurm()
     ## Add the run location
     sw['casedir'] = case
     sw['reeds_path'] = reeds_path if case is None else os.path.dirname(os.path.dirname(case))
@@ -837,7 +806,7 @@ def get_scalars(case=None, full=False):
     return scalars
 
 
-def read_h5py_file(filename, decode_strings=False):
+def read_h5py_file(filename):
     """Return dataframe object for a h5py file.
 
     This function returns a pandas dataframe of a h5py file. If the file has multiple dataset on it
@@ -885,7 +854,7 @@ def read_h5py_file(filename, decode_strings=False):
             idx_cols.sort()
             for idx_col in idx_cols:
                 df[idx_col] = pd.Series(f[idx_col]).values
-                if str(df[idx_col].dtype).startswith('|S') and decode_strings:
+                if str(df[idx_col].dtype).startswith('|S'):
                     df[idx_col] = df[idx_col].str.decode('utf-8')
             df = df.set_index(idx_cols)
 
@@ -906,7 +875,7 @@ def read_h5py_file(filename, decode_strings=False):
     return df
 
 
-def read_file(filename, parse_timestamps=False, decode_strings=False):
+def read_file(filename, parse_timestamps=True):
     """Return dataframe object of input file for multiple file formats.
 
     This function read multiple file formats for h5 file sand returns a dataframe from the file.
@@ -936,7 +905,7 @@ def read_file(filename, parse_timestamps=False, decode_strings=False):
     # datasets that composes the h5 file. For a single dataset we use pandas (since it is the most
     # convenient) and h5py for the custom h5 file.
     try:
-        df = read_h5py_file(filename, decode_strings=decode_strings)
+        df = read_h5py_file(filename)
     except TypeError:
         df = pd.read_hdf(filename)
 
@@ -944,9 +913,9 @@ def read_file(filename, parse_timestamps=False, decode_strings=False):
     if (
         parse_timestamps
         and ('datetime' in df.index.names)
-        and (isinstance(df.index.get_level_values('datetime')[0], bytes))
+        and not isinstance(df.index, pd.DatetimeIndex)
     ):
-        df = decode_h5_timestamps(df)
+        df = parse_h5_timestamps(df)
 
     # All values being NaN indicates that the region filtering in copy_files.py removed all
     # data, leaving an empty dataframe.
@@ -963,16 +932,34 @@ def read_file(filename, parse_timestamps=False, decode_strings=False):
     return df
 
 
-def decode_h5_timestamps(df):
+def parse_h5_timestamps(df):
     """
-    Decode a dataframe's "datetime" index whose index values are stored as bytes.
+    Parse a dataframe's "datetime" index into pandas timestamps
     """
-    unique_indices = df.index.get_level_values('datetime').unique()
-    index2datetime = dict(zip(
-        unique_indices,
-        pd.to_datetime(unique_indices.str.decode('utf-8'), format='ISO8601')
-    ))
-    df['datetime'] = df.index.get_level_values('datetime').map(index2datetime)
+    try:
+        index = df.index.get_level_values('datetime')
+    except KeyError:
+        index = df.index
+    unique_indices = index.unique()
+    dtype = index.dtype
+
+    if pd.api.types.is_datetime64_any_dtype(dtype):
+        index2datetime = {}
+    elif isinstance(index[0], bytes):
+        index2datetime = dict(zip(
+            unique_indices,
+            pd.to_datetime(unique_indices.str.decode('utf-8'), format='ISO8601')
+        ))
+    elif pd.api.types.is_string_dtype(dtype):
+        index2datetime = dict(zip(
+            unique_indices,
+            pd.to_datetime(unique_indices, format='ISO8601')
+        ))
+    else:
+        raise TypeError(f'Unsupported index type: {dtype}')
+
+    if len(index2datetime):
+        df['datetime'] = df.index.get_level_values('datetime').map(index2datetime)
 
     # Convert timezone format from 'UTC-[number]:00' to
     # 'Etc/GMT+[number]' for consistency with broader codebase
@@ -994,7 +981,7 @@ def decode_h5_timestamps(df):
     return df
 
 
-def read_h5_groups(filepath, parse_timestamps=False):
+def read_h5_groups(filepath, parse_timestamps=True):
     """
     Read a .h5 file with the following format,
     where r = numrows and c = numcols for each group (r and c can vary across groups):
@@ -1035,9 +1022,8 @@ def read_h5_groups(filepath, parse_timestamps=False):
             if (
                 parse_timestamps
                 and ('datetime' in dfout.index.names)
-                and (isinstance(dfout.index.get_level_values('datetime')[0], bytes))
             ):
-                dfout = decode_h5_timestamps(dfout)
+                dfout = parse_h5_timestamps(dfout)
 
             dictout[group] = dfout
                 
@@ -1120,7 +1106,47 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     return temperatures
 
 
-def get_site_cf_hourly(tech, year, case=None, **kwargs):
+def get_siting_switchval(
+    tech:None|Literal['upv','wind-ons','wind-ofs']=None,
+    switchname:None|Literal['GSw_SitingUPV','GSw_SitingWindOns','GSw_SitingWindOfs']=None,
+    case=None,
+    **kwargs
+) -> str:
+    """
+    Get the siting scenario to use for the specified tech.
+    If not using Monte Carlo sampling, simply reads from the case switches.
+    If using Monte Carlo sampling, returns the most permissive scenario used in the distribution
+    of siting scenarios for the specified technology (e.g., if the distribution includes
+    'open' and 'limited', it returns 'open').
+    """
+    sw = reeds.io.get_switches(case, **kwargs)
+    if switchname is None:
+        switchname = {
+            'upv': 'GSw_SitingUPV',
+            'wind-ons': 'GSw_SitingWindOns',
+            'wind-ofs': 'GSw_SitingWindOfs',
+        }[tech]
+    options_openest_first = ['open', 'reference', 'limited']
+    if not int(sw['MCS_runs']):
+        return sw[switchname]
+    else:
+        mc_inputs = reeds.input_processing.mcs_sampler.load_mcs_dist(case)
+        keep = mc_inputs.assignments_list.map(lambda x: any([switchname in entry for entry in x]))
+        ## Siting should only be specified in one entry
+        assert keep.sum() <= 1
+        if keep.sum() == 0:
+            return sw[switchname]
+        dist = mc_inputs.loc[keep].squeeze(0)
+        siting_scenarios = {
+            key: val for entry in dist.assignments_list for key, val in entry.items()
+        }[switchname]
+        ## Keep the openest scenario (which is first in the list)
+        for scen in options_openest_first:
+            if scen in siting_scenarios:
+                return scen
+
+
+def get_site_cf_hourly(tech:Literal['upv','wind-ons','wind-ofs'], year, case=None, **kwargs):
     """
     Get hourly site-level capacity factor profiles for the given tech and year
     in UTC. Note that "distpv" is not a valid input to the "tech" parameter for
@@ -1136,30 +1162,12 @@ def get_site_cf_hourly(tech, year, case=None, **kwargs):
     precedence. If {case} is None and a keyword argument is not provided
     for a switch, the default switch values specified in cases.csv are used.
     """
-    sw = reeds.io.get_switches(case, **kwargs)
-    match tech:
-        case 'upv':
-            fname = f'cf_upv_{sw.GSw_SitingUPV}'
-        case 'wind-ons':
-            fname = f'cf_wind-ons_{sw.GSw_SitingWindOns}'
-        case 'wind-ofs':
-            fname = f'cf_wind-ofs_{sw.GSw_SitingWindOfs}'
-        case None:
-            raise ValueError(
-                "A technology must be provided if no case is "
-                "provided or if inputs_case/recf.h5 does not exist."
-            )
-        case _:
-            raise NotImplementedError(
-                f"The provided tech '{tech}' does not have CF profiles."
-            )
+    access = get_siting_switchval(tech=tech, case=case, **kwargs)
+    fname = f'cf_{tech}_{access}.h5'
+    h5path = Path(reeds_path, 'inputs', 'profiles_cf', fname)
+    if not h5path.is_file():
+        raise FileNotFoundError(h5path)
 
-    h5path = os.path.join(
-        reeds_path,
-        'inputs',
-        'profiles_cf',
-        f'{fname}.h5'
-    )
     with h5py.File(h5path, 'r') as f:
         time_index = pd.to_datetime(
             pd.Series(f[f'time_index_{year}'][:])
@@ -1245,7 +1253,7 @@ def get_load_hourly(case=None, **kwargs):
             h5path = Path(reeds_path, 'inputs', 'profiles_demand', f'{fname}.h5')
 
     try:
-        load_hourly = pd.concat(read_h5_groups(h5path, parse_timestamps=True))
+        load_hourly = pd.concat(read_h5_groups(h5path))
         load_hourly = load_hourly.set_index(
             load_hourly.index.set_levels(
                 [int(i) for i in load_hourly.index.levels[0]],
@@ -1254,7 +1262,7 @@ def get_load_hourly(case=None, **kwargs):
             .rename("year", level=0)
         )
     except ValueError:
-        load_hourly = read_file(h5path, parse_timestamps=True)
+        load_hourly = read_file(h5path)
 
     return load_hourly
 
@@ -1319,7 +1327,7 @@ def get_distpv_cf_hourly():
         'profiles_cf',
         'cf_distpv_county.h5'
     )
-    return read_file(h5path, parse_timestamps=True)
+    return read_file(h5path)
 
 def get_years(case):
     return pd.read_csv(
@@ -1471,7 +1479,6 @@ def get_available_capacity_weighted_cf(case, level='country'):
     ## Get CF
     recf = reeds.io.read_file(
         os.path.join(case, 'inputs_case', 'recf.h5'),
-        parse_timestamps=True,
     )
     ## CF * cap / cap = available-capacity-weighted-average CF
     recapcf = (recf * sc.set_index('resource')['capacity']).dropna(axis=1, how='all')
@@ -1480,7 +1487,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
         recapcf.columns.map(lambda x: r2region[x.split('|')[1]]),
     ], names=['i', 'r'])
     dfout = (
-        recapcf.groupby(['i','r'], axis=1).sum()
+        recapcf.T.groupby(['i','r']).sum().T
         / sc.groupby(['tech','aggreg']).capacity.sum().rename_axis(['i','r'])
     )
     ## UPV is AC_out/DC_cap = CF_DC, so multiply by ILR to get CF_AC
@@ -1490,7 +1497,7 @@ def get_available_capacity_weighted_cf(case, level='country'):
     return dfout
 
 
-def get_sitemap(offshore=False, geo=True):
+def get_sitemap(case=None, offshore=False, geo=True, crs=None):
     """
     Get mapping from sc_point_gid to geographic points and counties.
     """
@@ -1502,10 +1509,53 @@ def get_sitemap(offshore=False, geo=True):
         ['latitude', 'longitude', 'FIPS']
         + (['ba', 'always_radial'] if offshore else [])
     ]
+    if offshore:
+        county2zone = get_county2zone(case)
+        sitemap.loc[sitemap.always_radial, 'ba'] = (
+            sitemap.loc[sitemap.always_radial, 'FIPS'].map(county2zone)
+        )
+        sitemap = sitemap.dropna(subset='ba')
     if geo:
-        crs = 'EPSG:5070' if offshore else 'ESRI:102008'
+        if crs is None:
+            crs = 'EPSG:5070' if offshore else 'ESRI:102008'
         sitemap = reeds.plots.df2gdf(sitemap, crs=crs)
     return sitemap
+
+
+def floatify(df:pd.DataFrame, col_label:str='cost') -> pd.DataFrame:
+    """
+    Convert all columns with col_label in the name to floats.
+    Used for cost data (which may be integers) so they can be
+    adjusted for dollar year without changing type.
+    """
+    costcols = [c for c in df if col_label in c]
+    dtypes = dict(zip(costcols, [np.float32]*len(costcols)))
+    dfout = df.astype(dtypes)
+    return dfout
+
+
+def get_supplycurve(scpath, case=None, crs='EPSG:5070', zonecol='region'):
+    """Load a supply curve file and map sc_point_gid's to model zones"""
+    fname = Path(scpath).stem
+    ## Get supply curve, reV sites, and zone map
+    sitemap = get_sitemap(standardize_case(case), offshore=('wind-ofs' in fname), crs=crs)
+    dfsc = pd.read_csv(scpath)
+    county2zone = get_county2zone(standardize_case(case))
+    sw = get_switches(case)
+    ## Map PSH lower reservoirs to nearest sc_point_gid
+    if 'psh' in fname:
+        dfsc = reeds.plots.df2gdf(
+            dfsc, crs=crs, lat='low_reservoir_latitude', lon='low_reservoir_longitude',
+        )
+        dfsc = dfsc.sjoin_nearest(sitemap[['geometry']], how='left').drop(columns=['geometry'])
+    ## Offshore zones are not user-adjustable and always use th same sc_point_gid's
+    if ('wind-ofs' in fname) and int(sw.GSw_OffshoreZones):
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.ba)
+    else:
+        ## Assign sc_point_gid's to counties and counties to zones
+        dfsc[zonecol] = dfsc.sc_point_gid.map(sitemap.FIPS).map(county2zone)
+    ## Drop regions outside this run's study area
+    return dfsc.dropna(subset=zonecol)
 
 
 def assemble_supplycurve(
@@ -1539,35 +1589,38 @@ def assemble_supplycurve(
     if scfile is None:
         offshore = False
     else:
-        offshore = (
-            True if ('wind-ofs' in os.path.basename(scfile)) or (scfile == 'offshore')
-            else False
-        )
-    ### Get interconnection cost
+        offshore = bool('wind-ofs' in os.path.basename(scfile) or scfile == 'offshore')
+        psh = bool('psh' in os.path.basename(scfile))
     fpath_interconnection = os.path.join(
         reeds_path, 'inputs', 'supply_curve',
         ('interconnection_offshore.h5' if offshore else 'interconnection_land.h5')
     )
-    interconnection_cost = reeds.io.read_h5_groups(fpath_interconnection)
+    interconnection_cost = floatify(reeds.io.read_h5_groups(fpath_interconnection))
     if scfile is None:
         return interconnection_cost
 
     ### Get supply curve
-    dfin = pd.read_csv(scfile, index_col='sc_point_gid')
+    dfin = floatify(pd.read_csv(scfile))
+    if 'sc_point_gid' in dfin.columns:
+        dfin = dfin.set_index('sc_point_gid')
     ## If derived columns are already in file, it's already been assembled, so stop here
     if 'supply_curve_cost_per_mw' in dfin:
         ## Rebuild it if not aggregating
         if skip_if_complete:
             return dfin
         else:
-            dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
+            if psh:
+                dfin = dfin[['capacity', 'capital_adder_per_mw']].copy()
+            else:
+                dfin = dfin[['class', 'capacity', 'capital_adder_per_mw', 'cf']].copy()
 
-    county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
 
     ### Combine
     dfout = dfin.copy()
     dfout = dfout.merge(interconnection_cost, how='left', left_index=True, right_index=True)
-    dfout['region'] = dfout.FIPS.map(county2zone)
+    if 'region' not in dfout:
+        county2zone = reeds.io.get_county2zone(case if agg else None, **kwargs)
+        dfout['region'] = dfout.FIPS.map(county2zone)
     ## Keep either meshed or radial data for offshore
     if offshore:
         keep = '|meshed' if int(sw.GSw_OffshoreZones) else '|radial'
@@ -1587,15 +1640,10 @@ def assemble_supplycurve(
         else:
             dfout['ba'] = dfout['region'].copy()
 
-    ## Drop reinforcement cost for counties
-    if case is not None:
-        agglevel_variables = reeds.spatial.get_agglevel_variables(
-            reeds_path, os.path.join(case, 'inputs_case')
-        )
-        counties = agglevel_variables['county_regions']
-    else:
-        counties = []
-    if len(counties):
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        counties = get_county_zones(GSw_ZoneSet=sw.GSw_ZoneSet)
         zerocols = ['cost_reinforcement_usd_per_mw', 'dist_reinforcement_km']
         dfout.loc[dfout.region.isin(counties), zerocols] = 0
         dfout.loc[dfout.region.isin(counties), 'cost_total_trans_usd_per_mw'] = dfout.loc[
@@ -1621,6 +1669,8 @@ def assemble_supplycurve(
                 'trans_type',
                 'node_latitude',
                 'node_longitude',
+                'node_lat',
+                'node_lon',
                 'always_radial',
                 'ba',
             ],
@@ -1645,54 +1695,6 @@ def map_sc_points_to_regions(dfin, case=None, offshore=False, **kwargs):
     return dfout
 
 
-def assemble_exog_cap(exogpath, case=None):
-    """
-    Join on sc_point_gid column:
-    - Exogenous capacity (indicated by exogpath input)
-    - Model zone
-
-    Returns: pd.DataFrame with [*tech, region, year, sc_point_gid] index and capacity data
-
-    Inputs for testing:
-    exogpath = os.path.join(reeds_path, 'inputs', 'capacity_exogenous', 'exog_cap_upv_reference.csv')
-    """
-    dfin = pd.read_csv(exogpath, index_col='sc_point_gid')
-    offshore = True if 'wind-ofs' in os.path.basename(exogpath) else False
-    dfout = map_sc_points_to_regions(dfin, case, offshore)
-    dfout = (
-        dfout.reset_index()
-        [['*tech','region','year','sc_point_gid','capacity']]
-    )
-    return dfout
-
-
-def assemble_prescribed_builds(filepath, case=None, **kwargs):
-    """
-    Join on sc_point_gid column and aggregate to model regions:
-    - Prescribed builds (indicated by filepath input)
-    - Model zone
-
-    Returns: pd.DataFrame with [region, year] index and capacity data
-
-    Inputs for testing:
-    filepath = os.path.join(
-        reeds_path,
-        'inputs',
-        'capacity_exogenous',
-        'prescribed_builds_wind-ons_reference.csv'
-    )
-    """
-    dfin = pd.read_csv(filepath, index_col='sc_point_gid')
-    offshore = True if 'wind-ofs' in os.path.basename(filepath) else False
-    dfout = map_sc_points_to_regions(dfin, case, offshore, **kwargs)
-    dfout = (
-        dfout.groupby(['region', 'year'], as_index=False)
-        ['capacity']
-        .sum()
-    )
-    return dfout
-
-
 #   ##      ## ########  #### ######## ########
 #   ##  ##  ## ##     ##  ##     ##    ##
 #   ##  ##  ## ##     ##  ##     ##    ##
@@ -1703,6 +1705,15 @@ def assemble_prescribed_builds(filepath, case=None, **kwargs):
 
 
 ### Write files
+def gamsify_header(df):
+    """Add '*' to the beginning so GAMS reads the header as a comment"""
+    if isinstance(df, pd.DataFrame):
+        dfout = df.rename(columns={df.columns[0]: '*' + str(df.columns[0])})
+    else:
+        dfout = df.rename('*' + df.name) if df.name else df
+    return dfout
+
+
 def get_dtype(col, df=None):
     if col.lower() == "value":
         return np.float32
@@ -1738,7 +1749,7 @@ def write_to_h5(
     key,
     filepath,
     attrs={},
-    overwrite=False,
+    overwrite=True,
     compression='gzip',
     compression_opts=4,
     **kwargs,
@@ -1748,6 +1759,7 @@ def write_to_h5(
         if key in list(f):
             if overwrite:
                 del f[key]
+                print(f'{key} was already used in {filepath} but is being overwritten')
             else:
                 raise ValueError(f'{key} is already used in {filepath}')
 
@@ -1771,7 +1783,7 @@ def write_to_h5(
                     data = dfwrite[col]
                     dtype = (
                         f"S{data.str.len().max()}"
-                        if dfwrite.dtypes[col] == 'O'
+                        if pd.api.types.is_string_dtype(dfwrite.dtypes[col])
                         else dfwrite.dtypes[col]
                     )
 
@@ -1841,9 +1853,10 @@ def write_to_inputs_h5(
     ## should contain the data as floats; all the other columns are treated as indices
     if gamstype == 'parameter':
         dfwrite.columns = dfwrite.columns.tolist()[:-1] + ['Value']
+        dfwrite['Value'] = dfwrite['Value'].astype(np.float32)
     ### Write record to h5 file
     calling_file = Path(inspect.stack()[-1][1]).name
-    attrs = {'gamstype': gamstype.lower(), 'written_by': calling_file}
+    attrs = {'gamstype': gamstype.lower(), 'units':units, 'written_by': calling_file}
     if len(units):
         attrs['comment'] = f'[{units}] {comment} (written by {calling_file})'
     else:
@@ -1863,6 +1876,7 @@ def write_csv_to_inputs_h5(
     filepath:str|Path,
     case:str|Path,
     gamstype:Literal['set','parameter'],
+    name:str|None=None,
     comment:str='',
     **kwargs,
 ):
@@ -1871,7 +1885,10 @@ def write_csv_to_inputs_h5(
     and write it to inputs.h5
     """
     df = pd.read_csv(filepath, dtype=str, header=None)
-    key = Path(filepath).stem
+    if isinstance(name, str):
+        if not len(name):
+            name = None
+    key = (Path(filepath).stem if name is None else name)
     if df.shape[1] == 1:
         ## Subsets have a header column beginning with '*';
         ## primary sets do not have a header
@@ -1887,7 +1904,7 @@ def write_csv_to_inputs_h5(
         df.columns = df.loc[0].str.replace('*','').values
         df = df.drop(0)
     ## No other *'s are allowed
-    if df.applymap(lambda x: '*' in x).any().any():
+    if df.map(lambda x: '*' in x).any().any():
         err = (
             "'*' characters are only allowed in subset headers.\n"
             f"{filepath} has at least one disallowed '*' character."
@@ -1909,7 +1926,6 @@ def write_output_to_h5(
     df,
     key,
     filepath,
-    drop_ctypes=False,
     verbose=0,
     **kwargs,
 ):
@@ -1926,9 +1942,8 @@ def write_output_to_h5(
         if verbose:
             print(f'{key} dataframe is empty, so it was not written to {filepath}')
         return dfwrite
-    ## Sets have `c_bool(True)` as the value for every entry, so just
-    ## drop the Value column if it's a set
-    if drop_ctypes and ("Value" in dfwrite) and isinstance(dfwrite.Value.values[0], ctypes.c_bool):
+    ## Drop the Value column if it's a set
+    if pd.api.types.is_string_dtype(dfwrite.Value) or isinstance(dfwrite.Value.values[0], ctypes.c_bool):
         dfwrite.drop("Value", axis=1, inplace=True)
     ## Make column names unique (necessary if '*' is overused)
     make_columns_unique(dfwrite)
@@ -1979,7 +1994,7 @@ def write_profile_to_h5(df, filename, outfolder, compression_opts=4):
                     indexvals.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
                 )
                 f.create_dataset(f'index_{i}', data=timeindex.str.encode('utf-8'), dtype='S30')
-            elif indexvals.dtype == 'O':
+            elif pd.api.types.is_string_dtype(indexvals.dtype):
                 f.create_dataset(f'index_{i}', data=indexvals, dtype=f'S{indexvals.map(len).max()}')
             else:
                 # Other indices can be saved using their data type
@@ -2127,14 +2142,14 @@ def get_folder_size(casedir):
 
     Returns
     -------
-    directory size in GB
+    directory size in MB
     """
     total_size = 0
-    for dirpath, dirnames, filenames in os.walk(os.path.join(casedir,'outputs')):
+    for dirpath, dirnames, filenames in os.walk(casedir):
         for f in filenames:
             fp = os.path.join(dirpath, f)
             if os.path.exists(fp):
                 total_size += os.path.getsize(fp)
-    # convert to GB
-    total_size /= 1e9
+    # convert to MB
+    total_size /= 1e6
     return total_size

@@ -181,21 +181,19 @@ def readwrite(
         ## Drop extra data after the model end year
         .loc[:,:endyear]
     )
-    
-    # Files indexed by month undergo additional processing in hourly_writetimeseries. Create
-    # intermediate filenames for these files and melt them back to long format
-    file_prefix = 'temp' if 'month' in dfout.index.names else 'climate'
-    keepindex = False if file_prefix == 'temp' else True
-    if file_prefix == 'temp': 
-        dfout = pd.melt(
-            dfout.reset_index(), id_vars=index[infile], value_vars=dfout.columns,
-            var_name='t', value_name='Value'
-        )
-        
+    # Melt to long format
+    dfout = pd.melt(
+        dfout.reset_index(), id_vars=index[infile], value_vars=dfout.columns,
+        var_name='t', value_name='Value'
+    )
+    # ClimateWater files indexed by month undergo additional processing in hourly_writetimeseries -
+    # Create intermediate filenames for these files
+    file_prefix = 'temp' if infile in ['UnappWaterMult','UnappWaterSeaAnnDistr'] else 'climate'
     # Write it to output folder
     dfout.round(decimals).to_csv(os.path.join(inputs_case, f'{file_prefix}_{infile}.csv'),
-                                 index=keepindex)
-    
+                                 index=False)
+
+
     return dfout
 
 

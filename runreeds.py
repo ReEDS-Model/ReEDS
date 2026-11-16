@@ -10,11 +10,9 @@ import threading
 import time
 import shutil
 import csv
-import importlib
 import numpy as np
 import pandas as pd
 import subprocess
-import re
 from datetime import datetime
 import argparse
 from pathlib import Path
@@ -99,12 +97,17 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
                 continue
         # Add switch settings to list of options passed to GAMS
         shcom = f' --case={BatchName}_{case}'
-        for i,v in df_cases[case].items():
-            #exclude certain switches that don't need to be passed to GAMS
+        case_out = df_cases[case].copy()
+        # (ReEDS-FINITO) Combine the cases files for the linked model
+        if int(case_out.loc['GSw_FINITO_Link']) == 1 :
+            case_out=reeds.finito.setup_linked_FINITO_cases(df_cases,case)
+            
+        #exclude certain switches that don't need to be passed to GAMS
+        for i,v in case_out.items():
             if i not in ['file_replacements','keep_run_terminal']:
                 shcom += f' --{i}={v}'
         caseList.append(shcom)
-        caseSwitches.append(df_cases[case].to_dict())
+        caseSwitches.append(case_out.to_dict())
 
     return caseSwitches, casenames, caseList
 
@@ -144,11 +147,11 @@ def get_ivt_numclass(reeds_path, casedir, caseSwitches):
     return numclass
 
 
-def get_rev_paths(revswitches, caseSwitches):
+def get_rev_paths(revswitches):
     # Expand on reV path based on where this run is happening
     # when running on the HPC this links to the shared-projects folder
-    hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
-    if os.environ.get('NREL_CLUSTER') == 'kestrel':
+    hpc = reeds.slurm.check_slurm()
+    if reeds.slurm.get_cluster() == 'kestrel':
         hpc_path = '/kfs2/shared-projects/reeds/Supply_Curve_Data'
     else:
         hpc_path = '/shared-projects/reeds/Supply_Curve_Data'
@@ -169,15 +172,10 @@ def get_rev_paths(revswitches, caseSwitches):
     revswitches['rev_path'] = revswitches.apply(lambda row: os.path.join(row.sc_path, "reV", row.rev_case), axis=1)
 
     # link to the pre-processed reV supply curves from hourlize
-    def get_rev_sc_file_name(caseSwitches, rev_row, use_hpc=False):
+    def get_rev_sc_file_name(rev_row, use_hpc=False):
         if pd.isnull(rev_row.original_sc_file):
             return ""
         else:
-            if caseSwitches['GSw_RegionResolution'] == "county":
-                sc_folder_suffix = "_county"
-            else:
-                sc_folder_suffix = "_ba"
-
             # link to HPC or other sc_path
             if use_hpc:
                 sc_path = rev_row.hpc_sc_path
@@ -186,359 +184,28 @@ def get_rev_paths(revswitches, caseSwitches):
 
             # supply curve name should be in format of {tech}_rev_supply_curves_raw.csv
             # in the hourlize results folder (must match format in 'save_sc_outputs' function of hourlize/resource.py)
-            sc_file = os.path.join(sc_path,
-                            rev_row.tech + "_" + rev_row.access_case + sc_folder_suffix,
-                            "results",
-                            rev_row.tech + "_supply_curve_raw.csv"
-                            )
+            sc_file = os.path.join(
+                sc_path,
+                f"{rev_row.tech}_{rev_row.access_case}_county",
+                "results",
+                f"{rev_row.tech}_supply_curve_raw.csv"
+            )
             return sc_file
-    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row), axis=1)
-    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(caseSwitches, row, use_hpc=True), axis=1)
+    revswitches['sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row), axis=1)
+    revswitches['hpc_sc_file'] = revswitches.apply(lambda row: get_rev_sc_file_name(row, use_hpc=True), axis=1)
 
     return revswitches
 
 
-def check_cases_format(df_cases):
-    """Check the integrity of the input cases_{}.csv data"""
-    dfkeep = df_cases.loc[:, ~df_cases.loc['ignore'].astype(int).astype(bool)]
-    ## Only allow GSw_FakeData to be used all-or-nothing
-    unique_fakes = dfkeep.loc['GSw_FakeData'].unique()
-    if len(unique_fakes) > 1:
-        err = (
-            'GSw_FakeData can only take a single value in a set of cases but values of "'
-            + ', '.join(unique_fakes) + '" were provided'
-        )
-        raise ValueError(err)
-    ## Check for spaces in case names
-    spaces = [i for i in dfkeep if ' ' in i]
-    if len(spaces):
-        err = (
-            'Spaces are not allowed in case names; the following names have spaces:\n'
-            + '\n'.join(f'"{i}"' for i in spaces)
-        )
-        raise ValueError(err)
-
-
-def check_compatibility(sw):
-    if int(sw['startyear']) < 2010:
-        raise ValueError(f"startyear = {sw['startyear']} but must be ≥ 2010")
-
-    if (sw['GSw_HourlyType'] in ['year']) and int(sw['GSw_InterDayLinkage']):
-        raise ValueError(
-            "GSw_HourlyType cannot be 'year' when GSw_InterDayLinkage is enabled. "
-            f"Current values: GSw_HourlyType={sw['GSw_HourlyType']}, GSw_InterDayLinkage={sw['GSw_InterDayLinkage']}"
-        )
-
-    if 24 % (int(sw['GSw_HourlyWindowOverlap']) * int(sw['GSw_HourlyChunkLengthRep'])):
-        raise ValueError(
-            ('24 must be divisible by GSw_HourlyWindowOverlap * GSw_HourlyChunkLengthRep:'
-            '\nGSw_HourlyWindowOverlap = {}\nGSw_HourlyChunkLengthRep = {}'.format(
-                sw['GSw_HourlyWindowOverlap'], sw['GSw_HourlyChunkLengthRep'])))
-
-    if int(sw['GSw_HourlyWindow']) <= int(sw['GSw_HourlyWindowOverlap']):
-        raise ValueError(
-            ('GSw_HourlyWindow must be greater than GSw_HourlyWindowOverlap:'
-            '\nGSw_HourlyWindow = {}\nGSw_HourlyWindowOverlap = {}'.format(
-                sw['GSw_HourlyWindow'], sw['GSw_HourlyWindowOverlap'])))
-
-    if ((sw['GSw_HourlyClusterAlgorithm'] not in ['hierarchical','optimized','kmeans','kmedoids'])
-        and ('user' not in sw['GSw_HourlyClusterAlgorithm'])
-    ):
-        if sw['GSw_HourlyClusterAlgorithm'].startswith('hierarchical'):
-            args = sw['GSw_HourlyClusterAlgorithm'].split('_')
-            assert len(args) == 3
-            ## https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html
-            assert args[1] in ['euclidean','l1','l2','manhattan','cosine']
-            assert args[2] in ['ward', 'complete', 'average', 'single']
-            if args[2] == 'ward':
-                assert args[1] == 'euclidean'
-        elif sw['GSw_HourlyClusterAlgorithm'].startswith('kmedoids'):
-            args = sw['GSw_HourlyClusterAlgorithm'].split('_')
-            assert len(args) == 3
-            assert args[1] in ['euclidean','l1','l2','manhattan','cosine']
-            assert args[2] in ['heuristic','k-medoids++','random','build']
-        else:
-            raise ValueError(
-                "GSw_HourlyClusterAlgorithm must be set to 'hierarchical', 'optimized', "
-                "'kmeans', or 'kmedoids', or must "
-                "contain the substring 'user' and match a scenario in "
-                "inputs/temporal/period_szn_user.csv"
-            )
-
-    if ((sw['GSw_PRM_StressModel'].lower() not in ['pras'])
-        and ('user' not in sw['GSw_PRM_StressModel'])):
-        raise ValueError(
-            "GSw_PRM_StressModel must be set to 'pras' or must "
-            "contain the substring 'user' and match a scenario at "
-            "inputs/temporal/stressperiods_{GSw_PRM_StressModel}.csv"
-        )
-
-    if (int(sw['GSw_H2_PTC']) == 1) and (int(sw['GSw_H2']) != 2):
-        raise ValueError(
-            'When running with the H2 PTC enabled, GSw_H2 should be set to 2.\n'
-            f"GSw_H2_PTC={sw['GSw_H2_PTC']}, GSw_H2={sw['GSw_H2']}"
-        )
-
-    if int(sw['GSw_H2_SMR']) == 0 and sw['GSw_H2_Demand_Case'] in ['BAU', 'Aggressive', 'Decarb_with_BAU']:
-        raise ValueError(
-            f"GSw_H2_SMR is set to 0, but GSw_H2_Demand_Case is set to '{sw['GSw_H2_Demand_Case']}', which requires SMR set to 1.\n"
-            "When GSw_H2_SMR is 0, GSw_H2_Demand_Case must be one of: 'none', 'Decarb', or 'LTS'."
-        )
-
-    if ('usa' not in sw['GSw_Region'].lower()) and (int(sw['GSw_GasCurve']) != 2):
-        raise ValueError(
-            'Should use GSw_GasCurve=2 (fixed prices) when running sub-nationally\n'
-            f"GSw_Region={sw['GSw_Region']}, GSw_GasCurve={sw['GSw_GasCurve']}"
-        )
-
-    if sw['GSw_RegionResolution'] in ['county','mixed']:
-        err_switch_configs = []
-        if int(sw['GSw_OffshoreZones']):
-            err_switch_configs.append('GSw_OffshoreZones=1')
-        if sw['GSw_LoadAllocationMethod'] == 'state_lpf':
-            err_switch_configs.append('GSw_LoadAllocationMethod=state_lpf')
-
-        if len(err_switch_configs) > 0:
-            raise NotImplementedError(
-                'The following switch configurations are not implemented for '
-                'county/mixed resolution:\n{}\n'
-                .format('\n'.join(err_switch_configs))
-            )
-
-    reeds.inputs.validate_zoneset(sw['GSw_ZoneSet'])
-
-    ### Aggregation
-    if (sw['GSw_RegionResolution'] != 'aggreg') and (int(sw['GSw_NumCSPclasses']) != 12):
-        raise NotImplementedError(
-            'Aggregated CSP classes only work with aggregated regions. '
-            'GSw_NumCSPclasses is incompatible with '
-            'GSw_RegionResolution != aggreg')
-
-    ### Parsed string switches
-    ## Automatic inputs
-    reeds_path = os.path.dirname(__file__)
-    hierarchy = reeds.io.get_hierarchy(GSw_ZoneSet=sw['GSw_ZoneSet']).reset_index()
-
-    for threshold in sw['GSw_PRM_StressThreshold'].split('/'):
-        ## Example: threshold = 'transgrp_10_EUE_sum'
-        allowed_levels = ['country','interconnect','nercr','transreg','transgrp','st','r']
-        (hierarchy_level, ppm, stress_metric, period_agg_method) = threshold.split('_')
-        if hierarchy_level not in allowed_levels:
-            raise ValueError(
-                f"GSw_PRM_StressThreshold: level={hierarchy_level} but must be in:\n"
-                + '\n'.join(allowed_levels)
-            )
-        if period_agg_method.lower() not in ['sum','max']:
-            raise ValueError("Fix period agg method in GSw_PRM_StressThreshold")
-        if not (float(ppm) >= 0):
-            raise ValueError(
-                "ppm in GSw_PRM_StressThreshold must be a positive number "
-                f"but '{ppm}' was provided"
-            )
-        if stress_metric.upper() not in ['EUE','NEUE']:
-            raise ValueError(
-                "stress metric in GSw_PRM_StressThreshold must be 'EUE' or 'NEUE' "
-                f"but '{stress_metric}' was provided"
-            )
-        if (sw['GSw_PRM_StressModel'].lower() != 'pras') and (stress_metric.upper() != 'EUE'):
-            err = (
-                f"The combination of GSw_PRM_StressModel={sw['GSw_PRM_StressModel']} and "
-                f"stress_metric={stress_metric} is not supported."
-            )
-            raise NotImplementedError(err)
-        
-    if sw['GSw_PRM_StressStorageCutoff'].lower() not in ['off','0','false']:
-        metric, value = sw['GSw_PRM_StressStorageCutoff'].split('_')
-        if metric.lower()[:3] not in ['eue', 'cap', 'abs']:
-            raise ValueError(
-                "The first argument of GSw_PRM_StressStorageCutoff must be in "
-                f"['eue', 'cap', 'abs'] but {metric} was provided"
-            )
-        try:
-            float(value)
-        except ValueError:
-            raise ValueError(
-                "The second argument of GSw_PRM_StressStorageCutoff must be a number "
-                f"but {value} was provided"
-            )
-        if (metric.lower()[:3] == 'abs') and (int(value) != 1):
-            raise NotImplementedError(
-                "GSw_PRM_StressStorageCutoff: only abs_1 is implemented for abs but "
-                f"{metric}_{value} was provided"
-            )
-
-    for keyval in sw['GSw_PRM_NetImportLimitScen'].split('/'):
-        err = (
-            "GSw_PRM_NetImportLimitScen accepts inputs in the format "
-            "{year1}_{'hist' or float}/{year2}_{float}/{year3}_{float} "
-            "or a single value given as {year1}_{'hist' or float}. Examples are "
-            "2024_hist/2035_40, 2025_20/2032_40, 2024_hist, 2025_20/2032_40/2050_60. "
-            f"You entered {sw['GSw_PRM_NetImportLimitScen']}."
-        )
-        year, limit = keyval.split('_')
-        try:
-            int(year)
-        except ValueError:
-            raise ValueError(err)
-        if limit not in ['hist', 'histmax']:
-            try:
-                float(limit)
-            except ValueError:
-                raise ValueError(err)
-
-    for bir in sw['GSw_PVB_BIR'].split('_'):
-        if not (float(bir) >= 0):
-            raise ValueError("Fix GSw_PVB_BIR")
-
-    for ilr in sw['GSw_PVB_ILR'].split('_'):
-        if not (float(ilr) >= 0):
-            raise ValueError("Fix GSw_PVB_ILR")
-
-    for pvbtype in sw['GSw_PVB_Types'].split('_'):
-        if not (1 <= int(pvbtype) <= 3):
-            raise ValueError("Fix GSw_PVB_Types")
-
-    try:
-        prm = float(sw['GSw_PRM_scenario'])
-        if prm >= 1:
-            raise Exception(
-                f"GSw_PRM_scenario={sw['GSw_PRM_scenario']} but should be formatted as a "
-                "fraction, not a percent"
-            )
-    except ValueError:
-        pass
-
-    scalars = reeds.io.get_scalars()
-    ilr_upv = scalars['ilr_utility'] * 100
-
-    if (
-        int(sw['GSw_PVB'])
-        and not all([np.isclose(float(ilr), ilr_upv) for ilr in sw['GSw_PVB_ILR'].split('_')])
-    ):
-        raise ValueError(
-            f"GSw_PVB_ILR = {sw['GSw_PVB_ILR']} but all entries must be {int(ilr_upv)}"
-        )
-
-    allowed_years = list(range(2007,2014)) + list(range(2016,2024))
-    allowed_years_string = ','.join([str(year) for year in allowed_years])
-
-    resource_adequacy_years = [int(y) for y in sw['resource_adequacy_years'].split('_')]
-    for year in resource_adequacy_years:
-        if year not in allowed_years:
-            raise ValueError(
-                f"resource_adequacy_years must be in {allowed_years_string} but is "
-                f"{sw['resource_adequacy_years']}"
-            )
-
-    for year in sw['GSw_HourlyWeatherYears'].split('_'):
-        if int(year) not in allowed_years:
-            raise ValueError(
-                f"GSw_HourlyWeatherYears must be in {allowed_years_string} but is "
-                f"{sw['GSw_HourlyWeatherYears']}"
-            )
-
-        if int(year) not in resource_adequacy_years:
-            raise ValueError(
-                "GSw_HourlyWeatherYears must be a subset of resource_adequacy_years but "
-                f"GSw_HourlyWeatherYears={sw['GSw_HourlyWeatherYears']} and "
-                f"resource_adequacy_years={sw['resource_adequacy_years']}"
-            )
-
-    solveyears = reeds.inputs.parse_yearset(sw['yearset'])
-    if int(sw['endyear']) not in solveyears:
-        err = f"`endyear` = {sw['endyear']} but must be in `yearset`: {sw['yearset']}"
-        raise ValueError(err)
-
-    # Add a row for each county
-    ## TEMPORARY 20260402 until the aggregation procedure is updated
-    county2zone = reeds.io.get_county2zone(GSw_ZoneSet='z134', as_map=False)
-    county2zone['county'] = 'p' + county2zone.FIPS
-    # Add county info to hierarchy
-    hierarchy = hierarchy.merge(county2zone.drop(columns=['FIPS','state']), on='r')
-
-    # Make sure specified regions are allowed for the specified hierarchy level
-    region_groups = sw['GSw_Region'].split('//') if '//' in sw['GSw_Region'] else [sw['GSw_Region']]
-    for group in region_groups:
-        level, regions = group.split('/')
-        if level not in hierarchy:
-            err = (
-                f"The specified hierarchy level '{level}' does not exist in the hierarchy file."
-                f"\nUpdate GSw_Region={sw['GSw_Region']} to specify a valid level."
-            )
-            raise ValueError(err)
-        invalid_regions = [
-            region for region in regions.split('.')
-            if region.lower() not in hierarchy[level].str.lower().values
-        ]
-        if invalid_regions:
-            err = f"GSw_Region: {', '.join(invalid_regions)} need to be in {hierarchy[level].unique()}"
-            raise Exception(err)
-
-    ### Compatible switch combinations
-    if sw['GSw_LoadProfiles'] == 'historic':
-        if ('demand_' + sw['demandscen'] +'.csv') not in os.listdir(os.path.join(reeds_path, 'inputs','load')) :
-            raise ValueError("The demand file specified by the demandscen switch is not in the inputs/load folder")
-
-    if (
-        re.match(r'(\/|[a-zA-Z]:[\\\/]).+$', sw['GSw_LoadProfiles'])
-        and not Path(sw['GSw_LoadProfiles']).is_file()
-    ):
-        err = f"GSw_LoadProfiles={sw['GSw_LoadProfiles']} but the specified file does not exist"
-        raise FileNotFoundError(err)
-
-    ### Dependent model availability
-    if (
-        ((int(sw['pras']) == 2) or int(sw['GSw_PRM_StressIterateMax']))
-        and (not os.path.isfile(os.path.join(reeds_path, 'Manifest.toml')))
-    ):
-        err = (
-            "Manifest.toml does not exist. "
-            "Please set up julia by following the instructions at "
-            "https://reeds-model.github.io/ReEDS/setup.html#reeds2pras-julia-and-stress-periods-setup"
-        )
-        raise Exception(err)
-
-    ### Land use and reeds_to_rev
-    if (int(sw['land_use_analysis'])) and (not int(sw['reeds_to_rev'])):
-        raise ValueError(
-            "'reeds_to_rev' must be enable for land_use analysis to run."
-        )
-
-    disallowed_characters = ['~', '|', '*']
-    invalid_switches = [
-        key for key, val in sw.items()
-        if any([char in val for char in disallowed_characters])
-    ]
-    if len(invalid_switches) > 0:
-        raise ValueError(
-            "The following switches have values with disallowed characters "
-            f"({', '.join(disallowed_characters)}): {', '.join(invalid_switches)}"
-        )
-
-    ### Contents of user-specified files
-    reeds.checks.check_switches(sw)
-
-    ### Uncommonly used packages
-    if sw['GSw_HourlyClusterAlgorithm'].lower().startswith('kmedoids'):
-        if importlib.util.find_spec("sklearn_extra") is None:
-            err = (
-                "The scikit-learn-extra package is required for GSw_HourlyClusterAlgorithm="
-                f"{sw['GSw_HourlyClusterAlgorithm']} but is not available in your conda "
-                "environment. Please install it by running:\n"
-                "    pip install 'scikit-learn-extra>=0.2.0,<0.3.0'"
-                "\nor:\n"
-                "    conda install -c conda-forge scikit-learn-extra=0.2"
-            )
-            raise ModuleNotFoundError(err)
-
-# function to stop the model after input processing
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
+    """Stop the model after input processing"""
     comment('Exit after input_processing', OPATH)
     OPATH.writelines(
         f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
         f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
     )
     OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
+
 
 def setup_sequential_year(
         cur_year, prev_year, next_year,
@@ -763,7 +430,7 @@ def setup_window(
 
 def setupEnvironment(
         BatchName=False, cases_suffix=False, single='', simult_runs=0,
-        forcelocal=0, skip_checks=False,
+        forcelocal=0, force=0,
         debug=False, debugnode=False, cases_per_node=1,
         dryrun=False,
     ):
@@ -773,7 +440,7 @@ def setupEnvironment(
     # WORKERS = 1
     # forcelocal = 0
     # single = ''
-    # skip_checks = False
+    # force = 0
     # debug = False
     # dryrun = True
 
@@ -818,38 +485,33 @@ def setupEnvironment(
         cases_suffix = str(input('Case Suffix: '))
 
     #%% Check whether to submit slurm jobs (if on HPC) or run locally
-    hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
-    hpc = False if forcelocal else hpc
+    hpc = reeds.slurm.check_slurm(forcelocal=forcelocal)
 
     ### If on NLR HPC but NOT submitting slurm job, ask for confirmation
-    if ('NREL_CLUSTER' in os.environ) and (not hpc):
+    if reeds.slurm.get_cluster() and (not hpc):
         print(
-            "It looks like you're running on the NLR HPC but the REEDS_USE_SLURM environment "
-            "variable is not set to 1, meaning the model will run locally rather than being "
-            "submitted as a slurm job. Are you sure you want to run locally?"
+            "It looks like you're running on the HPC login node instead of submitting a "
+            "slurm job. Are you sure you want to run locally (not recommended)?"
         )
         confirm_local = str(input('Run job locally? y/[n]: ') or 'n')
         if confirm_local not in ['y','Y','yes','Yes','YES']:
             quit()
 
     #%% Check whether the ReEDS conda environment is activated
-    if (not skip_checks) and (
-        ('reeds2' not in os.environ['CONDA_DEFAULT_ENV'].lower())
-        or (not pd.__version__.startswith('2'))
+    if (force < 3) and (
+        ('reeds' not in os.environ['CONDA_DEFAULT_ENV'].lower())
+        or (not pd.__version__.startswith('3'))
     ):
-        print(
+        err = (
             f"Your environment is {os.environ['CONDA_DEFAULT_ENV']} and your pandas "
-            f"version is {pd.__version__}.\nThe default environment is 'reeds2', with\n"
-            "pandas version 2.x, so the python parts of ReEDS are unlikely to work.\n"
+            f"version is {pd.__version__}.\nThe supported environment is 'reeds', with\n"
+            "pandas version 3.x.\n"
             "To build the environment for the first time, run:\n"
             "    `conda env create -f environment.yml`\n"
             "To activate the created environment, run:\n"
-            "    `conda activate reeds2` (or `activate reeds2` on Windows)\n"
-            "Do you want to continue without activating the environment?"
+            "    `conda activate reeds` (or `activate reeds` on Windows)"
         )
-        confirm_env = str(input("Continue? y/[n]: ") or 'n')
-        if confirm_env not in ['y','Y','yes','Yes','YES']:
-            quit()
+        raise ValueError(err)
 
     #%% Load specified case file, infer other settings from cases.csv
     if cases_suffix in ['', 'default']:
@@ -860,7 +522,7 @@ def setupEnvironment(
     df_cases = reeds.inputs.parse_cases(
         cases_filename=cases_filename,
         single=single,
-        skip_checks=skip_checks,
+        force=(force>=2),
     )
     ## Propagate debug setting
     if debug:
@@ -871,13 +533,6 @@ def setupEnvironment(
         BatchName=BatchName,
         single=single,
     )
-
-    #%% Stop now if any switches are incompatible
-    check_cases_format(df_cases)
-    for sw in caseSwitches:
-        check_compatibility(sw)
-    if dryrun:
-        quit()
 
     # If no --single/-s, drop the ignored cases, otherwise leave them
     if not single:
@@ -896,9 +551,15 @@ def setupEnvironment(
                     f'Specified single={single} but available cases are:\n'
                     + '\n> '.join([c for c in df_cases.columns])
                 )
-                raise KeyError(err)
+                raise ValueError(err)
         df_cases = df_cases[single.split(',')].copy()
         casenames = single.split(',')
+
+    #%% Stop now if any switches are incompatible
+    reeds.checks.check_cases_format(df_cases)
+    reeds.checks.check_switches(df_cases, force=force)
+    if dryrun:
+        quit()
 
     # Make sure the run folders don't already exist
     outpaths = [os.path.join(reeds_path,'runs',f'{BatchName}_{case}') for case in casenames]
@@ -939,7 +600,7 @@ def setupEnvironment(
         quit()
 
     #%% User warnings
-    if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and not skip_checks:
+    if (df_cases.loc['cleanup_level'].astype(int) > 0).any() and (force < 2):
         print(
             '\nWARNING: At least one case uses cleanup_level ≥ 1, which removes files '
             'used by R2X.\nIf you plan to run R2X, do not proceed; set cleanup_level '
@@ -1141,7 +802,7 @@ def write_batch_script(
     revswitches = revswitches.merge(binSwitches, on=['tech'], how='left')
 
     # format rev paths
-    revswitches = get_rev_paths(revswitches, caseSwitches)
+    revswitches = get_rev_paths(revswitches)
 
     # save rev paths file for run
     revswitches[['tech','access_switch','access_case','rev_case','bins','sc_path',
@@ -1239,6 +900,10 @@ def write_batch_script(
     os.makedirs(os.path.join(casedir,'handoff','reeds_data'), exist_ok=True)
     os.makedirs(os.path.join(casedir,'handoff','PRAS'), exist_ok=True)
 
+    ## Set up FINITO if running linked model
+    if int(caseSwitches['GSw_FINITO_Link'])==1:
+        reeds.finito.setup_finito(casedir, caseSwitches, BatchName)
+
     ###### Replace files according to 'file_replacements' in cases. Ignore quotes in input text.
     # << is used to separate the file that is to be replaced from the file that is used
     # || is used to separate multiple replacements.
@@ -1266,26 +931,19 @@ def write_batch_script(
             comment('Set up nodal environment for run', OPATH)
             OPATH.writelines(". $HOME/.bashrc \n")
             OPATH.writelines("module purge \n")
-
-            if os.environ.get('NREL_CLUSTER') == 'kestrel':
-                OPATH.writelines("source /nopt/nrel/apps/env.sh \n")
-                OPATH.writelines("module load anaconda3 \n")
-                OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
-                OPATH.writelines("module load gams \n")
-                OPATH.writelines("module load julia/1.12.1 \n")
-            else:
-                OPATH.writelines("module load conda \n")
-                OPATH.writelines("module load gams \n")
-
-            OPATH.writelines("conda activate reeds2 \n")
-            OPATH.writelines('export R_LIBS_USER="$HOME/rlib" \n\n\n')
+            OPATH.writelines("module load anaconda3 \n")
+            OPATH.writelines("module use /nopt/nrel/apps/software/gams/modulefiles \n")
+            OPATH.writelines("module load gams \n")
+            OPATH.writelines("conda activate reeds \n")
+            OPATH.writelines('\n\n')
 
         #%% Write the input_processing script calls
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
             'mcs_sampler',
-            'aggregate_regions',
+            'process_unitdata',
+            'climateprep',            
             'hydcf',
             'h2_storage',
             'calc_financial_inputs',
@@ -1294,13 +952,12 @@ def write_batch_script(
             'writesupplycurves',
             'writedrshift',
             'plantcostprep',
-            'climateprep',
             'hourly_load',
             'recf',
-            'forecast',
             'WriteHintage',
             'transmission',
             'outage_rates',
+            'forecast',
             'hourly_repperiods',
             'h5_to_gdx',
         ]:
@@ -1386,13 +1043,46 @@ def write_batch_script(
             + ' gdxcompress=1'
             + toLogGamsString
             + f"--fname={batch_case}"
-            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
+            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']}"
+            + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
-        if not LINUXORMAC:
+        if not LINUXORMAC and int(caseSwitches['GSw_FINITO_Link']) != 1:
             OPATH.writelines("endlocal\n")
         OPATH.writelines(f'python {logger}\n')
-        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n\n")
+
+        ### (ReEDS-FINITO) call FINITO reporting
+        if int(caseSwitches['GSw_FINITO_Link'])==1:
+            OPATH.writelines(
+                'gams '
+                + f"{os.path.join(casedir,'finito', 'model', 'finito_report.gms')}"
+                + f" o={os.path.join('lstfiles',f'finito_report_{batch_case}.lst')}"
+                + (' license=gamslice.txt' if hpc else '')
+                + (' r=$r' if LINUXORMAC else ' r=!r!')
+                + ' gdxcompress=1'
+                + toLogGamsString
+                + f"--case={batch_case}"
+                + f" --casedir={casedir}"
+                + f" --GSw_FINITO_Link={caseSwitches['GSw_FINITO_Link']}"
+                + f" --GSw_RetailAdder={caseSwitches['GSw_RetailAdder']}"
+                + f" --finito_inputs_dir={os.path.join('finito','inputs')}"
+                + f" --inputs_case_finito_dir={os.path.join('finito','inputs_case')}"
+                + f" --linked_report_dir={caseSwitches['linked_report_dir']} \n"
+            )
+            # (ReEDS-FINITO) calls FINITO postprocessing
+            OPATH.writelines(
+            f"python {os.path.join(casedir, 'finito', 'visualization', 'postprocessing.py')}"
+                + " -b 0"            
+                + f" -l {caseSwitches['GSw_FINITO_Link']}"
+                + f' -c {batch_case} \n\n'
+            )  
+            if not LINUXORMAC:
+                OPATH.writelines("endlocal\n")
+
+        ### save reporting outputs to h5 and/or csv files
+        OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
+        OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+
         if int(caseSwitches['diagnose']):
              OPATH.writelines(
                 "python"
@@ -1481,7 +1171,9 @@ def write_batch_script(
         ### Remove unnecessary files from case folder
         OPATH.writelines(
             f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
-            f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
+            f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}"
+            f"{' --keepra' if int(caseSwitches['keep_resource_adequacy_files']) else ''}"
+            "\n"
         )
 
         ### Run R2X if using debug mode
@@ -1745,7 +1437,7 @@ def launch_single_case_run(
 
 def main(
         BatchName='', cases_suffix='', single='', simult_runs=0,
-        forcelocal=False, skip_checks=False,
+        forcelocal=False, force=0,
         debug=False, debugnode=False, cases_per_node=1,
         dryrun=False,
     ):
@@ -1783,7 +1475,7 @@ def main(
     envVar = setupEnvironment(
         BatchName=BatchName, cases_suffix=cases_suffix,
         single=single, simult_runs=simult_runs,
-        forcelocal=forcelocal, skip_checks=skip_checks,
+        forcelocal=forcelocal, force=force,
         debug=debug, debugnode=debugnode, cases_per_node=cases_per_node,
         dryrun=dryrun,
     )
@@ -1818,8 +1510,6 @@ if __name__ == '__main__':
                         help='Number of simultaneous runs. If negative, run all simultaneously.')
     parser.add_argument('--forcelocal', '-l', action='store_true',
                         help='Force model to run locally instead of submitting a slurm job')
-    parser.add_argument('--skip_checks', '-f', action="store_true",
-                        help="Force run, skipping checks on conda environment and switches")
     parser.add_argument('--debug', '-d', action='count', default=0,
                         help="Run in debug mode (same behavior as debug switch in cases.csv)")
     parser.add_argument('--debugnode', '-n', action="store_true",
@@ -1829,12 +1519,21 @@ if __name__ == '__main__':
                             "If not provided, the user will be prompted to specify it.")
     parser.add_argument('--dryrun', '-t', action='store_true',
                         help="Check inputs but don't start runs")
+    parser.add_argument(
+        '--force', '-f', action='count', default=0,
+        help=(
+            'Force run, skipping the following checks: '
+            '≥1: Enough representative periods for analysis and no islanded zones; '
+            '≥2: Switches within allowed values; '
+            '≥3: Conda environment activated'
+        ),
+    )
 
     args = parser.parse_args()
 
     main(
         BatchName=args.BatchName, cases_suffix=args.cases_suffix, single=args.single,
-        simult_runs=args.simult_runs, forcelocal=args.forcelocal, skip_checks=args.skip_checks,
+        simult_runs=args.simult_runs, forcelocal=args.forcelocal, force=args.force,
         debug=args.debug, debugnode=args.debugnode, cases_per_node=args.cases_per_node,
         dryrun=args.dryrun,
     )

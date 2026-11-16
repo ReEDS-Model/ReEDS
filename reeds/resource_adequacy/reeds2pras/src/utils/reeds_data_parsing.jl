@@ -66,16 +66,6 @@ function process_lines(
             converter_capacity_data[!, "MW"],
     )
 
-    #add 0 converter capacity for regions that lack a converter
-    if length(keys(converter_capacity_dict)) > 0
-        for reg in regions
-            if !(reg in keys(converter_capacity_dict))
-                @info("$reg does not have VSC converter capacity, so adding" * " a 0")
-                converter_capacity_dict[reg] = 0.0
-            end
-        end
-    end
-
     function keep_line(from_pca, to_pca)
         from_idx = findfirst(x -> x == from_pca, regions)
         to_idx = findfirst(x -> x == to_pca, regions)
@@ -143,8 +133,8 @@ function process_lines(
                     MTTR = 24,
                     VSC = true,
                     converter_capacity = Dict(
-                        row.r => converter_capacity_dict[string(row.r)],
-                        row.rr => converter_capacity_dict[string(row.rr)],
+                        row.r => get(converter_capacity_dict, string(row.r), 0.0),
+                        row.rr => get(converter_capacity_dict, string(row.rr), 0.0),
                     ),
                 ),
             )
@@ -589,11 +579,7 @@ function process_hydro(
                         :value,
                     ] * row.MW_sum)[1]
             catch e
-                if isa(e, BoundsError)
-                    @error "$(row.r),$(row.i),$(e)"
-                else
-                    error()
-                end
+                @error "$(row.r),$(row.i),$(e)"
             end
         end
 
@@ -886,7 +872,7 @@ function disagg_existing_capacity(
     tech_ba_year_existing = DataFrames.subset(
         unitdata,
         :tech => DataFrames.ByRow(==(tech)),
-        :reeds_ba => DataFrames.ByRow(==(pca)),
+        :r => DataFrames.ByRow(==(pca)),
         :RetireYear => DataFrames.ByRow(>(year)),
         :StartYear => DataFrames.ByRow(<=(year)),
     )

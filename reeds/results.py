@@ -9,7 +9,10 @@ complex ReEDS output data like system costs, reinforcement transmission, etc.
 ### ===========================================================================
 import os
 import sys
+import h5py
+import numpy as np
 import pandas as pd
+from pathlib import Path
 from itertools import product
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  
@@ -300,19 +303,15 @@ def calc_systemcost(
         crf_from_user (bool): Use a user-specified Capital Recovery Factor (CRF) instead of the model’s.
             (Only used if cost_type == 'annualized'.)
     """
-    # Identify the inputs_case directory based on provided path
-    inputs_case = (
-        os.path.abspath(os.path.join(case, '..', '..', 'inputs_case'))
-        if case.endswith('.h5')
-        else os.path.join(case, 'inputs_case')
-    )
-
     # Get case inputs
     systemcost = reeds.io.read_output(case, 'systemcost_ba')
     pvf_capital = reeds.io.read_output(case, 'pvf_capital', valname='pvfcap')
     pvf_onm = reeds.io.read_output(case, 'pvf_onm', valname='pvfonm')
-    crf_in = pd.read_csv(os.path.join(inputs_case, 'crf.csv'))
-    df_capex_init = pd.read_csv(os.path.join(inputs_case, 'df_capex_init.csv'))
+    crf_in = reeds.io.read_input(case, 'crf')
+    df_capex_init = (
+        reeds.io.read_input(case, 'df_capex_init')
+        .astype({'cap_new':np.float32, 'capex':np.float32})
+    )
 
     sw = reeds.io.get_switches(case)  
     scalars = reeds.io.get_scalars(case)  
@@ -324,7 +323,7 @@ def calc_systemcost(
     systemcost.rename(columns={'t':'year', 'sys_costs':'cost_cat'}, inplace=True)
     pvf_capital.rename(columns={'t':'year'}, inplace=True)
     pvf_onm.rename(columns={'t':'year'}, inplace=True)
-    crf_in.rename(columns={'*t':'year'}, inplace=True)
+    crf_in.rename(columns={'t':'year', 'Value':'crf'}, inplace=True)
     df_capex_init.rename(columns={'t':'year','region':'r'}, inplace=True)
 
     # Convert to Billion dollars
@@ -414,7 +413,7 @@ def calc_systemcost(
             crf = crf_in.copy()
             crf = crf.set_index('year').reindex(full_yrs)
             crf = crf.interpolate(method='linear')
-            crf['crf'] = crf['crf'].fillna(method='bfill')
+            crf['crf'] = crf['crf'].bfill()
             
         if shift_capital:
             # This means we start capital payments in the year of the investment,
@@ -462,7 +461,7 @@ def calc_systemcost(
 
         df.loc[:,op_type_ls] = (
             df.groupby('r')[op_type_ls]
-            .fillna(method='ffill', limit=sys_eval_years-1)
+            .ffill(limit=sys_eval_years-1)
         )
         df = df.fillna(0)
 
@@ -583,25 +582,15 @@ def calc_reinforcement_spur_capacity_miles(case):
         .sort_values(by=['r', 'trtype', 'year'])
     )
 
-    if sw['GSw_RegionResolution'] in ['county', 'mixed']:
-        """
-        Due to some old ReEDS outputs runs we need to zero out 
-        the reinforcement line for county level regions 
-        (This can be removed in the future if countly level
-        supply curves get reinforcement distance zeroed out)
-        """
-        # Get county level regions
-        county_regions = pd.read_csv(
-            os.path.join(inputs_case, 'county2zone.csv'),
-            dtype={'FIPS':str},
-        )
-
-        county_regions['county'] = 'p' + county_regions.FIPS
-
-        # Set reinforcement distance to zero for county level regions  
+    sw = reeds.io.get_switches(case)
+    if sw.GSw_ZoneSet in reeds.inputs.get_applicable_zonesets(
+        'drop_single_county_reinforcement_cost'
+    ):
+        # Set reinforcement distance to zero for county level regions
+        county_regions = reeds.io.get_county_zones(case)
         tech_trans_out = tech_trans_out.loc[  
             ~(  
-                tech_trans_out.r.isin(county_regions['county'])  
+                tech_trans_out.r.isin(county_regions)
                 & (tech_trans_out.trtype == 'reinforcement')  
             )  
         ]    
@@ -653,8 +642,9 @@ def calc_transmission_capacity(case,levels):
 
     # pull intra and interregional transmission data into dictionaries for processing
     dict_inter = {}
-    level_map = get_level_map(case)
+    level_map = get_level_map()
     hierarchy = reeds.io.get_hierarchy(case)
+    hierarchy['r'] = hierarchy.index
     for level in levels:
         
         # Translate the level to a cleaner spatial resolution for publishing csvs. Ex. st --> State, transgrp --> Transmission Planning Subregion.
@@ -711,16 +701,110 @@ def calc_transmission_capacity(case,levels):
     
     return intraregional, interregional
 
-def get_level_map(case):
+def get_level_map():
     # for all regions available in ReEDS/inputs/hierarchy.csv, map them to a clean display name
     level_map = pd.read_csv(
         os.path.join(reeds_path, 'postprocessing', 'plots', 'level_map.csv'), 
         index_col='raw').squeeze(1)
-    
-    # add a value to level map for 'r' based on the spatial resolution of the run
-    sw = reeds.io.get_switches(case)
-    level_map['r'] = level_map.get(sw.GSw_RegionResolution)
       
     return level_map
 
-# %%
+
+def diff_outputs(
+    casebase:str|Path,
+    casecomp:str|Path,
+    outpath:str|Path|None|bool=None,
+    threshold_abs:float=1e-6,
+    threshold_rel:float=1e-6,
+    verbose:int=1,
+) -> dict:
+    """
+    Diff two {case}/outputs/outputs.h5 files and save the result to outpath.
+
+    Args:
+        casebase: Absolute path to base ReEDS case OR an outputs.h5 file
+        casecomp: Absolute path to comparison ReEDS case OR an outputs.h5 file
+        outpath: Absolute path to resulting difference .h5 file
+            If None or True, difference file is saved to
+                {casebase}/comparisons/diff_{casebase.stem}_{casecomp.stem}.h5.
+                If full paths to outputs.h5 files are provided in casebase and/or casecomp,
+                outpath=None should be avoided; provide an explicit outpath instead.
+            If False, no difference file is written.
+        threshold_abs: Absolute cutoff for differences to include
+            (i.e., to ignore differences of 0.1 MW in an output parameter in units of MW,
+            set to 0.1)
+        threshold_rel: [fraction] Relative cutoff for differences to include, relative to base
+            (i.e., to ignore differences <1%, set to 0.01)
+        verbose (int): If nonzero, print descriptive logs
+
+    Returns:
+        dict of pd.DataFrames (keys = entries in outputs.h5 with nonzero diff)
+
+    Inputs for testing:
+        casebase = Path(reeds.io.reeds_path, 'runs', 'v20260306_itlM0_Pacific')
+        casecomp = Path(reeds.io.reeds_path, 'runs', 'v20260306_itlM0_Pacific_CC')
+        outpath = None
+    """
+    ## Check inputs
+    casebase = Path(casebase)
+    casecomp = Path(casecomp)
+    fpaths = {}
+    fpaths['base'] = Path(casebase, 'outputs', 'outputs.h5') if casebase.is_dir() else casebase
+    fpaths['comp'] = Path(casecomp, 'outputs', 'outputs.h5') if casecomp.is_dir() else casecomp
+    for key, fpath in fpaths.items():
+        if not fpath.is_file():
+            raise FileNotFoundError(fpath)
+    ## Make output directory
+    if outpath in [None, True]:
+        outpath = Path(
+            casebase, 'outputs', 'comparisons', f'diff_{casebase.stem}_{casecomp.stem}.h5'
+        )
+    elif outpath is False:
+        pass
+    else:
+        outpath = Path(outpath)
+    if outpath:
+        outpath.parent.mkdir(exist_ok=True, parents=True)
+    ## Get results
+    keys = {}
+    dictin = {}
+    for case, fpath in fpaths.items():
+        _dictin = {}
+        with h5py.File(fpath, 'r') as f:
+            keys[case] = list(f)
+        for key in keys[case]:
+            df = reeds.io.read_output(fpath, key)
+            indices = [i for i in df if i.lower() != 'value']
+            if len(indices):
+                df = df.set_index(indices)
+            _dictin[key] = df.squeeze(1).astype(np.float32)
+        dictin[case] = _dictin
+    ## Take diff
+    allkeys = sorted(set(keys['base'] + keys['comp']))
+    max_key_length = max([len(i) for i in allkeys])
+    dictout = {}
+    for key in allkeys:
+        df = pd.concat({case:dictin[case].get(key, None) for case in dictin}, axis=1)
+        entries = df.shape[0]
+        ## Sets have no value column; ignore them
+        if df.shape[1] == 0:
+            continue
+        df['diff'] = df.get('comp', 0) - df.get('base', 0)
+        df['frac'] = df.get('comp', 0) / df.get('base', 0) - 1
+        df = df.loc[(df['diff'].abs() > threshold_abs) & (df['frac'].abs() > threshold_rel)].copy()
+        if len(df):
+            dictout[key] = df
+        if (verbose > 1) or (((verbose > 0) and len(df))):
+            msg = (
+                f'{key:·<{max_key_length}}·{len(df):·>5} differences out of '
+                f'{entries:>5} entries ({len(df)/entries*100:>4.1f}%)'
+            )
+            print(msg)
+    ## Write it
+    if outpath:
+        if outpath.is_file():
+            outpath.unlink()
+        for key, df in dictout.items():
+            reeds.io.write_to_h5(df.reset_index(), key, outpath)
+        print(f'Difference written to {outpath}')
+    return dictout

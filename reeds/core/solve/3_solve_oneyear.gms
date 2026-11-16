@@ -23,6 +23,13 @@ tload(t) = no ;
 tmodel(t) = no ;
 tmodel("%cur_year%") = yes ;
 
+* (ReEDS-FINITO) also reset tfinito
+$ifthene.linked_finito_time %GSw_FINITO_Link% == 1
+tfinito(t) = no ; 
+tfinito(t)$[tmodel(t)$tfinito_all(t)] = yes ;
+$endif.linked_finito_time
+
+
 $log 'Solving sequential case for...'
 $log '  Case: %case%'
 $log '  Year: %cur_year%'
@@ -42,10 +49,13 @@ $ifthene.post_startyear %cur_year%>%startyear%
 * infeasible or result in very tiny number (order 1e-16) in the matrix
 rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_con(r,i)] = 
 
-*capacity indicated by the resource supply curve (with undiscovered geo available
-*at the "discovered" amount and hydro upgrade availability adjusted over time)
-    m_rsc_dat(r,i,rscbin,"cap") * (
-        1$[not geo_hydro(i)] + geo_discovery(i,r,t)$geo_hydro(i))
+*capacity indicated by the resource supply curve net of first-year exogenous capacity
+*(with resource availability and hydro upgrade availability adjusted over time)
+    ( m_rsc_dat(r,i,rscbin,"cap")
+      - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
+             capacity_exog_rsc(ii,v,r,rscbin,tt) } )
+        * (1$[not rsc_capacity_scalar_i(i)]
+           + rsc_capacity_scalar(i,r,t)$rsc_capacity_scalar_i(i))
     + hyd_add_upg_cap(r,i,rscbin,t)$(Sw_HydroCapEnerUpgradeType=1)
 *minus the cumulative invested capacity in that region/class/bin...
 *Note that yeart(tt) is stricly < here, while it is <= in eq_rsc_INVlim. That is because
@@ -53,9 +63,6 @@ rhs_eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$m_rsc_
 *values from prior solve years.
     - sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) < yeart(t))$rsc_agg(i,ii)],
          INV_RSC.l(ii,v,r,rscbin,tt) * resourcescaler(ii) }
-*minus exogenous (pre-start-year) capacity, using its level in the first year (tfirst)
-    - sum{(ii,v,tt)$[tfirst(tt)$rsc_agg(i,ii)$exog_rsc(i)],
-         capacity_exog_rsc(ii,v,r,rscbin,tt) }
 ;
 
 
@@ -147,6 +154,7 @@ $loaddcr cc_old_load = cc_old
 $loaddcr cc_mar_load = cc_mar
 $loaddcr cc_evmc_load = cc_evmc
 $loaddcr sdbin_size_load = sdbin_size
+$loaddcr mean_forced_outage_rate_load = mean_forced_outage_rate
 $gdxin
 
 *Note: these values are rounded before they are written to the gdx file, so no need to round them here
@@ -181,6 +189,7 @@ cc_old(i,r,ccseason,t)$[tload(t)$pvb(i)$sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)}
     min{ cc_old(i,r,ccseason,t) / sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)}, 1 / ilr(i) - bcr(i) }
     * sum{(v,tt)$tprev(t,tt), CAP.l(i,v,r,tt)};
 
+mean_forced_outage_rate(i,r,ccseason,t)$tload(t) = mean_forced_outage_rate_load(i,r,ccseason,t) ;
 $endif.tcheck
 
 
@@ -257,7 +266,9 @@ tsolved(t)$tmodel(t) = yes ;
 z_rep(t)$tmodel(t) = Z.l ;
 z_rep_inv(t)$tmodel(t) = Z_inv.l(t) ;
 z_rep_op(t)$tmodel(t) = Z_op.l(t) ;
-
+$ifthene.linked_objective Sw_FINITO_Link==1
+z_rep_finito(t)$tmodel(t) = deflator('%FINITO_dollaryear%') / cost_scale_finito * Z_finito.l(t) ;
+$endif.linked_objective 
 
 * ---------------------------------
 * Modeling to Generate Alternatives
@@ -266,6 +277,7 @@ $ifthene.mga %GSw_MGA_CostDelta%>0
 $ifthene.mga1 %cur_year%>=%GSw_StartMarkets%
 *## Activate MGA mode
 Sw_MGA = 1 ;
+ReEDSmodel.optfile = %GSw_gopt_mga%  ;
 solve ReEDSmodel %GSw_MGA_Direction%imizing MGA_OBJ using lp ;
 *## Deactivate MGA mode
 Sw_MGA = 0 ;
@@ -279,6 +291,12 @@ $include reeds%ds%core%ds%solve%ds%4_post_solve_adjustments.gms
 *** Fix decision variables to their optimized levels for this solve year
 tfix("%cur_year%") = yes ;
 $include reeds%ds%core%ds%solve%ds%5_varfix.gms
+
+*** Fix FINITO decision variables to their optimized levels for this solve year
+$ifthene.linked_finito_varfix %GSw_FINITO_Link% == 1
+* Industrial variable fix
+$include finito%ds%model%ds%finito_varfix.gms
+$endif.linked_finito_varfix
 
 *** Dump data used in calculations between solve years
 $include reeds%ds%core%ds%solve%ds%6_data_dump.gms

@@ -4,13 +4,13 @@ AR,MISO,MISO,MISO_South,AR,eastern,MISO
 AZ,WECC_SW,WestConnect,WestConnect_South,AZ,western,Arizona_Public_Service_Co
 CA_N,WECC_CA,CAISO,CAISO,CA,western,CAISO
 CA_S,WECC_CA,CAISO,CAISO,CA,western,CAISO
-CO,WECC_NW,WestConnect,WestConnect_North,CO,western,Public_Service_Co_of_Colorado
+CO,WECC_RM,WestConnect,WestConnect_North,CO,western,Public_Service_Co_of_Colorado
 CT,NPCC_NE,ISONE,ISONE,CT,eastern,ISONE
 DE,PJM,PJM,PJM_East,DE,eastern,PJM
 FL,SERC_F,FRCC,FRCC,FL,eastern,Seminole_Electric_Coop_Inc
 GA,SERC_SE,SERTP,SERTP,GA,eastern,Southern_Co_Services_Inc
 IA,MISO,MISO,MISO_North,IA,eastern,MISO
-ID,WECC_NW,NorthernGrid,NorthernGrid_East,ID,western,Idaho_Power_Co
+ID,WECC_BA,NorthernGrid,NorthernGrid_East,ID,western,Idaho_Power_Co
 IL_MISO,MISO,MISO,MISO_Central,IL,eastern,MISO
 IL_PJM,PJM,PJM,PJM_West,IL,eastern,PJM
 IN,MISO,MISO,MISO_Central,IN,eastern,MISO
@@ -31,7 +31,7 @@ NE,SPP,SPP,SPP_North,NE,eastern,SPP
 NH,NPCC_NE,ISONE,ISONE,NH,eastern,ISONE
 NJ,PJM,PJM,PJM_East,NJ,eastern,PJM
 NM,WECC_SW,WestConnect,WestConnect_South,NM,western,Public_Service_Co_of_New_Mexico
-NV,WECC_NW,NorthernGrid,NorthernGrid_South,NV,western,Nevada_Power_Co
+NV,WECC_SW,NorthernGrid,NorthernGrid_South,NV,western,Nevada_Power_Co
 NY_NYCLI,NPCC_NY,NYISO,NYISO,NY,eastern,NYISO
 NY_UP,NPCC_NY,NYISO,NYISO,NY,eastern,NYISO
 OH,PJM,PJM,PJM_East,OH,eastern,PJM
@@ -46,10 +46,10 @@ TX_ERCOT_E,ERCOT,ERCOT,ERCOT,TX,texas,ERCOT
 TX_ERCOT_W,ERCOT,ERCOT,ERCOT,TX,texas,ERCOT
 TX_MISO,MISO,MISO,MISO_South,TX,eastern,MISO
 TX_SPP,SPP,SPP,SPP_South,TX,eastern,SPP
-UT,WECC_NW,NorthernGrid,NorthernGrid_South,UT,western,PacifiCorp_East
+UT,WECC_BA,NorthernGrid,NorthernGrid_South,UT,western,PacifiCorp_East
 VA,PJM,PJM,PJM_East,VA,eastern,PJM
 VT,NPCC_NE,ISONE,ISONE,VT,eastern,ISONE
 WA,WECC_NW,NorthernGrid,NorthernGrid_West,WA,western,Bonneville_Power_Administration
 WI,MISO,MISO,MISO_North,WI,eastern,MISO
 WV,PJM,PJM,PJM_East,WV,eastern,PJM
-WY,WECC_NW,NorthernGrid,NorthernGrid_East,WY,western,PacifiCorp_East
+WY,WECC_RM,NorthernGrid,NorthernGrid_East,WY,western,PacifiCorp_East

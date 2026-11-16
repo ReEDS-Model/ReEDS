@@ -19,7 +19,17 @@ Variable    Z        "--$-- total cost of operations and investment, scale varie
 
 * objective function is the sum over modeled years of the investment
 * and operations components
-eq_ObjFn.. Z =e= cost_scale * sum{t$tmodel(t), Z_inv(t) + Z_op(t) } ;
+eq_ObjFn.. Z =e= cost_scale * (
+* electricity and H2 costs
+                    sum{t$tmodel(t), Z_inv(t) + Z_op(t) } 
+* economy-wide costs from FINITO: deflate from FINITO_dollar year to ReEDS 
+* and remove any FINITO scaling
+$ifthene.linked_objective Sw_FINITO_Link==1
+                    + (deflator('%FINITO_dollaryear%') / cost_scale_finito 
+                       * sum{t$[tfinito(t)], Z_finito(t) } )
+$endif.linked_objective 
+     )
+;
 
 *=======================================================
 * -- Investment component of the objective function --
@@ -109,7 +119,7 @@ eq_ObjFn_inv(t)$tmodel(t)..
                         trans_cost_cap_fin_mult(t) * cost_acdc_lcc * INVTRAN(r,rr,trtype,t) }
 
 * VSC AC/DC converter stations
-                  + sum{r,
+                  + sum{r$val_converter(r,t),
                         trans_cost_cap_fin_mult(t) * cost_acdc_vsc * INV_CONVERTER(r,t) }
 
 * --- storage capacity credit---
@@ -175,16 +185,19 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(i,v,r)$[valcap(i,v,r,t)$battery(i)],
                    cost_fom_energy(i,v,r,t) * CAP_ENERGY(i,v,r,t) }
 
-* transmission lines
+* transmission lines (defined in both directions so divide by 2)
               + sum{(r,rr,trtype)$routes(r,rr,trtype,t),
-                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) }
+                    transmission_line_fom(r,rr,trtype) * CAPTRAN_ENERGY(r,rr,trtype,t) / 2 }
 
-* LCC and B2B AC/DC converter stations
+* LCC and B2B AC/DC converter stations. For each MW of linking capacity we add 1 MW of converter
+* capacity to each end of the link. But because CAPTRAN_ENERGY is defined in both directions
+* (r < rr and rr < r), we already count the link capacity twice, so don't need to multiply
+* by 2 to get the converter capacity.
               + sum{(r,rr,trtype)$[lcclike(trtype)$routes(r,rr,trtype,t)],
-                    cost_acdc_lcc * 2 * trans_fom_frac * CAPTRAN_ENERGY(r,rr,trtype,t) }
+                    cost_acdc_lcc * trans_fom_frac * CAPTRAN_ENERGY(r,rr,trtype,t) }
 
 * VSC AC/DC converter stations
-              + sum{r,
+              + sum{r$val_converter(r,t),
                     cost_acdc_vsc * trans_fom_frac * CAP_CONVERTER(r,t) }
 
 * spur lines modeled as part of supply curve
@@ -221,9 +234,13 @@ eq_Objfn_op(t)$tmodel(t)..
 * plus cost of H2 fuel when using fixed price (Sw_H2=0) or during stress periods.
 * When using endogenous H2 price (Sw_H2=1 or Sw_H2=2), H2 fuel cost is captured elsewhere
 * via the capex + opex costs of H2 production and its associated electricity demand.
-              + sum{(i,v,r,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
+* Note on FINITO linkage: fuel costs for years in tfinito_all accounted for in
+* FINITO. Coal/nuclear/gas remain in FINITO's fe_reeds accounting, but H2 combustion is
+* excluded there (see linked_finito_input.gms), so keep charging it here via the fixed price
+* (Sw_H2=0) so power-sector H2 fuel is not free in linked runs.
+              + sum{(i,v,r,h)$[[(not tfinito_all(t)) or h2_gen(i)]$valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
-                             $((not h2_combustion(i)) or h2_combustion(i)$[(Sw_H2=0) or h_stress(h)])],
+                             $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
 
 * --- startup/ramping costs
@@ -232,47 +249,47 @@ eq_Objfn_op(t)$tmodel(t)..
 
 * --cofire coal consumption---
 * cofire bio consumption already accounted for in accounting of BIOUSED
-              + sum{(i,v,r,h)$[valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
+              + sum{(i,v,r,h)$[(not tfinito_all(t))$valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
                    (1-bio_cofire_perc) * hours(h) * heat_rate(i,v,r,t)
                    * fuel_price("coal-new",r,t) * GEN(i,v,r,h,t) }
 
 * --- cost of natural gas---
 *Sw_GasCurve = 2 (static natural gas prices)
 *first - gas consumed for electricity generation
-              + sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) }
+              + sum{(i,v,r,h)$[(not tfinito_all(t))$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - gas consumed by gas-powered DAC
-              + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
-                   hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
+              + sum{(v,r,h)$[(not tfinito_all(t))$valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
+                   hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) }$[Sw_DAC_Gas]
 
 *Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{(cendiv,gb), sum{h, hours(h) * GASUSED(cendiv,gb,h,t) }
+              + sum{(cendiv,gb)$[(not tfinito_all(t))], sum{h, hours(h) * GASUSED(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }
                    * gasprice(cendiv,gb,t)
                    }$(Sw_GasCurve = 0)
 
 *Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
-              + sum{(h,cendiv,gb), hours(h) * GASUSED(cendiv,gb,h,t)
-                   * gasadder_cd(cendiv,t,h) + gasprice_nat_bin(gb,t)
+              + sum{(h,cendiv,gb)$[(not tfinito_all(t))], hours(h) * GASUSED(cendiv,gb,h,t)
+                   * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
                    }$(Sw_GasCurve = 3)
 
 *Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
-              + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)],
-                   gasmultterm(cendiv,t) * szn_adj_gas(h) * cendiv_weights(r,cendiv) *
-                   hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) }
+              + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)$(not tfinito_all(t))],
+                   gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
+                   hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - adjustments based on changes from last year's consumption at the regional and national level
-              + sum{(fuelbin,cendiv),
+              + sum{(fuelbin,cendiv)$(not tfinito_all(t)),
                    gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL(fuelbin,cendiv,t) }
 
-              + sum{(fuelbin),
+              + sum{(fuelbin)$(not tfinito_all(t)),
                    gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL(fuelbin,t) }
 
               )$[Sw_GasCurve = 1]
 
 * ---cost of biofuel consumption and biomass transport---
-              + sum{(r,bioclass)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }],
+              + sum{(r,bioclass)$[(not tfinito_all(t))$sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t) }],
                    BIOUSED(bioclass,r,t) *
                    (sum{usda_region$r_usda(r,usda_region), biosupply(usda_region, bioclass, "price") } + bio_transport_cost) }
 
@@ -299,9 +316,6 @@ eq_Objfn_op(t)$tmodel(t)..
               + sum{(RPSCat,st)$[(stfeas(st) or sameas(st,"voluntary"))$RecPerc(RPSCat,st,t)$(not acp_disallowed(st,RPSCat))],
                     acp_price(st,t) * ACP_PURCHASES(RPSCat,st,t)
                    }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS]
-
-* --- revenues from purchases of curtailed VRE---
-              - sum{(r,h), CURT(r,h,t) * hours(h) * cost_curt(t) }$Sw_CurtMarket
 
 * --- dropped/excess load (ONLY if before Sw_StartMarkets)
               + sum{(r,h)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)],
@@ -340,7 +354,7 @@ eq_Objfn_op(t)$tmodel(t)..
                                    CO2_SPURLINE_INV(r,cs,tt) } }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- CO2 injection break even costs
-              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs,t) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
+              + sum{(r,cs,h)$r_cs(r,cs), hours(h) * CO2_STORED(r,cs,h,t) * cost_co2_stor_bec(cs) }$[Sw_CO2_Detail$(yeart(t)>=co2_detail_startyr)]
 
 * --- Tax credit for CO2 stored ---
 * note conversion to 12-year CRF given length of CO2 captured incentive payments

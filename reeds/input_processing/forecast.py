@@ -21,6 +21,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import h5py
 import shutil
 from glob import glob
 from warnings import warn
@@ -73,10 +74,10 @@ def interpolate_missing_years(df, forecast_fit, method='linear'):
         .rename(columns={c: pd.Timestamp(str(c)) for c in df.columns})
         ### Add empty columns at year-starts between existing data 
         ### (mean doesn't do anything)
-        .resample('YS', axis=1).mean()
+        .T.resample('YS').mean()
         ### Interpolate linearly to fill the new columns
         ### (interpolate only works on rows, so pivot, interpolate, pivot again)
-        .T.interpolate(method).T
+        .interpolate(method).T
     )
     ### Switch back to integer-year column names
     dfadd = dfinterp.rename(columns={c: c.year for c in dfinterp.columns})
@@ -167,8 +168,8 @@ if __name__ == '__main__':
     inputs_case = os.path.join(args.inputs_case, '')
 
     # #%% Settings for testing
-    # reeds_path = os.path.expanduser('~/github/ReEDS')
-    # inputs_case = os.path.join(reeds_path,'runs','v20220411_prmM0_USA2060','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','v20260709_envM0_github_Everything','inputs_case')
 
     #%% Settings for debugging
     ### Set debug == True to write to a new folder (inputs_case/future/), leaving original files
@@ -216,23 +217,24 @@ if __name__ == '__main__':
 
     ### Get the settings file
     futurefiles = pd.read_csv(
-        os.path.join(inputs_case,'futurefiles.csv'),
+        os.path.join(reeds.io.reeds_path, 'inputs', 'userinput', 'futurefiles.csv'),
         dtype={
-            'header':'category', 'ignore':int, 'wide':int,
+            'ignore':int, 'wide':int,
             'year_col':str, 'fix_cols':str, 'header':str, 'clip_min':str, 'clip_max':str,
         }
-    )
-    ### Fill in the missing parts of filenames
-    futurefiles.filename = futurefiles.filename.map(
-        lambda x: x.format(casename=casename, distpvscen=distpvscen)
     )
     ### Fix issue where columns with "None" entries are read in as NaN
     for col in ['key','fix_cols','header','clip_min','clip_max']:
         futurefiles[col] = futurefiles[col].fillna('None')
     ### If any files are missing, stop and alert the user
-    inputfiles = [os.path.basename(f) for f in glob(os.path.join(inputs_case,'*'))]
+    inputs_files = [
+        Path(f).stem for f in glob(os.path.join(inputs_case,'*')) if not Path(f).is_dir()
+    ]
+    with h5py.File(Path(inputs_case, 'inputs.h5'), 'r') as f:
+        inputs_h5 = list(f)
+    inputfiles = inputs_files + inputs_h5
     missingfiles = [
-        f for f in inputfiles if ((f not in futurefiles.filename.values) and ('.' in f))]
+        f for f in inputfiles if f not in futurefiles.filename.map(lambda x: Path(x).stem).values]
     if any(missingfiles):
         if missing == 'raise':
             raise Exception(
@@ -258,7 +260,7 @@ if __name__ == '__main__':
         print(f'{filename}', end='')
         
         ### If the file isn't in inputs_case, skip it and continue to the next file
-        if filename not in inputfiles:
+        if Path(filename).stem not in inputfiles:
             if verbose > 1:
                 print('  -> skipped since not in inputs_case')
             continue
@@ -321,14 +323,13 @@ if __name__ == '__main__':
         efs = False
 
         ### Load it
-        if filetype in ['.csv','.csv.gz']:
-            dfin = pd.read_csv(os.path.join(inputs_case,filename), header=header,)
+        if filetype in ['inputs.h5', '.csv', '.csv.gz']:
+            dfin = reeds.io.read_input(inputs_case, filename, header=header)
         elif filetype == '.h5':
             ### Currently load.h5 and dr_shed_hourly.h5 are the only h5 files we need to 
             ### project forward, so the procedure is currently specific to these files
             dfin = reeds.io.read_file(
                 os.path.join(inputs_case,filename),
-                parse_timestamps=True,
             )
             # dfin = pd.read_hdf(os.path.join(inputs_case,filename))
             if header == 'keepindex':
@@ -463,7 +464,11 @@ if __name__ == '__main__':
         dfout.rename(columns=the_unnamer, inplace=True)
 
         #%% Write it
-        if filetype in ['.csv','.csv.gz']:
+        if Path(filename).stem in inputs_h5:
+            reeds.io.write_to_inputs_h5(
+                dfout, Path(filename).stem, inputs_case, gamstype='parameter',
+            )
+        elif filetype in ['.csv', '.csv.gz']:
             dfout.round(decimals).to_csv(
                 os.path.join(outpath, filename),
                 header=(False if header is None else True),
