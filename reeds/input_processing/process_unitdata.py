@@ -16,7 +16,7 @@ import reeds
 #%% ===========================================================================
 ### --- General Read Functions---
 ### ===========================================================================
-def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
+def assign_gids_to_unitdata(sw, unitdata, offland_gdf, land_gdf):
     '''
     Merge NEMS unitdata with interconnection_land/offshore data by 
     mapping each unit in NEMS by lon/lat to its closest sc_point_gid
@@ -37,14 +37,10 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
         print(f'Assigning {tech} classes')
         tech_sub = tech_match[tech]
 
-        df_sub = df[df.tech.isin(tech_sub)]
+        df_sub = unitdata[unitdata.tech.isin(tech_sub)]
         # Read supply curves
-        if tech == 'geohydro':
-            # Use egs supply curve for geohydro for now
-            geo_tech = 'egs'
-            supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+geo_tech+'.csv'))
-        else:
-            supply_curve = pd.read_csv(os.path.join(inputs_case,'supplycurve_'+tech+'.csv'))
+        usetech = 'egs' if tech == 'geohydro' else tech
+        supply_curve = pd.read_csv(Path(inputs_case, f'supplycurve_init_{usetech}.csv'))
 
         # Only consider the sc_point_gids that are in supply curves
         # (to avoid unmatched units later)
@@ -52,6 +48,7 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
             sc_point_gid_gdf = offland_gdf[offland_gdf['gid'].isin(supply_curve['sc_point_gid'].to_list())]
         else:
             sc_point_gid_gdf = land_gdf[land_gdf['gid'].isin(supply_curve['sc_point_gid'].to_list())]
+
         # Rename FIPS and lon/lat as nearest FIPS and lon/lat #
         # as after matching them to units in unitdata by distance later 
         # these FIPS and lon/lat are the nearest ones to these units 
@@ -81,11 +78,14 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
 
         gdf_joined = gdf_joined.merge(county2zone, on='FIPS', how='left')
         # Assign units' regions as regions with resources they are matched to
-        gdf_joined['r'] = gdf_joined['r_nearest']
+        if (tech == 'wind-ofs') and int(sw.GSw_OffshoreZones):
+            gdf_joined['r'] = gdf_joined['ba']
+        else:
+            gdf_joined['r'] = gdf_joined['r_nearest']
 
         # Merge unit database with VRE supply curves to assign AC capacity factors to VRE units
         # and mean resource temp for geothermal units
-        df_rev = gdf_joined[['sc_point_gid'] + df.drop(columns=['geometry']).columns.to_list()]
+        df_rev = gdf_joined[['sc_point_gid'] + unitdata.drop(columns=['geometry']).columns.to_list()]
 
         if len(df_rev) > 0:
             df_rev.loc[:, ['sc_point_gid']] = df_rev.loc[:, ['sc_point_gid']].fillna(0)
@@ -101,6 +101,7 @@ def assign_gids_to_unitdata(sw, df, offland_gdf, land_gdf):
 
     df_rev = pd.concat(df_rev_list, ignore_index=False, sort=False)
     return df_rev
+
 
 #%% ===========================================================================
 ### --- PROCEDURE ---
@@ -191,6 +192,8 @@ def main(inputs_case):
     # Save processed unitdata
     unitdata.to_csv(os.path.join(inputs_case,'unitdata.csv'),index=False)
 
+
+#%% Procedure
 if __name__ == '__main__':
     ### Time the operation of this script
     tic = datetime.datetime.now()
@@ -205,8 +208,8 @@ if __name__ == '__main__':
     inputs_case = args.inputs_case
     
     # for testing
-    #reeds_path = reeds.io.reeds_path
-    #inputs_case = os.path.join(reeds_path,'runs','test_Pacific','inputs_case')
+    # reeds_path = reeds.io.reeds_path
+    # inputs_case = os.path.join(reeds_path,'runs','v20261016_mcM2_MARICTNYNJPAOH_Offshore','inputs_case')
 
     #%% Set up logger
     log = reeds.log.makelog(

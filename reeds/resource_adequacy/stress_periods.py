@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from warnings import warn
 from typing import Literal
 
 import reeds
@@ -542,15 +543,18 @@ def get_stress_periods(case, sw, t, iteration):
             if dictout is not None:
                 _failed[stress_metric, criterion] = dictout['failed']
                 _high_stress_periods[stress_metric, criterion] = dictout['high_stress_periods']
-                _shoulder_periods[stress_metric, criterion] = dictout['shoulder_periods']
+                if len(dictout['shoulder_periods']):
+                    _shoulder_periods[stress_metric, criterion] = dictout['shoulder_periods']
 
     ### Get lists of stress periods: new (added this iteration) and all
     if len(_failed):
         failed = pd.concat(_failed, names=['stress_metric', 'criterion'])
         high_stress_periods = pd.concat(_high_stress_periods)
-        shoulder_periods = pd.concat(_shoulder_periods)
+        _new_stress_periods = {'stress':high_stress_periods}
+        if len(_shoulder_periods):
+            _new_stress_periods['shoulder'] = pd.concat(_shoulder_periods)
         new_stress_periods = pd.concat(
-            {'stress':high_stress_periods, 'shoulder':shoulder_periods},
+            _new_stress_periods,
             names=['periodtype','metric','criterion','num'],
         ).reset_index()
         print('All identified stress periods:')
@@ -809,9 +813,8 @@ def main(sw, t, iteration=0, logging=True):
     """
     #%% Write consolidated stress metrics
     ra_metrics = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration)
-    ra_metrics.round(3).to_csv(
-        os.path.join(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
-    )
+    ra_metrics_path = Path(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
+    ra_metrics.round(3).to_csv(ra_metrics_path)
 
     #%% Write EUE events
     eue_events = get_eue_events(case=sw.casedir, t=t, iteration=iteration)
@@ -864,6 +867,27 @@ def main(sw, t, iteration=0, logging=True):
     prm_next_iteration.to_csv(
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'prm.csv'),
     )
+
+    #%% Raise an error if it's the final iteration and metrics still exceed the threshold
+    if (
+        ((iteration + 1) == int(sw.GSw_PRM_StressIterateMax))
+        and (len(failed))
+    ):
+        err = (
+            '\nAt least one resource adequacy metric failed to meet the required '
+            f'threshold(s) within {sw.GSw_PRM_StressIterateMax} iterations.\n'
+            f'Check this file for regional details:\n{ra_metrics_path}\n'
+            'Consider:\n'
+            '- adding more iterations (GSw_PRM_StressIterateMax)\n'
+            '- increasing the planning reserve margin (GSw_PRM_scenario)\n'
+            '- relaxing the RA threshold(s) (GSw_PRM_StressThreshold*)\n'
+            '- revisiting other RA settings (GSw_PRM*)'
+            '- modeling a larger area (GSw_Region)'
+        )
+        if int(sw['debug']):
+            warn(err)
+        else:
+            raise ValueError(err)
 
 
 # #%%### Option to run script directly for debugging
