@@ -628,6 +628,8 @@ gen_h("upv_6",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)]
     = gen_h("upv_6",r,h,t) - gen_h("csp-ns",r,h,t) ;
 * Make sure it doesn't go negative, just in case
 gen_h("upv_6",r,h,t)$[cap_cspns(r,t)$tmodel_new(t)$(gen_h("upv_6",r,h,t) < 0)] = 0 ;
+
+
 gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 
 * Do it again for stress periods
@@ -639,6 +641,7 @@ gen_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)],
         PRODUCE.l(p,i,v,r,allh,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
+
 gen_h_stress_nat(i,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = sum{r, gen_h_stress(i,r,allh,t) } ;
 
 gen_ann(i,r,t)$tmodel_new(t) = sum{h, gen_h(i,r,h,t) * hours(h) } ;
@@ -2067,7 +2070,7 @@ $endif.powerfrac
 *========================================
 
 execute_unload "outputs%ds%results.gdx"
-$include e_report_data.csv
+$include report_data.csv
 ;
 
 * The parameter list in the following file is read from e_report_params.csv

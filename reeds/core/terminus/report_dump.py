@@ -12,7 +12,7 @@ import pandas as pd
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 import reeds
-import e_report_calcs
+import reeds.core.terminus.report_calcs as report_calcs
 
 
 #%% Generic functions
@@ -273,7 +273,7 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     print("Loading outputs gdx")
     dict_out = {
         **gdxpds.to_dataframes(Path(outputs_path, f"rep_{os.path.basename(case)}.gdx")),
-        **e_report_calcs.main(case),
+        **report_calcs.main(case),
     }
     print("Finished loading outputs gdx")
 

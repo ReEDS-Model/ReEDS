@@ -11,6 +11,7 @@ import os
 import sys
 import pandas as pd
 from itertools import product
+from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  
 import reeds  

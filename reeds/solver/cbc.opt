@@ -1,3 +1,25 @@
-startalg barrier
-crash off
-threads 8
+* Algorithm - dual simplex is CBC's strongest LP method
+startalg dual
+
+* Scaling - automatic is good but dynamic is often better for large energy models
+scaling 4
+
+* Presolve - keep on with more passes for a large model
+presolve on
+passPresolve 10
+
+* Crash - use idiot crash to get a warm starting point
+idiotCrash 30
+
+* Pivot selection - positive edge criterion helps degenerate LPs
+psi 0.5
+
+* Tolerances - match CPLEX defaults
+tol_primal 1e-7
+tol_dual 1e-7
+
+* Perturbation - helps escape degeneracy (ReEDS LPs are highly degenerate)
+perturbation 1
+
+* Refactorization frequency - increase for large sparse models
+maxFactor 400
