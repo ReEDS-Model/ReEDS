@@ -1,0 +1,13 @@
+
+{
+    "execution_control": {
+        "allocation": "wetosa",
+        "nodes": 1,
+        "option": "kestrel",
+        "walltime": 1,
+        "feature": "-p debug"
+    },
+    "log_directory": "./logs",
+    "log_level": "INFO",
+    "cmd": "python -u /projects/rev/projects/weto/fy25/standard_scenarios/osw/scripts/post_process_sc.py"
+}

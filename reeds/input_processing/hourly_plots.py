@@ -14,7 +14,7 @@ import cmocean
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import reeds
-from reeds.input_processing import hourly_repperiods
+from reeds import reedsplots
 from reeds import plots
 plots.plotparams()
 
@@ -135,9 +135,9 @@ def plot_ldc(
     ### Get clustered load, repeating representative periods based on how many
     ### periods they represent
     numperiods = period_szn.value_counts().rename('numperiods').to_frame()
-    numperiods['yearperiod'] = numperiods.index.map(hourly_repperiods.szn2yearperiod).values
-    numperiods['year'] = numperiods.index.map(hourly_repperiods.szn2yearperiod).map(lambda x: x[0])
-    numperiods['yperiod'] = numperiods.index.map(hourly_repperiods.szn2period)
+    numperiods['yearperiod'] = numperiods.index.map(reeds.timeseries.szn2yearperiod).values
+    numperiods['year'] = numperiods.index.map(reeds.timeseries.szn2yearperiod).map(lambda x: x[0])
+    numperiods['yperiod'] = numperiods.index.map(reeds.timeseries.szn2period)
     periods = [[row.yearperiod] * row.numperiods for (i,row) in numperiods.iterrows()]
     periods = [item for sublist in periods for item in sublist]
 
@@ -150,11 +150,11 @@ def plot_ldc(
     hourly_out = hourly_in.unstack('h_of_period').loc[periods].stack('h_of_period')
 
     #### Daily
-    periodly_in = hourly_in.groupby('yperiod').mean()
+    periodly_in = hourly_in.groupby(['year','yperiod']).mean()
     ## Index doesn't matter; replace it so we can take daily mean
     periodly_out = hourly_out.copy()
     hourly_out.index = hourly_in.index.copy()
-    periodly_out = hourly_out.groupby('yperiod').mean()
+    periodly_out = hourly_out.groupby(['year','yperiod']).mean()
 
     ### Get axis coordinates: properties = rows, regions = columns
     properties = periodly_out.columns.get_level_values('property').unique().values
@@ -231,7 +231,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     ### Settings
     cmaps = {
         'cf_actual':plt.cm.turbo, 'cf_rep':plt.cm.turbo, 'cf_diff':plt.cm.RdBu_r,
-        'GW_actual':cmocean.cm.rain, 'GW_rep':cmocean.cm.rain,
+        'GW_actual':cmocean.cm.tempo, 'GW_rep':cmocean.cm.tempo,
         'GW_diff':plt.cm.RdBu_r, 'GW_frac':plt.cm.RdBu_r, 'pct_diff':plt.cm.RdBu_r, 
     }
     vm = {
@@ -265,7 +265,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
         dfmap[key]['centroid_y'] = dfmap[key].centroid.y
 
     ### Get the CF data over all years, take the mean over weather years
-    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'), parse_timestamps=True)
+    recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf = recf.loc[recf.index.year.isin(GSw_HourlyWeatherYears)].mean()
 
     ### Get the hourly data
@@ -317,8 +317,8 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
                 )
             dfdiffs[col]['cf_diff'] = dfdiffs[col].cf_rep - dfdiffs[col].cf_actual
 
-        ## Convert from point to polygons (raster is 11.52 km but include a little extra)
-        cfmap.geometry = cfmap.buffer(11530/2, cap_style='square')
+        ## Convert from points to polygons
+        cfmap = reeds.spatial.site2poly_buffer(cfmap)
 
         ### Plot the difference map
         nrows, ncols, coords = plots.get_coordinates([
@@ -352,17 +352,16 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
             dfdiffs[level].plot(
                 ax=ax[coords[level]], column='cf_diff', cmap=cmaps['cf_diff'],
                 vmin=vm[tech]['cf_diff'][0], vmax=vm[tech]['cf_diff'][1], 
-                lw=0, legend=False,
+                lw=0, legend=False, missing_kwds={"color": "white"},
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
-            ## Text differences
-            for r, row in (dfdiffs[level].assign(val=dfdiffs[level].cf_diff.abs()).sort_values('val')).iterrows():
-                decimals = 0 if abs(row.cf_diff) >= 1 else 1
-                ax[coords[level]].annotate(
-                    f"{row.cf_diff*100:+.{decimals}f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k', fontsize={'r':5}.get(level,7),
-                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.5)],
+            dfmap[level]['cf_diff_pct'] = (dfdiffs[level].cf_diff * 100).values
+            reedsplots.label_region_value(
+                dfmap[level],
+                ax[coords[level]],
+                column='cf_diff_pct',
+                text_kwargs={'fontsize': {'r':5}.get(level,7)},
+                pe_kwargs={'linewidth': 1.5, 'foreground': 'w', 'alpha': 0.5},
                 )
             ## Colorbar
             plots.addcolorbarhist(
@@ -427,9 +426,6 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     load_mean = load_raw.loc[
         load_raw.index.map(lambda x: x.year in GSw_HourlyWeatherYears)
     ].mean() / 1000
-    ## load.h5 is busbar load, but b_inputs.gms ingests end-use load, so scale down by distloss
-    scalars = reeds.io.get_scalars(inputs_case)
-    load_mean *= (1 - scalars['distloss'])
     ### Get the representative data, take the mean for the cluster year
     load_allyear = (
         pd.read_csv(os.path.join(inputs_case, periodtype, 'load_allyear.csv')).rename(columns={'*r':'r'})
@@ -489,14 +485,12 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
                 lw=0, legend=False,
             )
             dfmap[level].plot(ax=ax[coords[level]], facecolor='none', edgecolor='k', lw=0.2)
-            ## Text differences
-            for r, row in (dfdiffs[level].assign(val=dfdiffs[level][val].abs()).sort_values('val')).iterrows():
-                decimals = 0 if abs(row[val]) >= 1 else 1
-                ax[coords[level]].annotate(
-                    f"{row[val]:+.{decimals}f}",
-                    [row.centroid_x, row.centroid_y],
-                    ha='center', va='center', c='k', fontsize={'r':5}.get(level,7),
-                    path_effects=[pe.withStroke(linewidth=1.5, foreground='w', alpha=0.5)],
+            reedsplots.label_region_value(
+                dfdiffs[level],
+                ax[coords[level]],
+                column=val,
+                text_kwargs={'fontsize': {'r':5}.get(level,7)},
+                pe_kwargs={'linewidth': 1.5, 'foreground': 'w', 'alpha': 0.5},
                 )
             ## Colorbar
             plots.addcolorbarhist(
@@ -552,7 +546,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
 def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
     def get_profiles(regions, year):
         """Assemble 8760 profiles from original and representative days"""
-        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='H',inclusive='left')[:8760]
+        timeindex = pd.date_range(f'{year}-01-01',f'{year+1}-01-01',freq='h',inclusive='left')[:8760]
         props = profiles.columns.get_level_values('property').unique()
         ### Original profiles
         dforig = {}
@@ -563,7 +557,7 @@ def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
         dforig = pd.concat(dforig, axis=1)
 
         ### Representative profiles
-        periodmap = period_szn.map(hourly_repperiods.szn2yearperiod).to_frame()
+        periodmap = period_szn.map(reeds.timeseries.szn2yearperiod).to_frame()
         periodmap['year'] = periodmap.szn.map(lambda x: x[0])
         periodmap['yperiod'] = periodmap.szn.map(lambda x: x[1])
         periodmap = periodmap.loc[periodmap.year==year].yperiod
@@ -657,7 +651,7 @@ def plot_load_days(profiles, rep_periods, period_szn, sw, reeds_path, figpath):
     """
     """
     ### Input processing
-    idx_reedsyr = period_szn.map(hourly_repperiods.szn2yearperiod)
+    idx_reedsyr = period_szn.map(reeds.timeseries.szn2yearperiod)
     medoid_profiles = profiles.loc[rep_periods]
     centroids = profiles.loc[rep_periods]
     centroid_profiles = centroids * profiles.stack('h_of_period').max()

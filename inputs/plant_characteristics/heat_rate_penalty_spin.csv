@@ -12,6 +12,7 @@
   CoalOldUns  ,0.055
   CofireNew ,0.055
   CofireOld ,0.055
+h2-fuel-cell,0
   Gas-CC  ,0.035
   Gas-CC_H_1x1  ,0.035
   Gas-CC_H_2x1  ,0.035

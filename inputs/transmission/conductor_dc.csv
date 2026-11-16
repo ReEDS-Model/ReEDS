@@ -1,0 +1,6 @@
+voltage_kv,kcmil,conductor_type,conductor_quantity,MW
+250,1590,ACSR,1,500
+400,1590,ACSR,2,1500
+500,1590,ACSR,2,2000
+600,1590,ACSR,2,2400
+640,795,ACSR,6,6000

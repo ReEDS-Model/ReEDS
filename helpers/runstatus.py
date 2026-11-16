@@ -1,14 +1,11 @@
 #%% Imports
 import os
 import re
-import sys
 import datetime
 import subprocess
 import argparse
 from glob import glob
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
-import reeds
 
 # #%% Inputs for debugging
 # batch_name = 'v20250812_mcK0'
@@ -20,7 +17,7 @@ def parse_multiple_runs_per_node(runs_running):
     expanded_runs = []
     for i in runs_running:
         ## Matches the form used for multiple runs per node: foo_(bar,baz[,etc])
-        if re.match('^\w+_\(\w+,\w+(,\w+)*\)$', i):
+        if re.match(r'^\w+_\(\w+,\w+(,\w+)*\)$', i):
             batch_ = i.split('(')[0]
             constituents = i.split('(')[1].strip(')').split(',')
             expanded_runs.extend([batch_+c for c in constituents])
@@ -36,6 +33,23 @@ def print_log_if_verbose(fullcase, verbose=0):
         print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
         subprocess.run(f'tail {gamslog} -n {verbose}', shell=True)
         print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n')
+
+
+def seff(jobid) -> dict:
+    """Run seff on a slurm job. Only returns complete results if the job has finished."""
+    raw = subprocess.run(f'seff {jobid}', capture_output=True, shell=True)
+    keyvals = [i.split(': ') for i in raw.stdout.decode().strip().split('\n')]
+    result = {key: val for (key, val) in keyvals}
+    return result
+
+
+def seff_reeds(casepath:str|Path) -> dict:
+    """Run seff on a ReEDS case. Only returns complete results if the job has finished."""
+    logs = Path(casepath).glob('slurm*')
+    jobs = sorted([int(i.stem.split('-')[-1].split('_')[0]) for i in logs])
+    lastjob = jobs[-1]
+    return seff(lastjob)
+
 
 def get_run_status(reeds_path, batch_name):
     #%% Get active runs
@@ -78,6 +92,7 @@ def get_run_status(reeds_path, batch_name):
 
     return dictruns
 
+
 #%%### Procedure
 if __name__ == '__main__':
 
@@ -85,8 +100,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Print status of runs on the HPC')
     parser.add_argument('batch_name', type=str, nargs='?', default='',
                         help='batch name (case prefix) to search for')
-    parser.add_argument('--include_finished', '-f', action='store_true',
-                        help='Include finished runs in response')
+    parser.add_argument('--include_finished', '-f', action='count', default=0,
+                        help='Include finished runs in response: 1 = time, 2 = time + memory')
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='How many tail lines to print from gamslog.txt')
 
@@ -96,7 +111,8 @@ if __name__ == '__main__':
     verbose = args.verbose
 
     #%%### Loop through categories and runs and report their status
-    dictruns = get_run_status(reeds.io.reeds_path, batch_name)
+    reeds_path = Path(__file__).parent.parent
+    dictruns = get_run_status(reeds_path, batch_name)
     for key, runs in dictruns.items():
         text = f'{key}: {len(runs)}'
         print(f"\n{text}\n{'-'*len(text)}")
@@ -108,11 +124,20 @@ if __name__ == '__main__':
         for fullcase in runs:
             case = os.path.basename(fullcase)
             if (key == 'finished'):
-                if include_finished:
+                if include_finished == 1:
                     import pandas as pd
                     duration = pd.read_csv(
                         os.path.join(fullcase,'meta.csv'), skiprows=3).processtime.sum()
-                    print(f"{case:<{longest}}: {datetime.timedelta(seconds=int(duration))}")
+                    msg = f"{datetime.timedelta(seconds=int(duration))}"
+                elif include_finished > 1:
+                    result = seff_reeds(fullcase)
+                    duration = result['Job Wall-clock time']
+                    cpu_eff = result['CPU Efficiency'].split('%')[0]
+                    mem_use = result['Memory Utilized']
+                    mem_eff = result['Memory Efficiency'].split('%')[0]
+                    msg = f"{duration:>10} | {cpu_eff:>5}% CPU | {mem_eff:>5}% memory ({mem_use})"
+                if include_finished:
+                    print(f"{case:<{longest+1}}: {msg}")
             else:
                 ### Get last .lst file
                 lstfiles = sorted(glob(os.path.join(fullcase,'lstfiles','*')))
@@ -181,6 +206,8 @@ if __name__ == '__main__':
                             errortext = "(infeasible)"
                         elif "Out of Memory" in slurm or "OOM Killed" in slurm:
                             errortext = "(out of memory)"
+                        elif 'At least one resource adequacy metric failed' in slurm:
+                            errortext = '(RA)'
                         else:
                             errortext = ""
                     print(f"{case:<{longest}}: failed in {last_lst} {errortext}")
