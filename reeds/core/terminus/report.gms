@@ -578,7 +578,7 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$(no
 * gas price when linked with FINITO [$2004/MMBtu]
 $ifthene.finitogasprice Sw_FINITO_Link == 1
 
-$ifthene.finitodetailedNG Sw_DetailedNG == 0
+$ifthene.finitodetailedNG DetailedNG == 0
 * approach with GSw_FixedCostSupply=1 or default supply curves
 repgasprice_finito(cendiv,h,t)$[tmodel_new(t)$(tfinito_all(t))] =
     deflator('%FINITO_dollaryear%') * 1/(cost_scale_finito) * 1/(pvf_onm(t)) 
