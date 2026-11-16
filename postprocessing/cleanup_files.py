@@ -6,9 +6,16 @@ from glob import glob
 import re
 
 
-#%% Functions
+#%% Global variables and functions
+RA_FILES = [
+    ## ReEDS2PRAS scratch files: deleted automatically unless run failed or the
+    ## keep_resource_adequacy_files switch is turned on
+    os.path.join('handoff', 'PRAS', r'^PRAS_.*\.pras$'),
+    os.path.join('handoff', 'reeds_data', r'^.*\.(csv|h5)$'),
+]
+
 ### Note: These lists include files from previous versions of ReEDS
-file_levels = {
+FILE_LEVELS = {
     ## Scratch files
     0: [
         'inputs_case_original',
@@ -16,9 +23,6 @@ file_levels = {
         os.path.join('inputs_case', r'^recf_.*\.h5$'),
         os.path.join('inputs_case', 'unitdata_orig.h5'),
         '225*',
-        ## ReEDS2PRAS scratch files (deleted automatically unless run failed)
-        os.path.join('handoff', 'PRAS', r'^PRAS_.*\.pras$'),
-        os.path.join('handoff', 'reeds_data', r'^.*\.(csv|h5)$'),
     ],
     ## Intermediate input files and duplicates
     1: [
@@ -108,16 +112,16 @@ def parse_caselist(caselist):
     return sorted(outlist)
 
 
-def main(caselist, level=0, dryrun=0, force=0, quiet=0, file_levels=file_levels):
+def main(caselist, level=0, keepra=0, dryrun=0, force=0, quiet=0):
     """
-    Deletes files specified by level and file_levels from cases in caselist
+    Deletes files specified by level and FILE_LEVELS from cases in caselist
 
     Args:
         caselist (list): List of paths to ReEDS cases
-        level (int): Level of file_levels up to which to delete files
+        level (int): Level of FILE_LEVELS up to which to delete files
+        keepra (bool): If True, keep resource adequacy files
         dryrun (bool): If True, print files but don't delete (default False)
         force (bool): If True, proceed without prompting user to confirm (default False)
-        file_levels (dict): Map from level to list of filenames
 
     Returns:
         None
@@ -128,8 +132,10 @@ def main(caselist, level=0, dryrun=0, force=0, quiet=0, file_levels=file_levels)
         quit()
 
     file_list = sorted(
-        sum([v for k,v in file_levels.items() if k <= level], [])
+        sum([v for k,v in FILE_LEVELS.items() if k <= level], [])
     )
+    if not keepra:
+        file_list += RA_FILES
 
     if not quiet:
         print('\nDeleting these files:')
@@ -175,6 +181,7 @@ parser.add_argument(
     default=0,
     help='How aggressively to remove files (larger number = more files)',
 )
+parser.add_argument('--keepra', '-r', action='store_true', help='Keep resource adequacy files')
 parser.add_argument('--force', '-f', action='store_true', help='Proceed without double-checking')
 parser.add_argument('--dryrun', '-d', action='store_true', help="Print files but don't delete")
 parser.add_argument('--quiet', '-q', action='store_true', help="Don't print file/case lists")
@@ -182,16 +189,18 @@ parser.add_argument('--quiet', '-q', action='store_true', help="Don't print file
 args = parser.parse_args()
 caselist = args.caselist
 level = args.level
+keepra = args.keepra
 force = args.force
 dryrun = args.dryrun
 quiet = args.quiet
 
 # #%% Inputs for testing
 # caselist = [os.path.abspath(os.path.join('..', 'runs', 'v20250221_commonM2_Pacific'))]
+# keepra = 0
 # level = 0
 # force = 0
 # dryrun = 1
 # quiet = 0
 
 if __name__ == '__main__':
-    main(caselist, level=level, dryrun=dryrun, force=force, quiet=quiet)
+    main(caselist, level=level, dryrun=dryrun, force=force, quiet=quiet, keepra=keepra)
