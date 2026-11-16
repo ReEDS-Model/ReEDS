@@ -382,25 +382,18 @@ if __name__ == '__main__':
     ###########################
     #    -- Natural Gas --    #
     ###########################
-
-    ngprice = pd.read_csv(os.path.join(inputs_case,'natgas_price_cendiv.csv'))
-    ngprice = ngprice.melt(id_vars=['year']).rename(columns={'variable':'cendiv'})
-    ngprice = ngprice.loc[ngprice['cendiv'].isin(val_cendiv)]
+    ngprice_cendiv = reeds.inputs.get_ngprice_cendiv(reeds.io.standardize_case(inputs_case))
 
     # Adjust prices to 2004$
     deflate = dollaryear.loc[dollaryear['Scenario'] == sw.ngscen,'Deflator'].values[0]
-    ngprice.loc[:,'value'] = ngprice['value'] * deflate
-
-    # Save Natural Gas prices by census region
-    ngprice_cendiv = ngprice.copy()
-    ngprice_cendiv = ngprice_cendiv.pivot_table(index='cendiv',columns='year',values='value')
-    ngprice_cendiv = ngprice_cendiv.round(6)
+    ngprice_cendiv = (ngprice_cendiv * deflate).round(6)
 
     # Map census regions to model regions
+    ngprice = pd.melt(ngprice_cendiv.transpose(), ignore_index=False)
+    ngprice = ngprice.reset_index()
     ngprice = ngprice.merge(r_cendiv,on='cendiv',how='left')
     ngprice = ngprice.drop('cendiv', axis=1)
-    ngprice = ngprice[['year','r','value']].rename(columns={'year':'t','value':'naturalgas'})
-    ngprice.naturalgas = ngprice.naturalgas.round(6)
+    ngprice = ngprice[['s','year','r','value']].rename(columns={'year':'t','value':'naturalgas'})
 
     # Census division weights
     dfmap = reeds.io.get_dfmap(reeds.io.standardize_case(inputs_case))
@@ -426,34 +419,38 @@ if __name__ == '__main__':
     fuel = coal.merge(uranium,on=['t','r'],how='left')
     fuel = fuel.merge(ngprice,on=['t','r'],how='left')
     fuel = fuel.merge(h2fuel,on=['t','r'],how='left')
-    fuel = fuel.sort_values(['t','r'])
+    fuel = fuel.set_index(['s','t','r']).sort_index()
 
 
     #%%#################################### 
     ### Natural Gas Demand Calculations ###
 
-    # Natural Gas demand
-    ngdemand = pd.read_csv(os.path.join(inputs_case,'ng_demand_elec.csv'), index_col='year')
-    ngdemand = ngdemand[ngdemand.columns[ngdemand.columns.isin(val_cendiv)]]
-    ngdemand = ngdemand.transpose()
+    # Electricity sector Natural Gas demand
+    ngdemand = reeds.inputs.get_ngdemand_cendiv_parameter(
+        case=reeds.io.standardize_case(inputs_case),
+        param='ng_demand'
+    )
     ngdemand = ngdemand.round(6)
 
     # Total Natural Gas demand
-    ngtotdemand = pd.read_csv(os.path.join(inputs_case, 'ng_demand_tot.csv'), index_col='year')
-    ngtotdemand = ngtotdemand[ngtotdemand.columns[ngtotdemand.columns.isin(val_cendiv)]]
-    ngtotdemand = ngtotdemand.transpose()
+    ngtotdemand = reeds.inputs.get_ngdemand_cendiv_parameter(
+        case=reeds.io.standardize_case(inputs_case),
+        param='ng_tot_demand'
+    )
     ngtotdemand = ngtotdemand.round(6)
 
     ### Natural Gas Alphas (already in 2004$)
-    alpha = pd.read_csv(os.path.join(inputs_case, 'alpha.csv'), index_col='t')
-    alpha = alpha[alpha.columns[alpha.columns.isin(val_cendiv)]]
+    alpha = reeds.inputs.get_ngdemand_cendiv_parameter(
+        case=reeds.io.standardize_case(inputs_case),
+        param='alpha'
+    )
     alpha = alpha.round(6)
 
     #%%###################
     ### Data Write-Out ###
     ######################
 
-    fuel.to_csv(os.path.join(inputs_case,'fprice.csv'),index=False)
+    fuel.to_csv(os.path.join(inputs_case,'fprice.csv'))
     ngprice_cendiv.to_csv(os.path.join(inputs_case,'gasprice_ref.csv'))
     reeds.io.write_profile_to_h5(
         daily_gasprice_multipliers_r,
