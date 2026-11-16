@@ -37,7 +37,7 @@ shared:
   GSw_PRM_NetImportLimit: '1'
   GSw_PRM_NetImportLimitScen: '2031_hist/2050_100'
   GSw_PRM_scenario: '0.12'
-  GSw_PRM_StressIterateMax: '3'
+  GSw_PRM_StressIterateMax: '5'
   GSw_PRM_StressThresholdLOLD: 'transgrp_0.1'
   GSw_PRM_StressThresholdMetrics: 'NEUE/LOLD'
   GSw_PRM_StressThresholdNEUE: 'transgrp_1'
