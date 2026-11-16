@@ -560,27 +560,30 @@ if(Sw_PVB=0,
 ) ;
 
 * Ban PVB_Types that aren't included in the model
-$ifthen.pvb123 %GSw_PVB_Types% == '1_2'
+$ifthen.pvbtypes %GSw_PVB_Types% == '1_2_3'
+$elseif.pvbtypes %GSw_PVB_Types% == '1_2'
     ban(i)$i_subsets(i,'pvb3') = yes ;
-$endif.pvb123
-$ifthen.pvb12 %GSw_PVB_Types% == '1'
+$elseif.pvbtypes %GSw_PVB_Types% == '1'
     ban(i)$i_subsets(i,'pvb2') = yes ;
     ban(i)$i_subsets(i,'pvb3') = yes ;
-$endif.pvb12
+$else.pvbtypes
+$abort 'GSw_PVB_Types=%GSw_PVB_Types% is not handled by the PVB_Types bans in b_inputs.gms'
+$endif.pvbtypes
 
 * Ban CSP_Types that aren't included in the model
-$ifthen.csp123 %GSw_CSP_Types% == '1_2_3'
+$ifthen.csptypes %GSw_CSP_Types% == '1_2_3_4'
+$elseif.csptypes %GSw_CSP_Types% == '1_2_3'
     ban(i)$i_subsets(i,'csp4') = yes ;
-$endif.csp123
-$ifthen.csp12 %GSw_CSP_Types% == '1_2'
+$elseif.csptypes %GSw_CSP_Types% == '1_2'
     ban(i)$i_subsets(i,'csp3') = yes ;
     ban(i)$i_subsets(i,'csp4') = yes ;
-$endif.csp12
-$ifthen.csp1 %GSw_CSP_Types% == '1'
+$elseif.csptypes %GSw_CSP_Types% == '1'
     ban(i)$i_subsets(i,'csp2') = yes ;
     ban(i)$i_subsets(i,'csp3') = yes ;
     ban(i)$i_subsets(i,'csp4') = yes ;
-$endif.csp1
+$else.csptypes
+$abort 'GSw_CSP_Types=%GSw_CSP_Types% is not handled by the CSP_Types bans in b_inputs.gms'
+$endif.csptypes
 
 *** Ban storage techs based on Sw_Storage switch
 * 0: Ban all storage
