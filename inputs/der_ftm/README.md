@@ -69,9 +69,12 @@ Prescribed battery energy capacity (`MWh` in the prescribed builds file) is a mi
 ReEDS must build at least that much energy capacity in each year with prescribed builds and can build more
 (on prescribed or optional power capacity) at the energy capital cost.
 
-Capacity and costs are by ReEDS zone (`r`); aggregated or county-level spatial resolutions are not supported yet.
+Capacity and costs are by ReEDS zone (`r`). The inputs are not aggregated or disaggregated between
+spatial resolutions, so each `der_ftm_scen` must use the zones of a single zone set (`GSw_ZoneSet`);
+input processing stops with an error if a file has zones that are not in the run's zone set or if the
+supply curve has none of the modeled zones.
 All files are included in the repository; `example` contains illustrative (not real) data for the
-Pacific census division zones only.
+Pacific census division zones of the `z90` zone set only.
 
 ### Files (`{der_ftm_scen}` is set by the `der_ftm_scen` switch)
 

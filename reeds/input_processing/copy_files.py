@@ -434,6 +434,10 @@ def subset_to_valid_regions(
     else:
         raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
 
+    # Front-of-the-meter DER inputs are not aggregated or disaggregated, so check their zones
+    if filename.startswith('der_ftm_'):
+        check_der_ftm_regions(df, region_col, filename, val_r_all, sw)
+
     # Filter data to valid regions
     df = filter_data(
         df,
@@ -517,6 +521,32 @@ def param_csv_to_txt(infilepath, outdirpath, writelist=True):
             w.write(paramlist)
 
     return dfparams
+
+def check_der_ftm_regions(df, region_col, filename, val_r_all, sw):
+    """
+    Front-of-the-meter DER inputs are not aggregated or disaggregated, so they must be
+    given for the zones of the run's zone set (GSw_ZoneSet). The supply curve must also
+    include at least one modeled zone; otherwise no FTM DER could be built.
+    """
+    if region_col == 'wide':
+        # h5 profiles are indexed by (year, hour), so the columns are zones
+        zones = set(df.columns)
+    else:
+        zones = set(df[region_col])
+    zoneset_zones = set(reeds.io.get_county2zone(GSw_ZoneSet=sw['GSw_ZoneSet']))
+    not_in_zoneset = sorted(zones - zoneset_zones)
+    if not_in_zoneset:
+        raise ValueError(
+            f"{filename} (der_ftm_scen={sw['der_ftm_scen']}) has zones that are not in "
+            f"GSw_ZoneSet={sw['GSw_ZoneSet']}: {not_in_zoneset}. "
+            "FTM DER inputs must be given for the zones of the run's zone set."
+        )
+    if (filename == 'der_ftm_supplycurve.csv') and not (zones & set(val_r_all)):
+        raise ValueError(
+            f"{filename} (der_ftm_scen={sw['der_ftm_scen']}) has no modeled zones, "
+            "so no FTM DER could be built. Set GSw_DER_FTM=0 or add the modeled zones."
+        )
+
 
 # Function to filter data to valid regions
 def filter_data(

@@ -436,11 +436,14 @@ def get_der_ftm_profiles(
                 .reindex(h2yearhour.values)
                 .set_axis(h2yearhour.index)
             )
+        ## copy_files.py fills the profile with NaN for each modeled zone if none of the
+        ## input zones is modeled, so drop missing values
         profiles[ptype] = (
             pd.concat(dfout, names=['t'])
             .rename_axis(columns='r')
             .stack()
             .rename('value')
+            .dropna()
             .reset_index()
             [['r', 'h', 't', 'value']]
         )
