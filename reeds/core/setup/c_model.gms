@@ -2895,7 +2895,7 @@ eq_gasused(s,cendiv,h,t)$[tmodel(t)$(not tfinito_all(t))$((Sw_GasCurve=0) or (Sw
 * gas from each bin needs to less than its capacity
 eq_gasbinlimit(s,cendiv,gb,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=0)]..
 
-    gaslimit(cendiv,gb,t)
+    gaslimit(s,cendiv,gb,t)
 
     =g=
 
@@ -2906,7 +2906,7 @@ eq_gasbinlimit(s,cendiv,gb,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=0)]..
 
 eq_gasbinlimit_nat(s,gb,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=3)]..
 
-   gaslimit_nat(gb,t)
+   gaslimit_nat(s,gb,t)
 
    =g=
 
@@ -2945,7 +2945,7 @@ eq_gasaccounting_national(s,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)].
 
 eq_gasbinlimit_regional(s,fuelbin,cendiv,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
-    Gasbinwidth_regional(fuelbin,cendiv,t)
+    gasbinwidth_regional(s,fuelbin,cendiv,t)
 
     =g=
 
@@ -2956,7 +2956,7 @@ eq_gasbinlimit_regional(s,fuelbin,cendiv,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_
 
 eq_gasbinlimit_national(s,fuelbin,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
-    Gasbinwidth_national(fuelbin,t)
+    gasbinwidth_national(s,fuelbin,t)
 
     =g=
 

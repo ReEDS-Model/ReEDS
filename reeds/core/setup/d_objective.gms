@@ -226,8 +226,8 @@ eq_Objfn_op(s,t)$tmodel(t)..
                    }
 
 * ---operating reserve costs---
-              + sum{(i,v,r,h,ortype)$[Sw_OpRes$valgen(i,v,r,t)$cost_opres(i,ortype,t)$reserve_frac(i,ortype)$opres_model(ortype)$opres_h(h)],
-                   hours(h) * cost_opres(i,ortype,t) * OPRES(s,ortype,i,v,r,h,t) }
+              + sum{(i,v,r,h,ortype)$[Sw_OpRes$valgen(i,v,r,t)$cost_opres(s,i,ortype,t)$reserve_frac(i,ortype)$opres_model(ortype)$opres_h(h)],
+                   hours(h) * cost_opres(s,i,ortype,t) * OPRES(s,ortype,i,v,r,h,t) }
 
 
 * --- cost of coal, nuclear, and other fixed-price fuels (except coal used for cofiring),
@@ -241,7 +241,7 @@ eq_Objfn_op(s,t)$tmodel(t)..
               + sum{(i,v,r,h)$[[(not tfinito_all(t)) or h2_gen(i)]$valgen(i,v,r,t)$heat_rate(i,v,r,t)
                              $(not gas(i))$(not bio(i))$(not cofire(i))
                              $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(s,i,v,r,h,t) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(s,i,r,t) * GEN(s,i,v,r,h,t) }
 
 * --- startup/ramping costs
               + sum{(i,r,h,hh)$[Sw_StartCost$startcost(i)$numhours_nexth(h,hh)$valgen_irt(i,r,t)],
@@ -251,13 +251,13 @@ eq_Objfn_op(s,t)$tmodel(t)..
 * cofire bio consumption already accounted for in accounting of BIOUSED
               + sum{(i,v,r,h)$[(not tfinito_all(t))$valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
                    (1-bio_cofire_perc) * hours(h) * heat_rate(i,v,r,t)
-                   * fuel_price("coal-new",r,t) * GEN(s,i,v,r,h,t) }
+                   * fuel_price(s,"coal-new",r,t) * GEN(s,i,v,r,h,t) }
 
 * --- cost of natural gas---
 *Sw_GasCurve = 2 (static natural gas prices)
 *first - gas consumed for electricity generation
               + sum{(i,v,r,h)$[(not tfinito_all(t))$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)$(Sw_GasCurve = 2)],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(s,i,r,t) * GEN(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - gas consumed by gas-powered DAC
               + sum{(v,r,h)$[(not tfinito_all(t))$valcap("dac_gas",v,r,t)$(Sw_GasCurve = 2)],
@@ -265,26 +265,26 @@ eq_Objfn_op(s,t)$tmodel(t)..
 
 *Sw_GasCurve = 0 (census division supply curves natural gas prices)
               + sum{(cendiv,gb)$[not tfinito_all(t)], sum{h, hours(h) * GASUSED(s,cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) }
-                   * gasprice(cendiv,gb,t)
+                   * gasprice(s,cendiv,gb,t)
                    }$(Sw_GasCurve = 0)
 
 *Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
               + sum{(h,cendiv,gb)$[not tfinito_all(t)], hours(h) * GASUSED(s,cendiv,gb,h,t)
-                   * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
+                   * gasadder_cd(s,cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(s,gb,t)
                    }$(Sw_GasCurve = 3)
 
 *Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
               + (sum{(i,r,v,cendiv,h)$[valgen(i,v,r,t)$gas(i)$(not tfinito_all(t))],
-                   gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
+                   gasmultterm(s,cendiv,t) * cendiv_weights(r,cendiv) *
                    hours(h) * heat_rate(i,v,r,t) * GEN(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin,cendiv)$(not tfinito_all(t)),
-                   gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL(s,fuelbin,cendiv,t) }
+                   gasbinp_regional(s,fuelbin,cendiv,t) * VGASBINQ_REGIONAL(s,fuelbin,cendiv,t) }
 
               + sum{(fuelbin)$(not tfinito_all(t)),
-                   gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL(s,fuelbin,t) }
+                   gasbinp_national(s,fuelbin,t) * VGASBINQ_NATIONAL(s,fuelbin,t) }
 
               )$[Sw_GasCurve = 1]
 
@@ -323,7 +323,7 @@ eq_Objfn_op(s,t)$tmodel(t)..
 
 * --- costs from producing products (for now DAC and/or H2)---
               + sum{(p,i,v,r,h)$[(h2(i) or dac(i))$valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],
-                    hours(h) * cost_prod(i,v,r,t) * PRODUCE(s,p,i,v,r,h,t) }$Sw_Prod
+                    hours(h) * cost_prod(s,i,v,r,t) * PRODUCE(s,p,i,v,r,h,t) }$Sw_Prod
 
 * --- H2 transport network fixed OM costs (compute cumulative sum of investments to get total capacity)
                + sum{(r,rr)$h2_routes_inv(r,rr), cost_h2_transport_fom(r,rr,t) 

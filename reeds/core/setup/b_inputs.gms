@@ -3091,7 +3091,7 @@ h2_routes_inv(r,rr) = h2_routes(r,rr) ;
 * Only keep routes with r < rr for investment
 h2_routes_inv(r,rr)$(ord(rr)<ord(r)) = no ;
 
-parameter cost_prod(i,v,r,t)                  "--$/metric ton/hr-- cost or benefit of producing output from consuming technologies"
+parameter cost_prod(s,i,v,r,t)                  "--$/metric ton/hr-- cost or benefit of producing output from consuming technologies"
           dac_conversion_rate(i,t)            "--metric tons/MWh-- CO2 captured per MWh of electricity consumed"
           h2_conversion_rate(i,v,r,t)         "--metric tons/MWh-- H2 produced per MWh of electricity consumed"
           prod_conversion_rate(i,v,r,t)       "--metric tons/MWh-- amount of product produced (H2 or CO2) per MWh of electricity consumed"
@@ -3699,12 +3699,12 @@ heat_rate(i,v,r,t)$[heat_rate_adj(i,'post2010')$newv(v)] = heat_rate_adj(i,'post
 * --- Fuel Prices ---
 *=========================================
 
-parameter fuel_price(i,r,t) "$/MMBtu - fuel prices by technology" ;
+parameter fuel_price(s,i,r,t) "$/MMBtu - fuel prices by technology" ;
 
 
 * Written by reeds/input_processing/fuelcostprep.py
 * declared over allt to allow for external data files that extend beyond end_year
-table fprice(allt,r,f) "--2004$/MMBtu-- fuel prices by fuel type"
+table fprice(s,allt,r,f) "--2004$/MMBtu-- fuel prices by fuel type"
 $offlisting
 $ondelim
 $include inputs_case%ds%fprice.csv
@@ -3712,13 +3712,13 @@ $offdelim
 $onlisting
 ;
 
-fuel_price(i,r,t)$[sum{f$fuel2tech(f,i),1}] =
-  sum{(f,allt)$[fuel2tech(f,i)$(year(allt)=yeart(t))], fprice(allt,r,f) } ;
+fuel_price(s,i,r,t)$[sum{f$fuel2tech(f,i),1}] =
+  sum{(f,allt)$[fuel2tech(f,i)$(year(allt)=yeart(t))], fprice(s,allt,r,f) } ;
 
-fuel_price(i,r,t)$[sum{f$fuel2tech(f,i),1}$(not fuel_price(i,r,t))] =
-  sum{rr$fuel_price(i,rr,t), fuel_price(i,rr,t) } / max(1,sum{rr$fuel_price(i,rr,t), 1 }) ;
+fuel_price(s,i,r,t)$[sum{f$fuel2tech(f,i),1}$(not fuel_price(s,i,r,t))] =
+  sum{rr$fuel_price(s,i,rr,t), fuel_price(s,i,rr,t) } / max(1,sum{rr$fuel_price(s,i,rr,t), 1 }) ;
 
-fuel_price(i,r,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), fuel_price(ii,r,t) } ;
+fuel_price(s,i,r,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), fuel_price(s,ii,r,t) } ;
 
 
 *=====================================================
@@ -3876,14 +3876,14 @@ $offdelim
 $onlisting
 ;
 
-parameter cost_opres(i,ortype,t) "--$ / MWh-- cost of reg operating reserves" ;
-cost_opres(i,ortype,t) = cost_opres_input(i, ortype) ;
+parameter cost_opres(s,i,ortype,t) "--$ / MWh-- cost of reg operating reserves" ;
+cost_opres(s,i,ortype,t) = cost_opres_input(i, ortype) ;
 
 * assign reserve costs to all geothermal techs
-cost_opres(i,ortype,t)$geo(i) = cost_opres("geothermal",ortype,t) ;
+cost_opres(s,i,ortype,t)$geo(i) = cost_opres(s,"geothermal",ortype,t) ;
 
 * Assign hybrid PV+battery the same value as battery_li
-cost_opres(i,ortype,t)$pvb(i) = cost_opres("battery_li",ortype,t) ;
+cost_opres(s,i,ortype,t)$pvb(i) = cost_opres(s,"battery_li",ortype,t) ;
 
 * add heat rate penalty for providing reserves (currently only applied to spin)
 * input data calculated based on heat rates in the PLEXOS EI database as of Dec. 2020
@@ -3897,28 +3897,28 @@ $onlisting
 / ;
 
 * calculate average heat rate and fuel prices
-parameter fuel_price_avg(i,t) ;
+parameter fuel_price_avg(s,i,t) ;
 parameter heat_rate_avg(i,t) ;
 
 * calculate average fuel price and heat rates
-fuel_price_avg(i,t)$[sum{r, fuel_price(i,r,t) }] = sum{r, fuel_price(i,r,t) } / sum{r, 1$[fuel_price(i,r,t)] } ;
+fuel_price_avg(s,i,t)$[sum{r, fuel_price(s,i,r,t) }] = sum{r, fuel_price(s,i,r,t) } / sum{r, 1$[fuel_price(s,i,r,t)] } ;
 
 heat_rate_avg(i,t)$[sum{(v,r), heat_rate(i,v,r,t) }] =
   sum{(v,r), heat_rate(i,v,r,t) } / sum{(v,r), 1$[heat_rate(i,v,r,t)] } ;
 
 * calculate penalty value, assign to cost_opres
 * only assign penalty in instances where spin costs are not already defined
-cost_opres(i,"spin",t)$[not cost_opres(i,"spin",t)] =
-  spin_hr_penalty(i) * heat_rate_avg(i,t) * fuel_price_avg(i,t) ;
+cost_opres(s,i,"spin",t)$[not cost_opres(s,i,"spin",t)] =
+  spin_hr_penalty(i) * heat_rate_avg(i,t) * fuel_price_avg(s,i,t) ;
 
-cost_opres(i,ortype,t)$[i_water_cooling(i)$Sw_WaterMain] =
-  sum{ii$ctt_i_ii(i,ii), cost_opres(ii,ortype,t) } ;
+cost_opres(s,i,ortype,t)$[i_water_cooling(i)$Sw_WaterMain] =
+  sum{ii$ctt_i_ii(i,ii), cost_opres(s,ii,ortype,t) } ;
 
-cost_opres(i,ortype,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), cost_opres(ii,ortype,t) } ;
+cost_opres(s,i,ortype,t)$upgrade(i) = sum{ii$upgrade_to(i,ii), cost_opres(s,ii,ortype,t) } ;
 
 * again - making the assumption that the combination
 * operating reserve is the most stringent/costly
-cost_opres(i,"combo",t) = smax{ortype, cost_opres(i,ortype,t) } ;
+cost_opres(s,i,"combo",t) = smax{ortype, cost_opres(s,i,ortype,t) } ;
 
 
 *======================================================
@@ -4297,14 +4297,14 @@ cost_growth(i,st,t) = 0 ;
 *price sits at its upper limit, we want to move the curve such that the reference price sits at the middle of the
 *respective bin
 
-parameter gasprice(cendiv,gb,t)   "--$/MMBtu-- price of each gas bin",
-          gasquant(cendiv,gb,t)   "--MMBtu - natural gas quantity for each bin",
-          gaslimit(cendiv,gb,t)   "--MMBtu-- gas limit by gas bin"
-          gassupply_ele(cendiv,t) "--MMBtu-- reference gas consumption by the ELE sector"
-          gassupply_tot(cendiv,t) "--MMBtu-- reference gas consumption by the ELE sector" ;
+parameter gasprice(s,cendiv,gb,t)   "--$/MMBtu-- price of each gas bin",
+          gasquant(s,cendiv,gb,t)   "--MMBtu - natural gas quantity for each bin",
+          gaslimit(s,cendiv,gb,t)   "--MMBtu-- gas limit by gas bin"
+          gassupply_ele(s,cendiv,t) "--MMBtu-- reference gas consumption by the ELE sector"
+          gassupply_tot(s,cendiv,t) "--MMBtu-- reference gas consumption by the ELE sector" ;
 
 * declared over allt to allow for external data files that extend beyond end_year
-table gasprice_ref(cendiv,allt)   "--2004$/MMBtu-- natural gas price by census division"
+table gasprice_ref(s,cendiv,allt)   "--2004$/MMBtu-- natural gas price by census division"
 $offlisting
 $ondelim
 $include inputs_case%ds%gasprice_ref.csv
@@ -4317,13 +4317,13 @@ $onlisting
 * $ / MT through MMBtu / kg * (kg / MT) * ($ / MMBtu)
 * SMR production costs seem high given gas-intensity and units
 * -- cost of production, for now, just gas_intensity times reference gas price, can revisit gas price assumptions --
-parameter h2_fuel_cost(i,v,r,t) "--$ per metric ton-- fuel cost for hydrogen production" ;
-h2_fuel_cost(i,newv,r,t)$[h2(i)$valcap(i,newv,r,t)] = 1000 * (sum{tt$ivt(i,newv,tt),consume_char0(i,tt,"gas_efficiency") } / countnc(i,newv))
-                                                           * sum{cendiv$r_cendiv(r,cendiv),gasprice_ref(cendiv,t) } * industrialGasMult ;
+parameter h2_fuel_cost(s,i,v,r,t) "--$ per metric ton-- fuel cost for hydrogen production" ;
+h2_fuel_cost(s,i,newv,r,t)$[h2(i)$valcap(i,newv,r,t)] = 1000 * (sum{tt$ivt(i,newv,tt),consume_char0(i,tt,"gas_efficiency") } / countnc(i,newv))
+                                                           * sum{cendiv$r_cendiv(r,cendiv),gasprice_ref(s,cendiv,t) } * industrialGasMult ;
 
 * initial capacity gets charged at the initial NG efficiency
-h2_fuel_cost(i,initv,r,t)$[h2(i)$valcap(i,initv,r,t)] = 1000 * consume_char0(i,"%startyear%","gas_efficiency")
-                                                             * sum{cendiv$r_cendiv(r,cendiv),gasprice_ref(cendiv,t) } * industrialGasMult ;
+h2_fuel_cost(s,i,initv,r,t)$[h2(i)$valcap(i,initv,r,t)] = 1000 * consume_char0(i,"%startyear%","gas_efficiency")
+                                                             * sum{cendiv$r_cendiv(r,cendiv),gasprice_ref(s,cendiv,t) } * industrialGasMult ;
 
 * -- adding in $ / metric ton adder for transport and storage and h2 vom cost
 parameter
@@ -4343,13 +4343,13 @@ h2_stor_tran(i,t)$[(Sw_H2=1)$Sw_H2_TransportUniform$h2(i)$sum{(v,r), valcap(i,v,
 h2_vom(i,t)$h2(i) = deflator("2016") * consume_char0(i,t,"vom") * 1000 ;
 
 * total cost of h2 production activities ($ per metric ton)
-cost_prod(i,v,r,t)$[h2(i)$valcap(i,v,r,t)] = h2_fuel_cost(i,v,r,t) + h2_vom(i,t) + h2_stor_tran(i,t) ;
+cost_prod(s,i,v,r,t)$[h2(i)$valcap(i,v,r,t)] = h2_fuel_cost(s,i,v,r,t) + h2_vom(i,t) + h2_stor_tran(i,t) ;
 
 * include VOM for DAC in cost_prod
-cost_prod(i,v,r,t)$[dac(i)$valcap(i,v,r,t)] = consume_char0(i,t,"vom") ;
+cost_prod(s,i,v,r,t)$[dac(i)$valcap(i,v,r,t)] = consume_char0(i,t,"vom") ;
 
 
-table gasquant_elec(cendiv,allt) "--Quads-- Natural gas consumption in the electricity sector"
+table gasquant_elec(s,cendiv,allt) "--Quads-- Natural gas consumption in the electricity sector"
 $offlisting
 $ondelim
 $include inputs_case%ds%ng_demand_elec.csv
@@ -4357,7 +4357,7 @@ $offdelim
 $onlisting
 ;
 
-table gasquant_tot(cendiv,allt) "--Quads-- Total natural gas consumption"
+table gasquant_tot(s,cendiv,allt) "--Quads-- Total natural gas consumption"
 $offlisting
 $ondelim
 $include inputs_case%ds%ng_demand_tot.csv
@@ -4366,72 +4366,72 @@ $onlisting
 ;
 
 *need to convert from quadrillion btu to million btu
-gassupply_ele(cendiv,t) = 1e9 * gasquant_elec(cendiv,t) ;
-gassupply_tot(cendiv,t) = 1e9 * gasquant_tot(cendiv,t) ;
+gassupply_ele(s,cendiv,t) = 1e9 * gasquant_elec(s,cendiv,t) ;
+gassupply_tot(s,cendiv,t) = 1e9 * gasquant_tot(s,cendiv,t) ;
 
 
 parameter
-gassupply_ele_nat(t)       "--quads-- national reference gas supply for electricity " ,
-gasprice_nat(t)            "--$/MMBtu-- national NG price",
+gassupply_ele_nat(s,t)       "--quads-- national reference gas supply for electricity " ,
+gasprice_nat(s,t)            "--$/MMBtu-- national NG price",
 gasquant_nat(t)            "--quads-- national NG usage",
-gasquant_nat_bin(gb,t)     "--quads-- national NG quantity by bin",
-gasprice_nat_bin(gb,t)     "--$/MMbtu-- price for each national NG bin",
-gaslimit_nat(gb,t)         "--MMbtu-- national gas bin limit" ;
+gasquant_nat_bin(s,gb,t)     "--quads-- national NG quantity by bin",
+gasprice_nat_bin(s,gb,t)     "--$/MMbtu-- price for each national NG bin",
+gaslimit_nat(s,gb,t)         "--MMbtu-- national gas bin limit" ;
 
-gassupply_ele_nat(t) = sum{cendiv$gassupply_ele(cendiv,t), gassupply_ele(cendiv,t) } ;
+gassupply_ele_nat(s,t) = sum{cendiv$gassupply_ele(s,cendiv,t), gassupply_ele(s,cendiv,t) } ;
 
-gasprice_nat(t) = sum{cendiv$gassupply_ele(cendiv,t), gassupply_ele(cendiv,t) * gasprice_ref(cendiv,t) }
-                              / gassupply_ele_nat(t) ;
+gasprice_nat(s,t) = sum{cendiv$gassupply_ele(s,cendiv,t), gassupply_ele(s,cendiv,t) * gasprice_ref(s,cendiv,t) }
+                              / gassupply_ele_nat(s,t) ;
 
 *now compute the amounts going into each gas bin
 *this is computed as the amount relative to the reference amount based on the ordinal of the
 *gas bin - e.g. gas bin 4 (with a central gas bin of 6 and bin width of 0.1)
 *will be gassupply_ele * (1+4-6*0.1) = 0.8 * reference
-gasquant(cendiv,gb,t)$gassupply_ele(cendiv,t) = gassupply_ele(cendiv,t) *
+gasquant(s,cendiv,gb,t)$gassupply_ele(s,cendiv,t) = gassupply_ele(s,cendiv,t) *
                           (1+(ord(gb)-(smax(gbb,ord(gbb)) / 2 + 0.5)) * 0.1) ;
 
 
-gasquant_nat_bin(gb,t)$gassupply_ele_nat(t) = gassupply_ele_nat(t) *
+gasquant_nat_bin(s,gb,t)$gassupply_ele_nat(s,t) = gassupply_ele_nat(s,t) *
                           (1+(ord(gb)-(smax(gbb,ord(gbb)) / 2 + 0.5)) * 0.1) ;
 
 
-gasprice(cendiv,gb,t)$gassupply_ele(cendiv,t) =
-          gas_scale * round(gasprice_ref(cendiv,t) *
+gasprice(s,cendiv,gb,t)$gassupply_ele(s,cendiv,t) =
+          gas_scale * round(gasprice_ref(s,cendiv,t) *
                (
 * numerator is the quantity in the bin
 * [plus] all natural gas usage
 * [minus] gas usage in the ele sector
-                (gasquant(cendiv,gb,t) + gassupply_tot(cendiv,t) - gassupply_ele(cendiv,t))
-                /(gassupply_tot(cendiv,t))
+                (gasquant(s,cendiv,gb,t) + gassupply_tot(s,cendiv,t) - gassupply_ele(s,cendiv,t))
+                /(gassupply_tot(s,cendiv,t))
                 ) ** (1 / gas_elasticity),4) ;
 
 
-gasprice_nat_bin(gb,t)$sum{cendiv, gassupply_tot(cendiv,t) } =
-          gas_scale * round(gasprice_nat(t) *
+gasprice_nat_bin(s,gb,t)$sum{cendiv, gassupply_tot(s,cendiv,t) } =
+          gas_scale * round(gasprice_nat(s,t) *
                (
-                (gasquant_nat_bin(gb,t) + sum{cendiv, gassupply_tot(cendiv,t) } - gassupply_ele_nat(t))
-                /(sum{cendiv, gassupply_tot(cendiv,t) })
+                (gasquant_nat_bin(s,gb,t) + sum{cendiv, gassupply_tot(s,cendiv,t) } - gassupply_ele_nat(s,t))
+                /(sum{cendiv, gassupply_tot(s,cendiv,t) })
                 ) ** (1 / gas_elasticity),4) ;
 
 
 *the quantity available in each bin is the quantity on the supply curve minus the previous bin's quantity supplied
-gaslimit(cendiv,gb,t) = round((gasquant(cendiv,gb,t) - gasquant(cendiv,gb-1,t)),0) / gas_scale;
+gaslimit(s,cendiv,gb,t) = round((gasquant(s,cendiv,gb,t) - gasquant(s,cendiv,gb-1,t)),0) / gas_scale;
 
 
-gaslimit(cendiv,"gb1",t) = gaslimit(cendiv,"gb1",t)
-                            - gassupplyscale * sum{gb$[ord(gb)=(smax(gbb,ord(gbb)) / 2 + 0.5)],gaslimit(cendiv,gb,t) } ;
-
-*final category gets a huge bonus so we make sure we do not run out of gas
-gaslimit(cendiv,gb,t)$[ord(gb)=smax(gbb,ord(gbb))] = 5 * gaslimit(cendiv,gb,t) ;
-
-
-gaslimit_nat(gb,t) = round((gasquant_nat_bin(gb,t) - gasquant_nat_bin(gb-1,t)),0) / gas_scale;
-
-gaslimit_nat("gb1",t) = gaslimit_nat("gb1",t)
-                            - gassupplyscale * sum{gb$[ord(gb)=(smax(gbb,ord(gbb)) / 2 + 0.5)],gaslimit_nat(gb,t) } ;
+gaslimit(s,cendiv,"gb1",t) = gaslimit(s,cendiv,"gb1",t)
+                            - gassupplyscale * sum{gb$[ord(gb)=(smax(gbb,ord(gbb)) / 2 + 0.5)],gaslimit(s,cendiv,gb,t) } ;
 
 *final category gets a huge bonus so we make sure we do not run out of gas
-gaslimit_nat(gb,t)$(ord(gb)=smax(gbb,ord(gbb))) = 5 * gaslimit_nat(gb,t) ;
+gaslimit(s,cendiv,gb,t)$[ord(gb)=smax(gbb,ord(gbb))] = 5 * gaslimit(s,cendiv,gb,t) ;
+
+
+gaslimit_nat(s,gb,t) = round((gasquant_nat_bin(s,gb,t) - gasquant_nat_bin(s,gb-1,t)),0) / gas_scale;
+
+gaslimit_nat(s,"gb1",t) = gaslimit_nat(s,"gb1",t)
+                            - gassupplyscale * sum{gb$[ord(gb)=(smax(gbb,ord(gbb)) / 2 + 0.5)],gaslimit_nat(s,gb,t) } ;
+
+*final category gets a huge bonus so we make sure we do not run out of gas
+gaslimit_nat(s,gb,t)$(ord(gb)=smax(gbb,ord(gbb))) = 5 * gaslimit_nat(s,gb,t) ;
 
 *Penalizing new gas built within cost recovery period of 30 years for states that
 * require fossil plants to retire in some future model period.
@@ -4474,14 +4474,14 @@ Scalar numfuelbins       "number of fuel bins",
 
 parameter cd_beta(cendiv,t)                      "--$/MMBtu per Quad-- beta value for census divisions' natural gas supply curves",
           nat_beta(t)                            "--$/MMBtu per Quad-- beta value for national natural gas supply curves",
-          gasbinwidth_regional(fuelbin,cendiv,t) "--MMBtu-- census division's gas bin width",
-          gasbinwidth_national(fuelbin,t)        "--MMBtu-- national gas bin width",
-          gasbinp_regional(fuelbin,cendiv,t)     "--$/MMBtu-- price for each gas bin",
-          gasusage_national(t)                   "--MMBtu-- reference national gas usage",
-          gasbinqq_regional(fuelbin,cendiv,t)    "--MMBtu-- regional reference level for supply curve calculation of each gas bin",
-          gasbinqq_national(fuelbin,t)           "--MMBtu-- national reference level for supply curve calculation of each gas bin",
-          gasbinp_national(fuelbin,t)            "--$/MMBtu--price for each national gas bin",
-          gasmultterm(cendiv,t)                  "parameter to be multiplied by total gas usage to compute the reference costs of gas consumption, from which the bins deviate" ;
+          gasbinwidth_regional(s,fuelbin,cendiv,t) "--MMBtu-- census division's gas bin width",
+          gasbinwidth_national(s,fuelbin,t)        "--MMBtu-- national gas bin width",
+          gasbinp_regional(s,fuelbin,cendiv,t)     "--$/MMBtu-- price for each gas bin",
+          gasusage_national(s,t)                   "--MMBtu-- reference national gas usage",
+          gasbinqq_regional(s,fuelbin,cendiv,t)    "--MMBtu-- regional reference level for supply curve calculation of each gas bin",
+          gasbinqq_national(s,fuelbin,t)           "--MMBtu-- national reference level for supply curve calculation of each gas bin",
+          gasbinp_national(s,fuelbin,t)            "--$/MMBtu--price for each national gas bin",
+          gasmultterm(s,cendiv,t)                  "parameter to be multiplied by total gas usage to compute the reference costs of gas consumption, from which the bins deviate" ;
 
 *note these do not change over years, only exception
 * is that the value in the first year is set to zero
@@ -4522,7 +4522,7 @@ $endif.gassector
 
 * Written by reeds/input_processing/fuelcostprep.py
 * declared over allt to allow for external data files that extend beyond end_year
-table cd_alpha(allt,cendiv) "--$/MMBtu-- alpha value for natural gas supply curves"
+table cd_alpha(s,allt,cendiv) "--$/MMBtu-- alpha value for natural gas supply curves"
 $offlisting
 $ondelim
 $include inputs_case%ds%alpha.csv
@@ -4549,46 +4549,46 @@ normfuelbinwidth = (normfuelbinmax - normfuelbinmin)/(numfuelbins - 2) ;
 botfuelbinwidth = normfuelbinmin ;
 
 *national gas usage computed as sum over census divisions' gas usage
-gasusage_national(t) = sum{cendiv, gassupply_ele(cendiv,t) } ;
+gasusage_national(s,t) = sum{cendiv, gassupply_ele(s,cendiv,t) } ;
 
 *gas bin width is typically the reference gas usage times the bin width
-gasbinwidth_regional(fuelbin,cendiv,t) = gassupply_ele(cendiv,t) * normfuelbinwidth ;
+gasbinwidth_regional(s,fuelbin,cendiv,t) = gassupply_ele(s,cendiv,t) * normfuelbinwidth ;
 
 *bottom and top bins get special treatment
 *in that they are expanded by botfuelbinwidth and topfuelbinwidth
-gasbinwidth_regional(fuelbin,cendiv,t)$[ord(fuelbin) = 1] = gassupply_ele(cendiv,t) * botfuelbinwidth ;
-gasbinwidth_regional(fuelbin,cendiv,t)$[ord(fuelbin) = smax(afuelbin,ord(afuelbin))] =
-                                          gassupply_ele(cendiv,t) * topfuelbinwidth ;
+gasbinwidth_regional(s,fuelbin,cendiv,t)$[ord(fuelbin) = 1] = gassupply_ele(s,cendiv,t) * botfuelbinwidth ;
+gasbinwidth_regional(s,fuelbin,cendiv,t)$[ord(fuelbin) = smax(afuelbin,ord(afuelbin))] =
+                                          gassupply_ele(s,cendiv,t) * topfuelbinwidth ;
 
 *don't want any super small or zero values -- this follows the same calculations in heritage ReEDS
-gasbinwidth_regional(fuelbin,cendiv,t)$[gasbinwidth_regional(fuelbin,cendiv,t) < 10] = 10 ;
+gasbinwidth_regional(s,fuelbin,cendiv,t)$[gasbinwidth_regional(s,fuelbin,cendiv,t) < 10] = 10 ;
 
 *gas bin widths are defined similarly on the national level
-gasbinwidth_national(fuelbin,t) = gasusage_national(t) * normfuelbinwidth ;
-gasbinwidth_national(fuelbin,t)$[ord(fuelbin) = 1]   = gasusage_national(t) * botfuelbinwidth ;
-gasbinwidth_national(fuelbin,t)$[ord(fuelbin)=smax(afuelbin,ord(afuelbin))]  = gasusage_national(t) * topfuelbinwidth ;
+gasbinwidth_national(s,fuelbin,t) = gasusage_national(s,t) * normfuelbinwidth ;
+gasbinwidth_national(s,fuelbin,t)$[ord(fuelbin) = 1]   = gasusage_national(s,t) * botfuelbinwidth ;
+gasbinwidth_national(s,fuelbin,t)$[ord(fuelbin)=smax(afuelbin,ord(afuelbin))]  = gasusage_national(s,t) * topfuelbinwidth ;
 
 *comment from heritage reeds:
 *gasbinqq is the centerpoint of each of the smaller bins and is used to determine the price of each bin. The first and last bin have
 *gasbinqqs that are just one more step before and after the smaller bins.
-gasbinqq_regional(fuelbin,cendiv,t) =
-   gassupply_ele(cendiv,t)  * (normfuelbinmin
+gasbinqq_regional(s,fuelbin,cendiv,t) =
+   gassupply_ele(s,cendiv,t)  * (normfuelbinmin
     + (ord(fuelbin) - 1)*normfuelbinwidth - normfuelbinwidth / 2) ;
 
-gasbinqq_national(fuelbin,t) =  gasusage_national(t)  * (normfuelbinmin + (ord(fuelbin) - 1)*normfuelbinwidth - normfuelbinwidth / 2) ;
+gasbinqq_national(s,fuelbin,t) =  gasusage_national(s,t)  * (normfuelbinmin + (ord(fuelbin) - 1)*normfuelbinwidth - normfuelbinwidth / 2) ;
 
 *bins' prices are those from the supply curves
 *1e9 converts from MMBtu to Quads
-gasbinp_regional(fuelbin,cendiv,t) =
-   round((cd_beta(cendiv,t) * (gasbinqq_regional(fuelbin,cendiv,t) -  gassupply_ele(cendiv,t))) / 1e9,5) ;
+gasbinp_regional(s,fuelbin,cendiv,t) =
+   round((cd_beta(cendiv,t) * (gasbinqq_regional(s,fuelbin,cendiv,t) -  gassupply_ele(s,cendiv,t))) / 1e9,5) ;
 
-gasbinp_national(fuelbin,t)= round(nat_beta(t)*(gasbinqq_national(fuelbin,t) - gasusage_national(t)) / 1e9,5) ;
+gasbinp_national(s,fuelbin,t)= round(nat_beta(t)*(gasbinqq_national(s,fuelbin,t) - gasusage_national(s,t)) / 1e9,5) ;
 
 
 *this is the reference price of gas given last year's gas usage levels
-gasmultterm(cendiv,t) = (cd_alpha(t,cendiv)
-                     + nat_beta(t) * gasusage_national(t-2) / 1e9
-                     + cd_beta(cendiv,t) * gassupply_ele(cendiv,t-2) / 1e9
+gasmultterm(s,cendiv,t) = (cd_alpha(s,t,cendiv)
+                     + nat_beta(t) * gasusage_national(s,t-2) / 1e9
+                     + cd_beta(cendiv,t) * gassupply_ele(s,cendiv,t-2) / 1e9
                         ) ;
 
 
@@ -5527,7 +5527,7 @@ Parameter
 * Minloading
     minloadfrac(r,i,allh)                  "--fraction-- minimum loading fraction - final used in model"
 * Fossil gas supply curve
-    gasadder_cd(cendiv,t,allh)             "--$/MMbtu-- adder for NG census division"
+    gasadder_cd(s,cendiv,t,allh)             "--$/MMbtu-- adder for NG census division"
     szn_adj_gas(allh)                      "--fraction-- seasonal adjustment for gas prices"
     gasprice_adj_r(r,allh)                 "--fraction-- adjustment for zonal gas prices"
     gasprice_adj_cendiv(cendiv,allh)       "--fraction-- adjustment for cendiv-level gas prices"
