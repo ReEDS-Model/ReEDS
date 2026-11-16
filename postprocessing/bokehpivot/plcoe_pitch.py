@@ -1332,6 +1332,31 @@ def grouped_capacity_credit(run_dir, prefix='battery', level=None):
                                              'penetration', 'capacity_credit']]
 
 
+def grouped_capacity_credit_by_scenario(core_dir, prefix='battery', level=None):
+    """grouped_capacity_credit for the core storage run and each storage duration and inter-day
+    sensitivity, stacked with a scenario column. Runs missing from the scenarios file are skipped.
+
+    Penetration is over the stress-period peak, which includes the planning reserve margin
+    (12% everywhere in these runs), so penetration over the peak without it is about 1.12 times
+    the value here.
+    """
+    from reeds_vs_rev import scenarios_path
+    scen = pd.read_csv(scenarios_path).set_index('name')['path']
+    runs = {n: p for n, p in scen.items() if os.path.normpath(p) == os.path.normpath(core_dir)}
+    runs.update({n: scen[n] for n in [*storage_duration_scenarios, *storage_interday_scenarios]
+                 if n in scen})
+    rows = []
+    for name, path in runs.items():
+        try:
+            rows.append(grouped_capacity_credit(path, prefix, level).assign(scenario=name))
+        except FileNotFoundError as e:
+            print(f'regional capacity credit unavailable for {name} ({e.filename}); skipped.')
+    if not rows:
+        return pd.DataFrame()
+    g = pd.concat(rows, ignore_index=True)
+    return g[['scenario'] + [c for c in g.columns if c != 'scenario']]
+
+
 def plot_grouped_capacity_credit(run_dir, output_path, prefix='battery', level=None):
     """Capacity credit against penetration, one small panel per region, national line in each.
 
@@ -2725,6 +2750,11 @@ def make_figs(valcostfac_core_path, output_dir=None):
                     plt.close(fig_reg)
                     reg_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_regional_cc.csv'),
                                    index=False)
+                reg_sc = grouped_capacity_credit_by_scenario(stor_dirs[tech], prefix=prefix)
+                if not reg_sc.empty:
+                    reg_sc.to_csv(os.path.join(output_dir,
+                                               'plcoe_pitch_storage_regional_cc_scenarios.csv'),
+                                  index=False)
                 fig_rvf, rvf_tab = plot_grouped_value_factor(
                     stor_dirs[tech], valcostfac_core_path,
                     os.path.join(output_dir, 'plcoe_pitch_storage_regional_vf.png'), tech=tech,
