@@ -344,38 +344,35 @@ def get_yearly_flexibility(
         modeledyears_int = [int(y) for y in modeledyears]        
         shape[stype] = shape[stype].loc[shape[stype].year.isin(modeledyears_int)]
 
-        # EER derived shape data is populated for multiple weather years
-        # The index is populated as a timestamp
-        if len(str(shape[stype].index[0])) > 4:
-            # Define timezone to UTC-6
-            shape[stype].set_index(pd.to_datetime(shape[stype].index), inplace=True)
-            shape[stype].index = shape[stype].index.tz_localize('Etc/GMT+6')
-            shape[stype].reset_index(inplace=True)
+        # Define timezone to UTC-6
+        shape[stype].set_index(pd.to_datetime(shape[stype].index), inplace=True)
+        shape[stype].index = shape[stype].index.tz_localize('Etc/GMT+6')
+        shape[stype].reset_index(inplace=True)
 
-            # create dictionary from hmap 
-            hour2h = hmap_1yr.set_index('timestamp')['h'].to_dict()
-            # Map timestamps to h values
-            shape[stype]['h'] = shape[stype]['datetime'].map(hour2h)
-            # Filter out hours not in hmap
-            shape[stype] = shape[stype].loc[~shape[stype]['h'].isnull()]
-            # Remove timestamp col
-            shape[stype] = shape[stype].drop(columns = 'datetime')
-            # Flip region columns to single column
-            region_cols = [col for col in shape[stype].columns if col not in ['year','h']]
-            if region_cols:
-                shape[stype] = shape[stype].melt(
-                    id_vars=[col for col in shape[stype].columns if col not in region_cols],
-                    value_vars=region_cols,
-                    var_name='r',
-                    value_name='Values'
-                )
-            # Split the region column into dr type and region
-            shape[stype]['i'] = shape[stype]['r'].apply(lambda x: x.split('|')[0])
-            shape[stype]['r'] = shape[stype]['r'].apply(lambda x: x.split('|')[1])
-            shape[stype]['year'] = shape[stype]['year'].astype(int)
-            # Reorder columns
-            shape_out[stype] = shape[stype][['i','r','h','year','Values']].copy()
-            shape_out[stype] = shape_out[stype].rename(columns={'year':'t'})
+        # create dictionary from hmap 
+        hour2h = hmap_1yr.set_index('timestamp')['h'].to_dict()
+        # Map timestamps to h values
+        shape[stype]['h'] = shape[stype]['datetime'].map(hour2h)
+        # Filter out hours not in hmap
+        shape[stype] = shape[stype].loc[~shape[stype]['h'].isnull()]
+        # Remove timestamp col
+        shape[stype] = shape[stype].drop(columns = 'datetime')
+        # Flip region columns to single column
+        region_cols = [col for col in shape[stype].columns if col not in ['year','h']]
+        if region_cols:
+            shape[stype] = shape[stype].melt(
+                id_vars=[col for col in shape[stype].columns if col not in region_cols],
+                value_vars=region_cols,
+                var_name='r',
+                value_name='Values'
+            )
+        # Split the region column into dr type and region
+        shape[stype]['i'] = shape[stype]['r'].apply(lambda x: x.split('|')[0])
+        shape[stype]['r'] = shape[stype]['r'].apply(lambda x: x.split('|')[1])
+        shape[stype]['year'] = shape[stype]['year'].astype(int)
+        # Reorder columns
+        shape_out[stype] = shape[stype][['i','r','h','year','Values']].copy()
+        shape_out[stype] = shape_out[stype].rename(columns={'year':'t'})
 
     shape_out = {k: v.drop_duplicates() for k, v in shape_out.items()}
     
