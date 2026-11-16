@@ -178,9 +178,10 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         )
         ### Optimize the assignment of actual days to representative days
         mapfunc = {
-            'exact': reeds.timeseries.match_act2rep_exact,
+            'assignment': reeds.timeseries.match_act2rep_assignment,
+            'milp': reeds.timeseries.match_act2rep_milp,
             'bestfirst': reeds.timeseries.match_act2rep_bestfirst,
-        }[sw.get('GSw_HourlyClusterMapMethod', 'exact')]
+        }[sw.get('GSw_HourlyClusterMapMethod', 'assignment')]
         a2r = mapfunc(
             profiles_period_mean=profiles_period_mean.round(4),
             iweights=iweights,
