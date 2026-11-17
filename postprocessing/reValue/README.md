@@ -28,7 +28,7 @@ reValue has two main purposes:
          - *LVOE_load*: Value per unit energy (load, or energy requirement, component. For *load* technology, this includes influence on operating reserves, state rps, and all model requirements that are linked to the LOAD variable)
          - *LVOE_rm*: Value per unit energy (reserve margin component)
          - *LVOE_or*: Value per unit energy (operating reserve component, only present if tech is not *load*)
-         - *LVOE_rps*: Value per unit energy (state rps component, only present if the tech is not *load*)
+         - *LVOE_rps*: Value per unit energy (state rps component, only present if the tech is not *load*). Based on representative-period prices only; value from the stress-period RPS/CES requirement (`GSw_StateRPS_Stress`) is not included.
          - *Pb_load_loc*: A benchmark price for the load component at this location (assuming flat block technology).
          - *Pb_rm_loc*: A benchmark price for the reserve margin component at this location (assuming flat block technology).
          - *Pb_load_nat*: A national benchmark price for the load component (assuming flat block technology).

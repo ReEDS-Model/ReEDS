@@ -644,6 +644,8 @@ def pre_val_streams(dfs, **kw):
         dfs['p']['p'] = inflate_series(dfs['p']['p'])
         df_bm = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=['type', 'subtype', 'rb', 'timeslice', 'year'], sort=False)
         df_bm['p'] = df_bm['p'].fillna(0)
+        #Stress-period RPS/CES value comes from the same eq_rec_requirement value stream, so benchmark it together
+        df_bm['type'] = df_bm['type'].replace({'state_rps_stress': 'state_rps'})
         #Add con_name:
         types = ['load','res_marg','oper_res','state_rps','curt_realize','curt_cause'] #the curt ones don't exist, they are just placeholders for the mapping.
         df_bm = df_bm[df_bm['type'].isin(types)].copy()
