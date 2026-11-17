@@ -43,8 +43,10 @@ retail_rate_module/inputs/EIA861/*
 postprocessing/retail_rate_module/inputs/EIA861/*
 
 # Large files from remote sources
-inputs/profiles*
-inputs/remote
+inputs/profiles*/*
+!inputs/profiles*/README.md
+inputs/remote/*
+!inputs/remote/README.md
 inputs/shapefiles/cache
 
 # IDE stuff

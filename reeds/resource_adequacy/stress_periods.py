@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from warnings import warn
 from typing import Literal
 
 import reeds
@@ -103,6 +104,21 @@ def get_events(ds:pd.Series, threshold:float=0) -> pd.DataFrame:
     return dfout
 
 
+def get_shortfall_totals_by_sample(case, t, iteration=0):
+    filepath = os.path.join(
+        case, 'handoff', 'PRAS', f'PRAS_{t}i{iteration}-shortfall_totals_by_sample.h5'
+    )
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"{filepath}: Rerun PRAS with write_shortfall_samples_totals=1")
+    df = reeds.io.read_pras_results(filepath)
+    df.columns = df.columns.astype(str)
+    if 'sample' in df.columns:
+        df = df.set_index('sample')
+    elif df.index.name != 'sample':
+        df.index = pd.RangeIndex(1, len(df) + 1, name='sample')
+    return df
+
+
 def calc_lold(dflole_agg, threshold=0):
     """Count a day as an event-day if at least one hour has LOLE > threshold"""
     ## Take the max for each day
@@ -141,6 +157,38 @@ def calc_neue(dfeue_agg, dfload_agg):
     """NEUE (sum of EUE / sum of load) in units of ppm"""
     neue = dfeue_agg.sum() / dfload_agg.sum() * 1e6
     return neue
+
+
+def _sample_cvar(samples, alpha=0.95):
+    x = pd.Series(samples).dropna().astype(float)
+    if x.empty:
+        return np.nan
+
+    # Round before applying ceil to remove floating-point noise.
+    # For example, a mathematically exact tail size of 50 may be
+    # represented as 50.00000000000004, which would otherwise select 51 samples.
+    tail_size = round((1 - alpha) * len(x), 12)
+    n_tail = max(1, int(np.ceil(tail_size)))
+
+    return x.nlargest(n_tail).mean()
+
+def calc_cvar(shortfall_samples_agg, alpha=0.95):
+    """
+    CVAR from total shortfall by PRAS sample.
+    """
+    cvar = shortfall_samples_agg.apply(
+        lambda s: _sample_cvar(s, alpha=alpha),
+        axis=0,
+    )
+    return cvar
+
+
+def calc_ncvar(cvar, dfload_agg):
+    """
+    NCVAR = CVAR / total load, in ppm.
+    """
+    ncvar = cvar / dfload_agg.sum().reindex(cvar.index) * 1e6
+    return ncvar
 
 
 def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute']='peak'):
@@ -192,6 +240,9 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
+    ### Get total shortfall samples for CVAR calculation
+    shortfall_samples = get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
+
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
     for level in levels:
@@ -203,6 +254,7 @@ def calc_ra_metrics(
         dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T
         dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
         dfload_agg = dfload.rename(columns=rmap).T.groupby(level=0).sum().T
+        shortfall_samples_agg = shortfall_samples.rename(columns=rmap).T.groupby(level=0).sum().T
         ## Calculate the full-timeseries metrics for each region
         ra_metrics[level, 'lold_peryear'] = calc_lold(dflole_agg) / numyears
         ra_metrics[level, 'lole_peryear'] = calc_lole(dflole_agg) / numyears
@@ -212,6 +264,9 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
+        cvar = calc_cvar(shortfall_samples_agg, alpha=float(sw.GSw_PRM_CVARalpha))
+        ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
+        ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
@@ -548,15 +603,18 @@ def get_stress_periods(case, sw, t, iteration):
             if dictout is not None:
                 _failed[stress_metric, criterion] = dictout['failed']
                 _high_stress_periods[stress_metric, criterion] = dictout['high_stress_periods']
-                _shoulder_periods[stress_metric, criterion] = dictout['shoulder_periods']
+                if len(dictout['shoulder_periods']):
+                    _shoulder_periods[stress_metric, criterion] = dictout['shoulder_periods']
 
     ### Get lists of stress periods: new (added this iteration) and all
     if len(_failed):
         failed = pd.concat(_failed, names=['stress_metric', 'criterion'])
         high_stress_periods = pd.concat(_high_stress_periods)
-        shoulder_periods = pd.concat(_shoulder_periods)
+        _new_stress_periods = {'stress':high_stress_periods}
+        if len(_shoulder_periods):
+            _new_stress_periods['shoulder'] = pd.concat(_shoulder_periods)
         new_stress_periods = pd.concat(
-            {'stress':high_stress_periods, 'shoulder':shoulder_periods},
+            _new_stress_periods,
             names=['periodtype','metric','criterion','num'],
         ).reset_index()
         print('All identified stress periods:')
@@ -815,9 +873,8 @@ def main(sw, t, iteration=0, logging=True):
     """
     #%% Write consolidated stress metrics
     ra_metrics = calc_ra_metrics(case=sw.casedir, t=t, iteration=iteration)
-    ra_metrics.round(3).to_csv(
-        os.path.join(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
-    )
+    ra_metrics_path = Path(sw.casedir, 'outputs', f'ra_metrics_{t}i{iteration}.csv')
+    ra_metrics.round(3).to_csv(ra_metrics_path)
 
     #%% Write EUE events
     eue_events = get_eue_events(case=sw.casedir, t=t, iteration=iteration)
@@ -870,6 +927,27 @@ def main(sw, t, iteration=0, logging=True):
     prm_next_iteration.to_csv(
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'prm.csv'),
     )
+
+    #%% Raise an error if it's the final iteration and metrics still exceed the threshold
+    if (
+        ((iteration + 1) == int(sw.GSw_PRM_StressIterateMax))
+        and (len(failed))
+    ):
+        err = (
+            '\nAt least one resource adequacy metric failed to meet the required '
+            f'threshold(s) within {sw.GSw_PRM_StressIterateMax} iterations.\n'
+            f'Check this file for regional details:\n{ra_metrics_path}\n'
+            'Consider:\n'
+            '- adding more iterations (GSw_PRM_StressIterateMax)\n'
+            '- increasing the planning reserve margin (GSw_PRM_scenario)\n'
+            '- relaxing the RA threshold(s) (GSw_PRM_StressThreshold*)\n'
+            '- revisiting other RA settings (GSw_PRM*)'
+            '- modeling a larger area (GSw_Region)'
+        )
+        if int(sw['debug']):
+            warn(err)
+        else:
+            raise ValueError(err)
 
 
 # #%%### Option to run script directly for debugging
