@@ -780,6 +780,7 @@ def inv_param_exporter(
     reeds.io.write_to_inputs_h5(
         df_param, file_name, inputs_case, gamstype='parameter', units=units, comment=comment,
     )
+
 def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     """
     Compute the CRF-based cost penalty for natural gas plants in states with
@@ -789,12 +790,12 @@ def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     function calculates how much of a plant's remaining economic life is cut
     short by the policy. The penalty is the ratio of the CRF over the
     truncated remaining life to the CRF over the full evaluation period:
-      - value = 100  for years after the forced retirement year 
+      - value = 100  in or after the forced retirement year
       - value > 1    if the plant would be forced to retire before its full economic life 
 
     States not present in hierarchy.csv (i.e. outside the modeled region) are
     dropped before any computation. If no forced-retirement states remain,
-    returns an empty DataFrame with columns ['t', 'st', 'value'].
+    returns an empty DataFrame with columns ['*t', 'st', 'value'].
     """
     # Load state-level forced retirement years for NG plants
     ng_st_forced = pd.read_csv(os.path.join(inputs_case, 'ng_st_forced.csv'))
@@ -806,7 +807,7 @@ def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
 
     # No forced retirements in this region — return empty result
     if ng_st_forced.empty:
-        ng_crf_penalty_st=pd.DataFrame(columns=['*t', 'st', 'value'])
+        ng_crf_penalty_st = pd.DataFrame(columns=['*t', 'st', 'value'])
         ng_crf_penalty_st.to_csv(os.path.join(inputs_case, 'ng_crf_penalty_st.csv'),
                              index=False)
         return ng_crf_penalty_st
@@ -820,13 +821,12 @@ def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     base_crf = fin['crf'].values
 
     # How many years remain between each build year t and each forced retirement year
-
-    diff  = forced_years[None, :] - modeled_years[:, None]
+    diff = forced_years[None, :] - modeled_years[:, None]
     # Effective remaining life: at least 1 year, at most the full evaluation period
     n_eff = np.clip(diff, 1, sw['sys_eval_years'])
 
     # CRF over the truncated life, then normalize by the full-life baseline
-    crf_vals     = np.vectorize(calc_crf)(d_real[:, None], n_eff)
+    crf_vals = np.vectorize(calc_crf)(d_real[:, None], n_eff)
 
     # 100 = prohibitive cost multiplier that blocks new NG builds in and after the forced retirement year
     value_matrix = np.where(diff <= 0, 100.0, crf_vals / base_crf[:, None])
