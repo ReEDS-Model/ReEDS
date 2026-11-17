@@ -1056,8 +1056,8 @@ def get_ngdemand_cendiv_parameter(
     match the following file format "inputs/fuelprices/{param}_{ngscen}.csv",
     so valid "param" values are:
         - alpha (alpha values used in demand curve calculations)
-        - ng_demand (natural gas demand for the electricity sector), and
-        - ng_tot_demand (natural gas demand across all sectors).
+        - ng_demand (natural gas demand for the electricity sector [Quads])
+        - ng_tot_demand (natural gas demand across all sectors [Quads])
     """
     sw_scen = reeds.stochastic.get_switches(case)
     val_cendiv = (
