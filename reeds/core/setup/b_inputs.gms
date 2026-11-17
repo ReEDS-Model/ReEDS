@@ -5070,8 +5070,9 @@ resourcescaler(i)$csp(i) = CSP_SM(i) / csp_sm_baseline ;
 * gen tech without an explicit row (e.g., upv, wind-ons, gas-cc), which
 * yields no powerblock cost subtraction — appropriate when the gen tech and the
 * storage discharge do not share a common powerblock.
-* Fractions in the CSV reflect ATB 2024 Table 6, GN-COA breakdown
-* (Abou-Jaoude et al. 2024, INL/RPT-24-77048):
+* Nuclear fractions in the CSV come from Table 6 of the ATB 2024 nuclear page (GN-COA
+* breakdown), which is based on Abou-Jaoude et al. 2024, INL/RPT-24-77048-Rev001,
+* doi:10.2172/2371533:
 *   Code 23 (Energy Conversion System): nuclear=3.92%, nuclear-SMR=3.86%
 *   Code 24 (Electrical Equipment):     nuclear=6.32%, nuclear-SMR=9.46%
 *   Combined:                           nuclear=10.24%, nuclear-SMR=13.32%

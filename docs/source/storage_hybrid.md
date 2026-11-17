@@ -176,7 +176,7 @@ Wrappers also join their gen tech's technology groups through `tg_i`, which gove
 ## Costs
 
 ### Capital cost
-Each wrapper's capital cost per MW of `CAP` is built from three component costs: the gen tech's capital cost (`cost_cap_storage_hybrid_p`), the storage tech's power capital cost (`cost_cap_storage_hybrid_s`), and the gen tech's powerblock cost. The powerblock cost is the gen tech's capital cost times the gen tech's powerblock share in `inputs/plant_characteristics/storage_hybrid_powerblock_share.csv`. The shares are 0.1024 for nuclear, 0.1332 for nuclear-SMR and 0.248 for the geothermal classes; all other gen techs get 0.
+Each wrapper's capital cost per MW of `CAP` is built from three component costs: the gen tech's capital cost (`cost_cap_storage_hybrid_p`), the storage tech's power capital cost (`cost_cap_storage_hybrid_s`), and the gen tech's powerblock cost. The powerblock cost is the gen tech's capital cost times the gen tech's powerblock share in `inputs/plant_characteristics/storage_hybrid_powerblock_share.csv`. The shares are 0.1024 for nuclear, 0.1332 for nuclear-SMR and 0.248 for the geothermal classes; all other gen techs get 0. The nuclear and nuclear-SMR shares add two accounts from the capital cost breakdown in Table 6 of the ATB 2024 nuclear page, which is based on {cite}`abou-jaoudeMetaAnalysisAdvancedNuclear2024`: account 23, energy conversion system (3.92% for large reactors, 3.86% for SMRs), and account 24, electrical equipment (6.32% and 9.46%).
 
 | Storage tech | `cost_cap` per MW of `CAP` |
 | --- | --- |
