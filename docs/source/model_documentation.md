@@ -3764,7 +3764,7 @@ $$\text{PresentValueDepr} \left(1 - \frac{\text{ITC}_\text{eff}}{2} \right)$$
 
 **Investment Tax Credit:** The value of the ITC is reduced by the fractional cost of monetizing it ($m_\text{ITC}$).
 The effective investment tax credit value ($\text{ITC}_\text{eff}$) reduces the tax burden of the investments.
-It includes the domestic content bonus ($\text{ITC}_\text{DC}$) and the energy community bonus ($\text{ITC}_\text{EC}$), the latter of which is scaled by the share of a region that belongs to energy communities ($s_r$):
+It includes the domestic content bonus ($\text{ITC}_\text{DC}$) and the energy community bonus ($\text{ITC}_\text{EC}$), the latter of which is scaled by the share of counties within a region that belongs to energy communities ($s_r$):
 
 $$\text{ITC}_\text{eff} = \left(\text{ITC} + \text{ITC}_\text{DC} + \text{ITC}_\text{EC} \cdot s_r\right) \cdot \left(1 - m_\text{ITC}\right)$$
 
