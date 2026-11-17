@@ -4,6 +4,7 @@ Unit tests for storage-hybrid wrapper input processing (no GAMS needed).
 Run with `python -m pytest tests/test_storage_hybrid.py`.
 """
 import os
+from pathlib import Path
 
 import h5py
 import pandas as pd
@@ -240,7 +241,7 @@ def test_clone_h5_rows(inputs_case):
 def validation_sw(**kwargs):
     sw = {**make_sw('1_2', 'nuclear_gas-cc', 'tes-ms_battery-li', gridcharging='0_0.25'),
           'GSw_HybridPlant': '3'}
-    sw.update({f'GSw_StorageHybrid_{k}' if k != 'GSw_HybridPlant' else k: v
+    sw.update({k if k.startswith('GSw_') else f'GSw_StorageHybrid_{k}': v
                for k, v in kwargs.items()})
     return sw
 
@@ -250,6 +251,7 @@ def validation_sw(**kwargs):
     validation_sw(Types='1', GenTechs='upv', StorageTechs='battery-li', GridCharging='0'),
     validation_sw(Types='1', GenTechs='geohydro-allkm', StorageTechs='flex-geo', GridCharging='0'),
     validation_sw(CostMult='0.5'),
+    validation_sw(GSw_FINITO_Link='0'),
     {'GSw_StorageHybrid': '0'},
 ])
 def test_validation_passes(sw):
@@ -258,6 +260,7 @@ def test_validation_passes(sw):
 
 @pytest.mark.parametrize('kwargs, message', [
     ({'GSw_HybridPlant': '1'}, 'GSw_HybridPlant=2 or 3'),
+    ({'GSw_FINITO_Link': '1'}, 'FINITO'),
     ({'BCR': '0.5_0.5_0.5'}, 'must have 1 value or 2'),
     ({'BCR': '0'}, 'must be > 0'),
     ({'GridCharging': '1.0'}, 'between 0 and the matching'),
@@ -309,3 +312,18 @@ def test_add_gentech_members(inputs_case):
     out = reeds.techs.add_storage_hybrid_gentech_members(
         pd.Series(['gas-cc', 'nuclear']), str(inputs_case))
     assert out == ['gas-cc', 'nuclear', 'storage-hybrid-1-gas-cc']
+
+
+#%% Incentives: TES and batteries are both energy storage
+@pytest.mark.parametrize('fpath', sorted(
+    Path(reeds.io.reeds_path, 'inputs', 'financials').glob('incentives_*.csv')
+), ids=lambda p: p.stem)
+def test_tes_incentives_match_battery(fpath):
+    """
+    TES is energy storage under the same credits as batteries, so every incentives
+    file must give TES exactly the BATTERY rows (or neither tech any rows)
+    """
+    df = pd.read_csv(fpath)
+    battery = df.loc[df.i == 'BATTERY'].drop(columns='i').reset_index(drop=True)
+    tes = df.loc[df.i == 'TES'].drop(columns='i').reset_index(drop=True)
+    pd.testing.assert_frame_equal(tes, battery, check_dtype=False)

@@ -203,6 +203,7 @@ Storage energy capacity costs `cost_cap_energy`, the storage tech's energy capex
 ### Financing
 - The generation side uses the gen tech's capital multiplier (`cost_cap_fin_mult_storage_hybrid_p`).
 - The storage side uses the storage tech's multiplier, rescaled to the gen tech's financing risk (`cost_cap_fin_mult_storage_hybrid_s`). The exception is in-reservoir geothermal storage, whose storage-side multiplier is 1, because its cost is a share of the powerblock rather than a standalone storage cost.
+  - The storage tech's multiplier includes its incentives. `TES` rows in `inputs/financials/incentives_*.csv` copy the `BATTERY` rows, because both are energy storage; `tests/test_storage_hybrid.py` checks that they stay equal.
 - `cost_cap_fin_mult` for `INV` is the cost-weighted average of the two sides, weighted the same way as `cost_cap`.
 - `INV_ENERGY` uses the storage-side multiplier.
 - Wrappers on supply-curve gen techs pay their gen tech's `rsc_fin_mult`.
@@ -352,6 +353,7 @@ This feature changes some code that runs even when `GSw_StorageHybrid=0`.
   - hydrogen: the H2 balance.
 - **Rules that use net output.** Some rules count `GEN` (net output) for wrappers rather than `GEN_PLANT`: `eq_min_cf`, `eq_national_gen`, `eq_REC_launder`, `eq_h2_ptc_creditgen`, minimum loading (`eq_minloading`, `eq_mingen_lb`/`ub`) and the `GSw_StartCost` 5 and 6 ramps. Each is off by default or has a small effect.
 - **Water.** Water accounting (`GSw_WaterMain=1`) does not cover wrappers.
+- **FINITO.** The linked ReEDS-FINITO model (`FINITO=1`) is rejected, because its fuel accounting does not include wrapper fuel use.
 - **Off-default switches that skip wrappers.** `GSw_OffshoreZones=1` drops wind-ofs wrappers, flex-geo wrappers are never interday storage, and the stress-hour availability override excludes wrappers.
 - **Seasonal derate.** Wrappers apply the seasonal capacity change to storage discharge as well as to plant output. That is physical for TES, which discharges through the shared powerblock. It is approximate for batteries, and it only matters when `thermal_summer_cap_delta` is nonzero.
 - **Financing and growth.** The storage share is financed at the gen tech's risk multiplier, and the growth-penalty basis includes storage power capex.
