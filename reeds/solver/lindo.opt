@@ -2,73 +2,84 @@
 *** Docs: https://www.gams.com/latest/docs/S_LINDO.html
 *** Activate with: model.OptFile = 1;
 ***
-*** LINDO API uses all-caps parameter names (LS_ / SPLEX_ / SOLVER_ / SOLVERIPM_).
-*** It auto-detects problem class, so submitting ReEDS with "option LP = LINDO"
-*** is sufficient - LINDO will dispatch its LP solver.
+*** NOTE: every option below previously used LINDO-API-style names
+*** (LS_IPARAM_*/LS_DPARAM_*). Those are C API constants, not GAMS
+*** option-file identifiers, so GAMS/LINDO rejected all of them at
+*** solve time ("Unknown option ...") and silently ran on defaults
+*** the whole time. The real GAMS/LINDO option names (from
+*** optlindo.def / S_LINDO.html) are used below instead.
+***
+*** NOTE: this GAMS/LINDO license does not include the Barrier solver
+*** (that needs a separate GAMS/MOSEK barrier license). Every prior
+*** LINDO solve log confirms this - "Barrier Solver Version 0.0.000" -
+*** and LINDO automatically falls back to dual simplex. So this file
+*** asks for dual simplex explicitly rather than an unusable
+*** barrier+crossover method.
 
 *** ------------------------------------------------------------------------------
-*** Algorithm selection - barrier with crossover, matching the CPLEX baseline
+*** Algorithm selection
 *** ------------------------------------------------------------------------------
-*** LP method: 1 free (auto), 2 primal simplex, 3 dual simplex,
-***            4 barrier (no crossover), 5 barrier + crossover, 6 concurrent
-*** Use 5 (barrier + crossover) for ReEDS to get the basic solution downstream code expects.
-*** Selects the LP method. Note: integer code as shown above.
-LS_IPARAM_SOL_TYPE_LP 5
+*** SOLVER_METHOD: 0 free (auto), 1 primal simplex, 2 dual simplex,
+***                3 barrier (unlicensed here), 4 NLP, 5 MIP, ...
+*** Dual simplex gives the basic solution downstream ReEDS code expects,
+*** and matches what LINDO already falls back to for this model.
+SOLVER_METHOD 2
 
-*** Dual simplex strategy: 1 single-phase, 2 two-phase
+*** Dual simplex strategy: 0 solver decides, 1 single-phase, 2 two-phase
 SPLEX_DUAL_PHASE 1
 
 *** Run barrier and simplex concurrently if at least 2 threads are available.
+*** Left OFF: with no licensed barrier solver, "concurrent" just means racing
+*** multiple simplex variants against each other, and on this badly-scaled
+*** model the threads have been observed to converge to different, mutually
+*** inconsistent answers - LINDO then reports overall status "unknown" and
+*** GAMS aborts the run.
 *** 0 off, 1 on if >= 2 threads, 2 always concurrent
-SOLVER_CONCURRENT_OPTMODE 1
+SOLVER_CONCURRENT_OPTMODE 0
 
 *** ------------------------------------------------------------------------------
-*** Parallelism (matches CPLEX baseline of 8 threads)
+*** Parallelism
 *** ------------------------------------------------------------------------------
-LS_IPARAM_NUM_THREADS 8
-
-*** Use threads aggressively in MIP / sub-solves (irrelevant for pure LP, but harmless)
-LS_IPARAM_MIP_PARA_FLAG 1
+*** Both multithreading strategies for the LP solve have failed on this model:
+*** - default/concurrent (MULTITHREAD_MODE -1 or left implicit via NUM_THREADS>1):
+***   races independent algorithm attempts across threads; they disagree with
+***   each other and LINDO reports overall status "unknown".
+*** - MULTITHREAD_MODE 2 (parallel-only): hard-fails immediately with
+***   "Specified feature is not yet supported or not compatible with the
+***   model type" - parallel mode isn't implemented for LP/dual-simplex in
+***   this LINDO build.
+*** So: run single-threaded. This model is small enough (ERCOT-scale, ~13.5k
+*** constraints) that the earlier 8-thread concurrent race only took ~14s
+*** total anyway - single-threaded dual simplex should still be fast, and is
+*** the only mode that actually returns a correct, deterministic answer.
+NUM_THREADS 1
 
 *** ------------------------------------------------------------------------------
 *** Time / iteration limits
 *** ------------------------------------------------------------------------------
 *** LP time limit in seconds (-1 = no limit). 2 days matches cplex.opt.
-LS_DPARAM_SOLVER_TIMLMT 172800
+SOLVER_TIMLMT 172800
 
 *** Global LP iteration limit (-1 = no limit)
-LS_IPARAM_LP_ITRLMT -1
+LP_ITRLMT -1
 
 *** ------------------------------------------------------------------------------
 *** Tolerances - matched to ReEDS cplex.opt where possible
 *** ------------------------------------------------------------------------------
 *** Primal feasibility tolerance (CPLEX eprhs 1e-5)
-LS_DPARAM_SOLVER_FEASTOL 1e-5
+SOLVER_FEASTOL 1e-5
 
 *** Dual feasibility / optimality tolerance (CPLEX epopt 1e-6)
-LS_DPARAM_SOLVER_OPTTOL 1e-6
+SOLVER_OPTTOL 1e-6
 
-*** Barrier convergence tolerance (CPLEX barepcomp 1e-8)
-LS_DPARAM_SOLVERIPM_TOL_OPT 1e-8
-
-*** Pivot tolerance
-LS_DPARAM_SOLVER_PIVTOL 1e-7
-
-*** ------------------------------------------------------------------------------
-*** Crossover (barrier -> basic solution)
-*** ------------------------------------------------------------------------------
-*** Run crossover after barrier. ReEDS needs basic marginals downstream.
-*** 0 off, 1 on
-LS_IPARAM_SOLVER_DO_BASIS_CROSSOVER 1
+*** Simplex pivot zero tolerance
+LP_PIV_ZEROTOL 1e-7
 
 *** ------------------------------------------------------------------------------
 *** Pre-processing / scaling
 *** ------------------------------------------------------------------------------
-*** Presolve level: 0 off, > 0 enables presolve (default is auto)
-LS_IPARAM_SOLVER_PRE_LP -1
-
-*** Scaling: 0 off, > 0 progressively stronger scaling
-LS_IPARAM_SOLVER_IUSOL 1
+*** Scaling: 0 off, 1 on
+LP_SCALE 1
 
 *** ------------------------------------------------------------------------------
 *** Warm start
@@ -76,12 +87,6 @@ LS_IPARAM_SOLVER_IUSOL 1
 *** 1 = use any basis already in memory (warm start), 0 = cold start.
 *** ReEDS sequentially advances years, so warm-starting between SOLVEs is helpful
 *** when feasible.
-LS_IPARAM_SOL_USE_BASIS 1
+SOLVER_RESTART 1
 
-*** ------------------------------------------------------------------------------
-*** Output
-*** ------------------------------------------------------------------------------
-*** Verbosity 0 quiet, ..., 4 maximum
-LS_IPARAM_SOLVER_OUTPUT_LEVEL 3
-
-threads = 8
+threads=8

@@ -6,6 +6,7 @@ if(Sw_RemoveSmallNumbers = 1,
     UPGRADES.l(i,v,r,tfix)$[abs(UPGRADES.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     CAP_ABOVE_LIM.l(tg,r,tfix)$[abs(CAP_ABOVE_LIM.l(tg,r,tfix)) < rhs_tolerance] = 0 ;
     INV.l(i,v,r,tfix)$[abs(INV.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
+    INV_REFURB.l(i,v,r,tfix)$[abs(INV_REFURB.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     INV_ENERGY.l(i,v,r,tfix)$[abs(INV_ENERGY.l(i,v,r,tfix)) < rhs_tolerance] = 0 ;
     INV_RSC.l(i,v,r,rscbin,tfix)$[abs(INV_RSC.l(i,v,r,rscbin,tfix)) < rhs_tolerance] = 0 ;
     INV_POI.l(r,tfix)$[abs(INV_POI.l(r,tfix)) < rhs_tolerance] = 0 ;

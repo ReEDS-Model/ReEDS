@@ -309,7 +309,7 @@ if __name__ == "__main__":
         
     # Generate diagnosis reports for the year found in the directory list.
     for gdxfile, scalarmodel in zip(gdxfiles, scalarmodels):
-
+        print(f"Processing {gdxfile.name} and {scalarmodel.name}...")
         # create Analyzer object
         m = Analyzer(gdxfile)
 
@@ -325,30 +325,30 @@ if __name__ == "__main__":
         if Sw_var_count_by_block==1:
             var_count_by_block=m.countVariables(by="block")
             var_count_by_block["year"] = tag
-            all_var_count_by_block.append(var_count_by_block)
-        
-        # Export matrix
-        if Sw_matrix==1:    
-            matrix=m.matrix
-            matrix["year"] = tag
-            all_matrix.append(matrix)
+            var_count_by_block.to_csv(pathlib.Path(file_dir, f'var_count_by_block_{tag}.csv'), index=False)
         
         # Generate matrix statistics report
         describe_matrix=m.describeMatrix()
         describe_matrix.append(tag)
         all_describe_matrix.append(describe_matrix)
         
-        # Export RHS values
-        if Sw_rhs == 1: 
-            rhs=m.rhs
-            rhs["year"] = tag
-            all_rhs.append(rhs) 
-                   
+        # Export matrix
+        if Sw_matrix==1:    
+            matrix=m.matrix
+            matrix["year"] = tag
+            matrix.to_hdf(pathlib.Path(file_dir, f'matrix{tag}.csv'), key='i' ,mode='w', format='table')
+
         # Generate RHS statistics report
+
         describe_rhs  = m.describeRHS()
         describe_rhs.append(tag)  
         all_describe_rhs.append(describe_rhs)
         
+        # Export RHS values
+        if Sw_rhs == 1: 
+            rhs=m.rhs
+            rhs["year"] = tag
+            rhs.to_hdf(pathlib.Path(file_dir, f'rhs_{tag}.csv'), key='i' ,mode='w', format='table')
     
     # Convert the `all_describe_rhs` and `all_describe_matrix` lists to data frames 
     # with their corresponding column names.
@@ -366,13 +366,6 @@ if __name__ == "__main__":
         "describe_matrix.csv": all_describe_matrix,
         "describe_rhs.csv": all_describe_rhs,
         "var_count.csv": all_var_count}
-
-    if Sw_matrix==1:
-        output_data["matrix.csv"] = all_matrix
-    if Sw_rhs==1:
-        output_data["rhs.csv"] = all_rhs
-    if Sw_var_count_by_block==1:
-        output_data["var_count_by_block.csv"] = all_var_count_by_block
         
     # Concatenate and export each dataframe
     for filename, data in output_data.items():

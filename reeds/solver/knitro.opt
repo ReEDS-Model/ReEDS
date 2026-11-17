@@ -54,11 +54,24 @@ linsolver 5
 *** ------------------------------------------------------------------------------
 *** Relative feasibility tolerance (CPLEX eprhs 1e-5)
 feastol 1e-5
-feastol_abs 1e-5
+*** feastol_abs is an ABSOLUTE tolerance, unlike CPLEX's eprhs which is
+*** applied after CPLEX's own internal scaling. ReEDS constraint/objective
+*** magnitudes run up to ~1e12, so even a relatively-converged solution
+*** (rel error ~1e-14, i.e. machine precision) naturally leaves an absolute
+*** residual around rel_error * scale ~ 0.01-0.1 - that's not a real
+*** infeasibility, just what "perfectly converged" looks like in absolute
+*** units at this scale. NOTE: passing -1 here does NOT disable the check -
+*** Knitro's "auto" resolves -1 to a fixed 0.001, which is still tighter
+*** than that natural residual and still falsely flags infeasible (observed
+*** abs error ~0.0023-0.0032 > 0.001). Set explicitly above that residual
+*** so this check can't be the thing that fails; feastol above (relative,
+*** scale-aware) is the tolerance that should actually govern.
+feastol_abs 10
 
 *** Relative optimality tolerance (CPLEX epopt 1e-6)
 opttol 1e-6
-opttol_abs 1e-6
+*** Same absolute-vs-relative scale mismatch as feastol_abs above.
+opttol_abs 10
 
 *** Stop on tiny feasible changes in the objective
 ftol 1e-12

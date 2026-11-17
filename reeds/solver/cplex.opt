@@ -12,7 +12,7 @@ advind 0
 reslim 172800
 
 *** scaind (integer): matrix scaling on/off [1 = modified, more aggressive scaling method]
-scaind 1
+scaind 0
 
 *** aggind (integer): aggregator on/off [5 = aggregator will be applied 5 times]
 aggind 5
@@ -68,4 +68,4 @@ barcolnz 30
 * bardisplay 2
 
 *** solutiontype (integer): type of solution (basic or non basic): 0 does basic with crossover, 2 skips crossover
-* solutiontype 2
+solutiontype 2

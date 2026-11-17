@@ -2,6 +2,13 @@
 *** Docs: https://www.gams.com/latest/docs/S_IPOPT.html
 *** Activate with: model.OptFile = 1;
 ***
+*** IMPORTANT: unlike GAMS's other solver option files (cplex.opt, xpress.opt,
+*** lindo.opt, ...), GAMS hands this file directly to Ipopt's own native option
+*** reader, which only understands "***" as a comment marker - "***" is not valid
+*** here and will raise "Exception of type: OPTION_INVALID ... Read Option: '***'"
+*** on the very first line, which aborts reading the WHOLE file and silently
+*** falls back to pure Ipopt defaults for every option below.
+***
 *** IMPORTANT: IPOPT is an NLP interior-point solver, not an LP solver.
 *** It can solve LPs (since LP is a degenerate NLP), but for a high-density LP
 *** the size of ReEDS this is generally MUCH slower than a dedicated LP barrier
@@ -23,9 +30,9 @@
 *** Options: ma27, ma57, ma77, ma86, ma97, mumps, pardiso, pardisomkl, spral, wsmp
 *** MA97 is the multi-threaded HSL solver and is usually the best choice for
 *** large sparse symmetric indefinite KKT systems like ReEDS produces.
+
 linear_solver ma97
 
-*** Number of threads MA97 / Pardiso may use
 ma97_print_level -1
 
 *** Use MC19 scaling on the linear system (HSL only). Strongly recommended for ReEDS.
@@ -80,8 +87,14 @@ honor_original_bounds yes
 *** ------------------------------------------------------------------------------
 *** print_level: 0 silent ... 12 maximum. 5 is a good default for ReEDS logs.
 print_level 5
-print_user_options yes
 print_timing_statistics yes
+
+*** Number of threads used by the linear algebra routines / linear solver.
+*** This is a GAMS-level parameter (not a native Ipopt option), so it does not
+*** take "=" like a shell assignment - same "name value" syntax as everything above.
+threads 8
+
+threads=8
 
 *** ------------------------------------------------------------------------------
 *** Notes / warnings for the ReEDS user
@@ -92,5 +105,3 @@ print_timing_statistics yes
 *** 2. Expect 3x-10x longer solve times vs CPLEX/Gurobi/HiGHS on the same hardware.
 *** 3. If you do not have an HSL license, set linear_solver to mumps but expect
 ***    much slower behavior; consider switching to HiGHS instead.
-
-threads = 8

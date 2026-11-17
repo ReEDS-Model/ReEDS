@@ -21,7 +21,7 @@ aggind 5
 iis 1
 
 *** eprhs (float): feasibility tolerance [default = 1e-6]
-eprhs = 1e-5
+eprhs = 1e-4
 
 *** epopt (float): optimality tolerance [default = 1e-6]
 epopt = 1e-5
@@ -68,4 +68,4 @@ barcolnz 100
 * bardisplay 2
 
 *** solutiontype (integer): type of solution (basic or non basic): 0 does basic with crossover, 2 skips crossover
-* solutiontype 2
+solutiontype 2

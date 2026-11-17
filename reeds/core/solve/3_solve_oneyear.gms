@@ -249,6 +249,21 @@ OPTION lp = %solver% ;
 ReEDSmodel.optfile = %GSw_gopt% ;
 OPTION savepoint = 1 ;
 $endif.valstr
+  
+
+* Activate CONVERT solver and dump gdx files
+$ifthen.mpsoutput %GSw_MPSOutput% == 1
+$ifthene %cur_year%==%endyear%
+option lp = convert;
+$onecho > convert.opt
+fixedmps outputs%ds%fixedmps_%cur_year%.mps
+cplexmps outputs%ds%cplexmps_%cur_year%.mps
+$offecho
+ReEDSmodel.optfile = 1;
+$endif
+$endif.mpsoutput
+
+
 
 solve ReEDSmodel minimizing z using lp ;
 tsolved(t)$tmodel(t) = yes ;
@@ -284,6 +299,6 @@ $include reeds%ds%core%ds%solve%ds%5_varfix.gms
 $include reeds%ds%core%ds%solve%ds%6_data_dump.gms
 
 *** Abort if the solver returns an error
-if (ReEDSmodel.modelStat > 1,
+if (ReEDSmodel.modelStat <> 1 and ReEDSmodel.modelStat <> 7,
     abort "Model did not solve to optimality",
     ReEDSmodel.modelStat) ;

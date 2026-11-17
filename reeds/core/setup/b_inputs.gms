@@ -1812,6 +1812,8 @@ avail_retire_exog_rsc(i,v,r,t)$[refurbtech(i)$(capacity_exog(i,v,r,t-1) > capaci
 
 avail_retire_exog_rsc(i,v,r,t)$[not initv(v)] = 0 ;
 
+avail_retire_exog_rsc(i,v,r,t) = round(avail_retire_exog_rsc(i,v,r,t),3) ;
+
 m_capacity_exog(i,v,r,t)$capacity_exog(i,v,r,t) = capacity_exog(i,v,r,t) ;
 m_capacity_exog_energy(i,v,r,t)$capacity_exog_energy(i,v,r,t) = capacity_exog_energy(i,v,r,t) ;
 m_capacity_exog(i,"init-1",r,t)$geo(i) = geo_cap_exog(i,r) ;

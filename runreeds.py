@@ -1328,7 +1328,7 @@ def write_batch_script(
         OPATH.writelines(
             f"\ngams {Path('reeds','core','setup','a_createmodel.gms')} "
             + "gdxcompress=1 xs="+os.path.join("g00files",batch_case)
-            + (' license=gamslice.txt' if hpc else '')
+            + (' license=gamslice.txt' if (hpc and caseSwitches['solver'] != 'GUROBI') else '')
             + " o="+os.path.join("lstfiles","1_Inputs.lst") + options + " " + toLogGamsString + '\n')
         OPATH.writelines(f'python {logger}\n')
         restartfile = batch_case
@@ -1381,7 +1381,7 @@ def write_batch_script(
         OPATH.writelines(
             f"gams {Path('reeds','core','terminus','report.gms')}"
             + f" o={os.path.join('lstfiles',f'report_{batch_case}.lst')}"
-            + (' license=gamslice.txt' if hpc else '')
+            + (' license=gamslice.txt' if (hpc and caseSwitches['solver'] != 'GUROBI') else '')
             + (' r=$r' if LINUXORMAC else ' r=!r!')
             + ' gdxcompress=1'
             + toLogGamsString
@@ -1592,6 +1592,85 @@ def submit_slurm_parallel_jobs(
             raise RuntimeError(f"Failed to submit job script: {run_script_fpath}\nError: {e}")
 
 
+def submit_slurm_serial_jobs(
+    reeds_path, BatchName, casenames, cases_per_node, debugnode = False,
+):
+    """
+    Write and submit Slurm serial run scripts for each group of cases in the batch.
+    """
+    num_cases = len(casenames)
+    num_nodes = int(np.ceil(num_cases / cases_per_node))
+
+    batch_folder = os.path.join(
+        reeds_path, 'slurm_serial_runs',
+        f"{BatchName}-{datetime.now().strftime('%Y%m%dT%H%M%S')}"
+    )
+    if os.path.isdir(batch_folder):
+        shutil.rmtree(batch_folder)
+    os.makedirs(batch_folder)
+
+    for node_index in range(num_nodes):
+        start_case_index = cases_per_node * node_index
+        stop_case_index = min(start_case_index + cases_per_node, num_cases)
+        casenames_print = casenames[start_case_index:stop_case_index]
+        run_script_fpath = os.path.join(batch_folder, f"run_{'-'.join(casenames_print)}.sh")
+        shutil.copy(Path(reeds_path,'reeds','hpc','srun_template.sh'), run_script_fpath)
+        job_name = f"{BatchName}_({','.join(casenames_print)})"
+
+        writelines = []
+        with open(run_script_fpath, 'r') as SPATH:
+            for line in SPATH:
+                stripped = line.strip()
+                if debugnode and ('--time' in stripped or '--partition' in stripped):
+                    continue
+                elif '--ntasks-per-node' in stripped:
+                    writelines.append('# ' + stripped)
+                else:
+                    writelines.append(stripped)
+
+        with open(run_script_fpath, 'w') as SPATH:
+            for line in writelines:
+                SPATH.write(line + '\n')
+
+            if debugnode:
+                SPATH.write("#SBATCH --time=04:00:00\n")
+                SPATH.write("#SBATCH --partition=debug\n")
+
+    
+            SPATH.write(f"#SBATCH --job-name={job_name}\n")
+            SPATH.write(f"#SBATCH --output={os.path.join(batch_folder, 'slurm-%j.out')}\n\n")
+            SPATH.write(". $HOME/.bashrc\n\n")
+
+            for idx, case_index in enumerate(range(start_case_index, stop_case_index)):
+                casename = casenames[case_index]
+                batch_case = f"{BatchName}_{casename}"
+                casedir = os.path.join(reeds_path, 'runs', batch_case)
+
+                bash_path = os.path.join(casedir, 'call_' + batch_case + ext)
+                task_out = os.path.join(casedir, f'slurm-${{SLURM_JOB_ID}}_{idx}.out')
+                resource_stats = os.path.join(casedir, 'resource_stats.log')
+                srun_line = (
+                    f"/usr/bin/time -a -o {resource_stats} "
+                    f"-f 'memory_KB=%M, runtime=%E' "
+                    f"bash {bash_path} 2>&1 | tee {task_out} &"
+                )
+                SPATH.write(srun_line + '\n')
+
+                # Also write the Slurm script for a single run
+                # just in case you need to restart a single case in the future
+                write_case_submission_script(
+                    casedir, batch_case, debugnode=debugnode,
+                )
+
+            SPATH.write("wait\n")
+
+        # Submit the job script via Slurm
+        try:
+            subprocess.Popen(["sbatch", run_script_fpath])
+        except Exception as e:
+            raise RuntimeError(f"Failed to submit job script: {run_script_fpath}\nError: {e}")            
+
+
 def write_case_submission_script(
     casedir, batch_case, debugnode = False,
 ):
@@ -1794,7 +1873,7 @@ def main(
 
         # Write the slurm scripts for parallel runs and
         # submit them to the HPC
-        submit_slurm_parallel_jobs(
+        submit_slurm_serial_jobs(
             reeds_path=envVar['reeds_path'],
             BatchName=envVar['BatchName'],
             casenames=envVar['casenames'],

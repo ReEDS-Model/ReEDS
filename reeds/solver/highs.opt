@@ -1,69 +1,74 @@
-*** GAMS/HIGHS option file for ReEDS
-*** Docs: https://www.gams.com/latest/docs/S_HIGHS.html
-*** Activate with: model.OptFile = 1;
-*** HiGHS is the leading open-source LP/MIP solver. For very large LPs the
-*** interior-point method (IPM) is recommended; for medium ones the parallel
-*** dual simplex is usually fastest. Recent releases also include cuPDLP-c
-*** (GPU PDLP) for extreme-scale LPs.
-
-*** ------------------------------------------------------------------------------
-*** Algorithm selection
-*** ------------------------------------------------------------------------------
-*** solver: "choose" (default), "simplex", "ipm", "pdlp"
-*** Use "ipm" for ReEDS-scale LPs (analogous to CPLEX barrier).
+* GAMS/HIGHS option file for ReEDS
+* Docs: https://www.gams.com/latest/docs/S_HIGHS.html
+* Activate with: model.OptFile = 1;
+* HiGHS is the leading open-source LP/MIP solver. For very large LPs the
+* interior-point method (IPM) is recommended; for medium ones the parallel
+* dual simplex is usually fastest. Recent releases also include cuPDLP-c
+* (GPU PDLP) for extreme-scale LPs.
+*
+* ------------------------------------------------------------------------------
+* Algorithm selection
+* ------------------------------------------------------------------------------
+* solver: "choose" (default), "simplex", "ipm", "pdlp"
+* Use "ipm" for ReEDS-scale LPs (analogous to CPLEX barrier).
 solver = ipm
-
-*** Total threads available to HiGHS
+*
+* Total threads available to HiGHS
 threads = 8
-
-*** Enable parallel dual simplex (only relevant when solver = simplex)
+*
+* Enable parallel dual simplex (only relevant when solver = simplex)
 parallel = on
-
-*** ------------------------------------------------------------------------------
-*** Time limit
-*** ------------------------------------------------------------------------------
-*** Wall-clock limit in seconds (2 days, matches cplex.opt reslim=172800)
+*
+* ------------------------------------------------------------------------------
+* Time limit
+* ------------------------------------------------------------------------------
+* Wall-clock limit in seconds (2 days, matches cplex.opt reslim=172800)
 time_limit = 172800
-
-*** ------------------------------------------------------------------------------
-*** Tolerances - matched to ReEDS cplex.opt where possible
-*** ------------------------------------------------------------------------------
-*** Primal feasibility tolerance (CPLEX eprhs 1e-5)
+*
+* ------------------------------------------------------------------------------
+* Tolerances - matched to ReEDS cplex.opt where possible
+* ------------------------------------------------------------------------------
+* Primal feasibility tolerance (CPLEX eprhs 1e-5)
 primal_feasibility_tolerance = 1e-5
-
-*** Dual feasibility / reduced-cost tolerance (CPLEX epopt 1e-6)
+*
+* Dual feasibility / reduced-cost tolerance (CPLEX epopt 1e-6)
 dual_feasibility_tolerance = 1e-6
-
-*** IPM optimality (~ CPLEX barepcomp 1e-8)
+*
+* IPM optimality (~ CPLEX barepcomp 1e-8)
 ipm_optimality_tolerance = 1e-8
-
-*** ------------------------------------------------------------------------------
-*** Preprocessing
-*** ------------------------------------------------------------------------------
-*** presolve: "choose" (default), "on", "off"
+*
+* ------------------------------------------------------------------------------
+* Preprocessing
+* ------------------------------------------------------------------------------
+* presolve: "choose" (default), "on", "off"
 presolve = on
-
-*** ------------------------------------------------------------------------------
-*** Crossover (IPM -> basic solution)
-*** "on": always crossover. "off": never. "choose": only if IPM result imprecise.
-*** ReEDS needs basic marginals, so keep crossover on.
-*** ------------------------------------------------------------------------------
+*
+* ------------------------------------------------------------------------------
+* Crossover (IPM -> basic solution)
+* "on": always crossover. "off": never. "choose": only if IPM result imprecise.
+* ReEDS needs basic marginals, so keep crossover on.
+* ------------------------------------------------------------------------------
 run_crossover = on
-
-*** ------------------------------------------------------------------------------
-*** Logging
-*** ------------------------------------------------------------------------------
-*** Log progress every N seconds (set to 0 to disable timed logging)
+*
+* ------------------------------------------------------------------------------
+* Logging
+* ------------------------------------------------------------------------------
+* Log progress every N seconds (set to 0 to disable timed logging)
 log_to_console = true
-
-*** ------------------------------------------------------------------------------
-*** Optional: write LP for debugging the first ReEDS year
-*** ------------------------------------------------------------------------------
+*
+* ------------------------------------------------------------------------------
+* Numerical scaling (model reported "excessively large bounds" warning)
+* ------------------------------------------------------------------------------
+user_bound_scale = -7
+*
+* ------------------------------------------------------------------------------
+* Optional: write LP for debugging the first ReEDS year
+* ------------------------------------------------------------------------------
 * write_model_file = reeds_first.mps
-
-*** ------------------------------------------------------------------------------
-*** Optional: try the first-order PDLP method (good for very large, lower-precision)
-***   solver = pdlp
-***   pdlp_e_optimal = 1e-6
-***   run_crossover = off          (PDLP returns no basis)
-*** ------------------------------------------------------------------------------
+*
+* ------------------------------------------------------------------------------
+* Optional: try the first-order PDLP method (good for very large, lower-precision)
+*   solver = pdlp
+*   pdlp_e_optimal = 1e-6
+*   run_crossover = off          (PDLP returns no basis)
+* ------------------------------------------------------------------------------

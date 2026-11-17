@@ -1,8 +1,10 @@
-,Default Value,Pacific_COPT,Pacific_CPLEX,Pacific_GUROBI,Pacific_HIGHS,Pacific_IPOPTH,Pacific_KNITRO,Pacific_LINDO,Pacific_MOSEK,Pacific_XPRESS,USA_defaults_COPT,USA_defaults_CPLEX,USA_defaults_GUROBI,USA_defaults_HIGHS,USA_defaults_IPOPTH,USA_defaults_KNITRO,USA_defaults_LINDO,USA_defaults_MOSEK,USA_defaults_XPRESS,WECC_COPT,WECC_CPLEX,WECC_GUROBI,WECC_HIGHS,WECC_IPOPTH,WECC_KNITRO,WECC_LINDO,WECC_MOSEK,WECC_XPRESS,WECC_county_COPT,WECC_county_CPLEX,WECC_county_GUROBI,WECC_county_HIGHS,WECC_county_IPOPTH,WECC_county_KNITRO,WECC_county_LINDO,WECC_county_MOSEK,WECC_county_XPRESS
-ignore,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-GSw_Region,cendiv/Pacific,,,,,,,,,,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western
-endyear,2050,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-GSw_ZoneSet,,,,,,,,,,,,,,,,,,,,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109
-GSw_GasCurve,2,,,,,,,,,,1,1,1,1,1,1,1,1,1,,,,,,,,,,,,,,,,,,
-GSw_PRM_StressIterateMax,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,0,0,0,0,0,0,0,0
-solver,CPLEX,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS
+,Default Value,ERCOR_COPT,ERCOR_CPLEX,ERCOR_GUROBI,ERCOR_HIGHS,ERCOR_IPOPTH,ERCOR_KNITRO,ERCOR_LINDO,ERCOR_MOSEK,ERCOR_XPRESS,USA_defaults_COPT,USA_defaults_eprhs_CPLEX,USA_defaults_scl_CPLEX,USA_defaults_GUROBI,USA_defaults_HIGHS,USA_defaults_IPOPTH,USA_defaults_KNITRO,USA_defaults_LINDO,USA_defaults_MOSEK,USA_defaults_XPRESS,WECC_COPT,WECC_CPLEX,WECC_GUROBI,WECC_HIGHS,WECC_IPOPTH,WECC_KNITRO,WECC_LINDO,WECC_MOSEK,WECC_XPRESS,WECC_county_COPT,WECC_county_CPLEX,WECC_county_GUROBI,WECC_county_HIGHS,WECC_county_IPOPTH,WECC_county_KNITRO,WECC_county_LINDO,WECC_county_MOSEK,WECC_county_XPRESS
+ignore,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,,,,,,,,,,,,,,,,,,
+GSw_Region,interconnect/texas,,,,,,,,,,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,country/USA,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western,interconnect/western
+endyear,2050,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GSw_ZoneSet,,,,,,,,,,,,,,,,,,,,,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109,z3109
+GSw_GasCurve,2,,,,,,,,,,1,1,1,1,1,1,1,1,1,1,,,,,,,,,,,,,,,,,,
+solver,CPLEX,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS,COPT,CPLEX,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS,COPT,CPLEX,GUROBI,HIGHS,IPOPTH,KNITRO,LINDO,MOSEK,XPRESS
+GSw_gopt,1,,,,,,,,,,,1,2,,,,,,,,,,,,,,,,,,,,,,,,,
+GSw_PRM_StressIterateMax,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+pras,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

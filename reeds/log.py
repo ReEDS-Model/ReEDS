@@ -65,6 +65,24 @@ def toc(tic, year, process, path=''):
         pass
 
 
+def crossover_disabled(path=''):
+    """Check cplex.opt/cplex.op2 for a solutiontype setting that skips crossover
+    (solutiontype 2). If crossover is skipped, CPLEX never logs a
+    'Total crossover time' line, so that column comes back empty."""
+    for optfile in ('cplex.opt', 'cplex.op2'):
+        fpath = os.path.join(path, optfile)
+        if not os.path.isfile(fpath):
+            continue
+        with open(fpath, 'r') as f:
+            for _line in f:
+                line = _line.strip()
+                if line.startswith('*'):
+                    continue
+                if line.startswith('solutiontype') and line.split()[-1] == '2':
+                    return True
+    return False
+
+
 def get_solve_times(path=''):
     """Get all solve times, disaggregated by GAMS/barrier/crossover/remainder.
     Disaggregation only works when using CPLEX as the solver."""
@@ -109,6 +127,11 @@ def get_solve_times(path=''):
                 times['start'][label] = times['stop'][label] - lengths['total'][label]
     ## Combine
     dftime = pd.concat([pd.DataFrame(times), pd.DataFrame(lengths)], axis=1)
+    ## If crossover is disabled, no 'Total crossover time' lines are ever logged,
+    ## so the column comes back all-NaN with dtype float64 instead of timedelta64,
+    ## which breaks summing it alongside the timedelta64 gams/barrier columns.
+    if crossover_disabled(path):
+        dftime['crossover'] = pd.Timedelta(0)
     dftime['remainder'] = dftime['total'] - pd.to_timedelta(
         dftime[['gams', 'barrier', 'crossover']].sum(axis=1)
     )

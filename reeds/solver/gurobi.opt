@@ -93,3 +93,5 @@ DisplayInterval 30
 
 *** Compute IIS automatically if the model is infeasible (mirrors cplex.opt iis 1)
 IIS 1
+
+threads 8

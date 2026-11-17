@@ -14,10 +14,12 @@
 LpMethod 2
 
 *** Total thread count (matches the 8 threads used in cplex.opt for fair comparison)
-Threads 8
+threads 8
 
 *** Threads dedicated to barrier (-1 = inherit from Threads)
 BarThreads -1
+
+BarHomogeneous 1
 
 *** Threads dedicated to crossover (-1 = inherit)
 CrossoverThreads -1
@@ -38,7 +40,9 @@ FeasTol 1e-5
 DualTol 1e-6
 
 *** Barrier convergence tolerance on relative gap (CPLEX barepcomp 1e-8)
-BarGapTol 1e-8
+*** NB: COPT has no separate LP barrier gap tolerance option (BarGapTol/BarTolGap
+*** don't exist - GAMS rejected this as "Unknown option"). Barrier convergence for
+*** LPs is governed by FeasTol/DualTol above instead.
 
 *** Matrix coefficient tolerance (entries below this treated as zero)
 MatrixTol 1e-10
@@ -47,10 +51,10 @@ MatrixTol 1e-10
 *** Preprocessing
 *** ------------------------------------------------------------------------------
 *** Presolve level: -1 auto, 0 off, 1 standard, 2 aggressive
-Presolve 2
+Presolve 1
 
 *** Scaling: -1 auto, 0 off, 1 on
-Scaling 1
+Scaling -1
 
 *** Dualize before solve: -1 auto, 0 off, 1 on. ReEDS LPs are often tall (many rows);
 *** dualizing rarely helps - leave on auto.
@@ -67,12 +71,19 @@ Crossover 1
 *** ------------------------------------------------------------------------------
 *** Logging / diagnostics
 *** ------------------------------------------------------------------------------
-*** Log level: 0 quiet, 1 normal, 2 verbose
-LogToConsole 1
+*** This GAMS/COPT build (51.3.0, per optcopt.def) exposes no console-verbosity
+*** option at all - "LogLevel"/"LogToConsole" are both invalid here. The nearest
+*** substitute is solvetrace, which writes periodic progress info to a file so we
+*** can see what the solver was doing right up to the point it stops.
+solvetrace "copt_solvetrace.txt"
+solvetracetimefreq 30
 
 *** Enable IIS on infeasibility (mirrors cplex.opt iis 1).
 *** Compute an Irreducible Infeasible Subsystem when the model is infeasible.
-IISMethod 0
+*** (per optcopt.def, "IISMethod" IS a valid option too - it picks the IIS
+*** algorithm, default auto - but the on/off switch that actually triggers IIS
+*** computation is "iis"; the previous "IISMethod 0" alone never turned it on)
+iis 1
 
 *** ------------------------------------------------------------------------------
 *** Optional GPU acceleration (uncomment to try)
@@ -82,3 +93,4 @@ IISMethod 0
 *** When LpMethod=4 (concurrent), control which engines run where:
 *** 0 CPU only, 1 CPU + GPU PDLP, 2 CPU + GPU barrier, 3 CPU + both GPU engines
 * ConcurrentLpMode 3
+

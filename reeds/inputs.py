@@ -354,7 +354,7 @@ def solvestring_sequential(
     _stress_year = f"{cur_year}i0" if stress_year is None else stress_year
     out = (
         f"gams {Path('reeds','core','solve','3_solve_oneyear.gms')}"
-        + (" license=gamslice.txt" if hpc else '')
+        + (" license=gamslice.txt" if (hpc and caseSwitches['solver'] != 'GUROBI') else '')
         + " o=" + os.path.join("lstfiles", f"{savefile}.lst")
         + " r=" + os.path.join("g00files", restartfile)
         + " gdxcompress=1"
