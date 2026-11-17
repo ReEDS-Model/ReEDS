@@ -598,6 +598,86 @@ def import_and_mod_incentives(
     ]
 
 
+def storage_hybrid_storage_itc(incentive_file_suffix, inflation_df, scen_settings, wrappers):
+    '''
+    Monetized ITC for the storage side of each storage-hybrid wrapper, by online year.
+
+    A wrapper is one facility with one construction start, so its storage side keeps the
+    storage tech's credit rate but can come online as late as the gen tech can. Each of the
+    storage tech's incentive rows is therefore widened to the larger of the storage tech's and
+    the gen tech's safe harbor for the same construction-start year. Taking the larger window
+    keeps co-located storage eligible when the gen tech's window is shorter (for example
+    wind and solar under OBBBA).
+
+    Otherwise this follows import_and_mod_incentives: the domestic-content bonus is added to
+    the ITC, each row is expanded over its online years, the highest ITC wins where rows
+    overlap, and the ITC is reduced by the tax-equity penalty.
+
+    Inputs:
+        wrappers: DataFrame with columns ['i', 'gen_tech', 'storage_tech']
+
+    Returns:
+        DataFrame with columns ['i', 't', 'itc_frac_monetized'], one row per wrapper and
+        online year in which the storage side has an ITC
+    '''
+    columns = ['i', 't', 'itc_frac_monetized']
+    if wrappers.empty:
+        return pd.DataFrame(columns=columns)
+    incentives = import_data(
+        file_root='incentives',
+        file_suffix=incentive_file_suffix,
+        indices=['i', 'country', 't_start_construction'],
+        inflation_df=inflation_df,
+        scen_settings=scen_settings,
+    )
+    incentives['i'] = incentives['i'].str.lower()
+    has_itc = incentives['itc_frac'] > 0
+    incentives.loc[has_itc, 'itc_frac'] = (
+        incentives.loc[has_itc, 'itc_frac']
+        + incentives.loc[has_itc, 'itc_percpt_domestic_bonus']
+    )
+
+    dfs = []
+    for wrapper, gen_tech, storage_tech in (
+        wrappers[['i', 'gen_tech', 'storage_tech']].itertuples(index=False)
+    ):
+        rows = incentives.loc[
+            (incentives['i'] == storage_tech.lower()) & (incentives['itc_frac'] > 0)
+        ].copy()
+        if rows.empty:
+            continue
+        gen_safe_harbor = (
+            incentives.loc[incentives['i'] == gen_tech.lower()]
+            .groupby('t_start_construction')['safe_harbor'].max()
+        )
+        rows['safe_harbor'] = np.maximum(
+            rows['safe_harbor'],
+            rows['t_start_construction'].map(gen_safe_harbor).fillna(0),
+        ).astype(int)
+        rows['i'] = wrapper
+        dfs.append(rows)
+    if not dfs:
+        return pd.DataFrame(columns=columns)
+
+    df = pd.concat(dfs, ignore_index=True)
+    ## Expand each row over the online years t_start_construction ... + safe_harbor
+    df['safe_harbor_buffer'] = df['safe_harbor'].map(lambda n: list(range(int(n) + 1)))
+    df = df.explode('safe_harbor_buffer')
+    df['t'] = df['t_start_construction'] + df['safe_harbor_buffer'].astype(int)
+    ## Highest ITC wins, as in import_and_mod_incentives
+    df = (
+        df.sort_values('itc_frac', ascending=False)
+        .drop_duplicates(['i', 'country', 't'], keep='first')
+    )
+    df['itc_frac_monetized'] = df['itc_frac'] * (1 - df['itc_tax_equity_penalty'])
+    if df['country'].nunique() > 1:
+        raise ValueError(
+            'storage_hybrid_storage_itc assumes one country but the incentives have '
+            f"{sorted(df['country'].unique())}"
+        )
+    return df[columns].sort_values(['i', 't']).reset_index(drop=True)
+
+
 def calc_degradation_adj(d_real, eval_period, annual_degradation):
     if annual_degradation == 0:
         return 1.0

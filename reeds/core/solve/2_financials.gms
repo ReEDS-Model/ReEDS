@@ -28,6 +28,7 @@ tc_phaseout_mult(i,v,t)$[tload(t)$(firstyear_v(i,v)>=%cur_year%)] =
 * --- Start calculations of cost_cap_fin_mult family of parameters --- *
 
 * The energy community bonus adds to the ITC only in years when the base ITC is available
+* (cost_cap_fin_mult_storage_hybrid_s below copies this formula; keep the two in sync)
 cost_cap_fin_mult(i,r,t) = ccmult(i,t) / (1.0 - tax_rate(t))
     * (1.0 - tax_rate(t)
              * (1.0 - (itc_frac_monetized(i,t) + itc_energy_comm_bonus(i,r)$itc_frac_monetized(i,t))
@@ -148,8 +149,38 @@ cost_cap_fin_mult_storage_hybrid_p(i,r,t)$storage_hybrid(i) = sum{ii$ storage_hy
 cost_cap_fin_mult_storage_hybrid_p_noITC(i,r,t)$storage_hybrid(i) = sum{ii$ storage_hybrid_gentech(i,ii), cost_cap_fin_mult_noITC(ii,r,t) } ;
 cost_cap_fin_mult_storage_hybrid_p_no_credits(i,r,t)$storage_hybrid(i) = sum{ii$ storage_hybrid_gentech(i,ii), cost_cap_fin_mult_no_credits(ii,r,t) } ;
 
-* Assign the storage portion of storage_hybrid the storage tech multiplier
-cost_cap_fin_mult_storage_hybrid_s(i,r,t)$storage_hybrid(i) = sum{ii$ storage_hybrid_stortech(i,ii), cost_cap_fin_mult(ii,r,t)};
+* Assign the storage portion of storage_hybrid the storage tech multiplier, with two
+* inputs swapped for the wrapper's own: the storage-side ITC, which uses the larger of
+* the gen and storage techs' eligibility windows (itc_frac_monetized_storage_hybrid_s),
+* and the wrapper's phaseout multiplier, which is the gen tech's (set at the top of this file).
+* KEEP IN SYNC with cost_cap_fin_mult above; the abort below catches a mismatch.
+cost_cap_fin_mult_storage_hybrid_s(i,r,t)$storage_hybrid(i) =
+    sum{ii$storage_hybrid_stortech(i,ii),
+        ccmult(ii,t) / (1.0 - tax_rate(t))
+        * (1.0 - tax_rate(t)
+                 * (1.0 - (itc_frac_monetized_storage_hybrid_s(i,t)
+                           + itc_energy_comm_bonus(ii,r)$itc_frac_monetized_storage_hybrid_s(i,t))
+                          * tc_phaseout_mult_t(i,t) / 2.0)
+                 * pv_frac_of_depreciation(ii,t)
+           - (itc_frac_monetized_storage_hybrid_s(i,t)
+              + itc_energy_comm_bonus(ii,r)$itc_frac_monetized_storage_hybrid_s(i,t))
+             * tc_phaseout_mult_t(i,t))
+        * degradation_adj(ii,t) * financing_risk_mult(ii,t) * (1 + reg_cap_cost_diff(ii,r))
+        * eval_period_adj_mult(ii,t) } ;
+
+* Where the swapped inputs equal the storage tech's own, the result must equal the storage
+* tech's cost_cap_fin_mult; otherwise the formula above has drifted from the one it copies
+parameter storage_hybrid_s_formula_diff(i,r,t) "--fraction-- check of cost_cap_fin_mult_storage_hybrid_s against cost_cap_fin_mult" ;
+storage_hybrid_s_formula_diff(i,r,t)
+    $[storage_hybrid(i)$(not geo_storage(i))
+     $sum{ii$[storage_hybrid_stortech(i,ii)
+             $(itc_frac_monetized_storage_hybrid_s(i,t) = itc_frac_monetized(ii,t))
+             $(tc_phaseout_mult_t(i,t) = tc_phaseout_mult_t(ii,t))], 1 }] =
+    abs(cost_cap_fin_mult_storage_hybrid_s(i,r,t)
+        - sum{ii$storage_hybrid_stortech(i,ii), cost_cap_fin_mult(ii,r,t) }) ;
+abort$[smax{(i,r,t), storage_hybrid_s_formula_diff(i,r,t) } > 1e-6]
+    "cost_cap_fin_mult_storage_hybrid_s has drifted from cost_cap_fin_mult; update its formula in 2_financials.gms",
+    storage_hybrid_s_formula_diff ;
 cost_cap_fin_mult_storage_hybrid_s_noITC(i,r,t)$storage_hybrid(i) = sum{ii$ storage_hybrid_stortech(i,ii), cost_cap_fin_mult_noITC(ii,r,t)} ;
 cost_cap_fin_mult_storage_hybrid_s_no_credits(i,r,t)$storage_hybrid(i) = sum{ii$ storage_hybrid_stortech(i,ii), cost_cap_fin_mult_no_credits(ii,r,t)} ;
 

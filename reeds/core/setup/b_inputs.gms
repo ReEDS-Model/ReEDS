@@ -4314,6 +4314,20 @@ $onlisting
 * Storage-hybrid wrappers inherit financial multiplier components from their
 * underlying generation technology
 itc_frac_monetized(i,t)$storage_hybrid(i) = sum{ii$storage_hybrid_gentech(i,ii), itc_frac_monetized(ii,t) } ;
+
+* The storage side keeps the storage tech's ITC rate but is eligible over the larger of
+* the gen and storage techs' windows, because a wrapper is one facility with one
+* construction start (written by calc_financial_inputs.py; used in 2_financials.gms)
+$onempty
+parameter itc_frac_monetized_storage_hybrid_s(i,allt) "--fraction-- monetized ITC on the storage side of storage-hybrid wrappers"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%storage_hybrid_itc_storage.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
 itc_energy_comm_bonus(i,r)$storage_hybrid(i) = sum{ii$storage_hybrid_gentech(i,ii), itc_energy_comm_bonus(ii,r) } ;
 degradation_adj(i,t)$storage_hybrid(i) = sum{ii$storage_hybrid_gentech(i,ii), degradation_adj(ii,t) } ;
 financing_risk_mult(i,t)$storage_hybrid(i) = sum{ii$storage_hybrid_gentech(i,ii), financing_risk_mult(ii,t) } ;

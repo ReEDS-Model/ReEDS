@@ -542,6 +542,28 @@ def calc_financial_inputs(inputs_case):
             itc_out = pd.concat([itc_out] + wrapper_itc, ignore_index=True)
     itc_out.to_csv(os.path.join(inputs_case, 'itc_fractions.csv'), index=False)
 
+    # Storage side of each storage-hybrid wrapper: the storage tech's ITC rate over the
+    # larger of the gen and storage techs' eligibility windows (see
+    # reeds.financials.storage_hybrid_storage_itc). 2_financials.gms uses it in
+    # cost_cap_fin_mult_storage_hybrid_s. Always written (header only when the feature
+    # is off) because b_inputs.gms declares the parameter from it.
+    storagetech_map_file = os.path.join(inputs_case, 'storage_hybrid_storagetechs.csv')
+    wrappers = pd.DataFrame(columns=['i', 'gen_tech', 'storage_tech'])
+    if os.path.isfile(gentech_map_file) and os.path.isfile(storagetech_map_file):
+        gentechs = pd.read_csv(gentech_map_file)
+        gentechs.columns = ['i', 'gen_tech']
+        storagetechs = pd.read_csv(storagetech_map_file)
+        storagetechs.columns = ['i', 'storage_tech']
+        wrappers = gentechs.merge(storagetechs, on='i', how='inner')
+    storage_itc = reeds.financials.storage_hybrid_storage_itc(
+        incentive_file_suffix=sw['incentives_suffix'], inflation_df=inflation_df,
+        scen_settings=scen_settings, wrappers=wrappers,
+    )
+    storage_itc = storage_itc.loc[storage_itc['t'].isin(modeled_years)].copy()
+    storage_itc['itc_frac_monetized'] = storage_itc['itc_frac_monetized'].round(6)
+    storage_itc.rename(columns={'i': '*i'}).to_csv(
+        os.path.join(inputs_case, 'storage_hybrid_itc_storage.csv'), index=False)
+
     # CRF used in sequential case for calculating pvf_onm values (pvf)
     crf_df = financials_sys[financials_sys['t']==financials_sys['modeled_year']].copy()
     reeds.io.write_to_inputs_h5(

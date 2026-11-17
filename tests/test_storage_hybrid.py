@@ -327,3 +327,46 @@ def test_tes_incentives_match_battery(fpath):
     battery = df.loc[df.i == 'BATTERY'].drop(columns='i').reset_index(drop=True)
     tes = df.loc[df.i == 'TES'].drop(columns='i').reset_index(drop=True)
     pd.testing.assert_frame_equal(tes, battery, check_dtype=False)
+
+
+#%% Storage-side ITC window for wrappers
+def test_storage_side_itc_window(monkeypatch):
+    """
+    The storage side keeps the storage tech's ITC rate (with domestic content and the
+    tax-equity penalty) over the larger of the gen and storage techs' windows
+    """
+    def row(i, start, safe_harbor, itc, domestic=0.0):
+        return {
+            'i': i, 'country': 'usa', 't_start_construction': start,
+            'safe_harbor': safe_harbor, 'itc_frac': itc,
+            'itc_percpt_domestic_bonus': domestic, 'itc_tax_equity_penalty': 0.1,
+        }
+    rows = (
+        [row('Nuclear-SMR', 2032, 6, 0.3)]
+        + [row('tes_ms', 2032, 4, 0.3, domestic=0.05)]
+        + [row('upv_1', 2027, 0, 0.3)]
+        + [row('battery_li', 2027, 4, 0.3)]
+    )
+    monkeypatch.setattr(reeds.financials, 'import_data', lambda **kwargs: pd.DataFrame(rows))
+    wrappers = pd.DataFrame({
+        'i': ['storage-hybrid-1-nuclear-smr', 'storage-hybrid-2-upv_1', 'storage-hybrid-3-gas-cc'],
+        'gen_tech': ['Nuclear-SMR', 'upv_1', 'gas-cc'],
+        'storage_tech': ['tes_ms', 'battery_li', 'battery_li'],
+    })
+    df = reeds.financials.storage_hybrid_storage_itc('obbba', None, None, wrappers)
+    years = df.groupby('i')['t'].agg(['min', 'max'])
+    ## TES on a nuclear wrapper: nuclear's 6-year window, not TES's 4
+    assert tuple(years.loc['storage-hybrid-1-nuclear-smr']) == (2032, 2038)
+    ## Battery on a upv wrapper: the battery's 4 years, not upv's 0
+    assert tuple(years.loc['storage-hybrid-2-upv_1']) == (2027, 2031)
+    ## Gen tech with no credit: the storage tech's own window
+    assert tuple(years.loc['storage-hybrid-3-gas-cc']) == (2027, 2031)
+    ## Rate: (0.3 + 0.05 domestic) * (1 - 0.1)
+    tes = df.loc[df.i == 'storage-hybrid-1-nuclear-smr', 'itc_frac_monetized']
+    assert tes.round(6).eq(0.315).all()
+
+
+def test_storage_side_itc_no_wrappers():
+    df = reeds.financials.storage_hybrid_storage_itc(
+        'obbba', None, None, pd.DataFrame(columns=['i', 'gen_tech', 'storage_tech']))
+    assert df.empty and list(df.columns) == ['i', 't', 'itc_frac_monetized']
