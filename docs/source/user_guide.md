@@ -454,7 +454,7 @@ By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over represe
 - `1`: weight all modeled stress hours equally.
 - `2`: weight only each state's own peak-load stress period(s) — the seeded peak-load period(s) that the state's regions belong to (a state spanning multiple `GSw_PRM_StressSeedLoadLevel` groups gets the union of all of them). Also requires `GSw_PRM_StressSeedLoadLevel` to be enabled and is not supported with user-defined stress periods (`GSw_PRM_StressModel=user...`).
 
-The voluntary REC market is enforced over representative periods only; it has no stress-period requirement under either setting.
+The voluntary REC market and the wind and solar carve-outs (`GSw_StateRPS_Carveouts`) are enforced over representative periods only; they have no stress-period requirement under either setting.
 
 
 ## Monte Carlo Sampling (MCS)
