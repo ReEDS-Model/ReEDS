@@ -231,9 +231,9 @@ rps_hours(h,st,"stress")$[h_stress(h)$(Sw_StateRPS_Stress=1)] = 1 ;
 rps_hours(h,st,"stress")$[h_stress(h)$(Sw_StateRPS_Stress=2)
                           $sum{allszn$h_szn(h,allszn), st_szn_stresspeak(st,allszn) }] = 1 ;
 
-* Store rps_hours by model year since stress periods change across years (used in report.gms)
+* Store stress-period rps_hours by model year since stress periods change across years (used in report.gms)
 rps_hours_t(allh,st,htype,t)$tmodel(t) = 0 ;
-rps_hours_t(h,st,htype,t)$tmodel(t) = rps_hours(h,st,htype) ;
+rps_hours_t(h,st,"stress",t)$tmodel(t) = rps_hours(h,st,"stress") ;
 
 parameter numdays(allszn) "--number of days-- number of days for each season" ;
 numdays(allszn) = 0 ;
