@@ -546,7 +546,7 @@ def import_and_mod_incentives(
     # (even if no single year had more than one incentive available). As a simple expedient, we are just sorting by incentive value
     # and selecting the highest. This is not meant to select between competing incentives, as we do not have the operational data
     # at this point to estimate their value. It is just a simple approach implemented here for lack of time to develop a better one.
-    incentive_df = incentive_df.sort_values('value', ascending=False, kind='stable')
+    incentive_df = incentive_df.sort_values('value', ascending=False)
     # Keep duplicate incentives for pvb if the battery takes the ITC
     if copy_battery:
         incentive_df_pvb = incentive_df[incentive_df['i'].str.contains('pvb')].copy()
