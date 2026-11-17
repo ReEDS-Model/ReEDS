@@ -175,8 +175,8 @@ cap_energy_iter(i,v,r,t,cciter) = 0 ;
 gen_iter(i,v,r,t,cciter) = 0 ;
 
 
-*Assign csp3 and csp4 to use the same initial values as csp2_1
-cc_int(i,c,v,r,ccseason,t)$[i_c(i,c)$(csp3(i) or csp4(i))] = sum{cc$i_c('csp2_1',cc), cc_int('csp2_1',cc,v,r,ccseason,t) } ;
+*Assign csp3 and csp4 to use the same initial values as csp2
+cc_int(i,c,v,r,ccseason,t)$[i_c(i,c)$(csp3(i) or csp4(i))] = cc_int('csp2',c,v,r,ccseason,t) ;
 
 tmodel(t) = no ;
 tmodel(t)$[tmodel_new(t)$(yeart(t)<=%endyear%)] = yes ;
@@ -225,8 +225,8 @@ pvf_onm0(t) = pvf_onm(t) ;
 
 cost_scale = 1e-3 ;
 
-*Assign csp3 and csp4 to use the same initial values as csp2_1
-cc_int(i,c,v,r,ccseason,t)$[i_c(i,c)$(csp3(i) or csp4(i))] = sum{cc$i_c('csp2_1',cc), cc_int('csp2_1',cc,v,r,ccseason,t) } ;
+*Assign csp3 and csp4 to use the same initial values as csp2
+cc_int(i,c,v,r,ccseason,t)$[i_c(i,c)$(csp3(i) or csp4(i))] = cc_int('csp2',c,v,r,ccseason,t) ;
 
 *marginal capacity value not used in intertemporal case
 m_cc_mar(i,c,r,ccseason,t) = 0 ;

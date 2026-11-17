@@ -48,10 +48,10 @@ hydNPND,0
 hydED,0
 hydEND,0
 wind-ofs_1*wind-ofs_10,0.0027
-csp1_1*csp1_12,0
-csp2_1*csp2_12,0
-csp3_1*csp3_12,0
-csp4_1*csp4_12,0
+csp1,0
+csp2,0
+csp3,0
+csp4,0
 egs_allkm_1*egs_allkm_10,0
 geohydro_allkm_1*geohydro_allkm_10,0
 egs_nearfield_1*egs_nearfield_10,0

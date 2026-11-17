@@ -36,10 +36,10 @@ lfill-gas,0.04
 H2-CT,0.08
 H2-CC,0.08
 ng-fuel-cell,0.05
-csp1_1*csp1_12,0.1
-csp2_1*csp2_12,0.1
-csp3_1*csp3_12,0.1
-csp4_1*csp4_12,0.1
+csp1,0.1
+csp2,0.1
+csp3,0.1
+csp4,0.1
 battery_li,1
 pumped-hydro,1
 pvb1,1

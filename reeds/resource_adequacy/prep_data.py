@@ -169,7 +169,7 @@ def main(t, casedir, iteration=0):
         ))
     else:
         ## Strip the resource class and the configuration number, but keep resource type;
-        ## e.g. "wind-ofs_5" -> "wind-ofs", "csp2_3" -> "csp", "pvb1" -> "pvb"
+        ## e.g. "wind-ofs_5" -> "wind-ofs", "csp2" -> "csp", "pvb1" -> "pvb"
         techs_vre_simplify = dict(zip(
             techs_vre,
             [re.sub(r'^(pvb|csp)\d$', r'\1', re.sub(r'_\d+$', '', i)) for i in techs_vre]

@@ -471,11 +471,14 @@ def main(
         csp["class"] = "class" + csp["class"].astype(str)
         csp["bin"] = "cspsc" + csp["bin"].astype(str)
 
-        spurout_list.append(
-            csp.assign(i="csp_" + csp["class"].astype(str).str.strip("class"))
-            .assign(c=csp["class"].astype(str).str.strip("class"))
+        ## Duplicate the CSP spur-line parameters for each CSP configuration
+        cspspur = (
+            csp.assign(c=csp["class"].astype(str).str.strip("class"))
             .assign(rscbin="bin" + csp["bin"].str.strip("cspsc"))
             .rename(columns={"region": "r"})
+        )
+        spurout_list.append(
+            pd.concat([cspspur.assign(i=f"csp{i}") for i in range(1, csp_configs + 1)])
         )
 
         ### Pivot, with bins in long format
@@ -673,29 +676,8 @@ def main(
         spurout.to_csv(os.path.join(inputs_case, "spur_parameters.csv"), index=False)
 
     ### Get spur-line and reinforcement distances if using in annual trans investment limit
-    poi_distance = spurout.copy()
-    ## Duplicate CSP entries for each CSP system design
-    poi_distance_csp = poi_distance.loc[poi_distance.i.str.startswith("csp")].copy()
-    poi_distance_csp_broadcasted = pd.concat(
-        [
-            poi_distance_csp.assign(
-                i=poi_distance_csp.i.str.replace("csp_", f"csp{i}_")
-            )
-            for i in range(1, csp_configs + 1)
-        ],
-        axis=0,
-    )
-    poi_distance_out = (
-        pd.concat(
-            [
-                poi_distance.loc[~poi_distance.i.str.startswith("csp")],
-                poi_distance_csp_broadcasted,
-            ],
-            axis=0,
-        )
-        ## Reformat to save for GAMS
-        .rename(columns={"i": "*i"})
-    )
+    ## Reformat to save for GAMS
+    poi_distance_out = spurout.rename(columns={"i": "*i"})
     poi_distance_out = poi_distance_out.set_index(["*i", "c", "r", "rscbin"])
     ## Convert to miles
     distance_spur = (poi_distance_out.dist_spur_km.rename("miles") / 1.609).round(3)

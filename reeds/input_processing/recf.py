@@ -506,19 +506,18 @@ def main(reeds_path, inputs_case):
 
     csp_resources = (
         csp_resources
-        .assign(i=csp_resources['tech'] + '_' + csp_resources['class'].astype(str))
+        .assign(i=csp_resources['tech'])
+        .assign(c=csp_resources['class'].astype(str))
         .assign(resource=csp_resources['tech'] + '_' + csp_resources['resource'])
         .assign(ccreg=csp_resources.r.map(r2ccreg))
     )
-    csp_resources['c'] = csp_resources['i'].map(i2c)
     csp_resources = csp_resources[['i','r','c','resource','ccreg']]
     ###### Simulate CSP dispatch for each design
     ### Get solar multiples
     sms = {tech: scalars[f'csp_sm_{tech.strip("csp")}'] for tech in csptechs}
     ### Get storage durations
     storage_duration = reeds.io.read_input(inputs_case, 'storage_duration').set_index('i').squeeze(1)
-    ## All CSP resource classes have the same duration for a given tech, so just take the first one
-    durations = {tech: storage_duration[f'csp{tech.strip("csp")}_1'] for tech in csptechs}
+    durations = {tech: storage_duration[tech] for tech in csptechs}
     ### Run the dispatch simulation for modeled regions
 
     csp_system_cf = pd.concat({
@@ -573,7 +572,7 @@ def main(reeds_path, inputs_case):
     reeds.io.write_profile_to_h5(recf.astype(np.float16), 'recf.h5', inputs_case)
     resources.to_csv(os.path.join(inputs_case,'resources.csv'), index=False)
     ### Write the CSP solar field CF (no SM or storage) for hourly_writetimeseries.py
-    cspcf = cspcf.rename(columns=dict(zip(cspcf.columns, [f'csp_{i}' for i in cspcf.columns])))
+    cspcf = cspcf.rename(columns=dict(zip(cspcf.columns, [f'csp|{i}' for i in cspcf.columns])))
     reeds.io.write_profile_to_h5(cspcf.astype(np.float32), 'csp.h5', inputs_case)
     ### Overwrite the original hierarchy.csv based on capcredit_hierarchy_level
     (
