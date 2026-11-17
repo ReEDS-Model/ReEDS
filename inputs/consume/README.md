@@ -1,7 +1,7 @@
 ## Consume Input Files
 
 - `consume_char_*.csv`: Cost (capex, FOM, VOM) and efficiency (gas and electrical) as well as storage and transmission adder (`stortran_adder`) inputs for various H2 producing technologies. Units vary by parameter; refer to [b_inputs.gms](https://github.com/ReEDS-Model/ReEDS/blob/main/reeds/core/setup/b_inputs.gms)
-  - `consume_char_low.csv`: Conservative assumptions
+  - `consume_char_low.csv`: Low-cost electrolyzer assumptions (lower capital and FOM costs and better efficiency); other technologies match the reference file
   - `consume_char_ref.csv`: Reference assumptions
 
 - `dac_elec_BVRE_2021_*.csv`: DAC costs (capex [$/(metric ton CO2/hr)], FOM [$/(metric ton CO2/hr)/yr], VOM [$/metric ton CO2]) and conversion rate, over time.
@@ -20,10 +20,11 @@
 
 - `dollaryear.csv`: Dollar year for DAC costs
 
-- `h2_demand_county_share.csv`: The fraction of national hydrogen demand in that year that corresponds to each county
+- `h2_demand_county_share.csv`: The fraction [fraction] of national hydrogen demand in that year that corresponds to each county
   - Demand estimates come from [https://data.openei.org/submissions/5655](https://data.openei.org/submissions/5655)
   - 2021 demand shares correspond to the "Reference" scenario with light-duty vehicles / biofuels / methanol demand removed and 2050 shares correspond to the "Low Cost Electrolysis" scenario
 
-- `h2_exogenous_demand.csv`: Exogenous hydrogen demand by industries other than the power sector per year
+- `h2_exogenous_demand.csv`: Exogenous hydrogen demand [million metric tons/yr] by industries other than the power sector
+  - The scenario column is selected by the `GSw_H2_Demand_Case` switch
 
 - `h2_transport_and_storage_costs.csv`: Transport and storage costs of hydrogen per year (in $2004)

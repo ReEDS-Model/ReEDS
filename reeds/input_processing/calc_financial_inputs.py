@@ -372,9 +372,13 @@ def calc_financial_inputs(inputs_case):
 
     ## get energy communities and itc bonus 
     energy_communities = pd.read_csv(os.path.join(inputs_case, 'energy_communities.csv'))
-    temp_incentives = incentive_df[
-       incentive_df['itc_energy_comm_bonus'] != 0
-    ][['i','itc_energy_comm_bonus']].drop_duplicates()
+    # The bonus is additive to the ITC and is monetized at the same penalty as the base ITC
+    temp_incentives = incentive_df.loc[
+        incentive_df['itc_energy_comm_bonus'] != 0,
+        ['i', 'itc_energy_comm_bonus', 'itc_tax_equity_penalty']
+    ].copy()
+    temp_incentives['itc_energy_comm_bonus'] *= 1 - temp_incentives['itc_tax_equity_penalty']
+    temp_incentives = temp_incentives[['i','itc_energy_comm_bonus']].drop_duplicates()
 
     energy_communities['key'] = 1
     temp_incentives['key'] = 1
@@ -384,14 +388,9 @@ def calc_financial_inputs(inputs_case):
     nuclear_energy_communities = pd.read_csv(
         os.path.join(inputs_case, 'nuclear_energy_communities.csv')
     )
-    nuclear_temp_incentives = (
-        incentive_df[
-            (incentive_df['itc_energy_comm_bonus'] != 0)
-            & (incentive_df['i'].isin(scen_settings.tech_groups['NUCLEAR']))
-        ]
-        [['i','itc_energy_comm_bonus']]
-        .drop_duplicates()
-    )
+    nuclear_temp_incentives = temp_incentives.loc[
+        temp_incentives['i'].isin(scen_settings.tech_groups['NUCLEAR'])
+    ].copy()
 
     nuclear_energy_communities['key'] = 1
     nuclear_temp_incentives['key'] = 1
@@ -401,18 +400,15 @@ def calc_financial_inputs(inputs_case):
     )
     e_df = pd.concat([e_df, nuclear_e_df], ignore_index=True)
 
-    # Calculate the weighted energy community bonus: the 'itc_energy_comm_bonus' is initially set to 1 - the value from the incentives file.
-    # To apply the bonus correctly, we reverse the adjustment, multiply it by the 'percentage_energy_communities',
-    # and then adjust it back to the 1 - 'itc_energy_comm_bonus' format.
+    # Derate the bonus by the fraction of each region that is an energy community
     e_df['itc_energy_comm_bonus'] = (
-        1 - ((1 - e_df['itc_energy_comm_bonus']) * e_df['percentage_energy_communities'])
-    ).round(4).drop(columns='percentage_energy_communities')
+        e_df['itc_energy_comm_bonus'] * e_df['percentage_energy_communities']
+    ).round(4)
 
-    # There are some regions that are eligible for both the energy communities and nuclear energy communities bonus
-    # so choose the highest bonus for each region and tech (note that the bonus is formatted as 1 - 'itc_energy_comm_bonus',
-    # meaning the lowest 'itc_energy_comm_bonus' value represents the highest bonus)
+    # Some regions are eligible for both the energy communities and nuclear energy communities
+    # bonus, so keep the highest bonus for each region and tech
     e_df = (
-        e_df.sort_values(by='itc_energy_comm_bonus', ascending=True)
+        e_df.sort_values(by='itc_energy_comm_bonus', ascending=False)
         .drop_duplicates(subset=['r', 'i'], keep='first')
         .reset_index(drop=True)
     )
@@ -461,8 +457,8 @@ def calc_financial_inputs(inputs_case):
     # Write out the energy community itc bonus
     reeds.io.write_to_inputs_h5(
         e_df[['i','r','itc_energy_comm_bonus']],
-        'itc_energy_comm_bonus', inputs_case, gamstype='parameter',
-        comment='energy community tax credit bonus factor',
+        'itc_energy_comm_bonus', inputs_case, gamstype='parameter', units='fraction',
+        comment='energy community ITC bonus added to the monetized ITC, derated by energy community share',
     )
 
     # Write out the adjustment multiplier for non-standard evaluation periods
