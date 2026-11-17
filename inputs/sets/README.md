@@ -46,17 +46,15 @@
   - Aliases of sets defined in `b_inputs.gms` (e.g., `h`→`hh`) should instead be defined in GAMS after the set definition
 
 ### Additional files
-- `RPSCat.csv`: set of RPS constraint categories, including clean energy standards
-
 - `aclike.csv`: set of AC transmission capacity types
 
 - `allt.csv`: set of all potential years
 
 - `bioclass.csv`: set of biomass supply curve classes, each a price/quantity bin of biomass feedstock supply
 
-- `captype.csv`: set of capacity types (existing and prescribed)
-
 - `c.csv`: set of renewable resource classes
+
+- `captype.csv`: set of capacity types (existing and prescribed)
 
 - `ccsflex_cat.csv`:set of flexible ccs performance parameter categories
 
@@ -93,6 +91,8 @@
 - `h2_stor.csv`: set of H2 storage options
 
 - `hintage_char.csv`: set of characteristics available in hintage_data
+
+- `htype.csv`: set of timeslice types (representative or stress period) used for state RPS/CES accounting
 
 - `i.csv`: set of technologies
 
@@ -137,6 +137,8 @@
 - `pvb_config.csv`: set of hybrid pv+battery configurations
 
 - `quarter.csv`: four quarters (listed as seasons) of the year
+
+- `RPSCat.csv`: set of RPS constraint categories, including clean energy standards
 
 - `sdbin.csv`: set of storage duration bins [hours]
 
