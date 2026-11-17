@@ -104,6 +104,21 @@ def get_events(ds:pd.Series, threshold:float=0) -> pd.DataFrame:
     return dfout
 
 
+def get_shortfall_totals_by_sample(case, t, iteration=0):
+    filepath = os.path.join(
+        case, 'handoff', 'PRAS', f'PRAS_{t}i{iteration}-shortfall_totals_by_sample.h5'
+    )
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"{filepath}: Rerun PRAS with write_shortfall_samples_totals=1")
+    df = reeds.io.read_pras_results(filepath)
+    df.columns = df.columns.astype(str)
+    if 'sample' in df.columns:
+        df = df.set_index('sample')
+    elif df.index.name != 'sample':
+        df.index = pd.RangeIndex(1, len(df) + 1, name='sample')
+    return df
+
+
 def calc_lold(dflole_agg, threshold=0):
     """Count a day as an event-day if at least one hour has LOLE > threshold"""
     ## Take the max for each day
@@ -142,6 +157,38 @@ def calc_neue(dfeue_agg, dfload_agg):
     """NEUE (sum of EUE / sum of load) in units of ppm"""
     neue = dfeue_agg.sum() / dfload_agg.sum() * 1e6
     return neue
+
+
+def _sample_cvar(samples, alpha=0.95):
+    x = pd.Series(samples).dropna().astype(float)
+    if x.empty:
+        return np.nan
+
+    # Round before applying ceil to remove floating-point noise.
+    # For example, a mathematically exact tail size of 50 may be
+    # represented as 50.00000000000004, which would otherwise select 51 samples.
+    tail_size = round((1 - alpha) * len(x), 12)
+    n_tail = max(1, int(np.ceil(tail_size)))
+
+    return x.nlargest(n_tail).mean()
+
+def calc_cvar(shortfall_samples_agg, alpha=0.95):
+    """
+    CVAR from total shortfall by PRAS sample.
+    """
+    cvar = shortfall_samples_agg.apply(
+        lambda s: _sample_cvar(s, alpha=alpha),
+        axis=0,
+    )
+    return cvar
+
+
+def calc_ncvar(cvar, dfload_agg):
+    """
+    NCVAR = CVAR / total load, in ppm.
+    """
+    ncvar = cvar / dfload_agg.sum().reindex(cvar.index) * 1e6
+    return ncvar
 
 
 def calc_peak_eue(dfeue_agg, dfload_agg, norm:Literal['peak','hourly','absolute']='peak'):
@@ -193,6 +240,9 @@ def calc_ra_metrics(
     sw = reeds.io.get_switches(case)
     numyears = len(sw.resource_adequacy_years_list)
 
+    ### Get total shortfall samples for CVAR calculation
+    shortfall_samples = get_shortfall_totals_by_sample(case=case, t=t, iteration=iteration)
+
     ### Loop over aggregation levels and calculate all metrics
     ra_metrics = {}
     for level in levels:
@@ -204,6 +254,7 @@ def calc_ra_metrics(
         dflole_agg = dflole.rename(columns=rmap).T.groupby(level=0).max().T
         dfeue_agg = dfeue.rename(columns=rmap).T.groupby(level=0).sum().T
         dfload_agg = dfload.rename(columns=rmap).T.groupby(level=0).sum().T
+        shortfall_samples_agg = shortfall_samples.rename(columns=rmap).T.groupby(level=0).sum().T
         ## Calculate the full-timeseries metrics for each region
         ra_metrics[level, 'lold_peryear'] = calc_lold(dflole_agg) / numyears
         ra_metrics[level, 'lole_peryear'] = calc_lole(dflole_agg) / numyears
@@ -213,6 +264,9 @@ def calc_ra_metrics(
         ra_metrics[level, 'euemax_peakloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'peak')
         ra_metrics[level, 'euemax_hourlyloadfrac'] = calc_peak_eue(dfeue_agg, dfload_agg, 'hourly')
         ra_metrics[level, 'euemax_mw'] = calc_peak_eue(dfeue_agg, dfload_agg, 'absolute')
+        cvar = calc_cvar(shortfall_samples_agg, alpha=float(sw.GSw_PRM_CVARalpha))
+        ra_metrics[level, 'cvar_mwh_peryear'] = cvar / numyears
+        ra_metrics[level, 'ncvar_ppm'] = calc_ncvar(cvar, dfload_agg)
 
     ### Combine it
     dfout = pd.concat(ra_metrics, names=['level','metric','region']).rename('value')
