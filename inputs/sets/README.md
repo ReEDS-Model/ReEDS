@@ -52,7 +52,9 @@
 
 - `allt.csv`: set of all potential years
 
-- `bioclass.csv`: set of bio tech classes
+- `bioclass.csv`: set of biomass supply curve classes, each a price/quantity bin of biomass feedstock supply
+
+- `captype.csv`: set of capacity types (existing and prescribed)
 
 - `c.csv`: set of renewable resource classes
 
@@ -80,7 +82,7 @@
 
 - `fuelbin.csv`: set of gas usage brackets
 
-- `gb.csv`: set of gas price bins
+- `gb.csv`: set of gas price bins; must have an odd number of bins (e.g. gb1*gb15)
 
 - `gbin.csv`: set of growth bins
 
@@ -106,9 +108,11 @@
 
 - `i_water_nocooling.csv`: set of technologies that use water, but are not differentiated by cooling tech and water source
 
+- `jtype.csv`: set of job types used in the model (construction and O&M)
+
 - `lcclike.csv`: set of transmission capacity types where lines are bundled with AC/DC converters
 
-- `month.csv`:
+- `month.csv`: Calendar months in a year
 
 - `noretire.csv`: set of technologies that will never be retired
 
@@ -126,15 +130,13 @@
 
 - `plantcat.csv`: set of categories for plant characteristics
 
-- `prepost.csv`:
+- `prepost.csv`: Defines pre-2010 versus post-2010 years
 
-- `prescriptivelink0.csv`: initial set of prescribed categories and their technologies - used in assigning prescribed builds
+- `quarter.csv`: four quarters (listed as seasons) of the year
 
-- `quarter.csv`:
+- `sdbin.csv`: set of storage duration bins [hours]
 
-- `sdbin.csv`: set of storage durage bins
-
-- `tg.csv`: set of technology groups
+- `tg.csv`: set of technology groups used for growth constraints
 
 - `tg_rsc_cspagg.csv`: set of CSP configurations that share a resource supply curve
 
@@ -152,6 +154,6 @@
 
 - `wst_climate.csv`: set of water sources affected by climate change
 
-- `wst_surface.csv`:
+- `wst_surface.csv`: Surface water types, for which access is based on consumption rather than withdrawal
 
 - `yearafter.csv`: set to loop over for the final year calculation
