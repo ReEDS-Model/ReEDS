@@ -375,24 +375,29 @@ def check_GSw_LoadSiteReg(sw):
 
 def check_GSw_StateRPS_Stress(sw):
     """
-    GSw_StateRPS_Stress=1 or 2 applies the state RPS/CES over stress periods, which
-    only exist when GSw_PRM_CapCredit=0. Otherwise the stress-period requirement
-    is empty and silently does nothing.
-    
+    GSw_StateRPS_Stress=1 or 2 applies the state RPS/CES over stress periods, so it
+    requires GSw_StateRPS=1, and stress periods only exist when GSw_PRM_CapCredit=0.
+    Otherwise the stress-period requirement is empty and does nothing.
+
     GSw_StateRPS_Stress=2 additionally weights a state's stress-period RPS/CES by only
     the state's seeded peak-load stress period(s), which are only ever identified
     when GSw_PRM_StressSeedLoadLevel is enabled and stress periods aren't
-    user-defined (GSw_PRM_StressModel doesn't start with 'user').
+    user-defined (GSw_PRM_StressModel doesn't contain 'user').
     Otherwise there's no peak-load stress period for GSw_StateRPS_Stress=2 to
     weight against.
     """
     mode = int(sw['GSw_StateRPS_Stress'])
     if mode == 0:
         return
+    if not int(sw['GSw_StateRPS']):
+        raise ValueError(
+            f"GSw_StateRPS_Stress={mode} requires GSw_StateRPS=1 because it applies the "
+            "state RPS/CES requirements over stress periods."
+        )
     if int(sw['GSw_PRM_CapCredit']):
         raise ValueError(
             f"GSw_StateRPS_Stress={mode} requires GSw_PRM_CapCredit=0 (the stress-period "
-            "PRM formulation) since stress periods are only modeled in that case."
+            "PRM formulation) because stress periods are only modeled in that case."
         )
     if mode != 2:
         return

@@ -448,7 +448,7 @@ This approach should therefore be used with caution.
 
 ## State RPS/CES stress-period requirement
 
-By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over representative periods only. `GSw_StateRPS_Stress` adds a parallel requirement over stress periods, reusing the same compliance target. Settings `1` and `2` require `GSw_PRM_CapCredit=0`, since stress periods are modeled only with the stress-period PRM formulation:
+By default, state RPS/CES compliance (`GSw_StateRPS`) is calculated over representative periods only. `GSw_StateRPS_Stress` adds a parallel requirement over stress periods, reusing the same compliance target. Settings `1` and `2` require `GSw_StateRPS=1`, and `GSw_PRM_CapCredit=0` since stress periods are modeled only with the stress-period PRM formulation:
 
 - `0` (default): off.
 - `1`: weight all modeled stress hours equally.
