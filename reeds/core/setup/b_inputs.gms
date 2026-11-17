@@ -2470,6 +2470,8 @@ RecPerc("CES",st,htype,t) = max(RecPerc("CES",st,htype,t), RecPerc("RPS_all",st,
 * The stress-period requirement is populated above with the same target as the
 * representative-period requirement; zero it out unless explicitly enabled.
 RecPerc(RPSCat,st,"stress",t)$[not Sw_StateRPS_Stress] = 0 ;
+* Voluntary REC purchases are never applied in stress periods regardless of switch setting
+RecPerc(RPSCat,"voluntary","stress",t) = 0 ;
 
 *Some links (value in RECtable = 2) restricted to bundled trading, while
 *some (value in RECtable = 1) allowed to also trade unbundled RECs.
