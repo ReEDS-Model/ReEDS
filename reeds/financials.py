@@ -778,6 +778,7 @@ def inv_param_exporter(
         df_param, file_name, inputs_case, gamstype='parameter', units=units, comment=comment,
     )
 
+
 def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     """
     Compute the CRF-based cost penalty for natural gas plants in states with
@@ -787,8 +788,8 @@ def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     function calculates how much of a plant's remaining economic life is cut
     short by the policy. The penalty is the ratio of the CRF over the
     truncated remaining life to the CRF over the full evaluation period:
-      - value = 100  in or after the forced retirement year
-      - value > 1    if the plant would be forced to retire before its full economic life 
+    - value = 100 in or after the forced retirement year
+    - value > 1   if the plant would be forced to retire before its full economic life 
 
     States not present in hierarchy.csv (i.e. outside the modeled region) are
     dropped before any computation. If no forced-retirement states remain,
@@ -802,11 +803,14 @@ def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
     valid_states = hierarchy['st'].unique()
     ng_st_forced = ng_st_forced[ng_st_forced['st'].isin(valid_states)]
 
-    # No forced retirements in this region — return empty result
+    # No forced retirements in this region — write an empty parameter so GAMS still declares it
     if ng_st_forced.empty:
-        ng_crf_penalty_st = pd.DataFrame(columns=['*t', 'st', 'value'])
-        ng_crf_penalty_st.to_csv(os.path.join(inputs_case, 'ng_crf_penalty_st.csv'),
-                             index=False)
+        ng_crf_penalty_st = pd.DataFrame(columns=['allt', 'st', 'value'])
+        reeds.io.write_to_inputs_h5(
+            ng_crf_penalty_st, 'ng_crf_penalty_st', inputs_case, gamstype='parameter',
+            units='(CRF_X / CRF_30)',
+            comment='cost adjustment for NG in states where all NG techs must be retired by a certain year',
+        )
         return ng_crf_penalty_st
 
     # Years when retirements are forced, and the model's active year range
@@ -838,14 +842,20 @@ def calc_ng_crf_penalty_st(inputs_case, modeled_years, financials_sys, sw):
         crf_table.stack().rename('value')
         .rename_axis(['t', '*t']).reset_index()
     )
-
+    
     # Attach state labels by merging on the forced retirement year
     ng_crf_penalty_st = (
         ng_st_forced[['*t', 'st']].merge(crf_long, on='*t', how='left')
-        [['t', 'st', 'value']]
-        .round({'value': 2})
-        .rename(columns={'t': '*t', 'value': 'value (CRF_X / CRF_30)'}))
+        .rename(columns={'t': 'allt'}
+        .round({'value': 2}))
+        [['allt', 'st', 'value']]
+        
+    )
 
-    ng_crf_penalty_st.to_csv(os.path.join(inputs_case, 'ng_crf_penalty_st.csv'),
-                             index=False)
+    reeds.io.write_to_inputs_h5(
+        ng_crf_penalty_st, 'ng_crf_penalty_st', inputs_case, gamstype='parameter',
+        units='(CRF_X / CRF_30)',
+        comment='cost adjustment for NG in states where all NG techs must be retired by a certain year',
+    )
+
     return ng_crf_penalty_st
