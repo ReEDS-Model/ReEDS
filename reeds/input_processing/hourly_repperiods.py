@@ -540,9 +540,11 @@ def main(
     ).reset_index(level='index', drop=True)
     if len(ces_peakday_write):
         level = sw['GSw_PRM_StressSeedLoadLevel']
+        ## Copy rather than rename the level column so level='st' keeps a separate 'st' column
         region2st = (
-            hierarchy.reset_index()[['st', level]]
-            .drop_duplicates().rename(columns={level: 'region'})
+            hierarchy.reset_index()
+            .assign(region=lambda df: df[level])
+            [['st', 'region']].drop_duplicates()
         )
         ces_peakday_write['szn'] = (
             'sy' + ces_peakday_write.year.astype(str)
