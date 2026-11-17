@@ -222,7 +222,7 @@ $onlisting
 hours_t(allh,t)$tmodel(t) = 0 ;
 hours_t(h,t)$tmodel(t) = hours(h) ;
 
-rps_hours(h,st,htype) = 0 ;
+rps_hours(allh,st,htype) = 0 ;
 * For representative periods, rps_hours is the same as hours
 rps_hours(h,st,"rep")$h_rep(h) = hours(h) ;
 * For Sw_StateRPS_Stress=1, all hours are equally weighted (with value 1)
