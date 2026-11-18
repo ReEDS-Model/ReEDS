@@ -385,6 +385,7 @@ def get_yearly_flexibility(
 ## Front-of-the-meter DER hourly profiles (inputs_case/{ptype}.h5)
 DER_FTM_PROFILES = [
     'der_ftm_min_output',
+    'der_ftm_max_output',
     'der_ftm_battery_nocharge',
     'der_ftm_profile_change',
 ]
@@ -406,6 +407,7 @@ def get_der_ftm_profiles(
 
     Returns a dict of dataframes with columns [r, h, t, value] for
     'der_ftm_min_output' (minimum combined net output of FTM DER [MW]),
+    'der_ftm_max_output' (maximum combined net output of FTM DER [MW]),
     'der_ftm_battery_nocharge' (1 where FTM batteries cannot charge), and
     'der_ftm_profile_change' (change in end-use load per MW of FTM DER load shape capacity;
     negative values are load reductions).
@@ -559,6 +561,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'dr_shift_charge': ['*i','r','h','t'],
             'dr_shift_profile_energy': ['*i','r','h','t'],
             'der_ftm_min_output': ['*r','h','t'],
+            'der_ftm_max_output': ['*r','h','t'],
+            'der_ftm_max_output_r': ['*r','h','t'],
             'der_ftm_battery_nocharge': ['*r','h','t'],
             'der_ftm_profile_change': ['*r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
@@ -1414,6 +1418,29 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         )
         daily_gasprice_multipliers_dict[region_level] = df
 
+    ### Front-of-the-meter DER profiles, averaged over the hours in each chunk
+    der_ftm_chunked = {
+        ptype: (
+            df.assign(h=df.h.map(chunkmap))
+            .groupby(["r", "h", "t"]).value.mean()
+            .round(decimals)
+        )
+        for ptype, df in der_ftm_profiles.items()
+    }
+    ## The model is infeasible where both requirements apply and the minimum exceeds the maximum
+    der_ftm_minmax = pd.concat(
+        {ptype: der_ftm_chunked[ptype] for ptype in ['der_ftm_min_output', 'der_ftm_max_output']},
+        axis=1,
+    ).dropna()
+    der_ftm_conflict = der_ftm_minmax.loc[
+        der_ftm_minmax.der_ftm_min_output > der_ftm_minmax.der_ftm_max_output
+    ]
+    if len(der_ftm_conflict):
+        raise ValueError(
+            'der_ftm_min_output exceeds der_ftm_max_output in these (r,h,t):\n'
+            f'{der_ftm_conflict}'
+        )
+
     # %%###################################################################################
     #    -- Write outputs, aggregating hours to GSw_HourlyChunkLength if necessary --    #
     ######################################################################################
@@ -1592,23 +1619,19 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             False,
             False,
         ],
-        ## Front-of-the-meter DER: minimum combined net output [MW],
+        ## Front-of-the-meter DER: minimum and maximum combined net output [MW],
         ## battery charging restriction [fraction of the chunk in which charging is not allowed],
         ## and load shape change [MW/MW; signed, so only zeros are dropped]
         **{
-            ptype: [
-                (
-                    df.assign(h=df.h.map(chunkmap))
-                    .groupby(["r", "h", "t"]).value.mean()
-                    .round(decimals)
-                    .loc[lambda x: x != 0]
-                    .reset_index()
-                ),
-                False,
-                False,
-            ]
-            for ptype, df in der_ftm_profiles.items()
+            ptype: [df.loc[lambda x: x != 0].reset_index(), False, False]
+            for ptype, df in der_ftm_chunked.items()
         },
+        ## (r,h,t) with a maximum net output, including maximums of zero that are dropped above
+        'der_ftm_max_output_r': [
+            der_ftm_chunked['der_ftm_max_output'].reset_index()[['r', 'h', 't']],
+            False,
+            False,
+        ],
         ## Gas price multipliers
         'daily_gasprice_multipliers_r': [
             daily_gasprice_multipliers_dict['r'].round(decimals),

@@ -318,6 +318,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_dr_shift_gen_capacity(i,v,r,allh,t)           "--MW-- storage generation capacity (deferment) for DR shifting resources is limited to a fraction of total capacity"
  eq_dr_shift_storage_in_capacity(i,v,r,allh,t)    "--MW-- storage load capacity (payback) for DR shifting resources is limited to a fraction of total capacity"
  eq_der_ftm_min_output(r,allh,t)                  "--MW-- combined net output of FTM DER must meet a minimum level in regions with prescribed FTM DER"
+ eq_der_ftm_max_output(r,allh,t)                  "--MW-- combined net output and operating reserves of FTM DER cannot exceed a maximum level"
  eq_der_ftm_battery_nocharge(i,r,allh,t)          "--MW-- FTM batteries cannot charge in restricted timeslices in regions with prescribed FTM batteries"
 
 * hybrid plant equations
@@ -3140,6 +3141,26 @@ eq_der_ftm_min_output(r,h,t)
     =g=
 
     der_ftm_min_output(r,h,t)
+;
+
+* The combined net output of front-of-the-meter DER, plus the operating reserves they provide
+* (which could raise their output if deployed), cannot exceed a given level [MW] in some timeslices.
+* The limit applies to all FTM DER capacity wherever it is given, including limits of zero.
+* Output and reserves are measured at the devices, as in the minimum output requirement.
+eq_der_ftm_max_output(r,h,t)
+    $[der_ftm_max_output_r(r,h,t)
+    $tmodel(t)]..
+
+    der_ftm_max_output(r,h,t)
+
+    =g=
+
+    sum{(i,v)$[der_ftm(i)$(not der_ftm_shape(i))$valgen(i,v,r,t)],
+        (GEN(i,v,r,h,t)
+         + sum{ortype$[Sw_OpRes$reserve_frac(i,ortype)$opres_h(h)$opres_model(ortype)],
+               OPRES(ortype,i,v,r,h,t) }
+        ) * (1 - distloss$vre_distributed(i))
+        - STORAGE_IN(i,v,r,h,t)$storage_standalone(i) }
 ;
 
 * Front-of-the-meter batteries cannot charge in some timeslices (or, for timeslices that

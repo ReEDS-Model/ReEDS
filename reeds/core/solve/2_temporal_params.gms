@@ -769,6 +769,31 @@ $onlisting
 $offempty
 
 $onempty
+parameter der_ftm_max_output(r,allh,allt) "--MW-- maximum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_max_output.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_max_output.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+* Includes maximums of zero, which are not stored in der_ftm_max_output
+$onempty
+set der_ftm_max_output_r(r,allh,allt) "regions, timeslices, and years with a maximum combined net output of FTM DER"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_max_output_r.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_max_output_r.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
 parameter der_ftm_battery_nocharge(r,allh,allt) "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
 /
 $offlisting

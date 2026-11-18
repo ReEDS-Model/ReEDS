@@ -5603,6 +5603,8 @@ Set
 * Demand flexibility
     flex_h_corr1(flex_type,allh,allh)      "correlation set for hours referenced in flexibility constraints"
     flex_h_corr2(flex_type,allh,allh)      "correlation set for hours referenced in flexibility constraints"
+* Front-of-the-meter DER
+    der_ftm_max_output_r(r,allh,allt)      "regions, timeslices, and years with a maximum combined net output of FTM DER"
 * Minloading
     hour_szn_group(allh,allh)              "h and hh in the same season - used in minloading constraint"
 ;
@@ -5664,6 +5666,7 @@ Parameter
     dr_shift_charge_frac(i,r,allh,allt)    "--fraction-- fraction of adopted DR shift capacity that can be charged (add back deferred charging) in each timeslice h"
     dr_shift_energy_hours(i,r,allh,allt)   "--hours-- Allowable DR shift device storage SOC (quantity deferred charge) [MWh] divided by nameplate discharge capacity [MW]"
     der_ftm_min_output(r,allh,allt)            "--MW-- minimum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+    der_ftm_max_output(r,allh,allt)            "--MW-- maximum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
     der_ftm_battery_nocharge(r,allh,allt)      "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
     der_ftm_profile_change(r,allh,allt)        "--MW/MW-- FTM DER load shape: change in end-use load per MW of der_ftm_shape capacity in each timeslice h (negative = reduction)"
 * Flexible Canadian imports/exports [Sw_Canada=1]

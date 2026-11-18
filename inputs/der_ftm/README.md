@@ -38,6 +38,11 @@ This requirement applies only in zones and model years where prescribed FTM PV o
 but output from all FTM PV and battery capacity (prescribed and optional) counts toward it.
 `der-ftm-shape` neither counts toward this requirement nor triggers it.
 
+In hours given by the maximum-output profile below, the same combined net output of the FTM PV and battery
+technologies in a zone, plus the operating reserves they provide, cannot exceed a given number of MW.
+This limit applies to all FTM PV and battery capacity (prescribed and optional) in every zone, hour, and year
+where the profile has a value, including values of zero; hours without a value have no limit.
+
 ### Costs
 
 FTM DER use the costs and performance of the corresponding utility-scale technologies
@@ -94,6 +99,10 @@ Pacific census division zones of the `z90` zone set only.
   in each zone (generation minus battery charging).
   Index: (`year`, `hour`), where `year` is the model year and `hour` is the hour of the year (1–8760, Central Standard Time);
   columns are zones. The same profile is used for every weather year.
+- **`der_ftm_max_output_{der_ftm_scen}.h5`**: Maximum combined net output [MW] of the FTM PV and battery technologies
+  in each zone (generation plus operating reserves minus battery charging). Zero allows no net output (batteries can still charge);
+  missing values (or zones not in the file) mean no limit. Same format as the minimum-output file.
+  Input processing stops with an error if the minimum output exceeds the maximum output in any modeled timeslice.
 - **`der_ftm_battery_nocharge_{der_ftm_scen}.h5`**: 1 in hours when FTM batteries cannot charge, 0 otherwise.
   Only used in zones and years with prescribed FTM battery builds.
   Same format as the minimum-output file.
@@ -105,6 +114,7 @@ For all profiles, each model year uses the data for the latest `year` at or befo
 (or the earliest `year` if all are after it). When modeled timeslices aggregate several hours,
 the profiles are averaged over the hours in the timeslice
 (so a timeslice in which charging is restricted for half of the hours allows charging at up to half of the power capacity).
+For the maximum-output profile, the average is taken over the hours in the timeslice that have a value.
 
 Make sure the minimum output can be met by the prescribed FTM DER capacity, given the PV profile, battery energy capacity,
 and hours when charging is allowed; otherwise the model must build optional FTM DER capacity to meet it, or is infeasible
