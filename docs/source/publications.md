@@ -3,6 +3,37 @@
 ```{dropdown-color} 2026
 :open:
 
+Chen, Yunzhi, Wesley Cole, and Brian Sergi. 2026. "Discrete Versus Continuous: Enhancing Battery Optimization in Capacity Expansion Models." Journal of Energy Storage 168 (August): 122637. https://doi.org/10.1016/j.est.2026.122637.
+
+Chen, Yunzhi, Anna Schleifer, Yonghong Chen, Wesley Cole, and Mort Webster. 2026. "From Exhaustive to Focused: Clustering-Based Scenario Reduction for Capacity Expansion Studies." 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS), Salt Lake City, UT. Accepted.
+
+Cohen, Stuart, Ningchao Gao, Thushara De Silva, Vincent Carag, Jin Tan, et al. 2026. "Technoeconomic Studies for the Rorex Creek Pumped Storage Hydro Project: An Evaluation of New Pumped Storage Hydro in the Tennessee Valley Authority System," January. https://doi.org/10.2172/3648898.
+
+Cole, Wesley, L. Serpe, and C. Eckhardt. 2026. "Impacts of New Large Loads in Utah." 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS), Salt Lake City, UT.
+
+Halloran, Claire. 2026. "Grid Impact of Reservoir Thermal Energy Storage for Data Center Cooling." IGA Geothermal Conference Papers Database. https://pangea.stanford.edu/ERE/db/IGAstandard/record_detail.php?id=38299.
+
+Halloran, Claire, Juliet Simpson, and Jonathan Ho. 2026. "Value of Geothermal Energy Storage for Supply-Side and Demand-Side Applications." Technical report NLR/TP-6A40-95722. Golden, CO: National Laboratory of the Rockies. https://docs.nlr.gov/docs/fy26osti/95722.pdf.
+
+Jorgenson, Jennie, Claire Nguyen, Sophie Bredenkamp, Greg Brinkman, Trieu Mai, Gabe Zuckerman, and Travis Douville. 2026. "Key Drivers for Offshore Wind Deployment in the Western United States." Wind Energy 29 (8). https://doi.org/10.1002/we.70137.
+
+Kahrl, Fredrich, Jennie Jorgenson, Lawryn Kiboma, Dev Millstein, Natalie Mims Frick, and Brian Sergi. 2026. "Getting Brighter: Impacts of Improved Day-Ahead Solar Forecasts in High-Solar, High-Storage Electricity Systems." Renewable Energy 259 (March): 125104. https://doi.org/10.1016/j.renene.2025.125104.
+
+Mai, Trieu, Patrick R. Brown, David Palchak, Gregory Brinkman, Adria Brooks, Paul Denholm, Rob Gramlich, et al. 2026. "What Can We Learn From US National Transmission Studies?" Joule 10 (2): 102339. https://doi.org/10.1016/j.joule.2026.102339.
+
+McTigue, Josh, Wesley Cole, Hyunjun Oh, Rebecca Barney, Erik Witter, Abra Gold, et al. 2026. "Project Phase 1 Report: Reducing Data Center Peak Cooling Demand and Energy Costs With Cold Underground Thermal Energy Storage (Cold UTES)." Technical report NLR/TP-5700-100780. Golden, CO: National Laboratory of the Rockies. https://docs.nlr.gov/docs/fy26osti/100780.pdf.
+
+Palmintier, Bryan, Rodrigo Henriquez-Auba, Nadia Panossian, Patrick Brown, Jose Daniel Lara, and Aadil Latif. 2026. "Multidisciplinary Design, Analysis, and Optimization (MDO) for Co-Designed Transmission & Distribution Electric Grid Planning." Electric Power Systems Research 264 (March): 113690. https://doi.org/10.1016/j.epsr.2026.113690.
+
+Rose, Amy, Becca Fuchs, Lina Ramirez, and Ram Mohan Pandian. 2026. "Informing Transmission Supply Chain Needs From National Transmission Studies." Technical report NLR/TP-6A40-97167. Golden, CO: National Laboratory of the Rockies. https://docs.nlr.gov/docs/fy26osti/97167.pdf.
+
+Sharma, Shashwat, Trieu Mai, and Ilya Chernyakhovskiy. 2026. "Impacts of Regional Coordination on Transmission Needs for Power System Resource Adequacy [Slides]," January. https://doi.org/10.2172/3015065.
+
+Steinberg, Daniel C., Daniel P. Cherney, Bryan K. Mignone, Matthew Mowers, and Brian Sergi. 2026. "Decomposing Sources of Value for Electricity and Negative Emissions Technologies in Net-Zero Power Systems." iScience 29 (3): 114187. https://doi.org/10.1016/j.isci.2025.114187.
+
+Sunkara, Sai Veena, Srihari Sundar, Gord Stephen, Stuart Cohen, Patrick Reed, Vivek Srikrishnan, and Ariel Miara. 2026. "Impact of Hydropower Availability on Resource Adequacy of the United States Western Interconnection." PLOS One 21 (6): e0351321. https://doi.org/10.1371/journal.pone.0351321.
+
+
 ```
 
 ```{dropdown-color} 2025
