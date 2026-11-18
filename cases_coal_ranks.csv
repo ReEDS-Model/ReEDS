@@ -1,9 +1,9 @@
-,Default Value,USA_z90,Texas_county,Texas_z90
+,Default Value,USA_z134,Texas_county,Texas_z134
 ignore,0,,,
 GSw_Region,country/USA,,interconnect/texas,interconnect/texas
 endyear,2050,,,
 yearset,,,,
-GSw_ZoneSet,z90,,z3109,
+GSw_ZoneSet,z134,,z3109,
 GSw_GasCurve,1,,2,2
 coalscen,AEO_2026_altelec,,,
 GSw_Geothermal,,,,
