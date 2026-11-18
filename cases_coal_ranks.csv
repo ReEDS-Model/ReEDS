@@ -1,5 +1,5 @@
 ,Default Value,USA_z134,Texas_county,Texas_z134
-ignore,1,,,
+ignore,0,,,
 GSw_Region,country/USA,,interconnect/texas,interconnect/texas
 endyear,2050,,,
 yearset,,,,
