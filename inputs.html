@@ -536,7 +536,7 @@
 <section id="the-regulation-itself">
 <h4>The regulation itself<a class="headerlink" href="#the-regulation-itself" title="Link to this heading"></a></h4>
 <p>The Clean Air Act, Section 111 is a federal regulation from the Environmental Protection Agency (EPA), which features carbon pollution standards to reduce greenhouse gas emissions from power plants.
-These regulations are called Section 111 for the section of the tax code which it is implemented in.
+These regulations are called Section 111 for the section of the Clean Air Act under which they are issued.
 The regulations stipulate a couple of compliance mechanisms for plants to comply with these regulations.</p>
 <p>The first compliance mechanism, and the strictest, is a best system of emissions reduction (BSER) for every technology and vintage (existing vs new plants).
 This is enforced at the plant level i.e. each plant must meet its BSER.
@@ -582,7 +582,8 @@ This is only possible if that state also has coal-CCS plants with high capture r
 </section>
 <section id="implementation-in-reeds">
 <h4>Implementation in ReEDS<a class="headerlink" href="#implementation-in-reeds" title="Link to this heading"></a></h4>
-<p>In ReEDS, new gas plants must adhere to their BSER and existing coal plants adhere to an emissions rate-based standard.</p>
+<p>These provisions are off by default and are active only when <code class="docutils literal notranslate"><span class="pre">GSw_Clean_Air_Act=1</span></code>.
+When active, new gas plants must adhere to their BSER and existing coal plants adhere to an emissions rate-based standard.</p>
 <p>For new gas plants, this is the code implementation:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">inputs/scalars.csv</span></code></p>
@@ -610,6 +611,7 @@ A unit that captures more than 90%, such as a new coal-CCS plant at 95%, emits l
 <li><p><code class="docutils literal notranslate"><span class="pre">reeds/input_processing/WriteHintage.py</span></code></p>
 <ul class="simple">
 <li><p>Coal plants are binned at the unit level if <code class="docutils literal notranslate"><span class="pre">GSw_Clean_Air_Act=1</span></code> so that each coal unit can independently choose to retire or upgrade.</p></li>
+<li><p>The number of existing-capacity bins is set to the largest bin number across all technologies (rather than <code class="docutils literal notranslate"><span class="pre">numhintage</span></code>) to accommodate the large number of coal bins.</p></li>
 <li><p>Coal plants maintain their exogenous retirement assumption, except after 2032, when the Clean Air Act regulations begin and coal can retire endogenously.
 For example, if the NEMS data states that a plant will retire in 2029, we maintain that assumption and that plant will retire in 2029.
 However, if the NEMS data previously stated that a plant will retire in 2040, they are now subject to the Clean Air Act regulations and may retire sooner than their previously stated retirement date.</p></li>
@@ -617,7 +619,6 @@ However, if the NEMS data previously stated that a plant will retire in 2040, th
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">b_inputs.gms</span></code></p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">numhintage</span></code> is set to 300, so that we can accommodate a large number of coal bins since they are binned at the unit level.</p></li>
 <li><p>Revise <code class="docutils literal notranslate"><span class="pre">m_capacity_exog</span></code> so that it matches with which coal capacity is allowed.</p></li>
 <li><p>if <code class="docutils literal notranslate"><span class="pre">caa_coal_retire_year</span></code> is not in the set of years being modeled for this run, then set it to the first year that is modeled after <code class="docutils literal notranslate"><span class="pre">caa_coal_retire_year</span></code>.
 For example, if running 5 year solves, then instead of enforcing coal retirement in 2032, it will be enforced in 2035.</p></li>
@@ -2153,7 +2154,7 @@ Turned on for some zone sets with single-county zones that have no high-voltage 
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on November 17, 2026.
+      <span class="lastupdated">Last updated on November 18, 2026.
       </span></p>
   </div>
 
