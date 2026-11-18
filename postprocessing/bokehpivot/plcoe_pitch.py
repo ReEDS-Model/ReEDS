@@ -2816,34 +2816,17 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 plt.close(fig_mix)
                 mix_tab.to_csv(os.path.join(output_dir, 'plcoe_pitch_storage_national_mix.csv'),
                                index=False)
-                #The same two grids for each of those runs, from valcostfac.csv as in
-                #plot_storage_sensitivity.
-                runs = [('', df_vcf)]
+                #The core run only; each sensitivity is drawn against it by plot_storage_sensitivity.
                 stor_scen = df_vcf.loc[df_vcf['tech'] == tech, 'scenario'].iloc[0]
-                full_path = os.path.join(output_dir, 'valcostfac.csv')
-                if os.path.exists(full_path):
-                    full = pd.read_csv(full_path)
-                    for run_tag, scen in [('formulation_', storage_formulation_scenario),
-                                          ('startcost_', storage_startcost_scenario),
-                                          ('pv_', storage_pv_scenario),
-                                          *[(f'duration{h}h_', s) for s, h in
-                                            storage_duration_scenarios.items()],
-                                          *[(f'{name}_', s) for s, *_, name, _ in interday_runs]]:
-                        d_run = full[(full['tech'] == tech) & (full['year'] >= start_year)
-                                     & (full['scenario'] == scen)]
-                        if not d_run.empty:
-                            runs.append((run_tag, d_run))
-                for run_tag, d_run in runs:
-                    for plot_fn, name in [(plot_storage_dollars, 'dollars'),
-                                          (plot_storage_factors, 'factors')]:
-                        fig_st, st_tab = plot_fn(
-                            d_run, os.path.join(output_dir, f'plcoe_pitch_storage_{run_tag}{name}.png'),
-                            tech=tech, peak_scenario=stor_scen)
-                        if fig_st is not None:
-                            plt.close(fig_st)
-                            st_tab.to_csv(
-                                os.path.join(output_dir, f'plcoe_pitch_storage_{run_tag}{name}.csv'),
-                                index=False)
+                for plot_fn, name in [(plot_storage_dollars, 'dollars'),
+                                      (plot_storage_factors, 'factors')]:
+                    fig_st, st_tab = plot_fn(
+                        df_vcf, os.path.join(output_dir, f'plcoe_pitch_storage_{name}.png'),
+                        tech=tech, peak_scenario=stor_scen)
+                    if fig_st is not None:
+                        plt.close(fig_st)
+                        st_tab.to_csv(os.path.join(output_dir, f'plcoe_pitch_storage_{name}.csv'),
+                                      index=False)
                 fig_unfit, unfit_tab = plot_vcf_unfitted(
                     df_vcf, os.path.join(output_dir, 'plcoe_pitch_VCF_storage_unfitted.png'),
                     tech=tech)
