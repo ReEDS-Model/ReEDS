@@ -446,9 +446,6 @@ def import_and_mod_incentives(
             'itc_energy_comm_bonus',
         ]
     ].copy()
-    itc_df.loc[itc_df['itc_energy_comm_bonus'] != 0, 'itc_energy_comm_bonus'] = (
-        1 - itc_df['itc_energy_comm_bonus']
-    )
     itc_df = itc_df[itc_df['itc_frac'] != 0.0]
     itc_df = itc_df.merge(expander, on=['safe_harbor'], how='left')
     itc_df['t'] = itc_df['t_start_construction'] + itc_df['safe_harbor_buffer']
