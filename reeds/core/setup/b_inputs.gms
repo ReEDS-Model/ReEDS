@@ -5076,6 +5076,10 @@ resourcescaler(i)$csp(i) = CSP_SM(i) / csp_sm_baseline ;
 *   Code 23 (Energy Conversion System): nuclear=3.92%, nuclear-SMR=3.86%
 *   Code 24 (Electrical Equipment):     nuclear=6.32%, nuclear-SMR=9.46%
 *   Combined:                           nuclear=10.24%, nuclear-SMR=13.32%
+* Geothermal (egs_*, geohydro_*): 0.248 = 0.80 x 0.31, the cost of oversizing the surface
+* plant: 80% per-kW cost of the oversized capacity (Ricks et al. 2022, Applied Energy 313,
+* 118807, appendix B.6) x 31% plant share of EGS project cost (Augustine et al. 2019,
+* NREL/TP-6A20-71833, table 5)
 parameter powerblock_share_storage_hybrid(i) "--unitless-- combined turbine-generator + electrical equipment cost share for the gen tech in a storage-hybrid plant"
 /
 $offlisting
