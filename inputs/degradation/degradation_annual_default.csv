@@ -47,7 +47,8 @@ hydNPD,0
 hydNPND,0
 hydED,0
 hydEND,0
-wind-ofs_1*wind-ofs_10,0.0027
+wind-ofs-fixed,0.0027
+wind-ofs-floating,0.0027
 csp1,0
 csp2,0
 csp3,0

@@ -52,7 +52,8 @@ upv,p
 pvb1,p
 pvb2,p
 pvb3,p
-wind-ofs_1*wind-ofs_10,p
+wind-ofs-fixed,p
+wind-ofs-floating,p
 wind-ons,p
 csp1,p
 csp2,p
