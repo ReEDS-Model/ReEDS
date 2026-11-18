@@ -449,7 +449,7 @@ Because some aspects of system operations are modeled with interday constraints 
 each actual day must then be mapped to one of the modeled representative days,
 allowing a reconstructed chronological representation of the year ({numref}`figure-temporal-repdays`**c**).
 This mapping is performed in a second optimization,
-formulated as a transportation problem and solved exactly,
+formulated as an assignment problem,
 to minimize the sum of absolute differences between each day's actual regional feature values and the feature values on the representative day to which it is mapped.
 
 ```{figure} figs/docs/temporal-repdays.png
