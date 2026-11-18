@@ -2155,8 +2155,9 @@ valinv(i,v,r,t)$[(yeart(t)<firstyear(i))
 * Add aggregations of valinv
 valinv_irt(i,r,t) = sum{v, valinv(i,v,r,t) } ;
 valinv_tg(st,tg,t)$sum{(i,r)$[tg_i(tg,i)$r_st(r,st)], valinv_irt(i,r,t) } = yes ;
-upgrade_tg(tg) = sum{i$tg_i(tg,i), upgrade(i) }; 
+upgrade_tg(tg) = sum{i$tg_i(tg,i), upgrade(i) };
 coal_tg(tg) = sum{i$tg_i(tg,i), coal(i) }; 
+valinv_tg(st,tg,t)$[upgrade_tg(tg)$coal_tg(tg)] = yes ;
 
 * -- valgen specification --
 * if the balancing area and/or its
