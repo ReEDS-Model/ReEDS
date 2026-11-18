@@ -289,14 +289,6 @@ function make_pras_interfaces(
     interface_line_idxs::Vector{UnitRange{Int64}},
     regions::Vector{Region},
 )
-    # A single-region system has no lines, so return empty PRAS Lines and Interfaces
-    if isempty(sorted_lines)
-        timesteps = first(regions).timesteps
-        return (
-            PRAS.Lines{timesteps, 1, PRAS.Hour, PRAS.MW}(),
-            PRAS.Interfaces{timesteps, PRAS.MW}(),
-        )
-    end
     make_pras_interfaces(
         sorted_lines,
         interface_reg_idxs,

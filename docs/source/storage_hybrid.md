@@ -305,7 +305,6 @@ Bokeh maps wrappers to the `storage-hybrid` style through a wildcard row in `tec
 - The CI scenario `github_StorageHybrid` in `cases_test.csv` is `github_Pacific` with three wrapper types: nuclear+TES, gas-cc+battery with grid charging, and upv+battery. It sets `GSw_StorageHybrid_CostMult=0.5`, so it builds upv+battery wrappers by 2030. A CI step fails if `cap.csv` has no wrapper capacity.
   - The case ends in 2030, so the nuclear wrapper exercises only setup.
 - `tests/objective_function_params.yaml` lets `check_inputs.py` check the wrapper cost parameters, BCR and heat rate on every case. `gridcharge_ratio` is not checked, because 0 is a valid value that GAMS does not store.
-- `cases_hybridtest.csv` holds Utah and z54 verification cases.
 
 ## Changes to existing behavior
 
@@ -339,8 +338,6 @@ This feature changes some code that runs even when `GSw_StorageHybrid=0`.
    - LCOE includes energy capital and energy FOM for TES and wrappers.
    - `report.gms` no longer multiplies energy-capacity FOM by ILR.
 8. **Upstream bug fixes found while testing** (each is independent of wrappers):
-   - `reeds2pras` `make_pras_interfaces` raised `BoundsError` for a system with no lines (any single-region run). It now returns empty Lines and Interfaces.
-   - `report_calcs.py` raised `KeyError` when `FLOW` is empty (single-region runs). It now skips the transmission report.
    - `process_storages` in `reeds2pras` now looks up energy capacity by key, not by position.
    - `writecapdat.py` matched vintage rows by substring, so a wrapper named after upv or wind doubled that tech's prescribed builds. It now leaves wrapper rows out.
 
