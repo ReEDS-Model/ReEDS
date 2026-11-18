@@ -153,6 +153,15 @@
   abstract = {The field of energy system modelling is experiencing significant development, driven by the urgent need to redesign the national energy systems to achieve carbon neutrality. A growing interest regards long-term energy system models, which enable tracking the pathway and not only the final need for installations. The increase in complexity may easily lead them to face computational limits. Therefore, modelling approaches are required that cluster data to reduce the size of the problem while limiting errors and inaccuracies. This article studies the impact of temporal clustering on the performances of a sector-integrated energy system model, considering the double-layer clustering scheme operating on two distinct temporal scales: intra-year and inter-year. The former is addressed through typical-day clustering (k-means and k-medoids), while the latter introduces multi-year gaps between representative years. This methodology is implemented in the open-source framework oemof, which is customized to the dual clustering approach. The study addresses a sector-integrated energy system, built on the Italian structure, with a multi-vector and multi-sector perspective along the 2020--2050 horizon. The impact is investigated by comparing multiple options with varying number of typical days and multi-year gap, comparing each configuration with a benchmark without clustering. The approach yields coherent representations of the energy system evolution, simultaneously reducing the memory usage down to 4~\%. The outcomes show the benefits of balancing the number of representative years with the number of representative days, suggesting that such a trade-off leads to significant computational advantages. Although literature shows that time-series reduction is case-dependent, the double-layer clustering scheme appears promising for application on even more complex models, where a full-hour resolution would be computationally intractable.}
 }
 
+@techreport{2025_rand_etal,
+  title = {Queued {{Up}}: 2025 {{Edition}}, {{Characteristics}} of {{Power Plants Seeking Transmission Interconnection As}} of the {{End}} of 2024},
+  author = {Rand, Joseph and Manderlink, Nick and Zhang, Steven and Talley, Chris and Gorman, Will and Wiser, Ryan H and Seel, Joachim and Kemp, Julie Mulvaney and Jeong, Seongeun and Kahrl, Fredrich},
+  year = 2025,
+  month = dec,
+  address = {Berkeley, CA},
+  institution = {Lawrence Berkeley National Lab}
+}
+
 @techreport{2025_wilson_etal,
   title = {Power {{Demand Forecasts Revised Up}} for {{Third Year Running}}, {{Led}} by {{Data Centers}}},
   author = {Wilson, John D and Meyer, Sophie and Zimmerman, Zach and Gramlich, Rob},
@@ -348,6 +357,24 @@
   langid = {english}
 }
 
+@inproceedings{abdelkaderTwoStageOptimizationFramework2026,
+  title = {Two-{{Stage Optimization Framework}} for {{Dynamic Line Rating Implementation}}},
+  booktitle = {2026 {{IEEE}}/{{PES Transmission}} and {{Distribution Conference}} and {{Exposition}} ({{T}}\&amp;{{D}})},
+  author = {Abdelkader, Alaaeldein and Chaudhary, Chandan and Pei, Yansong and Benidris, Mohammed and Mitra, Joydeep},
+  year = 2026,
+  month = may,
+  pages = {1--5},
+  publisher = {IEEE},
+  address = {Chicago, IL, USA},
+  doi = {10.1109/TD48022.2026.11562678},
+  url = {https://ieeexplore.ieee.org/document/11562678/},
+  urldate = {2026-06-23},
+  abstract = {Transmission line capacities are the limiting factor in integrating new renewable energy resources. Expanding transmission capacity is often unavoidable; however, constructing new lines is economically burdensome and time-consuming. As an alternative, dynamic line rating (DLR) approaches offer a practical and cost-effective means to enhance network capacity. Most existing DLR implementations are driven by line congestion indicators, and typically target the most congested lines. While this approach is optimal when a single line is congested, it may not yield the best results in multi-line congestion scenarios. It can potentially remove congestion from other lines or, conversely, intensify it. Such interactions are often overlooked in current practice, leading to suboptimal deployment decisions. To address this challenge, we propose a two-stage optimization framework for the strategic implementation of DLR, accounting for networkwide impacts, associated costs, and technology-specific characteristics. Furthermore, the framework incorporates the cost of load shedding into the decision-making process. In the first stage, system operating costs including generation costs and load shedding penalties, are minimized. In the second stage, the framework optimizes DLR deployment by evaluating implementation costs alongside the interdependence and congestion impacts across all transmission lines. This comprehensive approach enables more efficient and economically justified DLR investments, enhancing both reliability and cost-efficiency in transmission network operation. Validation using the IEEE Reliability Test System under realistic operating conditions including heatwave events demonstrates significant cost savings through strategic DLR deployment.},
+  copyright = {https://doi.org/10.15223/policy-029},
+  isbn = {979-8-3315-5569-6},
+  langid = {english}
+}
+
 @article{abdullaLimitsDeploymentNuclear2019,
   title = {Limits to Deployment of Nuclear Power for Decarbonization: {{Insights}} from Public Opinion},
   shorttitle = {Limits to Deployment of Nuclear Power for Decarbonization},
@@ -378,6 +405,19 @@
   issn = {1540-7977, 1558-4216},
   doi = {10.1109/MPE.2014.2331899},
   abstract = {Preparing for, responding to, coping with, and managing the aftermath of severe impacts on electrical power system grids due to extreme weather events resulting from climate change are all receiving growing attention. Recent severe events in North America and across the globe have stressed the ability of electrical utilities to maintain the continuity and reliability of supply, with many customers experiencing extended power outages. Hurricane Sandy, recent severe winter snow and ice storms in the northeastern United States and eastern Canada, Supercyclone Phailin in India, and Typhoon Haiyan in the Philippines are prime examples. This article is sponsored by members of the Climate Change Technology Subcommittee of the IEEE Power \& Energy Society Energy Development and Power Generation Committee, whose chair is Tom Baumann.}
+}
+
+@techreport{abou-jaoudeLiteratureReviewAdvanced2023,
+  title = {Literature {{Review}} of {{Advanced Reactor Cost Estimates}}},
+  author = {{Abou-Jaoude}, Abdalla and Lin, Linyu and Bolisetti, Chandrakanth and Worsham, Elizabeth and Larsen, Levi and Epiney, Aaron},
+  year = 2023,
+  month = jun,
+  number = {INL/RPT--23-72972-Rev000, 1986466},
+  pages = {INL/RPT--23-72972-Rev000, 1986466},
+  doi = {10.2172/1986466},
+  url = {https://www.osti.gov/servlets/purl/1986466/},
+  urldate = {2026-07-07},
+  langid = {english}
 }
 
 @techreport{aboujaoudeLiteratureReviewAdvanced2023,
@@ -436,6 +476,15 @@
   title = {Impacts of the {{Clean Power Plan}} on {{U}}.{{S}}. {{Natural Gas Markets}} and {{Pipeline Infrastructure}}},
   author = {AEE Institute},
   year = 2015
+}
+
+@techreport{aescorporationLessonsFirstDeployment2024,
+  title = {Lessons from First Deployment of {{Dynamic Line Ratings}}},
+  author = {{AES Corporation}},
+  year = 2024,
+  month = apr,
+  institution = {AES Corporation},
+  url = {https://www.aes.com/sites/aes.com/files/2024-04/AES-LineVision-Case-Study-2024.pdf}
 }
 
 @techreport{aesindianaAESIndiana20222022,
@@ -900,6 +949,16 @@
   month = aug
 }
 
+@misc{ampacimonWhyUtilitiesCant2024,
+  title = {Why {{Utilities Can}}'t {{Afford}} to {{Wait}} to {{Deploy DLR}}},
+  author = {{Ampacimon}},
+  year = 2024,
+  month = nov,
+  journal = {Ampacimon},
+  url = {https://www.ampacimon.com/news/why-utilities-cant-afford-to-wait-to-deploy-dlr},
+  urldate = {2026-09-29}
+}
+
 @misc{ampMeldahlHydroProject2018,
   title = {Meldahl {{Hydro Project}}},
   author = {AMP},
@@ -970,7 +1029,7 @@
 }
 
 @article{andersonRepresentativePeriodSelection,
-  title = {Representative {{Period Selection}} for {{Robust Capacity Expansion Planning}} in {{Low-carbon Grids}}},
+  title = {Representative {{Period Selection}} for {{Robust Capacity Expansion Planning}} in {{Low}}-Carbon {{Grids}}},
   author = {Anderson, Osten and Yu, Nanpeng and Oikonomou, Konstantinos and Maloney, Patrick and Wu, Di},
   abstract = {With the increasing urgency to decarbonize power systems, while mitigating extreme weather events, capacity expansion models can play a vital role in reliably planning the expansion of power systems and facilitating the integration of renewable energy (RE) sources. Optimizing capacity expansion generally involves selecting surrogate representative days from forecasts of load and the generation profiles of variable RE resources. To properly select those representative days, we propose a novel input-based approach in combination with the kmeans clustering algorithm that utilize three unique operational characteristics: load shedding, renewable curtailment, and transmission congestion. The proposed method allows for more robust and cost-effective capacity planning. The method is validated using a capacity expansion model and a production cost model aligned with California Independent System Operator (CAISO)'s decarbonization goals, and results in significant cost reduction and substantial decreases in load shedding.},
   langid = {english}
@@ -1096,7 +1155,7 @@
 }
 
 @article{arabStochasticPrehurricaneRestoration2015,
-  title = {Stochastic {{Pre-hurricane Restoration Planning}} for {{Electric Power Systems Infrastructure}}},
+  title = {Stochastic {{Pre}}-Hurricane {{Restoration Planning}} for {{Electric Power Systems Infrastructure}}},
   author = {Arab, Ali and Khodaei, Amin and Khator, Suresh K. and Ding, Kevin and Emesih, Valentine A. and Han, Zhu},
   year = 2015,
   month = mar,
@@ -1300,6 +1359,21 @@
   month = jan
 }
 
+@article{asuegaTechnoeconomicAnalysisAdvanced2023,
+  title = {Techno-Economic Analysis of Advanced Small Modular Nuclear Reactors},
+  author = {Asuega, Anthony and Limb, Braden J. and Quinn, Jason C.},
+  year = 2023,
+  month = mar,
+  journal = {Applied Energy},
+  volume = {334},
+  pages = {120669},
+  issn = {0306-2619},
+  doi = {10.1016/j.apenergy.2023.120669},
+  url = {https://www.sciencedirect.com/science/article/pii/S0306261923000338},
+  urldate = {2026-07-07},
+  abstract = {Small modular nuclear reactors (SMRs) represent a robust opportunity to develop low-carbon and reliable power with the potential to meet cost parity with conventional power systems. This study presents a detailed, bottom-up economic evaluation of a 12~\texttimes ~77 MWe (924 MWe total) light-water SMR (LW-SMR) plant, a 4~\texttimes ~262 MWe (1,048 MWe) gas-cooled SMR (GC-SMR) plant, and a 5~\texttimes ~200 MWe (1,000 MWe total) molten salt SMR (MS-SMR) plant. Cost estimates are derived from equipment costs, labor hours, material inputs, and process-engineering models. The advanced SMRs are compared to natural gas combined cycle plants with and without post-combustion carbon capture and a conventional large nuclear reactor. Overnight capital cost (OCC) and levelized cost of energy (LCOE) estimates are developed. The OCC of the LW-SMR, GC-SMR, and MS-SMR are found to be \$4,844/kW, \$4,355/kW, and \$3,985/kW respectively. The LCOE of the LW-SMR, GC-SMR, and MS-SMR are found to be \$89.6/MWh, \$81.5/MWh, and \$80.6/MWh respectively. A Monte Carlo analysis is performed, for which the OCC and construction time of the LW-SMR is found to have a lower mean and standard deviation than a conventional large reactor. The LW-SMR OCC is found to have a mean of \$5,233/kW with a standard deviation of \$658/kW and a 90~\% probability of remaining between \$4,254/kW and \$6,399/kW, while the construction duration is found to have a mean of 4.5~years with a standard deviation of 0.8~years and a 90~\% probability of remaining between 3.4 and 6.0~years. The economic impact of economies of scale, simplification, modularization, and construction time for SMRs are discussed. Additionally, policy implications for direct SMR capital subsidies and the impact of a carbon tax on natural gas emissions are explored.}
+}
+
 @misc{ATB2023,
   title = {Annual {{Technology Baseline}} 2023},
   shorttitle = {{{ATB2023}}},
@@ -1501,7 +1575,7 @@
 }
 
 @misc{badeMassachusettsUtilitiesFile2018,
-  title = {Massachusetts Utilities File {{US-record}} Offshore Wind Contracts at \$65/{{MWh}} \textbar{} {{Utility Dive}}},
+  title = {Massachusetts Utilities File {{US}}-Record Offshore Wind Contracts at \$65/{{MWh}} \textbar{} {{Utility Dive}}},
   author = {Bade, Gavin},
   year = 2018,
   month = aug,
@@ -1532,6 +1606,22 @@
   urldate = {2018-05-31},
   abstract = {Southern Co. expects to submit cost estimates and construction recommendations to the Georgia PSC this month.},
   langid = {american}
+}
+
+@article{baharvandiIntegratedGenerationTransmission2026,
+  title = {Integrated {{Generation}}--{{Transmission Expansion Planning With Uncertain Dynamic Line Ratings}}, {{Renewable Energy}}, and {{Electric Vehicles}}},
+  author = {Baharvandi, Arash and Nguyen, Duong Tung},
+  year = 2026,
+  journal = {IEEE Open Access Journal of Power and Energy},
+  volume = {13},
+  pages = {606--618},
+  issn = {2687-7910},
+  doi = {10.1109/OAJPE.2026.3719563},
+  url = {https://ieeexplore.ieee.org/document/11640834/},
+  urldate = {2026-09-26},
+  abstract = {This paper examines the integrated generation and transmission expansion planning (IGTEP) problem in the presence of increasing power system demand, high penetration of renewable energy sources (RES), and growing electric vehicle (EV) charging loads. The proposed framework jointly optimizes investment and operational costs for new generation units and transmission lines, while considering the environmental benefits of RES integration and the impact of EV charging on grid operation. The inherent uncertainties in load demand, EV charging, and renewable generation are addressed through a hybrid stochastic-robust optimization approach. Dynamic thermal line rating (DTLR) is incorporated through a physics-based heat balance model to capture time-varying transmission limits driven by environmental conditions. The framework also tackles the uncertainty in DTLR, incorporating a heuristic linearization technique to reduce model complexity. Unlike conventional IGTEP approaches that rely on static line ratings or treat uncertainties independently, the proposed framework provides a unified and scalable formulation that jointly captures multi-source uncertainties, including renewable variability, EV demand, and weatherdriven line ratings. The effectiveness of the proposed approach is demonstrated on the IEEE 6-bus and IEEE 118-bus systems.},
+  copyright = {https://creativecommons.org/licenses/by/4.0/legalcode},
+  langid = {english}
 }
 
 @techreport{bainBiopowerTechnicalAssessment2003,
@@ -1750,13 +1840,13 @@
 }
 
 @techreport{barboseStateRenewablesPortfolio2026,
-  title = {{{State Electricity Resource Standards}}: 2026 {{Data Update}}},
+  title = {U.{{S}}. {{State Electricity Resource Standards}}: 2026 {{Data Update}}},
   author = {Barbose, Galen},
   year = 2026,
-  month = jun,
   address = {Berkeley, CA},
   institution = {Lawrence Berkeley National Laboratory},
-  url = {https://emp.lbl.gov/sites/default/files/2026-06/State%20Electricity%20Resource%20Standards-2026%20Data%20Update.pdf},
+  url = {https://eta-publications.lbl.gov/sites/default/files/2026-06/state_electricity_resource_standards-2026_data_update.pdf},
+  urldate = {2026-11-09},
   langid = {english}
 }
 
@@ -1873,6 +1963,17 @@
   urldate = {2018-06-21},
   abstract = {We explore the plausible range of future deployment of photovoltaic generation capacity in the USA using a supply-focused model based on supply-chain growth constraints and a demand-focused model based on minimizing the overall cost of the electricity system. Both approaches require assumptions based on previous experience and anticipated trends. For each of the models, we assign plausible ranges for the key assumptions and then compare the resulting PV deployment over time. Each model was applied to 2 different future scenarios: one in which PV market penetration is ultimately constrained by the uncontrolled variability of solar power and one in which low-cost energy storage or some equivalent measure largely alleviates this constraint. The supply-focused and demand-focused models are in substantial agreement, not just in the long term, where deployment is largely determined by the assumed market penetration constraints, but also in the interim years. For the future scenario without low-cost energy storage or equivalent measures, the 2 models give an average plausible range of PV generation capacity in the USA of 150 to 530 GWdc in 2030 and 260 to 810 GWdc in 2040. With low-cost energy storage or equivalent measures, the corresponding ranges are 160 to 630 GWdc in 2030 and 280 to 1200 GWdc in 2040. The latter range is enough to supply 10\% to 40\% of US electricity demand in 2040, based on current demand growth.},
   langid = {english}
+}
+
+@misc{basoreQ12025SolarPhotovoltaic,
+  title = {Q1-2025 {{Solar Photovoltaic System Cost Benchmarks}}},
+  author = {Basore, Paul and Dummit, Krysta and Thomas, Andy and Taylor, Margaret and Benoliel, Peter and Feldman, David and Narayanaswami, Meenakshi and Ramasamy, Vignesh and Woodhouse, Michael and Zuboy, Jarett and Braid, Jennifer and Jost, Norman and Sproul, Evan},
+  pages = {7 files.},
+  publisher = {National Laboratory of the Rockies},
+  doi = {10.7799/3009689},
+  url = {https://www.osti.gov/servlets/purl/3009689},
+  urldate = {2026-07-07},
+  abstract = {The U.S. Department of Energy's solar office and its national laboratory partners analyze cost data for U.S. solar photovoltaic systems to develop cost benchmarks to measure progress toward goals and guide research and development programs. The cost data is available in an Excel spreadsheet model that can be downloaded here.}
 }
 
 @article{batasbjelicSimulationbasedOptimizationSustainable2015,
@@ -2062,6 +2163,22 @@
   url = {https://escholarship.org/uc/item/58v3d3m5}
 }
 
+@article{benigniFacilityRatingStandards2024,
+  title = {Facility {{Rating Standards Review}} and {{Proposed Methodology}} for {{FERC Order}} 881 {{AAR Calculation}}},
+  author = {Benigni, Bernardo and Lavrova, Olga and Whitney, Orland and Feinberg, Curt},
+  year = 2024,
+  journal = {IEEE Access},
+  volume = {12},
+  pages = {173156--173167},
+  issn = {2169-3536},
+  doi = {10.1109/ACCESS.2024.3459934},
+  url = {https://ieeexplore.ieee.org/document/10680012/},
+  urldate = {2026-10-26},
+  abstract = {FERC rule 881 requires the use of ambient-adjusted ratings (AAR) instead of standard static line ratings (SLR) to ensure more precise assessments of the maximum transfer capability of transmission lines. AAR offers several advantages, resulting in improved transfer capacities. However, the practical details of calculations of AARs require careful and detailed consideration. This paper describes the rationale, procedures and technical references used as a basis for determining AARs for FERC Order 881 compliance. IEEE standards concerning the individual power facilities are reviewed for references to ambient temperature and solar heating. The formulas, references and other relevant information are consolidated in the paper providing the necessary information to perform AAR calculations. Additionally the paper provides recommendations on developing, where applicable, conservative equipment-type rating scaling factors to be used across a utility's fleet.},
+  copyright = {https://creativecommons.org/licenses/by-nc-nd/4.0/},
+  langid = {english}
+}
+
 @article{berdahlPreliminarySurveySolar1997,
   title = {Preliminary Survey of the Solar Reflectance of Cool Roofing Materials},
   author = {Berdahl, P. and Bretz, S. E.},
@@ -2086,7 +2203,7 @@
 }
 
 @article{berntsenEnsuringDiversityNational2017a,
-  title = {Ensuring Diversity of National Energy Scenarios: {{Bottom-up}} Energy System Model with {{Modeling}} to {{Generate Alternatives}}},
+  title = {Ensuring Diversity of National Energy Scenarios: {{Bottom}}-up Energy System Model with {{Modeling}} to {{Generate Alternatives}}},
   shorttitle = {Ensuring Diversity of National Energy Scenarios},
   author = {Berntsen, Philip B. and Trutnevyte, Evelina},
   year = 2017,
@@ -2956,7 +3073,7 @@
 }
 
 @techreport{boldonSmallModularReactor2014,
-  title = {Small Modular Reactor: {{First-of-a-Kind}} ({{FOAK}}) and {{Nth-of-a-Kind}} ({{NOAK}}) {{Economic Analysis}}},
+  title = {Small Modular Reactor: {{First}}-of-a-{{Kind}} ({{FOAK}}) and {{Nth}}-of-a-{{Kind}} ({{NOAK}}) {{Economic Analysis}}},
   shorttitle = {Small Modular Reactor},
   author = {Boldon, Lauren M. and Sabharwall, Piyush},
   year = 2014,
@@ -3453,6 +3570,16 @@
   abstract = {In response to near- and long-term market and policy shifts, power systems are integrating increasingly-distant renewable energy resources. No analyses quantify the spatial heterogeneity of resource adequacy contributions of renewables at the interconnection-scale in the United States, which would indicate the value to resource adequacy of integrating increasingly-distant renewables. To fill this gap, we develop a Monte Carlo-based probabilistic reliability model to estimate the effective load carrying capability (ELCC) of wind or solar generators. We apply our model to estimate the ELCCs of new solar or wind generators at 1406 locations across the Western Interconnection when contributing to each of five power pools within the Interconnection. Across the five power pools, we find solar ELCCs range from 0\% to 44\% and wind ELCCs range from 0\% to 55\% across the Western Interconnection. Solar ELCCs increase from east to west for all but one power pool, incentivizing integration of western renewables into eastern power pools. Deploying storage with wind or solar generators increases their ELCCs, with larger increases occurring at locations with lower renewable-only ELCC values. Thus, resource adequacy gains from deploying storage with renewables can partly substitute for those from integrating increasingly-distant renewables.}
 }
 
+@techreport{brooksBrooks2025Resource2025,
+  title = {Brooks 2025 - {{Resource}} Adequacy Value of Interregional Transmission},
+  author = {Brooks, Adria E and Silverstein, Alison and Gramlich, Rob},
+  year = 2025,
+  month = jun,
+  institution = {Grid Strategies LLC},
+  url = {https://gridstrategiesllc.com/wp-content/uploads/GridStrategies_RAValueInterregionalTx_250601.pdf},
+  urldate = {2026-09-30}
+}
+
 @article{brouwerLeastcostOptionsIntegrating2016,
   title = {Least-Cost Options for Integrating Intermittent Renewables in Low-Carbon Power Systems},
   author = {{Anne Sjoerd Brouwer} and {Machteld van den Broek} and {William Zappa} and {Wim C. Turkenburg} and {Andr\'e Faaij}},
@@ -3534,6 +3661,16 @@
   langid = {english}
 }
 
+@misc{brownHourlyDynamicLine2024,
+  title = {Hourly {{Dynamic Line Ratings}} for {{Existing Transmission Across}} the {{Contiguous United States}}},
+  author = {Brown, Patrick R and Obika, Kodi and Bredenkamp, Sophie and Lu, Le (Helen)},
+  year = 2024,
+  month = nov,
+  publisher = {Open Energy Data Initiative (OEDI)},
+  url = {https://data.openei.org/submissions/6231},
+  urldate = {2026-09-26}
+}
+
 @article{brownInterregionalOptimizationApproach2025,
   title = {An Interregional Optimization Approach for Time Series Aggregation in Continent-Scale Electricity System Models},
   author = {Brown, Patrick R. and Cole, Wesley J. and Mai, Trieu},
@@ -3548,6 +3685,21 @@
   urldate = {2025-04-08},
   abstract = {Modeling electric power systems with high shares of weather-dependent resources requires tradeoffs between temporal, spatial, and operational resolution. Many studies perform time series aggregation using clustering algorithms to reduce the temporal dimension, but when modeling continent-scale electricity systems that are large enough to contain multiple independent weather systems, this approach requires large numbers of representative periods to minimize errors in regional wind and solar capacity factors. Here, a new optimization-based approach for representative period selection and weighting is introduced that minimizes regional errors in average renewable capacity factors and electricity demand. The method delivers higher regional fidelity with fewer representative periods than alternative clustering methods when applied to wind, solar, and demand profiles for the contiguous United States. When representative periods are selected from multiple weather years, the optimized method reproduces regional averages with lower error than a complete 365-day time series from any single weather year. The method identifies only representative (as opposed to outlying) periods but can be combined with an iterative ``stress period'' identification approach to guide efficient decision-making considering both average and high-risk weather conditions.},
   langid = {english}
+}
+
+@article{brownInterregionalOptimizationApproach2025a,
+  title = {An Interregional Optimization Approach for Time Series Aggregation in Continent-Scale Electricity System Models},
+  author = {Brown, Patrick R. and Cole, Wesley J. and Mai, Trieu},
+  year = 2025,
+  month = jun,
+  journal = {Energy},
+  volume = {324},
+  pages = {135830},
+  issn = {0360-5442},
+  doi = {10.1016/j.energy.2025.135830},
+  url = {https://www.sciencedirect.com/science/article/pii/S0360544225014720},
+  urldate = {2026-11-06},
+  abstract = {Modeling electric power systems with high shares of weather-dependent resources requires tradeoffs between temporal, spatial, and operational resolution. Many studies perform time series aggregation using clustering algorithms to reduce the temporal dimension, but when modeling continent-scale electricity systems that are large enough to contain multiple independent weather systems, this approach requires large numbers of representative periods to minimize errors in regional wind and solar capacity factors. Here, a new optimization-based approach for representative period selection and weighting is introduced that minimizes regional errors in average renewable capacity factors and electricity demand. The method delivers higher regional fidelity with fewer representative periods than alternative clustering methods when applied to wind, solar, and demand profiles for the contiguous United States. When representative periods are selected from multiple weather years, the optimized method reproduces regional averages with lower error than a complete 365-day time series from any single weather year. The method identifies only representative (as opposed to outlying) periods but can be combined with an iterative ``stress period'' identification approach to guide efficient decision-making considering both average and high-risk weather conditions.}
 }
 
 @article{brownMeteorologyClimatologyHistorical2021,
@@ -3675,7 +3827,7 @@
 }
 
 @article{brownSystemcostminimizingDeploymentPVwind2024,
-  title = {System-Cost-Minimizing Deployment of {{PV-wind}} Hybrids in Low-Carbon {{U}}.{{S}}. Power Systems},
+  title = {System-Cost-Minimizing Deployment of {{PV}}-Wind Hybrids in Low-Carbon {{U}}.{{S}}. Power Systems},
   author = {Brown, Patrick R. and Williams, Travis and Brown, Maxwell L. and Murphy, Caitlin},
   year = 2024,
   month = jul,
@@ -3993,7 +4145,7 @@
 }
 
 @techreport{butlerBatteryEnergyStorage1994,
-  title = {Battery Energy Storage for Utility Applications: {{Phase I-opportunities}} Analysis},
+  title = {Battery Energy Storage for Utility Applications: {{Phase I}}-Opportunities Analysis},
   shorttitle = {Battery Energy Storage for Utility Applications},
   author = {Butler, Paul C.},
   year = 1994,
@@ -4271,6 +4423,14 @@
   url = {https://www.ourenergypolicy.org/wp-content/uploads/2016/02/R42696.pdf}
 }
 
+@techreport{canadaenergyregulatorCanadasEnergyFuture2023,
+  title = {Canada's {{Energy Future Data Appendices}}},
+  author = {{Canada Energy Regulator}},
+  year = 2023,
+  institution = {Canada Energy Regulator},
+  url = {https://doi.org/10.35002/zjr8-8x75}
+}
+
 @techreport{canadaenergyregulatorCanadasEnergyFuture2026,
   title = {Canada's {{Energy Future Data Appendices}}},
   author = {{Canada Energy Regulator}},
@@ -4279,11 +4439,20 @@
   url = {https://doi.org/10.35002/zjr8-8x75}
 }
 
-@misc{canadaenergyregulatorElectricityTradeSummary2026,
+@misc{canadaenergyregulatorElectricityTradeSummary2024,
+  title = {Electricity {{Trade Summary}}},
+  author = {{Canada Energy Regulator}},
+  year = 2024,
+  month = dec,
+  url = {https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/index.html}
+}
+
+@techreport{canadaenergyregulatorElectricityTradeSummary2026,
   title = {Electricity {{Trade Summary}}},
   author = {{Canada Energy Regulator}},
   year = 2026,
   month = jun,
+  institution = {Canada Energy Regulator},
   url = {https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/index.html}
 }
 
@@ -4403,7 +4572,7 @@
 }
 
 @article{careyGridenhancingTechnologiesCan2024,
-  title = {``{{Grid-enhancing}} Technologies'' Can Squeeze a Lot More Power from the Existing Electric Grid},
+  title = {``{{Grid}}-Enhancing Technologies'' Can Squeeze a Lot More Power from the Existing Electric Grid},
   author = {Carey, John},
   year = 2024,
   month = jan,
@@ -4640,8 +4809,7 @@
   url = {https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/index.html},
   urldate = {2024-09-12},
   abstract = {Electricity Trade Summary},
-  langid = {english},
-  annotation = {Last Modified: 2024-06-14}
+  langid = {english}
 }
 
 @article{chadalavadaISONewEngland,
@@ -4790,7 +4958,7 @@
 }
 
 @article{chenNegativeElectricVehicle2025,
-  title = {Negative {{Electric Vehicle Emissions}}: {{Vehicle-to-Grid Can Incentivize Enough Wind}} and {{Solar Investment}} to {{Reverse EV Charging Emissions}}},
+  title = {Negative {{Electric Vehicle Emissions}}: {{Vehicle}}-to-{{Grid Can Incentivize Enough Wind}} and {{Solar Investment}} to {{Reverse EV Charging Emissions}}},
   shorttitle = {Negative {{Electric Vehicle Emissions}}},
   author = {Chen, Jiahui and Craig, Michael T. and Michalek, Jeremy and Bruchon, Matthew and Vaishnav, Parth},
   year = 2025,
@@ -5079,25 +5247,7 @@
   year = 2006,
   institution = {CIGRE},
   url = {https://www.e-cigre.org/publications/detail/299-guide-for-the-selection-of-weather-parameters-for-bare-overhead-conductor-ratings.html},
-  langid = {english},
-  annotation = {Tapani Seppa\\
-Afshin Salehian\\
-Kresimir Bakic\\
-William Chisholm\\
-Nicholas DeSantis\\
-Svein Fikke\\
-Dale Douglass\\
-Michelle Gaudry\\
-Anand Goel\\
-Sven Hoffmann\\
-Javier Iglesias\\
-Andrew Maxwell\\
-Dennis Mize\\
-Ralf Puffer\\
-Jerry Reding\\
-Jimmy Robinson\\
-Rob Stephen\\
-Woodrow Whitlatch}
+  langid = {english}
 }
 
 @techreport{cigreGuideThermalRating2014,
@@ -5119,6 +5269,14 @@ Woodrow Whitlatch}
   institution = {City of Tallahassee Electric Utility},
   url = {http://www.oasis.oati.com/woa/docs/TAL/TALdocs/FINAL_-_FAC-008-3_METHODOLOGY_R13_8-19-2019.pdf},
   langid = {english}
+}
+
+@techreport{clack100Clean20502021,
+  title = {100\% {{Clean By}} 2050: {{What}} Does It Look Like?},
+  author = {Clack, Christopher T. M.},
+  year = 2021,
+  institution = {Vibrant Clean Energy},
+  url = {https://vibrantcleanenergy.com/wp-content/uploads/2021/03/VCE-ESIG-03022021.pdf}
 }
 
 @techreport{clackConsumerEmploymentEnvironmental,
@@ -5318,8 +5476,7 @@ Woodrow Whitlatch}
 
 @unpublished{cohenClimateWaterElectricityEvaluatingClimateinduced[inreview],
   title = {Climate-{{Water-Electricity}}: {{Evaluating}} Climate-Induced Changes to the Future Development of the {{U}}.{{S}}. Electricity Sector},
-  author = {Cohen, Stuart M. and Meldrum, James R. and Macknick, Jordan and Averyt, Kristen and Rangwala, Imtiaz},
-  year = {[in review]}
+  author = {Cohen, Stuart M. and Meldrum, James R. and Macknick, Jordan and Averyt, Kristen and Rangwala, Imtiaz}
 }
 
 @techreport{cohenComponentLevelBottomUpCost2023,
@@ -5699,7 +5856,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{coleImpactUtilityTariff2017,
-  title = {The {{Impact}} of {{Utility Tariff Evolution}} on {{Behind-the-Meter PV Adoption}}},
+  title = {The {{Impact}} of {{Utility Tariff Evolution}} on {{Behind}}-the-{{Meter PV Adoption}}},
   author = {Cole, Wesley J. and Gagnon, Pieter J. and Frew, Bethany A. and Margolis, Robert M.},
   year = 2017,
   month = sep,
@@ -5821,7 +5978,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{coleSunShot2030Photovoltaics2017,
-  title = {{{SunShot}} 2030 for {{Photovoltaics}} ({{PV}}): {{Envisioning}} a {{Low-cost PV Future}}},
+  title = {{{SunShot}} 2030 for {{Photovoltaics}} ({{PV}}): {{Envisioning}} a {{Low}}-Cost {{PV Future}}},
   author = {Cole, Wesley and Frew, Bethany and Gagnon, Pieter and Richards, James and Sun, Yinong and Zuboy, Jarett and Margolis, Robert},
   year = 2017,
   number = {NREL/TP-6A20-68105},
@@ -6100,6 +6257,14 @@ Woodrow Whitlatch}
   urldate = {2020-09-21},
   abstract = {The U.S. Department of Energy's Office of Scientific and Technical Information},
   langid = {english}
+}
+
+@techreport{cpuc_2022,
+  title = {D2202004 {{Decision Adopting}} 2021 {{Preferred System Plan}}},
+  author = {CPUC},
+  year = 2022,
+  institution = {California Public Utilities Commission},
+  url = {https://docs.cpuc.ca.gov/PublishedDocs/Published/G000/M451/K412/451412947.PDF}
 }
 
 @techreport{cpucceccaisoRootCauseAnalysis2021,
@@ -7168,8 +7333,8 @@ Woodrow Whitlatch}
 }
 
 @article{desouzanoelsimasbarbosaHydropowerPowertogasStorage2016,
-  title = {Hydropower and {{Power-to-gas Storage Options}}: {{The Brazilian Energy System Case}}},
-  shorttitle = {Hydropower and {{Power-to-gas Storage Options}}},
+  title = {Hydropower and {{Power}}-to-Gas {{Storage Options}}: {{The Brazilian Energy System Case}}},
+  shorttitle = {Hydropower and {{Power}}-to-Gas {{Storage Options}}},
   author = {{Larissa de Souza Noel Simas Barbosa} and {Javier Farfan Orozco} and {Dmitrii Bogdanov} and {Pasi Vainikka} and {Christian Breyer}},
   year = 2016,
   month = nov,
@@ -7196,7 +7361,7 @@ Woodrow Whitlatch}
 }
 
 @article{despresStorageFlexibilityOption2017,
-  title = {Storage as a Flexibility Option in Power Systems with High Shares of Variable Renewable Energy Sources: A {{POLES-based}} Analysis},
+  title = {Storage as a Flexibility Option in Power Systems with High Shares of Variable Renewable Energy Sources: A {{POLES}}-Based Analysis},
   shorttitle = {Storage as a Flexibility Option in Power Systems with High Shares of Variable Renewable Energy Sources},
   author = {Despr{\'e}s, Jacques and Mima, Silvana and Kitous, Alban and Criqui, Patrick and Hadjsaid, Nouredine and Noirot, Isabelle},
   year = 2017,
@@ -7406,7 +7571,7 @@ Woodrow Whitlatch}
 }
 
 @inproceedings{diorioDCconnectedSolarStorage2018,
-  title = {{{DC-connected Solar Plus Storage Modeling}} and {{Analysis}} for {{Behind-The-Meter Systems}} in the {{System Advisor Model}}},
+  title = {{{DC}}-Connected {{Solar Plus Storage Modeling}} and {{Analysis}} for {{Behind-The-Meter Systems}} in the {{System Advisor Model}}},
   booktitle = {2018 {{IEEE}} 7th {{World Conference}} on {{Photovoltaic Energy Conversion}} ({{WCPEC}}) ({{A Joint Conference}} of 45th {{IEEE PVSC}}, 28th {{PVSEC}} 34th {{EU PVSEC}})},
   author = {DiOrio, N. A. and Freeman, J. M. and Blair, N.},
   year = 2018,
@@ -7537,6 +7702,15 @@ Woodrow Whitlatch}
   url = {http://www.netl.doe.gov/File%20Library/Research/Coal/carbon%20capture/Program-Plan-Carbon-Capture-2013.pdf}
 }
 
+@techreport{doeDynamicLineRating2014,
+  title = {Dynamic {{Line Rating Systems}} for {{Transmission Lines}}},
+  author = {{DOE}},
+  year = 2014,
+  month = apr,
+  institution = {U.S. Department of Energy},
+  url = {https://www.energy.gov/sites/prod/files/2016/10/f34/SGDP_Transmission_DLR_Topical_Report_04-25-14.pdf}
+}
+
 @techreport{doeDynamicLineRating2019,
   title = {Dynamic {{Line Rating}}: {{Report}} to {{Congress}}},
   author = {{DOE}},
@@ -7659,8 +7833,7 @@ Woodrow Whitlatch}
   month = apr,
   institution = {DOE},
   url = {https://liftoff.energy.gov/innovative-grid-deployment/},
-  langid = {english},
-  annotation = {https://liftoff.energy.gov/wp-content/uploads/2024/05/Liftoff\_Innovative-Grid-Deployment\_Final\_5.2-1.pdf}
+  langid = {english}
 }
 
 @misc{doePendingApplicationsDepartment2016,
@@ -9296,6 +9469,13 @@ Woodrow Whitlatch}
   url = {https://www.ercot.com/files/docs/2022/05/16/SARA_Summer2022.pdf}
 }
 
+@article{EliminatingDerateCarbon,
+  title = {Eliminating the {{Derate}} of {{Carbon Capture Retrofits}}},
+  author = {{K. Buchheit} and {N. Kuehn}},
+  journal = {National Energy Technology Laboratory},
+  langid = {english}
+}
+
 @techreport{ellerEnergyStorageFot2016,
   title = {Energy {{Storage}} Fot the {{Grid}} and {{Ancillary Services}}},
   author = {Eller, Alex and Dehamna, Anissa},
@@ -9485,9 +9665,10 @@ Woodrow Whitlatch}
 
 @techreport{energysystemsintegrationgroupInterregionalTransmissionResilience2024,
   title = {Interregional {{Transmission}} for {{Resilience}}},
-  author = {Energy Systems Integration Group},
+  author = {{Energy Systems Integration Group}},
   year = 2024,
   month = jun,
+  institution = {Energy Systems Integration Group},
   url = {https://www.esig.energy/wp-content/uploads/2024/06/ESIG-Interregional-Transmission-Resilience-methodology-report-2024.pdf}
 }
 
@@ -9974,7 +10155,7 @@ Woodrow Whitlatch}
 }
 
 @misc{esig2023LongtermLoad2023,
-  title = {2023 {{Long-term Load Forecasting Workshop}}},
+  title = {2023 {{Long}}-Term {{Load Forecasting Workshop}}},
   author = {ESIG},
   year = 2023,
   url = {https://www.esig.energy/event/2023-long-term-load-forecasting-workshop/},
@@ -10287,8 +10468,7 @@ Woodrow Whitlatch}
   url = {https://www.politesi.polimi.it/handle/10589/198255},
   urldate = {2025-10-03},
   abstract = {LAUREA MAGISTRALE},
-  langid = {english},
-  annotation = {Accepted: 2023-04-19T14:55:38Z}
+  langid = {english}
 }
 
 @article{falthMENAComparedEurope2020,
@@ -10517,6 +10697,15 @@ Woodrow Whitlatch}
   langid = {english}
 }
 
+@techreport{FERC2024Energy,
+  title = {Energy Primer: {{A}} Handbook of Energy Market Basics},
+  author = {{FERC}},
+  year = 2023,
+  month = dec,
+  institution = {Federal Energy Regulatory Commission},
+  url = {https://www.ferc.gov/media/energy-primer-handbook-energy-market-basics}
+}
+
 @misc{fercAdvancedNoticeProposed2024,
   title = {Advanced {{Notice}} of {{Proposed Rulemaking}}: {{Implementation}} of {{Dynamic Line Ratings}}},
   author = {{FERC}},
@@ -10646,7 +10835,7 @@ Woodrow Whitlatch}
 }
 
 @article{finkeModellingGenerateNearParetooptimal2024,
-  title = {Modelling to Generate Near-{{Pareto-optimal}} Alternatives ({{MGPA}}) for the Municipal Energy Transition},
+  title = {Modelling to Generate Near-{{Pareto}}-Optimal Alternatives ({{MGPA}}) for the Municipal Energy Transition},
   author = {Finke, Jonas and Kachirayil, Febin and McKenna, Russell and Bertsch, Valentin},
   year = 2024,
   month = dec,
@@ -10669,7 +10858,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{fischerRebatingEnvironmentalPolicy2001,
-  title = {Rebating Environmental Policy Revenues: {{Output-based}} Allocations and Tradable Performance Standards},
+  title = {Rebating Environmental Policy Revenues: {{Output}}-Based Allocations and Tradable Performance Standards},
   shorttitle = {Rebating Environmental Policy Revenues},
   author = {Fischer, Carolyn},
   year = 2001,
@@ -10736,6 +10925,21 @@ Woodrow Whitlatch}
   year = 2018,
   url = {https://www.eia.gov/electricity/data/eia860/},
   urldate = {2020-12-30}
+}
+
+@article{fossas-tenasEmpiricalEvidenceSlack2026,
+  title = {Empirical Evidence for Slack in {{Modeling}} to {{Generate Alternatives}}},
+  author = {{Fossas-Tenas}, Ariadna and Wen, Xin and Trutnevyte, Evelina},
+  year = 2026,
+  month = sep,
+  journal = {Energy},
+  volume = {360},
+  pages = {141552},
+  issn = {0360-5442},
+  doi = {10.1016/j.energy.2026.141552},
+  url = {https://www.sciencedirect.com/science/article/pii/S0360544226016580},
+  urldate = {2026-06-29},
+  abstract = {Modeling to Generate Alternatives (MGA) has been increasingly used with energy system optimization models to tackle uncertainty, stability of results, non-modeled objectives, and other complexities of the real-world energy transition. However, MGA results are highly contingent on the subjectively assumed value of slack, which defines how much higher the total system costs can be with respect to the costs of the cost-optimal scenario. Here, electricity system hindcasting in 31 European countries is used to quantify deviations between costs of the cost-optimal scenario and the real-world transition represented in an optimization model to provide first-of-the-kind empirical evidence for slack. For a multi-year model, the results indicate that the median value of cost deviations across the countries and across various parametric cost assumptions is 44\% if modeling 30 years ahead and if accounting for costs during the modeled period only. A single-year model for 25 years ahead had a median cost deviation of 59\%. As most current literature uses slack values that are lower or equal to 10\%, these results underscore the importance of using larger and country-specific slack, and at the same time open more fundamental questions about the use of cost-optimization models.}
 }
 
 @article{fossDynamicLineRating1990,
@@ -11379,6 +11583,17 @@ Woodrow Whitlatch}
   author = {Gagnon, Pieter},
   year = 2021,
   month = jun
+}
+
+@article{gagnonPlanningEvolutionElectric2022,
+  title = {Planning for the Evolution of the Electric Grid with a Long-Run Marginal Emission Rate},
+  author = {Gagnon, Pieter and Cole, Wesley},
+  year = 2022,
+  month = mar,
+  journal = {iScience},
+  volume = {25},
+  number = {3},
+  doi = {10.1016/j.isci.2022.103915}
 }
 
 @techreport{gagnonRooftopSolarPhotovoltaic2016a,
@@ -12414,7 +12629,7 @@ Woodrow Whitlatch}
 }
 
 @article{gueymardREST2HighperformanceSolar2008,
-  title = {{{REST2}}: {{High-performance}} Solar Radiation Model for Cloudless-Sky Irradiance, Illuminance, and Photosynthetically Active Radiation -- {{Validation}} with a Benchmark Dataset},
+  title = {{{REST2}}: {{High}}-Performance Solar Radiation Model for Cloudless-Sky Irradiance, Illuminance, and Photosynthetically Active Radiation -- {{Validation}} with a Benchmark Dataset},
   shorttitle = {{{REST2}}},
   author = {Gueymard, Christian A.},
   year = 2008,
@@ -12586,7 +12801,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{hadjeriouaAssessmentEnergyPotential2013,
-  title = {An {{Assessment}} of {{Energy Potential}} from {{New Stream-reach Development}} in the {{United States}}: {{Initial Report}} on {{Methodology}}},
+  title = {An {{Assessment}} of {{Energy Potential}} from {{New Stream}}-Reach {{Development}} in the {{United States}}: {{Initial Report}} on {{Methodology}}},
   author = {Hadjerioua, Boualem and Kao, Shih-Chieh and McManamay, Ryan A. and Pasha, MD Fayzul K. and Yeasmin, Dilruba and Oubeidillah, Abdoul A. and Samu, Nicole M. and Stewart, Kevin M. and Bevelhimer, Mark S. and Hetrick, Shelaine L. and Wei, Yaxing and Smith, Brennan T.},
   year = 2013,
   month = feb,
@@ -12806,6 +13021,19 @@ Woodrow Whitlatch}
   langid = {english}
 }
 
+@techreport{hammondWindfarmOperationsMaintenance2022,
+  title = {Windfarm {{Operations}} and {{Maintenance}} Cost-{{Benefit Analysis Tool}} ({{WOMBAT}})},
+  author = {Hammond, Rob and Cooperman, Aubryn},
+  year = 2022,
+  month = oct,
+  number = {NREL/TP-5000-83712, 1894867, MainId:84485},
+  pages = {NREL/TP-5000-83712, 1894867, MainId:84485},
+  doi = {10.2172/1894867},
+  url = {https://www.osti.gov/servlets/purl/1894867/},
+  urldate = {2026-07-07},
+  langid = {english}
+}
+
 @techreport{handRenewableElectricityFutures2012,
   title = {Renewable {{Electricity Futures Study}}. {{Volume}} 1. {{Exploration}} of {{High-Penetration Renewable Electricity Futures}}},
   author = {Hand, M. M. and Baldwin, S. and DeMeo, E. and Reilly, J. M. and Mai, T. and Arent, D. and Porro, G. and Meshek, M. and Sandor, D.},
@@ -12864,6 +13092,18 @@ Woodrow Whitlatch}
   url = {http://www.sciencedirect.com/science/article/pii/S0360544219304967},
   urldate = {2019-08-19},
   abstract = {This article shows that research in the design of 100\% renewable energy systems in scientific articles is fairly new but has gained increasing attention in recent years. In total, 180 articles published since 2004 have been identified and analysed. Many of these articles have a predominant focus on the electricity sector. However, an increasing number of studies apply a cross-sectoral holistic approach on the entire energy system. Most studies analyse energy systems for the final 100\% renewable state, while a small, though increasing, number also investigate energy transition pathways; how to reach the target. Europe, and thereafter the US and Australia, are well researched, while other parts of the world lack behind, and there is a focus on individual country studies. Henceforward, there is a need for applying a cross-sectoral holistic approach as well as coordinating individual country studies with the global context.}
+}
+
+@misc{hansonGeothermalElectricityTechnology2013,
+  title = {Geothermal {{Electricity Technology Evaluation Model}} ({{GETEM}}) {{Individual Case Files}} and {{Summary Spreadsheet}} ({{GETEM}} Version {{Spring}} 2013)},
+  author = {Hanson, Steven},
+  year = 2013,
+  publisher = {DOE Geothermal Data Repository; Idaho National Laboratory (INL), Idaho Falls, ID (United States)},
+  doi = {10.15121/1148822},
+  url = {http://www.osti.gov/servlets/purl/1148822/},
+  urldate = {2026-07-07},
+  abstract = {This group of files-- 10 GETEM individual case files and 1 summary spreadsheet-- contain final data from the revisions between summer 2011 and spring 2013.},
+  langid = {english}
 }
 
 @article{haoExtendedTransmissionLine2008,
@@ -13088,6 +13328,21 @@ Woodrow Whitlatch}
   url = {http://www.sciencemag.org/content/325/5948/1647},
   urldate = {2015-08-25},
   abstract = {The capture of carbon dioxide at the point of emission from coal- or gas-burning power plants is an attractive route to reducing carbon dioxide emissions into the atmosphere. To commercialize carbon capture, as well as transport of liquified carbon dioxide and its storage in exploited oil fields or saline formations, many technological, commercial, and political hurdles remain to be overcome. Urgent action is required if carbon capture and storage is to play a large role in limiting climate change.},
+  langid = {english}
+}
+
+@article{haugenRepresentationUncertaintyMarket2023,
+  title = {Representation of Uncertainty in Market Models for Operational Planning and Forecasting in Renewable Power Systems: A Review},
+  shorttitle = {Representation of Uncertainty in Market Models for Operational Planning and Forecasting in Renewable Power Systems},
+  author = {Haugen, Mari and Farahmand, Hossein and Jaehnert, Stefan and Fleten, Stein-Erik},
+  year = 2023,
+  month = jul,
+  journal = {Energy Systems},
+  issn = {1868-3967, 1868-3975},
+  doi = {10.1007/s12667-023-00600-4},
+  url = {https://link.springer.com/10.1007/s12667-023-00600-4},
+  urldate = {2026-05-25},
+  abstract = {As the power system is becoming more weather-dependent and integrated to meet decarbonization targets, the level and severity of uncertainty increase and inevitably introduce higher risk of demand rationing or economic loss. This paper reviews the representation of uncertainty in power market models for operational planning and forecasting. A synthesis of previous reviews is used to find the prevalence of stochastic tools in power and energy system applications, and it concludes that most approaches are deterministic. A selection of power market tools handling uncertainty is reviewed in terms of the uncertain parameters they capture, and the methods used to describe them. These all use probabilistic methods and typically cover weather-related uncertainty, including demand. Random outages are also covered by several short-term power market models, while uncertainty in fuel and CO2 emission prices were generally not found to be included, nor other types of uncertainty. A gap in power market models representing multiple dimensions of uncertainty, solvable on a realistic, large-scale system in a reasonable time, is identified. The paper concludes with a discussion on topics to address when representing uncertainty, where the main challenges are that uncertainty can be difficult to describe and quantify, and including uncertainty adds additional complexity and computational burden to the problem.},
   langid = {english}
 }
 
@@ -13512,7 +13767,7 @@ Woodrow Whitlatch}
   title = {Transmission {{Lines}}},
   author = {{Homeland Infrastructure Foundation Level Database (HIFLD)}},
   year = 2024,
-  url = {https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::transmission-lines}
+  url = {https://www.datalumos.org/datalumos/project/240591/version/V1/view}
 }
 
 @techreport{himelicSodiumSulfurBattery2011,
@@ -13663,6 +13918,24 @@ Woodrow Whitlatch}
   month = oct,
   pages = {92},
   url = {http://files.brattle.com/files/14618_economic_potential_for_storage_in_nevada_-_final.pdf},
+  langid = {english}
+}
+
+@article{hobbsAdaptiveTransmissionPlanning2016,
+  title = {Adaptive {{Transmission Planning}}: {{Implementing}} a {{New Paradigm}} for {{Managing Economic Risks}} in {{Grid Expansion}}},
+  shorttitle = {Adaptive {{Transmission Planning}}},
+  author = {Hobbs, Benjamin F. and Xu, Qingyu and Ho, Jonathan and Donohoo, Pearl and Kasina, Saamrat and Ouyang, Jasmine and Park, Sang Woo and Eto, Joseph and Satyal, Vijay},
+  year = 2016,
+  month = jul,
+  journal = {IEEE Power and Energy Magazine},
+  volume = {14},
+  number = {4},
+  pages = {30--40},
+  issn = {1540-7977},
+  doi = {10.1109/MPE.2016.2547280},
+  url = {http://ieeexplore.ieee.org/document/7491446/},
+  urldate = {2026-05-26},
+  copyright = {https://ieeexplore.ieee.org/Xplorehelp/downloads/license-information/IEEE.html},
   langid = {english}
 }
 
@@ -14066,7 +14339,7 @@ Woodrow Whitlatch}
 }
 
 @article{howingtonDynamicThermalLine1987,
-  title = {Dynamic {{Thermal Line Rating Summary}} and {{Status}} of the {{State-of-the-Art Technology}}},
+  title = {Dynamic {{Thermal Line Rating Summary}} and {{Status}} of the {{State}}-of-the-{{Art Technology}}},
   author = {Howington, B. S. and Ramon, G. J.},
   year = 1987,
   journal = {IEEE Transactions on Power Delivery},
@@ -14511,6 +14784,15 @@ Woodrow Whitlatch}
   url = {https://inl.gov/content/uploads/2024/10/23-50856_R12a_-AdvConductorsScanProjectReportCompressed.pdf}
 }
 
+@techreport{inlRealTimeForecastedDLR2023,
+  title = {Real-{{Time}} and {{Forecasted DLR Use Cases}}},
+  author = {{INL}},
+  year = 2023,
+  number = {INL/RPT-22-69578},
+  institution = {Idaho National Laboratory},
+  url = {https://inl.gov/content/uploads/2023/03/Real-Time-and-Forecasted-DLR-Use-Cases.pdf}
+}
+
 @misc{inskeep50StatesSolar2015,
   title = {The 50 {{States}} of {{Solar}}},
   author = {Inskeep, Benjamin and Case, Ethan and Daniel, Kate and Lips, Brian and Proudlove, Autumn and Shreshta, Achyut and Wright, Kathryn and Cook, Ryan and Laurent, Chad and Gessesse, Eskedar and Hanley, Will},
@@ -14621,6 +14903,22 @@ Woodrow Whitlatch}
   address = {Abu Dhabi},
   institution = {International Renewable Energy Agency},
   url = {https://www.irena.org/publications/2019/May/Renewable-power-generation-costs-in-2018}
+}
+
+@article{irizarry-martinezOptimalGenerationExpansion2027,
+  title = {Optimal Generation Expansion Planning with Weather-Dependent Generation and Transmission},
+  author = {{Irizarry-Martinez}, Giancarlos and Roald, Line},
+  year = 2027,
+  month = feb,
+  journal = {Electric Power Systems Research},
+  volume = {263},
+  pages = {113783},
+  issn = {03787796},
+  doi = {10.1016/j.epsr.2026.113783},
+  url = {https://linkinghub.elsevier.com/retrieve/pii/S0378779626010746},
+  urldate = {2026-08-18},
+  abstract = {Generation Expansion Planning is used to obtain future planning decisions that ensure the system reliability while minimizing cost. However, the past decade has seen an increase in weather-dependent faults in the electric grid, higher shares of weather-dependent renewable generation, and increased reliance on weather-dependent dynamic line ratings. To account for those dependencies, we propose a two-stage stochastic generation expansion planning model integrates leverages a spatial weather model to assess the generation and transmission line availability. This includes both variations of renewable generation capacity factors and dynamic line rating, and weather-dependent outage rates. The proposed framework is tested using a synthetic network, demonstrating that dynamic line rating outperforms static line ratings by reducing total operational costs and load shedding.},
+  langid = {english}
 }
 
 @article{irizarry-riveraCaseStudyResidential2018,
@@ -15041,6 +15339,12 @@ Woodrow Whitlatch}
   langid = {english}
 }
 
+@article{james_et_al_2023,
+  title = {Cost and {{Performance Baseline}} for {{Fossil Energy Plants}}, {{Volume}} 3 -- {{Low Rank Coal}} and {{Natural Gas}} to {{Electricity}}},
+  author = {Turner, Marc and James, Robert and Woods, Mark and Schmitt, Tommy and Oakes, Matt and Konrade, Jacob and Bleckinger, Mark and Sturdivan, Mark},
+  langid = {english}
+}
+
 @misc{jameslittlefieldLifeCycleAnalysis2019,
   title = {Life {{Cycle Analysis}} of {{Natural Gas Extraction}} and {{Power Generation}}},
   author = {{James Littlefield} and {Selina Roman-White} and {Dan Augustine} and {Ambica Pegallapati} and {George G. Zaimes} and {Srijana Rai} and {Gregory Cooney} and {Timothy J. Skone}},
@@ -15080,8 +15384,7 @@ Woodrow Whitlatch}
   author = {Javanbakht, Heidi},
   year = 2025,
   month = jul,
-  url = {https://www.energy.ca.gov/sites/default/files/2025-07/2024_IEPR_Data_Center_Forecast_Recap_ada.pdf},
-  annotation = {California Energy Comission}
+  url = {https://www.energy.ca.gov/sites/default/files/2025-07/2024_IEPR_Data_Center_Forecast_Recap_ada.pdf}
 }
 
 @article{jayadevElectricityInfrastructureFuture2020,
@@ -15132,8 +15435,7 @@ Woodrow Whitlatch}
   url = {https://dspace.mit.edu/handle/1721.1/130589},
   urldate = {2026-04-02},
   abstract = {The electric power sector is currently undergoing several important transitions, which individually and collectively have the potential to transform the design, operation, and characteristics of electricity systems, including: decarbonization of electricity supplies; increased adoption of variable renewable energy and distributed energy resources; digitization of power systems; and electrification of greater shares of heating, transportation, and industry. In the face of these transformations, many conventional electricity resource capacity expansion models are no longer adequate for rigorous decision support and policy analysis. This working paper describes the formulation of ``GenX," a highly-configurable electricity resource capacity expansion model that incorporates several state-of-the-art improvements in electricity system modeling to offer improved decision support for a changing electricity landscape. GenX is a constrained optimization model that determines the mix of electricity generation, storage, and demand-side resource investments and operational decisions to meet electricity demand in a future planning year at lowest cost subject to a variety of power system operational constraints and specified policy constraints, such as CO2 emissions limits. The appropriate level of model resolution with regards to chronological variability of electricity demand and renewable energy availability, power system operational detail and unit commitment constraints, and transmission and distribution network representation each vary for a given planning problem or policy question. As such, the GenX model is designed to be highly configurable, with several different degrees of resolution possible on each of these three key dimensions. The model is capable of representing a full range of conventional and novel electricity resources, including thermal generators, variable renewable resources (wind and solar), run-of-river, reservoir and pumped-storage hydroelectric generators, energy storage devices, demand-side  flexibility, and several advanced technologies such as high temperature nuclear reactors and carbon capture and storage. Two optional modules also allow modeling of heat storage, industrial heat demand, and co-generation of heat and power; and distributed energy resources deployed at distribution voltages. The model has been implemented in Julia Language.},
-  langid = {american},
-  annotation = {Accepted: 2021-05-13T17:24:21Z}
+  langid = {american}
 }
 
 @article{jenkinsGettingZeroCarbon2018,
@@ -15258,6 +15560,12 @@ Woodrow Whitlatch}
   langid = {english}
 }
 
+@misc{JobsEconomicDevelopment,
+  title = {Jobs and {{Economic Development Impact Models}} \textbar{} {{NLR}}},
+  url = {https://www.nlr.gov/analysis/jedi/},
+  urldate = {2026-07-07}
+}
+
 @techreport{johntsoukalis_et_al_2020,
   title = {Western {{Energy Imbalance Service}} and {{SPP Western RTO Participation Benefits}}},
   author = {Tsoukalis, John and Pfeifenberger, Johannes and Celebi, Metin and Leamon, Sophie and Peacock, Carson and Ganjam, Sharan},
@@ -15319,6 +15627,23 @@ Woodrow Whitlatch}
   month = dec,
   institution = {Evolved Energy Research},
   url = {https://www.evolved.energy/us-adp-2024}
+}
+
+@misc{jonesDynamicLineRatings2026,
+  title = {Dynamic {{Line Ratings Counteract Transmission Investment Needs Driven}} by {{Climate Change}}},
+  author = {Jones, Megan and Dvorkin, Vladimir and Craig, Michael},
+  year = 2026,
+  month = oct,
+  number = {arXiv:2610.27143},
+  eprint = {2610.27143},
+  primaryclass = {eess.SY},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2610.27143},
+  url = {http://arxiv.org/abs/2610.27143},
+  urldate = {2026-10-26},
+  abstract = {Rising temperatures due to climate change will reduce power system transmission capacity. This reduction will interact with an ongoing shift from static to time-varying transmission rating standards. Previous research has yet to disentangle the effects of changing rating standards and climates on investment decisions. We quantify transmission investment needs for the Western U.S. power system (WECC) through mid-century under climate change and three rating standards: static ratings (SLR), ambient-adjusted ratings (AAR), and dynamic line ratings (DLR). By embedding alternative rating standards and high-resolution future weather data into a generation and transmission expansion model, PyPSA-USA, we find WECC will lose 1-3\% of its transmission capacity across potential future climates under static ratings by midcentury, necessitating a 1-5\% increase in transmission investment. Adoption of AAR or DLR eliminates most (81-99\%) of the adaptation-driven transmission capacity needs, and further reduces aggregate transmission investments (by up to 31\%). Additionally, we demonstrate that planning with time-varying ratings does not increase investment variability for individual lines under climate uncertainty relative to planning with static ratings. Our results emphasize the value and practicality of considering alternative rating standards in climate adaptation planning.},
+  archiveprefix = {arXiv},
+  langid = {english}
 }
 
 @article{jordaanClimateVulnerabilitiesGlobal2019,
@@ -15520,7 +15845,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{kaoNewStreamreachDevelopment2014,
-  title = {New {{Stream-reach Development}} : {{A Comprehensive Assessment}} of {{Hydropower Energy Potential}} in the {{United States}}},
+  title = {New {{Stream}}-Reach {{Development}} : {{A Comprehensive Assessment}} of {{Hydropower Energy Potential}} in the {{United States}}},
   author = {Kao, Shih Chieh and McManamay, Ryan A. and Stewart, Kevin M. and Samu, Nicole M. and Hadjerioua, Boualem and DeNeale, Scott T. and Yeasmin, Dilruba and Fayzul, M. and Pasha, K. and Oubeidillah, Abdoul A. and Smith, Brennan T.},
   year = 2014,
   month = apr,
@@ -15705,6 +16030,35 @@ Woodrow Whitlatch}
   urldate = {2025-03-26},
   abstract = {Electric transmission infrastructure serves a critical role during extreme weather and supply disruptions and can enable low-cost, low-carbon electricity systems. This paper contributes to a more complete understanding of transmission's value, cost-effectiveness, and market barriers. By studying wholesale energy market prices in the United States during 2012-2022, we find that additional transfer capacity between regions was especially valuable (median of \$116M/GW-year) and directionally balanced. Transmission's market value was highly influenced by a small fraction of time: 5\% of hours typically capture at least 45\% of value. These peak periods were driven primarily by unforeseen changes in conditions within one day of operations. Transmission infrastructure cost estimates were less than market values for most studied locations, including all links crossing regional seams where value-to-cost ratios were frequently above 4, suggesting barriers to the development of valuable infrastructure. These results complement forward-looking modeling studies and aid efforts to improve modeling practices.},
   archiveprefix = {Research Square}
+}
+
+@techreport{kempElectricTransmissionValue2025,
+  title = {Electric Transmission Value and Its Drivers in {{United States}} Power Markets},
+  author = {Kemp, Julie and Millstein, Dev and Gorman, Will and Jeong, Seongeun and Wiser, Ryan},
+  year = 2025,
+  month = aug,
+  institution = {Lawrence Berkeley National Laboratory},
+  url = {https://emp.lbl.gov/publications/electric-transmission-value-and-0},
+  urldate = {2026-09-26},
+  abstract = {Electric transmission infrastructure plays a vital role during extreme weather and supply disruptions and can enable low-cost electricity systems. This report contributes to a more complete understanding of the value of transmission, as well as barriers to its development. By studying wholesale energy market prices in the United States between 2012 and 2023, we find that additional transfer capacity between regions would have been especially valuable, with a median value of \$131 million per GW per year. This capacity would often have provided balanced benefits to each region. The market value of transmission was highly influenced by a small fraction of time: 5\% of hours typically captured at least 30\% of the total value. These peak periods were primarily driven by unforeseen changes in conditions within one day of operations. These results complement forward-looking modeling studies and support efforts to improve modeling practices.},
+  copyright = {https://creativecommons.org/licenses/by/4.0/},
+  langid = {english}
+}
+
+@article{kempElectricTransmissionValue2025a,
+  title = {Electric Transmission Value and Its Drivers in {{United States}} Power Markets},
+  author = {Kemp, Julie and Millstein, Dev and Gorman, Will and Jeong, Seongeun and Wiser, Ryan},
+  year = 2025,
+  month = aug,
+  journal = {Nature Communications},
+  volume = {16},
+  pages = {8055},
+  doi = {10.1038/s41467-025-63143-5},
+  url = {https://doi.org/10.1038/s41467-025-63143-5},
+  urldate = {2026-09-26},
+  abstract = {Abstract           Electric transmission infrastructure serves a critical role during extreme weather and supply disruptions and can enable low-cost, low-carbon electricity systems. This paper contributes to a more complete understanding of transmission's value, cost-effectiveness, and market barriers. By studying wholesale energy market prices in the United States during 2012-2022, we find that additional transfer capacity between regions was especially valuable (median of \$116M/GW-year) and directionally balanced. Transmission's market value was highly influenced by a small fraction of time: 5\% of hours typically capture at least 45\% of value. These peak periods were driven primarily by unforeseen changes in conditions within one day of operations. Transmission infrastructure cost estimates were less than market values for most studied locations, including all links crossing regional seams where value-to-cost ratios were frequently above 4, suggesting barriers to the development of valuable infrastructure. These results complement forward-looking modeling studies and aid efforts to improve modeling practices.},
+  copyright = {https://creativecommons.org/licenses/by/4.0/},
+  langid = {english}
 }
 
 @article{kemptonElectricPowerOffshore2010,
@@ -15913,7 +16267,7 @@ Woodrow Whitlatch}
 }
 
 @article{kimLifeCycleGreenhouse2012,
-  title = {Life {{Cycle Greenhouse Gas Emissions}} of {{Thin-film Photovoltaic Electricity Generation}}},
+  title = {Life {{Cycle Greenhouse Gas Emissions}} of {{Thin}}-Film {{Photovoltaic Electricity Generation}}},
   author = {Kim, Hyung Chul and Fthenakis, Vasilis and Choi, Jun-Ki and Turney, Damon E.},
   year = 2012,
   month = apr,
@@ -16161,8 +16515,8 @@ Woodrow Whitlatch}
 }
 
 @inproceedings{kocatepeCoresilienceAssessmentHurricaneinduced2018,
-  title = {Co-Resilience {{Assessment}} of {{Hurricane-induced Power Grid}} and {{Roadway Network Disruptions}}: {{A Case Study}} in {{Florida}} with a {{Focus}} on {{Critical Facilities}}},
-  shorttitle = {Co-Resilience {{Assessment}} of {{Hurricane-induced Power Grid}} and {{Roadway Network Disruptions}}},
+  title = {Co-Resilience {{Assessment}} of {{Hurricane}}-Induced {{Power Grid}} and {{Roadway Network Disruptions}}: {{A Case Study}} in {{Florida}} with a {{Focus}} on {{Critical Facilities}}},
+  shorttitle = {Co-Resilience {{Assessment}} of {{Hurricane}}-Induced {{Power Grid}} and {{Roadway Network Disruptions}}},
   booktitle = {2018 21st {{International Conference}} on {{Intelligent Transportation Systems}} ({{ITSC}})},
   author = {Kocatepe, Ayberk and Ulak, Mehmet Baran and Sriram, Lalitha Madhavi Konila and Pinzan, Davide and Ozguven, Eren Erman and Arghandeh, Reza},
   year = 2018,
@@ -16305,7 +16659,7 @@ Woodrow Whitlatch}
 }
 
 @article{kotterFutureElectricPower2016,
-  title = {The Future Electric Power System: {{Impact}} of {{Power-to-Gas}} by Interacting with Other Renewable Energy Components},
+  title = {The Future Electric Power System: {{Impact}} of {{Power}}-to-{{Gas}} by Interacting with Other Renewable Energy Components},
   shorttitle = {The Future Electric Power System},
   author = {K{\"o}tter, Editha and Schneider, Ludwig and Sehnke, Frank and Ohnmeiss, Kay and Schr{\"o}er, Ramona},
   year = 2016,
@@ -16321,7 +16675,7 @@ Woodrow Whitlatch}
 }
 
 @article{kotterSensitivitiesPowertogasOptimised2015,
-  title = {Sensitivities of {{Power-to-gas Within}} an {{Optimised Energy System}}},
+  title = {Sensitivities of {{Power}}-to-Gas {{Within}} an {{Optimised Energy System}}},
   author = {K{\"o}tter, E. and Schneider, L. and Sehnke, F. and Ohnmeiss, K. and Schr{\"o}er, R.},
   year = 2015,
   month = jun,
@@ -17157,6 +17511,24 @@ Woodrow Whitlatch}
   archiveprefix = {arXiv}
 }
 
+@inproceedings{leeImpactsDynamicLine2022,
+  title = {Impacts of {{Dynamic Line Ratings}} on the {{ERCOT Transmission System}}},
+  booktitle = {2022 {{North American Power Symposium}} ({{NAPS}})},
+  author = {Lee, Thomas and Nair, Vineet Jagadeesan and Sun, Andy},
+  year = 2022,
+  month = oct,
+  pages = {1--6},
+  publisher = {IEEE},
+  address = {Salt Lake City, UT, USA},
+  doi = {10.1109/NAPS56150.2022.10012241},
+  url = {https://ieeexplore.ieee.org/document/10012241/},
+  urldate = {2026-07-21},
+  abstract = {Grid regulators and participants are paying increasing attention to Dynamic Line Ratings (DLR) as a new approach to address transmission system bottlenecks. In this paper, a thorough comparison of DLR, Ambient Adjusted Ratings (AAR), and the traditional Static Line Ratings (SLR) are conducted on a synthetic ERCOT grid. Estimates of DLR and AAR are calculated using an equation based on heat balance physics, along with high-resolution weather data of temperature and wind velocities. A constraint generation method for contingency screening is developed for solving security-constrained optimal power flow. Numerical results suggest that employing DLR could double the benefits compared to those of AAR relative to SLR, in terms of system costs, renewable curtailment, and emissions. Index Terms---Dynamic line ratings, transmission capacity, security-constrained optimal power flow, reliability.},
+  copyright = {https://doi.org/10.15223/policy-029},
+  isbn = {978-1-6654-9921-7},
+  langid = {english}
+}
+
 @article{leeInteractionsComplementaritiesTensions2012,
   title = {Interactions, {{Complementarities}} and {{Tensions}} at the {{Nexus}} of {{Natural Gas}} and {{Renewable Energy}}},
   author = {Lee, April and Zinaman, Owen and Logan, Jeffrey and Bazilian, Morgan and Arent, Douglas and Newmark, Robin L.},
@@ -17268,7 +17640,7 @@ Woodrow Whitlatch}
 }
 
 @article{levinSolarEnergydrivenLandcover2023,
-  title = {Solar {{Energy-driven Land-cover Change Could Alter Landscapes Critical}} to {{Animal Movement}} in the {{Continental United States}}},
+  title = {Solar {{Energy}}-Driven {{Land}}-Cover {{Change Could Alter Landscapes Critical}} to {{Animal Movement}} in the {{Continental United States}}},
   author = {Levin, Michael O. and Kalies, Elizabeth L. and Forester, Emma and Jackson, Elizabeth L. A. and Levin, Andrew H. and Markus, Caitlin and McKenzie, Patrick F. and Meek, Jared B. and Hernandez, Rebecca R.},
   year = 2023,
   month = aug,
@@ -17955,7 +18327,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{lopezUSRenewableEnergy2012,
-  title = {{{US}} Renewable Energy Technical Potentials: A {{GIS-based}} Analysis},
+  title = {{{US}} Renewable Energy Technical Potentials: A {{GIS}}-Based Analysis},
   shorttitle = {{{US}} Renewable Energy Technical Potentials},
   author = {Lopez, Anthony and Roberts, Billy and Heimiller, Donna and Blair, Nate and Porro, Gian},
   year = 2012,
@@ -18845,6 +19217,22 @@ Woodrow Whitlatch}
   abstract = {We show analytically that the heat conductivity of oscillator chains diverges with system size N as N1/3, which is the same as for one-dimensional fluids. For long cylinders, we use the hydrodynamic equations for a crystal in one dimension. This is appropriate for stiff systems such as nanotubes, where the eventual crossover to a fluid only sets in at unrealistically large N. Despite the extra equation compared to a fluid, the scaling of the heat conductivity is unchanged. For strictly one-dimensional chains, we show that the dynamic equations are those of a fluid at all length scales even if the static order extends to very large N. The discrepancy between our results and numerical simulations on Fermi-Pasta-Ulam chains is discussed.}
 }
 
+@article{maiWhatCanWe2026,
+  title = {What Can We Learn from {{US}} National Transmission Studies?},
+  author = {Mai, Trieu and Brown, Patrick R. and Palchak, David and Brinkman, Gregory and Brooks, Adria and Denholm, Paul and Gramlich, Rob and Homer, Juliet S. and Lew, Debra and Kuna, Jess and Okullo, James and Pfeifenberger, Johannes and Rose, Amy and Simeone, Christina and Wright, Jarrad},
+  year = 2026,
+  month = feb,
+  journal = {Joule},
+  volume = {10},
+  number = {2},
+  pages = {102339},
+  issn = {25424351},
+  doi = {10.1016/j.joule.2026.102339},
+  url = {https://linkinghub.elsevier.com/retrieve/pii/S2542435126000231},
+  urldate = {2026-09-26},
+  langid = {english}
+}
+
 @article{maiziMaximizingIntermittency1002018,
   title = {Maximizing Intermittency in 100\% Renewable and Reliable Power Systems: {{A}} Holistic Approach Applied to {{Reunion Island}} in 2030},
   shorttitle = {Maximizing Intermittency in 100\% Renewable and Reliable Power Systems},
@@ -19283,7 +19671,7 @@ Woodrow Whitlatch}
 }
 
 @article{matsuoQuantitativeAnalysisJapan2018,
-  title = {A Quantitative Analysis of {{Japan}}'s Optimal Power Generation Mix in 2050 and the Role of {{CO2-free}} Hydrogen},
+  title = {A Quantitative Analysis of {{Japan}}'s Optimal Power Generation Mix in 2050 and the Role of {{CO2}}-Free Hydrogen},
   author = {Matsuo, Yuhji and Endo, Seiya and Nagatomi, Yu and Shibata, Yoshiaki and Komiyama, Ryoichi and Fujii, Yasumasa},
   year = 2018,
   month = dec,
@@ -19415,7 +19803,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{mclarenBatteryEnergyStorage2016,
-  title = {Battery {{Energy Storage Market}}: {{Commercial Scale}}, {{Lithium-ion Projects}} in the {{U}}.{{S}}.},
+  title = {Battery {{Energy Storage Market}}: {{Commercial Scale}}, {{Lithium}}-Ion {{Projects}} in the {{U}}.{{S}}.},
   author = {McLaren, Joyce and Gagnon, Pieter and Anderson, Kate and Elgqvist, Emma and Fu, Ran and Remo, Tim},
   year = 2016,
   month = oct,
@@ -19560,8 +19948,8 @@ Woodrow Whitlatch}
 }
 
 @techreport{melainaNationalEconomicValue2016,
-  title = {National {{Economic Value Assessment}} of {{Plug-in Electric Vehicles}}: {{Volume I}}},
-  shorttitle = {National {{Economic Value Assessment}} of {{Plug-in Electric Vehicles}}},
+  title = {National {{Economic Value Assessment}} of {{Plug}}-in {{Electric Vehicles}}: {{Volume I}}},
+  shorttitle = {National {{Economic Value Assessment}} of {{Plug}}-in {{Electric Vehicles}}},
   author = {Melaina, Marc and Bush, Brian and Eichman, Joshua and Wood, Eric and Stright, Dana and Krishnan, Venkat and Keyser, David and Mai, Trieu and McLaren, Joyce},
   year = 2016,
   month = dec,
@@ -20194,7 +20582,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{misoResourceAdequacyBusiness2024,
-  title = {Resource {{Adequacy Business Practices Manual}}: {{BPM-011-r30}}},
+  title = {Resource {{Adequacy Business Practices Manual}}: {{BPM-011}}-R30},
   author = {{MISO}},
   year = 2024,
   month = oct
@@ -20412,8 +20800,25 @@ Woodrow Whitlatch}
   pages = {32--41},
   address = {Germany},
   issn = {1435-3199},
-  abstract = {Based upon existing experience feedback of French nuclear power plants operated by EDF (Electricit\'e de France), this paper shows that flexible operation of nuclear reactors is possible and has been applied in France by EDF's 58 reactors for more than 30 years without any noticeable or unmanageable impacts: no effects on safety or on the environment, and no noticeable additional maintenance costs, with an additional unplanned capability load factor estimated at only 05 \% EDF's nuclear reactors have the capability to vary their output between 20 \% and 100 \% within 30 minutes, twice a day, when operating in load-following mode Flexible operation requires sound plant design (safety margins, auxiliary equipment) and appropriate operator skills, and early modifications were made to the initial Westinghouse design to enable flexible operation (eg, use of "grey" control rods to vary reactor core thermal power more rapidly than with conventional "black" control rods) The nominal capacities of the present power stations are sufficient, safe and adequate to balance generation against demand and allow renewables to be inserted intermittently, without any additional CO2 emissions It is a clear demonstration of full complementarity between nuclear and renewable energies},
-  annotation = {INIS Reference Number: 52059914}
+  abstract = {Based upon existing experience feedback of French nuclear power plants operated by EDF (Electricit\'e de France), this paper shows that flexible operation of nuclear reactors is possible and has been applied in France by EDF's 58 reactors for more than 30 years without any noticeable or unmanageable impacts: no effects on safety or on the environment, and no noticeable additional maintenance costs, with an additional unplanned capability load factor estimated at only 05 \% EDF's nuclear reactors have the capability to vary their output between 20 \% and 100 \% within 30 minutes, twice a day, when operating in load-following mode Flexible operation requires sound plant design (safety margins, auxiliary equipment) and appropriate operator skills, and early modifications were made to the initial Westinghouse design to enable flexible operation (eg, use of "grey" control rods to vary reactor core thermal power more rapidly than with conventional "black" control rods) The nominal capacities of the present power stations are sufficient, safe and adequate to balance generation against demand and allow renewables to be inserted intermittently, without any additional CO2 emissions It is a clear demonstration of full complementarity between nuclear and renewable energies}
+}
+
+@article{morozovskaIncludingDynamicLine2021,
+  title = {Including {{Dynamic Line Rating Into}} the {{Optimal Planning}} of {{Distributed Energy Resources}}},
+  author = {Morozovska, Kateryna and Heleno, Miguel and Meza, Alan Valenzuela and Hilber, Patrik},
+  year = 2021,
+  month = nov,
+  journal = {IEEE Transactions on Smart Grid},
+  volume = {12},
+  number = {6},
+  pages = {5052--5059},
+  issn = {1949-3053, 1949-3061},
+  doi = {10.1109/TSG.2021.3109130},
+  url = {https://ieeexplore.ieee.org/document/9525437/},
+  urldate = {2026-09-26},
+  abstract = {Dynamic line rating (DLR) is an emerging technology that can remove strict power transmission constraints and potentially reduce investment costs in new generation technologies in a microgrid. By implementing dynamic rating into distributed generation sizing and placement problem, it is possible to reduce the investment costs on new distributed energy resources by achieving improved optimal power flow results as compared to planning without considering DLR. This paper explores the possibility of complementing a model for optimal siting and placement of the distributed energy resources in a microgrid with the dynamic line rating. Implementation of DLR has shown a decrease in investment costs as well as a reduced number of installed generators as opposed to the solution without DLR implementation.},
+  copyright = {https://creativecommons.org/licenses/by/4.0/legalcode},
+  langid = {english}
 }
 
 @article{moryadeeInvestigatingPotentialEffects2014,
@@ -21017,7 +21422,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{nerc2010LongtermReliability2010a,
-  title = {2010 {{Long-term}} Reliability Assessment},
+  title = {2010 {{Long}}-Term Reliability Assessment},
   author = {{NERC}},
   year = 2010,
   month = oct,
@@ -21083,6 +21488,15 @@ Woodrow Whitlatch}
   year = 2022,
   institution = {North American Electric Reliability Corporation},
   url = {https://www.nerc.com/pa/RAPA/PA/Performance%20Analysis%20DL/NERC_SOR_2022.pdf}
+}
+
+@techreport{nerc2025LongTermReliability2026,
+  title = {2025 {{Long-Term Reliability Assessment}}},
+  author = {{NERC}},
+  year = 2026,
+  month = jan,
+  institution = {North American Electric Reliability Corporation},
+  url = {https://www.nerc.com/globalassets/our-work/assessments/nerc_ltra_2025.pdf}
 }
 
 @techreport{nercAvailableTransferCapability1996,
@@ -21504,7 +21918,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{northamericanelectricreliabilitycorporation2023LongtermReliability2023,
-  title = {2023 {{Long-term}} Reliability Assessment},
+  title = {2023 {{Long}}-Term Reliability Assessment},
   shorttitle = {{{NERC2023}}},
   author = {{NERC}},
   year = 2023,
@@ -21760,9 +22174,8 @@ Woodrow Whitlatch}
   title = {{{ReEDS}} Model Documentation},
   shorttitle = {{{ReEDS}} Docs},
   author = {{NREL}},
-  year = 2025,
-  month = nov,
-  url = {https://natlabrockies.github.io/ReEDS-2.0/model_documentation.html}
+  year = 2026,
+  url = {https://reeds-model.github.io/ReEDS/model_documentation.html}
 }
 
 @misc{nrelRegionalEnergyDeployment2020,
@@ -21813,6 +22226,20 @@ Woodrow Whitlatch}
   author = {{National Renewable Energy Laboratory}},
   year = 2024,
   url = {https://nsrdb.nlr.gov/}
+}
+
+@techreport{nunemakerORBITOffshoreRenewables2020,
+  title = {{{ORBIT}}: {{Offshore Renewables Balance}}-of-{{System}} and {{Installation Tool}}},
+  shorttitle = {{{ORBIT}}},
+  author = {Nunemaker, Jacob and Shields, Matthew and Hammond, Robert and Duffy, Patrick},
+  year = 2020,
+  month = aug,
+  number = {NREL/TP-5000-77081, 1660132, MainId:26027},
+  pages = {NREL/TP-5000-77081, 1660132, MainId:26027},
+  doi = {10.2172/1660132},
+  url = {https://www.osti.gov/servlets/purl/1660132/},
+  urldate = {2026-07-07},
+  langid = {english}
 }
 
 @article{nunesEnablingSolarElectricity2015,
@@ -21927,6 +22354,36 @@ Woodrow Whitlatch}
   pages = {48},
   institution = {{New York State Energy Research and Development Authority}},
   url = {http://documents.dps.ny.gov/public/Common/ViewDoc.aspx?DocRefId={2A1BFBC9-85B4-4DAE-BCAE-164B21B0DC3D}}
+}
+
+@techreport{oakesCostPerformanceBaseline2023,
+  title = {Cost and {{Performance Baseline}} for {{Fossil Energy Plants}}, {{Volume}} 5: {{Natural Gas Electricity Generating Units}} for {{Flexible Operation}}},
+  shorttitle = {Cost and {{Performance Baseline}} for {{Fossil Energy Plants}}, {{Volume}} 5},
+  author = {Oakes, Matt and Konrade, Jacob and Bleckinger, Mark and Turner, Marc and Hughes, Sydney and Hoffman, Hannah and Shultz, Travis and Lewis, Eric},
+  year = 2023,
+  month = may,
+  number = {DOE/NETL--2023/3855, 1973266},
+  pages = {DOE/NETL--2023/3855, 1973266},
+  doi = {10.2172/1973266},
+  url = {https://www.osti.gov/servlets/purl/1973266/},
+  urldate = {2026-07-07},
+  langid = {english}
+}
+
+@misc{obikaDynamicLineRatings2026,
+  title = {Dynamic {{Line Ratings}} ({{DLR}})},
+  author = {Obika, Kodi and Brown, Patrick R},
+  year = 2026,
+  url = {https://github.com/NatLabRockies/DynamicLineRatings},
+  urldate = {2026-09-25},
+  copyright = {BSD 3-Clause},
+  howpublished = {National Laboratory of the Rockies}
+}
+
+@misc{obikaHourlyDynamicLine2026,
+  title = {Hourly Dynamic Line Ratings for Transmission Lines across the Contiguous {{United States}}},
+  author = {Obika, Kodi and Brown, Patrick R},
+  year = 2026
 }
 
 @article{ockoClimateConsequencesHydrogen2022,
@@ -22967,7 +23424,7 @@ Woodrow Whitlatch}
 }
 
 @article{plessmannOutlookSouthEastEuropean2017,
-  title = {Outlook on {{South-East European}} Power System until 2050: {{Least-cost}} Decarbonization Pathway Meeting {{EU}} Mitigation Targets},
+  title = {Outlook on {{South-East European}} Power System until 2050: {{Least}}-Cost Decarbonization Pathway Meeting {{EU}} Mitigation Targets},
   shorttitle = {Outlook on {{South-East European}} Power System until 2050},
   author = {Ple{\ss}mann, Guido and Blechinger, Philipp},
   year = 2017,
@@ -23416,6 +23873,14 @@ Woodrow Whitlatch}
   langid = {english}
 }
 
+@article{ramasamyUSSolarPhotovoltaic2022,
+  title = {U.{{S}}. {{Solar Photovoltaic System}} and {{Energy Storage Cost Benchmarks}}, {{With Minimum Sustainable Price Analysis}}: {{Q1}} 2022},
+  author = {Ramasamy, Vignesh and Zuboy, Jarett and O'Shaughnessy, Eric and Feldman, David and Desai, Jal and Woodhouse, Michael and Basore, Paul and Margolis, Robert},
+  year = 2022,
+  journal = {Renewable Energy},
+  langid = {english}
+}
+
 @article{ramJobCreationGlobal2020,
   title = {Job Creation during the Global Energy Transition towards 100\% Renewable Power System by 2050},
   author = {Ram, Manish and Aghahosseini, Arman and Breyer, Christian},
@@ -23448,6 +23913,16 @@ Woodrow Whitlatch}
   address = {Berkeley, CA},
   institution = {Lawrence Berkeley National Laboratory},
   url = {https://emp.lbl.gov/sites/default/files/2024-04/Queued%20Up%202024%20Edition_R2.pdf}
+}
+
+@techreport{randQueued2026Edition2026,
+  title = {Queued {{Up}}: 2026 {{Edition}}, {{Characteristics}} of {{Power Plants Seeking Transmission Interconnection As}} of the {{End}} of 2025},
+  author = {Rand, Joseph and Cheyette, Anna and Talley, Chris and Zhang, Steven and Gorman, Will and Wiser, Ryan H and Seel, Joachim and Jeong, Seongeun and Kahrl, Fredrich},
+  year = 2026,
+  month = may,
+  address = {Berkeley, CA},
+  institution = {Lawrence Berkeley National Laboratory},
+  url = {https://emp.lbl.gov/publications/queued-2026-edition-characteristics}
 }
 
 @techreport{randQueuedCharacteristicsPower2021,
@@ -23851,6 +24326,20 @@ Woodrow Whitlatch}
   url = {https://www.nlr.gov/docs/fy22osti/83063.pdf}
 }
 
+@techreport{reznicekCostAnalysisHeavyDuty2026,
+  title = {Cost {{Analysis}} of {{Heavy-Duty Vehicle Proton Exchange Membrane Fuel Cell Stationary Power Plants}}},
+  author = {Reznicek, Evan and Berres, Andreas and Li, Yijin and Ramasamy, Vignesh and Penev, Michael and Chung, Mark and Baldwin, Samuel},
+  year = 2026,
+  month = feb,
+  number = {NLR/TP-5400-91146},
+  institution = {National Laboratory of the Rockies},
+  doi = {10.2172/3018256},
+  url = {https://docs.nlr.gov/docs/fy26osti/91146.pdf},
+  urldate = {2026-11-09},
+  abstract = {Heavy-duty PEM fuel cells could be a low-cost, low emission alternative to combustion turbines for re-electrifying hydrogen if used as part of a long duration grid energy storage systems. Many studies expect heavy duty PEM fuel cell production costs to reduce as manufacturing volumes ramp up and their expected durability of 25,000-30,000 hours aligns well with a 30-year life for hydrogen seasonal energy storage plants that would likely operate less than 10\% of the year. The labor, material, and equipment costs associated with installing PEM fuel cells and their required balance of plant for stationary applications have not been thoroughly explored, however. This study performs a detailed design and cost analysis of a 100 MW stationary PEM fuel cell power plant, capturing costs such as cooling, power electronics, pipes, valves, fittings, cabling, conduit, concrete foundations, buildings, and land. It employs methods consistent with NLR's solar PV benchmarking cost analysis and annual technology baseline to derive the total installed costs of stationary PEM fuel cell plants that utilize heavy duty PEM fuel cells.},
+  langid = {english}
+}
+
 @article{rhodesExperimentalDataCollection2014,
   title = {Experimental and Data Collection Methods for a Large-Scale Smart Grid Deployment: {{Methods}} and First Results},
   author = {Rhodes, Joshua D. and Upshaw, Charles R. and Harris, Chioke B. and Meehan, Colin M. and Walling, David A. and Navr{\'a}til, Paul A. and Beck, Ariane L. and Nagasawa, Kazunori and Fares, Robert L. and Cole, Wesley J. and {others}},
@@ -24081,6 +24570,23 @@ Woodrow Whitlatch}
   year = 2024,
   month = oct,
   volume = {48}
+}
+
+@article{roaldPowerSystemsOptimization2023,
+  title = {Power Systems Optimization under Uncertainty: {{A}} Review of Methods and Applications},
+  shorttitle = {Power Systems Optimization under Uncertainty},
+  author = {Roald, Line A. and Pozo, David and Papavasiliou, Anthony and Molzahn, Daniel K. and Kazempour, Jalal and Conejo, Antonio},
+  year = 2023,
+  month = jan,
+  journal = {Electric Power Systems Research},
+  volume = {214},
+  pages = {108725},
+  issn = {03787796},
+  doi = {10.1016/j.epsr.2022.108725},
+  url = {https://linkinghub.elsevier.com/retrieve/pii/S0378779622007842},
+  urldate = {2026-05-25},
+  abstract = {Electric power systems and the companies and customers that interact with them are experiencing increasing levels of uncertainty due to factors such as renewable energy generation, market liberalization, and climate change. This raises the important question of how to make optimal decisions under uncertainty. This paper aims to provide an overview of existing methods for modeling and optimization of problems affected by uncertainty, targeted at researchers with a familiarity with power systems and optimization. We also review some important applications of optimization under uncertainty in power systems and provide an outlook to future directions of research.},
+  langid = {english}
 }
 
 @techreport{rocha-garridoProposedChangesPJM2019,
@@ -24591,6 +25097,22 @@ Woodrow Whitlatch}
   abstract = {With its European Green Deal, the European Union (EU) aims to substantially increase renewable electricity generation and decrease greenhouse gas emissions in the electricity sector by 2035. European countries independently set these targets, but might not account for cross-border infrastructure interdependencies that may facilitate or impede their implementation. This study quantifies regional interdependencies among 36 European countries aggregated to eight regions by applying electricity sector modeling, Modeling to Generate Alternatives, tree-based ensemble method, and scenario discovery. Cost-effectively reaching EU targets in 2035 allows for flexibility in uptake of electricity system infrastructure across European regions, with few exceptions. Reaching EU targets with low costs requires high renewable capacities in Central and Nordic Europe and France, steep reductions of fossil fuel capacities in Central and Eastern Europe, keeping existing nuclear capacities in France, and high storage capacities in Alpine and Central Europe. Regional targets are most influential for increasing renewable capacities, while EU targets are most influential for decreasing greenhouse gas emissions. If EU targets are met, reaching regional targets of Central Europe and keeping nuclear capacities in France substantially reduce infrastructure requirements in Eastern Europe, highlighting the importance of regional cooperation for electricity system planning and policy.}
 }
 
+@article{sasseDistributionalTradeoffsRegionally2019,
+  title = {Distributional Trade-Offs between Regionally Equitable and Cost-Efficient Allocation of Renewable Electricity Generation},
+  author = {Sasse, Jan-Philipp and Trutnevyte, Evelina},
+  year = 2019,
+  month = nov,
+  journal = {Applied Energy},
+  volume = {254},
+  pages = {113724},
+  issn = {03062619},
+  doi = {10.1016/j.apenergy.2019.113724},
+  url = {https://linkinghub.elsevier.com/retrieve/pii/S0306261919314114},
+  urldate = {2026-07-06},
+  abstract = {Decentralized renewable electricity generation (DREG) has been growing at an unprecedented pace, yet the appropriate spatial allocation and associated regional equity implications remain underinvestigated. In this study, we quantify the trade-offs between cost-efficient (least-cost) and regionally equitable DREG allocation in terms of electricity generation costs, investment needs, and DREG capacity requirements. Using the case of the ambitious and publicly-approved Swiss Energy Strategy 2050, we set up a bottom-up, technology-rich electricity system model EXPANSE with Modeling to Generate Alternatives at a spatial resolution of 2'258 Swiss municipalities. In order to measure regional equity implication, we adapt the concepts of the Lorenz curve and the Gini coefficient. We find a significant trade-off by 2035 in Switzerland: 50\% increase in regional equity when allocating DREG to various Swiss regions on the basis of population or electricity demand leads to 18\% higher electricity generation costs. Least-cost allocation implies concentrating DREG and associated investments to few most productive locations only. Solar PV is the key technology for increasing regional equity. We conclude that in countries with spatially-uneven DREG resources like Switzerland, any policies that focus on cost efficiency should anticipate regional equity implications in advance and, if desired, minimize them by promoting solar PV.},
+  langid = {english}
+}
+
 @article{sasseLowcarbonElectricitySector2023,
   title = {A Low-Carbon Electricity Sector in {{Europe}} Risks Sustaining Regional Inequalities in Benefits and Vulnerabilities},
   author = {Sasse, Jan-Philipp and Trutnevyte, Evelina},
@@ -24807,7 +25329,7 @@ Woodrow Whitlatch}
 }
 
 @article{schleiferEvolvingEnergyCapacityForthcoming,
-  title = {The Evolving Energy and Capacity Value of {{PV-battery}} Hybrid System Architectures in a Future with Low Renewable Energy Costs},
+  title = {The Evolving Energy and Capacity Value of {{PV}}-Battery Hybrid System Architectures in a Future with Low Renewable Energy Costs},
   author = {Schleifer, Anna and Murphy, Caitlin and Cole, Wesley and Denholm, Paul},
   year = {Forthcoming}
 }
@@ -24891,6 +25413,28 @@ Woodrow Whitlatch}
   url = {http://www.sciencedirect.com/science/article/pii/S254243511830583X},
   urldate = {2019-01-14},
   abstract = {Summary The future role of stationary electricity storage is perceived as highly uncertain. One reason is that most studies into the future cost of storage technologies focus on investment cost. An appropriate cost assessment must be based on the application-specific lifetime cost of storing electricity. We determine the levelized cost of storage (LCOS) for 9 technologies in 12 power system applications from 2015 to 2050 based on projected investment cost reductions and current performance parameters. We find that LCOS will reduce by one-third to one-half by 2030 and 2050, respectively, across the modeled applications, with lithium ion likely to become most cost efficient for nearly all stationary applications from 2030. Investments in alternative technologies may prove futile unless significant performance improvements can retain competitiveness with lithium ion. These insights increase transparency around the future competitiveness of electricity storage technologies and can help guide research, policy, and investment activities to ensure cost-efficient deployment.}
+}
+
+@techreport{schmitt_et_al_2022,
+  title = {Cost and {{Performance Baseline}} for {{Fossil Energy Plants}}. {{Volume}} 1: {{Bituminous Coal}} and {{Natural Gas}} to {{Electricity}}},
+  author = {{Schmitt, Tommy} and {Leptinsky, Sarah} and {Turner, Marc} and {Zoelle, Alexander} and {White, Charles W.} and {Hughes, Sydney} and {Homsy, Sally} and {Woods, Mark} and {Hoffman, Hannah} and {Shultz, Travis} and {James, Robert}},
+  year = 2022,
+  institution = {National Energy Technology Laboratory},
+  url = {https://www.osti.gov/servlets/purl/1893822/},
+  urldate = {2026-07-07}
+}
+
+@techreport{schmittCostPerformanceRetrofitting2023,
+  title = {Cost and {{Performance}} of {{Retrofitting NGCC Units}} for {{Carbon Capture}} -- {{Revision}} 3},
+  author = {Schmitt, Tommy and Homsy, Sally and Mantripragada, Hari and Woods, Mark and Hoffman, Hannah and Shultz, Travis and Fout, Timothy and Hackett, Gregory},
+  year = 2023,
+  month = may,
+  number = {DOE/NETL-2023/3848, 1961845},
+  pages = {DOE/NETL-2023/3848, 1961845},
+  doi = {10.2172/1961845},
+  url = {https://www.osti.gov/servlets/purl/1961845/},
+  urldate = {2026-07-07},
+  langid = {english}
 }
 
 @techreport{schneiderWorldNuclearIndustry2022,
@@ -25072,6 +25616,22 @@ Woodrow Whitlatch}
   institution = {La Secretar\'ia de Energ\'ia},
   url = {https://www.gob.mx/sener/acciones-y-programas/programa-de-desarrollo-del-sistema-electrico-nacional-33462},
   langid = {spanish}
+}
+
+@article{sengaImplicationsPolicydrivenTransmission2025,
+  title = {Implications of Policy-Driven Transmission Expansion for Costs, Emissions and Reliability in the {{USA}}},
+  author = {Senga, Juan Ramon L. and Botterud, Audun and Parsons, John E. and Story, S. Drew and Knittel, Christopher R.},
+  year = 2025,
+  month = dec,
+  journal = {Nature Energy},
+  volume = {11},
+  number = {2},
+  pages = {230--243},
+  issn = {2058-7546},
+  doi = {10.1038/s41560-025-01921-7},
+  url = {https://www.nature.com/articles/s41560-025-01921-7},
+  urldate = {2026-09-26},
+  langid = {english}
 }
 
 @article{senguptaNationalSolarRadiation2018,
@@ -25579,7 +26139,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{sigrinRooftopSolarTechnical2018,
-  title = {Rooftop {{Solar Technical Potential}} for {{Low-to-Moderate Income Households}} in the {{United States}}},
+  title = {Rooftop {{Solar Technical Potential}} for {{Low}}-to-{{Moderate Income Households}} in the {{United States}}},
   author = {Sigrin, Benjamin and Mooney, Meghan},
   year = 2018,
   month = apr,
@@ -25680,6 +26240,22 @@ Woodrow Whitlatch}
   volume = {47}
 }
 
+@misc{singhSensitivityAnalysisDynamic2026,
+  title = {Sensitivity {{Analysis}} of {{Dynamic Line Rating}} for {{ACSR Conductors}} Using {{IEEE-738}}},
+  author = {Singh, Shashank and Mishra, Ashish Kumar and P, Vinod M. and Romeis, Christian},
+  year = 2026,
+  month = jul,
+  number = {arXiv:2607.23536},
+  eprint = {2607.23536},
+  primaryclass = {eess.SY},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2607.23536},
+  url = {http://arxiv.org/abs/2607.23536},
+  urldate = {2026-08-18},
+  abstract = {Dynamic Line Rating (DLR) is a novel technique that enhances the utilization of transmission line capacity. It is nevertheless unclear how much measurement uncertainty in important environmental parameters affects the DLR calculation. Using the IEEE-738 standard, this paper presents a systematic parametric sensitivity analysis of DLR for a 795 kcmil ACSR Drake conductor. The DLR computation encompasses 832 operating points which includes daytime/nighttime solar scenarios, clear/non-clear atmospheric clearness conditions, wind speeds ranging from 0 to 15.25 m/s, and ambient temperatures between 15 and 50 \textopenbullet C. According to sensitivity analysis, wind sensitivity tends to decrease at higher ambient temperatures, whereas temperature sensitivity tends to increase with wind speed. Pearson correlation analysis indicates a strong negative linear association between DLR and ambient temperature, and a strong positive linear association with wind speed. A regression model incorporates both individual and interactive effects of wind and temperature, and explains over 93\% of the observed DLR variability across all cases. Finally, the observations serve as a guide for operational planning and uncertainty assessment in DLR-based transmission systems.},
+  archiveprefix = {arXiv}
+}
+
 @article{singhSolarPowerGeneration2013,
   title = {Solar Power Generation by {{PV}} (Photovoltaic) Technology: {{A}} Review},
   shorttitle = {Solar Power Generation by {{PV}} (Photovoltaic) Technology},
@@ -25728,8 +26304,8 @@ Woodrow Whitlatch}
 }
 
 @article{sioshansiEmissionsImpactsBenefits2009,
-  title = {Emissions {{Impacts}} and {{Benefits}} of {{Plug-In Hybrid Electric Vehicles}} and {{Vehicle-to-Grid Services}}},
-  shorttitle = {Emissions {{Impacts}} and {{Benefits}} of {{Plug-In Hybrid Electric Vehicles}} and {{Vehicle-to-Grid Services}}},
+  title = {Emissions {{Impacts}} and {{Benefits}} of {{Plug-In Hybrid Electric Vehicles}} and {{Vehicle}}-to-{{Grid Services}}},
+  shorttitle = {Emissions {{Impacts}} and {{Benefits}} of {{Plug-In Hybrid Electric Vehicles}} and {{Vehicle}}-to-{{Grid Services}}},
   author = {Sioshansi, R. and Denholm, P.},
   year = 2009,
   month = feb,
@@ -25745,7 +26321,7 @@ Woodrow Whitlatch}
 }
 
 @article{sioshansiEnergyStorageModelingStateoftheArt2021,
-  title = {Energy-{{Storage Modeling}}: {{State-of-the-Art}} and {{Future Research Directions}}},
+  title = {Energy-{{Storage Modeling}}: {{State}}-of-the-{{Art}} and {{Future Research Directions}}},
   shorttitle = {Energy-{{Storage Modeling}}},
   author = {Sioshansi, Ramteen and Denholm, Paul and Arteaga, Juan and Awara, Sarah and Bhattacharjee, Shubhrajit and Botterud, Audun and Cole, Wesley and Cortes, Andres and De Queiroz, Andeson Rodrigo and Decarolis, Joseph and Ding, Zhenhuan and Diorio, Nicholas and Dvorkin, Yury and Helman, Udi and Johnson, Jeremiah and Konstantelos, Ioannis and Mai, Trieu and Pandzic, Hrvoje and Sodano, Daniel and Stephen, Gord and Svoboda, Alva and Zareipour, Hamidreza and Zhang, Ziang},
   year = 2021,
@@ -26705,6 +27281,25 @@ Woodrow Whitlatch}
   langid = {english}
 }
 
+@inproceedings{sunDynamicLineRating2026,
+  title = {Dynamic {{Line Rating}} for {{Offshore Wind Submarine Cables}}: {{Case Studies}} in {{Selected U}}.{{S}}. {{Locations}}},
+  shorttitle = {Dynamic {{Line Rating}} for {{Offshore Wind Submarine Cables}}},
+  booktitle = {2026 {{IEEE}}/{{PES Transmission}} and {{Distribution Conference}} and {{Exposition}} ({{T}}\&amp;{{D}})},
+  author = {Sun, Mucun and Abboud, Alexander W. and Alam, S M Shafiul and Gentle, Jake P.},
+  year = 2026,
+  month = may,
+  pages = {1--5},
+  publisher = {IEEE},
+  address = {Chicago, IL, USA},
+  doi = {10.1109/TD48022.2026.11562629},
+  url = {https://ieeexplore.ieee.org/document/11562629/},
+  urldate = {2026-06-23},
+  abstract = {Dynamic line rating (DLR) adjusts the thermal capacity of transmission infrastructure based on real-time atmospheric conditions, enabling improved utilization of existing assets. While DLR has been widely studied for overhead lines, its application to submarine export cables for offshore wind (OSW) projects remains underexplored. This paper presents a quantitative framework for evaluating DLR feasibility for high-voltage submarine cables by integrating the IEC 60287 thermal model with oceanographic data from the National Oceanic and Atmospheric Administration's (NOAA) Real-Time Ocean Forecast System (RTOFS). Case studies covering representative sites across major U.S. coastal regions (e.g., Pacific, New England, Mid-Atlantic, South Atlantic, and Gulf Coast) have been conducted. Case study results indicate that regions with greater seasonal seabed temperature variability, such as the Mid-Atlantic, South Atlantic, and Gulf Coast, can achieve up to 10--15\% ampacity gains over static ratings, translating into enhanced operational flexibility and deferred infrastructure upgrades. Conversely, stable cold-water regions like the Pacific exhibit limited benefits. The results demonstrate that applying DLR to OSW submarine cables is technically feasible and may improve grid reliability when combined with appropriate sensing and monitoring systems.},
+  copyright = {https://doi.org/10.15223/policy-029},
+  isbn = {979-8-3315-5569-6},
+  langid = {english}
+}
+
 @techreport{sunElectrificationFuturesStudy2020a,
   title = {Electrification {{Futures Study}}: {{Methodological Approaches}} for {{Assessing Long-Term Power System Impacts}} of {{End-Use Electrification}}},
   shorttitle = {Sun2020},
@@ -27178,7 +27773,7 @@ Woodrow Whitlatch}
 }
 
 @inproceedings{thrashACSSTWanImproved2001,
-  title = {{{ACSS}}/{{TW-an}} Improved High Temperature Conductor for Upgrading Existing Lines or New Construction},
+  title = {{{ACSS}}/{{TW}}-an Improved High Temperature Conductor for Upgrading Existing Lines or New Construction},
   booktitle = {2001 {{Power Engineering Society Summer Meeting}}. {{Conference Proceedings}} ({{Cat}}. {{No}}.{{01CH37262}})},
   author = {Thrash, F.R.},
   year = 2001,
@@ -27992,7 +28587,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{usgsAssessmentModerateandHighTemperature2008,
-  title = {Assessment of {{Moderate-and High-Temperature Geothermal Resources}} of the {{United States}}},
+  title = {Assessment of {{Moderate}}-and {{High-Temperature Geothermal Resources}} of the {{United States}}},
   author = {USGS},
   year = 2008,
   institution = {U.S. Geological Survey},
@@ -28593,8 +29188,17 @@ Woodrow Whitlatch}
   abstract = {This paper develops models for hurricane exposure, fragility curve-based damage to electrical transmission grid components and power generating stations using Monte-Carlo simulation, and restoration cost to predict resiliency factors including power generation capacity lost and the restoration cost for electrical transmission grid and power generation system damages. Synthetic grid data are used to model the Energy Reliability Council of Texas (ERCOT) electrical grid. A case study is developed based on Hurricane Harvey. This work is extended to evaluate the changes to resiliency as the percentage of renewable sources is increased from 2017 levels to levels corresponding to the NREL Futures Study 2050 Texas scenarios for 50\% and 80\% renewable energy.}
 }
 
+@misc{wattcoalitionGlobalDeploymentsGrid2026,
+  title = {Global Deployments of Grid Enhancing Technologies},
+  author = {{WATT Coalition}},
+  year = 2026,
+  journal = {Working for Advanced Transmission Technologies},
+  doi = {https://watt-transmission.org/},
+  urldate = {2026-09-26}
+}
+
 @techreport{wecc2013InterconnectionwidePlan2013a,
-  title = {2013 {{Interconnection-wide Plan Tools}} and {{Models}}},
+  title = {2013 {{Interconnection}}-Wide {{Plan Tools}} and {{Models}}},
   author = {WECC},
   year = 2013,
   month = sep,
@@ -28603,7 +29207,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{wecc2013InterconnectionwidePlan2013b,
-  title = {2013 {{Interconnection-wide Plan Data}} and {{Assumptions}}},
+  title = {2013 {{Interconnection}}-Wide {{Plan Data}} and {{Assumptions}}},
   author = {WECC},
   year = 2013,
   month = sep,
@@ -28762,7 +29366,7 @@ Woodrow Whitlatch}
 }
 
 @article{wenELCCbasedCapacityValue2023,
-  title = {{{ELCC-based}} Capacity Value Estimation of Combined Wind - Storage System Using {{IPSO}} Algorithm},
+  title = {{{ELCC}}-Based Capacity Value Estimation of Combined Wind - Storage System Using {{IPSO}} Algorithm},
   author = {Wen, Lei and Song, Qianqian},
   year = 2023,
   month = jan,
@@ -28834,6 +29438,15 @@ Woodrow Whitlatch}
   year = 2024,
   month = sep,
   url = {https://feature.wecc.org/soti/topic-sections/resources/index.html}
+}
+
+@techreport{westtecWestwideTransmissionStudy2026,
+  title = {West-Wide Transmission Study: 10-Year Horizon Report},
+  author = {{WestTEC}},
+  year = 2026,
+  month = feb,
+  institution = {Western Transmission Expansion Coalition},
+  url = {https://www.westernpowerpool.org/resources/westtec-10-year-horizon-report}
 }
 
 @article{whartonAtmosphericStabilityAffects2012,
@@ -29506,7 +30119,7 @@ Woodrow Whitlatch}
 }
 
 @techreport{woodmackenzieFrontoftheMeterEnergyStorage2018,
-  title = {U.{{S}}. {{Front-of-the-Meter Energy Storage System Prices}} 2018-2022},
+  title = {U.{{S}}. {{Front}}-of-the-{{Meter Energy Storage System Prices}} 2018-2022},
   author = {Wood Mackenzie},
   year = 2018,
   url = {https://www.woodmac.com/our-expertise/focus/Power--Renewables/U.S.-Front-of-the-Meter-Energy-Storage-System-Prices-2018-2022}
@@ -29650,12 +30263,11 @@ Woodrow Whitlatch}
 }
 
 @techreport{xendee2024MarketSurvey2024,
-  title = {2024 {{Market Survey- Commercial EV Charging}}},
+  title = {2024 {{Market Survey}}- {{Commercial EV Charging}}},
   author = {{Xendee}},
   year = 2024,
   institution = {Xendee},
-  url = {https://xendee.com/industry-survey-report},
-  annotation = {https://6572318.fs1.hubspotusercontent-na1.net/hubfs/6572318/MK-5157-Xendee-SoM\_Report-2024\_FINAL.pdf?\_\_hstc=43606970.a684e4dbc748817cf46cbbde6ac9ef4c.1735666957538.1735666957538.1735666957538.1\&\_\_hssc=43606970.1.1735666957538\&\_\_hsfp=897878061}
+  url = {https://xendee.com/industry-survey-report}
 }
 
 @article{xieDistributionalLabourChallenges2023,
@@ -30448,25 +31060,6 @@ Woodrow Whitlatch}
   url = {http://www.nlr.gov/docs/fy14osti/62077.pdf}
 }
 
-@techreport{zotero-10476,
-  title = {100\% {{Clean By}} 2050: {{What}} Does It Look Like?},
-  author = {Clack, Christopher T. M.},
-  year = 2021,
-  institution = {Vibrant Clean Energy},
-  url = {https://vibrantcleanenergy.com/wp-content/uploads/2021/03/VCE-ESIG-03022021.pdf}
-}
-
-@article{zotero-8568,
-  title = {Planning for the Evolution of the Electric Grid with a Long-Run Marginal Emission Rate},
-  author = {Gagnon, Pieter and Cole, Wesley},
-  year = 2022,
-  month = mar,
-  journal = {iScience},
-  volume = {25},
-  number = {3},
-  doi = {10.1016/j.isci.2022.103915}
-}
-
 @misc{ZoteroConnectors,
   title = {Zotero \textbar{} {{Connectors}}},
   url = {https://www.zotero.org/download/connectors},
@@ -30503,165 +31096,5 @@ Woodrow Whitlatch}
   urldate = {2026-03-18},
   abstract = {We propose explicitly incorporating large-scale load siting into a stochastic nodal power system capacity expansion planning model that concurrently co-optimizes generation, transmission and storage expansion. The potential operational flexibility of some of these large loads is also taken into account by considering them as consisting of a set of tranches with different reliability requirements, which are modeled as a constraint on expected served energy across operational scenarios. We implement our model as a two-stage stochastic mixed-integer optimization problem with cross-scenario expectation constraints. To overcome the challenge of scalability, we build upon existing work to implement this model on a high performance computing platform and exploit scenario parallelization using an augmented Progressive Hedging Algorithm. The algorithm is implemented using the bounding features of mpisppy, which have shown to provide satisfactory provable optimality gaps despite the absence of theoretical guarantees of convergence. We test our approach to assess the value of this proactive planning framework on total system cost and reliability metrics using realistic testcases geographically assigned to San Diego and South Carolina, with datacenter and direct air capture facilities as large loads.},
   archiveprefix = {arXiv},
-  langid = {english}
-}
-
-@online{JobsEconomicDevelopment,
-	title = {Jobs and Economic Development Impact Models {\textbar} {NLR}},
-	url = {https://www.nlr.gov/analysis/jedi/},
-	urldate = {2026-07-07},
-	file = {Jobs and Economic Development Impact Models | NLR:files/8170/jedi.html:text/html},
-}
-
-@article{asuegaTechnoeconomicAnalysisAdvanced2023,
-	title = {Techno-economic analysis of advanced small modular nuclear reactors},
-	volume = {334},
-	issn = {0306-2619},
-	url = {https://www.sciencedirect.com/science/article/pii/S0306261923000338},
-	doi = {10.1016/j.apenergy.2023.120669},
-	pages = {120669},
-	journaltitle = {Applied Energy},
-	shortjournal = {Applied Energy},
-	author = {Asuega, Anthony and Limb, Braden J. and Quinn, Jason C.},
-	urldate = {2026-07-07},
-	date = {2023-03-15},
-	keywords = {Levelized cost of energy, Overnight capital cost, Small modular reactors, {SMRs}, Techno-economic analysis},
-	file = {ScienceDirect Snapshot:files/8183/S0306261923000338.html:text/html;Submitted Version:files/8182/Asuega et al. - 2023 - Techno-economic analysis of advanced small modular nuclear reactors.pdf:application/pdf},
-}
-
-@report{abou-jaoudeLiteratureReviewAdvanced2023,
-	title = {Literature Review of Advanced Reactor Cost Estimates},
-	url = {https://www.osti.gov/servlets/purl/1986466/},
-	doi = {10.2172/1986466},
-	pages = {INL/RPT--23--72972--Rev000, 1986466},
-	number = {{INL}/{RPT}--23-72972-Rev000, 1986466},
-	author = {Abou-Jaoude, Abdalla and Lin, Linyu and Bolisetti, Chandrakanth and Worsham, Elizabeth and Larsen, Levi and Epiney, Aaron},
-	urldate = {2026-07-07},
-	date = {2023-06-01},
-	langid = {english},
-	file = {PDF:files/8184/Abou-Jaoude et al. - 2023 - Literature Review of Advanced Reactor Cost Estimates.pdf:application/pdf},
-}
-
-@misc{basoreQ12025SolarPhotovoltaic,
-	title = {Q1-2025 Solar Photovoltaic System Cost Benchmarks},
-	url = {https://www.osti.gov/servlets/purl/3009689},
-	doi = {10.7799/3009689},
-	abstract = {The U.S. Department of Energy’s solar office and its national laboratory partners analyze cost data for U.S. solar photovoltaic systems to develop cost benchmarks to measure progress toward goals and guide research and development programs. The cost data is available in an Excel spreadsheet model that can be downloaded here.},
-	publisher = {National Laboratory of the Rockies},
-	author = {Basore, Paul and Dummit, Krysta and Thomas, Andy and Taylor, Margaret and Benoliel, Peter and Feldman, David and Narayanaswami, Meenakshi and Ramasamy, Vignesh and Woodhouse, Michael and Zuboy, Jarett and Braid, Jennifer and Jost, Norman and Sproul, Evan},
-	urldate = {2026-07-07},
-	note = {Artwork Size: 7 files.
-Pages: 7 files.},
-	keywords = {14 {SOLAR} {ENERGY}, battery cost 2025, battery system cost, pv cost 2025, pv module cost, pv system cost},
-}
-
-@report{hammondWindfarmOperationsMaintenance2022,
-	title = {Windfarm Operations and Maintenance cost-Benefit Analysis Tool ({WOMBAT})},
-	url = {https://www.osti.gov/servlets/purl/1894867/},
-	doi = {10.2172/1894867},
-	pages = {NREL/TP--5000--83712, 1894867, MainId:84485},
-	number = {{NREL}/{TP}-5000-83712, 1894867, {MainId}:84485},
-	author = {Hammond, Rob and Cooperman, Aubryn},
-	urldate = {2026-07-07},
-	date = {2022-10-01},
-	langid = {english},
-	file = {PDF:files/8187/Hammond and Cooperman - 2022 - Windfarm Operations and Maintenance cost-Benefit Analysis Tool (WOMBAT).pdf:application/pdf},
-}
-
-@misc{hansonGeothermalElectricityTechnology2013,
-	title = {Geothermal Electricity Technology Evaluation Model ({GETEM}) Individual Case Files and Summary Spreadsheet ({GETEM} version Spring 2013)},
-	url = {http://www.osti.gov/servlets/purl/1148822/},
-	doi = {10.15121/1148822},
-	abstract = {This group of files-- 10 {GETEM} individual case files and 1 summary spreadsheet-- contain final data from the revisions between summer 2011 and spring 2013.},
-	publisher = {{DOE} Geothermal Data Repository; Idaho National Laboratory ({INL}), Idaho Falls, {ID} (United States)},
-	author = {Hanson, Steven},
-	urldate = {2026-07-07},
-	date = {2013},
-	langid = {english},
-	keywords = {15 Geothermal Energy, geothermal, Geothermal Electricity Technology Evaluation Model, {GETEM}, {LCOE}, Levelized Cost of Electricity},
-}
-
-@report{schmitt_et_al_2022,
-	title = {Cost and Performance Baseline for Fossil Energy Plants. Volume 1: Bituminous Coal and Natural Gas to Electricity},
-	url = {https://www.osti.gov/servlets/purl/1893822/},
-	institution = {National Energy Technology Laboratory},
-	author = {{Schmitt, Tommy} and {Leptinsky, Sarah} and {Turner, Marc} and {Zoelle, Alexander} and {White, Charles W.} and {Hughes, Sydney} and {Homsy, Sally} and {Woods, Mark} and {Hoffman, Hannah} and {Shultz, Travis} and {James, Robert}},
-	urldate = {2026-07-07},
-	date = {2022},
-}
-
-@article{james_et_al_2023,
-	title = {Cost and Performance Baseline for Fossil Energy Plants, Volume 3 – Low Rank Coal and Natural Gas to Electricity},
-	author = {James, Robert and Woods, Mark and Turner, Marc and Schmitt, Tommy and Oakes, Matt and Konrade, Jacob and Bleckinger, Mark and Sturdivan, Mark},
-	langid = {english},
-	file = {PDF:files/8176/James et al. - Cost and Performance Baseline for Fossil Energy Plants, Volume 3 – Low Rank Coal and Natural Gas to.pdf:application/pdf},
-}
-
-@report{oakesCostPerformanceBaseline2023,
-	title = {Cost and Performance Baseline for Fossil Energy Plants, Volume 5: Natural Gas Electricity Generating Units for Flexible Operation},
-	url = {https://www.osti.gov/servlets/purl/1973266/},
-	doi = {10.2172/1973266},
-	shorttitle = {Cost and Performance Baseline for Fossil Energy Plants, Volume 5},
-	pages = {DOE/NETL--2023/3855, 1973266},
-	number = {{DOE}/{NETL}--2023/3855, 1973266},
-	author = {Oakes, Matt and Konrade, Jacob and Bleckinger, Mark and Turner, Marc and Hughes, Sydney and Hoffman, Hannah and Shultz, Travis and Lewis, Eric},
-	urldate = {2026-07-07},
-	date = {2023-05-05},
-	langid = {english},
-	file = {PDF:files/8189/Oakes et al. - 2023 - Cost and Performance Baseline for Fossil Energy Plants, Volume 5 Natural Gas Electricity Generating.pdf:application/pdf},
-}
-
-@article{EliminatingDerateCarbon,
-	title = {Eliminating the Derate of Carbon Capture Retrofits},
-	journaltitle = {National Energy Technology Laboratory},
-	author = {{K. Buchheit} and {N. Kuehn}},
-	langid = {english},
-	file = {PDF:files/8178/K. Buchheit and N. Kuehn - Eliminating the Derate of Carbon Capture Retrofits.pdf:application/pdf},
-}
-
-@report{schmittCostPerformanceRetrofitting2023,
-	title = {Cost and Performance of Retrofitting {NGCC} Units for Carbon Capture – Revision 3},
-	url = {https://www.osti.gov/servlets/purl/1961845/},
-	doi = {10.2172/1961845},
-	pages = {DOE/NETL--2023/3848, 1961845},
-	number = {{DOE}/{NETL}-2023/3848, 1961845},
-	author = {Schmitt, Tommy and Homsy, Sally and Mantripragada, Hari and Woods, Mark and Hoffman, Hannah and Shultz, Travis and Fout, Timothy and Hackett, Gregory},
-	urldate = {2026-07-07},
-	date = {2023-05-31},
-	langid = {english},
-	file = {PDF:files/8191/Schmitt et al. - 2023 - Cost and Performance of Retrofitting NGCC Units for Carbon Capture – Revision 3.pdf:application/pdf},
-}
-
-@report{nunemakerORBITOffshoreRenewables2020,
-	title = {{ORBIT}: Offshore Renewables Balance-of-System and Installation Tool},
-	url = {https://www.osti.gov/servlets/purl/1660132/},
-	doi = {10.2172/1660132},
-	shorttitle = {{ORBIT}},
-	pages = {NREL/TP--5000--77081, 1660132, MainId:26027},
-	number = {{NREL}/{TP}-5000-77081, 1660132, {MainId}:26027},
-	author = {Nunemaker, Jacob and Shields, Matthew and Hammond, Robert and Duffy, Patrick},
-	urldate = {2026-07-07},
-	date = {2020-08-10},
-	langid = {english},
-	file = {PDF:files/8193/Nunemaker et al. - 2020 - ORBIT Offshore Renewables Balance-of-System and Installation Tool.pdf:application/pdf},
-}
-
-@article{ramasamyUSSolarPhotovoltaic2022,
-	title = {U.S. Solar Photovoltaic System and Energy Storage Cost Benchmarks, With Minimum Sustainable Price Analysis: Q1 2022},
-	journaltitle = {Renewable Energy},
-	author = {Ramasamy, Vignesh and Zuboy, Jarett and O'Shaughnessy, Eric and Feldman, David and Desai, Jal and Woodhouse, Michael and Basore, Paul and Margolis, Robert},
-	date = {2022},
-	langid = {english},
-	file = {PDF:files/8171/Ramasamy et al. - 2022 - U.S. Solar Photovoltaic System and Energy Storage Cost Benchmarks, With Minimum Sustainable Price An.pdf:application/pdf},
-}
-
-
-@techreport{reznicekCostAnalysisHeavyDuty2026,
-  title = {Cost {{Analysis}} of {{Heavy-Duty Vehicle Proton Exchange Membrane Fuel Cell Stationary Power Plants}}},
-  author = {Reznicek, Evan and Berres, Andreas and Li, Yijin and others},
-  year = 2026,
-  institution = {National Laboratory of the Rockies},
-  doi = {10.2172/3018256},
-  url = {https://doi.org/10.2172/3018256},
   langid = {english}
 }
