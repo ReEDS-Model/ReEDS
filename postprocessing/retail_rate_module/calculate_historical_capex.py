@@ -37,6 +37,7 @@ def get_historical_units(inputs_case):
         'hyded': 'hydnd',
         'hydend': 'hydnd',
         'pvb': 'upv',
+        'wind-ofs': 'wind-ofs-fixed',
     }
     init_cap['i'] = init_cap['i'].str.lower().replace(tech_name_map)
 
