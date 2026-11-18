@@ -158,14 +158,24 @@ if 'Turbine' in ofswinddata:
     ofswinddata.columns= ['turbine','t','cf_mult','capcost','fom','vom','rsc_mult']
     ofswinddata['tech'] = 'OFFSHORE'
     class_bin_num = 5
+    ## Classes are numbered in turbine order, so fixed must come first (classes 1-5)
+    if list(ofswinddata['turbine'].unique()) != ['fixed', 'floating']:
+        raise ValueError(
+            f"plantchar_ofswind turbines must be ['fixed', 'floating'] in that order, "
+            f"not {list(ofswinddata['turbine'].unique())}")
     turb_ls = []
     for turb in ofswinddata['turbine'].unique():
         turb_ls += [turb]*class_bin_num
     df_class_turb = pd.DataFrame({'turbine':turb_ls, 'class':range(1, len(turb_ls) + 1)})
     ofswinddata = ofswinddata.merge(df_class_turb, on='turbine', how='inner')
     ofswind_rsc_mult = ofswinddata[['t','class','rsc_mult']].copy()
-    ofswind_rsc_mult['tech'] = 'wind-ofs_' + ofswind_rsc_mult['class'].astype(str)
-    ofswind_rsc_mult = ofswind_rsc_mult.pivot_table(index='t',columns='tech', values='rsc_mult')
+    ofswind_rsc_mult['tech'] = reeds.techs.get_tech_class_name(
+        pd.Series('wind-ofs', index=ofswind_rsc_mult.index), ofswind_rsc_mult['class'], collapsed)
+    ## Classes that share a technology name keep one value per year (pivot raises if they differ)
+    ofswind_rsc_mult = (
+        ofswind_rsc_mult.drop_duplicates(subset=['t','tech','rsc_mult'])
+        .pivot(index='t', columns='tech', values='rsc_mult')
+    )
     ofswinddata = ofswinddata[['tech','class','t','cf_mult','capcost','fom','vom']]
 else:
     #ATB 2023 style

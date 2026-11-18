@@ -467,8 +467,7 @@ def main(reeds_path, inputs_case):
     #    -- Performing Resource Modifications --    #
     #################################################
     if int(sw['GSw_OfsWind']) == 0:
-        wind_ofs_resource = ['wind-ofs_' + str(n) for n in range(1,16)]
-        resources = resources[~resources['tech'].isin(wind_ofs_resource)]
+        resources = resources[~resources['tech'].isin(techs['OFSWIND'])]
     
     # Sorting profiles of resources to match the order of the rows in resources
     resources = resources.sort_values(['resource','area'])
