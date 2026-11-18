@@ -768,6 +768,10 @@ tg_i('wind-ofs',i)$ofswind(i) = yes ;
 tg_i('pv',i)$[(pv(i) or pvb(i))$(not distpv(i))] = yes ;
 tg_i('csp',i)$csp(i) = yes ;
 tg_i('gas',i)$gas(i) = yes ;
+*option to exclude aeroderivatives from the queue constraint
+if(Sw_QueueExemptionAero = 1, 
+  tg_i('gas',i)$sameas(i,'Gas-CT_aero') = no 
+) ;
 tg_i('coal',i)$coal(i) = yes ;
 tg_i('nuclear',i)$nuclear(i) = yes ;
 tg_i('battery',i)$battery(i) = yes ;
@@ -948,7 +952,8 @@ set tmodel(t) "years to include in the model",
     tfix(t) "years to fix variables over when summing over previous years",
     tprev(t,tt) "previous modeled tt from year t",
     stfeas(st) "states to include in the model",
-    tsolved(t) "years that have solved" ;
+    tsolved(t) "years that have solved",
+    tfinito_all(t) "years to run with linkage to FINITO" ;
 
 *following parameters get re-defined when the solve years have been declared
 parameter mindiff(t) "minimum difference between t and all other tt that are in tmodel(t)" ;
@@ -961,7 +966,7 @@ tfix(t) = no ;
 stfeas(st) = no ;
 tprev(t,tt) = no ;
 tsolved(t) = no ;
-
+tfinito_all(t) = no ;
 
 *==============================
 * Year specification
@@ -975,6 +980,7 @@ tlast(t)$[ord(t) = smax{tt$tmodel_new(tt), ord(tt) }] = yes ;
 tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(tt.val<t.val)] = yes ;
 mindiff(t)$tmodel_new(t) = smin{tt$tprev(t,tt), t.val-tt.val} ;
 tprev(t,tt)$[tmodel_new(t)$tmodel_new(tt)$(t.val-tt.val<>mindiff(t))] = no ;
+
 
 * In order to fill all necessary dimensions of upgrade techs parameters, we require
 * Sw_UpgradeYear in ban(i) to be a modeled year and thus we compute as either
@@ -3459,7 +3465,7 @@ $offempty
 
 *Written in copy_files.py
 $onempty
-table fom_dr_shed(i,r,allt) "--$/MWh-- dr_shed vom costs over time"
+table fom_dr_shed(i,r,allt) "--$/MW-yr-- dr_shed fom costs over time"
 $offlisting
 $ondelim
 $include inputs_case%ds%plantchar_dr_shed_fom.csv
@@ -5354,12 +5360,14 @@ cost_co2_spurline_cap(r,cs,t) =  %GSw_CO2_CostAdj% * cost_co2_spurline_cap(r,cs,
 * Parameter tracking for sequential solve
 parameter
     m_capacity_exog0(i,v,r,t) "--MW-- original value of m_capacity_exog used to make sure upgraded capacity isnt forced into retirement"
-    z_rep(t)      "--$-- objective function value by year"
-    z_rep_inv(t)  "--$-- investment component of objective function by year"
-    z_rep_op(t)   "--$-- operation component of objective function by year"
+    z_rep(t)                  "--$-- objective function value by year"
+    z_rep_inv(t)              "--$-- investment component of objective function by year"
+    z_rep_op(t)               "--$-- operation component of objective function by year"
+    z_rep_finito(t)           "--$-- FINITO component of objective function by year"
 ;
 z_rep_inv(t) = 0 ;
 z_rep_op(t) = 0 ;
+z_rep_finito(t) = 0 ;
 
 *====================================
 *     --- Employment Factors ---

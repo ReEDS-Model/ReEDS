@@ -216,6 +216,9 @@ if __name__ == '__main__':
                                 errortext = "(out of memory - PRAS)"
                             else:
                                 errortext = "(failed in PRAS)"
+                        # check if any RA metrics failed
+                        elif 'At least one resource adequacy metric failed' in slurm:
+                            errortext = '(RA)'
                         else:
                             errortext = ""
                     print(f"{case:<{longest}}: failed in {last_lst} {errortext}")
