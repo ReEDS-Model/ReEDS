@@ -151,44 +151,31 @@ onswinddata = deflate_func(onswinddata, sw.plantchar_onswind)
 #############################
 
 ofswinddata = pd.read_csv(os.path.join(inputs_case,'plantchar_ofswind.csv'))
-if 'Turbine' in ofswinddata:
-    #ATB 2024 style
-    #We will have a 'Turbine' column (fixed vs floating). For each turbine, we assume 5 classes
-    #(fixed = 1-5 and floating = 6-10)
-    ofswinddata.columns= ['turbine','t','cf_mult','capcost','fom','vom','rsc_mult']
-    ofswinddata['tech'] = 'OFFSHORE'
-    class_bin_num = 5
-    ## Classes are numbered in turbine order, so fixed must come first (classes 1-5)
-    if list(ofswinddata['turbine'].unique()) != ['fixed', 'floating']:
-        raise ValueError(
-            f"plantchar_ofswind turbines must be ['fixed', 'floating'] in that order, "
-            f"not {list(ofswinddata['turbine'].unique())}")
-    turb_ls = []
-    for turb in ofswinddata['turbine'].unique():
-        turb_ls += [turb]*class_bin_num
-    df_class_turb = pd.DataFrame({'turbine':turb_ls, 'class':range(1, len(turb_ls) + 1)})
-    ofswinddata = ofswinddata.merge(df_class_turb, on='turbine', how='inner')
-    ofswind_rsc_mult = ofswinddata[['t','class','rsc_mult']].copy()
-    ofswind_rsc_mult['tech'] = reeds.techs.get_tech_class_name(
-        pd.Series('wind-ofs', index=ofswind_rsc_mult.index), ofswind_rsc_mult['class'], collapsed)
-    ## Classes that share a technology name keep one value per year (pivot raises if they differ)
-    ofswind_rsc_mult = (
-        ofswind_rsc_mult.drop_duplicates(subset=['t','tech','rsc_mult'])
-        .pivot(index='t', columns='tech', values='rsc_mult')
-    )
-    ofswinddata = ofswinddata[['tech','class','t','cf_mult','capcost','fom','vom']]
-else:
-    #ATB 2023 style
-    #We need to reduce to 5 classes for fixed and 5 for floating. We'll leave classes 1-5 alone (for fixed), remove classes 6,7,13, and 14, and then rename classes 8-12 to 6-10 (for floating)
-    ofswinddata = ofswinddata[~ofswinddata['Wind class'].isin([6,7,13,14])]
-    float_cond = ofswinddata['Wind class'] > 7
-    ofswinddata.loc[float_cond, 'Wind class'] = ofswinddata.loc[float_cond, 'Wind class'] - 2
-    ofswind_rsc_mult = ofswinddata[['Year','Wind class','rsc_mult']].copy()
-    ofswind_rsc_mult['tech'] = 'wind-ofs_' + ofswind_rsc_mult['Wind class'].astype(str)
-    ofswind_rsc_mult = ofswind_rsc_mult.rename(columns={'Year':'t'})
-    ofswind_rsc_mult = ofswind_rsc_mult.pivot_table(index='t',columns='tech', values='rsc_mult')
-    ofswinddata = ofswinddata.drop(columns=['rsc_mult'])
-    ofswinddata.columns = ['tech','class','t','cf_mult','capcost','fom','vom']
+if 'Turbine' not in ofswinddata:
+    raise ValueError("plantchar_ofswind must have a 'Turbine' column (fixed or floating)")
+#For each turbine, we assume 5 classes (fixed = 1-5 and floating = 6-10)
+ofswinddata.columns= ['turbine','t','cf_mult','capcost','fom','vom','rsc_mult']
+ofswinddata['tech'] = 'OFFSHORE'
+class_bin_num = 5
+## Classes are numbered in turbine order, so fixed must come first (classes 1-5)
+if list(ofswinddata['turbine'].unique()) != ['fixed', 'floating']:
+    raise ValueError(
+        f"plantchar_ofswind turbines must be ['fixed', 'floating'] in that order, "
+        f"not {list(ofswinddata['turbine'].unique())}")
+turb_ls = []
+for turb in ofswinddata['turbine'].unique():
+    turb_ls += [turb]*class_bin_num
+df_class_turb = pd.DataFrame({'turbine':turb_ls, 'class':range(1, len(turb_ls) + 1)})
+ofswinddata = ofswinddata.merge(df_class_turb, on='turbine', how='inner')
+ofswind_rsc_mult = ofswinddata[['t','class','rsc_mult']].copy()
+ofswind_rsc_mult['tech'] = reeds.techs.get_tech_class_name(
+    pd.Series('wind-ofs', index=ofswind_rsc_mult.index), ofswind_rsc_mult['class'], collapsed)
+## Classes that share a technology name keep one value per year (pivot raises if they differ)
+ofswind_rsc_mult = (
+    ofswind_rsc_mult.drop_duplicates(subset=['t','tech','rsc_mult'])
+    .pivot(index='t', columns='tech', values='rsc_mult')
+)
+ofswinddata = ofswinddata[['tech','class','t','cf_mult','capcost','fom','vom']]
 ofswinddata = deflate_func(ofswinddata, sw.plantchar_ofswind)
 winddata = pd.concat([onswinddata.copy(),ofswinddata.copy()])
 
