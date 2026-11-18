@@ -294,8 +294,6 @@ objective_function_params.yaml,.yaml,1,None,9999,None,9999,0,constant,None,None,
 offshore_goal_fix.csv,.csv,0,None,wide,st,1,0,constant,0,None,done,constant
 offshore_goal_float.csv,.csv,0,None,wide,st,1,0,constant,0,None,done,constant
 offshore_req.csv,.csv,0,None,wide,st,1,0,constant,0,None,done,constant
-ofstype_i.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-ofstype.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ofswind_rsc_mult.csv,.csv,0,None,t,None,1,0,constant,0,None,done,linear_5
 oosfrac.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 opres_periods.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
