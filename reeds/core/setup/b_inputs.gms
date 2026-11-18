@@ -3770,7 +3770,7 @@ $offdelim
 $onlisting
 / ; 
 
-table wind_cf_adj_t(allt,i) "--unitless-- wind capacity factor adjustments by class, from ATB"
+table wind_cf_adj_t(allt,i) "--unitless-- wind capacity factor adjustments"
 $offlisting
 $ondelim
 $include inputs_case%ds%windcfmult.csv
