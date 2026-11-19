@@ -7113,7 +7113,11 @@ def validate_regional_capacity(
     cap = reeds.io.read_output(case, 'cap')
     cap = cap.loc[~cap.i.isin(['can-imports'])].copy()
     cap.i = simplify_techs(cap.i)
-    cap_year = cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+    ## Zones without capacity in plotyear (e.g. offshore zones) get an empty panel
+    cap_year = (
+        cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+        .reindex(columns=hierarchy.index)
+    )
     ### Get EIA-NEMS capacity and formatting
     dfunits = reeds.plots.df2gdf(pd.read_csv(unitspath), lat='T_LAT', lon='T_LONG').to_crs(crs)
     ## Clean up old techs
