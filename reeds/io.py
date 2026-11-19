@@ -439,7 +439,7 @@ def read_h5(h5path:str|Path, key:str) -> pd.DataFrame:
 
 def read_input(
     case:str|Path,
-    name:str,
+    name:str|tuple,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -450,14 +450,20 @@ def read_input(
 
     Args:
         case (str or Path): Absolute path to a ReEDS case
-        name (str): Name of the ReEDS parameter or {case}/inputs_case/{name}.csv
+        name (str or tuple): Name of the ReEDS parameter or {case}/inputs_case/{name}.csv.
+            If a tuple is provided, the elements before the last element indicate folders.
+            So ('rep', 'numhours') would read from {case}/inputs_case/rep/numhours.csv.
 
     Returns:
         pd.DataFrame
     """
-    key = Path(name).stem
     h5path = Path(reeds.io.standardize_case(case), 'inputs_case', 'inputs.h5')
-    csvpath = Path(h5path.parent, f'{key}.csv')
+    if isinstance(name, str):
+        key = Path(name).stem
+        csvpath = Path(h5path.parent, f'{key}.csv')
+    else:
+        key = Path(name[-1]).stem
+        csvpath = Path(h5path.parent, *name[:-1], f'{key}.csv')
     if h5path.is_file():
         try:
             df = read_h5(h5path, key)
@@ -508,22 +514,24 @@ def read_output(
         try:
             df = read_h5(h5path, key)
         except KeyError:
-            ## Empty dataframes aren't written to h5 file, so make one ourselves
-            fpath = Path(case, 'reeds', 'core', 'terminus', 'report_params.csv')
-            ## Fall back to older params list if necessary for backwards compatibility
-            if not fpath.is_file():
-                fpath = Path(case, 'e_report_params.csv')
-            report_params = pd.read_csv(fpath, comment='#')
-            _index = report_params.loc[
-                report_params.param.map(lambda x: x.split('(')[0]) == key, 'param'
-            ].squeeze()
-            if not len(_index):
-                raise KeyError(f"{filename} is not in {h5path}")
-            index = _index.split('(')[-1].strip(')').split(',')
-            df = pd.DataFrame(columns=index + ['Value'])
-    else:
-        _filename = filename if filename.endswith('.csv') else filename + '.csv'
-        df = pd.read_csv(os.path.join(case, 'outputs', _filename))
+            try:
+                ## Some output are only written to csv files
+                _filename = filename if filename.endswith('.csv') else filename + '.csv'
+                df = pd.read_csv(os.path.join(case, 'outputs', _filename))
+            except FileNotFoundError:
+                ## Empty dataframes aren't written to h5 file, so make one ourselves
+                fpath = Path(case, 'reeds', 'core', 'terminus', 'report_params.csv')
+                ## Fall back to older params list if necessary for backwards compatibility
+                if not fpath.is_file():
+                    fpath = Path(case, 'e_report_params.csv')
+                report_params = pd.read_csv(fpath, comment='#')
+                _index = report_params.loc[
+                    report_params.param.map(lambda x: x.split('(')[0]) == key, 'param'
+                ].squeeze()
+                if not len(_index):
+                    raise KeyError(f"{filename} is not in {h5path}")
+                index = _index.split('(')[-1].strip(')').split(',')
+                df = pd.DataFrame(columns=index + ['Value'])
 
     df = df.rename(columns={'allh':'h', 'allt':'t', 'eall':'e'})
 
