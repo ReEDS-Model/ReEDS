@@ -28,6 +28,7 @@ import re
 import gdxpds
 import pandas as pd
 import numpy as np
+from pathlib import Path
 ### Local imports
 import reeds
 
@@ -436,6 +437,12 @@ def main(t, casedir, iteration=0):
         .set_index(['ccseason', 'year', 'h', 'hour'])
     )
 
+    #%% Outage rates in modeled years
+    for outage_type in ['forced', 'scheduled']:
+        df = reeds.io.get_outage_hourly(casedir, outage_type=outage_type)
+        df = df.loc[df.index.year.isin(sw.resource_adequacy_years_list)].copy()
+        h5out[f'pras_outage_{outage_type}'] = df
+
     #%%### Collect some csv's for ReEDS2PRAS
     ### Transmission capacity: Subset for RA according to GSw_PRMTRADE_level switch
     tran_cap = (
@@ -599,7 +606,12 @@ def main(t, casedir, iteration=0):
 
     #%% .h5 files
     for key in h5out:
-        if key.startswith('pras'):
+        if key.startswith('pras_outage'):
+            reeds.io.write_outages(
+                df=h5out[key],
+                h5path=Path(casedir,'handoff','reeds_data',f'{key}_{t}.h5'),
+            )
+        elif key.startswith('pras'):
             reeds.io.write_profile_to_h5(
                 df=h5out[key].astype(np.float32),
                 filename=f'{key}_{t}.h5',

@@ -1195,6 +1195,40 @@ def get_site_cf_hourly(tech:Literal['upv','wind-ons','wind-ofs'], year, case=Non
     
     return cf_hourly
 
+
+def write_outages(df, h5path):
+    names = df.columns.names
+    namelengths = {
+        name: df.columns.get_level_values(name).map(len).max()
+        for name in names
+    }
+    column_level_type = f'S{max([len(i) for i in names])}'
+    with h5py.File(h5path, 'w') as f:
+        f.create_dataset('index', data=df.index, dtype='S29')
+        ## Save both the individual column levels and the single-level delimited version
+        for name in names:
+            f.create_dataset(
+                f'columns_{name}',
+                data=df.columns.get_level_values(name),
+                dtype=f'S{namelengths[name]}')
+        f.create_dataset(
+            'columns',
+            data=(
+                df.columns.map(lambda x: '|'.join(x)).rename('|'.join(names))
+                if isinstance(df.columns, pd.MultiIndex)
+                else df.columns
+            ),
+            dtype=f'S{sum(namelengths.values()) + 1}')
+        f.create_dataset(
+            'data', data=df, dtype=np.float32,
+            compression='gzip', compression_opts=4,
+        )
+        f.create_dataset(
+            'column_levels',
+            data=np.array(names, dtype=column_level_type),
+            dtype=column_level_type)
+
+
 def get_outage_hourly(
     case,
     outage_type='forced',
