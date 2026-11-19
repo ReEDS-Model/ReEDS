@@ -736,6 +736,15 @@ def get_switches(case=None, **kwargs):
     ### Add derivative switches
     sw['resource_adequacy_years_list'] = [int(y) for y in sw['resource_adequacy_years'].split('_')]
     sw['num_resource_adequacy_years'] = len(sw['resource_adequacy_years_list'])
+    ## Superset of weather years
+    sw['weather_years_all'] = [
+        int(y) for y in sorted(set(
+            ## Allow backwards compatibility with runs before GSw_HourlyRepYears was added
+            sw.get('GSw_HourlyRepYears', sw['GSw_HourlyWeatherYears']).split('_')
+            + sw['GSw_HourlyWeatherYears'].split('_')
+            + sw['resource_adequacy_years'].split('_')
+        ))
+    ]
     ## Fallback for backwards compatibility with older cases
     _fallback = '2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022'
     sw['future_hydcf_rep_years_list'] = [

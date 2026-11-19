@@ -147,11 +147,9 @@ def main(t, casedir, iteration=0):
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
-    # load exogenous demand seen by ReEDS
-    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5'))
-
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
+    recf = recf.loc[recf.index.year.isin(sw.resource_adequacy_years_list)].copy()
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
                                              names=('i','r'))
 
@@ -322,10 +320,14 @@ def main(t, casedir, iteration=0):
     vre_cf_marg.index = h_dt_szn.set_index(['ccseason','year','h','hour']).index
     h5out['vre_cf_marg'] = vre_cf_marg
 
-    h_dt_szn_load_years = h_dt_szn.loc[h_dt_szn.index.isin(load.index.get_level_values('datetime'))]
 
-    #%%### Flexible load
+    #%%### Electricity demand
+    ### Exogenous demand
+    load = reeds.io.read_file(os.path.join(inputs_case, 'load.h5')).loc[t]
+    load = load.loc[load.index.year.isin(sw.resource_adequacy_years_list)].copy()
+
     ### H2 and DAC: Make it all inflexible (necessary for PRAS)
+    h_dt_szn_load_years = h_dt_szn.loc[h_dt_szn.index.isin(load.index.get_level_values('datetime'))]
     load_h2dac_all_hourly = (
         gdxreeds['prod_filt']
         .groupby(['r', 'allh']).Value.sum().reset_index()
@@ -359,10 +361,6 @@ def main(t, casedir, iteration=0):
     )
 
     #%%### Total load and net load
-
-    # get load data for model year
-    load_year = load.loc[t]
-
     ### Add load from FINITO when running linked model (GSw_FINITO_Link=FINITO=1) 
     if int(sw.GSw_FINITO_Link):
         load_finito_rt = gdxreeds['load_finito_rt'].rename(columns={'allh':'h', 'Value':'load_MW'})
@@ -381,13 +379,12 @@ def main(t, casedir, iteration=0):
         load_finito = load_finito.rename(columns={'timestamp':'datetime'}).set_index('datetime')
 
         # convert timezone and fill any missing columns
-        load_finito.index = load_finito.index.tz_convert(load_year.index.tz)
-        load_finito = load_finito.reindex(columns=load_year.columns, fill_value=0)
+        load_finito.index = load_finito.index.tz_convert(load.index.tz)
+        load_finito = load_finito.reindex(columns=load.columns, fill_value=0)
         load_finito = load_finito.fillna(0)
 
         # add to load
-        load_year = load_year + load_finito
-
+        load = load + load_finito
 
     ### Get Candian exports and add to this solve year's load
     can_exports = (
@@ -395,15 +392,15 @@ def main(t, casedir, iteration=0):
         .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
         .pivot(index='timestamp', columns='r', values='Value')
     )
-    load_year = load_year.add(can_exports, fill_value=0)
+    load = load.add(can_exports, fill_value=0)
 
     ### PRAS doesn't yet handle flexible load, so include all H2/DAC load in the
     ### version we write for PRAS
     if int(sw['pras_include_h2dac']):
         print(f'Added H2/DAC to PRAS load since pras_include_h2dac = {sw.pras_include_h2dac}')
-        pras_load = load_year.add(load_h2dac_all_hourly, fill_value=0)
+        pras_load = load.add(load_h2dac_all_hourly, fill_value=0)
     else:
-        pras_load = load_year.copy()
+        pras_load = load.copy()
 
     ### Add zeros for offshore zones
     for r in offshore:
@@ -433,7 +430,7 @@ def main(t, casedir, iteration=0):
 
     ### Store load with the appropriate index for capacity_credit.py
     h5out['load'] = (
-        load_year.merge(
+        load.merge(
             h_dt_szn[['ccseason', 'year', 'h', 'hour']], left_index=True, right_index=True
         )
         .set_index(['ccseason', 'year', 'h', 'hour'])

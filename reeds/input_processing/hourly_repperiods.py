@@ -51,11 +51,18 @@ interactive = False
 techs_min_vre = ['upv', 'wind-ons']
 
 #%%### Functions
-def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
+def get_load(inputs_case:str|Path) -> pd.DataFrame:
     """
+    Read {case}/inputs_case/load.h5 and add FINITO load if necessary.
+
+    Args:
+        inputs_case: Path to runs/{casename} or runs/{casename}/inputs_case
+
+    Returns:
+        pd.DataFrame with (model year, weather timestamp) multiindex and model-zone columns
     """
-    ### Subset to modeled regions
-    load = reeds.io.read_file(os.path.join(inputs_case,'load.h5'))
+    inputs_case = Path(reeds.io.standardize_case(inputs_case), 'inputs_case')
+    load = reeds.io.read_file(Path(inputs_case, 'load.h5'))
 
     ### When running the linked model (GSw_FINITO_Link=1) we add reference load estimates
     ### for FINITO load back in to use when selecting representative periods
@@ -63,14 +70,6 @@ def get_load(inputs_case, keep_modelyear=None, keep_weatheryears=[2012]):
     if int(sw.GSw_FINITO_Link):
         load_hourly_finito = reeds.finito.get_hourly_finito_load(inputs_case)
         load = load + load_hourly_finito
-
-    ### Subset to keep_modelyear if provided
-    if keep_modelyear:
-        load = load.loc[keep_modelyear].copy()
-
-    ### Downselect to weather years if provided
-    if isinstance(keep_weatheryears, list):
-        load = load.loc[load.index.year.isin(keep_weatheryears)]
 
     return load
 
@@ -176,13 +175,14 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         ]).sort_values('period').set_index('period').szn
 
     elif sw['GSw_HourlyClusterAlgorithm'] in ['opt','optimized','optimize']:
-        profiles_period_mean = (
-            profiles_fitperiods.T.groupby(['property','region'])
-            .mean().T
-        )
+        fit_using_years = sw.GSw_HourlyWeatherYears
+        profiles_period_mean = profiles_fitperiods.loc[fit_using_years]
+        fit_to_years = [int(y) for y in sw.GSw_HourlyRepYears.split('_')]
+        target_feature_mean = profiles_fitperiods.loc[fit_to_years].mean()
         ### Optimize the weights of representative days
         iweights, weights = reeds.timeseries.optimize_period_weights(
             profiles_period_mean=profiles_period_mean,
+            target_feature_mean=target_feature_mean,
             GSw_HourlyNumClusters=int(sw['GSw_HourlyNumClusters']),
         )
         ### Optimize the assignment of actual days to representative days
@@ -292,22 +292,23 @@ def main(
 
     #%%### Load RE CF data, then take available-capacity-weighted average by (tech,region)
     print("Collecting 8760 capacity factor data")
-    recf_ra = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
+    recf_allyears = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     ### Downselect to techs used for rep-period selection
-    recf_ra = recf_ra[[c for c in recf_ra if any([c.startswith(p) for p in techs_vre])]].copy()
+    recf_allyears = recf_allyears[[c for c in recf_allyears if any([c.startswith(p) for p in techs_vre])]].copy()
     ### Multiply by available capacity for weighted average
-    recf_ra *= sc.set_index('resource')['capacity']
+    recf_allyears *= sc.set_index('resource')['capacity']
     ### Downselect to modeled years, add descriptive time index
-    recf = recf_ra.loc[recf_ra.index.year.isin(sw['GSw_HourlyWeatherYears'])]
-    recf.index = timestamps_myr.set_index(['year','yperiod','h_of_period']).index
-    recf_ra.index = timestamps.set_index(['year','yperiod','h_of_period']).index
+    # recf = recf_allyears.loc[recf_allyears.index.year.isin(sw['GSw_HourlyWeatherYears'])]
+    # recf.index = timestamps_myr.set_index(['year','yperiod','h_of_period']).index
+    recf_allyears.index = timestamps.set_index(['year','yperiod','h_of_period']).index
 
     ### Identify outlying periods if using capacity credit instead of stress periods
     if (int(sw.GSw_PRM_CapCredit)
         and (sw['GSw_HourlyMinRElevel'].lower() not in ['false','none'])):
         forceperiods_minre = {
             tech: identify_min_periods(
-                df=recf, hierarchy=hierarchy,
+                df=recf_allyears.loc[sw.resource_adequacy_years_list],
+                hierarchy=hierarchy,
                 level=sw['GSw_HourlyMinRElevel'], prefix=tech)
             for tech in techs_min_vre
         }
@@ -315,13 +316,13 @@ def main(
         forceperiods_minre = {tech: set() for tech in techs_min_vre}
 
     ### Aggregate to (tech,GSw_HourlyClusterRegionLevel)
-    recf_agg = recf.copy()
-    tmp = (
-        pd.DataFrame({'resource':recf.columns}).set_index('resource')
+    recf_agg = recf_allyears.copy()
+    rename = (
+        pd.DataFrame({'resource':recf_agg.columns}).set_index('resource')
         .merge(sc.set_index('resource')[['tech','region']], left_index=True, right_index=True)
-        )
-    columns = tmp.loc[tmp.index.isin(recf.columns)]
-    recf_agg = recf_agg[tmp.index]
+    )
+    columns = rename.loc[rename.index.isin(recf_agg.columns)]
+    recf_agg = recf_agg[rename.index]
     columns['region'] = columns.region.map(rmap)
     recf_agg.columns = pd.MultiIndex.from_frame(columns[['tech','region']])
     recf_agg = recf_agg.T.groupby(level=['tech','region']).sum().T
@@ -331,27 +332,26 @@ def main(
 
     ### Load load data (Eastern time)
     print("Collecting 8760 load data")
-    load = get_load(
-        inputs_case=inputs_case,
-        keep_modelyear=(int(sw['GSw_HourlyClusterYear'])
-                  if int(sw['GSw_HourlyClusterYear']) in modelyears
-                  else max(modelyears)),
-        keep_weatheryears=sw.GSw_HourlyWeatherYears,
+    keep_modelyear = (
+        int(sw['GSw_HourlyClusterYear']) if int(sw['GSw_HourlyClusterYear']) in modelyears
+        else max(modelyears)
     )
+    load_allyears = get_load(inputs_case).loc[keep_modelyear]
     ## Add descriptive index
-    load.index = timestamps_myr.set_index(['year','yperiod','h_of_period']).index
+    load_allyears.index = timestamps.set_index(['year','yperiod','h_of_period']).index
 
     ### Identify outlying periods if using capacity credit instead of stress periods
     if (int(sw.GSw_PRM_CapCredit)
         and (sw['GSw_HourlyPeakLevel'].lower() not in ['false','none'])
     ):
         forceperiods_load = identify_peak_containing_periods(
-            df=load, hierarchy=hierarchy, level=sw['GSw_HourlyPeakLevel'])
+            df=load_allyears.loc[sw.resource_adequacy_years_list],
+            hierarchy=hierarchy, level=sw['GSw_HourlyPeakLevel'])
     else:
         forceperiods_load = set()
 
     ### Aggregate to GSw_HourlyClusterRegionLevel
-    load_agg = load.copy()
+    load_agg = load_allyears.copy()
     load_agg.columns = load_agg.columns.map(rmap)
     load_agg = load_agg.T.groupby(level=0).sum().T
     match sw.GSw_HourlyClusterLoadNorm:
@@ -478,7 +478,7 @@ def main(
     ):
         stressperiods_minre = {
             tech: identify_min_periods(
-                df=recf_ra,
+                df=recf_allyears.loc[sw.resource_adequacy_years_list],
                 hierarchy=hierarchy,
                 level=sw['GSw_PRM_StressSeedMinRElevel'],
                 prefix=tech,
@@ -491,7 +491,7 @@ def main(
         and (sw['GSw_PRM_StressSeedLoadLevel'].lower() not in ['false','none'])
     ):
         ## Get load for all model and weather years
-        load_allyears = get_load(inputs_case, keep_weatheryears='all').loc[modelyears]
+        load_allyears = get_load(inputs_case).loc[modelyears]
         ## Add descriptive index
         load_allyears = load_allyears.merge(
             timestamps[['year', 'yperiod', 'h_of_period']], left_on='datetime', right_index=True)
@@ -500,7 +500,8 @@ def main(
         load_allyears = load_allyears.set_index(['year', 'yperiod', 'h_of_period'], append=True)
         stressperiods_load = {
             y: identify_peak_containing_periods(
-                df=load_allyears.loc[y], hierarchy=hierarchy,
+                df=load_allyears.loc[y].loc[sw.resource_adequacy_years_list],
+                hierarchy=hierarchy,
                 level=sw['GSw_PRM_StressSeedLoadLevel'])
             for y in modelyears
         }
@@ -698,7 +699,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20260709_envM0_Simple','inputs_case','')
+    #     'v20261118_multirepM0_Pacific','inputs_case','')
     # interactive = True
 
     #%% Set up logger

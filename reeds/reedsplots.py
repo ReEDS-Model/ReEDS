@@ -5083,9 +5083,7 @@ def plot_seed_stressperiods(
     monthday2val = make_dayofyear_colormap(fmt=fmt)
 
     ### Recalculate peak load days since we dropped duplicates above
-    load_allyears = hourly_repperiods.get_load(
-        os.path.join(case, 'inputs_case'),
-        keep_weatheryears='all').loc[years]
+    load_allyears = hourly_repperiods.get_load(case).loc[years]
     timestamps = pd.read_csv(os.path.join(case, 'inputs_case', 'rep', 'timestamps.csv'))
     resource_adequacy_years = [int(y) for y in sw.resource_adequacy_years.split('_')]
     timestamps = timestamps.loc[timestamps.year.isin(resource_adequacy_years)].copy()
