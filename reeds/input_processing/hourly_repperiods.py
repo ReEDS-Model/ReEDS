@@ -520,7 +520,7 @@ def main(
     #%%### Get the representative and force periods
     period_szn_write = period_szn.rename('season').reset_index()
     if sw['GSw_HourlyType'] == 'year':
-        period_szn_write['year'] = sorted(sw['GSw_HourlyWeatherYears']*365)
+        period_szn_write['year'] = sorted(keep_years*365)
         period_szn_write['yperiod'] = period_szn_write.period
     else:
         period_szn_write['rep_period'] = period_szn_write['season'].copy()
@@ -689,7 +689,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20261119_multirepM1_rep2023_w2023_ra20072013','inputs_case','')
+    #     'v20261119_multirepM4_USA_faster','inputs_case','')
     # interactive = True
 
     #%% Set up logger

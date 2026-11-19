@@ -127,10 +127,7 @@ def plot_ldc(
         forceperiods_write, sw, reeds_path, figpath):
     """
     """
-    if isinstance(sw.GSw_HourlyWeatherYears, str):
-        GSw_HourlyWeatherYears = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
-    else:
-        GSw_HourlyWeatherYears = sw.GSw_HourlyWeatherYears
+    keep_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
     ### Get clustered load, repeating representative periods based on how many
     ### periods they represent
     numperiods = period_szn.value_counts().rename('numperiods').to_frame()
@@ -144,7 +141,7 @@ def plot_ldc(
     hourly_in = (
         profiles
         .stack('h_of_period')
-        .loc[GSw_HourlyWeatherYears]
+        .loc[keep_years]
     ).copy()
     hourly_out = hourly_in.unstack('h_of_period').loc[periods].stack('h_of_period')
 
@@ -570,11 +567,7 @@ def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
         return dforig, dfrep
 
     ###### All regions
-    if isinstance(sw.GSw_HourlyWeatherYears, str):
-        GSw_HourlyWeatherYears = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
-    else:
-        GSw_HourlyWeatherYears = sw.GSw_HourlyWeatherYears
-    for year in GSw_HourlyWeatherYears:
+    for year in [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]:
         props = profiles.columns.get_level_values('property').unique()
         regions = profiles.columns.get_level_values('region').unique()
         dforig, dfrep = get_profiles(regions, year)
