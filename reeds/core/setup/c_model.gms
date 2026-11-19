@@ -1079,6 +1079,7 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
 * Prescribed builds are required by eq_forceprescription_power and fill the first bin because it is cheapest.
 eq_der_ftm_INVlim(r,i,rscbin,t)
     $[tmodel(t)
+    $Sw_DER_FTM
     $der_ftm(i)
     $m_rscfeas(r,i,rscbin)
     $(not flag_eq_rsc_INVlim(r,i,rscbin,t))
@@ -3130,9 +3131,10 @@ eq_dr_shift_storage_in_capacity(i,v,r,h,t)
 * Output is measured at the devices (end-use level), so distributed PV generation, which is
 * scaled up to the busbar level by its capacity factor, is scaled back down by (1-distloss).
 eq_der_ftm_min_output(r,h,t)
-    $[der_ftm_min_output(r,h,t)
-    $sum{(i,v,tt)$[der_ftm(i)$(not der_ftm_shape(i))$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }
-    $tmodel(t)]..
+    $[tmodel(t)
+    $Sw_DER_FTM
+    $der_ftm_min_output(r,h,t)
+    $sum{(i,v,tt)$[der_ftm(i)$(not der_ftm_shape(i))$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }]..
 
     sum{(i,v)$[der_ftm(i)$valgen(i,v,r,t)],
         GEN(i,v,r,h,t) * (1 - distloss$vre_distributed(i))
@@ -3148,8 +3150,9 @@ eq_der_ftm_min_output(r,h,t)
 * The limit applies to all FTM DER capacity wherever it is given, including limits of zero.
 * Output and reserves are measured at the devices, as in the minimum output requirement.
 eq_der_ftm_max_output(r,h,t)
-    $[der_ftm_max_output_r(r,h,t)
-    $tmodel(t)]..
+    $[tmodel(t)
+    $Sw_DER_FTM
+    $der_ftm_max_output_r(r,h,t)]..
 
     der_ftm_max_output(r,h,t)
 
@@ -3168,12 +3171,13 @@ eq_der_ftm_max_output(r,h,t)
 * The restriction applies in regions and years with prescribed builds of that battery technology;
 * it then covers all of that technology's capacity in the region, prescribed or not.
 eq_der_ftm_battery_nocharge(i,r,h,t)
-    $[der_ftm(i)
+    $[tmodel(t)
+    $Sw_DER_FTM
+    $der_ftm(i)
     $storage_standalone(i)
     $valgen_irt(i,r,t)
     $der_ftm_battery_nocharge(r,h,t)
-    $sum{(v,tt)$[yeart(tt) <= yeart(t)], prescribed_build(i,v,r,tt) }
-    $tmodel(t)]..
+    $sum{(v,tt)$[yeart(tt) <= yeart(t)], prescribed_build(i,v,r,tt) }]..
 
     (1 - der_ftm_battery_nocharge(r,h,t)) * sum{v$valgen(i,v,r,t), CAP(i,v,r,t) }
 
