@@ -775,7 +775,7 @@ def plot_scatter_everything(
         'Battery': 'battery_li',
         'PV': 'upv',
         'Wind': 'wind-ons',
-        # 'Wind (offshore fixed)': 'wind-ofs_5',
+        # 'Wind (offshore fixed)': 'wind-ofs-fixed',
         # 'Geothermal': 'geohydro_allkm_1',
         # 'Coal+CCS': 'coal-ccs_mod',
         'Nuclear': 'nuclear',
