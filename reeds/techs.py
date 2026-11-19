@@ -18,7 +18,7 @@ TECH_FAMILY = {
 ### Functions
 def expand_star(techs):
     '''
-    Expand the GAMS range convention (e.g. wind-ofs_1*wind-ofs_10 becomes wind-ofs_1, wind-ofs_2,..., wind-ofs_10)
+    Expand the GAMS range convention (e.g. geohydro_allkm_1*geohydro_allkm_10 becomes geohydro_allkm_1, geohydro_allkm_2,..., geohydro_allkm_10)
     in a list of technology names. We assume the numbers we would like to enumerate occur
     at the end. Entries without a '*' are passed through unchanged.
     '''
@@ -39,7 +39,7 @@ def expand_star(techs):
 def split_class(i):
     '''
     Split a resource-class-bearing tech name into (base, class), e.g.,
-    'wind-ofs_5' -> ('wind-ofs', 5).
+    'geohydro_allkm_5' -> ('geohydro_allkm', 5).
     Techs with no numeric class suffix (e.g. 'distpv') return (i, None).
     '''
     match = re.search(r'^(.+)_(\d+)$', i)
@@ -128,7 +128,7 @@ def get_class_map(case):
 
 def expand_GAMS_tech_groups(df, col='i'):
     '''
-    GAMS has a convention for expanding rows (e.g. wind-ofs_1*wind-ofs_10 is expanded to wind-ofs_1, wind-ofs_2,..., wind-ofs_10)
+    GAMS has a convention for expanding rows (e.g. geohydro_allkm_1*geohydro_allkm_10 is expanded to geohydro_allkm_1, geohydro_allkm_2,..., geohydro_allkm_10)
     This function expands a df with the same convention, for the instances where a file is ingested
     by both python and GAMS. We assume the numbers we would like to enumerate occur at the end.
     '''
