@@ -35,26 +35,26 @@ def make_8760_map(period_szn, sw):
     """
     hoursperperiod = {'day':24, 'wek':120, 'year':24}[sw['GSw_HourlyType']]
     periodsperyear = {'day':365, 'wek':73, 'year':365}[sw['GSw_HourlyType']]
-    fulltimeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
+    fulltimeindex = reeds.timeseries.get_timeindex(sw.weather_years_all)
     ### Start with all weather years
     hmap_allyrs = pd.DataFrame({
         'timestamp': fulltimeindex,
-        'year': np.ravel([[y]*8760 for y in sw.resource_adequacy_years_list]),
+        'year': np.ravel([[y]*8760 for y in sw.weather_years_all]),
         'yearperiod': np.ravel([
             [h+1 for d in range(365) for h in (d,)*24] if sw['GSw_HourlyType'] == 'year'
             else [h+1 for d in range(periodsperyear)
                   for h in (d,)*hoursperperiod]
-            for y in sw.resource_adequacy_years_list]),
-        'hour': range(1, 8760*len(sw.resource_adequacy_years_list) + 1),
-        'hour0': range(8760*len(sw.resource_adequacy_years_list)),
-        'yearhour': np.ravel(list(range(1,8761))*len(sw.resource_adequacy_years_list)),
+            for y in sw.weather_years_all]),
+        'hour': range(1, 8760*len(sw.weather_years_all) + 1),
+        'hour0': range(8760*len(sw.weather_years_all)),
+        'yearhour': np.ravel(list(range(1,8761))*len(sw.weather_years_all)),
         'periodhour': (
-            list(range(1,25))*365*len(sw.resource_adequacy_years_list)
+            list(range(1,25))*365*len(sw.weather_years_all)
             if sw['GSw_HourlyType'] == 'year'
             else (
                 list(range(1, hoursperperiod+1))
                 * periodsperyear
-                * len(sw.resource_adequacy_years_list))
+                * len(sw.weather_years_all))
         ),
     })
     hmap_allyrs['actual_period'] = (
@@ -1219,7 +1219,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         # dr_shed only has 2018 weather year data, need to populate for other RA years
         dr_shed_avail_all_weatheryears = pd.DataFrame()
         # copy 2018 data to other weather years
-        for y in sw.resource_adequacy_years_list:
+        for y in sw.weather_years_all:
             #set datetime column to match hmap_allyrs.timestamp for y 
             dr_shed_avail_new_index = dr_shed_avail.copy()
             dr_shed_avail_new_index.index = pd.to_datetime(hmap_allyrs[hmap_allyrs['year']==y].timestamp)
@@ -1269,7 +1269,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             index="hour", columns=["t", "r"], values="net"
         )
         evmc_baseline_load_weatheryears = pd.concat(
-            {y: evmc_baseline_load_weatheryears for y in sw.resource_adequacy_years_list},
+            {y: evmc_baseline_load_weatheryears for y in sw.weather_years_all},
             axis=0, ignore_index=True).loc[hmap_myr.hour0]
         ## Map 8760 hours to modeled hours
         evmc_baseline_load_weatheryears.index = hmap_myr.h

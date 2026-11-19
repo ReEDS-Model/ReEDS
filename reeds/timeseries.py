@@ -129,7 +129,7 @@ def make_timestamps(sw):
     ### Get some useful constants
     hoursperperiod = {'day':24, 'wek':120, 'year':24}
     periodsperyear = {'day':365, 'wek':73, 'year':365}
-    weather_years = sw.resource_adequacy_years_list
+    weather_years = sw.weather_years_all
 
     ### Get map from yperiod, hour, and h_of_period to timestamp
     timestamps = pd.DataFrame({

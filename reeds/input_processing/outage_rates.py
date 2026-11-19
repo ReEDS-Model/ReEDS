@@ -416,7 +416,7 @@ def calc_outage_scheduled(reeds_path, inputs_case, during_quarters=during_quarte
     ).squeeze(1).unstack('prime_mover')
 
     timeindex = pd.Series(
-        index=reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
+        index=reeds.timeseries.get_timeindex(sw.weather_years_all)
     )
     outage_scheduled_pm = pd.DataFrame(
         {

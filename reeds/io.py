@@ -1072,7 +1072,7 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     )
     sw = reeds.io.get_switches(inputs_case)
     ## Add one more year on either end of weather years to allow for timezone conversion
-    weather_years = sw.resource_adequacy_years_list
+    weather_years = sw.weather_years_all
     read_years = range(min(weather_years)-1, max(weather_years)+2)
     val_st = reeds.io.read_input(inputs_case, 'st').squeeze(1).values
     ### Load temperatures

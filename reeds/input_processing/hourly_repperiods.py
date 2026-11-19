@@ -11,11 +11,6 @@ General notes:
 * dayhour: a clock hour starting at 1 [1-24]
 * period: a day (if GSw_HourlyType=='day') or a wek (if GSw_HourlyType=='wek')
 * wek: A consecutive 5-day period (365 is only divisible by 1, 5, 73, and 365)
-
-This script is currently not compatible with:
-* Climate impacts (climateprep.py)
-* Beyond-2050 modeling (forecast.py)
-* Flexible demand
 """
 
 #%% ===========================================================================
@@ -298,8 +293,6 @@ def main(
     ### Multiply by available capacity for weighted average
     recf_allyears *= sc.set_index('resource')['capacity']
     ### Downselect to modeled years, add descriptive time index
-    # recf = recf_allyears.loc[recf_allyears.index.year.isin(sw['GSw_HourlyWeatherYears'])]
-    # recf.index = timestamps_myr.set_index(['year','yperiod','h_of_period']).index
     recf_allyears.index = timestamps.set_index(['year','yperiod','h_of_period']).index
 
     ### Identify outlying periods if using capacity credit instead of stress periods
@@ -699,7 +692,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20261118_multirepM0_Pacific','inputs_case','')
+    #     'v20261119_multirepM1_rep2023_w2023_ra20072013','inputs_case','')
     # interactive = True
 
     #%% Set up logger
