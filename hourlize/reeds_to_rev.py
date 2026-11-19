@@ -246,7 +246,7 @@ def subset_supply_curve_columns(df_sc_in, tech, priority_cols):
     return df_sc_combined
 
 
-def get_preexisting_capacity(df_sc_in, tech, first_model_year=2009):
+def get_preexisting_capacity(df_sc_in, tech, collapsed, first_model_year=2009):
     """
     Helper function for prepare_data(). If existing capacity is defined in the supply
     curve, this function finds the capacity existing prior to the first model year and
@@ -261,6 +261,8 @@ def get_preexisting_capacity(df_sc_in, tech, first_model_year=2009):
     tech : str
         Technology associated with the supply curve. Expected values are defined in
         VALID_TECHS.
+    collapsed : dict
+        Technology name for each (tech, class), from reeds.techs.get_collapsed_techs().
     first_model_year : int, optional
         First year modeled by ReEDs, by default 2009.
 
@@ -297,8 +299,8 @@ def get_preexisting_capacity(df_sc_in, tech, first_model_year=2009):
             ["region", "class", "bin"], sort=False, as_index=False
         ).sum()
         df_bin_exist["raw_tech"] = tech
-        df_bin_exist["tech"] = (
-            df_bin_exist["raw_tech"] + "_" + df_bin_exist["class"].astype(str)
+        df_bin_exist["tech"] = reeds.techs.get_tech_class_name(
+            df_bin_exist["raw_tech"], df_bin_exist["class"], collapsed
         )
         df_bin_exist["year"] = first_model_year
         df_bin_exist["bin"] = "bin" + df_bin_exist["bin"].astype(str)
@@ -335,7 +337,9 @@ def get_capacity_check_data(run_folder, tech):
     df_cap_chk = pd.read_csv(
         cap_chk, low_memory=False, names=["tech", "class", "region", "year", "MW"], header=0
     )
-    df_cap_chk["tech_cat"] = df_cap_chk["tech"].str.rsplit("_", n=1).str[0]
+    df_cap_chk["tech_cat"] = df_cap_chk["tech"].map(
+        lambda i: reeds.techs.TECH_FAMILY.get(i, i.rsplit("_", 1)[0])
+    )
     df_cap_chk = df_cap_chk[df_cap_chk["tech_cat"] == tech].copy()
     df_cap_chk = df_cap_chk[["year", "region", "class", "MW"]].dropna(subset=["class"])
     df_cap_chk["class"] = df_cap_chk["class"].astype("int")
@@ -760,6 +764,7 @@ def prepare_data(run_folder, sc_file, tech, priority_cols, check_results=True):
     # load required data
     years = get_reeds_years(run_folder)
     lifetimes = get_reeds_tech_lifetimes(run_folder)
+    collapsed = reeds.techs.get_collapsed_techs(run_folder)
     df_cap_exog = get_exogenous_capacity(run_folder, tech)
     if check_results:
         df_cap_chk = get_capacity_check_data(run_folder, tech)
@@ -772,7 +777,7 @@ def prepare_data(run_folder, sc_file, tech, priority_cols, check_results=True):
 
     df_sc_in = subset_supply_curve_columns(input_sc_df, tech, priority_cols)
 
-    df_bin_exist = get_preexisting_capacity(df_sc_in, tech, first_model_year=2009)
+    df_bin_exist = get_preexisting_capacity(df_sc_in, tech, collapsed, first_model_year=2009)
 
     # Prepare Capital Stock Data
     # new and existing investments
@@ -804,6 +809,7 @@ def prepare_data(run_folder, sc_file, tech, priority_cols, check_results=True):
         "df_cap_chk": df_cap_chk,
         "years": years,
         "tech_lifetimes": lifetimes,
+        "collapsed": collapsed,
     }
 
     return reeds_to_rev_data
@@ -922,6 +928,7 @@ def disaggregate_reeds_to_rev(
     years,
     tech_lifetimes,
     tech,
+    collapsed,
     constrain_to_bins=True,
     **kwargs,
 ):
@@ -962,6 +969,8 @@ def disaggregate_reeds_to_rev(
     tech_lifetimes : pandas.DataFrame
         Defines lifetimes of technology (i.e., time to retirement or refurbishment).
         Columns include: [TODO].
+    collapsed : dict
+        Technology name for each (tech, class), from reeds.techs.get_collapsed_techs().
     constrain_to_bins : bool, optional
         If True (default), disaggregation of new and pre-exising capacity will be
         constrained by region, class, and bin. If False, disaggregation will only be
@@ -988,20 +997,13 @@ def disaggregate_reeds_to_rev(
 
     # apply tech lifetime as a new value to the sc dataframe
     print("Adding tech lifetimes to dataframe")
-    if tech in tech_lifetimes["tech"].values:
-        # Technologies that hold all their classes under one name have one lifetime
-        df_sc["tech_lifetime"] = (
-            tech_lifetimes.loc[tech_lifetimes["tech"] == tech, "lifetime"].iloc[0]
-        )
-    else:
-        tech_lifetimes[["tech_cat", "class"]] = tech_lifetimes["tech"].str.rsplit(
-            "_", n=1, expand=True
-        )
-        tech_lifetimes_filter = tech_lifetimes[tech_lifetimes["tech_cat"] == tech].copy()
-        tech_lifetimes_lkup = dict(
-            tech_lifetimes_filter[["class", "lifetime"]].values.tolist()
-        )
-        df_sc["tech_lifetime"] = df_sc["class"].astype(str).map(tech_lifetimes_lkup)
+    # Each class takes the lifetime of the technology name that holds it
+    class_techs = reeds.techs.get_tech_class_name(
+        pd.Series(tech, index=df_sc.index), df_sc["class"], collapsed
+    )
+    df_sc["tech_lifetime"] = class_techs.map(
+        tech_lifetimes.set_index("tech")["lifetime"]
+    )
 
     print("Setting up full dataset with all years")
     # build up the accounting table, which consists of all supply curve points
