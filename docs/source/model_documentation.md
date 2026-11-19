@@ -493,7 +493,9 @@ Some of the most important switches related to temporal resolution are briefly o
 - `GSw_HourlyChunkLengthRep` (default `3`) and `GSw_HourlyChunkLengthStress` (default `3`): Length of time steps (in hours) used within representative and stress periods, respectively.
   - `GSw_HourlyChunkAggMethod` (default `mean`): How to aggregate hourly data within the chunks specified by the `GSw_HourlyChunkLength` switches.
   If using `GSw_HourlyChunkLengthRep = 3`, setting `GSw_HourlyChunkAggMethod` to `mean` will average over the 3 hours in each chunk; `mid` will take the hourly value in the middle (second) hour; 1, 2, or 3 will take the hourly value in the first, second, or third hour.
-- `GSw_HourlyWeatherYears` (default `2012`): Weather years from which to select representative periods.
+- `GSw_HourlyRepYears` (default 2007-2013 + 2016-2023): Weather years for which to reproduce average weather profiles for energy/representative periods.
+The default setting (2007-2013 + 2016-2023) represents a 15-year average capacity factor for variable resources.
+- `GSw_HourlyWeatherYears` (default `2023`): Weather years from which to select representative periods.
 Multiple years can be used by passing a `_`-delimited string; for example, to select representative periods from 2011 to 2013, set the value to `2011_2012_2013`.
 - `GSw_HourlyClusterAlgorithm` (default `optimized`): Algorithm used to select representative periods.
 Choices are `optimized` (for the method described above), `hierarchical` (for hierarchical clustering), `kmeans` (for *k*-means clustering), `kmedoids` (for *k*-medoids clustering), or `user{label}` (for user-defined periods and weights as specified by a file located at `inputs/temporal/period_szn_{GSw_HourlyClusterAlgorithm}.csv`, for example `period_szn_user_myname_20230130.csv`).
@@ -542,6 +544,7 @@ Alternative weather profiles may be provided by the user,
 but the allowable weather years are constrained by the need for coincident hourly profiles for PV and wind capacity factors, electricity demand, and surface air temperature (used in the calculation of [outage rates](#outage-rates)) for all model zones.
 
 ```{admonition} Weather year settings
+- `GSw_HourlyRepYears` (default `2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023`): Weather years defining the period for which to reproduce average weather profiles for energy/representative periods
 - `GSw_HourlyWeatherYears` (default `2012`): Weather years from which to select representative periods, as described above
 - `resource_adequacy_years` (default `2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023`): Weather years to include in resource adequacy calculations
 ```

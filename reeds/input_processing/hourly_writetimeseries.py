@@ -127,19 +127,17 @@ def get_ccseason_peaks_hourly(load, sw, inputs_case, hierarchy, h2ccseason, val_
 
 
 def append_csp_profiles(cf_rep, sw):
-    ### Parse switch data (hourly_repperiods.py does this already but stress_periods.py does not)
-    if isinstance(sw["GSw_CSP_Types"], str):
-        sw["GSw_CSP_Types"] = [int(i) for i in sw["GSw_CSP_Types"].split("_")]
     ### Get the CSP profiles
     cfcsp = cf_rep[[c for c in cf_rep if c.startswith("csp")]].copy()
     ### Duplicate the csp1 profiles for each CSP tech
+    csp_types = [int(i) for i in sw["GSw_CSP_Types"].split("_")]
     cfcsp_out = pd.concat(
         (
             [
                 cfcsp.rename(
                     columns={c: c.replace("csp", f"csp{i}") for c in cfcsp.columns}
                 )
-                for i in sw["GSw_CSP_Types"]
+                for i in csp_types
             ]
         ),
         axis=1,
@@ -459,15 +457,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             logpath=os.path.join(inputs_case,'..','gamslog.txt'),
         )
 
-    # %% Parse some switches
-    if not isinstance(sw["GSw_HourlyWeatherYears"], list):
-        sw["GSw_HourlyWeatherYears"] = [
-            int(y) for y in sw["GSw_HourlyWeatherYears"].split("_")
-        ]
-
-    # Ensure the GSw_CSP_Types is a list, as hourly_writetimeseries is called in F_stress_periods.py as well
-    if not isinstance(sw['GSw_CSP_Types'],list):
-        sw['GSw_CSP_Types'] = [int(i) for i in sw['GSw_CSP_Types'].split('_')]
+    #%% Process inputs
     ## Make outputs path
     outpath = os.path.join(inputs_case, periodtype)
     os.makedirs(outpath, exist_ok=True)

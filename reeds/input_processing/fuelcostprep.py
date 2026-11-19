@@ -91,8 +91,7 @@ def calculate_daily_state_degree_days(
 ) -> dict[str, pd.DataFrame]:
     """
     Calculate daily historical heating and cooling degree days for each state
-    and each weather year (based on the GSw_HourlyWeatherYears switch) using
-    hourly state-level temperature data.
+    and each weather year using hourly state-level temperature data.
 
     Args:
         inputs_case: Path to the inputs case directory.

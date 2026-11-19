@@ -170,7 +170,7 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
         ]).sort_values('period').set_index('period').szn
 
     elif sw['GSw_HourlyClusterAlgorithm'] in ['opt','optimized','optimize']:
-        fit_using_years = sw.GSw_HourlyWeatherYears
+        fit_using_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
         profiles_period_mean = profiles_fitperiods.loc[fit_using_years]
         fit_to_years = [int(y) for y in sw.GSw_HourlyRepYears.split('_')]
         target_feature_mean = profiles_fitperiods.loc[fit_to_years].mean()
@@ -243,10 +243,6 @@ def main(
         sw['GSw_HourlyClusterWeights'] = (
             sw['GSw_HourlyClusterWeights'].loc[sw['GSw_HourlyClusterWeights'] != 0]
         ).copy()
-    if not isinstance(sw['GSw_HourlyWeatherYears'], list):
-        sw['GSw_HourlyWeatherYears'] = [int(y) for y in sw['GSw_HourlyWeatherYears'].split('_')]
-    if not isinstance(sw['GSw_CSP_Types'], list):
-        sw['GSw_CSP_Types'] = [int(i) for i in sw['GSw_CSP_Types'].split('_')]
     ## VRE techs that can be used for profiles
     techs_vre = ['upv', 'wind-ons', 'wind-ofs'] if int(sw.GSw_OfsWind) else ['upv', 'wind-ons']
 
@@ -262,7 +258,8 @@ def main(
 
     #%% Get map from yperiod, hour, and h_of_period to timestamp
     timestamps = reeds.timeseries.make_timestamps(sw)
-    timestamps_myr = timestamps.loc[timestamps.year.isin(sw['GSw_HourlyWeatherYears'])].copy()
+    keep_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
+    timestamps_myr = timestamps.loc[timestamps.year.isin(keep_years)].copy()
 
     ### Get region hierarchy and rmap
     hierarchy = pd.read_csv(
