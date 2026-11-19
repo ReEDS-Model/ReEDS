@@ -7,32 +7,31 @@ Chen, Yunzhi, Wesley Cole, and Brian Sergi. 2026. "[Discrete Versus Continuous: 
 
 Chen, Yunzhi, Anna Schleifer, Yonghong Chen, Wesley Cole, and Mort Webster. 2026. "[From Exhaustive to Focused: Clustering-Based Scenario Reduction for Capacity Expansion Studies](https://ieeexplore.ieee.org/abstract/document/11762316)." 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS), Salt Lake City, UT.
 
-Cohen, Stuart, Ningchao Gao, Thushara De Silva, Vincent Carag, Jin Tan, et al. 2026. "[Technoeconomic Studies for the Rorex Creek Pumped Storage Hydro Project: An Evaluation of New Pumped Storage Hydro in the Tennessee Valley Authority System](https://doi.org/10.2172/3648898)," January.
+Cohen, Stuart, Ningchao Gao, Thushara De Silva, Vincent Carag, Jin Tan, et al. 2026. [_Technoeconomic Studies for the Rorex Creek Pumped Storage Hydro Project: An Evaluation of New Pumped Storage Hydro in the Tennessee Valley Authority System_](https://doi.org/10.2172/3648898).
 
-Cole, Wesley, L. Serpe, and C. Eckhardt. 2026. "[Impacts of New Large Loads in Utah](https://ieeexplore.ieee.org/document/11762289)." 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS), Salt Lake City, UT. 
+Cole, Wesley, Louisa Serpe, and Cindi Eckhardt. 2026. "[Impacts of New Large Loads in Utah](https://ieeexplore.ieee.org/document/11762289)." _19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS)_, Salt Lake City, UT.
 
-Halloran, Claire. 2026. "[Grid Impact of Reservoir Thermal Energy Storage for Data Center Cooling](https://pangea.stanford.edu/ERE/db/IGAstandard/record_detail.php?id=38299)." IGA Geothermal Conference Papers Database. 
+Halloran, Claire. 2026. "[Grid Impact of Reservoir Thermal Energy Storage for Data Center Cooling](https://pangea.stanford.edu/ERE/db/IGAstandard/record_detail.php?id=38299)." IGA Geothermal Conference Papers Database.
 
-Halloran, Claire, Juliet Simpson, and Jonathan Ho. 2026. "[Value of Geothermal Energy Storage for Supply-Side and Demand-Side Applications](https://docs.nlr.gov/docs/fy26osti/95722.pdf)." Technical report NLR/TP-6A40-95722. Golden, CO: National Laboratory of the Rockies.
+Halloran, Claire, Juliet Simpson, and Jonathan Ho. 2026. [_Value of Geothermal Energy Storage for Supply-Side and Demand-Side Applications_](https://docs.nlr.gov/docs/fy26osti/95722.pdf). Golden, CO: National Laboratory of the Rockies.
 
-Jorgenson, Jennie, Claire Nguyen, Sophie Bredenkamp, Greg Brinkman, Trieu Mai, Gabe Zuckerman, and Travis Douville. 2026. "[Key Drivers for Offshore Wind Deployment in the Western United States](https://doi.org/10.1002/we.70137)." _Wind Energy_ 29 (8). 
+Jorgenson, Jennie, Claire Nguyen, Sophie Bredenkamp, Greg Brinkman, Trieu Mai, Gabe Zuckerman, and Travis Douville. 2026. "[Key Drivers for Offshore Wind Deployment in the Western United States](https://doi.org/10.1002/we.70137)." _Wind Energy_ 29 (8)
 
-Kahrl, Fredrich, Jennie Jorgenson, Lawryn Kiboma, Dev Millstein, Natalie Mims Frick, and Brian Sergi. 2026. "[Getting Brighter: Impacts of Improved Day-Ahead Solar Forecasts in High-Solar, High-Storage Electricity Systems](https://doi.org/10.1016/j.renene.2025.125104)." _Renewable Energy_ 259 (March): 125104. 
+Kahrl, Fredrich, Jennie Jorgenson, Lawryn Kiboma, Dev Millstein, Natalie Mims Frick, and Brian Sergi. 2026. "[Getting Brighter: Impacts of Improved Day-Ahead Solar Forecasts in High-Solar, High-Storage Electricity Systems](https://doi.org/10.1016/j.renene.2025.125104)." _Renewable Energy_ 259 (March): 125104.
 
-Mai, Trieu, Patrick R. Brown, David Palchak, Gregory Brinkman, Adria Brooks, Paul Denholm, Rob Gramlich, et al. 2026. "[What Can We Learn From US National Transmission Studies](https://doi.org/10.1016/j.joule.2026.102339)?" _Joule_ 10 (2): 102339. 
+Mai, Trieu, Patrick R. Brown, David Palchak, Gregory Brinkman, Adria Brooks, Paul Denholm, Rob Gramlich, et al. 2026. "[What Can We Learn From US National Transmission Studies?](https://doi.org/10.1016/j.joule.2026.102339)" _Joule_ 10 (2): 102339.
 
-McTigue, Josh, Wesley Cole, Hyunjun Oh, Rebecca Barney, Erik Witter, Abra Gold, et al. 2026. "[Project Phase 1 Report: Reducing Data Center Peak Cooling Demand and Energy Costs With Cold Underground Thermal Energy Storage (Cold UTES)](https://docs.nlr.gov/docs/fy26osti/100780.pdf)." Technical report NLR/TP-5700-100780. Golden, CO: National Laboratory of the Rockies. 
+McTigue, Josh, Wesley Cole, Hyunjun Oh, Rebecca Barney, Erik Witter, Abra Gold, et al. 2026. [_Project Phase 1 Report: Reducing Data Center Peak Cooling Demand and Energy Costs With Cold Underground Thermal Energy Storage (Cold UTES)_](https://docs.nlr.gov/docs/fy26osti/100780.pdf). Golden, CO: National Laboratory of the Rockies.
 
-Palmintier, Bryan, Rodrigo Henriquez-Auba, Nadia Panossian, Patrick Brown, Jose Daniel Lara, and Aadil Latif. 2026. "[Multidisciplinary Design, Analysis, and Optimization (MDO) for Co-Designed Transmission & Distribution Electric Grid Planning](https://doi.org/10.1016/j.epsr.2026.113690)." _Electric Power Systems Research_ 264 (March): 113690. 
+Palmintier, Bryan, Rodrigo Henriquez-Auba, Nadia Panossian, Patrick Brown, Jose Daniel Lara, and Aadil Latif. 2026. "[Multidisciplinary Design, Analysis, and Optimization (MDO) for Co-Designed Transmission & Distribution Electric Grid Planning](https://doi.org/10.1016/j.epsr.2026.113690)." _Electric Power Systems Research_ 264 (March): 113690.
 
-Rose, Amy, Becca Fuchs, Lina Ramirez, and Ram Mohan Pandian. 2026. "[Informing Transmission Supply Chain Needs From National Transmission Studies](https://docs.nlr.gov/docs/fy26osti/97167.pdf)." Technical report NLR/TP-6A40-97167. Golden, CO: National Laboratory of the Rockies. 
+Rose, Amy, Becca Fuchs, Lina Ramirez, and Ram Mohan Pandian. 2026. [_Informing Transmission Supply Chain Needs From National Transmission Studies_](https://docs.nlr.gov/docs/fy26osti/97167.pdf). Golden, CO: National Laboratory of the Rockies.
 
-Sharma, Shashwat, Trieu Mai, and Ilya Chernyakhovskiy. 2026. "[Impacts of Regional Coordination on Transmission Needs for Power System Resource Adequacy [Slides]](https://doi.org/10.2172/3015065)," January. 
+Sharma, Shashwat, Trieu Mai, and Ilya Chernyakhovskiy. 2026. [_Impacts of Regional Coordination on Transmission Needs for Power System Resource Adequacy_](https://doi.org/10.2172/3015065).
 
-Steinberg, Daniel C., Daniel P. Cherney, Bryan K. Mignone, Matthew Mowers, and Brian Sergi. 2026. "[Decomposing Sources of Value for Electricity and Negative Emissions Technologies in Net-Zero Power Systems](https://doi.org/10.1016/j.isci.2025.114187)." _iScience_ 29 (3): 114187. 
+Steinberg, Daniel C., Daniel P. Cherney, Bryan K. Mignone, Matthew Mowers, and Brian Sergi. 2026. "[Decomposing Sources of Value for Electricity and Negative Emissions Technologies in Net-Zero Power Systems](https://doi.org/10.1016/j.isci.2025.114187)." _iScience_ 29 (3): 114187.
 
-Sunkara, Sai Veena, Srihari Sundar, Gord Stephen, Stuart Cohen, Patrick Reed, Vivek Srikrishnan, and Ariel Miara. 2026. "[Impact of Hydropower Availability on Resource Adequacy of the United States Western Interconnection](https://doi.org/10.1371/journal.pone.0351321)." _PLOS One_ 21 (6): e0351321. 
-
+Sunkara, Sai Veena, Srihari Sundar, Gord Stephen, Stuart Cohen, Patrick Reed, Vivek Srikrishnan, and Ariel Miara. 2026. "[Impact of Hydropower Availability on Resource Adequacy of the United States Western Interconnection](https://doi.org/10.1371/journal.pone.0351321)." _PLOS One_ 21 (6): e0351321.
 
 ```
 
