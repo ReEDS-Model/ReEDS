@@ -5,8 +5,7 @@
 
 Chen, Yunzhi, Wesley Cole, and Brian Sergi. 2026. "[Discrete Versus Continuous: Enhancing Battery Optimization in Capacity Expansion Models](https://doi.org/10.1016/j.est.2026.122637)." _Journal of Energy Storage_ 168 (August): 122637.
 
-Chen, Yunzhi, Anna Schleifer, Yonghong Chen, Wesley Cole, and Mort Webster. 2026. "[From Exhaustive to Focused: Clustering-Based Scenario Reduction for Capacity Expansion Studies](https://ieeexplore.ieee.org/abstract/document/11762316)." 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS), Salt Lake City, UT.
-
+Chen, Yunzhi, Anna Schleifer, Yonghong Chen, Wesley Cole, and Mort Webster. 2026. "[From Exhaustive to Focused: Clustering-Based Scenario Reduction for Capacity Expansion Studies](https://ieeexplore.ieee.org/abstract/document/11762316)." _19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS)_, Salt Lake City, UT.
 
 Cohen, Stuart, Ningchao Gao, Thushara De Silva, Vincent Carag, Jin Tan, Patrick Balducci, Siyuan Wang, Jonghwan Kwon, Mark Weimar, and Jennie Jorgenson. 2026. [_Technoeconomic Studies for the Rorex Creek Pumped Storage Hydro Project: An Evaluation of New Pumped Storage Hydro in the Tennessee Valley Authority System_](https://doi.org/10.2172/3648898).
 
