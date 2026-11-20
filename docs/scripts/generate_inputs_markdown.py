@@ -6,6 +6,9 @@ from pathlib import Path
 
 def _collect_input_readmes(inputs_root: Path) -> list[Path]:
     readmes = []
+    root_readme = inputs_root / "README.md"
+    if root_readme.exists():
+        readmes.append(root_readme)
     for child in sorted(inputs_root.iterdir(), key=lambda p: p.name.casefold()):
         if not child.is_dir():
             continue
@@ -28,7 +31,8 @@ def _write_inputs_md(output_path: Path, readmes: list[Path]) -> None:
 
     for readme in readmes:
         folder = readme.parent.name
-        lines.append(f"- [inputs/{folder}](#inputs{folder})")
+        label = "inputs" if folder == "inputs" else f"inputs/{folder}"
+        lines.append(f"- [{label}](#inputs{folder})")
 
     # Do not add an additional markdown section header here.
     # Each included README already contains its own heading.

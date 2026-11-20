@@ -118,7 +118,7 @@ Screenshot of a test of Python in the terminal window
 
 #### Conda Environment Setup
 
-It is highly recommended to run ReEDS using the conda environment provided in the repository. This environment (named `reeds`) is specified by the `environment.yml` and can be built with the following command - make sure you navigate to the ReEDS repository from terminal first:
+ReEDS should be run using the conda environment provided in the repository. This environment (named `reeds`) is specified by the `environment.yml` and can be built with the following command - make sure you navigate to the ReEDS repository from terminal first:
 
 ```shell
 conda env create -f environment.yml
@@ -177,7 +177,8 @@ git lfs install
 3. Clone the ReEDS repository on your desktop or download a ZIP from GitHub.
 
 ### ReEDS2PRAS, Julia, and Stress Periods Setup
-Julia will need to be installed and set up to successfully run the model since ReEDS uses stress periods by default. The recommended way to install Julia is via **juliaup**, the official Julia version manager, which makes it easy to install and switch between specific Julia versions. Julia `1.12.1` is the currently tested version across all platforms.
+
+Julia should be installed using **juliaup**, the official Julia version manager, which makes it easy to install and switch between specific Julia versions. Julia `1.12.1` is the currently tested version across all platforms.
 
 #### Step 1: Install juliaup
 
