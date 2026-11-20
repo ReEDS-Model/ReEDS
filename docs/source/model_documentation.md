@@ -30,6 +30,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | CCS | carbon capture and storage |
 | CES | clean energy standard |
 | CF | capacity factor |
+| CHP | combined heat and power |
 | CO<sub>2</sub> | carbon dioxide |
 | CO<sub>2</sub>e | carbon dioxide equivalent |
 | CONUS | contiguous United States |
@@ -1420,12 +1421,15 @@ The number of bins formed is then equal to the smaller of the maximum bin number
 For each bin, the assigned heat rate is equal to the capacity-weighted average of the heat rates for the units inside the bin.
 
 Combined heat and power (CHP) units are identified separately in the unit database to allow them to be given specific treatment.
-CHP plants are not allowed to be retired exogenously because the model is not explicitly representing the value they receive by providing heat in addition to the electricity.
+CHP plants are not allowed to be retired endogenously because the model is not explicitly representing the value they receive by providing heat in addition to the electricity.
 Additionally, CHP plants have a fixed minimum generation level of 40%, which is used to approximate CHP operations as reported by EIA-923 from 2019-2025.
+CHP-specific treatment only applies to CHP plants that are online before the model start year.
+CHP plants coming online after the start year are treated as non-CHP plants.
 
 ```{admonition} Combined heat and power switches
 To disable the requirement that CHP plants cannot retire, turn off `GSw_CHPNoRetire`.
 The fixed minimum generation level for CHP plants is controlled by `GSw_MingenCHP`.
+When either of these switches are active, CHP units are binned separately from non-CHP units, with vintage names of init-chp-1, init-chp-2, etc.
 ```
 
 <!--
