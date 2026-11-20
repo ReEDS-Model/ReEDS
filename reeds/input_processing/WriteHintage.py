@@ -332,6 +332,33 @@ class grouping:
         return tdat
 
 
+def bin_units(nbins, input_df, minSpread):
+    '''
+    Bin units with the grouping class, keeping CHP and non-CHP units in separate bins.
+
+    CHP units (chp == 1) are binned separately within each tech/region (id); both sets
+    of bins are numbered from 1 and are distinguished by the chp column. When there
+    are no CHP units, this is identical to grouping(nbins, input_df, 'HR', ...).
+
+    nbins (int or str): number of bins, or 'unit'/'group' (see grouping class)
+    input_df (DataFrame object): generator data with 'id', 'HR', and 'chp' columns
+    minSpread (int): minimum heat rate deviation across bins
+    '''
+    if not (input_df['chp'] == 1).any():
+        return grouping(nbins, input_df, 'HR', minSpread=minSpread).df
+
+    binned = []
+    for chp in [0, 1]:
+        dfsub = input_df.loc[input_df['chp'] == chp]
+        if dfsub.empty:
+            continue
+        dfbin = grouping(nbins, dfsub, 'HR', minSpread=minSpread).df
+        dfbin['bin'] = dfbin['bin'].astype(int)
+        binned.append(dfbin)
+
+    return pd.concat(binned, ignore_index=True)
+
+
 #%% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
@@ -353,6 +380,9 @@ def main(reeds_path, inputs_case):
     GSw_RetireYears_Thermal = int(sw.GSw_RetireYears_Thermal)
     GSw_Clean_Air_Act = int(sw.GSw_Clean_Air_Act)
     startyear=int(sw.startyear)
+    # CHP units only get their own hintage bins when a CHP-specific treatment is on;
+    # otherwise they are binned together with non-CHP units
+    separate_chp = (float(sw.GSw_MingenCHP) > 0) or (int(sw.GSw_CHPNoRetire) == 1)
 
     #%%
     # Inflation factor 1987$ to 2004$
@@ -389,10 +419,17 @@ def main(reeds_path, inputs_case):
                   'coolingwatertech'] = indat.loc[indat['tech'].isin(TECH['no_cooling']),'tech']
         indat['tech'] = indat.coolingwatertech
 
+    # Combined heat and power (CHP) flag; treat all units as non-CHP if the unit
+    # database has no flag or no CHP-specific treatment is turned on
+    if ('chp' not in indat.columns) or (not separate_chp):
+        indat['chp'] = 0
+    indat['chp'] = indat['chp'].fillna(0).astype(int)
+
     ### NOTE: New addition for columns AO:AR, AW:AX in the plant file
     ad = indat[["tech", "r", "ctt", "summer_power_capacity_MW", "TC_WIN", "RetireYear",
                 "StartYear", "IsExistUnit", "HeatRate", "T_VOM", "T_FOM",
-                "T_CCSROV", "T_CCSF", "T_CCSV", "T_CCSHR", "T_CCSCAPA", "T_CCSLOC"]].copy() 
+                "T_CCSROV", "T_CCSF", "T_CCSV", "T_CCSHR", "T_CCSCAPA", "T_CCSLOC",
+                "chp"]].copy()
 
     # Rename columns in ad
     rename = {
@@ -471,6 +508,7 @@ def main(reeds_path, inputs_case):
         'TECH', 'r', 'HR', 'onlineyear', 
         'RetireYear', 'VOM', 'FOM',"CCS_Retro_OvernightCost", "CCS_Retro_FOM", 
         "CCS_Retro_VOM", "CCS_Retro_HR", "CCS_Retro_CapAdjust", "CCS_Retro_LocFactor",
+        'chp',
     ])[['Summer.capacity','Winter.capacity']].sum().reset_index()
 
     # Remove 'others' category
@@ -491,16 +529,30 @@ def main(reeds_path, inputs_case):
     dat_coal = dat[dat.TECH.isin(coal_techs)] # coal plants
 
     # treat the non-coal options regularly
-    tdat_non_coal = grouping(nBin, dat_non_coal, 'HR', minSpread=mindev).df
+    # (CHP units, if separated, are binned separately from non-CHP units; see bin_units())
+    tdat_non_coal = bin_units(nBin, dat_non_coal, mindev)
 
     # coal plants are grouped at the unit level if GSw_Clean_Air_Act is enabled
     if GSw_Clean_Air_Act == 1:
-        tdat_coal = grouping('unit', dat_coal, 'HR', minSpread=mindev).df
+        tdat_coal = bin_units('unit', dat_coal, mindev)
     else:
-        tdat_coal = grouping(nBin, dat_coal, 'HR', minSpread=mindev).df
+        tdat_coal = bin_units(nBin, dat_coal, mindev)
 
     tdat = pd.concat([tdat_non_coal, tdat_coal], ignore_index=True, axis=0)
-    
+
+    # Record the hintage bins made up of CHP units (empty unless separate_chp)
+    chp_hintage = (
+        tdat.loc[tdat.chp == 1, ['TECH', 'bin', 'r']]
+        .drop_duplicates()
+        .rename(columns={'TECH': '*i', 'bin': 'v'})
+    )
+    chp_hintage['v'] = 'init-chp-' + chp_hintage['v'].astype(int).astype(str)
+    if separate_chp:
+        print(
+            f"Separated {tdat.loc[tdat.chp == 1, 'Summer.capacity'].sum():.0f} MW "
+            f"of CHP capacity into {len(chp_hintage)} hintage bins"
+        )
+
    # calculate the capacity-weighted average heat rate for each bin 
     # by taking the product of the sum of the capacity and the centroid of the bin
     tdat['wHR'] = tdat.HR * tdat['Summer.capacity']
@@ -524,10 +576,10 @@ def main(reeds_path, inputs_case):
 # Adjust the HR, VOM, FOM, solveYearOnline, and winter capacity
     for i in list(range(startyear, tdat.RetireYear.max() + 1)):
         # Subset on years earlier than i
-        ydat = tdat.loc[tdat.RetireYear > i, ['id','bin','Summer.capacity'] + combine_cols]
+        ydat = tdat.loc[tdat.RetireYear > i, ['id','chp','bin','Summer.capacity'] + combine_cols]
 
         # Sum up the parameters by id and bin
-        ydat = ydat.groupby(['id','bin']).sum()
+        ydat = ydat.groupby(['id','chp','bin']).sum()
 
         # Levelize parameters
         for j in level_cols:
@@ -572,6 +624,7 @@ def main(reeds_path, inputs_case):
     dpv['wFOM'] = 0
     dpv['Winter.capacity'] = dpv['Summer.capacity']
     dpv['bin'] = 1
+    dpv['chp'] = 0
     dpv['year'] = dpv['year'].astype(int)
     dpv['solveYearOnline'] = np.nan
     # Estimate distpv's average build year in each region and year.
@@ -617,7 +670,10 @@ def main(reeds_path, inputs_case):
     
     # Clean up output dataframe
     zout['bin_int'] = zout['bin'] # keep integer bins in dataframe for ease of plotting
-    zout['bin'] = 'init-' + zout['bin'].astype(str)
+    zout['bin'] = (
+        np.where(zout['chp'] == 1, 'init-chp-', 'init-')
+        + zout['bin'].astype(int).astype(str)
+    )
     zout['solveYearOnline'] = zout['solveYearOnline'].round()
     zout['wFOM'] *= 1e3
     zout.rename(columns={'Summer.capacity': 'cap',
@@ -641,7 +697,7 @@ def main(reeds_path, inputs_case):
 
     #%% Get vintages
     # Each generation technology is broken out by class:
-    # 1. initial capacity: init-1, init-2, ..., init-n
+    # 1. initial capacity: init-1, init-2, ..., init-n (and init-chp-1, ..., init-chp-m for CHP)
     # 2. prescribed capacity: prescribed
     # 3. new capacity: new
     # This allows us to distinguish between existing, prescribed, and model-chosen builds
@@ -649,7 +705,7 @@ def main(reeds_path, inputs_case):
     # Under the Clean Air Act, all coal plants are regulated individually.
     # Therefore, we need a large value of hintages to represent these plants
     scalars = reeds.io.get_scalars(inputs_case)
-    max_hintage_number = tdat['bin'].max()
+    max_hintage_number = tdat.loc[tdat.chp == 0, 'bin'].max()
     if sw.numhintage in ['unit', 'group']:
         numhintage = int(scalars.hintage_unit_number)
     else:
@@ -662,8 +718,13 @@ def main(reeds_path, inputs_case):
     # NB this will not increase model size given conditions
     # dictating valcap and valgen for initial classes
     numhintage += 2
+    # CHP classes (init-chp-*) are only needed when CHP units are binned separately
+    numhintage_chp = int(tdat.loc[tdat.chp == 1, 'bin'].max()) + 2 if len(chp_hintage) else 0
 
-    initv = [f'init-{i}' for i in range(1, numhintage+1)]
+    initv = (
+        [f'init-{i}' for i in range(1, numhintage+1)]
+        + [f'init-chp-{i}' for i in range(1, numhintage_chp+1)]
+    )
     newv = [f'new{i}' for i in range(1, int(sw.numclass)+1)]
     v = initv + newv
 
@@ -687,6 +748,7 @@ def main(reeds_path, inputs_case):
             'wCCS_Retro_HR','wCCS_Retro_CapAdjust','wCCS_Retro_LocFactor']
 
     zout[cols].dropna().to_csv(os.path.join(inputs_case,'hintage_data.csv'), index=False)
+    chp_hintage.to_csv(os.path.join(inputs_case,'chp_hintage.csv'), index=False)
 
     #%%####################################################################################
     #    -- Make plots comparing actual unit heatrates with binned ones, if desired --    #
@@ -701,10 +763,10 @@ def main(reeds_path, inputs_case):
         allgens = pd.merge(
             tdat.loc[
                 (tdat.RetireYear > 2020) & (tdat['onlineyear'] < 2020),
-                ['TECH','r','bin','HR','FOM','VOM','onlineyear','Summer.capacity']],
+                ['TECH','r','chp','bin','HR','FOM','VOM','onlineyear','Summer.capacity']],
             zout.loc[zout.yr==2020],
-            left_on=['r','TECH','bin'],
-            right_on=['r','TECH','bin_int'],
+            left_on=['r','TECH','chp','bin'],
+            right_on=['r','TECH','chp','bin_int'],
             how='left')
         
         ## Summary scatter plot for all techs
