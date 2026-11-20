@@ -25,6 +25,7 @@ from report_switches import dollar_year
 # User inputs
 valcostfac_core_path = vr.valcostfac_core_path #Only used when running this file standalone.
 report_name = 'battery_report.html' #Written into output_dir, next to valcostfac_report.html.
+valcostfac_report_url = 'https://claude.ai/artifact/VEfK9E3KEKszvYLi8wicJj' #Published value-cost factor report the header links to as its companion. None to name it without a link.
 report_title = 'Battery Figures' #Page title and headline.
 storage_tech = 'Battery' #Name in valcostfac_core.csv of the storage technology this page covers.
 
@@ -571,6 +572,9 @@ def build_html(output_dir, core_path):
                'Fig 34 per kW, against installed storage capacity as a share of peak load, with '
                'the quantities and layout of Fig 27.', order)]
 
+    companion = (f'<a href="{valcostfac_report_url}" target="_blank" rel="noopener">'
+                 f'{vr.report_title}</a>' if valcostfac_report_url else vr.report_title)
+
     fell_back = any(isinstance(o, tuple) for o in order)
     if vr.embed_figures and not fell_back:
         packaging = f'Figures are embedded at up to {vr.embed_max_width}px wide.'
@@ -596,8 +600,9 @@ def build_html(output_dir, core_path):
   <h1>{report_title}</h1>
   <p class="stand">The storage figures of the value&#8211;cost factor pipeline, from the run that
   forces storage, and the capacity credit of every technology, with a description of what each
-  one plots. A companion report covers every technology on shared terms. Numbers are computed
-  from the tables the pipeline writes with the figures, so re-running the report restates them.</p>
+  one plots. A companion report, {companion}, covers every technology on shared terms. Numbers
+  are computed from the tables the pipeline writes with the figures, so re-running the report
+  restates them.</p>
   <div class="meta"><span>{storage_tech}</span><span>scenario: {scen}</span>
     <span>{dollar_year}$</span></div>
 </header>
