@@ -318,7 +318,7 @@ eq_Objfn_op(s,t)$tmodel(t)..
 
 * ---State RPS alternative compliance payments---
               + sum{(RPSCat,st)$[(stfeas(st) or sameas(st,"voluntary"))$RecPerc(RPSCat,st,t)$(not acp_disallowed(st,RPSCat))],
-                    acp_price(st,t) * ACP_PURCHASES(RPSCat,st,t)
+                    acp_price(st,t) * ACP_PURCHASES(s,RPSCat,st,t)
                    }$[(yeart(t)>=firstyear_RPS)$Sw_StateRPS]
 
 * --- dropped/excess load (ONLY if before Sw_StartMarkets)

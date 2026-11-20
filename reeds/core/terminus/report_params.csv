@@ -1,7 +1,7 @@
 # Full-line and line-end comments can be indicated with # (but use the comment column when possible),,,,,
 # This parameter list is in alphabetical order - please add new entries that way,,,,,
 param,units,comment,reeds2x,output_rename,input
-"acp_purchases_out(rpscat,st,t)",MWh,Annual alternative compliance credits from the variable ACP_PURCHASES,,,
+"acp_purchases_out(s,rpscat,st,t)",MWh,Annual alternative compliance credits from the variable ACP_PURCHASES,,,
 "avg_cf(s,i,v,r,t)",frac,Annual average capacity factor for rsc technologies,,,
 "avg_avail(i,v,r)",frac,Annual average avail factor,,,
 "bioused_out(s,bioclass,r,t)",dry tons (imperial),biomass used by class in each model region (-> bioused.csv),,,
@@ -77,7 +77,7 @@ error_check(*),unitless,set of checks to determine if there is an error - values
 "expenditure_flow(s,*,r,rr,t)",2004$,expenditures from flows of * moving from r to rr,,,
 "expenditure_flow_rps(s,st,ast,t)",2004$,expenditures from trades of RECS from st to ast,,,
 "expenditure_flow_int(s,r,t)",2004$,expenditures from exogenous international imports/exports,,,
-"flex_load_out(flex_type,r,allh,t)",MWh,flexible load consumed in each timeslice,,,
+"flex_load_out(s,flex_type,r,allh,t)",MWh,flexible load consumed in each timeslice,,,
 forced_outage(i),fraction,average forced outage rate (h-weighted; r-unweighted) by technology during representative periods,,,
 planned_outage(i),fraction,average scheduled outage rate (h-weighted) by technology during representative periods,,,
 "gen_ivrt_uncurt(i,v,r,t)",MWh,annual uncurtailed generation from VREs,,,

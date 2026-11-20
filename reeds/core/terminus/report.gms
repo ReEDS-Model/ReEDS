@@ -502,8 +502,8 @@ tran_hurdle_cost_ann(s,r,rr,trtype,t)$[tmodel_new(t)$routes(r,rr,trtype,t)$cost_
 * RPS, CES, AND TAX CREDIT OUTPUTS
 *========================================
 
-rec_outputs(RPSCat,i,st,ast,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(RPSCat,i,st,ast,t) ;
-acp_purchases_out(rpscat,st,t) = ACP_PURCHASES.l(RPSCat,st,t) ;
+rec_outputs(s,RPSCat,i,st,ast,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(s,RPSCat,i,st,ast,t) ;
+acp_purchases_out(s,rpscat,st,t) = ACP_PURCHASES.l(s,RPSCat,st,t) ;
 ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) ;
 
 *========================================
@@ -1696,11 +1696,11 @@ systemcost_ba(s,"op_acp_compliance_costs",r,t)$[tmodel_new(t)$(yeart(t)>=firstye
               + sum{(st,RPSCat)
                     $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,t)
                     $sum{rr$r_st(rr,st), reqt_quant(s,'state_rps',RPSCat,rr,'ann',t) }],
-                       acp_price(st,t) * ACP_PURCHASES.l(RPSCat,st,t) * reqt_quant(s,'state_rps',RPSCat,r,'ann',t)
+                       acp_price(st,t) * ACP_PURCHASES.l(s,RPSCat,st,t) * reqt_quant(s,'state_rps',RPSCat,r,'ann',t)
                        / sum{rr$r_st(rr,st), reqt_quant(s,'state_rps',RPSCat,rr,'ann',t) }
                    }
 * spread voluntary purchase costs based on BA load frac
-              + sum{RPSCat$RecPerc(RPSCat,"voluntary",t), acp_price("voluntary",t) * ACP_PURCHASES.l(RPSCat,"voluntary",t) }
+              + sum{RPSCat$RecPerc(RPSCat,"voluntary",t), acp_price("voluntary",t) * ACP_PURCHASES.l(s,RPSCat,"voluntary",t) }
                 * load_frac_rt(s,r,t)
 
 ;
@@ -1848,7 +1848,7 @@ error_check('z') = round(error_check('z'), 6) ;
 error_check("gen") = sum{(s,i,v,r,allh,t)$[not valgen(i,v,r,t)], GEN.l(s,i,v,r,allh,t) * scenario_probability(s) } ;
 error_gen(s,i,v,r,allh,t)$[not valgen(i,v,r,t)] = GEN.l(s,i,v,r,allh,t) ;
 error_check("cap") = sum{(i,v,r,t)$[not valcap(i,v,r,t)], CAP.l(i,v,r,t) } ;
-error_check("RPS") = sum{(RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(RPSCat,i,st,ast,t) } ;
+error_check("RPS") = sum{(s,RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(s,RPSCat,i,st,ast,t) } ;
 error_check("OpRes") = sum{(s,ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(s,ortype,i,v,r,h,t)  * scenario_probability(s) } ;
 error_check("m_rsc_dat") = sum{(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap"), m_rsc_dat_init(r,i,rscbin) - m_rsc_dat(r,i,rscbin,"cap") } ;
 
@@ -1927,7 +1927,7 @@ expenditure_flow(s,'oper_res',r,rr,t)$[tmodel_new(t)$sum{trtype, routes(r,rr,trt
   sum{(h,ortype), hours(h) * reqt_price(s,'oper_res',ortype,r,h,t) * OPRES_FLOW.l(s,ortype,r,rr,h,t) } ;
 *unlike for the three services above, use the destination price rather than the sending price for calculating RPS expenditure flows
 expenditure_flow_rps(s,st,ast,t)$[tmodel_new(t)$[not sameas(st,ast)]] =
-  (1 / cost_scale) * (1 / pvf_onm(t)) * sum{RPSCat, eq_REC_Requirement.m(s,RPSCat,ast,t) * sum{i, RECS.l(RPSCat,i,st,ast,t) } } ;
+  (1 / cost_scale) * (1 / pvf_onm(t)) * sum{RPSCat, eq_REC_Requirement.m(s,RPSCat,ast,t) * sum{i, RECS.l(s,RPSCat,i,st,ast,t) } } ;
 *International exports are negative expenditures, imports are positive. Use prices from the region where the imports/exports occur.
 expenditure_flow_int(s,r,t)$tmodel_new(t) =
   sum{(i,v,h)$[canada(i)$valgen(i,v,r,t)], GEN.l(s,i,v,r,h,t) * hours(h) * reqt_price(s,'load','na',r,h,t) }  - sum{h, hours(h) * reqt_price(s,'load','na',r,h,t) * can_exports_h(r,h,t) } ;
@@ -1942,7 +1942,7 @@ reduced_cost(i,v,r,t,rscbin,"INV_RSC")$[rsc_i(i)$valinv_init(i,v,r,t)$m_rscfeas(
 *=========================
 * Flexible load
 *=========================
-flex_load_out(flex_type,r,h,t) = FLEX.l(flex_type,r,h,t) ;
+flex_load_out(s,flex_type,r,h,t) = FLEX.l(s,flex_type,r,h,t) ;
 * peak_load_adj(r,ccseason,t) = PEAK_FLEX.l(r,ccseason,t) ;
 
 loadsite_cap(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;

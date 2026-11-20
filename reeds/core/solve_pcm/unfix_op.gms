@@ -1,8 +1,8 @@
 * load
 LOAD.lo(s,r,h,t_unfix) = 0 ;
 LOAD.up(s,r,h,t_unfix) = +inf ;
-FLEX.lo(s,flex_type,r,h,t_unfix)$Sw_EFS_flex  = 0 ;
-FLEX.up(s,flex_type,r,h,t_unfix)$Sw_EFS_flex  = +inf ;
+FLEX.lo(s,flex_type,r,h,t_unfix)$Sw_EFS_flex = 0 ;
+FLEX.up(s,flex_type,r,h,t_unfix)$Sw_EFS_flex = +inf ;
 DROPPED.lo(s,r,h,t_unfix)$[(yeart(t_unfix)<Sw_StartMarkets) or (Sw_PCM=1)] = 0 ;
 DROPPED.up(s,r,h,t_unfix)$[(yeart(t_unfix)<Sw_StartMarkets) or (Sw_PCM=1)] = +inf ;
 EXCESS.lo(s,r,h,t_unfix)$[(yeart(t_unfix)<Sw_StartMarkets) or (Sw_PCM=1)] = 0 ;
