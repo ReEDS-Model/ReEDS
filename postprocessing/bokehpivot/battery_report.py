@@ -16,6 +16,7 @@ import os
 import numpy as np
 import pandas as pd
 import valcostfac_report as vr
+import report_plotly as rp
 from valcostfac_report import CSS, figure, table, read_csv_or_empty, _num, _swatch
 from plcoe_pitch import (years as table_years, display_tech, load_style_colors, tech_style_path,
                          normalize_tech_name, storage_dollar_ymax,
@@ -28,6 +29,26 @@ report_name = 'battery_report.html' #Written into output_dir, next to valcostfac
 valcostfac_report_url = 'https://claude.ai/artifact/VEfK9E3KEKszvYLi8wicJj' #Published value-cost factor report the header links to as its companion. None to name it without a link.
 report_title = 'Battery Figures' #Page title and headline.
 storage_tech = 'Battery' #Name in valcostfac_core.csv of the storage technology this page covers.
+interactive_sensitivities = ['wek8'] #Sensitivity figures (by plcoe_pitch_storage_{name} filename stem) drawn as interactive Plotly charts over their static pngs. Empty for a fully static page.
+
+
+def sensitivity_panels(perkw):
+    """The eight panels of a storage sensitivity figure, as plot_storage_sensitivity draws them, in
+    the form report_plotly.interactive_figure takes."""
+    sfx, basis = ('_perkw', 'per kW') if perkw else ('', 'per MWh')
+    unit = f'{dollar_year}$/kW-yr' if perkw else f'{dollar_year}$/MWh'
+    ymax = storage_dollar_ymax_perkw if perkw else storage_dollar_ymax
+    ratio = dict(fmt='.2f', pyfmt='.2f')
+    dollars = dict(fmt=',.0f', pyfmt=',.0f', ymax=ymax)
+    return [dict(col='value_factor' + sfx, title=f'Value factor, {basis}', ref1=True, **ratio),
+            dict(col='cost_factor' + sfx, title=f'Cost factor, {basis}', ref1=True, **ratio),
+            dict(col='value_cost_factor' + sfx, title=f'Value-cost factor, {basis}', ref1=True,
+                 **ratio),
+            dict(col='capacity_credit', title='Capacity credit', **ratio),
+            dict(col='lvoe' + sfx, title=f'LVOE, {unit}', **dollars),
+            dict(col='lcoe_marg' + sfx, title=f'Marginal LCOE, {unit}', **dollars),
+            dict(col='plcoe' + sfx, title=f'PLCOE, {unit}', **dollars),
+            dict(col='benchmark_price' + sfx, title=f'Benchmark price (Pb), {unit}', **dollars)]
 
 
 def build_html(output_dir, core_path):
@@ -547,9 +568,24 @@ def build_html(output_dir, core_path):
                    f'Fig {n} per kW, against installed storage capacity as a share of peak load, '
                    'with the quantities and layout of Fig 27.', order)]
 
+    def sens_figure(name, perkw, num, title, body, scenario):
+        """figure() for a storage sensitivity png, drawn interactive over it if listed in
+        interactive_sensitivities."""
+        stem = f'plcoe_pitch_storage_{name}_{"perkw" if perkw else "permwh"}'
+        static = figure(output_dir, stem + '.png', num, title, body, order)
+        csv = os.path.join(output_dir, stem + '.csv')
+        if name not in interactive_sensitivities or not static or not os.path.exists(csv):
+            return static
+        panels = sensitivity_panels(perkw)
+        x, xlabel, xname = (('cap_peak', 'Installed capacity (% of peak load)', 'Share of peak')
+                            if perkw else ('gen_frac', 'Market share (% of generation)',
+                                           'Market share'))
+        return rp.interactive_figure(static, csv, panels, x, xlabel, scenario,
+                                     rp.sensitivity_table(csv, panels, x, xname, table))
+
     # ---- 14 five-day periods ----
     wek_figs = [
-        figure(output_dir, 'plcoe_pitch_storage_wek8_permwh.png', 34,
+        sens_figure('wek8', False, 34,
                'Storage with one-day and five-day periods, per MWh.',
                'The core storage run run twice: as it is, with 33 representative days and stress '
                'periods one day long, and with five-day periods (<span class="eq">'
@@ -566,11 +602,11 @@ def build_html(output_dir, core_path):
                'times as many stress hours. In both runs the state of charge runs in order through '
                'each period and returns to where it started at the period&rsquo;s end; neither has '
                'inter-day linkage. Nothing else differs between the two runs. Per MWh, against '
-               'market share, with the quantities and layout of Fig 26.', order),
-        figure(output_dir, 'plcoe_pitch_storage_wek8_perkw.png', 35,
+               'market share, with the quantities and layout of Fig 26.', 'battery_wek8'),
+        sens_figure('wek8', True, 35,
                'Storage with one-day and five-day periods, per kW.',
                'Fig 34 per kW, against installed storage capacity as a share of peak load, with '
-               'the quantities and layout of Fig 27.', order)]
+               'the quantities and layout of Fig 27.', 'battery_wek8')]
 
     companion = (f'<a href="{valcostfac_report_url}" target="_blank" rel="noopener">'
                  f'{vr.report_title}</a>' if valcostfac_report_url else vr.report_title)
@@ -578,6 +614,9 @@ def build_html(output_dir, core_path):
     fell_back = any(isinstance(o, tuple) for o in order)
     if vr.embed_figures and not fell_back:
         packaging = f'Figures are embedded at up to {vr.embed_max_width}px wide.'
+    if interactive_sensitivities:
+        packaging += (' Interactive figures are drawn with Plotly over the static figure, which '
+                      'shows instead if Plotly does not load.')
     elif vr.embed_figures:
         packaging = ('Figures are referenced rather than embedded, because Pillow was not '
                      'available. This page only renders next to them.')
@@ -593,7 +632,7 @@ def build_html(output_dir, core_path):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
-<style>{CSS}</style>
+<style>{CSS}{rp.CSS}</style>
 <div class="wrap">
 <header>
   <div class="lbl">ReEDS &middot; value&#8211;cost factor analysis &middot; storage</div>
@@ -675,6 +714,7 @@ def build_html(output_dir, core_path):
   value&#8211;cost factor pipeline. All monetary values {dollar_year}$. {packaging}</footer>
 </section>
 </div>
+{rp.page_script()}
 '''
 
 
