@@ -43,6 +43,7 @@
 - `incentives_*.csv`: Federal tax incentive definitions by technology and construction start year, selected by the `incentives_suffix` switch
   - Columns cover the production tax credit (`ptc_value`, `ptc_perc_bonus`, `ptc_dur`, `ptc_tax_equity_penalty`), the investment tax credit (`itc_frac`, `itc_energy_comm_bonus`, `itc_percpt_domestic_bonus`, `itc_tax_equity_penalty`), the 45Q carbon capture credit (`co2_capture_value`, `co2_capture_dur`), and the 45V hydrogen credit (`h2_ptc_value`, `h2_ptc_dur`), together with the eligibility window (`safe_harbor`, `t_max_online`)
   - `ptc_value` is in the dollar year given by `currency_incentives.csv`
+  - `itc_energy_comm_bonus` is an additive ITC fraction (e.g., 0.1 adds 10 percentage points), scaled by each zone's energy community share
   - `incentives_annual.csv`: Pre-IRA incentives with credit values given for each individual year
   - `incentives_biennial.csv`: Pre-IRA incentives with credit values set to two-year averages of the `incentives_annual.csv` values during credit step-down periods, for runs that solve every two years
   - `incentives_ira_45q_45v_extension.csv`: Inflation Reduction Act incentives with the 45Q (carbon capture) and 45V (clean hydrogen) credits extended
