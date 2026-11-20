@@ -399,12 +399,14 @@ def process_ivt(years, inputs_case):
 
 def force_retire_and_replace(
     gdb_use, tech, force_retire_year, startyear, endyear, maxage_lookup,
-    threshold_year=0, is_storage=False, has_energy=False,
+    threshold_year=0, is_storage=False, has_energy=False, replace=True,
 ):
-    """Cap RetireYear for `tech` units still online at force_retire_year and inject a
-    matching prescribed replacement build (same capacity, region, and cooling type) in
-    that year, so it flows through the existing capnonrsc/prescribed_nonRSC/retirements
-    pipeline below like any other retiring/newly-built generator.
+    """Cap RetireYear for `tech` units still online at force_retire_year, so this
+    capacity naturally drops out of capnonrsc/prescribed_nonRSC/retirements below like
+    any other retiring generator. If `replace` is True, also inject a matching
+    prescribed replacement build (same capacity, region, and cooling type) in that
+    year; otherwise the capacity is simply retired and ReEDS decides endogenously
+    whether/how much to rebuild.
     """
     if force_retire_year <= 0:
         return gdb_use
@@ -435,19 +437,19 @@ def force_retire_and_replace(
     # same as any other retiring generator
     gdb_use.loc[mask, 'RetireYear'] = force_retire_year
 
-    if len(retired):
+    if replace and len(retired):
         maxage = int(maxage_lookup[tech.lower()])
-        replace = retired.copy()
-        replace['tech'] = tech
-        replace['StartYear'] = force_retire_year
-        replace['RetireYear'] = force_retire_year + maxage
+        replace_df = retired.copy()
+        replace_df['tech'] = tech
+        replace_df['StartYear'] = force_retire_year
+        replace_df['RetireYear'] = force_retire_year + maxage
         if is_storage:
-            replace['ctt'] = 'n'
-            replace['wst'] = 'n'
-            replace['coolingwatertech'] = tech
+            replace_df['ctt'] = 'n'
+            replace_df['wst'] = 'n'
+            replace_df['coolingwatertech'] = tech
         # Adding these rows makes the existing prescribed_nonRSC/_energy pipeline below
         # treat the retired capacity as a forced (eq_forceprescription) replacement build
-        gdb_use = pd.concat([gdb_use, replace], ignore_index=True, sort=False)
+        gdb_use = pd.concat([gdb_use, replace_df], ignore_index=True, sort=False)
 
     return gdb_use
 
@@ -505,12 +507,14 @@ def main(inputs_case):
     gdb_use = force_retire_and_replace(
         gdb_use, 'battery_li', int(sw.GSw_ForceRetireBatteryYear),
         startyear, endyear, maxage_lookup, is_storage=True, has_energy=True,
+        replace=bool(int(sw.GSw_ForceRetireBatteryReplace)),
     )
     for gas_tech in ['gas-cc', 'gas-ct']:
         gdb_use = force_retire_and_replace(
             gdb_use, gas_tech, int(sw.GSw_ForceRetireGasYear),
             startyear, endyear, maxage_lookup,
             threshold_year=int(sw.GSw_ForceRetireGasThresholdYear),
+            replace=bool(int(sw.GSw_ForceRetireGasReplace)),
         )
 
     # Change tech category of hydro that will be prescribed to use upgrade tech
