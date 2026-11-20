@@ -130,6 +130,11 @@ def check_compatibility(sw):
     if not (0 <= alpha < 1):
         raise ValueError(f"GSw_PRM_CVARalpha must be in [0, 1). Got {alpha}")
 
+    ### CHP minimum generation is a fraction of available capacity
+    mingen_chp = float(sw['GSw_MingenCHP'])
+    if not (0 <= mingen_chp <= 1):
+        raise ValueError(f"GSw_MingenCHP must be in [0, 1]. Got {mingen_chp}")
+
     ### GSw_PRM_UpdateMethod 1-3 (static or PRAS-informed PRM update) is computed from the
     ### NEUE-based shortfall, so it requires NEUE to be an active stress metric
     if int(sw['GSw_PRM_UpdateMethod']) in [1, 2, 3] and 'neue' not in used_metrics:

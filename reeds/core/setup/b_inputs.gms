@@ -1225,6 +1225,21 @@ $offdelim
 $onlisting
 ;
 
+*created by reeds/input_processing/writehintage.py
+*Existing classes made up of combined heat and power (CHP) units. CHP units are only
+*binned separately from non-CHP units (resulting in this set being populated) when
+*Sw_MingenCHP > 0 or Sw_CHPNoRetire = 1.
+$onempty
+set chp_ivr(i,v,r) "existing (initv) classes made up of combined heat and power units"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%chp_hintage.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 * if not updating heat rate on upgrades, change to the default value
 if((not Sw_UpgradeHeatRateAdj),
   hintage_data(i,initv,r,t,"wCCS_Retro_HR")$hintage_data(i,initv,r,t,"wCCS_Retro_HR")
@@ -3973,6 +3988,17 @@ $offdelim
 $onlisting
 / ;
 
+*CHP capacity that is upgraded (e.g., CCS retrofit or H2 conversion) is still CHP
+chp_ivr(i,v,r)$[upgrade(i)$sum{ii$upgrade_from(i,ii), chp_ivr(ii,v,r) }] = yes ;
+chp_ivr(i,v,r)$[not valcap_ivr(i,v,r)] = no ;
+
+*Combine the technology-level fixed minimum generation level with the minimum
+*generation level for CHP classes
+parameter mingen_fixed_ivr(i,v,r) "--fraction-- minimum generation level across all hours by technology, class, and region" ;
+mingen_fixed_ivr(i,v,r)$[Sw_MingenFixed$mingen_fixed(i)$valcap_ivr(i,v,r)] = mingen_fixed(i) ;
+mingen_fixed_ivr(i,v,r)$[(Sw_MingenCHP > 0)$chp_ivr(i,v,r)] =
+    max(mingen_fixed_ivr(i,v,r), Sw_MingenCHP) ;
+
 *=========================================
 *              --- Load ---
 *=========================================
@@ -5078,6 +5104,11 @@ retiretech(i,initv,r,t)$[(yeart(t) < sum{st$r_st(r,st), nuclear_subsidies(st) })
 if(Sw_NukeNoRetire = 1,
          retiretech(i,v,r,t)$[nuclear(i)$(yeart(t)<=Sw_NukeNoRetireYear)] = no ;
 ) ;
+
+* if Sw_CHPNoRetire is enabled, do not allow CHP classes to retire endogenously
+* (their economics depend on their thermal output, which ReEDS does not represent)
+* Scheduled retirements from the unit database still apply
+retiretech(i,v,r,t)$[Sw_CHPNoRetire$chp_ivr(i,v,r)] = no ;
 
 
 *Do not allow retirements before they are allowed

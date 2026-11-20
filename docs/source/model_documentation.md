@@ -30,6 +30,7 @@ National Laboratory of the Rockies. ({{ cite_date_last_updated }}). *Model docum
 | CCS | carbon capture and storage |
 | CES | clean energy standard |
 | CF | capacity factor |
+| CHP | combined heat and power |
 | CO<sub>2</sub> | carbon dioxide |
 | CO<sub>2</sub>e | carbon dioxide equivalent |
 | CONUS | contiguous United States |
@@ -593,7 +594,7 @@ If set to multiple `_`-delimited years, H<sub>2</sub> storage levels are modeled
 As a linear optimization problem, ReEDS does not directly model unit commitment.
 For a subset of technologies for which unit startup costs are expected to significantly affect aggregate fleetwide operations, two approximation methods are used by default:
 
-- Nuclear generation technologies are modeled with a fixed minimum generation level, set to 70% for conventional nuclear and 40% for small modular reactors (SMRs).
+- Nuclear generation and CHP technologies are modeled with a fixed minimum generation level, set to 70% for conventional nuclear, 40% for small modular reactors (SMRs), and 40% for CHP units.
 (Forced and scheduled outages, discussed in the [Outage Rates](#outage-rates) section, still occur and are not subject to the minimum-generation constraint.)
 - For coal and CCS (both gas-CCS and coal-CCS), a linearized startup cost is applied based on the difference in dispatched generation between each pair of consecutive time chunks, including pairs of time chunks between different actual (not representative) periods.
 For example, in {numref}`figure-temporal-repdays`**c**, the 6/18 representative day has a weight of 5 and is followed by another 6/18 representative day three times, by 5/5 one time, and by 5/16 one time.
@@ -608,8 +609,9 @@ Example national dispatch profiles for gas CCS and nuclear in illustrative low-c
 ```
 
 ```{admonition} Unit startup considerations
-Two switches control unit startup considerations:
+Three switches control unit startup considerations:
 - `GSw_MingenFixed` (default `1`): Turn on (if `1`) or off (if `0`) the minimum generation constraint for the technologies included in `inputs/plant_characteristics/mingen_fixed.csv` (affects only nuclear by default).
+- `GSw_MingenCHP` (default `0.4`): Fixed minimum generation level [fraction of available capacity] applied in all hours to existing combined heat and power (CHP) classes. If a CHP class also has a technology-level minimum from `GSw_MingenFixed`, the larger of the two is used.
 - `GSw_StartCost` (default `3`): Specifies generation technologies for which to apply startup costs.
 Startup costs are found in `inputs/plant_characteristics/startcost.csv`.
 The available options for this switch are:
@@ -1417,6 +1419,19 @@ The user specifies a maximum number of bins and a minimum deviation across unit 
 Any two plants are eligible to form separate bins if the difference between their heat rates is greater than the minimum deviation parameter.
 The number of bins formed is then equal to the smaller of the maximum bin number parameter and the number of units after applying the minimum deviation criteria.
 For each bin, the assigned heat rate is equal to the capacity-weighted average of the heat rates for the units inside the bin.
+
+Combined heat and power (CHP) units are identified separately in the unit database to allow them to be given specific treatment.
+CHP plants are not allowed to be retired endogenously because the model is not explicitly representing the value they receive by providing heat in addition to the electricity.
+Additionally, CHP plants have a fixed minimum generation level of 40%, which is used to approximate CHP operations as reported by EIA-923 from 2019-2025.
+CHP-specific treatment only applies to CHP plants that are online before the model start year.
+CHP plants coming online after the start year are treated as non-CHP plants.
+
+```{admonition} Combined heat and power switches
+To disable the requirement that CHP plants cannot retire, turn off `GSw_CHPNoRetire`.
+The fixed minimum generation level for CHP plants is controlled by `GSw_MingenCHP`.
+When either of these switches are active, CHP units are binned separately from non-CHP units, with vintage names of init-chp-1, init-chp-2, etc.
+```
+
 <!--
 TODO: This figure is out of date; the x axis is "Ventyx heat rate" but we don't use Ventyx for the unit database anymore.
 

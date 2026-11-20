@@ -190,7 +190,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_dhyd_dispatch(i,v,r,allszn,t)              "--MWh-- dispatchable hydro seasonal energy constraint (when not allowing seasonal enregy shifting)"
  eq_min_cf(i,r,t)                              "--MWh-- minimum capacity factor constraint for each generator fleet, applied to (i,r)"
  eq_max_daily_cf(i,r,allszn,t)                 "--MWh-- maximum daily capacity factor constraint for any technology with maxdailycf(i,t) specified"
- eq_mingen_fixed(i,v,r,allh,t)                 "--MW-- Generation in each timeslice must be greater than mingen_fixed * available capacity"
+ eq_mingen_fixed(i,v,r,allh,t)                 "--MW-- Generation in each timeslice must be greater than mingen_fixed_ivr * available capacity"
  eq_mingen_lb(r,allh,allszn,t)                 "--MW-- lower bound on minimum generation level"
  eq_mingen_ub(r,allh,allszn,t)                 "--MW-- upper bound on minimum generation level"
  eq_minloading(i,v,r,allh,allhh,t)             "--MW-- minimum loading across same-season hours"
@@ -1278,16 +1278,16 @@ eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 ;
 
 * ---------------------------------------------------------------------------
-* Generation in each timeslice must be greater than mingen_fixed * available capacity
+* Generation in each timeslice must be greater than mingen_fixed_ivr * available capacity
 eq_mingen_fixed(i,v,r,h,t)
-    $[Sw_MingenFixed$tmodel(t)$mingen_fixed(i)$valgen(i,v,r,t)
+    $[tmodel(t)$mingen_fixed_ivr(i,v,r)$valgen(i,v,r,t)
     $(yeart(t)>=Sw_StartMarkets)]..
 
     GEN(i,v,r,h,t)
 
     =g=
 
-    mingen_fixed(i) * avail(i,r,h) *  CAP(i,v,r,t)
+    mingen_fixed_ivr(i,v,r) * avail(i,r,h) *  CAP(i,v,r,t)
 ;
 
 * ---------------------------------------------------------------------------

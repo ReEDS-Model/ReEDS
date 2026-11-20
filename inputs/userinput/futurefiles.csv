@@ -44,6 +44,7 @@ cd_beta0.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 cendivweights.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 ces_fraction.csv,.csv,0,None,*t,st,0,0,linear_5,0,1,done,linear_5
 cf_vre.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
+chp_hintage.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 classification_geothermal.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,
 climate_heuristics_finalyear.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 climate_heuristics_yearfrac.csv,.csv,0,None,*t,None,0,0,constant,None,None,new,
