@@ -41,6 +41,7 @@ storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Stor
 storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
 storage_duration_scenarios = {'battery_4h': 4, 'battery_8h': 8} #Scenarios in the scenarios file that rerun the storage forcing case with new battery builds fixed at this duration in hours (GSw_BatteryDuration) rather than chosen by the model. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and each drawn against the core storage run in its own comparison figure, skipped if absent.
 storage_interday_scenarios = {'battery_interday': 'battery', 'battery_interday_4h': 'battery_4h'} #Scenarios in the scenarios file that rerun a storage case with inter-day storage linkage (GSw_InterDayLinkage=1), each mapped to the run it repeats, which it is drawn against in its own comparison figure. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure, skipped if absent. A run listed in storage_duration_scenarios is labelled with its fixed duration.
+storage_wek_scenarios = {'battery_wek8': 'battery'} #Scenarios in the scenarios file that rerun a storage case with five-day representative and stress periods (GSw_HourlyType=wek), each mapped to the run it repeats, which it is drawn against in its own comparison figure. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure, skipped if absent.
 storage_share_prefixes = ('battery', 'pumped-hydro', 'caes', 'evmc_storage') #Raw tech prefixes excluded from the regional market-share denominator, mirroring storage_techs in report_switches.
 regional_cc_level = 'transreg' #hierarchy.csv column the storage regional capacity-credit figure groups zones by. transreg (11 in the z54 zone set) is the coarsest level that nests inside interconnects - census divisions do not - and equals ccreg, the region the capacity-credit formulation sizes its storage duration bins over.
 cc_scenario_min_new_gw = 1.0 #In the all-scenario capacity-credit figure, drop a year where the tech added less than this many GW. In the thermal-forced runs storage adds a few hundred MW in some years, and the credit of so little capacity swings between 0.75 and 0.98 on which one or two regions happened to build.
@@ -937,7 +938,8 @@ def capacity_credit_by_scenario(techs=None):
             continue
         for _, sc in scen.iterrows():
             if sc['name'] in (storage_formulation_scenario, storage_startcost_scenario,
-                              *storage_duration_scenarios, *storage_interday_scenarios):
+                              *storage_duration_scenarios, *storage_interday_scenarios,
+                              *storage_wek_scenarios):
                 continue  #a storage sensitivity, compared in its own figure
             try:
                 credit = new_build_capacity_credit(sc['path'], prefix)
@@ -1333,8 +1335,8 @@ def grouped_capacity_credit(run_dir, prefix='battery', level=None):
 
 
 def grouped_capacity_credit_by_scenario(core_dir, prefix='battery', level=None):
-    """grouped_capacity_credit for the core storage run and each storage duration and inter-day
-    sensitivity, stacked with a scenario column. Runs missing from the scenarios file are skipped.
+    """grouped_capacity_credit for the core storage run and each storage duration, inter-day and
+    five-day-period sensitivity, stacked with a scenario column. Runs missing from the scenarios file are skipped.
 
     Penetration is over the stress-period peak, which includes the planning reserve margin
     (12% everywhere in these runs), so penetration over the peak without it is about 1.12 times
@@ -1343,7 +1345,8 @@ def grouped_capacity_credit_by_scenario(core_dir, prefix='battery', level=None):
     from reeds_vs_rev import scenarios_path
     scen = pd.read_csv(scenarios_path).set_index('name')['path']
     runs = {n: p for n, p in scen.items() if os.path.normpath(p) == os.path.normpath(core_dir)}
-    runs.update({n: scen[n] for n in [*storage_duration_scenarios, *storage_interday_scenarios]
+    runs.update({n: scen[n] for n in [*storage_duration_scenarios, *storage_interday_scenarios,
+                                         *storage_wek_scenarios]
                  if n in scen})
     rows = []
     for name, path in runs.items():
@@ -2800,7 +2803,9 @@ def make_figs(valcostfac_core_path, output_dir=None):
                          'Storage forcing run (default)', 'pv', None),
                         *[(s, f'Fixed {h}-hour duration', 'Model-chosen duration (default)',
                            f'duration{h}h', None) for s, h in storage_duration_scenarios.items()],
-                        *interday_runs]:
+                        *interday_runs,
+                        *[(s, 'Five-day periods', 'One-day periods (default)',
+                           s.replace('battery_', ''), b) for s, b in storage_wek_scenarios.items()]]:
                     for perkw, sfx in [(False, '_permwh'), (True, '_perkw')]:
                         fig_sens, sens_tab = plot_storage_sensitivity(
                             valcostfac_core_path,
