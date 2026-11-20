@@ -63,8 +63,8 @@ wind-ons,Onshore Wind,Wind,VRE,Onshore Wind
 csp,CSP,Solar,VRE,CSP
 csp-ns,CSP,Solar,VRE,CSP
 dr_shed,DR Shed,DR,DR,DR Shed
-evmc_storage,EVMC_Storage,DR,DR,EVMC_Storage
-evmc_shape,EVMC_Shape,DR,DR,EVMC_Shape
+dr_shape,DR Shape,DR,DR,DR Shape
+dr_shift,DR Shift,DR,DR,DR Shift
 hydro,Hydropower,Hydropower,Hydropower,Hydropower Existing
 hyde,Hydropower,Hydropower,Hydropower,Hydropower Existing
 hydd,Hydropower,Hydropower,Hydropower,Hydropower New
