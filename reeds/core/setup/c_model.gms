@@ -3889,7 +3889,7 @@ eq_co2_spurline_caplimit(s,r,cs,h,t)
 * (ReEDS-FINITO) extraction of CO2 [metric tons per hour] 
 * calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * use [scaled_metric_tons-CO2/yr] 
 $ifthene.linked_co2_spurline_caplimit Sw_FINITO_Link==1
-    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[tfinito(t)]
+    + [ (1 / co2_scale) * EXTRACT_CO2_CS(s,cs,r,h,t) ]$[tfinito(t)]
 $endif.linked_co2_spurline_caplimit
 ;
 
@@ -3919,7 +3919,7 @@ eq_co2_sink(s,r,h,t)
 $ifthene.linked_co2_sink Sw_FINITO_Link==1
     + (1 / co2_scale) * [ sum{cs$[csfeas(cs)$r_cs(r,cs)], 
 *       extraction from all cs sites in r 
-        + EXTRACT_CO2_CS(cs,r,h,t)}
+        + EXTRACT_CO2_CS(s,cs,r,h,t)}
 *       total use of CO2, equivalent to supply 
         - USE_CO2(r,h,t) 
     ]$[tfinito(t)]
@@ -3946,7 +3946,7 @@ eq_co2_injection_limit(s,cs,h,t)
 
 * (ReEDS-FINITO) extraction of CO2 for use [metric tons per hour] 
 $ifthene.linked_co2_injection_limit Sw_FINITO_Link==1
-    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[tfinito(t)]
+    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(s,cs,r,h,t) }$[tfinito(t)]
 $endif.linked_co2_injection_limit
 ;
 
@@ -3975,7 +3975,7 @@ $ifthene.linked_co2_storage_cumul_limit Sw_FINITO_Link==1
     - sum{(r,h,tt)
         $[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)
         $r_cs(r,cs)$(not tfinito_all(tt))],
-        yearweight(tt) * hours(h) * EXTRACT_CO2_CS(cs,r,h,tt) }$[tfinito(t)]
+        yearweight(tt) * hours(h) * EXTRACT_CO2_CS(s,cs,r,h,tt) }$[tfinito(t)]
 $endif.linked_co2_storage_cumul_limit 
 ;
 * ---------------------------------------------------------------------------

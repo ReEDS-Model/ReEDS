@@ -522,10 +522,10 @@ repbioprice(s,r,t)$[tmodel_new(t)$(not tfinito_all(t))] = max{0, smax{bioclass$B
 * when running linked model use FINITO biomass clearing prices
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
-repbioprice(r,t)$[tmodel_new(t)$(tfinito_all(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
+repbioprice(s,r,t)$[tmodel_new(t)$(tfinito_all(t))$sum{(i,v,bs), USE_BS_REEDS.l(s,i,v,bs,r,t) }] =
     1/(cost_scale_finito) * 1/(pvf_onm(t)) * deflator('%FINITO_dollaryear%') *
-    sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
-    / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
+    sum{(i,v,bs), USE_BS_REEDS.l(s,i,v,bs,r,t) * eq_supplydemand_bs.m(s,bs,r,t) }
+    / sum{(i,v,bs), USE_BS_REEDS.l(s,i,v,bs,r,t) }
 ;
 $endif.finitobioprice
 
@@ -2069,7 +2069,7 @@ load_cat(s,"h2_network",r,t)$tmodel_new(t) =
 load_cat(s,"dac",r,t)$tmodel_new(t) = sum{i$dac(i), prod_load_ann(s,i,r,t) } ;
 
 $ifthene.finitoloadcat Sw_FINITO_Link == 1
-load_cat("finito",r,t)$tmodel_new(t) = sum{h, hours(h) * USE_ELE_FINITO.l(r,h,t) } ;
+load_cat(s,"finito",r,t)$tmodel_new(t) = sum{h, hours(h) * USE_ELE_FINITO.l(r,h,t) } ;
 $endif.finitoloadcat
 
 *========================================
