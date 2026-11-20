@@ -446,7 +446,7 @@ def main(t, casedir, iteration=0):
     
     ## Modify load for DR shape impacts
     if int(sw.GSw_DRShape):
-        print(f'Subtracted shape load from PRAS load since GSw_DRShape = {sw.GSw_DRShape}')
+        print(f'Modified PRAS load to account for DR shape since GSw_DRShape = {sw.GSw_DRShape}')
         pras_load = pras_load.add(load_dr_shape_all_hourly, fill_value=0).clip(lower=0)
     
     ## Modify load for FTM DER load shape impacts
@@ -456,7 +456,7 @@ def main(t, casedir, iteration=0):
 
     ## Modify load for DR shift impacts
     if int(sw.GSw_DRShift):
-        print(f'Subtracted shift load from PRAS load since GSw_DRShift = {sw.GSw_DRShift}')
+        print(f'Modified PRAS load to account for DR shift since GSw_DRShift = {sw.GSw_DRShift}')
         pras_load = pras_load.add(load_dr_shift_all_hourly, fill_value=0).clip(lower=0)
 
 

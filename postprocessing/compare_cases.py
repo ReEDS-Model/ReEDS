@@ -525,7 +525,7 @@ dictin_health_central_mort = {}
 for case in tqdm(cases, desc='health'):
     try:
         dictin_health[case] = (
-            reeds.io.read_output(cases[case], 'health_damages_caused_r.csv')
+            reeds.io.read_output(cases[case], 'health_damages_caused_r')
             .groupby(['year','pollutant','model','cr']).sum()
         )
         dictin_health_central[case] = (

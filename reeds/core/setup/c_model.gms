@@ -3085,7 +3085,7 @@ eq_storage_capacity(i,v,r,h,t)
           reserve_frac(i,ortype) * OPRES(ortype,i,v,r,h,t) }
 ;
 * ---------------------------------------------------------------------------
-* demand shifting specific storage constraints to handle 0 avaialbility fractions of charge/disharge.
+* demand shifting specific storage constraints to handle 0 availalbility fractions of charge/discharge.
 * constrain generation from demand shifting storage to be less than or equal 
 * to capacity adjusted for availability fraction
 

@@ -21,9 +21,14 @@ tc_phaseout_mult(i,v,t)$[tload(t)$(firstyear_v(i,v)>=%cur_year%)] =
 
 * --- Start calculations of cost_cap_fin_mult family of parameters --- *
 
+* The energy community bonus adds to the ITC only in years when the base ITC is available
 cost_cap_fin_mult(i,r,t) = ccmult(i,t) / (1.0 - tax_rate(t))
-    * (1.0-tax_rate(t) * (1.0 - (itc_frac_monetized(i,t) * itc_energy_comm_bonus(i,r) * tc_phaseout_mult_t(i,t)/2.0) )
-    * pv_frac_of_depreciation(i,t) - itc_frac_monetized(i,t) * tc_phaseout_mult_t(i,t))
+    * (1.0 - tax_rate(t)
+             * (1.0 - (itc_frac_monetized(i,t) + itc_energy_comm_bonus(i,r)$itc_frac_monetized(i,t))
+                      * tc_phaseout_mult_t(i,t) / 2.0)
+             * pv_frac_of_depreciation(i,t)
+       - (itc_frac_monetized(i,t) + itc_energy_comm_bonus(i,r)$itc_frac_monetized(i,t))
+         * tc_phaseout_mult_t(i,t))
     * degradation_adj(i,t) * financing_risk_mult(i,t) * (1 + reg_cap_cost_diff(i,r))
     * eval_period_adj_mult(i,t) ;
 
