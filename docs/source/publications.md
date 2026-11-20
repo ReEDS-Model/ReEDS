@@ -7,9 +7,14 @@ Chen, Yunzhi, Wesley Cole, and Brian Sergi. 2026. "[Discrete Versus Continuous: 
 
 Chen, Yunzhi, Anna Schleifer, Yonghong Chen, Wesley Cole, and Mort Webster. 2026. "[From Exhaustive to Focused: Clustering-Based Scenario Reduction for Capacity Expansion Studies](https://ieeexplore.ieee.org/abstract/document/11762316)." 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS), Salt Lake City, UT.
 
-Cohen, Stuart, Ningchao Gao, Thushara De Silva, Vincent Carag, Jin Tan, et al. 2026. [_Technoeconomic Studies for the Rorex Creek Pumped Storage Hydro Project: An Evaluation of New Pumped Storage Hydro in the Tennessee Valley Authority System_](https://doi.org/10.2172/3648898).
+
+Cohen, Stuart, Ningchao Gao, Thushara De Silva, Vincent Carag, Jin Tan, Patrick Balducci, Siyuan Wang, Jonghwan Kwon, Mark Weimar, and Jennie Jorgenson. 2026. [_Technoeconomic Studies for the Rorex Creek Pumped Storage Hydro Project: An Evaluation of New Pumped Storage Hydro in the Tennessee Valley Authority System_](https://doi.org/10.2172/3648898).
+
+Cole, Wesley, Anthony Lopez, An Pham, Marie Rivers, and Brian Sergi. 2026. “[Impacts of Solar Land Availability on the Evolution of the U.S. Power System](https://doi.org/10.1016/j.renene.2026.125608).” _Renewable Energy_ 264 (May): 125608. 
 
 Cole, Wesley, Louisa Serpe, and Cindi Eckhardt. 2026. "[Impacts of New Large Loads in Utah](https://ieeexplore.ieee.org/document/11762289)." _19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS)_, Salt Lake City, UT.
+
+De Faria, Victor A.D., Brian Sergi, and Patrick R. Brown. 2026. “[Multidimensional Uncertainty Assessment in a Capacity Expansion Model for the U.S. Power System](https://doi.org/10.1109/pmaps70385.2026.11762278).” _2026 19th International Conference on Probabilistic Methods Applied to Power Systems (PMAPS)_, September, 1–6. 
 
 Halloran, Claire. 2026. "[Grid Impact of Reservoir Thermal Energy Storage for Data Center Cooling](https://pangea.stanford.edu/ERE/db/IGAstandard/record_detail.php?id=38299)." IGA Geothermal Conference Papers Database.
 
@@ -27,11 +32,13 @@ Palmintier, Bryan, Rodrigo Henriquez-Auba, Nadia Panossian, Patrick Brown, Jose 
 
 Rose, Amy, Becca Fuchs, Lina Ramirez, and Ram Mohan Pandian. 2026. [_Informing Transmission Supply Chain Needs From National Transmission Studies_](https://docs.nlr.gov/docs/fy26osti/97167.pdf). Golden, CO: National Laboratory of the Rockies.
 
-Sharma, Shashwat, Trieu Mai, and Ilya Chernyakhovskiy. 2026. [_Impacts of Regional Coordination on Transmission Needs for Power System Resource Adequacy_](https://doi.org/10.2172/3015065).
+Serpe, Louisa, Shashwat Sharma, Trieu Mai, and Ilya Chernyakhovskiy. 2026. [_Impacts of Regional Coordination on Transmission Needs for Power System Resource Adequacy_](https://doi.org/10.2172/3015065). Golden, CO: National Laboratory of the Rockies. NLR/OT-6A40-96905.
 
 Steinberg, Daniel C., Daniel P. Cherney, Bryan K. Mignone, Matthew Mowers, and Brian Sergi. 2026. "[Decomposing Sources of Value for Electricity and Negative Emissions Technologies in Net-Zero Power Systems](https://doi.org/10.1016/j.isci.2025.114187)." _iScience_ 29 (3): 114187.
 
 Sunkara, Sai Veena, Srihari Sundar, Gord Stephen, Stuart Cohen, Patrick Reed, Vivek Srikrishnan, and Ariel Miara. 2026. "[Impact of Hydropower Availability on Resource Adequacy of the United States Western Interconnection](https://doi.org/10.1371/journal.pone.0351321)." _PLOS One_ 21 (6): e0351321.
+
+Vanatta, Max, Brian Sergi, Wesley Cole, Paul Denholm, and Trieu Mai. 2026. “[The Past, Present, and Future of Peaking Thermal Power Plants in the United States]( https://doi.org/10.1016/j.isci.2026.114886).” _iScience_ 29 (3): 114886.
 
 ```
 
