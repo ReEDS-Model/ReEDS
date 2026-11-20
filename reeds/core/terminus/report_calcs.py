@@ -49,6 +49,14 @@ def combine_forward_reverse(df, agg:Literal['net','simult']='net', value='Level'
     return pd.concat([forward, reverse]).groupby(index_order).sum()
 
 
+def agg_hours(ds, hours):
+    """Sum over hours, weighted by the number of hours represented by each hour index"""
+    hours_index = hours.index.name
+    assert hours_index in ds.index.names, f"{hours_index} is not in {ds.index.names}"
+    other_indices = [i for i in ds.index.names if i != hours_index]
+    return (ds * hours).groupby(other_indices).sum()
+
+
 #%% Results calculations
 def calc_iq(g):
     """Capacity above interconnection queue limit"""
@@ -64,11 +72,11 @@ def calc_co2_stor(g):
     ## (s,r,h,t)
     dfs['CO2_CAPTURED_out'] = g['CO2_CAPTURED'].Level
     ## (s,r,t)
-    dfs['CO2_CAPTURED_out_ann'] = (g['CO2_CAPTURED'].Level * g['hours']).groupby(['r','t']).sum()
+    dfs['CO2_CAPTURED_out_ann'] = agg_hours(g['CO2_CAPTURED'].Level, g['hours'])
     ## (s,r,cs,h,t)
     dfs['CO2_STORED_out'] = g['CO2_STORED'].Level
     ## (s,r,cs,t)
-    dfs['CO2_STORED_out_ann'] = (g['CO2_STORED'].Level * g['hours']).groupby(['r','cs','t']).sum()
+    dfs['CO2_STORED_out_ann'] = agg_hours(g['CO2_STORED'].Level, g['hours'])
     ## (r,rr,t)
     dfs['CO2_TRANSPORT_INV_out'] = g['CO2_TRANSPORT_INV'].Level
     ## (r,cs,t)
@@ -76,19 +84,19 @@ def calc_co2_stor(g):
     ## (s,r,rr,h,t)
     dfs['CO2_FLOW_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='simult')
     ## (s,r,rr,t)
-    dfs['CO2_FLOW_out_ann'] = (dfs['CO2_FLOW_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_out_ann'] = agg_hours(dfs['CO2_FLOW_out'], g['hours'])
     ## (s,r,rr,h,t)
     dfs['CO2_FLOW_pos_out'] = get_flow(g['CO2_FLOW'], 'forward')
     ## (s,r,rr,t)
-    dfs['CO2_FLOW_pos_out_ann'] = (dfs['CO2_FLOW_pos_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_pos_out_ann'] = agg_hours(dfs['CO2_FLOW_pos_out'], g['hours'])
     ## (s,r,rr,h,t)
     dfs['CO2_FLOW_neg_out'] = -get_flow(g['CO2_FLOW'], 'reverse')
     ## (s,r,rr,t)
-    dfs['CO2_FLOW_neg_out_ann'] = (dfs['CO2_FLOW_neg_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_neg_out_ann'] = agg_hours(dfs['CO2_FLOW_neg_out'], g['hours'])
     ## (s,r,rr,h,t)
     dfs['CO2_FLOW_net_out'] = combine_forward_reverse(g['CO2_FLOW'], agg='net')
     ## (s,r,rr,t)
-    dfs['CO2_FLOW_net_out_ann'] = (dfs['CO2_FLOW_net_out'] * g['hours']).groupby(['r','rr','t']).sum()
+    dfs['CO2_FLOW_net_out_ann'] = agg_hours(dfs['CO2_FLOW_net_out'], g['hours'])
     return dfs
 
 
@@ -132,7 +140,7 @@ def calc_transmission(g):
         .set_index(['s','r','rr','allh','trtype','t']).Level
     )
     ## (s,r,rr,trtype,t)
-    dfs['tran_flow_rep_ann'] = (dfs['tran_flow_rep'] * g['hours']).groupby(['s','r','rr','trtype','t']).sum()
+    dfs['tran_flow_rep_ann'] = agg_hours(dfs['tran_flow_rep'], g['hours'])
     ## (s,r,rr,h,trtype,t)
     dfs['tran_util_h_rep'] = dfs['tran_flow_all_rep'] / dfs['tran_cap_energy']
     ## (s,r,rr,allh,trtype,t)
