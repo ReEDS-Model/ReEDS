@@ -319,7 +319,7 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_dr_shift_storage_in_capacity(i,v,r,allh,t)    "--MW-- storage load capacity (payback) for DR shifting resources is limited to a fraction of total capacity"
  eq_der_ftm_min_output(r,allh,t)                  "--MW-- combined net output of FTM DER must meet a minimum level in regions with prescribed FTM DER"
  eq_der_ftm_max_output(r,allh,t)                  "--MW-- combined net output and operating reserves of FTM DER cannot exceed a maximum level"
- eq_der_ftm_battery_nocharge(i,r,allh,t)          "--MW-- FTM batteries cannot charge in restricted timeslices in regions with prescribed FTM batteries"
+ eq_der_ftm_battery_nocharge(r,allh,t)            "--MW-- FTM batteries cannot charge in restricted timeslices in regions with prescribed FTM batteries"
 
 * hybrid plant equations
  eq_plant_total_gen(i,v,r,allh,t)           "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
@@ -3168,22 +3168,20 @@ eq_der_ftm_max_output(r,h,t)
 
 * Front-of-the-meter batteries cannot charge in some timeslices (or, for timeslices that
 * aggregate several hours, during the fraction of the timeslice in which charging is restricted).
-* The restriction applies in regions and years with prescribed builds of that battery technology;
-* it then covers all of that technology's capacity in the region, prescribed or not.
-eq_der_ftm_battery_nocharge(i,r,h,t)
+* The restriction applies in regions and years with prescribed FTM battery builds;
+* it then covers all FTM battery capacity in the region, prescribed or not.
+eq_der_ftm_battery_nocharge(r,h,t)
     $[tmodel(t)
     $(Sw_DER_FTM >= 2)
-    $der_ftm(i)
-    $storage_standalone(i)
-    $valgen_irt(i,r,t)
     $der_ftm_battery_nocharge(r,h,t)
-    $sum{(v,tt)$[yeart(tt) <= yeart(t)], prescribed_build(i,v,r,tt) }]..
+    $sum{(i,v,tt)$[der_ftm(i)$storage_standalone(i)$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }]..
 
-    (1 - der_ftm_battery_nocharge(r,h,t)) * sum{v$valgen(i,v,r,t), CAP(i,v,r,t) }
+    (1 - der_ftm_battery_nocharge(r,h,t))
+    * sum{(i,v)$[der_ftm(i)$storage_standalone(i)$valgen(i,v,r,t)], CAP(i,v,r,t) }
 
     =g=
 
-    sum{v$valgen(i,v,r,t), STORAGE_IN(i,v,r,h,t) }
+    sum{(i,v)$[der_ftm(i)$storage_standalone(i)$valgen(i,v,r,t)], STORAGE_IN(i,v,r,h,t) }
 ;
 
 * ---------------------------------------------------------------------------
