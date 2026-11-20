@@ -434,8 +434,9 @@ def subset_to_valid_regions(
     else:
         raise ValueError(f'Unmatched filename ({filename}) or filetype ({filetype_in})')
 
-    # Front-of-the-meter DER inputs are not aggregated or disaggregated, so check their zones
-    if filename.startswith('der_ftm_'):
+    # Front-of-the-meter DER inputs are not aggregated or disaggregated, so check their zones.
+    # Files that exist are copied even when they are not required, so check only required files.
+    if filename.startswith('der_ftm_') and region_file_entry.get('file_is_required', True):
         check_der_ftm_regions(df, region_col, filename, val_r_all, sw)
 
     # Filter data to valid regions
