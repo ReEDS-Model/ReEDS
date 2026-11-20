@@ -1,3 +1,6 @@
+* Variables related to system operations should be included in this file
+* and should have s (stochastic scenario) as the first index.
+
 * load
 LOAD.lo(s,r,h,t_unfix) = 0 ;
 LOAD.up(s,r,h,t_unfix) = +inf ;

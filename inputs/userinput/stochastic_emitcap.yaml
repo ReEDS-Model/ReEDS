@@ -1,6 +1,6 @@
 scenario_probability:
-  current: 1
-  decarb: 1
+  current: 0.5
+  decarb: 0.5
 
 scenario_switches:
   current:
