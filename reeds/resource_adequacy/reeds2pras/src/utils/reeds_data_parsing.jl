@@ -180,28 +180,40 @@ function split_generator_types(ReEDS_data::ReEDSdatapaths)
     @debug "hd_types is $(union(hyd_disp_types,hyd_non_disp_types))"
 
     storage_types =
-        unique(DataFrames.dropmissing(tech_subset_table, :STORAGE_STANDALONE)[:, "Column1"])
+        DataFrames.dropmissing(tech_subset_table, :STORAGE_STANDALONE)[:, "Column1"]
 
     @debug "storage type is $(storage_types)"
+
+    # Storage-hybrid wrappers are modeled as PRAS GeneratorStorages
+    # (generator + coupled storage), not as Batteries and not as thermal units.
+    storage_hybrid_types = lowercase.(unique(
+        DataFrames.dropmissing(tech_subset_table, Symbol("STORAGE-HYBRID"))[:, "Column1"]
+    ))
 
     # clean vg/storage capacity on a regex, though there might be a better way...
     clean_names!(vg_types)
     @debug "vg_types is $(vg_types)"
     clean_names!(storage_types)
+    # wrapper names carry no GAMS *-ranges, so no clean_names! for them
 
     storage_capacity = filter(x -> x.i in storage_types, capacity_data)
+    storage_hybrid_capacity = filter(x -> lowercase(x.i) in storage_hybrid_types, capacity_data)
 
     hyd_disp_capacity = filter(x -> x.i in hyd_disp_types, capacity_data)
     hyd_non_disp_capacity = filter(x -> x.i in hyd_non_disp_types, capacity_data)
 
     thermal_capacity = filter(
-        x -> ~(x.i in union(vg_types, storage_types, hyd_disp_types, hyd_non_disp_types)),
+        x -> ~(
+            x.i in union(vg_types, storage_types, hyd_disp_types, hyd_non_disp_types) ||
+            lowercase(x.i) in storage_hybrid_types
+        ),
         capacity_data,
     )
 
     @debug "thermal_capacity is $(thermal_capacity)"
     return thermal_capacity,
     storage_capacity,
+    storage_hybrid_capacity,
     hyd_disp_capacity,
     hyd_non_disp_capacity
 end
@@ -731,13 +743,26 @@ function process_storages(
         for polarity in ["charge", "discharge"]
     )
     efficiency = Dict(
-        polarity => Dict(zip(efficiency_in[polarity][!,"i"], efficiency_in[polarity][!,"fraction"]))
+        polarity => Dict{String, Float64}(zip(
+            String.(efficiency_in[polarity][!,"i"]),
+            efficiency_in[polarity][!,"fraction"],
+        ))
         for polarity in keys(efficiency_in)
     )
 
     ## Read {case}/inputs_case/tech-subset-table.csv
     tech_subset_table = get_technology_types(ReEDS_data)
+    # (Storage-Hybrid wrappers no longer come through here — they are routed to
+    # process_storage_hybrids and modeled as GeneratorStorages.)
     battery_types = DataFrames.dropmissing(tech_subset_table, :BATTERY)[:, "Column1"]
+
+    # Keyed energy-capacity lookup: energy_cap_{t}.csv can contain techs that are
+    # not in storage_builds (e.g. storage-hybrid wrappers), so positional pairing
+    # with storage_builds rows would silently misalign durations.
+    energy_cap_dict = Dict{Tuple{String, String}, Float64}(
+        (String(r.i), String(r.r)) => r.MWh_sum
+        for r in DataFrames.eachrow(energy_capacity_df)
+    )
 
     storages_array = Storage[]
     for (idx, row) in enumerate(eachrow(storage_builds))
@@ -762,7 +787,11 @@ function process_storages(
         name = "$(name)|"#append for later matching
         mttr = Int64(mttr_dict[string(row.i)])
 
-        storage_duration = energy_capacity_df[idx, "MWh_sum"] / row.MW
+        energy_mwh = get(energy_cap_dict, (String(row.i), String(row.r)), 0.0)
+        if energy_mwh == 0.0
+            @warn "$(row.i)|$(row.r) has no CAP_ENERGY; its storage holds zero energy in PRAS"
+        end
+        storage_duration = energy_mwh / row.MW
         if string(row.i) in battery_types
             push!(
                 storages_array,
@@ -803,6 +832,196 @@ function process_storages(
         end
     end
     return storages_array
+end
+
+"""
+    Process storage-hybrid wrapper techs into PRAS GeneratorStorages.
+
+    Each wrapper (i,r) fleet is split into units sized by the gen tech's unit size
+    (unitsize.csv, capped by the region's PRM-based maximum when
+    pras_max_unitsize_prm is on), as thermal fleets are. A fleet whose gen tech has
+    no forced outages (VRE) stays one unit. Each unit of capacity U [MW] (a share
+    U/CAP of the fleet) mirrors the ReEDS LP:
+    - inflow = U for dispatchable gen techs (outages applied via FOR/SOR/MTTR), or
+      the gen tech's available output times U/CAP for VRE gen techs
+      (pras_storage_hybrid_inflow_{t}.h5 from prep_data.py)
+    - charge_cap = discharge_cap = bcr*U   (eq_hybrid_storage_capacity_limit)
+    - energy_cap = CAP_ENERGY*U/CAP
+    - grid_withdrawl_cap = gridcharge_ratio*U   (eq_cap_storage_in_grid)
+    - grid_inj_cap = (1+bcr)*U             (eq_plant_capacity_limit envelope)
+    - charge_eff from hybrid_config_{t}.csv: the plant-charging efficiency for
+      plant-charging configs, or the grid-charging efficiency for grid-charge-only
+      configs (flexible geothermal, where STORAGE_IN_PLANT is fixed to 0)
+
+    Outage data is looked up by the wrapper name first and then by the gen tech name,
+    so a unit (generator and storage together) carries the gen tech's FOR/SOR/MTTR.
+    A wrapper whose gen tech has no outage data (VRE) gets no outages.
+
+    Parameters
+    ----------
+    genstor_array : Vector{Gen_Storage}
+        Existing GeneratorStorages (e.g. from process_hydro); appended in place
+    storage_hybrid_builds : DataFrames.DataFrame
+        Wrapper rows of max_cap from split_generator_types (full plant CAP)
+    FOR_dict / forcedoutage_hourly / mttr_dict / scheduled_outage_hourly
+        Standard outage inputs, keyed by tech name
+    unitsize_dict : Dict
+        Map from techs to characteristic unit size [MW]
+    ReEDS_data : ReEDSdatapaths
+    timesteps : Int
+    pras_max_unitsize_prm : Bool
+        If true, cap the unit size at the region's max_unitsize_{t}.csv value
+
+    Returns
+    -------
+    genstor_array with the Gen_Storage units of every wrapper (i,r) appended
+"""
+function process_storage_hybrids(
+    genstor_array::Vector{Gen_Storage},
+    storage_hybrid_builds::DataFrames.DataFrame,
+    FOR_dict::Dict,
+    forcedoutage_hourly::DataFrames.DataFrame,
+    unitsize_dict::Dict,
+    ReEDS_data,
+    timesteps::Int,
+    mttr_dict::Dict;
+    scheduled_outage_hourly::Union{Nothing, DataFrames.DataFrame},
+    pras_max_unitsize_prm = true,
+)
+    if DataFrames.nrow(storage_hybrid_builds) == 0
+        return genstor_array
+    end
+
+    hybrid_builds = DataFrames.combine(
+        DataFrames.groupby(storage_hybrid_builds, ["i", "r"]),
+        :MW => sum,
+    )
+
+    config_df = get_storage_hybrid_config(ReEDS_data)
+    hybrid_config = Dict(
+        String(r.i) => (
+            gentech = String(r.gentech),
+            bcr = Float64(r.bcr),
+            gridcharge = Float64(r.gridcharge_ratio),
+            charge_eff = Float64(r.charge_eff),
+        )
+        for r in DataFrames.eachrow(config_df)
+    )
+
+    energy_capacity_df = DataFrames.combine(
+        DataFrames.groupby(get_storage_energy_capacity_data(ReEDS_data), ["i", "r"]),
+        :MWh => sum,
+    )
+    energy_cap_dict = Dict{Tuple{String, String}, Float64}(
+        (String(r.i), String(r.r)) => r.MWh_sum
+        for r in DataFrames.eachrow(energy_capacity_df)
+    )
+
+    inflow_vre = get_storage_hybrid_inflow_data(ReEDS_data)
+    max_unitsize = pras_max_unitsize_prm ? get_max_unitsize(ReEDS_data) : Dict()
+
+    ## Case-insensitive lookups, tried for the wrapper first and then its gen tech
+    for_lc = Dict(lowercase(String(k)) => v for (k, v) in FOR_dict)
+    mttr_lc = Dict(lowercase(String(k)) => v for (k, v) in mttr_dict)
+    unitsize_lc = Dict(lowercase(String(k)) => v for (k, v) in unitsize_dict)
+    hourly_for_names = Set(DataFrames.names(forcedoutage_hourly))
+    hourly_sor_names = isnothing(scheduled_outage_hourly) ?
+        Set{String}() : Set(DataFrames.names(scheduled_outage_hourly))
+
+    for row in DataFrames.eachrow(hybrid_builds)
+        tech = String(row.i)
+        region = String(row.r)
+        cap = Float64(row.MW_sum)
+        cap > 0 || continue
+
+        if !haskey(hybrid_config, tech)
+            # Hard error: silently skipping would drop the ENTIRE plant
+            # (generator included) from resource adequacy.
+            error(
+                "$(tech) has $(cap) MW in max_cap_$(ReEDS_data.year).csv but is " *
+                "missing from hybrid_config_$(ReEDS_data.year).csv — prep_data.py " *
+                "did not write its config, so its GeneratorStorage cannot be built " *
+                "and PRAS would silently lose the whole plant"
+            )
+        end
+        cfg = hybrid_config[tech]
+        sources = [lowercase(tech), lowercase(cfg.gentech)]
+
+        energy_mwh = get(energy_cap_dict, (tech, region), 0.0)
+        if energy_mwh == 0.0
+            @warn "$(tech)|$(region) has no CAP_ENERGY; its storage holds zero energy in PRAS"
+        end
+
+        i_r = "$(tech)|$(region)"
+        is_vre = i_r in DataFrames.names(inflow_vre)
+
+        hourly_for = findfirst(s -> "$(s)|$(region)" in hourly_for_names, sources)
+        static_for = findfirst(s -> haskey(for_lc, s), sources)
+        gen_for = if !isnothing(hourly_for)
+            Float32.(forcedoutage_hourly[!, "$(sources[hourly_for])|$(region)"])
+        elseif !isnothing(static_for)
+            fill(Float32(for_lc[sources[static_for]]), timesteps)
+        else
+            is_vre || @warn "$(i_r) has no forced outage rate for itself or $(cfg.gentech); using 0"
+            zeros(Float32, timesteps)
+        end
+
+        hourly_sor = findfirst(s -> s in hourly_sor_names, sources)
+        gen_sor = isnothing(hourly_sor) ?
+            zeros(Float32, timesteps) :
+            Float32.(scheduled_outage_hourly[!, sources[hourly_sor]])
+
+        mttr_source = findfirst(s -> haskey(mttr_lc, s), sources)
+        mttr = isnothing(mttr_source) ? 24 : Int64(mttr_lc[sources[mttr_source]])
+
+        ## Unit sizes: one unit if there are no forced outages, otherwise the gen tech's
+        ## unit size (capped by the regional maximum) with a smaller last unit
+        unitsize_source = findfirst(s -> haskey(unitsize_lc, s), sources)
+        unit_mw = isnothing(unitsize_source) ? cap : Float64(unitsize_lc[sources[unitsize_source]])
+        if get(max_unitsize, region, 0) > 0
+            unit_mw = min(unit_mw, Float64(max_unitsize[region]))
+        end
+        unit_sizes = if all(gen_for .== 0) || unit_mw >= cap
+            [cap]
+        else
+            n_units = floor(Int, cap / unit_mw)
+            remainder = cap - n_units * unit_mw
+            vcat(fill(unit_mw, n_units), remainder > 0.5 ? [remainder] : Float64[])
+        end
+        ## Give any remainder below 0.5 MW to the last unit so the fleet total is kept
+        unit_sizes[end] += cap - sum(unit_sizes)
+
+        plant_inflow = is_vre ? Float64.(inflow_vre[!, i_r]) : fill(cap, timesteps)
+
+        for (k, unit_cap) in enumerate(unit_sizes)
+            share = unit_cap / cap
+            push!(
+                genstor_array,
+                Gen_Storage(
+                    name = "$(i_r)|new|$(k)",
+                    timesteps = timesteps,
+                    region_name = region,
+                    type = tech,
+                    charge_cap = fill(cfg.bcr * unit_cap, timesteps),
+                    discharge_cap = fill(cfg.bcr * unit_cap, timesteps),
+                    energy_cap = fill(energy_mwh * share, timesteps),
+                    inflow = max.(plant_inflow .* share, 0.0),
+                    grid_withdrawl_cap = fill(cfg.gridcharge * unit_cap, timesteps),
+                    grid_inj_cap = fill((1.0 + cfg.bcr) * unit_cap, timesteps),
+                    legacy = "New",
+                    charge_eff = cfg.charge_eff,
+                    discharge_eff = 1.0,
+                    carryover_eff = 1.0,
+                    FOR = gen_for,
+                    SOR = gen_sor,
+                    MTTR = mttr,
+                ),
+            )
+        end
+        @info "$(i_r): $(round(cap, digits=1)) MW in $(length(unit_sizes)) GeneratorStorage unit(s)" *
+            (is_vre ? " with $(cfg.gentech) inflow profile" : "")
+    end
+    return genstor_array
 end
 
 """

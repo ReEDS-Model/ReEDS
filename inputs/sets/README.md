@@ -95,6 +95,9 @@
 - `hintage_char.csv`: set of characteristics available in hintage_data
 
 - `i.csv`: set of technologies
+  - `tes_ms`: molten-salt thermal energy storage, used only as the storage tech of storage-hybrid wrappers
+  - `flex_geo`, `flex_geo_high`, `flex_geo_med`, `flex_geo_low`: in-reservoir geothermal storage, used only as the storage tech of storage-hybrid wrappers
+  - Storage-hybrid wrappers (`storage-hybrid-<N>-<gentech>`) are not listed here; `copy_files.py` adds them to the case copy of `i` from the `GSw_StorageHybrid_*` switches
 
 - `i_c.csv`: map from technologies to their resource class (`c.csv`)
 
@@ -105,6 +108,10 @@
 - `i_p.csv`: mapping from technologies to the products they produce
 
 - `i_subtech.csv`: set of categories for subtechs
+  - `HYBRID_PLANT`: PV+battery and CSP techs (named `STORAGE_HYBRID` before storage-hybrid wrappers were added)
+  - `STORAGE-HYBRID`: storage-hybrid wrappers that pair a gen tech with a storage tech
+  - `TES`: thermal energy storage techs
+  - `GEO_STORAGE`: in-reservoir geothermal storage techs
 
 - `i_water_nocooling.csv`: set of technologies that use water, but are not differentiated by cooling tech and water source
 
@@ -141,6 +148,7 @@
 - `sdbin.csv`: set of storage duration bins [hours]
 
 - `tg.csv`: set of technology groups used for growth constraints
+  - `tes` and `geo-storage` hold the standalone TES and in-reservoir geothermal storage techs
 
 - `tg_rsc_cspagg.csv`: set of csp technologies that belong to the same class
 

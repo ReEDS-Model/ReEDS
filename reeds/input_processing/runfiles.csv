@@ -156,6 +156,7 @@ noretire.csv,inputs/sets/noretire.csv,1,ignore,ignore,,,,,0,,,set,noretire,techn
 notvsc.csv,inputs/sets/notvsc.csv,1,ignore,ignore,,,,,0,,,set,notvsc,transmission capacity types that are not VSC,
 nuclear_energy_communities.csv,inputs/financials/nuclear_energy_communities.csv,1,ignore,ignore,,,,,0,,,,,,region aggregation and filtering is handled in copy_files
 nuclear_subsidies.csv,inputs/state_policies/nuclear_subsidies.csv,1,ignore,ignore,st,year,,0,0,,,parameter,,--year-- the year a nuclear subsidy ends in a given state,
+storage_hybrid_powerblock_share.csv,inputs/plant_characteristics/storage_hybrid_powerblock_share.csv,1,ignore,ignore,,,*i,,0,,,,,,
 objective_function_params.yaml,tests/objective_function_params.yaml,1,ignore,ignore,,,,,,,,,,,
 offshore_req.csv,inputs/state_policies/offshore_req_{GSw_OfsWindForceScen}.csv,(int(sw.GSw_StateRPS) != 0) and (int(sw.GSw_OfsWind) != 0),ignore,ignore,st,,,1,0,,,,,,
 ofstype.csv,inputs/sets/ofstype.csv,1,ignore,ignore,,,,,,,,set,ofstype,offshore types used in offshore requirement constraint (eq_RPS_OFSWind),
@@ -179,6 +180,7 @@ plantchar_ccsflex_perf.csv,inputs/plant_characteristics/{ccsflexscen}_perf.csv,(
 plantchar_coal_ccs.csv,inputs/plant_characteristics/{plantchar_coal_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_coal.csv,inputs/plant_characteristics/{plantchar_coal}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_battery.csv,inputs/plant_characteristics/{plantchar_battery}.csv,int(sw.GSw_Storage) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
+plantchar_tes.csv,inputs/plant_characteristics/{plantchar_tes}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_csp.csv,inputs/plant_characteristics/{plantchar_csp}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed.csv,inputs/plant_characteristics/dr_shed_capcost_scalars_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
 plantchar_dr_shed_vom.csv,inputs/plant_characteristics/dr_shed_vom_{dr_shedscen}.csv,int(sw.GSw_DRShed) != 0,ignore,ignore,r,"tech,wide",,1,0,,,,,,used to define plantcharout.csv
@@ -190,10 +192,12 @@ plantchar_h2fuelcell.csv,inputs/plant_characteristics/{plantchar_h2fuelcell}.csv
 plantchar_gas_ccs.csv,inputs/plant_characteristics/{plantchar_gas_ccs}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_gas.csv,inputs/plant_characteristics/{plantchar_gas}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_geo.csv,inputs/plant_characteristics/{plantchar_geo}.csv,int(sw.GSw_Geothermal) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
+plantchar_flex_geo.csv,inputs/plant_characteristics/{plantchar_flex_geo}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_h2combustion.csv,inputs/plant_characteristics/{plantchar_h2combustion}.csv,int(sw.GSw_H2Combustion) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_hydro.csv,inputs/plant_characteristics/{plantchar_hydro}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_nuclear_smr.csv,inputs/plant_characteristics/{plantchar_nuclear_smr}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_nuclear.csv,inputs/plant_characteristics/{plantchar_nuclear}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
+heaterchars.csv,inputs/plant_characteristics/{heaterscen}.csv,1,ignore,ignore,,,,,0,,,,,,used to define heaterchar.csv
 plantchar_ofswind.csv,inputs/plant_characteristics/{plantchar_ofswind}.csv,int(sw.GSw_OfsWind) != 0,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_onswind.csv,inputs/plant_characteristics/{plantchar_onswind}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv
 plantchar_other.csv,inputs/plant_characteristics/{plantchar_other}.csv,1,ignore,ignore,,,,,0,,,,,,used to define plantcharout.csv

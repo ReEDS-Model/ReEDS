@@ -15,6 +15,7 @@
 setup
 developer_best_practices
 model_documentation
+storage_hybrid
 user_guide
 inputs
 postprocessing_tools

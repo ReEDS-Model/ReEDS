@@ -1,5 +1,7 @@
 i,region_type
 battery_li,p
+tes_ms,p
+flex_geo,p
 biopower,p
 beccs_mod,p
 beccs_max,p
@@ -69,3 +71,6 @@ smr,p
 smr_ccs,p
 dac,p
 dac_gas,p
+flex_geo_high,p
+flex_geo_med,p
+flex_geo_low,p

@@ -210,6 +210,56 @@ def fill_empty_techs(df_prefill, inputs_case, fillvalues_tech=None, during_quart
     return dfout
 
 
+def broadcast_gen_shapes_to_wrappers(df_prefill, inputs_case):
+    """
+    Storage-hybrid wrappers share their generator's outage behavior (gen-first
+    precedence in copy_files), but the temperature/monthly shapes are broadcast
+    from prime movers through tech-subset groups the wrappers are deliberately
+    not members of. Copy each wrapper's gen-tech shaped profile under the
+    wrapper name so fill_empty_techs doesn't fall back to a flat static value.
+    Wrappers already present, or whose gen tech has no shaped profile, keep the
+    existing flat-fill behavior.
+    """
+    gentech_map_file = os.path.join(inputs_case, 'storage_hybrid_gentechs.csv')
+    if not os.path.isfile(gentech_map_file):
+        return df_prefill
+    gentech_map = pd.read_csv(gentech_map_file)
+    gentech_map.columns = ['wrapper', 'gen_tech']
+    wrapper_gentech = dict(zip(
+        gentech_map.wrapper.str.lower(), gentech_map.gen_tech.str.lower()
+    ))
+
+    ## Geothermal techs share one 'geothermal' profile (GAMS maps it through geo(i))
+    geo = {
+        tech.lower() for tech in reeds.techs.import_tech_groups(
+            os.path.join(inputs_case, 'tech-subset-table.csv')).get('GEO', [])
+    }
+    included = df_prefill.columns.get_level_values('i').unique()
+    frames = []
+    mapped = []
+    for wrapper, gentech in wrapper_gentech.items():
+        if (gentech not in included) and (gentech in geo):
+            gentech = 'geothermal'
+        if (wrapper in included) or (gentech not in included):
+            continue
+        sub = df_prefill.loc[:, df_prefill.columns.get_level_values('i') == gentech].copy()
+        if isinstance(sub.columns, pd.MultiIndex):
+            sub.columns = pd.MultiIndex.from_tuples(
+                [(wrapper,) + tup[1:] for tup in sub.columns],
+                names=sub.columns.names,
+            )
+        else:
+            sub.columns = pd.Index([wrapper] * sub.shape[1], name=sub.columns.name)
+        frames.append(sub)
+        mapped.append(f"{wrapper}<-{gentech}")
+
+    if frames:
+        print(f"storage-hybrid gen shapes ({len(mapped)}): {' '.join(sorted(mapped))}")
+        df_prefill = pd.concat([df_prefill] + frames, axis=1)
+
+    return df_prefill
+
+
 def calc_outage_forced(
     reeds_path,
     inputs_case,
@@ -273,6 +323,10 @@ def calc_outage_forced(
 
         ### Map from prime movers to techs
         forcedoutage_prefill = pm_to_tech(df=forcedoutage_pm, inputs_case=inputs_case)
+
+    ### Give storage-hybrid wrappers their gen tech's temperature shape
+    forcedoutage_prefill = broadcast_gen_shapes_to_wrappers(
+        forcedoutage_prefill, inputs_case)
 
     ### Fill missing hourly data with tech-specific static values
     outage_forced_hourly = fill_empty_techs(
@@ -429,6 +483,10 @@ def calc_outage_scheduled(reeds_path, inputs_case, during_quarters=during_quarte
     outage_scheduled_pm.columns = outage_scheduled_pm.columns.rename('prime_mover')
 
     outage_scheduled_tech = pm_to_tech(outage_scheduled_pm, inputs_case)
+
+    ### Give storage-hybrid wrappers their gen tech's monthly shape
+    outage_scheduled_tech = broadcast_gen_shapes_to_wrappers(
+        outage_scheduled_tech, inputs_case)
 
     outage_scheduled_hourly = fill_empty_techs(
         df_prefill=outage_scheduled_tech,

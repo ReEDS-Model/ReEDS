@@ -25,15 +25,15 @@ OP_LOADSITE.fx(r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_
 
 * capacity and investment variables
 CAP.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)] = CAP.l(i,v,r,tfix) ;
-CAP_ENERGY.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$battery(i)] = CAP_ENERGY.l(i,v,r,tfix) ;
+CAP_ENERGY.fx(i,v,r,tfix)$[valcap(i,v,r,tfix)$(battery(i) or tes(i) or storage_hybrid(i))] = CAP_ENERGY.l(i,v,r,tfix) ;
 CAP_ABOVE_LIM.fx(tg,r,tfix)$[(yeart(tfix)>=model_builds_start_yr)
                                 $(sum{(tgg,rr), queue_limit(tgg,rr,tfix)})
                                 $sum{(i,newv)$tg_i(tg,i), valinv(i,newv,r,tfix)}] = CAP_ABOVE_LIM.l(tg,r,tfix) ;
 CAP_SDBIN.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$(storage(i) or hyd_add_pump(i))$(not csp(i))$Sw_PRM_CapCredit] = CAP_SDBIN.l(i,v,r,ccseason,sdbin,tfix) ;
-CAP_SDBIN_ENERGY.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$battery(i)$Sw_PRM_CapCredit] = CAP_SDBIN_ENERGY.l(i,v,r,ccseason,sdbin,tfix) ;
+CAP_SDBIN_ENERGY.fx(i,v,r,ccseason,sdbin,tfix)$[valcap(i,v,r,tfix)$(battery(i) or tes(i) or storage_hybrid(i))$Sw_PRM_CapCredit] = CAP_SDBIN_ENERGY.l(i,v,r,ccseason,sdbin,tfix) ;
 GROWTH_BIN.fx(gbin,i,st,tfix)$[sum{r$[r_st(r,st)], valinv_irt(i,r,tfix) }$stfeas(st)$Sw_GrowthPenalties$(yeart(tfix)<=Sw_GrowthPenLastYear)] = GROWTH_BIN.l(gbin,i,st,tfix) ;
 INV.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)] = INV.l(i,v,r,tfix) ;
-INV_ENERGY.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$battery(i)] = INV_ENERGY.l(i,v,r,tfix) ;
+INV_ENERGY.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$(battery(i) or tes(i) or storage_hybrid(i))] = INV_ENERGY.l(i,v,r,tfix) ;
 INV_REFURB.fx(i,v,r,tfix)$[valinv(i,v,r,tfix)$refurbtech(i)] = INV_REFURB.l(i,v,r,tfix) ;
 INV_RSC.fx(i,v,r,rscbin,tfix)$[valinv(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,rscbin)] = INV_RSC.l(i,v,r,rscbin,tfix) ;
 CAP_RSC.fx(i,v,r,rscbin,tfix)$[valcap(i,v,r,tfix)$rsc_i(i)$m_rscfeas(r,i,rscbin)] = CAP_RSC.l(i,v,r,rscbin,tfix) ;
@@ -46,12 +46,12 @@ EXTRA_PRESCRIP_ENERGY.fx(i,v,r,tfix)$[force_prescribe(i,v,r,tfix)$valinv(i,v,r,t
 
 * generation and storage variables
 GEN.fx(i,v,r,h,tfix)$valgen(i,v,r,tfix) = GEN.l(i,v,r,h,tfix) ;
-GEN_PLANT.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_PLANT.l(i,v,r,h,tfix) ;
-GEN_STORAGE.fx(i,v,r,h,tfix)$[storage_hybrid(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_STORAGE.l(i,v,r,h,tfix) ;
+GEN_PLANT.fx(i,v,r,h,tfix)$[hybrid_plant(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_PLANT.l(i,v,r,h,tfix) ;
+GEN_STORAGE.fx(i,v,r,h,tfix)$[hybrid_plant(i)$(not csp(i))$valgen(i,v,r,tfix)$Sw_HybridPlant] = GEN_STORAGE.l(i,v,r,h,tfix) ;
 MINGEN.fx(r,szn,tfix)$Sw_Mingen = MINGEN.l(r,szn,tfix) ;
 STORAGE_IN.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$(storage_standalone(i) or hyd_add_pump(i))] = STORAGE_IN.l(i,v,r,h,tfix) ;
-STORAGE_IN_PLANT.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_PLANT.l(i,v,r,h,tfix) ;
-STORAGE_IN_GRID.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_GRID.l(i,v,r,h,tfix) ;
+STORAGE_IN_PLANT.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$hybrid_plant(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_PLANT.l(i,v,r,h,tfix) ;
+STORAGE_IN_GRID.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$hybrid_plant(i)$(not csp(i))$Sw_HybridPlant] = STORAGE_IN_GRID.l(i,v,r,h,tfix) ;
 STORAGE_LEVEL.fx(i,v,r,h,tfix)$[valgen(i,v,r,tfix)$storage(i)$(not storage_interday(i))] = STORAGE_LEVEL.l(i,v,r,h,tfix) ;
 STORAGE_INTERDAY_LEVEL.fx(i,v,r,allszn,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL.l(i,v,r,allszn,tfix) ;
 STORAGE_INTERDAY_DISPATCH.fx(i,v,r,allh,tfix)$[valgen(i,v,r,tfix)$storage_interday(i)] = STORAGE_INTERDAY_DISPATCH.l(i,v,r,allh,tfix) ;

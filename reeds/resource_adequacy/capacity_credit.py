@@ -119,7 +119,9 @@ def reeds_cc(t, tnext, casedir):
     inputs_case = os.path.join(casedir, 'inputs_case')
     hierarchy = reeds.io.get_hierarchy(casedir).reset_index()
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
-    
+    ## Storage-hybrid wrappers on VRE get their own resources (see prep_data.py)
+    resources, _ = reeds.techs.add_storage_hybrid_vre_resources(resources, inputs_case)
+
     reeds_data = os.path.join(casedir, 'handoff', 'reeds_data')
     cap = pd.read_csv(os.path.join(reeds_data, f'max_cap_{t}.csv'))
 
@@ -133,6 +135,11 @@ def reeds_cc(t, tnext, casedir):
                        .rename(columns={'Value':'MW'})
     cap_stor['duration'] = cap_stor.i.map(gdx['storage_duration'].set_index('i').Value)
     cap_stor['MWh'] = cap_stor['MW'] * cap_stor['duration']
+
+    # NOTE: storage-hybrid wrapper storage is deliberately NOT appended here.
+    # cap_stor/cap_stor_agg only feed a never-created 'rte' column lookup (which
+    # falls through to cc_default_rte) and an unused per-ccreg frame; sdbin sizes
+    # come entirely from the peak-reduction geometry in cc_storage().
     #Adding a check if there is no storage - populate with 0 MW and 0 MWh in each r
     if cap_stor.empty:
         stor_techs = gdx['storage_standalone'].i.tolist()
@@ -158,7 +165,9 @@ def reeds_cc(t, tnext, casedir):
     tech_subset_table = reeds.techs.expand_GAMS_tech_groups(
         reeds.techs.get_tech_subset_table(casedir).reset_index()
     ).set_index('tech_group').i
-    techs_to_keep = tech_subset_table.loc['TEMP_DERATE'].tolist()
+    ## Storage-hybrid wrappers keep their outage rates when their gen tech does
+    techs_to_keep = reeds.techs.add_storage_hybrid_gentech_members(
+        tech_subset_table.loc['TEMP_DERATE'], inputs_case)
     techs_to_drop = [
         col for col in forced_outage_rate.columns.get_level_values('i').unique()
         if col not in techs_to_keep

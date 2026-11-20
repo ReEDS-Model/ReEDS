@@ -2,6 +2,7 @@ distpv,0.007
 upv_1*upv_10,0.007
 wind-ons_1*wind-ons_10,0.0027
 battery_li,0
+tes_ms,0
 biopower,0
 beccs_mod,0
 beccs_max,0
@@ -30,6 +31,7 @@ H2-CT,0
 H2-CC,0
 ng-fuel-cell,0
 geothermal,0
+flex_geo,0
 Hydro,0
 lfill-gas,0
 Nuclear,0
@@ -58,3 +60,6 @@ egs_nearfield_1*egs_nearfield_10,0
 dr_shed_1*dr_shed_2,0
 evmc_storage_1*evmc_storage_10,0
 evmc_shape_1*evmc_shape_10,0
+flex_geo_high,0
+flex_geo_med,0
+flex_geo_low,0

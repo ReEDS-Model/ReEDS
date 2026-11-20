@@ -150,17 +150,30 @@ end
 
 # Getter Functions
 
-#TODO: is SOR for grid injection enough? Do we need to derate energy capacity too?
+# Scheduled-outage semantics differ by what a Gen_Storage represents:
+# - Storage-hybrid wrappers (one plant, shared powerblock): maintenance takes the
+#   WHOLE plant down, so every power-side capability is derated by (1-SOR); the
+#   energy capacity is NOT derated (the tank does not shrink during maintenance).
+# - Reservoir hydro: water keeps arriving during turbine maintenance, so inflow/
+#   charge (the water budget) stay underated and only grid injection is derated
+#   (the pre-existing behavior, preserved exactly).
+# Forced outages enter via the unit-level lambda/mu transition rates in both cases.
+is_storage_hybrid(stor::Gen_Storage) = startswith(lowercase(stor.type), "storage-hybrid")
 
-get_charge_capacity(stor::Gen_Storage) = permutedims(round.(Int, stor.charge_cap))
+get_charge_capacity(stor::Gen_Storage) = permutedims(round.(Int,
+    is_storage_hybrid(stor) ? stor.charge_cap .* (1 .- stor.SOR) : stor.charge_cap))
 
-get_discharge_capacity(stor::Gen_Storage) = permutedims(round.(Int, stor.discharge_cap))
+get_discharge_capacity(stor::Gen_Storage) = permutedims(round.(Int,
+    is_storage_hybrid(stor) ? stor.discharge_cap .* (1 .- stor.SOR) : stor.discharge_cap))
 
-get_inflow(stor::Gen_Storage) = permutedims(round.(Int, stor.inflow))
+get_inflow(stor::Gen_Storage) = permutedims(round.(Int,
+    is_storage_hybrid(stor) ? stor.inflow .* (1 .- stor.SOR) : stor.inflow))
 
-get_grid_withdrawl_capacity(stor::Gen_Storage) =
-    permutedims(round.(Int, stor.grid_withdrawl_cap))
+get_grid_withdrawl_capacity(stor::Gen_Storage) = permutedims(round.(Int,
+    is_storage_hybrid(stor) ? stor.grid_withdrawl_cap .* (1 .- stor.SOR) : stor.grid_withdrawl_cap))
 
+get_grid_injection_capacity(stor::Gen_Storage) =
+    permutedims(round.(Int, stor.grid_inj_cap .* (1 .- stor.SOR)))
 
-get_grid_injection_capacity(stor::Gen_Storage) = 
-    permutedims(round.(Int, stor.grid_inj_cap .* (1 .-stor.SOR)))
+get_energy_capacity(stor::Gen_Storage) = permutedims(round.(Int,
+    is_storage_hybrid(stor) ? stor.energy_cap : stor.energy_cap .* (1 .- stor.SOR)))

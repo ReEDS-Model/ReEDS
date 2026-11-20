@@ -719,7 +719,12 @@ def main(inputs_case):
                     (gdb_use['StartYear'] >= startyear) &
                     (gdb_use['StartYear'] <= endyear)
                     ].copy()
-        mask = ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
+        # Storage-hybrid wrapper names contain their gen tech's name (e.g.
+        # storage-hybrid-1-upv_3), so leave their vintage rows out of the match
+        mask = (
+            ivt_df['Unnamed: 0'].str.contains(tech, case=False, na=False)
+            & ~ivt_df['Unnamed: 0'].str.startswith('storage-hybrid', na=False)
+        )
         if len(cap_pres[tech]) != 0:
             cap_pres[tech]["class"] = cap_pres[tech][colname].apply(
                 lambda x: assign_class(x, tech_class_cutoffs[usetech])

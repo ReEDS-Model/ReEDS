@@ -536,7 +536,13 @@ def get_stress_periods(case, sw, t, iteration):
         os.path.join(sw['casedir'], 'handoff', 'PRAS', f"PRAS_{t}i{iteration}-energy.h5")
     )
     timeindex = reeds.timeseries.get_timeindex(sw['resource_adequacy_years'])
-    dfenergy_unit.index = timeindex
+    ## A system with no storages or hybrid TES writes an empty -energy.h5;
+    ## rebuild it empty-with-index so the downstream .empty guard handles it
+    ## regardless of the empty frame's row/column shape
+    if dfenergy_unit.empty:
+        dfenergy_unit = pd.DataFrame(index=timeindex)
+    else:
+        dfenergy_unit.index = timeindex
     ## Sum over units
     dfenergy = (
         dfenergy_unit

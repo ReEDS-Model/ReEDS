@@ -52,19 +52,21 @@ function parse_reeds_data(
         "splitting thermal, storage, variable and hydro generator types from installed " *
         "ReEDS capacities..."
     )
-    thermal_builds, storage, hydro_disp_gens, hydro_non_disp_gens =
+    thermal_builds, storage, storage_hybrids, hydro_disp_gens, hydro_non_disp_gens =
         split_generator_types(ReEDS_data)
 
     @info "reading in ReEDS generator-type forced outage data..."
     forced_outage_data = get_forced_outage_data(ReEDS_data)
-    FOR_dict = Dict(forced_outage_data[!, "ResourceType"] .=> forced_outage_data[!, "FOR"])
+    # Force String keys so long names (e.g. storage-hybrid wrappers) aren't
+    # excluded by InlineString width narrowing.
+    FOR_dict = Dict{String, Float64}(String.(forced_outage_data[!, "ResourceType"]) .=> forced_outage_data[!, "FOR"])
 
     @info "reading hourly forced outage rates"
     forcedoutage_hourly = get_hourly_forced_outage_data(ReEDS_data)
 
     @info "reading in ATB unit size data for use with disaggregation..."
     unitsize_data = get_unitsize_mapping(ReEDS_data)
-    unitsize_dict = Dict(unitsize_data[!, "tech"] .=> unitsize_data[!, "MW"])
+    unitsize_dict = Dict{String, Int64}(String.(unitsize_data[!, "tech"]) .=> unitsize_data[!, "MW"])
 
     scheduled_outage_hourly = nothing
     # read the scheduled_outage CSV file if scheduled_outage
@@ -126,8 +128,19 @@ function parse_reeds_data(
         hydro_energylim = hydro_energylim,
     )
 
-    #@info "Processing GeneratorStorages"
-    #genstor_array = process_genstors(genstor_array, get_name.(regions), timesteps)
+    @info "Processing storage-hybrid GeneratorStorages..."
+    genstor_array = process_storage_hybrids(
+        genstor_array,
+        storage_hybrids,
+        FOR_dict,
+        forcedoutage_hourly,
+        unitsize_dict,
+        ReEDS_data,
+        timesteps,
+        mttr_dict,
+        scheduled_outage_hourly = scheduled_outage_hourly,
+        pras_max_unitsize_prm = pras_max_unitsize_prm,
+    )
 
     return lines, regions, gens_array, storage_array, genstor_array
 end

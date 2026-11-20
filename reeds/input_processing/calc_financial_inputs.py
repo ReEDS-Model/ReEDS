@@ -134,6 +134,24 @@ def calc_financial_inputs(inputs_case):
             'depreciation_sch'
         ] = 5
 
+    # Storage-hybrid wrappers inherit the gen tech's financial parameters
+    # (depreciation_sch, eval_period, construction_sch, finance_diff_real);
+    # without these rows the downstream merge leaves NaN construction_sch
+    # and the construction-financing multiplier lookup fails
+    gentech_map_file = os.path.join(inputs_case, 'storage_hybrid_gentechs.csv')
+    if os.path.isfile(gentech_map_file):
+        gentech_map = pd.read_csv(gentech_map_file)
+        gentech_map.columns = ['wrapper', 'gen_tech']
+        wrapper_financials = []
+        for _, maprow in gentech_map.iterrows():
+            gen_rows = financials_tech[financials_tech['i'] == maprow['gen_tech']].copy()
+            gen_rows['i'] = maprow['wrapper']
+            wrapper_financials.append(gen_rows)
+        if wrapper_financials:
+            financials_tech = pd.concat(
+                [financials_tech] + wrapper_financials, ignore_index=True
+            )
+
     ### Project financials_tech forward
     financials_tech_projected = (
         financials_tech.pivot(
@@ -504,9 +522,47 @@ def calc_financial_inputs(inputs_case):
 
     # Write out the ITC fractions, for use in retail rate calculations
     itc_df = incentive_df[incentive_df['itc_frac']!=0]
-    itc_df[
-        ['i', 'country', 't', 'itc_frac', 'itc_tax_equity_penalty']
-    ].to_csv(os.path.join(inputs_case, 'itc_fractions.csv'), index=False)
+    itc_out = itc_df[['i', 'country', 't', 'itc_frac', 'itc_tax_equity_penalty']]
+    # Storage-hybrid wrappers earn ITC in the LP (cost_cap_fin_mult composed
+    # from component techs in 2_financials.gms) but match no incentive group
+    # here, so without these rows the retail rate module's inner merge on 'i'
+    # assigns wrapper capex zero ITC. Clone the gen tech's rows: exact for the
+    # reactor share of wrapper capex, a slight understatement overall because
+    # the storage component's ITC is higher (e.g. 29.9% vs a 31.7% blend).
+    gentech_map_file = os.path.join(inputs_case, 'storage_hybrid_gentechs.csv')
+    if os.path.isfile(gentech_map_file):
+        gentech_map = pd.read_csv(gentech_map_file)
+        gentech_map.columns = ['wrapper', 'gen_tech']
+        wrapper_itc = []
+        for _, row in gentech_map.iterrows():
+            gen_rows = itc_out[itc_out['i'] == row['gen_tech']].copy()
+            gen_rows['i'] = row['wrapper']
+            wrapper_itc.append(gen_rows)
+        if wrapper_itc:
+            itc_out = pd.concat([itc_out] + wrapper_itc, ignore_index=True)
+    itc_out.to_csv(os.path.join(inputs_case, 'itc_fractions.csv'), index=False)
+
+    # Storage side of each storage-hybrid wrapper: the storage tech's ITC rate over the
+    # larger of the gen and storage techs' eligibility windows (see
+    # reeds.financials.storage_hybrid_storage_itc). 2_financials.gms uses it in
+    # cost_cap_fin_mult_storage_hybrid_s. Always written (header only when the feature
+    # is off) because b_inputs.gms declares the parameter from it.
+    storagetech_map_file = os.path.join(inputs_case, 'storage_hybrid_storagetechs.csv')
+    wrappers = pd.DataFrame(columns=['i', 'gen_tech', 'storage_tech'])
+    if os.path.isfile(gentech_map_file) and os.path.isfile(storagetech_map_file):
+        gentechs = pd.read_csv(gentech_map_file)
+        gentechs.columns = ['i', 'gen_tech']
+        storagetechs = pd.read_csv(storagetech_map_file)
+        storagetechs.columns = ['i', 'storage_tech']
+        wrappers = gentechs.merge(storagetechs, on='i', how='inner')
+    storage_itc = reeds.financials.storage_hybrid_storage_itc(
+        incentive_file_suffix=sw['incentives_suffix'], inflation_df=inflation_df,
+        scen_settings=scen_settings, wrappers=wrappers,
+    )
+    storage_itc = storage_itc.loc[storage_itc['t'].isin(modeled_years)].copy()
+    storage_itc['itc_frac_monetized'] = storage_itc['itc_frac_monetized'].round(6)
+    storage_itc.rename(columns={'i': '*i'}).to_csv(
+        os.path.join(inputs_case, 'storage_hybrid_itc_storage.csv'), index=False)
 
     # CRF used in sequential case for calculating pvf_onm values (pvf)
     crf_df = financials_sys[financials_sys['t']==financials_sys['modeled_year']].copy()

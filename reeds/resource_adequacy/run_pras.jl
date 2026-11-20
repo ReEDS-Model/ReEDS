@@ -186,6 +186,10 @@ function run_pras(pras_system_path::String, args::Dict)
     end
     if args["write_energy"] == 1
         resultspec["energy"] = PRAS.StorageEnergy()
+        ## Storage-hybrid wrappers are GeneratorStorages, not Storages, so their
+        ## stored energy must be requested separately or stress-period selection
+        ## (GSw_PRM_StressStorageCutoff) never sees hybrid TES state of charge
+        resultspec["energy_genstor"] = PRAS.GeneratorStorageEnergy()
     end
     ## Hourly per-sample shortfall (region x hour x sample) is memory-heavy, so only
     ## request it when the hourly samples are written. Per-sample totals (used for CVaR)
@@ -299,6 +303,17 @@ function run_pras(pras_system_path::String, args::Dict)
         for i in sys.storages.names
             ## Energy results are tuples of (mean, standard deviation). Keep the mean.
             dfenergy[!, strip("$(i)", '_')] = [results["energy"][i,h][1] for h in sys.timestamps]
+        end
+        ## Storage-hybrid wrapper TES (GeneratorStorages named "tech|region").
+        ## Hydro GeneratorStorages ("tech_region", no "|") are excluded to keep
+        ## the pre-split file contents: reservoir energy is inflow-driven and was
+        ## never part of the storage-headspace signal, and downstream
+        ## stress_periods.py extracts the region with split('|')[1].
+        for i in sys.generatorstorages.names
+            if occursin("|", i)
+                dfenergy[!, strip("$(i)", '_')] =
+                    [results["energy_genstor"][i,h][1] for h in sys.timestamps]
+            end
         end
         ## Write it
         energyfile = replace(outfile, ".h5"=>"-energy.h5")

@@ -266,15 +266,18 @@ lcoe_built(i,r,t)$[ [sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], GEN.l(i,v,r,h,t
         (crf(t) * (
          sum{v$valinv(i,v,r,t),
              INV.l(i,v,r,t) * (cost_cap_fin_mult(i,r,t) * cost_cap(i,t) ) }
-       + sum{v$[valinv(i,v,r,t)$battery(i)],
-             INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult(i,r,t) * cost_cap_energy(i,t) ) }
+*storage-hybrid INV_ENERGY is billed at the storage-side multiplier, matching the objective
+       + sum{v$[valinv(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))],
+             INV_ENERGY.l(i,v,r,t) * cost_cap_energy(i,t)
+             * (cost_cap_fin_mult(i,r,t)$(not storage_hybrid(i))
+                + cost_cap_fin_mult_storage_hybrid_s(i,r,t)$storage_hybrid(i)) }
        + sum{v$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades],
              UPGRADES.l(i,v,r,t) * (cost_upgrade(i,v,r,t) * cost_cap_fin_mult(i,r,t) ) }
        + sum{(v,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)],
              INV_RSC.l(i,v,r,rscbin,t) * m_rsc_dat(r,i,rscbin,"cost") * rsc_fin_mult(i,r,t) }
                  )
        + sum{v$valinv(i,v,r,t), cost_fom(i,v,r,t) * INV.l(i,v,r,t) }
-       + sum{v$[valinv(i,v,r,t)$battery(i)], cost_fom_energy(i,v,r,t) * INV_ENERGY.l(i,v,r,t) }
+       + sum{v$[valinv(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))], cost_fom_energy(i,v,r,t) * INV_ENERGY.l(i,v,r,t) }
        + sum{v$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades], cost_fom(i,v,r,t) * UPGRADES.l(i,v,r,t) }
        + sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(i,v,r,h,t) * hours(h) }
        + sum{(v,h)$[UPGRADES.l(i,v,r,t)$Sw_Upgrades], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(i,v,r,h,t) * hours(h) }
@@ -288,7 +291,10 @@ lcoe_built_nat(i,t)$[sum{(v,r)$valinv(i,v,r,t), INV.l(i,v,r,t) }] =
 
 lcoe_pieces("capcost",i,r,t)$tmodel_new(t) = 
           sum{v$valinv(i,v,r,t), INV.l(i,v,r,t) * (cost_cap_fin_mult(i,r,t) * cost_cap(i,t) ) }
-        + sum{v$[valinv(i,v,r,t)$battery(i)], INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult(i,r,t) * cost_cap_energy(i,t) ) } ;
+        + sum{v$[valinv(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))],
+              INV_ENERGY.l(i,v,r,t) * cost_cap_energy(i,t)
+              * (cost_cap_fin_mult(i,r,t)$(not storage_hybrid(i))
+                 + cost_cap_fin_mult_storage_hybrid_s(i,r,t)$storage_hybrid(i)) } ;
 
 lcoe_pieces("upgradecost",i,r,t)$tmodel_new(t) =
                   sum{v$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades],
@@ -304,7 +310,7 @@ lcoe_pieces("rsccost",i,r,t)$tmodel_new(t) =
 
 lcoe_pieces("fomcost",i,r,t)$tmodel_new(t) =
                   sum{v$valinv(i,v,r,t), cost_fom(i,v,r,t) * INV.l(i,v,r,t) }
-                  + sum{v$[valinv(i,v,r,t)$battery(i)], cost_fom_energy(i,v,r,t) * INV_ENERGY.l(i,v,r,t) }
+                  + sum{v$[valinv(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))], cost_fom_energy(i,v,r,t) * INV_ENERGY.l(i,v,r,t) }
                   + sum{v$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades], cost_fom(i,v,r,t) * UPGRADES.l(i,v,r,t) } ;
 
 lcoe_pieces("vomcost",i,r,t)$tmodel_new(t) =
@@ -409,7 +415,8 @@ reqt_quant('state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
 
       + ( sum{(i,v)$[valgen(i,v,r,t)$(not storage_standalone(i))], GEN.l(i,v,r,h,t)
           - (distloss * GEN.l(i,v,r,h,t))$(distpv(i))
-          - (STORAGE_IN_GRID.l(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] }
+          - STORAGE_IN_GRID.l(i,v,r,h,t)$[pvb(i)$Sw_HybridPlant]
+          - STORAGE_IN_GRID.l(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant] }
           - can_exports_h(r,h,t)$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
         )$(RecStyle(st,RPSCat)=2)
     )} ;
@@ -544,6 +551,9 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tmodel_new(t)$(not t
 repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2 or Sw_FINITO_Link = 1)$tmodel_new(t)] =
     ( sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)}
+* storage-hybrid wrappers on gas gen techs burn gas on the plant side only
+    + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$storage_hybrid_gas(i)$heat_rate(i,v,r,t)],
+          hours(h) * heat_rate(i,v,r,t) * GEN_PLANT.l(i,v,r,h,t)}
     + sum{(v,r,h)$[valcap("dac_gas",v,r,t)$r_cendiv(r,cendiv)],
           hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE.l("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
     + sum{(p,i,v,r,h)$[r_cendiv(r,cendiv)$valcap(i,v,r,t)$smr(i)],
@@ -553,6 +563,8 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2 or Sw_FINITO_Link = 1
 repgasquant_irt(i,r,t)$tmodel_new(t) =
     ( sum{(v,h)$[valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)  }
+    + sum{(v,h)$[valgen(i,v,r,t)$storage_hybrid_gas(i)$heat_rate(i,v,r,t)],
+          hours(h) * heat_rate(i,v,r,t) * GEN_PLANT.l(i,v,r,h,t)  }
     + sum{(v,h)$[valcap("dac_gas",v,r,t)],
           hours(h) * dac_gas_cons_rate("dac_gas",v,t) * PRODUCE.l("DAC","dac_gas",v,r,h,t) }$Sw_DAC_Gas
     + sum{(p,v,h)$[valcap(i,v,r,t)$smr(i)],
@@ -570,9 +582,11 @@ repgasprice(cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(cendiv,t)$(no
     } ;
 
 repgasprice(cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(cendiv,t)$(not tfinito_all(t))] =
-    sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h)
-       } / (repgasquant(cendiv,t) * 1e9) ;
+    ( sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
+          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
+    + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$storage_hybrid_gas(i)$heat_rate(i,v,r,t)],
+          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN_PLANT.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
+    ) / (repgasquant(cendiv,t) * 1e9) ;
 
 
 * gas price when linked with FINITO [$2004/MMBtu]
@@ -637,9 +651,9 @@ repgasprice_nat(t)$[tmodel_new(t)$sum{cendiv, repgasquant(cendiv,t) }] =
 *========================================
 
 gasshare_ba(r,cendiv,t)$[r_cendiv(r,cendiv)$tmodel_new(t)$repgasquant(cendiv,t)] =
-  sum{i$[valgen_irt(i,r,t)$gas(i)],repgasquant_irt(i,r,t) / repgasquant(cendiv,t) } ;
+  sum{i$[valgen_irt(i,r,t)$(gas(i) or storage_hybrid_gas(i))],repgasquant_irt(i,r,t) / repgasquant(cendiv,t) } ;
 
-gasshare_techba(i,r,cendiv,t)$[r_cendiv(r,cendiv)$tmodel_new(t)$repgasquant(cendiv,t)$gas(i)] =
+gasshare_techba(i,r,cendiv,t)$[r_cendiv(r,cendiv)$tmodel_new(t)$repgasquant(cendiv,t)$(gas(i) or storage_hybrid_gas(i))] =
   repgasquant_irt(i,r,t) / repgasquant(cendiv,t) ;
 
 gasshare_cendiv(cendiv,t)$[sum{cendiv2,repgasquant(cendiv2,t)}] = 
@@ -651,6 +665,9 @@ gascost_cendiv(cendiv,t)$[tmodel_new(t)$(not tfinito_all(t))] =
               + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)
                               $[not bio(i)]$[not cofire(i)]$[Sw_GasCurve = 2]],
                    hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
+              + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$storage_hybrid_gas(i)$heat_rate(i,v,r,t)
+                              $[Sw_GasCurve = 2]],
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN_PLANT.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *cost of natural gas for Sw_GasCurve = 0 (census division supply curves natural gas prices)
               + sum{gb, sum{h,hours(h) * GASUSED.l(cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) } * gasprice(cendiv,gb,t)
@@ -665,6 +682,9 @@ gascost_cendiv(cendiv,t)$[tmodel_new(t)$(not tfinito_all(t))] =
               + (sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)],
                    gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
                    hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
+              + sum{(i,v,r,h)$[valgen(i,v,r,t)$storage_hybrid_gas(i)],
+                   gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
+                   hours(h) * heat_rate(i,v,r,t) * GEN_PLANT.l(i,v,r,h,t) * gasprice_adj_r(r,h) }
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin),
                    gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL.l(fuelbin,cendiv,t) }
@@ -709,10 +729,16 @@ bioshare_techba(i,r,t)$[(cofire(i) or bio(i))$tmodel_new(t)$(not tfinito_all(t))
 gen_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)] =
   sum{v$valgen(i,v,r,t), GEN.l(i,v,r,h,t)
 * less storage charging
-  - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]}
+  - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
+* less storage charging for hybrid storage
+  - STORAGE_IN_GRID.l(i,v,r,h,t)$hybrid_plant(i)}
 * less load from hydrogen production
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)], PRODUCE.l(p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
+gen_plant_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)$hybrid_plant(i)] = sum{v$valgen(i,v,r,t), GEN_PLANT.l(i,v,r,h,t)} ;
+gen_storage_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)$hybrid_plant(i)] = sum{v$valgen(i,v,r,t), GEN_STORAGE.l(i,v,r,h,t)} ;
+storage_in_plant_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)$hybrid_plant(i)] = sum{v$valgen(i,v,r,t), -STORAGE_IN_PLANT.l(i,v,r,h,t)} ;
+storage_in_grid_h(i,r,h,t)$[tmodel_new(t)$valgen_irt(i,r,t)$hybrid_plant(i)] = sum{v$valgen(i,v,r,t), -STORAGE_IN_GRID.l(i,v,r,h,t)} ;
 * A small amount of upv capacity is actually csp-ns, so convert it back now.
 * UPV capacity is already in MWac at this point (matching csp-ns),
 * so don't need to account for ILR.
@@ -730,19 +756,26 @@ gen_h_nat(i,h,t)$tmodel_new(t) = sum{r, gen_h(i,r,h,t) } ;
 gen_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$h_stress_t(allh,t)] =
   sum{v$valgen(i,v,r,t), GEN.l(i,v,r,allh,t)
 * less storage charging
-      - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)] }
+      - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)]
+* less storage charging for hybrid storage
+      - STORAGE_IN_GRID.l(i,v,r,allh,t)$hybrid_plant(i) }
 * less load from hydrogen production
   - sum{(v,p)$[consume(i)$valcap(i,v,r,t)$i_p(i,p)],
         PRODUCE.l(p,i,v,r,allh,t) / prod_conversion_rate(i,v,r,t)}$Sw_Prod
 ;
 gen_h_stress_nat(i,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = sum{r, gen_h_stress(i,r,allh,t) } ;
 
+* plant and storage components during stress periods
+gen_plant_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$hybrid_plant(i)$h_stress_t(allh,t)] = sum{v$valgen(i,v,r,t), GEN_PLANT.l(i,v,r,allh,t)} ;
+gen_storage_h_stress(i,r,allh,t)$[tmodel_new(t)$valgen_irt(i,r,t)$hybrid_plant(i)$h_stress_t(allh,t)] = sum{v$valgen(i,v,r,t), GEN_STORAGE.l(i,v,r,allh,t)} ;
+
 gen_ann(i,r,t)$tmodel_new(t) = sum{h, gen_h(i,r,h,t) * hours(h) } ;
 gen_ann_nat(i,t)$tmodel_new(t) = sum{r, gen_ann(i,r,t) } ;
 
 * Report generation without the charging and production included as above
 gen_ivrt(i,v,r,t)$valgen(i,v,r,t) = sum{h, GEN.l(i,v,r,h,t) * hours(h) } ;
-gen_ivrt_uncurt(i,v,r,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valgen(i,v,r,t)] =
+gen_plant_ivrt(i,v,r,t)$[valgen(i,v,r,t)$hybrid_plant(i)] = sum{h, GEN_PLANT.l(i,v,r,h,t) * hours(h) } ;
+gen_ivrt_uncurt(i,v,r,t)$[(vre(i) or pvb(i))$valgen(i,v,r,t)] =
   sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) * hours(h) } ;
 
 * Report generation that will be used as a denominator in outputs, where VRE uses uncurtailed gen and storage uses GEN
@@ -751,10 +784,20 @@ gen_uncurtailed(i,r,t)$[valgen_irt(i,r,t)$vre(i)] = sum{v, gen_ivrt_uncurt(i,v,r
 gen_uncurtailed_nat(i,t)$tmodel_new(t) = sum{r, gen_uncurtailed(i,r,t) } ;
 
 * Storage outputs
-stor_inout(i,v,r,t,"in")$[valgen(i,v,r,t)$storage(i)$[not storage_hybrid(i)$(not csp(i))]] = sum{h, STORAGE_IN.l(i,v,r,h,t) * hours(h) } ;
-stor_inout(i,v,r,t,"out")$[valgen(i,v,r,t)$storage(i)] = gen_ivrt(i,v,r,t) ;
-stor_in(i,v,r,h,t)$[storage(i)$valgen(i,v,r,t)$(not storage_hybrid(i)$(not csp(i)))] = STORAGE_IN.l(i,v,r,h,t) ;
-stor_out(i,v,r,h,t)$[storage(i)$valgen(i,v,r,t)] = GEN.l(i,v,r,h,t) ;
+stor_inout(i,v,r,t,"in")$[valgen(i,v,r,t)$storage(i)$[not hybrid_plant(i)$(not csp(i))]] = sum{h, STORAGE_IN.l(i,v,r,h,t) * hours(h) } ;
+stor_inout(i,v,r,t,"out")$[valgen(i,v,r,t)$storage(i)$[not hybrid_plant(i)$(not csp(i))]] = gen_ivrt(i,v,r,t) ;
+* hybrid plants: report actual storage throughput, not total plant generation
+stor_inout(i,v,r,t,"in")$[valgen(i,v,r,t)$hybrid_plant(i)$(not csp(i))] =
+    sum{h, (STORAGE_IN_PLANT.l(i,v,r,h,t) + STORAGE_IN_GRID.l(i,v,r,h,t)) * hours(h) } ;
+stor_inout(i,v,r,t,"out")$[valgen(i,v,r,t)$hybrid_plant(i)$(not csp(i))] =
+    sum{h, GEN_STORAGE.l(i,v,r,h,t) * hours(h) } ;
+stor_in(i,v,r,h,t)$[storage(i)$valgen(i,v,r,t)$(not hybrid_plant(i)$(not csp(i)))] = STORAGE_IN.l(i,v,r,h,t) ;
+stor_in_plant(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$valgen(i,v,r,t)] = STORAGE_IN_PLANT.l(i,v,r,h,t) ;
+stor_in_grid(i,v,r,h,t)$[hybrid_plant(i)$valgen(i,v,r,t)] = STORAGE_IN_GRID.l(i,v,r,h,t) ;
+stor_out(i,v,r,h,t)$[storage(i)$valgen(i,v,r,t)$(not hybrid_plant(i)$(not csp(i)))] = GEN.l(i,v,r,h,t) ;
+* hybrid plants: storage output is GEN_STORAGE (GEN is total net plant output)
+stor_out(i,v,r,h,t)$[storage(i)$valgen(i,v,r,t)$hybrid_plant(i)$(not csp(i))] = GEN_STORAGE.l(i,v,r,h,t) ;
+hybrid_stor_out(i,v,r,h,t)$[hybrid_plant(i)$valgen(i,v,r,t)] = GEN_STORAGE.l(i,v,r,h,t);
 stor_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)] = STORAGE_LEVEL.l(i,v,r,h,t) ;
 stor_interday_level(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)] = STORAGE_INTERDAY_LEVEL.l(i,v,r,allszn,t) ;
 stor_interday_dispatch(i,v,r,h,t)$[valgen(i,v,r,t)$storage_interday(i)] = STORAGE_INTERDAY_DISPATCH.l(i,v,r,h,t) ;
@@ -820,16 +863,16 @@ opres_trade(ortype,r,rr,t)$[opres_routes(r,rr,t)$tmodel_new(t)] =
 * LOSSES AND CURTAILMENT
 *=========================
 
-gen_new_uncurt(i,r,h,t)$[(vre(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] =
+gen_new_uncurt(i,r,h,t)$[(vre(i) or pvb(i))$valcap_irt(i,r,t)] =
       sum{(v,c)$[valinv(i,v,r,t)$i_c(i,c)], (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)) * m_cf(i,c,v,r,h,t) * hours(h) }
 ;
 
 * curtailment = (availability - generation - operating reserves)
 curt_h(r,h,t)$tmodel_new(t) =
-      sum{(i,v,c)$[valcap(i,v,r,t)$(vre(i) or storage_hybrid(i)$(not csp(i)))$i_c(i,c)],
+      sum{(i,v,c)$[valcap(i,v,r,t)$(vre(i) or pvb(i))$i_c(i,c)],
           m_cf(i,c,v,r,h,t) * CAP.l(i,v,r,t) }
     - sum{(i,v)$[valgen(i,v,r,t)$vre(i)], GEN.l(i,v,r,h,t) }
-    - sum{(i,v)$[valgen(i,v,r,t)$storage_hybrid(i)$(not csp(i))], GEN_PLANT.l(i,v,r,h,t) }$Sw_HybridPlant
+    - sum{(i,v)$[valgen(i,v,r,t)$pvb(i)], GEN_PLANT.l(i,v,r,h,t) }$Sw_HybridPlant
     - sum{(ortype,i,v)$[Sw_OpRes$opres_h(h)$reserve_frac(i,ortype)$valgen(i,v,r,t)$vre(i)],
           OPRES.l(ortype,i,v,r,h,t) }
 ;
@@ -851,12 +894,15 @@ curt_rate_tech(i,r,t)$[tmodel_new(t)$vre(i)$(gen_ann(i,r,t) + curt_tech(i,r,t))]
 
 curt_rate(t)
     $[tmodel_new(t)
-    $(sum{(i,r)$[vre(i) or storage_hybrid(i)$(not csp(i))], gen_ann(i,r,t) } + sum{r, curt_ann(r,t) })]
+    $(sum{(i,r)$[vre(i) or pvb(i)], gen_ann(i,r,t) } + sum{r, curt_ann(r,t) })]
     = sum{r, curt_ann(r,t) }
-      / (sum{(i,r)$[vre(i) or storage_hybrid(i)$(not csp(i))], gen_ann(i,r,t) } + sum{r, curt_ann(r,t) }) ;
+      / (sum{(i,r)$[vre(i) or pvb(i)], gen_ann(i,r,t) } + sum{r, curt_ann(r,t) }) ;
 
 losses_ann('storage',t)$tmodel_new(t) = sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)], STORAGE_IN.l(i,v,r,h,t) * hours(h) }
-                          - sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)], GEN.l(i,v,r,h,t) * hours(h) } ;
+                          - sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)], GEN.l(i,v,r,h,t) * hours(h) }
+* hybrid-plant storage round-trip losses (charge minus discharge)
+                          + sum{(i,v,r,h)$[valcap(i,v,r,t)$hybrid_plant(i)$(not csp(i))],
+                                (STORAGE_IN_PLANT.l(i,v,r,h,t) + STORAGE_IN_GRID.l(i,v,r,h,t) - GEN_STORAGE.l(i,v,r,h,t)) * hours(h) } ;
 
 losses_ann('trans',t)$tmodel_new(t) =
   sum{(rr,r,h,trtype)$routes(rr,r,trtype,t),
@@ -996,47 +1042,64 @@ ret_ann_nat(i,t)$tmodel_new(t) = sum{r, ret_ann(i,r,t) } ;
 cap_sdbin_out(i,r,ccseason,sdbin,t)$valcap_irt(i,r,t) = sum{v, CAP_SDBIN.l(i,v,r,ccseason,sdbin,t)} ;
 
 * energy capacity of storage
+* techs with endogenous energy capacity (battery/tes/storage-hybrid) report CAP_ENERGY;
+* fixed-duration techs (CSP-TES, PSH, pvb) report duration * power
 stor_energy_cap(i,v,r,t)$[tmodel_new(t)$valcap(i,v,r,t)] =
-        storage_duration_m(i,v,r) * CAP.l(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$[battery(i) or storage_hybrid(i)$(not csp(i))]) ;
+        storage_duration_m(i,v,r) * CAP.l(i,v,r,t) * (1$CSP_Storage(i) + 1$psh(i) + bcr(i)$pvb(i))
+        + CAP_ENERGY.l(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i)) ;
 
+* assign cap_energy_ivrt from the solved energy capacity for endogenous-energy techs
+cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))] = CAP_ENERGY.l(i,v,r,t) ;
 * add PSH energy capacity to cap_energy_ivrt
 cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$psh(i)] = CAP.l(i,v,r,t) * storage_duration_m(i,v,r) ;
 
 * battery storage duration
-storage_duration_out(i,v,r,t)$[valcap(i,v,r,t)$battery(i)$CAP.l(i,v,r,t)] = 
+storage_duration_out(i,v,r,t)$[valcap(i,v,r,t)$(battery(i) or tes(i))$(not storage_hybrid(i))$CAP.l(i,v,r,t)] =
         CAP_ENERGY.l(i,v,r,t) / CAP.l(i,v,r,t) ;
+* storage-hybrid wrappers: storage power is bcr*CAP, so duration is relative to that
+storage_duration_out(i,v,r,t)$[valcap(i,v,r,t)$storage_hybrid(i)$bcr(i)$CAP.l(i,v,r,t)] =
+        CAP_ENERGY.l(i,v,r,t) / (bcr(i) * CAP.l(i,v,r,t)) ;
 
 *==================================
 * CAPACITY CREDIT AND FIRM CAPACITY
 *==================================
 
 cc_all_out(i,v,r,ccseason,t)$tmodel_new(t) =
-    cc_int(i,v,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)] +
-    m_cc_mar(i,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valinv_init(i,v,r,t)]
+    cc_int(i,v,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or hybrid_plant(i)$(not thermal_storage(i)))$valcap(i,v,r,t)] +
+    m_cc_mar(i,r,ccseason,t)$[(vre(i) or csp(i) or storage(i) or hybrid_plant(i)$(not thermal_storage(i)))$valinv_init(i,v,r,t)]
 ;
 
-cap_new_cc(i,r,ccseason,t)$[(vre(i) or storage(i) or storage_hybrid(i)$(not csp(i)))$valcap_irt(i,r,t)] = sum{v$ivt(i,v,t),cap_new_ivrt(i,v,r,t) } ;
+cap_new_cc(i,r,ccseason,t)$[(vre(i) or storage(i) or hybrid_plant(i)$(not thermal_storage(i)))$valcap_irt(i,r,t)] = sum{v$ivt(i,v,t),cap_new_ivrt(i,v,r,t) } ;
 
 cc_new(i,r,ccseason,t)$[valcap_irt(i,r,t)$cap_new_cc(i,r,ccseason,t)] = sum{v$ivt(i,v,t), cc_all_out(i,v,r,ccseason,t) } ;
 
 cap_firm(i,r,ccseason,t)$[valcap_irt(i,r,t)$[not consume(i)]$tmodel_new(t)$Sw_PRM_CapCredit] =
-      sum{v$[(not vre(i))$(not hydro(i))$(not storage(i))$(not storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
+      sum{v$[(not vre(i))$(not hydro(i))$(not storage(i))$(not hybrid_plant(i)$(not csp(i)))$valcap(i,v,r,t)],
           CAP.l(i,v,r,t) 
           * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t)) 
           * (1 - mean_forced_outage_rate(i,r,ccseason,t))
           }
     + cc_old(i,r,ccseason,t)
-    + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valinv(i,v,r,t)],
+    + sum{v$[(vre(i) or csp(i) or pvb(i) or storage_hybrid_vre(i))$valinv(i,v,r,t)],
          m_cc_mar(i,r,ccseason,t) * (INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb]) }
-    + sum{v$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))$valcap(i,v,r,t)],
+    + sum{v$[(vre(i) or csp(i) or pvb(i) or storage_hybrid_vre(i))$valcap(i,v,r,t)],
             cc_int(i,v,r,ccseason,t) * CAP.l(i,v,r,t) }
-    + cc_excess(i,r,ccseason,t)$[(vre(i) or csp(i) or storage_hybrid(i)$(not csp(i)))]
+    + cc_excess(i,r,ccseason,t)$[(vre(i) or csp(i) or pvb(i) or storage_hybrid_vre(i))]
     + sum{(v,h)$[hydro_nd(i)$valgen(i,v,r,t)$h_ccseason_prm(h,ccseason)],
          GEN.l(i,v,r,h,t) }
     + sum{v$[hydro_d(i)$valcap(i,v,r,t)],
          CAP.l(i,v,r,t) * cap_hyd_ccseason_adj(i,ccseason,r) * (1 + hydro_capcredit_delta(i,t)) }
     + sum{(v,sdbin)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) }
-    + sum{(v,sdbin)$[valcap(i,v,r,t)$storage_hybrid(i)], CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) * hybrid_cc_derate(i,r,ccseason,sdbin,t) } ;
+* VRE-availability derate applies only to VRE-paired hybrids (pvb and storage_hybrid_vre),
+* matching eq_reserve_margin; dispatchable storage-hybrids take cc_storage undiluted
+    + sum{(v,sdbin)$[valcap(i,v,r,t)$hybrid_plant(i)$(not storage_hybrid_dispatchable(i))], CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) * hybrid_cc_derate(i,r,ccseason,sdbin,t) }
+    + sum{(v,sdbin)$[valcap(i,v,r,t)$storage_hybrid_dispatchable(i)], CAP_SDBIN.l(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) }
+* firm credit for the dispatchable generation side of storage-hybrid plants (matches eq_reserve_margin)
+    + sum{v$[storage_hybrid_dispatchable(i)$valcap(i,v,r,t)],
+          CAP.l(i,v,r,t)
+          * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))
+          * (1 - mean_forced_outage_rate(i,r,ccseason,t))
+         } ;
 
 * Capacity trading to meet PRM
 captrade(r,rr,trtype,ccseason,t)$[routes(r,rr,trtype,t)$routes_prm(r,rr)$tmodel_new(t)] = PRMTRADE.l(r,rr,trtype,ccseason,t) ;
@@ -1051,6 +1114,9 @@ revenue('load',i,r,t)$valgen_irt(i,r,t) = sum{(v,h)$valgen(i,v,r,t),
 *revenue from storage charging (storage charging from curtailment recovery does not have a cost)
 revenue('charge',i,r,t)$[storage_standalone(i)$valgen_irt(i,r,t)] = - sum{(v,h)$valgen(i,v,r,t),
   STORAGE_IN.l(i,v,r,h,t) * hours(h) * reqt_price('load','na',r,h,t) } ;
+* hybrid plants purchase grid charging via STORAGE_IN_GRID
+revenue('charge',i,r,t)$[hybrid_plant(i)$(not csp(i))$valgen_irt(i,r,t)] = - sum{(v,h)$valgen(i,v,r,t),
+  STORAGE_IN_GRID.l(i,v,r,h,t) * hours(h) * reqt_price('load','na',r,h,t) } ;
 
 revenue('res_marg',i,r,t)$[valgen_irt(i,r,t)$Sw_PRM_CapCredit] = sum{ccseason,
   cap_firm(i,r,ccseason,t) * reqt_price('res_marg','na',r,ccseason,t) } ;
@@ -1119,11 +1185,13 @@ valnew('MW','benchmark',r,t)$tmodel_new(t) = reqt_quant('res_marg_ann','na',r,'a
 valnew('MW','benchmark','sys',t)$tmodel_new(t) = sum{r, reqt_quant('res_marg_ann','na',r,'ann',t)} ;
 
 valnew('val_load',i,r,t)$valnew('MW',i,r,t) = sum{(v,h)$valinv(i,v,r,t),
-    (GEN.l(i,v,r,h,t) - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)])
+    (GEN.l(i,v,r,h,t) - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
+     - STORAGE_IN_GRID.l(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))])
     * hours(h) * reqt_price('load','na',r,h,t) } * valnew('inv_cap_ratio',i,r,t) ;
 *'val_load_sys' is the val our tech would have if valued at the system-average load price profile.
 valnew('val_load_sys',i,r,t)$valnew('MW',i,r,t) = sum{(v,h)$valinv(i,v,r,t),
-    (GEN.l(i,v,r,h,t) - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)])
+    (GEN.l(i,v,r,h,t) - STORAGE_IN.l(i,v,r,h,t)$[storage_standalone(i) or hyd_add_pump(i)]
+     - STORAGE_IN_GRID.l(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))])
     * hours(h) * reqt_price_sys('load','na',h,t) } * valnew('inv_cap_ratio',i,r,t) ;
 *Annual-average price at each r:
 valnew('val_load','benchmark',r,t)$tmodel_new(t) =
@@ -1134,14 +1202,16 @@ valnew('val_load','benchmark','sys',t)$tmodel_new(t) =
 
 valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=0)$valnew('MW',i,r,t)] =
     sum{(v,allh)$[h_stress_t(allh,t)$valinv(i,v,r,t)],
-    (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)])
+    (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)]
+     - STORAGE_IN_GRID.l(i,v,r,allh,t)$[hybrid_plant(i)$(not csp(i))])
     * reqt_price('res_marg','na',r,allh,t)} * valnew('inv_cap_ratio',i,r,t) ;
 * New VRE for the CapCredit formulation is a special case in that new is distinct from old of the same vintage
 valnew('val_resmarg',i,r,t)$[(Sw_PRM_CapCredit=1)$vre(i)$valnew('MW',i,r,t)] =
     sum{ccseason, m_cc_mar(i,r,ccseason,t) * valnew('MW',i,r,t) * reqt_price('res_marg','na',r,ccseason,t)};
 valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=0)$valnew('MW',i,r,t)] =
     sum{(v,allh)$[h_stress_t(allh,t)$valinv(i,v,r,t)],
-    (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)])
+    (GEN.l(i,v,r,allh,t) - STORAGE_IN.l(i,v,r,allh,t)$[storage_standalone(i) or hyd_add_pump(i)]
+     - STORAGE_IN_GRID.l(i,v,r,allh,t)$[hybrid_plant(i)$(not csp(i))])
     * reqt_price_sys('res_marg','na',allh,t)} * valnew('inv_cap_ratio',i,r,t) ;
 valnew('val_resmarg_sys',i,r,t)$[(Sw_PRM_CapCredit=1)$vre(i)$valnew('MW',i,r,t)] =
     sum{ccseason, m_cc_mar(i,r,ccseason,t) * valnew('MW',i,r,t) * reqt_price_sys('res_marg','na',ccseason,t)} ;
@@ -1204,9 +1274,11 @@ valnew('val_rps','benchmark','sys',t)$tmodel_new(t) =
 emit_r(etype,e,r,t)$tmodel_new(t) = 
 
 * Emissions from generation
+* (hybrid plants use GEN_PLANT to match eq_emit_accounting: emissions follow fuel burn)
     sum{(i,v,h)$[valgen(i,v,r,t)$h_rep(h)],
         hours(h) * emit_rate(etype,e,i,v,r,t)
-        * (GEN.l(i,v,r,h,t)
+        * (GEN.l(i,v,r,h,t)$[not hybrid_plant(i)$(not csp(i))]
+           + GEN_PLANT.l(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
            + CCSFLEX_POW.l(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
        }
 
@@ -1236,14 +1308,18 @@ emit_nat(etype,eall,t)$tmodel_new(t) = sum{r, emit_r(etype,eall,r,t) } ;
 * Generation emissions by tech and region
 emit_irt(etype,e,i,r,t)$[tmodel_new(t)$(not sameas(e,"CO2"))$valgen_irt(i,r,t)] = 
     sum{(v,h)$[valgen(i,v,r,t)],
-         hours(h) * emit_rate(etype,e,i,v,r,t) * GEN.l(i,v,r,h,t) } ;
+         hours(h) * emit_rate(etype,e,i,v,r,t)
+         * (GEN.l(i,v,r,h,t)$[not hybrid_plant(i)$(not csp(i))]
+            + GEN_PLANT.l(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]) } ;
 * Production-related emissions by tech and region
 emit_irt(etype,e,i,r,t)$[tmodel_new(t)$(not sameas(e,"CO2"))$sum{p, i_p(i,p)}] =
          sum{(p,v,h)$i_p(i,p),
          hours(h) * prod_emit_rate(etype,e,i,t) * PRODUCE.l(p,i,v,r,h,t) } ;
 * CO2 generation emissions by tech and region
 emit_irt(etype,"CO2",i,r,t)$[tmodel_new(t)$valgen_irt(i,r,t)] = sum{(v,h)$[valgen(i,v,r,t)],
-         hours(h) * emit_rate(etype,"CO2",i,v,r,t) * GEN.l(i,v,r,h,t) } ;
+         hours(h) * emit_rate(etype,"CO2",i,v,r,t)
+         * (GEN.l(i,v,r,h,t)$[not hybrid_plant(i)$(not csp(i))]
+            + GEN_PLANT.l(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]) } ;
 * CO2 production-related emissions by tech and region
 emit_irt(etype,"CO2",i,r,t)$[tmodel_new(t)$sum{p, i_p(i,p)}] =
          sum{(p,v,h)$i_p(i,p),
@@ -1300,8 +1376,10 @@ systemcost_techba("inv_investment_capacity_costs",i,r,t)$tmodel_new(t) =
               sum{v$valinv(i,v,r,t),
                    INV.l(i,v,r,t) * (cost_cap_fin_mult_noITC(i,r,t) * cost_cap(i,t) ) }
 *plus investment energy costs (without the subtraction of any ITC/PTC value)
-              + sum{v$[valinv(i,v,r,t)$battery(i)],
+            + sum{v$[valinv(i,v,r,t)$(battery(i) or tes(i))$(not storage_hybrid(i))],
                    INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult_noITC(i,r,t) * cost_cap_energy(i,t) ) }
+            + sum{v$[valinv(i,v,r,t)$storage_hybrid(i)],
+                INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult_storage_hybrid_s_noITC(i,r,t) * cost_cap_energy(i,t) ) }
 *plus supply curve adjustment to capital cost (separated in outputs but part of m_rsc_dat(r,i,rscbin,"cost"))
               + sum{(v,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)$[not sccapcosttech(i)]$(not spur_techs(i))],
                    INV_RSC.l(i,v,r,rscbin,t) * m_rsc_dat(r,i,rscbin,"cost_cap") * rsc_fin_mult_noITC(i,r,t) }
@@ -1341,8 +1419,10 @@ systemcost_techba("inv_itc_payments_negative",i,r,t)$tmodel_new(t) =
                 sum{v$valinv(i,v,r,t),
                    INV.l(i,v,r,t) * (cost_cap_fin_mult_out(i,r,t) * cost_cap(i,t) ) }
 *energy investment costs (including reduction from ITC)
-              + sum{v$[valinv(i,v,r,t)$battery(i)],
+            + sum{v$[valinv(i,v,r,t)$(battery(i) or tes(i))$(not storage_hybrid(i))],
                    INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult_out(i,r,t) * cost_cap_energy(i,t) ) }
+            + sum{v$[valinv(i,v,r,t)$storage_hybrid(i)],
+                INV_ENERGY.l(i,v,r,t) * (cost_cap_fin_mult_storage_hybrid_s(i,r,t) * cost_cap_energy(i,t) ) }
 *plus supply curve adjustment to capital cost (separated in outputs but part of m_rsc_dat(r,i,rscbin,"cost"))
               + sum{(v,rscbin)$[m_rscfeas(r,i,rscbin)$valinv(i,v,r,t)$rsc_i(i)$[not sccapcosttech(i)]$(not spur_techs(i))],
                    INV_RSC.l(i,v,r,rscbin,t) * m_rsc_dat(r,i,rscbin,"cost_cap") * rsc_fin_mult(i,r,t) }
@@ -1402,9 +1482,26 @@ systemcost_techba("inv_investment_water_access",i,r,t)$tmodel_new(t) =
 * DOES NOT INCLUDE COSTS NOT INDEXED BY TECH (e.g., ACP COMPLIANCE)
 
 systemcost_techba("op_vom_costs",i,r,t)$tmodel_new(t)  =
-*variable O&M costs
-              sum{(v,h)$[valgen(i,v,r,t)$cost_vom(i,v,r,t)],
+*variable O&M costs (same guard as the objective: all techs except non-CSP
+*hybrids, whose VOM is billed on the GEN_PLANT/GEN_STORAGE terms below)
+              sum{(v,h)$[valgen(i,v,r,t)$cost_vom(i,v,r,t)$(not hybrid_plant(i)$(not csp(i)))],
                    hours(h) * cost_vom(i,v,r,t) * GEN.l(i,v,r,h,t) }
+
+* pvb plant-side VOM (uses GEN_PLANT, matching objective function)
+              + sum{(v,h)$[valgen(i,v,r,t)$cost_vom_pvb_p(i,v,r,t)$pvb(i)],
+                   hours(h) * cost_vom_pvb_p(i,v,r,t) * GEN_PLANT.l(i,v,r,h,t) }$Sw_HybridPlant
+
+* pvb battery-side VOM (uses GEN_STORAGE, matching objective function)
+              + sum{(v,h)$[valgen(i,v,r,t)$cost_vom_pvb_b(i,v,r,t)$pvb(i)],
+                   hours(h) * cost_vom_pvb_b(i,v,r,t) * GEN_STORAGE.l(i,v,r,h,t) }$Sw_HybridPlant
+
+* storage_hybrid plant-side VOM (uses GEN_PLANT, matching objective function)
+              + sum{(v,h)$[valgen(i,v,r,t)$cost_vom(i,v,r,t)$storage_hybrid(i)],
+                   hours(h) * cost_vom(i,v,r,t) * GEN_PLANT.l(i,v,r,h,t) }$Sw_HybridPlant
+
+* storage_hybrid storage-side VOM (uses GEN_STORAGE, matching objective function)
+              + sum{(v,h)$[valgen(i,v,r,t)$cost_vom_storage_hybrid_s(i,v,r,t)$storage_hybrid(i)],
+                   hours(h) * cost_vom_storage_hybrid_s(i,v,r,t) * GEN_STORAGE.l(i,v,r,h,t) }$Sw_HybridPlant
 
 * include production costs from production technologies
               + sum{(p,v,h)$[(h2(i) or dac(i))$valcap(i,v,r,t)$i_p(i,p)],
@@ -1418,6 +1515,10 @@ systemcost_techba("op_fom_costs",i,r,t)$tmodel_new(t)  =
 *fixed O&M costs for generation capacity
               + sum{v$[valcap(i,v,r,t)$((not one_newv(i)) or retiretech(i,v,r,t))],
                    cost_fom(i,v,r,t) * cap_ivrt(i,v,r,t) * ilr(i) }
+*energy-capacity FOM for all techs billed on CAP_ENERGY in the objective
+*(cap_energy_ivrt is CAP_ENERGY in MWh, so no ILR conversion)
+            + sum{v$[valcap(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))$((not one_newv(i)) or retiretech(i,v,r,t))],
+                cost_fom_energy(i,v,r,t) * cap_energy_ivrt(i,v,r,t) }
 *for technologies with only one newv that are not allowed to retire,
 *use the investments rather than the capacity to calculate FOM costs
               + sum{(v,tt)$[inv_cond(i,v,r,t,tt)$one_newv(i)$(not retiretech(i,v,r,tt))],
@@ -1437,10 +1538,13 @@ systemcost_techba("op_operating_reserve_costs",i,r,t)$tmodel_new(t)  =
 
 systemcost_techba("op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
 *cost of coal and nuclear fuel (except coal used for cofiring)
+*for storage_hybrid, only the plant side burns fuel (use GEN_PLANT, matching objective function)
               + sum{(v,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
-                         $(not gas(i))$(not bio(i))$(not cofire(i))
+                         $(not gas(i))$(not storage_hybrid_gas(i))$(not bio(i))$(not cofire(i))
                          $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(i,v,r,h,t) 
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t)
+                   * ( GEN.l(i,v,r,h,t)$(not storage_hybrid(i))
+                     + GEN_PLANT.l(i,v,r,h,t)$storage_hybrid(i) )
                 }$(not tfinito_all(t))
 
 
@@ -1461,8 +1565,12 @@ systemcost_techba("op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
 
 systemcost_techba("op_emissions_taxes",i,r,t)$tmodel_new(t)  =
 *plus any taxes on emissions
+*for storage_hybrid, only the plant side emits (use GEN_PLANT, matching objective function)
               sum{(e,v,h)$[valgen(i,v,r,t)],
-                    hours(h) * (emit_rate("process",e,i,v,r,t) + emit_rate("upstream",e,i,v,r,t)$Sw_Upstream) * GEN.l(i,v,r,h,t) * emit_tax(e,r,t) }
+                    hours(h) * (emit_rate("process",e,i,v,r,t) + emit_rate("upstream",e,i,v,r,t)$Sw_Upstream)
+                    * ( GEN.l(i,v,r,h,t)$(not storage_hybrid(i))
+                      + GEN_PLANT.l(i,v,r,h,t)$storage_hybrid(i) )
+                    * emit_tax(e,r,t) }
 ;
 
 systemcost_techba("op_h2_fuel_costs",i,r,t)$tmodel_new(t)  =
@@ -1507,9 +1615,14 @@ systemcost_techba("op_co2_incentive_negative",i,r,t)$tmodel_new(t) =
 ;
 
 * PTC for generation
+* (same basis as the objective: gross GEN_PLANT for storage-hybrid wrappers,
+*  grid-charged energy netted out for pvb)
 systemcost_techba('op_ptc_payments_negative',i,r,t)$tmodel_new(t) =
     - sum{(v,h)$[valgen(i,v,r,t)$ptc_value_scaled(i,v,t)],
-          hours(h) * ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) * GEN.l(i,v,r,h,t) }
+          hours(h) * ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) *
+          (GEN.l(i,v,r,h,t)$[not (storage_hybrid(i)$Sw_HybridPlant)]
+           + GEN_PLANT.l(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant]
+           - STORAGE_IN_GRID.l(i,v,r,h,t)$[pvb(i)$Sw_PVB]) }
 ;
 
 * PTC value for hydrogen production
@@ -1773,6 +1886,11 @@ error_check('z') = (
         - pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$retiretech(i,v,r,t)$Sw_RetirePenalty],
             cost_fom(i,v,r,t) * retire_penalty(t)
             * (CAP.l(i,v,r,t) - INV.l(i,v,r,t) - INV_REFURB.l(i,v,r,t)$[refurbtech(i)$Sw_Refurb] - UPGRADES.l(i,v,r,t)$[upgrade(i)$Sw_Upgrades]) }
+* Retirement penalty on energy capacity (matches objective)
+        - pvf_onm(t) * sum{(i,v,r)$[valcap(i,v,r,t)$retiretech(i,v,r,t)$Sw_RetirePenalty
+                                   $(battery(i) or tes(i) or hybrid_plant(i))$cost_fom_energy(i,v,r,t)],
+            cost_fom_energy(i,v,r,t) * retire_penalty(t)
+            * (CAP_ENERGY.l(i,v,r,t) - INV_ENERGY.l(i,v,r,t)) }
 * Hurdle costs
         + pvf_onm(t) * sum{(r,rr,trtype)$cost_hurdle(r,rr,t), tran_hurdle_cost_ann(r,rr,trtype,t) }
 * Penalty cost for dropped/excess load before Sw_StartMarkets
@@ -1809,7 +1927,8 @@ error_check('z') = (
                   cost_cap(i,t) * INV.l(i,v,r,t)
                   * (cost_cap_fin_mult(i,r,t) - cost_cap_fin_mult_out(i,r,t)) }
 
-            + sum{(i,v,r)$[valinv(i,v,r,t)$battery(i)],
+* (storage-hybrid energy capital uses cost_cap_fin_mult_storage_hybrid_s in both, so it is excluded)
+            + sum{(i,v,r)$[valinv(i,v,r,t)$(battery(i) or tes(i))$(not storage_hybrid(i))],
                   cost_cap_energy(i,t) * INV_ENERGY.l(i,v,r,t)
                   * (cost_cap_fin_mult(i,r,t) - cost_cap_fin_mult_out(i,r,t)) }
                   

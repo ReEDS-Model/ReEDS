@@ -59,6 +59,14 @@ cost_cap:
 cost_cap_fin_mult:
   indexsets:
   - valinv
+cost_cap_fin_mult_storage_hybrid_s:
+  indexsets:
+  - valinv
+  - storage_hybrid
+cost_cap_energy("storage_hybrid"):
+  indexsets:
+  - valinv
+  - storage_hybrid
 cap_penalty:
   indexsets:
   - queue_limit
@@ -141,21 +149,36 @@ cost_vom:
 cost_vom_pvb_p:
   indexsets:
   - valgen
-  - storage_hybrid
+  - hybrid_plant
   excludesets:
   - csp
+  - storage_hybrid
 cost_vom_pvb_b:
   indexsets:
   - valgen
-  - storage_hybrid
+  - hybrid_plant
   excludesets:
   - csp
+  - storage_hybrid
+cost_vom_storage_hybrid_s:
+  indexsets:
+  - valgen
+  - storage_hybrid
 cost_fom:
   indexsets:
   - valcap
   excludesets:
   - canada
   - distpv
+cost_fom_energy("storage_hybrid"):
+  indexsets:
+  - valcap
+  - storage_hybrid
+# bcr scales storage-hybrid capital, FOM and storage capacity. gridcharge_ratio is not
+# checked because zero is a valid value, which GAMS does not store.
+bcr("storage_hybrid"):
+  indexsets:
+  - storage_hybrid
 transmission_line_fom:
   indexsets:
   - routes
@@ -188,6 +211,13 @@ heat_rate:
   - rsc_i
   - storage
   - canada
+# storage-hybrid wrappers are storage, so check the fuel-burning ones separately
+heat_rate("storage_hybrid"):
+  indexsets:
+  - valgen
+  - storage_hybrid_dispatchable
+  excludesets:
+  - rsc_i
 gasprice:
   indexsets:
   - r_cendiv

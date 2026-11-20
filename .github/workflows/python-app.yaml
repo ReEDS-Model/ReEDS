@@ -112,6 +112,8 @@ jobs:
             solve-year: 2060
           - scenario: github_MA_county_CC
             solve-year: 2030
+          - scenario: github_StorageHybrid
+            solve-year: 2030
     env:
       batch: test
     steps:
@@ -192,6 +194,10 @@ jobs:
           SCENARIO: ${{ matrix.scenario }}
         run: echo "RUN_FOLDER=$GITHUB_WORKSPACE/runs/${batch}_${SCENARIO}" >> "$GITHUB_ENV"
 
+      - name: Run storage-hybrid unit tests
+        if: matrix.scenario == 'github_StorageHybrid'
+        run: python -m pytest tests/test_storage_hybrid.py
+
       - name: Run ReEDS model
         env:
           SCENARIO: ${{ matrix.scenario }}
@@ -207,6 +213,14 @@ jobs:
         with:
           script: |
             core.setFailed('ReEDS run failed. Check log to diagnose.')
+
+      - name: Check that the storage-hybrid case builds wrappers
+        if: matrix.scenario == 'github_StorageHybrid'
+        run: |
+          grep -q '^storage-hybrid-' "$RUN_FOLDER/outputs/cap.csv" || {
+            echo "::error::github_StorageHybrid built no storage-hybrid wrappers, so CI skips their PRAS and reporting code. Lower GSw_StorageHybrid_CostMult in cases_test.csv."
+            exit 1
+          }
 
       - name: Run output validation tests
         env:

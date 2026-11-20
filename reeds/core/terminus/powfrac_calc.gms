@@ -27,6 +27,7 @@ Parameter totload(r,allh,t) "--MW-- load modified to include charging of storage
 totload(r,h,t)$[tmodel_new(t)] =
     load_exog(r,h,t) + can_exports_h(r,h,t)
   + sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN.l(i,v,r,h,t)}
+  + sum{(i,v)$[valcap(i,v,r,t)$hybrid_plant(i)$(not csp(i))], STORAGE_IN_GRID.l(i,v,r,h,t)}
   + sum{(rr,trtype)$routes(rr,r,trtype,t), tranloss(rr,r,trtype) * FLOW.l(rr,r,h,t,trtype)}
 ;
 
@@ -44,6 +45,8 @@ totgen(r,h,t)$tmodel_new(t) =
     load_exog(r,h,t) + can_exports_h(r,h,t)
 
   + sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN.l(i,v,r,h,t) }
+
+  + sum{(i,v)$[valcap(i,v,r,t)$hybrid_plant(i)$(not csp(i))], STORAGE_IN_GRID.l(i,v,r,h,t) }
 
   + sum{(rr,trtype)$routes(rr,r,trtype,t),
       + FLOW.l(r,rr,h,t,trtype)

@@ -5,6 +5,9 @@ battery_ATB_2023_moderate,2021
 battery_ATB_2024_advanced,2022
 battery_ATB_2024_conservative,2022
 battery_ATB_2024_moderate,2022
+tes_ATB_2024_advanced,2022
+tes_ATB_2024_conservative,2022
+tes_ATB_2024_moderate,2022
 beccs_BVRE_2021_high,2019
 beccs_BVRE_2021_low,2019
 beccs_BVRE_2021_mid,2019
@@ -40,8 +43,10 @@ geo_ATB_2023_moderate,2020
 geo_ATB_2024_advanced,2021
 geo_ATB_2024_conservative,2021
 geo_ATB_2024_moderate,2021
+flex_geo_placeholder,2022
 h2-combustion_ATB_2023,2021
 h2-combustion_ATB_2024,2022
+heater_sams_2020,2020
 nuclear_ATB_2024_advanced,2022
 nuclear_ATB_2024_conservative,2022
 nuclear_ATB_2024_moderate,2022

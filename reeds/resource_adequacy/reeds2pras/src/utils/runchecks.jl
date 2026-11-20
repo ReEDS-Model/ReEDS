@@ -20,6 +20,7 @@ function run_checks(data::ReEDSdatapaths)
         joinpath(reeds_data_path, "charge_eff_$(string(data.year)).csv"),
         joinpath(reeds_data_path, "discharge_eff_$(string(data.year)).csv"),
         joinpath(reeds_data_path, "energy_cap_$(string(data.year)).csv"),
+        joinpath(reeds_data_path, "hybrid_config_$(string(data.year)).csv"),
         joinpath(reeds_data_path, "max_cap_$(string(data.year)).csv"),
         joinpath(reeds_data_path, "max_unitsize_$(string(data.year)).csv"),
         joinpath(reeds_data_path, "pras_load_$(string(data.year)).h5"),

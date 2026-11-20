@@ -76,6 +76,8 @@ Costs are in the dollar year listed for that scenario in `dollaryear.csv` and ar
   - `evmc_shape_Baseline.csv`: EVMC resources that shift charging load in response to prices
   - `evmc_storage_Baseline.csv`: EVMC resources under direct load control, modeled like storage
 
+- `flex_geo_placeholder.csv`: Placeholder cost and performance for the in-reservoir geothermal storage techs (`flex_geo`, `flex_geo_high`, `flex_geo_med`, `flex_geo_low`). Costs are zero because storage-hybrid wrappers that use these techs take their storage-side power cost from the shared powerblock; selected by `plantchar_flex_geo`
+
 - `fuelcell_ATB_2024_*.csv`: Fuel cell cost and performance from the 2024 ATB; selected by `plantchar_fuelcell`
   - `fuelcell_ATB_2024_advanced.csv`: Advanced scenario
   - `fuelcell_ATB_2024_moderate.csv`: Moderate scenario
@@ -110,6 +112,8 @@ Costs are in the dollar year listed for that scenario in `dollaryear.csv` and ar
   - Derived from historical EIA generation and fuel use data
 
 - `heat_rate_penalty_spin.csv`: Heat rate penalty [fraction] incurred for providing spinning reserves, by technology
+
+- `heater_sams_2020.csv`: Capital cost [2020$/kW] of the resistive heater that lets a `tes_ms` storage-hybrid wrapper charge from the grid. `b_inputs.gms` adds `gridcharge_ratio` times this cost to the wrapper's capital cost; selected by `heaterscen`
 
 - `hydro_ATB_2019_*.csv`: Hydropower capital cost multiplier [unitless] by technology and year, relative to 2010, from the 2019 ATB; selected by `plantchar_hydro`
   - `hydro_ATB_2019_constant.csv`: Constant cost scenario
@@ -195,6 +199,13 @@ Costs are in the dollar year listed for that scenario in `dollaryear.csv` and ar
     - Nuclear: 155
   - RPM uses 466 $2011/MW for nuclear, but we don't have a citable source for that number
   - CCS startup costs are assumed to be the startup cost for the non-CCS version multiplied by the ratio of 2035 VOM costs between gas-cc-ccs and gas-cc in ATB 2023
+
+- `storage_hybrid_powerblock_share.csv`: Fraction [unitless] of a gen tech's capital cost that is the turbine-generator and electrical equipment (GN-COA accounts 23 and 24). The nuclear and nuclear-SMR values come from Table 6 of the ATB 2024 nuclear page, which is based on Abou-Jaoude et al. 2024 (INL/RPT-24-77048-Rev001, doi:10.2172/2371533). The geothermal value is the cost of oversizing the surface plant, 0.80 × 0.31: an oversized plant costs 80% as much per kW as the base plant (Ricks et al. 2022, doi:10.1016/j.apenergy.2022.118807, appendix B.6), and plant construction is 31% of EGS project spending (Augustine et al. 2019, NREL/TP-6A20-71833, table 5). A storage-hybrid wrapper shares this powerblock between generation and storage discharge, so `b_inputs.gms` uses the fraction to avoid paying for it twice. Gen techs without a row get 0
+
+- `tes_ATB_2024_*.csv`: Molten-salt thermal energy storage (`tes_ms`) cost and performance from the 2024 ATB, used as the storage tech of storage-hybrid wrappers; selected by `plantchar_tes`
+  - `tes_ATB_2024_advanced.csv`: Advanced scenario
+  - `tes_ATB_2024_conservative.csv`: Conservative scenario
+  - `tes_ATB_2024_moderate.csv`: Moderate scenario
 
 - `unitsize_atb.csv`: Representative unit size [MW] by technology with the source given per row, used by the resource adequacy module when `pras_unitsize_source = atb`
 

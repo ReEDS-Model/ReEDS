@@ -1,5 +1,6 @@
 i,years_per_step
 battery_li,0
+tes_ms,0
 biopower,5
 beccs_mod,5
 beccs_max,5
@@ -35,6 +36,10 @@ H2-CT,5
 H2-CC,5
 ng-fuel-cell,5
 geothermal,0
+flex_geo,0
+flex_geo_high,0
+flex_geo_med,0
+flex_geo_low,0
 Hydro,0
 lfill-gas,5
 Nuclear,5

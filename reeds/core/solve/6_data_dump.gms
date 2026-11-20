@@ -121,7 +121,7 @@ cap_exist_iv(i,v)$valcap_iv_filt(i,v) = sum{r, cap_exist(i,v,r) } ;
 cap_exist_i(i)$valcap_i_filt(i) = sum{(r,v), cap_exist(i,v,r) } ;
 
 cap_ivrt(i,v,r,t)$([not (upv(i) or wind(i) or distpv(i))]$valcap(i,v,r,t)$trange(t)) = CAP.l(i,v,r,t) ;
-cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = CAP_ENERGY.l(i,v,r,t) ;
+cap_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$(battery(i) or tes(i) or storage_hybrid(i))] = CAP_ENERGY.l(i,v,r,t) ;
 cap_ivrt(i,v,r,t)$([upv(i) or wind(i) or distpv(i)]$valcap(i,v,r,t)) =
     m_capacity_exog(i,v,r,t)$trange(t)
     + sum{tt$[inv_cond(i,v,r,t,tt)$trange(tt)],
@@ -129,7 +129,7 @@ cap_ivrt(i,v,r,t)$([upv(i) or wind(i) or distpv(i)]$valcap(i,v,r,t)) =
 cap_init(i,v,r)$([not distpv(i)]$valcap_ivr(i,v,r)) = sum{t$tcur(t), cap_ivrt(i,v,r,t)$initv(v) } ;
 cap_init(i,v,r)$(distpv(i)$valcap_ivr(i,v,r)) = sum{t$tfirst(t), cap_ivrt(i,v,r,t) } ;
 inv_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)] = [INV.l(i,v,r,t) + INV_REFURB.l(i,v,r,t)]$valinv(i,v,r,t) + UPGRADES.l(i,v,r,t)$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades] ;
-inv_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$battery(i)] = INV_ENERGY.l(i,v,r,t);
+inv_energy_ivrt(i,v,r,t)$[valcap(i,v,r,t)$trange(t)$(battery(i) or tes(i) or storage_hybrid(i))] = INV_ENERGY.l(i,v,r,t);
 inv_ivrt("distpv",v,r,t)$([trange(t)$(not tfirst(t))]$valcap("distpv",v,r,t)) = cap_ivrt("distpv",v,r,t) - sum{tt$tprev(t,tt), cap_ivrt("distpv",v,r,tt) } ;
 inv_ivrt("distpv","init-1",r,"%next_year%") = inv_distpv(r,"%next_year%") ;
 
@@ -194,6 +194,10 @@ repgasquant(cendiv,t)$[(Sw_GasCurve = 0 or Sw_GasCurve = 3)$tcur(t)] =
 repgasquant(cendiv,t)$[(Sw_GasCurve = 1 or Sw_GasCurve = 2)$tcur(t)] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
           hours(h) * heat_rate(i,v,r,t) * GEN.l(i,v,r,h,t)
+       }
+* storage-hybrid wrappers on gas gen techs burn gas on the plant side only
+  + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$storage_hybrid_gas(i)$heat_rate(i,v,r,t)],
+          hours(h) * heat_rate(i,v,r,t) * GEN_PLANT.l(i,v,r,h,t)
        } ;
 
 *============================
@@ -222,7 +226,7 @@ cost_cap_fin_mult_filt(i,r,t)$([storage_standalone(i)]) = cost_cap_fin_mult(i,r,
 cost_vom_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), cost_vom(i,v,r,t) } ;
 
 cf_adj_t_filt(i,v,t)$[cap_exist_iv(i,v)$trange(t)] = sum{c$i_c(i,c), cf_adj_t(i,c,v,t) } ;
-cf_adj_t_filt(i,v,"%next_year%") = sum{c$i_c(i,c), cf_adj_t(i,c,v,"%next_year%") }$(vre(i) or pvb(i)) ;
+cf_adj_t_filt(i,v,"%next_year%") = sum{c$i_c(i,c), cf_adj_t(i,c,v,"%next_year%") }$(vre(i) or pvb(i) or storage_hybrid_vre(i)) ;
 
 ctt_i_ii_filt(i,ii) = ctt_i_ii(i,ii)$cap_exist_i(i) ;
 
@@ -232,9 +236,9 @@ emit_rate_filt(e,i,v,r)$cap_exist(i,v,r) = sum{(t,etype)$tcur(t), emit_rate(etyp
 
 heat_rate_filt(i,v,r)$cap_exist(i,v,r) = sum{t$tcur(t), heat_rate(i,v,r,t) } ;
 
-inv_cond_filt(i,v,t)$[(vre(i) or pvb(i))$tnext(t)] = sum{(tt,r), inv_cond(i,v,r,tt,t) } ;
+inv_cond_filt(i,v,t)$[(vre(i) or pvb(i) or storage_hybrid_vre(i))$tnext(t)] = sum{(tt,r), inv_cond(i,v,r,tt,t) } ;
 
-m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i))$cap_exist(i,v,r)] = sum{(t,c)$[tnext(t)$i_c(i,c)], m_cf(i,c,v,r,h,t) } ;
+m_cf_filt(i,v,r,h)$[(vre(i) or pvb(i) or storage_hybrid_vre(i))$cap_exist(i,v,r)] = sum{(t,c)$[tnext(t)$i_c(i,c)], m_cf(i,c,v,r,h,t) } ;
 
 m_cf_szn_filt(i,v,r,szn)$[hydro(i)$cap_exist(i,v,r)] = sum{t$tcur(t), m_cf_szn(i,v,r,szn,t) } ;
 
@@ -392,6 +396,9 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     storage_duration
     storage_eff
     storage_eff_filt
+    storage_eff_storage_hybrid_g
+    storage_eff_storage_hybrid_p
+    storage_hybrid
     storage_standalone
     Sw_VSC
     szn

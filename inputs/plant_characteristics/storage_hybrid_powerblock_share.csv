@@ -1,0 +1,6 @@
+*i,powerblock_share
+nuclear,0.1024
+nuclear-smr,0.1332
+egs_allkm_1*egs_allkm_10,0.248
+geohydro_allkm_1*geohydro_allkm_10,0.248
+egs_nearfield_1*egs_nearfield_10,0.248

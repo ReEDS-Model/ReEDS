@@ -120,6 +120,24 @@ function get_vg_cf_data(data::ReEDSdatapaths)
 end
 
 """
+    Get the available plant output [MW] of storage-hybrid wrappers on VRE gen techs,
+    with one column per "wrapper|region". prep_data.py writes the file only when
+    such wrappers exist, so a missing file returns an empty DataFrame.
+"""
+function get_storage_hybrid_inflow_data(data::ReEDSdatapaths)
+    filepath = joinpath(
+        data.ReEDSfilepath,
+        "handoff",
+        "reeds_data",
+        "pras_storage_hybrid_inflow_$(string(data.year)).h5",
+    )
+    isfile(filepath) || return DataFrames.DataFrame()
+    columns = HDF5.h5read(filepath, "columns")
+    data = HDF5.h5read(filepath, "data")
+    return DataFrames.DataFrame(transpose(data), columns)
+end
+
+"""
     Get tech-dependent MTTR.
 
     Parameters
@@ -136,7 +154,7 @@ end
 function get_MTTR_data(data::ReEDSdatapaths)
     filepath = joinpath(data.ReEDSfilepath, "inputs_case", "mttr.csv")
     df = DataFrames.DataFrame(CSV.File(filepath))
-    return Dict(df[!, "tech"] .=> df[!, "hours"])
+    return Dict{String, Int64}(String.(df[!, "tech"]) .=> df[!, "hours"])
 end
 
 
@@ -383,6 +401,31 @@ function get_storage_energy_capacity_data(data::ReEDSdatapaths)
         "handoff",
         "reeds_data",
         "energy_cap_$(string(data.year)).csv",
+    )
+    return DataFrames.DataFrame(CSV.File(filepath))
+end
+
+"""
+    Returns the storage-hybrid wrapper configuration written by
+    resource_adequacy/prep_data.py (columns: i, gentech, stortech, bcr,
+    gridcharge_ratio, charge_eff). Header-only (empty) when the run
+    has no storage-hybrid techs.
+
+    Parameters
+    ----------
+    data : ReEDSdatapaths
+        Struct containing ReEDS filepaths and year
+
+    Returns
+    -------
+    DataFrames.DataFrame of the wrapper configs
+"""
+function get_storage_hybrid_config(data::ReEDSdatapaths)
+    filepath = joinpath(
+        data.ReEDSfilepath,
+        "handoff",
+        "reeds_data",
+        "hybrid_config_$(string(data.year)).csv",
     )
     return DataFrames.DataFrame(CSV.File(filepath))
 end

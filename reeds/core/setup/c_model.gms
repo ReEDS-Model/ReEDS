@@ -153,6 +153,8 @@ EQUATION
  eq_cap_init_retub(i,v,r,t)               "--MW-- Existing capacity that can be retired is less than or equal to exogenously-specified amount"
  eq_cap_new_noret(i,v,r,t)                "--MW-- New power capacity that cannot be retired is equal to sum of all previous years investment"
  eq_cap_energy_new_noret(i,v,r,t)         "--MWh-- New energy capacity that cannot be retired is equal to sum of all previous years investment"
+ eq_cap_energy_new_retub(i,v,r,t)         "--MWh-- New energy capacity that can be retired is less than or equal to all previous years investment"
+ eq_cap_energy_new_retmo(i,v,r,t)         "--MWh-- New energy capacity that can be retired must be monotonically decreasing unless increased by investment"
  eq_cap_new_retmo(i,v,r,t)                "--MW-- New capacity that can be retired must be monotonically decreasing unless increased by investment"
  eq_cap_new_retub(i,v,r,t)                "--MW-- New capacity that can be retired is less than or equal to all previous years investment"
  eq_cap_rsc(i,v,r,rscbin,t)               "--MW-- Capacity accounting for techs with exogenous capacity tracked by rscbin"
@@ -311,14 +313,17 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_storage_interday_max_level_start(i,v,r,allszn,t)      "--MWh-- enforce maximum SOC at first period of each partition"
  eq_storage_interday_max_level_end(i,v,r,allszn,t)        "--MWh-- enforce maximum SOC at last period of each partition"
  eq_storage_opres(i,v,r,allh,t)                   "--MWh-- there must be sufficient energy in the storage to be able to provide operating reserves"
- eq_storage_thermalres(i,v,r,allh,t)              "--MW-- thermal storage contribution to operating reserves is store_in only"
  eq_battery_minduration(i,v,r,t)                  "--MWh-- when power capacity is built, energy capacity should have a minimum capacity"
 
 * hybrid plant equations
- eq_plant_total_gen(i,v,r,allh,t)           "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
- eq_hybrid_plant_energy_limit(i,v,r,allh,t) "--MW-- PV energy to storage (no curtailment recovery) + PV energy to inverter <= PV resource"
- eq_plant_capacity_limit(i,v,r,allh,t)      "--MW-- energy moving through the inverter cannot exceed the inverter capacity"
- eq_pvb_itc_charge_reqt(i,v,r,t)            "--MWh-- total energy charged from local PV >= ITC qualification fraction * total energy charged"
+ eq_plant_total_gen(i,v,r,allh,t)                "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
+ eq_hybrid_plant_energy_limit(i,v,r,allh,t)      "--MW-- PV energy to storage (no curtailment recovery) + PV energy to inverter <= PV resource"
+ eq_plant_capacity_limit(i,v,r,allh,t)           "--MW-- energy moving through the inverter cannot exceed the inverter capacity"
+ eq_hybrid_storage_capacity_limit(i,v,r,allh,t)  "--MW-- storage charging/discharging cannot exceed storage capacity"
+ eq_hybrid_plant_storage_limit(i,v,r,allh,t)     "--MW-- storage charging from the plant cannot exceed plant generation"
+ eq_pvb_itc_charge_reqt(i,v,r,t)                 "--MWh-- total energy charged from local PV >= ITC qualification fraction * total energy charged"
+ eq_cap_storage_in_grid(i,v,r,allh,t)            "--MW-- storage charging from the grid cannot exceed the capacity of the storage system to charge from the grid"
+ eq_storage_hybrid_geo_storage_grid_only(i,v,r,allh,t) "--MW-- in-reservoir geo storage hybrids cannot charge from the coupled plant"
 
 * Canadian imports balance
  eq_Canadian_Imports(r,allszn,t)          "--MWh-- Balance of Canadian imports by season"
@@ -735,8 +740,9 @@ eq_cap_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(not upgrade(i))
 
 * ---------------------------------------------------------------------------
 
-eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_PCM)]..
-    
+eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$(battery(i) or tes(i) or hybrid_plant(i))
+                                 $(not retiretech(i,v,r,t))$(not Sw_PCM)]..
+
     sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
               degrade_new(i,tt,t) * (INV_ENERGY(i,v,r,tt))
         }
@@ -748,6 +754,52 @@ eq_cap_energy_new_noret(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$battery(i)$(not Sw_P
     + m_capacity_exog_energy(i,v,r,t)
 
     =e=
+
+    CAP_ENERGY(i,v,r,t)
+
+;
+
+* ---------------------------------------------------------------------------
+
+* Energy capacity for retirable techs (storage-hybrid wrappers under Sw_Retire):
+* the ub/mo pair mirrors eq_cap_new_retub/retmo so CAP_ENERGY can retire with the
+* plant instead of persisting forever (energy FOM then stops accruing). Storage
+* techs without a retirable power side (battery/tes standalone) never have
+* retiretech and stay on the strict-equality path above.
+eq_cap_energy_new_retub(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$(battery(i) or tes(i) or hybrid_plant(i))
+                                 $retiretech(i,v,r,t)$(not Sw_PCM)]..
+
+    sum{tt$[inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))$valcap(i,v,r,tt)],
+              degrade_new(i,tt,t) * INV_ENERGY(i,v,r,tt)
+        }
+
+    + m_capacity_exog_energy(i,v,r,t)
+
+    =g=
+
+    CAP_ENERGY(i,v,r,t)
+
+;
+
+* ---------------------------------------------------------------------------
+
+* NOTE: the m_capacity_exog_energy term makes energy retirement non-monotone
+* (retired exog energy could resurrect in a later year). Currently unreachable:
+* every tech with exogenous energy capacity (existing batteries, init-1) is in
+* noretire, so retiretech never selects an exog-energy tuple. Revisit if a
+* retirable tech ever carries exogenous energy capacity.
+eq_cap_energy_new_retmo(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$(battery(i) or tes(i) or hybrid_plant(i))
+                                 $retiretech(i,v,r,t)$(not Sw_PCM)]..
+
+    sum{tt$[tprev(t,tt)$valcap(i,v,r,tt)],
+         degrade_new(i,tt,t) * CAP_ENERGY(i,v,r,tt)
+        }
+
+    + INV_ENERGY(i,v,r,t)$valinv(i,v,r,t)
+
+    + m_capacity_exog_energy(i,v,r,t)
+
+    =g=
 
     CAP_ENERGY(i,v,r,t)
 
@@ -967,7 +1019,7 @@ eq_forceprescription_energy(i,newv,r,t)
     $[tmodel(t)$force_prescribe(i,newv,r,t)$Sw_ForcePrescription
     $valinv(i,newv,r,t)
     $(not Sw_PCM)
-    $battery(i)]..
+    $(battery(i) or tes(i) or storage_hybrid(i))]..
 
 *energy capacity built in the current period or prior
         INV_ENERGY(i,newv,r,t)
@@ -978,8 +1030,13 @@ eq_forceprescription_energy(i,newv,r,t)
         prescribed_build_energy(i,newv,r,t)
 
 * plus any extra energy buildouts (no penalty here - used as free slack)
-* only on or after the first year the techs are available
-    + EXTRA_PRESCRIP_ENERGY(i,newv,r,t)$[yeart(t)>=firstyear(i)]
+* only on or after the first year the techs are available,
+* or when the tuple has a power prescription but no energy prescription
+* (e.g. a demonstration storage-hybrid plant prescribed in MW only) - without
+* the slack, this equality would force zero energy capacity while
+* eq_battery_minduration requires a nonzero minimum
+    + EXTRA_PRESCRIP_ENERGY(i,newv,r,t)$[(yeart(t)>=firstyear(i))
+                                         or (not prescribed_build_energy(i,newv,r,t))]
 ;
 
 * ---------------------------------------------------------------------------
@@ -1158,6 +1215,15 @@ eq_spurclip(x,h,t)
     =g=
 
     AVAIL_SITE(x,h,t)
+
+* plus the storage discharge capacity (bcr * CAP) of storage-hybrid wrappers at the site,
+* which shares the spur line but is not part of the site's available generation
+    + sum{(i,v,r,rscbin)
+          $[storage_hybrid(i)
+          $spurline_sitemap(i,r,rscbin,x)
+          $valcap(i,v,r,t)],
+          bcr(i) * CAP_RSC(i,v,r,rscbin,t)
+      }
 ;
 
 * ---------------------------------------------------------------------------
@@ -1177,10 +1243,12 @@ eq_spur_noclip(x,t)
 * must be >= to the wind/solar capacity installed at x
 * (Since PV capacity is in DC, we divide CAP_RSC [DC] by ILR [DC/AC] to get AC spur line capacity.
 *  ILR is 1 for all non-PV techs.)
+* (storage-hybrid wrappers add their storage discharge capacity, bcr * CAP)
     sum{(i,v,r,rscbin)
         $[spurline_sitemap(i,r,rscbin,x)
         $valcap(i,v,r,t)],
         CAP_RSC(i,v,r,rscbin,t) / ilr(i)
+        + (bcr(i) * CAP_RSC(i,v,r,rscbin,t))$storage_hybrid(i)
     }
 ;
 
@@ -1195,7 +1263,7 @@ eq_spur_noclip(x,t)
 eq_capacity_limit(i,v,r,h,t)
     $[tmodel(t)$valgen(i,v,r,t)
     $(not spur_techs(i))
-    $(not storage_standalone(i))$(not storage_hybrid(i)$(not csp(i)))$(not nondispatch(i))]..
+    $(not storage_standalone(i))$(not hybrid_plant(i)$(not csp(i)))$(not nondispatch(i))]..
     
 *total amount of dispatchable, non-hydro capacity
     avail(i,r,h)$[dispatchtech(i)$(not hydro_d(i))]
@@ -1251,10 +1319,13 @@ eq_capacity_limit_hybrid(r,h,t)
     =g=
 
 * is >= the actual generation and operating reserves from all the hybrid resources in that BA
+* (for storage-hybrid wrappers only the plant output draws on the site's resource;
+*  storage discharge does not)
     sum{(i,v)
         $[spur_techs(i)
         $valgen(i,v,r,t)],
-        GEN(i,v,r,h,t)
+        GEN(i,v,r,h,t)$[not (storage_hybrid(i)$Sw_HybridPlant)]
+        + GEN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant]
         + sum{ortype$[Sw_OpRes$opres_model(ortype)$reserve_frac(i,ortype)$opres_h(h)],
               OPRES(ortype,i,v,r,h,t)}
     }
@@ -1279,11 +1350,16 @@ eq_capacity_limit_nd(i,v,r,h,t)$[tmodel(t)$valgen(i,v,r,t)$nondispatch(i)]..
 
 * ---------------------------------------------------------------------------
 * Generation in each timeslice must be greater than mingen_fixed * available capacity
+* For dispatchable storage-hybrid configs, mingen tracks the gen tech's thermal output (GEN_PLANT)
+* rather than the net grid output (GEN). VRE storage-hybrid configs (and all non-storage-hybrid
+* techs) use GEN since mingen is not a meaningful constraint for variable resources.
 eq_mingen_fixed(i,v,r,h,t)
     $[Sw_MingenFixed$tmodel(t)$mingen_fixed(i)$valgen(i,v,r,t)
     $(yeart(t)>=Sw_StartMarkets)]..
 
-    GEN(i,v,r,h,t)
+    GEN(i,v,r,h,t)$(not storage_hybrid_dispatchable(i))
+
+    + GEN_PLANT(i,v,r,h,t)$storage_hybrid_dispatchable(i)
 
     =g=
 
@@ -1426,7 +1502,7 @@ eq_supply_demand_balance(r,h,t)$tmodel(t)..
     - sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN(i,v,r,h,t) }
 
 * [minus] energy into storage for hybrid+storage from grid
-    - sum{(i,v)$[valcap(i,v,r,t)$storage_hybrid(i)$(not csp(i))], STORAGE_IN_GRID(i,v,r,h,t) }$Sw_HybridPlant
+    - sum{(i,v)$[valcap(i,v,r,t)$hybrid_plant(i)$(not csp(i))], STORAGE_IN_GRID(i,v,r,h,t) }$Sw_HybridPlant
 
 * [plus] dropped/excess load ONLY if before Sw_StartMarkets
     + DROPPED(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
@@ -1508,9 +1584,14 @@ eq_ramping(i,r,h,hh,t)
 *generation must occur at some point during the szn (i.e., day)
 *in order to procure operating reserves from that resource
 *ORPRES for storage is limited by the storage capacity per the constraint "eq_storage_capacity"
+*storage-hybrid wrappers are excluded like standalone storage: their reserves are
+*storage-delivered and already limited by eq_storage_opres (energy backing incl.
+*reactor headroom) and eq_plant_capacity_limit (capacity envelope). Keying them
+*on net GEN here would forbid reserves in hours when the TES is net-charging.
 eq_ORCap_large_res_frac(ortype,i,v,r,h,t)
     $[tmodel(t)$valgen(i,v,r,t)$Sw_OpRes$opres_model(ortype)$opres_h(h)
-    $(reserve_frac(i,ortype)>0.5)$(not storage_standalone(i))$(not hyd_add_pump(i))]..
+    $(reserve_frac(i,ortype)>0.5)$(not storage_standalone(i))$(not hyd_add_pump(i))
+    $(not storage_hybrid(i)$Sw_HybridPlant)]..
 
 *the reserve_frac times...
     reserve_frac(i,ortype) * (
@@ -1531,7 +1612,8 @@ eq_ORCap_large_res_frac(ortype,i,v,r,h,t)
 *in which reserves are provided
 eq_ORCap_small_res_frac(ortype,i,v,r,h,t)
     $[tmodel(t)$valgen(i,v,r,t)$Sw_OpRes$opres_model(ortype)$opres_h(h)
-    $(reserve_frac(i,ortype)<=0.5)$reserve_frac(i,ortype)]..
+    $(reserve_frac(i,ortype)<=0.5)$reserve_frac(i,ortype)
+    $(not storage_hybrid(i)$Sw_HybridPlant)]..
 
 *generation
     GEN(i,v,r,h,t)
@@ -1644,7 +1726,7 @@ eq_cap_sdbin_balance(i,v,r,ccseason,t)
 
 * energy capacity must be greater than the binned value
 eq_cap_sdbin_energy_balance(i,v,r,ccseason,t)
-    $[tmodel(t)$valcap(i,v,r,t)$battery(i)$Sw_PRM_CapCredit]..
+    $[tmodel(t)$valcap(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))$Sw_PRM_CapCredit]..
 
 *total capacity in each region
     CAP_ENERGY(i,v,r,t)
@@ -1660,7 +1742,7 @@ eq_cap_sdbin_energy_balance(i,v,r,ccseason,t)
 * for each bin, binned energy capacity must equal to binned power capacity
 * times bin duration
 eq_sdbin_power_energy_link(i,v,r,ccseason,sdbin,t)
-    $[tmodel(t)$valcap(i,v,r,t)$battery(i)$Sw_PRM_CapCredit]..
+    $[tmodel(t)$valcap(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))$Sw_PRM_CapCredit]..
 
 *binned energy capacity
     CAP_SDBIN_ENERGY(i,v,r,ccseason,sdbin,t)
@@ -1687,9 +1769,16 @@ eq_sdbin_power_limit(ccreg,ccseason,sdbin,t)$[tmodel(t)$Sw_PRM_CapCredit]..
         }
 
 *[plus] hybrid storage capacity in each sdbin adjusted by the appropriate CC value and the hybrid derate factor
+*       Includes PVB and any storage-hybrid configs whose gen tech is VRE (e.g., upv, wind-ons),
+*       since these share PVB-style capacity-credit derating tied to VRE availability.
     + sum{(i,v,r)$[r_ccreg(r,ccreg)
-                 $valcap(i,v,r,t)$storage_hybrid(i)$(not csp(i))],
+                 $valcap(i,v,r,t)$((hybrid_plant(i)$(not csp(i))$(not storage_hybrid(i))) or storage_hybrid_vre(i))],
           CAP_SDBIN(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin) * hybrid_cc_derate(i,r,ccseason,sdbin,t)
+          }
+
+*[plus] dispatchable hybrid plant storage capacity in each sdbin (no VRE-availability derate)
+    + sum{(i,v,r)$[r_ccreg(r,ccreg)$valcap(i,v,r,t)$storage_hybrid_dispatchable(i)],
+          CAP_SDBIN(i,v,r,ccseason,sdbin,t) * cc_storage(i,sdbin)
           }
 ;
 
@@ -1714,26 +1803,41 @@ eq_reserve_margin(r,ccseason,t)
 
 *[plus] firm capacity from existing VRE or CSP
 *only used in sequential solve case (otherwise cc_old = 0)
-    + sum{i$[(vre(i) or csp(i) or pvb(i))$(not forced_retire(i,r,t))],
+    + sum{i$[(vre(i) or csp(i) or pvb(i) or storage_hybrid_vre(i))$(not forced_retire(i,r,t))],
           cc_old(i,r,ccseason,t)
          }
 
 *[plus] marginal capacity credit of VRE and csp times new investment
 *only used in sequential solve case (otherwise m_cc_mar = 0)
 *Note: new distpv is included with cc_old
-    + sum{(i,v)$[(vre(i) or csp(i) or pvb(i))$valinv(i,v,r,t)$(not forced_retire(i,r,t))],
+    + sum{(i,v)$[(vre(i) or csp(i) or pvb(i) or storage_hybrid_vre(i))$valinv(i,v,r,t)$(not forced_retire(i,r,t))],
           m_cc_mar(i,r,ccseason,t) * (INV(i,v,r,t) + INV_REFURB(i,v,r,t)$[refurbtech(i)$Sw_Refurb])
          }
 
 *[plus] firm capacity contribution from all binned storage capacity
-*battery and pumped-hydro
+*battery, pumped-hydro, and CAES
 *excludes hydro upgraded to add pumps
     + sum{(i,v,sdbin)$[(storage_standalone(i) or hyd_add_pump(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
           cc_storage(i,sdbin) * CAP_SDBIN(i,v,r,ccseason,sdbin,t)
          }
 *hybrid PV+battery
-    + sum{(i,v,sdbin)$[storage_hybrid(i)$(not csp(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
+    + sum{(i,v,sdbin)$[(pvb(i) or storage_hybrid_vre(i))$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
           cc_storage(i,sdbin) * hybrid_cc_derate(i,r,ccseason,sdbin,t) * CAP_SDBIN(i,v,r,ccseason,sdbin,t)
+         }
+
+*hybrid dispatchable+storage (no VRE-availability derate)
+    + sum{(i,v,sdbin)$[storage_hybrid_dispatchable(i)$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
+          cc_storage(i,sdbin) * CAP_SDBIN(i,v,r,ccseason,sdbin,t)
+         }
+
+*[plus] firm capacity from the dispatchable generation side of storage-hybrid plants
+*the storage side is credited through CAP_SDBIN above; eq_plant_capacity_limit allows
+*(1 + bcr)*CAP of simultaneous grid delivery, so the two terms together stay within
+*the plant's deliverable capacity (gen <= CAP, storage discharge <= bcr*CAP)
+    + sum{(i,v)$[storage_hybrid_dispatchable(i)$valcap(i,v,r,t)$(not forced_retire(i,r,t))],
+          CAP(i,v,r,t)
+          * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))
+          * (1 - mean_forced_outage_rate(i,r,ccseason,t))
          }
 
 *[plus] average capacity credit times capacity of VRE and storage
@@ -2005,7 +2109,9 @@ eq_POI_cap(r,t)
     =g=
 
 * must be greater than the sum of all generation capacity [AC] without explicit spur lines...
-    sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))], CAP(i,v,r,t) / ilr(i) }
+* (storage-hybrid wrappers can inject plant output plus storage discharge, bcr * CAP)
+    sum{(i,v)$[valcap(i,v,r,t)$(not spur_techs(i))],
+        CAP(i,v,r,t) / ilr(i) + (bcr(i) * CAP(i,v,r,t))$storage_hybrid(i) }
 * and spur-line capacity if explicitly tracked (use total capacity, not just new investments,
 * to make sure we account for the existing spur line capacity already included in poi_cap_init)...
     + sum{x$[xfeas(x)$x_r(x,r)$Sw_SpurScen], CAP_SPUR(x,t) }
@@ -2381,9 +2487,12 @@ eq_emit_accounting(etype,e,r,t)$[emit_modeled(e,r,t)$tmodel(t)]..
 
     =e=
 
+*for hybrid plants emissions follow fuel burn (GEN_PLANT), not net output (GEN):
+*storage round-trip losses are combusted fuel too
     sum{(i,v,h)$[valgen(i,v,r,t)$h_rep(h)],
         hours(h) * emit_rate(etype,e,i,v,r,t)
-        * (GEN(i,v,r,h,t)
+        * (GEN(i,v,r,h,t)$[not hybrid_plant(i)$(not csp(i))]
+           + GEN_PLANT(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
            + CCSFLEX_POW(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)])
        }
 
@@ -2457,9 +2566,11 @@ eq_CSAPR_Budget(csapr_group,t)$[Sw_CSAPR$tmodel(t)$(yeart(t)>=csapr_startyr)]..
     =g=
 
 *must exceed the summed-over-state hourly-weighted nox emissions by csapr group
+*(storage-hybrid wrappers emit on the plant side only)
     sum{st$csapr_group_st(csapr_group,st),
       sum{(i,v,h,r)$[r_st(r,st)$valgen(i,v,r,t)$h_rep(h)],
-         h_weight_csapr(h) * hours(h) * emit_rate("process","NOX",i,v,r,t) * GEN(i,v,r,h,t)
+         h_weight_csapr(h) * hours(h) * emit_rate("process","NOX",i,v,r,t)
+         * ( GEN(i,v,r,h,t)$(not storage_hybrid(i)) + GEN_PLANT(i,v,r,h,t)$storage_hybrid(i) )
        }
       }
 ;
@@ -2478,7 +2589,8 @@ eq_CSAPR_Assurance(st,t)$[stfeas(st)$(yeart(t)>=csapr_startyr)
 
 *must exceed the csapr-hourly-weighted nox emissions by state
     sum{(i,v,h,r)$[r_st(r,st)$valgen(i,v,r,t)$h_rep(h)],
-      h_weight_csapr(h) * hours(h) * emit_rate("process","NOX",i,v,r,t) * GEN(i,v,r,h,t)
+      h_weight_csapr(h) * hours(h) * emit_rate("process","NOX",i,v,r,t)
+      * ( GEN(i,v,r,h,t)$(not storage_hybrid(i)) + GEN_PLANT(i,v,r,h,t)$storage_hybrid(i) )
     }
 ;
 
@@ -2553,8 +2665,10 @@ eq_cdr_cap(t)
 
 *Under the Clean Air Act Section 111, new gas plants (CCs or CTs) can operate above caa_gas_max_cf percent before caa_coal_retire_year 
 *During and after caa_coal_retire_year, they need to either A) operate at <= caa_gas_max_cf percent CF, B) upgrade with CCS or C) retire
+*Storage-hybrid wrappers on gas gen techs are limited on their plant-side generation
 eq_caa_max_cf(i,v,r,t)$[tmodel(t)$valgen(i,v,r,t)
-                        $gas(i)$(not ccs(i))
+                        $(gas(i) or storage_hybrid_gas(i))$(not ccs(i))
+                        $(not sum{ii$storage_hybrid_gentech(i,ii), ccs(ii) })
                         $heat_rate(i,v,r,t)
                         $(firstyear_v(i,v)>=caa_first_year)
                         $(yeart(t)>=caa_coal_retire_year)
@@ -2567,7 +2681,8 @@ eq_caa_max_cf(i,v,r,t)$[tmodel(t)$valgen(i,v,r,t)
     =g=
 
 *must exceed total annual generation
-    sum{h$h_rep(h), hours(h) * GEN(i,v,r,h,t)}
+    sum{h$h_rep(h), hours(h) * ( GEN(i,v,r,h,t)$(not storage_hybrid(i))
+                                + GEN_PLANT(i,v,r,h,t)$storage_hybrid(i) ) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -2608,11 +2723,15 @@ eq_REC_Generation(RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
 *hydro is the only technology adjusted by RPSTechMult
 *because GEN can only generate a H2 PTC credit or a REC, not both, subtract out the generation which produces a hydrogen PTC credit
 *because GEN from pvb(i) includes grid charging, subtract out its grid charging
+*storage-hybrid wrappers are credited on gross generator output (GEN_PLANT),
+*matching a standalone generator with separately-metered storage; grid-charged
+*energy never enters GEN_PLANT so no STORAGE_IN_GRID netting is needed
     + sum{(v,r,h)$[valgen(i,v,r,t)$r_st(r,st)$h_rep(h)],
           RPSTechMult(RPSCat,i,st) * hours(h)
-          * (GEN(i,v,r,h,t) 
-          - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC] 
-          - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] )
+          * (GEN(i,v,r,h,t)$[not (storage_hybrid(i)$Sw_HybridPlant)]
+          + GEN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant]
+          - CREDIT_H2PTC(i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC]
+          - STORAGE_IN_GRID(i,v,r,h,t)$[pvb(i)$Sw_PVB])
          }
 
      =g=
@@ -2686,7 +2805,8 @@ eq_REC_Requirement(RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(not tfirst(t))
 *subtract out its grid charging (see eq_REC_Generation above).
       + ( sum{(i,v)$[valgen(i,v,r,t)$(not storage_standalone(i))], GEN(i,v,r,h,t)
           - (distloss * GEN(i,v,r,h,t))$(distpv(i))
-          - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] }
+          - STORAGE_IN_GRID(i,v,r,h,t)$[pvb(i)$Sw_PVB]
+          - STORAGE_IN_GRID(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant]}
           - can_exports_h(r,h,t)$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
         )$(RecStyle(st,RPSCat)=2)
     )}
@@ -2807,8 +2927,8 @@ eq_RPS_OFSWind(st,t)$[tmodel(t)$stfeas(st)$offshore_cap_req(st,t)$Sw_StateRPS
 * existing capacity of wind
     sum{(i,v,r)$[r_st(r,st)$ofswind(i)], m_capacity_exog(i,v,r,t) }
 
-* investments over time
-    + sum{(i,v,r,tt)$[r_st(r,st)$ofswind(i)$inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))],
+* investments over time (wrappers on offshore wind count their turbines)
+    + sum{(i,v,r,tt)$[r_st(r,st)$(ofswind(i) or storage_hybrid_ofswind(i))$inv_cond(i,v,r,t,tt)$(tmodel(tt) or tfix(tt))],
           INV(i,v,r,tt) + INV_REFURB(i,v,r,tt)$[refurbtech(i)$Sw_Refurb] }
 
     =g=
@@ -2824,7 +2944,8 @@ eq_batterymandate(st,t)
     $Sw_BatteryMandate
     $(not Sw_PCM)]..
 *battery capacity
-    sum{(i,v,r)$[r_st(r,st)$valcap(i,v,r,t)$(battery(i) or pvb(i))], bcr(i) * CAP(i,v,r,t) }
+    sum{(i,v,r)$[r_st(r,st)$valcap(i,v,r,t)$(battery(i) or pvb(i) or storage_hybrid_battery(i))],
+        bcr(i) * CAP(i,v,r,t) }
 
     =g=
 
@@ -2882,6 +3003,10 @@ eq_gasused(cendiv,h,t)$[tmodel(t)$(not tfinito_all(t))$((Sw_GasCurve=0) or (Sw_G
     sum{(i,v,r)$[valgen(i,v,r,t)$gas(i)$r_cendiv(r,cendiv)],
          heat_rate(i,v,r,t) * (GEN(i,v,r,h,t) + CCSFLEX_POW(i,v,r,h,t)$[ccsflex(i)$(Sw_CCSFLEX_BYP OR Sw_CCSFLEX_STO OR Sw_CCSFLEX_DAC)]) } / gas_scale
 
+*storage-hybrid wrappers on gas gen techs burn gas on the plant side only
+    + sum{(i,v,r)$[valgen(i,v,r,t)$storage_hybrid_gas(i)$r_cendiv(r,cendiv)],
+         heat_rate(i,v,r,t) * GEN_PLANT(i,v,r,h,t) } / gas_scale
+
     + (sum{(v,r)$[valcap("dac_gas",v,r,t)$r_cendiv(r,cendiv)],
          dac_gas_cons_rate("dac_gas",v,t) * PRODUCE("DAC","dac_gas",v,r,h,t) } / gas_scale)$Sw_DAC_Gas
 
@@ -2923,6 +3048,11 @@ eq_gasaccounting_regional(cendiv,t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve
     sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)$r_cendiv(r,cendiv)],
          hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t)
        }
+
+*storage-hybrid wrappers on gas gen techs burn gas on the plant side only
+    + sum{(i,v,r,h)$[valgen(i,v,r,t)$storage_hybrid_gas(i)$r_cendiv(r,cendiv)],
+         hours(h) * heat_rate(i,v,r,t) * GEN_PLANT(i,v,r,h,t)
+       }
 ;
 
 * ---------------------------------------------------------------------------
@@ -2935,6 +3065,11 @@ eq_gasaccounting_national(t)$[tmodel(t)$(not tfinito_all(t))$(Sw_GasCurve=1)]..
 
     sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)],
          hours(h) * heat_rate(i,v,r,t) * GEN(i,v,r,h,t)
+       }
+
+*storage-hybrid wrappers on gas gen techs burn gas on the plant side only
+    + sum{(i,v,r,h)$[valgen(i,v,r,t)$storage_hybrid_gas(i)],
+         hours(h) * heat_rate(i,v,r,t) * GEN_PLANT(i,v,r,h,t)
        }
 ;
 
@@ -3010,30 +3145,32 @@ eq_storage_capacity(i,v,r,h,t)$[valgen(i,v,r,t)
     $(storage_standalone(i)$(not evmc_storage(i))
         or evmc_storage(i)
             $[evmc_storage_charge_frac(i,r,h,t)$evmc_storage_discharge_frac(i,r,h,t)]
-        or storage_hybrid(i)$(not csp(i)))
+        or hybrid_plant(i)$(not csp(i)))
     $tmodel(t)]..
 
 * [plus] Capacity of all storage technologies
+* (storage-hybrid wrapper TES discharges through the shared powerblock, so plant
+*  availability and the seasonal capacity swing apply to it like any other storage)
     (CAP(i,v,r,t) * bcr(i) * avail(i,r,h)
        * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
-    )$valcap(i,v,r,t)
+    )$[valcap(i,v,r,t)]
 
     =g=
 
 * [plus] Generation from storage, excluding hybrid+storage and adjusting evmc_storage for time-varying discharge (deferral) availability
-    GEN(i,v,r,h,t)$(not storage_hybrid(i)$(not csp(i))) / (1$(not evmc_storage(i)) + evmc_storage_discharge_frac(i,r,h,t)$evmc_storage(i))
+    GEN(i,v,r,h,t)$(not hybrid_plant(i)$(not csp(i))) / (1$(not evmc_storage(i)) + evmc_storage_discharge_frac(i,r,h,t)$evmc_storage(i))
 
 * [plus] Generation from battery of hybrid+storage
-    + GEN_STORAGE(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
+    + GEN_STORAGE(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
 
 * [plus] Storage charging
 * excludes hybrid plant+storage and adjusting evmc_storage for time-varying charge (add back deferred EV load) availability
-    + STORAGE_IN(i,v,r,h,t)$[not storage_hybrid(i)$(not csp(i))] / (1$(not evmc_storage(i)) + evmc_storage_charge_frac(i,r,h,t)$evmc_storage(i)) 
+    + STORAGE_IN(i,v,r,h,t)$[not hybrid_plant(i)$(not csp(i))] / (1$(not evmc_storage(i)) + evmc_storage_charge_frac(i,r,h,t)$evmc_storage(i)) 
    
 * hybrid+storage plant: plant generation
-    + STORAGE_IN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$dayhours(h)$Sw_HybridPlant]
+    + STORAGE_IN_PLANT(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
 * hybrid+storage plant: Grid generation
-    + STORAGE_IN_GRID(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
+    + STORAGE_IN_GRID(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
 
 * [plus] Operating reserves
     + sum{ortype$[Sw_OpRes$opres_model(ortype)$opres_h(h)],
@@ -3080,18 +3217,27 @@ eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
 *[plus] energy into hybrid plant storage
 *hybrid+storage plant: plant charging
     + storage_eff_pvb_p(i,t) * hours_daily(h)
-      * STORAGE_IN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$dayhours(h)$Sw_HybridPlant]
+      * STORAGE_IN_PLANT(i,v,r,h,t)$[pvb(i)$Sw_HybridPlant]
 
 *hybrid+storage plant: grid charging
     + storage_eff_pvb_g(i,t) * hours_daily(h) 
-      * STORAGE_IN_GRID(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
+      * STORAGE_IN_GRID(i,v,r,h,t)$[pvb(i)$Sw_HybridPlant]
+
+*[plus] energy into storage-hybrid plant storage
+*storage-hybrid plant: plant charging
+    + storage_eff_storage_hybrid_p(i,t) * hours_daily(h)
+      * STORAGE_IN_PLANT(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant]
+
+*storage-hybrid plant: grid charging
+    + storage_eff_storage_hybrid_g(i,t) * hours_daily(h) 
+      * STORAGE_IN_GRID(i,v,r,h,t)$[storage_hybrid(i)$Sw_HybridPlant]
 
 *[minus] generation from stand-alone storage (discharge) and CSP
 *exclude hybrid+storage plant because GEN refers to output from both the plant and the battery
-    - hours_daily(h) * GEN(i,v,r,h,t)$[not storage_hybrid(i)$(not csp(i))]
+    - hours_daily(h) * GEN(i,v,r,h,t)$[not hybrid_plant(i)$(not csp(i))]
 
 *[minus] Generation from Battery (discharge) of hybrid+storage plant
-    - hours_daily(h) * GEN_STORAGE(i,v,r,h,t) $[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
+    - hours_daily(h) * GEN_STORAGE(i,v,r,h,t) $[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
 
 *[minus] losses from reg reserves (only half because only charging half
 *the time while providing reg reserves)
@@ -3106,16 +3252,25 @@ eq_storage_level(i,v,r,h,t)$[valgen(i,v,r,t)$storage(i)$tmodel(t)]..
 *there must be sufficient energy in storage to provide operating reserves
 eq_storage_opres(i,v,r,h,t)
     $[valgen(i,v,r,t)$tmodel(t)$Sw_OpRes$opres_h(h)
-    $(storage_standalone(i) or storage_hybrid(i)$(not csp(i)) or hyd_add_pump(i))]..
+*the exclusion protects CSP+TES (handled elsewhere); TES-paired storage-hybrid wrappers
+*are in thermal_storage(i) but must still back their reserves with stored energy
+    $(storage_standalone(i) or hybrid_plant(i)$(not csp(i)) or hyd_add_pump(i))]..
 
 *[plus] initial storage level
     STORAGE_LEVEL(i,v,r,h,t)
 
-*[minus] generation that occurs during this timeslice
-    - hours_daily(h) * GEN(i,v,r,h,t) $[not storage_hybrid(i)$(not csp(i))]
+*[plus] unused generator headroom of dispatchable storage-hybrid plants:
+*the coupled generator cannot run out of energy, so plant capability not
+*already dispatched in this timeslice backs reserves without pre-stored TES
+*energy (reserves are still delivered through the storage/powerblock)
+    + (hours_daily(h) * (avail(i,r,h) * CAP(i,v,r,t) - GEN_PLANT(i,v,r,h,t))
+      )$[storage_hybrid_dispatchable(i)$Sw_HybridPlant]
 
 *[minus] generation that occurs during this timeslice
-    - hours_daily(h) * GEN_STORAGE(i,v,r,h,t) $[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant]
+    - hours_daily(h) * GEN(i,v,r,h,t) $[not hybrid_plant(i)$(not csp(i))]
+
+*[minus] generation that occurs during this timeslice
+    - hours_daily(h) * GEN_STORAGE(i,v,r,h,t) $[hybrid_plant(i)$(not csp(i))$Sw_HybridPlant]
 
 *[minus] losses from reg reserves (only half because only charging half
 *the time while providing reg reserves)
@@ -3126,21 +3281,6 @@ eq_storage_opres(i,v,r,h,t)
 
 *[plus] energy reserved for operating reserves
     + hours_daily(h) * sum{ortype$opres_model(ortype), OPRES(ortype,i,v,r,h,t) }
-;
-
-* ---------------------------------------------------------------------------
-
-*storage charging must exceed OR contributions for thermal storage
-eq_storage_thermalres(i,v,r,h,t)
-    $[valgen(i,v,r,t)$Thermal_Storage(i)
-    $tmodel(t)$Sw_OpRes$opres_h(h)]..
-
-    STORAGE_IN(i,v,r,h,t)
-
-    =g=
-
-    sum{ortype$[opres_model(ortype)],
-        reserve_frac(i,ortype) * OPRES(ortype,i,v,r,h,t) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -3160,7 +3300,7 @@ eq_storage_duration(i,v,r,h,t)$[valgen(i,v,r,t)$valcap(i,v,r,t)
     + evmc_storage_energy_hours(i,r,h,t) * CAP(i,v,r,t) * (bcr(i)$evmc_storage(i))
 
 * [plus] battery storage capacity
-    + CAP_ENERGY(i,v,r,t)$battery(i)
+    + CAP_ENERGY(i,v,r,t)$(battery(i) or tes(i) or storage_hybrid(i))
 
     =g=
 
@@ -3205,13 +3345,22 @@ eq_storage_in_minloading(i,v,r,h,hh,t)$[(storage_standalone(i) or hyd_add_pump(i
 * ---------------------------------------------------------------------------
 * for batteries
 * when power capacity is built, energy capacity must be greater than the minimum duration
-eq_battery_minduration(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$battery(i)]..
+eq_battery_minduration(i,v,r,t)$[valcap(i,v,r,t)$tmodel(t)$newv(v)$(battery(i) or tes(i) or storage_hybrid(i))]..
 
     CAP_ENERGY(i,v,r,t)
 
     =g=
 
-    minbatteryduration * CAP(i,v,r,t)
+    CAP(i,v,r,t) * minbatteryduration$battery(i)
+
+*TES-paired storage-hybrid wrappers are in tes(i) but take the bcr-scaled
+*minimum below instead (otherwise the two terms stack)
+    + CAP(i,v,r,t) * mintesduration$[tes(i)$(not storage_hybrid(i))]
+
+*storage-hybrid wrappers take their storage class's minimum duration per MW of
+*storage power (bcr * CAP); geothermal reservoir storage has none
+    + CAP(i,v,r,t) * bcr(i) * minbatteryduration$storage_hybrid_battery(i)
+    + CAP(i,v,r,t) * bcr(i) * mintesduration$storage_hybrid_with_tes(i)
 ;
 
 * ---------------------------------------------------------------------------
@@ -3305,9 +3454,9 @@ eq_storage_interday_min_level_end(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_inter
 eq_storage_interday_max_level_start(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$numpartitions(allszn)]..
     
 * Fixed-duration storage
-    storage_duration_m(i,v,r) * CAP(i,v,r,t)$(not battery(i))
+    storage_duration_m(i,v,r) * CAP(i,v,r,t)$[not (battery(i) or storage_hybrid(i))]
 * Variable-duration storage
-    + CAP_ENERGY(i,v,r,t)$battery(i)
+    + CAP_ENERGY(i,v,r,t)$( battery(i) or storage_hybrid(i))
 
     =g=
     
@@ -3323,9 +3472,9 @@ eq_storage_interday_max_level_start(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_int
 * This is to make sure not only their hour 0 but also the highest point of the last period of each partition is greater than maximum capacity
 eq_storage_interday_max_level_end(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_interday(i)$tmodel(t)$numpartitions(allszn)]..
     
-    storage_duration_m(i,v,r) * CAP(i,v,r,t)$(not battery(i))
+    storage_duration_m(i,v,r) * CAP(i,v,r,t)$[not (battery(i) or storage_hybrid(i))]
 
-    + CAP_ENERGY(i,v,r,t)$battery(i)
+    + CAP_ENERGY(i,v,r,t)$( battery(i) or storage_hybrid(i))
 
     =g=
     
@@ -3348,50 +3497,73 @@ eq_storage_interday_max_level_end(i,v,r,allszn,t)$[valgen(i,v,r,t)$storage_inter
 
 *Generation post curtailment =
 *   + generation from hybrid storage plant + generation from storage - storage charging from hybrid storage plant
-eq_plant_total_gen(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$Sw_HybridPlant]..
+eq_plant_total_gen(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$Sw_HybridPlant]..
 
     + GEN_PLANT(i,v,r,h,t)
 
     + GEN_STORAGE(i,v,r,h,t)
 
 *[minus] charging from hybrid storage plant
-    - STORAGE_IN_PLANT(i,v,r,h,t)$dayhours(h)
+    - STORAGE_IN_PLANT(i,v,r,h,t)
 
     =e=
 
     GEN(i,v,r,h,t)
 ;
 
-* ---------------------------------------------------------------------------
-
 *Energy to storage from hybrid storage palnt + hybrid storage plant generation <= hybrid storage plant maximum production for a resource
-*capacity factor is adjusted to include inverter losses, clipping losses, and low voltage losses
-eq_hybrid_plant_energy_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
+*capacity factor is adjusted to include inverter losses, clipping losses, and low voltage losses.
+* For storage-hybrid configs paired with VRE gen techs (upv, wind-ons), the gen tech's
+* m_cf derates the available output. For configs paired with dispatchable gen techs
+* (nuclear, gas-cc, geothermal, etc.), output is derated by avail(i,r,h) (forced +
+* scheduled outage rates inherited from the gen tech), mirroring eq_capacity_limit for
+* standalone dispatchable techs and eq_mingen_fixed. Without this derate the plant could
+* dispatch at full nameplate every hour, reaching a ~100% capacity factor.
+eq_hybrid_plant_energy_limit(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
 * [plus] plant output
-    sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)
+    sum{c$i_c(i,c), m_cf(i,c,v,r,h,t) } * CAP(i,v,r,t)$(pvb(i) or storage_hybrid_vre(i))
+
+* seasonal capacity swing included so dispatch sees the same winter uprate the
+* reserve-margin constraint credits via ccseason_cap_frac_delta
+    + (avail(i,r,h) * CAP(i,v,r,t)
+       * (1 + sum{szn, h_szn(h,szn) * seas_cap_frac_delta(i,v,r,szn,t)})
+      )$storage_hybrid_dispatchable(i)
 
     =g=
-
-*[plus] charging from hybrid plant
-    + STORAGE_IN_PLANT(i,v,r,h,t)$dayhours(h)
 
 *[plus] generation from hybrid plant
     + GEN_PLANT(i,v,r,h,t)
 ;
 
-* ---------------------------------------------------------------------------
+*storage_in_plant must be less than gen_plant
+eq_hybrid_plant_storage_limit(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
+    GEN_PLANT(i,v,r,h,t)
+
+    =g=
+
+    STORAGE_IN_PLANT(i,v,r,h,t)
+;
+
+* ---------------------------------------------------------------------------
 *Energy moving through the inverter cannot exceed the inverter capacity
-eq_plant_capacity_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
+eq_plant_capacity_limit(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
 
 *[plus] inverter capacity [AC] = panel capacity [DC] / ILR [DC/AC]
-    + CAP(i,v,r,t) / ilr(i)
+    + CAP(i,v,r,t)$pvb(i) / ilr(i)
+    + CAP(i,v,r,t)$(storage_hybrid(i))*(1 + bcr(i))
 
     =g=
 
 * [plus] Output from plant
     + GEN_PLANT(i,v,r,h,t)
+
+* [minus] energy to storage from hybrid plant
+* (charging energy is already inside GEN_PLANT, and plant->storage flow never crosses
+*  the grid interconnect; simultaneous charge/discharge is prevented on the storage
+*  side by eq_storage_capacity / eq_hybrid_storage_capacity_limit)
+    - STORAGE_IN_PLANT(i,v,r,h,t)
 
 * [plus] Output form storage
     + GEN_STORAGE(i,v,r,h,t)
@@ -3401,6 +3573,41 @@ eq_plant_capacity_limit(i,v,r,h,t)$[storage_hybrid(i)$(not csp(i))$tmodel(t)$val
 
 *[plus] battery operating reserves
     + sum{ortype$[Sw_OpRes$opres_h(h)$opres_model(ortype)], OPRES(ortype,i,v,r,h,t) }
+;
+
+eq_cap_storage_in_grid(i,v,r,h,t)$[storage_hybrid(i)$hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
+    CAP(i,v,r,t) * gridcharge_ratio(i)
+
+    =g=
+
+    STORAGE_IN_GRID(i,v,r,h,t)
+;
+
+eq_storage_hybrid_geo_storage_grid_only(i,v,r,h,t)$[storage_hybrid(i)$geo_storage(i)$hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
+    STORAGE_IN_PLANT(i,v,r,h,t)
+
+    =e=
+
+    0
+;
+
+eq_hybrid_storage_capacity_limit(i,v,r,h,t)$[hybrid_plant(i)$(not csp(i))$tmodel(t)$valgen(i,v,r,t)$valcap(i,v,r,t)$Sw_HybridPlant]..
+
+*[plus] storage capacity
+*bcr is defined for both pvb and storage_hybrid configs; the equation is already
+*restricted to hybrid_plant (excluding csp), so no further conditional is needed
+    + CAP(i,v,r,t) * bcr(i)
+
+    =g=
+
+*[plus] generation from storage
+    + GEN_STORAGE(i,v,r,h,t)
+
+* [plus] storage charging from hybrid plant
+    + STORAGE_IN_PLANT(i,v,r,h,t)
+    
+* [plus] storage charging from grid
+    + STORAGE_IN_GRID(i,v,r,h,t)
 ;
 
 * ---------------------------------------------------------------------------

@@ -257,6 +257,64 @@ battery['capcost_energy'] = (
 )
 battery = battery.reset_index()
 
+### Battery Refurbishments for Storage-Hybrid Wrappers
+# A storage-hybrid wrapper lives for its gen tech's maxage (e.g., 55 years for gas-cc),
+# so its battery energy capacity is refurbished every batt_years_until_refurb years
+# before retirement, not just once. The battery_li energy capital cost above already
+# includes one refurbishment; write the discounted cost of the extra ones, which
+# b_inputs.gms adds to the wrapper's energy capital cost.
+## maxage.csv uses GAMS range rows (upv_1*upv_10), so expand them before the lookup
+maxage = (
+    reeds.techs.expand_GAMS_tech_groups(
+        pd.read_csv(os.path.join(inputs_case,'maxage.csv'), header=None, names=['i','maxage']))
+    .set_index('i').maxage.rename(lambda x: x.lower())
+)
+storage_hybrid_stor = pd.read_csv(
+    os.path.join(inputs_case,'storage_hybrid_storagetechs.csv'), index_col=0).squeeze(1)
+storage_hybrid_gen = pd.read_csv(
+    os.path.join(inputs_case,'storage_hybrid_gentechs.csv'), index_col=0).squeeze(1)
+
+def discounted_refurb_cost(k):
+    """Discounted cost of the kth energy refurbishment, by build year"""
+    years = k * years_until_refurb
+    future_cost = (
+        cost_by_year
+        .reindex(range(cost_by_year.index.min(), cost_by_year.index.max() + years + 1))
+        .ffill()
+        .loc[cost_by_year.index + years]
+        .set_axis(cost_by_year.index)
+    )
+    return (
+        scalars['batt_refurb_perc_energy'] * future_cost
+        / (d_real.reindex(cost_by_year.index) ** years)
+    )
+
+refurb_energy = {}
+for wrapper in storage_hybrid_stor.index[storage_hybrid_stor.str.lower() == 'battery_li']:
+    life = maxage.get(storage_hybrid_gen[wrapper].lower(), scalars['maxage_default'])
+    # Refurbishments happen at k * years_until_refurb for every k that falls before retirement
+    n_refurb = int(np.ceil(life / years_until_refurb)) - 1
+    refurb_energy[wrapper] = sum(
+        (discounted_refurb_cost(k) for k in range(2, n_refurb + 1)),
+        start=pd.Series(0., index=cost_by_year.index),
+    )
+    # A wrapper that retires before the first refurbishment does not need the one
+    # already included in the battery_li cost
+    if n_refurb < 1:
+        refurb_energy[wrapper] -= discounted_refurb_cost(1)
+storage_hybrid_refurb_energy = (
+    pd.DataFrame(refurb_energy, index=cost_by_year.index, columns=list(refurb_energy))
+    .rename_axis('t').T.rename_axis('*i')
+    ## Convert from $/kWh to $/MWh, as for capcost_energy below
+    .mul(1000).round(0).stack().rename('value').reset_index()
+)
+
+tes = pd.read_csv(os.path.join(inputs_case,'plantchar_tes.csv'))
+tes = deflate_func(tes, sw.plantchar_tes)
+
+flex_geo = pd.read_csv(os.path.join(inputs_case,'plantchar_flex_geo.csv'))
+flex_geo = deflate_func(flex_geo, sw.plantchar_flex_geo)
+
 evmc_storage = pd.read_csv(os.path.join(inputs_case,'plantchar_evmc_storage.csv'))
 evmc_storage = deflate_func(evmc_storage, 'evmc_storage_' + sw.evmcscen)
 evmc_shape = pd.read_csv(os.path.join(inputs_case,'plantchar_evmc_shape.csv'), dtype = {'fom':float,'vom':float,'rte':float})
@@ -266,7 +324,7 @@ evmc_shape = deflate_func(evmc_shape, 'evmc_shape_' + sw.evmcscen)
 #    -- Concat all data --    #
 ###############################
 
-alldata = pd.concat([conv,upv_stack,wind_stack,geo_stack,csp_stack,battery,
+alldata = pd.concat([conv,upv_stack,wind_stack,geo_stack,csp_stack,battery,tes,flex_geo,
                      evmc_storage,evmc_shape,beccs,ccsflex,h2combustion],sort=False)
 
 if sw.upgradescen != 'default':
@@ -474,6 +532,24 @@ for i in sw['GSw_PVB_Types'].split('_'):
     )['pvb_cost_fraction']
 pvb = pd.concat(pvb, axis=1)
 
+#%%##################################
+#    -- TES Heater Costs --
+#####################################
+heatercosts = pd.read_csv(os.path.join(inputs_case, 'heaterchars.csv'))
+heatercosts = deflate_func(heatercosts, sw.heaterscen)
+
+# ReEDS expects generator/storage capex and FOM in $/MW.
+# Heater cost inputs are provided in $/kW, so convert to $/MW.
+for col in ['capcost', 'fom']:
+    if col in heatercosts.columns:
+        heatercosts[col] = pd.to_numeric(heatercosts[col], errors='coerce') * 1000
+
+heatercosts_out = (
+    heatercosts
+    .melt(id_vars=['i','t'], value_vars=['capcost','fom','vom'])
+    .rename(columns={'i':'*i'})
+)
+
 
 ## Create Electric DAC scenario output
 # For electric DAC, we assume a sorbent system: https://www.netl.doe.gov/energy-analysis/details?id=d5860604-fbc7-44bb-a756-76db47d8b85a
@@ -521,6 +597,7 @@ elif int(sw.GSw_UpgradeCost_Mult) == 5:
 
 print('writing plant data to:', os.getcwd())
 outdata.to_csv(os.path.join(inputs_case,'plantcharout.csv'), index=False)
+storage_hybrid_refurb_energy.to_csv(os.path.join(inputs_case,'storage_hybrid_refurb_energy.csv'), index=False)
 upv.cf_improvement.round(3).to_csv(os.path.join(inputs_case,'pv_cf_improve.csv'), header=False)
 outwindcfmult.to_csv(os.path.join(inputs_case,'windcfmult.csv'))
 ccsflex_perf.to_csv(os.path.join(inputs_case,'ccsflex_perf.csv'))
@@ -532,6 +609,7 @@ dr_shed_vom_regional.to_csv(os.path.join(inputs_case,'plantchar_dr_shed_vom.csv'
 ofswind_rsc_mult.to_csv(os.path.join(inputs_case,'ofswind_rsc_mult.csv'))
 degrade.to_csv(os.path.join(inputs_case,'degradation_annual.csv'),header=False)
 pvb.to_csv(os.path.join(inputs_case,'pvbcapcostmult.csv'))
+heatercosts_out.to_csv(os.path.join(inputs_case,'heaterchar.csv'), index=False)
 upgrade_mult.round(4).to_csv(os.path.join(inputs_case,'upgrade_mult_final.csv'), index=False)
 outdac_elec.to_csv(os.path.join(inputs_case,'consumechardac.csv'), index=False)
 dac_gas.to_csv(os.path.join(inputs_case,'dac_gas.csv'), index=False)

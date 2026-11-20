@@ -76,7 +76,7 @@ def errorcheck_reeds2pras(casedir, csvout, h5out):
             raise ValueError(f'{check} are not in pras_load')
 
     ### Make sure there are no missing values in data sent to ReEDS2PRAS
-    for key in ['pras_load', 'pras_vre_gen']:
+    for key in [k for k in ['pras_load', 'pras_vre_gen', 'pras_storage_hybrid_inflow'] if k in h5out]:
         if h5out[key].isnull().sum().sum() > 0:
             missing_data_cols = [i for i in h5out[key] if h5out[key][i].isnull().sum(axis=0) > 0]
             print(missing_data_cols)
@@ -92,10 +92,16 @@ def errorcheck_reeds2pras(casedir, csvout, h5out):
     outage_techs = outage_forced.columns.get_level_values('i').unique()
     ## ReEDS2PRAS does not disaggregate batteries
     battery_techs = reeds.techs.get_tech_subset_table(casedir).loc[['BATTERY']].tolist()
+    ## Storage-hybrid wrappers on VRE have no outages, like their gen techs
+    no_outage_techs = (
+        h5out['pras_storage_hybrid_inflow'].columns.map(lambda x: x.split('|')[0]).tolist()
+        if 'pras_storage_hybrid_inflow' in h5out else []
+    )
     for check, infile in [
         ([i for i in max_cap_techs if i not in unitsize.index.tolist() + battery_techs], 'unitsize.csv'),
-        ([i for i in max_cap_techs if i not in mttr.index], 'mttr.csv'),
-        ([i for i in max_cap_techs if i not in outage_techs], 'outage_forced_hourly.h5'),
+        ([i for i in max_cap_techs if i not in mttr.index.tolist() + no_outage_techs], 'mttr.csv'),
+        ([i for i in max_cap_techs if i not in outage_techs.tolist() + no_outage_techs],
+         'outage_forced_hourly.h5'),
     ]:
         if len(check):
             raise ValueError(f'{check} are missing from {infile}')
@@ -154,6 +160,15 @@ def main(t, casedir, iteration=0):
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
     recf.columns = pd.MultiIndex.from_tuples([tuple(x.split('|')) for x in recf.columns],
                                              names=('i','r'))
+    ## Storage-hybrid wrappers on VRE use their gen tech's profile (as in GAMS cf_in)
+    resources, sh_vre_gentech = reeds.techs.add_storage_hybrid_vre_resources(
+        resources, inputs_case)
+    sh_vre_cols = [
+        (i, r) for i, r in resources[['i','r']].values if i in sh_vre_gentech.index]
+    if len(sh_vre_cols):
+        sh_vre_cf = recf[[(sh_vre_gentech[i], r) for i, r in sh_vre_cols]]
+        sh_vre_cf.columns = pd.MultiIndex.from_tuples(sh_vre_cols, names=('i','r'))
+        recf = pd.concat([recf, sh_vre_cf], axis=1)
 
     tech_subset_table = reeds.techs.expand_GAMS_tech_groups(
         reeds.techs.get_tech_subset_table(casedir).reset_index()
@@ -189,6 +204,20 @@ def main(t, casedir, iteration=0):
         trancap_reeds = gdxreeds['cap_trans_energy']
 
     #%%### Efficiencies and storage parameters
+    # Storage-hybrid wrappers (`storage_hybrid` GAMS set) need the same vintage-
+    # collapse and PRAS-export treatment as standalone storage. Build a combined
+    # tech list once and reuse it below. The `storage_hybrid` set is exported from
+    # GAMS via 6_data_dump.gms — fall back to an empty Series if it is missing
+    # so older GDX files (pre-export) still load.
+    _storage_hybrid_techs = (
+        gdxreeds['storage_hybrid'].i if 'storage_hybrid' in gdxreeds
+        else pd.Series([], dtype=str, name='i')
+    )
+    storage_techs_i = pd.concat(
+        [gdxreeds['storage_standalone'].i, _storage_hybrid_techs],
+        ignore_index=True,
+    ).drop_duplicates()
+
     duration = gdxreeds['storage_duration'].loc[
         gdxreeds['storage_duration'].i.isin(gdxreeds['storage_standalone'].i)
     ].set_index('i').Value
@@ -201,14 +230,14 @@ def main(t, casedir, iteration=0):
     )
     ### Reset the vintages of all storage units to 'new1' to reduce model size
     cap_storage_devint = cap_ivr_realvint.loc[
-        cap_ivr_realvint.i.isin(gdxreeds['storage_standalone'].i)].copy()
+        cap_ivr_realvint.i.isin(storage_techs_i)].copy()
     cap_storage_devint['v'] = 'new1'
     cap_storage_devint = (
         cap_storage_devint.groupby(['i','v','r'], as_index=False).Value.sum())
 
     def _devint_storage(dfin):
         dfout = pd.concat([
-            dfin.loc[~dfin.i.isin(gdxreeds['storage_standalone'].i)],
+            dfin.loc[~dfin.i.isin(storage_techs_i)],
             cap_storage_devint
         ], axis=0)
         return dfout
@@ -222,12 +251,12 @@ def main(t, casedir, iteration=0):
     )
     ### Reset the vintages of all storage energy capacity units to 'new1' as well
     cap_energy_ivr_devint = cap_energy_ivr.loc[
-        cap_energy_ivr.i.isin(gdxreeds['storage_standalone'].i)].copy()
+        cap_energy_ivr.i.isin(storage_techs_i)].copy()
     cap_energy_ivr_devint['v'] = 'new1'
     cap_energy_ivr_devint = (
         cap_energy_ivr_devint.groupby(['i','v','r'], as_index=False).Value.sum())
     cap_energy_ivr = pd.concat([
-        cap_energy_ivr.loc[~cap_energy_ivr.i.isin(gdxreeds['storage_standalone'].i)],
+        cap_energy_ivr.loc[~cap_energy_ivr.i.isin(storage_techs_i)],
         cap_energy_ivr_devint
     ], axis=0)
 
@@ -281,8 +310,10 @@ def main(t, casedir, iteration=0):
     vre_gen_exist.index = h_dt_szn.set_index(['ccseason','year','h','hour']).index
     h5out['vre_gen_exist'] = vre_gen_exist
 
-    ### Store generation by (i,r) for PRAS, after aggregating i if necessary
-    pras_vre_gen = gen_vre_resources.copy()
+    ### Store generation by (i,r) for PRAS, after aggregating i if necessary.
+    ### Storage-hybrid wrappers are left out because PRAS models them as GeneratorStorages.
+    pras_vre_gen = gen_vre_resources.drop(
+        columns=sh_vre_gentech.index, level='i', errors='ignore')
     pras_vre_gen.columns = pd.MultiIndex.from_arrays([
         pras_vre_gen.columns.get_level_values('i').map(lambda x: techs_vre_simplify.get(x,x)),
         pras_vre_gen.columns.get_level_values('r')
@@ -291,6 +322,15 @@ def main(t, casedir, iteration=0):
 
     pras_vre_gen.columns = ['|'.join(c) for c in pras_vre_gen.columns]
     h5out['pras_vre_gen'] = pras_vre_gen
+
+    ### Store the available plant output [MW] of storage-hybrid wrappers on VRE gen techs
+    ### for PRAS, where it is the inflow of their GeneratorStorages
+    pras_storage_hybrid_inflow = gen_vre_resources.loc[
+        :, gen_vre_resources.columns.get_level_values('i').isin(sh_vre_gentech.index)]
+    if pras_storage_hybrid_inflow.shape[1]:
+        pras_storage_hybrid_inflow.columns = [
+            '|'.join(c) for c in pras_storage_hybrid_inflow.columns]
+        h5out['pras_storage_hybrid_inflow'] = pras_storage_hybrid_inflow
 
 
     ###### Store marginal CF by (i,r) for capacity_credit.py
@@ -513,13 +553,17 @@ def main(t, casedir, iteration=0):
             max_cap.loc[energy_cap.index] < sw['storcap_cutoff']].index.tolist()
         + max_cap.loc[max_cap < sw['storcap_cutoff']/2].index.tolist()
     ))
+    ## Never drop storage-hybrid wrappers here: they become GeneratorStorages in PRAS,
+    ## and dropping the row would delete the generator side of a real plant
+    _sh_techs_set = set(_storage_hybrid_techs)
+    too_small_storage = [idx for idx in too_small_storage if idx[0] not in _sh_techs_set]
 
     csvout['energy_cap'] = energy_cap.drop(too_small_storage, errors='ignore')
     csvout['max_cap'] = max_cap.drop(too_small_storage, errors='ignore')
 
     ### Storage efficiency
-    storage_hybrid = reeds.techs.expand_GAMS_tech_groups(
-        reeds.techs.get_tech_subset_table(casedir).loc[['STORAGE_HYBRID']].reset_index()
+    hybrid_plant = reeds.techs.expand_GAMS_tech_groups(
+        reeds.techs.get_tech_subset_table(casedir).loc[['HYBRID_PLANT']].reset_index()
     ).i
     storage_eff = (
         gdxreeds['storage_eff']
@@ -528,11 +572,53 @@ def main(t, casedir, iteration=0):
         .Value
         .rename('fraction')
         ## Only keep standalone storage
-        .drop(storage_hybrid, errors='ignore')
+        .drop(hybrid_plant, errors='ignore')
     )
     ## As in ReEDS LP, storage losses are applied to charging side (none for discharging)
+    ## (storage-hybrid wrappers are NOT included here: they are modeled as PRAS
+    ## GeneratorStorages, whose efficiency comes from hybrid_config below)
     csvout['charge_eff'] = storage_eff
     csvout['discharge_eff'] = pd.Series(index=storage_eff.index, data=1., name='fraction')
+
+    ### Storage-hybrid wrapper configuration for the PRAS GeneratorStorage builder.
+    ## charge_eff: plant-charging configs use storage_eff_storage_hybrid_p (0.99 for
+    ## TES); grid-charge-only configs (flexible geothermal) use _g. Written directly
+    ## (not via csvout) because it carries string columns.
+    hybrid_config_cols = ['i', 'gentech', 'stortech', 'bcr', 'gridcharge_ratio', 'charge_eff']
+    hybrid_config = pd.DataFrame(columns=hybrid_config_cols)
+    if len(_storage_hybrid_techs):
+        def _read_sh_map(fname, valcol):
+            return (
+                pd.read_csv(os.path.join(casedir, 'inputs_case', fname))
+                .rename(columns={'*storage-hybrid_type': 'i'})
+                .set_index('i')[valcol]
+            )
+        _sh_gentech = _read_sh_map('storage_hybrid_gentechs.csv', 'gen_tech').str.lower()
+        _sh_stortech = _read_sh_map('storage_hybrid_storagetechs.csv', 'storage_type').str.lower()
+        _sh_bcr = _read_sh_map('storage_hybrid_bcr.csv', 'bcr')
+        _sh_grid = _read_sh_map('storage_hybrid_gridcharging.csv', 'gridcharge_ratio')
+        def _sh_eff(symbol):
+            return (
+                gdxreeds[symbol]
+                .loc[gdxreeds[symbol].t == t]
+                .set_index('i').Value
+            )
+        _eff_p = _sh_eff('storage_eff_storage_hybrid_p')
+        _eff_g = _sh_eff('storage_eff_storage_hybrid_g')
+        hybrid_config = pd.DataFrame({'i': sorted(_sh_techs_set)})
+        hybrid_config['gentech'] = hybrid_config.i.map(_sh_gentech)
+        hybrid_config['stortech'] = hybrid_config.i.map(_sh_stortech)
+        hybrid_config['bcr'] = hybrid_config.i.map(_sh_bcr).fillna(0.)
+        hybrid_config['gridcharge_ratio'] = hybrid_config.i.map(_sh_grid).fillna(0.)
+        _plant_charging = ~hybrid_config.stortech.fillna('').str.startswith('flex_geo')
+        hybrid_config['charge_eff'] = (
+            hybrid_config.i.map(_eff_p).where(_plant_charging, hybrid_config.i.map(_eff_g))
+        ).fillna(1.)
+    ## Write even when empty (header only) so the reeds2pras file check passes
+    hybrid_config[hybrid_config_cols].to_csv(
+        os.path.join(casedir, 'handoff', 'reeds_data', f'hybrid_config_{t}.csv'),
+        index=False,
+    )
 
     #%% Planning reserve margin in MW (sometimes used during unit disaggregation)
     csvout['max_unitsize'] = (

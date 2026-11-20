@@ -60,6 +60,7 @@ gas-ct_aero,Gas-CT
 geothermal,Geothermal
 nuclear,Nuclear
 nuclear-smr,Nuclear-SMR
+storage-hybrid*,Storage Hybrid
 caes,CAES
 pumped-hydro,Pumped-Hydro
 can-imports,Canadian Imports
@@ -84,6 +85,8 @@ gas-cc-ccs-f*,Gas-CC-CCS-Flex
 lfill-gas*,Landfill-Gas
 o-g-s*,Oil/Gas Steam
 battery_li,Battery
+tes_ms,TES
+flex_geo*,Geothermal Storage
 pumped-hydro_n*,Pumped-Hydro
 pumped-hydro-flex*,Pumped-Hydro-Flex
 upv*,UPV

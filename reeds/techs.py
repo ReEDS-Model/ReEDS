@@ -128,3 +128,42 @@ def get_techlist_after_bans(case):
         techlist = [i for i in techlist if i not in tech_subset_table.loc['CCSFLEX_DAC'].values]
 
     return techlist
+
+
+def get_storage_hybrid_gentechs(inputs_case):
+    """Return a Series that maps each storage-hybrid wrapper to its gen tech"""
+    path = os.path.join(inputs_case, 'storage_hybrid_gentechs.csv')
+    if not os.path.exists(path):
+        return pd.Series(dtype=str, name='gen_tech')
+    return pd.read_csv(path, index_col='*storage-hybrid_type')['gen_tech']
+
+
+def add_storage_hybrid_gentech_members(techs, inputs_case):
+    """
+    Return techs (lower-case tech names) plus each storage-hybrid wrapper whose gen tech
+    is in techs, so tech-group lists keyed on the gen tech also cover its wrappers.
+    """
+    techs = list(techs)
+    techs += [
+        wrapper.lower()
+        for wrapper, gen_tech in get_storage_hybrid_gentechs(inputs_case).items()
+        if gen_tech.lower() in techs
+    ]
+    return techs
+
+
+def add_storage_hybrid_vre_resources(resources, inputs_case):
+    """
+    Add a row to resources (from inputs_case/resources.csv) for each storage-hybrid
+    wrapper whose gen tech has a VRE profile, in each region where the gen tech has one.
+    The wrapper's resource is '{wrapper}|{r}', and it has the gen tech's profile.
+    Returns (resources, wrapper_to_gentech).
+    """
+    gentechs = get_storage_hybrid_gentechs(inputs_case)
+    rows = resources.merge(
+        gentechs.rename('i').rename_axis('wrapper').reset_index(), on='i')
+    rows['i'] = rows['wrapper']
+    rows['resource'] = rows['wrapper'] + '|' + rows['r']
+    resources = pd.concat(
+        [resources, rows[resources.columns]], ignore_index=True)
+    return resources, gentechs.loc[rows['wrapper'].unique()]
