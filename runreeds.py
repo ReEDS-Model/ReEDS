@@ -97,12 +97,17 @@ def create_case_lists(df_cases:pd.DataFrame, BatchName:str, single:str=''):
                 continue
         # Add switch settings to list of options passed to GAMS
         shcom = f' --case={BatchName}_{case}'
-        for i,v in df_cases[case].items():
-            #exclude certain switches that don't need to be passed to GAMS
+        case_out = df_cases[case].copy()
+        # (ReEDS-FINITO) Combine the cases files for the linked model
+        if int(case_out.loc['GSw_FINITO_Link']) == 1 :
+            case_out=reeds.finito.setup_linked_FINITO_cases(df_cases,case)
+            
+        #exclude certain switches that don't need to be passed to GAMS
+        for i,v in case_out.items():
             if i not in ['file_replacements','keep_run_terminal']:
                 shcom += f' --{i}={v}'
         caseList.append(shcom)
-        caseSwitches.append(df_cases[case].to_dict())
+        caseSwitches.append(case_out.to_dict())
 
     return caseSwitches, casenames, caseList
 
@@ -192,35 +197,15 @@ def get_rev_paths(revswitches):
     return revswitches
 
 
-def check_cases_format(df_cases):
-    """Check the integrity of the input cases_{}.csv data"""
-    dfkeep = df_cases.loc[:, ~df_cases.loc['ignore'].astype(int).astype(bool)]
-    ## Only allow GSw_FakeData to be used all-or-nothing
-    unique_fakes = dfkeep.loc['GSw_FakeData'].unique()
-    if len(unique_fakes) > 1:
-        err = (
-            'GSw_FakeData can only take a single value in a set of cases but values of "'
-            + ', '.join(unique_fakes) + '" were provided'
-        )
-        raise ValueError(err)
-    ## Check for spaces in case names
-    spaces = [i for i in dfkeep if ' ' in i]
-    if len(spaces):
-        err = (
-            'Spaces are not allowed in case names; the following names have spaces:\n'
-            + '\n'.join(f'"{i}"' for i in spaces)
-        )
-        raise ValueError(err)
-
-
-# function to stop the model after input processing
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
+    """Stop the model after input processing"""
     comment('Exit after input_processing', OPATH)
     OPATH.writelines(
         f"python {os.path.join(reeds_path, 'postprocessing', 'cleanup_files.py')} "
         f"{casedir} --force --quiet --level {caseSwitches['cleanup_level']}\n"
     )
     OPATH.writelines('\n' + ('exit' if LINUXORMAC else 'goto:eof') + '\n\n')
+
 
 def setup_sequential_year(
         cur_year, prev_year, next_year,
@@ -549,13 +534,6 @@ def setupEnvironment(
         single=single,
     )
 
-    #%% Stop now if any switches are incompatible
-    check_cases_format(df_cases)
-    for sw in caseSwitches:
-        reeds.checks.check_switches(sw, force=force)
-    if dryrun:
-        quit()
-
     # If no --single/-s, drop the ignored cases, otherwise leave them
     if not single:
         casenames = [case for case in casenames
@@ -576,6 +554,12 @@ def setupEnvironment(
                 raise ValueError(err)
         df_cases = df_cases[single.split(',')].copy()
         casenames = single.split(',')
+
+    #%% Stop now if any switches are incompatible
+    reeds.checks.check_cases_format(df_cases)
+    reeds.checks.check_switches(df_cases, force=force)
+    if dryrun:
+        quit()
 
     # Make sure the run folders don't already exist
     outpaths = [os.path.join(reeds_path,'runs',f'{BatchName}_{case}') for case in casenames]
@@ -916,6 +900,10 @@ def write_batch_script(
     os.makedirs(os.path.join(casedir,'handoff','reeds_data'), exist_ok=True)
     os.makedirs(os.path.join(casedir,'handoff','PRAS'), exist_ok=True)
 
+    ## Set up FINITO if running linked model
+    if int(caseSwitches['GSw_FINITO_Link'])==1:
+        reeds.finito.setup_finito(casedir, caseSwitches, BatchName)
+
     ###### Replace files according to 'file_replacements' in cases. Ignore quotes in input text.
     # << is used to separate the file that is to be replaced from the file that is used
     # || is used to separate multiple replacements.
@@ -953,8 +941,8 @@ def write_batch_script(
         big_comment('Input processing', OPATH)
         for s in [
             'copy_files',
-            'process_unitdata',
             'mcs_sampler',
+            'process_unitdata',
             'climateprep',            
             'hydcf',
             'h2_storage',
@@ -1055,12 +1043,43 @@ def write_batch_script(
             + ' gdxcompress=1'
             + toLogGamsString
             + f"--fname={batch_case}"
-            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']} \n"
+            + f" --GSw_calc_powfrac={caseSwitches['GSw_calc_powfrac']}"
+            + f" --FINITO_dollaryear={caseSwitches['FINITO_dollaryear']} \n"
         )
         OPATH.writelines(writescripterrorcheck("report.gms"))
-        if not LINUXORMAC:
+        if not LINUXORMAC and int(caseSwitches['GSw_FINITO_Link']) != 1:
             OPATH.writelines("endlocal\n")
         OPATH.writelines(f'python {logger}\n')
+
+        ### (ReEDS-FINITO) call FINITO reporting
+        if int(caseSwitches['GSw_FINITO_Link'])==1:
+            OPATH.writelines(
+                'gams '
+                + f"{os.path.join(casedir,'finito', 'model', 'finito_report.gms')}"
+                + f" o={os.path.join('lstfiles',f'finito_report_{batch_case}.lst')}"
+                + (' license=gamslice.txt' if hpc else '')
+                + (' r=$r' if LINUXORMAC else ' r=!r!')
+                + ' gdxcompress=1'
+                + toLogGamsString
+                + f"--case={batch_case}"
+                + f" --casedir={casedir}"
+                + f" --GSw_FINITO_Link={caseSwitches['GSw_FINITO_Link']}"
+                + f" --GSw_RetailAdder={caseSwitches['GSw_RetailAdder']}"
+                + f" --finito_inputs_dir={os.path.join('finito','inputs')}"
+                + f" --inputs_case_finito_dir={os.path.join('finito','inputs_case')}"
+                + f" --linked_report_dir={caseSwitches['linked_report_dir']} \n"
+            )
+            # (ReEDS-FINITO) calls FINITO postprocessing
+            OPATH.writelines(
+            f"python {os.path.join(casedir, 'finito', 'visualization', 'postprocessing.py')}"
+                + " -b 0"            
+                + f" -l {caseSwitches['GSw_FINITO_Link']}"
+                + f' -c {batch_case} \n\n'
+            )  
+            if not LINUXORMAC:
+                OPATH.writelines("endlocal\n")
+
+        ### save reporting outputs to h5 and/or csv files
         OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
         OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
 
