@@ -6287,10 +6287,10 @@ def get_cf_map(case, tech='wind-ons', timestamp=None, recf=None, crs='EPSG:5070'
 
 
 def label_region_value(
-    df, 
-    ax, 
-    column, 
-    fmt='{auto}', 
+    df,
+    ax,
+    column,
+    fmt='{auto}',
     text_kwargs:None|dict=None,
     pe_kwargs:None|dict=None,
 ):
@@ -6309,9 +6309,9 @@ def label_region_value(
         if isinstance(value, (int, float, complex)):
             if not np.isfinite(value):
                 continue
-            if '{auto}' in fmt:  
-                            decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1  
-                            fmt = fmt.replace('{auto}', f"{{:.{decimals}f}}")  
+            if '{auto}' in fmt:
+                decimals = 0 if ((abs(value) >= 1) or abs(value) < 0.05) else 1
+                fmt = fmt.replace('{auto}', f"{{:.{decimals}f}}")  
         text_artists.append(
             ax.annotate(
                 (fmt.format(value) if not isinstance(value, str) else value),
@@ -6326,9 +6326,7 @@ def label_region_value(
     except ImportError:
         return
 
-    adjust_text(text_artists, ax=ax,
-                avoid_self=False, ensure_inside_axes=True,
-            )
+    adjust_text(text_artists, ax=ax, avoid_self=False, ensure_inside_axes=True)
 
 
 def map_stressors(
@@ -6336,6 +6334,7 @@ def map_stressors(
     t,
     iteration=0,
     seed=True,
+    onlyseed=False,
     outage_type='forced',
     crs='EPSG:5070',
     debug=False,
@@ -6541,24 +6540,20 @@ def map_stressors(
             pd.read_csv(
                 os.path.join(case, 'inputs_case', f'stress{t}i0', 'forceperiods.csv')
             )
-            .drop(columns=['reason', 'yperiod'], errors='ignore')
-            .rename(columns={'region':'r', 'year':'y', 'property':'reason'})
+            .drop(columns=['reason', 'yperiod', 'year'], errors='ignore')
+            .rename(columns={'region':'r', 'property':'reason'})
         )
-        forceperiods['datetime'] = forceperiods.szn.map(reeds.timeseries.h2timestamp)
-        # forceperiods['timestamp'] = forceperiods.datetime.dt.strftime('%Y-%m-%d')
-        forceperiods['m'] = forceperiods.datetime.dt.month
-        forceperiods['d'] = forceperiods.datetime.dt.day
         forceperiods['reason'] = 'seed_' + forceperiods['reason']
         _plot_days.append(forceperiods)
     ## If this iteration didn't meet the reliability threshold, include the added stress periods
     fpath_new_stress_periods = os.path.join(
         case, 'inputs_case', f'stress{t}i{iteration+1}', 'new_stress_periods.csv'
     )
-    if os.path.exists(fpath_new_stress_periods):
+    if os.path.exists(fpath_new_stress_periods) and not onlyseed:
         new_stress_periods = (
             pd.read_csv(fpath_new_stress_periods)
             .drop(columns=['Unnamed: 0', 'criterion'], errors='ignore')
-            .rename(columns={'periodtype':'reason', 'actual_period':'szn'})
+            .rename(columns={'periodtype':'reason', 'period':'szn', 'region':'r'})
         )
         _plot_days.append(new_stress_periods)
 
@@ -6569,6 +6564,10 @@ def map_stressors(
         pd.concat(_plot_days, axis=0, ignore_index=True)
         .drop(columns=['datetime'], errors='ignore')
     )
+    plot_days['datetime'] = plot_days.szn.map(reeds.timeseries.h2timestamp)
+    plot_days['y'] = plot_days.datetime.dt.year
+    plot_days['m'] = plot_days.datetime.dt.month
+    plot_days['d'] = plot_days.datetime.dt.day
     plot_days['timestamp'] = plot_days.apply(lambda row: f'{row.y}-{row.m:02}-{row.d:02}', axis=1)
 
     ### Loop over days
@@ -6576,12 +6575,14 @@ def map_stressors(
         y, m, d = day.y, day.m, day.d
         timestamp = day.timestamp
         focus_region = day.r
-        if 'EUE' in day.reason:
+        if day.reason == 'stress':
             highlight_level = level
-            plotlabel = f'{timestamp}: {focus_region}, EUE = {day.EUE_MWh/1e3:.1f} GWh'
-        elif ('before' in day.reason) or ('after' in day.reason):
+            plotlabel = f'{timestamp}: {focus_region}, {day.metric} = {float(day.value):.1f}'
+        elif day.reason == 'shoulder':
             highlight_level = level
-            plotlabel = f"{timestamp}: {focus_region}, shoulder ({day.reason.split('_')[0]})"
+            side, parent = day.value.split('_')
+            parent = reeds.timeseries.h2timestamp(parent).strftime('%Y-%m-%d')
+            plotlabel = f"{timestamp}: {focus_region}, shoulder ({side} {parent})"
         elif day.reason == 'seed_load':
             highlight_level = sw.GSw_PRM_StressSeedLoadLevel
             plotlabel = f'{timestamp}: {focus_region}, peak load'
@@ -6648,7 +6649,7 @@ def map_stressors(
         )
         label_region_value(
             df=dflevel, ax=ax[1,0], column='load_rank',
-            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+            fmt='{:.0f}%', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,0].set_title('Demand', y=0.9)
         plots.addcolorbarhist(
@@ -6663,7 +6664,7 @@ def map_stressors(
             )
             label_region_value(
                 df=dflevel, ax=ax[1,col], column=f'{tech}_rank',
-                fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+                fmt='{:.0f}%', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[1,col].set_title(labels.get(tech,tech), y=0.9)
             plots.addcolorbarhist(
@@ -6677,7 +6678,7 @@ def map_stressors(
         )
         label_region_value(
             df=dflevel, ax=ax[1,3], column='temperature_rank',
-            fmt='{:.0%}', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
+            fmt='{:.0f}%', pe_kwargs={'linewidth':2.0, 'alpha':0.8},
         )
         ax[1,3].set_title('Temperature', y=0.9)
         plots.addcolorbarhist(
@@ -6695,7 +6696,7 @@ def map_stressors(
             dflevel[f'outage_{tech}'] = outage_region.loc[(y,m,d), tech]
             label_region_value(
                 df=dflevel, ax=ax[2,col], column=f'outage_{tech}',
-                fmt='{:.0%}',
+                fmt='{:.0f}%',
                 pe_kwargs={'linewidth':2.0, 'alpha':0.8},
             )
             ax[2,col].set_title(label, y=0.9)
@@ -6735,6 +6736,20 @@ def map_stressors(
         ## Keep the data for debugging
         dfout = {'dfba':dfba, 'dflevel':dflevel}
         yield f, ax, dfout, plotlabel
+
+
+def plot_stressors(case, t, iteration=0, seed=False, onlyseed=False):
+    """
+    Map demand/CF/FOR (organized differently to allow for independent use)
+    """
+    plot_generator = map_stressors(case=case, t=t, iteration=iteration, seed=seed)
+    while True:
+        try:
+            f, ax, df, plotlabel = next(plot_generator)
+            savename = f"stress{t}i{iteration}-{plotlabel.split(':')[0].replace('-','')}.png"
+            plt.savefig(Path(case, 'outputs', 'figures', 'resource_adequacy', savename))
+        except StopIteration:
+            break
 
 
 def plot_eue_events(
