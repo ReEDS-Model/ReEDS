@@ -93,8 +93,11 @@ wind-ons*,Onshore Wind
 csp*,CSP
 csp-ns*,CSP
 dr_shed*,DR Shed
-evmc_storage*,EVMC_Storage
-evmc_shape*,EVMC_Shape
+dr_shape*,DR Shape
+dr_shift*,DR Shift
+der-ftm-shape,DER-FTM-Shape
+der-ftm-pv,DER-FTM-PV
+der-ftm-battery_li,DER-FTM-Battery
 hyd*,Hydropower
 egs_allkm_*,Geothermal
 geohydro_allkm_*,Geothermal

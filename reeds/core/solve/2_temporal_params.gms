@@ -689,59 +689,129 @@ $include inputs_case%ds%%temporal_inputs%%ds%flex_frac_all.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-
-* EV adoptable managed charging
-parameter evmc_baseline_load(r,allh,allt) "--fraction-- how much adopted shaped EV load is allowed to be shed in each timeslice h"
+* DR Shape 
+$onempty
+parameter dr_shape_gen(i,r,allh,allt) "--fraction-- how much adopted DR shape load is allowed to be shed in each timeslice h"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_baseline_load.csv
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shape_generation.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shape_generation.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-parameter evmc_shape_gen(i,r,allh) "--fraction-- how much adopted shaped EV load is allowed to be shed in each timeslice h"
+$onempty
+parameter dr_shape_load(i,r,allh,allt) "--fraction-- how much adopted DR shape load is added in each timeslice h"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_shape_generation.csv
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shape_load.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shape_load.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-parameter evmc_shape_load(i,r,allh) "--fraction-- how much adopted shaped EV load is added in each timeslice h"
+$onempty
+
+* DR shift adoption
+parameter dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be discharged (deferred charging) in each timeslice h"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_shape_load.csv
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shift_discharge.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shift_discharge.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-parameter evmc_storage_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted EV storage discharge capacity that can be discharged (deferred charging) in each timeslice h"
+$onempty
+parameter dr_shift_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be charged (add back deferred charging) in each timeslice h"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_storage_discharge.csv
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shift_charge.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shift_charge.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-parameter evmc_storage_charge_frac(i,r,allh,allt) "--fraction-- fraction of adopted EV storage discharge capacity that can be charged (add back deferred charging) in each timeslice h"
+$onempty
+parameter dr_shift_energy_hours(i,r,allh,allt) "--hours-- Allowable DR shift device storage SOC (quantity deferred charge) [MWh] divided by nameplate discharge capacity [MW]"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_storage_charge.csv
+$include inputs_case%ds%%temporal_inputs%%ds%dr_shift_profile_energy.csv
+$include inputs_case%ds%stress%stress_year%%ds%dr_shift_profile_energy.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 
-parameter evmc_storage_energy_hours(i,r,allh,allt) "--hours-- Allowable EV storage SOC (quantity deferred EV charge) [MWh] divided by nameplate EVMC discharge capacity [MW]"
+* Front-of-the-meter DER operating requirements
+* Written by hourly_writetimeseries.py
+$onempty
+parameter der_ftm_min_output(r,allh,allt) "--MW-- minimum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
 /
 $offlisting
 $ondelim
-$include inputs_case%ds%%temporal_inputs%%ds%evmc_storage_energy.csv
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_min_output.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_min_output.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_max_output(r,allh,allt) "--MW-- maximum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_max_output.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_max_output.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+* Includes maximums of zero, which are not stored in der_ftm_max_output
+$onempty
+set der_ftm_max_output_r(r,allh,allt) "regions, timeslices, and years with a maximum combined net output of FTM DER"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_max_output_r.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_max_output_r.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_battery_nocharge(r,allh,allt) "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_battery_nocharge.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_battery_nocharge.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_profile_change(r,allh,allt) "--MW/MW-- FTM DER load shape: change in end-use load per MW of der_ftm_shape capacity in each timeslice h (negative = reduction)"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_profile_change.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_profile_change.csv
 $offdelim
 $onlisting
 / ;
