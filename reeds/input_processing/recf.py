@@ -398,14 +398,14 @@ def main(reeds_path, inputs_case):
     df_upv.columns = ['upv_' + col for col in df_upv]
 
     # If DistPV is turned off, create an empty dataframe with the same index as df_upv to concat
-    if int(sw['GSw_distpv']) == 0 and int(sw['GSw_DER_FTM']) == 0:
+    if int(sw['GSw_distpv']) == 0 and int(sw['GSw_DER_FTM']) < 2:
         df_distpv = pd.DataFrame(index=df_upv.index)
     else:
         regional_distpv_cf = calculate_regional_distpv_cf(inputs_case)
         df_distpv = pd.concat(
             ([regional_distpv_cf.add_prefix('distpv|')] if int(sw['GSw_distpv']) else [])
             # Front-of-the-meter PV uses the distpv profile
-            + ([regional_distpv_cf.add_prefix('der-ftm-pv|')] if int(sw['GSw_DER_FTM']) else []),
+            + ([regional_distpv_cf.add_prefix('der-ftm-pv|')] if int(sw['GSw_DER_FTM']) >= 2 else []),
             axis=1,
         )
 

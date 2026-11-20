@@ -264,7 +264,7 @@ battery = battery.reset_index()
 # FTM DER use the costs and performance of the corresponding utility-scale technologies
 # (UPV in $/kW_DC, and battery_li including its refurbishment adder); the FTM DER supply
 # curve (writesupplycurves.py) adds a cost adder to the capital cost
-if int(sw.GSw_DER_FTM):
+if int(sw.GSw_DER_FTM) >= 2:
     der_ftm = pd.concat([
         upv.reset_index()[['t','capcost','fom','vom']].assign(i='der-ftm-pv'),
         battery.loc[battery.i == 'battery_li'].assign(i='der-ftm-battery_li'),

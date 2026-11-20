@@ -419,8 +419,21 @@ def get_der_ftm_profiles(
         hmap = hmap_allyrs.loc[hmap_allyrs.actual_h.isin(hmap_myr.h.unique())]
     h2yearhour = hmap.set_index('actual_h').yearhour.rename_axis('h')
 
+    ## Profiles are copied only for the techs allowed by GSw_DER_FTM
+    der_ftm_pv_battery = int(sw.GSw_DER_FTM) >= 2
+    der_ftm_shape = int(sw.GSw_DER_FTM) in [1, 3]
+    profile_used = {
+        'der_ftm_min_output': der_ftm_pv_battery,
+        'der_ftm_max_output': der_ftm_pv_battery,
+        'der_ftm_battery_nocharge': der_ftm_pv_battery,
+        'der_ftm_profile_change': der_ftm_shape,
+    }
+
     profiles = {}
     for ptype in DER_FTM_PROFILES:
+        if not profile_used[ptype]:
+            profiles[ptype] = pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
+            continue
         dfin = reeds.io.read_file(os.path.join(inputs_case, f'{ptype}.h5'))
         ## No data for the modeled regions
         if dfin.columns.empty:

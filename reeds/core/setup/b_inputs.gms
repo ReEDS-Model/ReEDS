@@ -530,8 +530,17 @@ if(Sw_DRShift = 0,
   ban(i)$i_subsets(i,'DR_SHIFT') = yes ; 
 ) ;
 
+* Sw_DER_FTM: 0 = no FTM DER; 1 = der-ftm-shape only; 2 = der-ftm-pv and der-ftm-battery_li only; 3 = all
 if(Sw_DER_FTM = 0,
   ban(i)$i_subsets(i,'der_ftm') = yes ;
+) ;
+
+if(Sw_DER_FTM = 1,
+  ban(i)$[i_subsets(i,'der_ftm')$(not i_subsets(i,'der_ftm_shape'))] = yes ;
+) ;
+
+if(Sw_DER_FTM = 2,
+  ban(i)$i_subsets(i,'der_ftm_shape') = yes ;
 ) ;
 
 * always allow PSH to use fresh surface water (fsa, fsu)

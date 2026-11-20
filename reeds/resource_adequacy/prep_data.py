@@ -450,7 +450,7 @@ def main(t, casedir, iteration=0):
         pras_load = pras_load.add(load_dr_shape_all_hourly, fill_value=0).clip(lower=0)
     
     ## Modify load for FTM DER load shape impacts
-    if int(sw.GSw_DER_FTM):
+    if int(sw.GSw_DER_FTM) in [1, 3]:
         print(f'Added FTM DER load shape load to PRAS load since GSw_DER_FTM = {sw.GSw_DER_FTM}')
         pras_load = pras_load.add(load_der_ftm_shape_all_hourly, fill_value=0).clip(lower=0)
 

@@ -1,6 +1,7 @@
 ## Front-of-the-Meter Distributed Energy Resource (FTM DER) Input Files
 
-FTM DER are distribution-connected resources that ReEDS can invest in when `GSw_DER_FTM = 1`.
+FTM DER are distribution-connected resources that ReEDS can invest in, depending on `GSw_DER_FTM`:
+`0` = none, `1` = `der-ftm-shape` only, `2` = `der-ftm-pv` and `der-ftm-battery_li` only, `3` = all three.
 There are three technologies:
 
 - **`der-ftm-pv`**: PV with a fixed profile. The profile is a copy of the distpv profile (including the
@@ -82,6 +83,10 @@ All files are included in the repository; `example` contains illustrative (not r
 Pacific census division zones of the `z90` zone set only.
 
 ### Files (`{der_ftm_scen}` is set by the `der_ftm_scen` switch)
+
+The minimum-output, maximum-output, and no-charge profiles are used (and required) only when `GSw_DER_FTM` is 2 or 3;
+the load shape profile is used (and required) only when `GSw_DER_FTM` is 1 or 3.
+Rows in the prescribed builds and supply curve files for technologies that `GSw_DER_FTM` does not allow are ignored.
 
 - **`der_ftm_prescribed_{der_ftm_scen}.csv`**: Prescribed (bin1) builds by tech (`i`), zone (`r`), and build year (`t`).
   Columns: `i,r,t,MW,MWh`. `MW` is power capacity (MW-DC for PV); `MWh` is battery energy capacity and should be blank for

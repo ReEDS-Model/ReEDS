@@ -3132,7 +3132,7 @@ eq_dr_shift_storage_in_capacity(i,v,r,h,t)
 * scaled up to the busbar level by its capacity factor, is scaled back down by (1-distloss).
 eq_der_ftm_min_output(r,h,t)
     $[tmodel(t)
-    $Sw_DER_FTM
+    $(Sw_DER_FTM >= 2)
     $der_ftm_min_output(r,h,t)
     $sum{(i,v,tt)$[der_ftm(i)$(not der_ftm_shape(i))$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }]..
 
@@ -3151,7 +3151,7 @@ eq_der_ftm_min_output(r,h,t)
 * Output and reserves are measured at the devices, as in the minimum output requirement.
 eq_der_ftm_max_output(r,h,t)
     $[tmodel(t)
-    $Sw_DER_FTM
+    $(Sw_DER_FTM >= 2)
     $der_ftm_max_output_r(r,h,t)]..
 
     der_ftm_max_output(r,h,t)
@@ -3172,7 +3172,7 @@ eq_der_ftm_max_output(r,h,t)
 * it then covers all of that technology's capacity in the region, prescribed or not.
 eq_der_ftm_battery_nocharge(i,r,h,t)
     $[tmodel(t)
-    $Sw_DER_FTM
+    $(Sw_DER_FTM >= 2)
     $der_ftm(i)
     $storage_standalone(i)
     $valgen_irt(i,r,t)

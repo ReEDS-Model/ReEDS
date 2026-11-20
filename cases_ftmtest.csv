@@ -5,5 +5,5 @@ yearset,2010_2020_2026_2030_2035
 endyear,2035
 GSw_PRM_StressIterateMax,0
 GSw_GasCurve,2
-GSw_DER_FTM,1
+GSw_DER_FTM,3
 input_processing_only,1
