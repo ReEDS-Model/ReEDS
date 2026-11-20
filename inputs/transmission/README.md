@@ -80,3 +80,17 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
 - `transmission_cost_distance_lines.csv`: Similar to `transmission_cost_distance.csv`, but for individual existing and planned/possible HVDC lines, with latitude/longitude for start/end points instead of zone hashes
   - Voltages are in kilovolts [kV]
   - Costs and lengths (and underlying routes, not included in the file) are from the [reV Routing (reVRt) model](https://github.com/NatLabRockies/reVRt) and are not expected to exactly match the actual costs, lengths, or routes of existing lines
+
+- `county_overlay\LP2026_USA_100_50DR_cost_distance.csv`: Similar to `transmission_cost_distance.csv`, but for county-county lines which are not present in the base county transmission topology
+  - Voltages are in kilovolts [kV]
+  - Costs are derived from the neighoring lines of simialr voltage in the base county transmission network.
+
+- `county_overlay\LP2026_USA_100_50DR.csv`:  Database of additive adjsutments to initial forward/reverse AC ITLs [MW] of `itl_NARIS.csv` to support historical supply demand balancing at a county level
+  - This functionality is triggered by `GSw_TransCountyOverlay` being specified as `LP2026_USA_100_50DR`, while `none` uses the base system without overlay.
+  - The zone identifier is the same md5 hash of the `itl_NARIS.csv`.
+  - Derivation of these additive adjsutments is done through a process of least cost transmission addition for historical year available generation and load per-county, per-timeslice such that there is no lost load. 
+    - Initial avaiable paths and capcities are estimated through a summation of existing transmission thermal capacity for each county-county interface based on the [Open Infrastructure Map](https://openinframap.org/#4.1/40.65/-97.11).
+    - We then find the per state ratio or thermal limit to existing transfer limit per boundary and apply that with an additional 50% derate to any interface with OSM connectivity and not data within the `itl_NARIS.csv` file.
+    - With the existing network and these derated additions, we run a linear program to add transmission capacity to the network necessary to meet supply-demand balancing every timeslice while minimizing cost of expansion. 
+      - The timeslices used in this method are all derived from the the 2025 solve year of the national ReEDS model.
+    - The difference in transfer capacity between `itl_NARIS.csv` and this model are stored in this csv as an additive overlay.
