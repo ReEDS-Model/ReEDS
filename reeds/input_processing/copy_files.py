@@ -1025,10 +1025,19 @@ def write_miscellaneous_files(
 
     ### Single column from input table ###
 
-    pd.read_csv(
-        os.path.join(reeds_path,'inputs','emission_constraints','ng_crf_penalty.csv'), index_col='t',
-    )[sw['GSw_NG_CRF_penalty']].rename_axis('*t').to_csv(
-        os.path.join(inputs_case,'ng_crf_penalty.csv')
+    ng_carb_lifetime_cost_adjust = (
+        pd.read_csv(
+            os.path.join(reeds_path, 'inputs', 'emission_constraints', 'ng_crf_penalty.csv'),
+            index_col='t',
+        )
+        [sw['GSw_NG_CRF_penalty']]
+        .rename_axis('allt')
+        .rename('value')
+    )
+    reeds.io.write_to_inputs_h5(
+        ng_carb_lifetime_cost_adjust, 'ng_carb_lifetime_cost_adjust', inputs_case,
+        gamstype='parameter', units='unitless',
+        comment='cost adjustment for NG with full-region zero-carbon policy',
     )
 
     gwp = pd.read_csv(
