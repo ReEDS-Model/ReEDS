@@ -197,6 +197,7 @@ def get_rev_paths(revswitches):
     return revswitches
 
 
+
 def stop_after_input_processing(OPATH, reeds_path, casedir, caseSwitches):
     """Stop the model after input processing"""
     comment('Exit after input_processing', OPATH)

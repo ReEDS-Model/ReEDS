@@ -1,5 +1,6 @@
 #%% Imports
 import argparse
+import os
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -678,6 +679,133 @@ def check_nonac_costs(trancap_fut, trancap_init_energy, transmission_cost_nonac)
         raise ValueError(f'Missing non-AC transmission costs for {len(missing)} routes')
 
 
+def regional_poi_bins(g, deflator, upper_cost, existing_mw, min_bin_mw=1):
+    g = g.sort_values('capacity_GW')
+    anchor = g['cum_cost_$'].abs().idxmin()
+    anchor_gw = g.loc[anchor, 'capacity_GW']
+    above = g.loc[g['capacity_GW'] >= anchor_gw].sort_values('capacity_GW')
+    cap_gw = above['capacity_GW'].to_numpy(dtype=float)
+    cum_cost = above['cum_cost_$'].to_numpy(dtype=float)
+    width_gw = np.diff(cap_gw)
+    d_cost = np.diff(cum_cost)
+    keep = width_gw > 0
+    width_gw = width_gw[keep]
+    d_cost = d_cost[keep]
+
+    anchor_mw = anchor_gw * 1000.0
+    free_mw = max(0.0, anchor_mw - existing_mw)
+    overshoot_mw = max(0.0, existing_mw - anchor_mw)
+
+    if len(width_gw) == 0:
+        return free_mw, []
+
+    marg = np.clip(d_cost / (width_gw * 1e6), 0.0, None) * deflator
+    width_mw = width_gw * 1000.0
+    within = marg < upper_cost
+    order = np.argsort(marg[within], kind='mergesort')
+    widths = width_mw[within][order]
+    costs = marg[within][order]
+
+    remaining = overshoot_mw
+    for i in range(len(widths)):
+        if remaining <= 0:
+            break
+        take = min(remaining, widths[i])
+        widths[i] -= take
+        remaining -= take
+
+    return free_mw, [(w, c) for w, c in zip(widths, costs) if w >= min_bin_mw]
+
+
+def get_poi_supply_curve(case, min_bin_mw=1, free_bin_cost=1.0):
+    """
+    Build the POI / network-reinforcement supply curve for inputs.h5 as the icbin
+    set and the cost_poi_bin ($/MW) and cap_poi_bin (MW) parameters.
+
+    GSw_RegIntraCurve=0 -> flat GSw_TransIntraCost
+    GSw_RegIntraCurve=1 -> the regional curve
+    """
+    sw = reeds.io.get_switches(case)
+    reeds_path = reeds.io.reeds_path
+    valid_regions = {'r': reeds.io.read_input(case, 'r').squeeze(1).tolist()}
+
+    if not int(sw.GSw_RegIntraCurve):
+        ## Flat POI: a single unlimited bin1 at GSw_TransIntraCost for every model region
+        reg = pd.DataFrame({
+            'r': valid_regions['r'], 'icbin': 'bin1', 'sc_cat': 'cost',
+            'value': float(sw.GSw_TransIntraCost)})
+    else:
+        ## Build the zonal curve from the cumulative interconnection data
+        costfile = f'reinforcement_upgrade_cost_{sw.GSw_ZoneSet}.csv'
+        raw_poi = os.path.join(reeds_path, 'inputs', 'transmission', costfile)
+        if not os.path.exists(raw_poi):
+            raise FileNotFoundError(
+                'The regional POI reinforcement curve (GSw_RegIntraCurve=1) requires '
+                f'{raw_poi}, which was not found.')
+        input_dollar_year = pd.read_csv(
+            os.path.join(reeds_path, 'inputs', 'transmission', 'dollaryear.csv'), index_col=0,
+        ).squeeze(1)
+        inflatable = reeds.io.get_inflatable()
+        poi_deflator = inflatable[int(input_dollar_year[costfile]), int(sw.dollar_year)]
+        upper_cost = float(sw.GSw_POIUpperCost)
+
+        hashfunc = reeds.inputs.get_itl_config()['hashfunc']
+        zonehash = pd.read_csv(
+            os.path.join(reeds_path, 'inputs', 'zones', sw.GSw_ZoneSet, 'zonehash.csv'),
+            index_col='r')[hashfunc]
+        hash2zone = pd.Series(zonehash.index.values, index=zonehash.values)
+
+        raw = pd.read_csv(raw_poi)
+        raw['r'] = raw['region'].map(hash2zone)
+        ## Validate coverage against the raw data
+        missing = sorted(set(valid_regions['r']) - set(raw['r'].dropna().unique()))
+        if missing:
+            raise ValueError(
+                f'Missing POI / network-reinforcement curve for {len(missing)} of '
+                f'{len(valid_regions["r"])} model regions in {costfile} '
+                f'(GSw_RegIntraCurve=1, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing}')
+
+        poi_cap_init = reeds.io.read_input(case, 'poi_cap_init').set_index('r')['Value']
+        missing_init = sorted(set(valid_regions['r']) - set(poi_cap_init.index))
+        if missing_init:
+            raise ValueError(
+                f'Missing poi_cap_init for {len(missing_init)} of '
+                f'{len(valid_regions["r"])} model regions in inputs_case/inputs.h5, which '
+                f'the regional POI curve needs to net existing capacity out of the raw curve '
+                f'(GSw_RegIntraCurve=1, GSw_ZoneSet={sw.GSw_ZoneSet}): {missing_init}')
+
+        rows = []
+        for region, g in raw.loc[raw['r'].isin(valid_regions['r'])].groupby('r', sort=True):
+            free_mw, bins = regional_poi_bins(
+                g, poi_deflator, upper_cost, float(poi_cap_init[region]), min_bin_mw)
+            k = 0
+            if free_mw >= min_bin_mw:
+                k += 1
+                rows.append((region, f'bin{k}', 'cost', free_bin_cost))
+                rows.append((region, f'bin{k}', 'cap', round(free_mw, 1)))
+            for width_mw, cost_kw in bins:
+                k += 1
+                rows.append((region, f'bin{k}', 'cost', round(float(cost_kw), 2)))
+                rows.append((region, f'bin{k}', 'cap', round(float(width_mw), 1)))
+        reg = pd.DataFrame(rows, columns=['r', 'icbin', 'sc_cat', 'value'])
+        reg = pd.concat([reg, pd.DataFrame({
+            'r': sorted(valid_regions['r']), 'icbin': 'bin_upper', 'sc_cat': 'cost',
+            'value': upper_cost})], ignore_index=True)
+    
+    cost = reg.loc[reg['sc_cat'] == 'cost', ['r', 'icbin', 'value']].copy()
+    cost['value'] = cost['value'].astype(float) * 1000.0
+    cap = reg.loc[reg['sc_cat'] == 'cap', ['r', 'icbin', 'value']].copy()
+    
+    def _binkey(b):
+        return (1, 0) if b == 'bin_upper' else (0, int(str(b).replace('bin', '')))
+    icbins = sorted(reg['icbin'].unique(), key=_binkey)
+    
+    return {
+        'icbin': pd.Series(icbins),
+        'cost_poi_bin': cost,
+        'cap_poi_bin': cap,
+    }
+
 #%% Main function
 def main(case):
     #%% Calculate parameters
@@ -751,6 +879,10 @@ def main(case):
     ## Write transmission_cost_ac for R2X
     outputs['transmission_cost_ac'] = transmission_cost_ac
 
+    ### POI / network-reinforcement cost supply curve
+    for key, df in get_poi_supply_curve(case).items():
+        outputs[key] = df
+
     ### Pipelines
     outputs['pipeline_cost_mult'] = get_pipeline_cost_mult(
         case,
@@ -789,18 +921,21 @@ def main(case):
         'val_cs': False,
         'tscbin': False,
     }
-    sets = ['tscbin', 'routes_adjacent', 'r_cs', 'cs']
+    sets = ['tscbin', 'icbin', 'routes_adjacent', 'r_cs', 'cs']
     ## Write some copies for r2x (would be better to avoid by adding compatibility with inputs.h5)
     csvs = ['trancap_init_energy']
     units_comment = {
+        'cap_poi_bin': ('MW', 'incremental capacity width available in each POI bin (no row = unlimited)'),
         'co2_injection_limit': ('metric tons/hr', 'co2 site injection rate upper bound'),
         'co2_storage_limit': ('metric tons', 'total cumulative storage capacity per carbon storage site'),
         'cost_co2_stor_bec': ('$/metric ton', 'breakeven cost for storing carbon - CF determined by GSw_CO2_BEC'),
         'cost_hurdle_rate1': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp1'),
         'cost_hurdle_rate2': ('$/MWh', 'raw data cost for transmission hurdle rate for regiongrp2'),
+        'cost_poi_bin': ('$/MW', 'POI / network-reinforcement cost in each bin'),
         'cs': ('', 'CO2 storage sites'),
         'distance': ('miles', 'distance between BAs by line type'),
         'firm_import_limit': ('fraction', 'limit on net firm imports into NERC regions'),
+        'icbin': ('', 'POI / network-reinforcement supply curve bins'),
         'pipeline_cost_mult': ('fraction', 'cost multiplier for H2 pipelines (will be added to 1)'),
         'r_cs_distance': ('miles', 'Euclidean distance between BA transmission endpoints and storage formations'),
         'r_cs': ('', 'mapping from BA to carbon storage sites'),
