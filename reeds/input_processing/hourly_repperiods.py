@@ -172,7 +172,7 @@ def cluster_profiles(profiles_fitperiods, sw, forceperiods_yearperiod):
     elif sw['GSw_HourlyClusterAlgorithm'] in ['opt','optimized','optimize']:
         fit_using_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
         profiles_period_mean = profiles_fitperiods.loc[fit_using_years]
-        fit_to_years = [int(y) for y in sw.GSw_HourlyRepYears.split('_')]
+        fit_to_years = [int(y) for y in sw.GSw_HourlyMatchYears.split('_')]
         target_feature_mean = profiles_fitperiods.loc[fit_to_years].mean()
         ### Optimize the weights of representative days
         iweights, weights = reeds.timeseries.optimize_period_weights(

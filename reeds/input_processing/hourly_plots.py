@@ -248,7 +248,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     colors = {'cf_actual':'k', 'cf_rep':'C1'}
     lss = {'cf_actual':':', 'cf_rep':'-'}
     zorders = {'cf_actual':10, 'cf_rep':9}
-    actual_years = [int(y) for y in sw.GSw_HourlyRepYears.split('_')]
+    actual_years = [int(y) for y in sw.GSw_HourlyMatchYears.split('_')]
 
     hierarchy = reeds.io.get_hierarchy(os.path.abspath(os.path.join(inputs_case,'..')))
     dfmap = reeds.io.get_dfmap(os.path.abspath(os.path.join(inputs_case,'..')))

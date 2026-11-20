@@ -229,7 +229,7 @@ def check_compatibility(sw):
     allowed_years = list(range(2007,2014)) + list(range(2016,2024))
     allowed_years_string = ','.join([str(year) for year in allowed_years])
 
-    for key in ['resource_adequacy_years', 'GSw_HourlyRepYears', 'GSw_HourlyWeatherYears']:
+    for key in ['resource_adequacy_years', 'GSw_HourlyMatchYears', 'GSw_HourlyWeatherYears']:
         years = [int(y) for y in sw[key].split('_')]
         for year in years:
             if year not in allowed_years:

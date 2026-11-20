@@ -747,8 +747,8 @@ def get_switches(case=None, **kwargs):
     ## Superset of weather years
     sw['weather_years_all'] = [
         int(y) for y in sorted(set(
-            ## Allow backwards compatibility with runs before GSw_HourlyRepYears was added
-            sw.get('GSw_HourlyRepYears', sw['GSw_HourlyWeatherYears']).split('_')
+            ## Allow backwards compatibility with runs before GSw_HourlyMatchYears was added
+            sw.get('GSw_HourlyMatchYears', sw['GSw_HourlyWeatherYears']).split('_')
             + sw['GSw_HourlyWeatherYears'].split('_')
             + sw['resource_adequacy_years'].split('_')
         ))
