@@ -63,10 +63,10 @@ BIOUSED.lo(bioclass,r,t_unfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t_
 BIOUSED.up(bioclass,r,t_unfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,t_unfix) }] = +inf ;
 
 * RECS
-RECS.lo(RPSCat,i,st,ast,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,t_unfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = 0 ;
-RECS.up(RPSCat,i,st,ast,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,t_unfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = +inf ;
-ACP_PURCHASES.lo(RPSCat,st,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = 0 ;
-ACP_PURCHASES.up(RPSCat,st,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = +inf ;
+RECS.lo(RPSCat,i,st,ast,htype,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,htype,t_unfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = 0 ;
+RECS.up(RPSCat,i,st,ast,htype,t_unfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,htype,t_unfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = +inf ;
+ACP_PURCHASES.lo(RPSCat,st,htype,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = 0 ;
+ACP_PURCHASES.up(RPSCat,st,htype,t_unfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = +inf ;
 
 * transmission
 CONVERSION.lo(r,h,intype,outtype,t_unfix)$Sw_VSC = 0 ;

@@ -3041,10 +3041,18 @@ All policy-mandated offshore wind capacity is assumed to be rebuilt if retiring 
 [^refoffshorenote]: For Maryland, Barbose {cite:year}`barboseStateRenewablesPortfolio2026` shows a nonzero offshore wind carveout beginning in 2024.
 However, the ReEDS offshore wind mandate for Maryland already captures this requirement, so we zero out the wind carveout.
 
-Finally, voluntary renewable energy credits are also represented in ReEDS.
+Voluntary renewable energy credits are also represented in ReEDS.
 Only renewable energy technologies are allowed to supply voluntary RECs, and Canadian imports are not allowed.
 The voluntary REC requirement is based on the observed amount of voluntary RECs from {cite}`heeterStatusTrendsVoluntary2021`, and the requirement is assumed to grow by the smallest amount that has been observed year-over-year (0.1208% in absolute terms).
 The voluntary requirement includes an alternative compliance payment of \$10/MWh (in 2004\$).
+
+By default, RPS (and CES) requirements are enforced during representative periods only, with an option to also enforce them during stress periods.
+
+```{admonition} RPS/CES stress period settings
+`GSw_StateRPS_Stress` allows the requirements to also be enforced during stress periods: 0=off (default), 1=weight all modeled stress hours equally, 2=weight only each state's own peak-load stress period(s).
+
+Voluntary REC requirements and solar/wind set-asides are only ever enforced during representative periods irrespective of `GSw_StateRPS_Stress`.
+```
 
 ```{table} Cumulative Offshore Wind Capacity (MW) Mandated in ReEDS
 :name: offshore-wind-capacity

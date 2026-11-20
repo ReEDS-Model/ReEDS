@@ -84,7 +84,7 @@ Input-file documentation belongs in the per-folder READMEs above instead.
 ### 2.3 Check downstream implications of every change
 ReEDS has many switches in [`cases.csv`](cases.csv) that gate large blocks of behavior. A change that looks isolated in one `.gms` or `.py` file may silently affect:
 
-- Other scenarios in [`cases.csv`](cases.csv), [`cases_test.csv`](cases_test.csv), [`cases_standardscenarios.csv`](cases_standardscenario csv), etc.
+- Other scenarios in [`cases.csv`](cases.csv), [`cases_test.csv`](cases_test.csv), [`cases_standardscenarios.csv`](cases_standardscenarios.csv), etc.
 
 - Files declared in [`reeds/input_processing/runfiles.csv`](reeds/input_processing/runfiles.csv) (governs which inputs are copied into a run's `inputs_case/` directory and how they are aggregated / disaggregated).
 
@@ -103,8 +103,8 @@ Before handing a non-trivial change back to the human actually check:
 
 2. **Default case neutrality.** If the change is *not expected to alter results for the default case* (for example, a rename, a reformat, or new code that only runs when an off-by-default switch is turned on), say so explicitly so the reviewer knows that the comparison report should show no differences.
 
-3. **`reeds/input_processing/runfiles.csv` consistency.** If you add, remove, or rename a CSV file that is read by GAMS, update `reeds/input_processing/runfiles.csv`. Pay attention all columns, as incorrectly filled out values can cause silent failures in switch-gated runs. 
-   1. Scalar parameters live in [`inputs/scalars.csv`](inputs/scalars.csv); add new scalars there rather than hard-coding values. New files that get copied to `inputs_case/` also need an entry in [`inputs/userinput/futurefiles.csv`](inputs/userinput/futurefiles.csv), which tells [`reeds/input_processing/forecast.py`](reeds/input_processing/forecast.py) how to project the file forward in time — forecast.py will print a loud warning if a file is missing from it.
+3. **`reeds/input_processing/runfiles.csv` consistency.** If you add, remove, or rename a CSV file that is read by GAMS, update `reeds/input_processing/runfiles.csv`. Pay attention to all columns, as incorrectly filled out values can cause silent failures in switch-gated runs. 
+   Scalar parameters live in [`inputs/scalars.csv`](inputs/scalars.csv); add new scalars there rather than hard-coding values. New files that get copied to `inputs_case/` also need an entry in [`inputs/userinput/futurefiles.csv`](inputs/userinput/futurefiles.csv), which tells [`reeds/input_processing/forecast.py`](reeds/input_processing/forecast.py) how to project the file forward in time — forecast.py will print a loud warning if a file is missing from it.
 
 4. **Units and dollar year.** Costs read into `b_inputs.gms` must already be in the correct dollar year (as specified by the `dollar_year` switch in `cases.csv`). Use `inputs/financials/deflator.csv` (do not hard-code conversions). Add unit suffixes to new column names (e.g., `capcost_usd_per_kw`).
 

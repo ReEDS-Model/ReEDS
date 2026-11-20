@@ -644,6 +644,8 @@ def pre_val_streams(dfs, **kw):
         dfs['p']['p'] = inflate_series(dfs['p']['p'])
         df_bm = pd.merge(left=dfs['q'], right=dfs['p'], how='left', on=['type', 'subtype', 'rb', 'timeslice', 'year'], sort=False)
         df_bm['p'] = df_bm['p'].fillna(0)
+        #Stress-period RPS/CES value comes from the same eq_rec_requirement value stream, so benchmark it together
+        df_bm['type'] = df_bm['type'].replace({'state_rps_stress': 'state_rps'})
         #Add con_name:
         types = ['load','res_marg','oper_res','state_rps','curt_realize','curt_cause'] #the curt ones don't exist, they are just placeholders for the mapping.
         df_bm = df_bm[df_bm['type'].isin(types)].copy()
@@ -966,6 +968,11 @@ def pre_prices(dfs, **kw):
     #Calculate $
     df['$'] = df['p'] * df['q']
     df.drop(['p', 'q'], axis='columns',inplace=True)
+    #Combine the stress-period state RPS/CES price component into the base state_rps category.
+    if (df['type'] == 'state_rps_stress').any():
+        df['type'] = df['type'].replace({'state_rps_stress': 'state_rps'})
+        group_cols = [c for c in ['type', 'subtype', 'rb', 'timeslice', 'year'] if c in df.columns]
+        df = df.groupby(group_cols, sort=False, as_index=False)['$'].sum()
     #Calculate total $
     df_tot = df[df['type'].isin(price_types)].copy()
     df_tot = df_tot.drop(columns=['type','subtype'])
