@@ -642,6 +642,13 @@ ban(i)$[i_subsets(i,'geo')
            resourceclassnum(c)>Sw_NumGeoclasses }] = yes ;
 ) ;
 
+*Ban deep EGS flash (classes 1-6 have mean resource temperature >= 200C; see classification_geothermal.csv)
+if(Sw_DeepEGSFlash = 0,
+ban(i)$[i_subsets(i,'geo_egs_allkm')
+      $sum{c$i_c(i,c),
+           resourceclassnum(c)<=6 }] = yes ;
+) ;
+
 *Ingest list of new nuclear restricted BAs ('p' regions), ba list is consistent with NCSL restrictions.
 *https://www.ncsl.org/research/environment-and-natural-resources/states-restrictions-on-new-nuclear-power-facility.aspx
 $onempty
