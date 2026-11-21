@@ -54,8 +54,9 @@ def timestamp2h(ts, GSw_HourlyType='day'):
     y = ts.year
     d = int(ts.strftime('%j').lstrip('0'))
     if GSw_HourlyType == 'wek':
-        w = d // 5
-        h = (d % 5) * 24 + ts.hour + 1
+        ## w001 is days 1-5 (as in h2timestamp and make_timestamps)
+        w = (d - 1) // 5 + 1
+        h = ((d - 1) % 5) * 24 + ts.hour + 1
         out = f'y{y}w{w:>03}h{h:>03}'
     else:
         h = ts.hour + 1

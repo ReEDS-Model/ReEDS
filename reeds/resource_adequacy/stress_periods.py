@@ -313,16 +313,19 @@ def get_shoulder_periods(sw, criterion, dfenergy_agg, high_stress_periods):
 
         day = reeds.timeseries.h2timestamp(row.period)
 
-        start_headspace_MWh = dfheadspace_MWh.loc[day.strftime(fmt), row.region].iloc[0]
-        end_headspace_MWh = dfheadspace_MWh.loc[day.strftime(fmt), row.region].iloc[-1]
-
-        start_headspace_frac = dfheadspace_frac.loc[day.strftime(fmt), row.region].iloc[0]
-        end_headspace_frac = dfheadspace_frac.loc[day.strftime(fmt), row.region].iloc[-1]
-
         day_eue = high_stress_periods.loc[i, 'value']
         day_index = np.where(
             timeindex == dfenergy_agg.loc[day.strftime(fmt)].iloc[0].name
         )[0][0]
+        ## All hours of the period (one day, or five for wek), so the end headspace
+        ## is taken at the end of the period rather than the end of its first day
+        period_hours = timeindex[day_index:day_index + periodhours]
+
+        start_headspace_MWh = dfheadspace_MWh.loc[period_hours, row.region].iloc[0]
+        end_headspace_MWh = dfheadspace_MWh.loc[period_hours, row.region].iloc[-1]
+
+        start_headspace_frac = dfheadspace_frac.loc[period_hours, row.region].iloc[0]
+        end_headspace_frac = dfheadspace_frac.loc[period_hours, row.region].iloc[-1]
 
         ## Loop around with % len(timeindex) if on the first or last day
         day_before = timeindex[(day_index - periodhours) % len(timeindex)]
@@ -335,7 +338,8 @@ def get_shoulder_periods(sw, criterion, dfenergy_agg, high_stress_periods):
         ):
             _shoulder_periods[f'after_{row.period}'] = pd.Series({
                 'region':row.region,
-                'period':day_after.strftime('y%Yd%j'),
+                'period':reeds.timeseries.timestamp2h(
+                    day_after, sw.GSw_HourlyType).split('h')[0],
             })
             print(
                 f"Added {day_after.strftime(fmt)} as shoulder stress period "
@@ -349,7 +353,8 @@ def get_shoulder_periods(sw, criterion, dfenergy_agg, high_stress_periods):
         ):
             _shoulder_periods[f'before_{row.period}'] = pd.Series({
                 'region':row.region,
-                'period':day_before.strftime('y%Yd%j'),
+                'period':reeds.timeseries.timestamp2h(
+                    day_before, sw.GSw_HourlyType).split('h')[0],
             })
             print(
                 f"Added {day_before.strftime(fmt)} as shoulder stress period "
