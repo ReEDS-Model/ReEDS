@@ -520,8 +520,11 @@ ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t)
 * Case 2: the resource of one or more biomass classes ARE exhausted, i.e., BIOUSED = biosupply(bioclass)
 *    Marginal Biomass Price = maximum difference between eq_bioused.m and eq_biousedlimit.m across all biomass classes in a region
 
-repbioprice(s,r,t)$[tmodel_new(t)$(not tfinito_all(t))] = max{0, smax{bioclass$BIOUSED.l(s,bioclass,r,t), eq_bioused.m(s,r,t) -
-                                              sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(s,bioclass,usda_region,t) } } } / pvf_onm(t) ;
+repbioprice(s,r,t)$[tmodel_new(t)$(not tfinito_all(t))] =
+    opex_scale(s,t)
+    * max{0, smax{bioclass$BIOUSED.l(s,bioclass,r,t), eq_bioused.m(s,r,t)
+             - sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(s,bioclass,usda_region,t) } }
+    } ;
 
 * when running linked model use FINITO biomass clearing prices
 $ifthene.finitobioprice Sw_FINITO_Link == 1
