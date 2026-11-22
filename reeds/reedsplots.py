@@ -6588,7 +6588,7 @@ def map_stressors(
             plotlabel = f'{timestamp}: {focus_region}, peak load'
         elif day.reason.startswith('seed'):
             highlight_level = sw.GSw_PRM_StressSeedMinRElevel
-            plotlabel = f"{timestamp}: {focus_region}, minumum {labels[day.reason.split('_')[1]]}"
+            plotlabel = f"{timestamp}: {focus_region}, minimum {labels[day.reason.split('_')[1]]}"
         else:
             print(f'Invalid stress period: {day.reason}')
             continue
@@ -6740,7 +6740,7 @@ def map_stressors(
 
 def plot_stressors(case, t, iteration=0, seed=False, onlyseed=False):
     """
-    Map demand/CF/FOR (organized differently to allow for independent use)
+    Map demand/CF/FOR using map_stressors()
     """
     plot_generator = map_stressors(case=case, t=t, iteration=iteration, seed=seed)
     while True:

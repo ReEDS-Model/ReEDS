@@ -81,7 +81,7 @@ def validate_config(case):
     for key in required:
         if key not in config:
             raise ValueError(f'{key} must be a top-level key in {spath}')
-    ## No other keys must be included
+    ## No other keys may be included
     for key in config:
         if key not in required:
             raise ValueError(f'{spath}: {key} is invalid; the allowed keys are {required}')

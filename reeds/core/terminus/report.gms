@@ -1282,7 +1282,7 @@ emit_captured_nat(s,i,t)$tmodel_new(t) = sum{r, emit_captured_irt(s,i,r,t) } ;
 * National RE Constraint Marginals
 *==================================
 
-RE_gen_price_nat(s,t)$tmodel_new(t) = (1/cost_scale) * crf(t) * eq_national_gen.m(s,t) ;
+RE_gen_price_nat(s,t)$tmodel_new(t) = opex_scale(s,t) * eq_national_gen.m(s,t) ;
 
 *=========================
 * [i,v,r,t]-level capital expenditures (for retail rate calculations)
