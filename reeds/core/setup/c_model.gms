@@ -16,8 +16,8 @@ positive variables
   LOAD(s,r,allh,t)                  "--MW-- busbar load for each balancing region"
   FLEX(s,flex_type,r,allh,t)        "--MW-- flexible load shifted to each timeslice"
 *   PEAK_FLEX(r,ccseason,t)          "--MW-- peak busbar load adjustment based on load flexibility"
-  DROPPED(r,allh,t)               "--MW-- dropped load (only allowed before Sw_StartMarkets)"
-  EXCESS(r,allh,t)                "--MW-- excess load (only allowed before Sw_StartMarkets)"
+  DROPPED(s,r,allh,t)               "--MW-- dropped load (only allowed before Sw_StartMarkets)"
+  EXCESS(s,r,allh,t)                "--MW-- excess load (only allowed before Sw_StartMarkets)"
   CAP_LOADSITE(r,t)               "--MW-- capacity of flexibly sited load"
   INV_LOADSITE(r,t)               "--MW-- capacity of flexibly sited load installed in model year"
   OP_LOADSITE(s,r,allh,t)           "--MW-- operations of flexibly sited load"
@@ -1429,8 +1429,8 @@ eq_supply_demand_balance(s,r,h,t)$tmodel(t)..
     - sum{(i,v)$[valcap(i,v,r,t)$storage_hybrid(i)$(not csp(i))], STORAGE_IN_GRID(s,i,v,r,h,t) }$Sw_HybridPlant
 
 * [plus] dropped/excess load ONLY if before Sw_StartMarkets
-    + DROPPED(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
-    - EXCESS(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+    + DROPPED(s,r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+    - EXCESS(s,r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
 
     =e=
 
@@ -1558,7 +1558,7 @@ eq_OpRes_requirement(s,ortype,r,h,t)
     - sum{rr$opres_routes(r,rr,t), OPRES_FLOW(s,ortype,r,rr,h,t) }
 
 *[plus] dropped load (operating reserves) ONLY if before Sw_StartMarkets
-    + DROPPED(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+    + DROPPED(s,r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
 
     =g=
 

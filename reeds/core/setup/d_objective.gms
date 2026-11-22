@@ -323,7 +323,7 @@ eq_Objfn_op(s,t)$tmodel(t)..
 
 * --- dropped/excess load (ONLY if before Sw_StartMarkets)
               + sum{(r,h)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)],
-                    (DROPPED(r,h,t) + EXCESS(r,h,t) ) * hours(h) * cost_dropped_load }
+                    (DROPPED(s,r,h,t) + EXCESS(s,r,h,t) ) * hours(h) * cost_dropped_load }
 
 * --- costs from producing products (for now DAC and/or H2)---
               + sum{(p,i,v,r,h)$[(h2(i) or dac(i))$valcap(i,v,r,t)$i_p(i,p)$h_rep(h)],

@@ -1785,7 +1785,7 @@ error_check('z') = (
 * Hurdle costs
         + pvf_onm(t) * sum{(r,rr,trtype)$cost_hurdle(r,rr,t), tran_hurdle_cost_ann(s,r,rr,trtype,t) }
 * Penalty cost for dropped/excess load before Sw_StartMarkets
-        + pvf_onm(t) * sum{(r,h), (DROPPED.l(r,h,t) + EXCESS.l(r,h,t)) * hours(h) * cost_dropped_load }
+        + pvf_onm(t) * sum{(r,h), (DROPPED.l(s,r,h,t) + EXCESS.l(s,r,h,t)) * hours(h) * cost_dropped_load }
 * Retail adder for electricity consuming technologies
         + pvf_onm(t) * sum{(p,i,v,r,h)$[valcap(i,v,r,t)$i_p(i,p)$h_rep(h)$Sw_RetailAdder$Sw_Prod],
               hours(h) * Sw_RetailAdder * PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
@@ -1860,12 +1860,12 @@ error_check("OpRes") = sum{(s,ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(s
 error_check("m_rsc_dat") = sum{(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap"), m_rsc_dat_init(r,i,rscbin) - m_rsc_dat(r,i,rscbin,"cap") } ;
 
 * Check to make sure there's no dropped/excess load in or after Sw_StartMarkets
-error_check("dropped") = sum{(r,h,t)$[yeart(t)>=Sw_StartMarkets], DROPPED.l(r,h,t) } ;
-error_check("excess") = sum{(r,h,t)$[yeart(t)>=Sw_StartMarkets], EXCESS.l(r,h,t) } ;
+error_check("dropped") = sum{(s,r,h,t)$[yeart(t)>=Sw_StartMarkets], DROPPED.l(s,r,h,t) } ;
+error_check("excess") = sum{(s,r,h,t)$[yeart(t)>=Sw_StartMarkets], EXCESS.l(s,r,h,t) } ;
 
 * Report DROPPED and EXCESS variable levels
-dropped_load(r,h,t) = DROPPED.l(r,h,t) ;
-excess_load(r,h,t) = EXCESS.l(r,h,t) ;
+dropped_load(s,r,h,t) = DROPPED.l(s,r,h,t) ;
+excess_load(s,r,h,t) = EXCESS.l(s,r,h,t) ;
 
 *======================
 * Transmission

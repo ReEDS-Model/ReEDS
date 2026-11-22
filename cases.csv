@@ -387,7 +387,7 @@ keep_resource_adequacy_files,Indicate whether to keep (1) or delete (0) resource
 keep_g00_files,Keep (1) or delete (0) .g00 files for completed solve years,0; 1,0,
 keep_run_terminal,"0=close run terminal, 1=keep run terminal open",0; 1,0,
 land_use_analysis,switch to turn on/off land-use analysis. Requires the `reeds_to_rev` switch also be activated,0; 1,0,
-pcm,Rerun final solve year in dispatch mode at 1-hour resolution after the CEM run finishes (submits a new bigmem job if on the HPC),0; 1,0,
+pcm,Rerun final solve year in dispatch mode at 1-hour resolution after the CEM run finishes (submits a new job if on the HPC),0; 1,0,
 plot_ba_level,0=do not plot or output BA-level year-by-month plots; 1=plot and output BA-level year-by-month plots.,0; 1,0,
 pras,Indicate whether to run PRAS for 2007-2013 between each pair of solve years (0=never; 1=just the final solve year; 2=always),0; 1; 2,2,
 pras_agg_ogs_lfillgas,Aggregate existing o-g-s and landfill gas units to the capacity assumed for new units (from unitsize.csv),0; 1,0,
