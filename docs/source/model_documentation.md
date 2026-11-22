@@ -2395,7 +2395,6 @@ This process is illustrated graphically in {numref}`figure-ra-iteration-example`
 Once all regions meet the reliability threshold,
 the simulation progresses to the next model year, and the process begins again ({numref}`figure-reeds-pras`).
 If the reliability threshold is not met after the user-defined maximum number of iterations, the simulation is halted.
-The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss of load expectation of 0.1 days/year in many regions {cite}`epriMetricsCriteriaInsights2024`.
 
 ```{figure} figs/docs/ra-iteration-example.png
 :name: figure-ra-iteration-example
@@ -2412,6 +2411,17 @@ The 3 days listed are added as new stress periods for the next iteration.
 **f**, PRAS NEUE for the second-iteration system.
 All regions meet the 1 ppm NEUE target, so the process is complete for the present model year.
 ```
+
+The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss of load expectation of 0.1 days/year in many regions {cite}`epriMetricsCriteriaInsights2024`.
+This threshold is treated as an upper bound on unserved energy and, equivalently, as a lower bound on reliability;
+it is a constraint rather than a model objective.
+As a result of this treatment:
+- Differences in reliability between scenarios that are below the 1 ppm NEUE threshold are not distinguished by the model, and conclusions should not be drawn from such differences.
+- No action is taken to try to prevent solutions that are "too reliable"
+(i.e., that demonstrate regional NEUE far below the 1 ppm threshold).
+In these cases, there could be room to reduce the system cost
+(for example, by reducing the planning reserve margin)
+while continuing to meet the same reliability threshold.
 
 {numref}`figure-ra-stressperiod-evolution` shows the evolution of NEUE over successive ReEDS-PRAS iterations for an illustrative ReEDS scenario.
 The "seed" stress periods in iteration 0 are the same as in {numref}`figure-ra-seed_stressperiods`.
