@@ -1648,7 +1648,7 @@ PSH fixed O&amp;M costs and round-trip efficiency are taken from <span class="bi
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">pshsupplycurve</span></code>: Determines the PSH supply-curve dataset used.</p>
 <ul>
-<li><p>PSH storage duration is either 8, 10, or 12 hours depending on the chosen PSH supply curve (with 12 hours as the default). Supply curves with wEph or wEphemeral in the filename allow sites that intersect with ephemeral streams. Supply curves with wExist in the filename allow sites that utilize existing reservoirs. The repository typically includes the latest and previous data vintages.</p></li>
+<li><p>Specified as <code class="docutils literal notranslate"><span class="pre">{duration}hr_{siting}</span></code> with entries from <code class="docutils literal notranslate"><span class="pre">inputs/supply_curve/supplycurve_psh-{pshsupplycurve}.csv</span></code>. The PSH storage duration options are 8, 10, or 12 hours and the siting scenario options are <code class="docutils literal notranslate"><span class="pre">limited</span></code>, <code class="docutils literal notranslate"><span class="pre">reference</span></code>, or <code class="docutils literal notranslate"><span class="pre">open</span></code>. The default is <code class="docutils literal notranslate"><span class="pre">8hr_reference</span></code>.</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PSHwatercon</span></code>: Requires new PSH to purchase water access from water supply supply curves.</p>
@@ -1670,7 +1670,7 @@ PSH fixed O&amp;M costs and round-trip efficiency are taken from <span class="bi
 </ul>
 </li>
 </ul>
-<p><strong><code class="docutils literal notranslate"><span class="pre">GSw_PSHwatertypes</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_PSHfillyears</span></code> are only relevant when <code class="docutils literal notranslate"><span class="pre">GSw_watercon</span> <span class="pre">=</span> <span class="pre">1</span></code>.</strong></p>
+<p><strong><code class="docutils literal notranslate"><span class="pre">GSw_PSHwatertypes</span></code> is only relevant when <code class="docutils literal notranslate"><span class="pre">GSw_WaterMain</span> <span class="pre">=</span> <span class="pre">1</span></code>, and <code class="docutils literal notranslate"><span class="pre">GSw_PSHfillyears</span></code> is only relevant when <code class="docutils literal notranslate"><span class="pre">GSw_PSHwatercon</span> <span class="pre">=</span> <span class="pre">1</span></code> (which also requires <code class="docutils literal notranslate"><span class="pre">GSw_WaterMain</span> <span class="pre">=</span> <span class="pre">1</span></code>).</strong></p>
 </div>
 </section>
 <section id="hydrogen">
@@ -1696,7 +1696,7 @@ By default, the model uses the third option (endogenous representation with zona
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_H2</span></code> (default <code class="docutils literal notranslate"><span class="pre">2</span></code>): Controls the representation of hydrogen.</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: <strong>drop-in fuel</strong> — no endogenous representation of hydrogen production or transport; if <code class="docutils literal notranslate"><span class="pre">GSw_H2CT=1</span></code> fuel is assumed to be available at the cost specified by <code class="docutils literal notranslate"><span class="pre">h2ctfuelscen</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: <strong>drop-in fuel</strong> — no endogenous representation of hydrogen production or transport; if <code class="docutils literal notranslate"><span class="pre">GSw_H2Combustion=1</span></code>, fuel for H2-CT and H2-CC is assumed to be available at the cost specified by <code class="docutils literal notranslate"><span class="pre">h2combustionfuelscen</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">1</span></code>: <strong>production, national balancing</strong> — endogenous representation of hydrogen production represented with national balancing (no network constraints).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">2</span></code>: <strong>production, regional balancing</strong> — endogenous representation of hydrogen production and transport network.</p></li>
 </ul>
@@ -3074,7 +3074,20 @@ The syntax for these switches is described in the “Description” column of <c
 </li>
 <li><p>Control the iteration between ReEDS and PRAS</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThreshold</span></code> (default <code class="docutils literal notranslate"><span class="pre">transgrp_1_EUE_sum</span></code>): Regional RA threshold for stress period iteration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdMetrics</span></code> (default <code class="docutils literal notranslate"><span class="pre">NEUE</span></code>): RA metric(s) checked during stress period iteration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdNEUE</span></code> (default <code class="docutils literal notranslate"><span class="pre">transgrp_1</span></code>): Region level at which to apply the NEUE threshold and the value of the threshold in parts per million [ppm]</p>
+<ul>
+<li><p>NEUE is the only RA threshold active by default. Other thresholds that can be activated, in conjunction with the <code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdMetrics</span></code> switch, are:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdDepth</span></code>: Outage depth threshold [MW_EUE/MW_peak_load] (fraction)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdDuration</span></code>: Outage duration threshold [hours]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdLOLD</span></code>: Loss-of-load-days threshold [event-days/year]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdLOLE</span></code>: Loss-of-load-events threshold [events/year]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdLOLH</span></code>: Loss-of-load-hours threshold [event-hours/year]</p></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressIterateMax</span></code> (default 5): Max number of times to iterate on a particular solve year before halting the run</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressIncrement</span></code> (default 2): How many stress periods to add per region per iteration</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressStorageCutoff</span></code> (default <code class="docutils literal notranslate"><span class="pre">EUE_0.1</span></code>): How to select “shoulder” stress periods for interday storage</p></li>
@@ -3104,7 +3117,7 @@ The syntax for these switches is described in the “Description” column of <c
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">resource_adequacy_years</span></code> (default <code class="docutils literal notranslate"><span class="pre">2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023</span></code>): Weather years to include in resource adequacy calculations</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_HourlyChunkLengthStress</span></code> (default 3): Hours per time chunk modeled during stress periods</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pras_samples</span></code> (default 10): Number of Monte Carlo outage draws modeled in PRAS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pras_samples</span></code> (default 100): Number of Monte Carlo outage draws modeled in PRAS</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressLoadAggMethod</span></code> (default <code class="docutils literal notranslate"><span class="pre">max</span></code>): How to aggregate load within time chunks: “mean” or “max”</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressOutages</span></code> (default 1): Turn on (1) / off (0) outages during stress periods in ReEDS</p></li>
 </ul>
@@ -3169,8 +3182,8 @@ In all cases, the VRE profile is compared against the aggregated regional load p
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">capcredit_hierarchy_level</span></code> (default <code class="docutils literal notranslate"><span class="pre">transreg</span></code> for the 11 planning regions shown in <a class="reference internal" href="#figure-spatial-layers-zones"><span class="std std-numref">Fig. 17</span></a>): Level at which to aggregate net load for capacity credit calculation</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_CapCreditHours</span></code> (default 20): Number of peak net load hours per capacity credit season considered in capacity credit calculation</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">marg_vre_mw</span></code> (default 1000): Amount of marginal VRE capacity to add in MW for marginal capacity credit calculation</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">marg_stor_mw</span></code> (default 100): Amount of marginal storage capacity to add in MW for marginal capacity credit calculation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">marg_vre_mw</span></code> (default 1000): Minimum amount of marginal VRE capacity in MW to add for marginal capacity credit calculation; the specific amount used is the maximum of this value and the the most recent average new VRE investment per capacity credit region (looking back the number of solve years specified by <code class="docutils literal notranslate"><span class="pre">marg_vre_steps</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cc_stor_stepsize</span></code> (default 100): Amount of marginal storage capacity in MW to add for marginal storage capacity credit calculation</p></li>
 </ul>
 </div>
 </section>

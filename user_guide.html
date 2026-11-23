@@ -97,7 +97,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#relevant-switches">Relevant switches</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#reeds2pras-and-pras">ReEDS2PRAS and PRAS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#resource-adequacy">Resource adequacy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#stress-period-thresholds">Stress period thresholds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reeds2pras-and-pras-switches">ReEDS2PRAS and PRAS switches</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#monte-carlo-sampling-mcs">Monte Carlo Sampling (MCS)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#quick-start-monte-carlo">Quick start: Monte Carlo</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#yaml-distribution-file-format">YAML distribution file format</a></li>
@@ -274,15 +278,7 @@ More detail can be found in the <a href="postprocessing_tools.html#fix-represent
 </li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThreshold</span></code>: The default setting of ‘transgrp_1_EUE_sum’ means a threshold of “<strong>1</strong> ppm NEUE in each <strong>transgrp</strong>”, with stress periods selected by the daily <strong>sum</strong> of <strong>EUE</strong> within each <strong>transgrp</strong>.</p>
-<ul class="simple">
-<li><p>The first argument can be selected from [‘country’, ‘interconnect’, ‘nercr’, ‘transreg’, ‘transgrp’, ‘st’, ‘r’] and specifies the hierarchy level within which to compare RA performance against the threshold.</p></li>
-<li><p>The second argument can be any float and specifies the RA performance threshold in parts per million [ppm].</p></li>
-<li><p>The third argument can be ‘NEUE’ or ‘EUE’, specifying which metric to use when selecting stress periods. If set to ‘NEUE’ the model will add stress periods with the largest <strong>fraction</strong> of dropped load; if set to ‘EUE’ the model will add stress periods with the largest <strong>absolute MWh</strong> of dropped load.</p></li>
-<li><p>The fourth argument can be ‘sum’ or ‘max’, specifying whether to add stress periods in order of their daily per-hour max dropped load or by their daily sum of dropped load when selecting stress periods.</p></li>
-<li><p>If desired you can provide /-delimited entries like ‘transgrp_10_EUE_sum/country_1_EUE_sum’, meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.</p></li>
-</ul>
-</li>
+<li><p>Stress periods are added based on the thresholds described in <a class="reference internal" href="#resource-adequacy"><span class="xref myst">Resource adequacy</span></a>.</p></li>
 </ul>
 </section>
 <section id="conventions">
@@ -766,8 +762,8 @@ However, all analyses (both ours and from other research groups) indicate that h
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransSquigglinessMin</span></code>: Minimum squiggliness (straight-line length multiplier) to apply for interzonal transmission; the default value of 1.3 is from the <a class="reference external" href="https://www.misoenergy.org/planning/transmission-planning/mtep">MISO Transmission Cost Estimation Guide</a>.
 The cost and length of representative interzonal transmission routes that are straighter than <code class="docutils literal notranslate"><span class="pre">GSw_TransSquigglinessMin</span></code> are scaled up to match <code class="docutils literal notranslate"><span class="pre">GSw_TransSquigglinessMin</span></code>
 (i.e., if a representative route is 11 miles long and the straight-line distance between its endpoints is 10 miles, giving a squiggliness factor of 1.1, its cost and length are scaled up by 1.3 / 1.1 = 1.18).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransHurdle</span></code>: Intra-US hurdle rate for interzonal flows, measured in $2004/MWh</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransHurdleLevel</span></code>: Indicate the level of hierarchy.csv between which to apply the hurdle rate specified by <code class="docutils literal notranslate"><span class="pre">GSw_TransHurdle</span></code>. i.e. if set to ‘st’, intra-state flows will have no hurdle rates but inter-state flows will have hurdle rates specified by <code class="docutils literal notranslate"><span class="pre">GSw_TransHurdle</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransHurdleRate</span></code>: Turn on (1) or off (0) hurdle rates for intra-US interzonal flows. The rates [$/MWh] are taken by year from the column of <code class="docutils literal notranslate"><span class="pre">inputs/transmission/cost_hurdle_intra.csv</span></code> that matches the selected hierarchy level.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransHurdleLevel1</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_TransHurdleLevel2</span></code>: Levels of hierarchy.csv between which to apply hurdle rates when <code class="docutils literal notranslate"><span class="pre">GSw_TransHurdleRate=1</span></code>. For example, if <code class="docutils literal notranslate"><span class="pre">GSw_TransHurdleLevel1=st</span></code>, intra-state flows will have no level-1 hurdle rate but inter-state flows will. The hurdle rate on each interface is the larger of the level-1 and level-2 rates (with a floor of <code class="docutils literal notranslate"><span class="pre">hurdle_rate_floor</span></code> from <code class="docutils literal notranslate"><span class="pre">inputs/scalars.csv</span></code>). Hurdle rates between the US and Canada/Mexico are set separately in <code class="docutils literal notranslate"><span class="pre">inputs/transmission/cost_hurdle_country.csv</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransRestrict</span></code>: Spatial hierarchy level within which to allow transmission expansion. For example, if set to <code class="docutils literal notranslate"><span class="pre">st</span></code>, no inter-state expansion is allowed.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GSw_TransScen</span></code>: Which <code class="docutils literal notranslate"><span class="pre">inputs/transmission/hvdc_planned-{GSw_TransScen}.csv</span></code> file to use.
 This file provides a list of additional transmission lines that can be built.
@@ -777,8 +773,37 @@ The full list of candidate lines is indicated by this file plus <code class="doc
 </ol>
 </section>
 </section>
-<section id="reeds2pras-and-pras">
-<h2>ReEDS2PRAS and PRAS<a class="headerlink" href="#reeds2pras-and-pras" title="Link to this heading"></a></h2>
+<section id="resource-adequacy">
+<h2>Resource adequacy<a class="headerlink" href="#resource-adequacy" title="Link to this heading"></a></h2>
+<section id="stress-period-thresholds">
+<h3>Stress period thresholds<a class="headerlink" href="#stress-period-thresholds" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdMetrics</span></code> and <code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThreshold{metric}</span></code>: Resource adequacy thresholds used to decide whether to add new stress periods.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdMetrics</span></code> (default <code class="docutils literal notranslate"><span class="pre">NEUE</span></code>) is a /-delimited list of the metrics that can be used. Supported metrics are <code class="docutils literal notranslate"><span class="pre">NEUE</span></code>, <code class="docutils literal notranslate"><span class="pre">LOLD</span></code>, <code class="docutils literal notranslate"><span class="pre">LOLE</span></code>, <code class="docutils literal notranslate"><span class="pre">LOLH</span></code>, <code class="docutils literal notranslate"><span class="pre">Depth</span></code>, and <code class="docutils literal notranslate"><span class="pre">Duration</span></code>.</p></li>
+<li><p>Each listed metric reads its threshold from the matching <code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThreshold{metric}</span></code> switch, formatted as <code class="docutils literal notranslate"><span class="pre">{level}_{value}</span></code>. The default <code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdNEUE=transgrp_1</span></code> means a threshold of “<strong>1</strong> ppm NEUE in each <strong>transgrp</strong>”.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">{level}</span></code> can be selected from [‘country’, ‘interconnect’, ‘nercr’, ‘transreg’, ‘transgrp’, ‘st’, ‘r’] and specifies the hierarchy level within which to compare RA performance against the threshold.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">{value}</span></code> is a non-negative number in the units of the metric: NEUE [ppm]; LOLD [event-days/year]; LOLE [events/year]; LOLH [event-hours/year]; Depth [maximum hourly EUE as a fraction of peak load]; Duration [hours in the longest EUE event].</p></li>
+<li><p>If desired you can provide /-delimited entries like <code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressThresholdNEUE=transgrp_10/country_1</span></code>, meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.</p></li>
+</ul>
+</li>
+<li><p>For each region that exceeds the threshold for a given metric, <code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressIncrement</span></code> new stress periods (2 by default) are added for that metric:</p>
+<ul>
+<li><p>NEUE: Periods with the highest sum of EUE [MWh]</p></li>
+<li><p>Depth: Periods with the highest peak hourly EUE [MW]</p></li>
+<li><p>Duration: Periods with the longest continuous EUE event [hours]</p></li>
+<li><p>LOLD or LOLE: Periods with the highest peak hourly loss-of-load probability [fraction]</p></li>
+<li><p>LOLH: Periods with the highest sum of loss-of-load hours [hours]</p></li>
+</ul>
+</li>
+<li><p>Shoulder periods for storage recharge (<code class="docutils literal notranslate"><span class="pre">GSw_PRM_StressStorageCutoff</span></code>) are only added for the NEUE metric.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="reeds2pras-and-pras-switches">
+<h3>ReEDS2PRAS and PRAS switches<a class="headerlink" href="#reeds2pras-and-pras-switches" title="Link to this heading"></a></h3>
 <p>Some of the behavior of ReEDS2PRAS and PRAS (used for the stress periods resource adequacy method) can be controlled via the following switches:</p>
 <ul class="simple">
 <li><p>PRAS sampling</p>
@@ -818,6 +843,7 @@ using larger unit sizes (particularly unit sizes greater than the reserve margin
 if a single unit is larger than the planning reserve margin, unserved energy is likely whenever that unit experiences on outage.
 This approach should therefore be used with caution.</p></li>
 </ul>
+</section>
 </section>
 <section id="monte-carlo-sampling-mcs">
 <h2>Monte Carlo Sampling (MCS)<a class="headerlink" href="#monte-carlo-sampling-mcs" title="Link to this heading"></a></h2>
