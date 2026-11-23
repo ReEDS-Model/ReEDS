@@ -282,23 +282,15 @@ if __name__ == '__main__':
     )
     parser.add_argument('casepath', type=str, help='ReEDS/runs/{case} directory')
     parser.add_argument(
-        '--year',
-        '-t',
-        type=int,
-        default=0,
+        '--year', '-t', type=int, default=0,
         help='Year to run (must have the corresponding .g00 file), or 0 for last year',
     )
     parser.add_argument(
-        '--iteration',
-        '-i',
-        type=str,
-        default='last',
+        '--iteration', '-i', type=str, default='last',
         help="Iteration to run, or 'last' for last iteration",
     )
     parser.add_argument(
-        '--switch_mods',
-        '-s',
-        type=json.loads,
+        '--switch_mods', '-s', type=json.loads,
         default=json.dumps(switch_mods_default),
         help=(
             'Dictionary-formated string of switch arguments for PCM. '
@@ -306,20 +298,20 @@ if __name__ == '__main__':
             '`-s \'{"GSw_HourlyChunkLengthRep":4}\'`'
         ),
     )
-    parser.add_argument('--label', '-l', type=str, default='', help='Label for PCM outputs')
     parser.add_argument(
-        '--overwrite',
-        '-o',
-        action='store_true',
+        '--label', '-l', type=str, default='', help='Label for PCM outputs',
+    )
+    parser.add_argument(
+        '--overwrite', '-o', action='store_true',
         help="Overwrite input files if they already exist (otherwise don't rewrite them)",
     )
     parser.add_argument(
-        '--forcelocal',
-        '-f',
-        action='store_true',
+        '--forcelocal', '-f', action='store_true',
         help='Run locally (including on a compute node as part of a job)',
     )
-    parser.add_argument('--bigmem', '-b', action='store_true', help='Use bigmem node')
+    parser.add_argument(
+        '--bigmem', '-b', action='store_true', help='Use bigmem node',
+    )
 
     args = parser.parse_args()
     casepath = args.casepath
@@ -351,7 +343,7 @@ if __name__ == '__main__':
         main(casepath=casepath, t=t, switch_mods=switch_mods, label=label, overwrite=overwrite)
     else:
         command_string = (
-            f"python run_pcm.py {casepath} "
+            f"python {Path(reeds.io.reeds_path,'postprocessing','run_pcm.py')} {casepath} "
             f"--year={t} "
             f"--iteration={iteration} "
             f"--switch_mods='{json.dumps(switch_mods)}' "
