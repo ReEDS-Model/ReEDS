@@ -458,7 +458,7 @@ This guide explains how to enable, configure, and run Monte Carlo simulations so
 For example, `default` will use `inputs/userinput/mcs_distributions_default.yaml`.
 
 3. Set `MCS_dist_groups` to one or more YAML group names. Separate multiple groups with a dot.
-   For example `tech.load_st.ng_fuel_price`.
+   For example `tech_tri.load_state_flat.gasprice_flat`.
 
 4. Choose the sampling method; `MCS_lhs=1` uses a Latin Hypercube sampling method and `MCS_lhs=0` uses random sampling.
 
@@ -831,13 +831,13 @@ To avoid double-counting, in a linked run the estimated 'reference' electricity 
 
 The following ReEDS sets, parameters, and variables are referenced in FINITO. If you plan to update any of these in a breaking way (e.g., changing the name or indices) please let one of the FINITO developers know.
 
-Sets: `allt`, `bio(i)`, `bs_reeds(bs)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `cs`, `csfeas(cs)`, `i`, `map_i_fe(i,ec)`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `st`, `st_cendiv(st,cendiv)`, `t(allt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`
+Sets: `allh`, `allt`, `bio(i)`, `ccsflex(i)`, `ccsflex_byp(i)`, `ccsflex_sto(i)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `consume(i)`, `cs`, `csfeas(cs)`, `dac(i)`, `e`, `emit_modeled(s,e,r,t)`, `etype`, `gas(i)`, `h(allh)`, `h_rep(allh)`, `h2_combustion(i)`, `hyd_add_pump(i)`, `i`, `i_p(i,p)`, `inv_cond(i,v,r,t,tt)`, `m_refurb_cond(i,v,r,t,tt)`, `p`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `re(i)`, `RecTech(RPSCat,i,st,t)`, `retiretech(i,v,r,t)`, `RPSCat`, `rscbin`, `s`, `st`, `storage_standalone(i)`, `t(allt)`, `tfinito_all(t)`, `tfix(t)`, `tg`, `tg_i(tg,i)`, `tmodel(t)`, `tmodel_new(t)`, `tprev(t,tt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`, `valinv_irt(i,r,t)`, `valinv_tg(st,tg,t)`
 
-Parameters: `capture_rate`, `co2_injection_limit(cs)`, `co2_rate_elec_table(r,allt,*)`, `co2_storage_limit(cs)`, `cost_co2_pipeline_cap(r,rr,allt)`, `cost_co2_pipeline_fom(r,rr,allt)`, `cost_co2_spurline_cap(r,cs,allt)`, `cost_co2_spurline_fom(r,cs,allt)`, `cost_co2_stor_bec(cs)`, `cost_fom`, `cost_prod`, `cost_upgrade`, `cost_vom`, `deflator(allt)`, `emit_rate`, `heat_rate(i,v,r,t)`, `m_capacity_exog`, `price_ws_elec_ReEDS(r,allt,*)`, `r_cs_distance(r,cs)`, `tax_co2_input(allt,*)`, `upgrade_derate`
+Parameters: `allow_cap_up(i,v,r,rscbin,t)`, `allow_ener_up(i,v,r,rscbin,t)`, `bio_cofire_perc`, `capture_rate`, `ccsflex_co2eff(i,allt)`, `co2_captured_incentive(i,v,r,allt)`, `co2_detail_startyr`, `co2_injection_limit(cs)`, `co2_storage_limit(cs)`, `co2_tax(allt)`, `consume_char0(i,allt,*)`, `cost_co2_pipeline_cap(r,rr,allt)`, `cost_co2_pipeline_fom(r,rr,allt)`, `cost_co2_spurline_cap(r,cs,allt)`, `cost_co2_spurline_fom(r,cs,allt)`, `cost_co2_stor_bec(cs)`, `cost_fom`, `cost_prod`, `cost_scale`, `cost_upgrade`, `cost_vom`, `crf(t)`, `crf_co2_incentive(t)`, `dac_gas_cons_rate(i,v,t)`, `deflator(allt)`, `emit_rate`, `fuel_price(i,r,t)`, `h2_combustion_intensity`, `h2_demand_start`, `h2_exogenous_demand_regional(r,p,allh,allt)`, `heat_rate(i,v,r,t)`, `hours(allh)`, `load_exog_static(r,allh,t)`, `m_capacity_exog`, `prod_conversion_rate(i,v,r,t)`, `prod_emit_rate(etype,e,i,allt)`, `pvf_capital(t)`, `pvf_onm(t)`, `scenario_probability(s)`, `Sw_Prod`, `upgrade_derate`, `yeart(t)`, `yearweight(t)`
 
-Variables: `GEN(i,v,r,h,t)`
+Variables: `CCSFLEX_POW(s,i,v,r,h,t)`, `CCSFLEX_POWREQ(s,i,v,r,allh,t) `, `CO2_STORED(s,r,cs,h,t)`, `GEN(s,i,v,r,h,t)`, `PRODUCE(s,p,i,v,r,h,t)`, `STORAGE_IN(s,i,v,r,h,t)`
 
-Switches: `endyear`, `FINITO_dollaryear`, `GSw_CarbTax`, `GSw_CarbTaxOption`, `GSw_CO2_Detail`, `GSw_FINITO_Link` (set by `FINITO` switch in ReEDS `cases.csv`), `GSw_Region`, `GSw_RemoveSmallNumbers`, `GSw_RetailAdder`, `GSw_ZoneSet`, `ignore`, `keep_run_terminal`, `solver`, `yearset`
+Switches: `endyear`, `FINITO_dollaryear`, `GSw_CarbTax`, `GSw_CarbTaxOption`, `GSw_CCSFLEX_BYP`, `GSw_CCSFLEX_DAC`, `GSw_CCSFLEX_STO`, `GSw_CO2_Detail`, `GSw_DAC`, `GSw_DAC_Gas`, `GSw_FINITO_Link` (set by `FINITO` switch in ReEDS `cases.csv`), `GSw_H2`, `GSw_Region`, `GSw_RemoveSmallNumbers`, `GSw_RetailAdder`, `GSw_ZoneSet`, `ignore`, `keep_run_terminal`, `solver`, `yearset`
 
 
 ## Troubleshooting

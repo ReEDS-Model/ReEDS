@@ -2842,7 +2842,7 @@ The emission output files will include both upstream and process emissions regar
 - If setting `GSw_AnnualCap = 0` (model default): There are no emission caps for both CO<sub>2 and CO<sub>2</sub>e.
 - If setting `GSw_AnnualCap = 1`: Only CO<sub>2</sub> emission is capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv` (can be both upstream + process or just process depending on `GSw_Upstream` setting).
 - If setting `GSw_AnnualCap = 2`: CO<sub>2</sub>e emission is capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv` (can be both upstream + process or just combustion depending on `GSw_Upstream` setting).
-- If setting `GSw_AnnualCap = 3`: H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv`.
+  - If `GSw_GWPH2 = 1`, H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv`.
 ```
 
 ### SO<sub>2</sub> and NO<sub>x</sub>
@@ -2866,15 +2866,6 @@ This section primarily focuses on existing policies, but additional frameworks t
 
 
 ### Federal and State Emission Standards
-
-#### Clean Air Act
-ReEDS represents EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
-For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
-This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
-This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
-Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
-Existing gas plants fall outside the scope of this rule.
-
 
 #### Cross-State Air Pollution Rule
 
@@ -2936,8 +2927,8 @@ Four clean electricity production and investment tax credits are represented in 
 
 - **Production Tax Credit (PTC):** \$26/MWh for 10 years (2022 dollars) plus a bonus credit that starts at \$1.3/MWh and increases to \$2.6/MWh by 2028 for eligible technologies.
 - **Investment Tax Credit (ITC):** 30%, plus a domestic content bonus credit that starts at an additional 2.5% and increases to 5% by 2028 (for totals of 32.5% and 35%, respectively).
-Energy community bonuses are also applied based on the location of the new build, with an additional 10% bonus for building within an energy community.
-For ReEDS regions that are only partially covered by energy communities, the 10% bonus is derated by the portion of the region (by land area) that is made up of energy communities.
+Energy community bonuses are also applied based on the location of the new build, adding 10 percentage points to the ITC for new builds within an energy community.
+For ReEDS regions that are only partially covered by energy communities, the 10-percentage-point bonus is derated by the share of counties within that region that are energy communities.
 - **Captured CO<sub>2</sub> Incentive (45Q):** \$85 per metric ton of CO<sub>2</sub> for 12 years for fossil-CCS and bioenergy-CCS and \$180 per metric ton of CO<sub>2</sub> for 12 years for direct air capture; nominal through 2026 and inflation adjusted after that.
 - **Existing Nuclear Production Tax Credit (45U):** This tax credit is \$15/MWh (2022 dollars), but it is reduced if the market value of the electricity produced by the generator exceeds \$25/MWh.
 As a simplification, this dynamic calculation was not directly represented in ReEDS.
@@ -3190,6 +3181,18 @@ Users can restrict negative emissions technologies to offset emissions only from
 - **Alternative ITC and PTC Schedules:** In addition to the ITC and PTC schedules described in the [Federal and State Tax Incentives](#federal-and-state-emission-standards) section, the ITC and PTC can be modified to apply for any number of years and to any technology.
 
 - **Alternative Financing Measures:** Policy-related financing impacts such as MACRS or the under-construction provisions for the ITC and PTC can be modified as specified by the user.
+
+- **Clean Air Act, Section 111:**
+ReEDS can represent EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
+For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
+This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
+This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
+Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
+Existing gas plants fall outside the scope of this rule.
+
+```{admonition} Clean Air Act settings
+The Section 111 standards are turned off by default but can be turned on in `cases.csv` by setting `GSw_Clean_Air_Act` to 1.
+```
 
 
 ## Capital Financing, System Costs, and Economic Metrics
@@ -3762,10 +3765,11 @@ $$\text{PresentValueDepr} = \sum_t{\frac{1}{\left(1 + d_n\right)^t} \cdot f_t^\t
 
 $$\text{PresentValueDepr} \left(1 - \frac{\text{ITC}_\text{eff}}{2} \right)$$
 
-**Investment Tax Credit:** The value of the ITC is reduced to reflect the costs of monetizing it ($m_\text{ITC}$).
-The effective investment tax credit value (${ITC}_{eff}$) reduces the tax burden of the investments.
+**Investment Tax Credit:** The value of the ITC is reduced by the fractional cost of monetizing it ($m_\text{ITC}$).
+The effective investment tax credit value ($\text{ITC}_\text{eff}$) reduces the tax burden of the investments.
+It includes the domestic content bonus ($\text{ITC}_\text{DC}$) and the energy community bonus ($\text{ITC}_\text{EC}$), the latter of which is scaled by the share of counties within a region that belongs to energy communities ($s_r$):
 
-$$\text{ITC}_\text{eff} = \text{ITC} \cdot m_\text{ITC}$$
+$$\text{ITC}_\text{eff} = \left(\text{ITC} + \text{ITC}_\text{DC} + \text{ITC}_\text{EC} \cdot s_r\right) \cdot \left(1 - m_\text{ITC}\right)$$
 
 **Taxes:** The denominator term of the financial multiplier equation ($1-T$) reflects the additional revenues necessary to pay taxes.
 The tax burden is adjusted for depreciation expenses as well as the effective investment tax credit.
