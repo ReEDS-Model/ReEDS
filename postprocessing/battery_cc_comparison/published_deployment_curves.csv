@@ -1,0 +1,27 @@
+study,region,duration_h,mw,peak_mw,credit,source_url
+PJM 2019 (Astrape),PJM,4,1000,153379,1.0,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,4,2000,153379,1.0,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,4,4000,153379,0.999,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,4,8000,153379,0.956,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,6,1000,153379,1.0,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,6,2000,153379,1.0,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,6,4000,153379,1.0,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,6,10000,153379,0.9789,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+PJM 2019 (Astrape),PJM,6,12000,153379,0.9333,https://pjm.com/-/media/committees-groups/committees/mic/2020/20200224-capacity-market/20200224-item-03b-astrape-consulting-2019-capacity-value-of-storage-in-pjm.ashx
+NYISO 2019 (Astrape),NYISO,4,100,32000,1.0,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,4,250,32000,1.0,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,4,500,32000,1.0,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,4,1000,32000,0.978,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,4,2000,32000,0.861,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,6,1000,32000,1.0,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,6,2000,32000,0.976,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,8,1000,32000,1.0,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+NYISO 2019 (Astrape),NYISO,8,2000,32000,1.0,https://www.nyiso.com/documents/20142/5020603/Astrape%20presentation%20021519.pdf
+CPUC 2021 (E3/Astrape),CAISO,4,5854,46000,0.963,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,4,11854,46000,0.907,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,4,13854,46000,0.742,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,4,15854,46000,0.69,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,8,5854,46000,0.982,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,8,11854,46000,0.943,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,8,13854,46000,0.822,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
+CPUC 2021 (E3/Astrape),CAISO,8,15854,46000,0.782,https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/energy-division/documents/integrated-resource-plan-and-long-term-procurement-plan-irp-ltpp/20210831_irp_e3_astrape_incremental_elcc_study.pdf
