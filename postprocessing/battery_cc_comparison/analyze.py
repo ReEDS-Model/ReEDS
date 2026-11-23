@@ -2,7 +2,7 @@ import sys, numpy as np, pandas as pd, matplotlib
 matplotlib.use('Agg'); import matplotlib.pyplot as plt
 reeds = pd.read_csv(sys.argv[1]); pts = pd.read_csv(sys.argv[2]); out = sys.argv[3]; crv = pd.read_csv(sys.argv[4])
 days = pd.read_csv(sys.argv[5]) if len(sys.argv) > 5 else None  # per-stress-day ReEDS credits (optional)
-SZN = {'summer':'#d9822b','fall':'#8c564b','winter':'#2e6fb7','spring':'#c77cb5'}
+SZN = {'summer':'#d9822b','winter':'#2e6fb7'}  # stress-day halves: May-Oct, Nov-Apr
 MINW = 0.01  # stress days under 1% of the year's firm value are not drawn
 RM = 1.12
 pts['pen_actual'] = pts.batt_mw/pts.peak_mw
@@ -73,7 +73,7 @@ for scen, durs, fn, ttl in [('battery_4h',[1,2,3,4,5],'fig_4h.png','4-hour batte
        Line2D([],[],ls='',marker='o',color='#d9822b',label='summer'),Line2D([],[],ls='',marker='o',color='#c0392b',label='summer evening'),Line2D([],[],ls='',marker='o',color='#2e6fb7',label='winter'),Line2D([],[],ls='',marker='o',color='#222',label='annual or not seasonal'),Line2D([],[],color='#7b3294',marker='D',label='published deployment curve (2019-2021 studies)')]
     if days is not None:
         present = set(days[(days.scenario==scen)&(days.weight>=MINW)].season)
-        h += [Line2D([],[],ls='',marker='o',ms=7,color=c,alpha=.55,mec='none',label=f'ReEDS stress day, {k} (size = share of year)') for k,c in SZN.items() if k in present]
+        h += [Line2D([],[],ls='',marker='o',ms=7,color=c,alpha=.55,mec='none',label=f"ReEDS stress day, {k} ({'May-Oct' if k=='summer' else 'Nov-Apr'}; size = share of year)") for k,c in SZN.items() if k in present]
     fig.legend(handles=h, loc='lower center', ncol=4, fontsize=8, frameon=False)
     fig.suptitle(ttl, x=0.01, ha='left', fontsize=12)
     fig.tight_layout(rect=(0,(0.05 if nrow>2 else 0.1)*(1.4 if days is not None else 1),1,0.97)); fig.savefig(out+'/'+fn, dpi=150); plt.close(fig)

@@ -49,8 +49,10 @@ g['weight'] = g.firm / tot.firm
 g['credit'] = g.val / g.firm
 date = pd.to_datetime(g.day.str[2:6] + '-01-01') + pd.to_timedelta(g.day.str[7:10].astype(int) - 1, unit='D')
 g['date'] = date.dt.strftime('%Y-%m-%d')
-g['season'] = date.dt.month.map({12: 'winter', 1: 'winter', 2: 'winter', 3: 'spring', 4: 'spring', 5: 'spring',
-                                  6: 'summer', 7: 'summer', 8: 'summer', 9: 'fall', 10: 'fall', 11: 'fall'})
+# Two halves of the year, May-Oct and Nov-Apr. In the vcf6 battery runs every day with at least 1% of a
+# year's value is Jul-Sep heat or Dec-Feb cold, so meteorological seasons would label the September
+# heat waves as fall.
+g['season'] = date.dt.month.map(lambda m: 'summer' if 5 <= m <= 10 else 'winter')
 # check against the scenarios CSV
 ann_cc = (g.groupby(['grp', 't']).val.sum() / g.groupby(['grp', 't']).firm.sum()).rename('cc_days')
 sc = pd.read_csv(scen_csv); sc = sc[sc.scenario == scen].set_index(['transreg', 'year']).capacity_credit
