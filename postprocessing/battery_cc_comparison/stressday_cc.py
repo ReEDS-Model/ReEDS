@@ -1,20 +1,27 @@
 """Per-stress-day battery capacity credit by transreg and nationally, with a check that the
 firm-value-weighted mean of the days reproduces the annual credit in the scenarios CSV.
 
-Usage: python stressday_cc.py <run_dir> <stressday_resmarg gdx> <regional cc scenarios csv> <scenario> <out csv>
+Usage: python stressday_cc.py <run_dir> <regional cc scenarios csv> <scenario> <out csv>
 
 A day's credit is the new battery's reserve-margin value over that day's stress hours divided by
 what the same new MW would earn there if fully firm, summed over the group's zones - the annual
 credit of plcoe_pitch.grouped_capacity_credit split by stress day. weight is the day's share of
 the year's firm value, so sum(weight * credit) over a year's days is the annual credit.
+
+Everything comes from the run's outputs. Stress-hour battery net output is gen_h_stress, which sums
+every battery vintage; valnew's val_resmarg uses only the vintages open to investment. They agree
+because all batteries share one vintage (new1), and the check below stops the script if a run
+breaks that.
 """
-import sys, os, pandas as pd, numpy as np, gdxpds
-run, gdx, scen_csv, scen, out = sys.argv[1:6]
+import sys, os, pandas as pd, numpy as np
+run, scen_csv, scen, out = sys.argv[1:5]
 o = os.path.join(run, 'outputs')
-d = gdxpds.to_dataframes(gdx)
-rh = d['resmarg_h']; rh.columns = ['i', 'r', 'h', 't', 'val']
-ph = d['price_h']; ph.columns = ['r', 'h', 't', 'price']
-for x in (rh, ph): x['t'] = x['t'].astype(int)
+ph = pd.read_csv(os.path.join(o, 'reqt_price.csv'), names=['req', 'na', 'r', 'h', 't', 'price'], header=0)
+ph = ph.loc[ph.req == 'res_marg', ['r', 'h', 't', 'price']]  # $/MW per stress timeslice
+gh = pd.read_csv(os.path.join(o, 'gen_h_stress.csv'), names=['i', 'r', 'h', 't', 'mw'], header=0)
+gh = gh[gh.i.str.lower().str.startswith('battery')]  # GEN - STORAGE_IN, MW
+rh = gh.merge(ph, on=['r', 'h', 't'])
+rh['val'] = rh.mw * rh.price
 vn = pd.read_csv(os.path.join(o, 'valnew.csv'), names=['metric', 'i', 'r', 't', 'v'], header=0)
 vn = vn[vn.i.str.lower().str.startswith('battery')]
 w = vn.pivot_table(index=['i', 'r', 't'], columns='metric', values='v').reset_index()
@@ -23,7 +30,9 @@ rh = rh.merge(w[['i', 'r', 't', 'inv_cap_ratio']], on=['i', 'r', 't'], how='inne
 rh['val'] *= rh['inv_cap_ratio']
 chk = rh.groupby(['i', 'r', 't']).val.sum().rename('sum_h').to_frame().join(
     w.set_index(['i', 'r', 't'])['val_resmarg']).fillna(0)
-print('max |sum_h - valnew val_resmarg| / max val:', (chk.sum_h - chk.val_resmarg).abs().max() / chk.val_resmarg.abs().max())
+gap = (chk.sum_h - chk.val_resmarg).abs().max() / chk.val_resmarg.abs().max()
+assert gap < 1e-4, f'stress hours do not add up to valnew val_resmarg (gap {gap:.2g}); batteries in more than one vintage?'
+
 # zones as in regional_capacity_credit: MW > 0 and res_marg_ann > 0
 mw = w.groupby(['r', 't']).MW.sum()
 ann = ph.groupby(['r', 't']).price.sum()
