@@ -238,6 +238,8 @@ set
   dr_shed(i)           "DR shed technologies",
   dr_shape(i)          "DR shape technologies",
   dr_shift(i)          "DR shift technologies",
+  der_ftm(i)           "front-of-the-meter distributed energy resource technologies",
+  der_ftm_shape(i)     "front-of-the-meter DER technologies that change the load shape",
   fossil(i)            "fossil technologies"
   ng_fuel_cell(i)      "natural gas fuel cell technologies",
   gas_cc_ccs(i)        "techs that are gas combined cycle and have CCS",
@@ -528,6 +530,19 @@ if(Sw_DRShift = 0,
   ban(i)$i_subsets(i,'DR_SHIFT') = yes ; 
 ) ;
 
+* Sw_DER_FTM: 0 = no FTM DER; 1 = der-ftm-shape only; 2 = der-ftm-pv and der-ftm-battery_li only; 3 = all
+if(Sw_DER_FTM = 0,
+  ban(i)$i_subsets(i,'der_ftm') = yes ;
+) ;
+
+if(Sw_DER_FTM = 1,
+  ban(i)$[i_subsets(i,'der_ftm')$(not i_subsets(i,'der_ftm_shape'))] = yes ;
+) ;
+
+if(Sw_DER_FTM = 2,
+  ban(i)$i_subsets(i,'der_ftm_shape') = yes ;
+) ;
+
 * always allow PSH to use fresh surface water (fsa, fsu)
 * do not allow new PSH to use saline surface water
 bannew(i)$[sum{wst_i_ii(i,ii)$i_subsets(i,'psh'), i_wst(i,'ss') }] = YES ;
@@ -706,6 +721,8 @@ distpv(i)$(not ban(i))              = yes$i_subsets(i,'distpv') ;
 dr_shed(i)$(not ban(i))             = yes$i_subsets(i,'dr_shed') ;
 dr_shape(i)$(not ban(i))             = yes$i_subsets(i,'dr_shape') ;
 dr_shift(i)$(not ban(i))            = yes$i_subsets(i,'dr_shift') ;
+der_ftm(i)$(not ban(i))             = yes$i_subsets(i,'der_ftm') ;
+der_ftm_shape(i)$(not ban(i))       = yes$i_subsets(i,'der_ftm_shape') ;
 demand_flex(i)$(not ban(i))         = yes$i_subsets(i,'demand_flex') ;
 fossil(i)$(not ban(i))              = yes$i_subsets(i,'fossil') ;
 ng_fuel_cell(i)$(not ban(i))        = yes$i_subsets(i,'ng_fuel_cell') ;
@@ -765,12 +782,12 @@ coal_noccs(i)$[coal(i)$(not ccs(i))] = yes ;
 set tg_i(tg,i) "technologies that belong in tech group tg" ;
 tg_i('wind-ons',i)$onswind(i) = yes ;
 tg_i('wind-ofs',i)$ofswind(i) = yes ;
-tg_i('pv',i)$[(pv(i) or pvb(i))$(not distpv(i))] = yes ;
+tg_i('pv',i)$[(pv(i) or pvb(i))$(not distpv(i))$(not der_ftm(i))] = yes ;
 tg_i('csp',i)$csp(i) = yes ;
 tg_i('gas',i)$gas(i) = yes ;
 tg_i('coal',i)$coal(i) = yes ;
 tg_i('nuclear',i)$nuclear(i) = yes ;
-tg_i('battery',i)$battery(i) = yes ;
+tg_i('battery',i)$[battery(i)$(not der_ftm(i))] = yes ;
 tg_i('hydro',i)$hydro(i) = yes ;
 tg_i('h2',i)$h2_gen(i) = yes ;
 tg_i('geothermal',i)$geo(i) = yes ;
@@ -834,7 +851,10 @@ set dispatchtech(i)                 "technologies that are dispatchable",
 noret_upgrade_tech(i)$hyd_add_pump(i) = yes ;
 noret_upgrade_tech(i)$[(coal_ccs(i) or gas_cc_ccs(i))$upgrade(i)$Sw_CCS_NoRetire] = yes ;
 dispatchtech(i)$[not(vre(i) or hydro_nd(i) or ban(i))] = yes ;
-sccapcosttech(i)$[hydro(i) or psh(i) or dr_shed(i) or dr_shape(i) or dr_shift(i) ] = yes ;
+* Front-of-the-meter DER also have a cost_cap (zero for der_ftm_shape); their supply curve cost (der_ftm_rsc)
+* is an adder to it.
+* They are included here so the supply curve cost is not treated as a spur line cost.
+sccapcosttech(i)$[hydro(i) or psh(i) or dr_shed(i) or dr_shape(i) or dr_shift(i) or der_ftm(i) ] = yes ;
 
 *initialize sets to "no"
 retiretech(i,v,r,t) = no ;
@@ -1362,6 +1382,22 @@ $include inputs_case%ds%rsc_combined.csv
 $offdelim
 $onlisting
 / ;
+
+* Written by writesupplycurves.py
+* Front-of-the-meter DER supply curves change by year, so they are read separately:
+* "cap" is the cumulative capacity available in each bin through year t (bin1 holds the prescribed builds)
+* and "cost" is the adder to cost_cap for builds in year t. rsc_dat holds each bin's largest capacity and no cost.
+* der_ftm_shape techs have no cost_cap, so their "cost" is the full capital cost.
+$onempty
+parameter der_ftm_rsc(r,i,rscbin,allt,sc_cat) "--MW or $/MW-- front-of-the-meter DER supply curve by year"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%der_ftm_rsc.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
 
 
 * Written by writesupplycurves.py
@@ -2167,6 +2203,7 @@ valgen(i,v,r,t)$consume(i) = no ;
 
 * load modification technologies not allowed to generate
 valgen(i,v,r,t)$dr_shape(i) = no ;
+valgen(i,v,r,t)$der_ftm_shape(i) = no ;
 
 * Remove technologies that are required to retire
 valgen(i,v,r,t)$forced_retire(i,r,t) = no ;
@@ -2552,7 +2589,7 @@ RPSTechMult("RPS_bundled",i,st)$[hydro(i)$valcap_i(i)] = RPSTechMult("RPS_All",i
 RPSTechMult("CES_bundled",i,st)$[hydro(i)$valcap_i(i)] = RPSTechMult("CES",i,st) ;
 
 *Reduce RPS/CES values for distributed PV based on distloss because we increase their generation to the busbar level
-RPSTechMult(RPSCat,i,st)$[(distpv(i))$RPSTechMult(RPSCat,i,st)] = 1 - distloss ;
+RPSTechMult(RPSCat,i,st)$[vre_distributed(i)$RPSTechMult(RPSCat,i,st)] = 1 - distloss ;
 
 $onempty
 table techs_banned_imports_rps(i,st) "Techs that are not allowed to be imported into a state to meet the RPS"
@@ -3371,6 +3408,8 @@ parameter ilr(i) "--unitless-- inverter loading ratio - used to convert DC capac
 ilr(i)$[valcap_i(i)] = 1 ;
 ilr(i)$[upv(i)] = ilr_utility ;
 ilr(i)$distpv(i) = ilr_dist ;
+* front-of-the-meter PV uses the distpv profile, so it also uses the distpv ILR
+ilr(i)$[der_ftm(i)$pv(i)] = ilr_dist ;
 * assign an ILR to hybrid PV+battery technologies based on the ILR for the configurations
 ilr(pvb) = sum{pvb_config$pvb_agg(pvb_config,pvb), ilr_pvb_config(pvb_config) } ;
 
@@ -3972,6 +4011,9 @@ ramprate(i)$upgrade(i) = sum{ii$upgrade_to(i,ii), ramprate(ii) } ;
 reserve_frac(i,ortype) = min(1,ramprate(i) * ramptime(ortype)) ;
 
 reserve_frac(i,ortype)$upgrade(i) = sum{ii$upgrade_to(i,ii), reserve_frac(ii,ortype) } ;
+
+* Do not allow DR shift resources to provide operating reserves
+reserve_frac(i,ortype)$dr_shift(i) = 0 ;
 
 * input data for opres reserve costs by generator type (in $2004)
 * current options are bottom up costs by generator type ("default") or estimates based on historical reserve prices ("market")
@@ -4713,6 +4755,15 @@ storage_eff(i,t)$storage(i) = 1 ;
 storage_eff(i,t)$psh(i) = storage_eff_psh ;
 storage_eff(i,t)$[storage(i)$plant_char0(i,t,'rte')] = plant_char0(i,t,'rte') ;
 storage_eff(i,t)$pvb(i) = storage_eff("battery_li",t) ;
+
+* Storage charging and discharge are measured at the storage device. Distribution-connected
+* (front-of-the-meter DER) storage charges and discharges at the end-use level, so 1 MW of
+* charging adds 1/(1-distloss) MW of busbar load (like end-use load) and 1 MW of discharge
+* displaces 1/(1-distloss) MW of busbar load. This multiplier converts device-level storage
+* flows to the busbar level used in the supply-demand balance.
+parameter busbar_mult_storage(i) "--unitless-- ratio of busbar-level to device-level storage charging and discharge" ;
+busbar_mult_storage(i) = 1 ;
+busbar_mult_storage(i)$[der_ftm(i)$storage(i)] = 1 / (1 - distloss) ;
 
 parameter storage_eff_pvb_p(i,t) "--fraction-- efficiency of hybrid PV+battery when charging from the coupled PV"
           storage_eff_pvb_g(i,t) "--fraction-- efficiency of hybrid PV+battery when charging from the grid" ;
@@ -5561,6 +5612,8 @@ Set
 * Demand flexibility
     flex_h_corr1(flex_type,allh,allh)      "correlation set for hours referenced in flexibility constraints"
     flex_h_corr2(flex_type,allh,allh)      "correlation set for hours referenced in flexibility constraints"
+* Front-of-the-meter DER
+    der_ftm_max_output_r(r,allh,allt)      "regions, timeslices, and years with a maximum combined net output of FTM DER"
 * Minloading
     hour_szn_group(allh,allh)              "h and hh in the same season - used in minloading constraint"
 ;
@@ -5621,6 +5674,10 @@ Parameter
     dr_shift_discharge_frac(i,r,allh,allt) "--fraction-- fraction of adopted DR shift capacity that can be discharged (deferred charging) in each timeslice h"
     dr_shift_charge_frac(i,r,allh,allt)    "--fraction-- fraction of adopted DR shift capacity that can be charged (add back deferred charging) in each timeslice h"
     dr_shift_energy_hours(i,r,allh,allt)   "--hours-- Allowable DR shift device storage SOC (quantity deferred charge) [MWh] divided by nameplate discharge capacity [MW]"
+    der_ftm_min_output(r,allh,allt)            "--MW-- minimum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+    der_ftm_max_output(r,allh,allt)            "--MW-- maximum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+    der_ftm_battery_nocharge(r,allh,allt)      "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
+    der_ftm_profile_change(r,allh,allt)        "--MW/MW-- FTM DER load shape: change in end-use load per MW of der_ftm_shape capacity in each timeslice h (negative = reduction)"
 * Flexible Canadian imports/exports [Sw_Canada=1]
     can_imports_szn(r,allszn,t)            "--MWh-- [Sw_Canada=1] seasonal imports from Canada by year"
     can_imports_szn_frac(allszn)           "--fraction-- [Sw_Canada=1] fraction of annual imports that occur in each season"

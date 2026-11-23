@@ -167,6 +167,7 @@ EQUATION
 * renewable supply curves
  eq_rsc_inv_account(i,v,r,t)              "--MW-- INV for rsc techs is the sum over all bins of INV_RSC"
  eq_rsc_INVlim(r,i,rscbin,t)              "--MW-- total investment from each rsc bin cannot exceed the available investment"
+ eq_der_ftm_INVlim(r,i,rscbin,t)          "--MW-- cumulative FTM DER investment from each supply curve bin cannot exceed the capacity available through year t"
 
 * capacity growth limits
  eq_growthlimit_relative(i,st,t)          "--MW-- relative growth limit on technologies"
@@ -316,6 +317,9 @@ eq_interconnection_queues(tg,r,t)         "--MW-- capacity deployment limit base
  eq_battery_minduration(i,v,r,t)                  "--MWh-- when power capacity is built, energy capacity should have a minimum capacity"
  eq_dr_shift_gen_capacity(i,v,r,allh,t)           "--MW-- storage generation capacity (deferment) for DR shifting resources is limited to a fraction of total capacity"
  eq_dr_shift_storage_in_capacity(i,v,r,allh,t)    "--MW-- storage load capacity (payback) for DR shifting resources is limited to a fraction of total capacity"
+ eq_der_ftm_min_output(r,allh,t)                  "--MW-- combined net output of FTM DER must meet a minimum level in regions with prescribed FTM DER"
+ eq_der_ftm_max_output(r,allh,t)                  "--MW-- combined net output and operating reserves of FTM DER cannot exceed a maximum level"
+ eq_der_ftm_battery_nocharge(r,allh,t)            "--MW-- FTM batteries cannot charge in restricted timeslices in regions with prescribed FTM batteries"
 
 * hybrid plant equations
  eq_plant_total_gen(i,v,r,allh,t)           "--MW-- generation post curtailment = generation from pv (post curtailment) + generation from battery - charging from PV"
@@ -368,6 +372,12 @@ eq_loadcon(r,h,t)$tmodel(t)..
 *[plus] shifted load from adopted DR shape resources
     + sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_load(i,r,h,t) * CAP(i,v,r,t)}
     - sum{(i,v)$[dr_shape(i)$valcap(i,v,r,t)], dr_shape_gen(i,r,h,t) * CAP(i,v,r,t)}
+
+*[plus] load shape change from front-of-the-meter DER load shape resources
+*(the profiles are at the end-use level, so they are scaled up to the busbar level like end-use load)
+    + sum{(i,v)$[der_ftm_shape(i)$valcap(i,v,r,t)],
+          der_ftm_profile_change(r,h,t) * CAP(i,v,r,t) }
+      / (1 - distloss)
 
 
 *[plus] load shifted from other timeslices
@@ -1033,6 +1043,7 @@ eq_rsc_inv_account(i,v,r,t)$[tmodel(t)$valinv(i,v,r,t)$rsc_i(i)$(not Sw_PCM)]..
 *is changed
 eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
                             $rsc_i(i)
+                            $(not der_ftm(i))
                             $m_rscfeas(r,i,rscbin)
                             $m_rsc_con(r,i)
                             $(not flag_eq_rsc_INVlim(r,i,rscbin,t))
@@ -1057,6 +1068,29 @@ eq_rsc_INVlim(r,i,rscbin,t)$[tmodel(t)
     sum{(ii,v,tt)$[valinv(ii,v,r,tt)$(yeart(tt) <= yeart(t))$rsc_agg(i,ii)],
          INV_RSC(ii,v,r,rscbin,tt) * resourcescaler(ii) }
 
+;
+
+* ---------------------------------------------------------------------------
+
+* Front-of-the-meter DER supply curves change by year: cumulative investment from each bin
+* cannot exceed the capacity available in that bin through year t. The first bin holds the
+* prescribed builds (writesupplycurves.py sets its capacity in year t to the cumulative prescribed
+* capacity through t), so optional builds come from the remaining, more expensive bins.
+* Prescribed builds are required by eq_forceprescription_power and fill the first bin because it is cheapest.
+eq_der_ftm_INVlim(r,i,rscbin,t)
+    $[tmodel(t)
+    $Sw_DER_FTM
+    $der_ftm(i)
+    $m_rscfeas(r,i,rscbin)
+    $(not flag_eq_rsc_INVlim(r,i,rscbin,t))
+    $(not Sw_PCM)]..
+
+    der_ftm_rsc(r,i,rscbin,t,"cap")
+
+    =g=
+
+    sum{(v,tt)$[valinv(i,v,r,tt)$(yeart(tt) <= yeart(t))],
+         INV_RSC(i,v,r,rscbin,tt) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -1408,7 +1442,8 @@ eq_interconnection_queues(tg,r,t)
 eq_supply_demand_balance(r,h,t)$tmodel(t)..
 
 * generation from all land-based sources, including storage discharge
-    sum{(i,v)$[valgen(i,v,r,t)$land(r)], GEN(i,v,r,h,t) }
+* (distribution-connected storage discharge is scaled up to the busbar level)
+    sum{(i,v)$[valgen(i,v,r,t)$land(r)], GEN(i,v,r,h,t) * busbar_mult_storage(i) }
 
 * [plus] net AC and LCC DC transmission with imports reduced by losses
     + sum{(trtype,rr)$[routes(rr,r,trtype,t)$notvsc(trtype)],
@@ -1423,7 +1458,9 @@ eq_supply_demand_balance(r,h,t)$tmodel(t)..
     - (CONVERSION(r,h,"AC","VSC",t) / converter_efficiency_vsc)$[Sw_VSC$val_converter(r,t)]
 
 * [minus] storage charging; not hybrid+storage
-    - sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))], STORAGE_IN(i,v,r,h,t) }
+* (distribution-connected storage charging is scaled up to the busbar level, like end-use load)
+    - sum{(i,v)$[valcap(i,v,r,t)$(storage_standalone(i) or hyd_add_pump(i))],
+          STORAGE_IN(i,v,r,h,t) * busbar_mult_storage(i) }
 
 * [minus] energy into storage for hybrid+storage from grid
     - sum{(i,v)$[valcap(i,v,r,t)$storage_hybrid(i)$(not csp(i))], STORAGE_IN_GRID(i,v,r,h,t) }$Sw_HybridPlant
@@ -1549,9 +1586,10 @@ eq_OpRes_requirement(ortype,r,h,t)
     $[tmodel(t)$Sw_OpRes$opres_model(ortype)$opres_h(h)]..
 
 *operating reserves from technologies that can produce them (i.e. those w/ramp rates)
+*(reserves from distribution-connected storage are scaled up to the busbar level, like its discharge)
 
     sum{(i,v)$[valgen(i,v,r,t)$reserve_frac(i,ortype)],
-         OPRES(ortype,i,v,r,h,t) }
+         OPRES(ortype,i,v,r,h,t) * busbar_mult_storage(i) }
 
 *[plus] net transmission of operating reserves (while including losses for imports)
     + sum{rr$opres_routes(rr,r,t), (1 - tranloss(rr,r,"AC")) * OPRES_FLOW(ortype,rr,r,h,t) }
@@ -1706,7 +1744,9 @@ eq_reserve_margin(r,ccseason,t)
 * Because it can provide no services, it will either upgrade or retire.
 
 *[plus] sum of all non-rsc and non-storage capacity
-    + sum{(i,v)$[valcap(i,v,r,t)$(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))$(not forced_retire(i,r,t))],
+*(FTM DER load shape resources only change load, so they do not provide firm capacity here)
+    + sum{(i,v)$[valcap(i,v,r,t)$(not vre(i))$(not hydro(i))$(not storage(i))$(not consume(i))
+                $(not der_ftm_shape(i))$(not forced_retire(i,r,t))],
           CAP(i,v,r,t)
           * (1 + ccseason_cap_frac_delta(i,v,r,ccseason,t))
           * (1 - mean_forced_outage_rate(i,r,ccseason,t))
@@ -2685,7 +2725,7 @@ eq_REC_Requirement(RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(not tfirst(t))
 *for CES (similar to the left-hand-side). Also, because GEN from pvb(i) includes grid charging,
 *subtract out its grid charging (see eq_REC_Generation above).
       + ( sum{(i,v)$[valgen(i,v,r,t)$(not storage_standalone(i))], GEN(i,v,r,h,t)
-          - (distloss * GEN(i,v,r,h,t))$(distpv(i))
+          - (distloss * GEN(i,v,r,h,t))$(vre_distributed(i))
           - (STORAGE_IN_GRID(i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] }
           - can_exports_h(r,h,t)$[(Sw_Canada=1)$sameas(RPSCat,"CES")]
         )$(RecStyle(st,RPSCat)=2)
@@ -2852,8 +2892,10 @@ eq_national_gen(t)$[tmodel(t)$national_gen_frac(t)$Sw_GenMandate]..
 * [plus] transmission losses
     + sum{(rr,r,h,trtype)$[routes(rr,r,trtype,t)$h_rep(h)], (tranloss(rr,r,trtype) * FLOW(rr,r,h,t,trtype) * hours(h)) }
 * [plus] storage losses
-    + sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)$h_rep(h)], STORAGE_IN(i,v,r,h,t) * hours(h) }
-    - sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)$h_rep(h)], GEN(i,v,r,h,t) * hours(h) }
+    + sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)$h_rep(h)],
+          STORAGE_IN(i,v,r,h,t) * busbar_mult_storage(i) * hours(h) }
+    - sum{(i,v,r,h)$[valcap(i,v,r,t)$storage_standalone(i)$h_rep(h)],
+          GEN(i,v,r,h,t) * busbar_mult_storage(i) * hours(h) }
     )$[Sw_GenMandate = 1]
 
 * if Sw_GenMandate = 2, then apply the fraction to the end use load
@@ -3078,6 +3120,68 @@ eq_dr_shift_storage_in_capacity(i,v,r,h,t)
 
 * demand shifting payback/charging
     STORAGE_IN(i,v,r,h,t)
+;
+
+* ---------------------------------------------------------------------------
+
+* The combined net output of front-of-the-meter DER (generation minus storage charging) must
+* be at least a given level [MW] in some timeslices. The requirement applies in regions and
+* years with prescribed FTM DER builds; output from all FTM DER capacity counts toward it.
+* FTM DER load shape resources (der_ftm_shape) neither count toward it nor trigger it.
+* Output is measured at the devices (end-use level), so distributed PV generation, which is
+* scaled up to the busbar level by its capacity factor, is scaled back down by (1-distloss).
+eq_der_ftm_min_output(r,h,t)
+    $[tmodel(t)
+    $(Sw_DER_FTM >= 2)
+    $der_ftm_min_output(r,h,t)
+    $sum{(i,v,tt)$[der_ftm(i)$(not der_ftm_shape(i))$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }]..
+
+    sum{(i,v)$[der_ftm(i)$valgen(i,v,r,t)],
+        GEN(i,v,r,h,t) * (1 - distloss$vre_distributed(i))
+        - STORAGE_IN(i,v,r,h,t)$storage_standalone(i) }
+
+    =g=
+
+    der_ftm_min_output(r,h,t)
+;
+
+* The combined net output of front-of-the-meter DER, plus the operating reserves they provide
+* (which could raise their output if deployed), cannot exceed a given level [MW] in some timeslices.
+* The limit applies to all FTM DER capacity wherever it is given, including limits of zero.
+* Output and reserves are measured at the devices, as in the minimum output requirement.
+eq_der_ftm_max_output(r,h,t)
+    $[tmodel(t)
+    $(Sw_DER_FTM >= 2)
+    $der_ftm_max_output_r(r,h,t)]..
+
+    der_ftm_max_output(r,h,t)
+
+    =g=
+
+    sum{(i,v)$[der_ftm(i)$(not der_ftm_shape(i))$valgen(i,v,r,t)],
+        (GEN(i,v,r,h,t)
+         + sum{ortype$[Sw_OpRes$reserve_frac(i,ortype)$opres_h(h)$opres_model(ortype)],
+               OPRES(ortype,i,v,r,h,t) }
+        ) * (1 - distloss$vre_distributed(i))
+        - STORAGE_IN(i,v,r,h,t)$storage_standalone(i) }
+;
+
+* Front-of-the-meter batteries cannot charge in some timeslices (or, for timeslices that
+* aggregate several hours, during the fraction of the timeslice in which charging is restricted).
+* The restriction applies in regions and years with prescribed FTM battery builds;
+* it then covers all FTM battery capacity in the region, prescribed or not.
+eq_der_ftm_battery_nocharge(r,h,t)
+    $[tmodel(t)
+    $(Sw_DER_FTM >= 2)
+    $der_ftm_battery_nocharge(r,h,t)
+    $sum{(i,v,tt)$[der_ftm(i)$storage_standalone(i)$(yeart(tt) <= yeart(t))], prescribed_build(i,v,r,tt) }]..
+
+    (1 - der_ftm_battery_nocharge(r,h,t))
+    * sum{(i,v)$[der_ftm(i)$storage_standalone(i)$valgen(i,v,r,t)], CAP(i,v,r,t) }
+
+    =g=
+
+    sum{(i,v)$[der_ftm(i)$storage_standalone(i)$valgen(i,v,r,t)], STORAGE_IN(i,v,r,h,t) }
 ;
 
 * ---------------------------------------------------------------------------

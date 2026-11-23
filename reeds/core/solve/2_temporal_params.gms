@@ -754,6 +754,69 @@ $onlisting
 / ;
 $offempty
 
+* Front-of-the-meter DER operating requirements
+* Written by hourly_writetimeseries.py
+$onempty
+parameter der_ftm_min_output(r,allh,allt) "--MW-- minimum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_min_output.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_min_output.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_max_output(r,allh,allt) "--MW-- maximum combined net output (generation minus storage charging) of FTM DER in each timeslice h"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_max_output.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_max_output.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+* Includes maximums of zero, which are not stored in der_ftm_max_output
+$onempty
+set der_ftm_max_output_r(r,allh,allt) "regions, timeslices, and years with a maximum combined net output of FTM DER"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_max_output_r.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_max_output_r.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_battery_nocharge(r,allh,allt) "--fraction-- fraction of each timeslice h in which FTM batteries cannot charge"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_battery_nocharge.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_battery_nocharge.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
+$onempty
+parameter der_ftm_profile_change(r,allh,allt) "--MW/MW-- FTM DER load shape: change in end-use load per MW of der_ftm_shape capacity in each timeslice h (negative = reduction)"
+/
+$offlisting
+$ondelim
+$include inputs_case%ds%%temporal_inputs%%ds%der_ftm_profile_change.csv
+$include inputs_case%ds%stress%stress_year%%ds%der_ftm_profile_change.csv
+$offdelim
+$onlisting
+/ ;
+$offempty
+
 * Written by hourly_writetimeseries.py
 parameter load_allyear(r,allh,allt) "--MW-- busbar load by region, timeslice, and year"
 / 

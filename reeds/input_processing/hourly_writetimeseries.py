@@ -382,6 +382,87 @@ def get_yearly_flexibility(
         return shape_out["decrease"], shape_out["increase"]
 
 
+## Front-of-the-meter DER hourly profiles (inputs_case/{ptype}.h5)
+DER_FTM_PROFILES = [
+    'der_ftm_min_output',
+    'der_ftm_max_output',
+    'der_ftm_battery_nocharge',
+    'der_ftm_profile_change',
+]
+
+
+def get_der_ftm_profiles(
+    sw,
+    hmap_myr,
+    hmap_allyrs,
+    inputs_case,
+    modeledyears,
+    periodtype='rep',
+):
+    """
+    Extract the front-of-the-meter (FTM) DER operating profiles for the modeled periods.
+    The input profiles are indexed by (year, hour of year) and are applied to every weather year.
+    Each modeled year uses the profile for the latest input year at or before it
+    (or the earliest input year if all input years are after it).
+
+    Returns a dict of dataframes with columns [r, h, t, value] for
+    'der_ftm_min_output' (minimum combined net output of FTM DER [MW]),
+    'der_ftm_max_output' (maximum combined net output of FTM DER [MW]),
+    'der_ftm_battery_nocharge' (1 where FTM batteries cannot charge), and
+    'der_ftm_profile_change' (change in end-use load per MW of FTM DER load shape capacity;
+    negative values are load reductions).
+    """
+    ### Get the hour of year for each modeled hour
+    if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
+        hmap = hmap_allyrs.loc[hmap_allyrs.year.isin(sw['GSw_HourlyWeatherYears'])]
+    else:
+        hmap = hmap_allyrs.loc[hmap_allyrs.actual_h.isin(hmap_myr.h.unique())]
+    h2yearhour = hmap.set_index('actual_h').yearhour.rename_axis('h')
+
+    ## Profiles are copied only for the techs allowed by GSw_DER_FTM
+    der_ftm_pv_battery = int(sw.GSw_DER_FTM) >= 2
+    der_ftm_shape = int(sw.GSw_DER_FTM) in [1, 3]
+    profile_used = {
+        'der_ftm_min_output': der_ftm_pv_battery,
+        'der_ftm_max_output': der_ftm_pv_battery,
+        'der_ftm_battery_nocharge': der_ftm_pv_battery,
+        'der_ftm_profile_change': der_ftm_shape,
+    }
+
+    profiles = {}
+    for ptype in DER_FTM_PROFILES:
+        if not profile_used[ptype]:
+            profiles[ptype] = pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
+            continue
+        dfin = reeds.io.read_file(os.path.join(inputs_case, f'{ptype}.h5'))
+        ## No data for the modeled regions
+        if dfin.columns.empty:
+            profiles[ptype] = pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
+            continue
+        datayears = sorted(dfin.index.get_level_values('year').unique())
+        dfout = {}
+        for t in modeledyears:
+            datayear = max([y for y in datayears if y <= int(t)], default=datayears[0])
+            dfout[int(t)] = (
+                dfin.xs(datayear, level='year')
+                .reindex(h2yearhour.values)
+                .set_axis(h2yearhour.index)
+            )
+        ## copy_files.py fills the profile with NaN for each modeled zone if none of the
+        ## input zones is modeled, so drop missing values
+        profiles[ptype] = (
+            pd.concat(dfout, names=['t'])
+            .rename_axis(columns='r')
+            .stack()
+            .rename('value')
+            .dropna()
+            .reset_index()
+            [['r', 'h', 't', 'value']]
+        )
+
+    return profiles
+
+
 # %% ===========================================================================
 ### --- MAIN FUNCTION ---
 ### ===========================================================================
@@ -492,6 +573,11 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             'dr_shift_discharge': ['*i','r','h','t'],
             'dr_shift_charge': ['*i','r','h','t'],
             'dr_shift_profile_energy': ['*i','r','h','t'],
+            'der_ftm_min_output': ['*r','h','t'],
+            'der_ftm_max_output': ['*r','h','t'],
+            'der_ftm_max_output_r': ['*r','h','t'],
+            'der_ftm_battery_nocharge': ['*r','h','t'],
+            'der_ftm_profile_change': ['*r','h','t'],
             'flex_frac_all': ['*flex_type','r','h','t'],
             'peak_h': ['*r','h','t','MW'],
             'daily_gasprice_multipliers_r': ['*r','h','multiplier'],
@@ -1246,6 +1332,24 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         dr_shift_inc = pd.DataFrame(columns=["i", "r", "h", "t"])
         dr_shift_profile_energy = pd.DataFrame(columns=["i", "r", "h", "t"])
 
+    ###############################
+    # -- Front-of-the-meter DER -- #
+    ###############################
+
+    if int(sw.GSw_DER_FTM):
+        der_ftm_profiles = get_der_ftm_profiles(
+            sw=sw,
+            hmap_myr=hmap_myr,
+            hmap_allyrs=hmap_allyrs,
+            inputs_case=inputs_case,
+            modeledyears=modeledyears,
+            periodtype=periodtype,
+        )
+    else:
+        der_ftm_profiles = {
+            ptype: pd.DataFrame(columns=['r', 'h', 't', 'value']).astype({'value': float})
+            for ptype in DER_FTM_PROFILES
+        }
 
 
     #%% Chunk the profiles
@@ -1326,6 +1430,29 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             [[region_level, 'h', 'multiplier']]
         )
         daily_gasprice_multipliers_dict[region_level] = df
+
+    ### Front-of-the-meter DER profiles, averaged over the hours in each chunk
+    der_ftm_chunked = {
+        ptype: (
+            df.assign(h=df.h.map(chunkmap))
+            .groupby(["r", "h", "t"]).value.mean()
+            .round(decimals)
+        )
+        for ptype, df in der_ftm_profiles.items()
+    }
+    ## The model is infeasible where both requirements apply and the minimum exceeds the maximum
+    der_ftm_minmax = pd.concat(
+        {ptype: der_ftm_chunked[ptype] for ptype in ['der_ftm_min_output', 'der_ftm_max_output']},
+        axis=1,
+    ).dropna()
+    der_ftm_conflict = der_ftm_minmax.loc[
+        der_ftm_minmax.der_ftm_min_output > der_ftm_minmax.der_ftm_max_output
+    ]
+    if len(der_ftm_conflict):
+        raise ValueError(
+            'der_ftm_min_output exceeds der_ftm_max_output in these (r,h,t):\n'
+            f'{der_ftm_conflict}'
+        )
 
     # %%###################################################################################
     #    -- Write outputs, aggregating hours to GSw_HourlyChunkLength if necessary --    #
@@ -1502,6 +1629,19 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
                 .round(decimals)
                 .reset_index()
             ),
+            False,
+            False,
+        ],
+        ## Front-of-the-meter DER: minimum and maximum combined net output [MW],
+        ## battery charging restriction [fraction of the chunk in which charging is not allowed],
+        ## and load shape change [MW/MW; signed, so only zeros are dropped]
+        **{
+            ptype: [df.loc[lambda x: x != 0].reset_index(), False, False]
+            for ptype, df in der_ftm_chunked.items()
+        },
+        ## (r,h,t) with a maximum net output, including maximums of zero that are dropped above
+        'der_ftm_max_output_r': [
+            der_ftm_chunked['der_ftm_max_output'].reset_index()[['r', 'h', 't']],
             False,
             False,
         ],

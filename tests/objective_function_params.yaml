@@ -58,6 +58,7 @@ cost_cap:
   - dr_shed
   - dr_shift
   - dr_shape
+  - der_ftm_shape
 cost_cap_fin_mult:
   indexsets:
   - valinv
@@ -158,6 +159,7 @@ cost_fom:
   excludesets:
   - canada
   - distpv
+  - der_ftm_shape
 transmission_line_fom:
   indexsets:
   - routes

@@ -232,7 +232,7 @@ def main(t, casedir, iteration=0):
     ], axis=0)
 
     #%% Remove VRE and demand-modifying techs (H2 production, DAC, DR)
-    demand_techs = tech_subset_table[['CONSUME', 'DR_SHED','DR_SHAPE','DR_SHIFT']].values
+    demand_techs = tech_subset_table[['CONSUME','DR_SHED','DR_SHAPE','DR_SHIFT','DER_FTM_SHAPE']].values
     cap_nonloadtechs = cap_ivr.loc[~cap_ivr.i.isin(demand_techs)].copy()
 
     vretechs_i = resources.i.str.lower().unique()
@@ -345,6 +345,16 @@ def main(t, casedir, iteration=0):
         .reindex(h_dt_szn_load_years.index)
     )
 
+    ### FTM DER load shape: busbar load change (already inflexible)
+    load_der_ftm_shape_all_hourly = (
+        gdxreeds['der_ftm_shape_load_mod']
+        .groupby(['r', 'allh']).Value.sum().reset_index()
+        .merge(h_dt_szn_load_years[['h']].reset_index(), left_on='allh', right_on='h')
+        .pivot(index='timestamp', columns='r', values='Value')
+        .fillna(0)
+        .reindex(h_dt_szn_load_years.index)
+    )
+
     ### DR shift: make it all inflexible for PRAS
     load_dr_shift_all_hourly = (
         gdxreeds['dr_shift_load_mod']
@@ -439,6 +449,11 @@ def main(t, casedir, iteration=0):
         print(f'Modified PRAS load to account for DR shape since GSw_DRShape = {sw.GSw_DRShape}')
         pras_load = pras_load.add(load_dr_shape_all_hourly, fill_value=0).clip(lower=0)
     
+    ## Modify load for FTM DER load shape impacts
+    if int(sw.GSw_DER_FTM) in [1, 3]:
+        print(f'Added FTM DER load shape load to PRAS load since GSw_DER_FTM = {sw.GSw_DER_FTM}')
+        pras_load = pras_load.add(load_der_ftm_shape_all_hourly, fill_value=0).clip(lower=0)
+
     ## Modify load for DR shift impacts
     if int(sw.GSw_DRShift):
         print(f'Modified PRAS load to account for DR shift since GSw_DRShift = {sw.GSw_DRShift}')
@@ -535,6 +550,18 @@ def main(t, casedir, iteration=0):
     # Add to max_cap any index in energy_cap that's missing, setting them to 0
     missing_index = energy_cap.index.difference(max_cap.index)
     max_cap = pd.concat([max_cap, pd.Series(0, index=missing_index, name=max_cap.name)])
+
+    ## Distribution-connected (front-of-the-meter DER) storage charges and discharges at the
+    ## end-use level, so 1 MW at the device is 1/(1-distloss) MW at the busbar (as in
+    ## busbar_mult_storage in ReEDS). Scale its power and energy capacity to busbar-equivalent
+    ## values; the charging and discharging efficiencies are unchanged in these units.
+    der_ftm_storage = (
+        set(tech_subset_table.loc[tech_subset_table.index == 'DER_FTM'].values)
+        & set(gdxreeds['storage_standalone'].i)
+    )
+    busbar_mult = 1 / (1 - reeds.io.get_scalars(casedir)['distloss'])
+    for df in [max_cap, energy_cap]:
+        df.loc[df.index.get_level_values('i').isin(der_ftm_storage)] *= busbar_mult
 
     ## Drop storage with energy or power capacity below the PRAS cutoff
     too_small_storage = list(set(

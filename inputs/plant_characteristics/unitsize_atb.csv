@@ -66,3 +66,5 @@ dr_shed,20000,set as an arbitrarily high number
 dr_shift,20000,set as an arbitrarily high number
 dr_shape,20000,set as an arbitrarily high number
 h2-fuel-cell,100,https://docs.nlr.gov/docs/fy26osti/91146.pdf
+der-ftm-pv,5,assumed size of a distribution-connected PV system
+der-ftm-battery_li,5,assumed size of a distribution-connected battery system
