@@ -93,19 +93,7 @@ Here is partial list of remotely hosted files used by ReEDS:
     - You can feed the period:szn mapping from a completed run into the inputs folder of your repo to force ReEDS to use the same representative or stress periods.
       More detail can be found in the <a href="postprocessing_tools.html#fix-representative-stress-periods-preprocessing-get-case-periods-py">postprocessing tools</a> guide.
 
-- `GSw_PRM_StressThresholdMetrics` and `GSw_PRM_StressThreshold{metric}`: Resource adequacy thresholds used to decide whether to add new stress periods.
-  - `GSw_PRM_StressThresholdMetrics` (default `NEUE`) is a /-delimited list of the metrics that can be used. Supported metrics are `NEUE`, `LOLD`, `LOLE`, `LOLH`, `Depth`, and `Duration`.
-  - Each listed metric reads its threshold from the matching `GSw_PRM_StressThreshold{metric}` switch, formatted as `{level}_{value}`. The default `GSw_PRM_StressThresholdNEUE=transgrp_1` means a threshold of "**1** ppm NEUE in each **transgrp**".
-    - `{level}` can be selected from ['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'] and specifies the hierarchy level within which to compare RA performance against the threshold.
-    - `{value}` is a non-negative number in the units of the metric: NEUE [ppm]; LOLD [event-days/year]; LOLE [events/year]; LOLH [event-hours/year]; Depth [maximum hourly EUE as a fraction of peak load]; Duration [hours in the longest EUE event].
-    - If desired you can provide /-delimited entries like `GSw_PRM_StressThresholdNEUE=transgrp_10/country_1`, meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.
-  - For each region that exceeds the threshold for a given metric, `GSw_PRM_StressIncrement` new stress periods (2 by default) are added for that metric:
-    - NEUE: Periods with the highest sum of EUE [MWh]
-    - Depth: Periods with the highest peak hourly EUE [MW]
-    - Duration: Periods with the longest continuous EUE event [hours]
-    - LOLD or LOLE: Periods with the highest peak hourly loss-of-load probability [fraction]
-    - LOLH: Periods with the highest sum of loss-of-load hours [hours]
-  - Shoulder periods for storage recharge (`GSw_PRM_StressStorageCutoff`) are only added for the NEUE metric.
+- Stress periods are added based on the thresholds described in [Resource adequacy](#resource-adequacy).
 
 
 ### Conventions
@@ -420,7 +408,25 @@ The full list of candidate lines is indicated by this file plus `hvdc_planned-ba
 
 
 
-## ReEDS2PRAS and PRAS
+## Resource adequacy
+
+### Stress period thresholds
+
+- `GSw_PRM_StressThresholdMetrics` and `GSw_PRM_StressThreshold{metric}`: Resource adequacy thresholds used to decide whether to add new stress periods.
+  - `GSw_PRM_StressThresholdMetrics` (default `NEUE`) is a /-delimited list of the metrics that can be used. Supported metrics are `NEUE`, `LOLD`, `LOLE`, `LOLH`, `Depth`, and `Duration`.
+  - Each listed metric reads its threshold from the matching `GSw_PRM_StressThreshold{metric}` switch, formatted as `{level}_{value}`. The default `GSw_PRM_StressThresholdNEUE=transgrp_1` means a threshold of "**1** ppm NEUE in each **transgrp**".
+    - `{level}` can be selected from ['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'] and specifies the hierarchy level within which to compare RA performance against the threshold.
+    - `{value}` is a non-negative number in the units of the metric: NEUE [ppm]; LOLD [event-days/year]; LOLE [events/year]; LOLH [event-hours/year]; Depth [maximum hourly EUE as a fraction of peak load]; Duration [hours in the longest EUE event].
+    - If desired you can provide /-delimited entries like `GSw_PRM_StressThresholdNEUE=transgrp_10/country_1`, meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.
+  - For each region that exceeds the threshold for a given metric, `GSw_PRM_StressIncrement` new stress periods (2 by default) are added for that metric:
+    - NEUE: Periods with the highest sum of EUE [MWh]
+    - Depth: Periods with the highest peak hourly EUE [MW]
+    - Duration: Periods with the longest continuous EUE event [hours]
+    - LOLD or LOLE: Periods with the highest peak hourly loss-of-load probability [fraction]
+    - LOLH: Periods with the highest sum of loss-of-load hours [hours]
+  - Shoulder periods for storage recharge (`GSw_PRM_StressStorageCutoff`) are only added for the NEUE metric.
+
+### ReEDS2PRAS and PRAS switches
 
 Some of the behavior of ReEDS2PRAS and PRAS (used for the stress periods resource adequacy method) can be controlled via the following switches:
 
