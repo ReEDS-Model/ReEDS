@@ -80,8 +80,9 @@ for iso in isos.split(','):
         ax2.set_yticks([0, float(f'{pmax:.2g}')])
         ax2.set_ylabel('price\n($/kW-yr per block)', fontsize=8, color=PRICE); ax2.tick_params(axis='y', labelsize=7)
         cc, pen = sc.loc[(iso, t), 'capacity_credit'], sc.loc[(iso, t), 'penetration'] * 1.12
-        ax.set_title(f'{t}: annual credit {cc:.2f}, batteries {pen:.0%} of peak', loc='left', fontsize=9, pad=36)
-    fig.suptitle(f'{iso}: new {scen} battery net output and reserve-margin price on stress days '
+        ax.set_title(f'{t}: annual credit {cc:.2f}, batteries {pen:.1%} of peak', loc='left', fontsize=9, pad=36)
+    dur = scen.split('_')[-1].replace('h', '-hour')
+    fig.suptitle(f'{iso}: new {dur} battery net output and reserve-margin price on stress days '
                  f'(days with at least 1% of the year\'s firm value; hours are CST block starts)',
                  x=0.01, ha='left', fontsize=10)
     fig.tight_layout(rect=(0, 0, 1, 0.98))

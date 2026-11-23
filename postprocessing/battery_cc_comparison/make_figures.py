@@ -33,8 +33,11 @@ subprocess.run([sys.executable, os.path.join(here, 'analyze.py'), scen_csv,
                 os.path.join(here, 'real_world_points.csv'), out,
                 os.path.join(here, 'published_deployment_curves.csv'),
                 os.path.join(out, 'stressday_cc.csv')], check=True, stdout=subprocess.DEVNULL)
-# dispatch on the stress days behind the dots, for a few ISOs of the 4-hour run
-subprocess.run([sys.executable, os.path.join(here, 'stressday_dispatch.py'), runs['battery_4h'],
-                os.path.join(out, 'stressday_cc.csv'),
-                scen_csv, 'battery_4h', out, 'MISO,CAISO'], check=True, stdout=subprocess.DEVNULL)
+# dispatch on the stress days behind the dots, for the ISOs in each figure's panels
+dispatch_isos = {'battery_4h': 'PJM,MISO,ERCOT,SPP,CAISO,NYISO,ISONE,WestConnect,NorthernGrid',
+                 'battery_8h': 'PJM,SPP,CAISO,NYISO,ISONE'}
+for scen, isos in dispatch_isos.items():
+    subprocess.run([sys.executable, os.path.join(here, 'stressday_dispatch.py'), runs[scen],
+                    os.path.join(out, 'stressday_cc.csv'), scen_csv, scen, out, isos],
+                   check=True, stdout=subprocess.DEVNULL)
 print('wrote', ', '.join(sorted(f for f in os.listdir(out) if f.endswith(('.png', 'table.csv')))))
