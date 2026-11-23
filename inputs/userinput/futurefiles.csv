@@ -4,7 +4,7 @@ acp_disallowed.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 acp_prices.csv,.csv,0,None,wide,st,1,0,constant,None,None,done,constant
 allout_RSC.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 allt.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
-alpha.csv,.csv,0,None,t,None,1,0,constant,None,None,done,linear_10
+alpha.csv,.csv,0,None,t,s,1,0,constant,None,None,done,linear_10
 bio_priceramp.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 bio_supplycurve.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 bioclass.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -161,12 +161,12 @@ firstyear.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 flex_frac_all.csv,.csv,0,None,wide,"flextype,r,h",1,0,constant,None,1,linear or constant? projection takes quite a while for this one,linear_5
 flex_type.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 forced_retirements.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
-fprice.csv,.csv,0,None,t,r,1,0,constant,None,None,done,linear_5
+fprice.csv,.csv,0,None,t,"s,r",1,0,constant,None,None,done,linear_5
 fuel_price.csv,.csv,0,None,t,"i,r",0,0,constant,0,None,done,linear_5
 fuel2tech.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 fuelbin.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 futurefiles.csv,.csv,1,None,9999,None,9999,0,constant,None,None,so meta,constant
-gasprice_ref.csv,.csv,0,None,wide,cendiv,1,0,constant,0,None,done,linear_5
+gasprice_ref.csv,.csv,0,None,wide,"s,cendiv",1,0,constant,0,None,done,linear_5
 gasreg_price_adj_regression_params.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gb.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 gbin_min.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
@@ -279,8 +279,8 @@ net_firm_transfers_nerc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 net_gen_existing_hydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 ng_crf_penalty_st.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ng_crf_penalty.csv,.csv,0,None,*t,None,0,0,constant,None,None,done,constant
-ng_demand_elec.csv,.csv,0,None,wide,Unnamed: 0,1,0,constant,0,None,done,linear_5
-ng_demand_tot.csv,.csv,0,None,wide,Unnamed: 0,1,0,constant,0,None,done,linear_5
+ng_demand_elec.csv,.csv,0,None,wide,"s, Unnamed: 1",1,0,constant,0,None,done,linear_5
+ng_demand_tot.csv,.csv,0,None,wide,"s, Unnamed: 1",1,0,constant,0,None,done,linear_5
 noretire.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 notvsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 nuclear_ba_ban_list.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
