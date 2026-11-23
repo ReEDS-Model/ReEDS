@@ -2429,7 +2429,13 @@ The syntax for these switches is described in the "Description" column of `cases
   - `GSw_PRM_CapCredit` (default 0): Use stress periods if 0, capacity credit if 1
 - Control the iteration between ReEDS and PRAS
   - `GSw_PRM_StressThresholdMetrics` (default `NEUE`): RA metric(s) checked during stress period iteration
-  - `GSw_PRM_StressThreshold{metric}` (default `GSw_PRM_StressThresholdNEUE=transgrp_1`): Regional RA threshold for each metric
+  - `GSw_PRM_StressThresholdNEUE` (default `transgrp_1`): Region level at which to apply the NEUE threshold and the value of the threshold in parts per million [ppm]
+    - NEUE is the only RA threshold active by default. Other thresholds that can be activated, in conjunction with the `GSw_PRM_StressThresholdMetrics` switch, are:
+      - `GSw_PRM_StressThresholdDepth`: Outage depth threshold [MW_EUE/MW_peak_load] (fraction)
+      - `GSw_PRM_StressThresholdDuration`: Outage duration threshold [hours]
+      - `GSw_PRM_StressThresholdLOLD`: Loss-of-load-days threshold [event-days/year]
+      - `GSw_PRM_StressThresholdLOLE`: Loss-of-load-events threshold [events/year]
+      - `GSw_PRM_StressThresholdLOLH`: Loss-of-load-hours threshold [event-hours/year]
   - `GSw_PRM_StressIterateMax` (default 5): Max number of times to iterate on a particular solve year before halting the run
   - `GSw_PRM_StressIncrement` (default 2): How many stress periods to add per region per iteration
   - `GSw_PRM_StressStorageCutoff` (default `EUE_0.1`): How to select "shoulder" stress periods for interday storage
