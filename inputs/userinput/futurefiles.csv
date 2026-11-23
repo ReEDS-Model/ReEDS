@@ -279,8 +279,8 @@ net_firm_transfers_nerc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 net_gen_existing_hydro.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
 ng_crf_penalty_st.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 ng_crf_penalty.csv,.csv,0,None,*t,None,0,0,constant,None,None,done,constant
-ng_demand_elec.csv,.csv,0,None,wide,"s, Unnamed: 1",1,0,constant,0,None,done,linear_5
-ng_demand_tot.csv,.csv,0,None,wide,"s, Unnamed: 1",1,0,constant,0,None,done,linear_5
+ng_demand_elec.csv,.csv,0,None,wide,"s,Unnamed: 1",1,0,constant,0,None,done,linear_5
+ng_demand_tot.csv,.csv,0,None,wide,"s,Unnamed: 1",1,0,constant,0,None,done,linear_5
 noretire.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 notvsc.csv,.csv,1,None,9999,None,9999,0,constant,None,None,new,
 nuclear_ba_ban_list.csv,.csv,1,None,9999,None,9999,0,constant,None,None,done,constant
