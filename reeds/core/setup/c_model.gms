@@ -14,10 +14,10 @@ positive variables
 
 * load variable - set equal to load_exog to compute holistic marginal price
   LOAD(s,r,allh,t)                  "--MW-- busbar load for each balancing region"
-  FLEX(flex_type,r,allh,t)        "--MW-- flexible load shifted to each timeslice"
+  FLEX(s,flex_type,r,allh,t)        "--MW-- flexible load shifted to each timeslice"
 *   PEAK_FLEX(r,ccseason,t)          "--MW-- peak busbar load adjustment based on load flexibility"
-  DROPPED(r,allh,t)               "--MW-- dropped load (only allowed before Sw_StartMarkets)"
-  EXCESS(r,allh,t)                "--MW-- excess load (only allowed before Sw_StartMarkets)"
+  DROPPED(s,r,allh,t)               "--MW-- dropped load (only allowed before Sw_StartMarkets)"
+  EXCESS(s,r,allh,t)                "--MW-- excess load (only allowed before Sw_StartMarkets)"
   CAP_LOADSITE(r,t)               "--MW-- capacity of flexibly sited load"
   INV_LOADSITE(r,t)               "--MW-- capacity of flexibly sited load installed in model year"
   OP_LOADSITE(s,r,allh,t)           "--MW-- operations of flexibly sited load"
@@ -76,8 +76,8 @@ positive variables
   BIOUSED(s,bioclass,r,t)                 "--MMBtu-- total biomass used by biomass class"
 
 * RECS variables
-  RECS(RPSCat,i,st,ast,t)               "--MWh-- renewable energy credits from state st to state ast",
-  ACP_PURCHASES(RPSCat,st,t)            "--MWh-- purchases of ACP credits to meet the RPS constraints",
+  RECS(s,RPSCat,i,st,ast,t)               "--MWh-- renewable energy credits from state st to state ast",
+  ACP_PURCHASES(s,RPSCat,st,t)            "--MWh-- purchases of ACP credits to meet the RPS constraints",
 
 * transmission variables
   CAPTRAN_ENERGY(r,rr,trtype,t)                  "--MW-- capacity of transmission for energy trading. Defined for both directions (r < rr and r > rr)"
@@ -138,9 +138,9 @@ EQUATION
  eq_loadcon(s,r,allh,t)                    "--MW-- load constraint used for computing the marginal energy price"
 
 * load flexibility constraints
- eq_load_flex_day(flex_type,r,allszn,t)  "--MWh-- total flexible load in each season is equal to the exogenously-specified flexible load"
- eq_load_flex1(flex_type,r,allh,t)       "--MWh-- exogenously-specified flexible demand (load_exog_flex) must be served by flexible load (FLEX)"
- eq_load_flex2(flex_type,r,allh,t)       "--MWh-- flexible load (FLEX) can't exceed exogenously-specified flexible demand (load_exog_flex)"
+ eq_load_flex_day(s,flex_type,r,allszn,t)  "--MWh-- total flexible load in each season is equal to the exogenously-specified flexible load"
+ eq_load_flex1(s,flex_type,r,allh,t)       "--MWh-- exogenously-specified flexible demand (load_exog_flex) must be served by flexible load (FLEX)"
+ eq_load_flex2(s,flex_type,r,allh,t)       "--MWh-- flexible load (FLEX) can't exceed exogenously-specified flexible demand (load_exog_flex)"
 *  eq_load_flex_peak(r,allh,ccseason,t)    "--MWh-- adjust peak demand as needed based on the load flexibility (FLEX)"
  eq_loadsite_inv(r,t)                   "--MW-- CAP_LOADSITE accumulates INV_LOADSITE"
  eq_loadsite_cap(s,r,allh,t)              "--MW-- Realized load from optimally sited load must be less than optimally sited load capacity"
@@ -369,7 +369,7 @@ eq_loadcon(s,r,h,t)$tmodel(t)..
     + sum{(i,v)$[evmc_shape(i)$valcap(i,v,r,t)], evmc_shape_load(i,r,h) * CAP(i,v,r,t)}
 
 *[plus] load shifted from other timeslices
-    + sum{flex_type, FLEX(flex_type,r,h,t) }$Sw_EFS_flex
+    + sum{flex_type, FLEX(s,flex_type,r,h,t) }$Sw_EFS_flex
 
 *[plus] Load created by production activities - only tracked during representative hours
 * [metric tons/hour] / [metric tons/MWh] = [MW]
@@ -478,9 +478,9 @@ eq_loadsite_siting(loadsitereg,t)
 * in the DR CONSTRAINTS section for that representation
 
 * FLEX load in each season equals the total exogenously-specified flexible load in each season
-eq_load_flex_day(flex_type,r,szn,t)$[tmodel(t)$Sw_EFS_flex]..
+eq_load_flex_day(s,flex_type,r,szn,t)$[tmodel(t)$Sw_EFS_flex]..
 
-    sum{h$h_szn(h,szn), FLEX(flex_type,r,h,t) * hours(h) } / numdays(szn)
+    sum{h$h_szn(h,szn), FLEX(s,flex_type,r,h,t) * hours(h) } / numdays(szn)
 
     =e=
 
@@ -498,11 +498,11 @@ eq_load_flex_day(flex_type,r,szn,t)$[tmodel(t)$Sw_EFS_flex]..
 * for the "adjacent" flex type: the amount of exogenously-specified load in timeslice "h"
 * must be served by FLEX load either in the timeslice h or a timeslice ADJACENT to h
 
-eq_load_flex1(flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
+eq_load_flex1(s,flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
 
-    FLEX(flex_type,r,h,t) * hours(h)
+    FLEX(s,flex_type,r,h,t) * hours(h)
 
-    + sum{hh$flex_h_corr1(flex_type,h,hh), FLEX(flex_type,r,hh,t) * hours(hh) }
+    + sum{hh$flex_h_corr1(flex_type,h,hh), FLEX(s,flex_type,r,hh,t) * hours(hh) }
 
     =g=
 
@@ -520,7 +520,7 @@ eq_load_flex1(flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
 * for the "adjacent" flex type: FLEX load in timeslice "h" cannot exceed the sum of
 * exogenously-specified load in timeslice h and the timeslices adjacent to h
 
-eq_load_flex2(flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
+eq_load_flex2(s,flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
 
     load_exog_flex(flex_type,r,h,t) * hours(h)
 
@@ -528,7 +528,7 @@ eq_load_flex2(flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
 
     =g=
 
-    FLEX(flex_type,r,h,t) * hours(h)
+    FLEX(s,flex_type,r,h,t) * hours(h)
 ;
 
 * * ---------------------------------------------------------------------------
@@ -544,7 +544,7 @@ eq_load_flex2(flex_type,r,h,t)$[tmodel(t)$Sw_EFS_flex]..
 *     peakdem_static_h(r,h,t)$h_ccseason(h,ccseason)
 
 * *   PLUS the flexibile load served in each timeslice
-*     + sum{flex_type, FLEX(flex_type,r,h,t) }$h_ccseason(h,ccseason)
+*     + sum{flex_type, FLEX(s,flex_type,r,h,t) }$h_ccseason(h,ccseason)
 
 * *   MINUS the static peak demand in the season corresponding to each timeslice
 *     - peakdem_static_ccseason(r,ccseason,t)$h_ccseason(h,ccseason)
@@ -1429,8 +1429,8 @@ eq_supply_demand_balance(s,r,h,t)$tmodel(t)..
     - sum{(i,v)$[valcap(i,v,r,t)$storage_hybrid(i)$(not csp(i))], STORAGE_IN_GRID(s,i,v,r,h,t) }$Sw_HybridPlant
 
 * [plus] dropped/excess load ONLY if before Sw_StartMarkets
-    + DROPPED(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
-    - EXCESS(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+    + DROPPED(s,r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+    - EXCESS(s,r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
 
     =e=
 
@@ -1558,7 +1558,7 @@ eq_OpRes_requirement(s,ortype,r,h,t)
     - sum{rr$opres_routes(r,rr,t), OPRES_FLOW(s,ortype,r,rr,h,t) }
 
 *[plus] dropped load (operating reserves) ONLY if before Sw_StartMarkets
-    + DROPPED(r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
+    + DROPPED(s,r,h,t)$[(yeart(t)<Sw_StartMarkets) or (Sw_PCM=1)]
 
     =g=
 
@@ -2622,15 +2622,15 @@ eq_REC_Generation(s,RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
 
 * Generation must be greater than RECS sent to all states that can trade
     + sum{ast$[RecMap(i,RPSCat,st,ast,t)$(stfeas(ast) or sameas(ast,"voluntary"))],
-          RECS(RPSCat,i,st,ast,t) }
+          RECS(s,RPSCat,i,st,ast,t) }
 * RPS_Bundled RECS and RPS_All RECS can meet the same requirement
 * therefore lumping them together to avoid double-counting
     + sum{ast$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("RPS_Bundled",i,st,ast,t) }$[sameas(RPSCat,"RPS_All")]
+          RECS(s,"RPS_Bundled",i,st,ast,t) }$[sameas(RPSCat,"RPS_All")]
 
 *same logic as bundled RPS RECS is applied to the bundled CES RECS
     + sum{ast$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("CES_Bundled",i,st,ast,t) }$[sameas(RPSCat,"CES")]
+          RECS(s,"CES_Bundled",i,st,ast,t) }$[sameas(RPSCat,"CES")]
 ;
 
 * ---------------------------------------------------------------------------
@@ -2646,24 +2646,24 @@ eq_REC_Requirement(s,RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(not tfirst(t))
 
 * RECs owned (i.e. imported and generated/used in state minus exports)
     + sum{(i,ast)$[RecMap(i,RPSCat,ast,st,t)$stfeas(ast)],
-         RECS(RPSCat,i,ast,st,t) }
+         RECS(s,RPSCat,i,ast,st,t) }
     - sum{(i,ast)$[RecMap(i,RPSCat,st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-         RECS(RPSCat,i,st,ast,t) }
+         RECS(s,RPSCat,i,st,ast,t) }
 
 * bundled RECS can also be used to meet the RPS_All requirements (imports minus exports)
     + sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,t)$stfeas(ast)$(not sameas(ast,st))],
-         RECS("RPS_Bundled",i,ast,st,t) }$[sameas(RPSCat,"RPS_All")]
+         RECS(s,"RPS_Bundled",i,ast,st,t) }$[sameas(RPSCat,"RPS_All")]
     - sum{(i,ast)$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-         RECS("RPS_Bundled",i,st,ast,t) }$[sameas(RPSCat,"RPS_All")]
+         RECS(s,"RPS_Bundled",i,st,ast,t) }$[sameas(RPSCat,"RPS_All")]
 
 * bundled CES credits can also be used to meet the CES requirements (imports minus exports)
     + sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,t)$stfeas(ast)$(not sameas(ast,st))],
-         RECS("CES_Bundled",i,ast,st,t) }$[sameas(RPSCat,"CES")]
+         RECS(s,"CES_Bundled",i,ast,st,t) }$[sameas(RPSCat,"CES")]
     - sum{(i,ast)$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-         RECS("CES_Bundled",i,st,ast,t) }$[sameas(RPSCat,"CES")]
+         RECS(s,"CES_Bundled",i,st,ast,t) }$[sameas(RPSCat,"CES")]
 
 * ACP credits can also be purchased
-    + ACP_PURCHASES(rpscat,st,t)$(not acp_disallowed(st,RPSCat))
+    + ACP_PURCHASES(s,rpscat,st,t)$(not acp_disallowed(st,RPSCat))
 
 * Exports to Canada are assumed to be clean, and therefore consume CES credits
     - sum{(r,h)$[r_st(r,st)$h_rep(h)],
@@ -2711,7 +2711,7 @@ eq_REC_BundleLimit(s,RPSCat,st,ast,t)$[stfeas(st)$stfeas(ast)$tmodel(t)
     =g=
 * must be greater than bundled RECS
     sum{i$RecMap(i,RPSCat,st,ast,t),
-        RECS(RPSCat,i,st,ast,t) }
+        RECS(s,RPSCat,i,st,ast,t) }
 ;
 
 * ---------------------------------------------------------------------------
@@ -2730,13 +2730,13 @@ eq_REC_unbundledLimit(s,RPSCat,st,t)$[st_unbundled_limit(RPScat,st)$tmodel(t)$st
 *needs to be greater than the unbundled recs
 *NB unbundled RECS are computed as all imported RECS minus bundled RECS
     sum{(i,ast)$[RecMap(i,RPSCat,ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS(RPSCat,i,ast,st,t) }
+        RECS(s,RPSCat,i,ast,st,t) }
 
     - sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("RPS_Bundled",i,ast,st,t) }$sameas(RPSCat,"RPS_All")
+        RECS(s,"RPS_Bundled",i,ast,st,t) }$sameas(RPSCat,"RPS_All")
 
     - sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("CES_Bundled",i,ast,st,t) }$sameas(RPSCat,"CES")
+        RECS(s,"CES_Bundled",i,ast,st,t) }$sameas(RPSCat,"CES")
 ;
 
 * ---------------------------------------------------------------------------
@@ -2756,15 +2756,15 @@ eq_REC_ooslim(s,RPSCat,st,t)$[RecPerc(RPSCat,st,t)$(yeart(t)>=firstyear_RPS)
 
 *imported RECs - note that the not sameas(st,ast) indicates they are not generated in-state
     sum{(i,ast)$[RecMap(i,RPSCat,ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS(RPSCat,i,ast,st,t)
+        RECS(s,RPSCat,i,ast,st,t)
        }
 
     + sum{(i,ast)$[RecMap(i,"RPS_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("RPS_Bundled",i,ast,st,t)
+        RECS(s,"RPS_Bundled",i,ast,st,t)
        }$sameas(RPSCat,"RPS_All")
 
     + sum{(i,ast)$[RecMap(i,"CES_Bundled",ast,st,t)$stfeas(ast)$(not sameas(st,ast))],
-        RECS("CES_Bundled",i,ast,st,t)
+        RECS(s,"CES_Bundled",i,ast,st,t)
        }$sameas(RPSCat,"CES")
 ;
 
@@ -2783,20 +2783,20 @@ eq_REC_launder(s,RPSCat,st,t)$[RecStates(RPSCat,st,t)$(not tfirst(t))$(yeart(t)>
 
 *minus ACP_PURCHASES with a 10x multiplier (the multiplier discourages the model from
 *exporting RECs when it is buying ACP credits)
-    - ACP_PURCHASES(RPSCat,st,t)$(not acp_disallowed(st,RPSCat)) * 10
+    - ACP_PURCHASES(s,RPSCat,st,t)$(not acp_disallowed(st,RPSCat)) * 10
 
     =g=
 
 *exported RECS - NB the conditional that st!=ast
     + sum{(i,ast)$[RecMap(i,RPSCat,st,ast,t)$(stfeas(ast) or sameas(ast,"voluntary"))$(not sameas(st,ast))],
-          RECS(RPSCat,i,st,ast,t) }
+          RECS(s,RPSCat,i,st,ast,t) }
 
     + sum{(i,ast)$[RecMap(i,"RPS_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("RPS_Bundled",i,st,ast,t)
+          RECS(s,"RPS_Bundled",i,st,ast,t)
        }$sameas(RPSCat,"RPS_All")
 
     + sum{(i,ast)$[RecMap(i,"CES_Bundled",st,ast,t)$stfeas(ast)$(not sameas(st,ast))],
-          RECS("CES_Bundled",i,st,ast,t)
+          RECS(s,"CES_Bundled",i,st,ast,t)
        }$sameas(RPSCat,"CES")
 
 ;
@@ -3889,7 +3889,7 @@ eq_co2_spurline_caplimit(s,r,cs,h,t)
 * (ReEDS-FINITO) extraction of CO2 [metric tons per hour] 
 * calculation: hours_per_year [yrs/hr] * (1 / co2_scale [scaled_metric_tons-CO2/metric_tons-CO2]) * use [scaled_metric_tons-CO2/yr] 
 $ifthene.linked_co2_spurline_caplimit Sw_FINITO_Link==1
-    + [ (1 / co2_scale) * EXTRACT_CO2_CS(cs,r,h,t) ]$[tfinito(t)]
+    + [ (1 / co2_scale) * EXTRACT_CO2_CS(s,cs,r,h,t) ]$[tfinito(t)]
 $endif.linked_co2_spurline_caplimit
 ;
 
@@ -3919,7 +3919,7 @@ eq_co2_sink(s,r,h,t)
 $ifthene.linked_co2_sink Sw_FINITO_Link==1
     + (1 / co2_scale) * [ sum{cs$[csfeas(cs)$r_cs(r,cs)], 
 *       extraction from all cs sites in r 
-        + EXTRACT_CO2_CS(cs,r,h,t)}
+        + EXTRACT_CO2_CS(s,cs,r,h,t)}
 *       total use of CO2, equivalent to supply 
         - USE_CO2(r,h,t) 
     ]$[tfinito(t)]
@@ -3946,7 +3946,7 @@ eq_co2_injection_limit(s,cs,h,t)
 
 * (ReEDS-FINITO) extraction of CO2 for use [metric tons per hour] 
 $ifthene.linked_co2_injection_limit Sw_FINITO_Link==1
-    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(cs,r,h,t) }$[tfinito(t)]
+    + (1 / co2_scale) * sum{r$[r_cs(r,cs)], EXTRACT_CO2_CS(s,cs,r,h,t) }$[tfinito(t)]
 $endif.linked_co2_injection_limit
 ;
 
@@ -3975,7 +3975,7 @@ $ifthene.linked_co2_storage_cumul_limit Sw_FINITO_Link==1
     - sum{(r,h,tt)
         $[(yeart(tt)<=yeart(t))$(tmodel(tt) or tfix(tt))$(yeart(tt)>=co2_detail_startyr)
         $r_cs(r,cs)$(not tfinito_all(tt))],
-        yearweight(tt) * hours(h) * EXTRACT_CO2_CS(cs,r,h,tt) }$[tfinito(t)]
+        yearweight(tt) * hours(h) * EXTRACT_CO2_CS(s,cs,r,h,tt) }$[tfinito(t)]
 $endif.linked_co2_storage_cumul_limit 
 ;
 * ---------------------------------------------------------------------------

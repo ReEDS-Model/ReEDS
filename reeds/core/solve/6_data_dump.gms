@@ -52,8 +52,6 @@ cost_vom_filt(i,v,r)               "--$/MWh-- VO&M costs filtered for the previo
 ctt_i_ii_filt(i,ii)                "--set-- set linking watercooling techs i to numeraire techs ii filtered for existing watercooling techs"
 ctt_i_ii_psh(i,ii)                 "--set-- set linking PSH techs with water i to numeraire techs ii filtered for valid capacity techs"
 emit_rate_filt(e,i,v,r)            "--metric tons/MWh-- emission rate for the previous solve year"
-flex_load_opt(r,allh)              "--MW-- model results for optimizing flexible load"
-flex_load(r,allh)                  "--MW-- total exogenously defined flexible load"
 gen_h_stress_filt(s,i,r,allh,t)      "--MW-- generation by stress timeslice with charge and production load as negative generation"
 heat_rate_filt(i,v,r)              "--MMBtu/MWh-- heat rate"
 inv_cond_filt(i,v,t)               "--set-- vintage-year mapping for investments by technology"
@@ -206,11 +204,6 @@ routes_filt(r,rr,trtype) = sum{t$tcur(t), routes(r,rr,trtype,t) } ;
 * Load data
 *============================
 
-* flexible load
-flex_load(r,h) = sum{(flex_type,t)$tcur(t), load_exog_flex(flex_type,r,h,t) } ;
-
-flex_load_opt(r,h) = sum{(flex_type,t)$tcur(t), FLEX.l(flex_type,r,h,t) } ;
-
 ra_cap_loadsite(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
 
 * FINITO load, converted from enduse to busbar
@@ -258,8 +251,6 @@ execute_unload 'handoff%ds%reeds_data%ds%reeds_data_%cur_year%.gdx'
     ctt_i_ii_psh
     degrade_annual
     emit_rate_filt
-    flex_load
-    flex_load_opt
     fuel2tech
     gen_h_stress_filt
     geo

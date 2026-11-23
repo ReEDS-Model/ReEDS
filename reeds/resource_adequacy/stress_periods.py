@@ -1,5 +1,6 @@
 #%%### General imports
 import os
+import traceback
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -904,6 +905,12 @@ def main(sw, t, iteration=0, logging=True):
         make_plots=0,
         logging=logging
     )
+
+    #%% Plot diagnostics for the new stress periods
+    try:
+        reeds.reedsplots.plot_stressors(case=sw.casedir, t=t, iteration=iteration, seed=int(sw.debug))
+    except Exception:
+        print(traceback.format_exc())
 
     #%% Write updated PRM values
     if (

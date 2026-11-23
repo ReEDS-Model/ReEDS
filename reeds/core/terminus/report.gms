@@ -329,27 +329,32 @@ load_frac_rt(s,r,t)$sum{(rr,h), LOAD.l(s,rr,h,t) } = sum{h, hours(h) * LOAD.l(s,
 
 *Load and operating reserve prices are $/MWh, and reserve margin price is $/MW/rep-day for
 * capacity credit formulation and $/MW/stress-timeslice for stress period formulation.
+* Operational costs are multiplied by scenario probability in the objective function,
+* so they are divided by scenario probability here to give unweighted prices for each scenario.
+parameter opex_scale(s,t) "scaler for operational costs" ;
+opex_scale(s,t)$tmodel_new(t) = 1 / cost_scale / pvf_onm(t) / scenario_probability(s) ;
+
 reqt_price(s,'load','na',r,h,t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_supply_demand_balance.m(s,r,h,t) / hours(h) ;
+    opex_scale(s,t) * eq_supply_demand_balance.m(s,r,h,t) / hours(h) ;
 
 reqt_price(s,'oper_res',ortype,r,h,t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_OpRes_requirement.m(s,ortype,r,h,t) / hours(h) ;
+    opex_scale(s,t) * eq_OpRes_requirement.m(s,ortype,r,h,t) / hours(h) ;
 
 reqt_price(s,'state_rps',RPSCat,r,'ann',t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * sum{st$r_st(r,st), eq_REC_Requirement.m(s,RPSCat,st,t) } ;
+    opex_scale(s,t) * sum{st$r_st(r,st), eq_REC_Requirement.m(s,RPSCat,st,t) } ;
 
 reqt_price(s,'nat_gen','na',r,'ann',t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_national_gen.m(s,t) ;
+    opex_scale(s,t) * eq_national_gen.m(s,t) ;
 
 reqt_price(s,'annual_cap',e,r,'ann',t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_annual_cap.m(s,e,t) ;
+    opex_scale(s,t) * eq_annual_cap.m(s,e,t) ;
 
 * Capacity credit formulation ($/MW/rep-day)
 reqt_price(s,'res_marg','na',r,ccseason,t)$[Sw_PRM_CapCredit$tmodel_new(t)] =
-    eq_reserve_margin.m(s,r,ccseason,t) * (1 / cost_scale) * (1 / pvf_onm(t)) ;
+    opex_scale(s,t) * eq_reserve_margin.m(s,r,ccseason,t) ;
 * Stress period formulation ($/MW/stress-timeslice)
 reqt_price(s,'res_marg','na',r,allh,t)$[(Sw_PRM_CapCredit=0)$tmodel_new(t)$h_stress_t(allh,t)] =
-    eq_supply_demand_balance.m(s,r,allh,t) * (1 / cost_scale) * (1 / pvf_onm(t)) ;
+    opex_scale(s,t) * eq_supply_demand_balance.m(s,r,allh,t) ;
 
 reqt_price(s,'res_marg_ann','na',r,'ann',t)$tmodel_new(t) =
 * Capacity credit formulation ($/MW-yr)
@@ -360,7 +365,7 @@ reqt_price(s,'res_marg_ann','na',r,'ann',t)$tmodel_new(t) =
 *The marginal on the total load constraint, eq_loadcon is converted to $/MW-yr.
 *We can't convert to $/MWh because stress periods have no hours.
 reqt_price(s,'eq_loadcon','na',r,allh,t)$[tmodel_new(t)$h_t(allh,t)] =
-    (1 / cost_scale) * (1 / pvf_onm(t)) * eq_loadcon.m(s,r,allh,t) ;
+    opex_scale(s,t) * eq_loadcon.m(s,r,allh,t) ;
 
 
 *Load and operating reserve quantities are MWh, and reserve margin quantity is MW
@@ -483,14 +488,13 @@ loadvar_rt(s,r,t)$[tmodel_new(t)] = sum{h, hours(h) * LOAD.l(s,r,h,t) } ;
 
 load_stress(s,r,allh,t)$[tmodel_new(t)$h_stress_t(allh,t)] = LOAD.l(s,r,allh,t) ;
 
-co2_price(s,t)$tmodel_new(t) = (1 / cost_scale) * (1 / pvf_onm(t)) * eq_annual_cap.m(s,"CO2",t) ;
+co2_price(s,t)$tmodel_new(t) = opex_scale(s,t) * eq_annual_cap.m(s,"CO2",t) ;
 
-rggi_price(s,t)$tmodel_new(t) = (1 / cost_scale) * (1 / pvf_onm(t)) * eq_RGGI_cap.m(s,t) ;
+rggi_price(s,t)$tmodel_new(t) = opex_scale(s,t) * eq_RGGI_cap.m(s,t) ;
 rggi_quant(t)$tmodel_new(t) = RGGI_cap(t) ;
 
 state_cap_and_trade_price(s,st,t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t))
-    * eq_state_cap.m(s,st,t) ;
+    opex_scale(s,t) * eq_state_cap.m(s,st,t) ;
 
 state_cap_and_trade_quant(st,t)$tmodel_new(t) =
     state_cap(st,t) ;
@@ -502,8 +506,8 @@ tran_hurdle_cost_ann(s,r,rr,trtype,t)$[tmodel_new(t)$routes(r,rr,trtype,t)$cost_
 * RPS, CES, AND TAX CREDIT OUTPUTS
 *========================================
 
-rec_outputs(RPSCat,i,st,ast,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(RPSCat,i,st,ast,t) ;
-acp_purchases_out(rpscat,st,t) = ACP_PURCHASES.l(RPSCat,st,t) ;
+rec_outputs(s,RPSCat,i,st,ast,t)$[stfeas(st)$(stfeas(ast) or sameas(ast,"voluntary"))$tmodel_new(t)] = RECS.l(s,RPSCat,i,st,ast,t) ;
+acp_purchases_out(s,rpscat,st,t) = ACP_PURCHASES.l(s,RPSCat,st,t) ;
 ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t) * tc_phaseout_mult(i,v,t) ;
 
 *========================================
@@ -516,16 +520,19 @@ ptc_out(i,v,t)$[tmodel_new(t)$ptc_value_scaled(i,v,t)] = ptc_value_scaled(i,v,t)
 * Case 2: the resource of one or more biomass classes ARE exhausted, i.e., BIOUSED = biosupply(bioclass)
 *    Marginal Biomass Price = maximum difference between eq_bioused.m and eq_biousedlimit.m across all biomass classes in a region
 
-repbioprice(s,r,t)$[tmodel_new(t)$(not tfinito_all(t))] = max{0, smax{bioclass$BIOUSED.l(s,bioclass,r,t), eq_bioused.m(s,r,t) -
-                                              sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(s,bioclass,usda_region,t) } } } / pvf_onm(t) ;
+repbioprice(s,r,t)$[tmodel_new(t)$(not tfinito_all(t))] =
+    opex_scale(s,t)
+    * max{0, smax{bioclass$BIOUSED.l(s,bioclass,r,t), eq_bioused.m(s,r,t)
+             - sum{usda_region$r_usda(r,usda_region), eq_biousedlimit.m(s,bioclass,usda_region,t) } }
+    } ;
 
 * when running linked model use FINITO biomass clearing prices
 $ifthene.finitobioprice Sw_FINITO_Link == 1
 * here we take the weighted average of prices across biomass products used for power
-repbioprice(r,t)$[tmodel_new(t)$(tfinito_all(t))$sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }] =
+repbioprice(s,r,t)$[tmodel_new(t)$(tfinito_all(t))$sum{(i,v,bs), USE_BS_REEDS.l(s,i,v,bs,r,t) }] =
     1/(cost_scale_finito) * 1/(pvf_onm(t)) * deflator('%FINITO_dollaryear%') *
-    sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) * eq_supplydemand_bs.m(bs,r,t) }
-    / sum{(i,v,bs), USE_BS_REEDS.l(i,v,bs,r,t) }
+    sum{(i,v,bs), USE_BS_REEDS.l(s,i,v,bs,r,t) * eq_supplydemand_bs.m(s,bs,r,t) }
+    / sum{(i,v,bs), USE_BS_REEDS.l(s,i,v,bs,r,t) }
 ;
 $endif.finitobioprice
 
@@ -1275,7 +1282,7 @@ emit_captured_nat(s,i,t)$tmodel_new(t) = sum{r, emit_captured_irt(s,i,r,t) } ;
 * National RE Constraint Marginals
 *==================================
 
-RE_gen_price_nat(s,t)$tmodel_new(t) = (1/cost_scale) * crf(t) * eq_national_gen.m(s,t) ;
+RE_gen_price_nat(s,t)$tmodel_new(t) = opex_scale(s,t) * eq_national_gen.m(s,t) ;
 
 *=========================
 * [i,v,r,t]-level capital expenditures (for retail rate calculations)
@@ -1472,7 +1479,7 @@ systemcost_techba(s,"op_h2_fuel_costs",i,r,t)$tmodel_new(t)  =
 
 systemcost_techba(s,"op_h2combustion_fuel_costs",i,r,t)$[tmodel_new(t)$h2_gen(i)$Sw_H2]  =
 * fuel costs for H2-CT/CC techs
-              + (1 / cost_scale) * (1 / pvf_onm(t))
+              + opex_scale(s,t)
 * when using national demand, calculate total annual demand and multiply by national average price
 * [MW] * [hours] * [MMBTU/MWh] * [metric tons/MMBTU] * [$/metric ton] = [$]
               * ( (sum{(v,h), GEN.l(s,i,v,r,h,t) * hours(h) * heat_rate(i,v,r,t) * h2_combustion_intensity  } 
@@ -1696,11 +1703,11 @@ systemcost_ba(s,"op_acp_compliance_costs",r,t)$[tmodel_new(t)$(yeart(t)>=firstye
               + sum{(st,RPSCat)
                     $[stfeas(st)$r_st(r,st)$RecPerc(RPSCat,st,t)
                     $sum{rr$r_st(rr,st), reqt_quant(s,'state_rps',RPSCat,rr,'ann',t) }],
-                       acp_price(st,t) * ACP_PURCHASES.l(RPSCat,st,t) * reqt_quant(s,'state_rps',RPSCat,r,'ann',t)
+                       acp_price(st,t) * ACP_PURCHASES.l(s,RPSCat,st,t) * reqt_quant(s,'state_rps',RPSCat,r,'ann',t)
                        / sum{rr$r_st(rr,st), reqt_quant(s,'state_rps',RPSCat,rr,'ann',t) }
                    }
 * spread voluntary purchase costs based on BA load frac
-              + sum{RPSCat$RecPerc(RPSCat,"voluntary",t), acp_price("voluntary",t) * ACP_PURCHASES.l(RPSCat,"voluntary",t) }
+              + sum{RPSCat$RecPerc(RPSCat,"voluntary",t), acp_price("voluntary",t) * ACP_PURCHASES.l(s,RPSCat,"voluntary",t) }
                 * load_frac_rt(s,r,t)
 
 ;
@@ -1778,7 +1785,7 @@ error_check('z') = (
 * Hurdle costs
         + pvf_onm(t) * sum{(r,rr,trtype)$cost_hurdle(r,rr,t), tran_hurdle_cost_ann(s,r,rr,trtype,t) }
 * Penalty cost for dropped/excess load before Sw_StartMarkets
-        + pvf_onm(t) * sum{(r,h), (DROPPED.l(r,h,t) + EXCESS.l(r,h,t)) * hours(h) * cost_dropped_load }
+        + pvf_onm(t) * sum{(r,h), (DROPPED.l(s,r,h,t) + EXCESS.l(s,r,h,t)) * hours(h) * cost_dropped_load }
 * Retail adder for electricity consuming technologies
         + pvf_onm(t) * sum{(p,i,v,r,h)$[valcap(i,v,r,t)$i_p(i,p)$h_rep(h)$Sw_RetailAdder$Sw_Prod],
               hours(h) * Sw_RetailAdder * PRODUCE.l(s,p,i,v,r,h,t) / prod_conversion_rate(i,v,r,t) }
@@ -1848,17 +1855,17 @@ error_check('z') = round(error_check('z'), 6) ;
 error_check("gen") = sum{(s,i,v,r,allh,t)$[not valgen(i,v,r,t)], GEN.l(s,i,v,r,allh,t) * scenario_probability(s) } ;
 error_gen(s,i,v,r,allh,t)$[not valgen(i,v,r,t)] = GEN.l(s,i,v,r,allh,t) ;
 error_check("cap") = sum{(i,v,r,t)$[not valcap(i,v,r,t)], CAP.l(i,v,r,t) } ;
-error_check("RPS") = sum{(RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(RPSCat,i,st,ast,t) } ;
+error_check("RPS") = sum{(s,RPSCat,i,st,ast,t)$[(not RecMap(i,RPSCat,st,ast,t))$[(not stfeas(ast)) or not sameas(ast,"voluntary")]], RECS.l(s,RPSCat,i,st,ast,t) } ;
 error_check("OpRes") = sum{(s,ortype,i,v,r,h,t)$[not valgen(i,v,r,t)], OPRES.l(s,ortype,i,v,r,h,t)  * scenario_probability(s) } ;
 error_check("m_rsc_dat") = sum{(r,i,rscbin)$m_rsc_dat(r,i,rscbin,"cap"), m_rsc_dat_init(r,i,rscbin) - m_rsc_dat(r,i,rscbin,"cap") } ;
 
 * Check to make sure there's no dropped/excess load in or after Sw_StartMarkets
-error_check("dropped") = sum{(r,h,t)$[yeart(t)>=Sw_StartMarkets], DROPPED.l(r,h,t) } ;
-error_check("excess") = sum{(r,h,t)$[yeart(t)>=Sw_StartMarkets], EXCESS.l(r,h,t) } ;
+error_check("dropped") = sum{(s,r,h,t)$[yeart(t)>=Sw_StartMarkets], DROPPED.l(s,r,h,t) } ;
+error_check("excess") = sum{(s,r,h,t)$[yeart(t)>=Sw_StartMarkets], EXCESS.l(s,r,h,t) } ;
 
 * Report DROPPED and EXCESS variable levels
-dropped_load(r,h,t) = DROPPED.l(r,h,t) ;
-excess_load(r,h,t) = EXCESS.l(r,h,t) ;
+dropped_load(s,r,h,t) = DROPPED.l(s,r,h,t) ;
+excess_load(s,r,h,t) = EXCESS.l(s,r,h,t) ;
 
 *======================
 * Transmission
@@ -1927,7 +1934,7 @@ expenditure_flow(s,'oper_res',r,rr,t)$[tmodel_new(t)$sum{trtype, routes(r,rr,trt
   sum{(h,ortype), hours(h) * reqt_price(s,'oper_res',ortype,r,h,t) * OPRES_FLOW.l(s,ortype,r,rr,h,t) } ;
 *unlike for the three services above, use the destination price rather than the sending price for calculating RPS expenditure flows
 expenditure_flow_rps(s,st,ast,t)$[tmodel_new(t)$[not sameas(st,ast)]] =
-  (1 / cost_scale) * (1 / pvf_onm(t)) * sum{RPSCat, eq_REC_Requirement.m(s,RPSCat,ast,t) * sum{i, RECS.l(RPSCat,i,st,ast,t) } } ;
+  opex_scale(s,t) * sum{RPSCat, eq_REC_Requirement.m(s,RPSCat,ast,t) * sum{i, RECS.l(s,RPSCat,i,st,ast,t) } } ;
 *International exports are negative expenditures, imports are positive. Use prices from the region where the imports/exports occur.
 expenditure_flow_int(s,r,t)$tmodel_new(t) =
   sum{(i,v,h)$[canada(i)$valgen(i,v,r,t)], GEN.l(s,i,v,r,h,t) * hours(h) * reqt_price(s,'load','na',r,h,t) }  - sum{h, hours(h) * reqt_price(s,'load','na',r,h,t) * can_exports_h(r,h,t) } ;
@@ -1942,7 +1949,7 @@ reduced_cost(i,v,r,t,rscbin,"INV_RSC")$[rsc_i(i)$valinv_init(i,v,r,t)$m_rscfeas(
 *=========================
 * Flexible load
 *=========================
-flex_load_out(flex_type,r,h,t) = FLEX.l(flex_type,r,h,t) ;
+flex_load_out(s,flex_type,r,h,t) = FLEX.l(s,flex_type,r,h,t) ;
 * peak_load_adj(r,ccseason,t) = PEAK_FLEX.l(r,ccseason,t) ;
 
 loadsite_cap(r,t)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,t) ;
@@ -1984,7 +1991,7 @@ h2_usage(s,r,h,t)$tmodel_new(t) =
 *"--$2004/metric ton-- national average marginal cost of producing H2"
 * NB subsetting only on Sw_H2 here and not broader Sw_Prod
 prod_h2_price(s,p,t)$[tmodel_new(t)$Sw_H2$sameas(p,"H2")] =
-  (1 / cost_scale) * (1 / pvf_onm(t))
+  opex_scale(s,t)
 * $/(metric ton) when using national demand
     * ( eq_h2_demand.m(s,p,t)$[Sw_H2=1] 
 * price when using regional demand; calculate annual price as the weighted average of demand
@@ -2020,7 +2027,7 @@ h2_demand_by_sector(s,"electricity",t) = sum{(i,v,r,h)$[valgen(i,v,r,t)$h2_gen(i
 * is in [MW] (or [MWh/hour]). So divide by hours(h) and kg/metric ton:
 * [($·hour)/metric ton] / [hour] / [1000 kg/metric ton] = [$/kg]
 h2_price_h(s,r,h,t)$tmodel_new(t) =
-    (1 / cost_scale) * (1 / pvf_onm(t))
+    opex_scale(s,t)
     * eq_h2_demand_regional.m(s,r,h,t)
     / hours(h) / 1000
 ;
@@ -2038,13 +2045,13 @@ h2_ptc_generation(s,i,v,r,h,t)$[tmodel_new(t)$Sw_H2_PTC] =
 
 * marginal cost of producing an Energy Attribute Credit with regional and annual matching
 h2_ptc_marginal_region(s,h2ptcreg,t)$[tmodel_new(t)$Sw_H2_PTC] =
-  (1 / cost_scale) * (1 / pvf_onm(t))
+  opex_scale(s,t)
   * eq_h2_ptc_region_balance.m(s,h2ptcreg,t)
 ;
 
 * marginal cost of producing an Energy Attribute Credit with regional, hourly and annual matching
 h2_ptc_marginal_region_hour(s,h2ptcreg,h,t)$[tmodel_new(t)$Sw_H2_PTC] =
-  (1 / cost_scale) * (1 / pvf_onm(t))
+  opex_scale(s,t)
   * eq_h2_ptc_region_hour_balance.m(s,h2ptcreg,h,t)
 ;
 
@@ -2069,7 +2076,7 @@ load_cat(s,"h2_network",r,t)$tmodel_new(t) =
 load_cat(s,"dac",r,t)$tmodel_new(t) = sum{i$dac(i), prod_load_ann(s,i,r,t) } ;
 
 $ifthene.finitoloadcat Sw_FINITO_Link == 1
-load_cat("finito",r,t)$tmodel_new(t) = sum{h, hours(h) * USE_ELE_FINITO.l(r,h,t) } ;
+load_cat(s,"finito",r,t)$tmodel_new(t) = sum{h, hours(h) * USE_ELE_FINITO.l(r,h,t) } ;
 $endif.finitoloadcat
 
 *========================================

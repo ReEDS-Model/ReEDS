@@ -338,10 +338,9 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         )
         print("Finished loading powerfrac gdx")
 
-        dfdict_to_csv(
+        write_dfdict(
             dict_powerfrac,
-            outputs_path=outputs_path,
-            rename=rename,
+            outputs_path=Path(case, 'outputs', 'outputs_powerfrac.h5'),
         )
 
 

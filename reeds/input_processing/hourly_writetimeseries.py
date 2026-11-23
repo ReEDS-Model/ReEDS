@@ -1495,7 +1495,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         ## Seasonal peak demand
         "peak_ccseason": [peak_all.round(decimals), False, False],
         ## Capacity factors (i,c,r,h)
-        'cf_vre': [cf_vre.round(5), False, False],
+        'cf_vre': [cf_vre[['i','c','r','h','cf']].round(5), False, False],
         ## Exports to Canada [fraction] (h)
         "can_exports_h_frac": [
             (

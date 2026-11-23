@@ -15,10 +15,10 @@ if(Sw_RemoveSmallNumbers = 1,
     
 *load variable
 LOAD.fx(s,r,h,tfix) = LOAD.l(s,r,h,tfix) ;
-FLEX.fx(flex_type,r,h,tfix)$Sw_EFS_flex  = FLEX.l(flex_type,r,h,tfix) ;
+FLEX.fx(s,flex_type,r,h,tfix)$Sw_EFS_flex = FLEX.l(s,flex_type,r,h,tfix) ;
 *     PEAK_FLEX.fx(r,ccseason,tfix)$Sw_EFS_flex = PEAK_FLEX.l(r,ccseason,tfix) ;
-DROPPED.fx(r,h,tfix)$[(yeart(tfix)<Sw_StartMarkets)] = DROPPED.l(r,h,tfix) ;
-EXCESS.fx(r,h,tfix)$[(yeart(tfix)<Sw_StartMarkets)] = EXCESS.l(r,h,tfix) ;
+DROPPED.fx(s,r,h,tfix)$[(yeart(tfix)<Sw_StartMarkets)] = DROPPED.l(s,r,h,tfix) ;
+EXCESS.fx(s,r,h,tfix)$[(yeart(tfix)<Sw_StartMarkets)] = EXCESS.l(s,r,h,tfix) ;
 CAP_LOADSITE.fx(r,tfix)$[Sw_LoadSiteCF$val_loadsite(r)] = CAP_LOADSITE.l(r,tfix) ;
 INV_LOADSITE.fx(r,tfix)$[Sw_LoadSiteCF$val_loadsite(r)] = INV_LOADSITE.l(r,tfix) ;
 OP_LOADSITE.fx(s,r,h,tfix)$[Sw_LoadSiteCF$(Sw_LoadSiteCF<1)$val_loadsite(r)] = OP_LOADSITE.l(s,r,h,tfix) ;
@@ -81,8 +81,8 @@ VGASBINQ_REGIONAL.fx(s,fuelbin,cendiv,tfix)$[Sw_GasCurve=1] = VGASBINQ_REGIONAL.
 BIOUSED.fx(s,bioclass,r,tfix)$[sum{(i,v)$(bio(i) or cofire(i)), valgen(i,v,r,tfix) }] = BIOUSED.l(s,bioclass,r,tfix) ;
 
 * RECS variables
-RECS.fx(RPSCat,i,st,ast,tfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,tfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = RECS.l(RPSCat,i,st,ast,tfix) ;
-ACP_Purchases.fx(RPSCat,st,tfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = ACP_Purchases.l(RPSCat,st,tfix) ;
+RECS.fx(s,RPSCat,i,st,ast,tfix)$[stfeas(st)$RecMap(i,RPSCat,st,ast,tfix)$(stfeas(ast) or sameas(ast,"voluntary"))$Sw_StateRPS] = RECS.l(s,RPSCat,i,st,ast,tfix) ;
+ACP_PURCHASES.fx(s,RPSCat,st,tfix)$[(stfeas(st) or sameas(st,"voluntary"))$Sw_StateRPS] = ACP_PURCHASES.l(s,RPSCat,st,tfix) ;
 EMIT.fx(s,etype,e,r,tfix)$emit_modeled(s,e,r,tfix) = EMIT.l(s,etype,e,r,tfix) ;
 
 * transmission variables
