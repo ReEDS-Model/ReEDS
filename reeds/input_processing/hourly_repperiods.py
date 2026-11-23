@@ -344,22 +344,23 @@ def main(
     load_agg = load_allyears.copy()
     load_agg.columns = load_agg.columns.map(rmap)
     load_agg = load_agg.T.groupby(level=0).sum().T
+    fit_to_years = [int(y) for y in sw.GSw_HourlyMatchYears.split('_')]
     match sw.GSw_HourlyClusterLoadNorm:
         case 'none':
             ## Don't normalize load
             pass
         case 'regionmax':
             ## Normalize each region to [0,1]
-            load_agg /= load_agg.max()
+            load_agg /= load_agg.loc[fit_to_years].max()
         case 'maxmax':
             ## Divide each region by largest regional max across all regions
-            load_agg /= load_agg.max().max()
+            load_agg /= load_agg.loc[fit_to_years].max().max()
         case 'maxmin':
             ## Divide each region by smallest regional max across all regions
-            load_agg /= load_agg.max().min()
+            load_agg /= load_agg.loc[fit_to_years].max().min()
         case _:
             ## Like 'maxmin' but scaled by the provided numeric value
-            load_agg /= load_agg.max().min() * float(sw.GSw_HourlyClusterLoadNorm)
+            load_agg /= load_agg.loc[fit_to_years].max().min() * float(sw.GSw_HourlyClusterLoadNorm)
 
     ### Get the full list of forced periods
     forceperiods = forceperiods_load.copy()
@@ -689,7 +690,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20261119_multirepM4_USA_faster','inputs_case','')
+    #     'v20261122_multirepM0_Pacific_rep2012_match2012','inputs_case','')
     # interactive = True
 
     #%% Set up logger
