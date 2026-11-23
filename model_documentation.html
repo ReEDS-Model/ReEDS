@@ -3892,8 +3892,11 @@ This switch specifies only which type of emission is included in the emission co
 The emission output files will include both upstream and process emissions regardless of whether a switch is turned on.</p></li>
 <li><p>If setting <code class="docutils literal notranslate"><span class="pre">GSw_AnnualCap</span> <span class="pre">=</span> <span class="pre">0</span></code> (model default): There are no emission caps for both CO<sub>2 and CO<sub>2</sub>e.</p></li>
 <li><p>If setting <code class="docutils literal notranslate"><span class="pre">GSw_AnnualCap</span> <span class="pre">=</span> <span class="pre">1</span></code>: Only CO<sub>2</sub> emission is capped following emission trajectories defined in <code class="docutils literal notranslate"><span class="pre">inputs/emission_constraints/co2_cap.csv</span></code> (can be both upstream + process or just process depending on <code class="docutils literal notranslate"><span class="pre">GSw_Upstream</span></code> setting).</p></li>
-<li><p>If setting <code class="docutils literal notranslate"><span class="pre">GSw_AnnualCap</span> <span class="pre">=</span> <span class="pre">2</span></code>: CO<sub>2</sub>e emission is capped following emission trajectories defined in <code class="docutils literal notranslate"><span class="pre">inputs/emission_constraints/co2_cap.csv</span></code> (can be both upstream + process or just combustion depending on <code class="docutils literal notranslate"><span class="pre">GSw_Upstream</span></code> setting).</p></li>
-<li><p>If setting <code class="docutils literal notranslate"><span class="pre">GSw_AnnualCap</span> <span class="pre">=</span> <span class="pre">3</span></code>: H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in <code class="docutils literal notranslate"><span class="pre">inputs/emission_constraints/co2_cap.csv</span></code>.</p></li>
+<li><p>If setting <code class="docutils literal notranslate"><span class="pre">GSw_AnnualCap</span> <span class="pre">=</span> <span class="pre">2</span></code>: CO<sub>2</sub>e emission is capped following emission trajectories defined in <code class="docutils literal notranslate"><span class="pre">inputs/emission_constraints/co2_cap.csv</span></code> (can be both upstream + process or just combustion depending on <code class="docutils literal notranslate"><span class="pre">GSw_Upstream</span></code> setting).</p>
+<ul>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">GSw_GWPH2</span> <span class="pre">=</span> <span class="pre">1</span></code>, H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in <code class="docutils literal notranslate"><span class="pre">inputs/emission_constraints/co2_cap.csv</span></code>.</p></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -6499,7 +6502,7 @@ Prescribed retirements are power plant retirements that are forced into the mode
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on November 20, 2026.
+      <span class="lastupdated">Last updated on November 23, 2026.
       </span></p>
   </div>
 

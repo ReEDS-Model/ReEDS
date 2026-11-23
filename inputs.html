@@ -452,7 +452,12 @@
 <h2>Emission Constraints Input Files<a class="headerlink" href="#emission-constraints-input-files" title="Link to this heading"></a></h2>
 <section id="co2-and-co2e-caps">
 <h3>CO<sub>2</sub> and CO<sub>2</sub>e Caps<a class="headerlink" href="#co2-and-co2e-caps" title="Link to this heading"></a></h3>
-<p>CO<sub>2</sub> and CO<sub>2</sub>e emissions caps are defined in <code class="docutils literal notranslate"><span class="pre">co2_cap.csv</span></code>, which includes a range of different emission cap trajectories until 2050. CO<sub>2</sub> tax for varying scenarios are defined in <code class="docutils literal notranslate"><span class="pre">co2_tax.csv</span></code>.</p>
+<ul class="simple">
+<li><p>CO<sub>2</sub> and CO<sub>2</sub>e emissions caps are defined in <code class="docutils literal notranslate"><span class="pre">co2_cap.csv</span></code>, which includes a range of different emission cap trajectories across model years.
+Filler values of 9999999999 indicate no cap is applied in that year; the default setting of <code class="docutils literal notranslate"><span class="pre">none</span></code> applies no cap.
+Custom trajectories can be created using the <code class="docutils literal notranslate"><span class="pre">preprocessing/co2cap_trajectory.py</span></code> script.</p></li>
+<li><p>CO<sub>2</sub> taxes for different scenarios are defined in <code class="docutils literal notranslate"><span class="pre">co2_tax.csv</span></code>.</p></li>
+</ul>
 </section>
 <section id="emission-rates">
 <h3>Emission Rates<a class="headerlink" href="#emission-rates" title="Link to this heading"></a></h3>
@@ -2154,7 +2159,7 @@ Turned on for some zone sets with single-county zones that have no high-voltage 
 
   <div role="contentinfo">
     <p>&#169; Copyright 2024, NREL.
-      <span class="lastupdated">Last updated on November 20, 2026.
+      <span class="lastupdated">Last updated on November 23, 2026.
       </span></p>
   </div>
 
