@@ -54,10 +54,10 @@ hydNPD,300
 hydNPND,300
 hydED,300
 hydEND,300
-csp1_1*csp1_12,30
-csp2_1*csp2_12,30
-csp3_1*csp3_12,30
-csp4_1*csp4_12,30
+csp1,30
+csp2,30
+csp3,30
+csp4,30
 battery_li,30
 dr_shed_1*dr_shed_2,8
 evmc_storage_1*evmc_storage_10,1

@@ -13,7 +13,7 @@ ignore_techs = []
 ### Functions
 def expand_star(techs):
     '''
-    Expand the GAMS range convention (e.g. csp1_1*csp1_12 becomes csp1_1, csp1_2,..., csp1_12)
+    Expand the GAMS range convention (e.g. wind-ofs_1*wind-ofs_10 becomes wind-ofs_1, wind-ofs_2,..., wind-ofs_10)
     in a list of technology names. We assume the numbers we would like to enumerate occur
     at the end. Entries without a '*' are passed through unchanged.
     '''
@@ -34,7 +34,7 @@ def expand_star(techs):
 def split_class(i):
     '''
     Split a resource-class-bearing tech name into (base, class), e.g.,
-    'wind-ofs_5' -> ('wind-ofs', 5), 'csp2_5' -> ('csp2', 5).
+    'wind-ofs_5' -> ('wind-ofs', 5).
     Techs with no numeric class suffix (e.g. 'distpv') return (i, None).
     '''
     match = re.search(r'^(.+)_(\d+)$', i)
@@ -59,7 +59,7 @@ def get_tech_class_name(tech, c, collapsed):
     family tech.
 
     Families whose classes are separate techs get the class appended
-    ('csp1', 5 -> 'csp1_5'). Families in collapsed hold all their classes under one
+    ('wind-ofs', 5 -> 'wind-ofs_5'). Families in collapsed hold all their classes under one
     tech name, so the name is returned unchanged ('upv', 5 -> 'upv').
     Get collapsed from get_collapsed_techs(case).
 
@@ -103,7 +103,7 @@ def get_class_map(case):
 
 def expand_GAMS_tech_groups(df, col='i'):
     '''
-    GAMS has a convention for expanding rows (e.g. csp1_1*csp1_12 is expanded to csp1_1, csp1_2,..., csp1_12)
+    GAMS has a convention for expanding rows (e.g. wind-ofs_1*wind-ofs_10 is expanded to wind-ofs_1, wind-ofs_2,..., wind-ofs_10)
     This function expands a df with the same convention, for the instances where a file is ingested
     by both python and GAMS. We assume the numbers we would like to enumerate occur at the end.
     '''

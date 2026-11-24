@@ -108,6 +108,6 @@ CofireNew,d,1.051
 CofireNew,p,0.989
 lfill-gas,n,1.0
 distpv,n,1.0
-csp1_1,o,0.905
-csp1_1,r,0.952
-csp1_1,d,1.0
+csp1,o,0.905
+csp1,r,0.952
+csp1,d,1.0

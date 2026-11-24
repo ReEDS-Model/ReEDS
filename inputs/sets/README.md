@@ -138,9 +138,9 @@
 
 - `tg.csv`: set of technology groups used for growth constraints
 
-- `tg_rsc_cspagg.csv`: set of csp technologies that belong to the same class
+- `tg_rsc_cspagg.csv`: set of CSP configurations that share a resource supply curve
 
-- `tg_rsc_upvagg.csv`: set of pv and pvb technologies that belong to the same class
+- `tg_rsc_upvagg.csv`: set of PV and PVB technologies that share a resource supply curve
 
 - `trancap_fut_cat.csv`: set of categories of near-term transmission projects that describe the likelihood of being completed
 

@@ -96,8 +96,6 @@ sets
     unknown
     geothermal
     hydro
-    csp3_1*csp3_12
-    csp4_1*csp4_12
     pumped-hydro-flex
     hydED_pumped-hydro-flex
     CoalOldUns_CoalOldScr
@@ -412,10 +410,6 @@ if(Sw_CSP = 0,
   ban(i)$i_subsets(i,'csp') = yes ;
 ) ;
 
-if(Sw_CSP = 1,
-  ban(i)$i_subsets(i,'csp2') = yes ;
-) ;
-
 if(Sw_CoalIGCC = 0,
   ban('Coal-IGCC') = yes ;
 ) ;
@@ -546,17 +540,17 @@ if(Sw_HybridPlant = 0,
 ) ;
 * 1: Allow CSP, ban all other storage
 if(Sw_HybridPlant = 1,
- ban(i)$[i_subsets(i,'storage_hybrid')$(not sameas(i,'csp_storage'))] = yes ;
+ ban(i)$[i_subsets(i,'storage_hybrid')$(not i_subsets(i,'csp_storage'))] = yes ;
  ban(i)$i_subsets(i,'csp_storage') = no ;
 ) ;
 * 2: Allow hybrid plants, excluding CSP
 if(Sw_HybridPlant = 2,
- ban(i)$[i_subsets(i,'storage_hybrid')$(not sameas(i,'csp_storage'))] = no ;
+ ban(i)$[i_subsets(i,'storage_hybrid')$(not i_subsets(i,'csp_storage'))] = no ;
  ban(i)$i_subsets(i,'csp_storage') = yes ;
 ) ;
-* 3: Allow CSP and all other hybrid plants (note csp_storage bans are controlled by Sw_CSP)
+* 3: Allow CSP and all other hybrid plants (note csp_storage bans are controlled by Sw_CSP and GSw_CSP_Types)
 if(Sw_HybridPlant = 3,
- ban(i)$[i_subsets(i,'storage_hybrid')$(not sameas(i,'csp_storage'))] = no ;
+ ban(i)$[i_subsets(i,'storage_hybrid')$(not i_subsets(i,'csp_storage'))] = no ;
 ) ;
 
 *ban techs in hybrid PV+battery if the switch calls for it
@@ -566,13 +560,30 @@ if(Sw_PVB=0,
 ) ;
 
 * Ban PVB_Types that aren't included in the model
-$ifthen.pvb123 %GSw_PVB_Types% == '1_2'
+$ifthen.pvbtypes %GSw_PVB_Types% == '1_2_3'
+$elseif.pvbtypes %GSw_PVB_Types% == '1_2'
     ban(i)$i_subsets(i,'pvb3') = yes ;
-$endif.pvb123
-$ifthen.pvb12 %GSw_PVB_Types% == '1'
+$elseif.pvbtypes %GSw_PVB_Types% == '1'
     ban(i)$i_subsets(i,'pvb2') = yes ;
     ban(i)$i_subsets(i,'pvb3') = yes ;
-$endif.pvb12
+$else.pvbtypes
+$abort 'GSw_PVB_Types=%GSw_PVB_Types% is not handled by the PVB_Types bans in b_inputs.gms'
+$endif.pvbtypes
+
+* Ban CSP_Types that aren't included in the model
+$ifthen.csptypes %GSw_CSP_Types% == '1_2_3_4'
+$elseif.csptypes %GSw_CSP_Types% == '1_2_3'
+    ban(i)$i_subsets(i,'csp4') = yes ;
+$elseif.csptypes %GSw_CSP_Types% == '1_2'
+    ban(i)$i_subsets(i,'csp3') = yes ;
+    ban(i)$i_subsets(i,'csp4') = yes ;
+$elseif.csptypes %GSw_CSP_Types% == '1'
+    ban(i)$i_subsets(i,'csp2') = yes ;
+    ban(i)$i_subsets(i,'csp3') = yes ;
+    ban(i)$i_subsets(i,'csp4') = yes ;
+$else.csptypes
+$abort 'GSw_CSP_Types=%GSw_CSP_Types% is not handled by the CSP_Types bans in b_inputs.gms'
+$endif.csptypes
 
 *** Ban storage techs based on Sw_Storage switch
 * 0: Ban all storage
@@ -620,19 +631,16 @@ i_c(i,'0')$[not sum{cc, i_c(i,cc)}] = yes ;
 set i_multiclass(i) "technologies that hold several resource classes under one name" ;
 i_multiclass(i)$[sum{c$i_c(i,c), 1 } > 1] = yes ;
 
-* There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban the
-* CSP techs with resource class > Sw_NumCSPclasses
+* There are 12 CSP resource classes by default. If Sw_NumCSPclasses < 12, we ban new
+* capacity in CSP resource classes > Sw_NumCSPclasses
 if(Sw_NumCSPclasses < 12,
-ban(i)$[i_subsets(i,'csp')
-      $sum{c$i_c(i,c),
-           resourceclassnum(c)>Sw_NumCSPclasses }] = yes ;
+bannew_class(i,c)$[i_subsets(i,'csp')$i_c(i,c)
+                  $(resourceclassnum(c) > Sw_NumCSPclasses)] = yes ;
 ) ;
-* If Sw_CSPRemoveLow is turned on, remove the last (worst) CSP class (which will be
-* equal to Sw_NumCSPclasses)
+* If Sw_CSPRemoveLow is turned on, ban new capacity in the lowest-quality CSP class (class 1)
 if(Sw_CSPRemoveLow = 1,
-ban(i)$[i_subsets(i,'csp')
-      $sum{c$i_c(i,c),
-           resourceclassnum(c)=Sw_NumCSPclasses }] = yes ;
+bannew_class(i,c)$[i_subsets(i,'csp')$i_c(i,c)
+                  $(resourceclassnum(c) = 1)] = yes ;
 ) ;
 
 *Ban Geothermal resources that do not remain after aggregation
@@ -803,9 +811,9 @@ water_req_psh(r,rscbin) = round(water_req_psh(r,rscbin) / psh_fillyrs, 6) ;
 water_with_cons_rate(i,ctt,w)$i_water_cooling(i) =
   sum{(ii,wst)$i_ii_ctt_wst(i,ii,ctt,wst), water_with_cons_rate(ii,ctt,w) } ;
 
-*CSP techs have same water withdrawal and consumption rates; populating all CSP data with the data of csp1_1
+*CSP techs have same water withdrawal and consumption rates; populating all CSP data with the data of csp1
 water_with_cons_rate(i,ctt,w)$[i_water_cooling(i)$(csp1(i) or csp2(i) or csp3(i) or csp4(i))] =
-  sum{(ii,wst)$i_ii_ctt_wst(i,ii,ctt,wst), water_with_cons_rate("csp1_1",ctt,w) } ;
+  sum{(ii,wst)$i_ii_ctt_wst(i,ii,ctt,wst), water_with_cons_rate("csp1",ctt,w) } ;
 
 water_with_cons_rate(ii,ctt,w)$[sum{(wst,i)$i_ii_ctt_wst(i,ii,ctt,wst), 1 }] = no ;
 
@@ -841,7 +849,7 @@ min_retire_age(i)$[i_water_cooling(i)$Sw_WaterMain] = sum{ii$ctt_i_ii(i,ii), min
 min_retire_age(i)$[coal(i)$Sw_Clean_Air_Act] = no ;
 
 
-set rsc_agg(i,ii)   "rsc technologies that belong to the same class" ;
+set rsc_agg(i,ii)   "rsc technologies that share a resource supply curve" ;
 
 set tg_rsc_cspagg_tmp(i,ii) "expanded tg_rsc_cspagg(i,ii) to include new non-numeraire CSP techs" ;
 

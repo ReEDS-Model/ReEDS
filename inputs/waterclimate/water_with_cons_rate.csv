@@ -155,9 +155,9 @@ CofireNew,d,cons,0
 CofireNew,p,cons,390
 lfill-gas,n,cons,1
 distpv,n,cons,1
-csp1_1,o,with,1000
-csp1_1,o,cons,1000
-csp1_1,r,with,786
-csp1_1,r,cons,786
-csp1_1,d,with,26
-csp1_1,d,cons,26
+csp1,o,with,1000
+csp1,o,cons,1000
+csp1,r,with,786
+csp1,r,cons,786
+csp1,d,with,26
+csp1,d,cons,26
