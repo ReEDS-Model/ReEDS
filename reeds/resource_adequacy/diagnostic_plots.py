@@ -1210,30 +1210,6 @@ def plot_netloadhours_histogram(sw, dfs):
     plt.close()
 
 
-def plot_stressors(sw, dfs):
-    """
-    Map demand/CF/FOR (organized differently to allow for independent use)
-    """
-    plot_generator = reeds.reedsplots.map_stressors(
-        case=sw['casedir'], t=sw['t'], iteration=sw['iteration'],
-        seed=(True if t == int(sw['endyear']) else False),
-    )
-    while True:
-        try:
-            f, ax, df, plotlabel = next(plot_generator)
-            savename = (
-                f"stress{sw.t}i{sw.iteration}-"
-                + plotlabel.split(':')[0].replace('-','')
-                + '.png'
-            )
-            if savefig:
-                plt.savefig(os.path.join(sw['savepath'],savename))
-            if interactive:
-                plt.show()
-        except StopIteration:
-            break
-
-
 #%%### Main function
 def main(sw, debug=False):
     """
@@ -1274,11 +1250,6 @@ def main(sw, debug=False):
             plot_pras_load(sw, dfs)
         except Exception:
             print('plot_pras_load() failed:', traceback.format_exc())
-
-        try:
-            plot_stressors(sw, dfs)
-        except Exception:
-            print('plot_stressors() failed:', traceback.format_exc())
 
     try:
         plot_dropped_load_timeseries_full(sw, dfs)

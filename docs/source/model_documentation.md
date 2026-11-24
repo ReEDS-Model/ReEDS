@@ -1212,7 +1212,7 @@ PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020G
 
 ```{admonition} PSH options
 - `pshsupplycurve`: Determines the PSH supply-curve dataset used.
-  - PSH storage duration is either 8, 10, or 12 hours depending on the chosen PSH supply curve (with 12 hours as the default). Supply curves with wEph or wEphemeral in the filename allow sites that intersect with ephemeral streams. Supply curves with wExist in the filename allow sites that utilize existing reservoirs. The repository typically includes the latest and previous data vintages.
+  - Specified as `{duration}hr_{siting}` with entries from `inputs/supply_curve/supplycurve_psh-{pshsupplycurve}.csv`. The PSH storage duration options are 8, 10, or 12 hours and the siting scenario options are `limited`, `reference`, or `open`. The default is `8hr_reference`.
 
 - `GSw_PSHwatercon`: Requires new PSH to purchase water access from water supply supply curves.
   - `0`: Ignore water access costs (default).
@@ -1226,7 +1226,7 @@ PSH fixed O&M costs and round-trip efficiency are taken from {cite}`mongird2020G
 - `GSw_PSHfillyears`: Scales the water requirement by the number of years it is assumed to take to fill the PSH reservoirs.
   - Default setting: 3 years.
 
-**`GSw_PSHwatertypes` and `GSw_PSHfillyears` are only relevant when `GSw_watercon = 1`.**
+**`GSw_PSHwatertypes` is only relevant when `GSw_WaterMain = 1`, and `GSw_PSHfillyears` is only relevant when `GSw_PSHwatercon = 1` (which also requires `GSw_WaterMain = 1`).**
 
 ```
 
@@ -1267,7 +1267,7 @@ By default, the model uses the third option (endogenous representation with zona
 ```{admonition} Hydrogen options
 
 - `GSw_H2` (default `2`): Controls the representation of hydrogen.
-  - `0`: **drop-in fuel** — no endogenous representation of hydrogen production or transport; if `GSw_H2CT=1` fuel is assumed to be available at the cost specified by `h2ctfuelscen`.
+  - `0`: **drop-in fuel** — no endogenous representation of hydrogen production or transport; if `GSw_H2Combustion=1`, fuel for H2-CT and H2-CC is assumed to be available at the cost specified by `h2combustionfuelscen`.
   - `1`: **production, national balancing** — endogenous representation of hydrogen production represented with national balancing (no network constraints).
   - `2`: **production, regional balancing** — endogenous representation of hydrogen production and transport network.
 
@@ -2428,7 +2428,14 @@ The syntax for these switches is described in the "Description" column of `cases
 - Choose between stress periods vs. capacity credit
   - `GSw_PRM_CapCredit` (default 0): Use stress periods if 0, capacity credit if 1
 - Control the iteration between ReEDS and PRAS
-  - `GSw_PRM_StressThreshold` (default `transgrp_1_EUE_sum`): Regional RA threshold for stress period iteration
+  - `GSw_PRM_StressThresholdMetrics` (default `NEUE`): RA metric(s) checked during stress period iteration
+  - `GSw_PRM_StressThresholdNEUE` (default `transgrp_1`): Region level at which to apply the NEUE threshold and the value of the threshold in parts per million [ppm]
+    - NEUE is the only RA threshold active by default. Other thresholds that can be activated, in conjunction with the `GSw_PRM_StressThresholdMetrics` switch, are:
+      - `GSw_PRM_StressThresholdDepth`: Outage depth threshold [MW_EUE/MW_peak_load] (fraction)
+      - `GSw_PRM_StressThresholdDuration`: Outage duration threshold [hours]
+      - `GSw_PRM_StressThresholdLOLD`: Loss-of-load-days threshold [event-days/year]
+      - `GSw_PRM_StressThresholdLOLE`: Loss-of-load-events threshold [events/year]
+      - `GSw_PRM_StressThresholdLOLH`: Loss-of-load-hours threshold [event-hours/year]
   - `GSw_PRM_StressIterateMax` (default 5): Max number of times to iterate on a particular solve year before halting the run
   - `GSw_PRM_StressIncrement` (default 2): How many stress periods to add per region per iteration
   - `GSw_PRM_StressStorageCutoff` (default `EUE_0.1`): How to select "shoulder" stress periods for interday storage
@@ -2446,7 +2453,7 @@ The syntax for these switches is described in the "Description" column of `cases
 - Additional RA modeling details
   - `resource_adequacy_years` (default `2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023`): Weather years to include in resource adequacy calculations
   - `GSw_HourlyChunkLengthStress` (default 3): Hours per time chunk modeled during stress periods
-  - `pras_samples` (default 10): Number of Monte Carlo outage draws modeled in PRAS
+  - `pras_samples` (default 100): Number of Monte Carlo outage draws modeled in PRAS
   - `GSw_PRM_StressLoadAggMethod` (default `max`): How to aggregate load within time chunks: "mean" or "max"
   - `GSw_PRM_StressOutages` (default 1): Turn on (1) / off (0) outages during stress periods in ReEDS
 ```
@@ -2524,8 +2531,8 @@ In all cases, the VRE profile is compared against the aggregated regional load p
 Many settings related to capacity credit calculations can be adjusted by the user.
 - `capcredit_hierarchy_level` (default `transreg` for the 11 planning regions shown in {numref}`figure-spatial_layers_zones`): Level at which to aggregate net load for capacity credit calculation
 - `GSw_PRM_CapCreditHours` (default 20): Number of peak net load hours per capacity credit season considered in capacity credit calculation
-- `marg_vre_mw` (default 1000): Amount of marginal VRE capacity to add in MW for marginal capacity credit calculation
-- `marg_stor_mw` (default 100): Amount of marginal storage capacity to add in MW for marginal capacity credit calculation
+- `marg_vre_mw` (default 1000): Minimum amount of marginal VRE capacity in MW to add for marginal capacity credit calculation; the specific amount used is the maximum of this value and the the most recent average new VRE investment per capacity credit region (looking back the number of solve years specified by `marg_vre_steps`)
+- `cc_stor_stepsize` (default 100): Amount of marginal storage capacity in MW to add for marginal storage capacity credit calculation
 ```
 
 
@@ -2842,7 +2849,7 @@ The emission output files will include both upstream and process emissions regar
 - If setting `GSw_AnnualCap = 0` (model default): There are no emission caps for both CO<sub>2 and CO<sub>2</sub>e.
 - If setting `GSw_AnnualCap = 1`: Only CO<sub>2</sub> emission is capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv` (can be both upstream + process or just process depending on `GSw_Upstream` setting).
 - If setting `GSw_AnnualCap = 2`: CO<sub>2</sub>e emission is capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv` (can be both upstream + process or just combustion depending on `GSw_Upstream` setting).
-- If setting `GSw_AnnualCap = 3`: H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv`.
+  - If `GSw_GWPH2 = 1`, H<sub>2</sub> leakage from H<sub>2</sub> production, by SMR, SMR-CC and electrolyzer as well as electricity production from H<sub>2</sub> combustion plants and fuel cells, is also included in CO<sub>2</sub>e emissions, which are capped following emission trajectories defined in `inputs/emission_constraints/co2_cap.csv`.
 ```
 
 ### SO<sub>2</sub> and NO<sub>x</sub>
@@ -2866,15 +2873,6 @@ This section primarily focuses on existing policies, but additional frameworks t
 
 
 ### Federal and State Emission Standards
-
-#### Clean Air Act
-ReEDS represents EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
-For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
-This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
-This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
-Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
-Existing gas plants fall outside the scope of this rule.
-
 
 #### Cross-State Air Pollution Rule
 
@@ -3190,6 +3188,18 @@ Users can restrict negative emissions technologies to offset emissions only from
 - **Alternative ITC and PTC Schedules:** In addition to the ITC and PTC schedules described in the [Federal and State Tax Incentives](#federal-and-state-emission-standards) section, the ITC and PTC can be modified to apply for any number of years and to any technology.
 
 - **Alternative Financing Measures:** Policy-related financing impacts such as MACRS or the under-construction provisions for the ITC and PTC can be modified as specified by the user.
+
+- **Clean Air Act, Section 111:**
+ReEDS can represent EPA's greenhouse gas emissions standards for power plants under Section 111 of the Clean Air Act {cite}`epaNewSourcePerformance2024`.
+For existing coal plants, ReEDS models an emissions rate-based compliance mechanism, enforced at the state level.
+This mechanism is enforced in 2032 and beyond, and requires that the CO<sub>2</sub> emissions from the state's coal fleet must be no greater than what it would be if each coal unit captured 90% of its CO<sub>2</sub> stack emissions.
+This enables some unabated coal plants to remain online after 2032 if that state also has coal-CCS plants with higher capture rates that stay online and generate, because those plants would emit less than their own allowance.
+Also starting in 2032, new gas plants must either retrofit with CCS or operate below a 40% capacity factor.
+Existing gas plants fall outside the scope of this rule.
+
+```{admonition} Clean Air Act settings
+The Section 111 standards are turned off by default but can be turned on in `cases.csv` by setting `GSw_Clean_Air_Act` to 1.
+```
 
 
 ## Capital Financing, System Costs, and Economic Metrics
