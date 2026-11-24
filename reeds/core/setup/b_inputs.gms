@@ -4435,27 +4435,9 @@ gaslimit_nat(gb,t)$(ord(gb)=smax(gbb,ord(gbb))) = 5 * gaslimit_nat(gb,t) ;
 
 *Penalizing new gas built within cost recovery period of 30 years for states that
 * require fossil plants to retire in some future model period.
-* This value is calculated as the ratio of CRF_X / CRF_30 where X is the number of
-* years until the required retirement year.
-$onempty
-parameter ng_crf_penalty_st(allt,st) "--unitless-- cost adjustment for NG in states where all NG techs must be retired by a certain year"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ng_crf_penalty_st.csv
-$offdelim
-$onlisting
-/ ;
-$offempty
-
-parameter ng_carb_lifetime_cost_adjust(allt) "--unitless-- cost adjustment for NG with full-region zero-carbon policy"
-/
-$offlisting
-$ondelim
-$include inputs_case%ds%ng_crf_penalty.csv
-$offdelim
-$onlisting
-/ ;
+* ng_crf_penalty_st and ng_carb_lifetime_cost_adjust values are calculated as 
+* the ratio of CRF_X / CRF_30 where X is the number of years until the required 
+* retirement year and it is in the inputs.h5 file.
 
 parameter ng_crf_penalty_nat(i,t) "--unitless-- cost adjustment for NG techs that must be retired by a certain year" ;
 * Penalize new gas that can be upgraded to recover upgrade costs prior to upgrade within 20 years of a zero-carbon policy
