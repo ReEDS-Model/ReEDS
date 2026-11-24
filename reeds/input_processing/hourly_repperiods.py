@@ -297,7 +297,7 @@ def main(
         and (sw['GSw_HourlyMinRElevel'].lower() not in ['false','none'])):
         forceperiods_minre = {
             tech: identify_min_periods(
-                df=recf_allyears.loc[sw.resource_adequacy_years_list],
+                df=recf_allyears.loc[keep_years],
                 hierarchy=hierarchy,
                 level=sw['GSw_HourlyMinRElevel'], prefix=tech)
             for tech in techs_min_vre
@@ -335,7 +335,7 @@ def main(
         and (sw['GSw_HourlyPeakLevel'].lower() not in ['false','none'])
     ):
         forceperiods_load = identify_peak_containing_periods(
-            df=load_allyears.loc[sw.resource_adequacy_years_list],
+            df=load_allyears.loc[keep_years],
             hierarchy=hierarchy, level=sw['GSw_HourlyPeakLevel'])
     else:
         forceperiods_load = set()
@@ -690,7 +690,7 @@ if __name__ == '__main__':
     # reeds_path = reeds.io.reeds_path
     # inputs_case = os.path.join(
     #     reeds_path,'runs',
-    #     'v20261122_multirepM0_Pacific_rep2012_match2012','inputs_case','')
+    #     'v20261123_multirepM0_github_MA_county_CC','inputs_case','')
     # interactive = True
 
     #%% Set up logger

@@ -133,6 +133,8 @@ def main(t, casedir, iteration=0):
         os.path.join(inputs_case, 'rep', 'hmap_allyrs.csv'),
         low_memory=False,
     )
+    hmap_allyrs = hmap_allyrs.loc[hmap_allyrs.year.isin(sw.resource_adequacy_years_list)].copy()
+    hmap_allyrs['hour'] = range(1, len(hmap_allyrs)+1)
     hmap_allyrs['szn'] = h_dt_szn['season'].copy()
 
     hmap_myr_stress = pd.read_csv(
@@ -146,6 +148,7 @@ def main(t, casedir, iteration=0):
     # Add explicit timestamp index
     h_dt_szn['timestamp'] = pd.to_datetime(
         h_dt_szn.index.map(hmap_allyrs.set_index(['year', 'hour'])['*timestamp']))
+    assert h_dt_szn.timestamp.isnull().sum() == 0, 'mismatched timesetamps'
     h_dt_szn = h_dt_szn.reset_index().set_index('timestamp')
 
     resources = pd.read_csv(os.path.join(inputs_case, 'resources.csv'))
