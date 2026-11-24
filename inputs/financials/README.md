@@ -39,6 +39,7 @@
   - `incentives_none.csv`: 
   - `incentives_obbba_conservative.csv`: 
   - `incentives_obbba.csv`: 
+  - `incentives_obbba_extension.csv`: incentives_obbba.csv with the construction-start-2032 credits for every tech still eligible then (all but wind, solar, and 45V) held constant through 2050
 
 - `inflation_default.csv`: Annual inflation factors from 1914 through 2200
   - historical values use the avg-avg values from [https://www.usinflationcalculator.com/inflation/consumer-price-index-and-annual-percent-changes-from-1913-to-2008/](https://www.usinflationcalculator.com/inflation/consumer-price-index-and-annual-percent-changes-from-1913-to-2008/)
