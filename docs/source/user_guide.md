@@ -407,7 +407,7 @@ The cost and length of representative interzonal transmission routes that are st
 This file provides a list of additional transmission lines that can be built.
 The full list of candidate lines is indicated by this file plus `hvdc_planned-baseline.csv` (currently planned additions) plus existing AC and DC interfaces (which can be expanded by default).
 1. `GSw_PRM_hierarchy_level`: Level of hierarchy.csv within which to calculate net load, used for capacity credit. Larger levels indicate more planning coordination between regions.
-1. `GSw_PRM_CapCreditHours`: Number of highest net-load hours per capacity-credit region and season used in seasonal capacity credit calculations. Thermal forced-outage derates are averaged over these hours using their actual weather-year timestamps, not representative-period timestamps. This averaging is independent of the top-500-hour net-load reporting limit.
+1. `GSw_PRM_CapCreditHours`: Number of highest net-load hours per capacity-credit region and season used in seasonal capacity credit calculations. Thermal forced-outage derates are averaged over these hours using their actual weather-year timestamps, not representative-period timestamps.
 1. `GSw_PRMTRADE_level`: Level of hierarchy.csv within which to allow PRM trading. By default it’s set to ‘country’, indicating no limits. If set to ‘r’, no PRM trading is allowed.
 
 
