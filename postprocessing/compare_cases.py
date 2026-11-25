@@ -2209,7 +2209,7 @@ try:
         case=list(cases.values()),
         colors={v: colors[k] for k,v in cases.items()},
         casenames={v:k for k,v in cases.items()},
-        level='nercr', tstart=startyear,
+        level='transreg', tstart=startyear,
     )
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
@@ -2532,16 +2532,7 @@ if detailed:
 #%%### Copy some premade single-case plots
 wide = 1 if len(hierarchy[basecase]['transreg'].unique()) > 6 else 0
 weatheryear = sw.GSw_HourlyWeatherYears.split('_')[0]
-metrics = [
-    'cap',
-    'rep_mean',
-    'stress_mean',
-    'stress_top5_load',
-    'stress_top5_netload',
-    'stress_bottom5_vregen',
-    'stress_max_load',
-    'stress_max_price',
-]
+metrics = reedsplots.STRESS_MIX_METRICS
 for figname, width, height in [
     (f'map_gencap_transcap-{lastyear}', None, SLIDE_HEIGHT),
     ('plot_stressperiod_evolution-neue', SLIDE_WIDTH, None),
@@ -2549,7 +2540,7 @@ for figname, width, height in [
     ## Include both versions for backwards compatibility
     ('plot_stressperiod_evolution-sum-transgrp', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}-w{weatheryear}', SLIDE_WIDTH, None),
-    ('plot_stress_cf-interconnect-stress_top10_price', SLIDE_WIDTH, None),
+    ('plot_stress_cf-interconnect-stress_weight_price', SLIDE_WIDTH, None),
 ] + [
     (
         f"plot_techmix-transreg-{lastyear}-{units}-{reedsplots.stress_metrics_shorten(metrics)}",

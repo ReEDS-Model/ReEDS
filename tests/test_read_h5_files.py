@@ -1,4 +1,3 @@
-import h5py
 import numpy as np
 import pandas as pd
 import pytest
@@ -19,21 +18,21 @@ def pandas_h5(tmp_path, n_cols=10, n_rows=10):
 
 
 @pytest.fixture
-def load_h5(tmp_path, n_cols=10):
-    fpath = tmp_path / "regular.h5"
-    with h5py.File(fpath, "w") as f:
-        solve_years = [2022, 2023, 2024]
-        hours = range(24)
-        columns = [f"p{i:02}" for i in range(n_cols)]
-        f.create_dataset("columns", data=columns)
-        for year in solve_years:
-            # Create a DataFrame with random data
-            data = pd.DataFrame(
-                data=np.random.randn(len(hours), n_cols), index=hours, columns=columns
-            )
-            f.create_dataset(str(year), data=data, dtype="float32")
+def load_df(n_cols=10):
+    index = pd.MultiIndex.from_product(
+        [[2022, 2023, 2024], range(24)], names=["year", "hour"]
+    )
+    columns = [f"p{i:02}" for i in range(n_cols)]
+    return pd.DataFrame(
+        np.random.randn(len(index), n_cols).astype(np.float32),
+        index=index, columns=columns,
+    )
 
-    return fpath
+
+@pytest.fixture
+def load_h5(tmp_path, load_df):
+    reeds.io.write_profile_to_h5(load_df, "load.h5", tmp_path)
+    return tmp_path / "load.h5"
 
 
 def test_read_file(pandas_h5):
@@ -54,8 +53,9 @@ def test_read_file(pandas_h5):
     ), "Size of dataframes is different. Check file for multiple keys"
 
 
-def test_read_h5py_file(load_h5):
+def test_read_h5py_file(load_h5, load_df):
     h5_df = reeds.io.read_h5py_file(load_h5)
     assert isinstance(h5_df, pd.DataFrame)
     assert h5_df.size == 720  # 3 years * 24 rows * 10 colums
     assert h5_df.index.names == ["year", "hour"]
+    pd.testing.assert_frame_equal(h5_df, load_df)

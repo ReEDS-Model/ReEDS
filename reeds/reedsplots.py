@@ -33,6 +33,18 @@ zone_label_offset = {
     'MISO_North': (0, -0.1e6),
 }
 
+### List of stress technology mix metrics for plotting
+STRESS_MIX_METRICS = [
+    'cap',
+    'rep_mean',
+    'stress_mean',
+    'stress_top10_load',
+    'stress_top10_netload',
+    'stress_bottom10_vregen',
+    'stress_top10_price',
+    'stress_weight_price',
+]
+
 ### Functions
 def simplify_techs(techs, condense_upgrades=True, lower_case=False, display_level='display', raw_level = 'raw'):
     """
@@ -1405,7 +1417,7 @@ def map_net_imports(
 
 def plot_max_imports(
         case, colors=None, casenames=None,
-        level='nercr', units='%', tstart=2020,
+        level='transreg', units='%', tstart=2020,
         grid=False, draw_limit=True,
     ):
     """Plot max hourly stress period net imports over time"""
@@ -1426,7 +1438,7 @@ def plot_max_imports(
     elif isinstance(colors, str):
         colors = dict(zip(cases, colors.split(',')))
 
-    _draw_limit = draw_limit and (level == 'nercr') and (len(cases) == 1)
+    _draw_limit = draw_limit and (level == 'transreg') and (len(cases) == 1)
 
     ### Get inputs
     dfmap = reeds.io.get_dfmap(cases[0])
@@ -1466,7 +1478,7 @@ def plot_max_imports(
             try:
                 firm_import_limit = (
                     reeds.io.read_input(c, 'firm_import_limit')
-                    .rename(columns={'*nercr':'nercr'}).set_index(['nercr','t']).squeeze(1)
+                    .rename(columns={'allt':'t'}).set_index(['transreg','t']).squeeze(1)
                 )
             except FileNotFoundError:
                 print("firm_import_limit.csv not found, so it won't be plotted")
@@ -1507,7 +1519,7 @@ def plot_max_imports(
             dfplot = max_import_stress_agg.rename(units) * scale[units.upper()]
             ymax = dfplot.max()
             if _draw_limit:
-                firm_import_limit * peakload.rename_axis(['nercr','t'])
+                firm_import_limit = firm_import_limit * peakload.rename_axis(['transreg','t'])
         else:
             raise NotImplementedError(f"Unsupported units: {units}")
         dictplot[c] = dfplot
@@ -5604,16 +5616,7 @@ def plot_cap_rep_stress_mix(
     year=2050,
     level='transreg',
     units='GW',
-    metrics=[
-        'cap',
-        'rep_mean',
-        'stress_mean',
-        'stress_top5_load',
-        'stress_top5_netload',
-        'stress_bottom5_vregen',
-        'stress_max_load',
-        'stress_max_price',
-    ],
+    metrics=STRESS_MIX_METRICS,
     drawpeak=True,
     drawgrid=True,
 ):

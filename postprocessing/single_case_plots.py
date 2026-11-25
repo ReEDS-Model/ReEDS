@@ -247,7 +247,7 @@ except Exception:
     print(traceback.format_exc())
 
 try:
-    level = 'nercr'
+    level = 'transreg'
     plt.close()
     f, ax, df = reedsplots.plot_max_imports(case=case, level=level)
     savename = f"plot_max_imports-{level}"
@@ -792,16 +792,7 @@ if not int(sw.GSw_PRM_CapCredit):
 
     try:
         level = 'transreg'
-        metrics = [
-            'cap',
-            'rep_mean',
-            'stress_mean',
-            'stress_top10_load',
-            'stress_top10_netload',
-            'stress_bottom10_vregen',
-            'stress_top10_price',
-            'stress_weight_price',
-        ]
+        metrics = reedsplots.STRESS_MIX_METRICS
         for units in ['percent', 'GW']:
             plt.close()
             f, ax, dictout = reedsplots.plot_cap_rep_stress_mix(

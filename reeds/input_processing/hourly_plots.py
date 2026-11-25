@@ -275,10 +275,13 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     dfcf = pd.read_csv(os.path.join(inputs_case, periodtype, 'cf_vre.csv')).rename(columns={'*i':'i'})
 
     for tech in techs:
-        ### Get supply curve
-        dfsc = pd.read_csv(
-            os.path.join(inputs_case, f'supplycurve_{tech}.csv')
-        ).rename(columns={'region':'r'})
+        ### Get supply curve; skip techs that are switched off or have no sites in the region
+        scpath = Path(inputs_case, f'supplycurve_{tech}.csv')
+        if not scpath.is_file():
+            continue
+        dfsc = pd.read_csv(scpath).rename(columns={'region':'r'})
+        if dfsc.empty:
+            continue
         dfsc['i'] = tech + '_' + dfsc['class'].astype(str)
         ### Add geographic and CF information
         sitemap = reeds.io.get_sitemap(offshore=(True if tech == 'wind-ofs' else False))

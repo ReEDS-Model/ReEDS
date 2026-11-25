@@ -526,11 +526,12 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
                 state_flow_expenditures, 'rps_flow', modeled_years, 
                 non_modeled_years, first_year, last_year, state_list, 'state'), 
             on=['t', 'state'])
-    state_flow_expenditures_expanded = state_flow_expenditures_expanded.merge(
-        interp_between_solve_years(
-            state_flow_expenditures, 'res_marg_ann_flow', modeled_years, 
-            non_modeled_years, first_year, last_year, state_list, 'state'), 
-        on=['t', 'state'])
+    if 'res_marg_ann_flow' in state_flow_expenditures:
+        state_flow_expenditures_expanded = state_flow_expenditures_expanded.merge(
+            interp_between_solve_years(
+                state_flow_expenditures, 'res_marg_ann_flow', modeled_years,
+                non_modeled_years, first_year, last_year, state_list, 'state'),
+            on=['t', 'state'])
 
     ### Canadian Imports is dropped since we merge left
     dfall = dfall.merge(
@@ -1782,37 +1783,45 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
     itc_value_df = itc_value_df.merge(
         df_finance[['tax_rate']], on='t', how='left')
 
-    # Calculate the value of the ITC credit in the year each asset is built. 
-    # This is not the value we use, because we need to normalize and adjust for taxes
-    itc_value_df['itc_base_value'] = itc_value_df['capex'] * itc_value_df['itc_frac']
+    if itc_value_df.empty:
+        ## No ITC-eligible generator builds (e.g. small regions)
+        itc_value_grouped = pd.Series(
+            dtype=float, name='itc_normalized_value',
+            index=pd.MultiIndex.from_arrays(
+                [pd.Series(dtype=dfall['t'].dtype), pd.Series(dtype=dfall['state'].dtype)],
+                names=['t', 'state']))
+    else:
+        # Calculate the value of the ITC credit in the year each asset is built.
+        # This is not the value we use, because we need to normalize and adjust for taxes
+        itc_value_df['itc_base_value'] = itc_value_df['capex'] * itc_value_df['itc_frac']
 
-    # Spread the ITC value over the lifetime of the asset 
-    # (i.e. approximate the normalization of the value)
-    itc_value_distributed = itc_value_df.rename(columns={'t':'t_online'})
-    unique_durs = itc_value_distributed['eval_period'].drop_duplicates()
-    max_dur = itc_value_distributed['eval_period'].max()
-    itc_expander = pd.DataFrame(
-        list(itertools.product(unique_durs, np.arange(0,max_dur,1))), 
-        columns=['eval_period', 'itc_year'])
-    itc_expander = itc_expander[itc_expander['itc_year']<itc_expander['eval_period']]
-    itc_value_distributed = itc_value_distributed.merge(
-        itc_expander[['eval_period', 'itc_year']], on='eval_period', how='left')
-    itc_value_distributed['t'] = itc_value_distributed[['t_online','itc_year']].sum(axis=1)
+        # Spread the ITC value over the lifetime of the asset
+        # (i.e. approximate the normalization of the value)
+        itc_value_distributed = itc_value_df.rename(columns={'t':'t_online'})
+        unique_durs = itc_value_distributed['eval_period'].drop_duplicates()
+        max_dur = itc_value_distributed['eval_period'].max()
+        itc_expander = pd.DataFrame(
+            list(itertools.product(unique_durs, np.arange(0,max_dur,1))),
+            columns=['eval_period', 'itc_year'])
+        itc_expander = itc_expander[itc_expander['itc_year']<itc_expander['eval_period']]
+        itc_value_distributed = itc_value_distributed.merge(
+            itc_expander[['eval_period', 'itc_year']], on='eval_period', how='left')
+        itc_value_distributed['t'] = itc_value_distributed[['t_online','itc_year']].sum(axis=1)
 
-    # Decrease the ongoing values of the credit, 
-    # since they were in nominal terms for the year of construction
-    itc_value_distributed = itc_value_distributed.merge(
-        df_dep_years[['t', 't_online', 'dep_inflation_adj']], on=['t', 't_online'], how='left')
+        # Decrease the ongoing values of the credit,
+        # since they were in nominal terms for the year of construction
+        itc_value_distributed = itc_value_distributed.merge(
+            df_dep_years[['t', 't_online', 'dep_inflation_adj']], on=['t', 't_online'], how='left')
 
-    # Calculate the normalized, after-tax, inflation-adjusted annual value of the ITC 
-    # for each year of an asset's life. Negative because it's a credit not a cost
-    itc_value_distributed['itc_normalized_value'] = - (
-        itc_value_distributed['itc_base_value'] / (1.0 - itc_value_distributed['tax_rate']) 
-        / itc_value_distributed['eval_period'] * itc_value_distributed['dep_inflation_adj'])
+        # Calculate the normalized, after-tax, inflation-adjusted annual value of the ITC
+        # for each year of an asset's life. Negative because it's a credit not a cost
+        itc_value_distributed['itc_normalized_value'] = - (
+            itc_value_distributed['itc_base_value'] / (1.0 - itc_value_distributed['tax_rate'])
+            / itc_value_distributed['eval_period'] * itc_value_distributed['dep_inflation_adj'])
 
-    # Group by [t, state]
-    itc_value_grouped = itc_value_distributed.groupby(
-        ['t', 'state']).sum()['itc_normalized_value']
+        # Group by [t, state]
+        itc_value_grouped = itc_value_distributed.groupby(
+            ['t', 'state']).sum()['itc_normalized_value']
 
     # Merge onto main dfall
     dfall = (
