@@ -2058,7 +2058,7 @@ def battery_stress_arbitrage(run_dir, prefix='battery'):
     return pd.DataFrame(rows)
 
 
-def plot_battery_stress_arbitrage(run_dir, output_path, prefix='battery', start_year=2026):
+def plot_battery_stress_arbitrage(run_dir, output_path, prefix='battery', start_year=start_year):
     """Two panels: the prices storage buys and sells at inside the stress periods, and the credit
     those prices produce.
 

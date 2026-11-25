@@ -17,7 +17,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 run, days_csv, scen_csv, scen, out, isos = sys.argv[1:7]
-YEARS = list(range(2026, 2051, 4))
+YEARS = list(range(2028, 2051, 2))  # every model year from the first market year (report_switches.start_year is 2027)
 MINW = 0.01
 BAR, PRICE = '#2a9d8f', '#222222'
 

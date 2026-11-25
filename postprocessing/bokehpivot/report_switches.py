@@ -17,7 +17,7 @@ keep their own user inputs at the top).
 
 dollar_year = 2024 #Dollar year for every $ output and axis label. Report values, LCOE_base and the PTC arrive on three different bases and are all converted into it, so they can be mixed.
 lcoe_base_dollar_year = 2022 #Dollar year of LCOE_base.csv as written (2024 ATB). Only change this if that file is regenerated on a different basis.
-start_year = 2025 #First year of results to include (first endogenous year, without prescribed builds)
+start_year = 2027 #First year of results to include (first endogenous year, without prescribed builds; GSw_StartMarkets is 2027 on main, and before it load can be dropped cheaply in stress hours, capping the reserve-margin price)
 share_basis = 'gen' #Denominator for gen_frac (used by all plots and adjusted metrics): 'load' = busbar load; 'gen' = total generation excluding storage. Both columns (gen_frac_load, gen_frac_gen) are retained in valcostfac.csv regardless.
 gen_frac_max = 0.65 #Upper limit on gen_frac for the intermediary "lim" plots
 vcf_min = 0 #Minimum value_cost_factor_adj2 to retain in df_plot_core
