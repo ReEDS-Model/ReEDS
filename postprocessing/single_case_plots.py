@@ -247,7 +247,7 @@ except Exception:
     print(traceback.format_exc())
 
 try:
-    level = 'nercr'
+    level = 'transreg'
     plt.close()
     f, ax, df = reedsplots.plot_max_imports(case=case, level=level)
     savename = f"plot_max_imports-{level}"

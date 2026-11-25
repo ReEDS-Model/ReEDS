@@ -2209,7 +2209,7 @@ try:
         case=list(cases.values()),
         colors={v: colors[k] for k,v in cases.items()},
         casenames={v:k for k,v in cases.items()},
-        level='nercr', tstart=startyear,
+        level='transreg', tstart=startyear,
     )
     ### Save it
     slide = reeds.report_utils.add_to_pptx(
