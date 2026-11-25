@@ -93,12 +93,7 @@ Here is partial list of remotely hosted files used by ReEDS:
     - You can feed the period:szn mapping from a completed run into the inputs folder of your repo to force ReEDS to use the same representative or stress periods.
       More detail can be found in the <a href="postprocessing_tools.html#fix-representative-stress-periods-preprocessing-get-case-periods-py">postprocessing tools</a> guide.
 
-- `GSw_PRM_StressThreshold`: The default setting of 'transgrp_1_EUE_sum' means a threshold of "**1** ppm NEUE in each **transgrp**", with stress periods selected by the daily **sum** of **EUE** within each **transgrp**.
-  - The first argument can be selected from ['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'] and specifies the hierarchy level within which to compare RA performance against the threshold.
-  - The second argument can be any float and specifies the RA performance threshold in parts per million [ppm].
-  - The third argument can be 'NEUE' or 'EUE', specifying which metric to use when selecting stress periods. If set to 'NEUE' the model will add stress periods with the largest **fraction** of dropped load; if set to 'EUE' the model will add stress periods with the largest **absolute MWh** of dropped load.
-  - The fourth argument can be 'sum' or 'max', specifying whether to add stress periods in order of their daily per-hour max dropped load or by their daily sum of dropped load when selecting stress periods.
-  - If desired you can provide /-delimited entries like 'transgrp_10_EUE_sum/country_1_EUE_sum', meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.
+- Stress periods are added based on the thresholds described in [Resource adequacy](#resource-adequacy).
 
 
 ### Conventions
@@ -400,8 +395,8 @@ In addition, the `GSw_ReducedResource` switch allows for a uniform reduction of 
 1. `GSw_TransSquigglinessMin`: Minimum squiggliness (straight-line length multiplier) to apply for interzonal transmission; the default value of 1.3 is from the [MISO Transmission Cost Estimation Guide](https://www.misoenergy.org/planning/transmission-planning/mtep).
 The cost and length of representative interzonal transmission routes that are straighter than `GSw_TransSquigglinessMin` are scaled up to match `GSw_TransSquigglinessMin`
 (i.e., if a representative route is 11 miles long and the straight-line distance between its endpoints is 10 miles, giving a squiggliness factor of 1.1, its cost and length are scaled up by 1.3 / 1.1 = 1.18).
-1. `GSw_TransHurdle`: Intra-US hurdle rate for interzonal flows, measured in $2004/MWh
-1. `GSw_TransHurdleLevel`: Indicate the level of hierarchy.csv between which to apply the hurdle rate specified by `GSw_TransHurdle`. i.e. if set to ‘st’, intra-state flows will have no hurdle rates but inter-state flows will have hurdle rates specified by `GSw_TransHurdle`.
+1. `GSw_TransHurdleRate`: Turn on (1) or off (0) hurdle rates for intra-US interzonal flows. The rates [$/MWh] are taken by year from the column of `inputs/transmission/cost_hurdle_intra.csv` that matches the selected hierarchy level.
+1. `GSw_TransHurdleLevel1` and `GSw_TransHurdleLevel2`: Levels of hierarchy.csv between which to apply hurdle rates when `GSw_TransHurdleRate=1`. For example, if `GSw_TransHurdleLevel1=st`, intra-state flows will have no level-1 hurdle rate but inter-state flows will. The hurdle rate on each interface is the larger of the level-1 and level-2 rates (with a floor of `hurdle_rate_floor` from `inputs/scalars.csv`). Hurdle rates between the US and Canada/Mexico are set separately in `inputs/transmission/cost_hurdle_country.csv`.
 1. `GSw_TransRestrict`: Spatial hierarchy level within which to allow transmission expansion. For example, if set to `st`, no inter-state expansion is allowed.
 1. `GSw_TransScen`: Which `inputs/transmission/hvdc_planned-{GSw_TransScen}.csv` file to use.
 This file provides a list of additional transmission lines that can be built.
@@ -413,7 +408,25 @@ The full list of candidate lines is indicated by this file plus `hvdc_planned-ba
 
 
 
-## ReEDS2PRAS and PRAS
+## Resource adequacy
+
+### Stress period thresholds
+
+- `GSw_PRM_StressThresholdMetrics` and `GSw_PRM_StressThreshold{metric}`: Resource adequacy thresholds used to decide whether to add new stress periods.
+  - `GSw_PRM_StressThresholdMetrics` (default `NEUE`) is a /-delimited list of the metrics that can be used. Supported metrics are `NEUE`, `LOLD`, `LOLE`, `LOLH`, `Depth`, and `Duration`.
+  - Each listed metric reads its threshold from the matching `GSw_PRM_StressThreshold{metric}` switch, formatted as `{level}_{value}`. The default `GSw_PRM_StressThresholdNEUE=transgrp_1` means a threshold of "**1** ppm NEUE in each **transgrp**".
+    - `{level}` can be selected from ['country', 'interconnect', 'nercr', 'transreg', 'transgrp', 'st', 'r'] and specifies the hierarchy level within which to compare RA performance against the threshold.
+    - `{value}` is a non-negative number in the units of the metric: NEUE [ppm]; LOLD [event-days/year]; LOLE [events/year]; LOLH [event-hours/year]; Depth [maximum hourly EUE as a fraction of peak load]; Duration [hours in the longest EUE event].
+    - If desired you can provide /-delimited entries like `GSw_PRM_StressThresholdNEUE=transgrp_10/country_1`, meaning that each transgrp must have ≤10 ppm NEUE and the country overall must have ≤1 ppm NEUE.
+  - For each region that exceeds the threshold for a given metric, `GSw_PRM_StressIncrement` new stress periods (2 by default) are added for that metric:
+    - NEUE: Periods with the highest sum of EUE [MWh]
+    - Depth: Periods with the highest peak hourly EUE [MW]
+    - Duration: Periods with the longest continuous EUE event [hours]
+    - LOLD or LOLE: Periods with the highest peak hourly loss-of-load probability [fraction]
+    - LOLH: Periods with the highest sum of loss-of-load hours [hours]
+  - Shoulder periods for storage recharge (`GSw_PRM_StressStorageCutoff`) are only added for the NEUE metric.
+
+### ReEDS2PRAS and PRAS switches
 
 Some of the behavior of ReEDS2PRAS and PRAS (used for the stress periods resource adequacy method) can be controlled via the following switches:
 
@@ -831,13 +844,13 @@ To avoid double-counting, in a linked run the estimated 'reference' electricity 
 
 The following ReEDS sets, parameters, and variables are referenced in FINITO. If you plan to update any of these in a breaking way (e.g., changing the name or indices) please let one of the FINITO developers know.
 
-Sets: `allt`, `bio(i)`, `bs_reeds(bs)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `cs`, `csfeas(cs)`, `i`, `map_i_fe(i,ec)`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `st`, `st_cendiv(st,cendiv)`, `t(allt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`
+Sets: `allh`, `allt`, `bio(i)`, `ccsflex(i)`, `ccsflex_byp(i)`, `ccsflex_sto(i)`, `cendiv`, `co2_routes(r,rr)`, `cofire(i)`, `consume(i)`, `cs`, `csfeas(cs)`, `dac(i)`, `e`, `emit_modeled(s,e,r,t)`, `etype`, `gas(i)`, `h(allh)`, `h_rep(allh)`, `h2_combustion(i)`, `hyd_add_pump(i)`, `i`, `i_p(i,p)`, `inv_cond(i,v,r,t,tt)`, `m_refurb_cond(i,v,r,t,tt)`, `p`, `r`, `r_cendiv(r,cendiv)`, `r_cs(r,cs)`, `r_st(r,st)`, `re(i)`, `RecTech(RPSCat,i,st,t)`, `retiretech(i,v,r,t)`, `RPSCat`, `rscbin`, `s`, `st`, `storage_standalone(i)`, `t(allt)`, `tfinito_all(t)`, `tfix(t)`, `tg`, `tg_i(tg,i)`, `tmodel(t)`, `tmodel_new(t)`, `tprev(t,tt)`, `upgrade(i)`, `upgrade_to(i,ii)`, `v`, `valcap(i,v,r,t)`, `valgen(i,v,r,t)`, `valinv(i,v,r,t)`, `valinv_irt(i,r,t)`, `valinv_tg(st,tg,t)`
 
-Parameters: `capture_rate`, `co2_injection_limit(cs)`, `co2_rate_elec_table(r,allt,*)`, `co2_storage_limit(cs)`, `cost_co2_pipeline_cap(r,rr,allt)`, `cost_co2_pipeline_fom(r,rr,allt)`, `cost_co2_spurline_cap(r,cs,allt)`, `cost_co2_spurline_fom(r,cs,allt)`, `cost_co2_stor_bec(cs)`, `cost_fom`, `cost_prod`, `cost_upgrade`, `cost_vom`, `deflator(allt)`, `emit_rate`, `heat_rate(i,v,r,t)`, `m_capacity_exog`, `price_ws_elec_ReEDS(r,allt,*)`, `r_cs_distance(r,cs)`, `tax_co2_input(allt,*)`, `upgrade_derate`
+Parameters: `allow_cap_up(i,v,r,rscbin,t)`, `allow_ener_up(i,v,r,rscbin,t)`, `bio_cofire_perc`, `capture_rate`, `ccsflex_co2eff(i,allt)`, `co2_captured_incentive(i,v,r,allt)`, `co2_detail_startyr`, `co2_injection_limit(cs)`, `co2_storage_limit(cs)`, `co2_tax(allt)`, `consume_char0(i,allt,*)`, `cost_co2_pipeline_cap(r,rr,allt)`, `cost_co2_pipeline_fom(r,rr,allt)`, `cost_co2_spurline_cap(r,cs,allt)`, `cost_co2_spurline_fom(r,cs,allt)`, `cost_co2_stor_bec(cs)`, `cost_fom`, `cost_prod`, `cost_scale`, `cost_upgrade`, `cost_vom`, `crf(t)`, `crf_co2_incentive(t)`, `dac_gas_cons_rate(i,v,t)`, `deflator(allt)`, `emit_rate`, `fuel_price(i,r,t)`, `h2_combustion_intensity`, `h2_demand_start`, `h2_exogenous_demand_regional(r,p,allh,allt)`, `heat_rate(i,v,r,t)`, `hours(allh)`, `load_exog_static(r,allh,t)`, `m_capacity_exog`, `prod_conversion_rate(i,v,r,t)`, `prod_emit_rate(etype,e,i,allt)`, `pvf_capital(t)`, `pvf_onm(t)`, `scenario_probability(s)`, `Sw_Prod`, `upgrade_derate`, `yeart(t)`, `yearweight(t)`
 
-Variables: `GEN(i,v,r,h,t)`
+Variables: `CCSFLEX_POW(s,i,v,r,h,t)`, `CCSFLEX_POWREQ(s,i,v,r,allh,t) `, `CO2_STORED(s,r,cs,h,t)`, `GEN(s,i,v,r,h,t)`, `PRODUCE(s,p,i,v,r,h,t)`, `STORAGE_IN(s,i,v,r,h,t)`
 
-Switches: `endyear`, `FINITO_dollaryear`, `GSw_CarbTax`, `GSw_CarbTaxOption`, `GSw_CO2_Detail`, `GSw_FINITO_Link` (set by `FINITO` switch in ReEDS `cases.csv`), `GSw_Region`, `GSw_RemoveSmallNumbers`, `GSw_RetailAdder`, `GSw_ZoneSet`, `ignore`, `keep_run_terminal`, `solver`, `yearset`
+Switches: `endyear`, `FINITO_dollaryear`, `GSw_CarbTax`, `GSw_CarbTaxOption`, `GSw_CCSFLEX_BYP`, `GSw_CCSFLEX_DAC`, `GSw_CCSFLEX_STO`, `GSw_CO2_Detail`, `GSw_DAC`, `GSw_DAC_Gas`, `GSw_FINITO_Link` (set by `FINITO` switch in ReEDS `cases.csv`), `GSw_H2`, `GSw_Region`, `GSw_RemoveSmallNumbers`, `GSw_RetailAdder`, `GSw_ZoneSet`, `ignore`, `keep_run_terminal`, `solver`, `yearset`
 
 
 ## Troubleshooting
