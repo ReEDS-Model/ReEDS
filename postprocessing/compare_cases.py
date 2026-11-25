@@ -2540,7 +2540,7 @@ for figname, width, height in [
     ## Include both versions for backwards compatibility
     ('plot_stressperiod_evolution-sum-transgrp', SLIDE_WIDTH, None),
     (f'plot_dispatch-yearbymonth-1-{lastyear}-w{weatheryear}', SLIDE_WIDTH, None),
-    ('plot_stress_cf-interconnect-stress_top10_price', SLIDE_WIDTH, None),
+    ('plot_stress_cf-interconnect-stress_weight_price', SLIDE_WIDTH, None),
 ] + [
     (
         f"plot_techmix-transreg-{lastyear}-{units}-{reedsplots.stress_metrics_shorten(metrics)}",
