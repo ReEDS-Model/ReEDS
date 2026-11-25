@@ -3148,7 +3148,7 @@ The mandates are required to be met with battery storage, and any duration of st
 | VA | 42.7 | 4,260 | 16,780 |
 ```
 
-Note: The required capacity in Illinois increases to 3,000 MW in 2031.
+Note: The required capacity in Illinois increases to 3,000 MW in 2031, and long-duration storage requirements that include an off-ramp (e.g., required only if available at reasonable cost) are not represented.
 
 ### Nuclear Power Plant Policies
 
