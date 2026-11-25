@@ -526,11 +526,12 @@ def main(run_dir, inputpath='inputs.csv', write=True, verbose=0):
                 state_flow_expenditures, 'rps_flow', modeled_years, 
                 non_modeled_years, first_year, last_year, state_list, 'state'), 
             on=['t', 'state'])
-    state_flow_expenditures_expanded = state_flow_expenditures_expanded.merge(
-        interp_between_solve_years(
-            state_flow_expenditures, 'res_marg_ann_flow', modeled_years, 
-            non_modeled_years, first_year, last_year, state_list, 'state'), 
-        on=['t', 'state'])
+    if 'res_marg_ann_flow' in state_flow_expenditures:
+        state_flow_expenditures_expanded = state_flow_expenditures_expanded.merge(
+            interp_between_solve_years(
+                state_flow_expenditures, 'res_marg_ann_flow', modeled_years,
+                non_modeled_years, first_year, last_year, state_list, 'state'),
+            on=['t', 'state'])
 
     ### Canadian Imports is dropped since we merge left
     dfall = dfall.merge(
