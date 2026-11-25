@@ -853,8 +853,8 @@ peakdem_static_h(r,h,t) = peak_h(r,h,t) * (1 - sum{flex_type, flex_demand_frac(f
 * -- Fossil gas supply curve --
 *=============================================
 
-gasadder_cd(cendiv,t,allh) = 0 ;
-gasadder_cd(cendiv,t,h) = (gasprice_ref(cendiv,t) - gasprice_nat(t))/2 ;
+gasadder_cd(s,cendiv,t,allh) = 0 ;
+gasadder_cd(s,cendiv,t,h) = (gasprice_ref(s,cendiv,t) - gasprice_nat(s,t))/2 ;
 
 * Written by hourly_writetimeseries.py
 $onempty
@@ -912,7 +912,7 @@ avail(i,r,h)$avail(i,r,h) = round(avail(i,r,h),3) ;
 can_imports_szn(r,szn,t)$can_imports_szn(r,szn,t) = round(can_imports_szn(r,szn,t),3) ;
 can_exports_h(r,h,t)$can_exports_h(r,h,t) = round(can_exports_h(r,h,t),3) ;
 frac_h_ccseason_weights(h,ccseason)$frac_h_ccseason_weights(h,ccseason) = round(frac_h_ccseason_weights(h,ccseason),3) ;
-gasadder_cd(cendiv,t,h)$gasadder_cd(cendiv,t,h) = round(gasadder_cd(cendiv,t,h),3) ;
+gasadder_cd(s,cendiv,t,h)$gasadder_cd(s,cendiv,t,h) = round(gasadder_cd(s,cendiv,t,h),3) ;
 h_weight_csapr(h)$h_weight_csapr(h) = round(h_weight_csapr(h),3) ;
 hours(h)$hours(h) = round(hours(h),3) ;
 load_exog(r,h,t)$load_exog(r,h,t) = round(load_exog(r,h,t),3) ;

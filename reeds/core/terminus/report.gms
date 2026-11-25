@@ -189,7 +189,7 @@ avg_cf(s,i,v,r,t)$[CAP.l(i,v,r,t)$(not rsc_i(i))] =
 *LCOE calculation is appropriate for sequential solve mode only where annual energy production is the same in every year.
 *In inter-temporal modes this isn't the case and energy production should be discounted appropriately.
 
-lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i,v,r)] =
+lcoe(s,i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i,v,r)] =
 * cost of capacity divided by generation
    ((crf(t) * cost_cap_fin_mult(i,r,t) * cost_cap(i,t)$newv(v)
      + cost_fom(i,v,r,t)
@@ -197,13 +197,13 @@ lcoe(i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_avail(i
 *plus VOM costs
    + cost_vom(i,v,r,t)
 * plus fuel costs - assuming constant fuel prices here (model prices might be different)
-   + heat_rate(i,v,r,t) * fuel_price(i,r,t)
+   + heat_rate(i,v,r,t) * fuel_price(s,i,r,t)
 ;
 
 gen_rsc(i,v,r,t)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)] =
     sum{(h,c)$i_c(i,c), m_cf(i,c,v,r,h,t) * hours(h) } ;
 
-lcoe(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
+lcoe(s,i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
      * (cost_cap_fin_mult(i,r,t) * cost_cap(i,t)
@@ -218,7 +218,7 @@ lcoe(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rsc
     + cost_vom(i,v,r,t)
 ;
 
-lcoe_cf_act(s,i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$rsc_i(i)] = lcoe(i,v,r,t,rscbin) ;
+lcoe_cf_act(s,i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$rsc_i(i)] = lcoe(s,i,v,r,t,rscbin) ;
 lcoe_cf_act(s,i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$avg_cf(s,i,v,r,t)] =
 * cost of capacity divided by generation
    ((crf(t) * cost_cap_fin_mult(i,r,t) * cost_cap(i,t)$newv(v)
@@ -228,11 +228,11 @@ lcoe_cf_act(s,i,v,r,t,"bin1")$[(not rsc_i(i))$valcap_init(i,v,r,t)$ivt(i,v,t)$av
 *plus VOM costs
    + cost_vom(i,v,r,t)
 *plus fuel costs - assuming constant fuel prices here (model prices might be different)
-   + heat_rate(i,v,r,t) * fuel_price(i,r,t)
+   + heat_rate(i,v,r,t) * fuel_price(s,i,r,t)
 ;
 
-lcoe_nopol(i,v,r,t,rscbin)$valcap_init(i,v,r,t) = lcoe(i,v,r,t,rscbin) ;
-lcoe_nopol(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
+lcoe_nopol(s,i,v,r,t,rscbin)$valcap_init(i,v,r,t) = lcoe(s,i,v,r,t,rscbin) ;
+lcoe_nopol(s,i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
      * (cost_cap_fin_mult_noITC(i,r,t) * cost_cap(i,t)
@@ -246,8 +246,8 @@ lcoe_nopol(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r
     + cost_vom(i,v,r,t)
 ;
 
-lcoe_fullpol(i,v,r,t,rscbin)$valcap_init(i,v,r,t) = lcoe(i,v,r,t,rscbin) ;
-lcoe_fullpol(i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
+lcoe_fullpol(s,i,v,r,t,rscbin)$valcap_init(i,v,r,t) = lcoe(s,i,v,r,t,rscbin) ;
+lcoe_fullpol(s,i,v,r,t,rscbin)$[valcap_init(i,v,r,t)$ivt(i,v,t)$rsc_i(i)$m_rscfeas(r,i,rscbin)$gen_rsc(i,v,r,t)] =
 * cost of capacity divided by generation
     (crf(t)
      * (cost_cap_fin_mult(i,r,t) * cost_cap(i,t)
@@ -276,8 +276,8 @@ lcoe_built(s,i,r,t)$[ [sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], GEN.l(s,i,v,r
        + sum{v$valinv(i,v,r,t), cost_fom(i,v,r,t) * INV.l(i,v,r,t) }
        + sum{v$[valinv(i,v,r,t)$battery(i)], cost_fom_energy(i,v,r,t) * INV_ENERGY.l(i,v,r,t) }
        + sum{v$[upgrade(i)$valcap(i,v,r,t)$Sw_Upgrades], cost_fom(i,v,r,t) * UPGRADES.l(i,v,r,t) }
-       + sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h) }
-       + sum{(v,h)$[UPGRADES.l(i,v,r,t)$Sw_Upgrades], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h) }
+       + sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(s,i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h) }
+       + sum{(v,h)$[UPGRADES.l(i,v,r,t)$Sw_Upgrades], (cost_vom(i,v,r,t)+ heat_rate(i,v,r,t) * fuel_price(s,i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h) }
         ) / (sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], GEN.l(s,i,v,r,h,t) * hours(h) }
             + sum{(v,h)$[UPGRADES.l(i,v,r,t)$Sw_Upgrades], GEN.l(s,i,v,r,h,t) * hours(h) })
 ;
@@ -309,9 +309,9 @@ lcoe_pieces(s,"fomcost",i,r,t)$tmodel_new(t) =
 
 lcoe_pieces(s,"vomcost",i,r,t)$tmodel_new(t) =
                   sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)],
-                    (cost_vom(i,v,r,t) + heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h) }
+                    (cost_vom(i,v,r,t) + heat_rate(i,v,r,t) * fuel_price(s,i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h) }
                   + sum{(v,h)$[UPGRADES.l(i,v,r,t)$Sw_Upgrades],
-                    (cost_vom(i,v,r,t) + heat_rate(i,v,r,t) * fuel_price(i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h)} ;
+                    (cost_vom(i,v,r,t) + heat_rate(i,v,r,t) * fuel_price(s,i,r,t)) * GEN.l(s,i,v,r,h,t) * hours(h)} ;
 
 lcoe_pieces(s,"gen",i,r,t)$tmodel_new(t) =
                          sum{(v,h)$[valinv(i,v,r,t)$INV.l(i,v,r,t)], GEN.l(s,i,v,r,h,t) * hours(h) }
@@ -572,13 +572,13 @@ repgasquant_nat(s,t)$tmodel_new(t) = sum{cendiv, repgasquant(s,cendiv,t) } ;
 *scale back to $ / mmbtu and apply annual consumption-weighted gas price multipliers
 repgasprice(s,cendiv,t)$[(Sw_GasCurve = 0)$tmodel_new(t)$repgasquant(s,cendiv,t)$(not tfinito_all(t))] =
     smax{gb$[repgasquant_gb(s,cendiv,gb,t)],
-        gasprice(cendiv,gb,t)
+        gasprice(s,cendiv,gb,t)
         * sum{h, gasprice_adj_cendiv(cendiv,h) * GASUSED.l(s,cendiv,gb,h,t) * hours(h) / (repgasquant_gb(s,cendiv,gb,t) * 1e9) }
     } ;
 
 repgasprice(s,cendiv,t)$[(Sw_GasCurve = 2)$tmodel_new(t)$repgasquant(s,cendiv,t)$(not tfinito_all(t))] =
     sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)],
-          hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(s,i,v,r,h,t) * gasprice_adj_r(r,h)
+          hours(h) * heat_rate(i,v,r,t) * fuel_price(s,i,r,t) * GEN.l(s,i,v,r,h,t) * gasprice_adj_r(r,h)
        } / (repgasquant(s,cendiv,t) * 1e9) ;
 
 
@@ -623,15 +623,15 @@ repgasprice_r(s,r,t)$[(tfinito_all(t) or (Sw_GasCurve = 0 or Sw_GasCurve = 2))$t
 
 repgasprice_r(s,r,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$(not tfinito_all(t))] =
               ( sum{(h,cendiv),
-                   gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
+                   gasmultterm(s,cendiv,t) * cendiv_weights(r,cendiv) *
                    hours(h) * gasprice_adj_r(r,h) } / sum{h, hours(h) }
 
-              + smax((fuelbin,cendiv)$[VGASBINQ_REGIONAL.l(s,fuelbin,cendiv,t)$r_cendiv(r,cendiv)], gasbinp_regional(fuelbin,cendiv,t) )
+              + smax((fuelbin,cendiv)$[VGASBINQ_REGIONAL.l(s,fuelbin,cendiv,t)$r_cendiv(r,cendiv)], gasbinp_regional(s,fuelbin,cendiv,t) )
 
-              + smax(fuelbin$VGASBINQ_NATIONAL.l(s,fuelbin,t), gasbinp_national(fuelbin,t) )
+              + smax(fuelbin$VGASBINQ_NATIONAL.l(s,fuelbin,t), gasbinp_national(s,fuelbin,t) )
               ) ;
 
-*Now calculate the remaining repgasprice(cendiv,t) (for Sw_GasCurve = 1)
+*Now calculate the remaining repgasprice(s,cendiv,t) (for Sw_GasCurve = 1)
 repgasprice(s,cendiv,t)$[(Sw_GasCurve = 1)$tmodel_new(t)$repgasquant(s,cendiv,t)$(not tfinito_all(t))] =
     sum{(i,r)$r_cendiv(r,cendiv), repgasprice_r(s,r,t) * repgasquant_irt(s,i,r,t) } / repgasquant(s,cendiv,t) ;
 
@@ -657,27 +657,27 @@ gascost_cendiv(s,cendiv,t)$[tmodel_new(t)$(not tfinito_all(t))] =
 *cost of natural gas for Sw_GasCurve = 2 (static natural gas prices)
               + sum{(i,v,r,h)$[r_cendiv(r,cendiv)$valgen(i,v,r,t)$gas(i)$heat_rate(i,v,r,t)
                               $[not bio(i)]$[not cofire(i)]$[Sw_GasCurve = 2]],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(s,i,r,t) * GEN.l(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 
 *cost of natural gas for Sw_GasCurve = 0 (census division supply curves natural gas prices)
-              + sum{gb, sum{h,hours(h) * GASUSED.l(s,cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) } * gasprice(cendiv,gb,t)
+              + sum{gb, sum{h,hours(h) * GASUSED.l(s,cendiv,gb,h,t) * gasprice_adj_cendiv(cendiv,h) } * gasprice(s,cendiv,gb,t)
                    }$[Sw_GasCurve = 0]
 
 *cost of natural gas for Sw_GasCurve = 3 (national supply curve for natural gas prices with census division multipliers)
               + sum{(h,gb), hours(h) * GASUSED.l(s,cendiv,gb,h,t)
-                   * gasadder_cd(cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(gb,t)
+                   * gasadder_cd(s,cendiv,t,h) * gasprice_adj_cendiv(cendiv,h) + gasprice_nat_bin(s,gb,t)
                    }$[Sw_GasCurve = 3]
 *cost of natural gas for Sw_GasCurve = 1 (national and census division supply curves for natural gas prices)
 *first - anticipated costs of gas consumption given last year's amount
               + (sum{(i,v,r,h)$[valgen(i,v,r,t)$gas(i)],
-                   gasmultterm(cendiv,t) * cendiv_weights(r,cendiv) *
+                   gasmultterm(s,cendiv,t) * cendiv_weights(r,cendiv) *
                    hours(h) * heat_rate(i,v,r,t) * GEN.l(s,i,v,r,h,t) * gasprice_adj_r(r,h) }
 *second - adjustments based on changes from last year's consumption at the regional and national level
               + sum{(fuelbin),
-                   gasbinp_regional(fuelbin,cendiv,t) * VGASBINQ_REGIONAL.l(s,fuelbin,cendiv,t) }
+                   gasbinp_regional(s,fuelbin,cendiv,t) * VGASBINQ_REGIONAL.l(s,fuelbin,cendiv,t) }
 
               + sum{(fuelbin),
-                   gasbinp_national(fuelbin,t) * VGASBINQ_NATIONAL.l(s,fuelbin,t) } * gasshare_cendiv(s,cendiv,t)
+                   gasbinp_national(s,fuelbin,t) * VGASBINQ_NATIONAL.l(s,fuelbin,t) } * gasshare_cendiv(s,cendiv,t)
 
               )$[Sw_GasCurve = 1];
 
@@ -1415,7 +1415,7 @@ systemcost_techba(s,"op_vom_costs",i,r,t)$tmodel_new(t)  =
 
 * include production costs from production technologies
               + sum{(p,v,h)$[(h2(i) or dac(i))$valcap(i,v,r,t)$i_p(i,p)],
-                    hours(h) * cost_prod(i,v,r,t) * PRODUCE.l(s,p,i,v,r,h,t) }$Sw_Prod
+                    hours(h) * cost_prod(s,i,v,r,t) * PRODUCE.l(s,p,i,v,r,h,t) }$Sw_Prod
 ;
 
 systemcost_techba(s,"op_consume_vom",i,r,t)$[tmodel_new(t)$consume(i)] = systemcost_techba(s,"op_vom_costs",i,r,t)$tmodel_new(t) ;
@@ -1438,8 +1438,8 @@ systemcost_techba(s,"op_fom_costs",i,r,t)$[tmodel_new(t)$consume(i)] = 0 ;
 
 systemcost_techba(s,"op_operating_reserve_costs",i,r,t)$tmodel_new(t)  =
 *operating reserve costs
-              + sum{(v,h,ortype)$[valgen(i,v,r,t)$cost_opres(i,ortype,t)],
-                   hours(h) * cost_opres(i,ortype,t) * OPRES.l(s,ortype,i,v,r,h,t) }
+              + sum{(v,h,ortype)$[valgen(i,v,r,t)$cost_opres(s,i,ortype,t)],
+                   hours(h) * cost_opres(s,i,ortype,t) * OPRES.l(s,ortype,i,v,r,h,t) }
 ;
 
 systemcost_techba(s,"op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
@@ -1447,13 +1447,13 @@ systemcost_techba(s,"op_fuelcosts_objfn",i,r,t)$tmodel_new(t)  =
               + sum{(v,h)$[valgen(i,v,r,t)$heat_rate(i,v,r,t)
                          $(not gas(i))$(not bio(i))$(not cofire(i))
                          $((not h2_gen(i)) or h2_gen(i)$[(Sw_H2=0) or h_stress(h)])],
-                   hours(h) * heat_rate(i,v,r,t) * fuel_price(i,r,t) * GEN.l(s,i,v,r,h,t)
+                   hours(h) * heat_rate(i,v,r,t) * fuel_price(s,i,r,t) * GEN.l(s,i,v,r,h,t)
                 }$(not tfinito_all(t))
 
 *cofire coal consumption - cofire bio consumption already accounted for in accounting of BIOUSED
               + sum{(v,h)$[valgen(i,v,r,t)$cofire(i)$heat_rate(i,v,r,t)],
                    (1-bio_cofire_perc) * hours(h) * heat_rate(i,v,r,t)
-                   * fuel_price("coal-new",r,t) * GEN.l(s,i,v,r,h,t)
+                   * fuel_price(s,"coal-new",r,t) * GEN.l(s,i,v,r,h,t)
                 }$(not tfinito_all(t))
 
 *cost of natural gas fuel
@@ -1474,7 +1474,7 @@ systemcost_techba(s,"op_emissions_taxes",i,r,t)$tmodel_new(t)  =
 systemcost_techba(s,"op_h2_fuel_costs",i,r,t)$tmodel_new(t)  =
 * H2 production costs 
               sum{(v,h,p)$[h2(i)$valcap(i,v,r,t)],
-                  hours(h) * h2_fuel_cost(i,v,r,t) * PRODUCE.l(s,p,i,v,r,h,t) }
+                  hours(h) * h2_fuel_cost(s,i,v,r,t) * PRODUCE.l(s,p,i,v,r,h,t) }
 ;
 
 systemcost_techba(s,"op_h2combustion_fuel_costs",i,r,t)$[tmodel_new(t)$h2_gen(i)$Sw_H2]  =

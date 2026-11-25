@@ -9,6 +9,7 @@ NON_STOCHASTIC_NAME = '1'
 SUPPORTED_SWITCHES = [
     'GSw_AnnualCap',
     'GSw_AnnualCapScen',
+    'ngscen'
 ]
 
 def is_stochastic(case=None) -> bool:

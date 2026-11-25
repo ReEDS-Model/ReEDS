@@ -1009,3 +1009,76 @@ def get_capped_pollutants(case:str|Path) -> pd.Series:
 
     emit_capped = pd.concat(emit_cappeds, names=('s','e')).reset_index()[['s','e']]
     return emit_capped
+
+
+def get_ngprice_cendiv(case:str|Path) -> pd.DataFrame:
+    """Get census division natural gas prices [$/MMBtu]."""
+    sw_scen = reeds.stochastic.get_switches(case)
+    val_cendiv = (
+        reeds.io.read_input(case, 'cendiv')
+        .squeeze(1)
+        .tolist()
+    )
+
+    ngprice_cendivs = {}
+    for scen, sw in sw_scen.items():
+        fpath = Path(
+            reeds.io.reeds_path,
+            'inputs',
+            'fuelprices',
+            f"ng_{sw['ngscen']}.csv"
+        )
+        df = pd.read_csv(fpath)
+        df = (
+            df.melt(id_vars=['year'])
+            .rename(columns={'variable': 'cendiv'})
+        )
+        df = df.loc[df['cendiv'].isin(val_cendiv)]
+        df = df.pivot_table(
+            index='cendiv',
+            columns='year',
+            values='value'
+        )
+
+        ngprice_cendivs[scen] = df
+
+    ngprice_cendiv = pd.concat(ngprice_cendivs, names=('s')).squeeze(1)
+    return ngprice_cendiv
+
+
+def get_ngdemand_cendiv_parameter(
+    case:str|Path,
+    param:Literal['alpha', 'ng_demand', 'ng_tot_demand']
+) -> pd.DataFrame:
+    """
+    Retrieve data for the specified natural gas demand parameter
+    at census division resolution. Valid natural gas demand parameters
+    match the following file format "inputs/fuelprices/{param}_{ngscen}.csv",
+    so valid "param" values are:
+        - alpha (alpha values used in demand curve calculations)
+        - ng_demand (natural gas demand for the electricity sector [Quads])
+        - ng_tot_demand (natural gas demand across all sectors [Quads])
+    """
+    sw_scen = reeds.stochastic.get_switches(case)
+    val_cendiv = (
+        reeds.io.read_input(case, 'cendiv')
+        .squeeze(1)
+        .tolist()
+    )
+
+    df_dict = {}
+    for scen, sw in sw_scen.items():
+        fpath = Path(
+            reeds.io.reeds_path,
+            'inputs',
+            'fuelprices',
+            f"{param}_{sw['ngscen']}.csv"
+        )
+        df = pd.read_csv(fpath, index_col=0)
+        df = df[df.columns[df.columns.isin(val_cendiv)]]
+        if param in ['ng_demand', 'ng_tot_demand']:
+            df = df.transpose()
+        df_dict[scen] = df
+
+    dfout = pd.concat(df_dict, names=('s')).squeeze(1)
+    return dfout
