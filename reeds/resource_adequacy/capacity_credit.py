@@ -99,6 +99,13 @@ def load_evmc_data(csv_path,inputs_case,h_dt_szn,
     return df.set_index(set_idx_cols)
      
 
+def calc_mean_forced_outage_rate(net_load, forced_outage_rate, top_hours_n, timeindex):
+    """Average forced outages over the highest net-load hours, using actual timestamps."""
+    top_hours = net_load.nlargest(top_hours_n, 'MW')['hour'].to_numpy()
+    timestamps = timeindex[top_hours - 1]
+    return forced_outage_rate.loc[timestamps].mean()
+
+
 #%% Main function
 def reeds_cc(t, tnext, casedir):
     '''
@@ -172,6 +179,7 @@ def reeds_cc(t, tnext, casedir):
     sdb = [int(x) for x in sdb['bin']]
 
     # Temporal definitions
+    timeindex = reeds.timeseries.get_timeindex(sw['resource_adequacy_years_list'])
     h_dt_szn = pd.read_csv(os.path.join('inputs_case', 'rep', 'h_dt_szn.csv'))
     ccseasons = []
     if sw['cc_calc_annual']:
@@ -226,6 +234,7 @@ def reeds_cc(t, tnext, casedir):
     dict_cc_evmc = {}
     dict_net_load = {}
     dict_net_load_2012 = {}
+    dict_mean_forced_outage_rate = {}
 
     #%% Loop over CCREGs
     for ccreg in hierarchy['ccreg'].drop_duplicates():
@@ -245,6 +254,10 @@ def reeds_cc(t, tnext, casedir):
 
         # Hourly profiles
         load_profile_ccreg = load_profiles[ccreg]      
+
+        forced_outage_rate_ccreg = forced_outage_rate.loc[
+            :, pd.IndexSlice[:, hierarchy.loc[hierarchy.ccreg == ccreg, 'r']]
+        ]
 
         # EVMC profile
         if int(sw['GSw_EVMC']):
@@ -331,6 +344,10 @@ def reeds_cc(t, tnext, casedir):
                 load_profile_ccseason.drop(columns=ccreg)
                 .assign(MW=cc_vg_results['load_net'])
                 .sort_values(['MW'], ascending=False)
+            )
+            dict_mean_forced_outage_rate[ccreg, ccseason] = calc_mean_forced_outage_rate(
+                net_load_ccreg_ccseason, forced_outage_rate_ccreg,
+                int(sw['GSw_PRM_CapCreditHours']), timeindex,
             )
             #Save top n hrs of net load for ccreg and ccseason across all years, and for 2012 alone
             net_load_out_numhrs = 500
@@ -477,23 +494,11 @@ def reeds_cc(t, tnext, casedir):
     ### Reorder to match ReEDS convention
     net_load_2012 = net_load_2012.reindex(['ccreg','ccseason','year','h','hour','t','value'], axis=1)
 
-    # export mean forced outage rate for top load hours in each region and ccseason
-    top_net_load_hours = net_load.groupby(['ccreg','ccseason']).head(int(sw['GSw_PRM_CapCreditHours']))
-    # map back to regions from ccreg for ReEDS input
-    top_net_load_hours = top_net_load_hours.merge(
-        hierarchy[['r','ccreg']], on='ccreg', how='left'
-    ).drop(['ccreg','year','hour','t','value'], axis=1)
-    # map h to timestamp to match forced outage rate
-    top_net_load_hours['*timestamp'] = top_net_load_hours['h'].apply(reeds.timeseries.h2timestamp)
-    hours = top_net_load_hours.groupby(['ccseason', 'r'])['*timestamp'].agg(list)
-
     mean_forced_outage_rate = (
-        pd.concat({  
-            (ccseason, r): forced_outage_rate.loc[h].xs(r, 1, 'r').mean()  
-            for (ccseason, r), h in hours.items()  
-        }, names=('ccseason', 'r'))  
+        pd.concat(dict_mean_forced_outage_rate, names=('ccreg', 'ccseason'))
+        .rename('value')
         .reset_index()
-        .rename(columns={0:'value'})
+        .replace({'winter':'wint', 'spring':'spri', 'summer':'summ'})
         .assign(t=str(tnext))
         .reindex(['i','r','ccseason','t','value'], axis=1)
     )
