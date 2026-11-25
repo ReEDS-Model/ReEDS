@@ -872,6 +872,12 @@ if not int(sw.GSw_PRM_CapCredit):
             print(f'{savename} failed:')
             print(traceback.format_exc())
 
+    try:
+        reeds.reedsplots.plot_stressors(case=case, t=year, seed=True, onlyseed=True)
+    except Exception:
+        print('plot_stressors failed:')
+        print(traceback.format_exc())
+
 
 #%% PRM if iterating
 if int(sw.GSw_PRM_StressIterateMax) and int(sw.GSw_PRM_UpdateMethod):

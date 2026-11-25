@@ -1,6 +1,7 @@
 #%%### General imports
 import os
 import shutil
+import traceback
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -913,6 +914,12 @@ def main(sw, t, iteration=0, logging=True):
         os.path.join(sw.casedir, 'inputs_case', f'stress{t}i0', 'ces_peakday_st.csv'),
         os.path.join(sw.casedir, 'inputs_case', newstresspath, 'ces_peakday_st.csv'),
     )
+    
+    #%% Plot diagnostics for the new stress periods
+    try:
+        reeds.reedsplots.plot_stressors(case=sw.casedir, t=t, iteration=iteration, seed=int(sw.debug))
+    except Exception:
+        print(traceback.format_exc())
 
     #%% Write updated PRM values
     if (
