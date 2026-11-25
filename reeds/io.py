@@ -809,8 +809,8 @@ def get_scalars(case=None, full=False):
 def read_h5py_file(filename):
     """Return dataframe object for a h5py file.
 
-    This function returns a pandas dataframe of a h5py file. If the file has multiple dataset on it
-    means it has yearly index.
+    Reads the layout written by write_profile_to_h5: values from a "data" (or "cf", "load",
+    "evload") dataset, plus optional "columns", "index_{n}", "index_names", and "column_names".
 
     Parameters
     ----------
