@@ -36,7 +36,7 @@ avail_basis_prefix = {'Onshore Wind': 'wind-ons', 'UPV': 'upv', 'Gas-CC': 'gas-c
                       'Coal': 'coal', 'Nuclear': 'nuclear', 'Battery': 'battery'} #Report tech -> raw tech prefix in the run outputs, for the available-energy basis. Techs absent here keep their default basis.
 avail_basis_resource_techs = ['Onshore Wind', 'UPV'] #Techs whose available energy is resource-limited (gen_ivrt_uncurt) rather than outage-limited (avg_avail * cap_ivrt). These are already on the available basis by default, so their multiplier is 1 and they are listed only to route them to the right source.
 cc_scenario_techs = ['Battery', 'UPV'] #Techs whose new-build capacity credit is also drawn in every scenario in the scenarios file, not only in the run that forces them, to separate a tech's own saturation from the system around it. Names as in valcostfac_core.csv; each needs an entry in avail_basis_prefix.
-storage_startcost_scenario = 'battery_sc3' #Scenario in the scenarios file that reruns the storage forcing case without gas-CC start costs (GSw_StartCost=3 rather than 4). A sensitivity like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and drawn against the core storage run in its own comparison figure, skipped if absent.
+storage_startcost_scenario = 'battery_sc4' #Scenario in the scenarios file that reruns the storage forcing case with gas-CC start costs added (GSw_StartCost=4 rather than the default 3). A sensitivity like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and drawn against the core storage run in its own comparison figure, skipped if absent.
 storage_pv_scenario = 'upv' #Scenario in the scenarios file that forces PV. Storage is built there without forcing, and it is drawn against the core storage run in its own comparison figure, with the storage dollar and factor grids also drawn for it. Skipped if absent.
 storage_formulation_scenario = 'battery_cc' #Scenario in the scenarios file that reruns the storage forcing case with the capacity-credit formulation of the reserve margin (GSw_PRM_CapCredit=1) instead of stress periods. It is a sensitivity, not a forcing scenario: it is left out of the all-scenario capacity-credit figure, and drawn against the core storage run in its own comparison figure. Absent from the results, the comparison is skipped.
 storage_duration_scenarios = {'battery_4h': 4, 'battery_8h': 8} #Scenarios in the scenarios file that rerun the storage forcing case with new battery builds fixed at this duration in hours (GSw_BatteryDuration) rather than chosen by the model. Sensitivities like storage_formulation_scenario: left out of the all-scenario capacity-credit figure and each drawn against the core storage run in its own comparison figure, skipped if absent.
@@ -2797,8 +2797,8 @@ def make_figs(valcostfac_core_path, output_dir=None):
                 for sens, label, base_label, name, base_scen in [
                         (storage_formulation_scenario, 'Capacity-credit formulation',
                          'Stress periods (default)', 'formulation', None),
-                        (storage_startcost_scenario, 'No gas-CC start costs',
-                         'Gas-CC start costs (default)', 'startcost', None),
+                        (storage_startcost_scenario, 'Gas-CC start costs added',
+                         'No gas-CC start costs (default)', 'startcost', None),
                         (storage_pv_scenario, 'PV forcing run, storage not forced',
                          'Storage forcing run (default)', 'pv', None),
                         *[(s, f'Fixed {h}-hour duration', 'Model-chosen duration (default)',

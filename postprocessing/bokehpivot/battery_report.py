@@ -454,11 +454,11 @@ def build_html(output_dir, core_path):
 
     # ---- 10 gas-CC start costs ----
     sc_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_permwh.png', 22,
-                    'Storage with and without start costs on gas combined cycle, per MWh.',
-                    'The storage forcing case run twice: with start costs on coal, gas-CC and CCS '
-                    '(<span class="eq">GSw_StartCost=4</span>), the default and the basis of every'
-                    ' other figure here, and with them on coal and CCS only (<span '
-                    'class="eq">GSw_StartCost=3</span>). Nothing else differs between the two '
+                    'Storage without and with start costs on gas combined cycle, per MWh.',
+                    'The storage forcing case run twice: with start costs on coal and CCS only '
+                    '(<span class="eq">GSw_StartCost=3</span>), the default and the basis of every'
+                    ' other figure here, and with gas-CC start costs added (<span '
+                    'class="eq">GSw_StartCost=4</span>). Nothing else differs between the two '
                     'runs. Per MWh, against market share. Top row: value factor, cost factor and '
                     'value&#8211;cost factor as computed, without the LCOE-base scaling in the '
                     'right panel of Fig 4, which is fitted per run, and capacity credit as in '
@@ -468,7 +468,7 @@ def build_html(output_dir, core_path):
                     'times the forcing multiplier over the benchmark price and carries no value '
                     'term, so the two runs can differ in it only through the benchmark price.', order)
     sc_kw_fig = figure(output_dir, 'plcoe_pitch_storage_startcost_perkw.png', 23,
-                       'Storage with and without start costs on gas combined cycle, per kW.',
+                       'Storage without and with start costs on gas combined cycle, per kW.',
                        'Fig 22 per kW, against installed storage capacity as a share of peak load '
                        '(as in section 05) rather than market share, since market share is '
                        'discharge: the per-kW factors of section 08, capacity credit as in Fig 22,'
