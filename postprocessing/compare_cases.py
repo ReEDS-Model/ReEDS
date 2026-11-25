@@ -2532,16 +2532,7 @@ if detailed:
 #%%### Copy some premade single-case plots
 wide = 1 if len(hierarchy[basecase]['transreg'].unique()) > 6 else 0
 weatheryear = sw.GSw_HourlyWeatherYears.split('_')[0]
-metrics = [
-    'cap',
-    'rep_mean',
-    'stress_mean',
-    'stress_top5_load',
-    'stress_top5_netload',
-    'stress_bottom5_vregen',
-    'stress_max_load',
-    'stress_max_price',
-]
+metrics = reedsplots.STRESS_MIX_METRICS
 for figname, width, height in [
     (f'map_gencap_transcap-{lastyear}', None, SLIDE_HEIGHT),
     ('plot_stressperiod_evolution-neue', SLIDE_WIDTH, None),

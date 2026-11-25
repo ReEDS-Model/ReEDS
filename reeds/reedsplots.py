@@ -33,6 +33,18 @@ zone_label_offset = {
     'MISO_North': (0, -0.1e6),
 }
 
+### List of stress technology mix metrics for plotting
+STRESS_MIX_METRICS = [
+    'cap',
+    'rep_mean',
+    'stress_mean',
+    'stress_top10_load',
+    'stress_top10_netload',
+    'stress_bottom10_vregen',
+    'stress_top10_price',
+    'stress_weight_price',
+]
+
 ### Functions
 def simplify_techs(techs, condense_upgrades=True, lower_case=False, display_level='display', raw_level = 'raw'):
     """
@@ -5604,16 +5616,7 @@ def plot_cap_rep_stress_mix(
     year=2050,
     level='transreg',
     units='GW',
-    metrics=[
-        'cap',
-        'rep_mean',
-        'stress_mean',
-        'stress_top5_load',
-        'stress_top5_netload',
-        'stress_bottom5_vregen',
-        'stress_max_load',
-        'stress_max_price',
-    ],
+    metrics=STRESS_MIX_METRICS,
     drawpeak=True,
     drawgrid=True,
 ):
