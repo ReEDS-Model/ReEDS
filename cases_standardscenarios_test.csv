@@ -1,9 +1,9 @@
-,Default Value,CurrentPolicy_Midcase,CurrentPolicy_Midcase_GrowthPenalty,CurrentPolicy_Midcase_35,CurrentPolicy_Midcase_GrowthPenalty_35
+,Default Value,CurrentPolicy_Midcase,CurrentPolicy_Midcase_GrowthPenalty,CurrentPolicy_Midcase_40,CurrentPolicy_Midcase_GrowthPenalty_40
 ignore,0,,,,
 coalscen,AEO_2026_altelec,,,,
 demandscen,AEO_2026_baseline,,,,
 distpvscen,stscen2026_midcase,,,,
-endyear,2050,,,2035,2035
+endyear,2050,,,2040,2040
 geodiscov,BAU,,,,
 geohydrosupplycurve,ATB_2023,,,,
 GSw_AnnualCap,0,,,,

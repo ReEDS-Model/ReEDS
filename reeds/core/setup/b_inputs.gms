@@ -220,7 +220,6 @@ set
   cf_tech(i)           "technologies that have a specified capacity factor"
   coal_ccs(i)          "technologies that use coal and have CCS",
   coal(i)              "technologies that use coal",
-  coal_tg(tg)          "technologies that use coal",
   cofire(i)            "cofire technologies",
   combined_cycle(i)    "combined cycle technologies",
   combustion_turbine(i)"combustion turbine technologies",
@@ -286,7 +285,6 @@ set
   storage_interday(i)  "interday storage",
   thermal_storage(i)   "thermal storage technologies",
   upgrade(i)           "technologies that are upgrades from other technologies",
-  upgrade_tg(tg)       "technologies that are upgrades from other technologies",
   upv(i)               "upv generation technologies",
   vre_distributed(i)   "distributed PV technologies",
   vre_no_csp(i)        "variable renewable energy technologies that are not csp",
@@ -1751,8 +1749,10 @@ set valcap(i,v,r,t)            "i, v, r, and t combinations that are allowed for
     valcap_h2ptc(i,v,r,t)      "i, v, r and t combinations that are allowed for capacity that can receive the hydrogen PTC",
     valgen_irt(i,r,t)          "i, r, and t combinations that are allowed for generation",
     valinv(i,v,r,t)            "i, v, r, and t combinations that are allowed for investments",
+    valinv_gp(i,v,r,t)         "i, v, r, and t combinations that are subjected to growth penalties",
     valinv_init(i,v,r,t)       "Initialized i, v, r, and t combinations that are allowed for investments, while valinv can change",
     valinv_irt(i,r,t)          "i, r, and t combinations that are allowed for investments",
+    valinv_irt_tg(i,r,t)       "i, r, and t combinations that are subjected to growth penalties",
     valinv_tg(st,tg,t)         "valid technology groups for investments"
     valgen(i,v,r,t)            "i, v, r, and t combinations that are allowed for generation",
     valgen_h2ptc(i,v,r,t)        "i, v, r and t combinations that are allowed for generation that can receive the hydrogen PTC",
@@ -2144,7 +2144,18 @@ valinv(i,newv,r,t)$[i_numeraire(i)$Sw_WaterMain$(not prescribed_build(i,newv,r,t
 *upgrades are not allowed for the INV variable as they are the sum of UPGRADES
 valinv(i,v,r,t)$upgrade(i) = no ;
 
+*upgrades for coal and gas-ccs are being subjected to growth penalties
+valinv_gp(i,v,r,t)$[upgrade(i)$coal(i)$gas(i)] = yes ; 
+
 valinv(i,v,r,t)$[(yeart(t)<firstyear(i))
+* Allow investments before firstyear(i) in technologies with prescribed capacity
+                 $(not prescribed_build(i,v,r,t))
+* Allow investments before firstyear(i) in mandated technologies
+                 $(not [sum{st$r_st(r,st), batterymandate(st,t) }  and battery(i)])
+                 $(not [sum{st$r_st(r,st), offshore_cap_req(st,t)} and ofswind(i)])
+                 ] = no ;
+
+valinv_gp(i,v,r,t)$[(yeart(t)<firstyear(i))
 * Allow investments before firstyear(i) in technologies with prescribed capacity
                  $(not prescribed_build(i,v,r,t))
 * Allow investments before firstyear(i) in mandated technologies
@@ -2154,10 +2165,8 @@ valinv(i,v,r,t)$[(yeart(t)<firstyear(i))
 
 * Add aggregations of valinv
 valinv_irt(i,r,t) = sum{v, valinv(i,v,r,t) } ;
-valinv_tg(st,tg,t)$sum{(i,r)$[tg_i(tg,i)$r_st(r,st)], valinv_irt(i,r,t) } = yes ;
-upgrade_tg(tg) = sum{i$tg_i(tg,i), upgrade(i) };
-coal_tg(tg) = sum{i$tg_i(tg,i), coal(i) }; 
-valinv_tg(st,tg,t)$[upgrade_tg(tg)$coal_tg(tg)] = yes ;
+valinv_irt_tg(i,r,t) = sum{v, valinv_gp(i,v,r,t) } ;
+valinv_tg(st,tg,t)$sum{(i,r)$[tg_i(tg,i)$r_st(r,st)], valinv_irt_tg(i,r,t) } = yes ;
 
 * -- valgen specification --
 * if the balancing area and/or its
