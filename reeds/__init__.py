@@ -5,16 +5,22 @@ from . import resource_adequacy as resource_adequacy
 
 from . import checks as checks
 from . import financials as financials
+from . import finito as finito
 from . import inputs as inputs
 from . import io as io
 from . import log as log
+from . import mcplots as mcplots
 from . import plots as plots
 from . import prasplots as prasplots
 from . import reedsplots as reedsplots
 from . import remote as remote
 from . import report_utils as report_utils
 from . import results as results
+from . import slurm as slurm
 from . import spatial as spatial
+from . import stochastic as stochastic
 from . import techs as techs
 from . import timeseries as timeseries
 from . import units as units
+
+from .objects import ReEDScase as ReEDScase

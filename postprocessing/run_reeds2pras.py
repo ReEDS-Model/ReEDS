@@ -1,22 +1,18 @@
 #%% Imports
 import pandas as pd
 import os
+import sys
 import site
 import json
 from glob import glob
 import subprocess
 ### Local imports
 reeds_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(reeds_path)
+import reeds
 
 
 #%%### Functions
-def check_slurm(forcelocal=False):
-    """Check whether to submit slurm jobs (if on HPC) or run locally"""
-    hpc = True if (int(os.environ.get('REEDS_USE_SLURM',0))) else False
-    hpc = False if forcelocal else hpc
-    return hpc
-
-
 def submit_job(
     case,
     year=0,
@@ -241,7 +237,7 @@ if __name__ == '__main__':
     # switch_mods = {}
 
     #%% Determine whether to submit SLURM job
-    hpc = check_slurm(forcelocal=local)
+    hpc = reeds.slurm.check_slurm(forcelocal=local)
 
     ### Run it
     if hpc:

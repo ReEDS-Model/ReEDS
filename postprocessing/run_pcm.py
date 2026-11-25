@@ -10,15 +10,12 @@ import pandas as pd
 from pathlib import Path
 
 ## Local imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(str(Path(__file__).parent.parent))
 import reeds
 from reeds.input_processing import hourly_repperiods
 from reeds.input_processing import hourly_writetimeseries
 from reeds.core.terminus.report_dump import write_dfdict
 
-
-# %% Inferred inputs
-reeds_path = os.path.join(os.path.dirname(__file__), '..')
 
 # %% Default inputs
 switch_mods_default = {
@@ -34,20 +31,6 @@ switch_mods_default = {
 
 
 # %% Functions
-def check_slurm(forcelocal=False):
-    """Check whether to submit slurm jobs (if on HPC) or run locally"""
-    hpc = (
-        False
-        if forcelocal
-        else (
-            True
-            if int(os.environ.get('REEDS_USE_SLURM', 0)) and ('NREL_CLUSTER' in os.environ)
-            else False
-        )
-    )
-    return hpc
-
-
 def solvestring_pcm(
     batch_case,
     sw,
@@ -93,6 +76,7 @@ def solvestring_pcm(
                     'GSw_StateCO2ImportLevel',
                     'GSw_PVB_Dur',
                     'GSw_ValStr',
+                    'GSw_FINITO_Link',
                     'GSw_gopt',
                     'solver',
                     'debug',
@@ -130,7 +114,7 @@ def submit_job(casepath, command_string, jobname='', joblabel='', bigmem=0):
     """
     ### Get the SLURM boilerplate
     commands_header, commands_sbatch, commands_other = [], [], []
-    with open(os.path.join(reeds_path,'reeds','hpc','srun_template.sh'), 'r') as f:
+    with open(os.path.join(reeds.io.reeds_path,'reeds','hpc','srun_template.sh'), 'r') as f:
         for line in f:
             if bigmem and ('--mem=' in line):
                 line = '#SBATCH --mem=2000000'
@@ -179,6 +163,7 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         .values
     )
     _t = t if t > 0 else max(years)
+    batch_case = os.path.basename(casepath)
 
     # %% Set up logger
     reeds.log.makelog(
@@ -195,14 +180,14 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
     if (not os.path.isdir(os.path.join(casepath, 'inputs_case', f'pcm_{label}'))) or overwrite:
         hourly_repperiods.main(
             sw=sw_pcm,
-            reeds_path=reeds_path,
+            reeds_path=reeds.io.reeds_path,
             inputs_case=os.path.join(casepath, 'inputs_case'),
             periodtype=f'pcm_{label}',
             minimal=1,
         )
         hourly_writetimeseries.main(
             sw=sw_pcm,
-            reeds_path=reeds_path,
+            reeds_path=reeds.io.reeds_path,
             inputs_case=os.path.join(casepath, 'inputs_case'),
             periodtype=f'pcm_{label}',
             make_plots=0,
@@ -217,14 +202,15 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
         )
         hourly_writetimeseries.main(
             sw=sw_pcm,
-            reeds_path=reeds_path,
+            reeds_path=reeds.io.reeds_path,
             inputs_case=os.path.join(casepath, 'inputs_case'),
             periodtype='stress0',
             make_plots=0,
         )
+        ## Set PRM to zero since we don't use stress periods for PCM
+        pd.DataFrame(columns=['*r','fraction']).to_csv(Path(stresspath, 'prm.csv'), index=False)
 
     # %% Get ReEDS LP for specified year
-    batch_case = os.path.basename(casepath)
     ### Get the restartfile and get the last year/iteration if t=0 and iteration='last'
     if _t == min(years):
         restartfile = batch_case
@@ -284,13 +270,8 @@ def main(casepath, t, switch_mods=switch_mods_default, label='', overwrite=False
     )
     print("Finished loading outputs gdx")
 
-    outputs_path = os.path.join(casepath, 'outputs', f'pcm_{label}_{_t}')
-    os.makedirs(outputs_path, exist_ok=True)
-    write_dfdict(
-        dfdict=dict_out,
-        outputs_path=outputs_path,
-        rename=rename,
-    )
+    outputs_path = Path(casepath, 'outputs', f'outputs_pcm_{label}_{_t}.h5')
+    write_dfdict(dfdict=dict_out, outputs_path=outputs_path, rename=rename)
 
 
 # %% Procedure
@@ -302,23 +283,15 @@ if __name__ == '__main__':
     )
     parser.add_argument('casepath', type=str, help='ReEDS/runs/{case} directory')
     parser.add_argument(
-        '--year',
-        '-t',
-        type=int,
-        default=0,
+        '--year', '-t', type=int, default=0,
         help='Year to run (must have the corresponding .g00 file), or 0 for last year',
     )
     parser.add_argument(
-        '--iteration',
-        '-i',
-        type=str,
-        default='last',
+        '--iteration', '-i', type=str, default='last',
         help="Iteration to run, or 'last' for last iteration",
     )
     parser.add_argument(
-        '--switch_mods',
-        '-s',
-        type=json.loads,
+        '--switch_mods', '-s', type=json.loads,
         default=json.dumps(switch_mods_default),
         help=(
             'Dictionary-formated string of switch arguments for PCM. '
@@ -326,20 +299,20 @@ if __name__ == '__main__':
             '`-s \'{"GSw_HourlyChunkLengthRep":4}\'`'
         ),
     )
-    parser.add_argument('--label', '-l', type=str, default='', help='Label for PCM outputs')
     parser.add_argument(
-        '--overwrite',
-        '-o',
-        action='store_true',
+        '--label', '-l', type=str, default='', help='Label for PCM outputs',
+    )
+    parser.add_argument(
+        '--overwrite', '-o', action='store_true',
         help="Overwrite input files if they already exist (otherwise don't rewrite them)",
     )
     parser.add_argument(
-        '--forcelocal',
-        '-f',
-        action='store_true',
+        '--forcelocal', '-f', action='store_true',
         help='Run locally (including on a compute node as part of a job)',
     )
-    parser.add_argument('--bigmem', '-b', action='store_true', help='Use bigmem node')
+    parser.add_argument(
+        '--bigmem', '-b', action='store_true', help='Use bigmem node',
+    )
 
     args = parser.parse_args()
     casepath = args.casepath
@@ -354,30 +327,24 @@ if __name__ == '__main__':
     bigmem = args.bigmem
 
     # #%% Inputs for debugging
-    # casepath = os.path.join(reeds_path, 'runs', 'v20250206_pcmM0_Pacific')
+    # casepath = os.path.join(reeds.io.reeds_path, 'runs', 'v20261121_stochasticM2_R2P_PCM_PowFrac')
     # t = 0
     # iteration = 'last'
     # switch_mods = switch_mods_default
-    # switch_mods = {
-    #     'GSw_HourlyClusterAlgorithm': 'hierarchical',
-    #     'GSw_HourlyType': 'day', 'GSw_HourlyNumClusters': 365,
-    #     # 'GSw_HourlyType': 'wek', 'GSw_HourlyNumClusters': 73,
-    #     'GSw_HourlyChunkLengthRep': 4,
-    # }
     # label = f"{switch_mods['GSw_HourlyType'][0]}{switch_mods['GSw_HourlyChunkLengthRep']}h"
-    # forcelocal = False
-    # overwrite = False
-    # bigmem = True
+    # forcelocal = True
+    # overwrite = True
+    # bigmem = False
 
     # %% Determine whether to submit slurm job
-    hpc = check_slurm(forcelocal=forcelocal)
+    hpc = reeds.slurm.check_slurm(forcelocal=forcelocal)
 
     ### Run it
     if not hpc:
         main(casepath=casepath, t=t, switch_mods=switch_mods, label=label, overwrite=overwrite)
     else:
         command_string = (
-            f"python postprocessing/run_pcm.py {casepath} "
+            f"python {Path(reeds.io.reeds_path,'postprocessing','run_pcm.py')} {casepath} "
             f"--year={t} "
             f"--iteration={iteration} "
             f"--switch_mods='{json.dumps(switch_mods)}' "

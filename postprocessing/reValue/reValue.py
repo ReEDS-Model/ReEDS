@@ -85,7 +85,7 @@ def get_prices():
         yrs_less = [y for y in yrs if y < year]
         max_yr = max(yrs_less)
         df_ra = gdxpds.to_dataframe(f'{reeds_run_path}/handoff/reeds_data/ccdata_{max_yr}.gdx',
-            'net_load_2012', old_interface=False)
+            'net_load_2012')
         if int(df_ra['t'][0]) != year:
             raise ValueError(f'RA year ({int(df_ra["t"][0])}) does not match current scenario year ({year})')
         df_ra = df_ra.sort_values('Value', ascending=False)

@@ -310,7 +310,7 @@ To edit the ReEDS documentation:
 3. Commit and push your changes as you normally would.
    - **When your pull request gets merged into main, there is a github action that will automatically recompile the documentation with your changes and publish the updated site.**
 
-Make sure to update the `docs/sources.csv` file when applicable.
+If you're updating anything related to the input files, make sure to update the relevant `inputs/*/README.md`.
 
 ### Viewing the Documentation Locally
 
@@ -328,7 +328,7 @@ If you would like to see what the documentation will look like when developing l
 1. Navigate to the "docs/" folder
 
 2. Run the command `make html` to build the documentation locally
-   - Ensure you have the 'reeds2' environment activated
+   - Ensure you have the `reeds` environment activated
   
 3. Open `/ReEDS/docs/build/html/index.html` to view the documentation.
    - If you make changes and wish to see how they are reflected in the documentation, you can run the `make html` command again and refresh the window you already have open
@@ -638,7 +638,7 @@ Additionally, if you want to re-run a given scenario without having to run all o
         | `--simult_runs` / `-r` | Number of simultaneous runs. If negative, run all simultaneously |
         | `--forcelocal` / `-l` | Force model to run locally instead of submitting a slurm job |
         | `--restart` / `-r` | Switch to restart existing ReEDS runs |
-        | `--skip_checks` / `-f` | Force run, skipping checks on conda environment and switches |
+        | `--force` / `-f` | Force run, skipping an increasing number of checks at higher levels |
         | `--debug` / `-d` | Run in debug mode (same behavior as debug switch in cases.csv) |
         | `--debugnode` / `-n` | Run using debug specifications for slurm on an hpc system |
 

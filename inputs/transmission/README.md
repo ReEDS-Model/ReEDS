@@ -1,6 +1,6 @@
-# Transmission input files
+## Transmission Input Files
 
-- `b2b_converters.csv`: Power capacity and location of back-to-back (B2B) AC/DC/AC converters in the USA.
+- `b2b_converters.csv`: Power capacity [MW] and location of back-to-back (B2B) AC/DC/AC converters in the USA.
   - Power capacities are from [Brinkman et al. 2020](https://docs.nlr.gov/docs/fy21osti/78161.pdf) for converters at the eastern/western interface and [ERCOT 2020](https://www.ercot.com/files/docs/2020/07/30/ERCOT_DC_Tie_Operations_Document.docx) for converters at the eastern/texas interface.
   - Locations are from the [Open Infrastructure Map](https://openinframap.org/#4.1/40.65/-97.11).
   The `osm_id` column gives the OpenStreetMap ID of the converter; for example, the "Miles City, MT" converter (with `osm_id = 137835349`) can be found at <https://www.openstreetmap.org/way/137835349>.
@@ -16,7 +16,7 @@
 
 - `cost_hurdle_intra.csv`: Hurdle rate for transmission flows [\$/MWh] between ReEDS spatial hierarchy levels.
 
-- `dollaryear.scv`: U.S. dollar year for cost-related input files
+- `dollaryear.csv`: U.S. dollar year for cost-related input files
 
 - `hvdc_existing.csv`: Power capacity and start/end locations of [high-voltage direct current (HVDC) lines](https://en.wikipedia.org/wiki/List_of_HVDC_projects#North_America) in the USA.
 These lines are mapped to ReEDS zone interfaces during input processing.
@@ -47,12 +47,12 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
   - The `itl_NARIS.csv` is indexed by the hashes of the two zones that define the interface (`md5_from` and `md5_to`).
     - So even though the `DE` and `MD` zones are used in many of the supported region resolutions, we only store the ITL for the `DE`/`MD` interface once, with `md5_from = a182e260da3f30b54260bf499f0db584` and `md5_to = f8644441280e76e07363ed18c744f98e`.
     - The interfaces to expect values for are listed in the `inputs/zones/{GSw_ZoneSet}/interfaces_{level}.csv` files, where `level` can be `r` or `transgrp`.
-  - The most straightforward way to read all the ITLs for a given region resolution is to run the following commands from the root of the ReEDS repo with the `reeds2` conda environment activated:
+  - The most straightforward way to read all the ITLs for a given region resolution is to run the following commands from the root of the ReEDS repo with the `reeds` conda environment activated:
 
     ```python
     import reeds
     ## GSw_ZoneSet can be any of the supported zone resolutions listed in the `GSw_ZoneSet` row of `cases.csv`
-    GSw_ZoneSet = 'z134'
+    GSw_ZoneSet = 'z90'
     reeds.inputs.get_itls(GSw_ZoneSet=GSw_ZoneSet)
     ```
 
@@ -62,7 +62,7 @@ Calculated using the [TSC](https://github.nrel.gov/pbrown/TSC) model as describe
 - `transmission_cost_ac_500kv_z134.h5`: Example file illustrating the required format when using the transmission upgrade supply curve ([TSC](https://github.nrel.gov/ReEDS/TSC)) method for `GSw_ZoneSet = z134`
   - The full method is not yet supported; when implemented, it will only be supported for a limited number of `GSw_ZoneSet` definitions
 
-- `transmission_cost_distance.csv`: Cost [USD2024] and distance [miles] for greenfield interzonal single-circuit transmission lines of the specified polarity (AC or DC) and voltage [kV] between nodes of the specified zone hashes
+- `transmission_cost_distance.csv`: Cost [million 2024$] and distance [miles] for greenfield interzonal single-circuit transmission lines of the specified polarity (AC or DC) and voltage [kV] between nodes of the specified zone hashes
   - Node locations are described in `inputs/zones/README.md` and found in the `inputs/zones/{GSw_ZoneSet}/zonehash.csv` files
   - Least-cost paths between nodes (and integrated land/terrain-dependent costs along those paths) are determined using the [reV Routing (reVRt) model](https://github.com/NatLabRockies/reVRt)
   - Technical assumptions:

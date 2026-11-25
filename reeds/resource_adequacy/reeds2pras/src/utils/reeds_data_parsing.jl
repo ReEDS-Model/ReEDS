@@ -579,11 +579,7 @@ function process_hydro(
                         :value,
                     ] * row.MW_sum)[1]
             catch e
-                if isa(e, BoundsError)
-                    @error "$(row.r),$(row.i),$(e)"
-                else
-                    error()
-                end
+                @error "$(row.r),$(row.i),$(e)"
             end
         end
 

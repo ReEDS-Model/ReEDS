@@ -24,6 +24,7 @@ def run_pras(
         write_surplus=False,
         write_energy=False,
         write_shortfall_samples=False,
+        write_shortfall_samples_totals=True,
         write_availability_samples=False,
         **kwargs,
     ):
@@ -68,6 +69,7 @@ def run_pras(
         f"--write_surplus={int(write_surplus)}",
         f"--write_energy={int(write_energy)}",
         f"--write_shortfall_samples={int(write_shortfall_samples)}",
+        f"--write_shortfall_samples_totals={int(write_shortfall_samples_totals)}",
         f"--write_availability_samples={int(write_availability_samples)}",
         f"--iteration={iteration}",
         f"--samples={sw['pras_samples']}",
@@ -99,11 +101,11 @@ def run_pras(
 def main(t, tnext, casedir, iteration=0):
 
     # #%% To debug, uncomment these lines and update the run path
-    # t = 2020
-    # tnext = 2023
+    # t = 2030
+    # tnext = 2035
     # reeds_path = reeds.io.reeds_path
     # casedir = os.path.join(
-    #     reeds_path,'runs','v20260417_reorgM1_Pacific')
+    #     reeds_path,'runs','v20260624_raM0_MultiMetricRA')
     # iteration = 0
     # assert tnext >= t
     # os.chdir(casedir)
@@ -191,11 +193,9 @@ def main(t, tnext, casedir, iteration=0):
 
     # #%% Uncomment to run diagnostic_plots
     # ### (typically run from call_{}.sh script for parallelization)
-    # try:
-    #     reeds.resource_adequacy.diagnostic_plots.main(sw)
-    # except Exception as err:
-    #     print('diagnostic_plots.py failed with the following exception:')
-    #     print(err)
+    # from reeds.resource_adequacy import diagnostic_plots
+    # sw['iteration'] = iteration
+    # diagnostic_plots.main(sw)
 
 
 #%% Procedure

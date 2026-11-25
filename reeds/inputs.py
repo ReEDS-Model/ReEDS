@@ -106,6 +106,9 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
     for case in cases:
         sw = dfcases[case]
         new_switches[case] = {}
+        # Add startyear switch as the first year in yearset
+        new_switches[case]['startyear'] = str(parse_yearset(sw['yearset'])[0])
+
         ### TEMPORARY 20260402: Turn off itlgrp constraint until it's fixed
         new_switches[case]['GSw_itlgrpConstraint'] = '0'
         ## 'meshed' offshore files are only used when offshore zones are turned on
@@ -121,14 +124,20 @@ def add_intermediate_switches(dfcases:pd.DataFrame) -> pd.DataFrame:
             int(sw['numbins_upv']),
             15,
         ))
-    dfcases_out = pd.concat([dfcases, pd.DataFrame(new_switches)])
+        ## add intermediate ReEDS-FINITO switches
+        new_switches = reeds.finito.update_FINITO_switches(case, sw, new_switches)
+
+    # combine old and new switches, dropping the old 'FINITO_dir' to avoid
+    # duplication with the filled path from update_FINITO_switches
+    dfcases_out = pd.concat([dfcases.drop('FINITO_dir'), pd.DataFrame(new_switches)])
+    
     return dfcases_out
 
 
 def parse_cases(
     cases_filename:str='cases_test.csv',
     single:str='',
-    skip_checks:bool=False,
+    force:int=0,
 ) -> pd.DataFrame:
     """
     Read a ReEDS cases file, look up empty switch values from "Default Value" or cases.csv,
@@ -137,7 +146,7 @@ def parse_cases(
     Args:
         cases_filename (str): 'cases_{something}.csv' or 'cases.csv'
         single (str): If not '', specifies a single column to keep from cases_filename
-        skip_checks (bool): Skip case validation (not recommended)
+        force (bool): Skip case validation (not recommended)
 
     Returns:
         pd.DataFrame
@@ -195,7 +204,7 @@ def parse_cases(
 
         # Check to make sure the switch setting is valid
         for i, val in dfcases[case].items():
-            if skip_checks:
+            if force:
                 continue
             # check that the switch isn't duplicated
             if isinstance(choices[i], pd.Series) and len(choices[i]) > 1:
@@ -246,19 +255,20 @@ def parse_cases(
             print("Please change the delimeter in the GSw_Region switch from ',' to '.'")
             quit()
 
-    # If doing a Monte Carlo run, modify dfcases by adding new columns
-    # for each scenario run. Also validate the distribution file.
+    # If doing a Monte Carlo or MGA Random Vector run, modify dfcases by adding new columns
+    # for each scenario run. For Monte Carlo we also validate the distribution file.
     warned_about_cluster_alg = False
-    if 'MCS_runs' in dfcases.index:
+    if 'MCS_runs' in dfcases.index or 'GSw_MGA_RV_runs' in dfcases.index:
         for c in dfcases.columns:
             if (
                 c not in ['Description','Default Value','Choices']
-                and (int(dfcases.loc['MCS_runs',c]) > 0)
+                and ((int(dfcases.loc['MCS_runs',c]) > 0) or (int(dfcases.loc['GSw_MGA_RV_runs',c]) > 0))
                 and (not int(dfcases.loc['ignore',c]))
             ):
                 # Warn user if the hourly clustering algorithm is not fixed for Monte Carlo runs
                 if (
-                    not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
+                    int(dfcases.loc['MCS_runs',c]) > 0
+                    and not dfcases.at['GSw_HourlyClusterAlgorithm', c].startswith('user')
                     and not warned_about_cluster_alg
                 ):
                     print(f"\n[Warning] Case Column: '{c}'")
@@ -268,12 +278,12 @@ def parse_cases(
                         "This may result in inconsistent representative days across MCS runs.\n\n"
                         "To ensure consistency, we strongly recommend setting "
                         "`GSw_HourlyClusterAlgorithm = user` in your switch configuration.\n"
-                        "Do you want to proceed with the current setup?"
                     )
-                    user_input = input("Type 'yes' to proceed, or 'no' to exit: ").strip().lower()
-                    if user_input not in ['yes', 'y']:
-                        print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
-                        quit()
+                    if not force:
+                        user_input = input("Do you want to proceed with the current setup? y/[n]")
+                        if user_input.strip().lower() not in ['yes', 'y']:
+                            print("\nPlease update the `GSw_HourlyClusterAlgorithm` switch and restart.")
+                            quit()
                     warned_about_cluster_alg = True
                     print()
 
@@ -281,25 +291,31 @@ def parse_cases(
                 sw = dfcases[c].fillna(dfcases['Default Value'])
                 mcs_dist_path = os.path.join(
                     reeds.io.reeds_path, 'inputs', 'userinput',
-                    'mcs_distributions_{}.yaml'.format(sw.MCS_dist)
+                    f'mcs_distributions_{sw.MCS_dist}.yaml'
                 )
-                mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
+                if int(dfcases[c].MCS_runs) > 0:
+                    mcs_sampler.general_mcs_dist_validation(reeds.io.reeds_path, mcs_dist_path, sw)
+                    numruns = int(dfcases[c].MCS_runs)
+                    run_type = 'MC'
+                else:                    
+                    numruns = int(dfcases[c].GSw_MGA_RV_runs)
+                    run_type = 'R'
 
-                # c (column) is a case with monte carlo runs.
-                # replicate this column N (NumMonteCarloRuns) times
-                NumMonteCarloRuns = int(dfcases.loc['MCS_runs',c])
+                # c (column) is a case with monte carlo or MGA random vector runs.
+                # replicate this column N times
                 NewColumnNames = [
-                    f"{c}_MC{i:0>4}"
-                    for i in range(1, NumMonteCarloRuns + 1)
+                    f"{c}_{run_type}{i:0>4}"
+                    for i in range(1, numruns + 1)
                 ]
 
-                # Each new column is a copy of the original column with name c_{MC1,MC2,...}
-                dfcases_MC = pd.DataFrame(
-                    data=np.array([dfcases[c].values]*NumMonteCarloRuns).T,
+                # Each new column is a copy of the original column with name 
+                # c_{MCS1,MCS2,...} or c_{R1,R2,...}
+                dfcases_all = pd.DataFrame(
+                    data=np.array([dfcases[c].values]*numruns).T,
                     index=dfcases.index,
                     columns=NewColumnNames,
                 )
-                dfcases = pd.concat([dfcases, dfcases_MC], axis=1)
+                dfcases = pd.concat([dfcases, dfcases_all], axis=1)
                 # drop the original column
                 dfcases.drop(c, axis=1, inplace=True)
 
@@ -345,17 +361,22 @@ def solvestring_sequential(
             'GSw_ClimateHydro',
             'GSw_ClimateWater',
             'GSw_gopt',
+            'GSw_gopt_mga',
             'GSw_HourlyChunkLengthRep',
             'GSw_HourlyChunkLengthStress',
             'GSw_HourlyType',
             'GSw_HourlyWrapLevel',
             'GSw_MGA_CostDelta',
             'GSw_MGA_Direction',
+            'GSw_MGA_RV_runs',
             'GSw_PVB_Dur',
             'GSw_SkipRAyear',
             'GSw_StateCO2ImportLevel',
             'GSw_StartMarkets',
             'GSw_ValStr',
+            'GSw_FINITO_Link',
+            'FINITO_first_year',
+            'FINITO_dollaryear',
             'solver',
             'debug',
             'startyear',
@@ -429,7 +450,7 @@ def get_bin(
         bin_ser = bin_ser.rank(method='dense')
         df[bin_out_col] = bin_ser.values
         # we need the same index ordering for apply to work
-        df = df.reindex(index=orig_index)
+        df = df.reindex(index=orig_index).drop(columns='cum_cap')
     df[bin_out_col] = df[bin_out_col].astype(int)
     return df
 
@@ -774,6 +795,28 @@ def get_b2b(case=None, **kwargs) -> pd.DataFrame:
     return b2b
 
 
+def get_county_populations():
+    return pd.read_csv(
+        os.path.join(
+            reeds.io.reeds_path,
+            'inputs',
+            'disaggregation',
+            'county_population.csv'
+        )
+    )
+
+
+def get_state_groups():
+    return pd.read_csv(
+        os.path.join(
+            reeds.io.reeds_path,
+            'inputs',
+            'zones',
+            'state_groups.csv'
+        )
+    )
+
+
 def get_zoneset_config() -> dict:
     configpath = Path(reeds.io.reeds_path, 'inputs', 'zones', 'zoneset_config.yaml')
     with open(configpath, 'r') as f:
@@ -881,3 +924,88 @@ def validate_zoneset(GSw_ZoneSet):
         hierarchypath = Path(zonepath, 'hierarchy.csv')
         err = f'The following columns are missing from {hierarchypath}: ' + ' '.join(missing)
         raise KeyError(err)
+
+
+def get_emit_cap(case:str|Path|None=None, **kwargs) -> pd.Series:
+    """
+    Load and process CO2/CO2e emissions cap trajectory [metric tons/year].
+
+    Returns:
+        pd.Series (parameter)
+            index = [s, eall, allt]
+            values = metric tons per year
+    """
+    ### Get shared scenario settings
+    sw_shared = reeds.io.get_switches(case, **kwargs)
+    county2zone = reeds.io.get_county2zone(case=case, **kwargs)
+    allyears = reeds.inputs.parse_yearset(sw_shared.yearset)
+    years = [y for y in allyears if y <= int(sw_shared.endyear)]
+    ### Get shared data from repo
+    co2path = Path(reeds.io.reeds_path, 'inputs', 'emission_constraints', 'co2_cap.csv')
+    co2_caps = pd.read_csv(co2path, index_col='t')
+    ## 2022 CO2 emission share by county calculated from 2022 eGrid emission data
+    fpath = Path(reeds.io.reeds_path,'inputs','emission_constraints','county_co2_share_egrid_2022.csv')
+    em_share = pd.read_csv(fpath, index_col=0).squeeze(1)
+    em_share.index = em_share.index.str.strip('p')
+    # Merge county emission share with modeled counties and calculate emission share of GSw_Region
+    region_em_share = em_share.reindex(county2zone.index).sum()
+
+    ### Get stochastic scenario settings
+    sw_scen = reeds.stochastic.get_switches(case)
+    emit_caps = {}
+    for scen, sw in sw_scen.items():
+        # Calculate CO2 cap based on GSw_Region chosen (national or sub-national regions)
+        # Read in national co2 cap
+        co2_cap = (
+            co2_caps
+            .loc[sw['GSw_AnnualCapScen']]
+            .rename_axis('allt').rename('Value')
+        )
+        co2_cap.index = co2_cap.index.astype(int)
+        ## Forecasting is handled in forecast.py
+        co2_cap = co2_cap.reindex(years).dropna()
+
+        # Apply the emission share to national cap to get the emission cap trajectory of GSw_Region
+        co2_cap *= region_em_share
+
+        ## Parse switches controlling emissions limits
+        df = co2_cap.reset_index()
+        if int(sw.GSw_AnnualCap) == 1:
+            df['eall'] = 'CO2'
+        elif int(sw.GSw_AnnualCap) > 1:
+            df['eall'] = 'CO2e'
+        else:
+            df = pd.DataFrame(columns=['eall','allt','Value'])
+
+        emit_caps[scen] = df.set_index(['eall','allt'])
+
+    emit_cap = pd.concat(emit_caps, names=('s')).squeeze(1)
+    return emit_cap
+
+
+def get_capped_pollutants(case:str|Path) -> pd.Series:
+    """
+    Get list of capped pollutants by scenario and emissions type
+
+    Returns:
+        pd.Series (set)
+            index = [s, e]
+    """
+    sw_scen = reeds.stochastic.get_switches(case)
+    gwp = reeds.io.read_input(case, 'gwp').set_index('e').squeeze(1)
+    emit_cappeds = {}
+    for scen, sw in sw_scen.items():
+        match int(sw.GSw_AnnualCap):
+            case 0:
+                df = pd.Series()
+            case 1:
+                df = pd.Series(index=['CO2'])
+            case 2:
+                if int(sw.GSw_GWPH2):
+                    df = pd.Series(index=gwp.index)
+                else:
+                    df = pd.Series(index=[i for i in gwp.index if i.upper() != 'H2'])
+        emit_cappeds[scen] = df
+
+    emit_capped = pd.concat(emit_cappeds, names=('s','e')).reset_index()[['s','e']]
+    return emit_capped

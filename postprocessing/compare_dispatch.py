@@ -196,7 +196,54 @@ try:
     cmap = cmocean.cm.rain
     dfmaps = {case: reeds.io.get_dfmap(cases[case]) for case in cases}
 
-    nrows, ncols, coords = reeds.plots.get_coordinates(cases)
+nrows, ncols, coords = reeds.plots.get_coordinates(cases)
+
+plt.close()
+f,ax = plt.subplots(
+    nrows, ncols, figsize=(scale*ncols, scale*nrows*0.75), sharex=True, sharey=True,
+    gridspec_kw={'wspace':0, 'hspace':-0.1}, dpi=200,
+)
+for case in cases:
+    _ax = ax[coords[case]]
+    dfmaps[case]['st'].plot(ax=_ax, facecolor='none', edgecolor='C7', lw=0.1)
+    dfmaps[case]['transreg'].plot(ax=_ax, facecolor='none', edgecolor='k', lw=0.2)
+    for r, row in dfmaps[case]['r'].iterrows():
+        _ax.annotate(
+            r.strip('p'), (row.centroid_x, row.centroid_y),
+            ha='center', va='center', fontsize=3,
+            color='0.8',
+        )
+    df = dfmaps[case]['r'].copy()
+    df['GWh'] = (
+        dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]
+        .groupby('r').Value.sum()
+        / 1e3
+    )
+    df.plot(ax=_ax, column='GWh', cmap=cmap)
+    _ax.axis('off')
+    _ax.set_title(case, y=0.9)
+reeds.plots.trim_subplots(ax, nrows, ncols, len(cases))
+## Save it
+title = 'Dropped load'
+slide = reeds.report_utils.add_to_pptx(title, prs=prs)
+if interactive:
+    plt.show()
+
+
+#%% Timing of dropped load
+dfdropped = pd.Series({
+    case:
+    dictin_dropped[case].loc[dictin_dropped[case].t==plotyear].Value.sum() / 1e3
+    for case in cases
+})
+
+for case in dfdropped.loc[dfdropped > 0].index:
+    sw = reeds.io.get_switches(cases[case])
+    y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
+    fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='h', tz='Etc/GMT+6')[:8760]
+    df = (dictin_dropped[case].loc[dictin_dropped[case].t==plotyear]).groupby('h').Value.sum()
+    df.index = df.index.map(reeds.timeseries.h2timestamp)
+    df = df.reindex(fullyear).fillna(0)
 
     plt.close()
     f,ax = plt.subplots(
@@ -291,18 +338,48 @@ for r in plot_regions:
             title = f"{case}: {r} ({dfdropped[case][r]/1e3:.1f} GWh)"
         except KeyError:
             continue
-        try:
-            sw = reeds.io.get_switches(cases[case])
-            y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
-            fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='H', tz='Etc/GMT+6')[:8760]
-            ## Dispatch
-            plt.close()
-            f, ax, dfplot = reeds.reedsplots.plot_dispatch_yearbymonth(
-                case=cases[case],
-                t=plotyear,
-                periodtype=f'pcm_{label}',
-                highlight_rep_periods=False,
-                region=f'r/{r}',
+        sw = reeds.io.get_switches(cases[case])
+        y = int(sw.GSw_HourlyWeatherYears.split('_')[0])
+        fullyear = pd.date_range(f'{y}-01-01', f'{y+1}-01-01', freq='h', tz='Etc/GMT+6')[:8760]
+        ## Dispatch
+        plt.close()
+        f, ax, dfplot = reeds.reedsplots.plot_dispatch_yearbymonth(
+            case=cases[case],
+            t=plotyear,
+            periodtype=f'pcm_{label}',
+            highlight_rep_periods=False,
+            region=f'r/{r}',
+        )
+        ## Dropped, as white areas at the bottom
+        df = (
+            dictin_dropped[case]
+            .loc[
+                (dictin_dropped[case].t==plotyear)
+                & (dictin_dropped[case].r==r)
+            ]
+        ).groupby('h').Value.sum()
+        df.index = df.index.map(reeds.timeseries.h2timestamp)
+        df = df.reindex(fullyear).fillna(0) / 1e3
+        reeds.plots.plotyearbymonth(df, colors='w', f=f, ax=ax)
+        ## Annotate the hours with dropped load
+        nonzero_dropped_load = df.loc[df > 0].sort_values(ascending=False)
+        for i in range(min(max_arrows, len(nonzero_dropped_load))):
+            dt = nonzero_dropped_load.index[i]
+            row = dt.month - 1
+            ## plots.plotyearbymonth() plots each month as January 2001
+            _dt = pd.Timestamp(f'2001-01-{dt.day:02} {dt.hour}:00:00')
+            ax[row].annotate(
+                '',
+                xy=(_dt, -ax[row].get_ylim()[1]*0.05),
+                xytext=(_dt, -ax[row].get_ylim()[1]*0.25),
+                arrowprops={
+                    'headwidth':2.5,
+                    'headlength':3,
+                    'width':0.5,
+                    'color':'k',
+                    'lw':0.5,
+                },
+                annotation_clip=False,
             )
             ## Dropped, as white areas at the bottom
             df = (

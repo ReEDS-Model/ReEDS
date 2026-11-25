@@ -12,7 +12,9 @@ import pandas as pd
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 import reeds
-
+from reeds.core.terminus import report_calcs
+sys.path.append(str(Path(reeds.io.reeds_path, 'postprocessing')))
+from retail_rate_module import calculate_historical_capex
 
 #%% Generic functions
 def dfdict_to_csv(dfdict, filepath, symbol_list=None, rename=dict(), decimals=6):
@@ -60,17 +62,19 @@ def dfdict_to_h5(
     overwrite=True,
     symbol_list=None,
     rename=dict(),
-    errors="warn",
+    errors='raise',
     **kwargs,
 ):
     """
     Write dictionary of dataframes to one .h5 file
     """
+    print(f"Saving results to {filepath}")
+
     ### unless a subset is specified, iterate over all keys in dict
     _symbol_list = dfdict.keys() if symbol_list is None else symbol_list
 
     ### Check for existing file
-    _filepath = filepath if filepath.endswith(".h5") else filepath + ".h5"
+    _filepath = filepath if Path(filepath).suffix == '.h5' else str(filepath) + '.h5'
     if os.path.exists(_filepath):
         if overwrite:
             os.remove(_filepath)
@@ -86,7 +90,6 @@ def dfdict_to_h5(
                 key=rename.get(key, key),
                 filepath=_filepath,
                 overwrite=overwrite,
-                drop_ctypes=True,
             )
         except Exception as err:
             print(key)
@@ -101,12 +104,14 @@ def dfdict_to_excel(
     overwrite=True,
     symbol_list=None,
     rename=dict(),
-    errors="warn",
+    errors='raise',
     **kwargs,
 ):
     """
     Write dictionary of dataframes to one .xlsx file
     """
+    print(f"Saving results to {filepath}")
+
     ### unless a subset is specified, iterate over all keys in dict
     _symbol_list = dfdict.keys() if symbol_list is None else symbol_list
 
@@ -139,7 +144,7 @@ def write_dfdict(
     overwrite=True,
     symbol_list=None,
     rename=dict(),
-    errors="warn",
+    errors='raise',
     **kwargs,
 ):
     """
@@ -152,7 +157,7 @@ def write_dfdict(
     ## Always write the h5
     dfdict_to_h5(
         dfdict=dfdict,
-        filepath=os.path.join(outputs_path, 'outputs.h5'),
+        filepath=Path(outputs_path.parent, outputs_path.stem + '.h5'),
         overwrite=overwrite,
         symbol_list=symbol_list,
         rename=rename,
@@ -162,14 +167,14 @@ def write_dfdict(
     if write_csv:
         dfdict_to_csv(
             dfdict=dfdict,
-            filepath=outputs_path,
+            filepath=outputs_path.parent,
             symbol_list=symbol_list,
             rename=rename,
         )
     if write_xlsx:
         dfdict_to_excel(
             dfdict=dfdict,
-            filepath=os.path.join(outputs_path, 'outputs.xlsx'),
+            filepath=Path(outputs_path.parent, outputs_path.stem + '.xlsx'),
             overwrite=overwrite,
             symbol_list=symbol_list,
             rename=rename,
@@ -233,16 +238,19 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     parser.add_argument("case", help="ReEDS scenario name")
     parser.add_argument('--csv', '-c', action='store_true', help='write csv files')
     parser.add_argument('--xlsx', '-x', action='store_true', help='write xlsx file')
+    parser.add_argument('--keep_scenario_index', '-s', action='store_true', help='keep s index')
 
     args = parser.parse_args()
     case = args.case
     write_csv = args.csv
     write_xlsx = args.xlsx
+    keep_scenario_index = args.keep_scenario_index
 
     # #%% Inputs for debugging
-    # case = os.path.join(reeds_path, 'runs', 'v20250312_scheduledM0_Pacific')
-    # write_csv = False
+    # case = os.path.join(reeds.io.reeds_path, 'runs', 'v20261023_stochasticM2_Stochastic')
+    # write_csv = True
     # write_xlsx = False
+    # keep_scenario_index = False
 
     #%% Set up logger
     reeds_path = os.path.abspath(os.path.dirname(__file__))
@@ -255,14 +263,13 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
     print("Starting report_dump.py")
 
     # %%### Parse inputs and get switches
-    outputs_path = os.path.join(case, "outputs")
-    os.makedirs(outputs_path, exist_ok=True)
-    
-    if 'pcm' not in case:
-        gdx_path = outputs_path
+    if keep_scenario_index:
+        outputs_path = Path(case, 'outputs', 'outputs_stochastic.h5')
+    elif 'pcm' in case:
+        outputs_path = os.path.join(os.path.dirname(case))
     else:
-        gdx_path = os.path.join(os.path.dirname(case))
-    
+        outputs_path = Path(case, 'outputs', 'outputs.h5')
+
     ### Get switches
     if 'pcm' not in case:
         sw = reeds.io.get_switches(case)
@@ -295,41 +302,76 @@ if __name__ == '__main__' and not hasattr(sys, 'ps1'):
         gdx_file = f"rep_{os.path.basename(case)}.gdx"
     else:
         gdx_file =f"rep_{os.path.basename(case)}_{os.path.basename(os.path.abspath(os.path.join(case,'..','..')))}.gdx"
-    dict_out = gdxpds.to_dataframes(
-        os.path.join(gdx_path, gdx_file)
-    )
+    dictin = {
+        **gdxpds.to_dataframes(Path(outputs_path, gdx_file)),
+        **report_calcs.main(case),
+    }
     print("Finished loading outputs gdx")
 
+    ### FINITO outputs when running linked model
+    if int(sw.GSw_FINITO_Link):
+        print("Loading FINITO outputs gdx")
+        finito_gdx = os.path.join(outputs_path, f"finito_reeds_outputs_{os.path.basename(case)}.gdx")
+        try:
+            finito_outputs = gdxpds.to_dataframes(finito_gdx)
+            dictin.update(finito_outputs)
+            print("Finished loading FINITO outputs gdx")
+        except Exception as err:
+            print(err)
+            print(f"Error loading FINITO outputs in {finito_gdx}, skipping.")
+
+    ## If not using stochastic optimization, there will only be a single s index,
+    ## so drop it to simplify downstream processing.
+    if not reeds.stochastic.is_stochastic(case):
+        dictout = {key: df.drop(columns='s', errors='ignore') for key, df in dictin.items()}
+    ## If we're using stochastic optimization but dropping the s index, take the
+    ## probability-weighted average over scenarios
+    elif not keep_scenario_index:
+        prob = reeds.io.read_input(case, 'scenario_probability').set_index('s').squeeze(1)
+        dictout = {}
+        for key, df in dictin.items():
+            reeds.io.make_columns_unique(df)
+            if 's' in df:
+                index = [c for c in df if c.lower() not in ['value','val']]
+                keep_index = [c for c in index if c != 's']
+                dfout = df.set_index(index).squeeze(1)
+                dictout[key] = (dfout * prob).groupby(keep_index).sum().reset_index()
+            else:
+                dictout[key] = df
+    else:
+        dictout = dictin
+
     write_dfdict(
-        dfdict=dict_out,
+        dfdict=dictout,
         outputs_path=outputs_path,
         write_csv=write_csv,
         write_xlsx=write_xlsx,
         rename=rename,
     )
 
-    ### powerfrac results
+    ### Additional output reporting
+    calculate_historical_capex.main(case)
+
     if int(sw.GSw_calc_powfrac):
         print("Loading powerfrac gdx")
         dict_powerfrac = gdxpds.to_dataframes(
-            os.path.join(gdx_path, f"rep_powerfrac_{os.path.basename(case)}.gdx")
+            os.path.join(outputs_path, f"rep_powerfrac_{os.path.basename(case)}.gdx")
         )
         print("Finished loading powerfrac gdx")
 
-        dfdict_to_csv(
+        write_dfdict(
             dict_powerfrac,
-            outputs_path=outputs_path,
-            rename=rename,
+            outputs_path=Path(outputs_path, 'outputs_powerfrac.h5'),
         )
 
 
     #%% Special handling of particular outputs
-    postprocess_outputs(case, outputs_path=outputs_path)
+    postprocess_outputs(case)
 
 
     #%% All done
     print("Completed report_dump.py")
     try:
-        toc(tic=tic, year=0, path=case, process="report_dump.py")
+        reeds.log.toc(tic=tic, year=0, path=case, process="report_dump.py")
     except NameError:
         print("reeds/log.py not found, so not logging output")
