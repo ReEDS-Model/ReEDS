@@ -38,10 +38,6 @@ import reeds
 
 #%%#################
 ### FIXED INPUTS ###
-WINDOFS_CLASS_TYPE = {
-    **{i: 'fixed' for i in range(1,6)},
-    **{i: 'floating' for i in range(6,11)},
-}
 ONLINEYEAR_COLUMNS = ['i', 'c', 'r', 'StartYear', 'RetireYear', 'summer_power_capacity_MW']
 
 # Only keep neccessary columns from unitdata to work with
@@ -179,20 +175,23 @@ def create_rsc_wsc(gendb,TECH,startyear):
 def get_class_cf_min(
     inputs_case,
     tech:Literal['upv','wind-ons','wind-ofs'],
-    subtech:None|Literal['fixed','floating']=None,
+    name:None|str=None,
 ) -> pd.DataFrame:
     """
     Establish class cut offs based on capacity factors.
     Because the max of one class is the min of the next class, we only need the min.
+    If name is given, only use the classes that i_c assigns to that technology name.
     """
     ## Get the supply curve for this run
     dfsc = pd.read_csv(Path(inputs_case, f'supplycurve_init_{tech}.csv'))
 
-    ## Downselect offshore wind to fixed or floating
-    if tech == 'wind-ofs':
-        dfsc['subtech'] = dfsc['class'].map(WINDOFS_CLASS_TYPE)
-        dfsc = dfsc.loc[dfsc['subtech'] == subtech]
-    
+    ## Downselect a family that spans several names (e.g. offshore wind) to one name
+    if name is not None:
+        dfsc['i'] = reeds.techs.get_tech_class_name(
+            pd.Series(tech, index=dfsc.index), dfsc['class'],
+            reeds.techs.get_collapsed_techs(inputs_case))
+        dfsc = dfsc.loc[dfsc['i'] == name]
+
     class_cf_min = dfsc.groupby('class')['cf'].min()
     return class_cf_min
 
@@ -204,7 +203,7 @@ def get_class_cf_min_alltechs(inputs_case) -> dict:
 
     Returns:
         dict:
-            keys are ['upv', 'wind-ons', 'wind-ofs', 'geohydro_allkm']
+            keys are ['upv', 'wind-ons', 'wind-ofs-fixed', 'wind-ofs-floating', 'geohydro_allkm']
             values are dataframes mapping from a resource class to a CF range
     """
     sw = reeds.io.get_switches(inputs_case)
@@ -212,9 +211,9 @@ def get_class_cf_min_alltechs(inputs_case) -> dict:
     for tech in ['upv', 'wind-ons']:
         tech_class_cutoffs[tech] = get_class_cf_min(inputs_case, tech)
 
-    ## Offshore wind is separated into fixed and floating subtechs
-    for subtech in ['fixed', 'floating']:
-        tech_class_cutoffs['wind-ofs', subtech] = get_class_cf_min(inputs_case, 'wind-ofs', subtech)
+    ## Offshore wind classes are split across technology names (fixed and floating)
+    for name in [i for i, family in reeds.techs.TECH_FAMILY.items() if family == 'wind-ofs']:
+        tech_class_cutoffs[name] = get_class_cf_min(inputs_case, 'wind-ofs', name)
 
     ## Geothermal is hardcoded, and the classes are ordered in the opposite direction
     ## from wind/solar (the lowest geo class is the highest temperature, while the
@@ -255,7 +254,7 @@ def create_exog_rsc(inputs_case, gdb_use_cap_exog, sw, startyear, collapsed):
             case _ if tech in TECH['rsc_pv_all']:
                 usetech = 'upv'
             case 'wind-ofs':
-                usetech = ('wind-ofs', 'fixed')
+                usetech = 'wind-ofs-fixed'
             case _:
                 usetech = tech
         print(tech, usetech)
@@ -731,7 +730,7 @@ def main(inputs_case):
             case _ if tech in TECH['rsc_upv'] + TECH['prsc_csp']:
                 usetech = 'upv'
             case 'wind-ofs':
-                usetech = ('wind-ofs', 'fixed')
+                usetech = 'wind-ofs-fixed'
             case _:
                 usetech = tech
         print(tech, usetech)
@@ -764,6 +763,11 @@ def main(inputs_case):
                                 vin=lambda df: 'new' + df['vin_num'].astype(str),
                                 year=lambda df: df['year'].astype(int)    # year to intager
                             ))
+            ## A family can match several ivt rows (one per name), which must agree;
+            ## otherwise the merge below would count each unit once per row
+            ivt_df_mask = ivt_df_mask.drop_duplicates(subset=['year', 'vin'])
+            if ivt_df_mask['year'].duplicated().any():
+                raise ValueError(f'ivt rows matching {tech} assign different vintages')
             cap_pres[tech] =  pd.merge(cap_pres[tech], ivt_df_mask, how='left', left_on='StartYear', right_on='year')
             cap_pres[tech] = cap_pres[tech][COLNAMES['prescribed_RSC'][0]]
             cap_pres[tech].columns = COLNAMES['prescribed_RSC'][1]

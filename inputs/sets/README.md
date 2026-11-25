@@ -118,10 +118,6 @@
 
 - `notvsc.csv`: set of transmission capacity types that are not VSC
 
-- `ofstype.csv`: set of offshore types used in offshore requirement constraint (eq_RPS_OFSWind)
-
-- `ofstype_i.csv`: crosswalk between ofstype and i
-
 - `orcat.csv`: set of operating reserve categories
 
 - `ortype.csv`: set of types of operating reserve constraints

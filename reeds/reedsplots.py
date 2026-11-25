@@ -2134,7 +2134,7 @@ def animate_dispatch(
     ###### Define tech aggregations and colors
     aggtechs = {
         **{f'battery_{i}': 'battery' for i in [2,4,6,8,10,12,24,48,72,100]},
-        **{f'wind-ofs_{i}': 'wind-ofs' for i in range(1,11)},
+        **{i: 'wind-ofs' for i in ['wind-ofs-fixed', 'wind-ofs-floating']},
         **{
             'battery_li':'battery',
             'upv':'pv',
@@ -7113,7 +7113,11 @@ def validate_regional_capacity(
     cap = reeds.io.read_output(case, 'cap')
     cap = cap.loc[~cap.i.isin(['can-imports'])].copy()
     cap.i = simplify_techs(cap.i)
-    cap_year = cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+    ## Zones without capacity in plotyear (e.g. offshore zones) get an empty panel
+    cap_year = (
+        cap.loc[cap.t==plotyear].groupby(['i','r']).Value.sum().unstack('r')
+        .reindex(columns=hierarchy.index)
+    )
     ### Get EIA-NEMS capacity and formatting
     dfunits = reeds.plots.df2gdf(pd.read_csv(unitspath), lat='T_LAT', lon='T_LONG').to_crs(crs)
     ## Clean up old techs

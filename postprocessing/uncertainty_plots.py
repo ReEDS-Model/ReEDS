@@ -55,7 +55,7 @@ class Conventions:
         'upv': 'PV',
         **{f'dupv_{i}':'PV' for i in range(20)},
         'wind-ons': 'Wind',
-        **{f'wind-ofs_{i}':'Wind' for i in range(20)},
+        **{i: 'Wind' for i in ['wind-ofs-fixed', 'wind-ofs-floating']},
         **dict(zip(['nuclear','nuclear-smr', 'smr'], ['Nuclear']*20)),
         **dict(zip(
             ['gas-cc_re-cc','gas-ct_re-ct','re-cc','re-ct',
@@ -90,7 +90,7 @@ class Conventions:
         'upv': 'PV',
         **{f'dupv_{i}': 'PV' for i in range(20)},
         'wind-ons': 'Wind',
-        **{f'wind-ofs_{i}': 'Offshore Wind' for i in range(20)},
+        **{i: 'Offshore Wind' for i in ['wind-ofs-fixed', 'wind-ofs-floating']},
         'nuclear': 'Nuclear',
         **dict(zip(['nuclear-smr', 'smr'], ['Nuclear-SMR']*20)),
         **dict(zip(

@@ -27,7 +27,8 @@ CoalOldScr,70
 CoalOldUns,70
 CofireNew,70
 CofireOld,70
-wind-ofs_1*wind-ofs_10,30
+wind-ofs-fixed,30
+wind-ofs-floating,30
 wind-ons,30
 upv,30
 pvb1,30

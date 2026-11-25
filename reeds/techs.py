@@ -8,12 +8,17 @@ import reeds
 
 ### Constants
 ignore_techs = []
+## Technology names that hold a subset of a family's resource classes
+TECH_FAMILY = {
+    'wind-ofs-fixed': 'wind-ofs',
+    'wind-ofs-floating': 'wind-ofs',
+}
 
 
 ### Functions
 def expand_star(techs):
     '''
-    Expand the GAMS range convention (e.g. wind-ofs_1*wind-ofs_10 becomes wind-ofs_1, wind-ofs_2,..., wind-ofs_10)
+    Expand the GAMS range convention (e.g. geohydro_allkm_1*geohydro_allkm_10 becomes geohydro_allkm_1, geohydro_allkm_2,..., geohydro_allkm_10)
     in a list of technology names. We assume the numbers we would like to enumerate occur
     at the end. Entries without a '*' are passed through unchanged.
     '''
@@ -34,7 +39,7 @@ def expand_star(techs):
 def split_class(i):
     '''
     Split a resource-class-bearing tech name into (base, class), e.g.,
-    'wind-ofs_5' -> ('wind-ofs', 5).
+    'geohydro_allkm_5' -> ('geohydro_allkm', 5).
     Techs with no numeric class suffix (e.g. 'distpv') return (i, None).
     '''
     match = re.search(r'^(.+)_(\d+)$', i)
@@ -45,12 +50,17 @@ def split_class(i):
 
 def get_collapsed_techs(case):
     '''
-    Get the technologies that are mapped to more than one class
-    (i.e., technologies listed with more than one class in i_c).
+    Map (family, class) to the technology name in i for technologies listed with more
+    than one class in i_c, e.g. ('upv', '5') -> 'upv'. The family is the name itself
+    unless TECH_FAMILY says otherwise. Classes are strings.
     '''
-    i_c = reeds.io.read_input(case, 'i_c')
+    i_c = reeds.io.read_input(case, 'i_c').astype({'c': str})
     num_classes = i_c.groupby('i').c.nunique()
-    return set(num_classes.loc[num_classes > 1].index)
+    multi = i_c.loc[i_c.i.isin(num_classes.loc[num_classes > 1].index)]
+    keys = list(zip(multi.i.map(lambda i: TECH_FAMILY.get(i, i)), multi.c))
+    if len(set(keys)) != len(keys):
+        raise ValueError('A (family, class) pair maps to more than one technology in i_c')
+    return dict(zip(keys, multi.i))
 
 
 def get_tech_class_name(tech, c, collapsed):
@@ -58,18 +68,33 @@ def get_tech_class_name(tech, c, collapsed):
     Return the name in the ReEDS technology set i for class c of technology
     family tech.
 
-    Families whose classes are separate techs get the class appended
-    ('wind-ofs', 5 -> 'wind-ofs_5'). Families in collapsed hold all their classes under one
-    tech name, so the name is returned unchanged ('upv', 5 -> 'upv').
+    Families in collapsed hold their classes under shared names, looked up by
+    (family, class) ('upv', 5 -> 'upv'). Other families get the class appended
+    ('geohydro_allkm', 5 -> 'geohydro_allkm_5').
     Get collapsed from get_collapsed_techs(case).
 
     tech and c can be scalars, or pd.Series with the same index (returns a
     pd.Series).
     '''
+    names = set(collapsed.values())
+    families = {family for family, _ in collapsed}
+
+    def lookup(tech, c):
+        c = str(c)
+        if (tech, c) in collapsed:
+            return collapsed[tech, c]
+        ## Class not in i_c for a family whose name is a technology: keep the name
+        if tech in names:
+            return tech
+        if tech in families:
+            raise ValueError(f'Class {c} of {tech} is not in i_c')
+        return f'{tech}_{c}'
+
     if isinstance(tech, pd.Series):
-        c = c.astype(str) if isinstance(c, pd.Series) else str(c)
-        return tech.where(tech.isin(collapsed), tech + '_' + c)
-    return tech if tech in collapsed else f'{tech}_{c}'
+        c = c if isinstance(c, pd.Series) else pd.Series(c, index=tech.index)
+        return pd.Series(
+            [lookup(t, cc) for t, cc in zip(tech, c)], index=tech.index, name=tech.name)
+    return lookup(tech, c)
 
 
 def get_class_map(case):
@@ -103,7 +128,7 @@ def get_class_map(case):
 
 def expand_GAMS_tech_groups(df, col='i'):
     '''
-    GAMS has a convention for expanding rows (e.g. wind-ofs_1*wind-ofs_10 is expanded to wind-ofs_1, wind-ofs_2,..., wind-ofs_10)
+    GAMS has a convention for expanding rows (e.g. geohydro_allkm_1*geohydro_allkm_10 is expanded to geohydro_allkm_1, geohydro_allkm_2,..., geohydro_allkm_10)
     This function expands a df with the same convention, for the instances where a file is ingested
     by both python and GAMS. We assume the numbers we would like to enumerate occur at the end.
     '''
