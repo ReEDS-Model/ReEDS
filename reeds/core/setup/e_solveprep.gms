@@ -166,13 +166,13 @@ $ifthen.int %timetype%=="int"
 set cciter "placeholder for iteration number for tracking CC" /0*20/ ;
 parameter cap_iter(i,v,r,t,cciter)                      "--MW-- Power apacity by iteration"
           cap_energy_iter(i,v,r,t,cciter)               "--MWh-- Energy capacity by iteration"
-          gen_iter(i,v,r,t,cciter)                      "--MWh-- Annual uncurtailed generation by iteration"
+          gen_iter(s,i,v,r,t,cciter)                      "--MWh-- Annual uncurtailed generation by iteration"
           cap_firm_iter(i,v,r,ccseason,t,cciter)        "--MW-- VRE Firm capacity by iteration"
           cap_energy_firm_iter(i,v,r,ccseason,t,cciter) "--MWh-- VRE Firm energy capacity by iteration"
 ;
 cap_iter(i,v,r,t,cciter) = 0 ;
 cap_energy_iter(i,v,r,t,cciter) = 0 ;
-gen_iter(i,v,r,t,cciter) = 0 ;
+gen_iter(s,i,v,r,t,cciter) = 0 ;
 
 
 *Assign csp3 and csp4 to use the same initial values as csp2

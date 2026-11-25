@@ -760,6 +760,7 @@ $onlisting
 load_exog(r,allh,t) = 0 ;
 load_exog(r,h,t) = load_allyear(r,h,t) ;
 
+$onempty
 parameter prm_year(r) "--fraction-- planning reserve margin for the current solve year"
 / 
 $offlisting
@@ -768,6 +769,7 @@ $include inputs_case%ds%stress%stress_year%%ds%prm.csv
 $offdelim
 $onlisting
 / ;
+$offempty
 prm(r,t)$tmodel(t) = prm_year(r) ;
 
 * Stress-period load is scaled up by PRM

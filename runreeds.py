@@ -1082,6 +1082,10 @@ def write_batch_script(
         ### save reporting outputs to h5 and/or csv files
         OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -c\n")
         OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
+        ## Also write the full scenario results if using stochastic optimization
+        if caseSwitches['GSw_Stochastic'] != '0':
+            OPATH.writelines(f"python {Path('reeds','core','terminus','report_dump.py')} {casedir} -s\n")
+            OPATH.writelines(writescripterrorcheck('report_dump.py')+'\n')
 
         if int(caseSwitches['diagnose']):
              OPATH.writelines(
@@ -1200,8 +1204,9 @@ def write_batch_script(
         ### Run dispatch mode if desired
         if int(caseSwitches['pcm']):
             OPATH.writelines(
-                f"\npython {Path('reeds','postprocessing','run_pcm.py')} {casedir} -b\n\n"
+                f"\npython {Path(reeds_path,'postprocessing','run_pcm.py')} {casedir} -f\n"
             )
+            OPATH.writelines(writescripterrorcheck('run_pcm.py'))
 
 
 def submit_slurm_parallel_jobs(

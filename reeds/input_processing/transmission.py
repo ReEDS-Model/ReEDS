@@ -502,9 +502,13 @@ def get_transmission_cost_nonac(case, interface_params):
 def get_hurdle_rates(case, hurdle_level=1):
     """Get hurdle rates on transmission flows (wheeling charges) used in this run"""
     sw = reeds.io.get_switches(case)
+    fdir = Path(reeds.io.reeds_path, 'inputs', 'transmission')
+    dollaryear = pd.read_csv(Path(fdir, 'dollaryear.csv'), index_col='filename').squeeze(1)
+    inflatable = reeds.io.get_inflatable()
+    deflator = inflatable[dollaryear['cost_hurdle_intra.csv'], int(sw.dollar_year)]
     cost_hurdle_intra = (
-        pd.read_csv(Path(reeds.io.reeds_path, 'inputs', 'transmission', 'cost_hurdle_intra.csv'))
-        .set_index('t').round(3)
+        (pd.read_csv(Path(fdir, 'cost_hurdle_intra.csv')).set_index('t') * deflator)
+        .round(3)
     )
     cost_hurdle_rate = (
         cost_hurdle_intra[sw[f'GSw_TransHurdleLevel{hurdle_level}']].rename('USDperMWh')
