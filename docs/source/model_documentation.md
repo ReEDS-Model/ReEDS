@@ -3127,7 +3127,7 @@ For example, when evaluating whether to build a gas-CC unit 5 years before the s
 
 ### Storage Mandates
 
-Ten state storage mandates are represented in ReEDS and are summarized in {numref}`energy-storage-mandates`.
+Eleven state storage mandates are represented in ReEDS and are summarized in {numref}`energy-storage-mandates`.
 The mandates are required to be met with battery storage, and any duration of storage qualifies.
 
 ```{table} Energy storage mandates, with required capacity listed in MW.
@@ -3137,7 +3137,7 @@ The mandates are required to be met with battery storage, and any duration of st
 |----|:--:|:--:|:--:|
 | CA | 1,325 | 2,325 | 2,325 |
 | IL |   | 1,038 | 3,000 |
-| MA | 50 | 50 | 50 |
+| MA | 50 | 3,500 | 3,500 |
 | MD |   | 2,102 | 3,000 |
 | MI |   | 2,500 | 2,500 |
 | NJ | 600 | 2,000 | 2,000 |
@@ -3145,10 +3145,10 @@ The mandates are required to be met with battery storage, and any duration of st
 | NY | 500 | 3,000 | 3,000 |
 | OR | 2.5 | 2.5 | 2.5 |
 | RI |   | 195 | 195 |
-| VA | 42.7 | 1,350 | 3,100 |
+| VA | 42.7 | 4,260 | 16,780 |
 ```
 
-Note: The required capacity in Illinois increases to 3,000 MW in 2031. 
+Note: The required capacity in Illinois increases to 3,000 MW in 2031, and long-duration storage requirements that include an off-ramp (e.g., required only if available at reasonable cost) are not represented.
 
 ### Nuclear Power Plant Policies
 
