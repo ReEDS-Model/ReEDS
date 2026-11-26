@@ -2614,7 +2614,7 @@ eq_REC_Generation(s,RPSCat,i,st,t)$[stfeas(st)$(not tfirst(t))$tmodel(t)
     + sum{(v,r,h)$[valgen(i,v,r,t)$r_st(r,st)$h_rep(h)],
           RPSTechMult(RPSCat,i,st) * hours(h)
           * (GEN(s,i,v,r,h,t) 
-          - CREDIT_H2PTC(s,i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC] 
+          - CREDIT_H2PTC(s,i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC$h2_ptc_years(t)$(yeart(t)>=h2_demand_start)]
           - (STORAGE_IN_GRID(s,i,v,r,h,t) * storage_eff_pvb_g(i,t))$[storage_hybrid(i)$(not csp(i))$Sw_HybridPlant] )
          }
 
@@ -2778,7 +2778,7 @@ eq_REC_launder(s,RPSCat,st,t)$[RecStates(RPSCat,st,t)$(not tfirst(t))$(yeart(t)>
 
 *in-state REC generation
     + sum{(i,v,r,h)$[valgen(i,v,r,t)$RecTech(RPSCat,i,st,t)$r_st(r,st)$h_rep(h)],
-          hours(h) * (GEN(s,i,v,r,h,t) - CREDIT_H2PTC(s,i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC])
+          hours(h) * (GEN(s,i,v,r,h,t) - CREDIT_H2PTC(s,i,v,r,h,t)$[valgen_h2ptc(i,v,r,t)$Sw_H2_PTC$h2_ptc_years(t)$(yeart(t)>=h2_demand_start)])
          }
 
 *minus ACP_PURCHASES with a 10x multiplier (the multiplier discourages the model from
