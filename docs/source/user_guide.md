@@ -302,7 +302,7 @@ If the final regulations include a 4-hr year safe harbor (consistent with other 
   - Qualifying clean technologies include: wind, solar PV, nuclear, gas with CCS, geothermal, hydropower
   - These are defined by the set i_h2_ptc_gen(i) and carried through the model as valcap_h2ptc and valgen_h2ptc
 - Electrolyzers must purchase and retire EACs for all MWh used in order to receive the 45V credit
-  - This is accomplished via the new variable CREDIT_H2PTC(i,v,r,allh,t)
+  - This is accomplished via the new variable CREDIT_H2PTC(s,i,v,r,allh,t)
 - Pre-2030 those EACs can be generated at any time within the year the H2 is generated; 2030 and later the EACs must be matched hourly
 - Simplifying assumption used for vintage: generators must have a commercial online date in 2024 or later in order to qualify as an EAC producer
   - Applied by restricting valcap_h2ptc to have firstyear_v(i,v)>=h2_ptc_firstyear
