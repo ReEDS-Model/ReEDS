@@ -1215,7 +1215,7 @@ valnew(s,'val_opres','benchmark',r,t)$tmodel_new(t) =
 valnew(s,'val_opres','benchmark','sys',t)$tmodel_new(t) =
     sum{(ortype,r,h), reqt_price(s,'oper_res',ortype,r,h,t) * reqt_quant(s,'oper_res',ortype,r,h,t)} ;
 
-valnew(s,'val_rps',i,r,t)$valnew('MW',i,r,t) =
+valnew(s,'val_rps',i,r,t)$valnew(s,'MW',i,r,t) =
   ( sum{(v,h,RPSCat)$[valinv(i,v,r,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
       GEN.l(s,i,v,r,h,t) * sum{st$r_st(r,st), RPSTechMult(RPSCat,i,st) } * hours(h) * reqt_price(s,'state_rps',RPSCat,r,'ann',t) }
   + sum{(v,allh,RPSCat)$[valinv(i,v,r,t)$h_stress_t(allh,t)$sum{st$r_st(r,st), RecTech(RPSCat,i,st,t) }],
