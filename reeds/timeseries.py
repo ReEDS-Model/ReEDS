@@ -446,6 +446,46 @@ def _plot_act2repday(a2r, i):
     plt.savefig(fpath)
 
 
+def match_act2rep_assignment(profiles_period_mean, iweights):
+    """
+    Assign representative periods to actual periods to minimize the sum of absolute
+    errors in feature values, with each representative period used iweights[r] times.
+
+    Each actual period maps to exactly one representative period, so the error for a
+    pairing is cost[a,r] = sum_c |value[a,c] - value[r,c]| and the problem is a
+    transportation problem. Repeating each representative period by its weight turns it
+    into a square assignment problem, which is solved exactly.
+    """
+    ### Imports
+    import scipy.optimize
+    import scipy.spatial.distance
+
+    ### Input processing
+    repdays = list(iweights.index)
+    counts = iweights.astype(int).values
+    if counts.sum() != len(profiles_period_mean):
+        raise ValueError(
+            f'iweights sum to {counts.sum()} but there are {len(profiles_period_mean)} periods')
+
+    ### Cost of assigning each actual period (rows) to each representative period (columns)
+    actual = profiles_period_mean.values
+    rep = profiles_period_mean.loc[repdays].values
+    cost = scipy.spatial.distance.cdist(actual, rep, metric='cityblock')
+
+    ### One column per use of each representative period, then solve the assignment
+    slots = np.repeat(np.arange(len(repdays)), counts)
+    rows, cols = scipy.optimize.linear_sum_assignment(cost[:, slots])
+
+    ### Collect assignments
+    a2r = pd.Series(
+        [repdays[slots[j]] for j in cols],
+        index=pd.Index(list(profiles_period_mean.index[rows]), name='act', tupleize_cols=False),
+        name='rep',
+    ).sort_index()
+
+    return a2r
+
+
 def match_act2rep_bestfirst(
     profiles_period_mean,
     iweights,
