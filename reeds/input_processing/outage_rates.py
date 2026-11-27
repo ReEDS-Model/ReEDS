@@ -5,7 +5,6 @@ import os
 import sys
 import datetime
 import argparse
-import h5py
 from pathlib import Path
 import cmocean
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -288,40 +287,6 @@ def calc_outage_forced(
     }
 
 
-def write_outages(df, h5path):
-    names = df.columns.names
-    namelengths = {
-        name: df.columns.get_level_values(name).map(len).max()
-        for name in names
-    }
-    column_level_type = f'S{max([len(i) for i in names])}'
-    with h5py.File(h5path, 'w') as f:
-        f.create_dataset('index', data=df.index, dtype='S29')
-        ## Save both the individual column levels and the single-level delimited version
-        for name in names:
-            f.create_dataset(
-                f'columns_{name}',
-                data=df.columns.get_level_values(name),
-                dtype=f'S{namelengths[name]}')
-        f.create_dataset(
-            'columns',
-            data=(
-                df.columns.map(lambda x: '|'.join(x)).rename('|'.join(names))
-                if isinstance(df.columns, pd.MultiIndex)
-                else df.columns
-            ),
-            dtype=f'S{sum(namelengths.values()) + 1}')
-        f.create_dataset(
-            'data', data=df, dtype=np.float32,
-            compression='gzip', compression_opts=4,
-        )
-        
-        f.create_dataset(
-            'column_levels',
-            data=np.array(names, dtype=column_level_type),
-            dtype=column_level_type)
-
-
 def plot_outage_forced(
     case,
     fits_forcedoutage,
@@ -416,7 +381,7 @@ def calc_outage_scheduled(reeds_path, inputs_case, during_quarters=during_quarte
     ).squeeze(1).unstack('prime_mover')
 
     timeindex = pd.Series(
-        index=reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
+        index=reeds.timeseries.get_timeindex(sw.weather_years_all)
     )
     outage_scheduled_pm = pd.DataFrame(
         {
@@ -446,7 +411,7 @@ def main(reeds_path, inputs_case, debug=0, interactive=False):
     print('Get forced outage rates')
     dfforced = calc_outage_forced(reeds_path, inputs_case)
     print('Write forced outage rates')
-    write_outages(
+    reeds.io.write_outages(
         df=dfforced['outage_forced_hourly'],
         h5path=os.path.join(inputs_case, 'outage_forced_hourly.h5'),
     )
@@ -464,7 +429,7 @@ def main(reeds_path, inputs_case, debug=0, interactive=False):
     print('Get scheduled outage rates')
     outage_scheduled_hourly = calc_outage_scheduled(reeds_path, inputs_case)
     print('Write scheduled outage rates')
-    write_outages(
+    reeds.io.write_outages(
         df=outage_scheduled_hourly,
         h5path=os.path.join(inputs_case, 'outage_scheduled_hourly.h5'),
     )

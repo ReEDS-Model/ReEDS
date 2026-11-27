@@ -408,9 +408,8 @@ end
 """
 function get_hourly_scheduled_outage_data(data::ReEDSdatapaths)
     filepath = joinpath(
-        data.ReEDSfilepath,
-        "inputs_case",
-        "outage_scheduled_hourly.h5",
+        data.ReEDSfilepath, "handoff", "reeds_data",
+        "pras_outage_scheduled_$(string(data.year)).h5"
     )
 
     return DataFrames.DataFrame(
@@ -434,7 +433,10 @@ end
         Dataframe containing the hourly forced outage data.
 """
 function get_hourly_forced_outage_data(data::ReEDSdatapaths)
-    filepath = joinpath(data.ReEDSfilepath, "inputs_case", "outage_forced_hourly.h5")
+    filepath = joinpath(
+        data.ReEDSfilepath, "handoff", "reeds_data",
+        "pras_outage_forced_$(string(data.year)).h5"
+    )
     forcedoutage_hourly = DataFrames.DataFrame(
         HDF5.h5read(filepath, "data")',
         HDF5.h5read(filepath, "columns"),

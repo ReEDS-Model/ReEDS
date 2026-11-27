@@ -125,10 +125,9 @@ ReEDS is a big model with limitations and caveats. Higher-level limitations are 
 
 #### Capabilities that don't currently work
 
-- Climate impacts on hydropower (`GSw_ClimateHydro`), electricity demand (`Gsw_ClimateDemand`), and water cooling (`GSw_ClimateWater`)
-- `endyear` beyond 2050 (processed in forecast.py)
+- Climate impacts on hydropower (`GSw_ClimateHydro`) and water cooling (`GSw_ClimateWater`)
 - Demand flexibility via the `GSw_EFS_Flex` switch
-- County-level runs for regions with Canadian imports/exports and stress-period PRM formulation (`GSw_PRM_CapCredit == 0)
+- County-level runs for regions with Canadian imports/exports and stress-period PRM formulation (`GSw_PRM_CapCredit == 0`)
 
 #### Assumptions
 

@@ -12,6 +12,11 @@ import reeds
 
 
 def check_compatibility(sw):
+    broken = ['GSw_EFS_Flex']
+    for switch in broken:
+        if sw[switch] != '0':
+            raise NotImplementedError(f'Functionality controlled by {switch=} is broken')
+
     if int(sw['startyear']) != 2010:
         raise ValueError(f"startyear = {sw['startyear']} but must be = 2010")
 
@@ -227,27 +232,11 @@ def check_compatibility(sw):
     allowed_years = list(range(2007,2014)) + list(range(2016,2024))
     allowed_years_string = ','.join([str(year) for year in allowed_years])
 
-    resource_adequacy_years = [int(y) for y in sw['resource_adequacy_years'].split('_')]
-    for year in resource_adequacy_years:
-        if year not in allowed_years:
-            raise ValueError(
-                f"resource_adequacy_years must be in {allowed_years_string} but is "
-                f"{sw['resource_adequacy_years']}"
-            )
-
-    for year in sw['GSw_HourlyWeatherYears'].split('_'):
-        if int(year) not in allowed_years:
-            raise ValueError(
-                f"GSw_HourlyWeatherYears must be in {allowed_years_string} but is "
-                f"{sw['GSw_HourlyWeatherYears']}"
-            )
-
-        if int(year) not in resource_adequacy_years:
-            raise ValueError(
-                "GSw_HourlyWeatherYears must be a subset of resource_adequacy_years but "
-                f"GSw_HourlyWeatherYears={sw['GSw_HourlyWeatherYears']} and "
-                f"resource_adequacy_years={sw['resource_adequacy_years']}"
-            )
+    for key in ['resource_adequacy_years', 'GSw_HourlyMatchYears', 'GSw_HourlyWeatherYears']:
+        years = [int(y) for y in sw[key].split('_')]
+        for year in years:
+            if year not in allowed_years:
+                raise ValueError(f'{key}={sw[key]} but must be in {allowed_years_string}')
 
     solveyears = reeds.inputs.parse_yearset(sw['yearset'])
     if int(sw['endyear']) not in solveyears:
@@ -291,6 +280,7 @@ def check_compatibility(sw):
         raise FileNotFoundError(err)
 
     if sw['GSw_LoadProfiles'].startswith('EER2023'):
+        resource_adequacy_years = [int(y) for y in sw['resource_adequacy_years'].split('_')]
         allowed_ra_years = range(2007,2014)
         if not all([y in allowed_ra_years for y in resource_adequacy_years]):
             err = (

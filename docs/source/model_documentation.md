@@ -493,7 +493,9 @@ Some of the most important switches related to temporal resolution are briefly o
 - `GSw_HourlyChunkLengthRep` (default `3`) and `GSw_HourlyChunkLengthStress` (default `3`): Length of time steps (in hours) used within representative and stress periods, respectively.
   - `GSw_HourlyChunkAggMethod` (default `mean`): How to aggregate hourly data within the chunks specified by the `GSw_HourlyChunkLength` switches.
   If using `GSw_HourlyChunkLengthRep = 3`, setting `GSw_HourlyChunkAggMethod` to `mean` will average over the 3 hours in each chunk; `mid` will take the hourly value in the middle (second) hour; 1, 2, or 3 will take the hourly value in the first, second, or third hour.
-- `GSw_HourlyWeatherYears` (default `2012`): Weather years from which to select representative periods.
+- `GSw_HourlyMatchYears` (default 2007-2013 + 2016-2023): Weather years to average to define the regional average CF/load profiles to try to match via representative period weighting.
+The default setting (2007-2013 + 2016-2023) represents a 15-year average capacity factor for variable resources.
+- `GSw_HourlyWeatherYears` (default `2023`): Weather years from which to select representative periods.
 Multiple years can be used by passing a `_`-delimited string; for example, to select representative periods from 2011 to 2013, set the value to `2011_2012_2013`.
 - `GSw_HourlyClusterAlgorithm` (default `optimized`): Algorithm used to select representative periods.
 Choices are `optimized` (for the method described above), `hierarchical` (for hierarchical clustering), `kmeans` (for *k*-means clustering), `kmedoids` (for *k*-medoids clustering), or `user{label}` (for user-defined periods and weights as specified by a file located at `inputs/temporal/period_szn_{GSw_HourlyClusterAlgorithm}.csv`, for example `period_szn_user_myname_20230130.csv`).
@@ -542,6 +544,7 @@ Alternative weather profiles may be provided by the user,
 but the allowable weather years are constrained by the need for coincident hourly profiles for PV and wind capacity factors, electricity demand, and surface air temperature (used in the calculation of [outage rates](#outage-rates)) for all model zones.
 
 ```{admonition} Weather year settings
+- `GSw_HourlyMatchYears` (default `2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023`): Weather years to average to define the regional average CF/load profiles to try to match via representative period weighting
 - `GSw_HourlyWeatherYears` (default `2012`): Weather years from which to select representative periods, as described above
 - `resource_adequacy_years` (default `2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022_2023`): Weather years to include in resource adequacy calculations
 ```
@@ -2392,7 +2395,6 @@ This process is illustrated graphically in {numref}`figure-ra-iteration-example`
 Once all regions meet the reliability threshold,
 the simulation progresses to the next model year, and the process begins again ({numref}`figure-reeds-pras`).
 If the reliability threshold is not met after the user-defined maximum number of iterations, the simulation is halted.
-The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss of load expectation of 0.1 days/year in many regions {cite}`epriMetricsCriteriaInsights2024`.
 
 ```{figure} figs/docs/ra-iteration-example.png
 :name: figure-ra-iteration-example
@@ -2409,6 +2411,17 @@ The 3 days listed are added as new stress periods for the next iteration.
 **f**, PRAS NEUE for the second-iteration system.
 All regions meet the 1 ppm NEUE target, so the process is complete for the present model year.
 ```
+
+The default reliability threshold of 1 ppm NEUE is roughly equivalent to a loss of load expectation of 0.1 days/year in many regions {cite}`epriMetricsCriteriaInsights2024`.
+This threshold is treated as an upper bound on unserved energy and, equivalently, as a lower bound on reliability;
+it is a constraint rather than a model objective.
+As a result of this treatment:
+- Differences in reliability between scenarios that are below the 1 ppm NEUE threshold are not distinguished by the model, and conclusions should not be drawn from such differences.
+- No action is taken to try to prevent solutions that are "too reliable"
+(i.e., that demonstrate regional NEUE far below the 1 ppm threshold).
+In these cases, there could be room to reduce the system cost
+(for example, by reducing the planning reserve margin)
+while continuing to meet the same reliability threshold.
 
 {numref}`figure-ra-stressperiod-evolution` shows the evolution of NEUE over successive ReEDS-PRAS iterations for an illustrative ReEDS scenario.
 The "seed" stress periods in iteration 0 are the same as in {numref}`figure-ra-seed_stressperiods`.

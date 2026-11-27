@@ -320,7 +320,7 @@ def main(reeds_path, inputs_case):
 
     #%% Inputs from switches
     sw = reeds.io.get_switches(inputs_case)
-    resource_adequacy_years = sw['resource_adequacy_years_list']
+    weather_years = sw['weather_years_all']
     GSw_CSP_Types = [int(i) for i in sw.GSw_CSP_Types.split('_')]
     GSw_PVB_Types = sw.GSw_PVB_Types
     GSw_PVB = int(sw.GSw_PVB)
@@ -368,7 +368,7 @@ def main(reeds_path, inputs_case):
     df_windons = calculate_class_region_cf_hourly(
         inputs_case,
         'wind-ons',
-        resource_adequacy_years
+        weather_years
     )
     df_windons.columns = ['wind-ons_' + col for col in df_windons]
     ### Don't do aggregation in this case, so make a 1:1 lookup table
@@ -385,7 +385,7 @@ def main(reeds_path, inputs_case):
         df_windofs = calculate_class_region_cf_hourly(
             inputs_case,
             'wind-ofs',
-            resource_adequacy_years
+            weather_years
         )
         df_windofs.columns = ['wind-ofs_' + col for col in df_windofs]
 
@@ -393,7 +393,7 @@ def main(reeds_path, inputs_case):
     df_upv = calculate_class_region_cf_hourly(
         inputs_case,
         'upv',
-        resource_adequacy_years
+        weather_years
     )
     df_upv.columns = ['upv_' + col for col in df_upv]
 
@@ -442,7 +442,7 @@ def main(reeds_path, inputs_case):
         sort=False, axis=1)
     
     ### Downselect RECF data to resource adequacy and weather years
-    recf = recf.loc[recf.index.year.isin(resource_adequacy_years)]
+    recf = recf.loc[recf.index.year.isin(weather_years)]
 
     ### Add the other recf techs to the resources lookup table
     toadd = pd.DataFrame({'ragg': [c for c in recf.columns if c not in lookup.ragg.values]})

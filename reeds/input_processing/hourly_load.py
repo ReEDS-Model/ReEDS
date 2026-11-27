@@ -605,7 +605,7 @@ def main(reeds_path, inputs_case):
     #%%### Load inputs
     ### Load the input parameters
     sw = reeds.io.get_switches(inputs_case)
-    weather_years = sw.resource_adequacy_years_list
+    weather_years = sw.weather_years_all
     scalars = reeds.io.get_scalars(inputs_case)
     solveyears = reeds.io.get_years(os.path.dirname(inputs_case))
     hierarchy = reeds.io.get_hierarchy(os.path.dirname(inputs_case))

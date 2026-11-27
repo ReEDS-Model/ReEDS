@@ -9,7 +9,6 @@ import numpy as np
 import h5py
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib import patheffects as pe
 import cmocean
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -128,10 +127,7 @@ def plot_ldc(
         forceperiods_write, sw, reeds_path, figpath):
     """
     """
-    if isinstance(sw.GSw_HourlyWeatherYears, str):
-        GSw_HourlyWeatherYears = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
-    else:
-        GSw_HourlyWeatherYears = sw.GSw_HourlyWeatherYears
+    keep_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
     ### Get clustered load, repeating representative periods based on how many
     ### periods they represent
     numperiods = period_szn.value_counts().rename('numperiods').to_frame()
@@ -145,7 +141,7 @@ def plot_ldc(
     hourly_in = (
         profiles
         .stack('h_of_period')
-        .loc[GSw_HourlyWeatherYears]
+        .loc[keep_years]
     ).copy()
     hourly_out = hourly_in.unstack('h_of_period').loc[periods].stack('h_of_period')
 
@@ -252,10 +248,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
     colors = {'cf_actual':'k', 'cf_rep':'C1'}
     lss = {'cf_actual':':', 'cf_rep':'-'}
     zorders = {'cf_actual':10, 'cf_rep':9}
-    if isinstance(sw.GSw_HourlyWeatherYears, str):
-        GSw_HourlyWeatherYears = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
-    else:
-        GSw_HourlyWeatherYears = sw.GSw_HourlyWeatherYears
+    actual_years = [int(y) for y in sw.GSw_HourlyMatchYears.split('_')]
 
     hierarchy = reeds.io.get_hierarchy(os.path.abspath(os.path.join(inputs_case,'..')))
     dfmap = reeds.io.get_dfmap(os.path.abspath(os.path.join(inputs_case,'..')))
@@ -266,7 +259,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
 
     ### Get the CF data over all years, take the mean over weather years
     recf = reeds.io.read_file(os.path.join(inputs_case, 'recf.h5'))
-    recf = recf.loc[recf.index.year.isin(GSw_HourlyWeatherYears)].mean()
+    recf = recf.loc[recf.index.year.isin(actual_years)].mean()
 
     ### Get the hourly data
     hours = pd.read_csv(
@@ -424,7 +417,7 @@ def plot_maps(sw, inputs_case, reeds_path, figpath, periodtype='rep', crs='EPSG:
         else max(loadyears))
     load_raw = load_raw.loc[keepyear].copy()
     load_mean = load_raw.loc[
-        load_raw.index.map(lambda x: x.year in GSw_HourlyWeatherYears)
+        load_raw.index.map(lambda x: x.year in actual_years)
     ].mean() / 1000
     ### Get the representative data, take the mean for the cluster year
     load_allyear = (
@@ -574,11 +567,7 @@ def plot_8760(profiles, period_szn, sw, reeds_path, figpath):
         return dforig, dfrep
 
     ###### All regions
-    if isinstance(sw.GSw_HourlyWeatherYears, str):
-        GSw_HourlyWeatherYears = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
-    else:
-        GSw_HourlyWeatherYears = sw.GSw_HourlyWeatherYears
-    for year in GSw_HourlyWeatherYears:
+    for year in [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]:
         props = profiles.columns.get_level_values('property').unique()
         regions = profiles.columns.get_level_values('region').unique()
         dforig, dfrep = get_profiles(regions, year)

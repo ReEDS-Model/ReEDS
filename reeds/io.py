@@ -744,6 +744,15 @@ def get_switches(case=None, **kwargs):
     ### Add derivative switches
     sw['resource_adequacy_years_list'] = [int(y) for y in sw['resource_adequacy_years'].split('_')]
     sw['num_resource_adequacy_years'] = len(sw['resource_adequacy_years_list'])
+    ## Superset of weather years
+    sw['weather_years_all'] = [
+        int(y) for y in sorted(set(
+            ## Allow backwards compatibility with runs before GSw_HourlyMatchYears was added
+            sw.get('GSw_HourlyMatchYears', sw['GSw_HourlyWeatherYears']).split('_')
+            + sw['GSw_HourlyWeatherYears'].split('_')
+            + sw['resource_adequacy_years'].split('_')
+        ))
+    ]
     ## Fallback for backwards compatibility with older cases
     _fallback = '2007_2008_2009_2010_2011_2012_2013_2016_2017_2018_2019_2020_2021_2022'
     sw['future_hydcf_rep_years_list'] = [
@@ -1063,7 +1072,7 @@ def get_temperatures(case, tz_in='UTC', tz_out='Etc/GMT+6', subset_years=True):
     )
     sw = reeds.io.get_switches(inputs_case)
     ## Add one more year on either end of weather years to allow for timezone conversion
-    weather_years = sw.resource_adequacy_years_list
+    weather_years = sw.weather_years_all
     read_years = range(min(weather_years)-1, max(weather_years)+2)
     val_st = reeds.io.read_input(inputs_case, 'st').squeeze(1).values
     ### Load temperatures
@@ -1185,6 +1194,40 @@ def get_site_cf_hourly(tech:Literal['upv','wind-ons','wind-ofs'], year, case=Non
         )
     
     return cf_hourly
+
+
+def write_outages(df, h5path):
+    names = df.columns.names
+    namelengths = {
+        name: df.columns.get_level_values(name).map(len).max()
+        for name in names
+    }
+    column_level_type = f'S{max([len(i) for i in names])}'
+    with h5py.File(h5path, 'w') as f:
+        f.create_dataset('index', data=df.index, dtype='S29')
+        ## Save both the individual column levels and the single-level delimited version
+        for name in names:
+            f.create_dataset(
+                f'columns_{name}',
+                data=df.columns.get_level_values(name),
+                dtype=f'S{namelengths[name]}')
+        f.create_dataset(
+            'columns',
+            data=(
+                df.columns.map(lambda x: '|'.join(x)).rename('|'.join(names))
+                if isinstance(df.columns, pd.MultiIndex)
+                else df.columns
+            ),
+            dtype=f'S{sum(namelengths.values()) + 1}')
+        f.create_dataset(
+            'data', data=df, dtype=np.float32,
+            compression='gzip', compression_opts=4,
+        )
+        f.create_dataset(
+            'column_levels',
+            data=np.array(names, dtype=column_level_type),
+            dtype=column_level_type)
+
 
 def get_outage_hourly(
     case,

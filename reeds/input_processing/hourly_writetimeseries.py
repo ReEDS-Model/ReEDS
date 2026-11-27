@@ -35,26 +35,26 @@ def make_8760_map(period_szn, sw):
     """
     hoursperperiod = {'day':24, 'wek':120, 'year':24}[sw['GSw_HourlyType']]
     periodsperyear = {'day':365, 'wek':73, 'year':365}[sw['GSw_HourlyType']]
-    fulltimeindex = reeds.timeseries.get_timeindex(sw.resource_adequacy_years_list)
+    fulltimeindex = reeds.timeseries.get_timeindex(sw.weather_years_all)
     ### Start with all weather years
     hmap_allyrs = pd.DataFrame({
         'timestamp': fulltimeindex,
-        'year': np.ravel([[y]*8760 for y in sw.resource_adequacy_years_list]),
+        'year': np.ravel([[y]*8760 for y in sw.weather_years_all]),
         'yearperiod': np.ravel([
             [h+1 for d in range(365) for h in (d,)*24] if sw['GSw_HourlyType'] == 'year'
             else [h+1 for d in range(periodsperyear)
                   for h in (d,)*hoursperperiod]
-            for y in sw.resource_adequacy_years_list]),
-        'hour': range(1, 8760*len(sw.resource_adequacy_years_list) + 1),
-        'hour0': range(8760*len(sw.resource_adequacy_years_list)),
-        'yearhour': np.ravel(list(range(1,8761))*len(sw.resource_adequacy_years_list)),
+            for y in sw.weather_years_all]),
+        'hour': range(1, 8760*len(sw.weather_years_all) + 1),
+        'hour0': range(8760*len(sw.weather_years_all)),
+        'yearhour': np.ravel(list(range(1,8761))*len(sw.weather_years_all)),
         'periodhour': (
-            list(range(1,25))*365*len(sw.resource_adequacy_years_list)
+            list(range(1,25))*365*len(sw.weather_years_all)
             if sw['GSw_HourlyType'] == 'year'
             else (
                 list(range(1, hoursperperiod+1))
                 * periodsperyear
-                * len(sw.resource_adequacy_years_list))
+                * len(sw.weather_years_all))
         ),
     })
     hmap_allyrs['actual_period'] = (
@@ -127,19 +127,17 @@ def get_ccseason_peaks_hourly(load, sw, inputs_case, hierarchy, h2ccseason, val_
 
 
 def append_csp_profiles(cf_rep, sw):
-    ### Parse switch data (hourly_repperiods.py does this already but stress_periods.py does not)
-    if isinstance(sw["GSw_CSP_Types"], str):
-        sw["GSw_CSP_Types"] = [int(i) for i in sw["GSw_CSP_Types"].split("_")]
     ### Get the CSP profiles
     cfcsp = cf_rep[[c for c in cf_rep if c.startswith("csp")]].copy()
     ### Duplicate the csp1 profiles for each CSP tech
+    csp_types = [int(i) for i in sw["GSw_CSP_Types"].split("_")]
     cfcsp_out = pd.concat(
         (
             [
                 cfcsp.rename(
                     columns={c: c.replace("csp", f"csp{i}") for c in cfcsp.columns}
                 )
-                for i in sw["GSw_CSP_Types"]
+                for i in csp_types
             ]
         ),
         axis=1,
@@ -212,10 +210,11 @@ def get_yearly_demand(sw, hmap_myr, hmap_allyrs, inputs_case, periodtype='rep'):
 
     load_out = load_in.copy()
     ### For full year, keep all periods in the modeled years
+    keep_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
     if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
         load_out = load_out.loc[
             load_out.index.map(hmap_allyrs.set_index('actual_h').year)
-            .isin(sw['GSw_HourlyWeatherYears'])
+            .isin(keep_years)
         ].copy()
     ### Otherwise, pull out the specified periods
     else:
@@ -286,10 +285,11 @@ def get_daily_gasprice_multipliers(
     )
 
     ### For full year, keep all periods in the modeled years
+    keep_years = [int(y) for y in sw.GSw_HourlyWeatherYears.split('_')]
     if (sw.GSw_HourlyType == 'year') and (periodtype == 'rep'):
         dfout = dfin.loc[
             dfin.index.map(hmap_allyrs.set_index('actual_h').year)
-            .isin(sw['GSw_HourlyWeatherYears'])
+            .isin(keep_years)
         ].copy()
     ### Otherwise, pull out the specified periods
     else:
@@ -459,15 +459,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             logpath=os.path.join(inputs_case,'..','gamslog.txt'),
         )
 
-    # %% Parse some switches
-    if not isinstance(sw["GSw_HourlyWeatherYears"], list):
-        sw["GSw_HourlyWeatherYears"] = [
-            int(y) for y in sw["GSw_HourlyWeatherYears"].split("_")
-        ]
-
-    # Ensure the GSw_CSP_Types is a list, as hourly_writetimeseries is called in F_stress_periods.py as well
-    if not isinstance(sw['GSw_CSP_Types'],list):
-        sw['GSw_CSP_Types'] = [int(i) for i in sw['GSw_CSP_Types'].split('_')]
+    #%% Process inputs
     ## Make outputs path
     outpath = os.path.join(inputs_case, periodtype)
     os.makedirs(outpath, exist_ok=True)
@@ -622,9 +614,10 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
 
     # %%### Create the temporal sets used by ReEDS
     ### Calculate number of hours represented by each timeslice
+    numyears = len(sw['GSw_HourlyWeatherYears'].split('_'))
     hours = (
         hmap_myr.groupby('h').season.count().rename('numhours')
-        / (len(sw['GSw_HourlyWeatherYears']) if not periodtype.startswith('stress') else 1))
+        / (numyears if not periodtype.startswith('stress') else 1))
     ## Stress period hours are scaled to sum to 6 hours, making 8766 hours (365.25 days) per year
     if periodtype.startswith('stress'):
         hours = hours / hours.sum() * 6
@@ -699,7 +692,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
                 frac_h_weights[season].groupby(["h", season])["season"].count()
                 ## Normalize by the total number of hours per timeslice
                 / hours
-                / len(sw["GSw_HourlyWeatherYears"])
+                / numyears
             ).rename("weight")
             frac_h_weights[season] = frac_h_weights[season].reset_index()
     else:
@@ -735,7 +728,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             frac_h_month_weights.groupby(["h", "month"]).season.count()
             ## Normalize by the total number of hours per timeslice
             / hours
-            / len(sw["GSw_HourlyWeatherYears"])
+            / numyears
         ).rename("weight")
         frac_h_month_weights = frac_h_month_weights.reset_index()
     else:
@@ -811,7 +804,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
     ##################################################
 
     period_weights = (
-        (period_szn.rep_period.value_counts() / len(sw["GSw_HourlyWeatherYears"]))
+        (period_szn.rep_period.value_counts() / numyears)
         .reset_index()
         .rename(columns={"index": "szn", "szn": "weight"})
     )
@@ -849,8 +842,8 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
     if not len(hmap_myr) % 8760:
         ## Important: When modeling a single weather year, rep periods in the
         ## h_dt_szn table are just the single-year periods concatenated n times.
-        ## In that case electrolyzer demand (optimized for GSw_HourlyWeatherYears, usually
-        ## 2012) won't line up with optimal operation times (low demand / high wind/solar)
+        ## In that case electrolyzer demand (optimized for GSw_HourlyWeatherYears)
+        ## won't line up with optimal operation times (low demand / high wind/solar)
         ## outside of the single reprsentative year.
         h_dt_szn = pd.concat(
             {y: hmap_myr.drop_duplicates(['yearhour']).drop('year', axis=1)
@@ -1064,9 +1057,9 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         periodtype=periodtype,
     )
 
-    ###### Get the peak demand in each (r,szn,modelyear) for GSw_HourlyWeatherYears
+    ###### Get the peak demand in each (r,szn,modelyear) across all resource adequacy years
     load_full_yearly = load_in.loc[
-        load_in.index.map(hmap_allyrs.set_index('actual_h').year.isin(sw['GSw_HourlyWeatherYears']))
+        load_in.index.map(hmap_allyrs.set_index('actual_h').year.isin(sw['resource_adequacy_years_list']))
     ].stack('r').reset_index()
 
     h2ccseason = hmap_allyrs.set_index('actual_h').ccseason
@@ -1219,7 +1212,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
         # dr_shed only has 2018 weather year data, need to populate for other RA years
         dr_shed_avail_all_weatheryears = pd.DataFrame()
         # copy 2018 data to other weather years
-        for y in sw.resource_adequacy_years_list:
+        for y in sw.weather_years_all:
             #set datetime column to match hmap_allyrs.timestamp for y 
             dr_shed_avail_new_index = dr_shed_avail.copy()
             dr_shed_avail_new_index.index = pd.to_datetime(hmap_allyrs[hmap_allyrs['year']==y].timestamp)
@@ -1269,7 +1262,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             index="hour", columns=["t", "r"], values="net"
         )
         evmc_baseline_load_weatheryears = pd.concat(
-            {y: evmc_baseline_load_weatheryears for y in sw.resource_adequacy_years_list},
+            {y: evmc_baseline_load_weatheryears for y in sw.weather_years_all},
             axis=0, ignore_index=True).loc[hmap_myr.hour0]
         ## Map 8760 hours to modeled hours
         evmc_baseline_load_weatheryears.index = hmap_myr.h
@@ -1280,7 +1273,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             .sum()
             .rename("MWh")
             ## Divide by number of weather years since we concatted that number of weather years
-            / (len(sw['GSw_HourlyWeatherYears']) if (not periodtype.startswith('stress')) else 1)
+            / (numyears if (not periodtype.startswith('stress')) else 1)
         ).reset_index()
         ## Only keep modeled regions
         evmc_baseline_load_out = evmc_baseline_load_out.loc[
@@ -1665,7 +1658,7 @@ def main(sw, reeds_path, inputs_case, periodtype='rep', make_plots=1, logging=Tr
             ## Capacity factor and load
             hourly_plots.plot_maps(sw, inputs_case, reeds_path, figpath)
             ## Representative days
-            for year in sw.GSw_HourlyWeatherYears:
+            for year in sw.GSw_HourlyWeatherYears.split('_'):
                 f, ax, _ = reeds.reedsplots.plot_repdays(
                     case=os.path.dirname(os.path.abspath(inputs_case)),
                     year=int(year),
